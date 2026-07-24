@@ -5,7 +5,7 @@ import json
 import re
 from collections.abc import Iterable
 from datetime import datetime
-from typing import Any
+from typing import Any, TypeAlias
 
 import httpx
 
@@ -19,6 +19,8 @@ _API_BASE_URL = "https://www.googleapis.com/youtube/v3"
 _DURATION_RE = re.compile(
     r"^P(?:(?P<days>\d+)D)?(?:T(?:(?P<hours>\d+)H)?(?:(?P<minutes>\d+)M)?(?:(?P<seconds>\d+)S)?)?$"
 )
+QueryParam: TypeAlias = str | int
+QueryParams: TypeAlias = dict[str, QueryParam]
 
 
 class YouTubeApiError(RuntimeError):
@@ -46,8 +48,21 @@ def _parse_duration(value: str | None) -> int | None:
     return parts["days"] * 86400 + parts["hours"] * 3600 + parts["minutes"] * 60 + parts["seconds"]
 
 
-def _best_thumbnail(thumbnails: dict[str, Any] | None) -> str | None:
-    thumbnails = thumbnails or {}
+def _dict_field(payload: dict[str, Any], key: str) -> dict[str, Any]:
+    value = payload.get(key)
+    return value if isinstance(value, dict) else {}
+
+
+def _dict_items(payload: dict[str, Any], key: str = "items") -> list[dict[str, Any]]:
+    value = payload.get(key)
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, dict)]
+
+
+def _best_thumbnail(thumbnails: object) -> str | None:
+    if not isinstance(thumbnails, dict):
+        return None
     for key in ("maxres", "standard", "high", "medium", "default"):
         item = thumbnails.get(key)
         if isinstance(item, dict) and item.get("url"):
@@ -85,20 +100,22 @@ class YouTubeApiClient:
             self.token_store.save_token(self.account_alias, token)
         return token.access_token
 
-    def _get(self, resource: str, *, params: dict[str, object]) -> dict[str, Any]:
+    def _get(self, resource: str, *, params: QueryParams) -> dict[str, Any]:
         client = self._http_client or httpx.Client(timeout=45.0, follow_redirects=True)
         close_client = self._http_client is None
         try:
             response = client.get(
                 f"{self.api_base_url}/{resource.lstrip('/')}",
-                params=params,
+                params=httpx.QueryParams(params),
                 headers={"Authorization": f"Bearer {self._get_access_token()}"},
             )
             if response.status_code >= 400:
                 message = response.text[:500]
                 try:
                     payload = response.json()
-                    message = str(payload.get("error", {}).get("message") or message)
+                    if isinstance(payload, dict):
+                        error = _dict_field(payload, "error")
+                        message = str(error.get("message") or message)
                 except ValueError:
                     pass
                 raise YouTubeApiError(f"YouTube API {response.status_code}: {message}")
@@ -112,7 +129,7 @@ class YouTubeApiClient:
             if close_client:
                 client.close()
 
-    def _list_all(self, resource: str, *, params: dict[str, object]) -> list[dict[str, Any]]:
+    def _list_all(self, resource: str, *, params: QueryParams) -> list[dict[str, Any]]:
         items: list[dict[str, Any]] = []
         page_token: str | None = None
         while True:
@@ -120,9 +137,7 @@ class YouTubeApiClient:
             if page_token:
                 page_params["pageToken"] = page_token
             payload = self._get(resource, params=page_params)
-            raw_items = payload.get("items", [])
-            if isinstance(raw_items, list):
-                items.extend(item for item in raw_items if isinstance(item, dict))
+            items.extend(_dict_items(payload))
             next_token = payload.get("nextPageToken")
             if not next_token:
                 return items
@@ -142,7 +157,7 @@ class YouTubeApiClient:
             channel_id = str(item.get("id") or "").strip()
             if not channel_id:
                 continue
-            snippet = item.get("snippet") if isinstance(item.get("snippet"), dict) else {}
+            snippet = _dict_field(item, "snippet")
             records.append(
                 ChannelRecord(
                     ref=RemoteRef(platform=PlatformName.YOUTUBE, channel_id=channel_id, remote_id=channel_id),
@@ -160,11 +175,11 @@ class YouTubeApiClient:
             "channels",
             params={"part": "contentDetails", "id": channel_id, "maxResults": 1},
         )
-        items = payload.get("items", [])
+        items = _dict_items(payload)
         if not items:
             raise YouTubeApiError(f"Channel not found or inaccessible: {channel_id}")
-        content = items[0].get("contentDetails", {})
-        related = content.get("relatedPlaylists", {}) if isinstance(content, dict) else {}
+        content = _dict_field(items[0], "contentDetails")
+        related = _dict_field(content, "relatedPlaylists")
         uploads = str(related.get("uploads") or "").strip()
         if not uploads:
             raise YouTubeApiError(f"Channel does not expose an uploads playlist: {channel_id}")
@@ -180,12 +195,12 @@ class YouTubeApiClient:
                 "maxResults": 50,
             },
         )
-        video_ids = [
-            str(item.get("contentDetails", {}).get("videoId") or "")
-            for item in playlist_items
-            if isinstance(item.get("contentDetails"), dict)
-        ]
-        ordered_ids = [video_id for video_id in video_ids if video_id]
+        ordered_ids: list[str] = []
+        for item in playlist_items:
+            video_id = str(_dict_field(item, "contentDetails").get("videoId") or "").strip()
+            if video_id:
+                ordered_ids.append(video_id)
+
         raw_by_id: dict[str, dict[str, Any]] = {}
         for batch in _chunks(ordered_ids, 50):
             payload = self._get(
@@ -196,18 +211,20 @@ class YouTubeApiClient:
                     "maxResults": 50,
                 },
             )
-            for item in payload.get("items", []):
-                if isinstance(item, dict) and item.get("id"):
-                    raw_by_id[str(item["id"])] = item
+            for item in _dict_items(payload):
+                item_id = str(item.get("id") or "").strip()
+                if item_id:
+                    raw_by_id[item_id] = item
 
         records: list[VideoRecord] = []
         for video_id in ordered_ids:
             item = raw_by_id.get(video_id)
             if item is None:
                 continue
-            snippet = item.get("snippet") if isinstance(item.get("snippet"), dict) else {}
-            details = item.get("contentDetails") if isinstance(item.get("contentDetails"), dict) else {}
-            status = item.get("status") if isinstance(item.get("status"), dict) else {}
+            snippet = _dict_field(item, "snippet")
+            details = _dict_field(item, "contentDetails")
+            status = _dict_field(item, "status")
+            raw_tags = snippet.get("tags")
             records.append(
                 VideoRecord(
                     ref=RemoteRef(platform=PlatformName.YOUTUBE, channel_id=channel_id, remote_id=video_id),
@@ -216,7 +233,7 @@ class YouTubeApiClient:
                     duration_seconds=_parse_duration(str(details.get("duration") or "")),
                     published_at=_parse_datetime(str(snippet.get("publishedAt") or "")),
                     privacy_status=str(status.get("privacyStatus") or "") or None,
-                    tags=[str(tag) for tag in snippet.get("tags", [])] if isinstance(snippet.get("tags"), list) else [],
+                    tags=[str(tag) for tag in raw_tags] if isinstance(raw_tags, list) else [],
                     thumbnail_url=_best_thumbnail(snippet.get("thumbnails")),
                     revision=_revision(item),
                     metadata=item,
@@ -236,10 +253,10 @@ class YouTubeApiClient:
         records: list[CollectionRecord] = []
         for item in items:
             playlist_id = str(item.get("id") or "").strip()
-            snippet = item.get("snippet") if isinstance(item.get("snippet"), dict) else {}
+            snippet = _dict_field(item, "snippet")
             if not playlist_id or str(snippet.get("channelId") or "") != channel_id:
                 continue
-            status = item.get("status") if isinstance(item.get("status"), dict) else {}
+            status = _dict_field(item, "status")
             records.append(
                 CollectionRecord(
                     ref=RemoteRef(platform=PlatformName.YOUTUBE, channel_id=channel_id, remote_id=playlist_id),
@@ -271,8 +288,8 @@ class YouTubeApiClient:
                 },
             )
             for item in items:
-                content = item.get("contentDetails") if isinstance(item.get("contentDetails"), dict) else {}
-                snippet = item.get("snippet") if isinstance(item.get("snippet"), dict) else {}
+                content = _dict_field(item, "contentDetails")
+                snippet = _dict_field(item, "snippet")
                 video_id = str(content.get("videoId") or "").strip()
                 if not video_id or video_id not in known_video_ids:
                     continue
