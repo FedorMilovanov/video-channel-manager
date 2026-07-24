@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import unicodedata
 from dataclasses import dataclass
 from typing import Any, TypeAlias
 
@@ -14,6 +15,14 @@ from video_channel_manager.platforms.youtube.store import TokenStore
 _API_BASE_URL = "https://www.googleapis.com/youtube/v3"
 QueryParam: TypeAlias = str | int
 QueryParams: TypeAlias = dict[str, QueryParam]
+
+# YouTube may remove harmless invisible separators while storing a description.
+# Do not remove U+200D ZERO WIDTH JOINER because it is meaningful inside emoji.
+_IGNORABLE_DESCRIPTION_CODEPOINTS = {
+    ord("\ufeff"): None,  # ZERO WIDTH NO-BREAK SPACE / BOM
+    ord("\u200b"): None,  # ZERO WIDTH SPACE
+    ord("\u2060"): None,  # WORD JOINER
+}
 
 
 class YouTubeWriteError(RuntimeError):
@@ -38,6 +47,19 @@ class VideoDescriptionSnapshot:
     raw: dict[str, Any]
 
 
+def canonicalize_description(value: str) -> str:
+    """Normalize storage-only differences without changing visible wording."""
+
+    normalized = unicodedata.normalize("NFC", value.replace("\r\n", "\n").replace("\r", "\n"))
+    normalized = normalized.translate(_IGNORABLE_DESCRIPTION_CODEPOINTS)
+    # Trailing spaces and a final newline are not visible in YouTube descriptions.
+    return "\n".join(line.rstrip() for line in normalized.split("\n")).rstrip("\n")
+
+
+def descriptions_equivalent(left: str, right: str) -> bool:
+    return canonicalize_description(left) == canonicalize_description(right)
+
+
 def _revision(payload: object) -> str:
     encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
@@ -56,7 +78,7 @@ def _dict_items(payload: dict[str, Any], key: str = "items") -> list[dict[str, A
 
 
 class YouTubeDescriptionWriter:
-    """Narrow YouTube writer for revision-guarded description replacement only."""
+    """Narrow YouTube writer for guarded description replacement only."""
 
     def __init__(
         self,
@@ -152,34 +174,19 @@ class YouTubeDescriptionWriter:
             raw=raw,
         )
 
-    def replace_description(
+    def _write_description(
         self,
         *,
-        video_id: str,
-        expected_channel_id: str,
-        expected_revision: str,
-        expected_description: str,
+        current: VideoDescriptionSnapshot,
         new_description: str,
     ) -> VideoDescriptionSnapshot:
-        current = self.read_description(video_id)
-        if current.channel_id != expected_channel_id:
-            raise YouTubeRevisionConflictError(
-                f"Channel mismatch for {video_id}: expected {expected_channel_id}, got {current.channel_id}."
-            )
-        if current.revision != expected_revision:
-            raise YouTubeRevisionConflictError(
-                f"Revision mismatch for {video_id}; the remote video changed after the audit snapshot."
-            )
-        if current.description != expected_description:
-            raise YouTubeRevisionConflictError(
-                f"Description mismatch for {video_id}; refusing to overwrite newer or manually edited text."
-            )
-
         snippet = _dict_field(current.raw, "snippet")
         title = str(snippet.get("title") or "").strip()
         category_id = str(snippet.get("categoryId") or "").strip()
         if not title or not category_id:
-            raise YouTubeWriteError(f"Video {video_id} lacks title/categoryId required by videos.update.")
+            raise YouTubeWriteError(
+                f"Video {current.video_id} lacks title/categoryId required by videos.update."
+            )
 
         update_snippet: dict[str, Any] = {
             "title": title,
@@ -198,10 +205,66 @@ class YouTubeDescriptionWriter:
             "PUT",
             "videos",
             params={"part": "snippet"},
-            json_body={"id": video_id, "snippet": update_snippet},
+            json_body={"id": current.video_id, "snippet": update_snippet},
             require_write=True,
         )
-        verified = self.read_description(video_id)
-        if verified.description != new_description:
-            raise YouTubeWriteError(f"Verification failed after updating description for {video_id}.")
+        verified = self.read_description(current.video_id)
+        if not descriptions_equivalent(verified.description, new_description):
+            raise YouTubeWriteError(
+                f"Verification failed after updating description for {current.video_id}."
+            )
         return verified
+
+    def replace_description(
+        self,
+        *,
+        video_id: str,
+        expected_channel_id: str,
+        expected_revision: str,
+        expected_description: str,
+        new_description: str,
+    ) -> VideoDescriptionSnapshot:
+        current = self.read_description(video_id)
+        if current.channel_id != expected_channel_id:
+            raise YouTubeRevisionConflictError(
+                f"Channel mismatch for {video_id}: expected {expected_channel_id}, got {current.channel_id}."
+            )
+        if current.revision != expected_revision:
+            raise YouTubeRevisionConflictError(
+                f"Revision mismatch for {video_id}; the remote video changed after the audit snapshot."
+            )
+        if not descriptions_equivalent(current.description, expected_description):
+            raise YouTubeRevisionConflictError(
+                f"Description mismatch for {video_id}; refusing to overwrite newer or manually edited text."
+            )
+        return self._write_description(current=current, new_description=new_description)
+
+    def restore_description_if_current(
+        self,
+        *,
+        video_id: str,
+        expected_channel_id: str,
+        expected_current_description: str,
+        restore_description: str,
+    ) -> VideoDescriptionSnapshot:
+        """Restore only when live text still equals the exact state written by this tool.
+
+        This deliberately does not depend on YouTube's full-record revision. YouTube can
+        refresh etags or other server-managed fields after an update even when the
+        description has not changed. Exact canonical description equality remains the
+        mutation guard during recovery.
+        """
+
+        current = self.read_description(video_id)
+        if current.channel_id != expected_channel_id:
+            raise YouTubeRevisionConflictError(
+                f"Channel mismatch for {video_id}: expected {expected_channel_id}, got {current.channel_id}."
+            )
+        if descriptions_equivalent(current.description, restore_description):
+            return current
+        if not descriptions_equivalent(current.description, expected_current_description):
+            raise YouTubeRevisionConflictError(
+                f"Description mismatch for {video_id}; refusing recovery because live text is neither the "
+                "planned after-state nor the original backup."
+            )
+        return self._write_description(current=current, new_description=restore_description)
