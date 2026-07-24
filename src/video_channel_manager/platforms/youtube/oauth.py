@@ -16,6 +16,7 @@ import httpx
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
 
 YOUTUBE_READONLY_SCOPE = "https://www.googleapis.com/auth/youtube.readonly"
+YOUTUBE_FORCE_SSL_SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl"
 
 
 class OAuthFlowError(RuntimeError):
@@ -110,7 +111,11 @@ class InstalledOAuthFlow:
             )
             response.raise_for_status()
             payload = response.json()
-            return OAuthToken.from_token_response(payload, previous_refresh_token=token.refresh_token)
+            return OAuthToken.from_token_response(
+                payload,
+                previous_refresh_token=token.refresh_token,
+                previous_scopes=token.scopes,
+            )
         except (httpx.HTTPError, ValueError, KeyError) as exc:
             raise OAuthFlowError(f"Google access-token refresh failed: {exc}") from exc
         finally:
