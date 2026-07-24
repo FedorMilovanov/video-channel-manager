@@ -28,6 +28,8 @@ class AppSettings(BaseSettings):
     max_operations_per_plan: int = Field(default=1000, ge=1, le=100_000)
     require_expected_revision: bool = True
 
+    youtube_client_secret_file: Path = Path("./secrets/client_secret.json")
+    youtube_oauth_timeout_seconds: int = Field(default=300, ge=30, le=1800)
     youtube_client_id: str | None = None
     youtube_client_secret: SecretStr | None = None
     youtube_token_file: Path = Path("./data/secrets/youtube-token.json")
@@ -52,6 +54,7 @@ class AppSettings(BaseSettings):
         (self.data_dir / "imports").mkdir(exist_ok=True)
         (self.data_dir / "logs").mkdir(exist_ok=True)
         (self.data_dir / "secrets").mkdir(exist_ok=True)
+        (self.data_dir / "youtube").mkdir(exist_ok=True)
 
 
 @lru_cache(maxsize=1)
