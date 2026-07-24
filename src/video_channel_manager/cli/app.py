@@ -14,6 +14,7 @@ from rich.table import Table
 from video_channel_manager import __version__
 from video_channel_manager.application.plan_guard import PlanGuard
 from video_channel_manager.application.plan_preview import build_plan_preview
+from video_channel_manager.cli.vk import vk_app
 from video_channel_manager.cli.youtube import youtube_app
 from video_channel_manager.config import get_settings
 from video_channel_manager.domain.enums import ChannelKind, CollectionKind, OperationType, PlatformName, RiskLevel
@@ -35,6 +36,7 @@ app.add_typer(plan_app, name="plan")
 app.add_typer(local_app, name="local")
 app.add_typer(example_app, name="example")
 app.add_typer(youtube_app, name="youtube")
+app.add_typer(vk_app, name="vk")
 console = Console()
 
 
@@ -51,6 +53,7 @@ def doctor() -> None:
 
     settings = get_settings()
     settings.ensure_runtime_directories()
+    vk_registry = settings.data_dir / "vk" / "accounts.json"
     table = Table(title="Video Channel Manager doctor")
     table.add_column("Check")
     table.add_column("Result")
@@ -67,6 +70,8 @@ def doctor() -> None:
             if settings.youtube_client_secret_file.is_file()
             else "not found"
         ),
+        "VK API version": settings.vk_api_version,
+        "VK local accounts": "present" if vk_registry.is_file() else "none",
         "Safe mode": str(settings.safe_mode),
         "Destructive operations": "enabled" if settings.allow_destructive_operations else "disabled",
     }

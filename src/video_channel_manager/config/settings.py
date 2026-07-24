@@ -55,6 +55,7 @@ class AppSettings(BaseSettings):
         (self.data_dir / "logs").mkdir(exist_ok=True)
         (self.data_dir / "secrets").mkdir(exist_ok=True)
         (self.data_dir / "youtube").mkdir(exist_ok=True)
+        (self.data_dir / "vk").mkdir(exist_ok=True)
 
 
 @lru_cache(maxsize=1)
