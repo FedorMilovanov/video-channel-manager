@@ -32,6 +32,21 @@ jobs:
         run: ruff format --check .
         continue-on-error: true
       - name: Static typing
-        run: mypy src
+        id: mypy
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mypy src --show-error-codes 2>&1 | tee mypy.log
+      - name: Upload static typing report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mypy-${{ matrix.python-version }}
+          path: mypy.log
+          if-no-files-found: error
+      - name: Enforce static typing
+        if: steps.mypy.outcome == 'failure'
+        run: exit 1
       - name: Tests
         run: pytest --cov=video_channel_manager --cov-report=term-missing
