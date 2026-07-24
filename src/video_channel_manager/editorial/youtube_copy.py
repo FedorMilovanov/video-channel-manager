@@ -11,7 +11,9 @@ URL_RE = re.compile(r"https?://\S+", re.IGNORECASE)
 LITERAL_TRIPLE_STAR_RE = re.compile(r"(?<!\*)\*{3}(?!\*)")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]\n]+\]\(https?://[^)\s]+\)", re.IGNORECASE)
 MULTI_BLANK_RE = re.compile(r"\n{3,}")
-PUNCT_OUTSIDE_RE = re.compile(r"(?:\*[^*\n]+\*|(?<!\w)_[^_\n]+_(?!\w))[,.:;!?…]")
+PUNCT_OUTSIDE_RE = re.compile(
+    r"(?P<span>\*[^*\n]+\*|(?<!\w)_[^_\n]+_(?!\w))(?P<punct>[,.:;!?…])"
+)
 BOLD_SPAN_RE = re.compile(r"\*([^*\n]*)\*")
 ITALIC_SPAN_RE = re.compile(r"(?<!\w)_([^_\n]+)_(?!\w)")
 
@@ -24,6 +26,13 @@ _METADATA_PREFIXES = (
     "*rutube:*",
     "#",
 )
+_METADATA_LABELS = {
+    "vk",
+    "telegram",
+    "телеграм",
+    "rutube",
+    "рутуб",
+}
 
 
 @dataclass(frozen=True)
@@ -100,6 +109,55 @@ def _italic_marker_positions(text: str) -> list[int]:
     return positions
 
 
+def _emphasis_inner(span: str) -> str:
+    return span[1:-1].strip()
+
+
+def _is_metadata_label(inner: str) -> bool:
+    lowered = inner.casefold().strip()
+    return lowered.startswith("плейлист ") or lowered in _METADATA_LABELS
+
+
+def _punctuation_finding(match: re.Match[str]) -> CopyFinding:
+    span = match.group("span")
+    punctuation = match.group("punct")
+    inner = _emphasis_inner(span)
+    excerpt = _excerpt(match.group(0))
+
+    if punctuation == ":":
+        if _is_metadata_label(inner):
+            return CopyFinding(
+                "punctuation_outside_emphasis",
+                "error",
+                "Двоеточие является частью подписи ссылки и должно находиться внутри *...* или _..._.",
+                excerpt=excerpt,
+            )
+        return CopyFinding(
+            "colon_after_emphasis_review",
+            "warning",
+            "Двоеточие после выделения может быть внешней синтаксической связкой. Проверьте контекст вручную.",
+            excerpt=excerpt,
+        )
+
+    if punctuation == "." and inner.endswith(("?", "!", "…", "?»", "!»", "…»")):
+        return CopyFinding(
+            "duplicate_terminal_punctuation",
+            "error",
+            "После выделенной фразы уже есть ?/!/…; внешнюю точку нужно удалить, а не переносить внутрь.",
+            excerpt=excerpt,
+        )
+
+    return CopyFinding(
+        "punctuation_outside_emphasis",
+        "error",
+        (
+            "Знак сразу после закрывающего * или _. Если он завершает выделенную фразу, "
+            "перенесите его внутрь; внешнюю синтаксическую пунктуацию оставьте снаружи."
+        ),
+        excerpt=excerpt,
+    )
+
+
 def validate_youtube_description(description: str) -> list[CopyFinding]:
     findings: list[CopyFinding] = []
     paragraphs = _paragraphs(description)
@@ -114,7 +172,10 @@ def validate_youtube_description(description: str) -> list[CopyFinding]:
             CopyFinding(
                 "first_paragraph_formatting",
                 "error",
-                "Первый абзац содержит * или _ вне URL и буквального ***. По стандарту превью он должен быть без форматирования.",
+                (
+                    "Первый абзац содержит * или _ вне URL и буквального ***. "
+                    "По стандарту превью он должен быть без форматирования."
+                ),
                 paragraph_index=1,
                 excerpt=_excerpt(first),
             )
@@ -122,7 +183,9 @@ def validate_youtube_description(description: str) -> list[CopyFinding]:
 
     text_without_non_markers = _without_non_markers(description)
     if text_without_non_markers.count("*") % 2:
-        findings.append(CopyFinding("unbalanced_bold", "error", "Нечётное число маркеров *: жирная обёртка не закрыта."))
+        findings.append(
+            CopyFinding("unbalanced_bold", "error", "Нечётное число маркеров *: жирная обёртка не закрыта.")
+        )
     if len(_italic_marker_positions(text_without_non_markers)) % 2:
         findings.append(
             CopyFinding("unbalanced_italic", "error", "Обнаружена незакрытая или одиночная курсивная обёртка _.")
@@ -152,15 +215,9 @@ def validate_youtube_description(description: str) -> list[CopyFinding]:
                 )
             )
 
-    for match in PUNCT_OUTSIDE_RE.finditer(text_without_non_markers):
-        findings.append(
-            CopyFinding(
-                "punctuation_outside_emphasis",
-                "error",
-                "Знак сразу после закрывающего * или _. Если он завершает выделенную фразу, перенесите его внутрь; внешнюю синтаксическую пунктуацию оставьте снаружи.",
-                excerpt=_excerpt(match.group(0)),
-            )
-        )
+    findings.extend(
+        _punctuation_finding(match) for match in PUNCT_OUTSIDE_RE.finditer(text_without_non_markers)
+    )
 
     for match in MARKDOWN_LINK_RE.finditer(description):
         findings.append(
