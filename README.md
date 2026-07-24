@@ -54,7 +54,7 @@ See [`docs/architecture.md`](docs/architecture.md) and [`docs/exchange-format.md
 Channel-specific editorial and playlist decisions are documented in:
 
 - [`docs/youtube-editorial-standard.md`](docs/youtube-editorial-standard.md) — titles, descriptions, Shorts classification, playlist routing, fact-checking, tags, hashtags, and approval rules;
-- [`docs/youtube-description-rendering-standard.md`](docs/youtube-description-rendering-standard.md) — exact `*bold*` / `_italic_` punctuation, first-paragraph behavior, selective emoji policy, line breaks, and final-link rendering;
+- [`docs/youtube-description-rendering-standard.md`](docs/youtube-description-rendering-standard.md) — exact `*bold*` / `_italic_` punctuation, first-paragraph behavior, selective emoji policy, line breaks, final-link rendering, and the screenshot-verified «На поле Куликовом» example;
 - [`docs/audits/2026-07-24-the-legendary-poet.md`](docs/audits/2026-07-24-the-legendary-poet.md) — the first real audit of **The Legendary Poet**.
 
 These files are the source of truth for future AI-assisted recommendations. Do not rely on chat memory alone. The rendering standard takes precedence when it clarifies punctuation or emoji behavior.
