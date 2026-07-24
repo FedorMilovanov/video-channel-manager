@@ -90,7 +90,7 @@ class InstalledOAuthFlow:
             if close_client:
                 client.close()
         try:
-            return OAuthToken.from_token_response(payload)
+            return OAuthToken.from_token_response(payload, previous_scopes=list(self.scopes))
         except (KeyError, TypeError, ValueError) as exc:
             raise OAuthFlowError("Google token response did not contain a usable access token.") from exc
 
