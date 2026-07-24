@@ -211,19 +211,19 @@ class YouTubeApiClient:
                     "maxResults": 50,
                 },
             )
-            for item in _dict_items(payload):
-                item_id = str(item.get("id") or "").strip()
+            for raw_item in _dict_items(payload):
+                item_id = str(raw_item.get("id") or "").strip()
                 if item_id:
-                    raw_by_id[item_id] = item
+                    raw_by_id[item_id] = raw_item
 
         records: list[VideoRecord] = []
         for video_id in ordered_ids:
-            item = raw_by_id.get(video_id)
-            if item is None:
+            video_payload = raw_by_id.get(video_id)
+            if video_payload is None:
                 continue
-            snippet = _dict_field(item, "snippet")
-            details = _dict_field(item, "contentDetails")
-            status = _dict_field(item, "status")
+            snippet = _dict_field(video_payload, "snippet")
+            details = _dict_field(video_payload, "contentDetails")
+            status = _dict_field(video_payload, "status")
             raw_tags = snippet.get("tags")
             records.append(
                 VideoRecord(
@@ -235,8 +235,8 @@ class YouTubeApiClient:
                     privacy_status=str(status.get("privacyStatus") or "") or None,
                     tags=[str(tag) for tag in raw_tags] if isinstance(raw_tags, list) else [],
                     thumbnail_url=_best_thumbnail(snippet.get("thumbnails")),
-                    revision=_revision(item),
-                    metadata=item,
+                    revision=_revision(video_payload),
+                    metadata=video_payload,
                 )
             )
         return records
