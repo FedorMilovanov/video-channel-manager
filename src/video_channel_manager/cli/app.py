@@ -14,6 +14,7 @@ from rich.table import Table
 from video_channel_manager import __version__
 from video_channel_manager.application.plan_guard import PlanGuard
 from video_channel_manager.application.plan_preview import build_plan_preview
+from video_channel_manager.cli.youtube import youtube_app
 from video_channel_manager.config import get_settings
 from video_channel_manager.domain.enums import ChannelKind, CollectionKind, OperationType, PlatformName, RiskLevel
 from video_channel_manager.domain.models import ChannelRecord, CollectionRecord, RemoteRef, VideoRecord
@@ -33,6 +34,7 @@ app.add_typer(schema_app, name="schema")
 app.add_typer(plan_app, name="plan")
 app.add_typer(local_app, name="local")
 app.add_typer(example_app, name="example")
+app.add_typer(youtube_app, name="youtube")
 console = Console()
 
 
@@ -60,6 +62,11 @@ def doctor() -> None:
         "yt-dlp": shutil.which("yt-dlp") or "not found (needed for YouTube cache downloads)",
         "Data directory": str(settings.data_dir.resolve()),
         "Database URL": settings.database_url,
+        "YouTube OAuth client": (
+            str(settings.youtube_client_secret_file.resolve())
+            if settings.youtube_client_secret_file.is_file()
+            else "not found"
+        ),
         "Safe mode": str(settings.safe_mode),
         "Destructive operations": "enabled" if settings.allow_destructive_operations else "disabled",
     }
