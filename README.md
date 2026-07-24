@@ -4,15 +4,16 @@
 
 It is not a one-off YouTube → VK script. The core is platform-neutral and supports independent work with each channel:
 
-- inspect a YouTube channel without changing anything;
-- organize titles, descriptions, thumbnails, and playlists;
-- audit a VK community and its video albums;
+- authorize multiple YouTube accounts with read-only OAuth;
+- export channels, videos, playlists, and memberships as a versioned `AuditPackage`;
+- organize titles, descriptions, thumbnails, tags, and playlists through reviewed plans;
+- audit a VK community and its video albums in future phases;
 - compare platforms and detect missing or duplicate publications;
-- import a structured change plan prepared by an external AI assistant;
+- import a structured `ChangePlan` prepared by an external AI assistant;
 - preview, validate, approve, execute, verify, and roll back changes;
 - index local media without moving or deleting files.
 
-> Status: foundation release. Network adapters are intentionally read-only stubs until OAuth, live API fixtures, and safety gates are implemented and tested.
+> Status: YouTube read-only OAuth and complete channel inventory are operational. Remote mutations remain intentionally disabled until write scopes, policy gates, live fixtures, dry-run previews, and rollback paths are implemented and approved.
 
 ## Core principles
 
@@ -23,7 +24,8 @@ It is not a one-off YouTube → VK script. The core is platform-neutral and supp
 5. **Optimistic concurrency.** Mutations carry an expected revision to avoid overwriting newer manual edits.
 6. **Idempotency.** Re-running a plan must not create duplicates.
 7. **Auditability.** Snapshots, plans, operations, attempts, and outcomes are persisted.
-8. **Modular monolith.** One deployable application with strict domain and adapter boundaries.
+8. **Human approval.** Editorial and playlist changes are reviewed before any remote write.
+9. **Modular monolith.** One deployable application with strict domain and adapter boundaries.
 
 ## Architecture
 
@@ -47,7 +49,16 @@ External AI / Human editor
 
 See [`docs/architecture.md`](docs/architecture.md) and [`docs/exchange-format.md`](docs/exchange-format.md).
 
-## Quick start (Windows PowerShell)
+## Editorial policy
+
+Channel-specific editorial and playlist decisions are documented in:
+
+- [`docs/youtube-editorial-standard.md`](docs/youtube-editorial-standard.md) — titles, descriptions, YouTube formatting, Shorts classification, playlist routing, fact-checking, tags, hashtags, and approval rules;
+- [`docs/audits/2026-07-24-the-legendary-poet.md`](docs/audits/2026-07-24-the-legendary-poet.md) — the first real audit of **The Legendary Poet**.
+
+These files are the source of truth for future AI-assisted recommendations. Do not rely on chat memory alone.
+
+## Quick start — Windows PowerShell
 
 ```powershell
 ./scripts/setup.ps1
@@ -61,13 +72,44 @@ video-manager example export --output-dir .\examples\generated
 Manual installation:
 
 ```powershell
-py -3.12 -m venv .venv
+py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -e ".[dev]"
 ```
 
-## CLI foundation
+## YouTube OAuth and inventory
+
+Place the downloaded Google OAuth **Desktop app** client in a local ignored path such as:
+
+```text
+secrets/client_secret.json
+```
+
+Authorize one account alias:
+
+```powershell
+video-manager youtube login --account legendary-poet
+```
+
+Inspect local accounts and live channels:
+
+```powershell
+video-manager youtube accounts
+video-manager youtube channels --account legendary-poet
+```
+
+Export a complete read-only snapshot:
+
+```powershell
+video-manager youtube scan --account legendary-poet
+```
+
+The export contains exact channel/video/playlist IDs, metadata, revisions, playlist memberships, and a read-only marker. OAuth tokens and client secrets stay local and must never be committed.
+
+See [`docs/youtube-oauth.md`](docs/youtube-oauth.md).
+
+## CLI
 
 ```text
 video-manager version
@@ -78,13 +120,17 @@ video-manager example export
 video-manager plan validate plan.json
 video-manager plan preview plan.json
 video-manager local scan H:\ --output local-inventory.json
+video-manager youtube login --account legendary-poet
+video-manager youtube accounts
+video-manager youtube channels --account legendary-poet
+video-manager youtube scan --account legendary-poet
 ```
 
-The first operational milestone is:
+The current operational workflow is:
 
 ```text
-YouTube scan → AuditPackage → external AI analysis → ChangePlan
-→ strict validation → preview → safe playlist operations
+YouTube scan → AuditPackage → verified editorial analysis → ChangePlan
+→ strict validation → human approval → preview → future safe operations
 ```
 
 ## Project layout
@@ -105,6 +151,8 @@ src/video_channel_manager/
 
 Destructive operations are disabled by default. A plan can be syntactically valid and still be rejected by policy. See [`docs/security.md`](docs/security.md).
 
+Never run `git clean -fdx` in a working tree that contains ignored OAuth secrets or tokens.
+
 ## Development
 
 ```bash
@@ -118,4 +166,11 @@ CI runs on Python 3.11, 3.12, and 3.13.
 
 ## Roadmap
 
-See [`docs/roadmap.md`](docs/roadmap.md). The next implementation phase adds YouTube OAuth and a read-only channel scanner, followed by VK read-only inventory and safe playlist/album mutations.
+The next milestones are:
+
+1. enrich read-only YouTube inventory with owner-only file geometry for reliable Shorts classification;
+2. generate verified editorial findings and reviewed `ChangePlan` documents;
+3. add explicit write scopes and safe playlist operations behind dry-run, revision, approval, and rollback gates;
+4. implement VK read-only inventory and cross-platform comparison.
+
+See [`docs/roadmap.md`](docs/roadmap.md).
