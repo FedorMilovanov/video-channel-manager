@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-import unicodedata
 from collections import Counter
 from dataclasses import dataclass
 from typing import Literal
@@ -45,14 +44,17 @@ def _excerpt(value: str, limit: int = 140) -> str:
 
 
 def _is_emoji(character: str) -> bool:
+    """Recognize leading emoji without treating box-drawing separators as emoji."""
+
     if not character:
         return False
     codepoint = ord(character)
-    if 0x1F000 <= codepoint <= 0x1FAFF:
-        return True
-    if 0x2600 <= codepoint <= 0x27BF:
-        return True
-    return unicodedata.category(character) == "So" and codepoint >= 0x2300
+    return (
+        0x1F000 <= codepoint <= 0x1FAFF
+        or 0x2600 <= codepoint <= 0x27BF
+        or 0x2300 <= codepoint <= 0x23FF
+        or 0x2B00 <= codepoint <= 0x2BFF
+    )
 
 
 def _leading_emoji(paragraph: str) -> str | None:
@@ -63,6 +65,17 @@ def _leading_emoji(paragraph: str) -> str | None:
 def _is_metadata_paragraph(paragraph: str) -> bool:
     lowered = paragraph.casefold().lstrip()
     return any(lowered.startswith(prefix) for prefix in _METADATA_PREFIXES)
+
+
+def _is_long_prose_paragraph(paragraph: str) -> bool:
+    """Flag dense prose, not verse blocks or hashtag-only metadata."""
+
+    if len(paragraph) <= 700 or _is_metadata_paragraph(paragraph):
+        return False
+    lines = [line.strip() for line in paragraph.splitlines() if line.strip()]
+    if len(lines) >= 6 and max((len(line) for line in lines), default=0) <= 180:
+        return False
+    return True
 
 
 def _italic_marker_positions(text: str) -> list[int]:
@@ -87,12 +100,13 @@ def validate_youtube_description(description: str) -> list[CopyFinding]:
         return [CopyFinding("empty_description", "error", "Описание пустое.")]
 
     first = paragraphs[0] if paragraphs else ""
-    if "*" in first or "_" in first:
+    first_without_urls = URL_RE.sub("", first)
+    if "*" in first_without_urls or "_" in first_without_urls:
         findings.append(
             CopyFinding(
                 "first_paragraph_formatting",
                 "error",
-                "Первый абзац содержит * или _. По стандарту превью он должен быть без форматирования.",
+                "Первый абзац содержит * или _ вне URL. По стандарту превью он должен быть без форматирования.",
                 paragraph_index=1,
                 excerpt=_excerpt(first),
             )
@@ -118,7 +132,7 @@ def validate_youtube_description(description: str) -> list[CopyFinding]:
                 )
             )
 
-    for match in ITALIC_SPAN_RE.finditer(description):
+    for match in ITALIC_SPAN_RE.finditer(text_without_urls):
         inner = match.group(1)
         if inner != inner.strip():
             findings.append(
@@ -130,12 +144,12 @@ def validate_youtube_description(description: str) -> list[CopyFinding]:
                 )
             )
 
-    for match in PUNCT_OUTSIDE_RE.finditer(description):
+    for match in PUNCT_OUTSIDE_RE.finditer(text_without_urls):
         findings.append(
             CopyFinding(
                 "punctuation_outside_emphasis",
                 "error",
-                "Знак сразу после закрывающего * или _. Проверьте: если он завершает выделенную фразу, перенесите его внутрь.",
+                "Знак сразу после закрывающего * или _. Если он завершает выделенную фразу, перенесите его внутрь; внешнюю синтаксическую пунктуацию оставьте снаружи.",
                 excerpt=_excerpt(match.group(0)),
             )
         )
@@ -160,12 +174,12 @@ def validate_youtube_description(description: str) -> list[CopyFinding]:
         )
 
     for index, paragraph in enumerate(paragraphs, start=1):
-        if len(paragraph) > 700:
+        if _is_long_prose_paragraph(paragraph):
             findings.append(
                 CopyFinding(
                     "long_paragraph",
                     "warning",
-                    "Абзац длиннее 700 символов и требует ручной проверки переносов.",
+                    "Плотный прозаический абзац длиннее 700 символов и требует ручной проверки переносов.",
                     paragraph_index=index,
                     excerpt=_excerpt(paragraph),
                 )
