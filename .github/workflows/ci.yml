@@ -49,4 +49,19 @@ jobs:
         if: steps.mypy.outcome == 'failure'
         run: exit 1
       - name: Tests
-        run: pytest --cov=video_channel_manager --cov-report=term-missing
+        id: pytest
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          pytest --cov=video_channel_manager --cov-report=term-missing 2>&1 | tee pytest.log
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-${{ matrix.python-version }}
+          path: pytest.log
+          if-no-files-found: error
+      - name: Enforce tests
+        if: steps.pytest.outcome == 'failure'
+        run: exit 1
