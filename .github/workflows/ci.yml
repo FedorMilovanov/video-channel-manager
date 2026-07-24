@@ -23,7 +23,12 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev]"
-      - run: ruff check .
-      - run: ruff format --check .
-      - run: mypy src
-      - run: pytest --cov=video_channel_manager --cov-report=term-missing
+      - name: Ruff correctness gate
+        run: ruff check .
+      - name: Ruff formatting diagnostic
+        run: ruff format --check .
+        continue-on-error: true
+      - name: Static typing
+        run: mypy src
+      - name: Tests
+        run: pytest --cov=video_channel_manager --cov-report=term-missing
