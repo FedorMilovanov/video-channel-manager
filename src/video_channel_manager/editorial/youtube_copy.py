@@ -8,6 +8,7 @@ from typing import Literal
 Severity = Literal["error", "warning"]
 
 URL_RE = re.compile(r"https?://\S+", re.IGNORECASE)
+LITERAL_TRIPLE_STAR_RE = re.compile(r"(?<!\*)\*{3}(?!\*)")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]\n]+\]\(https?://[^)\s]+\)", re.IGNORECASE)
 MULTI_BLANK_RE = re.compile(r"\n{3,}")
 PUNCT_OUTSIDE_RE = re.compile(r"(?:\*[^*\n]+\*|(?<!\w)_[^_\n]+_(?!\w))[,.:;!?…]")
@@ -41,6 +42,13 @@ def _paragraphs(description: str) -> list[str]:
 def _excerpt(value: str, limit: int = 140) -> str:
     single_line = " ".join(value.split())
     return single_line if len(single_line) <= limit else f"{single_line[: limit - 1]}…"
+
+
+def _without_non_markers(text: str) -> str:
+    """Remove text fragments whose underscores or stars are not formatting markers."""
+
+    without_urls = URL_RE.sub("", text)
+    return LITERAL_TRIPLE_STAR_RE.sub("", without_urls)
 
 
 def _is_emoji(character: str) -> bool:
@@ -100,27 +108,27 @@ def validate_youtube_description(description: str) -> list[CopyFinding]:
         return [CopyFinding("empty_description", "error", "Описание пустое.")]
 
     first = paragraphs[0] if paragraphs else ""
-    first_without_urls = URL_RE.sub("", first)
-    if "*" in first_without_urls or "_" in first_without_urls:
+    first_without_non_markers = _without_non_markers(first)
+    if "*" in first_without_non_markers or "_" in first_without_non_markers:
         findings.append(
             CopyFinding(
                 "first_paragraph_formatting",
                 "error",
-                "Первый абзац содержит * или _ вне URL. По стандарту превью он должен быть без форматирования.",
+                "Первый абзац содержит * или _ вне URL и буквального ***. По стандарту превью он должен быть без форматирования.",
                 paragraph_index=1,
                 excerpt=_excerpt(first),
             )
         )
 
-    text_without_urls = URL_RE.sub("", description)
-    if text_without_urls.count("*") % 2:
+    text_without_non_markers = _without_non_markers(description)
+    if text_without_non_markers.count("*") % 2:
         findings.append(CopyFinding("unbalanced_bold", "error", "Нечётное число маркеров *: жирная обёртка не закрыта."))
-    if len(_italic_marker_positions(text_without_urls)) % 2:
+    if len(_italic_marker_positions(text_without_non_markers)) % 2:
         findings.append(
             CopyFinding("unbalanced_italic", "error", "Обнаружена незакрытая или одиночная курсивная обёртка _.")
         )
 
-    for match in BOLD_SPAN_RE.finditer(description):
+    for match in BOLD_SPAN_RE.finditer(text_without_non_markers):
         inner = match.group(1)
         if inner != inner.strip():
             findings.append(
@@ -132,7 +140,7 @@ def validate_youtube_description(description: str) -> list[CopyFinding]:
                 )
             )
 
-    for match in ITALIC_SPAN_RE.finditer(text_without_urls):
+    for match in ITALIC_SPAN_RE.finditer(text_without_non_markers):
         inner = match.group(1)
         if inner != inner.strip():
             findings.append(
@@ -144,7 +152,7 @@ def validate_youtube_description(description: str) -> list[CopyFinding]:
                 )
             )
 
-    for match in PUNCT_OUTSIDE_RE.finditer(text_without_urls):
+    for match in PUNCT_OUTSIDE_RE.finditer(text_without_non_markers):
         findings.append(
             CopyFinding(
                 "punctuation_outside_emphasis",
