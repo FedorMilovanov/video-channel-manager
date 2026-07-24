@@ -6,8 +6,13 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import httpx
+import pytest
 
-from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
+from video_channel_manager.platforms.youtube.models import (
+    InstalledClientConfig,
+    OAuthToken,
+    YouTubeConfigurationError,
+)
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow, YOUTUBE_READONLY_SCOPE
 
 
@@ -18,9 +23,11 @@ def _config(tmp_path: Path) -> InstalledClientConfig:
             {
                 "installed": {
                     "client_id": "desktop.apps.googleusercontent.com",
-                    "client_secret": "secret",
-                    "auth_uri": "https://accounts.google.com/o/oauth2/v2/auth",
+                    "project_id": "video-channel-manager",
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                     "token_uri": "https://oauth2.googleapis.com/token",
+                    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+                    "client_secret": "secret",
                     "redirect_uris": ["http://localhost"],
                 }
             }
@@ -30,7 +37,7 @@ def _config(tmp_path: Path) -> InstalledClientConfig:
     return InstalledClientConfig.from_file(path)
 
 
-def test_desktop_client_config_and_authorization_url(tmp_path: Path) -> None:
+def test_desktop_client_config_accepts_google_metadata_and_builds_authorization_url(tmp_path: Path) -> None:
     config = _config(tmp_path)
     flow = InstalledOAuthFlow(config)
     url = flow.build_authorization_url(
@@ -46,6 +53,14 @@ def test_desktop_client_config_and_authorization_url(tmp_path: Path) -> None:
     assert query["prompt"] == ["consent"]
     assert query["code_challenge_method"] == ["S256"]
     assert "client_secret" not in query
+
+
+def test_web_client_reports_actionable_error(tmp_path: Path) -> None:
+    path = tmp_path / "client_secret.json"
+    path.write_text(json.dumps({"web": {"client_id": "web-id", "client_secret": "secret"}}), encoding="utf-8")
+
+    with pytest.raises(YouTubeConfigurationError, match="Web application"):
+        InstalledClientConfig.from_file(path)
 
 
 def test_exchange_and_refresh_preserve_refresh_token(tmp_path: Path) -> None:
