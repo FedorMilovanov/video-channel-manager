@@ -229,14 +229,16 @@ class YouTubeDescriptionWriter:
             raise YouTubeRevisionConflictError(
                 f"Channel mismatch for {video_id}: expected {expected_channel_id}, got {current.channel_id}."
             )
-        if current.revision != expected_revision:
-            raise YouTubeRevisionConflictError(
-                f"Revision mismatch for {video_id}; the remote video changed after the audit snapshot."
-            )
         if not descriptions_equivalent(current.description, expected_description):
             raise YouTubeRevisionConflictError(
                 f"Description mismatch for {video_id}; refusing to overwrite newer or manually edited text."
             )
+        # The CLI preflight still checks the full audit revision before any writes.
+        # Between that preflight and a write, YouTube can refresh etags or other
+        # server-managed fields. Since this operation preserves the current live
+        # title/tags/category and replaces only a description whose text still
+        # matches the expected state, revision drift alone is not a conflict.
+        _ = expected_revision
         return self._write_description(current=current, new_description=new_description)
 
     def restore_description_if_current(
