@@ -73,12 +73,12 @@ class YouTubeDescriptionWriter:
         self._http_client = http_client
         self.api_base_url = api_base_url.rstrip("/")
 
-    def _token(self) -> OAuthToken:
+    def _token(self, *, require_write: bool) -> OAuthToken:
         token = self.token_store.load_token(self.account_alias)
         if token.needs_refresh():
             token = InstalledOAuthFlow(self.client_config, http_client=self._http_client).refresh(token)
             self.token_store.save_token(self.account_alias, token)
-        if YOUTUBE_FORCE_SSL_SCOPE not in token.scopes:
+        if require_write and YOUTUBE_FORCE_SSL_SCOPE not in token.scopes:
             raise YouTubeWriteScopeError(
                 "Stored token is read-only. Re-authorize with: "
                 f"video-manager youtube login --account {self.account_alias} --write --force"
@@ -92,6 +92,7 @@ class YouTubeDescriptionWriter:
         *,
         params: QueryParams,
         json_body: dict[str, Any] | None = None,
+        require_write: bool = False,
     ) -> dict[str, Any]:
         client = self._http_client or httpx.Client(timeout=45.0, follow_redirects=True)
         close_client = self._http_client is None
@@ -100,7 +101,7 @@ class YouTubeDescriptionWriter:
                 method,
                 f"{self.api_base_url}/{resource.lstrip('/')}",
                 params=httpx.QueryParams(params),
-                headers={"Authorization": f"Bearer {self._token().access_token}"},
+                headers={"Authorization": f"Bearer {self._token(require_write=require_write).access_token}"},
                 json=json_body,
             )
             if response.status_code >= 400:
@@ -198,6 +199,7 @@ class YouTubeDescriptionWriter:
             "videos",
             params={"part": "snippet"},
             json_body={"id": video_id, "snippet": update_snippet},
+            require_write=True,
         )
         verified = self.read_description(video_id)
         if verified.description != new_description:
