@@ -1,4 +1,4 @@
-from video_channel_manager.editorial import validate_youtube_description
+from video_channel_manager.editorial import autofix_youtube_description, validate_youtube_description
 
 
 def _codes(description: str) -> set[str]:
@@ -76,9 +76,25 @@ def test_external_dash_after_channel_name_is_allowed() -> None:
     assert "punctuation_outside_emphasis" not in _codes(description)
 
 
-def test_first_paragraph_emoji_is_allowed_but_formatting_is_not() -> None:
-    assert "first_paragraph_formatting" not in _codes("⚔️ Первый абзац без разметки.\n\nОбычный текст.")
-    assert "first_paragraph_formatting" in _codes("⚔️ *Первый абзац с разметкой.*\n\nОбычный текст.")
+def test_share_preview_requires_plain_first_paragraph() -> None:
+    assert "share_preview_emphasis" not in _codes("⚔️ Первый абзац без разметки.\n\nОбычный текст.")
+    assert "share_preview_emphasis" in _codes("⚔️ *Первый абзац с разметкой.*\n\nОбычный текст.")
+
+
+def test_drkin_first_paragraph_is_fixed_without_touching_later_emphasis() -> None:
+    description = """Веня Д’ркин — поэт, чья сила — _беспощадная ясность._ Его песни звучат как свет.
+
+*Anno Domini* по-латыни означает «в лето Господне».
+
+Главный нерв песни — *сопротивление слепоте.*"""
+
+    fixed, fixes = autofix_youtube_description(description)
+
+    assert fixed.startswith("Веня Д’ркин — поэт, чья сила — беспощадная ясность. Его песни звучат как свет.")
+    assert "*Anno Domini*" in fixed
+    assert "*сопротивление слепоте.*" in fixed
+    assert [fix.code for fix in fixes].count("share_preview_emphasis") == 1
+    assert "share_preview_emphasis" not in _codes(fixed)
 
 
 def test_emoji_on_every_body_paragraph_is_only_a_warning() -> None:
@@ -120,7 +136,7 @@ def test_underscore_inside_url_is_not_treated_as_italic_marker() -> None:
 def test_underscore_inside_first_paragraph_url_is_not_formatting() -> None:
     description = "Полная версия: https://youtu.be/ib2ehg2__sg?si=XbQdaxD4bQmkuJ7R"
 
-    assert "first_paragraph_formatting" not in _codes(description)
+    assert "share_preview_emphasis" not in _codes(description)
     assert "unbalanced_italic" not in _codes(description)
 
 
@@ -147,12 +163,56 @@ def test_verse_block_is_not_reported_as_dense_prose() -> None:
 
 
 def test_literal_triple_star_poem_title_is_not_broken_bold() -> None:
-    description = """Первый абзац без форматирования.
-
-К *** (Я помню чудное мгновенье…)
+    description = """К *** (Я помню чудное мгновенье…)
 
 Я помню чудное мгновенье:
 Передо мной явилась ты."""
 
+    assert "share_preview_emphasis" not in _codes(description)
     assert "unbalanced_bold" not in _codes(description)
     assert "bold_edge_space" not in _codes(description)
+
+
+def test_autofix_moves_only_safe_punctuation() -> None:
+    description = """Чистый первый абзац.
+
+Дата указана как *7 июня 1908 года*, затем раздел *«Родина»*.
+
+Особенно важен повтор *«тленной»*: дальше следует объяснение.
+
+Так заканчивается текст *«Что это такое?»*.
+
+*VK*: https://vk.com/thelegendarypoet"""
+
+    fixed, fixes = autofix_youtube_description(description)
+
+    assert "*7 июня 1908 года,*" in fixed
+    assert "*«Родина».*" in fixed
+    assert "*«тленной»*:" in fixed
+    assert "*«Что это такое?»*\n" in fixed
+    assert "*VK:* https://" in fixed
+    assert len(fixes) == 4
+
+
+def test_autofix_normalizes_blank_lines_and_edge_spaces() -> None:
+    description = "Первый абзац.\n\n\n\nВторой абзац с * лишним пробелом * и _ лишним курсивом _."
+
+    fixed, fixes = autofix_youtube_description(description)
+
+    assert "\n\n\n" not in fixed
+    assert "*лишним пробелом*" in fixed
+    assert "_лишним курсивом_" in fixed
+    assert {fix.code for fix in fixes} == {"multiple_blank_lines", "bold_edge_space", "italic_edge_space"}
+
+
+def test_autofix_is_idempotent() -> None:
+    description = """Первый *абзац*.
+
+Дата — *7 июня 1908 года*, затем обычный текст."""
+
+    fixed_once, first_fixes = autofix_youtube_description(description)
+    fixed_twice, second_fixes = autofix_youtube_description(fixed_once)
+
+    assert first_fixes
+    assert fixed_twice == fixed_once
+    assert second_fixes == []
