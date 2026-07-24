@@ -350,6 +350,27 @@ def autofix_youtube_description(description: str) -> tuple[str, list[CopyFix]]:
             fixes.append(CopyFix("share_preview_emphasis", first, clean_first))
             updated = f"{clean_first}{separator}{updated[first_match.end():]}"
 
+    def trim_bold(match: re.Match[str]) -> str:
+        inner = match.group(1)
+        if inner == inner.strip():
+            return match.group(0)
+        after = f"*{inner.strip()}*"
+        fixes.append(CopyFix("bold_edge_space", match.group(0), after))
+        return after
+
+    def trim_italic(match: re.Match[str]) -> str:
+        inner = match.group(1)
+        if inner == inner.strip():
+            return match.group(0)
+        after = f"_{inner.strip()}_"
+        fixes.append(CopyFix("italic_edge_space", match.group(0), after))
+        return after
+
+    masked, replacements = _mask_non_markers(updated)
+    masked = BOLD_SPAN_RE.sub(trim_bold, masked)
+    masked = ITALIC_SPAN_RE.sub(trim_italic, masked)
+    updated = _restore_masks(masked, replacements)
+
     def fix_punctuation(match: re.Match[str]) -> str:
         span = match.group("span")
         punctuation = match.group("punct")
@@ -372,27 +393,6 @@ def autofix_youtube_description(description: str) -> tuple[str, list[CopyFix]]:
         return after
 
     updated = PUNCT_OUTSIDE_RE.sub(fix_punctuation, updated)
-
-    def trim_bold(match: re.Match[str]) -> str:
-        inner = match.group(1)
-        if inner == inner.strip():
-            return match.group(0)
-        after = f"*{inner.strip()}*"
-        fixes.append(CopyFix("bold_edge_space", match.group(0), after))
-        return after
-
-    def trim_italic(match: re.Match[str]) -> str:
-        inner = match.group(1)
-        if inner == inner.strip():
-            return match.group(0)
-        after = f"_{inner.strip()}_"
-        fixes.append(CopyFix("italic_edge_space", match.group(0), after))
-        return after
-
-    masked, replacements = _mask_non_markers(updated)
-    masked = BOLD_SPAN_RE.sub(trim_bold, masked)
-    masked = ITALIC_SPAN_RE.sub(trim_italic, masked)
-    updated = _restore_masks(masked, replacements)
 
     def normalize_blank_lines(match: re.Match[str]) -> str:
         before = match.group(0)
