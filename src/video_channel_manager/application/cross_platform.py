@@ -15,6 +15,7 @@ from video_channel_manager.exchange.audit_package import AuditPackage
 _BRAND_RE = re.compile(r"@thelegendarypoet|#thelegendarypoet|#theepicpoet|#shorts", re.IGNORECASE)
 _NON_WORD_RE = re.compile(r"[^a-zа-я0-9]+", re.IGNORECASE)
 _SPACE_RE = re.compile(r"\s+")
+_AMBIGUITY_EPSILON = 0.005
 
 
 class VideoMatch(StrictModel):
@@ -208,7 +209,7 @@ def compare_audit_packages(
     source: AuditPackage,
     target: AuditPackage,
     *,
-    min_score: float = 0.72,
+    min_score: float = 0.65,
     max_duration_delta_seconds: int = 3,
 ) -> CrossPlatformComparison:
     if source.channel.ref.platform == target.channel.ref.platform:
@@ -219,16 +220,12 @@ def compare_audit_packages(
         raise ValueError("max_duration_delta_seconds cannot be negative")
 
     candidates: list[tuple[float, int, int, int | None]] = []
-    source_candidate_counts: dict[int, int] = defaultdict(int)
-    target_candidate_counts: dict[int, int] = defaultdict(int)
     for source_index, source_video in enumerate(source.videos):
         for target_index, target_video in enumerate(target.videos):
             score, delta = _candidate_score(source_video, target_video)
             duration_allowed = delta is None or delta <= max_duration_delta_seconds
             if score >= min_score and duration_allowed:
                 candidates.append((score, source_index, target_index, delta))
-                source_candidate_counts[source_index] += 1
-                target_candidate_counts[target_index] += 1
 
     candidates.sort(
         key=lambda item: (
@@ -237,6 +234,19 @@ def compare_audit_packages(
             target.videos[item[2]].ref.remote_id,
         )
     )
+    source_best_scores: dict[int, float] = {}
+    target_best_scores: dict[int, float] = {}
+    for score, source_index, target_index, _ in candidates:
+        source_best_scores[source_index] = max(score, source_best_scores.get(source_index, 0.0))
+        target_best_scores[target_index] = max(score, target_best_scores.get(target_index, 0.0))
+    source_top_counts: dict[int, int] = defaultdict(int)
+    target_top_counts: dict[int, int] = defaultdict(int)
+    for score, source_index, target_index, _ in candidates:
+        if abs(score - source_best_scores[source_index]) <= _AMBIGUITY_EPSILON:
+            source_top_counts[source_index] += 1
+        if abs(score - target_best_scores[target_index]) <= _AMBIGUITY_EPSILON:
+            target_top_counts[target_index] += 1
+
     used_source: set[int] = set()
     used_target: set[int] = set()
     matches: list[VideoMatch] = []
@@ -257,7 +267,7 @@ def compare_audit_packages(
                 duration_delta_seconds=delta,
                 exact_normalized_title=normalize_title(source_video.title) == normalize_title(target_video.title),
                 exact_description=source_video.description.strip() == target_video.description.strip(),
-                ambiguous=source_candidate_counts[source_index] > 1 or target_candidate_counts[target_index] > 1,
+                ambiguous=source_top_counts[source_index] > 1 or target_top_counts[target_index] > 1,
             )
         )
 
