@@ -87,3 +87,32 @@ def test_underscore_inside_url_is_not_treated_as_italic_marker() -> None:
 Полная версия: https://youtu.be/Ac7Fz_9HS3I"""
 
     assert "unbalanced_italic" not in _codes(description)
+
+
+def test_underscore_inside_first_paragraph_url_is_not_formatting() -> None:
+    description = "Полная версия: https://youtu.be/ib2ehg2__sg?si=XbQdaxD4bQmkuJ7R"
+
+    assert "first_paragraph_formatting" not in _codes(description)
+    assert "unbalanced_italic" not in _codes(description)
+
+
+def test_box_drawing_separator_is_not_an_emoji() -> None:
+    description = """Первый абзац без форматирования.
+
+━━━━━━━━━━━━━━━━━━━━
+
+━━━━━━━━━━━━━━━━━━━━
+
+━━━━━━━━━━━━━━━━━━━━
+
+Обычный заключительный абзац."""
+
+    assert "emoji_repeated_mechanically" not in _codes(description)
+    assert "emoji_density_high" not in _codes(description)
+
+
+def test_verse_block_is_not_reported_as_dense_prose() -> None:
+    verse = "\n".join(f"Строка стихотворения номер {index}" for index in range(1, 31))
+    description = f"Первый абзац без форматирования.\n\n{verse}"
+
+    assert "long_paragraph" not in _codes(description)
