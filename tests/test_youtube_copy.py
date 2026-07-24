@@ -116,3 +116,15 @@ def test_verse_block_is_not_reported_as_dense_prose() -> None:
     description = f"Первый абзац без форматирования.\n\n{verse}"
 
     assert "long_paragraph" not in _codes(description)
+
+
+def test_literal_triple_star_poem_title_is_not_broken_bold() -> None:
+    description = """Первый абзац без форматирования.
+
+К *** (Я помню чудное мгновенье…)
+
+Я помню чудное мгновенье:
+Передо мной явилась ты."""
+
+    assert "unbalanced_bold" not in _codes(description)
+    assert "bold_edge_space" not in _codes(description)
