@@ -40,6 +40,34 @@ def test_punctuation_outside_emphasis_is_reported() -> None:
     assert sum(finding.code == "punctuation_outside_emphasis" for finding in findings) == 3
 
 
+def test_explanatory_colon_after_emphasis_requires_review_not_error() -> None:
+    description = """Чистый первый абзац.
+
+Особенно важен повтор слова *«тленной»*: дальше следует его объяснение."""
+
+    matching = [
+        finding
+        for finding in validate_youtube_description(description)
+        if finding.code == "colon_after_emphasis_review"
+    ]
+    assert len(matching) == 1
+    assert matching[0].severity == "warning"
+
+
+def test_extra_period_after_emphasized_question_is_removed_not_moved() -> None:
+    description = """Чистый первый абзац.
+
+Так заканчивается стихотворение *«Что это такое?»*."""
+
+    matching = [
+        finding
+        for finding in validate_youtube_description(description)
+        if finding.code == "duplicate_terminal_punctuation"
+    ]
+    assert len(matching) == 1
+    assert matching[0].severity == "error"
+
+
 def test_external_dash_after_channel_name_is_allowed() -> None:
     description = """Чистый первый абзац.
 
