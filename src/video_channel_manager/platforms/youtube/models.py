@@ -32,13 +32,32 @@ class InstalledClientConfig(StrictModel):
 
         installed = payload.get("installed") if isinstance(payload, dict) else None
         if not isinstance(installed, dict):
+            client_type = "web" if isinstance(payload, dict) and isinstance(payload.get("web"), dict) else "unknown"
+            if client_type == "web":
+                raise YouTubeConfigurationError(
+                    "This is a Google OAuth 'Web application' client. Create/download a client of type 'Desktop app'."
+                )
             raise YouTubeConfigurationError(
                 "Expected a Google OAuth client of type 'Desktop app' with a top-level 'installed' object."
             )
+
+        required_fields = ("client_id", "client_secret")
+        missing_fields = [name for name in required_fields if not str(installed.get(name) or "").strip()]
+        if missing_fields:
+            names = ", ".join(missing_fields)
+            raise YouTubeConfigurationError(f"OAuth Desktop client file is missing required field(s): {names}.")
+
+        # Google includes harmless metadata such as project_id and
+        # auth_provider_x509_cert_url. Keep our runtime model strict while
+        # explicitly selecting only OAuth fields that the application uses.
+        supported_fields = ("client_id", "client_secret", "auth_uri", "token_uri", "redirect_uris")
+        normalized = {name: installed[name] for name in supported_fields if name in installed}
         try:
-            return cls.model_validate(installed)
+            return cls.model_validate(normalized)
         except Exception as exc:
-            raise YouTubeConfigurationError("OAuth client file is missing required Desktop app fields.") from exc
+            raise YouTubeConfigurationError(
+                "OAuth Desktop client fields have invalid values; download the JSON again from Google Cloud."
+            ) from exc
 
 
 class OAuthToken(StrictModel):
