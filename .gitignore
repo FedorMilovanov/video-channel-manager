@@ -1,0 +1,11 @@
+# Local secrets
+secrets/
+
+# OAuth tokens
+tokens/
+
+# Local data
+data/
+reports/
+exports/
+*.env
