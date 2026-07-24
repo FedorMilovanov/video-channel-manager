@@ -53,10 +53,11 @@ See [`docs/architecture.md`](docs/architecture.md) and [`docs/exchange-format.md
 
 Channel-specific editorial and playlist decisions are documented in:
 
-- [`docs/youtube-editorial-standard.md`](docs/youtube-editorial-standard.md) — titles, descriptions, YouTube formatting, Shorts classification, playlist routing, fact-checking, tags, hashtags, and approval rules;
+- [`docs/youtube-editorial-standard.md`](docs/youtube-editorial-standard.md) — titles, descriptions, Shorts classification, playlist routing, fact-checking, tags, hashtags, and approval rules;
+- [`docs/youtube-description-rendering-standard.md`](docs/youtube-description-rendering-standard.md) — exact `*bold*` / `_italic_` punctuation, first-paragraph behavior, selective emoji policy, line breaks, and final-link rendering;
 - [`docs/audits/2026-07-24-the-legendary-poet.md`](docs/audits/2026-07-24-the-legendary-poet.md) — the first real audit of **The Legendary Poet**.
 
-These files are the source of truth for future AI-assisted recommendations. Do not rely on chat memory alone.
+These files are the source of truth for future AI-assisted recommendations. Do not rely on chat memory alone. The rendering standard takes precedence when it clarifies punctuation or emoji behavior.
 
 ## Quick start — Windows PowerShell
 
@@ -109,6 +110,24 @@ The export contains exact channel/video/playlist IDs, metadata, revisions, playl
 
 See [`docs/youtube-oauth.md`](docs/youtube-oauth.md).
 
+## Editorial validation
+
+Validate a single prepared description stored as UTF-8 text:
+
+```powershell
+python .\scripts\validate_youtube_copy.py .\description.txt --strict
+```
+
+Validate every description in an `AuditPackage` and write a Markdown report:
+
+```powershell
+python .\scripts\validate_youtube_copy.py `
+  .\data\exports\youtube-audit-package.json `
+  --output .\data\reports\youtube-copy-validation.md
+```
+
+The validator treats punctuation outside a completed emphasis span as an error candidate, allows an external dash in `*The Legendary Poet* — ...`, permits one intentional emoji in the first paragraph, and only warns when emoji prefixes appear mechanically on all or almost all body paragraphs.
+
 ## CLI
 
 ```text
@@ -141,6 +160,7 @@ src/video_channel_manager/
 ├── cli/             # PowerShell-friendly command line
 ├── config/          # typed environment settings
 ├── domain/          # platform-neutral models and enums
+├── editorial/       # deterministic YouTube copy validation
 ├── exchange/        # versioned AuditPackage / ChangePlan formats
 ├── local_media/     # read-only local file indexer
 ├── persistence/     # SQLAlchemy entities and database lifecycle
