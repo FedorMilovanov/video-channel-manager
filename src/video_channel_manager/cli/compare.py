@@ -27,7 +27,7 @@ def compare_snapshots(
     target: Annotated[Path, typer.Argument(help="Target AuditPackage JSON")],
     output_dir: Annotated[Path, typer.Option("--output-dir", "-o")] = Path("data/reports"),
     basename: Annotated[str, typer.Option("--basename")] = "cross-platform-comparison",
-    min_score: Annotated[float, typer.Option("--min-score")] = 0.72,
+    min_score: Annotated[float, typer.Option("--min-score")] = 0.65,
     max_duration_delta: Annotated[int, typer.Option("--max-duration-delta")] = 3,
 ) -> None:
     """Compare two snapshots without changing either platform."""
