@@ -27,24 +27,6 @@ def _read_audit(path: Path) -> AuditPackage:
     return AuditPackage.model_validate(payload)
 
 
-def _compare(
-    source: Path,
-    target: Path,
-    *,
-    min_score: float,
-    max_duration_delta: int,
-) -> tuple[AuditPackage, AuditPackage, object]:
-    source_audit = _read_audit(source)
-    target_audit = _read_audit(target)
-    comparison = compare_audit_packages(
-        source_audit,
-        target_audit,
-        min_score=min_score,
-        max_duration_delta_seconds=max_duration_delta,
-    )
-    return source_audit, target_audit, comparison
-
-
 @compare_app.command("snapshots")
 def compare_snapshots(
     source: Annotated[Path, typer.Argument(help="Source AuditPackage JSON")],
@@ -126,8 +108,8 @@ def compare_plans(
     transfer_path.write_text(transfer_plan.model_dump_json(indent=2), encoding="utf-8")
     collection_path.write_text(collection_plan.model_dump_json(indent=2), encoding="utf-8")
 
-    create_count = sum(item.operation.value == "create_collection" for item in collection_plan.operations)
-    add_count = sum(item.operation.value == "add_to_collection" for item in collection_plan.operations)
+    create_count = sum(item.operation == "create_collection" for item in collection_plan.operations)
+    add_count = sum(item.operation == "add_to_collection" for item in collection_plan.operations)
     table = Table(title="Disabled cross-platform review plans")
     table.add_column("Plan")
     table.add_column("Operations", justify="right")
