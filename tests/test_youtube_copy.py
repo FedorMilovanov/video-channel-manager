@@ -201,8 +201,13 @@ def test_autofix_normalizes_blank_lines_and_edge_spaces() -> None:
 
     assert "\n\n\n" not in fixed
     assert "*лишним пробелом*" in fixed
-    assert "_лишним курсивом_" in fixed
-    assert {fix.code for fix in fixes} == {"multiple_blank_lines", "bold_edge_space", "italic_edge_space"}
+    assert "_лишним курсивом._" in fixed
+    assert {fix.code for fix in fixes} == {
+        "multiple_blank_lines",
+        "bold_edge_space",
+        "italic_edge_space",
+        "punctuation",
+    }
 
 
 def test_autofix_is_idempotent() -> None:
