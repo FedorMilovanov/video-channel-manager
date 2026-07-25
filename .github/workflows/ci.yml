@@ -27,7 +27,19 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev]"
       - name: Ruff correctness gate
-        run: ruff check .
+        id: ruff
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          ruff check . --output-format=concise 2>&1 | tee ruff.log
+      - name: Upload Ruff report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruff-${{ matrix.python-version }}
+          path: ruff.log
+          if-no-files-found: error
       - name: Ruff formatting diagnostic
         run: ruff format --check .
         continue-on-error: true
@@ -45,8 +57,20 @@ jobs:
           name: mypy-${{ matrix.python-version }}
           path: mypy.log
           if-no-files-found: error
-      - name: Enforce static typing
-        if: steps.mypy.outcome == 'failure'
-        run: exit 1
       - name: Tests
-        run: pytest --cov=video_channel_manager --cov-report=term-missing
+        id: tests
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          pytest --cov=video_channel_manager --cov-report=term-missing 2>&1 | tee pytest.log
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-${{ matrix.python-version }}
+          path: pytest.log
+          if-no-files-found: error
+      - name: Enforce quality gates
+        if: steps.ruff.outcome == 'failure' || steps.mypy.outcome == 'failure' || steps.tests.outcome == 'failure'
+        run: exit 1
