@@ -70,7 +70,21 @@ class VkVideoWriter:
             raise VkWriteError("Stored VK token does not declare the video permission.", method="token", code=7)
         return token.access_token
 
-    def _call(self, method: str, *, params: ApiParams | None = None) -> object:
+    def _call(
+        self,
+        method: str,
+        *,
+        params: ApiParams | None = None,
+        retry_transient: bool = False,
+    ) -> object:
+        """Call VK, retrying only when the caller proves the request is read-only.
+
+        A network/5xx error after ``video.save`` or ``video.addAlbum`` is
+        ambiguous: VK may have completed the mutation before the response was
+        lost. Blindly retrying can reserve or create a duplicate. Mutation
+        workflows must instead journal intent and reconcile live state.
+        """
+
         request_data: dict[str, str] = {
             "access_token": self._token_value(),
             "v": self.api_version,
@@ -78,14 +92,15 @@ class VkVideoWriter:
         for key, value in (params or {}).items():
             request_data[key] = "1" if value is True else "0" if value is False else str(value)
 
+        attempts = self.max_attempts if retry_transient else 1
         delay_seconds = 0.5
         last_error: VkWriteError | None = None
-        for attempt in range(self.max_attempts):
+        for attempt in range(attempts):
             try:
                 return self._call_once(method, request_data)
             except VkWriteError as exc:
                 last_error = exc
-                if not exc.retryable or attempt + 1 >= self.max_attempts:
+                if not exc.retryable or attempt + 1 >= attempts:
                     raise
                 time.sleep(delay_seconds)
                 delay_seconds *= 2
@@ -143,6 +158,8 @@ class VkVideoWriter:
         return album_id
 
     def album_ids_for_video(self, *, community_id: int, owner_id: int, video_id: int) -> set[int]:
+        if community_id <= 0 or owner_id == 0 or video_id <= 0:
+            raise ValueError("community_id/video_id must be positive and owner_id cannot be zero")
         response = self._call(
             "video.getAlbumsByVideo",
             params={
@@ -151,10 +168,11 @@ class VkVideoWriter:
                 "video_id": video_id,
                 "extended": False,
             },
+            retry_transient=True,
         )
         if not isinstance(response, list):
             raise VkWriteError("video.getAlbumsByVideo returned a non-list response.", method="video.getAlbumsByVideo")
-        return {item for item in response if isinstance(item, int)}
+        return {item for item in response if isinstance(item, int) and item > 0}
 
     def add_to_album(
         self,
@@ -166,6 +184,8 @@ class VkVideoWriter:
         verification_attempts: int = 5,
         verification_delay_seconds: float = 0.5,
     ) -> bool:
+        if community_id <= 0 or album_id <= 0 or owner_id == 0 or video_id <= 0:
+            raise ValueError("community_id/album_id/video_id must be positive and owner_id cannot be zero")
         if album_id in self.album_ids_for_video(
             community_id=community_id,
             owner_id=owner_id,
@@ -202,6 +222,11 @@ class VkVideoWriter:
         )
 
     def begin_upload(self, *, community_id: int, title: str, description: str) -> VkUploadTicket:
+        title = title.strip()
+        if community_id <= 0:
+            raise ValueError("community_id must be positive")
+        if not title:
+            raise ValueError("VK video title cannot be blank")
         response = self._call(
             "video.save",
             params={
@@ -220,16 +245,23 @@ class VkVideoWriter:
         upload_url = response.get("upload_url")
         if not isinstance(owner_id, int) or not isinstance(video_id, int) or not isinstance(upload_url, str):
             raise VkWriteError("video.save returned an incomplete upload ticket.", method="video.save")
+        upload_url = upload_url.strip()
         if owner_id != -community_id:
             raise VkWriteError(
                 f"video.save returned owner {owner_id}, expected {-community_id}.",
                 method="video.save",
             )
+        if video_id <= 0 or not upload_url or not upload_url.lower().startswith(("https://", "http://")):
+            raise VkWriteError("video.save returned an invalid upload ticket.", method="video.save")
         return VkUploadTicket(owner_id=owner_id, video_id=video_id, upload_url=upload_url)
 
     def upload_file(self, ticket: VkUploadTicket, path: Path) -> dict[str, Any]:
+        if ticket.video_id <= 0 or ticket.owner_id == 0 or not ticket.upload_url:
+            raise ValueError("VK upload ticket is invalid")
         if not path.is_file():
             raise FileNotFoundError(path)
+        if path.stat().st_size <= 0:
+            raise ValueError(f"VK upload file is empty: {path}")
         client = self._http_client or httpx.Client(
             timeout=httpx.Timeout(connect=60.0, read=7200.0, write=7200.0, pool=60.0),
             follow_redirects=True,
@@ -251,8 +283,13 @@ class VkVideoWriter:
             payload = response.json()
             if not isinstance(payload, dict):
                 raise VkWriteError("VK upload server returned a non-object response.", method="video.upload")
-            upload_video_id = payload.get("video_id")
-            if isinstance(upload_video_id, int) and upload_video_id != ticket.video_id:
+            upload_video_id_raw = payload.get("video_id")
+            upload_video_id = (
+                int(upload_video_id_raw)
+                if isinstance(upload_video_id_raw, int | str) and str(upload_video_id_raw).isdigit()
+                else None
+            )
+            if upload_video_id is not None and upload_video_id != ticket.video_id:
                 raise VkWriteError(
                     f"VK upload response video ID {upload_video_id} differs from ticket {ticket.video_id}.",
                     method="video.upload",
@@ -267,9 +304,12 @@ class VkVideoWriter:
                 client.close()
 
     def read_video(self, *, owner_id: int, video_id: int) -> dict[str, Any] | None:
+        if owner_id == 0 or video_id <= 0:
+            raise ValueError("owner_id cannot be zero and video_id must be positive")
         response = self._call(
             "video.get",
             params={"videos": f"{owner_id}_{video_id}", "count": 1, "extended": False},
+            retry_transient=True,
         )
         if not isinstance(response, dict):
             raise VkWriteError("video.get returned a non-object response.", method="video.get")
@@ -277,7 +317,16 @@ class VkVideoWriter:
         if not isinstance(items, list) or not items:
             return None
         item = items[0]
-        return item if isinstance(item, dict) else None
+        if not isinstance(item, dict):
+            return None
+        observed_owner = item.get("owner_id")
+        observed_id = item.get("id")
+        if observed_owner != owner_id or observed_id != video_id:
+            raise VkWriteError(
+                f"video.get returned unexpected identity {observed_owner}_{observed_id} for {owner_id}_{video_id}.",
+                method="video.get",
+            )
+        return item
 
     def wait_until_available(
         self,
@@ -286,6 +335,8 @@ class VkVideoWriter:
         timeout_seconds: int = 3600,
         poll_seconds: float = 10.0,
     ) -> dict[str, Any]:
+        if timeout_seconds <= 0 or poll_seconds <= 0:
+            raise ValueError("timeout_seconds and poll_seconds must be positive")
         deadline = time.monotonic() + timeout_seconds
         last_item: dict[str, Any] | None = None
         while time.monotonic() < deadline:
@@ -295,7 +346,9 @@ class VkVideoWriter:
                 processing = bool(item.get("processing")) or bool(item.get("converting"))
                 if not processing:
                     return item
-            time.sleep(poll_seconds)
+            remaining = deadline - time.monotonic()
+            if remaining > 0:
+                time.sleep(min(poll_seconds, remaining))
         state = json.dumps(last_item, ensure_ascii=False)[:500] if last_item else "not visible"
         raise VkWriteError(
             f"Uploaded video {ticket.remote_id} did not finish processing within {timeout_seconds}s; last state: {state}",
