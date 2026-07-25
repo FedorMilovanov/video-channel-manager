@@ -87,6 +87,28 @@ def test_render_preserves_underscores_in_urls_ids_and_literal_poem_title() -> No
     assert not any(issue.code == "literal_asterisk_remaining" for issue in rendered.issues)
 
 
+def test_render_removes_emphasis_around_url_without_changing_url() -> None:
+    source = "*Сайт: https://example.test/path_with_under_score?x=1*"
+
+    rendered = render_vk_video_description(source)
+
+    assert rendered.text.startswith("Сайт: https://example.test/path_with_under_score?x=1")
+    assert "*" not in rendered.text
+    assert "path_with_under_score?x=1" in rendered.text
+    assert rendered.removed_emphasis_pairs == 1
+    assert rendered.issues == ()
+
+
+def test_render_removes_double_emphasis_around_bare_url() -> None:
+    source = "**https://example.test/a_b**"
+
+    rendered = render_vk_video_description(source)
+
+    assert rendered.text.startswith("https://example.test/a_b")
+    assert "**" not in rendered.text
+    assert rendered.removed_emphasis_pairs == 1
+
+
 def test_render_converts_markdown_links_and_normalizes_invisible_characters() -> None:
     source = "Сайт: [The Legendary Poet](https://thelegendarypoet.ru/)\ufeff\n\n\n\nНовый абзац."
 
@@ -101,6 +123,14 @@ def test_render_converts_markdown_links_and_normalizes_invisible_characters() ->
     assert rendered.footer_added is False
 
 
+def test_markdown_link_does_not_duplicate_existing_label_colon() -> None:
+    rendered = render_vk_video_description("[VK:](https://vk.com/thelegendarypoet)")
+
+    assert rendered.text.startswith("VK: https://vk.com/thelegendarypoet")
+    assert "VK::" not in rendered.text
+    assert rendered.converted_markdown_links == 1
+
+
 def test_render_is_idempotent_and_site_footer_is_not_duplicated() -> None:
     first = render_vk_video_description("Первый *абзац*.")
     second = render_vk_video_description(first.text)
@@ -109,6 +139,12 @@ def test_render_is_idempotent_and_site_footer_is_not_duplicated() -> None:
     assert second.removed_emphasis_pairs == 0
     assert second.footer_added is False
     assert second.text.count("https://thelegendarypoet.ru/") == 1
+
+
+def test_renderer_reports_arbitrary_html_tag() -> None:
+    rendered = render_vk_video_description("Текст <script>alert(1)</script>.")
+
+    assert any(issue.code == "html_tag_not_supported" for issue in rendered.issues)
 
 
 def test_clip_renderer_adds_full_video_route_and_reports_policy_limit() -> None:
@@ -121,6 +157,16 @@ def test_clip_renderer_adds_full_video_route_and_reports_policy_limit() -> None:
     assert "Короткий фрагмент." in rendered.text
     assert "▶ Полная версия: https://vk.com/video-1_2" in rendered.text
     assert any(issue.code == "clip_description_too_long" and issue.severity == "error" for issue in rendered.issues)
+
+
+def test_clip_renderer_rejects_non_absolute_full_video_url() -> None:
+    with pytest.raises(ValueError, match="absolute http"):
+        render_vk_clip_description("Фрагмент", full_video_url="javascript:alert(1)")
+
+
+def test_clip_renderer_requires_positive_policy_limit() -> None:
+    with pytest.raises(ValueError, match="must be positive"):
+        render_vk_clip_description("Фрагмент", max_characters=0)
 
 
 def test_vk_text_equivalence_normalizes_server_whitespace_and_zero_width() -> None:
