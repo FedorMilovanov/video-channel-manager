@@ -5,21 +5,8 @@ from datetime import datetime
 from pathlib import PurePosixPath, PureWindowsPath
 from typing import Any
 
-from video_channel_manager.editorial._content_types import (
-    ALLOWED_FACT_TYPES,
-    ALLOWED_LINK_KINDS,
-    ALLOWED_PROFILES,
-    ALLOWED_STATUSES,
-    ALLOWED_SURFACES,
-    APPROVED_PROJECT_URLS,
-    BANNED_GENERIC_PHRASES,
-    CANONICAL_SCHEMA_NAME,
-    CANONICAL_SCHEMA_VERSION,
-    DECORATIVE_MARKERS,
-    LEGACY_YOUTUBE_SCHEMA_NAME,
-    LEGACY_YOUTUBE_SCHEMA_VERSION,
-)
-from video_channel_manager.editorial._content_urls import balanced_emphasis, canonicalize_url, contains_banned_circle
+from video_channel_manager.editorial._content_types import ALLOWED_SURFACES
+from video_channel_manager.editorial._content_urls import canonicalize_url
 
 _STABLE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{1,159}$")
 
@@ -155,6 +142,7 @@ def _validate_platform_metadata(payload: dict[str, Any], *, schema_is_canonical:
             if schema_is_canonical and surface not in normalized_suitability.get(platform, set()):
                 errors.append(f"platform target {key} is not enabled by platform_suitability")
     return errors
+
 
 __all__ = [
     "_object",
