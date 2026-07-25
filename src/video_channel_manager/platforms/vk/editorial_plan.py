@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from copy import deepcopy
+from datetime import datetime
 from typing import Any
 
 from video_channel_manager.editorial.content import EditorialContentRecord
@@ -14,6 +15,17 @@ from video_channel_manager.platforms.vk.renderers import VKVideoDescriptionRende
 from video_channel_manager.platforms.vk.text_writer import canonical_vk_text
 
 UNIFIED_EDITORIAL_POLICY_VERSION = "unified-editorial-v1"
+
+
+def _valid_review_timestamp(value: str | None) -> bool:
+    text = str(value or "").strip()
+    if not text:
+        return False
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    return parsed.tzinfo is not None and parsed.utcoffset() is not None
 
 
 def apply_editorial_records_to_vk_catalog_plan(
@@ -33,8 +45,10 @@ def apply_editorial_records_to_vk_catalog_plan(
     validate_vk_catalog_plan(plan)
     by_video_id: dict[str, EditorialContentRecord] = {}
     for candidate in records:
-        if candidate.status != "approved" or not candidate.reviewed_at:
-            raise ValueError(f"VK catalog adaptation requires approved, reviewed content: {candidate.content_id}")
+        if candidate.status != "approved" or not _valid_review_timestamp(candidate.reviewed_at):
+            raise ValueError(
+                f"VK catalog adaptation requires approved content with a timezone-aware review: {candidate.content_id}"
+            )
         if not candidate.video_id:
             continue
         if candidate.video_id in by_video_id:
