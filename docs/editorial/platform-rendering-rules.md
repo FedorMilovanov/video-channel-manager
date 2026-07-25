@@ -6,6 +6,8 @@ All renderers receive the same validated canonical record. They preserve the fac
 
 Every renderer reports character count, link count, layout warnings, orphan labels, and platform errors. Preview is mutation-free.
 
+`rendering_metadata.preferred_link_order` may be either one shared list or a mapping with `platform.surface`, platform, and `default` keys. It changes presentation order only; it cannot make an unsuitable link eligible for a platform or bypass required-link validation.
+
 ## YouTube
 
 ### Comment
@@ -25,7 +27,7 @@ Long-form poetry, covers, and adaptations require a relevant playlist. Short-for
 
 ## VK
 
-VK video descriptions, posts, and comments are treated as plain text. `*`, `_`, Markdown links, zero-width characters, and unsupported HTML must not leak into the final field.
+VK video descriptions, posts, and comments are treated as plain text. `*`, `_`, Markdown links, zero-width characters, and unsupported HTML must not leak into an executable plan.
 
 `VKVideoDescriptionRenderer` and `VKPostRenderer` keep every link label and URL on one line. They reject missing site/community routes where those routes are required and warn when a link line is likely to wrap badly on mobile.
 
@@ -42,7 +44,9 @@ VK:
 https://vk.com/thelegendarypoet
 ```
 
-The VK renderer strips YouTube emphasis while preserving the literary hierarchy through paragraph order, concise labels, and contextual emoji markers. It does not create large blank gaps or decorative-only lines.
+The VK renderer strips paired YouTube emphasis and converts Markdown links when that transformation is deterministic. If HTML tags, unresolved asterisks, or paired underscores remain after fallback conversion, the renderer emits a blocking error rather than allowing literal markup into a VK catalog plan.
+
+The literary hierarchy is preserved through paragraph order, concise labels, and contextual emoji markers. The renderer does not create large blank gaps or decorative-only lines.
 
 `VKCommentRenderer` intentionally keeps at most two relevant links. It emits a warning when it compacts a larger link set.
 
@@ -54,5 +58,6 @@ The common preview layer detects:
 - a label separated from its URL;
 - unusually long URL lines that may wrap badly;
 - forbidden colored circles;
+- unresolved platform markup;
 - platform length violations;
 - duplicate rendered output in a batch.
