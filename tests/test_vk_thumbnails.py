@@ -5,13 +5,15 @@ from pathlib import Path
 from urllib.parse import parse_qs
 
 import httpx
+import pytest
 
 from video_channel_manager.platforms.vk.models import VkAccessToken
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.thumbnails import VkThumbnailWriter
+from video_channel_manager.platforms.vk.writer import VkWriteError
 
 
-def _writer(tmp_path: Path, transport: httpx.MockTransport) -> VkThumbnailWriter:
+def _writer(tmp_path: Path, transport: httpx.MockTransport, *, max_attempts: int = 4) -> VkThumbnailWriter:
     store = VkTokenStore(tmp_path)
     store.save_token("legendary-poet", VkAccessToken(access_token="secret", scopes=["video", "groups"]))
     return VkThumbnailWriter(
@@ -19,6 +21,7 @@ def _writer(tmp_path: Path, transport: httpx.MockTransport) -> VkThumbnailWriter
         account_alias="legendary-poet",
         http_client=httpx.Client(transport=transport),
         api_base_url="https://api.example/method",
+        max_attempts=max_attempts,
     )
 
 
@@ -128,3 +131,73 @@ def test_set_thumbnail_accepts_current_raw_vk_upload_payload(tmp_path: Path) -> 
     )
 
     assert result["photo_id"] == 78
+
+
+def test_get_thumbnail_upload_url_retries_transient_failure(tmp_path: Path) -> None:
+    calls = 0
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return httpx.Response(503, text="temporary")
+        return httpx.Response(200, json={"response": {"upload_url": "https://upload.example/thumb"}})
+
+    writer = _writer(tmp_path, httpx.MockTransport(respond), max_attempts=4)
+
+    assert writer.get_upload_url(owner_id=-235216998) == "https://upload.example/thumb"
+    assert calls == 2
+
+
+def test_save_uploaded_thumbnail_does_not_retry_ambiguous_failure(tmp_path: Path) -> None:
+    calls = 0
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        assert request.url.path.endswith("/video.saveUploadedThumb")
+        return httpx.Response(503, text="ambiguous")
+
+    writer = _writer(tmp_path, httpx.MockTransport(respond), max_attempts=4)
+
+    with pytest.raises(VkWriteError, match="HTTP 503") as error:
+        writer.save_uploaded_thumbnail(
+            owner_id=-235216998,
+            video_id=456239134,
+            upload_payload={"thumb_json": '{"photo":"payload"}'},
+        )
+
+    assert error.value.retryable is True
+    assert calls == 1
+
+
+def test_save_uploaded_thumbnail_checks_photo_owner(tmp_path: Path) -> None:
+    def respond(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "response": {
+                    "photo_id": 78,
+                    "photo_owner_id": -999,
+                    "photo_hash": "hash-2",
+                }
+            },
+        )
+
+    writer = _writer(tmp_path, httpx.MockTransport(respond))
+
+    with pytest.raises(VkWriteError, match="photo owner"):
+        writer.save_uploaded_thumbnail(
+            owner_id=-235216998,
+            video_id=456239134,
+            upload_payload={"thumb_json": '{"photo":"payload"}'},
+        )
+
+
+def test_upload_image_rejects_empty_file(tmp_path: Path) -> None:
+    image = tmp_path / "empty.jpg"
+    image.write_bytes(b"")
+    writer = _writer(tmp_path, httpx.MockTransport(lambda request: httpx.Response(500)))
+
+    with pytest.raises(ValueError, match="empty"):
+        writer.upload_image(upload_url="https://upload.example/thumb", path=image)
