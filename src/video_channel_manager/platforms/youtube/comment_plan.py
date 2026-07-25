@@ -126,7 +126,9 @@ def seal_comment_plan(payload: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("Comment plan operations must be a list.")
     operation_ids = [str(item.get("operation_id") or "") for item in operations if isinstance(item, dict)]
     plan["operation_set_sha256"] = _sha256(sorted(operation_ids))
-    plan["counts"] = dict(sorted(Counter(str(item.get("action")) for item in operations if isinstance(item, dict)).items()))
+    plan["counts"] = dict(
+        sorted(Counter(str(item.get("action")) for item in operations if isinstance(item, dict)).items())
+    )
     plan["plan_sha256"] = _sha256(_plan_without_digest(plan))
     return plan
 
@@ -242,7 +244,9 @@ def validate_comment_plan(payload: dict[str, Any]) -> list[str]:
     expected_set_sha = _sha256(sorted(operation_ids))
     if payload.get("operation_set_sha256") != expected_set_sha:
         errors.append("operation_set_sha256 mismatch")
-    expected_counts = dict(sorted(Counter(str(item.get("action")) for item in operations if isinstance(item, dict)).items()))
+    expected_counts = dict(
+        sorted(Counter(str(item.get("action")) for item in operations if isinstance(item, dict)).items())
+    )
     if payload.get("counts") != expected_counts:
         errors.append("counts mismatch")
     expected_plan_sha = _sha256(_plan_without_digest(payload))

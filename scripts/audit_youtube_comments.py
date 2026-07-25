@@ -98,9 +98,7 @@ def main() -> int:
         return 2
 
     candidates = [
-        video
-        for video in package.videos
-        if args.include_nonpublic or (video.privacy_status or "").lower() == "public"
+        video for video in package.videos if args.include_nonpublic or (video.privacy_status or "").lower() == "public"
     ]
     results: list[dict[str, Any]] = []
     for index, video in enumerate(candidates, start=1):

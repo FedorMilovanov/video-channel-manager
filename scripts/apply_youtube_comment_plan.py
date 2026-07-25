@@ -137,7 +137,9 @@ def _record_attempt(
     _write_json(journal_path, journal)
 
 
-def _status_groups(results: list[dict[str, str]]) -> tuple[list[dict[str, str]], list[dict[str, str]], list[dict[str, str]]]:
+def _status_groups(
+    results: list[dict[str, str]],
+) -> tuple[list[dict[str, str]], list[dict[str, str]], list[dict[str, str]]]:
     ready = [item for item in results if item["status"] == "ready"]
     already = [item for item in results if item["status"] == "already_applied"]
     blockers = [item for item in results if item["status"] not in {"ready", "already_applied"}]

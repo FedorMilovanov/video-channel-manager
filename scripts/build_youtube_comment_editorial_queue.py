@@ -80,7 +80,9 @@ def main() -> int:
     parser.add_argument("snapshot", type=Path)
     parser.add_argument("audit", type=Path)
     parser.add_argument("--output", type=Path)
-    parser.add_argument("--include-owned", action="store_true", help="Also queue videos that already have a channel comment")
+    parser.add_argument(
+        "--include-owned", action="store_true", help="Also queue videos that already have a channel comment"
+    )
     args = parser.parse_args()
 
     try:
@@ -108,7 +110,9 @@ def main() -> int:
         print("ERROR: comment audit videos must be a list.", file=sys.stderr)
         return 2
     audit_by_id = {
-        str(item.get("video_id") or ""): item for item in audit_videos if isinstance(item, dict) and item.get("video_id")
+        str(item.get("video_id") or ""): item
+        for item in audit_videos
+        if isinstance(item, dict) and item.get("video_id")
     }
     if set(audit_by_id) != set(public_ids):
         print("ERROR: comment audit does not cover exactly the public-video snapshot.", file=sys.stderr)

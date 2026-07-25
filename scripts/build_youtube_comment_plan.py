@@ -132,7 +132,9 @@ def main() -> int:
         print("ERROR: audit videos must be a list.", file=sys.stderr)
         return 2
     audit_by_id = {
-        str(item.get("video_id") or ""): item for item in audit_videos if isinstance(item, dict) and item.get("video_id")
+        str(item.get("video_id") or ""): item
+        for item in audit_videos
+        if isinstance(item, dict) and item.get("video_id")
     }
     if set(audit_by_id) != set(video_by_id):
         print("ERROR: audit does not cover exactly the current public-video set.", file=sys.stderr)
@@ -150,13 +152,15 @@ def main() -> int:
         video = video_by_id.get(video_id)
         if video is None:
             review_only.append(
-                {"video_id": video_id, "video_title": str(record.get("video_title") or ""), "reason": "not public or absent"}
+                {
+                    "video_id": video_id,
+                    "video_title": str(record.get("video_title") or ""),
+                    "reason": "not public or absent",
+                }
             )
             continue
         if record.get("channel_id") != channel_id:
-            review_only.append(
-                {"video_id": video_id, "video_title": video.title, "reason": "content channel mismatch"}
-            )
+            review_only.append({"video_id": video_id, "video_title": video.title, "reason": "content channel mismatch"})
             continue
         source_ids = record.get("source_ids")
         if not isinstance(source_ids, list):
@@ -212,7 +216,11 @@ def main() -> int:
                     review_only.append({"video_id": video_id, "video_title": video.title, "reason": str(exc)})
             else:
                 review_only.append(
-                    {"video_id": video_id, "video_title": video.title, "reason": "different owned comment; updates disabled"}
+                    {
+                        "video_id": video_id,
+                        "video_title": video.title,
+                        "reason": "different owned comment; updates disabled",
+                    }
                 )
             continue
         review_only.append(

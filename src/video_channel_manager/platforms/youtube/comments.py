@@ -188,9 +188,7 @@ class YouTubeCommentWriter:
                 if reason == "commentsDisabled":
                     raise YouTubeCommentsDisabledError(message)
                 raise YouTubeCommentError(
-                    f"YouTube API {response.status_code}"
-                    + (f" ({reason})" if reason else "")
-                    + f": {message}"
+                    f"YouTube API {response.status_code}" + (f" ({reason})" if reason else "") + f": {message}"
                 )
             payload = response.json()
             if not isinstance(payload, dict):
