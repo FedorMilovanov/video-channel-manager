@@ -27,11 +27,24 @@ APPROVED_PROJECT_URLS = frozenset(
     }
 )
 _URL_RE = re.compile(r"https?://[^\s<>]+", re.IGNORECASE)
-_TRAILING_URL_PUNCTUATION = ".,;:!?)]}»”'"
+_SIMPLE_TRAILING_URL_PUNCTUATION = ".,;:!?»”'\""
+_BRACKET_PAIRS = (("(", ")"), ("[", "]"), ("{", "}"))
+
+
+def _strip_trailing_url_punctuation(value: str) -> str:
+    result = value.strip().rstrip(_SIMPLE_TRAILING_URL_PUNCTUATION)
+    changed = True
+    while result and changed:
+        changed = False
+        for opening, closing in _BRACKET_PAIRS:
+            if result.endswith(closing) and result.count(closing) > result.count(opening):
+                result = result[:-1].rstrip(_SIMPLE_TRAILING_URL_PUNCTUATION)
+                changed = True
+    return result
 
 
 def canonicalize_url(value: str) -> str:
-    raw = value.strip().rstrip(_TRAILING_URL_PUNCTUATION)
+    raw = _strip_trailing_url_punctuation(value)
     parsed = urlsplit(raw)
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         raise ValueError(f"Invalid HTTP(S) URL: {value}")
@@ -39,7 +52,10 @@ def canonicalize_url(value: str) -> str:
     hostname = (parsed.hostname or "").lower()
     if not hostname:
         raise ValueError(f"Invalid URL host: {value}")
-    port = parsed.port
+    try:
+        port = parsed.port
+    except ValueError as exc:
+        raise ValueError(f"Invalid URL port: {value}") from exc
     if port is None or (scheme == "https" and port == 443) or (scheme == "http" and port == 80):
         netloc = hostname
     else:
