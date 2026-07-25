@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-manager.youtube-comment-content",
+  "schema_version": 1,
+  "status": "approved",
+  "channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+  "video_id": "yaJNLxSSqZg",
+  "video_title": "Веня Д’ркин ⚡ Anno Domini ⚡ Руины, Свет и Слепые Санитары",
+  "reviewed_at": "2026-07-25T16:23:00+00:00",
+  "source_ids": [
+    "anno-domini-dictionary",
+    "venya-drkin-track",
+    "playlist-ai-experiments"
+  ],
+  "comment_text": "📖 Латинское выражение Anno Domini буквально означает «в год Господа» и лежит в основе сокращения AD. У Вени Д’ркина эта календарная формула оказывается рядом с образами света, слепоты, болезни, руин и журавлей — без одного заданного толкования.\n\nКакой образ остаётся главным после прослушивания этой версии: солнечный зайчик, слепые санитары, руины или журавли в небе?\n\n🌐 Сайт The Legendary Poet:\nhttps://thelegendarypoet.ru/\n\n⚡ Плейлист «Эксперименты — AI Музыка»:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3uYdxFo5bxzXEUI8HYIo-sHb\n\nVK:\nhttps://vk.com/thelegendarypoet\n\nОригинальная запись песни:\nhttps://open.spotify.com/track/40vwNWRSwr9XRsuj1oZOH8",
+  "sources": [
+    {
+      "source_id": "anno-domini-dictionary",
+      "title": "Anno Domini — Cambridge Dictionary",
+      "url": "https://dictionary.cambridge.org/dictionary/english/anno-domini"
+    },
+    {
+      "source_id": "venya-drkin-track",
+      "title": "Веня Д’ркин. «Anno Domini»",
+      "url": "https://open.spotify.com/track/40vwNWRSwr9XRsuj1oZOH8"
+    },
+    {
+      "source_id": "playlist-ai-experiments",
+      "title": "Плейлист «Эксперименты — AI Музыка»",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uYdxFo5bxzXEUI8HYIo-sHb"
+    }
+  ]
+}
