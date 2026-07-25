@@ -32,12 +32,12 @@ def apply_editorial_records_to_vk_catalog_plan(
 
     validate_vk_catalog_plan(plan)
     by_video_id: dict[str, EditorialContentRecord] = {}
-    for record in records:
-        if not record.video_id:
+    for candidate in records:
+        if not candidate.video_id:
             continue
-        if record.video_id in by_video_id:
-            raise ValueError(f"Duplicate editorial record for source video: {record.video_id}")
-        by_video_id[record.video_id] = record
+        if candidate.video_id in by_video_id:
+            raise ValueError(f"Duplicate editorial record for source video: {candidate.video_id}")
+        by_video_id[candidate.video_id] = candidate
 
     adapted = deepcopy(plan)
     raw_operations = adapted.get("text_operations")
