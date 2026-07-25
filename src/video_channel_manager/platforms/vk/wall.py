@@ -77,7 +77,9 @@ def render_vk_wall_post(
     if not normalized_headline or not normalized_lead:
         raise ValueError("VK wall headline and lead cannot be blank")
 
-    route_url = _absolute_http_url(article_url, "article_url") if article_url else _absolute_http_url(site_url, "site_url")
+    route_url = (
+        _absolute_http_url(article_url, "article_url") if article_url else _absolute_http_url(site_url, "site_url")
+    )
     paragraph_list = [canonical_vk_text(item) for item in paragraphs if canonical_vk_text(item)]
     links: list[tuple[str, str]] = []
     seen_urls: set[str] = set()
@@ -230,9 +232,7 @@ class VkWallWriter(VkVideoWriter):
             if not isinstance(response, dict) or not isinstance(response.get("items"), list):
                 raise VkWriteError("wall.get returned an invalid response", method="wall.get")
             items = [item for item in response["items"] if isinstance(item, dict)]
-            matches.extend(
-                item for item in items if _post_has_video(item, owner_id=video_owner_id, video_id=video_id)
-            )
+            matches.extend(item for item in items if _post_has_video(item, owner_id=video_owner_id, video_id=video_id))
             if len(items) < count:
                 break
             offset += count
@@ -267,7 +267,7 @@ class VkWallWriter(VkVideoWriter):
             video_id=video_id,
         )
         if duplicates:
-            post_ids = sorted(item.get("id") for item in duplicates if isinstance(item.get("id"), int))
+            post_ids = sorted(int(item["id"]) for item in duplicates if isinstance(item.get("id"), int))
             raise VkWriteError(
                 f"Video already appears in community wall posts: {post_ids}",
                 method="wall.get",

@@ -72,9 +72,7 @@ def _live_preflight(plan: dict[str, Any], writer: VkWallWriter, max_wall_scan: i
         "title": title,
         "description": description,
         "duplicate_count": len(duplicates),
-        "duplicate_post_ids": sorted(
-            item["id"] for item in duplicates if isinstance(item.get("id"), int)
-        ),
+        "duplicate_post_ids": sorted(item["id"] for item in duplicates if isinstance(item.get("id"), int)),
     }
 
 

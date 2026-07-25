@@ -80,9 +80,7 @@ def _report(plan: dict[str, Any]) -> str:
         lines.extend(["## Placements", ""])
         for item in plan["placement_operations"]:
             destination = item["target_collection_id"] or "planned-new-album"
-            lines.append(
-                f"- `{item['target_video_id']}` → `{item['album_title']}` ({destination})"
-            )
+            lines.append(f"- `{item['target_video_id']}` → `{item['album_title']}` ({destination})")
         lines.append("")
     if plan["text_operations"]:
         lines.extend(["## Video text changes", ""])
@@ -127,7 +125,9 @@ def main() -> int:
         f"  review: {args.report}"
     )
     if summary["review_only"]:
-        print("Review-only findings are excluded from automation. Add exact mappings or edit source text, then rebuild.")
+        print(
+            "Review-only findings are excluded from automation. Add exact mappings or edit source text, then rebuild."
+        )
     return 0
 
 

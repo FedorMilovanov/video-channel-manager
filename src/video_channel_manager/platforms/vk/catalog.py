@@ -56,8 +56,7 @@ def catalog_state_sha256(target: AuditPackage) -> str:
             if not _is_system_collection(collection)
         ),
         "memberships": sorted(
-            (membership.collection_ref.remote_id, membership.video_ref.remote_id)
-            for membership in target.memberships
+            (membership.collection_ref.remote_id, membership.video_ref.remote_id) for membership in target.memberships
         ),
     }
     return canonical_sha256(payload)
@@ -163,8 +162,7 @@ def build_vk_catalog_plan(
     source_collections = {item.ref.remote_id: item for item in source.collections}
     target_collections = _target_collection_index(target)
     target_memberships = {
-        (membership.collection_ref.remote_id, membership.video_ref.remote_id)
-        for membership in target.memberships
+        (membership.collection_ref.remote_id, membership.video_ref.remote_id) for membership in target.memberships
     }
 
     album_operations: list[dict[str, Any]] = []
@@ -204,8 +202,8 @@ def build_vk_catalog_plan(
         if target_video_id is None:
             continue
         source_collection_id = membership.collection_ref.remote_id
-        source_collection = source_collections.get(source_collection_id)
-        if source_collection is None or source_collection_id not in collection_targets:
+        membership_collection = source_collections.get(source_collection_id)
+        if membership_collection is None or source_collection_id not in collection_targets:
             continue
         target_collection_id = collection_targets[source_collection_id]
         if target_collection_id is not None and (target_collection_id, target_video_id) in target_memberships:
@@ -218,7 +216,7 @@ def build_vk_catalog_plan(
             {
                 "operation_id": f"placement:add:{source_collection_id}:{target_video_id}",
                 "source_collection_id": source_collection_id,
-                "album_title": canonical_vk_text(source_collection.title),
+                "album_title": canonical_vk_text(membership_collection.title),
                 "target_collection_id": target_collection_id,
                 "target_video_id": target_video_id,
                 "source_video_id": source_video_id,

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from collections import Counter
 import sys
 import time
 from datetime import UTC, datetime
@@ -88,8 +89,7 @@ def _live_indexes(live: AuditPackage) -> tuple[dict[str, Any], dict[str, list[An
             continue
         collections.setdefault(normalize_title(collection.title), []).append(collection)
     memberships = {
-        (membership.collection_ref.remote_id, membership.video_ref.remote_id)
-        for membership in live.memberships
+        (membership.collection_ref.remote_id, membership.video_ref.remote_id) for membership in live.memberships
     }
     return videos, collections, memberships
 
@@ -149,8 +149,7 @@ def _preflight(plan: dict[str, Any], live: AuditPackage) -> dict[str, Any]:
                 continue
         if collection_id is None:
             planned_album = any(
-                item["source_collection_id"] == operation["source_collection_id"]
-                for item in plan["album_operations"]
+                item["source_collection_id"] == operation["source_collection_id"] for item in plan["album_operations"]
             )
             state = "ready" if planned_album else "conflict"
             detail = "ready after planned album creation" if planned_album else "target album is absent"
@@ -178,13 +177,9 @@ def _preflight(plan: dict[str, Any], live: AuditPackage) -> dict[str, Any]:
             current_title = canonical_vk_text(video.title)
             current_description = canonical_vk_text(video.description)
             before = (
-                current_title == operation["before_title"]
-                and current_description == operation["before_description"]
+                current_title == operation["before_title"] and current_description == operation["before_description"]
             )
-            after = (
-                current_title == operation["after_title"]
-                and current_description == operation["after_description"]
-            )
+            after = current_title == operation["after_title"] and current_description == operation["after_description"]
             if after:
                 state = "already_applied"
                 detail = "live text equals reviewed after-state"
