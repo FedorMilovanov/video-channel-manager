@@ -1,0 +1,38 @@
+{
+  "schema_name": "video-manager.youtube-comment-content",
+  "schema_version": 1,
+  "status": "approved",
+  "channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+  "video_id": "mw-dYETmPIE",
+  "video_title": "Сергей Есенин — «Чёрный Человек» ⚡ Предсмертный Диалог с Двойником (1925)",
+  "reviewed_at": "2026-07-25T16:22:00+00:00",
+  "source_ids": [
+    "esenin-black-man-notes",
+    "esenin-black-man-full-text",
+    "playlist-black-man",
+    "playlist-esenin"
+  ],
+  "comment_text": "📖 Поэма «Чёрный человек» впервые была опубликована посмертно в январе 1926 года в журнале «Новый мир». Издательский комментарий фиксирует несколько рукописных списков и текстовых разночтений: окончательный текст складывался не одномоментно.\n\nЧто сильнее организует поэму для вас — повторяющееся обращение «друг мой», чтение чужой «мерзкой книги» или финальное обнаружение разбитого зеркала?\n\n🌐 Сайт The Legendary Poet:\nhttps://thelegendarypoet.ru/\n\n🎧 Плейлист всех версий «Чёрного человека»:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3ua1QeVsZutwScsM0l-asll4\n\n📖 Плейлист «Сергей Есенин»:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q\n\nVK:\nhttps://vk.com/thelegendarypoet\n\nПолный текст:\nhttps://www.culture.ru/poems/43530/chernyi-chelovek",
+  "sources": [
+    {
+      "source_id": "esenin-black-man-notes",
+      "title": "С. А. Есенин. «Чёрный человек»: комментарии",
+      "url": "https://rvb.ru/20vek/esenin/pss7/vol3/notes/209.html"
+    },
+    {
+      "source_id": "esenin-black-man-full-text",
+      "title": "Сергей Есенин. «Чёрный человек» — полный текст",
+      "url": "https://www.culture.ru/poems/43530/chernyi-chelovek"
+    },
+    {
+      "source_id": "playlist-black-man",
+      "title": "Плейлист «Чёрный человек»",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3ua1QeVsZutwScsM0l-asll4"
+    },
+    {
+      "source_id": "playlist-esenin",
+      "title": "Плейлист «Сергей Есенин»",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q"
+    }
+  ]
+}
