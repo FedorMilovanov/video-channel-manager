@@ -61,12 +61,13 @@ def test_renderers_apply_platform_specific_preferred_link_order() -> None:
     assert vk.text.index("Сообщество проекта VK") < vk.text.index("The Legendary Poet")
 
 
-def test_vk_renderer_preserves_plain_text_converter_diagnostics() -> None:
+def test_vk_renderer_blocks_unresolved_plain_text_diagnostics() -> None:
     record = _record()
     unsafe_fact = replace(record.fact, text=f"{record.fact.text} <b>Неподдерживаемая разметка</b>")
     rendered = VKVideoDescriptionRenderer().render(replace(record, fact=unsafe_fact))
     codes = {issue.code for issue in rendered.issues}
     assert "vk_fact_html_tag_not_supported" in codes
+    assert not rendered.is_valid
 
 
 def test_layout_detector_finds_orphan_labels_and_long_link_lines() -> None:
