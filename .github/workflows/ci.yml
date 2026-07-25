@@ -6,6 +6,7 @@ on:
       - main
       - "feature/**"
       - "agent/**"
+      - "integration/**"
   pull_request:
 
 permissions:
@@ -67,7 +68,7 @@ jobs:
           name: ruff-${{ matrix.python-version }}
           path: ruff.log
           if-no-files-found: error
-      - name: Ruff formatting diagnostic
+      - name: Ruff formatting gate
         id: format
         continue-on-error: true
         shell: bash
@@ -113,6 +114,7 @@ jobs:
         if: >-
           steps.pip_audit.outcome == 'failure' ||
           steps.ruff.outcome == 'failure' ||
+          steps.format.outcome == 'failure' ||
           steps.mypy.outcome == 'failure' ||
           steps.tests.outcome == 'failure'
         run: exit 1
