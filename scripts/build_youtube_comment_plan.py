@@ -25,6 +25,8 @@ from video_channel_manager.platforms.youtube.comment_plan import (
 from video_channel_manager.platforms.youtube.comments import comments_equivalent
 
 _AUDIT_SCHEMA = "video-manager.youtube-comment-audit"
+_LEGACY_VK_LABEL = "*Сообщество проекта VK:*"
+_CANONICAL_VK_LABEL = "*Сообщество проекта в VK:*"
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -39,6 +41,17 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     temporary.replace(path)
+
+
+def _render_for_youtube(record: dict[str, Any]) -> str:
+    """Render current records with the canonical natural-language VK label.
+
+    Existing schema-v2 records may still contain the legacy label. Keeping the
+    compatibility conversion here lets old reviewed records remain valid while
+    every newly signed YouTube plan uses the improved viewer-facing wording.
+    """
+
+    return render_comment_content(record).replace(_LEGACY_VK_LABEL, _CANONICAL_VK_LABEL)
 
 
 def _load_content_records(content_dir: Path) -> dict[str, dict[str, Any]]:
@@ -193,7 +206,7 @@ def main() -> int:
             continue
         source_ids = record.get("source_ids")
         assert isinstance(source_ids, list)
-        comment_text = render_comment_content(record)
+        comment_text = _render_for_youtube(record)
         reviewed_at = str(record.get("reviewed_at") or "").strip()
 
         live = audit_by_id[video_id]
