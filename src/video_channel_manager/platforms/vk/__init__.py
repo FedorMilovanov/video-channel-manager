@@ -8,6 +8,7 @@ from video_channel_manager.platforms.vk.models import (
 )
 from video_channel_manager.platforms.vk.service import VkInventoryService
 from video_channel_manager.platforms.vk.store import VkAccountNotFoundError, VkTokenStore
+from video_channel_manager.platforms.vk.writer import VkUploadTicket, VkVideoWriter, VkWriteError
 
 __all__ = [
     "VkAccessToken",
@@ -19,5 +20,8 @@ __all__ = [
     "VkConfigurationError",
     "VkInventoryService",
     "VkTokenStore",
+    "VkUploadTicket",
     "VkUserIdentity",
+    "VkVideoWriter",
+    "VkWriteError",
 ]
