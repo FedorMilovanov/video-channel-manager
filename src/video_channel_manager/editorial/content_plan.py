@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections import Counter
 from copy import deepcopy
 from datetime import UTC, datetime
@@ -20,6 +21,7 @@ _ALLOWED_PLATFORM_SURFACES = {
     "vk": frozenset({"video_description", "post", "comment"}),
 }
 _ALLOWED_PLAN_MODES = frozenset({"dry-run-first"})
+_SHA256_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 
 def canonical_text(value: str) -> str:
@@ -37,6 +39,10 @@ def _canonical_json(payload: object) -> bytes:
 
 def _sha256(payload: object) -> str:
     return f"sha256:{hashlib.sha256(_canonical_json(payload)).hexdigest()}"
+
+
+def _valid_sha256(value: object) -> bool:
+    return _SHA256_RE.fullmatch(str(value or "").strip()) is not None
 
 
 def _valid_aware_datetime(value: object) -> bool:
@@ -172,12 +178,15 @@ def seal_content_plan(payload: dict[str, Any]) -> dict[str, Any]:
 def build_content_plan(
     *,
     source_snapshot: str,
+    source_snapshot_sha256: str,
     source_snapshot_generated_at: str,
     operations: list[dict[str, Any]],
     mode: str = "dry-run-first",
 ) -> dict[str, Any]:
     if not source_snapshot.strip():
         raise ValueError("source_snapshot cannot be blank")
+    if not _valid_sha256(source_snapshot_sha256):
+        raise ValueError("source_snapshot_sha256 must be a sha256: digest")
     if not _valid_aware_datetime(source_snapshot_generated_at):
         raise ValueError("source_snapshot_generated_at must be a timezone-aware ISO-8601 timestamp")
     if mode not in _ALLOWED_PLAN_MODES:
@@ -187,6 +196,7 @@ def build_content_plan(
         "schema_version": CONTENT_PLAN_SCHEMA_VERSION,
         "created_at": datetime.now(UTC).isoformat(),
         "source_snapshot": source_snapshot,
+        "source_snapshot_sha256": source_snapshot_sha256,
         "source_snapshot_generated_at": source_snapshot_generated_at,
         "mode": mode,
         "operations": operations,
@@ -202,6 +212,8 @@ def validate_content_plan(payload: dict[str, Any]) -> list[str]:
         errors.append(f"schema_version must be {CONTENT_PLAN_SCHEMA_VERSION}")
     if not str(payload.get("source_snapshot") or "").strip():
         errors.append("source_snapshot cannot be blank")
+    if not _valid_sha256(payload.get("source_snapshot_sha256")):
+        errors.append("source_snapshot_sha256 must be a sha256: digest")
     if not _valid_aware_datetime(payload.get("source_snapshot_generated_at")):
         errors.append("source_snapshot_generated_at must be a timezone-aware ISO-8601 timestamp")
     if not _valid_aware_datetime(payload.get("created_at")):
@@ -303,13 +315,18 @@ def validate_preflight_state(
     payload: dict[str, Any],
     *,
     expected_source_snapshot: str,
+    expected_source_snapshot_sha256: str,
 ) -> tuple[dict[str, dict[str, Any]], list[str]]:
     errors: list[str] = []
     actual_snapshot = str(payload.get("source_snapshot") or "").strip()
     if actual_snapshot != expected_source_snapshot.strip():
         errors.append("state source_snapshot does not match the signed plan")
-    generated_at = payload.get("source_snapshot_generated_at")
-    if generated_at is not None and not _valid_aware_datetime(generated_at):
+    actual_snapshot_sha256 = str(payload.get("source_snapshot_sha256") or "").strip()
+    if actual_snapshot_sha256 != expected_source_snapshot_sha256.strip():
+        errors.append("state source_snapshot_sha256 does not match the signed plan")
+    if not _valid_sha256(actual_snapshot_sha256):
+        errors.append("state source_snapshot_sha256 must be a sha256: digest")
+    if not _valid_aware_datetime(payload.get("source_snapshot_generated_at")):
         errors.append("state source_snapshot_generated_at must be a timezone-aware ISO-8601 timestamp")
     raw_targets = payload.get("targets")
     if not isinstance(raw_targets, list):
