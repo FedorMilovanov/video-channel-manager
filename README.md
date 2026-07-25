@@ -1,126 +1,125 @@
 # Video Channel Manager
 
-**Video Channel Manager** is a safety-first toolkit for auditing, organizing, and synchronizing video channels across YouTube, VK, local storage, and future platforms.
+**Video Channel Manager** — safety-first инструмент для аудита, редакционной проверки, организации и синхронизации видеоканалов YouTube, VK и локального медиархива.
 
-It is not a one-off YouTube → VK script. The core is platform-neutral and supports independent work with each channel:
+Это не одноразовый YouTube → VK скрипт. Проект строится как платформенно-нейтральный модульный монолит:
 
-- authorize multiple YouTube accounts with read-only OAuth;
-- import and validate multiple VK user tokens locally;
-- export YouTube channels or VK communities as a versioned `AuditPackage`;
-- organize titles, descriptions, thumbnails, tags, playlists, and video albums through reviewed plans;
-- compare platforms and detect missing or duplicate publications;
-- import a structured `ChangePlan` prepared by an external AI assistant;
-- preview, validate, approve, execute, verify, and roll back changes;
-- index local media without moving or deleting files.
+- несколько локальных YouTube/VK account aliases;
+- полные read-only снимки `AuditPackage`;
+- версионированные `ChangePlan` и платформенные планы;
+- точные remote IDs без угадывания;
+- deterministic text renderers для каждой платформы;
+- dry-run, exact confirmations и single-writer locks;
+- backup, per-operation journal, postcondition verification и guarded rollback;
+- локальный media QC и SHA-256 fingerprints;
+- SQLAlchemy/Alembic foundation для будущего operation ledger.
 
-> Status: YouTube read-only OAuth and complete channel inventory are operational. VK read-only user-token inventory is implemented in `feature/vk-readonly-v1`. Remote mutations remain intentionally disabled until write scopes, policy gates, live fixtures, dry-run previews, verification, and rollback paths are implemented and approved.
+> **Статус:** YouTube и VK read-only inventory работают. Для отдельных одобренных сценариев реализованы guarded writers и recovery scripts. Удаления и unattended remote writes по-прежнему выключены. Любая массовая запись требует свежего снимка, читаемого diff, dry-run и точных подтверждений.
 
-## Core principles
+## Основные инварианты
 
-1. **Read-only by default.** Scans and audits never mutate remote platforms.
-2. **External AI, deterministic executor.** AI analyzes exported data and returns a versioned `ChangePlan`; this application validates and executes it.
-3. **Dry-run before write.** Every plan has a preview and policy validation stage.
-4. **No guessed IDs.** All remote objects are referenced by exact platform IDs.
-5. **Optimistic concurrency.** Mutations carry an expected revision to avoid overwriting newer manual edits.
-6. **Idempotency.** Re-running a plan must not create duplicates.
-7. **Auditability.** Snapshots, plans, operations, attempts, and outcomes are persisted.
-8. **Human approval.** Editorial and collection changes are reviewed before any remote write.
-9. **Modular monolith.** One deployable application with strict domain and adapter boundaries.
+1. **Read-only по умолчанию.** Сканирование и аудит не меняют платформы.
+2. **AI анализирует, deterministic executor исполняет.** AI не получает токены и не вызывает provider API напрямую.
+3. **Нет guessed IDs.** Все объекты адресуются точными platform/channel/remote IDs.
+4. **Before/after state, а не слепая revision.** Ревизия полезна, но фактическое изменяемое поле является источником истины.
+5. **Idempotence.** `before → ready`, `after → already applied`, третье состояние → `conflict`.
+6. **Single writer на remote target.** Два процесса не могут одновременно менять одно сообщество/канал.
+7. **Locked re-preflight.** Перед первой записью весь live-state проверяется повторно после захвата lock.
+8. **Immutable evidence.** Snapshot, plan, backup и result остаются отдельными JSON-артефактами.
+9. **Postcondition, а не доверие HTTP 200.** После write выполняется повторное provider read.
+10. **Human approval.** Факты, интерпретации и сомнительный текст не исправляются автоматически.
 
-## Architecture
+## Архитектура
 
 ```text
-External AI / Human editor
-          │
-          │ AuditPackage ↔ ChangePlan (JSON)
-          ▼
-┌───────────────────────────────────────────────┐
-│              Video Channel Manager            │
-│                                               │
-│  CLI / future Web UI / future Telegram client │
-│                    │                          │
-│  Audit ─ Plan Guard ─ Preview ─ Executor      │
-│                    │                          │
-│  Domain + SQLAlchemy persistence + history    │
-│                    │                          │
-│  YouTube adapter | VK adapter | Local index   │
-└───────────────────────────────────────────────┘
+Human editor / external AI
+           │
+           │ AuditPackage ↔ reviewed Plan
+           ▼
+┌────────────────────────────────────────────────┐
+│             Video Channel Manager              │
+│                                                │
+│ CLI → Plan Guard → Preview → Executor          │
+│                │                               │
+│ Domain + exchange schemas + persistence        │
+│                │                               │
+│ YouTube adapter | VK adapter | Local media     │
+└────────────────────────────────────────────────┘
 ```
 
-See [`docs/architecture.md`](docs/architecture.md) and [`docs/exchange-format.md`](docs/exchange-format.md).
+Полный mutation protocol:
 
-## Editorial and platform policy
-
-Permanent instructions and audit decisions are documented in:
-
-- [`docs/youtube-editorial-standard.md`](docs/youtube-editorial-standard.md) — titles, descriptions, Shorts classification, playlist routing, fact-checking, tags, hashtags, and approval rules;
-- [`docs/youtube-description-rendering-standard.md`](docs/youtube-description-rendering-standard.md) — exact `*bold*` / `_italic_` punctuation, first-paragraph behavior, selective emoji policy, line breaks, final-link rendering, and the screenshot-verified «На поле Куликовом» example;
-- [`docs/vk-readonly.md`](docs/vk-readonly.md) — VK token safety, communities, videos, albums, Shorts/Clips metadata, pagination, system albums, and first-run commands;
-- [`docs/audits/2026-07-24-the-legendary-poet.md`](docs/audits/2026-07-24-the-legendary-poet.md) — the first real YouTube audit of **The Legendary Poet**;
-- [`docs/research/2026-07-25-vk-api-source-ledger.md`](docs/research/2026-07-25-vk-api-source-ledger.md) — 52-source VK API research ledger.
-
-These files are the source of truth for future AI-assisted recommendations. Do not rely on chat memory alone. The YouTube rendering standard takes precedence when it clarifies punctuation or emoji behavior.
-
-## Quick start — Windows PowerShell
-
-```powershell
-./scripts/setup.ps1
-.\.venv\Scripts\Activate.ps1
-video-manager doctor
-video-manager db init
-video-manager schema export --output-dir .\schemas
-video-manager example export --output-dir .\examples\generated
+```text
+complete snapshot
+→ deterministic proposal
+→ self-validating plan
+→ readable diff
+→ dry-run
+→ exact confirmations
+→ target lock
+→ locked re-preflight
+→ backup
+→ journaled writes
+→ per-item verification
+→ full postflight
+→ immutable result / guarded rollback
 ```
 
-Manual installation:
+См. [`docs/architecture.md`](docs/architecture.md) и [`docs/adr/0003-guarded-remote-mutations.md`](docs/adr/0003-guarded-remote-mutations.md).
+
+## Документы, являющиеся источником истины
+
+- [`docs/youtube-editorial-standard.md`](docs/youtube-editorial-standard.md) — структура канала, названия, плейлисты, фактчекинг и approval rules;
+- [`docs/youtube-description-rendering-standard.md`](docs/youtube-description-rendering-standard.md) — точная YouTube-разметка, первый абзац, пунктуация и emoji policy;
+- [`docs/vk-description-rendering-standard.md`](docs/vk-description-rendering-standard.md) — почему VK Видео не рендерит YouTube Markdown и как строится plain text;
+- [`docs/operations/vk-description-cleanup-runbook.md`](docs/operations/vk-description-cleanup-runbook.md) — полный whole-library VK cleanup v2;
+- [`docs/vk-readonly.md`](docs/vk-readonly.md) — VK OAuth/token/inventory и безопасные read-only команды;
+- [`docs/research/2026-07-25-vk-api-source-ledger.md`](docs/research/2026-07-25-vk-api-source-ledger.md) — 52-source VK API ledger;
+- [`docs/research/2026-07-25-cross-platform-hardening-source-ledger.md`](docs/research/2026-07-25-cross-platform-hardening-source-ledger.md) — 100+ первичных источников и решения NOW/NEXT/LATER/NO.
+
+Не полагайтесь только на память чата: operational docs и versioned plans имеют приоритет.
+
+## Установка — Windows PowerShell
 
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -e ".[dev]"
+
+video-manager doctor
+video-manager db init
 ```
 
-## YouTube OAuth and inventory
-
-Place the downloaded Google OAuth **Desktop app** client in a local ignored path such as:
+Секреты хранятся только в ignored paths, например:
 
 ```text
 secrets/client_secret.json
+data/secrets/
 ```
 
-Authorize one account alias:
+Никогда не выполнять `git clean -fdx` в рабочем дереве с ignored OAuth/VK credentials.
+
+## YouTube
+
+### OAuth и read-only inventory
 
 ```powershell
 video-manager youtube login --account legendary-poet
-```
-
-Inspect local accounts and live channels:
-
-```powershell
 video-manager youtube accounts
 video-manager youtube channels --account legendary-poet
-```
-
-Export a complete read-only snapshot:
-
-```powershell
 video-manager youtube scan --account legendary-poet
 ```
 
-The export contains exact channel/video/playlist IDs, metadata, revisions, playlist memberships, and a read-only marker. OAuth tokens and client secrets stay local and must never be committed.
+OAuth tokens и client secrets не включаются в `AuditPackage` и не коммитятся.
 
-See [`docs/youtube-oauth.md`](docs/youtube-oauth.md).
-
-## Editorial validation
-
-Validate a single prepared description stored as UTF-8 text:
+### Редакционная проверка
 
 ```powershell
 python .\scripts\validate_youtube_copy.py .\description.txt --strict
 ```
 
-Validate every description in an `AuditPackage` and write a Markdown report:
+Для полного снимка:
 
 ```powershell
 python .\scripts\validate_youtube_copy.py `
@@ -128,111 +127,160 @@ python .\scripts\validate_youtube_copy.py `
   --output .\data\reports\youtube-copy-validation.md
 ```
 
-The validator treats punctuation outside a completed emphasis span as an error candidate, allows an external dash in `*The Legendary Poet* — ...`, permits one intentional emoji in the first paragraph, and only warns when emoji prefixes appear mechanically on all or almost all body paragraphs.
+YouTube update workflows используют field-level before/after equivalence, reread verification, backup и recovery. Подтверждённый completed result не следует повторно выполнять только потому, что поздняя whole-record revision изменилась.
 
-## VK token and inventory
+## VK
 
-The VK video methods used here require a **user access token**, not a community token. Obtain one through an official VK OAuth flow with the expected `video` and `groups` permissions, then import it through hidden input:
+### Token и read-only inventory
+
+Текущий video contour использует **user access token** с ожидаемыми `video` и `groups` permissions.
 
 ```powershell
 video-manager vk login --account legendary-poet
-```
-
-The command validates the token with read-only calls before it is permanently saved. It accepts a raw token, a full OAuth redirect URL, or a local ignored token file:
-
-```powershell
-video-manager vk login --account legendary-poet --token-file .\secrets\vk-token.txt
-```
-
-Inspect local aliases and managed communities:
-
-```powershell
 video-manager vk accounts
 video-manager vk communities --account legendary-poet
+video-manager vk scan --account legendary-poet --community 235216998
 ```
 
-Export a complete community snapshot:
+Снимок включает полный `owner_id_video_id`, `type`, размеры, albums, system markers и memberships.
+
+### Обычное описание VK Видео — plain text
+
+VK не предоставляет Markdown/HTML parse mode для обычного поля video description. Поэтому YouTube-маркеры:
+
+```text
+*жирное*
+_курсив_
+~~зачёркнутое~~
+```
+
+должны сниматься до публикации. URL, hashtags, технические ID, абзацы и название `К ***` сохраняются.
+
+### Полный read-only аудит всех live-описаний
 
 ```powershell
-video-manager vk scan --account legendary-poet --community <numeric-id-or-screen-name>
+python .\scripts\audit_all_vk_descriptions.py `
+  --account legendary-poet `
+  --community 235216998
 ```
 
-The export includes exact community/video/album IDs, system-album markers, video dimensions and VK type, revisions, and album memberships. It does not call any write method.
+Актуальный скрипт создаёт **plan schema v2** с:
 
-See [`docs/vk-readonly.md`](docs/vk-readonly.md).
+- полным live-ID coverage;
+- `coverage_remote_ids_sha256`;
+- before/after hashes;
+- `plan_sha256`;
+- readable Markdown diff.
 
-## CLI
+Проверка JSON без обращения к VK:
+
+```powershell
+python .\scripts\validate_vk_description_cleanup_plan.py `
+  .\data\reports\vk-live-description-cleanup-<timestamp>.json
+```
+
+Старые schema v1 plans остаются историей и намеренно отклоняются apply-скриптом.
+
+### Dry-run whole-library cleanup
+
+```powershell
+python .\scripts\apply_all_vk_description_cleanup.py `
+  .\data\reports\vk-live-description-cleanup-<timestamp>.json `
+  --account legendary-poet `
+  --community 235216998
+```
+
+Не добавляйте `--execute`, пока Markdown diff не просмотрен и dry-run не показал `conflicts 0` и `review-only 0`. Полная процедура находится в runbook.
+
+### Новые YouTube → VK публикации
+
+Оператор использует только safe wrapper:
+
+```powershell
+python .\scripts\sync_youtube_to_vk_textsafe.py <аргументы>
+```
+
+Он включает:
+
+- централизованный VK title/description policy;
+- community single-writer lock;
+- `ffprobe` media QC;
+- обязательные video/audio streams;
+- положительную duration;
+- SHA-256 media fingerprint.
+
+Базовый `scripts/sync_youtube_to_vk.py` является implementation module и не является самостоятельным safety profile.
+
+### Exact-ID recovery
+
+```powershell
+python .\scripts\resume_youtube_to_vk_exact_ids.py `
+  <youtube-audit.json> `
+  <exact-video-id...> `
+  --journal <journal.json> `
+  --cache-dir <cache> `
+  --account legendary-poet `
+  --community 235216998
+```
+
+Dry-run строит transfer manifest SHA-256. Execute требует подтвердить community, new upload count, source snapshot и manifest. Журнал фиксирует промежуточные состояния remote reservation/upload/verification.
+
+## Локальные данные
+
+По умолчанию generated artifacts находятся в ignored `data/`:
 
 ```text
-video-manager version
-video-manager doctor
-video-manager db init
-video-manager schema export
-video-manager example export
-video-manager plan validate plan.json
-video-manager plan preview plan.json
-video-manager local scan H:\ --output local-inventory.json
-video-manager youtube login --account legendary-poet
-video-manager youtube accounts
-video-manager youtube channels --account legendary-poet
-video-manager youtube scan --account legendary-poet
-video-manager vk login --account legendary-poet
-video-manager vk accounts
-video-manager vk communities --account legendary-poet
-video-manager vk scan --account legendary-poet --community <id-or-screen-name>
+data/exports/   # snapshots
+data/reports/   # plans, backups, results, readable reports
+data/cache/     # downloaded media
+data/locks/     # local writer locks
+data/secrets/   # local credentials
 ```
 
-The operational workflow is:
+JSON snapshots/backups/results не являются исходным кодом. Их не нужно пушить в публичный GitHub. Для отдельной копии используйте зашифрованное резервное хранилище и периодическую проверку восстановления.
 
-```text
-YouTube scan ─┐
-              ├→ AuditPackage(s) → verified editorial/cross-platform analysis
-VK scan ──────┘  → ChangePlan → strict validation → human approval
-                 → preview → future safe operations
-```
-
-## Project layout
-
-```text
-src/video_channel_manager/
-├── application/     # use cases, validation, preview
-├── cli/             # PowerShell-friendly command line
-├── config/          # typed environment settings
-├── domain/          # platform-neutral models and enums
-├── editorial/       # deterministic YouTube copy validation
-├── exchange/        # versioned AuditPackage / ChangePlan formats
-├── local_media/     # read-only local file indexer
-├── persistence/     # SQLAlchemy entities and database lifecycle
-└── platforms/       # YouTube, VK, and future adapter implementations
-```
-
-## Safety posture
-
-Destructive operations are disabled by default. A plan can be syntactically valid and still be rejected by policy. See [`docs/security.md`](docs/security.md).
-
-Never run `git clean -fdx` in a working tree that contains ignored OAuth secrets or tokens.
-
-VK tokens are stored below `data/secrets/vk/`, outside version control. The CLI validates a replacement token in a temporary directory first, sends tokens in POST bodies rather than URLs, and does not copy VK `request_params` into exception messages.
-
-## Development
+## Разработка
 
 ```bash
-pytest
+pip check
+python -m compileall -q src scripts tests
 ruff check .
 ruff format --check .
 mypy src
+pytest --cov=video_channel_manager --cov-report=term-missing
+pip-audit --desc on
 ```
 
-CI runs on Python 3.11, 3.12, and 3.13.
+CI запускается на Python 3.11, 3.12 и 3.13. Blocking gates: dependency graph, compileall, Ruff correctness/formatting, mypy и pytest. Vulnerability audit пока сохраняется как diagnostic artifact, чтобы исключения вводились явно, а не скрывали отчёт.
 
-## Roadmap
+## Текущий порядок развития
 
-The next milestones are:
+### Сейчас
 
-1. obtain the first real VK `AuditPackage` and verify response variations against the official schema;
-2. compare real YouTube and VK snapshots without mutating either platform;
-3. generate verified editorial and cross-platform findings plus reviewed `ChangePlan` documents;
-4. enrich matching with local media fingerprints and owner-only geometry where available;
-5. add explicit write scopes and safe playlist/video-album operations behind dry-run, revision, approval, verification, and rollback gates.
+```text
+полная проверка VK cleanup v2
+safe publication renderer
+Windows-safe writer lock
+media QC + manifests
+journal + verification + rollback
+```
 
-See [`docs/roadmap.md`](docs/roadmap.md).
+### Следом
+
+```text
+SQLite operation ledger
+state-machine tests
+structured redacted logs
+secret scanning
+restic backup runbook
+```
+
+### Пока не добавлять
+
+```text
+unattended remote writes
+Temporal/Celery/Redis cluster
+cookies основного канала как downloader identity
+arbitrary yt-dlp plugins
+Prometheus/Grafana для редких CLI-запусков
+```
