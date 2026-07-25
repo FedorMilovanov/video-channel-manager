@@ -259,7 +259,7 @@ def test_verification_retries_eventually_consistent_get(tmp_path: Path) -> None:
         new_description="After",
     )
     assert verified.description == "After"
-    assert methods == ["GET", "PUT", "GET", "GET"]
+    assert methods == ["GET", "GET", "PUT", "GET", "GET"]
 
 
 def test_recovery_ignores_server_revision_drift_when_after_text_is_unchanged(tmp_path: Path) -> None:
