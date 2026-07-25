@@ -24,6 +24,7 @@ from video_channel_manager.platforms.youtube.oauth import (
     YOUTUBE_FORCE_SSL_SCOPE,
     YOUTUBE_READONLY_SCOPE,
 )
+from video_channel_manager.platforms.youtube.renderers import YouTubeCommentRenderer, YouTubeDescriptionRenderer
 from video_channel_manager.platforms.youtube.resilient_writer import YouTubeDescriptionWriter
 from video_channel_manager.platforms.youtube.service import YouTubeInventoryService
 from video_channel_manager.platforms.youtube.store import AccountNotFoundError, TokenStore
@@ -55,8 +56,10 @@ __all__ = [
     "YouTubeApiError",
     "YouTubeCommentConflictError",
     "YouTubeCommentError",
+    "YouTubeCommentRenderer",
     "YouTubeCommentWriter",
     "YouTubeCommentsDisabledError",
+    "YouTubeDescriptionRenderer",
     "YouTubeDescriptionWriter",
     "YouTubeInventoryService",
     "YouTubeRevisionConflictError",
