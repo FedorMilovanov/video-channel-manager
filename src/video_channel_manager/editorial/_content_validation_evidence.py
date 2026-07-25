@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from video_channel_manager.editorial._content_types import ALLOWED_FACT_TYPES, BANNED_GENERIC_PHRASES, DECORATIVE_MARKERS
+from video_channel_manager.editorial._content_types import (
+    ALLOWED_FACT_TYPES,
+    BANNED_GENERIC_PHRASES,
+    DECORATIVE_MARKERS,
+)
 from video_channel_manager.editorial._content_urls import balanced_emphasis, contains_banned_circle
 from video_channel_manager.editorial._content_validation_support import _object, _source_validation, _string_list
 
