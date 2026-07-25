@@ -7,14 +7,16 @@ from video_channel_manager.platforms.youtube.oauth import (
     YOUTUBE_FORCE_SSL_SCOPE,
     YOUTUBE_READONLY_SCOPE,
 )
+from video_channel_manager.platforms.youtube.resilient_writer import YouTubeDescriptionWriter
 from video_channel_manager.platforms.youtube.service import YouTubeInventoryService
 from video_channel_manager.platforms.youtube.store import AccountNotFoundError, TokenStore
 from video_channel_manager.platforms.youtube.writer import (
     VideoDescriptionSnapshot,
-    YouTubeDescriptionWriter,
     YouTubeRevisionConflictError,
     YouTubeWriteError,
     YouTubeWriteScopeError,
+    canonicalize_description,
+    descriptions_equivalent,
 )
 
 __all__ = [
@@ -37,4 +39,6 @@ __all__ = [
     "YouTubeRevisionConflictError",
     "YouTubeWriteError",
     "YouTubeWriteScopeError",
+    "canonicalize_description",
+    "descriptions_equivalent",
 ]
