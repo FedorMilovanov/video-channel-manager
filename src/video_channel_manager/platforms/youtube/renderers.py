@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from video_channel_manager.editorial.content import (
     EditorialContentRecord,
+    LinkBlock,
     balanced_emphasis,
     contains_banned_circle,
 )
@@ -19,7 +20,7 @@ from video_channel_manager.platforms.youtube.comments import validate_comment_te
 _DECORATIVE_MARKERS = ("📖", "📌", "🎧", "📚", "❄️", "⚔️", "🌊", "🎭", "📝", "🎼", "🕯️", "🗂️")
 
 
-def _links(record: EditorialContentRecord, *, surface: str):
+def _links(record: EditorialContentRecord, *, surface: str) -> tuple[LinkBlock, ...]:
     return ordered_links(record, platform="youtube", surface=surface)
 
 
