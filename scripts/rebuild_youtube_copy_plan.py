@@ -85,9 +85,7 @@ def build_repair_plan(payload: dict[str, Any], source: Path) -> tuple[dict[str, 
             continue
 
         errors = [
-            asdict(finding)
-            for finding in validate_youtube_description(recomputed)
-            if finding.severity == "error"
+            asdict(finding) for finding in validate_youtube_description(recomputed) if finding.severity == "error"
         ]
         if errors:
             unresolved.append(

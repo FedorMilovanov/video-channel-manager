@@ -50,9 +50,7 @@ def test_explanatory_colon_after_emphasis_requires_review_not_error() -> None:
 
 Особенно важен повтор слова *«тленной»*: дальше следует его объяснение."""
     matching = [
-        finding
-        for finding in validate_youtube_description(description)
-        if finding.code == "punctuation_scope_review"
+        finding for finding in validate_youtube_description(description) if finding.code == "punctuation_scope_review"
     ]
     assert len(matching) == 1
     assert matching[0].severity == "warning"

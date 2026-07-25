@@ -60,9 +60,7 @@ def _atomic_write(path: Path, payload: object) -> None:
 
 def _plan_remote_ids(plan: dict[str, Any]) -> set[str]:
     return {
-        str(item["remote_id"])
-        for section in ("operations", "review_only", "already_safe")
-        for item in plan[section]
+        str(item["remote_id"]) for section in ("operations", "review_only", "already_safe") for item in plan[section]
     }
 
 
@@ -272,12 +270,10 @@ def main() -> int:
 
         timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
         backup_output = (
-            args.backup_output
-            or settings.data_dir / "reports" / f"vk-live-description-backup-{timestamp}.json"
+            args.backup_output or settings.data_dir / "reports" / f"vk-live-description-backup-{timestamp}.json"
         )
         result_output = (
-            args.result_output
-            or settings.data_dir / "reports" / f"vk-live-description-apply-{timestamp}.json"
+            args.result_output or settings.data_dir / "reports" / f"vk-live-description-apply-{timestamp}.json"
         )
         backup = {
             "schema_name": "video-manager.vk-live-description-backup",
@@ -388,9 +384,7 @@ def main() -> int:
                             expected_description=after,
                             new_description=before,
                         )
-                        rollback.append(
-                            {"remote_id": remote_id, "status": "safe_original", "title": restored.title}
-                        )
+                        rollback.append({"remote_id": remote_id, "status": "safe_original", "title": restored.title})
                     else:
                         raise RuntimeError("live text is neither the planned before-state nor after-state")
                     print(f"Rollback safe/original {remote_id}")
@@ -419,10 +413,7 @@ def main() -> int:
             if isinstance(failure, KeyboardInterrupt):
                 raise failure
             return 2
-        print(
-            f"Completed {len(applied)} verified VK description updates; "
-            "final postflight verified the whole batch."
-        )
+        print(f"Completed {len(applied)} verified VK description updates; final postflight verified the whole batch.")
         return 0
 
 

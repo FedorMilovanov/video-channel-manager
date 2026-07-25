@@ -43,8 +43,7 @@ class PlanGuard:
                 ValidationIssue(
                     code="operation_limit_exceeded",
                     message=(
-                        f"Plan has {len(enabled)} enabled operations; limit is "
-                        f"{self.settings.max_operations_per_plan}."
+                        f"Plan has {len(enabled)} enabled operations; limit is {self.settings.max_operations_per_plan}."
                     ),
                 )
             )

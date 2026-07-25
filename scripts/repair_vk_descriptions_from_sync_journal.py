@@ -21,10 +21,7 @@ from video_channel_manager.platforms.vk.text_writer import VkVideoTextWriter, vk
 from video_channel_manager.platforms.vk.writer import VkWriteError
 
 _SITE_URL = "https://thelegendarypoet.ru/"
-_SITE_FOOTER = (
-    "🎧 The Legendary Poet — русская поэзия, музыка и литературные материалы.\n"
-    f"🌐 {_SITE_URL}"
-)
+_SITE_FOOTER = f"🎧 The Legendary Poet — русская поэзия, музыка и литературные материалы.\n🌐 {_SITE_URL}"
 
 
 def _parser() -> argparse.ArgumentParser:

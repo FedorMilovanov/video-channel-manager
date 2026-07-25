@@ -100,9 +100,7 @@ def _build_plan(payload: dict[str, Any], source: Path) -> tuple[dict[str, Any], 
         before = str(video.get("description") or "")
         after, fixes = autofix_youtube_description(before)
         remaining_errors = [
-            asdict(finding)
-            for finding in validate_youtube_description(after)
-            if finding.severity == "error"
+            asdict(finding) for finding in validate_youtube_description(after) if finding.severity == "error"
         ]
 
         if remaining_errors:

@@ -1,6 +1,11 @@
 from video_channel_manager.platforms.youtube.adapter import YouTubeAdapter
 from video_channel_manager.platforms.youtube.client import YouTubeApiClient, YouTubeApiError
-from video_channel_manager.platforms.youtube.models import ChannelIdentity, InstalledClientConfig, OAuthToken, YouTubeAccount
+from video_channel_manager.platforms.youtube.models import (
+    ChannelIdentity,
+    InstalledClientConfig,
+    OAuthToken,
+    YouTubeAccount,
+)
 from video_channel_manager.platforms.youtube.oauth import (
     InstalledOAuthFlow,
     OAuthFlowError,

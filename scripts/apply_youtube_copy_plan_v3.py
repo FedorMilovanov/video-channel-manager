@@ -117,9 +117,7 @@ def main() -> int:
     plan = _load_plan(args.plan)
     target_channel = str(plan["target_channel_id"])
     if args.confirm_channel != target_channel:
-        raise SystemExit(
-            f"--confirm-channel {args.confirm_channel!r} differs from plan target {target_channel!r}."
-        )
+        raise SystemExit(f"--confirm-channel {args.confirm_channel!r} differs from plan target {target_channel!r}.")
     operations = list(plan["operations"])
     if not operations:
         raise SystemExit("YouTube copy plan has no operations.")
@@ -141,9 +139,7 @@ def main() -> int:
             f"revision drift tolerated {preflight.revision_drift_tolerated}"
         )
         print("Dry-run only. No remote write method was called.")
-        print(
-            "Execute requires exact --confirm-channel, --confirm-count and --confirm-plan-sha256 values."
-        )
+        print("Execute requires exact --confirm-channel, --confirm-count and --confirm-plan-sha256 values.")
         return 0
 
     token = store.load_token(args.account)
@@ -295,16 +291,12 @@ def main() -> int:
                     )
                     print(f"Rollback safe/original {video_id}")
                 except YouTubeWriteError as rollback_exc:
-                    rollback_results.append(
-                        {"video_id": video_id, "status": "failed", "error": str(rollback_exc)}
-                    )
+                    rollback_results.append({"video_id": video_id, "status": "failed", "error": str(rollback_exc)})
                     print(f"Rollback failed {video_id}: {rollback_exc}")
                 result["summary"]["rollback_safe_original"] = sum(
                     item["status"] == "safe_original" for item in rollback_results
                 )
-                result["summary"]["rollback_failed"] = sum(
-                    item["status"] == "failed" for item in rollback_results
-                )
+                result["summary"]["rollback_failed"] = sum(item["status"] == "failed" for item in rollback_results)
                 _atomic_write(result_output, result)
 
         rollback_failed = int(result["summary"]["rollback_failed"])
@@ -319,10 +311,7 @@ def main() -> int:
             if isinstance(failure, KeyboardInterrupt):
                 raise failure
             return 2
-        print(
-            f"Completed {len(applied)} verified description updates; "
-            "final postflight verified the whole batch."
-        )
+        print(f"Completed {len(applied)} verified description updates; final postflight verified the whole batch.")
         return 0
 
 

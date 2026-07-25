@@ -184,9 +184,7 @@ class YouTubeDescriptionWriter:
         title = str(snippet.get("title") or "").strip()
         category_id = str(snippet.get("categoryId") or "").strip()
         if not title or not category_id:
-            raise YouTubeWriteError(
-                f"Video {current.video_id} lacks title/categoryId required by videos.update."
-            )
+            raise YouTubeWriteError(f"Video {current.video_id} lacks title/categoryId required by videos.update.")
 
         update_snippet: dict[str, Any] = {
             "title": title,
@@ -210,9 +208,7 @@ class YouTubeDescriptionWriter:
         )
         verified = self.read_description(current.video_id)
         if not descriptions_equivalent(verified.description, new_description):
-            raise YouTubeWriteError(
-                f"Verification failed after updating description for {current.video_id}."
-            )
+            raise YouTubeWriteError(f"Verification failed after updating description for {current.video_id}.")
         return verified
 
     def replace_description(

@@ -10,7 +10,13 @@ from typing import Any, TypeAlias
 import httpx
 
 from video_channel_manager.domain.enums import ChannelKind, CollectionKind, PlatformName
-from video_channel_manager.domain.models import ChannelRecord, CollectionMembership, CollectionRecord, RemoteRef, VideoRecord
+from video_channel_manager.domain.models import (
+    ChannelRecord,
+    CollectionMembership,
+    CollectionRecord,
+    RemoteRef,
+    VideoRecord,
+)
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow
 from video_channel_manager.platforms.youtube.store import TokenStore

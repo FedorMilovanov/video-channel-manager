@@ -69,9 +69,7 @@ def _resolve_executable(value: str) -> str:
 
 def _completed_mp4(cache_dir: Path, video_id: str) -> Path | None:
     candidates = sorted(
-        path
-        for path in cache_dir.glob(f"{video_id}*.mp4")
-        if path.is_file() and path.stat().st_size > 0
+        path for path in cache_dir.glob(f"{video_id}*.mp4") if path.is_file() and path.stat().st_size > 0
     )
     return candidates[0] if candidates else None
 

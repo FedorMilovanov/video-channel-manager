@@ -37,7 +37,9 @@ console = Console()
 youtube_app = typer.Typer(no_args_is_help=True, help="YouTube OAuth, inventory, and guarded description fixes.")
 
 
-def _components(account: str, client_secret: Path | None = None) -> tuple[TokenStore, InstalledClientConfig, YouTubeApiClient]:
+def _components(
+    account: str, client_secret: Path | None = None
+) -> tuple[TokenStore, InstalledClientConfig, YouTubeApiClient]:
     settings = get_settings()
     secret_path = client_secret or settings.youtube_client_secret_file
     config = InstalledClientConfig.from_file(secret_path)
@@ -125,7 +127,7 @@ def login(
             timeout_seconds=settings.youtube_oauth_timeout_seconds,
             force_consent=True,
             on_authorization_url=lambda url: console.print(
-                "If the browser does not open, copy this URL:\n" f"[link={url}]{url}[/link]"
+                f"If the browser does not open, copy this URL:\n[link={url}]{url}[/link]"
             ),
         )
         store.save_token(account, token)
@@ -247,7 +249,9 @@ def scan(
         if channel_id is None:
             if len(available_channels) != 1:
                 choices = ", ".join(item.ref.remote_id for item in available_channels) or "none"
-                raise ValueError(f"Specify --channel because this account has {len(available_channels)} choices: {choices}")
+                raise ValueError(
+                    f"Specify --channel because this account has {len(available_channels)} choices: {choices}"
+                )
             channel_id = available_channels[0].ref.remote_id
         with console.status("Reading YouTube channel inventory…"):
             package = YouTubeInventoryService(client).build_audit_package(channel_id)
@@ -307,9 +311,7 @@ def apply_copy_fixes(
 
     lock_path = settings.data_dir / "locks" / f"youtube-{account}-{confirm_channel}.lock"
     lock_context = (
-        local_youtube_write_lock(lock_path, account=account, channel_id=confirm_channel)
-        if execute
-        else nullcontext()
+        local_youtube_write_lock(lock_path, account=account, channel_id=confirm_channel) if execute else nullcontext()
     )
 
     try:
@@ -469,16 +471,12 @@ def apply_copy_fixes(
                         )
                         console.print(f"[yellow]Rollback safe/original[/yellow] {video_id}")
                     except YouTubeWriteError as rollback_exc:
-                        rollback_results.append(
-                            {"video_id": video_id, "status": "failed", "error": str(rollback_exc)}
-                        )
+                        rollback_results.append({"video_id": video_id, "status": "failed", "error": str(rollback_exc)})
                         console.print(f"[red]Rollback failed[/red] {video_id}: {rollback_exc}")
                     result["summary"]["rollback_safe_original"] = sum(
                         item["status"] == "safe_original" for item in rollback_results
                     )
-                    result["summary"]["rollback_failed"] = sum(
-                        item["status"] == "failed" for item in rollback_results
-                    )
+                    result["summary"]["rollback_failed"] = sum(item["status"] == "failed" for item in rollback_results)
                     _write_json(result_output, result)
 
                 rollback_failed = int(result["summary"]["rollback_failed"])

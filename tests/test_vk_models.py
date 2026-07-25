@@ -4,9 +4,7 @@ from video_channel_manager.platforms.vk.models import VkAccessToken
 
 
 def test_token_can_be_parsed_from_redirect_url() -> None:
-    token = VkAccessToken.from_text(
-        "https://oauth.vk.com/blank.html#access_token=secret&expires_in=3600&user_id=42"
-    )
+    token = VkAccessToken.from_text("https://oauth.vk.com/blank.html#access_token=secret&expires_in=3600&user_id=42")
     assert token.access_token == "secret"
     assert token.user_id == 42
     assert token.expires_at is not None

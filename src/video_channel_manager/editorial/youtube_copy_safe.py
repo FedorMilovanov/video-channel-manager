@@ -65,8 +65,7 @@ def validate_youtube_description(description: str) -> list[CopyFinding]:
     ]
     text_without_non_markers = legacy._without_non_markers(description)
     findings.extend(
-        _review_punctuation_finding(match)
-        for match in legacy.PUNCT_OUTSIDE_RE.finditer(text_without_non_markers)
+        _review_punctuation_finding(match) for match in legacy.PUNCT_OUTSIDE_RE.finditer(text_without_non_markers)
     )
     return findings
 
@@ -84,7 +83,7 @@ def autofix_youtube_description(description: str) -> tuple[str, list[CopyFix]]:
         clean_first = legacy._strip_emphasis_markers(first)
         if clean_first != first:
             fixes.append(CopyFix("share_preview_emphasis", first, clean_first))
-            updated = f"{clean_first}{separator}{updated[first_match.end():]}"
+            updated = f"{clean_first}{separator}{updated[first_match.end() :]}"
 
     def trim_bold(match: re.Match[str]) -> str:
         inner = match.group(1)

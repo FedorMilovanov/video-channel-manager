@@ -57,9 +57,7 @@ class VideoView:
             published_at=(
                 datetime.fromisoformat(published.replace("Z", "+00:00")) if isinstance(published, str) else None
             ),
-            privacy_status=(
-                str(payload.get("privacy_status")) if payload.get("privacy_status") is not None else None
-            ),
+            privacy_status=(str(payload.get("privacy_status")) if payload.get("privacy_status") is not None else None),
             tags=[str(item) for item in payload.get("tags", []) if isinstance(item, str)],
             metadata=payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {},
         )

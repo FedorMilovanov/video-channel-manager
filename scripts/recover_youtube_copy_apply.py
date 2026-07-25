@@ -73,9 +73,7 @@ def main() -> int:
         if not operations:
             raise ValueError("Backup has no operations.")
         if len(operations) > args.max_operations:
-            raise ValueError(
-                f"Backup has {len(operations)} operations, above --max-operations {args.max_operations}."
-            )
+            raise ValueError(f"Backup has {len(operations)} operations, above --max-operations {args.max_operations}.")
 
         backup_channel = str(backup.get("channel_id") or "")
         if backup_channel != args.confirm_channel:
@@ -170,7 +168,9 @@ def main() -> int:
                 return 0
 
             timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
-            result_output = args.result_output or settings.data_dir / "reports" / f"youtube-copy-recovery-{timestamp}.json"
+            result_output = (
+                args.result_output or settings.data_dir / "reports" / f"youtube-copy-recovery-{timestamp}.json"
+            )
             restored: list[dict[str, str]] = []
             failed: list[dict[str, str]] = []
             result: dict[str, Any] = {

@@ -159,7 +159,9 @@ def main() -> int:
             lines.append(f"- **{issue['severity']}** `{issue['code']}`: {issue['message']}{excerpt}")
         if record["issues"]:
             lines.append("")
-        lines.extend(["```diff", _diff(record["source_description"], record["vk_description"], record["video_id"]), "```", ""])
+        lines.extend(
+            ["```diff", _diff(record["source_description"], record["vk_description"], record["video_id"]), "```", ""]
+        )
 
     report_output.parent.mkdir(parents=True, exist_ok=True)
     report_output.write_text("\n".join(lines), encoding="utf-8")

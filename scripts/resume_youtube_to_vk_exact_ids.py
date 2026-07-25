@@ -99,9 +99,7 @@ def _media_path(cache_dir: Path, video_id: str) -> Path | None:
     if exact.is_file() and exact.stat().st_size > 0:
         return exact
     candidates = sorted(
-        path
-        for path in cache_dir.glob(f"{video_id}*.mp4")
-        if path.is_file() and path.stat().st_size > 0
+        path for path in cache_dir.glob(f"{video_id}*.mp4") if path.is_file() and path.stat().st_size > 0
     )
     return candidates[0] if candidates else None
 
@@ -226,9 +224,7 @@ def main() -> int:
                 remote_id = str(existing["remote_id"])
                 owner_id, video_id = _parse_remote_id(remote_id)
                 if owner_id != -community_id:
-                    raise ValueError(
-                        f"Journal upload {source_id} targets owner {owner_id}, expected {-community_id}."
-                    )
+                    raise ValueError(f"Journal upload {source_id} targets owner {owner_id}, expected {-community_id}.")
                 if writer.read_video(owner_id=owner_id, video_id=video_id) is not None:
                     reusable[source_id] = remote_id
                     continue

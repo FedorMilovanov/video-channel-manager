@@ -275,14 +275,10 @@ def compare_audit_packages(
     source_titles = _collection_titles_by_video(source)
     target_titles = _collection_titles_by_video(target)
     missing_on_target = [
-        _missing_video(video, source_titles)
-        for index, video in enumerate(source.videos)
-        if index not in used_source
+        _missing_video(video, source_titles) for index, video in enumerate(source.videos) if index not in used_source
     ]
     extra_on_target = [
-        _missing_video(video, target_titles)
-        for index, video in enumerate(target.videos)
-        if index not in used_target
+        _missing_video(video, target_titles) for index, video in enumerate(target.videos) if index not in used_target
     ]
     missing_on_target.sort(key=lambda item: item.title.casefold())
     extra_on_target.sort(key=lambda item: item.title.casefold())

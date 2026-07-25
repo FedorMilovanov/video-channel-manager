@@ -23,15 +23,9 @@ class PlacementSummary:
 
 def summarize_placements(comparison: CrossPlatformComparison) -> PlacementSummary:
     existing = sum(
-        gap.missing_placement_count
-        for gap in comparison.collection_gaps
-        if gap.target_collection_id is not None
+        gap.missing_placement_count for gap in comparison.collection_gaps if gap.target_collection_id is not None
     )
-    pending = sum(
-        gap.missing_placement_count
-        for gap in comparison.collection_gaps
-        if gap.target_collection_id is None
-    )
+    pending = sum(gap.missing_placement_count for gap in comparison.collection_gaps if gap.target_collection_id is None)
     return PlacementSummary(
         existing_collection_placements=existing,
         pending_collection_placements=pending,
@@ -40,16 +34,11 @@ def summarize_placements(comparison: CrossPlatformComparison) -> PlacementSummar
 
 def render_detailed_comparison_markdown(comparison: CrossPlatformComparison) -> str:
     summary = summarize_placements(comparison)
-    old_line = (
-        "- Недостающих размещений в существующих коллекциях: "
-        f"**{comparison.missing_placement_count}**."
-    )
+    old_line = f"- Недостающих размещений в существующих коллекциях: **{comparison.missing_placement_count}**."
     replacement = "\n".join(
         [
-            "- Недостающих размещений в уже существующих коллекциях: "
-            f"**{summary.existing_collection_placements}**.",
-            "- Размещений, ожидающих создания отсутствующих коллекций: "
-            f"**{summary.pending_collection_placements}**.",
+            f"- Недостающих размещений в уже существующих коллекциях: **{summary.existing_collection_placements}**.",
+            f"- Размещений, ожидающих создания отсутствующих коллекций: **{summary.pending_collection_placements}**.",
             f"- Всего требуемых размещений: **{summary.total_placements}**.",
         ]
     )

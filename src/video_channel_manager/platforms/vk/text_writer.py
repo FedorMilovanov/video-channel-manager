@@ -112,9 +112,13 @@ class VkVideoTextWriter(VkVideoWriter):
         last: VkVideoTextSnapshot | None = None
         for attempt in range(attempts):
             last = self.read_text(owner_id=owner_id, video_id=video_id)
-            if last is not None and vk_texts_equivalent(last.title, target_title) and vk_texts_equivalent(
-                last.description,
-                target_description,
+            if (
+                last is not None
+                and vk_texts_equivalent(last.title, target_title)
+                and vk_texts_equivalent(
+                    last.description,
+                    target_description,
+                )
             ):
                 return last
             if attempt + 1 < attempts and delay:

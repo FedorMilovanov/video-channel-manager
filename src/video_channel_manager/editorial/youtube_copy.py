@@ -13,9 +13,7 @@ NON_MARKER_RE = re.compile(r"https?://\S+|(?<!\*)\*{3}(?!\*)", re.IGNORECASE)
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]\n]+\]\(https?://[^)\s]+\)", re.IGNORECASE)
 MULTI_BLANK_RE = re.compile(r"\n[ \t]*\n(?:[ \t]*\n)+")
 FIRST_PARAGRAPH_RE = re.compile(r"\A(?P<first>.*?)(?P<separator>\n[ \t]*\n|\Z)", re.DOTALL)
-PUNCT_OUTSIDE_RE = re.compile(
-    r"(?P<span>\*[^*\n]+\*|(?<!\w)_[^_\n]+_(?!\w))(?P<punct>[,.:;!?…])"
-)
+PUNCT_OUTSIDE_RE = re.compile(r"(?P<span>\*[^*\n]+\*|(?<!\w)_[^_\n]+_(?!\w))(?P<punct>[,.:;!?…])")
 BOLD_SPAN_RE = re.compile(r"\*([^*\n]*)\*")
 ITALIC_SPAN_RE = re.compile(r"(?<!\w)_([^_\n]+)_(?!\w)")
 
@@ -265,9 +263,7 @@ def validate_youtube_description(description: str) -> list[CopyFinding]:
                 )
             )
 
-    findings.extend(
-        _punctuation_finding(match) for match in PUNCT_OUTSIDE_RE.finditer(text_without_non_markers)
-    )
+    findings.extend(_punctuation_finding(match) for match in PUNCT_OUTSIDE_RE.finditer(text_without_non_markers))
 
     for match in MARKDOWN_LINK_RE.finditer(description):
         findings.append(
@@ -348,7 +344,7 @@ def autofix_youtube_description(description: str) -> tuple[str, list[CopyFix]]:
         clean_first = _strip_emphasis_markers(first)
         if clean_first != first:
             fixes.append(CopyFix("share_preview_emphasis", first, clean_first))
-            updated = f"{clean_first}{separator}{updated[first_match.end():]}"
+            updated = f"{clean_first}{separator}{updated[first_match.end() :]}"
 
     def trim_bold(match: re.Match[str]) -> str:
         inner = match.group(1)

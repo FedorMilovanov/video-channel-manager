@@ -168,9 +168,7 @@ def _download_thumbnail(
             if not response.content:
                 raise RuntimeError("YouTube thumbnail response was empty")
             if len(response.content) > max_image_bytes:
-                raise RuntimeError(
-                    f"YouTube thumbnail is {len(response.content)} bytes, above limit {max_image_bytes}"
-                )
+                raise RuntimeError(f"YouTube thumbnail is {len(response.content)} bytes, above limit {max_image_bytes}")
             destination = cache_dir / f"{video_id}-{url_hash}{_thumbnail_extension(url, content_type)}"
             temporary = destination.with_suffix(destination.suffix + ".tmp")
             temporary.write_bytes(response.content)
@@ -424,7 +422,9 @@ def main() -> int:
                 }
             )
             _save_journal(args.journal, locked_journal)
-            print(f"[{index}/{len(prepared)}] Thumbnail API result journaled for https://vk.com/video{candidate.remote_id}")
+            print(
+                f"[{index}/{len(prepared)}] Thumbnail API result journaled for https://vk.com/video{candidate.remote_id}"
+            )
             if index < len(prepared) and args.write_delay > 0:
                 time.sleep(args.write_delay)
 

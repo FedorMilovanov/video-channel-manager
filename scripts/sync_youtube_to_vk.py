@@ -32,10 +32,7 @@ from video_channel_manager.platforms.vk import VkApiClient, VkInventoryService, 
 from video_channel_manager.platforms.vk.writer import VkUploadTicket, VkVideoWriter, VkWriteError
 
 _SITE_URL = "https://thelegendarypoet.ru/"
-_SITE_FOOTER = (
-    "🎧 The Legendary Poet — русская поэзия, музыка и литературные материалы.\n"
-    f"🌐 {_SITE_URL}"
-)
+_SITE_FOOTER = f"🎧 The Legendary Poet — русская поэзия, музыка и литературные материалы.\n🌐 {_SITE_URL}"
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -522,7 +519,9 @@ def main() -> int:
     print("Reading final live VK inventory…")
     live_after = VkInventoryService(reader).build_audit_package(community_id)
     timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
-    result_output = args.result_output or settings.data_dir / "exports" / f"vk-{args.account}-{community_id}-{timestamp}.json"
+    result_output = (
+        args.result_output or settings.data_dir / "exports" / f"vk-{args.account}-{community_id}-{timestamp}.json"
+    )
     result_output.parent.mkdir(parents=True, exist_ok=True)
     result_output.write_text(live_after.model_dump_json(indent=2), encoding="utf-8")
     final_comparison = compare_audit_packages(source, live_after)

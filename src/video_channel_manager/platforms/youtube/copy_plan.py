@@ -88,9 +88,7 @@ def validate_copy_plan(plan: dict[str, Any]) -> None:
             raise ValueError(f"YouTube copy plan {field} is {plan.get(field)!r}, expected {expected}.")
     videos_checked = plan.get("videos_checked")
     if videos_checked != len(checked_video_ids):
-        raise ValueError(
-            f"YouTube copy plan videos_checked is {videos_checked!r}, expected {len(checked_video_ids)}."
-        )
+        raise ValueError(f"YouTube copy plan videos_checked is {videos_checked!r}, expected {len(checked_video_ids)}.")
 
     checked_set = set(checked_video_ids)
     all_planned_ids: list[str] = []

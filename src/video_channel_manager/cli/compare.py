@@ -115,7 +115,9 @@ def compare_plans(
     table.add_column("Operations", justify="right")
     table.add_column("Enabled", justify="right")
     table.add_row("Transfer public full-length videos", str(len(transfer_plan.operations)), "0")
-    table.add_row(f"VK albums ({create_count} create + {add_count} placements)", str(len(collection_plan.operations)), "0")
+    table.add_row(
+        f"VK albums ({create_count} create + {add_count} placements)", str(len(collection_plan.operations)), "0"
+    )
     console.print(table)
     console.print("[yellow]All generated operations are disabled. No remote write method was called.[/yellow]")
     console.print(f"[green]Transfer plan → {transfer_path}[/green]")

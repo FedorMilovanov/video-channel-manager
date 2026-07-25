@@ -136,9 +136,7 @@ def probe_media(
     video = _first_stream(streams, "video") or {}
     audio = _first_stream(streams, "audio") or {}
     format_names = tuple(
-        item.strip()
-        for item in str(format_payload.get("format_name") or "").split(",")
-        if item.strip()
+        item.strip() for item in str(format_payload.get("format_name") or "").split(",") if item.strip()
     )
     return MediaQualityReport(
         path=str(path.resolve()),
