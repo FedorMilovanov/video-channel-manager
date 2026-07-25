@@ -22,17 +22,21 @@ def apply_editorial_records_to_vk_catalog_plan(
     *,
     require_all_text_operations: bool = False,
 ) -> dict[str, Any]:
-    """Replace VK catalog after-descriptions with canonical rendered content.
+    """Replace VK catalog after-descriptions with approved canonical content.
 
     The existing VK catalog plan remains the safety envelope: source/target snapshot
     IDs, target inventory digest, exact before-text hashes, operation IDs, and the
-    guarded executor are preserved. Only reviewed ``after_description`` values and
-    their hashes are replaced, then the whole plan is re-signed.
+    guarded executor are preserved. Only approved, reviewed ``after_description``
+    values and their hashes are replaced, then the whole plan is re-signed.
     """
 
     validate_vk_catalog_plan(plan)
     by_video_id: dict[str, EditorialContentRecord] = {}
     for candidate in records:
+        if candidate.status != "approved" or not candidate.reviewed_at:
+            raise ValueError(
+                f"VK catalog adaptation requires approved, reviewed content: {candidate.content_id}"
+            )
         if not candidate.video_id:
             continue
         if candidate.video_id in by_video_id:
@@ -67,6 +71,7 @@ def apply_editorial_records_to_vk_catalog_plan(
         raw["editorial_content_id"] = record.content_id
         raw["editorial_variation_key"] = record.variation_key
         raw["editorial_source_ids"] = sorted(record.source_ids)
+        raw["editorial_reviewed_at"] = record.reviewed_at
         used_variations.append(record.variation_key)
         used_rendered_hashes.append(raw["after_description_sha256"])
         adapted_count += 1
