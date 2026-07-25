@@ -12,13 +12,21 @@ from video_channel_manager.editorial.rendering import (
 )
 from video_channel_manager.platforms.vk.text import render_vk_video_description
 
+_BLOCKING_FALLBACK_ISSUES = frozenset(
+    {
+        "html_tag_not_supported",
+        "literal_asterisk_remaining",
+        "paired_underscore_remaining",
+    }
+)
+
 
 def _plain(value: str, *, context: str) -> tuple[str, list[RenderIssue]]:
     rendered = render_vk_video_description(value, site_url="", brand_line="")
     issues = [
         RenderIssue(
             code=f"vk_{context}_{issue.code}",
-            severity=issue.severity,
+            severity="error" if issue.code in _BLOCKING_FALLBACK_ISSUES else issue.severity,
             message=issue.message,
         )
         for issue in rendered.issues
