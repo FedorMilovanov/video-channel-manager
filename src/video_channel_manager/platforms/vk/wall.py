@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -10,6 +9,7 @@ from urllib.parse import urlsplit
 
 from video_channel_manager.exchange.audit_package import AuditPackage
 from video_channel_manager.platforms.vk.catalog import canonical_sha256, text_sha256
+from video_channel_manager.platforms.vk.text import render_vk_video_description
 from video_channel_manager.platforms.vk.text_writer import canonical_vk_text
 from video_channel_manager.platforms.vk.writer import VkVideoWriter, VkWriteError
 
@@ -17,8 +17,6 @@ VK_WALL_PLAN_SCHEMA = "video-manager.vk-wall-post-plan"
 VK_WALL_PLAN_VERSION = 1
 VK_WALL_POLICY_VERSION = "vk-wall-editorial-v1"
 _DEFAULT_SITE_URL = "https://thelegendarypoet.ru/"
-_HTML_RE = re.compile(r"</?[A-Za-z][^>\n]*>")
-_MARKDOWN_RE = re.compile(r"(?<!\*)\*\*?[^*\n]+\*\*?|(?<!_)__?[^_\n]+__?")
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,6 +51,15 @@ def _parse_video_remote_id(remote_id: str) -> tuple[int, int]:
     if owner_id == 0 or video_id <= 0:
         raise ValueError(f"Invalid VK video remote ID: {remote_id}")
     return owner_id, video_id
+
+
+def _assert_plain_vk_message(message: str) -> str:
+    normalized = canonical_vk_text(message)
+    rendered = render_vk_video_description(normalized, site_url="", brand_line="")
+    if rendered.text != normalized or rendered.issues:
+        issue_codes = ", ".join(item.code for item in rendered.issues) or "text would be transformed"
+        raise ValueError(f"VK wall message is not stable plain text: {issue_codes}")
+    return normalized
 
 
 def render_vk_wall_post(
@@ -96,12 +103,8 @@ def render_vk_wall_post(
         sections.append("Первоисточники:\n" + "\n".join(f"• {label}: {url}" for label, url in links))
     if normalized_tags:
         sections.append(" ".join(normalized_tags))
-    message = "\n\n".join(sections)
+    message = _assert_plain_vk_message("\n\n".join(sections))
 
-    if _HTML_RE.search(message):
-        raise ValueError("VK wall message contains unsupported HTML")
-    if _MARKDOWN_RE.search(message):
-        raise ValueError("VK wall message contains Markdown-like emphasis markers")
     expected_site_occurrences = 1 if "thelegendarypoet.ru" in route_url else 0
     if message.count("thelegendarypoet.ru") != expected_site_occurrences:
         raise ValueError("The Legendary Poet route must occur exactly once in the wall message")
@@ -130,13 +133,11 @@ def build_vk_wall_post_plan(
     video = videos.get(video_remote_id)
     if video is None:
         raise ValueError(f"Video {video_remote_id} is absent from the reviewed VK snapshot")
-    normalized_message = canonical_vk_text(message)
+    normalized_message = _assert_plain_vk_message(message)
     if not normalized_message:
         raise ValueError("VK wall message cannot be blank")
     if len(normalized_message) > 15000:
         raise ValueError("VK wall message exceeds the 15,000-character project policy")
-    if _HTML_RE.search(normalized_message) or _MARKDOWN_RE.search(normalized_message):
-        raise ValueError("VK wall message contains unsupported HTML or Markdown-like emphasis")
     normalized_article_url = _absolute_http_url(article_url, "article_url") if article_url else None
     normalized_sources = []
     for item in source_links:
@@ -186,6 +187,7 @@ def validate_vk_wall_post_plan(plan: dict[str, Any]) -> None:
     for field in ("expected_video_title", "expected_video_description", "message"):
         if plan.get(f"{field}_sha256") != text_sha256(str(plan.get(field) or "")):
             raise ValueError(f"VK wall plan hash mismatch: {field}")
+    _assert_plain_vk_message(str(plan.get("message") or ""))
     if not isinstance(plan.get("guid"), str) or not plan["guid"].startswith("vcm-"):
         raise ValueError("VK wall plan guid is invalid")
     expected = calculate_vk_wall_plan_sha256(plan)
@@ -244,10 +246,7 @@ class VkWallWriter(VkVideoWriter):
             params={"posts": f"{-community_id}_{post_id}"},
             retry_transient=True,
         )
-        if isinstance(response, dict):
-            items = response.get("items")
-        else:
-            items = response
+        items = response.get("items") if isinstance(response, dict) else response
         if not isinstance(items, list) or not items:
             return None
         item = items[0]
