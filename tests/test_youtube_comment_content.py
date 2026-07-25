@@ -61,6 +61,12 @@ def test_url_canonicalization_removes_fragments_and_default_ports() -> None:
     assert extract_urls("Источник: https://example.org/path).") == ["https://example.org/path"]
 
 
+def test_url_canonicalization_preserves_balanced_parentheses() -> None:
+    url = "https://ru.wikisource.org/wiki/О,_я_хочу_безумно_жить_(Блок)"
+    assert canonicalize_url(url) == url
+    assert extract_urls(f"Полный текст: {url}.") == [url]
+
+
 def test_unsafe_repository_source_path_is_rejected() -> None:
     record = deepcopy(_record())
     sources = record["sources"]
