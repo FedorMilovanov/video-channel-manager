@@ -29,13 +29,33 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     temporary.replace(path)
 
 
-def _content_class(title: str, duration_seconds: int | None) -> str:
+def _suggested_profile(title: str, duration_seconds: int | None) -> str:
     lower = title.casefold()
     if "#shorts" in lower or (duration_seconds is not None and duration_seconds <= 60):
         return "short"
-    if any(token in lower for token in ("english", "англий", "китай", "中文", "cover")):
-        return "adaptation-or-cover"
-    return "full-length"
+    if any(token in lower for token in ("english", "англий", "китай", "中文", "translation")):
+        return "foreign_language_adaptation"
+    if "cover" in lower or "кавер" in lower:
+        return "cover_or_adaptation"
+    if any(token in lower for token in ("дебаты", "apostrophes", "биография", "история", "анализ")):
+        return "historical_or_essay"
+    return "long_form_poetry"
+
+
+def _fact_type_candidates(profile: str) -> list[str]:
+    if profile == "short":
+        return ["composition_history", "first_publication", "textual_structure"]
+    if profile == "historical_or_essay":
+        return ["documented_context", "archival_provenance", "performance_history"]
+    if profile in {"cover_or_adaptation", "foreign_language_adaptation"}:
+        return ["adaptation_history", "performance_history", "documented_context"]
+    return [
+        "composition_history",
+        "first_publication",
+        "manuscript_history",
+        "textual_structure",
+        "archival_provenance",
+    ]
 
 
 def _markdown(payload: dict[str, Any]) -> str:
@@ -46,7 +66,7 @@ def _markdown(payload: dict[str, Any]) -> str:
         f"- Source snapshot: `{payload['source_snapshot']}`",
         f"- Queue items: **{len(payload['items'])}**",
         "",
-        "This file is an editorial queue, not a write plan. Every item starts as `needs-research`.",
+        "This file is an editorial queue, not a write plan. Every item starts as `needs-research` and targets structured comment schema v2.",
         "",
     ]
     for item in payload["items"]:
@@ -57,7 +77,8 @@ def _markdown(payload: dict[str, Any]) -> str:
                 f"- Video ID: `{item['video_id']}`",
                 f"- URL: {item['video_url']}",
                 f"- Audit status: `{item['audit_status']}`",
-                f"- Content class: `{item['content_class']}`",
+                f"- Suggested profile: `{item['suggested_profile']}`",
+                f"- Fact families to research: {', '.join(item['fact_type_candidates'])}",
                 f"- Suggested record: `{item['suggested_content_path']}`",
                 "- Relevant playlists:",
             ]
@@ -69,7 +90,30 @@ def _markdown(payload: dict[str, Any]) -> str:
                     lines.append(f"  - {playlist.get('title')}: {playlist.get('url')}")
         else:
             lines.append("  - none in the snapshot")
-        lines.extend(["", "### Existing description for research context", "", str(item.get("description") or ""), ""])
+        lines.extend(
+            [
+                "",
+                "### Required rendering",
+                "",
+                "```text",
+                "[contextual marker] *[work-specific factual heading]*",
+                "",
+                "[substantial sourced fact]",
+                "",
+                "_[specific lead]:_ [specific question]?",
+                "",
+                "📌 *The Legendary Poet:* https://thelegendarypoet.ru/",
+                "🎧 *[relevant playlist]:* [URL when required]",
+                "*Сообщество проекта VK:* https://vk.com/thelegendarypoet",
+                "[optional primary text on one line]",
+                "```",
+                "",
+                "### Existing description for research context",
+                "",
+                str(item.get("description") or ""),
+                "",
+            ]
+        )
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -143,14 +187,18 @@ def main() -> int:
         if not queueable:
             skipped.append({"video_id": video_id, "title": video.title, "reason": status})
             continue
+        profile = _suggested_profile(video.title, video.duration_seconds)
         items.append(
             {
                 "editorial_status": "needs-research",
+                "target_schema_version": 2,
                 "video_id": video_id,
                 "title": video.title,
                 "video_url": f"https://www.youtube.com/watch?v={video_id}",
                 "audit_status": status,
-                "content_class": _content_class(video.title, video.duration_seconds),
+                "suggested_profile": profile,
+                "profile_requires_human_review": True,
+                "fact_type_candidates": _fact_type_candidates(profile),
                 "duration_seconds": video.duration_seconds,
                 "published_at": video.published_at.isoformat() if video.published_at else None,
                 "description": video.description,
@@ -161,11 +209,20 @@ def main() -> int:
                     "telegram": "https://t.me/thelegendarypoet",
                     "rutube": "https://rutube.ru/channel/74579453/",
                 },
+                "required_link_labels": {
+                    "site": "📌 *The Legendary Poet:*",
+                    "vk": "*Сообщество проекта VK:*",
+                    "playlist_prefix": "🎧 *",
+                    "primary_text_prefix": "📚 _",
+                },
                 "suggested_content_path": f"content/youtube-comments/{video_id}.json",
                 "requirements": [
-                    "verify every factual claim",
-                    "attach exact source_ids",
-                    "avoid prophecy language and generic hype",
+                    "research one concrete composition/publication/manuscript/structure/archive/adaptation fact",
+                    "map the exact factual paragraph to exact fact.source_ids",
+                    "use a unique variation_key and work-specific heading",
+                    "write a question tied to a precise textual or documented detail",
+                    "keep each link label and URL on the same line",
+                    "use no coloured circle markers and no generic hype",
                     "use only relevant playlist links",
                     "human approval required before plan inclusion",
                 ],
@@ -174,7 +231,7 @@ def main() -> int:
 
     payload: dict[str, Any] = {
         "schema_name": "video-manager.youtube-comment-editorial-queue",
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": datetime.now(UTC).isoformat(),
         "channel_id": channel_id,
         "source_snapshot": str(package.snapshot_id),
