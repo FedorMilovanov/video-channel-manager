@@ -1,9 +1,9 @@
 name: Finalize VK publishing once
 
 on:
-  push:
+  pull_request:
     branches:
-      - integration/youtube-vk-unified-v2
+      - main
 
 permissions:
   contents: write
