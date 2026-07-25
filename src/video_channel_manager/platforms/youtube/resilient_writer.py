@@ -10,6 +10,7 @@ from video_channel_manager.platforms.youtube.store import TokenStore
 from video_channel_manager.platforms.youtube.writer import (
     VideoDescriptionSnapshot,
     YouTubeDescriptionWriter as BaseYouTubeDescriptionWriter,
+    YouTubeRevisionConflictError,
     YouTubeWriteError,
     descriptions_equivalent,
 )
@@ -73,3 +74,33 @@ class YouTubeDescriptionWriter(BaseYouTubeDescriptionWriter):
             f"Verification failed after updating description for {current.video_id} "
             f"after {1 + len(self._verification_delays)} reads; last revision: {observed}."
         )
+
+    def restore_description_if_current(
+        self,
+        *,
+        video_id: str,
+        expected_channel_id: str,
+        expected_current_description: str,
+        restore_description: str,
+    ) -> VideoDescriptionSnapshot:
+        """Reassert the backup when live text is one of the two known states.
+
+        Even when a read already shows the original text, an earlier successful
+        update may still be propagating. Writing the original state again makes
+        the rollback the newest mutation and prevents a delayed after-state from
+        resurfacing later.
+        """
+
+        current = self.read_description(video_id)
+        if current.channel_id != expected_channel_id:
+            raise YouTubeRevisionConflictError(
+                f"Channel mismatch for {video_id}: expected {expected_channel_id}, got {current.channel_id}."
+            )
+        known_after = descriptions_equivalent(current.description, expected_current_description)
+        known_original = descriptions_equivalent(current.description, restore_description)
+        if not known_after and not known_original:
+            raise YouTubeRevisionConflictError(
+                f"Description mismatch for {video_id}; refusing recovery because live text is neither the "
+                "planned after-state nor the original backup."
+            )
+        return self._write_description(current=current, new_description=restore_description)
