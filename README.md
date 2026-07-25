@@ -451,7 +451,7 @@ python -m pytest --cov=video_channel_manager --cov-report=term-missing
 pip-audit --skip-editable --desc on
 ```
 
-CI запускается на Python 3.11, 3.12 и 3.13. Blocking gates: dependency graph, compileall, vulnerability audit, Ruff correctness, Ruff formatting, strict mypy и full pytest. Последний полный editorial CI run #667 прошёл на всех трёх версиях Python; 197 тестов зелёные в каждой матрице.
+CI запускается на Python 3.11, 3.12 и 3.13. Blocking gates: dependency graph, compileall, vulnerability audit, Ruff correctness, Ruff formatting, strict mypy и full pytest. Последний полный editorial CI run #669 прошёл на всех трёх версиях Python; 197 тестов зелёные в каждой матрице.
 
 # Текущий порядок развития
 
