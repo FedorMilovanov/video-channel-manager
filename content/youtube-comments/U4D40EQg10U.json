@@ -7,6 +7,7 @@
   "video_title": "О, Русь моя! Жена моя! ⚡ НА ПОЛЕ КУЛИКОВОМ ⚡ Александр Блок",
   "reviewed_at": "2026-07-25T15:40:00+00:00",
   "source_ids": [
+    "culture-full-text",
     "wikisource-cycle",
     "wikisource-part-1",
     "wikisource-part-2",
@@ -18,33 +19,38 @@
   "comment_text": "⚔️ «На поле Куликовом» — цикл из пяти стихотворений Александра Блока.\n\nЕго части датированы 7, 8 и 14 июня, 31 июля и 23 декабря 1908 года. Напишите, какая из пяти частей особенно запомнилась после прослушивания: можно указать номер или привести одну строку.\n\n🌐 Сайт The Legendary Poet:\nhttps://thelegendarypoet.ru/\n\n📖 Плейлист «Александр Блок»:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3ua3Q9BQe1Dhuzn7Knbz2djU\n\n🎧 Плейлист «Поющие Поэты»:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8\n\nVK:\nhttps://vk.com/thelegendarypoet\n\nПолный текст цикла:\nhttps://www.culture.ru/poems/275/na-pole-kulikovom",
   "sources": [
     {
+      "source_id": "culture-full-text",
+      "title": "Александр Блок. «На поле Куликовом» — полный текст",
+      "url": "https://www.culture.ru/poems/275/na-pole-kulikovom"
+    },
+    {
       "source_id": "wikisource-cycle",
-      "title": "На поле Куликовом — состав цикла",
+      "title": "«На поле Куликовом» — состав цикла",
       "url": "https://ru.wikisource.org/wiki/На_поле_Куликовом_(Блок)"
     },
     {
       "source_id": "wikisource-part-1",
-      "title": "На поле Куликовом, часть 1",
+      "title": "«На поле Куликовом», часть 1",
       "url": "https://ru.wikisource.org/wiki/На_поле_Куликовом_(Блок)/1"
     },
     {
       "source_id": "wikisource-part-2",
-      "title": "На поле Куликовом, часть 2",
+      "title": "«На поле Куликовом», часть 2",
       "url": "https://ru.wikisource.org/wiki/На_поле_Куликовом_(Блок)/2"
     },
     {
       "source_id": "wikisource-part-3",
-      "title": "На поле Куликовом, часть 3",
+      "title": "«На поле Куликовом», часть 3",
       "url": "https://ru.wikisource.org/wiki/На_поле_Куликовом_(Блок)/3"
     },
     {
       "source_id": "wikisource-part-4",
-      "title": "На поле Куликовом, часть 4",
+      "title": "«На поле Куликовом», часть 4",
       "url": "https://ru.wikisource.org/wiki/На_поле_Куликовом_(Блок)/4"
     },
     {
       "source_id": "wikisource-part-5",
-      "title": "На поле Куликовом, часть 5",
+      "title": "«На поле Куликовом», часть 5",
       "url": "https://ru.wikisource.org/wiki/На_поле_Куликовом_(Блок)/5"
     },
     {
