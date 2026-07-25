@@ -199,8 +199,8 @@ def plan_build_command(
         typer.Option(
             "--targets",
             help=(
-                "Reviewed target manifest with source_snapshot, source_snapshot_generated_at, and operations "
-                "containing content_id/action/target_id/exact-before guards"
+                "Reviewed target manifest with immutable source snapshot metadata and operations containing "
+                "content_id/action/target_id/exact-before guards"
             ),
         ),
     ],
@@ -260,6 +260,7 @@ def plan_build_command(
     try:
         plan = build_content_plan(
             source_snapshot=str(manifest.get("source_snapshot") or ""),
+            source_snapshot_sha256=str(manifest.get("source_snapshot_sha256") or ""),
             source_snapshot_generated_at=str(manifest.get("source_snapshot_generated_at") or ""),
             operations=operations,
         )
@@ -301,8 +302,8 @@ def plan_preflight_command(
         typer.Option(
             "--state",
             help=(
-                "Fresh read-only state bound to the same source_snapshot; every planned target must have an "
-                "explicit exists=true/false observation"
+                "Fresh read-only state bound to the same source snapshot ID and SHA-256; every planned target "
+                "must have an explicit exists=true/false observation"
             ),
         ),
     ],
@@ -324,9 +325,11 @@ def plan_preflight_command(
         raise typer.Exit(code=2)
 
     source_snapshot = str(plan.get("source_snapshot") or "")
+    source_snapshot_sha256 = str(plan.get("source_snapshot_sha256") or "")
     state_by_key, state_errors = validate_preflight_state(
         state_payload,
         expected_source_snapshot=source_snapshot,
+        expected_source_snapshot_sha256=source_snapshot_sha256,
     )
     operations = plan.get("operations")
     assert isinstance(operations, list)
@@ -375,6 +378,7 @@ def plan_preflight_command(
             {
                 "plan_sha256": plan.get("plan_sha256"),
                 "source_snapshot": source_snapshot,
+                "source_snapshot_sha256": source_snapshot_sha256,
                 "counts": dict(sorted(counts.items())),
                 "operations": report_operations,
             },
