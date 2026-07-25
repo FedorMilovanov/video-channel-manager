@@ -74,6 +74,39 @@ def test_add_to_album_is_idempotent(tmp_path: Path) -> None:
     assert calls == ["/method/video.getAlbumsByVideo"]
 
 
+def test_add_to_album_uses_verified_membership_not_response_shape(tmp_path: Path) -> None:
+    calls: list[str] = []
+    album_checks = 0
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        nonlocal album_checks
+        calls.append(request.url.path)
+        if request.url.path.endswith("/video.getAlbumsByVideo"):
+            album_checks += 1
+            albums = [] if album_checks == 1 else [10]
+            return httpx.Response(200, json={"response": albums})
+        if request.url.path.endswith("/video.addToAlbum"):
+            return httpx.Response(200, json={"response": 0})
+        raise AssertionError(request.url)
+
+    writer = _writer(tmp_path, httpx.MockTransport(respond))
+
+    added = writer.add_to_album(
+        community_id=235216998,
+        album_id=10,
+        owner_id=-235216998,
+        video_id=501,
+        verification_delay_seconds=0,
+    )
+
+    assert added is True
+    assert calls == [
+        "/method/video.getAlbumsByVideo",
+        "/method/video.addToAlbum",
+        "/method/video.getAlbumsByVideo",
+    ]
+
+
 def test_upload_file_posts_video_file(tmp_path: Path) -> None:
     media = tmp_path / "video.mp4"
     media.write_bytes(b"video-bytes")
