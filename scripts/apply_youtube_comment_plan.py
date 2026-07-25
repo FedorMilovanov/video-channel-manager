@@ -4,7 +4,6 @@ import argparse
 import json
 import sys
 import time
-from contextlib import nullcontext
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -79,27 +78,13 @@ def _classify_operation(writer: YouTubeCommentWriter, operation: dict[str, Any])
     return "ready", comment_id
 
 
-def _preflight(
-    writer: YouTubeCommentWriter,
-    operations: list[dict[str, Any]],
-    completed_ids: set[str],
-) -> list[dict[str, str]]:
+def _preflight(writer: YouTubeCommentWriter, operations: list[dict[str, Any]]) -> list[dict[str, str]]:
     results: list[dict[str, str]] = []
     for index, operation in enumerate(operations, start=1):
         operation_id = str(operation["operation_id"])
         video_id = str(operation["video_id"])
         title = str(operation.get("video_title") or video_id)
         print(f"[{index}/{len(operations)}] Preflight — {title}")
-        if operation_id in completed_ids:
-            results.append(
-                {
-                    "operation_id": operation_id,
-                    "video_id": video_id,
-                    "status": "journal_completed",
-                    "detail": "completed in the existing journal",
-                }
-            )
-            continue
         try:
             status, detail = _classify_operation(writer, operation)
         except YouTubeCommentsDisabledError as exc:
@@ -121,8 +106,7 @@ def _journal_payload(plan: dict[str, Any], existing: dict[str, Any] | None) -> d
     if existing is not None:
         if existing.get("plan_sha256") != plan.get("plan_sha256"):
             raise ValueError("Existing journal belongs to a different comment plan.")
-        attempts = existing.get("attempts")
-        if not isinstance(attempts, dict):
+        if not isinstance(existing.get("attempts"), dict):
             raise ValueError("Existing comment journal has invalid attempts.")
         return existing
     return {
@@ -135,17 +119,6 @@ def _journal_payload(plan: dict[str, Any], existing: dict[str, Any] | None) -> d
         "updated_at": datetime.now(UTC).isoformat(),
         "status": "pending",
         "attempts": {},
-    }
-
-
-def _completed_operation_ids(journal: dict[str, Any]) -> set[str]:
-    attempts = journal.get("attempts")
-    if not isinstance(attempts, dict):
-        return set()
-    return {
-        str(operation_id)
-        for operation_id, item in attempts.items()
-        if isinstance(item, dict) and item.get("status") == "completed"
     }
 
 
@@ -162,6 +135,13 @@ def _record_attempt(
     attempts[operation_id] = payload
     journal["updated_at"] = datetime.now(UTC).isoformat()
     _write_json(journal_path, journal)
+
+
+def _status_groups(results: list[dict[str, str]]) -> tuple[list[dict[str, str]], list[dict[str, str]], list[dict[str, str]]]:
+    ready = [item for item in results if item["status"] == "ready"]
+    already = [item for item in results if item["status"] == "already_applied"]
+    blockers = [item for item in results if item["status"] not in {"ready", "already_applied"}]
+    return ready, already, blockers
 
 
 def main() -> int:
@@ -198,7 +178,8 @@ def main() -> int:
         return 2
 
     if args.journal is None:
-        args.journal = settings.data_dir / "reports" / f"youtube-comment-apply-{str(plan['plan_sha256'])[7:23]}.json"
+        plan_digest = str(plan["plan_sha256"]).removeprefix("sha256:")[:16]
+        args.journal = settings.data_dir / "reports" / f"youtube-comment-apply-{plan_digest}.json"
     existing_journal: dict[str, Any] | None = None
     if args.journal.exists():
         try:
@@ -212,12 +193,9 @@ def main() -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
 
-    completed_ids = _completed_operation_ids(journal)
     print("Reading live YouTube state before any write…")
-    preflight = _preflight(writer, operations, completed_ids)
-    ready = [item for item in preflight if item["status"] == "ready"]
-    already = [item for item in preflight if item["status"] in {"already_applied", "journal_completed"}]
-    blockers = [item for item in preflight if item["status"] not in {"ready", "already_applied", "journal_completed"}]
+    preflight = _preflight(writer, operations)
+    ready, already, blockers = _status_groups(preflight)
 
     print("YouTube comment preflight:")
     print(f"  channel: {plan['channel_id']}")
@@ -225,12 +203,11 @@ def main() -> int:
     print(f"  plan SHA-256: {plan['plan_sha256']}")
     print(f"  planned operations: {len(operations)}")
     print(f"  ready now: {len(ready)}")
-    print(f"  already applied / journaled: {len(already)}")
+    print(f"  already applied: {len(already)}")
     print(f"  blockers: {len(blockers)}")
     print(f"  estimated write quota: {len(ready) * 50} units")
-    if blockers:
-        for item in blockers:
-            print(f"  BLOCKED {item['video_id']} — {item['status']}: {item['detail']}")
+    for item in blockers:
+        print(f"  BLOCKED {item['video_id']} — {item['status']}: {item['detail']}")
 
     if not args.execute:
         print("Dry-run only. No YouTube write method was called.")
@@ -259,20 +236,15 @@ def main() -> int:
         print("ERROR: live preflight has blockers; refusing all writes.", file=sys.stderr)
         return 2
 
+    ready_ids = {item["operation_id"] for item in ready}
     lock_path = settings.data_dir / "locks" / f"youtube-{args.account}-{expected_channel}.lock"
-    lock_context = local_youtube_write_lock(lock_path, account=args.account, channel_id=expected_channel)
     try:
-        with lock_context:
-            completed_ids = _completed_operation_ids(journal)
+        with local_youtube_write_lock(lock_path, account=args.account, channel_id=expected_channel):
             print("Re-running the complete live preflight under the channel writer lock…")
-            locked_preflight = _preflight(writer, operations, completed_ids)
-            locked_ready = [item for item in locked_preflight if item["status"] == "ready"]
-            locked_blockers = [
-                item
-                for item in locked_preflight
-                if item["status"] not in {"ready", "already_applied", "journal_completed"}
-            ]
-            if locked_blockers or len(locked_ready) != len(ready):
+            locked_preflight = _preflight(writer, operations)
+            locked_ready, _, locked_blockers = _status_groups(locked_preflight)
+            locked_ready_ids = {item["operation_id"] for item in locked_ready}
+            if locked_blockers or locked_ready_ids != ready_ids:
                 raise YouTubeCommentConflictError(
                     "Live comment state changed between review and locked execution; refusing all writes."
                 )
@@ -324,7 +296,6 @@ def main() -> int:
                         },
                     )
                     journal["status"] = "partial_failure"
-                    journal["updated_at"] = datetime.now(UTC).isoformat()
                     _write_json(args.journal, journal)
                     raise
                 _record_attempt(
@@ -344,13 +315,9 @@ def main() -> int:
                 if args.write_delay > 0 and index < len(locked_ready):
                     time.sleep(args.write_delay)
 
-            final_preflight = _preflight(writer, operations, _completed_operation_ids(journal))
-            final_blockers = [
-                item
-                for item in final_preflight
-                if item["status"] not in {"already_applied", "journal_completed"}
-            ]
-            if final_blockers:
+            final_preflight = _preflight(writer, operations)
+            final_ready, final_already, final_blockers = _status_groups(final_preflight)
+            if final_ready or final_blockers or len(final_already) != len(operations):
                 raise YouTubeCommentError("Full postflight did not confirm every planned comment operation.")
             journal["status"] = "completed"
             journal["completed_at"] = datetime.now(UTC).isoformat()
@@ -361,7 +328,7 @@ def main() -> int:
         print(f"Journal → {args.journal}", file=sys.stderr)
         return 1
 
-    print(f"YouTube comment synchronization completed: {len(locked_ready)} write(s) verified.")
+    print(f"YouTube comment synchronization completed: {len(ready)} write(s) verified.")
     print(f"Journal → {args.journal}")
     return 0
 
