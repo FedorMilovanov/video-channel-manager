@@ -152,12 +152,22 @@ class VkThumbnailWriter:
                     "VK thumbnail upload server returned a non-object response.",
                     method="video.thumbUpload",
                 )
+
+            # VK has two upload-server response shapes in production. Older
+            # responses wrap the opaque value in `thumb_json`; current servers
+            # return the opaque JSON object itself (server/hash/secret/meta/etc.).
+            # video.saveUploadedThumb expects the complete raw upload response as
+            # its `thumb_json` parameter, so preserve the exact response text.
             thumb_json = payload.get("thumb_json")
             if not isinstance(thumb_json, str) or not thumb_json:
-                raise VkWriteError(
-                    f"VK thumbnail upload response has no thumb_json: {json.dumps(payload, ensure_ascii=False)[:500]}",
-                    method="video.thumbUpload",
-                )
+                raw_thumb_json = response.text.strip()
+                if not raw_thumb_json:
+                    raise VkWriteError(
+                        "VK thumbnail upload server returned an empty response.",
+                        method="video.thumbUpload",
+                    )
+                payload = dict(payload)
+                payload["thumb_json"] = raw_thumb_json
             return payload
         except httpx.HTTPError as exc:
             raise VkWriteError(
