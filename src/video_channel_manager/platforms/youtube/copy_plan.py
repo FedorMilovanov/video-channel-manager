@@ -43,6 +43,12 @@ def _required_string(value: object, field: str) -> str:
     return value
 
 
+def _required_text(value: object, field: str) -> str:
+    if not isinstance(value, str):
+        raise ValueError(f"YouTube copy plan field {field} must be a string.")
+    return value
+
+
 def validate_copy_plan(plan: dict[str, Any]) -> None:
     """Validate schema, target identity, operation hashes, coverage, and self-digest."""
 
@@ -91,8 +97,8 @@ def validate_copy_plan(plan: dict[str, Any]) -> None:
     for operation in operations:
         video_id = _required_string(operation.get("video_id"), "operation.video_id")
         channel_id = _required_string(operation.get("channel_id"), f"{video_id}.channel_id")
-        before = _required_string(operation.get("before_description"), f"{video_id}.before_description")
-        after = _required_string(operation.get("after_description"), f"{video_id}.after_description")
+        before = _required_text(operation.get("before_description"), f"{video_id}.before_description")
+        after = _required_text(operation.get("after_description"), f"{video_id}.after_description")
         expected_revision = _required_string(operation.get("expected_revision"), f"{video_id}.expected_revision")
         _ = expected_revision
         if video_id not in checked_set:
