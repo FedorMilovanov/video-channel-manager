@@ -88,12 +88,20 @@ def test_vk_catalog_plan_reuses_guards_and_gets_canonical_description() -> None:
     assert adapted["plan_sha256"] != original["plan_sha256"]
 
 
-def test_vk_catalog_plan_rejects_draft_or_unreviewed_content() -> None:
+def test_vk_catalog_plan_rejects_draft_unreviewed_or_malformed_review() -> None:
     record = _record()
     draft = replace(record, status="draft", reviewed_at=None)
-    with pytest.raises(ValueError, match="approved, reviewed"):
+    with pytest.raises(ValueError, match="timezone-aware review"):
         apply_editorial_records_to_vk_catalog_plan(_catalog_plan(), [draft])
 
     unreviewed = replace(record, reviewed_at=None)
-    with pytest.raises(ValueError, match="approved, reviewed"):
+    with pytest.raises(ValueError, match="timezone-aware review"):
         apply_editorial_records_to_vk_catalog_plan(_catalog_plan(), [unreviewed])
+
+    malformed = replace(record, reviewed_at="yesterday")
+    with pytest.raises(ValueError, match="timezone-aware review"):
+        apply_editorial_records_to_vk_catalog_plan(_catalog_plan(), [malformed])
+
+    naive = replace(record, reviewed_at="2026-07-25T20:22:00")
+    with pytest.raises(ValueError, match="timezone-aware review"):
+        apply_editorial_records_to_vk_catalog_plan(_catalog_plan(), [naive])
