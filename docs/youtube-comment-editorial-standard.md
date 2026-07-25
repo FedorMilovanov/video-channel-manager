@@ -82,7 +82,7 @@ Recommended rendering:
 ```text
 📌 *The Legendary Poet:* https://thelegendarypoet.ru/
 🎧 *Сергей Есенин — плейлист:* https://www.youtube.com/playlist?list=...
-*Сообщество проекта VK:* https://vk.com/thelegendarypoet
+*Сообщество проекта в VK:* https://vk.com/thelegendarypoet
 📚 _Полный текст:_ https://...
 ```
 
@@ -90,7 +90,7 @@ Rules:
 
 - the site label uses `📌` and restrained bold;
 - a playlist label uses `🎧` and names the actual author, series, or category;
-- the VK label is exactly `*Сообщество проекта VK:*`;
+- the canonical VK label is `*Сообщество проекта в VK:*`;
 - a primary-text label uses `📚` and restrained emphasis;
 - use only links relevant to the exact video;
 - two or three links are preferred; four are allowed when the primary text genuinely adds value;
@@ -130,7 +130,7 @@ _[short lead if useful]:_ [one specific question]?
 
 📌 *The Legendary Poet:* https://thelegendarypoet.ru/
 🎧 *[relevant playlist label]:* [playlist URL]
-*Сообщество проекта VK:* https://vk.com/thelegendarypoet
+*Сообщество проекта в VK:* https://vk.com/thelegendarypoet
 [optional primary-text line]
 ```
 

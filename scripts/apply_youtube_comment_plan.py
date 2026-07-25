@@ -55,8 +55,8 @@ def _classify_operation(writer: YouTubeCommentWriter, operation: dict[str, Any])
     if identity.channel_id != channel_id:
         return "conflict", f"video belongs to {identity.channel_id}"
 
+    owned = _owned_comments(writer, video_id=video_id, channel_id=channel_id)
     if action == "create":
-        owned = _owned_comments(writer, video_id=video_id, channel_id=channel_id)
         for item in owned:
             if comments_equivalent(item.text, new_text):
                 return "already_applied", item.comment_id
@@ -66,11 +66,11 @@ def _classify_operation(writer: YouTubeCommentWriter, operation: dict[str, Any])
 
     comment_id = str(operation.get("expected_comment_id") or "")
     expected_text = str(operation.get("expected_comment_text") or "")
-    current = writer.read_comment(comment_id)
+    current = next((item for item in owned if item.comment_id == comment_id), None)
+    if current is None:
+        return "conflict", "expected channel-authored comment was not found on the target video"
     if current.video_id != video_id or current.channel_id != channel_id:
         return "conflict", "existing comment target mismatch"
-    if current.author_channel_id != channel_id:
-        return "conflict", "existing comment is not authored by the channel"
     if comments_equivalent(current.text, new_text):
         return "already_applied", comment_id
     if not comments_equivalent(current.text, expected_text):
