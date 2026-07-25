@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-manager.youtube-comment-content",
+  "schema_version": 1,
+  "status": "approved",
+  "channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+  "video_id": "jkaayeq7q8g",
+  "video_title": "«Шёпот, робкое дыханье…» ⚡ Фет Слышит Пульс Зари @TheLegendaryPoet",
+  "reviewed_at": "2026-07-25T16:18:00+00:00",
+  "source_ids": [
+    "fet-whisper-edition",
+    "playlist-fet",
+    "playlist-singing-poets"
+  ],
+  "comment_text": "📖 «Шёпот, робкое дыханье…» впервые опубликовано в журнале «Москвитянин» в 1850 году. Одна из самых заметных особенностей текста — отсутствие глаголов: движение ночи к заре создаётся последовательностью звуков, света и отдельных предметных образов.\n\nНа каком переходе это особенно слышно в музыкальной версии: от шёпота к соловью, от теней к лицу или от слёз к заре?\n\n🌐 Сайт The Legendary Poet:\nhttps://thelegendarypoet.ru/\n\n📖 Плейлист «Афанасий Фет»:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3uYTrhcN1TDMUeks46Y-TT_M\n\n🎧 Плейлист «Поющие Поэты»:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8\n\nVK:\nhttps://vk.com/thelegendarypoet\n\nТекст и примечание к первой публикации:\nhttps://ru.wikisource.org/wiki/Шёпот,_робкое_дыханье_(Фет)",
+  "sources": [
+    {
+      "source_id": "fet-whisper-edition",
+      "title": "Афанасий Фет. «Шёпот, робкое дыханье…»",
+      "url": "https://ru.wikisource.org/wiki/Шёпот,_робкое_дыханье_(Фет)"
+    },
+    {
+      "source_id": "playlist-fet",
+      "title": "Плейлист «Афанасий Фет»",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uYTrhcN1TDMUeks46Y-TT_M"
+    },
+    {
+      "source_id": "playlist-singing-poets",
+      "title": "Плейлист «Поющие Поэты»",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8"
+    }
+  ]
+}
