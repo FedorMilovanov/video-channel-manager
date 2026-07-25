@@ -9,10 +9,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from video_channel_manager.config import get_settings
-from video_channel_manager.platforms.vk import VkApiClient, VkInventoryService, VkTokenStore
+from video_channel_manager.exchange.audit_package import AuditPackage
+from video_channel_manager.platforms.vk import VkApiClient, VkTokenStore
 from video_channel_manager.platforms.vk.live_description_audit import (
     build_live_description_cleanup_plan,
     render_live_description_report,
+    validate_live_description_cleanup_plan,
 )
 
 
@@ -47,8 +49,23 @@ def main() -> int:
         raise SystemExit("The authorized VK user is not reported as an administrator of this community.")
 
     print(f"Reading every live VK video for community {community_id} — {community.title}…")
-    live = VkInventoryService(reader).build_audit_package(community_id)
+    videos = reader.list_videos(community_id)
+    remote_ids = [video.ref.remote_id for video in videos]
+    if len(remote_ids) != len(set(remote_ids)):
+        raise RuntimeError("VK returned duplicate video IDs; refusing to build a cleanup plan.")
+    live = AuditPackage(
+        channel=community,
+        videos=videos,
+        metadata={
+            "source": "vk-api-video-only",
+            "api_version": settings.vk_api_version,
+            "account_alias": args.account,
+            "read_only": True,
+            "complete_video_pagination": True,
+        },
+    )
     plan = build_live_description_cleanup_plan(live, community_id=community_id)
+    validate_live_description_cleanup_plan(plan)
 
     timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
     plan_output = args.plan_output or settings.data_dir / "reports" / f"vk-live-description-cleanup-{timestamp}.json"
@@ -72,6 +89,8 @@ def main() -> int:
         )
     )
     print(f"Live snapshot confirmation value: {plan['live_snapshot_id']}")
+    print(f"Plan SHA-256 confirmation value: {plan['plan_sha256']}")
+    print(f"Coverage SHA-256: {plan['coverage_remote_ids_sha256']}")
     return 0
 
 
