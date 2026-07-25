@@ -16,7 +16,12 @@ python scripts/build_youtube_comment_editorial_queue.py ...
 python scripts/audit_all_vk_descriptions.py ...
 ```
 
-Do not author against stale target IDs or remembered remote text.
+Do not author against stale target IDs or remembered remote text. Preserve the audit JSON and calculate its SHA-256 before building a generic plan:
+
+```powershell
+$hash = (Get-FileHash .\artifacts\vk-audit.json -Algorithm SHA256).Hash.ToLowerInvariant()
+$snapshotSha256 = "sha256:$hash"
+```
 
 ## Validate records
 
@@ -44,11 +49,12 @@ Batch preview rejects duplicate variation keys, duplicate content IDs, and dupli
 
 ## Build a generic signed content plan
 
-Prepare a reviewed target manifest:
+Prepare a reviewed target manifest. `source_snapshot_sha256` is the SHA-256 of the exact immutable audit file used for authoring and target selection:
 
 ```json
 {
   "source_snapshot": "artifacts/vk-audit.json",
+  "source_snapshot_sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "source_snapshot_generated_at": "2026-07-25T20:30:00+00:00",
   "operations": [
     {
@@ -69,17 +75,18 @@ video-manager content plan build --platform vk --surface video_description --inp
 video-manager content plan validate artifacts/vk-editorial-plan.json
 ```
 
-The plan contains deterministic operation IDs, exact-before hashes, expected revisions, rendered hashes, operation-set hash, counts, and a final plan SHA-256. Snapshot and review timestamps must be timezone-aware ISO-8601 values.
+The plan contains deterministic operation IDs, immutable snapshot metadata, exact-before hashes, expected revisions, rendered hashes, operation-set hash, counts, and a final plan SHA-256. Snapshot and review timestamps must be timezone-aware ISO-8601 values.
 
 ## Read-only preflight and resume classification
 
-The state document must be produced from a fresh read-only snapshot and must name the **same** `source_snapshot` as the signed plan. Every planned target needs one and only one explicit observation.
+The state document must be produced from a fresh read-only snapshot and must name the **same** `source_snapshot` and `source_snapshot_sha256` as the signed plan. Every planned target needs one and only one explicit observation.
 
 Existing target:
 
 ```json
 {
   "source_snapshot": "artifacts/vk-audit.json",
+  "source_snapshot_sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "source_snapshot_generated_at": "2026-07-25T20:30:00+00:00",
   "targets": [
     {
@@ -99,6 +106,7 @@ Confirmed absence, for a reviewed `create` operation:
 ```json
 {
   "source_snapshot": "artifacts/youtube-comment-audit.json",
+  "source_snapshot_sha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "source_snapshot_generated_at": "2026-07-25T20:30:00+00:00",
   "targets": [
     {
@@ -124,13 +132,14 @@ video-manager content plan preflight artifacts/vk-editorial-plan.json `
 Every operation becomes `ready`, `already_applied`, or `conflict`. The command fails closed when:
 
 - `source_snapshot` differs from the signed plan;
+- the immutable `source_snapshot_sha256` differs;
 - a planned target is missing from state coverage;
 - a target is repeated;
 - `exists` is absent or not boolean;
 - an existing target lacks exact current text or revision;
 - an absent target carries invented current text or revision.
 
-Omitting a target is never interpreted as proof that it does not exist.
+Omitting a target is never interpreted as proof that it does not exist. Reusing the same file path after overwriting the file is also rejected because its SHA-256 changes.
 
 ## YouTube comments apply path
 
