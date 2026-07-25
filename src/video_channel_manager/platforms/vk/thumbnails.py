@@ -52,7 +52,20 @@ class VkThumbnailWriter:
             raise VkWriteError("Stored VK token does not declare the video permission.", method="token", code=7)
         return token.access_token
 
-    def _call(self, method: str, *, params: ApiParams | None = None) -> object:
+    def _call(
+        self,
+        method: str,
+        *,
+        params: ApiParams | None = None,
+        retry_transient: bool = False,
+    ) -> object:
+        """Retry only read/reservation-URL methods explicitly marked safe.
+
+        ``video.saveUploadedThumb`` changes the selected thumbnail and can create
+        an additional photo object. An ambiguous 5xx/network response must not be
+        blindly repeated by the low-level client.
+        """
+
         request_data: dict[str, str] = {
             "access_token": self._token_value(),
             "v": self.api_version,
@@ -60,14 +73,15 @@ class VkThumbnailWriter:
         for key, value in (params or {}).items():
             request_data[key] = "1" if value is True else "0" if value is False else str(value)
 
+        attempts = self.max_attempts if retry_transient else 1
         delay_seconds = 0.5
         last_error: VkWriteError | None = None
-        for attempt in range(self.max_attempts):
+        for attempt in range(attempts):
             try:
                 return self._call_once(method, request_data)
             except VkWriteError as exc:
                 last_error = exc
-                if not exc.retryable or attempt + 1 >= self.max_attempts:
+                if not exc.retryable or attempt + 1 >= attempts:
                     raise
                 time.sleep(delay_seconds)
                 delay_seconds *= 2
@@ -115,9 +129,21 @@ class VkThumbnailWriter:
                 client.close()
 
     def get_upload_url(self, *, owner_id: int) -> str:
-        response = self._call("video.getThumbUploadUrl", params={"owner_id": owner_id})
+        if owner_id == 0:
+            raise ValueError("owner_id cannot be zero")
+        response = self._call(
+            "video.getThumbUploadUrl",
+            params={"owner_id": owner_id},
+            retry_transient=True,
+        )
         upload_url = response.get("upload_url") if isinstance(response, dict) else None
-        if not isinstance(upload_url, str) or not upload_url.startswith(("http://", "https://")):
+        if not isinstance(upload_url, str):
+            raise VkWriteError(
+                "video.getThumbUploadUrl returned an invalid upload URL.",
+                method="video.getThumbUploadUrl",
+            )
+        upload_url = upload_url.strip()
+        if not upload_url.lower().startswith(("http://", "https://")):
             raise VkWriteError(
                 "video.getThumbUploadUrl returned an invalid upload URL.",
                 method="video.getThumbUploadUrl",
@@ -125,9 +151,15 @@ class VkThumbnailWriter:
         return upload_url
 
     def upload_image(self, *, upload_url: str, path: Path) -> dict[str, Any]:
+        if not upload_url.strip().lower().startswith(("http://", "https://")):
+            raise ValueError("upload_url must be an absolute http(s) URL")
         if not path.is_file():
             raise FileNotFoundError(path)
+        if path.stat().st_size <= 0:
+            raise ValueError(f"Thumbnail file is empty: {path}")
         content_type = mimetypes.guess_type(path.name)[0] or "image/jpeg"
+        if not content_type.startswith("image/"):
+            raise ValueError(f"Thumbnail path has a non-image media type: {content_type}")
         client = self._http_client or httpx.Client(
             timeout=httpx.Timeout(connect=60.0, read=600.0, write=600.0, pool=60.0),
             follow_redirects=True,
@@ -191,6 +223,8 @@ class VkThumbnailWriter:
         video_id: int,
         upload_payload: dict[str, Any],
     ) -> dict[str, Any]:
+        if owner_id == 0 or video_id <= 0:
+            raise ValueError("owner_id cannot be zero and video_id must be positive")
         thumb_json = upload_payload.get("thumb_json")
         if not isinstance(thumb_json, str) or not thumb_json:
             raise ValueError("upload_payload must contain non-empty thumb_json")
@@ -213,10 +247,16 @@ class VkThumbnailWriter:
                 method="video.saveUploadedThumb",
             )
         photo_id = response.get("photo_id")
+        photo_owner_id = response.get("photo_owner_id")
         photo_hash = response.get("photo_hash")
-        if not isinstance(photo_id, int) or not isinstance(photo_hash, str):
+        if not isinstance(photo_id, int) or photo_id <= 0 or not isinstance(photo_hash, str) or not photo_hash:
             raise VkWriteError(
                 "video.saveUploadedThumb returned an incomplete result.",
+                method="video.saveUploadedThumb",
+            )
+        if isinstance(photo_owner_id, int) and photo_owner_id != owner_id:
+            raise VkWriteError(
+                f"video.saveUploadedThumb returned photo owner {photo_owner_id}, expected {owner_id}.",
                 method="video.saveUploadedThumb",
             )
         return response
