@@ -93,6 +93,7 @@ class OAuthToken(StrictModel):
         payload: dict[str, Any],
         *,
         previous_refresh_token: str | None = None,
+        previous_scopes: list[str] | None = None,
     ) -> "OAuthToken":
         now = datetime.now(UTC)
         expires_in = int(payload.get("expires_in", 3600))
@@ -100,7 +101,7 @@ class OAuthToken(StrictModel):
             access_token=str(payload["access_token"]),
             refresh_token=payload.get("refresh_token") or previous_refresh_token,
             token_type=str(payload.get("token_type", "Bearer")),
-            scopes=payload.get("scope", []),
+            scopes=payload.get("scope", previous_scopes or []),
             issued_at=now,
             expires_at=now + timedelta(seconds=max(expires_in, 0)),
         )
