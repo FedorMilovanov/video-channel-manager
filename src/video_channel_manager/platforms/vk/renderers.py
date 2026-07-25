@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from video_channel_manager.editorial.content import EditorialContentRecord, LinkBlock, contains_banned_circle
+from video_channel_manager.editorial.linking import ordered_links
 from video_channel_manager.editorial.rendering import (
     ContentSurface,
     PlatformName,
@@ -12,22 +13,32 @@ from video_channel_manager.editorial.rendering import (
 from video_channel_manager.platforms.vk.text import render_vk_video_description
 
 
-def _plain(value: str) -> str:
-    return render_vk_video_description(value, site_url="", brand_line="").text
+def _plain(value: str, *, context: str) -> tuple[str, list[RenderIssue]]:
+    rendered = render_vk_video_description(value, site_url="", brand_line="")
+    issues = [
+        RenderIssue(
+            code=f"vk_{context}_{issue.code}",
+            severity=issue.severity,
+            message=issue.message,
+        )
+        for issue in rendered.issues
+    ]
+    return rendered.text, issues
 
 
-def _link_line(label: str, url: str) -> str:
-    plain_label = _plain(label).strip()
+def _link_line(label: str, url: str, *, index: int) -> tuple[str, list[RenderIssue]]:
+    plain_label, issues = _plain(label, context=f"link_{index}")
+    plain_label = plain_label.strip()
     separator = " " if plain_label.endswith((":", "：", "—", "–", "-")) else ": "
-    return f"{plain_label}{separator}{url}".strip()
+    return f"{plain_label}{separator}{url}".strip(), issues
 
 
 def _selected_links(record: EditorialContentRecord, *, surface: str) -> tuple[LinkBlock, ...]:
-    links = list(record.links_for("vk", surface))
+    links = list(ordered_links(record, platform="vk", surface=surface))
     if surface != "comment" or len(links) <= 2:
         return tuple(links)
     priority = {"primary_text": 0, "full_version": 0, "site": 1, "vk": 2, "playlist": 3, "vk_album": 3}
-    links.sort(key=lambda item: (priority.get(item.kind, 4), item.kind))
+    links.sort(key=lambda item: priority.get(item.kind, 4))
     return tuple(links[:2])
 
 
@@ -41,15 +52,26 @@ def _render_vk(record: EditorialContentRecord, *, surface: str) -> tuple[str, li
                 message=f"Content record does not allow vk.{surface} rendering.",
             )
         )
-    heading = _plain(record.fact.heading)
-    fact = _plain(record.fact.text)
-    question = _plain(f"{record.question.lead} {record.question.text}".strip())
+    heading, heading_issues = _plain(record.fact.heading, context="heading")
+    fact, fact_issues = _plain(record.fact.text, context="fact")
+    question, question_issues = _plain(
+        f"{record.question.lead} {record.question.text}".strip(),
+        context="question",
+    )
+    issues.extend(heading_issues)
+    issues.extend(fact_issues)
+    issues.extend(question_issues)
+
     selected_links = _selected_links(record, surface=surface)
-    link_lines = [_link_line(link.label, link.url) for link in selected_links]
+    link_lines: list[str] = []
+    for index, link in enumerate(selected_links):
+        line, link_issues = _link_line(link.label, link.url, index=index)
+        link_lines.append(line)
+        issues.extend(link_issues)
     blocks = [heading, fact, question, "\n".join(link_lines)]
     text = "\n\n".join(block for block in blocks if block).strip()
 
-    all_links = record.links_for("vk", surface)
+    all_links = ordered_links(record, platform="vk", surface=surface)
     if surface == "comment" and len(all_links) > len(selected_links):
         issues.append(
             RenderIssue(
