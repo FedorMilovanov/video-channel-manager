@@ -11,7 +11,8 @@ from video_channel_manager.config import get_settings
 from video_channel_manager.exchange.audit_package import AuditPackage
 from video_channel_manager.platforms.youtube.comment_content import (
     CONTENT_SCHEMA_NAME,
-    CONTENT_SCHEMA_VERSION,
+    SUPPORTED_CONTENT_SCHEMA_VERSIONS,
+    render_comment_content,
     validate_comment_content,
 )
 from video_channel_manager.platforms.youtube.comment_plan import (
@@ -42,11 +43,12 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 
 def _load_content_records(content_dir: Path) -> dict[str, dict[str, Any]]:
     records: dict[str, dict[str, Any]] = {}
+    variation_keys: dict[str, Path] = {}
     for path in sorted(content_dir.rglob("*.json")):
         payload = _read_json(path)
         if payload.get("schema_name") != CONTENT_SCHEMA_NAME:
             continue
-        if payload.get("schema_version") != CONTENT_SCHEMA_VERSION:
+        if payload.get("schema_version") not in SUPPORTED_CONTENT_SCHEMA_VERSIONS:
             raise ValueError(f"Unsupported comment content schema in {path}")
         validation_errors = validate_comment_content(payload)
         if validation_errors:
@@ -54,6 +56,12 @@ def _load_content_records(content_dir: Path) -> dict[str, dict[str, Any]]:
         video_id = str(payload.get("video_id") or "").strip()
         if video_id in records:
             raise ValueError(f"Duplicate comment content for video {video_id}: {path}")
+        variation_key = str(payload.get("variation_key") or "").strip()
+        if variation_key:
+            previous = variation_keys.get(variation_key)
+            if previous is not None:
+                raise ValueError(f"Duplicate variation_key {variation_key}: {previous} and {path}")
+            variation_keys[variation_key] = path
         payload["_path"] = str(path)
         records[video_id] = payload
     return records
@@ -176,7 +184,7 @@ def main() -> int:
             continue
         source_ids = record.get("source_ids")
         assert isinstance(source_ids, list)
-        comment_text = str(record.get("comment_text") or "")
+        comment_text = render_comment_content(record)
         reviewed_at = str(record.get("reviewed_at") or "").strip()
 
         live = audit_by_id[video_id]
@@ -258,18 +266,15 @@ def main() -> int:
     )
     validation_errors = validate_comment_plan(plan)
     if validation_errors:
-        print("ERROR: generated plan failed self-validation:", file=sys.stderr)
-        for error in validation_errors:
-            print(f"  - {error}", file=sys.stderr)
+        print(f"ERROR: generated comment plan is invalid: {'; '.join(validation_errors)}", file=sys.stderr)
         return 2
 
-    settings = get_settings()
     if args.output is None:
         timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
-        args.output = settings.data_dir / "reports" / f"youtube-comment-plan-{channel_id}-{timestamp}.json"
+        args.output = get_settings().data_dir / "reports" / f"youtube-comment-plan-{channel_id}-{timestamp}.json"
     _write_json(args.output, plan)
-    report_path = args.output.with_suffix(".md")
-    report_path.write_text(
+    markdown_path = args.output.with_suffix(".md")
+    markdown_path.write_text(
         _report_markdown(
             plan=plan,
             already_applied=already_applied,
@@ -278,14 +283,13 @@ def main() -> int:
         ),
         encoding="utf-8",
     )
-
     print("YouTube comment plan built:")
-    print(f"  operations: {len(operations)}")
+    print(f"  operations: {len(plan['operations'])}")
     print(f"  already applied: {len(already_applied)}")
     print(f"  review-only: {len(review_only)}")
     print(f"  plan SHA-256: {plan['plan_sha256']}")
     print(f"JSON → {args.output}")
-    print(f"Markdown → {report_path}")
+    print(f"Markdown → {markdown_path}")
     return 0
 
 
