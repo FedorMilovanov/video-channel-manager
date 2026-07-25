@@ -418,8 +418,7 @@ def validate_content_record(payload: dict[str, Any], *, expected_channel_id: str
             unknown_surfaces = sorted(set(surfaces).difference(allowed_surfaces))
             if unknown_surfaces:
                 errors.append(
-                    f"links[{index}].surfaces contains unsupported {platform} surfaces: "
-                    f"{', '.join(unknown_surfaces)}"
+                    f"links[{index}].surfaces contains unsupported {platform} surfaces: {', '.join(unknown_surfaces)}"
                 )
     if len(link_kinds) != len(set(link_kinds)):
         errors.append("links cannot repeat the same kind")
@@ -476,8 +475,7 @@ def parse_content_record(
     raw_suitability = payload.get("platform_suitability")
     if isinstance(raw_suitability, dict):
         suitability = {
-            str(platform): frozenset(_string_list(raw_surfaces))
-            for platform, raw_surfaces in raw_suitability.items()
+            str(platform): frozenset(_string_list(raw_surfaces)) for platform, raw_surfaces in raw_suitability.items()
         }
     raw_rendering = payload.get("rendering_metadata")
     rendering_metadata = MappingProxyType(dict(raw_rendering) if isinstance(raw_rendering, dict) else {})

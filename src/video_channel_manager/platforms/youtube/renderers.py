@@ -114,9 +114,7 @@ def _youtube_style_issues(record: EditorialContentRecord, *, surface: str) -> li
             )
         )
     primary = link_by_kind.get("primary_text")
-    if primary is not None and not (
-        primary.label.startswith("📚 ") and ("*" in primary.label or "_" in primary.label)
-    ):
+    if primary is not None and not (primary.label.startswith("📚 ") and ("*" in primary.label or "_" in primary.label)):
         issues.append(
             RenderIssue(
                 code="youtube_primary_text_label_style",

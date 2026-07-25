@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import unicodedata
 from dataclasses import dataclass
 from datetime import datetime

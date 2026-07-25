@@ -97,8 +97,12 @@ def main() -> int:
     parser.add_argument("--channel", required=True)
     parser.add_argument("--content-dir", type=Path)
     parser.add_argument("--snapshot", type=Path, help="Use an existing snapshot instead of running a fresh scan.")
-    parser.add_argument("--skip-scan", action="store_true", help="Use the newest matching snapshot in the data directory.")
-    parser.add_argument("--create-missing", action="store_true", help="Also create approved comments where none exists.")
+    parser.add_argument(
+        "--skip-scan", action="store_true", help="Use the newest matching snapshot in the data directory."
+    )
+    parser.add_argument(
+        "--create-missing", action="store_true", help="Also create approved comments where none exists."
+    )
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--confirm-channel", default="")
     parser.add_argument("--write-delay", type=float, default=3.0)

@@ -75,9 +75,7 @@ def apply_editorial_records_to_vk_catalog_plan(
         raise ValueError(
             "No canonical editorial record for source videos: " + ", ".join(sorted(set(missing_source_ids)))
         )
-    duplicate_variations = sorted(
-        value for value, count in Counter(used_variations).items() if value and count > 1
-    )
+    duplicate_variations = sorted(value for value, count in Counter(used_variations).items() if value and count > 1)
     if duplicate_variations:
         raise ValueError(f"Duplicate variation keys in VK catalog plan: {duplicate_variations}")
     duplicate_renderings = sorted(

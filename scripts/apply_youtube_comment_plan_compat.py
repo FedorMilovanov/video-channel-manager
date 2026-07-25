@@ -273,9 +273,7 @@ def _update_top_level_comment_compat(
     if comments_equivalent(current.text, normalized_new):
         return current
     if not comments_equivalent(current.text, expected_text):
-        raise YouTubeCommentConflictError(
-            f"Comment {comment_id} text changed after review; refusing to overwrite it."
-        )
+        raise YouTubeCommentConflictError(f"Comment {comment_id} text changed after review; refusing to overwrite it.")
 
     payload = self._request(  # type: ignore[attr-defined]
         "PUT",

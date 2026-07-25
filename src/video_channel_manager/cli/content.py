@@ -101,12 +101,15 @@ def validate_command(
 def preview_command(
     input_path: Annotated[Path, typer.Option("--input", "-i", help="Canonical JSON file or directory")],
     platform: Annotated[str, typer.Option("--platform", "-p", help="youtube or vk")],
-    surface: Annotated[str | None, typer.Option("--surface", help="comment, description, video_description, post")]
-    = None,
-    json_output: Annotated[Path | None, typer.Option("--json-output", help="Optional machine-readable preview report")]
-    = None,
-    strict: Annotated[bool, typer.Option("--strict/--no-strict", help="Fail on renderer warnings as well as errors")]
-    = False,
+    surface: Annotated[
+        str | None, typer.Option("--surface", help="comment, description, video_description, post")
+    ] = None,
+    json_output: Annotated[
+        Path | None, typer.Option("--json-output", help="Optional machine-readable preview report")
+    ] = None,
+    strict: Annotated[
+        bool, typer.Option("--strict/--no-strict", help="Fail on renderer warnings as well as errors")
+    ] = False,
 ) -> None:
     """Render one record or a batch without any remote mutation."""
 
@@ -169,9 +172,7 @@ def preview_command(
         )
         console.print(f"[green]Preview report written to {json_output}[/green]")
 
-    warning_count = sum(
-        1 for item in batch.items for issue in item.rendered.issues if issue.severity == "warning"
-    )
+    warning_count = sum(1 for item in batch.items for issue in item.rendered.issues if issue.severity == "warning")
     error_count = sum(1 for item in batch.items for issue in item.rendered.issues if issue.severity == "error")
     if batch.errors or error_count or (strict and warning_count):
         raise typer.Exit(code=2)
@@ -332,9 +333,7 @@ def plan_preflight_command(
         state = operation_state(
             raw,
             current_text=(
-                str(current.get("current_text"))
-                if current and current.get("current_text") is not None
-                else None
+                str(current.get("current_text")) if current and current.get("current_text") is not None else None
             ),
             current_revision=(
                 str(current.get("current_revision"))
