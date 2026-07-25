@@ -1,131 +1,144 @@
 # Video Channel Manager
 
-**Video Channel Manager** is a safety-first toolkit for auditing, organizing, and synchronizing video channels across YouTube, VK, local storage, and future platforms.
+**Video Channel Manager** — safety-first инструмент для аудита, редакционной проверки, организации и синхронизации видеоканалов YouTube, VK и локального медиархива.
 
-It is not a one-off YouTube → VK script. The core is platform-neutral and supports independent work with each channel:
+Это не одноразовый YouTube → VK скрипт. Проект строится как платформенно-нейтральный модульный монолит:
 
-- authorize multiple YouTube accounts with read-only or explicitly requested guarded-write OAuth;
-- export channels, videos, playlists, and memberships as a versioned `AuditPackage`;
-- organize titles, descriptions, thumbnails, tags, and playlists through reviewed plans;
-- audit a VK community and its video albums in future phases;
-- compare platforms and detect missing or duplicate publications;
-- import a structured `ChangePlan` prepared by an external AI assistant;
-- preview, validate, approve, execute, verify, and roll back changes;
-- index local media without moving or deleting files.
+- несколько локальных YouTube/VK account aliases;
+- полные read-only снимки `AuditPackage`;
+- версионированные `ChangePlan` и платформенные планы;
+- точные remote IDs без угадывания;
+- deterministic text renderers для каждой платформы;
+- dry-run, exact confirmations и per-target single-writer locks;
+- backup, per-operation journal, postcondition verification и guarded rollback;
+- локальный media/image QC и SHA-256 fingerprints;
+- SQLAlchemy/Alembic foundation для будущего operation ledger.
 
-> Status: YouTube read-only OAuth, complete channel inventory, deterministic description validation, conservative description plans, guarded writes, verification, backups, and recovery are operational. Playlist and destructive remote mutations remain disabled until their own policy gates and rollback paths are implemented.
+> **Статус:** YouTube и VK read-only inventory работают. Для одобренных сценариев реализованы узкие guarded writers, self-validating планы, recovery scripts и полная postflight-проверка. Удаления, playlist mutations и unattended remote writes остаются выключенными до появления собственных policy gates и rollback paths.
 
-## Core principles
+## Основные инварианты
 
-1. **Read-only by default.** Scans and audits never mutate remote platforms.
-2. **External AI, deterministic executor.** AI analyzes exported data and returns a versioned plan; the application validates and executes only supported deterministic operations.
-3. **Dry-run before write.** Every mutation command performs a complete live preflight before writing.
-4. **No guessed IDs.** All remote objects are referenced by exact platform IDs.
-5. **Description-state concurrency.** A write proceeds only when live text matches the planned before-state; the planned after-state is idempotently accepted, and every third state is rejected.
-6. **Idempotency.** Re-running a plan must not duplicate or overwrite work already applied.
-7. **Auditability.** Snapshots, plans, backups, attempts, outcomes, postflight checks, and rollback results are persisted.
-8. **Human editorial boundary.** The bot automates only mechanically provable formatting changes; semantic punctuation and factual edits stay review-only.
-9. **Modular monolith.** One deployable application with strict domain and adapter boundaries.
+1. **Read-only по умолчанию.** Сканирование и аудит не меняют платформы.
+2. **AI анализирует, deterministic executor исполняет.** AI не получает токены и не вызывает provider API напрямую.
+3. **Нет guessed IDs.** Все объекты адресуются точными platform/channel/remote IDs.
+4. **Before/after state, а не слепая revision.** Ревизия диагностична; фактическое изменяемое поле является источником истины.
+5. **Idempotence.** `before → ready`, `after → already applied`, третье состояние → `conflict`.
+6. **Single writer на remote target.** Два процесса не могут одновременно менять одно сообщество или канал.
+7. **Locked re-preflight.** Перед первой записью live-state проверяется повторно уже после захвата lock.
+8. **Immutable evidence.** Snapshot, plan, backup и result остаются отдельными JSON-артефактами.
+9. **Postcondition, а не доверие HTTP 200.** После write выполняется повторное provider read.
+10. **Human editorial boundary.** Факты, интерпретации и неоднозначная пунктуация не исправляются автоматически.
 
-## Architecture
+## Архитектура
 
 ```text
-External AI / Human editor
-          │
-          │ AuditPackage ↔ ChangePlan (JSON)
-          ▼
-┌───────────────────────────────────────────────┐
-│              Video Channel Manager            │
-│                                               │
-│  CLI / future Web UI / future Telegram client │
-│                    │                          │
-│  Audit ─ Plan Guard ─ Preview ─ Executor      │
-│                    │                          │
-│  Domain + SQLAlchemy persistence + history    │
-│                    │                          │
-│  YouTube adapter | VK adapter | Local index   │
-└───────────────────────────────────────────────┘
+Human editor / external AI
+           │
+           │ AuditPackage ↔ reviewed Plan
+           ▼
+┌────────────────────────────────────────────────┐
+│             Video Channel Manager              │
+│                                                │
+│ CLI → Plan Guard → Preview → Executor          │
+│                │                               │
+│ Domain + exchange schemas + persistence        │
+│                │                               │
+│ YouTube adapter | VK adapter | Local media     │
+└────────────────────────────────────────────────┘
 ```
 
-See [`docs/architecture.md`](docs/architecture.md) and [`docs/exchange-format.md`](docs/exchange-format.md).
+Полный mutation protocol:
 
-## Editorial policy
-
-Channel-specific editorial and playlist decisions are documented in:
-
-- [`docs/youtube-editorial-standard.md`](docs/youtube-editorial-standard.md) — titles, descriptions, Shorts classification, playlist routing, fact-checking, tags, hashtags, and approval rules;
-- [`docs/youtube-description-rendering-standard.md`](docs/youtube-description-rendering-standard.md) — exact `*bold*` / `_italic_` punctuation, first-paragraph behavior, selective emoji policy, line breaks, final-link rendering, and the screenshot-verified «На поле Куликовом» example;
-- [`docs/youtube-copy-automation-safety.md`](docs/youtube-copy-automation-safety.md) — the narrower deterministic boundary for automatic fixes, live-state guards, retries, locking, postflight, and rollback;
-- [`docs/audits/2026-07-24-the-legendary-poet.md`](docs/audits/2026-07-24-the-legendary-poet.md) — the first real audit of **The Legendary Poet**.
-
-These files are the source of truth for future AI-assisted recommendations. Do not rely on chat memory alone. Human editorial guidance may be broader than the automatic rules: the automation safety document controls what the bot may change without review.
-
-## Quick start — Windows PowerShell
-
-```powershell
-./scripts/setup.ps1
-.\.venv\Scripts\Activate.ps1
-video-manager doctor
-video-manager db init
-video-manager schema export --output-dir .\schemas
-video-manager example export --output-dir .\examples\generated
+```text
+complete snapshot
+→ deterministic proposal
+→ self-validating plan
+→ readable diff
+→ dry-run
+→ exact confirmations
+→ target lock
+→ locked re-preflight
+→ backup
+→ journaled writes
+→ per-item verification
+→ full postflight
+→ immutable result / guarded rollback
 ```
 
-Manual installation:
+См. [`docs/architecture.md`](docs/architecture.md), [`docs/exchange-format.md`](docs/exchange-format.md) и [`docs/adr/0003-guarded-remote-mutations.md`](docs/adr/0003-guarded-remote-mutations.md).
+
+## Документы, являющиеся источником истины
+
+### YouTube
+
+- [`docs/youtube-editorial-standard.md`](docs/youtube-editorial-standard.md) — структура канала, названия, плейлисты, фактчекинг и approval rules;
+- [`docs/youtube-description-rendering-standard.md`](docs/youtube-description-rendering-standard.md) — точная YouTube-разметка, первый абзац, пунктуация и emoji policy;
+- [`docs/youtube-copy-automation-safety.md`](docs/youtube-copy-automation-safety.md) — узкая deterministic boundary для автоматических исправлений;
+- [`docs/youtube-copy-fix-application.md`](docs/youtube-copy-fix-application.md) — plan v3, dry-run, execute, backup, postflight и rollback;
+- [`docs/youtube-share-preview-standard.md`](docs/youtube-share-preview-standard.md) — требования к SHARE preview;
+- [`docs/audits/2026-07-25-copy-validation-v2.md`](docs/audits/2026-07-25-copy-validation-v2.md) — ручная триаж-проверка реального канала.
+
+### VK
+
+- [`docs/vk-description-rendering-standard.md`](docs/vk-description-rendering-standard.md) — почему VK Видео не рендерит YouTube Markdown и как строится plain text;
+- [`docs/operations/vk-description-cleanup-runbook.md`](docs/operations/vk-description-cleanup-runbook.md) — whole-library VK cleanup v2;
+- [`docs/vk-readonly.md`](docs/vk-readonly.md) — VK token/inventory и безопасные read-only команды;
+- [`docs/research/2026-07-25-vk-api-source-ledger.md`](docs/research/2026-07-25-vk-api-source-ledger.md) — VK API source ledger;
+- [`docs/research/2026-07-25-cross-platform-hardening-source-ledger.md`](docs/research/2026-07-25-cross-platform-hardening-source-ledger.md) — cross-platform hardening ledger.
+
+Operational docs и versioned plans имеют приоритет над памятью чата.
+
+## Установка — Windows PowerShell
 
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -e ".[dev]"
+
+video-manager doctor
+video-manager db init
+video-manager schema export --output-dir .\schemas
+video-manager example export --output-dir .\examples\generated
 ```
 
-## YouTube OAuth and inventory
-
-Place the downloaded Google OAuth **Desktop app** client in a local ignored path such as:
+Секреты хранятся только в ignored paths:
 
 ```text
 secrets/client_secret.json
+data/secrets/
 ```
 
-Authorize one account alias for read-only work:
+Никогда не выполнять `git clean -fdx` в рабочем дереве с ignored OAuth/VK credentials, exports, backups и result logs.
+
+# YouTube
+
+## OAuth и read-only inventory
 
 ```powershell
 video-manager youtube login --account legendary-poet
+video-manager youtube accounts
+video-manager youtube channels --account legendary-poet
+video-manager youtube scan --account legendary-poet
 ```
 
-Guarded description writes require an explicit replacement token:
+Guarded description writes требуют отдельный explicit write token:
 
 ```powershell
 video-manager youtube login --account legendary-poet --write --force
 ```
 
-Inspect local accounts and live channels:
+OAuth tokens и client secrets не включаются в `AuditPackage` и не коммитятся.
 
-```powershell
-video-manager youtube accounts
-video-manager youtube channels --account legendary-poet
-```
+## Редакционная проверка
 
-Export a complete read-only snapshot:
-
-```powershell
-video-manager youtube scan --account legendary-poet
-```
-
-The export contains exact channel/video/playlist IDs, metadata, revisions, playlist memberships, and a read-only marker. OAuth tokens and client secrets stay local and must never be committed.
-
-See [`docs/youtube-oauth.md`](docs/youtube-oauth.md).
-
-## Editorial validation and conservative plans
-
-Validate a single prepared description stored as UTF-8 text:
+Один UTF-8 текст:
 
 ```powershell
 python .\scripts\validate_youtube_copy.py .\description.txt --strict
 ```
 
-Validate every description in an `AuditPackage` and write a Markdown report:
+Полный `AuditPackage`:
 
 ```powershell
 python .\scripts\validate_youtube_copy.py `
@@ -133,39 +146,172 @@ python .\scripts\validate_youtube_copy.py `
   --output .\data\reports\youtube-copy-validation.md
 ```
 
-Build a conservative description plan:
+Автоматизация меняет только механически доказуемые вещи: очищает первый абзац от видимых SHARE-маркеров, исправляет известные link labels, лишнюю точку после `?`, `!` или `…`, zero-width символы и избыточные пустые строки. Неоднозначные запятые, точки, двоеточия, факты и литературная интерпретация остаются review-only.
+
+## Self-validating YouTube plan v3
+
+Создание плана:
 
 ```powershell
-python .\scripts\autofix_youtube_copy.py .\data\exports\youtube-audit-package.json
+python .\scripts\autofix_youtube_copy.py `
+  .\data\exports\youtube-audit-package.json
 ```
 
-General commas, full stops, semicolons, and explanatory colons outside an emphasis span are review-only. The bot automatically changes punctuation only when the scope is mechanically unambiguous, such as `*VK:*` or an extra period after `?`, `!`, or `…`. A video with any remaining error-level finding is excluded from automatic operations.
-
-Preflight and apply a generated plan:
+Offline-проверка целостности:
 
 ```powershell
-video-manager youtube apply-copy-fixes `
+python .\scripts\validate_youtube_copy_plan.py `
+  .\data\reports\youtube-copy-fix-plan.json
+```
+
+Plan v3 фиксирует:
+
+- exact target channel;
+- полный hash проверенных video IDs;
+- before/after SHA-256 каждой операции;
+- ruleset;
+- self `plan_sha256`;
+- unresolved videos, исключённые из automation.
+
+Dry-run strict executor:
+
+```powershell
+python .\scripts\apply_youtube_copy_plan_v3.py `
   .\data\reports\youtube-copy-fix-plan.json `
   --account legendary-poet `
   --confirm-channel UC_EXACT_CHANNEL_ID
+```
 
-video-manager youtube apply-copy-fixes `
+Execute разрешён только с точным количеством ready-операций и `plan_sha256`, показанными dry-run:
+
+```powershell
+python .\scripts\apply_youtube_copy_plan_v3.py `
   .\data\reports\youtube-copy-fix-plan.json `
   --account legendary-poet `
   --confirm-channel UC_EXACT_CHANNEL_ID `
+  --confirm-count 56 `
+  --confirm-plan-sha256 sha256:EXACT_DIGEST `
   --execute
 ```
 
-Execution holds a local process lock, writes a backup before mutation, records progress incrementally, retries bounded verification reads, performs a final whole-batch postflight, and rolls back every attempted operation when the batch fails.
+Executor держит Windows-safe channel lock, повторяет preflight после lock, пишет backup до первой mutation, журналирует каждую попытку, выполняет bounded reread verification, полный postflight и guarded rollback.
 
-After an automation ruleset changes, recompute only affected outputs from a completed apply result:
+Историческая команда `video-manager youtube apply-copy-fixes` сохранена для уже завершённых schema v2 workflows. Новые массовые операции должны использовать strict v3 executor.
+
+После изменения ruleset пересчитывается только затронутый результат:
 
 ```powershell
 python .\scripts\rebuild_youtube_copy_plan.py `
   .\data\reports\youtube-copy-apply-YYYYMMDD-HHMMSS.json
 ```
 
-## CLI
+Recovery выполняется отдельным guarded script и никогда не перезаписывает третье неизвестное live-состояние:
+
+```powershell
+python .\scripts\recover_youtube_copy_apply.py `
+  .\data\reports\youtube-copy-apply-YYYYMMDD-HHMMSS.json `
+  --account legendary-poet `
+  --confirm-channel UC_EXACT_CHANNEL_ID
+```
+
+Подтверждённый `status=completed` result не следует повторно выполнять только потому, что позднее изменилась whole-record revision.
+
+# VK
+
+## Token и read-only inventory
+
+Текущий video contour использует **user access token** с ожидаемыми `video` и `groups` permissions.
+
+```powershell
+video-manager vk login --account legendary-poet
+video-manager vk accounts
+video-manager vk communities --account legendary-poet
+video-manager vk scan --account legendary-poet --community 235216998
+```
+
+Снимок включает полный `owner_id_video_id`, `type`, размеры, albums, system markers и memberships.
+
+## Обычное описание VK Видео — plain text
+
+VK не предоставляет Markdown/HTML parse mode для обычного video description. Поэтому маркеры:
+
+```text
+*жирное*
+_курсив_
+~~зачёркнутое~~
+```
+
+снимаются до публикации. URL, hashtags, технические ID, абзацы и название `К ***` сохраняются.
+
+## Полный read-only аудит live-описаний
+
+```powershell
+python .\scripts\audit_all_vk_descriptions.py `
+  --account legendary-poet `
+  --community 235216998
+```
+
+Plan schema v2 содержит полный live-ID coverage, `coverage_remote_ids_sha256`, before/after hashes, `plan_sha256` и readable Markdown diff.
+
+Offline-проверка:
+
+```powershell
+python .\scripts\validate_vk_description_cleanup_plan.py `
+  .\data\reports\vk-live-description-cleanup-<timestamp>.json
+```
+
+Старые schema v1 plans остаются историей и намеренно отклоняются apply-скриптом.
+
+## Dry-run whole-library cleanup
+
+```powershell
+python .\scripts\apply_all_vk_description_cleanup.py `
+  .\data\reports\vk-live-description-cleanup-<timestamp>.json `
+  --account legendary-poet `
+  --community 235216998
+```
+
+Не добавлять `--execute`, пока Markdown diff не просмотрен и dry-run не показал `conflicts 0` и `review-only 0`. Полная процедура находится в runbook.
+
+## Новые YouTube → VK публикации
+
+Оператор использует только safe wrapper:
+
+```powershell
+python .\scripts\sync_youtube_to_vk_textsafe.py <аргументы>
+```
+
+Он включает centralized VK publication policy, community lock, `ffprobe` QC, обязательные video/audio streams, положительную duration и SHA-256 media fingerprint. Базовый `scripts/sync_youtube_to_vk.py` является implementation module, а не самостоятельным safety profile.
+
+## Exact-ID recovery
+
+```powershell
+python .\scripts\resume_youtube_to_vk_exact_ids.py `
+  <youtube-audit.json> `
+  <exact-video-id...> `
+  --journal <journal.json> `
+  --cache-dir <cache> `
+  --account legendary-poet `
+  --community 235216998
+```
+
+Dry-run строит transfer manifest SHA-256. Execute требует подтвердить community, new upload count, source snapshot и manifest. Журнал фиксирует `upload_reserved → uploaded_processing → uploaded_and_verified`.
+
+# Локальные данные
+
+Generated artifacts находятся в ignored `data/`:
+
+```text
+data/exports/   # snapshots
+data/reports/   # plans, backups, results, readable reports
+data/cache/     # downloaded media and thumbnails
+data/locks/     # local writer locks
+data/secrets/   # local credentials
+```
+
+JSON snapshots/backups/results не являются исходным кодом и не должны попадать в публичный GitHub. Для отдельной копии используется зашифрованное резервное хранилище с проверкой восстановления.
+
+# CLI
 
 ```text
 video-manager version
@@ -180,56 +326,56 @@ video-manager youtube login --account legendary-poet
 video-manager youtube accounts
 video-manager youtube channels --account legendary-poet
 video-manager youtube scan --account legendary-poet
-video-manager youtube apply-copy-fixes plan.json --account legendary-poet --confirm-channel UC_EXACT_CHANNEL_ID
+video-manager vk login --account legendary-poet
+video-manager vk accounts
+video-manager vk communities --account legendary-poet
+video-manager vk scan --account legendary-poet --community 235216998
+video-manager compare audits youtube.json vk.json
 ```
 
-The current operational description workflow is:
-
-```text
-YouTube scan → AuditPackage → conservative deterministic plan → live dry-run
-→ explicit guarded write → per-item verification → whole-batch postflight
-→ completed result or description-state guarded rollback
-```
-
-## Project layout
-
-```text
-src/video_channel_manager/
-├── application/     # use cases, validation, preview
-├── cli/             # PowerShell-friendly command line
-├── config/          # typed environment settings
-├── domain/          # platform-neutral models and enums
-├── editorial/       # deterministic YouTube copy validation
-├── exchange/        # versioned AuditPackage / ChangePlan formats
-├── local_media/     # read-only local file indexer
-├── persistence/     # SQLAlchemy entities and database lifecycle
-└── platforms/       # adapter contracts and platform implementations
-```
-
-## Safety posture
-
-Destructive operations are disabled by default. Supported description replacement is narrow, non-destructive, explicitly authorized, backed up, live-state guarded, verified, and recoverable. A plan can be syntactically valid and still be rejected by policy. See [`docs/security.md`](docs/security.md).
-
-Never run `git clean -fdx` in a working tree that contains ignored OAuth secrets, tokens, exports, backups, or result logs.
-
-## Development
+# Разработка
 
 ```bash
-pytest
+pip check
+python -m compileall -q src scripts tests
 ruff check .
 ruff format --check .
 mypy src
+pytest --cov=video_channel_manager --cov-report=term-missing
+pip-audit --desc on
 ```
 
-CI runs on Python 3.11, 3.12, and 3.13.
+CI запускается на Python 3.11, 3.12 и 3.13. Blocking gates: dependency graph, compileall, vulnerability audit, Ruff correctness, mypy и pytest. Formatting должен быть зелёным в окончательной объединённой ветке.
 
-## Roadmap
+# Текущий порядок развития
 
-The next milestones are:
+## Сейчас
 
-1. enrich read-only YouTube inventory with owner-only file geometry for reliable Shorts classification;
-2. generate broader verified editorial findings and reviewed `ChangePlan` documents;
-3. add safe playlist operations behind dry-run, approval, live-state, verification, and rollback gates;
-4. implement VK read-only inventory and cross-platform comparison.
+```text
+единый YouTube + VK integration CI
+self-validating plans
+Windows-safe locks
+media/image QC + manifests
+journals + verification + rollback
+```
 
-See [`docs/roadmap.md`](docs/roadmap.md).
+## Следом
+
+```text
+SQLite operation ledger
+state-machine tests
+structured redacted logs
+secret scanning
+restic backup runbook
+safe playlist operations
+```
+
+## Пока не добавлять
+
+```text
+unattended remote writes
+Temporal/Celery/Redis cluster
+cookies основного канала как downloader identity
+arbitrary yt-dlp plugins
+Prometheus/Grafana для редких CLI-запусков
+```
