@@ -1,18 +1,53 @@
 {
   "schema_name": "video-manager.youtube-comment-content",
-  "schema_version": 1,
+  "schema_version": 2,
   "status": "approved",
+  "profile": "long_form_poetry",
+  "variation_key": "tyutchev-night-sea-two-editions-nice-v2",
   "channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
   "video_id": "RQIlUvFf1KQ",
   "video_title": "Как Хорошо Ты, о Море Ночное… ⚡ Тютчев и Тайна Живого Моря",
-  "reviewed_at": "2026-07-25T16:17:00+00:00",
+  "reviewed_at": "2026-07-25T20:22:00+00:00",
   "source_ids": [
     "tyutchev-night-sea-edition",
     "tyutchev-night-sea-feb",
-    "playlist-tyutchev",
-    "playlist-singing-poets"
+    "playlist-tyutchev"
   ],
-  "comment_text": "🌊 «Как хорошо ты, о море ночное…» датировано: Ницца, 2/14 января 1865 года. Сначала в газете «День» появилась ранняя сокращённая редакция; полный текст Тютчев затем отправил в «Русский вестник», где стихотворение было напечатано в феврале 1865 года.\n\nКакая сторона моря яснее слышна в этой версии — движение и блеск волн или желание лирического героя раствориться в их жизни?\n\n🌐 Сайт The Legendary Poet:\nhttps://thelegendarypoet.ru/\n\n📖 Плейлист «Фёдор Тютчев»:\nhttps://www.youtube.com/playlist?list=PLKzLtO0ERdzg\n\n🎧 Плейлист «Поющие Поэты»:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8\n\nVK:\nhttps://vk.com/thelegendarypoet\n\nТекст, автографы и комментарии:\nhttps://ftutchev.ru/stihi0279.html",
+  "fact": {
+    "heading": "🌊 *Две редакции одного морского текста*",
+    "fact_type": "manuscript_history",
+    "source_ids": [
+      "tyutchev-night-sea-edition",
+      "tyutchev-night-sea-feb"
+    ],
+    "text": "Стихотворение датировано в Ницце 2/14 января 1865 года. Сначала газета «День» напечатала сокращённую раннюю редакцию, после чего Тютчев отправил полный текст в «Русский вестник», где он появился в феврале 1865-го. История публикации позволяет видеть перед нами не мгновенно застывшую запись, а текст, прошедший через две печатные формы."
+  },
+  "question": {
+    "lead": "_Что становится центром музыкальной версии:_",
+    "text": "блеск и движение волн или желание героя раствориться в их живой стихии?"
+  },
+  "links": [
+    {
+      "kind": "site",
+      "label": "📌 *The Legendary Poet:*",
+      "url": "https://thelegendarypoet.ru/"
+    },
+    {
+      "kind": "playlist",
+      "label": "🎧 *Фёдор Тютчев — плейлист:*",
+      "url": "https://www.youtube.com/playlist?list=PLKzLtO0ERdzg"
+    },
+    {
+      "kind": "vk",
+      "label": "*Сообщество проекта VK:*",
+      "url": "https://vk.com/thelegendarypoet"
+    },
+    {
+      "kind": "primary_text",
+      "label": "📚 _Текст, автографы и комментарии:_",
+      "url": "https://ftutchev.ru/stihi0279.html"
+    }
+  ],
   "sources": [
     {
       "source_id": "tyutchev-night-sea-edition",
