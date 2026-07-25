@@ -13,16 +13,13 @@ from pathlib import Path
 from typing import Any
 
 from video_channel_manager.editorial import autofix_youtube_description, validate_youtube_description
+from video_channel_manager.platforms.youtube.copy_plan import finalize_copy_plan, sha256_text
 
 RULESET = "youtube-copy-safe-v2"
 
 
 def _default_output(input_path: Path, suffix: str) -> Path:
     return input_path.with_name(f"{input_path.stem}{suffix}")
-
-
-def _sha256_text(value: str) -> str:
-    return f"sha256:{hashlib.sha256(value.encode('utf-8')).hexdigest()}"
 
 
 def _required_text(item: dict[str, Any], field: str) -> str:
@@ -42,6 +39,10 @@ def _diff(before: str, after: str, video_id: str) -> str:
             lineterm="",
         )
     )
+
+
+def _source_sha256(path: Path) -> str:
+    return f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}"
 
 
 def build_repair_plan(payload: dict[str, Any], source: Path) -> tuple[dict[str, Any], str]:
@@ -64,6 +65,7 @@ def build_repair_plan(payload: dict[str, Any], source: Path) -> tuple[dict[str, 
 
     operations: list[dict[str, Any]] = []
     unresolved: list[dict[str, Any]] = []
+    checked_video_ids: list[str] = []
 
     for item in raw_applied:
         video_id = _required_text(item, "video_id")
@@ -72,6 +74,9 @@ def build_repair_plan(payload: dict[str, Any], source: Path) -> tuple[dict[str, 
         original_before = _required_text(item, "before_description")
         currently_applied = _required_text(item, "after_description")
         after_revision = _required_text(item, "after_revision")
+        if video_id in checked_video_ids:
+            raise ValueError(f"Apply result repeats video_id: {video_id}")
+        checked_video_ids.append(video_id)
         if item_channel != channel_id:
             raise ValueError(f"Applied item {video_id} targets {item_channel}, not result channel {channel_id}.")
 
@@ -106,9 +111,9 @@ def build_repair_plan(payload: dict[str, Any], source: Path) -> tuple[dict[str, 
                 "expected_revision": after_revision,
                 "before_description": currently_applied,
                 "after_description": recomputed,
-                "before_sha256": _sha256_text(currently_applied),
-                "after_sha256": _sha256_text(recomputed),
-                "recomputed_from_original_before_sha256": _sha256_text(original_before),
+                "before_sha256": sha256_text(currently_applied),
+                "after_sha256": sha256_text(recomputed),
+                "recomputed_from_original_before_sha256": sha256_text(original_before),
                 "fixes": [asdict(fix) for fix in fixes],
                 "rationale": (
                     "Recomputed from the original backup with the current conservative ruleset; "
@@ -117,15 +122,15 @@ def build_repair_plan(payload: dict[str, Any], source: Path) -> tuple[dict[str, 
             }
         )
 
-    plan = {
-        "schema_name": "video-manager.youtube-copy-fix-plan",
-        "schema_version": 2,
+    plan: dict[str, Any] = {
         "ruleset": RULESET,
         "generated_at": datetime.now(UTC).isoformat(),
-        "source_apply_result": str(source),
+        "source_apply_result": str(source.resolve()),
+        "source_apply_sha256": _source_sha256(source),
+        "source_audit_sha256": _source_sha256(source),
         "source_apply_status": "completed",
         "account": account,
-        "channel_id": channel_id,
+        "target_channel_id": channel_id,
         "read_only": True,
         "videos_checked": len(raw_applied),
         "operations_count": len(operations),
@@ -133,12 +138,15 @@ def build_repair_plan(payload: dict[str, Any], source: Path) -> tuple[dict[str, 
         "operations": operations,
         "unresolved": unresolved,
     }
+    finalize_copy_plan(plan, checked_video_ids=checked_video_ids)
 
     lines = [
         "# YouTube copy ruleset rebuild",
         "",
         f"Source apply result: `{source}`",
         f"Ruleset: `{RULESET}`",
+        f"Target channel: `{channel_id}`",
+        f"Plan SHA-256: `{plan['plan_sha256']}`",
         "",
         "> This plan does not revert the whole batch. It recomputes each original description and changes only entries whose old automatic output differs from the current conservative rules.",
         "",
@@ -178,6 +186,13 @@ def build_repair_plan(payload: dict[str, Any], source: Path) -> tuple[dict[str, 
     return plan, "\n".join(lines)
 
 
+def _atomic_write(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(text, encoding="utf-8")
+    temporary.replace(path)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", type=Path, help="Completed youtube-copy-apply-*.json")
@@ -186,7 +201,7 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        payload = json.loads(args.input.read_text(encoding="utf-8"))
+        payload = json.loads(args.input.read_text(encoding="utf-8-sig"))
         if not isinstance(payload, dict):
             raise ValueError("Input JSON must be an object.")
         plan, report = build_repair_plan(payload, args.input)
@@ -195,15 +210,14 @@ def main() -> int:
 
     plan_output = args.plan_output or _default_output(args.input, "-ruleset-rebuild-plan.json")
     report_output = args.report_output or _default_output(args.input, "-ruleset-rebuild-report.md")
-    plan_output.parent.mkdir(parents=True, exist_ok=True)
-    report_output.parent.mkdir(parents=True, exist_ok=True)
-    plan_output.write_text(json.dumps(plan, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    report_output.write_text(report, encoding="utf-8")
+    _atomic_write(plan_output, json.dumps(plan, ensure_ascii=False, indent=2) + "\n")
+    _atomic_write(report_output, report)
 
     print(f"Wrote {plan_output}")
     print(f"Wrote {report_output}")
     print(f"Corrective description changes: {plan['operations_count']}")
     print(f"Unresolved error-level videos: {plan['unresolved_error_videos']}")
+    print(f"Plan SHA-256 confirmation value: {plan['plan_sha256']}")
     return 0
 
 
