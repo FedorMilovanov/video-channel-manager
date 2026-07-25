@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
-from scripts.sync_youtube_thumbnails_to_vk import (
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts.sync_youtube_thumbnails_to_vk import (  # noqa: E402
     PreparedThumbnail,
     ThumbnailCandidate,
     _candidate_identity,
@@ -10,10 +15,10 @@ from scripts.sync_youtube_thumbnails_to_vk import (
     _cover_complete,
     _manifest_sha256,
 )
-from video_channel_manager.domain.enums import ChannelKind, PlatformName
-from video_channel_manager.domain.models import ChannelRecord, RemoteRef, VideoRecord
-from video_channel_manager.exchange.audit_package import AuditPackage
-from video_channel_manager.local_media.image_quality import ImageQualityReport
+from video_channel_manager.domain.enums import ChannelKind, PlatformName  # noqa: E402
+from video_channel_manager.domain.models import ChannelRecord, RemoteRef, VideoRecord  # noqa: E402
+from video_channel_manager.exchange.audit_package import AuditPackage  # noqa: E402
+from video_channel_manager.local_media.image_quality import ImageQualityReport  # noqa: E402
 
 
 def _source() -> AuditPackage:
