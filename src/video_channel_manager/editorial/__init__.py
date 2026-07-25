@@ -1,6 +1,6 @@
-"""Deterministic editorial checks and safe copy fixes for platform copy."""
+"""Deterministic editorial checks and conservative copy fixes for platform copy."""
 
-from video_channel_manager.editorial.youtube_copy import (
+from video_channel_manager.editorial.youtube_copy_safe import (
     CopyFinding,
     CopyFix,
     autofix_youtube_description,
