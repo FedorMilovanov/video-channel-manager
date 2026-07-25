@@ -158,24 +158,26 @@ jobs:
 
           catalog_path = Path("src/video_channel_manager/platforms/vk/catalog.py")
           catalog_text = catalog_path.read_text(encoding="utf-8")
-          old_catalog = '''        source_collection = source_collections.get(source_collection_id)
-          if source_collection is None or source_collection_id not in collection_targets:
-              continue
-          target_collection_id = collection_targets[source_collection_id]
-          '''
-          new_catalog = '''        membership_collection = source_collections.get(source_collection_id)
-          if membership_collection is None or source_collection_id not in collection_targets:
-              continue
-          target_collection_id = collection_targets[source_collection_id]
-          '''
+          old_catalog = (
+              "        source_collection = source_collections.get(source_collection_id)\n"
+              "        if source_collection is None or source_collection_id not in collection_targets:\n"
+              "            continue\n"
+              "        target_collection_id = collection_targets[source_collection_id]\n"
+          )
+          new_catalog = (
+              "        membership_collection = source_collections.get(source_collection_id)\n"
+              "        if membership_collection is None or source_collection_id not in collection_targets:\n"
+              "            continue\n"
+              "        target_collection_id = collection_targets[source_collection_id]\n"
+          )
           if old_catalog not in catalog_text:
               raise SystemExit("Cannot find catalog type-fix block")
           catalog_text = catalog_text.replace(old_catalog, new_catalog, 1)
-          catalog_text = catalog_text.replace(
-              '"album_title": canonical_vk_text(source_collection.title),',
-              '"album_title": canonical_vk_text(membership_collection.title),',
-              1,
-          )
+          old_album_title = '"album_title": canonical_vk_text(source_collection.title),'
+          new_album_title = '"album_title": canonical_vk_text(membership_collection.title),'
+          if old_album_title not in catalog_text:
+              raise SystemExit("Cannot find catalog album-title type-fix line")
+          catalog_text = catalog_text.replace(old_album_title, new_album_title, 1)
           catalog_path.write_text(catalog_text, encoding="utf-8")
 
           wall_path = Path("src/video_channel_manager/platforms/vk/wall.py")
