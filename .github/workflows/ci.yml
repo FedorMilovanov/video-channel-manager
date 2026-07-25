@@ -70,7 +70,17 @@ jobs:
       - name: Ruff formatting gate
         id: format
         continue-on-error: true
-        run: ruff format --check .
+        shell: bash
+        run: |
+          set -o pipefail
+          ruff format --check . 2>&1 | tee ruff-format.log
+      - name: Upload Ruff formatting report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ruff-format-${{ matrix.python-version }}
+          path: ruff-format.log
+          if-no-files-found: error
       - name: Static typing
         id: mypy
         continue-on-error: true
