@@ -112,8 +112,17 @@ def main() -> int:
     parser.add_argument("--content-dir", type=Path, default=Path("content/youtube-comments"))
     parser.add_argument("--account", default="legendary-poet")
     parser.add_argument("--include-updates", action="store_true")
+    parser.add_argument(
+        "--updates-only",
+        action="store_true",
+        help="Plan only exact updates of existing channel comments; never create missing comments.",
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
+
+    if args.updates_only and not args.include_updates:
+        print("ERROR: --updates-only requires --include-updates.", file=sys.stderr)
+        return 2
 
     try:
         package = AuditPackage.model_validate_json(args.snapshot.read_text(encoding="utf-8"))
@@ -192,6 +201,15 @@ def main() -> int:
         owned_comments = live.get("owned_comments")
         owned = [item for item in owned_comments if isinstance(item, dict)] if isinstance(owned_comments, list) else []
         if status in {"missing", "foreign_only"} and not owned:
+            if args.updates_only:
+                review_only.append(
+                    {
+                        "video_id": video_id,
+                        "video_title": video.title,
+                        "reason": "updates-only mode; no channel comment exists",
+                    }
+                )
+                continue
             try:
                 operations.append(
                     make_comment_operation(
@@ -255,6 +273,12 @@ def main() -> int:
         for video_id, record in sorted(content.items())
         if video_id not in used_content
     ]
+    if args.updates_only:
+        mode = "reviewed-updates-only"
+    elif args.include_updates:
+        mode = "reviewed-create-and-update"
+    else:
+        mode = "reviewed-missing-only"
     plan = build_comment_plan(
         account_alias=args.account,
         channel_id=channel_id,
@@ -262,7 +286,7 @@ def main() -> int:
         source_snapshot_generated_at=package.generated_at.isoformat(),
         inventory_video_ids=list(video_by_id),
         operations=operations,
-        mode="reviewed-create-and-update" if args.include_updates else "reviewed-missing-only",
+        mode=mode,
     )
     validation_errors = validate_comment_plan(plan)
     if validation_errors:
