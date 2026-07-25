@@ -25,11 +25,13 @@ def calculate_copy_plan_sha256(plan: dict[str, Any]) -> str:
 def finalize_copy_plan(plan: dict[str, Any], *, checked_video_ids: list[str]) -> dict[str, Any]:
     """Add complete coverage and self-digest fields, then validate the plan."""
 
-    if len(checked_video_ids) != len(set(checked_video_ids)):
+    normalized_ids = sorted(checked_video_ids)
+    if len(normalized_ids) != len(set(normalized_ids)):
         raise ValueError("checked_video_ids must be unique")
     plan["schema_name"] = COPY_PLAN_SCHEMA_NAME
     plan["schema_version"] = COPY_PLAN_SCHEMA_VERSION
-    plan["checked_video_ids_sha256"] = canonical_sha256(sorted(checked_video_ids))
+    plan["checked_video_ids"] = normalized_ids
+    plan["checked_video_ids_sha256"] = canonical_sha256(normalized_ids)
     plan["plan_sha256"] = calculate_copy_plan_sha256(plan)
     validate_copy_plan(plan)
     return plan
@@ -53,6 +55,18 @@ def validate_copy_plan(plan: dict[str, Any]) -> None:
     _required_string(plan.get("source_audit_sha256"), "source_audit_sha256")
     checked_hash = _required_string(plan.get("checked_video_ids_sha256"), "checked_video_ids_sha256")
 
+    checked_video_ids = plan.get("checked_video_ids")
+    if not isinstance(checked_video_ids, list) or not all(
+        isinstance(video_id, str) and video_id.strip() for video_id in checked_video_ids
+    ):
+        raise ValueError("YouTube copy plan checked_video_ids must be a list of nonblank strings.")
+    if checked_video_ids != sorted(checked_video_ids):
+        raise ValueError("YouTube copy plan checked_video_ids must be sorted.")
+    if len(checked_video_ids) != len(set(checked_video_ids)):
+        raise ValueError("YouTube copy plan checked_video_ids contains duplicates.")
+    if checked_hash != canonical_sha256(checked_video_ids):
+        raise ValueError("YouTube copy plan checked_video_ids_sha256 does not match its ID list.")
+
     operations = plan.get("operations")
     unresolved = plan.get("unresolved")
     if not isinstance(operations, list) or not all(isinstance(item, dict) for item in operations):
@@ -67,11 +81,12 @@ def validate_copy_plan(plan: dict[str, Any]) -> None:
         if plan.get(field) != expected:
             raise ValueError(f"YouTube copy plan {field} is {plan.get(field)!r}, expected {expected}.")
     videos_checked = plan.get("videos_checked")
-    if not isinstance(videos_checked, int) or videos_checked < len(operations) + len(unresolved):
-        raise ValueError("YouTube copy plan videos_checked is inconsistent with its operation/review sets.")
-    if not checked_hash.startswith("sha256:"):
-        raise ValueError("YouTube copy plan checked_video_ids_sha256 is invalid.")
+    if videos_checked != len(checked_video_ids):
+        raise ValueError(
+            f"YouTube copy plan videos_checked is {videos_checked!r}, expected {len(checked_video_ids)}."
+        )
 
+    checked_set = set(checked_video_ids)
     all_planned_ids: list[str] = []
     for operation in operations:
         video_id = _required_string(operation.get("video_id"), "operation.video_id")
@@ -80,6 +95,8 @@ def validate_copy_plan(plan: dict[str, Any]) -> None:
         after = _required_string(operation.get("after_description"), f"{video_id}.after_description")
         expected_revision = _required_string(operation.get("expected_revision"), f"{video_id}.expected_revision")
         _ = expected_revision
+        if video_id not in checked_set:
+            raise ValueError(f"Operation {video_id} is absent from checked_video_ids.")
         if operation.get("operation") != "replace_video_description":
             raise ValueError(f"Unexpected operation type for {video_id}.")
         if operation.get("platform") != "youtube":
@@ -99,6 +116,8 @@ def validate_copy_plan(plan: dict[str, Any]) -> None:
     for item in unresolved:
         video_id = _required_string(item.get("video_id"), "unresolved.video_id")
         channel_id = _required_string(item.get("channel_id"), f"{video_id}.channel_id")
+        if video_id not in checked_set:
+            raise ValueError(f"Unresolved video {video_id} is absent from checked_video_ids.")
         if channel_id != target_channel_id:
             raise ValueError(f"Unresolved video {video_id} targets {channel_id}, not {target_channel_id}.")
         errors = item.get("errors")
