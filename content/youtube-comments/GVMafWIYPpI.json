@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-manager.youtube-comment-content",
+  "schema_version": 1,
+  "status": "approved",
+  "channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+  "video_id": "GVMafWIYPpI",
+  "video_title": "И Невозможное Возможно ⚡ РОССИЯ ⚡ Александр Блок",
+  "reviewed_at": "2026-07-25T16:15:00+00:00",
+  "source_ids": [
+    "blok-russia-text",
+    "playlist-blok",
+    "playlist-singing-poets"
+  ],
+  "comment_text": "📖 Стихотворение Блока «Россия» датировано 18 октября 1908 года и входит в цикл «Родина». В нём страна показана без приукрашивания: рядом стоят «нищая Россия», расхлябанные колеи и финальная уверенность — «и невозможное возможно».\n\nКакая часть этого соединения вам ближе в музыкальной версии: суровая дорожная картина или спокойная уверенность финала?\n\n🌐 Сайт The Legendary Poet:\nhttps://thelegendarypoet.ru/\n\n📖 Плейлист «Александр Блок»:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3ua3Q9BQe1Dhuzn7Knbz2djU\n\n🎧 Плейлист «Поющие Поэты»:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8\n\nVK:\nhttps://vk.com/thelegendarypoet\n\nТекст стихотворения:\nhttps://rvb.ru/20vek/silver-age/1900-e/05/032-aleksandr-blok.html",
+  "sources": [
+    {
+      "source_id": "blok-russia-text",
+      "title": "Александр Блок. «Россия»",
+      "url": "https://rvb.ru/20vek/silver-age/1900-e/05/032-aleksandr-blok.html"
+    },
+    {
+      "source_id": "playlist-blok",
+      "title": "Плейлист «Александр Блок»",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3ua3Q9BQe1Dhuzn7Knbz2djU"
+    },
+    {
+      "source_id": "playlist-singing-poets",
+      "title": "Плейлист «Поющие Поэты»",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8"
+    }
+  ]
+}
