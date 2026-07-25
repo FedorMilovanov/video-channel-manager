@@ -1,17 +1,46 @@
 {
   "schema_name": "video-manager.youtube-comment-content",
-  "schema_version": 1,
+  "schema_version": 2,
   "status": "approved",
+  "profile": "foreign_language_adaptation",
+  "variation_key": "esenin-tired-journal-1924-english-v2",
   "channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
   "video_id": "BSJZ3BogD94",
   "video_title": "Never Have I Been So Much Tired ⚡ Sergey Esenin @TheLegendaryPoet",
-  "reviewed_at": "2026-07-25T16:14:00+00:00",
+  "reviewed_at": "2026-07-25T20:38:00+00:00",
   "source_ids": [
     "esenin-tired-bibliography",
-    "playlist-esenin",
-    "playlist-singing-poets"
+    "playlist-esenin"
   ],
-  "comment_text": "📖 Sergey Esenin wrote «Я усталым таким ещё не был…» in 1923. It was first published in 1924 in the journal «Гостиница для путешествующих в прекрасном», together with other poems connected with «Москва кабацкая».\n\nThis English adaptation keeps the contrast between the remembered Ryazan sky and the exhausted urban voice. Which image remained strongest for you after listening?\n\n🌐 The Legendary Poet:\nhttps://thelegendarypoet.ru/\n\n📖 Sergey Esenin playlist:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q\n\n🎧 Singing Poets playlist:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8\n\nVK:\nhttps://vk.com/thelegendarypoet\n\nRussian text and publication note:\nhttps://ru.wikisource.org/wiki/Я_усталым_таким_ещё_не_был_(Есенин)",
+  "fact": {
+    "heading": "📖 *The journal context of 1924*",
+    "fact_type": "first_publication",
+    "source_ids": [
+      "esenin-tired-bibliography"
+    ],
+    "text": "Esenin wrote the poem in 1923, and its first publication followed in 1924 in the journal «Гостиница для путешествующих в прекрасном». It appeared beside texts connected with «Москва кабацкая», placing the speaker’s fatigue and memory of the Ryazan landscape within a broader group of poems rather than as a single isolated confession."
+  },
+  "question": {
+    "lead": "_In this English adaptation:_",
+    "text": "which contrast remains strongest — the remembered Ryazan sky, the city, or the speaker’s weariness?"
+  },
+  "links": [
+    {
+      "kind": "site",
+      "label": "📌 *The Legendary Poet:*",
+      "url": "https://thelegendarypoet.ru/"
+    },
+    {
+      "kind": "playlist",
+      "label": "🎧 *Sergey Esenin — playlist:*",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q"
+    },
+    {
+      "kind": "vk",
+      "label": "*Сообщество проекта VK:*",
+      "url": "https://vk.com/thelegendarypoet"
+    }
+  ],
   "sources": [
     {
       "source_id": "esenin-tired-bibliography",
