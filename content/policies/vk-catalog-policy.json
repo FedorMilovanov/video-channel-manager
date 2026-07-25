@@ -1,0 +1,11 @@
+{
+  "schema_name": "video-manager.vk-catalog-policy",
+  "schema_version": 1,
+  "title_overrides": {
+    "Поющие Поэты": "Поющие поэты",
+    "Эксперименты AI": "AI-эксперименты",
+    "Чёрный Человек — Сергей Есенин": "Чёрный человек — Сергей Есенин"
+  },
+  "excluded_titles": [],
+  "skip_collections_without_mapped_videos": true
+}
