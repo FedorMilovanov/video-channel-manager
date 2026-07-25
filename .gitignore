@@ -19,6 +19,8 @@ venv/
 *.token.json
 credentials.json
 client_secret*.json
+secrets/
+tokens/
 
 # Runtime data
 data/
