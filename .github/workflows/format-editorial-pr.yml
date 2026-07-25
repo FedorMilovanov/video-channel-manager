@@ -1,11 +1,6 @@
 name: Format unified editorial PR
 
 on:
-  push:
-    branches:
-      - agent/unified-editorial-pipeline
-    paths:
-      - .github/workflows/format-editorial-pr.yml
   pull_request:
     branches:
       - feature/youtube-comment-publishing-v1
@@ -17,7 +12,7 @@ permissions:
 
 jobs:
   format:
-    if: github.head_ref == 'agent/unified-editorial-pipeline' || github.ref_name == 'agent/unified-editorial-pipeline'
+    if: github.head_ref == 'agent/unified-editorial-pipeline'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -33,16 +28,24 @@ jobs:
           python-version: "3.13"
           cache: pip
 
-      - name: Format and verify
+      - name: Install project
         shell: bash
         run: |
           set -euo pipefail
           python -m pip install --upgrade "pip>=25" "setuptools>=83,<84" wheel
           pip install -e ".[dev]"
-          ruff format .
-          ruff check .
-          python -m compileall -q src scripts tests
-          rm -f .github/workflows/format-editorial-pr.yml
+
+      - name: Apply Ruff formatting
+        run: ruff format .
+
+      - name: Verify Ruff correctness
+        run: ruff check .
+
+      - name: Compile sources
+        run: python -m compileall -q src scripts tests
+
+      - name: Remove temporary workflow
+        run: rm -f .github/workflows/format-editorial-pr.yml
 
       - name: Commit formatting
         shell: bash
