@@ -5,6 +5,7 @@ from video_channel_manager.editorial.content import (
     balanced_emphasis,
     contains_banned_circle,
 )
+from video_channel_manager.editorial.linking import ordered_links
 from video_channel_manager.editorial.rendering import (
     ContentSurface,
     PlatformName,
@@ -18,8 +19,12 @@ from video_channel_manager.platforms.youtube.comments import validate_comment_te
 _DECORATIVE_MARKERS = ("📖", "📌", "🎧", "📚", "❄️", "⚔️", "🌊", "🎭", "📝", "🎼", "🕯️", "🗂️")
 
 
+def _links(record: EditorialContentRecord, *, surface: str):
+    return ordered_links(record, platform="youtube", surface=surface)
+
+
 def _render_blocks(record: EditorialContentRecord, *, surface: str) -> str:
-    links = record.links_for("youtube", surface)
+    links = _links(record, surface=surface)
     question = f"{record.question.lead} {record.question.text}".strip()
     link_lines = [f"{link.label} {link.url}".strip() for link in links]
     blocks = [record.fact.heading, record.fact.text, question, "\n".join(link_lines)]
@@ -62,7 +67,7 @@ def _youtube_style_issues(record: EditorialContentRecord, *, surface: str) -> li
             )
         )
 
-    links = record.links_for("youtube", surface)
+    links = _links(record, surface=surface)
     if not 2 <= len(links) <= 4:
         issues.append(
             RenderIssue(
