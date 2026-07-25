@@ -1,0 +1,22 @@
+[
+  {
+    "label": "Полный текст цикла",
+    "kind": "primary_text_transcription",
+    "url": "https://www.culture.ru/poems/275/na-pole-kulikovom"
+  },
+  {
+    "label": "Состав пяти частей и библиография",
+    "kind": "primary_text_index",
+    "url": "https://ru.wikisource.org/wiki/На_поле_Куликовом_(Блок)"
+  },
+  {
+    "label": "Александр Блок. Народ и интеллигенция",
+    "kind": "author_context_primary_text",
+    "url": "https://ru.wikisource.org/wiki/Народ_и_интеллигенция_(Блок)"
+  },
+  {
+    "label": "Россия и интеллигенция — архивное издание",
+    "kind": "archive_catalog_and_digitized_edition",
+    "url": "https://www.prlib.ru/item/1306071"
+  }
+]
