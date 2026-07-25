@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-manager.youtube-comment-content",
+  "schema_version": 1,
+  "status": "approved",
+  "channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+  "video_id": "3ZFf2PBEYrM",
+  "video_title": "Кто Здесь?! 🔥 Эпическая Зимняя Мистика Сергея Есенина - Что Это Такое? - FULL VERSION 2",
+  "reviewed_at": "2026-07-25T16:11:00+00:00",
+  "source_ids": [
+    "esenin-what-is-it-text",
+    "esenin-what-is-it-bibliography",
+    "playlist-esenin"
+  ],
+  "comment_text": "❄️ «Что это такое?» написано в 1914 году и впервые опубликовано в январской книге детского журнала «Мирок» за 1915 год. Стихотворение построено как короткое расследование: герой видит на снегу когти и лыжи, но так и не получает ответа, кто оставил следы.\n\nЧто сильнее создаёт ощущение тайны в этом тексте: зимняя тишина, странные следы или отсутствие разгадки?\n\n🌐 Сайт The Legendary Poet:\nhttps://thelegendarypoet.ru/\n\n📖 Плейлист «Сергей Есенин»:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q\n\nVK:\nhttps://vk.com/thelegendarypoet\n\nПолный текст:\nhttps://www.culture.ru/poems/44379/chto-eto-takoe",
+  "sources": [
+    {
+      "source_id": "esenin-what-is-it-text",
+      "title": "Сергей Есенин. «Что это такое?»",
+      "url": "https://www.culture.ru/poems/44379/chto-eto-takoe"
+    },
+    {
+      "source_id": "esenin-what-is-it-bibliography",
+      "title": "«Что это такое?» — дата и первая публикация",
+      "url": "https://ru.wikisource.org/wiki/Что_это_такое%3F_(Есенин)"
+    },
+    {
+      "source_id": "playlist-esenin",
+      "title": "Плейлист «Сергей Есенин»",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q"
+    }
+  ]
+}
