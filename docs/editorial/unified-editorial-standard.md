@@ -10,6 +10,7 @@ The canonical schema is `video-manager.editorial-content` version 1. Existing `v
 
 A record contains:
 
+- `content_id`: stable editorial identity independent of a platform rendering;
 - `profile`: `long_form_poetry`, `short_form`, `essay`, `historical`, `music_cover`, or a supported legacy equivalent;
 - `variation_key`: a stable, work-specific editorial angle;
 - `fact.heading`, `fact.text`, `fact.fact_type`, and evidence `fact.source_ids`;
@@ -19,6 +20,8 @@ A record contains:
 - `rendering_metadata`, `platform_suitability`, and optional `platform_targets`.
 
 The record stores meaning and evidence. It does not store a separate VK copy and YouTube copy unless a human explicitly decides that two different facts are required.
+
+`platform_suitability` is an allow-list, not a suggestion. A renderer must report an error when asked to produce a surface absent from that allow-list. `rendering_metadata` may control presentation such as platform-specific link order, but it cannot bypass evidence, required-link, suitability, or length rules.
 
 ## Evidence and anti-hallucination rules
 
@@ -45,6 +48,14 @@ Variation is controlled by `variation_key`. A batch is invalid when it repeats a
 Allowed contextual markers include `📌`, `🎧`, `📚`, `📖`, `📝`, `🕯️`, `⚔️`, `❄️`, `🌊`, and `🎼`. Colored circles such as `🔵`, `🔴`, `🟢`, `🟡`, `🟣`, `⚪`, and `⚫` are forbidden.
 
 Use compact literary prose, precise nouns and dates, restrained emphasis, and readable mobile paragraphs. Avoid slogans, inflated claims, aggressive calls to action, and copy-paste headings.
+
+## Planning and execution boundary
+
+Only `approved` records with an explicit review timestamp may enter a mutation plan. A generic editorial plan must bind to an immutable source snapshot by ID/path, timezone-aware generation timestamp, and SHA-256 digest.
+
+The common core renders, validates, previews, signs, and performs offline preflight classification. It does not perform remote writes. YouTube and VK writes remain in their existing platform-specific guarded executors with exact confirmations, target locks, locked live re-preflight, journals, and postflight verification.
+
+Missing state is never evidence of absence. A `create` operation becomes ready only when a complete read-only state artifact explicitly records `exists: false` for that exact platform, surface, and target.
 
 ## Compatibility and migration
 
