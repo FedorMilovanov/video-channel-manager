@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import NoReturn
+import sys
+from typing import NoReturn, TextIO
 
 from video_channel_manager.platforms.youtube.comments import (
     TopLevelCommentSnapshot,
@@ -10,6 +11,17 @@ from video_channel_manager.platforms.youtube.comments import (
     comments_equivalent,
     validate_comment_text,
 )
+
+
+def _configure_utf8_stream(stream: TextIO) -> None:
+    reconfigure = getattr(stream, "reconfigure", None)
+    if callable(reconfigure):
+        reconfigure(encoding="utf-8", errors="replace")
+
+
+def _configure_utf8_stdio() -> None:
+    _configure_utf8_stream(sys.stdout)
+    _configure_utf8_stream(sys.stderr)
 
 
 def _find_top_level_comment(
@@ -117,6 +129,7 @@ def _update_top_level_comment_compat(
 
 
 def _run() -> NoReturn:
+    _configure_utf8_stdio()
     YouTubeCommentWriter.create_top_level_comment = _create_top_level_comment_compat  # type: ignore[method-assign]
     YouTubeCommentWriter.update_top_level_comment = _update_top_level_comment_compat  # type: ignore[method-assign]
 
