@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any
 
 from video_channel_manager.editorial.content import EditorialContentRecord, parse_content_record
 from video_channel_manager.editorial.rendering import ContentRenderer, ContentSurface, PlatformName, RenderedContent
@@ -84,7 +84,7 @@ def preview_records(
 
 def normalized_platform_surface(platform: str, surface: str | None) -> tuple[PlatformName, ContentSurface]:
     renderer = renderer_for(platform, surface)
-    return cast(PlatformName, renderer.platform), cast(ContentSurface, renderer.surface)
+    return renderer.platform, renderer.surface
 
 
 __all__ = [
