@@ -196,15 +196,16 @@ jobs:
           mypy src
           pytest
           git diff --check
-      - name: Restore permanent CI and remove one-shot workflow
-        run: |
-          git show 1a519deef135a58063e5a57f2195e81340d5ab06:.github/workflows/ci.yml > .github/workflows/ci.yml
-          rm -f .github/workflows/finalize-vk-publishing-once.yml
-      - name: Commit validated publishing contour
+      - name: Commit only validated Python changes
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add \
+            scripts/apply_vk_catalog_plan.py \
+            scripts/apply_vk_wall_post_plan.py \
+            scripts/build_vk_catalog_plan.py \
+            src/video_channel_manager/platforms/vk/catalog.py \
+            src/video_channel_manager/platforms/vk/wall.py
           git commit -m "Finalize guarded VK catalog and wall publishing"
           git push origin HEAD:integration/youtube-vk-unified-v2
