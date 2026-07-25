@@ -186,7 +186,14 @@ class VkApiClient:
             items.extend(page)
             total = response.get("count") if isinstance(response, dict) else None
             offset += len(page)
-            if not page or (isinstance(total, int) and offset >= total) or len(page) < page_size:
+
+            if not page:
+                return items
+            if isinstance(total, int):
+                if offset >= total:
+                    return items
+                continue
+            if len(page) < page_size:
                 return items
 
     def get_current_user(self) -> VkUserIdentity:
