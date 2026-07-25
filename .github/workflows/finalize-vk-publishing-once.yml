@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - main
+    types:
+      - synchronize
+      - edited
 
 permissions:
   contents: write
