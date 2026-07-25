@@ -1,0 +1,38 @@
+{
+  "schema_name": "video-manager.youtube-comment-content",
+  "schema_version": 1,
+  "status": "approved",
+  "channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+  "video_id": "mFsty3NOEMs",
+  "video_title": "Отговорила Роща Золотая ⚡ Сергей Есенин",
+  "reviewed_at": "2026-07-25T16:21:00+00:00",
+  "source_ids": [
+    "esenin-golden-grove-notes",
+    "esenin-golden-grove-archive",
+    "playlist-esenin",
+    "playlist-singing-poets"
+  ],
+  "comment_text": "📖 По свидетельству Александры Есениной, «Отговорила роща золотая…» написано во второй половине августа 1924 года в Константинове. Первая публикация состоялась 23 сентября в газете «Бакинский рабочий»; затем стихотворение появилось в журнале «Красная новь».\n\nКакой образ удерживает для вас весь текст: журавли, костёр рябины, опадающие листья или повторяющаяся золотая роща?\n\n🌐 Сайт The Legendary Poet:\nhttps://thelegendarypoet.ru/\n\n📖 Плейлист «Сергей Есенин»:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q\n\n🎧 Плейлист «Поющие Поэты»:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8\n\nVK:\nhttps://vk.com/thelegendarypoet\n\nТекст и комментарии издания:\nhttps://rvb.ru/20vek/esenin/pss7/vol1/notes/119.html",
+  "sources": [
+    {
+      "source_id": "esenin-golden-grove-notes",
+      "title": "С. А. Есенин. «Отговорила роща золотая…»: комментарии",
+      "url": "https://rvb.ru/20vek/esenin/pss7/vol1/notes/119.html"
+    },
+    {
+      "source_id": "esenin-golden-grove-archive",
+      "title": "РГАЛИ. Рукопись «Отговорила роща золотая…»",
+      "url": "https://www.rgali.ru/storage-unit/2622325"
+    },
+    {
+      "source_id": "playlist-esenin",
+      "title": "Плейлист «Сергей Есенин»",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q"
+    },
+    {
+      "source_id": "playlist-singing-poets",
+      "title": "Плейлист «Поющие Поэты»",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8"
+    }
+  ]
+}
