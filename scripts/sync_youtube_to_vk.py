@@ -13,6 +13,7 @@ import json
 import shutil
 import subprocess
 import sys
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -30,6 +31,12 @@ from video_channel_manager.exchange.audit_package import AuditPackage
 from video_channel_manager.platforms.vk import VkApiClient, VkInventoryService, VkTokenStore
 from video_channel_manager.platforms.vk.writer import VkUploadTicket, VkVideoWriter, VkWriteError
 
+_SITE_URL = "https://thelegendarypoet.ru/"
+_SITE_FOOTER = (
+    "🎧 The Legendary Poet — русская поэзия, музыка и литературные материалы.\n"
+    f"🌐 {_SITE_URL}"
+)
+
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -42,6 +49,12 @@ def _parser() -> argparse.ArgumentParser:
         default="full-length",
         help="full-length transfers public videos over 180 seconds; all-public includes shorter candidates",
     )
+    parser.add_argument(
+        "--phase",
+        choices=("videos", "albums", "all"),
+        default="all",
+        help="videos uploads only; albums organizes albums only; all performs both phases",
+    )
     parser.add_argument("--cache-dir", type=Path, default=Path("data/cache/vk-transfer"))
     parser.add_argument("--journal", type=Path, default=Path("data/reports/youtube-vk-sync-journal.json"))
     parser.add_argument("--result-output", type=Path)
@@ -52,6 +65,12 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--confirm-source-snapshot", help="Exact source snapshot UUID")
     parser.add_argument("--max-videos", type=int, default=100)
     parser.add_argument("--processing-timeout", type=int, default=3600)
+    parser.add_argument(
+        "--write-delay",
+        type=float,
+        default=1.0,
+        help="Pause in seconds after successful remote mutations",
+    )
     parser.add_argument("--yt-dlp", default="yt-dlp", help="yt-dlp executable name or path")
     return parser
 
@@ -83,7 +102,7 @@ def _load_journal(path: Path, *, source: AuditPackage, community_id: int) -> dic
         return payload
     return {
         "schema_name": "video-manager.youtube-vk-sync-journal",
-        "schema_version": 1,
+        "schema_version": 2,
         "created_at": datetime.now(UTC).isoformat(),
         "updated_at": datetime.now(UTC).isoformat(),
         "source_snapshot_id": str(source.snapshot_id),
@@ -92,6 +111,7 @@ def _load_journal(path: Path, *, source: AuditPackage, community_id: int) -> dic
         "placements": {},
         "uploads": {},
         "unsupported_album_descriptions": {},
+        "completed_phases": [],
     }
 
 
@@ -132,6 +152,27 @@ def _source_memberships(source: AuditPackage) -> dict[str, list[str]]:
     for titles in result.values():
         titles.sort(key=str.casefold)
     return result
+
+
+def _vk_title(source_title: str) -> str:
+    title = " ".join(source_title.split())
+    if "⚡" in title:
+        return title
+    if "🔥" in title:
+        return title.replace("🔥", "⚡", 1)
+    return f"{title} ⚡"
+
+
+def _vk_description(source_description: str) -> str:
+    description = source_description.strip()
+    if _SITE_URL in description:
+        return description
+    return f"{description}\n\n{_SITE_FOOTER}" if description else _SITE_FOOTER
+
+
+def _pause(seconds: float) -> None:
+    if seconds > 0:
+        time.sleep(seconds)
 
 
 def _resolve_executable(value: str) -> str:
@@ -205,6 +246,7 @@ def _ensure_albums(
     album_map: dict[str, int],
     journal: dict[str, Any],
     journal_path: Path,
+    write_delay: float,
 ) -> None:
     source_collections = {item.ref.remote_id: item for item in source.collections}
     albums = journal.setdefault("albums", {})
@@ -224,6 +266,7 @@ def _ensure_albums(
                     "status": "created",
                 }
                 _save_journal(journal_path, journal)
+                _pause(write_delay)
             album_map[normalized] = album_id
         source_collection = source_collections.get(gap.source_collection_id)
         if source_collection is not None and source_collection.description.strip():
@@ -243,6 +286,7 @@ def _place_existing_videos(
     album_map: dict[str, int],
     journal: dict[str, Any],
     journal_path: Path,
+    write_delay: float,
 ) -> None:
     placements = journal.setdefault("placements", {})
     for gap in comparison.collection_gaps:
@@ -265,6 +309,8 @@ def _place_existing_videos(
                 "status": "added" if added else "already_present",
             }
             _save_journal(journal_path, journal)
+            if added:
+                _pause(write_delay)
 
 
 def _upload_candidates(
@@ -280,6 +326,8 @@ def _upload_candidates(
     yt_dlp: str,
     cache_dir: Path,
     processing_timeout: int,
+    place_in_albums: bool,
+    write_delay: float,
 ) -> None:
     source_videos = {item.ref.remote_id: item for item in source.videos}
     uploads = journal.setdefault("uploads", {})
@@ -287,6 +335,8 @@ def _upload_candidates(
 
     for index, source_id in enumerate(candidate_ids, start=1):
         source_video = source_videos[source_id]
+        published_title = _vk_title(source_video.title)
+        published_description = _vk_description(source_video.description)
         existing = uploads.get(source_id)
         ticket: VkUploadTicket | None = None
         if isinstance(existing, dict):
@@ -297,20 +347,22 @@ def _upload_candidates(
                     ticket = VkUploadTicket(owner_id=owner_id, video_id=video_id, upload_url="journal-resume")
 
         if ticket is None:
-            print(f"[{index}/{len(candidate_ids)}] Downloading {source_id} — {source_video.title}")
+            print(f"[{index}/{len(candidate_ids)}] Downloading {source_id} — {published_title}")
             media_path = _download_video(yt_dlp=yt_dlp, video_id=source_id, cache_dir=cache_dir)
             print(f"[{index}/{len(candidate_ids)}] Uploading {media_path.name} to VK…")
             ticket = writer.begin_upload(
                 community_id=community_id,
-                title=source_video.title,
-                description=source_video.description,
+                title=published_title,
+                description=published_description,
             )
             upload_response = writer.upload_file(ticket, media_path)
             processed = writer.wait_until_available(ticket, timeout_seconds=processing_timeout)
             uploads[source_id] = {
                 "source_video_id": source_id,
                 "remote_id": ticket.remote_id,
-                "title": source_video.title,
+                "source_title": source_video.title,
+                "published_title": published_title,
+                "site_url": _SITE_URL,
                 "media_path": str(media_path),
                 "upload_response": upload_response,
                 "vk_type": processed.get("type"),
@@ -318,9 +370,12 @@ def _upload_candidates(
             }
             _save_journal(journal_path, journal)
             print(f"[{index}/{len(candidate_ids)}] Verified https://vk.com/video{ticket.remote_id}")
+            _pause(write_delay)
         else:
             print(f"[{index}/{len(candidate_ids)}] Reusing verified journal upload {ticket.remote_id}")
 
+        if not place_in_albums:
+            continue
         for collection_title in memberships.get(source_id, []):
             album_id = album_map[normalize_title(collection_title)]
             key = f"{ticket.remote_id}:{album_id}"
@@ -339,10 +394,15 @@ def _upload_candidates(
                 "status": "added" if added else "already_present",
             }
             _save_journal(journal_path, journal)
+            if added:
+                _pause(write_delay)
 
 
 def main() -> int:
     args = _parser().parse_args()
+    if args.write_delay < 0:
+        raise SystemExit("--write-delay cannot be negative")
+
     settings = get_settings()
     source = _load_audit(args.source)
     if source.channel.ref.platform != PlatformName.YOUTUBE:
@@ -362,27 +422,38 @@ def main() -> int:
     print("Reading live VK inventory before any write…")
     live_before = VkInventoryService(reader).build_audit_package(community_id)
     comparison = compare_audit_packages(source, live_before)
-    candidate_ids = _transfer_candidates(comparison, scope=args.scope)
+    all_candidate_ids = _transfer_candidates(comparison, scope=args.scope)
+    candidate_ids = all_candidate_ids if args.phase in {"videos", "all"} else []
     if len(candidate_ids) > args.max_videos:
         raise SystemExit(f"Candidate count {len(candidate_ids)} exceeds --max-videos {args.max_videos}.")
 
     missing_albums = sum(gap.target_collection_id is None for gap in comparison.collection_gaps)
     placement_count = sum(gap.missing_placement_count for gap in comparison.collection_gaps)
     nonempty_playlist_descriptions = sum(bool(item.description.strip()) for item in source.collections)
+    source_videos = {item.ref.remote_id: item for item in source.videos}
+    lightning_title_changes = sum(
+        _vk_title(source_videos[video_id].title) != source_videos[video_id].title for video_id in candidate_ids
+    )
     print(
         "VK synchronization preflight:\n"
         f"  source snapshot: {source.snapshot_id}\n"
         f"  target community: {community_id} — {community_record.title}\n"
         f"  scope: {args.scope}\n"
+        f"  phase: {args.phase}\n"
         f"  videos to upload now: {len(candidate_ids)}\n"
+        f"  titles receiving the ⚡ standard: {lightning_title_changes}\n"
+        f"  descriptions receiving site link: {sum(_SITE_URL not in source_videos[item].description for item in candidate_ids)}\n"
+        f"  write delay: {args.write_delay:.2f}s\n"
         f"  ambiguous existing matches: {comparison.ambiguous_match_count}\n"
         f"  albums to create: {missing_albums}\n"
         f"  existing-video album placements: {placement_count}\n"
         f"  source playlist descriptions not supported by VK albums: {nonempty_playlist_descriptions}"
     )
 
-    yt_dlp = _resolve_executable(args.yt_dlp)
-    _resolve_executable("ffmpeg")
+    yt_dlp: str | None = None
+    if args.phase in {"videos", "all"}:
+        yt_dlp = _resolve_executable(args.yt_dlp)
+        _resolve_executable("ffmpeg")
     if not args.execute:
         print("Dry-run only. No remote write method was called.")
         print(
@@ -408,36 +479,45 @@ def main() -> int:
     )
     journal = _load_journal(args.journal, source=source, community_id=community_id)
     album_map = _album_map_from_live(live_before)
-    _ensure_albums(
-        source=source,
-        comparison=comparison,
-        community_id=community_id,
-        writer=writer,
-        album_map=album_map,
-        journal=journal,
-        journal_path=args.journal,
-    )
-    _place_existing_videos(
-        comparison=comparison,
-        community_id=community_id,
-        writer=writer,
-        album_map=album_map,
-        journal=journal,
-        journal_path=args.journal,
-    )
-    _upload_candidates(
-        source=source,
-        candidate_ids=candidate_ids,
-        community_id=community_id,
-        writer=writer,
-        album_map=album_map,
-        journal=journal,
-        journal_path=args.journal,
-        memberships=_source_memberships(source),
-        yt_dlp=yt_dlp,
-        cache_dir=args.cache_dir,
-        processing_timeout=args.processing_timeout,
-    )
+
+    if args.phase in {"albums", "all"}:
+        _ensure_albums(
+            source=source,
+            comparison=comparison,
+            community_id=community_id,
+            writer=writer,
+            album_map=album_map,
+            journal=journal,
+            journal_path=args.journal,
+            write_delay=args.write_delay,
+        )
+        _place_existing_videos(
+            comparison=comparison,
+            community_id=community_id,
+            writer=writer,
+            album_map=album_map,
+            journal=journal,
+            journal_path=args.journal,
+            write_delay=args.write_delay,
+        )
+
+    if args.phase in {"videos", "all"}:
+        assert yt_dlp is not None
+        _upload_candidates(
+            source=source,
+            candidate_ids=candidate_ids,
+            community_id=community_id,
+            writer=writer,
+            album_map=album_map,
+            journal=journal,
+            journal_path=args.journal,
+            memberships=_source_memberships(source),
+            yt_dlp=yt_dlp,
+            cache_dir=args.cache_dir,
+            processing_timeout=args.processing_timeout,
+            place_in_albums=args.phase == "all",
+            write_delay=args.write_delay,
+        )
 
     print("Reading final live VK inventory…")
     live_after = VkInventoryService(reader).build_audit_package(community_id)
@@ -446,6 +526,9 @@ def main() -> int:
     result_output.parent.mkdir(parents=True, exist_ok=True)
     result_output.write_text(live_after.model_dump_json(indent=2), encoding="utf-8")
     final_comparison = compare_audit_packages(source, live_after)
+    completed_phases = journal.setdefault("completed_phases", [])
+    if args.phase not in completed_phases:
+        completed_phases.append(args.phase)
     journal["final_snapshot_id"] = str(live_after.snapshot_id)
     journal["final_export"] = str(result_output)
     journal["remaining_missing_on_target"] = len(final_comparison.missing_on_target)
