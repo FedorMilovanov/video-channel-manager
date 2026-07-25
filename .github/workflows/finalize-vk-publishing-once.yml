@@ -1,6 +1,9 @@
 name: Finalize VK publishing once
 
 on:
+  push:
+    branches:
+      - integration/youtube-vk-unified-v2
   pull_request:
     branches:
       - main
