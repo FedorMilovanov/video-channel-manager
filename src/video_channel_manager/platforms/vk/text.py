@@ -5,6 +5,7 @@ import re
 import unicodedata
 from dataclasses import dataclass
 from typing import Literal
+from urllib.parse import urlsplit
 
 Severity = Literal["warning", "error"]
 
@@ -16,11 +17,18 @@ _DOUBLE_UNDERSCORE_RE = re.compile(r"(?<![\w_])__(?![\s_])(?P<body>[^_\n]*?\S)__
 _SINGLE_UNDERSCORE_RE = re.compile(r"(?<![\w_])_(?![\s_])(?P<body>[^_\n]*?\S)_(?![\w_])")
 _STRIKETHROUGH_RE = re.compile(r"(?<!~)~~(?![\s~])(?P<body>[^~\n]*?\S)~~(?!~)")
 _MULTI_BLANK_RE = re.compile(r"\n[ \t]*\n(?:[ \t]*\n)+")
-_HTML_TAG_RE = re.compile(r"</?(?:b|strong|i|em|u|s|strike|a|br|p|div|span)(?:\s+[^>]*)?>", re.IGNORECASE)
+_HTML_TAG_RE = re.compile(r"</?[A-Za-z][^>\n]*>")
 _ZERO_WIDTH = {"\ufeff", "\u200b", "\u2060"}
 _LITERAL_TRIPLE_STAR_RE = re.compile(r"(?<!\*)\*{3}(?!\*)")
 _DEFAULT_SITE_URL = "https://thelegendarypoet.ru/"
 _DEFAULT_BRAND_LINE = "🎧 The Legendary Poet — русская поэзия, музыка и литературные материалы."
+_EMPHASIS_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("**", _DOUBLE_STAR_RE),
+    ("__", _DOUBLE_UNDERSCORE_RE),
+    ("~~", _STRIKETHROUGH_RE),
+    ("*", _SINGLE_STAR_RE),
+    ("_", _SINGLE_UNDERSCORE_RE),
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,13 +96,38 @@ def _excerpt(value: str, limit: int = 160) -> str:
     return compact if len(compact) <= limit else f"{compact[: limit - 1]}…"
 
 
+def _closing_emphasis_suffix(text: str, match: re.Match[str]) -> str:
+    """Return a URL suffix that belongs to an enclosing emphasis span.
+
+    ``https?://\S+`` deliberately accepts URL underscores and punctuation. It
+    can therefore also consume the closing ``*``/``_``/``~~`` of a span such as
+    ``*https://example.test/path*``. We only unmask a suffix when the complete
+    same-line text proves that a matching emphasis span ends exactly there.
+    """
+
+    raw = match.group(0)
+    line_start = text.rfind("\n", 0, match.start()) + 1
+    candidate = text[line_start : match.end()]
+    relative_url_start = match.start() - line_start
+    for marker, pattern in _EMPHASIS_PATTERNS:
+        if not raw.endswith(marker):
+            continue
+        for emphasis_match in pattern.finditer(candidate):
+            if emphasis_match.end() == len(candidate) and emphasis_match.start() < relative_url_start:
+                return marker
+    return ""
+
+
 def _mask_urls(text: str) -> tuple[str, list[tuple[str, str]]]:
     replacements: list[tuple[str, str]] = []
 
     def replace(match: re.Match[str]) -> str:
+        suffix = _closing_emphasis_suffix(text, match)
+        original = match.group(0)
+        protected = original[: -len(suffix)] if suffix else original
         token = f"\ue100{len(replacements)}\ue101"
-        replacements.append((token, match.group(0)))
-        return token
+        replacements.append((token, protected))
+        return f"{token}{suffix}"
 
     return _URL_RE.sub(replace, text), replacements
 
@@ -134,7 +167,10 @@ def _convert_markdown_links(text: str) -> tuple[str, int]:
     def replace(match: re.Match[str]) -> str:
         label = match.group("label").strip()
         url = match.group("url")
-        return f"{label}: {url}" if label else url
+        if not label:
+            return url
+        separator = " " if label.endswith((":", "：", "—", "–", "-")) else ": "
+        return f"{label}{separator}{url}"
 
     return _MARKDOWN_LINK_RE.subn(replace, text)
 
@@ -242,10 +278,19 @@ def render_vk_clip_description(
 ) -> VkDescriptionRender:
     """Render plain text for VK Clips and add a full-video route when supplied."""
 
+    if max_characters <= 0:
+        raise ValueError("max_characters must be positive")
     base = render_vk_video_description(source_description, site_url=site_url)
     text = base.text
-    if full_video_url and full_video_url not in text:
-        text = f"{text}\n\n▶ Полная версия: {full_video_url.strip()}" if text else f"▶ Полная версия: {full_video_url.strip()}"
+    normalized_full_url: str | None = None
+    if full_video_url is not None:
+        normalized_full_url = full_video_url.strip()
+        parsed = urlsplit(normalized_full_url)
+        if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
+            raise ValueError("full_video_url must be an absolute http(s) URL")
+    if normalized_full_url and normalized_full_url not in text:
+        route = f"▶ Полная версия: {normalized_full_url}"
+        text = f"{text}\n\n{route}" if text else route
     issues = list(base.issues)
     if len(text) > max_characters:
         issues.append(
