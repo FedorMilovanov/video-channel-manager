@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-manager.youtube-comment-content",
+  "schema_version": 1,
+  "status": "approved",
+  "channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+  "video_id": "BSJZ3BogD94",
+  "video_title": "Never Have I Been So Much Tired ⚡ Sergey Esenin @TheLegendaryPoet",
+  "reviewed_at": "2026-07-25T16:14:00+00:00",
+  "source_ids": [
+    "esenin-tired-bibliography",
+    "playlist-esenin",
+    "playlist-singing-poets"
+  ],
+  "comment_text": "📖 Sergey Esenin wrote «Я усталым таким ещё не был…» in 1923. It was first published in 1924 in the journal «Гостиница для путешествующих в прекрасном», together with other poems connected with «Москва кабацкая».\n\nThis English adaptation keeps the contrast between the remembered Ryazan sky and the exhausted urban voice. Which image remained strongest for you after listening?\n\n🌐 The Legendary Poet:\nhttps://thelegendarypoet.ru/\n\n📖 Sergey Esenin playlist:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q\n\n🎧 Singing Poets playlist:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8\n\nVK:\nhttps://vk.com/thelegendarypoet\n\nRussian text and publication note:\nhttps://ru.wikisource.org/wiki/Я_усталым_таким_ещё_не_был_(Есенин)",
+  "sources": [
+    {
+      "source_id": "esenin-tired-bibliography",
+      "title": "«Я усталым таким ещё не был…» — текст и сведения о публикации",
+      "url": "https://ru.wikisource.org/wiki/Я_усталым_таким_ещё_не_был_(Есенин)"
+    },
+    {
+      "source_id": "playlist-esenin",
+      "title": "Плейлист «Сергей Есенин»",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q"
+    },
+    {
+      "source_id": "playlist-singing-poets",
+      "title": "Плейлист «Поющие Поэты»",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8"
+    }
+  ]
+}
