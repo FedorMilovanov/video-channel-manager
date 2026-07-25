@@ -6,12 +6,18 @@ on:
       - agent/unified-editorial-pipeline
     paths:
       - .github/workflows/format-editorial-pr.yml
+  pull_request:
+    branches:
+      - feature/youtube-comment-publishing-v1
+    types:
+      - synchronize
 
 permissions:
   contents: write
 
 jobs:
   format:
+    if: github.head_ref == 'agent/unified-editorial-pipeline' || github.ref_name == 'agent/unified-editorial-pipeline'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
