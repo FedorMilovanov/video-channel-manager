@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import os
 import sys
 from contextlib import nullcontext
@@ -49,12 +50,12 @@ def _download_video(*, yt_dlp: str, video_id: str, cache_dir: Path) -> Path:
     return path
 
 
-def _write_lock(args: object) -> ContextManager[None]:
-    if not bool(getattr(args, "execute", False)):
+def _write_lock(args: argparse.Namespace) -> ContextManager[None]:
+    if not args.execute:
         return nullcontext()
     settings = get_settings()
-    account = str(getattr(args, "account"))
-    community_value = str(getattr(args, "community"))
+    account = str(args.account)
+    community_value = str(args.community)
     store = VkTokenStore(settings.data_dir)
     reader = VkApiClient(
         token_store=store,
