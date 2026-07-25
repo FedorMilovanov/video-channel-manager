@@ -19,7 +19,9 @@ from video_channel_manager.editorial.content_plan import (
     build_content_plan,
     make_content_operation,
     operation_state,
+    target_state_key,
     validate_content_plan,
+    validate_preflight_state,
 )
 from video_channel_manager.editorial.preview import preview_records, renderer_for
 from video_channel_manager.platforms.vk.editorial_plan import apply_editorial_records_to_vk_catalog_plan
@@ -70,6 +72,19 @@ def _load_records(input_path: Path) -> tuple[list[EditorialContentRecord], list[
     return records, errors
 
 
+def _print_failures(failures: list[str]) -> None:
+    for failure in failures:
+        console.print(f"[red]ERROR:[/red] {failure}")
+
+
+def _operation_key(raw: dict[str, Any]) -> str:
+    return target_state_key(
+        platform=str(raw.get("platform") or ""),
+        surface=str(raw.get("surface") or ""),
+        target_id=str(raw.get("target_id") or ""),
+    )
+
+
 @content_app.command("validate")
 def validate_command(
     input_path: Annotated[Path, typer.Option("--input", "-i", help="Canonical JSON file or directory")],
@@ -91,8 +106,7 @@ def validate_command(
             records.append(parse_content_record(payload))
     failures.extend(validate_content_collection(records))
     if failures:
-        for failure in failures:
-            console.print(f"[red]ERROR:[/red] {failure}")
+        _print_failures(failures)
         raise typer.Exit(code=2)
     console.print(f"[green]Validated {len(records)} editorial content record(s).[/green]")
 
@@ -115,8 +129,7 @@ def preview_command(
 
     records, errors = _load_records(input_path)
     if errors:
-        for error in errors:
-            console.print(f"[red]ERROR:[/red] {error}")
+        _print_failures(errors)
         raise typer.Exit(code=2)
     try:
         batch = preview_records(records, platform=platform, surface=surface)
@@ -199,8 +212,7 @@ def plan_build_command(
 
     records, errors = _load_records(input_path)
     if errors:
-        for error in errors:
-            console.print(f"[red]ERROR:[/red] {error}")
+        _print_failures(errors)
         raise typer.Exit(code=2)
     by_id = {record.content_id: record for record in records}
     try:
@@ -242,8 +254,7 @@ def plan_build_command(
             continue
         operations.append(operation)
     if failures:
-        for failure in failures:
-            console.print(f"[red]ERROR:[/red] {failure}")
+        _print_failures(failures)
         raise typer.Exit(code=2)
 
     try:
@@ -257,8 +268,7 @@ def plan_build_command(
         raise typer.Exit(code=2) from exc
     plan_errors = validate_content_plan(plan)
     if plan_errors:
-        for error in plan_errors:
-            console.print(f"[red]ERROR:[/red] {error}")
+        _print_failures(plan_errors)
         raise typer.Exit(code=2)
     _write_json(output, plan)
     console.print(f"[green]Built signed content plan with {len(operations)} operation(s) → {output}[/green]")
@@ -278,8 +288,7 @@ def plan_validate_command(
         raise typer.Exit(code=2) from exc
     errors = validate_content_plan(payload)
     if errors:
-        for error in errors:
-            console.print(f"[red]ERROR:[/red] {error}")
+        _print_failures(errors)
         raise typer.Exit(code=2)
     console.print(f"[green]Valid signed content plan:[/green] {payload['plan_sha256']}")
 
@@ -291,11 +300,17 @@ def plan_preflight_command(
         Path,
         typer.Option(
             "--state",
-            help="Fresh read-only target state with targets: platform/surface/target_id/current_text/current_revision",
+            help=(
+                "Fresh read-only state bound to the same source_snapshot; every planned target must have an "
+                "explicit exists=true/false observation"
+            ),
         ),
     ],
+    json_output: Annotated[
+        Path | None, typer.Option("--json-output", help="Optional machine-readable preflight report")
+    ] = None,
 ) -> None:
-    """Classify every operation as ready, already-applied, or conflict without writing."""
+    """Fail-closed classification of every operation without remote mutation."""
 
     try:
         plan = _read_json(plan_path)
@@ -305,47 +320,66 @@ def plan_preflight_command(
         raise typer.Exit(code=2) from exc
     plan_errors = validate_content_plan(plan)
     if plan_errors:
-        for error in plan_errors:
-            console.print(f"[red]ERROR:[/red] {error}")
+        _print_failures(plan_errors)
         raise typer.Exit(code=2)
-    raw_targets = state_payload.get("targets")
-    if not isinstance(raw_targets, list):
-        console.print("[red]State targets must be a list.[/red]")
+
+    source_snapshot = str(plan.get("source_snapshot") or "")
+    state_by_key, state_errors = validate_preflight_state(
+        state_payload,
+        expected_source_snapshot=source_snapshot,
+    )
+    operations = plan.get("operations")
+    assert isinstance(operations, list)
+    planned_keys = {_operation_key(raw) for raw in operations if isinstance(raw, dict)}
+    missing_keys = sorted(planned_keys.difference(state_by_key))
+    if missing_keys:
+        state_errors.append("state snapshot is incomplete for planned targets: " + ", ".join(missing_keys))
+    if state_errors:
+        _print_failures(state_errors)
         raise typer.Exit(code=2)
-    state_by_key: dict[str, dict[str, Any]] = {}
-    for raw in raw_targets:
-        if not isinstance(raw, dict):
-            continue
-        key = f"{raw.get('platform')}:{raw.get('surface')}:{raw.get('target_id')}"
-        state_by_key[key] = raw
 
     counts: Counter[str] = Counter()
+    report_operations: list[dict[str, Any]] = []
     table = Table(title="Editorial content plan preflight")
     table.add_column("Operation")
     table.add_column("Target")
     table.add_column("State")
-    operations = plan.get("operations")
-    assert isinstance(operations, list)
-    for raw in operations:
-        assert isinstance(raw, dict)
-        key = f"{raw.get('platform')}:{raw.get('surface')}:{raw.get('target_id')}"
-        current = state_by_key.get(key)
+    for raw_value in operations:
+        assert isinstance(raw_value, dict)
+        key = _operation_key(raw_value)
+        current = state_by_key[key]
         state = operation_state(
-            raw,
-            current_text=(
-                str(current.get("current_text")) if current and current.get("current_text") is not None else None
-            ),
+            raw_value,
+            target_exists=current["exists"],
+            current_text=str(current["current_text"]) if current.get("current_text") is not None else None,
             current_revision=(
-                str(current.get("current_revision"))
-                if current and current.get("current_revision") is not None
-                else None
+                str(current["current_revision"]) if current.get("current_revision") is not None else None
             ),
         )
         counts[state] += 1
         style = "green" if state in {"ready", "already_applied"} else "red"
-        table.add_row(str(raw.get("operation_id")), key, f"[{style}]{state}[/{style}]")
+        table.add_row(str(raw_value.get("operation_id")), key, f"[{style}]{state}[/{style}]")
+        report_operations.append(
+            {
+                "operation_id": raw_value.get("operation_id"),
+                "target": key,
+                "state": state,
+            }
+        )
     console.print(table)
     console.print(" · ".join(f"{key}={value}" for key, value in sorted(counts.items())))
+
+    if json_output is not None:
+        _write_json(
+            json_output,
+            {
+                "plan_sha256": plan.get("plan_sha256"),
+                "source_snapshot": source_snapshot,
+                "counts": dict(sorted(counts.items())),
+                "operations": report_operations,
+            },
+        )
+        console.print(f"[green]Preflight report written to {json_output}[/green]")
     if counts["conflict"]:
         raise typer.Exit(code=2)
 
@@ -364,8 +398,7 @@ def plan_adapt_vk_catalog_command(
 
     records, errors = _load_records(input_path)
     if errors:
-        for error in errors:
-            console.print(f"[red]ERROR:[/red] {error}")
+        _print_failures(errors)
         raise typer.Exit(code=2)
     try:
         plan = _read_json(plan_path)
