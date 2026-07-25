@@ -1,0 +1,38 @@
+{
+  "schema_name": "video-manager.youtube-comment-content",
+  "schema_version": 1,
+  "status": "approved",
+  "channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+  "video_id": "K-x6neQiyfs",
+  "video_title": "Песнь о Вещем Олеге ⚡ VERSION 2 ⚡ А. С. Пушкин",
+  "reviewed_at": "2026-07-25T16:16:00+00:00",
+  "source_ids": [
+    "pushkin-oleg-feb",
+    "pushkin-oleg-neb",
+    "playlist-pushkin",
+    "playlist-singing-poets"
+  ],
+  "comment_text": "📜 Пушкин написал «Песнь о вещем Олеге» в 1822 году. Впервые произведение было напечатано в альманахе «Северные цветы на 1825 год»; основой сюжета стал летописный рассказ о смерти князя Олега.\n\nЧто в этой музыкальной версии заметнее всего: торжественный рассказ, разговор Олега с кудесником или переход от победной памяти к финалу у конского черепа?\n\n🌐 Сайт The Legendary Poet:\nhttps://thelegendarypoet.ru/\n\n📖 Плейлист «Александр Пушкин»:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3ua0FhqDhByHxyaBjVrk0-pE\n\n🎧 Плейлист «Поющие Поэты»:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8\n\nVK:\nhttps://vk.com/thelegendarypoet\n\nТекст и библиографическая справка:\nhttps://rusneb.ru/catalog/010000_000060_ART-9fb0787d-3095-4f95-b073-0227a2a153fe/",
+  "sources": [
+    {
+      "source_id": "pushkin-oleg-feb",
+      "title": "Пушкин. ПСС. Примечания к «Песни о вещем Олеге»",
+      "url": "https://feb-web.ru/feb/pushkin/texts/push17/vol02/y22-a05-.htm?cmd=p"
+    },
+    {
+      "source_id": "pushkin-oleg-neb",
+      "title": "«Песнь о вещем Олеге» — Национальная электронная библиотека",
+      "url": "https://rusneb.ru/catalog/010000_000060_ART-9fb0787d-3095-4f95-b073-0227a2a153fe/"
+    },
+    {
+      "source_id": "playlist-pushkin",
+      "title": "Плейлист «Александр Пушкин»",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3ua0FhqDhByHxyaBjVrk0-pE"
+    },
+    {
+      "source_id": "playlist-singing-poets",
+      "title": "Плейлист «Поющие Поэты»",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8"
+    }
+  ]
+}
