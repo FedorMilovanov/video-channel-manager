@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-manager.youtube-comment-content",
+  "schema_version": 1,
+  "status": "approved",
+  "channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+  "video_id": "5CzAVKhsscA",
+  "video_title": "VIKTOR TSOI ⚡ WE WAIT FOR CHANGE - МЫ ЖДЕМ ПЕРЕМЕН ⚡ SUNO AI English Cover",
+  "reviewed_at": "2026-07-25T16:13:00+00:00",
+  "source_ids": [
+    "kino-original-track",
+    "mosfilm-assa",
+    "playlist-ai-experiments"
+  ],
+  "comment_text": "🎧 This is an English musical adaptation of «Перемен!» by Viktor Tsoi and Kino, not a replacement for the Russian original. The song is also closely associated with the final appearance of Tsoi in Sergei Solovyov’s film «Assa».\n\nWhich element survives the change of language most clearly for you: the rhythm, the tension, or the central demand for change?\n\n🌐 The Legendary Poet:\nhttps://thelegendarypoet.ru/\n\n⚡ AI Music Experiments playlist:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3uYdxFo5bxzXEUI8HYIo-sHb\n\nVK:\nhttps://vk.com/thelegendarypoet\n\nOriginal song:\nhttps://open.spotify.com/track/2SlPgibCIYGakQmFnhlecE",
+  "sources": [
+    {
+      "source_id": "kino-original-track",
+      "title": "Kino. «Перемен» — из фильма «Асса»",
+      "url": "https://open.spotify.com/track/2SlPgibCIYGakQmFnhlecE"
+    },
+    {
+      "source_id": "mosfilm-assa",
+      "title": "«Асса» — каталог Мосфильма",
+      "url": "https://www.mosfilm.ru/cinema/films/assa/"
+    },
+    {
+      "source_id": "playlist-ai-experiments",
+      "title": "Плейлист «Эксперименты — AI Музыка»",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uYdxFo5bxzXEUI8HYIo-sHb"
+    }
+  ]
+}
