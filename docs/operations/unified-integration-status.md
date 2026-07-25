@@ -45,7 +45,7 @@ a91c610ba0a9633819327814a6b7836aa1a434f5 — Add local secrets ignore rules
 9b32221fa943db32f6d15a40028d0c69e54ca8a3
 ```
 
-Таким образом PR #13 построен непосредственно против актуального `main`, но остаётся draft и ничего не сливает автоматически.
+Таким образом PR #13 построен непосредственно против актуального `main`, остаётся draft и ничего не сливает автоматически.
 
 GitHub compare для heads PR #1, #6, #7, #8, #9 и #10 показывает:
 
@@ -92,6 +92,7 @@ Unified branch является потомком всех прежних раб�
 335 — Python 3.11 / 3.12 / 3.13: success
 337 — merge-head с полной feature ancestry: Python 3.11 / 3.12 / 3.13: success
 339 — documented feature head: Python 3.11 / 3.12 / 3.13: success
+344 — current-main integrated head: Python 3.11 / 3.12 / 3.13: success
 ```
 
 Каждая версия прошла:
@@ -108,12 +109,11 @@ pytest --cov
 
 Final gate был корректно skipped, поскольку все individual outcomes были успешными.
 
-## Текущее правило
+## Финальное состояние PR
 
-- PR #13 остаётся единственным итоговым draft PR прямо в `main`;
-- PR #7–#10 закрыты без merge как superseded;
-- PR #1 и #6 закрываются без merge после финального CI current-main head;
-- слияние PR #13 в `main` без отдельного явного решения запрещено;
+- PR #13 — единственный итоговый draft PR прямо в `main`;
+- PR #1, #6, #7, #8, #9 и #10 закрыты **без merge** как superseded by #13;
+- PR #13 остаётся mergeable, но его слияние в `main` без отдельного явного решения запрещено;
 - live YouTube/VK execute не запускается из integration branch автоматически;
 - старые backups/results сохраняются независимо от Git;
 - перед любой новой platform mutation создаётся свежий snapshot и новый plan соответствующей schema.
