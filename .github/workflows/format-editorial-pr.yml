@@ -38,6 +38,12 @@ jobs:
       - name: Apply Ruff formatting
         run: ruff format .
 
+      - name: Apply safe Ruff fixes
+        run: ruff check . --fix
+
+      - name: Normalize after fixes
+        run: ruff format .
+
       - name: Verify Ruff correctness
         run: ruff check .
 
