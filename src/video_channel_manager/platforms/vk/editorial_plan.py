@@ -34,9 +34,7 @@ def apply_editorial_records_to_vk_catalog_plan(
     by_video_id: dict[str, EditorialContentRecord] = {}
     for candidate in records:
         if candidate.status != "approved" or not candidate.reviewed_at:
-            raise ValueError(
-                f"VK catalog adaptation requires approved, reviewed content: {candidate.content_id}"
-            )
+            raise ValueError(f"VK catalog adaptation requires approved, reviewed content: {candidate.content_id}")
         if not candidate.video_id:
             continue
         if candidate.video_id in by_video_id:
