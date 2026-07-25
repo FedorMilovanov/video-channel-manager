@@ -163,6 +163,8 @@ class VkVideoWriter:
         album_id: int,
         owner_id: int,
         video_id: int,
+        verification_attempts: int = 5,
+        verification_delay_seconds: float = 0.5,
     ) -> bool:
         if album_id in self.album_ids_for_video(
             community_id=community_id,
@@ -179,9 +181,25 @@ class VkVideoWriter:
                 "video_id": video_id,
             },
         )
-        if response not in (1, True):
-            raise VkWriteError("video.addToAlbum did not return success.", method="video.addToAlbum")
-        return True
+
+        attempts = max(1, verification_attempts)
+        delay_seconds = max(0.0, verification_delay_seconds)
+        for attempt in range(attempts):
+            if album_id in self.album_ids_for_video(
+                community_id=community_id,
+                owner_id=owner_id,
+                video_id=video_id,
+            ):
+                return True
+            if attempt + 1 < attempts and delay_seconds > 0:
+                time.sleep(delay_seconds)
+                delay_seconds *= 2
+
+        raise VkWriteError(
+            "video.addToAlbum returned "
+            f"{response!r}, but the album membership was not visible after {attempts} verification attempts.",
+            method="video.addToAlbum",
+        )
 
     def begin_upload(self, *, community_id: int, title: str, description: str) -> VkUploadTicket:
         response = self._call(
