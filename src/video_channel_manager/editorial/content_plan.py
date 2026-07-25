@@ -15,6 +15,12 @@ CONTENT_PLAN_SCHEMA_VERSION = 1
 ContentAction = Literal["create", "update"]
 OperationState = Literal["ready", "already_applied", "conflict"]
 
+_ALLOWED_PLATFORM_SURFACES = {
+    "youtube": frozenset({"comment", "description"}),
+    "vk": frozenset({"video_description", "post", "comment"}),
+}
+_ALLOWED_PLAN_MODES = frozenset({"dry-run-first"})
+
 
 def canonical_text(value: str) -> str:
     normalized = value.replace("\r\n", "\n").replace("\r", "\n")
@@ -31,6 +37,30 @@ def _canonical_json(payload: object) -> bytes:
 
 def _sha256(payload: object) -> str:
     return f"sha256:{hashlib.sha256(_canonical_json(payload)).hexdigest()}"
+
+
+def _valid_aware_datetime(value: object) -> bool:
+    text = str(value or "").strip()
+    if not text:
+        return False
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    return parsed.tzinfo is not None and parsed.utcoffset() is not None
+
+
+def _platform_surface_error(platform: str, surface: str) -> str | None:
+    allowed = _ALLOWED_PLATFORM_SURFACES.get(platform)
+    if allowed is None:
+        return f"unsupported platform: {platform or '<blank>'}"
+    if surface not in allowed:
+        return f"unsupported {platform} surface: {surface or '<blank>'}"
+    return None
+
+
+def target_state_key(*, platform: str, surface: str, target_id: str) -> str:
+    return f"{platform.strip()}:{surface.strip()}:{target_id.strip()}"
 
 
 def operation_id_for(
@@ -75,13 +105,17 @@ def make_content_operation(
     normalized_target = target_id.strip()
     if not normalized_target:
         raise ValueError("target_id cannot be blank")
+    surface_error = _platform_surface_error(rendered.platform, rendered.surface)
+    if surface_error:
+        raise ValueError(surface_error)
     if not rendered.is_valid:
         raise ValueError("Cannot plan invalid rendered content.")
     normalized_text = canonical_text(rendered.text)
     before = canonical_text(expected_before_text) if expected_before_text is not None else None
-    if action == "create" and (before is not None or expected_revision is not None):
+    normalized_revision = expected_revision.strip() if expected_revision else None
+    if action == "create" and (before is not None or normalized_revision is not None):
         raise ValueError("Create operations require an absent target and cannot declare exact-before data.")
-    if action == "update" and (before is None or not expected_revision):
+    if action == "update" and (before is None or not normalized_revision):
         raise ValueError("Update operations require exact before-text and expected_revision guards.")
     rendered_sha = text_sha256(normalized_text)
     before_sha = text_sha256(before) if before is not None else None
@@ -94,7 +128,7 @@ def make_content_operation(
         variation_key=record.variation_key,
         rendered_sha256=rendered_sha,
         expected_before_sha256=before_sha,
-        expected_revision=expected_revision,
+        expected_revision=normalized_revision,
     )
     return {
         "operation_id": operation_id,
@@ -108,7 +142,7 @@ def make_content_operation(
         "rendered_sha256": rendered_sha,
         "expected_before_text": before,
         "expected_before_sha256": before_sha,
-        "expected_revision": expected_revision,
+        "expected_revision": normalized_revision,
         "source_ids": sorted(record.source_ids),
         "review_status": "approved",
         "reviewed_at": record.reviewed_at,
@@ -144,6 +178,10 @@ def build_content_plan(
 ) -> dict[str, Any]:
     if not source_snapshot.strip():
         raise ValueError("source_snapshot cannot be blank")
+    if not _valid_aware_datetime(source_snapshot_generated_at):
+        raise ValueError("source_snapshot_generated_at must be a timezone-aware ISO-8601 timestamp")
+    if mode not in _ALLOWED_PLAN_MODES:
+        raise ValueError(f"unsupported content plan mode: {mode}")
     payload: dict[str, Any] = {
         "schema_name": CONTENT_PLAN_SCHEMA_NAME,
         "schema_version": CONTENT_PLAN_SCHEMA_VERSION,
@@ -164,6 +202,12 @@ def validate_content_plan(payload: dict[str, Any]) -> list[str]:
         errors.append(f"schema_version must be {CONTENT_PLAN_SCHEMA_VERSION}")
     if not str(payload.get("source_snapshot") or "").strip():
         errors.append("source_snapshot cannot be blank")
+    if not _valid_aware_datetime(payload.get("source_snapshot_generated_at")):
+        errors.append("source_snapshot_generated_at must be a timezone-aware ISO-8601 timestamp")
+    if not _valid_aware_datetime(payload.get("created_at")):
+        errors.append("created_at must be a timezone-aware ISO-8601 timestamp")
+    if payload.get("mode") not in _ALLOWED_PLAN_MODES:
+        errors.append("mode must be dry-run-first")
     operations = payload.get("operations")
     if not isinstance(operations, list):
         return errors + ["operations must be a list"]
@@ -185,6 +229,9 @@ def validate_content_plan(payload: dict[str, Any]) -> list[str]:
             continue
         platform = str(raw.get("platform") or "").strip()
         surface = str(raw.get("surface") or "").strip()
+        surface_error = _platform_surface_error(platform, surface)
+        if surface_error:
+            errors.append(f"{prefix}: {surface_error}")
         target_id = str(raw.get("target_id") or "").strip()
         content_id = str(raw.get("content_id") or "").strip()
         variation_key = str(raw.get("variation_key") or "").strip()
@@ -207,8 +254,10 @@ def validate_content_plan(payload: dict[str, Any]) -> list[str]:
         source_ids = raw.get("source_ids")
         if not isinstance(source_ids, list) or not source_ids or not all(str(item).strip() for item in source_ids):
             errors.append(f"{prefix}.source_ids must contain at least one nonblank ID")
-        if raw.get("review_status") != "approved" or not str(raw.get("reviewed_at") or "").strip():
-            errors.append(f"{prefix} must be approved and reviewed")
+        elif len(source_ids) != len({str(item).strip() for item in source_ids}):
+            errors.append(f"{prefix}.source_ids cannot contain duplicates")
+        if raw.get("review_status") != "approved" or not _valid_aware_datetime(raw.get("reviewed_at")):
+            errors.append(f"{prefix} must be approved with a timezone-aware reviewed_at")
         expected_id = operation_id_for(
             action=action,  # type: ignore[arg-type]
             platform=platform,
@@ -224,7 +273,7 @@ def validate_content_plan(payload: dict[str, Any]) -> list[str]:
         if operation_id != expected_id:
             errors.append(f"{prefix}.operation_id mismatch")
         operation_ids.append(operation_id)
-        target_keys.append(f"{platform}:{surface}:{target_id}")
+        target_keys.append(target_state_key(platform=platform, surface=surface, target_id=target_id))
         variation_keys.append(variation_key)
         rendered_hashes.append(rendered_sha)
 
@@ -250,19 +299,75 @@ def validate_content_plan(payload: dict[str, Any]) -> list[str]:
     return errors
 
 
+def validate_preflight_state(
+    payload: dict[str, Any],
+    *,
+    expected_source_snapshot: str,
+) -> tuple[dict[str, dict[str, Any]], list[str]]:
+    errors: list[str] = []
+    actual_snapshot = str(payload.get("source_snapshot") or "").strip()
+    if actual_snapshot != expected_source_snapshot.strip():
+        errors.append("state source_snapshot does not match the signed plan")
+    generated_at = payload.get("source_snapshot_generated_at")
+    if generated_at is not None and not _valid_aware_datetime(generated_at):
+        errors.append("state source_snapshot_generated_at must be a timezone-aware ISO-8601 timestamp")
+    raw_targets = payload.get("targets")
+    if not isinstance(raw_targets, list):
+        return {}, errors + ["state targets must be a list"]
+
+    state_by_key: dict[str, dict[str, Any]] = {}
+    for index, raw in enumerate(raw_targets):
+        prefix = f"targets[{index}]"
+        if not isinstance(raw, dict):
+            errors.append(f"{prefix} must be an object")
+            continue
+        platform = str(raw.get("platform") or "").strip()
+        surface = str(raw.get("surface") or "").strip()
+        target_id = str(raw.get("target_id") or "").strip()
+        surface_error = _platform_surface_error(platform, surface)
+        if surface_error:
+            errors.append(f"{prefix}: {surface_error}")
+        if not target_id:
+            errors.append(f"{prefix}.target_id cannot be blank")
+        exists = raw.get("exists")
+        if not isinstance(exists, bool):
+            errors.append(f"{prefix}.exists must be true or false")
+        current_text = raw.get("current_text")
+        current_revision = str(raw.get("current_revision") or "").strip() or None
+        if exists is True:
+            if current_text is None:
+                errors.append(f"{prefix}.current_text is required when exists is true")
+            if current_revision is None:
+                errors.append(f"{prefix}.current_revision is required when exists is true")
+        elif exists is False:
+            if current_text is not None:
+                errors.append(f"{prefix}.current_text must be null when exists is false")
+            if current_revision is not None:
+                errors.append(f"{prefix}.current_revision must be null when exists is false")
+        key = target_state_key(platform=platform, surface=surface, target_id=target_id)
+        if key in state_by_key:
+            errors.append(f"duplicate state target: {key}")
+        else:
+            state_by_key[key] = raw
+    return state_by_key, errors
+
+
 def operation_state(
     operation: dict[str, Any],
     *,
+    target_exists: bool | None,
     current_text: str | None,
     current_revision: str | None,
 ) -> OperationState:
     desired = canonical_text(str(operation.get("rendered_text") or ""))
     current = canonical_text(current_text) if current_text is not None else None
-    if current is not None and text_sha256(current) == text_sha256(desired):
+    if target_exists is True and current is not None and text_sha256(current) == text_sha256(desired):
         return "already_applied"
     action = str(operation.get("action") or "")
     if action == "create":
-        return "ready" if current is None else "conflict"
+        return "ready" if target_exists is False else "conflict"
+    if action != "update" or target_exists is not True:
+        return "conflict"
     expected_before = operation.get("expected_before_text")
     expected_revision = str(operation.get("expected_revision") or "").strip() or None
     if expected_before is None or expected_revision is None:
@@ -284,6 +389,8 @@ __all__ = [
     "operation_id_for",
     "operation_state",
     "seal_content_plan",
+    "target_state_key",
     "text_sha256",
     "validate_content_plan",
+    "validate_preflight_state",
 ]
