@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from pathlib import Path
+
+import pytest
 
 from video_channel_manager.editorial.content import parse_content_record
 from video_channel_manager.platforms.vk.catalog import (
@@ -81,4 +84,16 @@ def test_vk_catalog_plan_reuses_guards_and_gets_canonical_description() -> None:
     assert "*" not in adapted_op["after_description"]
     assert "Сообщество проекта VK: https://vk.com/thelegendarypoet" in adapted_op["after_description"]
     assert adapted_op["editorial_variation_key"] == "tyutchev-night-sea-two-editions-nice-v3"
+    assert adapted_op["editorial_reviewed_at"] == "2026-07-25T20:22:00+00:00"
     assert adapted["plan_sha256"] != original["plan_sha256"]
+
+
+def test_vk_catalog_plan_rejects_draft_or_unreviewed_content() -> None:
+    record = _record()
+    draft = replace(record, status="draft", reviewed_at=None)
+    with pytest.raises(ValueError, match="approved, reviewed"):
+        apply_editorial_records_to_vk_catalog_plan(_catalog_plan(), [draft])
+
+    unreviewed = replace(record, reviewed_at=None)
+    with pytest.raises(ValueError, match="approved, reviewed"):
+        apply_editorial_records_to_vk_catalog_plan(_catalog_plan(), [unreviewed])
