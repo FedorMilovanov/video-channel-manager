@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-manager.youtube-comment-content",
+  "schema_version": 1,
+  "status": "approved",
+  "channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+  "video_id": "48WeOZPMaOA",
+  "video_title": "Ельцин VS Зиновьев ⚡ Исторические Рэп Дебаты ⚡ Apostrophes 1990",
+  "reviewed_at": "2026-07-25T16:12:00+00:00",
+  "source_ids": [
+    "apostrophes-program-record",
+    "apostrophes-transcript",
+    "playlist-ai-experiments"
+  ],
+  "comment_text": "📺 Основа этого эксперимента — выпуск французской программы «Apostrophes» от 9 марта 1990 года. В студии Бернара Пиво встретились Борис Ельцин, Александр Зиновьев и Александр Адлер. Наш ролик не является стенограммой: это художественная переработка реального телевизионного спора.\n\nКакая линия аргументации в этой реконструкции показалась вам более последовательной — Ельцина или Зиновьева?\n\n🌐 Сайт The Legendary Poet:\nhttps://thelegendarypoet.ru/\n\n⚡ Плейлист «Эксперименты — AI Музыка»:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3uYdxFo5bxzXEUI8HYIo-sHb\n\nVK:\nhttps://vk.com/thelegendarypoet\n\nСтенограмма и сведения об эфире:\nhttps://zinoviev.info/wps/archives/518",
+  "sources": [
+    {
+      "source_id": "apostrophes-program-record",
+      "title": "Apostrophes — La rencontre Eltsine-Zinoviev",
+      "url": "https://www.imdb.com/title/tt6539732/"
+    },
+    {
+      "source_id": "apostrophes-transcript",
+      "title": "Стенограмма дебатов Ельцина и Зиновьева 9 марта 1990 года",
+      "url": "https://zinoviev.info/wps/archives/518"
+    },
+    {
+      "source_id": "playlist-ai-experiments",
+      "title": "Плейлист «Эксперименты — AI Музыка»",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uYdxFo5bxzXEUI8HYIo-sHb"
+    }
+  ]
+}
