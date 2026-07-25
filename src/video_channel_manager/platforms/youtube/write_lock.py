@@ -27,18 +27,28 @@ def _windows_pid_is_running(pid: int, *, kernel32: Any | None = None) -> bool:
     import ctypes
     from ctypes import wintypes
 
-    api = kernel32 if kernel32 is not None else ctypes.WinDLL("kernel32", use_last_error=True)
     if kernel32 is None:
+        win_dll = getattr(ctypes, "WinDLL", None)
+        if win_dll is None:
+            return True
+        api: Any = win_dll("kernel32", use_last_error=True)
         api.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
         api.OpenProcess.restype = wintypes.HANDLE
         api.GetExitCodeProcess.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
         api.GetExitCodeProcess.restype = wintypes.BOOL
         api.CloseHandle.argtypes = [wintypes.HANDLE]
         api.CloseHandle.restype = wintypes.BOOL
+    else:
+        api = kernel32
 
     handle = api.OpenProcess(_WINDOWS_PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
     if not handle:
-        error = ctypes.get_last_error() if kernel32 is None else int(getattr(api, "last_error", 0))
+        if kernel32 is None:
+            get_last_error = getattr(ctypes, "get_last_error", None)
+            error = int(get_last_error()) if callable(get_last_error) else 0
+        else:
+            raw_error = getattr(api, "last_error", 0)
+            error = int(raw_error) if isinstance(raw_error, int | str) else 0
         if error == _WINDOWS_ERROR_INVALID_PARAMETER:
             return False
         return True
@@ -95,9 +105,12 @@ def _existing_lock_is_stale(
     hostname = str(payload.get("hostname") or "").strip()
     if hostname and hostname != socket.gethostname():
         return False
+    raw_pid = payload.get("pid")
+    if not isinstance(raw_pid, int | str):
+        return _lock_age_seconds(path) >= max(0.0, invalid_grace_seconds)
     try:
-        pid = int(payload.get("pid") or 0)
-    except (TypeError, ValueError):
+        pid = int(raw_pid)
+    except ValueError:
         return _lock_age_seconds(path) >= max(0.0, invalid_grace_seconds)
     return not _pid_is_running(pid)
 
