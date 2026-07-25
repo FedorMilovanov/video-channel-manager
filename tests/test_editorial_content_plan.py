@@ -16,6 +16,9 @@ from video_channel_manager.editorial.content_plan import (
 )
 from video_channel_manager.platforms.youtube.renderers import YouTubeCommentRenderer
 
+_SNAPSHOT = "snapshot/comments-20260725.json"
+_SNAPSHOT_SHA256 = "sha256:" + "a" * 64
+
 
 def _record():
     path = Path(__file__).resolve().parents[1] / "content" / "editorial" / "examples" / "tyutchev-night-sea.json"
@@ -35,13 +38,18 @@ def _create_operation():
     return operation, rendered.text
 
 
-def test_signed_plan_validates_and_is_idempotent_after_apply() -> None:
-    operation, rendered_text = _create_operation()
-    plan = build_content_plan(
-        source_snapshot="snapshot/comments-20260725.json",
+def _plan(operation):
+    return build_content_plan(
+        source_snapshot=_SNAPSHOT,
+        source_snapshot_sha256=_SNAPSHOT_SHA256,
         source_snapshot_generated_at="2026-07-25T20:30:00+00:00",
         operations=[operation],
     )
+
+
+def test_signed_plan_validates_and_is_idempotent_after_apply() -> None:
+    operation, rendered_text = _create_operation()
+    plan = _plan(operation)
     assert validate_content_plan(plan) == []
     assert (
         operation_state(
@@ -126,7 +134,8 @@ def test_update_requires_exact_before_revision_and_presence() -> None:
 
 def test_preflight_state_requires_snapshot_binding_unique_targets_and_explicit_existence() -> None:
     payload = {
-        "source_snapshot": "snapshot/comments-20260725.json",
+        "source_snapshot": _SNAPSHOT,
+        "source_snapshot_sha256": _SNAPSHOT_SHA256,
         "source_snapshot_generated_at": "2026-07-25T20:30:00+00:00",
         "targets": [
             {
@@ -141,7 +150,8 @@ def test_preflight_state_requires_snapshot_binding_unique_targets_and_explicit_e
     }
     state_by_key, errors = validate_preflight_state(
         payload,
-        expected_source_snapshot="snapshot/comments-20260725.json",
+        expected_source_snapshot=_SNAPSHOT,
+        expected_source_snapshot_sha256=_SNAPSHOT_SHA256,
     )
     assert errors == []
     assert "youtube:comment:RQIlUvFf1KQ" in state_by_key
@@ -150,15 +160,26 @@ def test_preflight_state_requires_snapshot_binding_unique_targets_and_explicit_e
     mismatched["source_snapshot"] = "another-snapshot"
     _, errors = validate_preflight_state(
         mismatched,
-        expected_source_snapshot="snapshot/comments-20260725.json",
+        expected_source_snapshot=_SNAPSHOT,
+        expected_source_snapshot_sha256=_SNAPSHOT_SHA256,
     )
     assert "state source_snapshot does not match the signed plan" in errors
+
+    digest_mismatch = deepcopy(payload)
+    digest_mismatch["source_snapshot_sha256"] = "sha256:" + "b" * 64
+    _, errors = validate_preflight_state(
+        digest_mismatch,
+        expected_source_snapshot=_SNAPSHOT,
+        expected_source_snapshot_sha256=_SNAPSHOT_SHA256,
+    )
+    assert "state source_snapshot_sha256 does not match the signed plan" in errors
 
     duplicate = deepcopy(payload)
     duplicate["targets"].append(deepcopy(duplicate["targets"][0]))
     _, errors = validate_preflight_state(
         duplicate,
-        expected_source_snapshot="snapshot/comments-20260725.json",
+        expected_source_snapshot=_SNAPSHOT,
+        expected_source_snapshot_sha256=_SNAPSHOT_SHA256,
     )
     assert any(error.startswith("duplicate state target") for error in errors)
 
@@ -166,25 +187,30 @@ def test_preflight_state_requires_snapshot_binding_unique_targets_and_explicit_e
     ambiguous["targets"][0].pop("exists")
     _, errors = validate_preflight_state(
         ambiguous,
-        expected_source_snapshot="snapshot/comments-20260725.json",
+        expected_source_snapshot=_SNAPSHOT,
+        expected_source_snapshot_sha256=_SNAPSHOT_SHA256,
     )
     assert "targets[0].exists must be true or false" in errors
 
 
-def test_plan_requires_aware_snapshot_time_and_supported_surface() -> None:
+def test_plan_requires_snapshot_digest_aware_time_and_supported_surface() -> None:
     operation, _ = _create_operation()
+    with pytest.raises(ValueError, match="source_snapshot_sha256"):
+        build_content_plan(
+            source_snapshot=_SNAPSHOT,
+            source_snapshot_sha256="not-a-digest",
+            source_snapshot_generated_at="2026-07-25T20:30:00+00:00",
+            operations=[operation],
+        )
     with pytest.raises(ValueError, match="timezone-aware"):
         build_content_plan(
-            source_snapshot="snapshot/comments-20260725.json",
+            source_snapshot=_SNAPSHOT,
+            source_snapshot_sha256=_SNAPSHOT_SHA256,
             source_snapshot_generated_at="2026-07-25T20:30:00",
             operations=[operation],
         )
 
-    plan = build_content_plan(
-        source_snapshot="snapshot/comments-20260725.json",
-        source_snapshot_generated_at="2026-07-25T20:30:00+00:00",
-        operations=[operation],
-    )
+    plan = _plan(operation)
     invalid = deepcopy(plan)
     invalid_operations = invalid["operations"]
     assert isinstance(invalid_operations, list)
@@ -196,11 +222,7 @@ def test_plan_requires_aware_snapshot_time_and_supported_surface() -> None:
 
 def test_plan_tampering_and_duplicate_rendered_text_are_rejected() -> None:
     operation, _ = _create_operation()
-    plan = build_content_plan(
-        source_snapshot="snapshot/comments-20260725.json",
-        source_snapshot_generated_at="2026-07-25T20:30:00+00:00",
-        operations=[operation],
-    )
+    plan = _plan(operation)
     tampered = deepcopy(plan)
     operations = tampered["operations"]
     assert isinstance(operations, list)
@@ -210,7 +232,8 @@ def test_plan_tampering_and_duplicate_rendered_text_are_rejected() -> None:
     assert any("mismatch" in error for error in validate_content_plan(tampered))
 
     duplicate = build_content_plan(
-        source_snapshot="snapshot/comments-20260725.json",
+        source_snapshot=_SNAPSHOT,
+        source_snapshot_sha256=_SNAPSHOT_SHA256,
         source_snapshot_generated_at="2026-07-25T20:30:00+00:00",
         operations=[operation, dict(operation, target_id="another-target")],
     )
