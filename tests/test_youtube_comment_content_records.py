@@ -5,6 +5,7 @@ from pathlib import Path
 
 from video_channel_manager.platforms.youtube.comment_content import (
     CONTENT_SCHEMA_NAME,
+    render_comment_content,
     validate_comment_content,
 )
 
@@ -17,6 +18,8 @@ def test_all_youtube_comment_content_records_are_sourced_and_valid() -> None:
     assert len(paths) >= 15
 
     video_ids: set[str] = set()
+    variation_keys: set[str] = set()
+    rendered_comments: set[str] = set()
     failures: list[str] = []
     for path in paths:
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -26,7 +29,19 @@ def test_all_youtube_comment_content_records_are_sourced_and_valid() -> None:
         if video_id in video_ids:
             failures.append(f"{path}: duplicate video_id {video_id}")
         video_ids.add(video_id)
+
+        variation_key = str(payload.get("variation_key") or "").strip()
+        if variation_key:
+            if variation_key in variation_keys:
+                failures.append(f"{path}: duplicate variation_key {variation_key}")
+            variation_keys.add(variation_key)
+
         errors = validate_comment_content(payload, expected_channel_id=_CHANNEL_ID)
         failures.extend(f"{path}: {error}" for error in errors)
+        if not errors:
+            rendered = render_comment_content(payload)
+            if rendered in rendered_comments:
+                failures.append(f"{path}: duplicate rendered comment")
+            rendered_comments.add(rendered)
 
     assert failures == []
