@@ -1,4 +1,5 @@
 from video_channel_manager.platforms.vk.client import VkApiClient, VkApiError
+from video_channel_manager.platforms.vk.lock import local_vk_write_lock
 from video_channel_manager.platforms.vk.models import (
     VkAccessToken,
     VkAccount,
@@ -8,9 +9,24 @@ from video_channel_manager.platforms.vk.models import (
 )
 from video_channel_manager.platforms.vk.service import VkInventoryService
 from video_channel_manager.platforms.vk.store import VkAccountNotFoundError, VkTokenStore
+from video_channel_manager.platforms.vk.text import (
+    VK_VIDEO_DESCRIPTION_CAPABILITIES,
+    VkDescriptionRender,
+    VkTextCapabilities,
+    VkTextIssue,
+    render_vk_clip_description,
+    render_vk_video_description,
+)
+from video_channel_manager.platforms.vk.text_writer import (
+    VkVideoTextSnapshot,
+    VkVideoTextWriter,
+    canonical_vk_text,
+    vk_texts_equivalent,
+)
 from video_channel_manager.platforms.vk.writer import VkUploadTicket, VkVideoWriter, VkWriteError
 
 __all__ = [
+    "VK_VIDEO_DESCRIPTION_CAPABILITIES",
     "VkAccessToken",
     "VkAccount",
     "VkAccountNotFoundError",
@@ -18,10 +34,20 @@ __all__ = [
     "VkApiError",
     "VkCommunityIdentity",
     "VkConfigurationError",
+    "VkDescriptionRender",
     "VkInventoryService",
+    "VkTextCapabilities",
+    "VkTextIssue",
     "VkTokenStore",
     "VkUploadTicket",
     "VkUserIdentity",
+    "VkVideoTextSnapshot",
+    "VkVideoTextWriter",
     "VkVideoWriter",
     "VkWriteError",
+    "canonical_vk_text",
+    "local_vk_write_lock",
+    "render_vk_clip_description",
+    "render_vk_video_description",
+    "vk_texts_equivalent",
 ]
