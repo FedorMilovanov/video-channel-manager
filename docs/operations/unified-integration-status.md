@@ -2,7 +2,7 @@
 
 Дата сборки: **2026-07-25**  
 Интеграционная ветка: `integration/youtube-vk-unified-v2`  
-Итоговый PR: **#13**  
+Итоговый PR: **#13 → main**  
 Статус: **draft; remote platform writes не выполнялись**.
 
 ## История
@@ -33,14 +33,28 @@ c9e455a82e232dde931c5b0a3a35369e4f2ea0ca
 
 Tree merge-коммита оставлен равным уже проверенному unified tree: более новые exact-ID resume и thumbnail hardening не откатывались, но поздняя история PR #7 теперь также входит в ancestry.
 
-GitHub compare для heads PR #7, #8, #9 и #10 показывает:
+После ретаргета PR #13 на `main` выявлен отдельный main-коммит:
+
+```text
+a91c610ba0a9633819327814a6b7836aa1a434f5 — Add local secrets ignore rules
+```
+
+Его правила `secrets/` и `tokens/` добавлены в расширенный unified `.gitignore`, а сам current main head записан вторым родителем merge-коммита:
+
+```text
+9b32221fa943db32f6d15a40028d0c69e54ca8a3
+```
+
+Таким образом PR #13 построен непосредственно против актуального `main`, но остаётся draft и ничего не сливает автоматически.
+
+GitHub compare для heads PR #1, #6, #7, #8, #9 и #10 показывает:
 
 ```text
 status: ahead
 behind_by: 0
 ```
 
-Это означает, что unified branch является потомком всех четырёх рабочих линий и не потеряла их коммиты.
+Unified branch является потомком всех прежних рабочих линий и current main; потерянных веточных коммитов нет.
 
 ## Проверенное наличие контуров
 
@@ -67,7 +81,8 @@ behind_by: 0
 - `pip-audit` входит в обязательный CI gate;
 - GitHub Actions pinned по commit SHA;
 - Ruff formatting применён ко всему объединённому дереву одним механическим commit;
-- одноразовый formatting workflow удалён тем же commit.
+- одноразовый formatting workflow удалён тем же commit;
+- `.gitignore` объединяет все локальные secret/token/data/report правила current main и feature history.
 
 ## CI доказательство
 
@@ -75,7 +90,8 @@ behind_by: 0
 
 ```text
 335 — Python 3.11 / 3.12 / 3.13: success
-337 — merge-head с полной ancestry: Python 3.11 / 3.12 / 3.13: success
+337 — merge-head с полной feature ancestry: Python 3.11 / 3.12 / 3.13: success
+339 — documented feature head: Python 3.11 / 3.12 / 3.13: success
 ```
 
 Каждая версия прошла:
@@ -90,13 +106,14 @@ mypy
 pytest --cov
 ```
 
-Final gate не запускался как failure; он был корректно skipped, поскольку все individual outcomes были успешными.
+Final gate был корректно skipped, поскольку все individual outcomes были успешными.
 
 ## Текущее правило
 
-- PR #13 остаётся draft до отдельного решения о целевой base/main strategy;
-- исходные PR #7–#10 могут быть закрыты без merge как superseded by #13;
-- слияние в `main` без отдельного явного решения запрещено;
+- PR #13 остаётся единственным итоговым draft PR прямо в `main`;
+- PR #7–#10 закрыты без merge как superseded;
+- PR #1 и #6 закрываются без merge после финального CI current-main head;
+- слияние PR #13 в `main` без отдельного явного решения запрещено;
 - live YouTube/VK execute не запускается из integration branch автоматически;
 - старые backups/results сохраняются независимо от Git;
 - перед любой новой platform mutation создаётся свежий snapshot и новый plan соответствующей schema.
