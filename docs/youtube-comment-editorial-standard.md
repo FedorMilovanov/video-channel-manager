@@ -2,76 +2,176 @@
 
 ## Purpose
 
-A top-level channel comment should add useful context and give the viewer a natural reason to respond. It is not a second description, not an advertising dump, and not a place for unsupported literary claims.
+A top-level channel comment must add something that is not already obvious from the title or description: a documented fact about the text, publication, manuscript, structure, performance, or adaptation, followed by a precise invitation to respond.
+
+It is not a second description, an advertising dump, a generic engagement prompt, or a place for unsupported literary claims.
 
 ## Non-negotiable rules
 
-1. Facts are written only after checking primary text, an authoritative edition, an archive, or another named reliable source.
-2. Every publishable content record contains `source_ids` linked to the exact claim set used in the comment.
-3. Interpretations are explicitly framed as readings, not facts.
-4. Do not call poets prophets and do not describe poems as prophecies.
-5. Do not claim that an author predicted a revolution, war, death, or political event unless the statement is a direct, sourced quotation and the context justifies it.
-6. Avoid generic phrases such as “great eternal masterpiece”, “incredible journey”, “speaks to all of us”, or “more relevant than ever”.
-7. Avoid false certainty around ambiguous symbols, addressees, religious images, and biographical motives.
-8. Do not use invented quotations, reconstructed speech, unsourced dates, or viral anecdotes.
-9. Do not copy one identical comment across unrelated videos.
-10. A comment marked `approved` is immutable editorial input. Any later text edit requires a new plan.
+1. Facts are written only after checking a primary text, authoritative edition, archive, scholarly note, catalogue record, or another named reliable source.
+2. Every publishable record maps the exact factual paragraph to one or more `source_ids`.
+3. A fact must be concrete. Prefer dates, first publication, manuscript history, textual variants, cycle structure, documented circumstances, or the relationship between an adaptation and its original.
+4. Do not approve a paragraph that could be pasted under an unrelated poem by changing only the author and title.
+5. Interpretations are explicitly framed as readings or questions, not facts.
+6. Do not call poets prophets and do not describe poems as prophecies.
+7. Do not claim that an author predicted a revolution, war, death, or political event unless this is a direct sourced quotation whose context supports the statement.
+8. Avoid generic phrases such as “great eternal masterpiece”, “incredible journey”, “speaks to all of us”, “more relevant than ever”, or “one of the greatest works”.
+9. Avoid false certainty around ambiguous symbols, addressees, religious images, and biographical motives.
+10. Do not use invented quotations, reconstructed speech, unsourced dates, or viral anecdotes.
+11. Do not copy one identical comment across unrelated videos.
+12. A comment marked `approved` is immutable editorial input. Any later text edit requires a new plan.
 
-## Recommended structure
+## Structured schema v2
 
-A normal full-length poetry comment may contain:
+New records use `schema_version=2` and contain separate editorial blocks rather than a hand-built advertising template:
 
-- one verified fact about composition, publication, structure, manuscript history, or textual context;
-- one direct and specific question about the listener’s experience of the text;
-- the new site;
-- VK;
-- one poet playlist and, when genuinely relevant, one broader playlist;
-- optionally one primary-text link.
+- `profile` — content type;
+- `variation_key` — a unique editorial variation identifier;
+- `fact` — heading, factual paragraph, fact type, and exact evidence sources;
+- `question` — optional emphasized lead and one specific question;
+- `links` — two to four compact inline links.
 
-Keep it compact. Two or three useful links are better than every available social network and playlist.
+The bot renders these blocks into the final YouTube comment, validates the layout, rejects duplicated `variation_key` values, and places the exact rendered text into the signed plan.
 
-## Link policy
+The bot does **not** decide whether a historical claim is true. Truth is established during source review; the bot verifies that the approved claim is mapped to named evidence and has not changed afterward.
 
-Stable project links:
+## Deep-fact requirement
+
+An approved v2 fact must belong to one of these families:
+
+- `composition_history` — documented writing date or circumstances;
+- `first_publication` — first known publication and edition context;
+- `manuscript_history` — drafts, copies, revisions, or textual variants;
+- `textual_structure` — cycle, stanza, refrain, syntax, or another demonstrable structural feature;
+- `archival_provenance` — archive, autograph, catalogue, or surviving document;
+- `documented_context` — a factual historical or literary context directly tied to the work;
+- `adaptation_history` — documented relationship between the current adaptation and the original;
+- `performance_history` — documented premiere, recording, broadcast, or performance history.
+
+A publishable fact paragraph normally contains 100–900 characters. Length alone is not depth: it must name a verifiable detail that materially improves the viewer’s understanding.
+
+## Visual style
+
+The style is compact, literary, and readable on desktop and mobile.
+
+### Allowed
+
+- one contextual marker in the factual heading, for example `📖`, `❄️`, `⚔️`, `🌊`, `🎭`, `📝`, `🎼`, or `🕯️`;
+- `📌` for the project site;
+- `🎧` for a playlist;
+- `📚` for the primary text;
+- restrained `*bold*` and `_italic_` emphasis;
+- one blank line between the fact, the question, and the compact link block;
+- no blank lines inside the link block.
+
+### Forbidden
+
+- coloured circle bullets such as `🔵`, `🔴`, `🟢`, `🟡`, `🟠`, `🟣`, `⚫`, `⚪`, or `🟤`;
+- emoji-only lines;
+- more than four decorative markers in one comment;
+- half a paragraph in bold or italics;
+- empty labels followed by a URL on the next line;
+- rows of decorative symbols.
+
+## Required compact link layout
+
+Each label and URL stay on the **same line**. This avoids the orphaned `VK:` label and unnecessary empty vertical space.
+
+Recommended rendering:
+
+```text
+📌 *The Legendary Poet:* https://thelegendarypoet.ru/
+🎧 *Сергей Есенин — плейлист:* https://www.youtube.com/playlist?list=...
+*Сообщество проекта VK:* https://vk.com/thelegendarypoet
+📚 _Полный текст:_ https://...
+```
+
+Rules:
+
+- the site label uses `📌` and restrained bold;
+- a playlist label uses `🎧` and names the actual author, series, or category;
+- the VK label is exactly `*Сообщество проекта VK:*`;
+- a primary-text label uses `📚` and restrained emphasis;
+- use only links relevant to the exact video;
+- two or three links are preferred; four are allowed when the primary text genuinely adds value;
+- never invent a playlist URL.
+
+## Variable composition, not templates
+
+Comments must share standards, not sentences.
+
+Variation comes from:
+
+- a different fact family;
+- a work-specific factual heading;
+- a different sentence rhythm;
+- a question tied to a precise image, structural turn, textual variant, or documented context;
+- a link block appropriate to the specific work.
+
+Do not mechanically begin every comment with “Интересный факт”. Suitable headings include, when accurate:
+
+- `📖 *История публикации*`
+- `📝 *След рукописи*`
+- `🕯️ *Дата и контекст*`
+- `🎼 *Как текст стал песней*`
+- `⚔️ *Структура цикла*`
+- `❄️ *Первая публикация*`
+
+These are examples, not mandatory templates.
+
+## Recommended full-length shape
+
+```text
+[contextual marker] *[work-specific factual heading]*
+
+[one substantial, sourced factual paragraph]
+
+_[short lead if useful]:_ [one specific question]?
+
+📌 *The Legendary Poet:* https://thelegendarypoet.ru/
+🎧 *[relevant playlist label]:* [playlist URL]
+*Сообщество проекта VK:* https://vk.com/thelegendarypoet
+[optional primary-text line]
+```
+
+## Content profiles
+
+### Full poetry or cycle
+
+Use composition history, first publication, manuscript history, or a demonstrable structural fact. Ask about a specific line, image, transition, refrain, or part of the cycle.
+
+Required link kinds: site, relevant playlist, VK. A primary-text link is optional.
+
+### Historical or literary essay
+
+Use one documented historical detail and one precise question about the presented material. Add the article or primary source when it improves verification.
+
+Required link kinds: site and VK. A primary-text or article link is usually appropriate.
+
+### Cover or musical reinterpretation
+
+Name the original accurately and state the documented relationship of the new version to it. Do not imply authorship of the original.
+
+Required link kinds: site, relevant playlist, VK. The original work link is optional.
+
+### Foreign-language adaptation
+
+Explain the relationship to the original-language work without claiming that every nuance has a definitive equivalent. Link the original version when available.
+
+Required link kinds: site, relevant playlist, VK.
+
+### Shorts
+
+Keep the factual note short but still specific. Prefer a link to the exact full version. Do not copy the full-length comment into the Short.
+
+Required link kinds: site, VK, and full version.
+
+## Stable project links
 
 - Site: https://thelegendarypoet.ru/
 - VK: https://vk.com/thelegendarypoet
 - Telegram: https://t.me/thelegendarypoet
 - RUTUBE: https://rutube.ru/channel/74579453/
-
-YouTube playlists:
-
-- “Поющие Поэты”: https://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8
-- “Эксперименты AI”: https://www.youtube.com/playlist?list=PLy9lLJfoq3uYdxFo5bxzXEUI8HYIo-sHb
-- “Владимир Маяковский”: https://www.youtube.com/playlist?list=PLy9lLJfoq3uaI7EGOexBWQp7WX-KVabKM
-- “Сергей Есенин”: https://www.youtube.com/playlist?list=PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q
-- “Михаил Лермонтов”: https://www.youtube.com/playlist?list=PLy9lLJfoq3ubOdGfY8orpQzGNAAvkqul5
-- “Александр Пушкин”: https://www.youtube.com/playlist?list=PLy9lLJfoq3ua0FhqDhByHxyaBjVrk0-pE
-- “Александр Блок”: https://www.youtube.com/playlist?list=PLy9lLJfoq3ua3Q9BQe1Dhuzn7Knbz2djU
-
-Add only links that belong to the specific video. Do not invent playlist URLs.
-
-## Content types
-
-### Full poetry or cycle
-
-Use one structural or textual fact. Ask which part, image, or line remained most noticeable. Do not ask abstract questions about “prophecy” or “the fate of the universe”.
-
-### Historical or literary essay
-
-Use one source-based historical detail and one precise question about the material. Add the article or primary-source link when available.
-
-### Cover or musical reinterpretation
-
-Name the original work accurately. State clearly that this is a musical interpretation, adaptation, translation, or cover. Do not imply authorship of the original.
-
-### Foreign-language adaptation
-
-Link to the original-language version when it exists. Explain the relationship in one sentence. Avoid claiming that the adaptation replaces or definitively translates every nuance.
-
-### Shorts
-
-Keep the comment short. Prefer a link to the full version and one relevant playlist. Do not copy the full-length historical note into every Short.
 
 ## Existing comments
 
@@ -93,5 +193,3 @@ Suggested non-publishable statuses:
 - `fact-check`
 - `link-check`
 - `rejected`
-
-The bot validates structure, IDs, hashes, and live state. It does not decide whether a historical claim is true.
