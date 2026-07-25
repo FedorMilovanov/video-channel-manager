@@ -9,6 +9,11 @@ from typing import Any
 
 from video_channel_manager.config import get_settings
 from video_channel_manager.exchange.audit_package import AuditPackage
+from video_channel_manager.platforms.youtube.comment_content import (
+    CONTENT_SCHEMA_NAME,
+    CONTENT_SCHEMA_VERSION,
+    validate_comment_content,
+)
 from video_channel_manager.platforms.youtube.comment_plan import (
     CommentOperation,
     build_comment_plan,
@@ -18,7 +23,6 @@ from video_channel_manager.platforms.youtube.comment_plan import (
 )
 from video_channel_manager.platforms.youtube.comments import comments_equivalent
 
-_CONTENT_SCHEMA = "video-manager.youtube-comment-content"
 _AUDIT_SCHEMA = "video-manager.youtube-comment-audit"
 
 
@@ -40,15 +44,16 @@ def _load_content_records(content_dir: Path) -> dict[str, dict[str, Any]]:
     records: dict[str, dict[str, Any]] = {}
     for path in sorted(content_dir.rglob("*.json")):
         payload = _read_json(path)
-        if payload.get("schema_name") != _CONTENT_SCHEMA:
+        if payload.get("schema_name") != CONTENT_SCHEMA_NAME:
             continue
-        if payload.get("schema_version") != 1:
+        if payload.get("schema_version") != CONTENT_SCHEMA_VERSION:
             raise ValueError(f"Unsupported comment content schema in {path}")
+        validation_errors = validate_comment_content(payload)
+        if validation_errors:
+            raise ValueError(f"Invalid comment content {path}: {'; '.join(validation_errors)}")
         video_id = str(payload.get("video_id") or "").strip()
-        if not video_id:
-            raise ValueError(f"Comment content has no video_id: {path}")
         if video_id in records:
-            raise ValueError(f"Duplicate approved content for video {video_id}: {path}")
+            raise ValueError(f"Duplicate comment content for video {video_id}: {path}")
         payload["_path"] = str(path)
         records[video_id] = payload
     return records
@@ -159,18 +164,20 @@ def main() -> int:
                 }
             )
             continue
-        if record.get("channel_id") != channel_id:
-            review_only.append({"video_id": video_id, "video_title": video.title, "reason": "content channel mismatch"})
+        content_errors = validate_comment_content(record, expected_channel_id=channel_id)
+        if content_errors:
+            review_only.append(
+                {
+                    "video_id": video_id,
+                    "video_title": video.title,
+                    "reason": "; ".join(content_errors),
+                }
+            )
             continue
         source_ids = record.get("source_ids")
-        if not isinstance(source_ids, list):
-            review_only.append({"video_id": video_id, "video_title": video.title, "reason": "source_ids missing"})
-            continue
+        assert isinstance(source_ids, list)
         comment_text = str(record.get("comment_text") or "")
         reviewed_at = str(record.get("reviewed_at") or "").strip()
-        if not reviewed_at:
-            review_only.append({"video_id": video_id, "video_title": video.title, "reason": "reviewed_at missing"})
-            continue
 
         live = audit_by_id[video_id]
         status = str(live.get("status") or "")
