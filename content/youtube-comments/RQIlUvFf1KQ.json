@@ -1,0 +1,38 @@
+{
+  "schema_name": "video-manager.youtube-comment-content",
+  "schema_version": 1,
+  "status": "approved",
+  "channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+  "video_id": "RQIlUvFf1KQ",
+  "video_title": "Как Хорошо Ты, о Море Ночное… ⚡ Тютчев и Тайна Живого Моря",
+  "reviewed_at": "2026-07-25T16:17:00+00:00",
+  "source_ids": [
+    "tyutchev-night-sea-edition",
+    "tyutchev-night-sea-feb",
+    "playlist-tyutchev",
+    "playlist-singing-poets"
+  ],
+  "comment_text": "🌊 «Как хорошо ты, о море ночное…» датировано: Ницца, 2/14 января 1865 года. Сначала в газете «День» появилась ранняя сокращённая редакция; полный текст Тютчев затем отправил в «Русский вестник», где стихотворение было напечатано в феврале 1865 года.\n\nКакая сторона моря яснее слышна в этой версии — движение и блеск волн или желание лирического героя раствориться в их жизни?\n\n🌐 Сайт The Legendary Poet:\nhttps://thelegendarypoet.ru/\n\n📖 Плейлист «Фёдор Тютчев»:\nhttps://www.youtube.com/playlist?list=PLKzLtO0ERdzg\n\n🎧 Плейлист «Поющие Поэты»:\nhttps://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8\n\nVK:\nhttps://vk.com/thelegendarypoet\n\nТекст, автографы и комментарии:\nhttps://ftutchev.ru/stihi0279.html",
+  "sources": [
+    {
+      "source_id": "tyutchev-night-sea-edition",
+      "title": "«Как хорошо ты, о море ночное…» — тексты, автографы и комментарии",
+      "url": "https://ftutchev.ru/stihi0279.html"
+    },
+    {
+      "source_id": "tyutchev-night-sea-feb",
+      "title": "ФЭБ. Комментарий к истории публикации",
+      "url": "https://feb-web.ru/feb/litnas/texts/l972/ln2-106-.htm?cmd=p"
+    },
+    {
+      "source_id": "playlist-tyutchev",
+      "title": "Плейлист «Фёдор Тютчев»",
+      "url": "https://www.youtube.com/playlist?list=PLKzLtO0ERdzg"
+    },
+    {
+      "source_id": "playlist-singing-poets",
+      "title": "Плейлист «Поющие Поэты»",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8"
+    }
+  ]
+}
