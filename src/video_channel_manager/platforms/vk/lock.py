@@ -15,7 +15,6 @@ from video_channel_manager.platforms.vk.writer import VkWriteError
 _INVALID_LOCK_GRACE_SECONDS = 30.0
 _WINDOWS_PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 _WINDOWS_STILL_ACTIVE = 259
-_WINDOWS_ERROR_ACCESS_DENIED = 5
 _WINDOWS_ERROR_INVALID_PARAMETER = 87
 
 
@@ -49,7 +48,7 @@ def _windows_pid_is_running(pid: int, *, kernel32: Any | None = None) -> bool:
             return False
         # Access denied and unknown failures are handled fail-closed: never
         # delete a lock merely because process liveness could not be proved.
-        return error == _WINDOWS_ERROR_ACCESS_DENIED or error != _WINDOWS_ERROR_INVALID_PARAMETER
+        return True
 
     try:
         exit_code = wintypes.DWORD()
@@ -138,6 +137,13 @@ def _release_owned_lock(path: Path, nonce: str) -> None:
 def local_vk_write_lock(path: Path, *, account: str, community_id: int, operation: str) -> Iterator[None]:
     """Prevent two local processes from mutating the same VK community."""
 
+    if community_id <= 0:
+        raise ValueError("community_id must be positive")
+    account = account.strip()
+    operation = operation.strip()
+    if not account or not operation:
+        raise ValueError("account and operation cannot be blank")
+
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor: int | None = None
     nonce = uuid.uuid4().hex
@@ -170,7 +176,10 @@ def local_vk_write_lock(path: Path, *, account: str, community_id: int, operatio
             try:
                 written = 0
                 while written < len(encoded):
-                    written += os.write(descriptor, encoded[written:])
+                    count = os.write(descriptor, encoded[written:])
+                    if count <= 0:
+                        raise OSError("os.write returned no progress while writing VK lock metadata")
+                    written += count
                 os.fsync(descriptor)
             except BaseException:
                 os.close(descriptor)
