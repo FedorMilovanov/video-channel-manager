@@ -68,23 +68,14 @@ def plan_preflight_command(
         state_payload,
         expected_source_snapshot=source_snapshot,
         expected_source_snapshot_sha256=source_snapshot_sha256,
-        expected_source_snapshot_generated_at=(
-            source_snapshot_generated_at
-        ),
+        expected_source_snapshot_generated_at=(source_snapshot_generated_at),
     )
     operations = plan.get("operations")
     assert isinstance(operations, list)
-    planned_keys = {
-        operation_key(raw)
-        for raw in operations
-        if isinstance(raw, dict)
-    }
+    planned_keys = {operation_key(raw) for raw in operations if isinstance(raw, dict)}
     missing_keys = sorted(planned_keys.difference(state_by_key))
     if missing_keys:
-        state_errors.append(
-            "state snapshot is incomplete for planned targets: "
-            + ", ".join(missing_keys)
-        )
+        state_errors.append("state snapshot is incomplete for planned targets: " + ", ".join(missing_keys))
     if state_errors:
         print_failures(state_errors)
         raise typer.Exit(code=2)
@@ -112,11 +103,7 @@ def plan_preflight_command(
             ),
         )
         counts[state] += 1
-        style = (
-            "green"
-            if state in {"ready", "already_applied"}
-            else "red"
-        )
+        style = "green" if state in {"ready", "already_applied"} else "red"
         table.add_row(
             cast(str, raw_value["operation_id"]),
             key,
@@ -130,12 +117,7 @@ def plan_preflight_command(
             }
         )
     console.print(table)
-    console.print(
-        " · ".join(
-            f"{key}={value}"
-            for key, value in sorted(counts.items())
-        )
-    )
+    console.print(" · ".join(f"{key}={value}" for key, value in sorted(counts.items())))
 
     if json_output is not None:
         write_json(
@@ -144,16 +126,12 @@ def plan_preflight_command(
                 "plan_sha256": plan["plan_sha256"],
                 "source_snapshot": source_snapshot,
                 "source_snapshot_sha256": source_snapshot_sha256,
-                "source_snapshot_generated_at": (
-                    source_snapshot_generated_at
-                ),
+                "source_snapshot_generated_at": (source_snapshot_generated_at),
                 "counts": dict(sorted(counts.items())),
                 "operations": report_operations,
             },
         )
-        console.print(
-            f"[green]Preflight report written to {json_output}[/green]"
-        )
+        console.print(f"[green]Preflight report written to {json_output}[/green]")
     if counts["conflict"]:
         raise typer.Exit(code=2)
 

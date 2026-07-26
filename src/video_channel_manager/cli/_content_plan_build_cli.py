@@ -101,9 +101,7 @@ def plan_build_command(
                 context=context,
             )
             if action_value not in {"create", "update"}:
-                raise ValueError(
-                    f"{context}.action must be create or update"
-                )
+                raise ValueError(f"{context}.action must be create or update")
             target_id = required_string(
                 raw,
                 "target_id",
@@ -121,9 +119,7 @@ def plan_build_command(
             )
             record = by_id.get(content_id)
             if record is None:
-                raise ValueError(
-                    f"{context} references unknown content_id: {content_id}"
-                )
+                raise ValueError(f"{context} references unknown content_id: {content_id}")
             operation = make_content_operation(
                 record=record,
                 rendered=renderer.render(record),
@@ -155,10 +151,7 @@ def plan_build_command(
         print_failures(plan_errors)
         raise typer.Exit(code=2)
     write_json(output, plan)
-    console.print(
-        f"[green]Built signed content plan with {len(operations)} "
-        f"operation(s) → {output}[/green]"
-    )
+    console.print(f"[green]Built signed content plan with {len(operations)} operation(s) → {output}[/green]")
     console.print(f"Plan SHA-256: {plan['plan_sha256']}")
 
 

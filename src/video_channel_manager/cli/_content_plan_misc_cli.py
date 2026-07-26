@@ -35,10 +35,7 @@ def plan_validate_command(
     if errors:
         print_failures(errors)
         raise typer.Exit(code=2)
-    console.print(
-        f"[green]Valid signed content plan:[/green] "
-        f"{payload['plan_sha256']}"
-    )
+    console.print(f"[green]Valid signed content plan:[/green] {payload['plan_sha256']}")
 
 
 def plan_adapt_vk_catalog_command(
@@ -84,15 +81,8 @@ def plan_adapt_vk_catalog_command(
         raise typer.Exit(code=2) from exc
     write_json(output, adapted)
     summary = adapted.get("summary")
-    adapted_count = (
-        summary.get("editorial_texts_adapted", 0)
-        if isinstance(summary, dict)
-        else 0
-    )
-    console.print(
-        f"[green]Adapted {adapted_count} VK description operation(s) "
-        f"→ {output}[/green]"
-    )
+    adapted_count = summary.get("editorial_texts_adapted", 0) if isinstance(summary, dict) else 0
+    console.print(f"[green]Adapted {adapted_count} VK description operation(s) → {output}[/green]")
     console.print(f"Plan SHA-256: {adapted['plan_sha256']}")
 
 

@@ -27,8 +27,6 @@ content_app.command("preview")(preview_command)
 content_plan_app.command("build")(plan_build_command)
 content_plan_app.command("validate")(plan_validate_command)
 content_plan_app.command("preflight")(plan_preflight_command)
-content_plan_app.command("adapt-vk-catalog")(
-    plan_adapt_vk_catalog_command
-)
+content_plan_app.command("adapt-vk-catalog")(plan_adapt_vk_catalog_command)
 
 __all__ = ["content_app"]

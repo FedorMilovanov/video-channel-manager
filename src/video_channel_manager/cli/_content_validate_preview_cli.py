@@ -47,9 +47,7 @@ def validate_command(
     if failures:
         print_failures(failures)
         raise typer.Exit(code=2)
-    console.print(
-        f"[green]Validated {len(records)} editorial content record(s).[/green]"
-    )
+    console.print(f"[green]Validated {len(records)} editorial content record(s).[/green]")
 
 
 def preview_command(
@@ -97,10 +95,7 @@ def preview_command(
 
     report_items: list[dict[str, Any]] = []
     for item in batch.items:
-        title = (
-            f"{item.record.content_id} · "
-            f"{item.rendered.platform}.{item.rendered.surface}"
-        )
+        title = f"{item.record.content_id} · {item.rendered.platform}.{item.rendered.surface}"
         console.rule(title)
         console.print(item.rendered.text)
         console.print(
@@ -110,15 +105,8 @@ def preview_command(
         )
         for issue in item.rendered.issues:
             style = "red" if issue.severity == "error" else "yellow"
-            location = (
-                f" line {issue.line_number}"
-                if issue.line_number is not None
-                else ""
-            )
-            console.print(
-                f"[{style}]{issue.severity.upper()} "
-                f"{issue.code}{location}:[/{style}] {issue.message}"
-            )
+            location = f" line {issue.line_number}" if issue.line_number is not None else ""
+            console.print(f"[{style}]{issue.severity.upper()} {issue.code}{location}:[/{style}] {issue.message}")
         report_items.append(
             {
                 "content_id": item.record.content_id,
@@ -152,22 +140,10 @@ def preview_command(
                 "batch_errors": list(batch.errors),
             },
         )
-        console.print(
-            f"[green]Preview report written to {json_output}[/green]"
-        )
+        console.print(f"[green]Preview report written to {json_output}[/green]")
 
-    warning_count = sum(
-        1
-        for item in batch.items
-        for issue in item.rendered.issues
-        if issue.severity == "warning"
-    )
-    error_count = sum(
-        1
-        for item in batch.items
-        for issue in item.rendered.issues
-        if issue.severity == "error"
-    )
+    warning_count = sum(1 for item in batch.items for issue in item.rendered.issues if issue.severity == "warning")
+    error_count = sum(1 for item in batch.items for issue in item.rendered.issues if issue.severity == "error")
     if batch.errors or error_count or (strict and warning_count):
         raise typer.Exit(code=2)
 
