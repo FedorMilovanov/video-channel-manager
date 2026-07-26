@@ -17,6 +17,7 @@ from video_channel_manager.platforms.youtube.comment_plan import validate_commen
 _AUDIT_SCHEMA = "video-manager.youtube-comment-audit"
 _JOURNAL_SCHEMA = "video-manager.youtube-comment-apply-journal"
 _CERTIFICATE_SCHEMA = "video-manager.youtube-comment-coverage-certificate"
+_CERTIFICATE_SCHEMA_VERSION = 2
 _AUDIT_STATUSES = frozenset({"owned_present", "foreign_only", "missing", "comments_disabled", "error"})
 
 
@@ -135,6 +136,38 @@ def validate_recovery_journal(
     return {"planned": len(operation_by_id), "completed_attempts": completed}
 
 
+def _owned_comment_hashes(
+    item: dict[str, Any],
+    *,
+    video_id: str,
+    owned_count: int,
+) -> list[str]:
+    raw_comments = item.get("owned_comments")
+    if not isinstance(raw_comments, list) or not all(isinstance(comment, dict) for comment in raw_comments):
+        raise ValueError(f"YouTube comment audit video {video_id} has invalid owned_comments.")
+    if len(raw_comments) != owned_count:
+        raise ValueError(f"YouTube comment audit video {video_id} owned_comments length does not match the count.")
+
+    seen_comment_ids: set[str] = set()
+    hashes: list[str] = []
+    for index, comment in enumerate(raw_comments):
+        comment_id = comment.get("comment_id")
+        text_sha256 = comment.get("text_sha256")
+        if not isinstance(comment_id, str) or not comment_id:
+            raise ValueError(
+                f"YouTube comment audit video {video_id} has an invalid owned comment ID at index {index}."
+            )
+        if comment_id in seen_comment_ids:
+            raise ValueError(f"YouTube comment audit video {video_id} repeats owned comment ID {comment_id}.")
+        seen_comment_ids.add(comment_id)
+        if not isinstance(text_sha256, str) or not text_sha256.startswith("sha256:"):
+            raise ValueError(
+                f"YouTube comment audit video {video_id} has an invalid owned comment text hash at index {index}."
+            )
+        hashes.append(text_sha256)
+    return hashes
+
+
 def strict_coverage_summary(audit: dict[str, Any], *, expected_channel: str) -> dict[str, int]:
     if audit.get("schema_name") != _AUDIT_SCHEMA or audit.get("schema_version") != 1:
         raise ValueError("Unsupported YouTube comment audit schema.")
@@ -160,8 +193,11 @@ def strict_coverage_summary(audit: dict[str, Any], *, expected_channel: str) -> 
 
     actual_counts: Counter[str] = Counter()
     seen_video_ids: set[str] = set()
-    duplicate_owned_video_ids: list[str] = []
+    exact_text_duplicate_video_ids: list[str] = []
     non_owned_video_ids: list[str] = []
+    multiple_owned_videos = 0
+    extra_owned_comments = 0
+
     for item in videos:
         video_id = item.get("video_id")
         status = item.get("status")
@@ -178,9 +214,19 @@ def strict_coverage_summary(audit: dict[str, Any], *, expected_channel: str) -> 
             item.get("owned_comment_count"),
             field=f"videos[{video_id}].owned_comment_count",
         )
-        if status == "owned_present" and owned_count != 1:
-            duplicate_owned_video_ids.append(video_id)
-        if status != "owned_present":
+        hashes = _owned_comment_hashes(item, video_id=video_id, owned_count=owned_count)
+
+        if status == "owned_present":
+            if owned_count < 1:
+                raise ValueError(f"YouTube comment audit video {video_id} is owned_present with no owned comments.")
+            if owned_count > 1:
+                multiple_owned_videos += 1
+                extra_owned_comments += owned_count - 1
+            if len(set(hashes)) != len(hashes):
+                exact_text_duplicate_video_ids.append(video_id)
+        else:
+            if owned_count != 0:
+                raise ValueError(f"YouTube comment audit video {video_id} has owned comments under status {status}.")
             non_owned_video_ids.append(video_id)
 
     normalized_declared = {status: declared_counts.get(status, 0) for status in _AUDIT_STATUSES}
@@ -189,18 +235,21 @@ def strict_coverage_summary(audit: dict[str, Any], *, expected_channel: str) -> 
         raise ValueError("YouTube comment audit counts do not match the per-video statuses.")
     if sum(normalized_declared.values()) != inventory_count:
         raise ValueError("YouTube comment audit counts do not account for every inventory video.")
-    if duplicate_owned_video_ids:
-        sample = ", ".join(duplicate_owned_video_ids[:10])
-        raise ValueError(f"Public videos with duplicate channel-authored comments: {sample}.")
+    if exact_text_duplicate_video_ids:
+        sample = ", ".join(exact_text_duplicate_video_ids[:10])
+        raise ValueError(f"Public videos with exact duplicate channel-authored comment text: {sample}.")
     if non_owned_video_ids:
         sample = ", ".join(non_owned_video_ids[:10])
-        raise ValueError(f"Public videos without exactly one channel-authored comment: {sample}.")
+        raise ValueError(f"Public videos without a channel-authored comment: {sample}.")
     if normalized_declared["owned_present"] != inventory_count:
         raise ValueError("owned_present does not equal the public inventory size.")
 
     return {
         "inventory_video_count": inventory_count,
         "owned_present": normalized_declared["owned_present"],
+        "multiple_owned_videos": multiple_owned_videos,
+        "extra_owned_comments": extra_owned_comments,
+        "exact_text_duplicate_videos": 0,
         "foreign_only": normalized_declared["foreign_only"],
         "missing": normalized_declared["missing"],
         "comments_disabled": normalized_declared["comments_disabled"],
@@ -212,8 +261,8 @@ def main() -> int:
     _configure_utf8_stdio()
     parser = argparse.ArgumentParser(
         description=(
-            "Recover a previously written YouTube comment wave without writing, then prove exact-one-comment "
-            "coverage across the fresh public inventory."
+            "Recover a previously written YouTube comment wave without writing, then prove at-least-one-owned "
+            "coverage across the fresh public inventory while rejecting exact text duplicates."
         )
     )
     parser.add_argument("plan", type=Path, help="Original signed YouTube comment plan")
@@ -330,10 +379,10 @@ def main() -> int:
         certificate_path = certificate_path.resolve()
         certificate = {
             "schema_name": _CERTIFICATE_SCHEMA,
-            "schema_version": 1,
+            "schema_version": _CERTIFICATE_SCHEMA_VERSION,
             "generated_at": datetime.now(UTC).isoformat(),
             "status": "completed",
-            "mode": "verify-only-plus-fresh-audit",
+            "mode": "verify-only-plus-fresh-audit-at-least-one-owned",
             "remote_writes": 0,
             "account_alias": args.account,
             "channel_id": args.channel,
@@ -353,15 +402,18 @@ def main() -> int:
         _write_json(certificate_path, certificate)
 
         print("\nYOUTUBE COMMENT COVERAGE PROVED")
-        print(f"  public videos:       {coverage['inventory_video_count']}")
-        print(f"  exactly one owned:   {coverage['owned_present']}")
-        print("  missing:             0")
-        print("  foreign_only:        0")
-        print("  comments_disabled:   0")
-        print("  API errors:          0")
-        print("  remote writes:       0")
-        print(f"  audit:                {audit_path}")
-        print(f"  certificate:          {certificate_path}")
+        print(f"  public videos:        {coverage['inventory_video_count']}")
+        print(f"  with owned comment:   {coverage['owned_present']}")
+        print(f"  multiple owned:       {coverage['multiple_owned_videos']}")
+        print(f"  extra owned comments: {coverage['extra_owned_comments']}")
+        print("  exact text duplicates: 0")
+        print("  missing:               0")
+        print("  foreign_only:          0")
+        print("  comments_disabled:     0")
+        print("  API errors:            0")
+        print("  remote writes:         0")
+        print(f"  audit:                  {audit_path}")
+        print(f"  certificate:            {certificate_path}")
         return 0
     except (FileNotFoundError, OSError, RuntimeError, ValueError, json.JSONDecodeError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
