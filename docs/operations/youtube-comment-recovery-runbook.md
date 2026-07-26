@@ -48,8 +48,24 @@ The PowerShell entrypoint delegates all evidence checks to `recover_youtube_comm
 4. a new read-only YouTube scan;
 5. a new full comment audit;
 6. structural and arithmetic validation of the audit JSON;
-7. exact-one-owned-comment validation for every current public video;
-8. creation of a SHA-256-bound coverage certificate.
+7. at-least-one-owned-comment validation for every current public video;
+8. exact duplicate-text detection among channel-authored comments;
+9. creation of a SHA-256-bound coverage certificate.
+
+## Coverage and comment hygiene are different questions
+
+A public video is covered when it has at least one top-level comment authored by the channel. Additional channel-authored comments are not automatically duplicates. They may be intentional and complementary, for example:
+
+- an editorial or historical explanation;
+- a playlist link;
+- channel and social links;
+- a production note or audience question.
+
+The recovery certificate records how many videos have multiple channel-authored comments and how many extra comments exist. Distinct additional comments do not block coverage.
+
+A blocking duplicate is narrower: two channel-authored comments on the same video with the same normalized text SHA-256. Exact duplicate text indicates a likely accidental repeated publication and must be reviewed before certification.
+
+Near-duplicate or editorially redundant comments remain a separate review concern. The recovery command does not delete, merge, or rewrite them.
 
 ## Why the public-video count is dynamic
 
@@ -76,9 +92,12 @@ The recovery workflow is fail-closed:
 - counts must be real non-negative integers, not booleans or absent values;
 - declared counts must equal the recomputed per-video statuses;
 - video IDs must be unique and cover the complete fresh inventory;
-- every public video must have exactly one channel-authored top-level comment;
+- `owned_comments` must agree with `owned_comment_count`;
+- comment IDs must be unique within each video's audit record;
+- every public video must have at least one channel-authored top-level comment;
 - `missing`, `foreign_only`, `comments_disabled`, and `error` must all be zero;
-- duplicate channel-authored comments are blocking failures;
+- exact same-text channel-comment duplicates are blocking failures;
+- distinct additional channel comments are reported but are not destructive-action candidates;
 - any failure exits before a success certificate can be written.
 
 ## Circular-import regression
@@ -102,7 +121,7 @@ Completion is not a green console line. A successful run creates:
 data/reports/youtube-comment-coverage-certificate-<channel>-<timestamp>.json
 ```
 
-The certificate records:
+Certificate schema version 2 records:
 
 - the signed plan SHA and file SHA-256;
 - the completed journal SHA-256;
@@ -110,7 +129,10 @@ The certificate records:
 - the fresh audit SHA-256;
 - the number of planned and completed operations;
 - the dynamic public inventory count;
-- zero remaining tail and exactly one owned comment per public video;
+- zero remaining uncovered tail;
+- the number of videos with multiple channel-authored comments;
+- the number of extra distinct channel-authored comments;
+- zero exact same-text duplicates;
 - `remote_writes: 0` for the recovery run.
 
 Keep the plan, completed journal, fresh snapshot, final audit, and coverage certificate together as the recovery evidence bundle.
