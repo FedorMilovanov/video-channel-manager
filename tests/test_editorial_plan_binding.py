@@ -122,4 +122,3 @@ def test_plan_creation_cannot_predate_source_snapshot() -> None:
     plan["created_at"] = "2026-07-25T20:29:00+00:00"
     plan = seal_content_plan(plan)
     assert "created_at cannot be earlier than source_snapshot_generated_at" in validate_content_plan(plan)
-
