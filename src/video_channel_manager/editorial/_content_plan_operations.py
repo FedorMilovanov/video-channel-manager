@@ -1,0 +1,116 @@
+from __future__ import annotations
+
+from typing import Any
+
+from video_channel_manager.editorial._content_plan_common import (
+    ContentAction,
+    OperationState,
+    canonical_text,
+    normalized_target_id,
+    operation_id_for,
+    platform_surface_error,
+    text_sha256,
+    valid_aware_datetime,
+)
+from video_channel_manager.editorial.content import EditorialContentRecord
+from video_channel_manager.editorial.rendering import RenderedContent
+
+
+def make_content_operation(
+    *,
+    record: EditorialContentRecord,
+    rendered: RenderedContent,
+    target_id: str,
+    action: ContentAction,
+    expected_before_text: str | None = None,
+    expected_revision: str | None = None,
+) -> dict[str, Any]:
+    if record.status != "approved" or not valid_aware_datetime(record.reviewed_at):
+        raise ValueError("Content plans can include only approved records with a timezone-aware reviewed_at.")
+    if action not in {"create", "update"}:
+        raise ValueError(f"unsupported content action: {action}")
+    normalized_target = normalized_target_id(target_id)
+    surface_error = platform_surface_error(rendered.platform, rendered.surface)
+    if surface_error:
+        raise ValueError(surface_error)
+    if not record.supports(rendered.platform, rendered.surface):
+        raise ValueError(f"Content record does not allow {rendered.platform}.{rendered.surface} planning.")
+    reviewed_target = record.target_for(rendered.platform, rendered.surface)
+    if reviewed_target is not None:
+        reviewed_target = normalized_target_id(reviewed_target)
+        if normalized_target != reviewed_target:
+            raise ValueError(
+                f"target_id does not match reviewed platform target for {rendered.platform}.{rendered.surface}"
+            )
+    if not rendered.is_valid:
+        raise ValueError("Cannot plan invalid rendered content.")
+
+    normalized_text = canonical_text(rendered.text)
+    before = canonical_text(expected_before_text) if expected_before_text is not None else None
+    normalized_revision = expected_revision.strip() if expected_revision else None
+    if action == "create" and (before is not None or normalized_revision is not None):
+        raise ValueError("Create operations require an absent target and cannot declare exact-before data.")
+    if action == "update" and (before is None or not normalized_revision):
+        raise ValueError("Update operations require exact before-text and expected_revision guards.")
+
+    rendered_sha = text_sha256(normalized_text)
+    before_sha = text_sha256(before) if before is not None else None
+    operation_id = operation_id_for(
+        action=action,
+        platform=rendered.platform,
+        surface=rendered.surface,
+        target_id=normalized_target,
+        content_id=record.content_id,
+        variation_key=record.variation_key,
+        rendered_sha256=rendered_sha,
+        expected_before_sha256=before_sha,
+        expected_revision=normalized_revision,
+        reviewed_target_id=reviewed_target,
+    )
+    return {
+        "operation_id": operation_id,
+        "action": action,
+        "platform": rendered.platform,
+        "surface": rendered.surface,
+        "target_id": normalized_target,
+        "reviewed_target_id": reviewed_target,
+        "content_id": record.content_id,
+        "variation_key": record.variation_key,
+        "rendered_text": normalized_text,
+        "rendered_sha256": rendered_sha,
+        "expected_before_text": before,
+        "expected_before_sha256": before_sha,
+        "expected_revision": normalized_revision,
+        "source_ids": sorted(record.source_ids),
+        "review_status": "approved",
+        "reviewed_at": record.reviewed_at,
+    }
+
+
+def operation_state(
+    operation: dict[str, Any],
+    *,
+    target_exists: bool | None,
+    current_text: str | None,
+    current_revision: str | None,
+) -> OperationState:
+    desired = canonical_text(str(operation.get("rendered_text") or ""))
+    current = canonical_text(current_text) if current_text is not None else None
+    if target_exists is True and current is not None and text_sha256(current) == text_sha256(desired):
+        return "already_applied"
+    action = str(operation.get("action") or "")
+    if action == "create":
+        return "ready" if target_exists is False else "conflict"
+    if action != "update" or target_exists is not True:
+        return "conflict"
+    expected_before = operation.get("expected_before_text")
+    expected_revision = str(operation.get("expected_revision") or "").strip() or None
+    if expected_before is None or expected_revision is None:
+        return "conflict"
+    before = canonical_text(str(expected_before))
+    if current == before and current_revision == expected_revision:
+        return "ready"
+    return "conflict"
+
+
+__all__ = ["make_content_operation", "operation_state"]
