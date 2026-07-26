@@ -171,7 +171,7 @@ There are two different success conditions:
 - **plan success:** every operation in the signed plan is verified;
 - **channel closure:** a fresh channel-wide postflight reports `missing + foreign_only == 0`.
 
-The plan builder now supports fail-closed complete-coverage checks, and the refresh workflow supports a channel-wide postflight plus a zero-tail requirement.
+The plan builder supports fail-closed complete-coverage checks, and the refresh workflow supports a channel-wide postflight plus a zero-tail requirement.
 
 Comments-disabled and API-error states are reported separately. They are blockers requiring investigation, not successful coverage and not silently counted as actionable creates.
 
@@ -212,6 +212,22 @@ Operational response:
 2. do not assume the final gate itself is defective;
 3. fix the underlying Ruff, format, mypy, audit, or pytest failure;
 4. confirm a completely green matrix on every supported Python version.
+
+## Incident 11: create-missing is not the same as create-only
+
+### Symptom
+
+A workflow that merely enables missing-comment creation can still include reviewed updates when its content directory also contains records for already covered videos.
+
+### Permanent rule
+
+Final channel-closing waves use both:
+
+```text
+--create-missing --creates-only
+```
+
+Create-only mode omits update planning and then verifies the signed operation list contains no action other than `create`. It is an independent safety boundary, not a convention about which records happen to be present in a folder.
 
 ## Editorial scaling lesson: research dossiers, not title-based invention
 
@@ -257,6 +273,7 @@ python -X utf8 .\scripts\refresh_youtube_comments.py `
   --channel UC-78ys2S3cQ3lpqgXfo-SvQ `
   --content-dir <approved-wave-directory> `
   --create-missing `
+  --creates-only `
   --require-complete-coverage `
   --require-no-review-only `
   --postflight-audit `
@@ -268,8 +285,8 @@ python -X utf8 .\scripts\refresh_youtube_comments.py `
 
 The workflow must stop before writes when coverage is incomplete. If all planned writes verify but the channel-wide postflight still finds an actionable tail, it must report that distinction explicitly; completed remote writes are not rolled back or hidden.
 
-## Remaining engineering debt
+## Completed hardening and remaining engineering debt
 
-The live rollout proved that the compatibility executor's moderation-state reads, context-aware exact reads, and delayed verification belong in the core `YouTubeCommentWriter`. Until that migration is complete, the compatibility entrypoint remains the required operational executor. It must not be removed merely because unit tests for the simpler writer pass.
+The moderation-state reads, context-aware exact comment reads, and bounded delayed verification discovered during live operation now live in the core `YouTubeCommentWriter`. The historical `apply_youtube_comment_plan_compat.py` path remains as a thin UTF-8 wrapper so saved Windows commands, signed-wave launchers, and recovery instructions continue to work without maintaining a second implementation.
 
-A future machine-readable preflight report should replace regex extraction from console output, while preserving the same exact confirmation and writer-lock model.
+The principal remaining debt is a machine-readable preflight sidecar that replaces regex extraction from console output while preserving the same exact confirmation and writer-lock model. Once operational callers have migrated, the compatibility filename may be deprecated separately; it must not be removed as part of an unrelated cleanup.
