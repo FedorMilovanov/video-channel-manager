@@ -92,9 +92,7 @@ def _is_system_collection(collection: Any) -> bool:
 def _live_indexes(live: AuditPackage) -> tuple[dict[str, Any], dict[str, Any]]:
     videos = {video.ref.remote_id: video for video in live.videos}
     collections = {
-        collection.ref.remote_id: collection
-        for collection in live.collections
-        if not _is_system_collection(collection)
+        collection.ref.remote_id: collection for collection in live.collections if not _is_system_collection(collection)
     }
     return videos, collections
 
@@ -102,10 +100,7 @@ def _live_indexes(live: AuditPackage) -> tuple[dict[str, Any], dict[str, Any]]:
 def _preflight(plan: dict[str, Any], live: AuditPackage) -> dict[str, Any]:
     coverage = target_video_ids_sha256(live)
     if coverage != plan["target_video_ids_sha256"]:
-        raise ValueError(
-            "Live VK video coverage differs from the reviewed plan. "
-            "Create a fresh scan and rebuild the plan."
-        )
+        raise ValueError("Live VK video coverage differs from the reviewed plan. Create a fresh scan and rebuild the plan.")
     memberships = membership_state_sha256(live)
     if memberships != plan["initial_memberships_sha256"]:
         raise ValueError(
@@ -123,14 +118,8 @@ def _preflight(plan: dict[str, Any], live: AuditPackage) -> dict[str, Any]:
         else:
             current_title = canonical_vk_text(video.title)
             current_description = canonical_vk_text(video.description)
-            before = (
-                current_title == operation["before_title"]
-                and current_description == operation["before_description"]
-            )
-            after = (
-                current_title == operation["after_title"]
-                and current_description == operation["after_description"]
-            )
+            before = current_title == operation["before_title"] and current_description == operation["before_description"]
+            after = current_title == operation["after_title"] and current_description == operation["after_description"]
             if after:
                 state = "already_applied"
                 detail = "live text equals reviewed after-state"
@@ -199,10 +188,7 @@ def main() -> int:
     plan = _load_plan(args.plan)
     total_operations = int(plan["summary"]["total_operations"])
     if total_operations > args.max_operations:
-        raise SystemExit(
-            f"Plan has {total_operations} operations, above "
-            f"--max-operations {args.max_operations}."
-        )
+        raise SystemExit(f"Plan has {total_operations} operations, above --max-operations {args.max_operations}.")
     if args.community != plan["target_community_id"]:
         raise SystemExit("--community differs from the reviewed plan target")
 
@@ -214,10 +200,7 @@ def main() -> int:
         api_version=settings.vk_api_version,
     )
     community = reader.get_community(str(args.community))
-    if (
-        int(community.ref.channel_id) != args.community
-        or not bool(community.metadata.get("managed_by_token"))
-    ):
+    if int(community.ref.channel_id) != args.community or not bool(community.metadata.get("managed_by_token")):
         raise SystemExit("The token does not manage the exact reviewed VK community.")
 
     print("Reading fresh live VK inventory…")
@@ -257,10 +240,7 @@ def main() -> int:
         raise SystemExit(f"Execution confirmation mismatch: {', '.join(failed)}")
 
     timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
-    result_output = (
-        args.result_output
-        or settings.data_dir / "reports" / f"vk-editorial-apply-{timestamp}.json"
-    )
+    result_output = args.result_output or settings.data_dir / "reports" / f"vk-editorial-apply-{timestamp}.json"
     result: dict[str, Any] = {
         "schema_name": "video-manager.vk-editorial-apply-result",
         "schema_version": 1,
@@ -288,10 +268,7 @@ def main() -> int:
                 or locked_preflight["ready"] != preflight["ready"]
                 or locked_preflight["already_applied"] != preflight["already_applied"]
             ):
-                raise RuntimeError(
-                    "Locked re-preflight differs from the confirmed dry-run; "
-                    "no write was started."
-                )
+                raise RuntimeError("Locked re-preflight differs from the confirmed dry-run; no write was started.")
             states = _status_by_id(locked_preflight)
             writer = VkEditorialWriter(
                 token_store=store,
@@ -302,9 +279,7 @@ def main() -> int:
             for operation in plan["video_text_operations"]:
                 operation_id = operation["operation_id"]
                 if states[operation_id] == "already_applied":
-                    result["operations"].append(
-                        {"operation_id": operation_id, "status": "already_applied"}
-                    )
+                    result["operations"].append({"operation_id": operation_id, "status": "already_applied"})
                     continue
                 owner_id, video_id = _parse_remote_id(operation["target_video_id"])
                 updated = writer.replace_text_if_current(
@@ -329,9 +304,7 @@ def main() -> int:
             for operation in plan["album_title_operations"]:
                 operation_id = operation["operation_id"]
                 if states[operation_id] == "already_applied":
-                    result["operations"].append(
-                        {"operation_id": operation_id, "status": "already_applied"}
-                    )
+                    result["operations"].append({"operation_id": operation_id, "status": "already_applied"})
                     continue
                 writer.rename_album(
                     community_id=args.community,
