@@ -43,8 +43,7 @@ def target_video_ids_sha256(target: AuditPackage) -> str:
 def membership_state_sha256(target: AuditPackage) -> str:
     return canonical_sha256(
         sorted(
-            (membership.collection_ref.remote_id, membership.video_ref.remote_id)
-            for membership in target.memberships
+            (membership.collection_ref.remote_id, membership.video_ref.remote_id) for membership in target.memberships
         )
     )
 
@@ -57,9 +56,7 @@ def build_vk_editorial_cleanup_plan(target: AuditPackage, policy: dict[str, Any]
     if target.channel.ref.platform.value != "vk":
         raise ValueError("VK editorial target must be a VK AuditPackage")
     title_overrides = {str(key): str(value) for key, value in dict(policy.get("title_overrides") or {}).items()}
-    album_overrides = {
-        str(key): str(value) for key, value in dict(policy.get("album_title_overrides") or {}).items()
-    }
+    album_overrides = {str(key): str(value) for key, value in dict(policy.get("album_title_overrides") or {}).items()}
     maximum = int(policy.get("description_policy", {}).get("max_length", 5000))
     video_operations: list[dict[str, Any]] = []
     review_only: list[dict[str, Any]] = []
@@ -251,7 +248,10 @@ def validate_vk_editorial_cleanup_plan(plan: dict[str, Any]) -> None:
     expected_total = len(plan.get("video_text_operations", [])) + len(plan.get("album_title_operations", []))
     if not isinstance(summary, dict) or int(summary.get("total_operations", -1)) != expected_total:
         raise ValueError("summary.total_operations does not match operations")
-    if any(int(summary.get(field, -1)) != 0 for field in ("placements_to_add", "placements_to_remove", "videos_to_delete")):
+    if any(
+        int(summary.get(field, -1)) != 0
+        for field in ("placements_to_add", "placements_to_remove", "videos_to_delete")
+    ):
         raise ValueError("Editorial plan cannot contain catalog or deletion operations")
 
 
