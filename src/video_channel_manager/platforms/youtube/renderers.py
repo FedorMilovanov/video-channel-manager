@@ -32,9 +32,7 @@ def _links(record: EditorialContentRecord, *, surface: str) -> tuple[LinkBlock, 
 def _render_blocks(record: EditorialContentRecord, *, surface: str) -> str:
     links = _links(record, surface=surface)
     question = f"{record.question.lead} {record.question.text}".strip()
-    link_lines = [
-        f"{canonicalize_youtube_link_label(link.kind, link.label)} {link.url}".strip() for link in links
-    ]
+    link_lines = [f"{canonicalize_youtube_link_label(link.kind, link.label)} {link.url}".strip() for link in links]
     blocks = [record.fact.heading, record.fact.text, question, "\n".join(link_lines)]
     return "\n\n".join(block for block in blocks if block).strip()
 
