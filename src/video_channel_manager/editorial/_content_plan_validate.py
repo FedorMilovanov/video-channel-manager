@@ -100,10 +100,7 @@ def validate_content_plan(payload: dict[str, Any]) -> list[str]:
     counts = payload.get("counts")
     if not isinstance(counts, dict):
         errors.append("counts must be an object")
-    elif any(
-        key not in {"create", "update"} or type(value) is not int or value < 0
-        for key, value in counts.items()
-    ):
+    elif any(key not in {"create", "update"} or type(value) is not int or value < 0 for key, value in counts.items()):
         errors.append("counts must map create/update to nonnegative integers")
     if counts != expected_counts:
         errors.append("counts mismatch")
