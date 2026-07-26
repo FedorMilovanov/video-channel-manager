@@ -20,16 +20,26 @@ def validate_preflight_state(
     expected_source_snapshot_generated_at: str | None = None,
 ) -> tuple[dict[str, dict[str, Any]], list[str]]:
     errors: list[str] = []
-    actual_snapshot = str(payload.get("source_snapshot") or "").strip()
+    actual_snapshot_raw = payload.get("source_snapshot")
+    if not isinstance(actual_snapshot_raw, str):
+        errors.append("state source_snapshot must be a string")
+    actual_snapshot = actual_snapshot_raw.strip() if isinstance(actual_snapshot_raw, str) else ""
     if actual_snapshot != expected_source_snapshot.strip():
         errors.append("state source_snapshot does not match the signed plan")
-    actual_snapshot_sha256 = str(payload.get("source_snapshot_sha256") or "").strip()
+    actual_snapshot_sha256_raw = payload.get("source_snapshot_sha256")
+    if not isinstance(actual_snapshot_sha256_raw, str):
+        errors.append("state source_snapshot_sha256 must be a string")
+    actual_snapshot_sha256 = (
+        actual_snapshot_sha256_raw.strip() if isinstance(actual_snapshot_sha256_raw, str) else ""
+    )
     if actual_snapshot_sha256 != expected_source_snapshot_sha256.strip():
         errors.append("state source_snapshot_sha256 does not match the signed plan")
     if not valid_sha256(actual_snapshot_sha256):
         errors.append("state source_snapshot_sha256 must be a sha256: digest")
     actual_generated_at = payload.get("source_snapshot_generated_at")
-    if not valid_aware_datetime(actual_generated_at):
+    if not isinstance(actual_generated_at, str):
+        errors.append("state source_snapshot_generated_at must be a string")
+    if not isinstance(actual_generated_at, str) or not valid_aware_datetime(actual_generated_at):
         errors.append("state source_snapshot_generated_at must be a timezone-aware ISO-8601 timestamp")
     elif expected_source_snapshot_generated_at is not None and not same_aware_datetime(
         actual_generated_at,

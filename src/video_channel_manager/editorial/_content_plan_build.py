@@ -43,13 +43,13 @@ def build_content_plan(
     operations: list[dict[str, Any]],
     mode: str = "dry-run-first",
 ) -> dict[str, Any]:
-    if not source_snapshot.strip():
-        raise ValueError("source_snapshot cannot be blank")
-    if not valid_sha256(source_snapshot_sha256):
+    if not isinstance(source_snapshot, str) or not source_snapshot.strip():
+        raise ValueError("source_snapshot must be a nonblank string")
+    if not isinstance(source_snapshot_sha256, str) or not valid_sha256(source_snapshot_sha256):
         raise ValueError("source_snapshot_sha256 must be a sha256: digest")
-    if not valid_aware_datetime(source_snapshot_generated_at):
+    if not isinstance(source_snapshot_generated_at, str) or not valid_aware_datetime(source_snapshot_generated_at):
         raise ValueError("source_snapshot_generated_at must be a timezone-aware ISO-8601 timestamp")
-    if mode not in ALLOWED_PLAN_MODES:
+    if not isinstance(mode, str) or mode not in ALLOWED_PLAN_MODES:
         raise ValueError(f"unsupported content plan mode: {mode}")
     payload: dict[str, Any] = {
         "schema_name": CONTENT_PLAN_SCHEMA_NAME,
