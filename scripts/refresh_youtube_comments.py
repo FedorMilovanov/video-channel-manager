@@ -254,9 +254,7 @@ def main() -> int:
             "--output",
             str(plan_path),
         ]
-        plan_command.extend(
-            plan_mode_arguments(create_missing=args.create_missing, creates_only=args.creates_only)
-        )
+        plan_command.extend(plan_mode_arguments(create_missing=args.create_missing, creates_only=args.creates_only))
         if args.require_complete_coverage:
             plan_command.append("--require-complete-coverage")
         if args.require_no_review_only:
@@ -279,9 +277,7 @@ def main() -> int:
                 if not isinstance(item, dict) or item.get("action") != "create"
             ]
             if non_create:
-                raise ValueError(
-                    "Create-only mode generated a non-create operation for: " + ", ".join(non_create)
-                )
+                raise ValueError("Create-only mode generated a non-create operation for: " + ", ".join(non_create))
         if not operations:
             print("\nNo approved YouTube comments require changes.")
             if args.require_zero_tail:
@@ -354,7 +350,9 @@ def main() -> int:
 
         if args.postflight_audit or args.require_zero_tail:
             postflight_timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
-            postflight_path = reports_dir / f"youtube-comment-audit-postflight-{args.channel}-{postflight_timestamp}.json"
+            postflight_path = (
+                reports_dir / f"youtube-comment-audit-postflight-{args.channel}-{postflight_timestamp}.json"
+            )
             postflight = _run(
                 _audit_command(
                     repo_root=repo_root,
