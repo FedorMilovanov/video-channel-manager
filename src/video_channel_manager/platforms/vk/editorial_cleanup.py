@@ -114,9 +114,7 @@ def clean_vk_description(value: str, policy: dict[str, Any]) -> str:
     text = _outside_urls(text, lambda part: part.replace("*", "").replace("`", "").replace("_", ""))
     text = re.sub(r"^[━─═—-]{15,}\s*$", "━━━━━━━━━━━━━━━", text, flags=re.MULTILINE)
     text = "\n".join(
-        line.rstrip()
-        for line in text.splitlines()
-        if not any(pattern.match(line) for pattern in FOOTER_PATTERNS)
+        line.rstrip() for line in text.splitlines() if not any(pattern.match(line) for pattern in FOOTER_PATTERNS)
     )
     text = re.sub(r"\n[ \t]*\n(?:[ \t]*\n)+", "\n\n", text).strip()
     settings = dict(policy.get("description_policy") or {})
