@@ -7,6 +7,7 @@ from video_channel_manager.editorial._content_plan_common import (
     OperationState,
     canonical_text,
     normalized_target_id,
+    object_sha256,
     operation_id_for,
     platform_surface_error,
     text_sha256,
@@ -55,6 +56,8 @@ def make_content_operation(
 
     rendered_sha = text_sha256(normalized_text)
     before_sha = text_sha256(before) if before is not None else None
+    source_ids = sorted(record.source_ids)
+    source_ids_sha = object_sha256(source_ids)
     operation_id = operation_id_for(
         action=action,
         platform=rendered.platform,
@@ -66,6 +69,8 @@ def make_content_operation(
         expected_before_sha256=before_sha,
         expected_revision=normalized_revision,
         reviewed_target_id=reviewed_target,
+        source_ids_sha256=source_ids_sha,
+        reviewed_at=record.reviewed_at,
     )
     return {
         "operation_id": operation_id,
@@ -81,7 +86,8 @@ def make_content_operation(
         "expected_before_text": before,
         "expected_before_sha256": before_sha,
         "expected_revision": normalized_revision,
-        "source_ids": sorted(record.source_ids),
+        "source_ids": source_ids,
+        "source_ids_sha256": source_ids_sha,
         "review_status": "approved",
         "reviewed_at": record.reviewed_at,
     }

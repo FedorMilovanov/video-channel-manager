@@ -17,6 +17,7 @@ ALLOWED_PLATFORM_SURFACES = {
 }
 ALLOWED_PLAN_MODES = frozenset({"dry-run-first"})
 _SHA256_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+_STABLE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{1,159}$")
 
 
 def canonical_text(value: str) -> str:
@@ -38,6 +39,10 @@ def object_sha256(payload: object) -> str:
 
 def valid_sha256(value: object) -> bool:
     return _SHA256_RE.fullmatch(str(value or "").strip()) is not None
+
+
+def valid_stable_id(value: object) -> bool:
+    return _STABLE_ID_RE.fullmatch(str(value or "").strip()) is not None
 
 
 def parse_aware_datetime(value: object) -> datetime | None:
@@ -97,6 +102,8 @@ def operation_id_for(
     expected_before_sha256: str | None,
     expected_revision: str | None,
     reviewed_target_id: str | None = None,
+    source_ids_sha256: str | None = None,
+    reviewed_at: str | None = None,
 ) -> str:
     digest = object_sha256(
         {
@@ -110,6 +117,8 @@ def operation_id_for(
             "expected_before_sha256": expected_before_sha256,
             "expected_revision": expected_revision,
             "reviewed_target_id": reviewed_target_id,
+            "source_ids_sha256": source_ids_sha256,
+            "reviewed_at": reviewed_at,
         }
     )
     return digest.removeprefix("sha256:")[:24]
@@ -133,4 +142,5 @@ __all__ = [
     "text_sha256",
     "valid_aware_datetime",
     "valid_sha256",
+    "valid_stable_id",
 ]

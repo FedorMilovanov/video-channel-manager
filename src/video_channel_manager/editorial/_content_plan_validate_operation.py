@@ -6,11 +6,13 @@ from video_channel_manager.editorial._content_plan_common import (
     ContentAction,
     canonical_text,
     normalized_target_id,
+    object_sha256,
     operation_id_for,
     platform_surface_error,
     target_state_key,
     text_sha256,
     valid_aware_datetime,
+    valid_stable_id,
 )
 
 
@@ -44,6 +46,10 @@ def validate_operation(raw: dict[str, Any], *, index: int) -> tuple[list[str], s
             errors.append(f"{prefix}.reviewed_target_id does not match target_id")
     content_id = str(raw.get("content_id") or "").strip()
     variation_key = str(raw.get("variation_key") or "").strip()
+    if content_id and not valid_stable_id(content_id):
+        errors.append(f"{prefix}.content_id must be a stable identifier")
+    if variation_key and not valid_stable_id(variation_key):
+        errors.append(f"{prefix}.variation_key must be a stable identifier")
     rendered_text = canonical_text(str(raw.get("rendered_text") or ""))
     rendered_sha = text_sha256(rendered_text)
     if raw.get("rendered_sha256") != rendered_sha:
@@ -60,12 +66,23 @@ def validate_operation(raw: dict[str, Any], *, index: int) -> tuple[list[str], s
         errors.append(f"{prefix}: update requires exact before-text and expected_revision")
     if not all((platform, surface, target_id, content_id, variation_key, rendered_text)):
         errors.append(f"{prefix} contains blank identity or rendered-text fields")
-    source_ids = raw.get("source_ids")
-    if not isinstance(source_ids, list) or not source_ids or not all(str(item).strip() for item in source_ids):
+    source_ids_raw = raw.get("source_ids")
+    source_ids: list[str] = []
+    if not isinstance(source_ids_raw, list) or not source_ids_raw:
         errors.append(f"{prefix}.source_ids must contain at least one nonblank ID")
-    elif len(source_ids) != len({str(item).strip() for item in source_ids}):
-        errors.append(f"{prefix}.source_ids cannot contain duplicates")
-    if raw.get("review_status") != "approved" or not valid_aware_datetime(raw.get("reviewed_at")):
+    else:
+        source_ids = [str(item).strip() for item in source_ids_raw]
+        if any(not item or not valid_stable_id(item) for item in source_ids):
+            errors.append(f"{prefix}.source_ids must contain stable nonblank IDs")
+        if len(source_ids) != len(set(source_ids)):
+            errors.append(f"{prefix}.source_ids cannot contain duplicates")
+        if source_ids != sorted(source_ids):
+            errors.append(f"{prefix}.source_ids must be sorted")
+    source_ids_sha = object_sha256(source_ids)
+    if raw.get("source_ids_sha256") != source_ids_sha:
+        errors.append(f"{prefix}.source_ids_sha256 mismatch")
+    reviewed_at = str(raw.get("reviewed_at") or "").strip() or None
+    if raw.get("review_status") != "approved" or not valid_aware_datetime(reviewed_at):
         errors.append(f"{prefix} must be approved with a timezone-aware reviewed_at")
     expected_id = operation_id_for(
         action=cast(ContentAction, action),
@@ -78,6 +95,8 @@ def validate_operation(raw: dict[str, Any], *, index: int) -> tuple[list[str], s
         expected_before_sha256=before_sha,
         expected_revision=expected_revision,
         reviewed_target_id=reviewed_target_id,
+        source_ids_sha256=source_ids_sha,
+        reviewed_at=reviewed_at,
     )
     operation_id = str(raw.get("operation_id") or "")
     if operation_id != expected_id:

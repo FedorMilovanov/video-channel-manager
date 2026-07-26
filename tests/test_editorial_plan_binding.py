@@ -122,3 +122,26 @@ def test_plan_creation_cannot_predate_source_snapshot() -> None:
     plan["created_at"] = "2026-07-25T20:29:00+00:00"
     plan = seal_content_plan(plan)
     assert "created_at cannot be earlier than source_snapshot_generated_at" in validate_content_plan(plan)
+
+
+def test_operation_identity_binds_review_provenance() -> None:
+    plan = build_content_plan(
+        source_snapshot=SNAPSHOT,
+        source_snapshot_sha256=SNAPSHOT_SHA256,
+        source_snapshot_generated_at=SNAPSHOT_TIME,
+        operations=[_operation()],
+    )
+    operation = plan["operations"][0]
+    assert operation["source_ids_sha256"].startswith("sha256:")
+
+    changed_sources = deepcopy(plan)
+    changed_sources["operations"][0]["source_ids"] = ["different-source"]
+    changed_sources = seal_content_plan(changed_sources)
+    source_errors = validate_content_plan(changed_sources)
+    assert "operations[0].source_ids_sha256 mismatch" in source_errors
+    assert "operations[0].operation_id mismatch" in source_errors
+
+    changed_review = deepcopy(plan)
+    changed_review["operations"][0]["reviewed_at"] = "2026-07-25T21:22:00+00:00"
+    changed_review = seal_content_plan(changed_review)
+    assert "operations[0].operation_id mismatch" in validate_content_plan(changed_review)
