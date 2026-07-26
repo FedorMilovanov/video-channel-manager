@@ -66,4 +66,6 @@ Legacy YouTube comment schema v2 already contains the canonical semantic fields.
 3. add `content_id`, `platform_suitability`, `rendering_metadata`, or `platform_targets` only when needed;
 4. rename the schema to `video-manager.editorial-content` version 1 when the record becomes cross-platform-owned.
 
+The canonical YouTube community label is `*Сообщество проекта в VK:*`. Existing approved records that still store `*Сообщество проекта VK:*` remain valid migration input, but every YouTube renderer, preview, and signed plan emits the canonical wording. New records must not use the historical label.
+
 No mass rewrite of approved YouTube records is required.
