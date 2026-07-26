@@ -22,6 +22,8 @@ from video_channel_manager.platforms.youtube.models import InstalledClientConfig
 from video_channel_manager.platforms.youtube.store import TokenStore
 from video_channel_manager.platforms.youtube.write_lock import local_youtube_write_lock
 
+_DEFAULT_POSTFLIGHT_DELAYS_SECONDS = (0.0, 3.0, 7.0, 15.0, 30.0)
+
 
 def _read_json(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
@@ -146,6 +148,87 @@ def _status_groups(
     return ready, already, blockers
 
 
+def _await_complete_postflight(
+    writer: YouTubeCommentWriter,
+    operations: list[dict[str, Any]],
+    *,
+    delays_seconds: tuple[float, ...] = _DEFAULT_POSTFLIGHT_DELAYS_SECONDS,
+) -> list[dict[str, str]]:
+    if not delays_seconds:
+        raise ValueError("Postflight delays must contain at least one attempt.")
+
+    last_results: list[dict[str, str]] = []
+    for attempt, delay in enumerate(delays_seconds, start=1):
+        if delay > 0:
+            print(
+                f"Waiting {delay:g}s for YouTube indexing before full postflight "
+                f"attempt {attempt}/{len(delays_seconds)}…"
+            )
+            time.sleep(delay)
+        else:
+            print(f"Full postflight attempt {attempt}/{len(delays_seconds)}…")
+
+        last_results = _preflight(writer, operations)
+        ready, already, blockers = _status_groups(last_results)
+        if not ready and not blockers and len(already) == len(operations):
+            return last_results
+
+        print(
+            "Full postflight is not complete yet: "
+            f"ready={len(ready)}, already_applied={len(already)}, blockers={len(blockers)}."
+        )
+
+    ready, already, blockers = _status_groups(last_results)
+    unresolved = [item for item in last_results if item["status"] != "already_applied"]
+    unresolved_summary = ", ".join(f"{item['video_id']}:{item['status']}" for item in unresolved[:10])
+    if len(unresolved) > 10:
+        unresolved_summary += f", +{len(unresolved) - 10} more"
+    raise YouTubeCommentError(
+        "Full postflight did not confirm every planned comment operation after "
+        f"{len(delays_seconds)} attempt(s): ready={len(ready)}, "
+        f"already_applied={len(already)}, blockers={len(blockers)}. "
+        f"Unconfirmed: {unresolved_summary or 'unknown'}."
+    )
+
+
+def _validate_verify_only_journal(
+    plan: dict[str, Any],
+    journal: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if journal is None:
+        raise ValueError("--verify-only requires an existing apply journal for this signed plan.")
+    attempts = journal.get("attempts")
+    if not isinstance(attempts, dict):
+        raise ValueError("Existing comment journal has invalid attempts.")
+    operations = plan.get("operations")
+    if not isinstance(operations, list):
+        raise ValueError("Plan operations must be a list.")
+
+    expected_ids = {str(item["operation_id"]) for item in operations if isinstance(item, dict)}
+    missing = sorted(expected_ids - set(attempts))
+    incomplete = sorted(
+        operation_id
+        for operation_id in expected_ids & set(attempts)
+        if not isinstance(attempts[operation_id], dict) or attempts[operation_id].get("status") != "completed"
+    )
+    if missing or incomplete:
+        details: list[str] = []
+        if missing:
+            details.append(f"missing attempts: {', '.join(missing[:10])}")
+        if incomplete:
+            details.append(f"non-completed attempts: {', '.join(incomplete[:10])}")
+        raise ValueError("--verify-only refuses an incomplete write journal; " + "; ".join(details) + ".")
+    return journal
+
+
+def _mark_journal_completed(journal: dict[str, Any], journal_path: Path) -> None:
+    journal["status"] = "completed"
+    journal["completed_at"] = datetime.now(UTC).isoformat()
+    journal["updated_at"] = journal["completed_at"]
+    journal.pop("last_error", None)
+    _write_json(journal_path, journal)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Dry-run or apply a self-validating YouTube comment plan.")
     parser.add_argument("plan", type=Path)
@@ -157,7 +240,13 @@ def main() -> int:
     parser.add_argument("--max-operations", type=int, default=200)
     parser.add_argument("--write-delay", type=float, default=2.0)
     parser.add_argument("--journal", type=Path)
-    parser.add_argument("--execute", action="store_true")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--execute", action="store_true")
+    mode.add_argument(
+        "--verify-only",
+        action="store_true",
+        help="Perform locked retrying postflight only; never call a YouTube write method.",
+    )
     args = parser.parse_args()
 
     try:
@@ -169,6 +258,8 @@ def main() -> int:
         if not isinstance(operations_raw, list):
             raise ValueError("Plan operations must be a list.")
         operations = [item for item in operations_raw if isinstance(item, dict)]
+        if len(operations) != len(operations_raw):
+            raise ValueError("Every plan operation must be an object.")
         if len(operations) > args.max_operations:
             raise ValueError(f"Plan has {len(operations)} operations, above --max-operations {args.max_operations}.")
         settings = get_settings()
@@ -191,6 +282,8 @@ def main() -> int:
             return 2
     try:
         journal = _journal_payload(plan, existing_journal)
+        if args.verify_only:
+            journal = _validate_verify_only_journal(plan, existing_journal)
     except ValueError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
@@ -211,11 +304,12 @@ def main() -> int:
     for item in blockers:
         print(f"  BLOCKED {item['video_id']} — {item['status']}: {item['detail']}")
 
-    if not args.execute:
+    if not args.execute and not args.verify_only:
         print("Dry-run only. No YouTube write method was called.")
         print(
             "Re-run with --execute and exact --confirm-channel, --confirm-count, "
-            "--confirm-source-snapshot, and --confirm-plan-sha256 values."
+            "--confirm-source-snapshot, and --confirm-plan-sha256 values; or use "
+            "--verify-only with the original journal after a postflight-only failure."
         )
         return 0 if not blockers else 1
 
@@ -231,6 +325,28 @@ def main() -> int:
     if args.confirm_plan_sha256 != expected_plan_sha:
         print("ERROR: --confirm-plan-sha256 does not match the plan.", file=sys.stderr)
         return 2
+
+    lock_path = settings.data_dir / "locks" / f"youtube-{args.account}-{expected_channel}.lock"
+
+    if args.verify_only:
+        try:
+            with local_youtube_write_lock(lock_path, account=args.account, channel_id=expected_channel):
+                print("Verify-only recovery: no YouTube write method will be called.")
+                _await_complete_postflight(writer, operations)
+                _mark_journal_completed(journal, args.journal)
+        except (OSError, ValueError, YouTubeCommentError) as exc:
+            journal["status"] = "verification_pending"
+            journal["last_error"] = str(exc)
+            journal["updated_at"] = datetime.now(UTC).isoformat()
+            _write_json(args.journal, journal)
+            print(f"ERROR: {exc}", file=sys.stderr)
+            print(f"Journal → {args.journal}", file=sys.stderr)
+            return 1
+
+        print("YouTube comment recovery verification completed: 0 write(s); every operation is confirmed.")
+        print(f"Journal → {args.journal}")
+        return 0
+
     if args.confirm_count != len(ready):
         print(f"ERROR: --confirm-count must equal the live ready count {len(ready)}.", file=sys.stderr)
         return 2
@@ -239,7 +355,7 @@ def main() -> int:
         return 2
 
     ready_ids = {item["operation_id"] for item in ready}
-    lock_path = settings.data_dir / "locks" / f"youtube-{args.account}-{expected_channel}.lock"
+    writes_completed = 0
     try:
         with local_youtube_write_lock(lock_path, account=args.account, channel_id=expected_channel):
             print("Re-running the complete live preflight under the channel writer lock…")
@@ -314,18 +430,18 @@ def main() -> int:
                         "verified_at": datetime.now(UTC).isoformat(),
                     },
                 )
+                writes_completed += 1
                 if args.write_delay > 0 and index < len(locked_ready):
                     time.sleep(args.write_delay)
 
-            final_preflight = _preflight(writer, operations)
-            final_ready, final_already, final_blockers = _status_groups(final_preflight)
-            if final_ready or final_blockers or len(final_already) != len(operations):
-                raise YouTubeCommentError("Full postflight did not confirm every planned comment operation.")
-            journal["status"] = "completed"
-            journal["completed_at"] = datetime.now(UTC).isoformat()
-            journal["updated_at"] = journal["completed_at"]
-            _write_json(args.journal, journal)
+            _await_complete_postflight(writer, operations)
+            _mark_journal_completed(journal, args.journal)
     except (OSError, ValueError, YouTubeCommentError) as exc:
+        if writes_completed and journal.get("status") != "partial_failure":
+            journal["status"] = "verification_pending"
+            journal["last_error"] = str(exc)
+            journal["updated_at"] = datetime.now(UTC).isoformat()
+            _write_json(args.journal, journal)
         print(f"ERROR: {exc}", file=sys.stderr)
         print(f"Journal → {args.journal}", file=sys.stderr)
         return 1
