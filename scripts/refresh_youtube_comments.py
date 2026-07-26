@@ -18,6 +18,7 @@ _SUMMARY_PATTERNS = {
     "already": re.compile(r"(?m)^\s*already applied:\s*(\d+)\s*$"),
     "blockers": re.compile(r"(?m)^\s*blockers:\s*(\d+)\s*$"),
 }
+_ACTIONABLE_AUDIT_STATUSES = ("missing", "foreign_only")
 
 
 def _configure_utf8_stdio() -> None:
@@ -42,6 +43,13 @@ def _read_json(path: Path) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError(f"Expected a JSON object: {path}")
     return payload
+
+
+def actionable_tail_from_audit(payload: dict[str, Any]) -> int:
+    counts = payload.get("counts")
+    if not isinstance(counts, dict):
+        raise ValueError("YouTube comment audit does not contain a counts object.")
+    return sum(int(counts.get(status) or 0) for status in _ACTIONABLE_AUDIT_STATUSES)
 
 
 def _run(command: Sequence[str], *, capture: bool = False) -> subprocess.CompletedProcess[str]:
@@ -85,12 +93,36 @@ def _script(repo_root: Path, name: str) -> str:
     return str(path)
 
 
+def _audit_command(
+    *,
+    repo_root: Path,
+    snapshot: Path,
+    account: str,
+    channel: str,
+    output: Path,
+) -> list[str]:
+    return [
+        sys.executable,
+        "-X",
+        "utf8",
+        _script(repo_root, "audit_youtube_comments.py"),
+        str(snapshot),
+        "--account",
+        account,
+        "--channel",
+        channel,
+        "--output",
+        str(output),
+    ]
+
+
 def main() -> int:
     _configure_utf8_stdio()
     parser = argparse.ArgumentParser(
         description=(
             "Refresh approved YouTube top-level comments in one guarded workflow: "
-            "scan, audit, build an exact create/update plan, live preflight, and optional execution."
+            "scan, audit, build an exact create/update plan, live preflight, optional execution, "
+            "and optional channel-wide postflight."
         )
     )
     parser.add_argument("--account", default="legendary-poet")
@@ -103,20 +135,47 @@ def main() -> int:
     parser.add_argument(
         "--create-missing", action="store_true", help="Also create approved comments where none exists."
     )
+    parser.add_argument(
+        "--require-complete-coverage",
+        action="store_true",
+        help="Fail before plan signing unless every live missing/foreign_only video has a valid approved create operation.",
+    )
+    parser.add_argument(
+        "--require-no-review-only",
+        action="store_true",
+        help="Fail before plan signing if any approved record is excluded into review-only.",
+    )
+    parser.add_argument(
+        "--postflight-audit",
+        action="store_true",
+        help="Run a fresh channel-wide comment audit after verified execution.",
+    )
+    parser.add_argument(
+        "--require-zero-tail",
+        action="store_true",
+        help="After execution, fail if the postflight audit still has missing or foreign_only public videos.",
+    )
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--confirm-channel", default="")
     parser.add_argument("--write-delay", type=float, default=3.0)
     parser.add_argument("--max-operations", type=int, default=200)
     args = parser.parse_args()
 
+    if args.execute and args.confirm_channel != args.channel:
+        print("ERROR: --execute requires exact --confirm-channel.", file=sys.stderr)
+        return 2
+    if args.require_complete_coverage and not args.create_missing:
+        print("ERROR: --require-complete-coverage requires --create-missing.", file=sys.stderr)
+        return 2
+    if args.require_zero_tail and not args.execute:
+        print("ERROR: --require-zero-tail requires --execute.", file=sys.stderr)
+        return 2
+
     repo_root = Path(__file__).resolve().parents[1]
     settings = get_settings()
     content_dir = args.content_dir or repo_root / "content" / "youtube-comments"
     if not content_dir.is_dir():
         print(f"ERROR: content directory not found: {content_dir}", file=sys.stderr)
-        return 2
-    if args.execute and args.confirm_channel != args.channel:
-        print("ERROR: --execute requires exact --confirm-channel.", file=sys.stderr)
         return 2
 
     try:
@@ -153,19 +212,13 @@ def main() -> int:
         print(f"Content:  {content_dir}")
 
         audit = _run(
-            [
-                sys.executable,
-                "-X",
-                "utf8",
-                _script(repo_root, "audit_youtube_comments.py"),
-                str(snapshot),
-                "--account",
-                args.account,
-                "--channel",
-                args.channel,
-                "--output",
-                str(audit_path),
-            ]
+            _audit_command(
+                repo_root=repo_root,
+                snapshot=snapshot,
+                account=args.account,
+                channel=args.channel,
+                output=audit_path,
+            )
         )
         _require_success(audit, stage="YouTube comment audit")
 
@@ -186,6 +239,10 @@ def main() -> int:
         ]
         if not args.create_missing:
             plan_command.append("--updates-only")
+        if args.require_complete_coverage:
+            plan_command.append("--require-complete-coverage")
+        if args.require_no_review_only:
+            plan_command.append("--require-no-review-only")
         plan_result = _run(plan_command)
         _require_success(plan_result, stage="YouTube comment plan build")
 
@@ -199,6 +256,10 @@ def main() -> int:
             )
         if not operations:
             print("\nNo approved YouTube comments require changes.")
+            if args.require_zero_tail:
+                tail = actionable_tail_from_audit(_read_json(audit_path))
+                if tail:
+                    raise RuntimeError(f"No operations were planned, but the live actionable tail is still {tail}.")
             return 0
 
         apply_script = _script(repo_root, "apply_youtube_comment_plan_compat.py")
@@ -235,34 +296,58 @@ def main() -> int:
             return 0
         if summary["ready"] == 0:
             print("\nAll approved changes are already present on YouTube.")
-            return 0
+        else:
+            execute = _run(
+                [
+                    sys.executable,
+                    "-X",
+                    "utf8",
+                    apply_script,
+                    str(plan_path),
+                    "--account",
+                    args.account,
+                    "--execute",
+                    "--confirm-channel",
+                    str(plan["channel_id"]),
+                    "--confirm-count",
+                    str(summary["ready"]),
+                    "--confirm-source-snapshot",
+                    str(plan["source_snapshot"]),
+                    "--confirm-plan-sha256",
+                    str(plan["plan_sha256"]),
+                    "--max-operations",
+                    str(args.max_operations),
+                    "--write-delay",
+                    str(args.write_delay),
+                ]
+            )
+            _require_success(execute, stage="YouTube comment execution")
+            print("\nYouTube comment refresh completed and verified.")
 
-        execute = _run(
-            [
-                sys.executable,
-                "-X",
-                "utf8",
-                apply_script,
-                str(plan_path),
-                "--account",
-                args.account,
-                "--execute",
-                "--confirm-channel",
-                str(plan["channel_id"]),
-                "--confirm-count",
-                str(summary["ready"]),
-                "--confirm-source-snapshot",
-                str(plan["source_snapshot"]),
-                "--confirm-plan-sha256",
-                str(plan["plan_sha256"]),
-                "--max-operations",
-                str(args.max_operations),
-                "--write-delay",
-                str(args.write_delay),
-            ]
-        )
-        _require_success(execute, stage="YouTube comment execution")
-        print("\nYouTube comment refresh completed and verified.")
+        if args.postflight_audit or args.require_zero_tail:
+            postflight_timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
+            postflight_path = reports_dir / f"youtube-comment-audit-postflight-{args.channel}-{postflight_timestamp}.json"
+            postflight = _run(
+                _audit_command(
+                    repo_root=repo_root,
+                    snapshot=snapshot,
+                    account=args.account,
+                    channel=args.channel,
+                    output=postflight_path,
+                )
+            )
+            _require_success(postflight, stage="YouTube comment postflight audit")
+            postflight_payload = _read_json(postflight_path)
+            tail = actionable_tail_from_audit(postflight_payload)
+            print("\nChannel-wide postflight:")
+            print(f"  actionable tail (missing + foreign_only): {tail}")
+            print(f"  audit: {postflight_path}")
+            if args.require_zero_tail and tail:
+                raise RuntimeError(
+                    f"Verified writes completed, but the channel-wide postflight still has {tail} actionable video(s)."
+                )
+            if args.require_zero_tail:
+                print("  zero-tail requirement satisfied")
         return 0
     except (FileNotFoundError, OSError, RuntimeError, ValueError, json.JSONDecodeError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
