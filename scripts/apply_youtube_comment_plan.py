@@ -180,9 +180,7 @@ def _await_complete_postflight(
 
     ready, already, blockers = _status_groups(last_results)
     unresolved = [item for item in last_results if item["status"] != "already_applied"]
-    unresolved_summary = ", ".join(
-        f"{item['video_id']}:{item['status']}" for item in unresolved[:10]
-    )
+    unresolved_summary = ", ".join(f"{item['video_id']}:{item['status']}" for item in unresolved[:10])
     if len(unresolved) > 10:
         unresolved_summary += f", +{len(unresolved) - 10} more"
     raise YouTubeCommentError(
@@ -211,8 +209,7 @@ def _validate_verify_only_journal(
     incomplete = sorted(
         operation_id
         for operation_id in expected_ids & set(attempts)
-        if not isinstance(attempts[operation_id], dict)
-        or attempts[operation_id].get("status") != "completed"
+        if not isinstance(attempts[operation_id], dict) or attempts[operation_id].get("status") != "completed"
     )
     if missing or incomplete:
         details: list[str] = []
@@ -220,9 +217,7 @@ def _validate_verify_only_journal(
             details.append(f"missing attempts: {', '.join(missing[:10])}")
         if incomplete:
             details.append(f"non-completed attempts: {', '.join(incomplete[:10])}")
-        raise ValueError(
-            "--verify-only refuses an incomplete write journal; " + "; ".join(details) + "."
-        )
+        raise ValueError("--verify-only refuses an incomplete write journal; " + "; ".join(details) + ".")
     return journal
 
 
