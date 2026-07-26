@@ -40,6 +40,12 @@ jobs:
         run: pip check
       - name: Compile Python sources and operational scripts
         run: python -m compileall -q src scripts tests
+      - name: Smoke-test operational imports
+        run: |
+          python -c "import scripts.audit_youtube_comments"
+          python -c "import scripts.apply_youtube_comment_plan"
+          python -c "import video_channel_manager.editorial.preview"
+          python -c "from video_channel_manager.platforms.youtube import YouTubeCommentRenderer"
       - name: Dependency vulnerability gate
         id: pip_audit
         continue-on-error: true
