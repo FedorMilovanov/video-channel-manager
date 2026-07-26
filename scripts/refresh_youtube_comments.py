@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import shutil
 import subprocess
 import sys
@@ -12,12 +11,7 @@ from typing import Any, Sequence
 
 from video_channel_manager.config import get_settings
 
-_SUMMARY_PATTERNS = {
-    "planned": re.compile(r"(?m)^\s*planned operations:\s*(\d+)\s*$"),
-    "ready": re.compile(r"(?m)^\s*ready now:\s*(\d+)\s*$"),
-    "already": re.compile(r"(?m)^\s*already applied:\s*(\d+)\s*$"),
-    "blockers": re.compile(r"(?m)^\s*blockers:\s*(\d+)\s*$"),
-}
+_PREFLIGHT_SCHEMA = "video-manager.youtube-comment-preflight"
 _ACTIONABLE_AUDIT_STATUSES = ("missing", "foreign_only")
 
 
@@ -26,16 +20,6 @@ def _configure_utf8_stdio() -> None:
         reconfigure = getattr(stream, "reconfigure", None)
         if callable(reconfigure):
             reconfigure(encoding="utf-8", errors="replace")
-
-
-def parse_preflight_summary(output: str) -> dict[str, int]:
-    summary: dict[str, int] = {}
-    for key, pattern in _SUMMARY_PATTERNS.items():
-        match = pattern.search(output)
-        if match is None:
-            raise ValueError(f"Cannot parse '{key}' from YouTube comment preflight output.")
-        summary[key] = int(match.group(1))
-    return summary
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -60,6 +44,36 @@ def plan_mode_arguments(*, create_missing: bool, creates_only: bool) -> list[str
     if create_missing:
         return ["--include-updates"]
     return ["--include-updates", "--updates-only"]
+
+
+def preflight_summary_from_report(
+    report: dict[str, Any],
+    *,
+    plan: dict[str, Any],
+    operation_count: int,
+) -> dict[str, int]:
+    if report.get("schema_name") != _PREFLIGHT_SCHEMA or report.get("schema_version") != 1:
+        raise ValueError("Unsupported YouTube comment preflight report schema.")
+    for key in ("channel_id", "source_snapshot", "plan_sha256"):
+        if str(report.get(key) or "") != str(plan.get(key) or ""):
+            raise ValueError(f"YouTube comment preflight {key} does not match the signed plan.")
+    raw_counts = report.get("counts")
+    if not isinstance(raw_counts, dict):
+        raise ValueError("YouTube comment preflight does not contain a counts object.")
+    try:
+        summary = {
+            "planned": int(raw_counts["planned"]),
+            "ready": int(raw_counts["ready"]),
+            "already": int(raw_counts["already_applied"]),
+            "blockers": int(raw_counts["blockers"]),
+        }
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("YouTube comment preflight counts are incomplete or invalid.") from exc
+    if summary["planned"] != operation_count:
+        raise ValueError("Live preflight operation count does not match the signed plan.")
+    if summary["ready"] + summary["already"] + summary["blockers"] != summary["planned"]:
+        raise ValueError("Live preflight summary does not account for every planned operation.")
+    return summary
 
 
 def _run(command: Sequence[str], *, capture: bool = False) -> subprocess.CompletedProcess[str]:
@@ -131,8 +145,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Refresh approved YouTube top-level comments in one guarded workflow: "
-            "scan, audit, build an exact create/update plan, live preflight, optional execution, "
-            "and optional channel-wide postflight."
+            "scan, audit, build an exact create/update plan, machine-readable live preflight, "
+            "optional execution, and optional channel-wide postflight."
         )
     )
     parser.add_argument("--account", default="legendary-poet")
@@ -225,6 +239,7 @@ def main() -> int:
         reports_dir.mkdir(parents=True, exist_ok=True)
         audit_path = reports_dir / f"youtube-comment-audit-refresh-{args.channel}-{timestamp}.json"
         plan_path = reports_dir / f"youtube-comment-update-plan-{args.channel}-{timestamp}.json"
+        preflight_path = reports_dir / f"youtube-comment-preflight-{args.channel}-{timestamp}.json"
 
         print(f"\nSnapshot: {snapshot}")
         print(f"Content:  {content_dir}")
@@ -287,33 +302,35 @@ def main() -> int:
             return 0
 
         apply_script = _script(repo_root, "apply_youtube_comment_plan_compat.py")
-        dry = _run(
+        preflight = _run(
             [
                 sys.executable,
                 "-X",
                 "utf8",
-                apply_script,
+                _script(repo_root, "preflight_youtube_comment_plan.py"),
                 str(plan_path),
                 "--account",
                 args.account,
                 "--max-operations",
                 str(args.max_operations),
-            ],
-            capture=True,
+                "--json-output",
+                str(preflight_path),
+            ]
         )
-        _require_success(dry, stage="YouTube comment live preflight")
-        dry_text = (dry.stdout or "") + "\n" + (dry.stderr or "")
-        summary = parse_preflight_summary(dry_text)
-        if summary["planned"] != len(operations):
-            raise ValueError("Live preflight operation count does not match the signed plan.")
-        if summary["ready"] + summary["already"] + summary["blockers"] != summary["planned"]:
-            raise ValueError("Live preflight summary does not account for every planned operation.")
+        if preflight.returncode not in {0, 1}:
+            raise RuntimeError(f"YouTube comment live preflight failed with exit code {preflight.returncode}.")
+        summary = preflight_summary_from_report(
+            _read_json(preflight_path),
+            plan=plan,
+            operation_count=len(operations),
+        )
         if summary["blockers"]:
             raise RuntimeError(f"Live preflight has {summary['blockers']} blocker(s); refusing all writes.")
 
         print("\nPrepared artifacts:")
-        print(f"  audit: {audit_path}")
-        print(f"  plan:  {plan_path}")
+        print(f"  audit:     {audit_path}")
+        print(f"  plan:      {plan_path}")
+        print(f"  preflight: {preflight_path}")
 
         if not args.execute:
             print("\nDry-run completed. No YouTube write method was called.")
