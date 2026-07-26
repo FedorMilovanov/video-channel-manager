@@ -13,6 +13,7 @@ from video_channel_manager.editorial._content_plan_common import (
     valid_aware_datetime,
     valid_sha256,
 )
+from video_channel_manager.editorial._content_plan_validate_operation import validate_operation
 
 
 def without_plan_digest(payload: dict[str, Any]) -> dict[str, Any]:
@@ -27,12 +28,12 @@ def _operation_identity(operations: list[object]) -> tuple[list[str], list[str]]
     for index, item in enumerate(operations):
         if not isinstance(item, dict):
             raise ValueError(f"Content plan operations[{index}] must be an object.")
-        operation_id = item.get("operation_id")
-        if not isinstance(operation_id, str) or not operation_id.strip():
-            raise ValueError(f"Content plan operations[{index}].operation_id must be a nonblank string.")
-        action = item.get("action")
-        if not isinstance(action, str) or action not in {"create", "update"}:
-            raise ValueError(f"Content plan operations[{index}].action must be create or update.")
+        errors, operation_id, _, _, _ = validate_operation(item, index=index)
+        if errors:
+            detail = "; ".join(errors)
+            raise ValueError(f"Cannot seal invalid content plan: {detail}")
+        action = item["action"]
+        assert isinstance(action, str)
         operation_ids.append(operation_id)
         actions.append(action)
     return operation_ids, actions

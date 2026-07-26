@@ -13,6 +13,7 @@ from video_channel_manager.editorial._content_plan_common import (
     text_sha256,
     valid_aware_datetime,
 )
+from video_channel_manager.editorial._content_plan_validate_operation import validate_operation
 from video_channel_manager.editorial.content import EditorialContentRecord
 from video_channel_manager.editorial.rendering import RenderedContent
 
@@ -100,34 +101,33 @@ def operation_state(
     current_text: str | None,
     current_revision: str | None,
 ) -> OperationState:
-    rendered_raw = operation.get("rendered_text")
-    action_raw = operation.get("action")
-    if not isinstance(rendered_raw, str) or not isinstance(action_raw, str):
+    operation_errors, _, _, _, _ = validate_operation(operation, index=0)
+    if operation_errors:
+        return "conflict"
+    if target_exists is not None and type(target_exists) is not bool:
         return "conflict"
     if current_text is not None and not isinstance(current_text, str):
         return "conflict"
     if current_revision is not None and not isinstance(current_revision, str):
         return "conflict"
 
-    desired = canonical_text(rendered_raw)
-    if not desired:
-        return "conflict"
+    rendered_text = operation["rendered_text"]
+    action = operation["action"]
+    assert isinstance(rendered_text, str)
+    assert isinstance(action, str)
+    desired = canonical_text(rendered_text)
     current = canonical_text(current_text) if current_text is not None else None
     if target_exists is True and current is not None and text_sha256(current) == text_sha256(desired):
         return "already_applied"
-    action = action_raw.strip()
     if action == "create":
         return "ready" if target_exists is False else "conflict"
-    if action != "update" or target_exists is not True:
+    if target_exists is not True:
         return "conflict"
 
-    expected_before = operation.get("expected_before_text")
-    expected_revision_raw = operation.get("expected_revision")
-    if not isinstance(expected_before, str) or not isinstance(expected_revision_raw, str):
-        return "conflict"
-    expected_revision = expected_revision_raw.strip()
-    if not expected_revision:
-        return "conflict"
+    expected_before = operation["expected_before_text"]
+    expected_revision = operation["expected_revision"]
+    assert isinstance(expected_before, str)
+    assert isinstance(expected_revision, str)
     before = canonical_text(expected_before)
     if current == before and current_revision == expected_revision:
         return "ready"

@@ -78,13 +78,15 @@ def test_plan_validation_requires_reviewed_target_binding() -> None:
 
     missing = deepcopy(plan)
     missing["operations"][0].pop("reviewed_target_id")
-    missing = seal_content_plan(missing)
     assert "operations[0].reviewed_target_id must be present" in validate_content_plan(missing)
+    with pytest.raises(ValueError, match="reviewed_target_id must be present"):
+        seal_content_plan(missing)
 
     mismatch = deepcopy(plan)
     mismatch["operations"][0]["reviewed_target_id"] = "different-video"
-    mismatch = seal_content_plan(mismatch)
     assert "operations[0].reviewed_target_id does not match target_id" in validate_content_plan(mismatch)
+    with pytest.raises(ValueError, match="reviewed_target_id does not match target_id"):
+        seal_content_plan(mismatch)
 
 
 def test_state_timestamp_must_match_signed_snapshot_instant() -> None:
@@ -136,15 +138,17 @@ def test_operation_identity_binds_review_provenance() -> None:
 
     changed_sources = deepcopy(plan)
     changed_sources["operations"][0]["source_ids"] = ["different-source"]
-    changed_sources = seal_content_plan(changed_sources)
     source_errors = validate_content_plan(changed_sources)
     assert "operations[0].source_ids_sha256 mismatch" in source_errors
     assert "operations[0].operation_id mismatch" in source_errors
+    with pytest.raises(ValueError, match="source_ids_sha256 mismatch"):
+        seal_content_plan(changed_sources)
 
     changed_review = deepcopy(plan)
     changed_review["operations"][0]["reviewed_at"] = "2026-07-25T21:22:00+00:00"
-    changed_review = seal_content_plan(changed_review)
     assert "operations[0].operation_id mismatch" in validate_content_plan(changed_review)
+    with pytest.raises(ValueError, match="operation_id mismatch"):
+        seal_content_plan(changed_review)
 
 
 def test_plan_and_state_reject_scalar_type_coercion() -> None:
@@ -157,10 +161,11 @@ def test_plan_and_state_reject_scalar_type_coercion() -> None:
     malformed = deepcopy(plan)
     malformed["operations"][0]["rendered_text"] = 123
     malformed["operations"][0]["source_ids"] = [123]
-    malformed = seal_content_plan(malformed)
     errors = validate_content_plan(malformed)
     assert "operations[0].rendered_text must be a string" in errors
     assert "operations[0].source_ids must contain only strings" in errors
+    with pytest.raises(ValueError, match="rendered_text must be a string"):
+        seal_content_plan(malformed)
 
     state = {
         "source_snapshot": SNAPSHOT,

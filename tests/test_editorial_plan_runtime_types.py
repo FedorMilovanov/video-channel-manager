@@ -155,3 +155,37 @@ def test_plan_validation_does_not_crash_on_unhashable_action() -> None:
 
     assert "operations[0].action must be a string" in errors
     assert "operations[0].action must be create or update" in errors
+
+
+def test_operation_state_rejects_invalid_action_even_when_text_matches() -> None:
+    operation = _operation()
+    current_text = operation["rendered_text"]
+    assert isinstance(current_text, str)
+    operation["action"] = "delete"
+
+    assert (
+        operation_state(
+            operation,
+            target_exists=True,
+            current_text=current_text,
+            current_revision=None,
+        )
+        == "conflict"
+    )
+
+
+def test_operation_state_rejects_hash_tampering_even_when_text_matches() -> None:
+    operation = _operation()
+    current_text = operation["rendered_text"]
+    assert isinstance(current_text, str)
+    operation["rendered_sha256"] = "sha256:" + "0" * 64
+
+    assert (
+        operation_state(
+            operation,
+            target_exists=True,
+            current_text=current_text,
+            current_revision=None,
+        )
+        == "conflict"
+    )
