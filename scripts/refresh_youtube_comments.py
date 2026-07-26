@@ -52,6 +52,16 @@ def actionable_tail_from_audit(payload: dict[str, Any]) -> int:
     return sum(int(counts.get(status) or 0) for status in _ACTIONABLE_AUDIT_STATUSES)
 
 
+def plan_mode_arguments(*, create_missing: bool, creates_only: bool) -> list[str]:
+    """Translate the public workflow mode into fail-closed plan-builder flags."""
+
+    if creates_only:
+        return []
+    if create_missing:
+        return ["--include-updates"]
+    return ["--include-updates", "--updates-only"]
+
+
 def _run(command: Sequence[str], *, capture: bool = False) -> subprocess.CompletedProcess[str]:
     print("\n$ " + subprocess.list2cmdline(list(command)))
     completed = subprocess.run(
@@ -136,6 +146,11 @@ def main() -> int:
         "--create-missing", action="store_true", help="Also create approved comments where none exists."
     )
     parser.add_argument(
+        "--creates-only",
+        action="store_true",
+        help="Build a create-only plan and refuse any update operation. Requires --create-missing.",
+    )
+    parser.add_argument(
         "--require-complete-coverage",
         action="store_true",
         help="Fail before plan signing unless every live missing/foreign_only video has a valid approved create operation.",
@@ -163,6 +178,9 @@ def main() -> int:
 
     if args.execute and args.confirm_channel != args.channel:
         print("ERROR: --execute requires exact --confirm-channel.", file=sys.stderr)
+        return 2
+    if args.creates_only and not args.create_missing:
+        print("ERROR: --creates-only requires --create-missing.", file=sys.stderr)
         return 2
     if args.require_complete_coverage and not args.create_missing:
         print("ERROR: --require-complete-coverage requires --create-missing.", file=sys.stderr)
@@ -233,12 +251,12 @@ def main() -> int:
             args.account,
             "--content-dir",
             str(content_dir),
-            "--include-updates",
             "--output",
             str(plan_path),
         ]
-        if not args.create_missing:
-            plan_command.append("--updates-only")
+        plan_command.extend(
+            plan_mode_arguments(create_missing=args.create_missing, creates_only=args.creates_only)
+        )
         if args.require_complete_coverage:
             plan_command.append("--require-complete-coverage")
         if args.require_no_review_only:
@@ -254,6 +272,16 @@ def main() -> int:
             raise ValueError(
                 f"Generated plan has {len(operations)} operations, above --max-operations {args.max_operations}."
             )
+        if args.creates_only:
+            non_create = [
+                str(item.get("video_id") or "")
+                for item in operations
+                if not isinstance(item, dict) or item.get("action") != "create"
+            ]
+            if non_create:
+                raise ValueError(
+                    "Create-only mode generated a non-create operation for: " + ", ".join(non_create)
+                )
         if not operations:
             print("\nNo approved YouTube comments require changes.")
             if args.require_zero_tail:
