@@ -8,6 +8,10 @@ from video_channel_manager.platforms.youtube.comment_content import (
     render_comment_content,
     validate_comment_content,
 )
+from video_channel_manager.platforms.youtube.labels import (
+    CANONICAL_VK_COMMUNITY_LABEL,
+    LEGACY_VK_COMMUNITY_LABEL,
+)
 
 
 def _legacy_record() -> dict[str, object]:
@@ -69,7 +73,7 @@ def _v2_record() -> dict[str, object]:
                 "label": "🎧 *Александр Блок — плейлист:*",
                 "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3ua3Q9BQe1Dhuzn7Knbz2djU",
             },
-            {"kind": "vk", "label": "*Сообщество проекта VK:*", "url": "https://vk.com/thelegendarypoet"},
+            {"kind": "vk", "label": CANONICAL_VK_COMMUNITY_LABEL, "url": "https://vk.com/thelegendarypoet"},
             {"kind": "primary_text", "label": "📚 _Полный текст:_", "url": "https://example.org/source"},
         ],
         "sources": [
@@ -92,9 +96,23 @@ def test_v2_deep_fact_content_is_valid_and_compact() -> None:
     assert validate_comment_content(record, expected_channel_id="channel-1") == []
     rendered = render_comment_content(record)
     assert "📌 *The Legendary Poet:* https://thelegendarypoet.ru/" in rendered
-    assert "*Сообщество проекта VK:* https://vk.com/thelegendarypoet" in rendered
+    assert f"{CANONICAL_VK_COMMUNITY_LABEL} https://vk.com/thelegendarypoet" in rendered
     assert "VK:\n" not in rendered
     assert "🔵" not in rendered
+
+
+def test_v2_legacy_vk_label_is_accepted_but_rendered_canonically() -> None:
+    record = deepcopy(_v2_record())
+    links = record["links"]
+    assert isinstance(links, list)
+    vk = links[2]
+    assert isinstance(vk, dict)
+    vk["label"] = LEGACY_VK_COMMUNITY_LABEL
+
+    assert validate_comment_content(record, expected_channel_id="channel-1") == []
+    rendered = render_comment_content(record)
+    assert f"{CANONICAL_VK_COMMUNITY_LABEL} https://vk.com/thelegendarypoet" in rendered
+    assert LEGACY_VK_COMMUNITY_LABEL not in rendered
 
 
 def test_v2_rejects_coloured_circle_and_orphan_vk_label() -> None:
@@ -109,7 +127,7 @@ def test_v2_rejects_coloured_circle_and_orphan_vk_label() -> None:
     vk["label"] = "VK:"
     errors = validate_comment_content(record)
     assert "colored circle markers are not allowed" in errors
-    assert "VK link label must be exactly *Сообщество проекта VK:*" in errors
+    assert f"VK link label must be exactly {CANONICAL_VK_COMMUNITY_LABEL}" in errors
 
 
 def test_v2_requires_substantial_fact_and_exact_evidence_mapping() -> None:
