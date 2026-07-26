@@ -22,6 +22,7 @@ from video_channel_manager.platforms.vk.catalog_policy import (
     apply_vk_catalog_policy,
     parse_vk_catalog_policy,
 )
+from video_channel_manager.platforms.vk.catalog_scope import restrict_vk_catalog_plan_to_catalog_only
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -30,6 +31,11 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("target", type=Path, help="Fresh VK AuditPackage JSON")
     parser.add_argument("--mapping-json", type=Path, help="Reviewed exact source-ID to target-ID mappings")
     parser.add_argument("--policy-json", type=Path, help="Reviewed VK catalog editorial policy")
+    parser.add_argument(
+        "--catalog-only",
+        action="store_true",
+        help="Build a plan containing only album creation and placement operations; never include video text updates",
+    )
     parser.add_argument("--output", type=Path, default=Path("data/reports/vk-catalog-plan.json"))
     parser.add_argument("--report", type=Path, default=Path("data/reports/vk-catalog-plan.md"))
     return parser
@@ -76,6 +82,7 @@ def _report(plan: dict[str, Any]) -> str:
     lines = [
         "# VK catalog plan",
         "",
+        f"- Operation scope: `{plan.get('operation_scope', 'catalog_and_text')}`",
         f"- Source snapshot: `{plan['source_snapshot_id']}`",
         f"- Target snapshot: `{plan['target_snapshot_id']}`",
         f"- Community: `{plan['target_community_id']}`",
@@ -166,15 +173,24 @@ def main() -> int:
     )
     plan["summary"]["policy_notes"] = len(policy_notes)
     plan["summary"]["review_only"] = len(plan["review_only"])
-    plan["plan_sha256"] = calculate_vk_catalog_plan_sha256(plan)
-    validate_vk_catalog_plan(plan)
+
+    if args.catalog_only:
+        plan = restrict_vk_catalog_plan_to_catalog_only(plan)
+    else:
+        plan["operation_scope"] = "catalog_and_text"
+        plan["plan_sha256"] = calculate_vk_catalog_plan_sha256(plan)
+        validate_vk_catalog_plan(plan)
 
     _atomic_write(args.output, json.dumps(plan, ensure_ascii=False, indent=2) + "\n")
     _atomic_write(args.report, _report(plan) + "\n")
     summary = plan["summary"]
     print(
         "VK catalog plan built:\n"
+        f"  operation scope: {plan['operation_scope']}\n"
         f"  operations: {summary['total_operations']}\n"
+        f"  albums to create: {summary['albums_to_create']}\n"
+        f"  placements to add: {summary['placements_to_add']}\n"
+        f"  video texts to update: {summary['video_texts_to_update']}\n"
         f"  policy notes: {summary['policy_notes']}\n"
         f"  review-only: {summary['review_only']}\n"
         f"  policy sha256: {plan['catalog_policy_sha256']}\n"
