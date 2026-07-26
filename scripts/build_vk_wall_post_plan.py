@@ -68,9 +68,7 @@ def _validate_visible_links(
         url = source["url"]
         occurrences = message.count(url)
         if occurrences != 1:
-            raise ValueError(
-                f"Reviewed wall message must contain source URL exactly once; found {occurrences}: {url}"
-            )
+            raise ValueError(f"Reviewed wall message must contain source URL exactly once; found {occurrences}: {url}")
 
     route_url = article_url.strip() if article_url else _SITE_URL
     route_occurrences = message.count(route_url)
@@ -81,8 +79,7 @@ def _validate_visible_links(
     domain_occurrences = message.count("thelegendarypoet.ru")
     if domain_occurrences != 1:
         raise ValueError(
-            "Reviewed wall message must contain exactly one The Legendary Poet route; "
-            f"found {domain_occurrences}"
+            f"Reviewed wall message must contain exactly one The Legendary Poet route; found {domain_occurrences}"
         )
 
 

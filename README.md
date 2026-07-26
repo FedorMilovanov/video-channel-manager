@@ -6,6 +6,7 @@
 
 - несколько локальных YouTube/VK account aliases;
 - полные read-only снимки `AuditPackage`;
+- единые canonical editorial records и платформенные renderers;
 - версионированные `ChangePlan` и платформенные планы;
 - точные remote IDs без угадывания;
 - deterministic text renderers для каждой платформы;
@@ -14,7 +15,7 @@
 - локальный media/image QC и SHA-256 fingerprints;
 - SQLAlchemy/Alembic foundation для будущего operation ledger.
 
-> **Статус:** YouTube и VK read-only inventory работают. Для одобренных сценариев реализованы узкие guarded writers, self-validating планы, recovery scripts и полная postflight-проверка. Удаления, playlist mutations и unattended remote writes остаются выключенными до появления собственных policy gates и rollback paths.
+> **Статус:** YouTube и VK read-only inventory работают. Для одобренных сценариев реализованы узкие guarded writers, self-validating планы, recovery scripts и полная postflight-проверка. Единое editorial-ядро валидирует, рендерит и планирует контент для YouTube/VK, но не выполняет unattended remote writes. Удаления, playlist mutations и unattended remote writes остаются выключенными до появления собственных policy gates и rollback paths.
 
 ## Основные инварианты
 
@@ -25,7 +26,7 @@
 5. **Idempotence.** `before → ready`, `after → already applied`, третье состояние → `conflict`.
 6. **Single writer на remote target.** Два процесса не могут одновременно менять одно сообщество или канал.
 7. **Locked re-preflight.** Перед первой записью live-state проверяется повторно уже после захвата lock.
-8. **Immutable evidence.** Snapshot, plan, backup и result остаются отдельными JSON-артефактами.
+8. **Immutable evidence.** Snapshot, plan, backup и result остаются отдельными JSON-артефактами и связываются SHA-256.
 9. **Postcondition, а не доверие HTTP 200.** После write выполняется повторное provider read.
 10. **Human editorial boundary.** Факты, интерпретации и неоднозначная пунктуация не исправляются автоматически.
 
@@ -34,15 +35,17 @@
 ```text
 Human editor / external AI
            │
-           │ AuditPackage ↔ reviewed Plan
+           │ AuditPackage ↔ canonical content ↔ reviewed Plan
            ▼
 ┌────────────────────────────────────────────────┐
 │             Video Channel Manager              │
 │                                                │
-│ CLI → Plan Guard → Preview → Executor          │
-│                │                               │
+│ CLI → Editorial Core → Renderer → Plan Guard   │
+│                              │                 │
+│ Preview → Platform Adapter → Guarded Executor  │
+│                              │                 │
 │ Domain + exchange schemas + persistence        │
-│                │                               │
+│                              │                 │
 │ YouTube adapter | VK adapter | Local media     │
 └────────────────────────────────────────────────┘
 ```
@@ -50,10 +53,11 @@ Human editor / external AI
 Полный mutation protocol:
 
 ```text
-complete snapshot
-→ deterministic proposal
+complete snapshot + SHA-256
+→ canonical reviewed content
+→ deterministic platform rendering
 → self-validating plan
-→ readable diff
+→ readable preview / diff
 → dry-run
 → exact confirmations
 → target lock
@@ -69,9 +73,18 @@ complete snapshot
 
 ## Документы, являющиеся источником истины
 
+### Unified editorial
+
+- [`docs/editorial/unified-editorial-standard.md`](docs/editorial/unified-editorial-standard.md) — canonical schema, evidence boundary, anti-hallucination и approval rules;
+- [`docs/editorial/platform-rendering-rules.md`](docs/editorial/platform-rendering-rules.md) — общие и платформенные правила YouTube/VK, fallback и layout diagnostics;
+- [`docs/editorial/content-authoring-guide.md`](docs/editorial/content-authoring-guide.md) — как писать факт, вопрос, ссылки, variation key и suitability;
+- [`docs/operations/unified-editorial-runbook.md`](docs/operations/unified-editorial-runbook.md) — validate, preview, signed plan, immutable snapshot preflight и platform apply paths.
+
 ### YouTube
 
 - [`docs/youtube-editorial-standard.md`](docs/youtube-editorial-standard.md) — структура канала, названия, плейлисты, фактчекинг и approval rules;
+- [`docs/youtube-comment-editorial-standard.md`](docs/youtube-comment-editorial-standard.md) — source-led top-level comments и schema v2 compatibility;
+- [`docs/operations/youtube-comment-publishing-runbook.md`](docs/operations/youtube-comment-publishing-runbook.md) — audit, queue, signed plan, dry-run, execute и resume для комментариев;
 - [`docs/youtube-description-rendering-standard.md`](docs/youtube-description-rendering-standard.md) — точная YouTube-разметка, первый абзац, пунктуация и emoji policy;
 - [`docs/youtube-copy-automation-safety.md`](docs/youtube-copy-automation-safety.md) — узкая deterministic boundary для автоматических исправлений;
 - [`docs/youtube-copy-fix-application.md`](docs/youtube-copy-fix-application.md) — plan v3, dry-run, execute, backup, postflight и rollback;
@@ -82,6 +95,7 @@ complete snapshot
 
 - [`docs/vk-description-rendering-standard.md`](docs/vk-description-rendering-standard.md) — почему VK Видео не рендерит YouTube Markdown и как строится plain text;
 - [`docs/operations/vk-description-cleanup-runbook.md`](docs/operations/vk-description-cleanup-runbook.md) — whole-library VK cleanup v2;
+- [`docs/operations/vk-catalog-wall-and-article-runbook.md`](docs/operations/vk-catalog-wall-and-article-runbook.md) — guarded catalog, wall post и article workflow;
 - [`docs/vk-readonly.md`](docs/vk-readonly.md) — VK token/inventory и безопасные read-only команды;
 - [`docs/research/2026-07-25-vk-api-source-ledger.md`](docs/research/2026-07-25-vk-api-source-ledger.md) — VK API source ledger;
 - [`docs/research/2026-07-25-cross-platform-hardening-source-ledger.md`](docs/research/2026-07-25-cross-platform-hardening-source-ledger.md) — cross-platform hardening ledger.
@@ -110,6 +124,91 @@ data/secrets/
 ```
 
 Никогда не выполнять `git clean -fdx` в рабочем дереве с ignored OAuth/VK credentials, exports, backups и result logs.
+
+# Unified editorial/content pipeline
+
+## Validate and preview
+
+Один canonical record или существующий YouTube comment record schema v2 можно валидировать и рендерить без remote API:
+
+```powershell
+video-manager content validate --input .\content\editorial
+
+video-manager content preview `
+  --platform youtube `
+  --surface comment `
+  --input .\content\editorial\examples\tyutchev-night-sea.json
+
+video-manager content preview `
+  --platform vk `
+  --surface video_description `
+  --input .\content\editorial\examples\tyutchev-night-sea.json
+```
+
+Batch preview:
+
+```powershell
+video-manager content preview `
+  --platform vk `
+  --surface video_description `
+  --input .\content\editorial `
+  --strict `
+  --json-output .\data\reports\vk-editorial-preview.json
+```
+
+`--strict` отклоняет не только renderer errors, но и warnings. Duplicate content IDs, variation keys и rendered text отклоняются на уровне batch.
+
+## Signed generic content plan
+
+Generic plan является review/preflight artifact, а не самостоятельным remote executor. Target manifest обязан содержать:
+
+- immutable snapshot path/ID;
+- `source_snapshot_sha256` точного audit JSON;
+- timezone-aware snapshot timestamp;
+- exact target IDs;
+- exact-before text/revision для updates.
+
+```powershell
+video-manager content plan build `
+  --platform vk `
+  --surface video_description `
+  --input .\content\editorial `
+  --targets .\data\reports\vk-editorial-targets.json `
+  --output .\data\reports\vk-editorial-plan.json
+
+video-manager content plan validate .\data\reports\vk-editorial-plan.json
+
+video-manager content plan preflight `
+  .\data\reports\vk-editorial-plan.json `
+  --state .\data\reports\vk-editorial-live-state.json `
+  --json-output .\data\reports\vk-editorial-preflight.json
+```
+
+Preflight требует полный state coverage и explicit `exists: true/false`; отсутствующая строка никогда не считается доказательством отсутствия target.
+
+## Platform apply paths
+
+YouTube comments продолжают использовать зрелый guarded comment executor:
+
+```powershell
+python .\scripts\build_youtube_comment_plan.py ...
+python .\scripts\apply_youtube_comment_plan.py ... # сначала dry-run
+```
+
+VK descriptions сначала встраиваются в существующий signed catalog plan, затем исполняются его guarded executor’ом:
+
+```powershell
+video-manager content plan adapt-vk-catalog `
+  .\data\reports\vk-catalog-plan.json `
+  --input .\content\editorial `
+  --require-all `
+  --output .\data\reports\vk-catalog-editorial-plan.json
+
+python .\scripts\apply_vk_catalog_plan.py `
+  .\data\reports\vk-catalog-editorial-plan.json ... # сначала dry-run
+```
+
+`adapt-vk-catalog` принимает только approved records с timezone-aware `reviewed_at`, сохраняет exact-before guards исходного VK plan и пересчитывает полный plan SHA-256.
 
 # YouTube
 
@@ -241,7 +340,7 @@ _курсив_
 ~~зачёркнутое~~
 ```
 
-снимаются до публикации. URL, hashtags, технические ID, абзацы и название `К ***` сохраняются.
+снимаются до публикации. URL, hashtags, технические ID, абзацы и название `К ***` сохраняются. Неразрешённые HTML/Markdown-маркеры блокируют editorial plan и требуют review.
 
 ## Полный read-only аудит live-описаний
 
@@ -321,6 +420,13 @@ video-manager schema export
 video-manager example export
 video-manager plan validate plan.json
 video-manager plan preview plan.json
+video-manager content validate --input content/editorial
+video-manager content preview --platform youtube --surface comment --input content/editorial
+video-manager content preview --platform vk --surface video_description --input content/editorial
+video-manager content plan build --platform vk --surface video_description --input content/editorial --targets targets.json
+video-manager content plan validate editorial-plan.json
+video-manager content plan preflight editorial-plan.json --state live-state.json
+video-manager content plan adapt-vk-catalog vk-catalog-plan.json --input content/editorial --require-all
 video-manager local scan H:\ --output local-inventory.json
 video-manager youtube login --account legendary-poet
 video-manager youtube accounts
@@ -340,20 +446,22 @@ pip check
 python -m compileall -q src scripts tests
 ruff check .
 ruff format --check .
-mypy src
-pytest --cov=video_channel_manager --cov-report=term-missing
-pip-audit --desc on
+mypy src --show-error-codes
+python -m pytest --cov=video_channel_manager --cov-report=term-missing
+pip-audit --skip-editable --desc on
 ```
 
-CI запускается на Python 3.11, 3.12 и 3.13. Blocking gates: dependency graph, compileall, vulnerability audit, Ruff correctness, mypy и pytest. Formatting должен быть зелёным в окончательной объединённой ветке.
+CI запускается на Python 3.11, 3.12 и 3.13. Blocking gates: dependency graph, compileall, vulnerability audit, Ruff correctness, Ruff formatting, strict mypy и full pytest. Последний полный editorial CI run #669 прошёл на всех трёх версиях Python; 197 тестов зелёные в каждой матрице.
 
 # Текущий порядок развития
 
 ## Сейчас
 
 ```text
-единый YouTube + VK integration CI
-self-validating plans
+единое canonical editorial core для YouTube + VK
+platform renderers + batch preview
+immutable snapshot-bound plans
+self-validating platform plans
 Windows-safe locks
 media/image QC + manifests
 journals + verification + rollback

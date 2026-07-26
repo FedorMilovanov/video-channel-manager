@@ -99,7 +99,7 @@ def _excerpt(value: str, limit: int = 160) -> str:
 def _closing_emphasis_suffix(text: str, match: re.Match[str]) -> str:
     """Return a URL suffix that belongs to an enclosing emphasis span.
 
-    ``https?://\S+`` deliberately accepts URL underscores and punctuation. It
+    ``https?://\\S+`` deliberately accepts URL underscores and punctuation. It
     can therefore also consume the closing ``*``/``_``/``~~`` of a span such as
     ``*https://example.test/path*``. We only unmask a suffix when the complete
     same-line text proves that a matching emphasis span ends exactly there.

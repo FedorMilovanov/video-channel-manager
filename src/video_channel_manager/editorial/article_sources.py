@@ -105,9 +105,7 @@ def validate_article_source_ledger(payload: dict[str, Any]) -> dict[str, Any]:
         claim_sources = raw_claim.get("source_ids")
         if not isinstance(claim_sources, list) or not claim_sources:
             raise ValueError(f"claims[{index}].source_ids must be a nonempty array")
-        normalized_claim_sources = [
-            _required_string(item, f"claims[{index}].source_ids") for item in claim_sources
-        ]
+        normalized_claim_sources = [_required_string(item, f"claims[{index}].source_ids") for item in claim_sources]
         missing = sorted(set(normalized_claim_sources) - source_ids)
         if missing:
             raise ValueError(f"Claim {claim_id} references unknown source IDs: {missing}")

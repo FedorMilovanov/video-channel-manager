@@ -75,9 +75,7 @@ def parse_vk_catalog_policy(payload: object | None) -> VkCatalogPolicy:
         target_normalized = normalize_title(target_title)
         existing_source = target_titles.get(target_normalized)
         if existing_source is not None and existing_source != source_title:
-            raise ValueError(
-                f"Two source titles map to the same VK album title: {existing_source!r}, {source_title!r}"
-            )
+            raise ValueError(f"Two source titles map to the same VK album title: {existing_source!r}, {source_title!r}")
         title_overrides[source_title] = target_title
         target_titles[target_normalized] = source_title
 
@@ -126,9 +124,7 @@ def apply_vk_catalog_policy(
 ) -> tuple[AuditPackage, list[dict[str, Any]]]:
     mapped_source_ids = _candidate_mapped_source_ids(source, target, reviewed_mappings)
     mapped_memberships = [
-        membership
-        for membership in source.memberships
-        if membership.video_ref.remote_id in mapped_source_ids
+        membership for membership in source.memberships if membership.video_ref.remote_id in mapped_source_ids
     ]
     mapped_collection_ids = {membership.collection_ref.remote_id for membership in mapped_memberships}
     retained_collections: list[CollectionRecord] = []

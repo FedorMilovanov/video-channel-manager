@@ -23,12 +23,7 @@ def test_visible_link_validation_accepts_exact_sources_and_route() -> None:
         {"label": "Первый", "url": "https://example.org/one", "kind": "primary"},
         {"label": "Второй", "url": "https://example.org/two", "kind": "primary"},
     ]
-    message = (
-        "Пост\n\n"
-        "https://thelegendarypoet.ru/\n\n"
-        "https://example.org/one\n"
-        "https://example.org/two"
-    )
+    message = "Пост\n\nhttps://thelegendarypoet.ru/\n\nhttps://example.org/one\nhttps://example.org/two"
 
     builder._validate_visible_links(message, sources=sources, article_url=None)
 

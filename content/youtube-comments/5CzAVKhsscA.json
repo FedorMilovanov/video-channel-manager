@@ -1,0 +1,68 @@
+{
+  "schema_name": "video-manager.youtube-comment-content",
+  "schema_version": 2,
+  "status": "approved",
+  "profile": "foreign_language_adaptation",
+  "variation_key": "kino-changes-assa-english-adaptation-v2",
+  "channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+  "video_id": "5CzAVKhsscA",
+  "video_title": "VIKTOR TSOI ⚡ WE WAIT FOR CHANGE - МЫ ЖДЕМ ПЕРЕМЕН ⚡ SUNO AI English Cover",
+  "reviewed_at": "2026-07-25T20:14:00+00:00",
+  "source_ids": [
+    "kino-original-track",
+    "mosfilm-assa",
+    "playlist-ai-experiments"
+  ],
+  "fact": {
+    "heading": "🎼 *From «Assa» to an English adaptation*",
+    "fact_type": "adaptation_history",
+    "source_ids": [
+      "kino-original-track",
+      "mosfilm-assa"
+    ],
+    "text": "«Перемен!» is closely tied to Sergei Solovyov’s film «Assa», whose finale features Viktor Tsoi performing the song. This version changes both language and arrangement, so it should be heard as a separate musical adaptation rather than as a substitute for the Russian original or a claim to reproduce every nuance word for word."
+  },
+  "question": {
+    "lead": "_What survives the change of language most clearly for you:_",
+    "text": "the rhythmic drive, the tension of the verses, or the force of the refrain?"
+  },
+  "links": [
+    {
+      "kind": "site",
+      "label": "📌 *The Legendary Poet:*",
+      "url": "https://thelegendarypoet.ru/"
+    },
+    {
+      "kind": "playlist",
+      "label": "🎧 *AI Music Experiments — playlist:*",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uYdxFo5bxzXEUI8HYIo-sHb"
+    },
+    {
+      "kind": "vk",
+      "label": "*Сообщество проекта VK:*",
+      "url": "https://vk.com/thelegendarypoet"
+    },
+    {
+      "kind": "original_work",
+      "label": "*Original song:*",
+      "url": "https://open.spotify.com/track/2SlPgibCIYGakQmFnhlecE"
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "kino-original-track",
+      "title": "Kino. «Перемен» — из фильма «Асса»",
+      "url": "https://open.spotify.com/track/2SlPgibCIYGakQmFnhlecE"
+    },
+    {
+      "source_id": "mosfilm-assa",
+      "title": "«Асса» — каталог Мосфильма",
+      "url": "https://www.mosfilm.ru/cinema/films/assa/"
+    },
+    {
+      "source_id": "playlist-ai-experiments",
+      "title": "Плейлист «Эксперименты — AI Музыка»",
+      "url": "https://www.youtube.com/playlist?list=PLy9lLJfoq3uYdxFo5bxzXEUI8HYIo-sHb"
+    }
+  ]
+}

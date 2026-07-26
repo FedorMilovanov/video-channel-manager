@@ -12,7 +12,7 @@ from video_channel_manager.editorial.article_sources import (
 
 
 def _article() -> str:
-    return '''---
+    return """---
 title: "Статья"
 slug: "article-slug"
 status: "editorial-review"
@@ -23,7 +23,7 @@ keywords:
 ---
 
 # Статья
-'''
+"""
 
 
 def _ledger() -> dict[str, object]:
