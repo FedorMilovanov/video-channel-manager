@@ -46,21 +46,36 @@ def validate_preflight_state(
         if not isinstance(raw, dict):
             errors.append(f"{prefix} must be an object")
             continue
-        platform = str(raw.get("platform") or "").strip()
-        surface = str(raw.get("surface") or "").strip()
+        platform_raw = raw.get("platform")
+        surface_raw = raw.get("surface")
+        target_raw = raw.get("target_id")
+        if not isinstance(platform_raw, str):
+            errors.append(f"{prefix}.platform must be a string")
+        if not isinstance(surface_raw, str):
+            errors.append(f"{prefix}.surface must be a string")
+        if not isinstance(target_raw, str):
+            errors.append(f"{prefix}.target_id must be a string")
+        platform = platform_raw.strip() if isinstance(platform_raw, str) else ""
+        surface = surface_raw.strip() if isinstance(surface_raw, str) else ""
         surface_error = platform_surface_error(platform, surface)
         if surface_error:
             errors.append(f"{prefix}: {surface_error}")
         try:
-            target_id = normalized_target_id(str(raw.get("target_id") or ""))
+            target_id = normalized_target_id(target_raw if isinstance(target_raw, str) else "")
         except ValueError as exc:
-            target_id = str(raw.get("target_id") or "").strip()
+            target_id = target_raw.strip() if isinstance(target_raw, str) else ""
             errors.append(f"{prefix}: {exc}")
         exists = raw.get("exists")
         if not isinstance(exists, bool):
             errors.append(f"{prefix}.exists must be true or false")
         current_text = raw.get("current_text")
-        current_revision = str(raw.get("current_revision") or "").strip() or None
+        revision_raw = raw.get("current_revision")
+        if current_text is not None and not isinstance(current_text, str):
+            errors.append(f"{prefix}.current_text must be a string or null")
+        if revision_raw is not None and not isinstance(revision_raw, str):
+            errors.append(f"{prefix}.current_revision must be a string or null")
+        current_revision = revision_raw.strip() if isinstance(revision_raw, str) else None
+        current_revision = current_revision or None
         if exists is True:
             if current_text is None:
                 errors.append(f"{prefix}.current_text is required when exists is true")

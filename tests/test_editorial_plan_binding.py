@@ -145,3 +145,43 @@ def test_operation_identity_binds_review_provenance() -> None:
     changed_review["operations"][0]["reviewed_at"] = "2026-07-25T21:22:00+00:00"
     changed_review = seal_content_plan(changed_review)
     assert "operations[0].operation_id mismatch" in validate_content_plan(changed_review)
+
+
+def test_plan_and_state_reject_scalar_type_coercion() -> None:
+    plan = build_content_plan(
+        source_snapshot=SNAPSHOT,
+        source_snapshot_sha256=SNAPSHOT_SHA256,
+        source_snapshot_generated_at=SNAPSHOT_TIME,
+        operations=[_operation()],
+    )
+    malformed = deepcopy(plan)
+    malformed["operations"][0]["rendered_text"] = 123
+    malformed["operations"][0]["source_ids"] = [123]
+    malformed = seal_content_plan(malformed)
+    errors = validate_content_plan(malformed)
+    assert "operations[0].rendered_text must be a string" in errors
+    assert "operations[0].source_ids must contain only strings" in errors
+
+    state = {
+        "source_snapshot": SNAPSHOT,
+        "source_snapshot_sha256": SNAPSHOT_SHA256,
+        "source_snapshot_generated_at": SNAPSHOT_TIME,
+        "targets": [
+            {
+                "platform": "youtube",
+                "surface": "comment",
+                "target_id": "RQIlUvFf1KQ",
+                "exists": True,
+                "current_text": 123,
+                "current_revision": 456,
+            }
+        ],
+    }
+    _, state_errors = validate_preflight_state(
+        state,
+        expected_source_snapshot=SNAPSHOT,
+        expected_source_snapshot_sha256=SNAPSHOT_SHA256,
+        expected_source_snapshot_generated_at=SNAPSHOT_TIME,
+    )
+    assert "targets[0].current_text must be a string or null" in state_errors
+    assert "targets[0].current_revision must be a string or null" in state_errors
