@@ -9,6 +9,7 @@ from video_channel_manager.editorial.content import parse_content_record
 from video_channel_manager.editorial.preview import preview_records
 from video_channel_manager.editorial.rendering import layout_issues
 from video_channel_manager.platforms.vk.renderers import VKPostRenderer, VKVideoDescriptionRenderer
+from video_channel_manager.platforms.youtube.labels import CANONICAL_VK_COMMUNITY_LABEL
 from video_channel_manager.platforms.youtube.renderers import YouTubeCommentRenderer, YouTubeDescriptionRenderer
 
 
@@ -28,7 +29,8 @@ def test_same_record_renders_for_youtube_and_vk() -> None:
     assert "🌊 Две редакции одного морского текста" in vk.text
     assert "*" not in vk.text
     assert "_" not in vk.text
-    assert "Сообщество проекта VK: https://vk.com/thelegendarypoet" in vk.text
+    assert "Сообщество проекта в VK: https://vk.com/thelegendarypoet" in vk.text
+    assert f"{CANONICAL_VK_COMMUNITY_LABEL} https://vk.com/thelegendarypoet" in youtube.text
     assert "VK:\n" not in vk.text
 
 
@@ -58,7 +60,7 @@ def test_renderers_apply_platform_specific_preferred_link_order() -> None:
     youtube = YouTubeCommentRenderer().render(record)
     vk = VKVideoDescriptionRenderer().render(record)
     assert youtube.text.index("The Legendary Poet") < youtube.text.index("Фёдор Тютчев — плейлист")
-    assert vk.text.index("Сообщество проекта VK") < vk.text.index("The Legendary Poet")
+    assert vk.text.index("Сообщество проекта в VK") < vk.text.index("The Legendary Poet")
 
 
 def test_vk_renderer_blocks_unresolved_plain_text_diagnostics() -> None:

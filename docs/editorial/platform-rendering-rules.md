@@ -21,6 +21,14 @@ Every renderer reports character count, link count, layout warnings, orphan labe
 
 Long-form poetry, covers, and adaptations require a relevant playlist. Short-form records require a full-version route. Site and VK project routes remain required by the current comment standard. More than four decorative markers is rejected.
 
+The canonical VK community line is:
+
+```text
+*Сообщество проекта в VK:* https://vk.com/thelegendarypoet
+```
+
+The historical stored label `*Сообщество проекта VK:*` remains accepted only as migration input. YouTube rendering always normalizes it to the canonical wording. New records, examples, previews, and signed plans must use the canonical output.
+
 ### Description
 
 `YouTubeDescriptionRenderer` uses the same content blocks with the YouTube emphasis style and a 5,000-character project limit. It is suitable for reviewed description-improvement plans, not automatic replacement of complete existing descriptions.
@@ -34,7 +42,7 @@ VK video descriptions, posts, and comments are treated as plain text. `*`, `_`, 
 Correct:
 
 ```text
-Сообщество проекта VK: https://vk.com/thelegendarypoet
+Сообщество проекта в VK: https://vk.com/thelegendarypoet
 ```
 
 Incorrect:

@@ -25,8 +25,7 @@ from video_channel_manager.platforms.youtube.comment_plan import (
 from video_channel_manager.platforms.youtube.comments import comments_equivalent
 
 _AUDIT_SCHEMA = "video-manager.youtube-comment-audit"
-_LEGACY_VK_LABEL = "*Сообщество проекта VK:*"
-_CANONICAL_VK_LABEL = "*Сообщество проекта в VK:*"
+_ACTIONABLE_AUDIT_STATUSES = frozenset({"missing", "foreign_only"})
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -44,14 +43,13 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 
 
 def _render_for_youtube(record: dict[str, Any]) -> str:
-    """Render current records with the canonical natural-language VK label.
+    """Render through the canonical YouTube renderer.
 
-    Existing schema-v2 records may still contain the legacy label. Keeping the
-    compatibility conversion here lets old reviewed records remain valid while
-    every newly signed YouTube plan uses the improved viewer-facing wording.
+    The renderer accepts the historical VK label in stored schema-v2 records,
+    but every newly signed plan receives the canonical viewer-facing wording.
     """
 
-    return render_comment_content(record).replace(_LEGACY_VK_LABEL, _CANONICAL_VK_LABEL)
+    return render_comment_content(record)
 
 
 def _load_content_records(content_dir: Path) -> dict[str, dict[str, Any]]:
@@ -80,11 +78,21 @@ def _load_content_records(content_dir: Path) -> dict[str, dict[str, Any]]:
     return records
 
 
+def _owned_comments(live: dict[str, Any]) -> list[dict[str, Any]]:
+    raw = live.get("owned_comments")
+    return [item for item in raw if isinstance(item, dict)] if isinstance(raw, list) else []
+
+
+def _is_actionable(live: dict[str, Any]) -> bool:
+    return str(live.get("status") or "") in _ACTIONABLE_AUDIT_STATUSES and not _owned_comments(live)
+
+
 def _report_markdown(
     *,
     plan: dict[str, Any],
     already_applied: list[dict[str, str]],
     review_only: list[dict[str, str]],
+    uncovered_actionable: list[dict[str, str]],
     unused_content: list[dict[str, str]],
 ) -> str:
     lines = [
@@ -96,6 +104,7 @@ def _report_markdown(
         f"- Operations: **{len(plan['operations'])}**",
         f"- Already applied: **{len(already_applied)}**",
         f"- Review-only: **{len(review_only)}**",
+        f"- Uncovered actionable videos: **{len(uncovered_actionable)}**",
         f"- Unused content records: **{len(unused_content)}**",
         "",
     ]
@@ -103,6 +112,7 @@ def _report_markdown(
         ("Operations", plan["operations"]),
         ("Already applied", already_applied),
         ("Review-only", review_only),
+        ("Uncovered actionable videos", uncovered_actionable),
         ("Unused content", unused_content),
     ):
         lines.extend([f"## {heading}", ""])
@@ -130,11 +140,27 @@ def main() -> int:
         action="store_true",
         help="Plan only exact updates of existing channel comments; never create missing comments.",
     )
+    parser.add_argument(
+        "--require-complete-coverage",
+        action="store_true",
+        help=(
+            "Fail before signing a plan when any live missing/foreign_only public video lacks a valid approved "
+            "create operation. Intended for final channel-closing waves."
+        ),
+    )
+    parser.add_argument(
+        "--require-no-review-only",
+        action="store_true",
+        help="Fail before signing a plan when any approved record is excluded into review-only.",
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
 
     if args.updates_only and not args.include_updates:
         print("ERROR: --updates-only requires --include-updates.", file=sys.stderr)
+        return 2
+    if args.updates_only and args.require_complete_coverage:
+        print("ERROR: --require-complete-coverage cannot be used with --updates-only.", file=sys.stderr)
         return 2
 
     try:
@@ -211,9 +237,8 @@ def main() -> int:
 
         live = audit_by_id[video_id]
         status = str(live.get("status") or "")
-        owned_comments = live.get("owned_comments")
-        owned = [item for item in owned_comments if isinstance(item, dict)] if isinstance(owned_comments, list) else []
-        if status in {"missing", "foreign_only"} and not owned:
+        owned = _owned_comments(live)
+        if status in _ACTIONABLE_AUDIT_STATUSES and not owned:
             if args.updates_only:
                 review_only.append(
                     {
@@ -277,6 +302,16 @@ def main() -> int:
             }
         )
 
+    planned_create_ids = {item["video_id"] for item in operations if item["action"] == "create"}
+    uncovered_actionable = [
+        {
+            "video_id": video_id,
+            "video_title": video_by_id[video_id].title,
+            "reason": "live video is missing a valid approved create operation",
+        }
+        for video_id, live in sorted(audit_by_id.items())
+        if _is_actionable(live) and video_id not in planned_create_ids
+    ]
     unused_content = [
         {
             "video_id": video_id,
@@ -286,6 +321,25 @@ def main() -> int:
         for video_id, record in sorted(content.items())
         if video_id not in used_content
     ]
+
+    if args.require_complete_coverage and uncovered_actionable:
+        print(
+            f"ERROR: complete coverage required, but {len(uncovered_actionable)} actionable public video(s) "
+            "lack a valid approved create operation.",
+            file=sys.stderr,
+        )
+        for item in uncovered_actionable[:25]:
+            print(f"  UNCOVERED {item['video_id']} — {item['video_title']}", file=sys.stderr)
+        return 2
+    if args.require_no_review_only and review_only:
+        print(
+            f"ERROR: no-review-only mode required, but {len(review_only)} record(s) need review.",
+            file=sys.stderr,
+        )
+        for item in review_only[:25]:
+            print(f"  REVIEW {item['video_id']} — {item['reason']}", file=sys.stderr)
+        return 2
+
     if args.updates_only:
         mode = "reviewed-updates-only"
     elif args.include_updates:
@@ -316,6 +370,7 @@ def main() -> int:
             plan=plan,
             already_applied=already_applied,
             review_only=review_only,
+            uncovered_actionable=uncovered_actionable,
             unused_content=unused_content,
         ),
         encoding="utf-8",
@@ -324,6 +379,7 @@ def main() -> int:
     print(f"  operations: {len(plan['operations'])}")
     print(f"  already applied: {len(already_applied)}")
     print(f"  review-only: {len(review_only)}")
+    print(f"  uncovered actionable: {len(uncovered_actionable)}")
     print(f"  plan SHA-256: {plan['plan_sha256']}")
     print(f"JSON → {args.output}")
     print(f"Markdown → {markdown_path}")

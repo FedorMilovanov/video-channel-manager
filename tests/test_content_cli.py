@@ -39,7 +39,7 @@ def test_content_preview_youtube_and_vk() -> None:
         ["content", "preview", "--platform", "vk", "--surface", "video_description", "--input", str(_example_path())],
     )
     assert vk.exit_code == 0, vk.stdout
-    assert "Сообщество проекта VK: https://vk.com/thelegendarypoet" in vk.stdout
+    assert "Сообщество проекта в VK: https://vk.com/thelegendarypoet" in vk.stdout
     assert "*Сообщество" not in vk.stdout
 
 

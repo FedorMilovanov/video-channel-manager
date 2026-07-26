@@ -15,6 +15,10 @@ from video_channel_manager.editorial.content import (
     validate_content_record,
 )
 from video_channel_manager.platforms.youtube.comments import validate_comment_text
+from video_channel_manager.platforms.youtube.labels import (
+    ACCEPTED_VK_COMMUNITY_LABELS,
+    CANONICAL_VK_COMMUNITY_LABEL,
+)
 from video_channel_manager.platforms.youtube.renderers import YouTubeCommentRenderer
 
 CONTENT_SCHEMA_NAME = LEGACY_YOUTUBE_SCHEMA_NAME
@@ -124,8 +128,8 @@ def _validate_v2_youtube_rules(payload: dict[str, Any]) -> list[str]:
             errors.append("site link label must use the compact 📌 bold style")
         if kind == "playlist" and not (label.startswith("🎧 ") and "*" in label):
             errors.append("playlist link label must use the compact 🎧 bold style")
-        if kind == "vk" and label != "*Сообщество проекта VK:*":
-            errors.append("VK link label must be exactly *Сообщество проекта VK:*")
+        if kind == "vk" and label not in ACCEPTED_VK_COMMUNITY_LABELS:
+            errors.append(f"VK link label must be exactly {CANONICAL_VK_COMMUNITY_LABEL}")
         if kind == "primary_text" and not (label.startswith("📚 ") and ("*" in label or "_" in label)):
             errors.append("primary-text link label must use the compact 📚 emphasized style")
     if len(link_kinds) != len(set(link_kinds)):
