@@ -77,15 +77,13 @@ def _report(plan: dict[str, Any]) -> str:
     ]
     for operation in plan["album_title_operations"]:
         lines.append(
-            f"- `{operation['target_collection_id']}`: "
-            f"`{operation['before_title']}` → `{operation['after_title']}`"
+            f"- `{operation['target_collection_id']}`: `{operation['before_title']}` → `{operation['after_title']}`"
         )
     lines.extend(["", "## Video title changes", ""])
     for operation in plan["video_text_operations"]:
         if operation["title_changed"]:
             lines.append(
-                f"- `{operation['target_video_id']}`: "
-                f"`{operation['before_title']}` → `{operation['after_title']}`"
+                f"- `{operation['target_video_id']}`: `{operation['before_title']}` → `{operation['after_title']}`"
             )
     lines.extend(["", "## Review only — excluded from semantic automation", ""])
     for finding in plan["review_only"]:
