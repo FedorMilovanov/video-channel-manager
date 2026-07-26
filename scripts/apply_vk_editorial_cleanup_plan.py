@@ -100,7 +100,9 @@ def _live_indexes(live: AuditPackage) -> tuple[dict[str, Any], dict[str, Any]]:
 def _preflight(plan: dict[str, Any], live: AuditPackage) -> dict[str, Any]:
     coverage = target_video_ids_sha256(live)
     if coverage != plan["target_video_ids_sha256"]:
-        raise ValueError("Live VK video coverage differs from the reviewed plan. Create a fresh scan and rebuild the plan.")
+        raise ValueError(
+            "Live VK video coverage differs from the reviewed plan. Create a fresh scan and rebuild the plan."
+        )
     memberships = membership_state_sha256(live)
     if memberships != plan["initial_memberships_sha256"]:
         raise ValueError(
@@ -118,7 +120,9 @@ def _preflight(plan: dict[str, Any], live: AuditPackage) -> dict[str, Any]:
         else:
             current_title = canonical_vk_text(video.title)
             current_description = canonical_vk_text(video.description)
-            before = current_title == operation["before_title"] and current_description == operation["before_description"]
+            before = (
+                current_title == operation["before_title"] and current_description == operation["before_description"]
+            )
             after = current_title == operation["after_title"] and current_description == operation["after_description"]
             if after:
                 state = "already_applied"
