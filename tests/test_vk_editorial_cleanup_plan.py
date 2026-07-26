@@ -85,21 +85,15 @@ def _policy() -> dict[str, object]:
                 "🌐 Сайт: https://thelegendarypoet.ru/"
             ),
         },
-        "playlist_replacements": {
-            "playlist-esenin": "https://vkvideo.ru/playlist/-235216998_3?uh=test"
-        },
+        "playlist_replacements": {"playlist-esenin": "https://vkvideo.ru/playlist/-235216998_3?uh=test"},
         "youtube_video_replacements": {},
-        "title_overrides": {
-            "-235216998_456239047": "Исповедь Самоубийцы ⚡ ВЕРСИЯ 2 ⚡ Сергей Есенин"
-        },
+        "title_overrides": {"-235216998_456239047": "Исповедь Самоубийцы ⚡ ВЕРСИЯ 2 ⚡ Сергей Есенин"},
         "album_title_overrides": {"3": "Сергей Есенин"},
     }
 
 
 def test_title_cleanup_preserves_brand_style_without_pipe() -> None:
-    title = clean_vk_title(
-        "DJ Маяковский 🎶 𝖭𝖮𝖪TU𝖱𝖭 🎶 А Вы Могли Бы? @TheLegendaryPoet"
-    )
+    title = clean_vk_title("DJ Маяковский 🎶 𝖭𝖮𝖪TU𝖱𝖭 🎶 А Вы Могли Бы? @TheLegendaryPoet")
 
     assert title == "DJ Маяковский 🎶 𝖭𝖮𝖪TU𝖱𝖭 🎶 А Вы Могли Бы?"
     assert "|" not in title
