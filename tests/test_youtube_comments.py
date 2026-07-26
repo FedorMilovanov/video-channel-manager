@@ -186,7 +186,9 @@ def test_create_comment_is_verified_and_idempotent_with_contextual_direct_read(t
             return httpx.Response(200, json=created)
         if request.url.path == "/comments":
             assert created is not None
-            direct = _comment("comment-1", created["snippet"]["topLevelComment"]["snippet"]["textOriginal"], include_target=False)
+            direct = _comment(
+                "comment-1", created["snippet"]["topLevelComment"]["snippet"]["textOriginal"], include_target=False
+            )
             return httpx.Response(200, json={"items": [direct]})
         raise AssertionError(f"Unexpected request: {request.method} {request.url}")
 
