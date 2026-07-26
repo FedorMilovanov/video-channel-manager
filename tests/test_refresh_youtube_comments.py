@@ -3,7 +3,11 @@ from __future__ import annotations
 import pytest
 
 from scripts.apply_youtube_comment_plan import _classify_operation
-from scripts.refresh_youtube_comments import actionable_tail_from_audit, parse_preflight_summary
+from scripts.refresh_youtube_comments import (
+    actionable_tail_from_audit,
+    parse_preflight_summary,
+    plan_mode_arguments,
+)
 from video_channel_manager.platforms.youtube.comments import TopLevelCommentSnapshot, VideoIdentity
 
 
@@ -47,6 +51,15 @@ def test_actionable_tail_counts_only_missing_and_foreign_only() -> None:
 def test_actionable_tail_requires_machine_readable_counts() -> None:
     with pytest.raises(ValueError, match="counts object"):
         actionable_tail_from_audit({})
+
+
+def test_plan_mode_arguments_are_fail_closed() -> None:
+    assert plan_mode_arguments(create_missing=False, creates_only=False) == [
+        "--include-updates",
+        "--updates-only",
+    ]
+    assert plan_mode_arguments(create_missing=True, creates_only=False) == ["--include-updates"]
+    assert plan_mode_arguments(create_missing=True, creates_only=True) == []
 
 
 def test_update_preflight_uses_exact_comment_from_target_video_threads() -> None:
