@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from copy import deepcopy
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -231,10 +232,23 @@ def test_plan_tampering_and_duplicate_rendered_text_are_rejected() -> None:
     first["rendered_text"] = "tampered"
     assert any("mismatch" in error for error in validate_content_plan(tampered))
 
+    second_record = replace(
+        _record(),
+        content_id="tyutchev-night-sea-duplicate",
+        variation_key="tyutchev-night-sea-duplicate",
+        platform_targets={},
+    )
+    second_rendered = YouTubeCommentRenderer().render(second_record)
+    second_operation = make_content_operation(
+        record=second_record,
+        rendered=second_rendered,
+        target_id="another-target",
+        action="create",
+    )
     duplicate = build_content_plan(
         source_snapshot=_SNAPSHOT,
         source_snapshot_sha256=_SNAPSHOT_SHA256,
         source_snapshot_generated_at="2026-07-25T20:30:00+00:00",
-        operations=[operation, dict(operation, target_id="another-target")],
+        operations=[operation, second_operation],
     )
     assert any(error.startswith("duplicate rendered texts") for error in validate_content_plan(duplicate))
