@@ -82,7 +82,7 @@ def test_vk_catalog_plan_reuses_guards_and_gets_canonical_description() -> None:
     assert adapted_op["before_description"] == original_op["before_description"]
     assert adapted_op["before_description_sha256"] == original_op["before_description_sha256"]
     assert "*" not in adapted_op["after_description"]
-    assert "Сообщество проекта VK: https://vk.com/thelegendarypoet" in adapted_op["after_description"]
+    assert "Сообщество проекта в VK: https://vk.com/thelegendarypoet" in adapted_op["after_description"]
     assert adapted_op["editorial_variation_key"] == "tyutchev-night-sea-two-editions-nice-v3"
     assert adapted_op["editorial_reviewed_at"] == "2026-07-25T20:22:00+00:00"
     assert adapted["plan_sha256"] != original["plan_sha256"]
