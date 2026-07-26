@@ -79,6 +79,37 @@ missing + foreign_only == 0
 
 A zero-tail failure happens **after** already verified writes and is reported as a remaining channel-coverage problem, not as a rollback. The journal and completed comments remain valid.
 
+## Recovery after a postflight-only indexing failure
+
+YouTube may accept every write while one new comment is still absent from immediate list reads. The executor now retries the complete postflight with bounded increasing delays. When an older run has already written every operation but stopped with `Full postflight did not confirm every planned comment operation`, use the original signed plan and original journal in `--verify-only` mode.
+
+`--verify-only` has a hard no-write boundary:
+
+- it requires an existing journal bound to the same plan SHA-256;
+- every planned operation must already have a `completed` journal attempt;
+- it acquires the normal channel writer lock;
+- it repeatedly reads the complete plan until every operation is `already_applied`;
+- it never calls create or update;
+- it marks the original journal `completed` only after full confirmation.
+
+Example:
+
+```powershell
+python -X utf8 .\scripts\apply_youtube_comment_plan.py `
+  "C:\path\to\original-signed-plan.json" `
+  --account legendary-poet `
+  --verify-only `
+  --journal "C:\path\to\original-apply-journal.json" `
+  --confirm-channel UC-78ys2S3cQ3lpqgXfo-SvQ `
+  --confirm-source-snapshot <SOURCE_SNAPSHOT_FROM_PLAN> `
+  --confirm-plan-sha256 <PLAN_SHA256_FROM_PLAN> `
+  --max-operations 200
+```
+
+Do not delete the journal, rebuild the plan, or rerun the original create wave blindly. A genuine remaining `ready` operation remains unconfirmed and is not written by recovery mode; a conflicting live comment or API error remains a blocker.
+
+After successful recovery, run a new channel-wide scan and audit. Complete closure requires `missing: 0`, `foreign_only: 0`, and no `comments_disabled` or `error` targets hidden from the result.
+
 ## Optional modes
 
 Use the newest existing snapshot without scanning again:
@@ -141,6 +172,8 @@ python -X utf8 .\scripts\refresh_youtube_comments.py `
 - any blocker stops all writes;
 - the channel write lock prevents concurrent writers;
 - every operation is journaled and verified after the API call;
+- full-plan postflight uses bounded retries for eventual YouTube indexing;
+- verify-only recovery requires a complete original write journal and cannot write;
 - optional channel-wide postflight distinguishes plan success from complete channel coverage;
 - reruns recognize already-applied content and do not duplicate it.
 
