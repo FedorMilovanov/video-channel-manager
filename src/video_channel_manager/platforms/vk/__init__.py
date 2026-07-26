@@ -7,6 +7,7 @@ from video_channel_manager.platforms.vk.models import (
     VkConfigurationError,
     VkUserIdentity,
 )
+from video_channel_manager.platforms.vk.renderers import VKCommentRenderer, VKPostRenderer, VKVideoDescriptionRenderer
 from video_channel_manager.platforms.vk.service import VkInventoryService
 from video_channel_manager.platforms.vk.store import VkAccountNotFoundError, VkTokenStore
 from video_channel_manager.platforms.vk.text import (
@@ -26,6 +27,9 @@ from video_channel_manager.platforms.vk.text_writer import (
 from video_channel_manager.platforms.vk.writer import VkUploadTicket, VkVideoWriter, VkWriteError
 
 __all__ = [
+    "VKCommentRenderer",
+    "VKPostRenderer",
+    "VKVideoDescriptionRenderer",
     "VK_VIDEO_DESCRIPTION_CAPABILITIES",
     "VkAccessToken",
     "VkAccount",

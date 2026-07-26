@@ -28,9 +28,7 @@ YouTube comment preflight:
 
 def test_parse_preflight_summary_rejects_incomplete_output() -> None:
     with pytest.raises(ValueError, match="Cannot parse 'blockers'"):
-        parse_preflight_summary(
-            "planned operations: 1\nready now: 1\nalready applied: 0\n"
-        )
+        parse_preflight_summary("planned operations: 1\nready now: 1\nalready applied: 0\n")
 
 
 def test_update_preflight_uses_exact_comment_from_target_video_threads() -> None:
