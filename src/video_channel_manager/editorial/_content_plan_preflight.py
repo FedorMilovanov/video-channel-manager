@@ -29,9 +29,7 @@ def validate_preflight_state(
     actual_snapshot_sha256_raw = payload.get("source_snapshot_sha256")
     if not isinstance(actual_snapshot_sha256_raw, str):
         errors.append("state source_snapshot_sha256 must be a string")
-    actual_snapshot_sha256 = (
-        actual_snapshot_sha256_raw.strip() if isinstance(actual_snapshot_sha256_raw, str) else ""
-    )
+    actual_snapshot_sha256 = actual_snapshot_sha256_raw.strip() if isinstance(actual_snapshot_sha256_raw, str) else ""
     if actual_snapshot_sha256 != expected_source_snapshot_sha256.strip():
         errors.append("state source_snapshot_sha256 does not match the signed plan")
     if not valid_sha256(actual_snapshot_sha256):
