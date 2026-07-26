@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import time
 import unicodedata
 from dataclasses import dataclass
 from datetime import datetime
@@ -15,6 +16,8 @@ from video_channel_manager.platforms.youtube.writer import YouTubeWriteError, Yo
 
 _API_BASE_URL = "https://www.googleapis.com/youtube/v3"
 _COMMENT_TEXT_LIMIT = 8000
+_MODERATION_STATES = ("published", "heldForReview", "likelySpam")
+_DEFAULT_VERIFY_DELAYS_SECONDS = (0.0, 0.5, 1.0, 2.0, 3.0, 5.0, 8.0, 12.0)
 QueryParam: TypeAlias = str | int
 QueryParams: TypeAlias = dict[str, QueryParam]
 
@@ -125,7 +128,13 @@ def _author_channel_id(snippet: dict[str, Any]) -> str | None:
 
 
 class YouTubeCommentWriter:
-    """Read and guardedly write top-level comments through YouTube Data API v3."""
+    """Read and guardedly write top-level comments through YouTube Data API v3.
+
+    The writer deliberately reads every moderation view available to the
+    authenticated channel and performs bounded eventual verification after a
+    successful mutation. This prevents duplicate creates when YouTube accepts a
+    write before the comment is visible in the default thread listing.
+    """
 
     def __init__(
         self,
@@ -135,12 +144,15 @@ class YouTubeCommentWriter:
         account_alias: str,
         http_client: httpx.Client | None = None,
         api_base_url: str = _API_BASE_URL,
+        verify_delays_seconds: tuple[float, ...] = _DEFAULT_VERIFY_DELAYS_SECONDS,
     ) -> None:
         self.client_config = client_config
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
         self._http_client = http_client
         self.api_base_url = api_base_url.rstrip("/")
+        cleaned_delays = tuple(max(0.0, float(item)) for item in verify_delays_seconds)
+        self.verify_delays_seconds = cleaned_delays or (0.0,)
 
     def _token(self, *, require_write: bool) -> OAuthToken:
         token = self.token_store.load_token(self.account_alias)
@@ -248,27 +260,79 @@ class YouTubeCommentWriter:
             raw=item,
         )
 
+    def _parse_direct_comment(
+        self,
+        comment: dict[str, Any],
+        *,
+        video_id: str,
+        channel_id: str,
+    ) -> TopLevelCommentSnapshot:
+        comment_id = str(comment.get("id") or "").strip()
+        snippet = _dict_field(comment, "snippet")
+        direct_video_id = str(snippet.get("videoId") or "").strip()
+        direct_channel_id = str(snippet.get("channelId") or "").strip()
+        if not comment_id:
+            raise YouTubeCommentError("YouTube returned an invalid direct comment record.")
+        if direct_video_id and direct_video_id != video_id:
+            raise YouTubeCommentError(f"Direct comment {comment_id} belongs to unexpected video {direct_video_id}.")
+        if direct_channel_id and direct_channel_id != channel_id:
+            raise YouTubeCommentError(f"Direct comment {comment_id} belongs to unexpected channel {direct_channel_id}.")
+        text = str(snippet.get("textOriginal") or snippet.get("textDisplay") or "")
+        return TopLevelCommentSnapshot(
+            thread_id=str(snippet.get("parentId") or comment_id),
+            comment_id=comment_id,
+            video_id=video_id,
+            channel_id=channel_id,
+            author_channel_id=_author_channel_id(snippet),
+            author_display_name=str(snippet.get("authorDisplayName") or ""),
+            text=canonicalize_comment_text(text),
+            published_at=_parse_datetime(snippet.get("publishedAt")),
+            updated_at=_parse_datetime(snippet.get("updatedAt")),
+            moderation_status=str(snippet.get("moderationStatus") or "").strip() or None,
+            raw=comment,
+        )
+
     def list_top_level_comments(self, video_id: str) -> list[TopLevelCommentSnapshot]:
         records: list[TopLevelCommentSnapshot] = []
-        page_token: str | None = None
-        while True:
-            params: QueryParams = {
-                "part": "snippet",
-                "videoId": video_id,
-                "maxResults": 100,
-                "textFormat": "plainText",
-                "order": "time",
-            }
-            if page_token:
-                params["pageToken"] = page_token
-            payload = self._request("GET", "commentThreads", params=params)
-            records.extend(self._parse_thread(item) for item in _dict_items(payload))
-            next_token = str(payload.get("nextPageToken") or "").strip()
-            if not next_token:
-                return records
-            page_token = next_token
+        seen_comment_ids: set[str] = set()
+        for moderation_status in _MODERATION_STATES:
+            page_token: str | None = None
+            while True:
+                params: QueryParams = {
+                    "part": "snippet",
+                    "videoId": video_id,
+                    "maxResults": 100,
+                    "textFormat": "plainText",
+                    "order": "time",
+                    "moderationStatus": moderation_status,
+                }
+                if page_token:
+                    params["pageToken"] = page_token
+                try:
+                    payload = self._request("GET", "commentThreads", params=params)
+                except YouTubeCommentError:
+                    if moderation_status == "published":
+                        raise
+                    break
+                for item in _dict_items(payload):
+                    snapshot = self._parse_thread(item)
+                    if snapshot.comment_id in seen_comment_ids:
+                        continue
+                    seen_comment_ids.add(snapshot.comment_id)
+                    records.append(snapshot)
+                next_token = str(payload.get("nextPageToken") or "").strip()
+                if not next_token:
+                    break
+                page_token = next_token
+        return records
 
-    def read_comment(self, comment_id: str) -> TopLevelCommentSnapshot:
+    def read_comment(
+        self,
+        comment_id: str,
+        *,
+        video_id: str | None = None,
+        channel_id: str | None = None,
+    ) -> TopLevelCommentSnapshot:
         payload = self._request(
             "GET",
             "comments",
@@ -280,19 +344,68 @@ class YouTubeCommentWriter:
         comment = items[0]
         snippet = _dict_field(comment, "snippet")
         actual_id = str(comment.get("id") or "").strip()
-        video_id = str(snippet.get("videoId") or "").strip()
-        channel_id = str(snippet.get("channelId") or "").strip()
-        if actual_id != comment_id or not video_id or not channel_id:
+        resolved_video_id = str(snippet.get("videoId") or video_id or "").strip()
+        resolved_channel_id = str(snippet.get("channelId") or channel_id or "").strip()
+        if actual_id != comment_id or not resolved_video_id or not resolved_channel_id:
             raise YouTubeCommentError(f"YouTube returned an invalid comment record for: {comment_id}")
-        synthetic_thread = {
-            "id": str(snippet.get("parentId") or comment_id),
-            "snippet": {
-                "videoId": video_id,
-                "channelId": channel_id,
-                "topLevelComment": comment,
-            },
-        }
-        return self._parse_thread(synthetic_thread)
+        return self._parse_direct_comment(
+            comment,
+            video_id=resolved_video_id,
+            channel_id=resolved_channel_id,
+        )
+
+    def _find_top_level_comment(
+        self,
+        *,
+        comment_id: str,
+        video_id: str,
+        channel_id: str,
+    ) -> TopLevelCommentSnapshot | None:
+        try:
+            direct = self.read_comment(comment_id, video_id=video_id, channel_id=channel_id)
+        except YouTubeCommentError:
+            direct = None
+        if direct is not None:
+            return direct
+        return next(
+            (item for item in self.list_top_level_comments(video_id) if item.comment_id == comment_id),
+            None,
+        )
+
+    def _verify_comment_eventually(
+        self,
+        *,
+        video_id: str,
+        channel_id: str,
+        comment_id: str,
+        expected_text: str,
+        fallback: TopLevelCommentSnapshot,
+    ) -> TopLevelCommentSnapshot:
+        last_error: YouTubeCommentError | None = None
+        for delay in self.verify_delays_seconds:
+            if delay:
+                time.sleep(delay)
+            try:
+                verified = self._find_top_level_comment(
+                    comment_id=comment_id,
+                    video_id=video_id,
+                    channel_id=channel_id,
+                )
+            except YouTubeCommentError as exc:
+                last_error = exc
+                continue
+            if verified is None:
+                continue
+            if verified.author_channel_id != channel_id:
+                raise YouTubeCommentError(f"Comment {comment_id} is not authored by the expected channel.")
+            if not comments_equivalent(verified.text, expected_text):
+                raise YouTubeCommentError(f"Verification found unexpected text for comment {comment_id}.")
+            return verified
+        if fallback.author_channel_id == channel_id and comments_equivalent(fallback.text, expected_text):
+            return fallback
+        if last_error is not None:
+            raise last_error
+        raise YouTubeCommentError(f"Comment {comment_id} was not available for verification after retries.")
 
     def create_top_level_comment(
         self,
@@ -335,10 +448,15 @@ class YouTubeCommentWriter:
         created = self._parse_thread(payload)
         if created.video_id != video_id or created.channel_id != expected_channel_id:
             raise YouTubeCommentError(f"YouTube created a comment on an unexpected target for {video_id}.")
-        verified = self.read_comment(created.comment_id)
-        if verified.author_channel_id != expected_channel_id or not comments_equivalent(verified.text, normalized):
-            raise YouTubeCommentError(f"Verification failed after creating a comment for {video_id}.")
-        return verified
+        if created.author_channel_id != expected_channel_id or not comments_equivalent(created.text, normalized):
+            raise YouTubeCommentError(f"YouTube returned an unexpected created comment for {video_id}.")
+        return self._verify_comment_eventually(
+            video_id=video_id,
+            channel_id=expected_channel_id,
+            comment_id=created.comment_id,
+            expected_text=normalized,
+            fallback=created,
+        )
 
     def update_top_level_comment(
         self,
@@ -350,7 +468,13 @@ class YouTubeCommentWriter:
         new_text: str,
     ) -> TopLevelCommentSnapshot:
         normalized_new = validate_comment_text(new_text)
-        current = self.read_comment(comment_id)
+        current = self._find_top_level_comment(
+            comment_id=comment_id,
+            video_id=video_id,
+            channel_id=expected_channel_id,
+        )
+        if current is None:
+            raise YouTubeCommentConflictError(f"Top-level comment {comment_id} was not found on video {video_id}.")
         if current.video_id != video_id or current.channel_id != expected_channel_id:
             raise YouTubeCommentConflictError(f"Comment target mismatch for {comment_id}.")
         if current.author_channel_id != expected_channel_id:
@@ -368,13 +492,20 @@ class YouTubeCommentWriter:
             json_body={"id": comment_id, "snippet": {"textOriginal": normalized_new}},
             require_write=True,
         )
-        updated_id = str(payload.get("id") or "").strip()
-        if updated_id != comment_id:
+        updated = self._parse_direct_comment(
+            payload,
+            video_id=video_id,
+            channel_id=expected_channel_id,
+        )
+        if updated.comment_id != comment_id:
             raise YouTubeCommentError(f"YouTube returned an unexpected comment ID after updating {comment_id}.")
-        verified = self.read_comment(comment_id)
-        if verified.author_channel_id != expected_channel_id or not comments_equivalent(verified.text, normalized_new):
-            raise YouTubeCommentError(f"Verification failed after updating comment {comment_id}.")
-        return verified
+        return self._verify_comment_eventually(
+            video_id=video_id,
+            channel_id=expected_channel_id,
+            comment_id=comment_id,
+            expected_text=normalized_new,
+            fallback=updated,
+        )
 
 
 __all__ = [
