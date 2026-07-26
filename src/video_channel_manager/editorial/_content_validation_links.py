@@ -106,8 +106,7 @@ def validate_links(payload: dict[str, Any], *, source_urls: set[str]) -> list[st
             unknown_surfaces = sorted(set(surfaces).difference(allowed_surfaces))
             if unknown_surfaces:
                 errors.append(
-                    f"{location}.surfaces contains unsupported {platform} surfaces: "
-                    f"{', '.join(unknown_surfaces)}"
+                    f"{location}.surfaces contains unsupported {platform} surfaces: {', '.join(unknown_surfaces)}"
                 )
     if len(link_kinds) != len(set(link_kinds)):
         errors.append("links cannot repeat the same kind")

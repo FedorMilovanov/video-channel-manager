@@ -51,14 +51,10 @@ def validate_identity(payload: dict[str, Any], *, expected_channel_id: str | Non
     if type(version) is not int:
         errors.append("schema_version must be an integer")
     schema_is_canonical = (
-        schema_name == CANONICAL_SCHEMA_NAME
-        and type(version) is int
-        and version == CANONICAL_SCHEMA_VERSION
+        schema_name == CANONICAL_SCHEMA_NAME and type(version) is int and version == CANONICAL_SCHEMA_VERSION
     )
     schema_is_legacy = (
-        schema_name == LEGACY_YOUTUBE_SCHEMA_NAME
-        and type(version) is int
-        and version == LEGACY_YOUTUBE_SCHEMA_VERSION
+        schema_name == LEGACY_YOUTUBE_SCHEMA_NAME and type(version) is int and version == LEGACY_YOUTUBE_SCHEMA_VERSION
     )
     if not schema_is_canonical and not schema_is_legacy:
         errors.append(

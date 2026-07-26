@@ -120,6 +120,5 @@ def test_preferred_link_order_rejects_invalid_targets_and_link_kinds() -> None:
 
     assert "unsupported preferred_link_order target: youtube.unknown" in errors
     assert (
-        "rendering_metadata.preferred_link_order.youtube.comment contains unsupported link kinds: "
-        "unsupported-kind"
+        "rendering_metadata.preferred_link_order.youtube.comment contains unsupported link kinds: unsupported-kind"
     ) in errors
