@@ -249,8 +249,7 @@ def validate_vk_editorial_cleanup_plan(plan: dict[str, Any]) -> None:
     if not isinstance(summary, dict) or int(summary.get("total_operations", -1)) != expected_total:
         raise ValueError("summary.total_operations does not match operations")
     if any(
-        int(summary.get(field, -1)) != 0
-        for field in ("placements_to_add", "placements_to_remove", "videos_to_delete")
+        int(summary.get(field, -1)) != 0 for field in ("placements_to_add", "placements_to_remove", "videos_to_delete")
     ):
         raise ValueError("Editorial plan cannot contain catalog or deletion operations")
 
