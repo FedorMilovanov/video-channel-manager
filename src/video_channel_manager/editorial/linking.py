@@ -10,7 +10,9 @@ def _string_order(value: object) -> tuple[str, ...]:
         return ()
     result: list[str] = []
     for item in value:
-        normalized = str(item).strip()
+        if not isinstance(item, str):
+            return ()
+        normalized = item.strip()
         if normalized and normalized not in result:
             result.append(normalized)
     return tuple(result)

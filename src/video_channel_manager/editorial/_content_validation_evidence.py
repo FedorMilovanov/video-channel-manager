@@ -7,15 +7,27 @@ from video_channel_manager.editorial._content_types import (
     BANNED_GENERIC_PHRASES,
     DECORATIVE_MARKERS,
 )
-from video_channel_manager.editorial._content_urls import balanced_emphasis, contains_banned_circle
-from video_channel_manager.editorial._content_validation_support import _object, _source_validation, _string_list
+from video_channel_manager.editorial._content_urls import (
+    balanced_emphasis,
+    contains_banned_circle,
+)
+from video_channel_manager.editorial._content_validation_support import (
+    _object,
+    _source_validation,
+    _string_field,
+    _validate_string_list,
+)
 
 
 def validate_evidence(payload: dict[str, Any]) -> tuple[list[str], set[str]]:
     errors: list[str] = []
     source_errors, source_by_id, source_urls = _source_validation(payload)
     errors.extend(source_errors)
-    source_ids = _string_list(payload.get("source_ids"))
+    source_ids = _validate_string_list(
+        payload.get("source_ids"),
+        location="source_ids",
+        errors=errors,
+    )
     if not source_ids:
         errors.append("source_ids must contain at least one source")
     if any(not item for item in source_ids):
@@ -26,13 +38,33 @@ def validate_evidence(payload: dict[str, Any]) -> tuple[list[str], set[str]]:
     if missing_source_ids:
         errors.append(f"source_ids missing from sources: {', '.join(missing_source_ids)}")
 
-    fact = _object(payload.get("fact"))
-    if not fact:
+    fact_raw = payload.get("fact")
+    fact = _object(fact_raw)
+    if not isinstance(fact_raw, dict):
         errors.append("fact must be an object")
-    heading = str(fact.get("heading") or "").strip()
-    fact_text = str(fact.get("text") or "").strip()
-    fact_type = str(fact.get("fact_type") or "").strip()
-    fact_source_ids = _string_list(fact.get("source_ids"))
+    heading = _string_field(
+        fact,
+        "heading",
+        location="fact",
+        errors=errors,
+    )
+    fact_text = _string_field(
+        fact,
+        "text",
+        location="fact",
+        errors=errors,
+    )
+    fact_type = _string_field(
+        fact,
+        "fact_type",
+        location="fact",
+        errors=errors,
+    )
+    fact_source_ids = _validate_string_list(
+        fact.get("source_ids"),
+        location="fact.source_ids",
+        errors=errors,
+    )
     if not 5 <= len(heading) <= 100:
         errors.append("fact.heading must contain 5-100 characters")
     if not any(marker in heading for marker in DECORATIVE_MARKERS):
@@ -45,6 +77,8 @@ def validate_evidence(payload: dict[str, Any]) -> tuple[list[str], set[str]]:
         errors.append("fact.fact_type is unsupported")
     if not fact_source_ids:
         errors.append("fact.source_ids must contain at least one evidence source")
+    if len(fact_source_ids) != len(set(fact_source_ids)):
+        errors.append("fact.source_ids cannot contain duplicates")
     missing_fact_sources = sorted(set(fact_source_ids).difference(source_ids))
     if missing_fact_sources:
         errors.append(f"fact.source_ids missing from source_ids: {', '.join(missing_fact_sources)}")
@@ -55,11 +89,23 @@ def validate_evidence(payload: dict[str, Any]) -> tuple[list[str], set[str]]:
         if phrase in lowered_fact:
             errors.append(f"generic or unsupported phrase is forbidden: {phrase}")
 
-    question = _object(payload.get("question"))
-    if not question:
+    question_raw = payload.get("question")
+    question = _object(question_raw)
+    if not isinstance(question_raw, dict):
         errors.append("question must be an object")
-    lead = str(question.get("lead") or "").strip()
-    question_text = str(question.get("text") or "").strip()
+    lead = _string_field(
+        question,
+        "lead",
+        location="question",
+        errors=errors,
+        optional=True,
+    )
+    question_text = _string_field(
+        question,
+        "text",
+        location="question",
+        errors=errors,
+    )
     if lead and (len(lead) > 100 or not balanced_emphasis(lead)):
         errors.append("question.lead must be short and have balanced emphasis")
     if not 25 <= len(question_text) <= 320 or not question_text.endswith("?"):
