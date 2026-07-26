@@ -1,9 +1,10 @@
 # One-command YouTube comment refresh
 
-Use this workflow after approved comment records have changed. It supports two fail-closed operating modes:
+Use this workflow after approved comment records have changed. It supports three fail-closed operating modes:
 
 - the default **updates-only** mode, which never creates missing comments;
-- an explicitly requested **create-missing** mode, including full-coverage and zero-tail checks for final channel-closing waves.
+- an explicitly requested **create-and-update** mode through `--create-missing`;
+- a strict **create-only** mode through `--create-missing --creates-only`, intended for final channel-closing waves.
 
 The command performs:
 
@@ -58,6 +59,7 @@ python -X utf8 .\scripts\refresh_youtube_comments.py `
   --channel UC-78ys2S3cQ3lpqgXfo-SvQ `
   --content-dir C:\path\to\approved-final-wave `
   --create-missing `
+  --creates-only `
   --require-complete-coverage `
   --require-no-review-only `
   --postflight-audit `
@@ -66,6 +68,8 @@ python -X utf8 .\scripts\refresh_youtube_comments.py `
   --confirm-channel UC-78ys2S3cQ3lpqgXfo-SvQ `
   --write-delay 3
 ```
+
+`--creates-only` omits update planning and then verifies defensively that every signed operation is a `create`. Existing channel comments cannot be changed in this mode.
 
 `--require-complete-coverage` fails before plan signing when any actionable public video lacks a valid approved create operation. `--require-no-review-only` fails when an approved record cannot safely enter the plan. `--require-zero-tail` runs a channel-wide postflight and requires:
 
@@ -104,6 +108,16 @@ python -X utf8 .\scripts\refresh_youtube_comments.py `
   --create-missing
 ```
 
+Allow creates but prohibit updates:
+
+```powershell
+python -X utf8 .\scripts\refresh_youtube_comments.py `
+  --account legendary-poet `
+  --channel UC-78ys2S3cQ3lpqgXfo-SvQ `
+  --create-missing `
+  --creates-only
+```
+
 Run a channel-wide audit after verified execution without requiring a zero tail:
 
 ```powershell
@@ -119,6 +133,7 @@ python -X utf8 .\scripts\refresh_youtube_comments.py `
 
 - fresh audit and signed plan are generated in the same run;
 - updates require exact comment ID, owner channel, target video, and before-text;
+- strict create-only mode cannot include update operations;
 - multiple channel comments on one video are never selected automatically;
 - missing comments are review-only in default updates-only mode;
 - final waves can require complete coverage before plan signing;
