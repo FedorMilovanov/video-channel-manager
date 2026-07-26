@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from scripts.apply_youtube_comment_plan import _classify_operation
-from scripts.refresh_youtube_comments import parse_preflight_summary
+from scripts.refresh_youtube_comments import actionable_tail_from_audit, parse_preflight_summary
 from video_channel_manager.platforms.youtube.comments import TopLevelCommentSnapshot, VideoIdentity
 
 
@@ -29,6 +29,24 @@ YouTube comment preflight:
 def test_parse_preflight_summary_rejects_incomplete_output() -> None:
     with pytest.raises(ValueError, match="Cannot parse 'blockers'"):
         parse_preflight_summary("planned operations: 1\nready now: 1\nalready applied: 0\n")
+
+
+def test_actionable_tail_counts_only_missing_and_foreign_only() -> None:
+    audit = {
+        "counts": {
+            "missing": 3,
+            "foreign_only": 4,
+            "owned_present": 100,
+            "comments_disabled": 2,
+            "error": 1,
+        }
+    }
+    assert actionable_tail_from_audit(audit) == 7
+
+
+def test_actionable_tail_requires_machine_readable_counts() -> None:
+    with pytest.raises(ValueError, match="counts object"):
+        actionable_tail_from_audit({})
 
 
 def test_update_preflight_uses_exact_comment_from_target_video_threads() -> None:
