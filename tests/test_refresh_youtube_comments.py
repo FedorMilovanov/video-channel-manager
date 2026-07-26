@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from scripts import apply_youtube_comment_plan as apply_plan
 from scripts.apply_youtube_comment_plan import _classify_operation
 from scripts.refresh_youtube_comments import (
     actionable_tail_from_audit,
@@ -67,6 +68,106 @@ def test_preflight_summary_rejects_incomplete_or_wrong_report() -> None:
             plan=_plan(),
             operation_count=1,
         )
+
+
+def test_full_postflight_retries_until_every_operation_is_visible(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    operations = [{"operation_id": "operation-1", "video_id": "video-1"}]
+    responses = iter(
+        [
+            [
+                {
+                    "operation_id": "operation-1",
+                    "video_id": "video-1",
+                    "status": "ready",
+                    "detail": "not indexed yet",
+                }
+            ],
+            [
+                {
+                    "operation_id": "operation-1",
+                    "video_id": "video-1",
+                    "status": "already_applied",
+                    "detail": "comment-1",
+                }
+            ],
+        ]
+    )
+    sleeps: list[float] = []
+
+    def fake_preflight(
+        writer: object,
+        selected_operations: list[dict[str, object]],
+    ) -> list[dict[str, str]]:
+        del writer
+        assert selected_operations == operations
+        return next(responses)
+
+    monkeypatch.setattr(apply_plan, "_preflight", fake_preflight)
+    monkeypatch.setattr(apply_plan.time, "sleep", sleeps.append)
+
+    result = apply_plan._await_complete_postflight(  # type: ignore[arg-type]
+        object(),
+        operations,
+        delays_seconds=(0.0, 2.5),
+    )
+
+    assert result[0]["status"] == "already_applied"
+    assert sleeps == [2.5]
+
+
+def test_full_postflight_reports_unconfirmed_targets_after_bounded_retries(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    operations = [{"operation_id": "operation-1", "video_id": "video-1"}]
+
+    monkeypatch.setattr(
+        apply_plan,
+        "_preflight",
+        lambda writer, selected_operations: [
+            {
+                "operation_id": "operation-1",
+                "video_id": "video-1",
+                "status": "ready",
+                "detail": "not indexed yet",
+            }
+        ],
+    )
+    monkeypatch.setattr(apply_plan.time, "sleep", lambda delay: None)
+
+    with pytest.raises(apply_plan.YouTubeCommentError, match="video-1:ready"):
+        apply_plan._await_complete_postflight(  # type: ignore[arg-type]
+            object(),
+            operations,
+            delays_seconds=(0.0, 0.0),
+        )
+
+
+def test_verify_only_requires_a_complete_existing_write_journal() -> None:
+    plan = {
+        "operations": [
+            {"operation_id": "operation-1"},
+            {"operation_id": "operation-2"},
+        ]
+    }
+    incomplete = {
+        "attempts": {
+            "operation-1": {"status": "completed"},
+            "operation-2": {"status": "pending"},
+        }
+    }
+
+    with pytest.raises(ValueError, match="non-completed attempts"):
+        apply_plan._validate_verify_only_journal(plan, incomplete)
+
+    complete = {
+        "attempts": {
+            "operation-1": {"status": "completed"},
+            "operation-2": {"status": "completed"},
+        }
+    }
+    assert apply_plan._validate_verify_only_journal(plan, complete) is complete
 
 
 def test_actionable_tail_counts_only_missing_and_foreign_only() -> None:
