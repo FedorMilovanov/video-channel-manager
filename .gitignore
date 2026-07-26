@@ -1,11 +1,48 @@
-# Local secrets
-secrets/
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
-# OAuth tokens
+# Virtual environments
+.venv/
+venv/
+
+# Secrets and local settings
+.env
+.env.*
+!.env.example
+*.token.json
+credentials.json
+client_secret*.json
+secrets/
 tokens/
 
-# Local data
+# Runtime data
 data/
-reports/
+downloads/
+cache/
+logs/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Generated exchange packages
 exports/
-*.env
+imports/
+reports/
+schemas/generated/
+examples/generated/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini

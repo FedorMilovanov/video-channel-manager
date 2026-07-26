@@ -1,0 +1,22 @@
+[
+  {
+    "label": "Академический текст цикла",
+    "kind": "academic_primary_text_index",
+    "url": "https://rvb.ru/20vek/blok/pss20/vol3/text/rodina.html"
+  },
+  {
+    "label": "Собственное примечание Блока",
+    "kind": "author_note_academic_edition",
+    "url": "https://rvb.ru/20vek/blok/pss20/vol3/appendix/0770.html"
+  },
+  {
+    "label": "Александр Блок. Народ и интеллигенция",
+    "kind": "author_context_primary_text",
+    "url": "https://ru.wikisource.org/wiki/Народ_и_интеллигенция_(Блок)"
+  },
+  {
+    "label": "Россия и интеллигенция — архивное издание",
+    "kind": "archive_catalog_and_digitized_edition",
+    "url": "https://www.prlib.ru/item/1306071"
+  }
+]

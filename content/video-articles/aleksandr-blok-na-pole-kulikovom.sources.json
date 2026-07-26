@@ -1,0 +1,144 @@
+{
+  "schema_name": "video-manager.video-article-source-ledger",
+  "schema_version": 1,
+  "status": "editorial-review",
+  "proposed_slug": "aleksandr-blok-na-pole-kulikovom",
+  "youtube_video_id": "U4D40EQg10U",
+  "vk_video_id": "-235216998_456239142",
+  "article_url": null,
+  "claims": [
+    {
+      "claim_id": "cycle-five-parts",
+      "claim": "«На поле Куликовом» является циклом из пяти стихотворений и входит в раздел «Родина».",
+      "source_ids": ["rvb-rodina-index", "rvb-volume-3", "wikisource-cycle", "culture-full-text"]
+    },
+    {
+      "claim_id": "academic-edition-basis",
+      "claim": "Академическая электронная публикация РВБ воспроизводит текст по третьему тому Полного собрания сочинений и писем Блока в 20 томах, изданному «Наукой» в 1997 году.",
+      "source_ids": ["rvb-part-1", "rvb-volume-3"]
+    },
+    {
+      "claim_id": "composition-dates",
+      "claim": "Части датированы 7, 8, 14 июня, 31 июля и 23 декабря 1908 года.",
+      "source_ids": ["wikisource-part-1", "wikisource-part-2", "wikisource-part-3", "wikisource-part-4", "wikisource-part-5"]
+    },
+    {
+      "claim_id": "author-symbolic-event-note",
+      "claim": "В собственном примечании Блок определил Куликовскую битву как символическое событие русской истории, которому суждено возвращение и окончательная разгадка которого ещё впереди.",
+      "source_ids": ["rvb-author-note"]
+    },
+    {
+      "claim_id": "solovyov-epigraph",
+      "claim": "Блок указал, что строка эпиграфа пятой части взята из стихотворения Владимира Соловьёва «Дракон».",
+      "source_ids": ["rvb-author-note", "wikisource-part-5", "culture-full-text"]
+    },
+    {
+      "claim_id": "blok-essay-context",
+      "claim": "В ноябре 1908 года Блок в статье «Народ и интеллигенция» использовал образы Куликовской битвы, татарского стана и Непрядвы.",
+      "source_ids": ["blok-people-intelligentsia"]
+    },
+    {
+      "claim_id": "essay-publication-title",
+      "claim": "Статья впервые опубликована в 1909 году под заглавием «Россия и интеллигенция».",
+      "source_ids": ["blok-people-intelligentsia", "presidential-library-edition"]
+    },
+    {
+      "claim_id": "mints-duty-context",
+      "claim": "З. Г. Минц связывает творчество Блока этого периода с усилением темы долга — отношения современного человека и художника к будущему и народу.",
+      "source_ids": ["feb-mints-blok"]
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "rvb-part-1",
+      "kind": "academic_primary_text_edition",
+      "title": "Александр Блок. На поле Куликовом. Часть 1 — РВБ",
+      "url": "https://rvb.ru/20vek/blok/pss20/vol3/text/0740.html"
+    },
+    {
+      "source_id": "rvb-rodina-index",
+      "kind": "academic_primary_text_index",
+      "title": "Александр Блок. Родина — состав раздела и цикла в РВБ",
+      "url": "https://rvb.ru/20vek/blok/pss20/vol3/text/rodina.html"
+    },
+    {
+      "source_id": "rvb-author-note",
+      "kind": "author_note_academic_edition",
+      "title": "Собственное примечание Блока к «На поле Куликовом»",
+      "url": "https://rvb.ru/20vek/blok/pss20/vol3/appendix/0770.html"
+    },
+    {
+      "source_id": "rvb-volume-3",
+      "kind": "academic_edition_table_of_contents",
+      "title": "Александр Блок. Полное собрание сочинений и писем. Том 3 — РВБ",
+      "url": "https://rvb.ru/20vek/blok/pss20/tocvol03.html"
+    },
+    {
+      "source_id": "culture-full-text",
+      "kind": "primary_text_transcription",
+      "title": "Александр Блок. На поле Куликовом — полный текст",
+      "url": "https://www.culture.ru/poems/275/na-pole-kulikovom"
+    },
+    {
+      "source_id": "wikisource-cycle",
+      "kind": "primary_text_index",
+      "title": "На поле Куликовом — состав цикла",
+      "url": "https://ru.wikisource.org/wiki/На_поле_Куликовом_(Блок)"
+    },
+    {
+      "source_id": "wikisource-part-1",
+      "kind": "primary_text_edition",
+      "title": "На поле Куликовом, часть 1",
+      "url": "https://ru.wikisource.org/wiki/На_поле_Куликовом_(Блок)/1"
+    },
+    {
+      "source_id": "wikisource-part-2",
+      "kind": "primary_text_edition",
+      "title": "На поле Куликовом, часть 2",
+      "url": "https://ru.wikisource.org/wiki/На_поле_Куликовом_(Блок)/2"
+    },
+    {
+      "source_id": "wikisource-part-3",
+      "kind": "primary_text_edition",
+      "title": "На поле Куликовом, часть 3",
+      "url": "https://ru.wikisource.org/wiki/На_поле_Куликовом_(Блок)/3"
+    },
+    {
+      "source_id": "wikisource-part-4",
+      "kind": "primary_text_edition",
+      "title": "На поле Куликовом, часть 4",
+      "url": "https://ru.wikisource.org/wiki/На_поле_Куликовом_(Блок)/4"
+    },
+    {
+      "source_id": "wikisource-part-5",
+      "kind": "primary_text_edition",
+      "title": "На поле Куликовом, часть 5",
+      "url": "https://ru.wikisource.org/wiki/На_поле_Куликовом_(Блок)/5"
+    },
+    {
+      "source_id": "blok-people-intelligentsia",
+      "kind": "author_context_primary_text",
+      "title": "Александр Блок. Народ и интеллигенция",
+      "url": "https://ru.wikisource.org/wiki/Народ_и_интеллигенция_(Блок)"
+    },
+    {
+      "source_id": "presidential-library-edition",
+      "kind": "archive_catalog_and_digitized_edition",
+      "title": "Александр Блок. Россия и интеллигенция — Президентская библиотека",
+      "url": "https://www.prlib.ru/item/1306071"
+    },
+    {
+      "source_id": "feb-mints-blok",
+      "kind": "academic_secondary_research",
+      "title": "З. Г. Минц. Александр Блок — ФЭБ",
+      "url": "https://feb-web.ru/feb/irl/rl0/rl4/rl4-5202.htm?cmd=p"
+    }
+  ],
+  "editorial_rules": {
+    "facts_require_claim_source_mapping": true,
+    "primary_sources_precede_secondary_research": true,
+    "interpretation_must_be_labeled": true,
+    "automatic_literary_rewriting": false,
+    "publish_only_after_human_review": true
+  }
+}
