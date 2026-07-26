@@ -92,7 +92,7 @@ YouTube may accept every write while one new comment is still absent from immedi
 - it never calls create or update;
 - it marks the original journal `completed` only after full confirmation.
 
-Example:
+Low-level example:
 
 ```powershell
 python -X utf8 .\scripts\apply_youtube_comment_plan.py `
@@ -108,7 +108,30 @@ python -X utf8 .\scripts\apply_youtube_comment_plan.py `
 
 Do not delete the journal, rebuild the plan, or rerun the original create wave blindly. A genuine remaining `ready` operation remains unconfirmed and is not written by recovery mode; a conflicting live comment or API error remains a blocker.
 
-After successful recovery, run a new channel-wide scan and audit. Complete closure requires `missing: 0`, `foreign_only: 0`, and no `comments_disabled` or `error` targets hidden from the result.
+## Preferred one-command recovery and closure proof
+
+Use the recovery wrapper instead of chaining manual PowerShell stages. It performs the low-level `--verify-only` recovery, runs a fresh channel scan, audits every current public video, validates the audit structure and arithmetic, rejects duplicate channel comments, and writes a coverage certificate only when every public video has exactly one channel-authored top-level comment.
+
+```powershell
+python -X utf8 .\scripts\recover_youtube_comment_wave.py `
+  "C:\path\to\original-signed-plan.json" `
+  --journal "C:\path\to\original-apply-journal.json" `
+  --account legendary-poet `
+  --channel UC-78ys2S3cQ3lpqgXfo-SvQ `
+  --max-operations 200
+```
+
+The wrapper is no-write by construction. It exits nonzero and produces no success certificate when any of these conditions is true:
+
+- the plan, journal, channel, snapshot, or operation sets do not match;
+- any original write attempt is missing or incomplete;
+- verify-only cannot confirm the exact planned text;
+- the fresh scan or audit fails;
+- audit counts are absent, booleans, negative, inconsistent, or do not cover the full inventory;
+- any public video is `missing`, `foreign_only`, `comments_disabled`, or `error`;
+- any public video has zero or more than one channel-authored top-level comment.
+
+A successful run creates `youtube-comment-coverage-certificate-<channel>-<timestamp>.json` with hashes of the signed plan, final journal, fresh snapshot, and final audit. Terminal text alone is not completion evidence; the certificate is.
 
 ## Optional modes
 
@@ -174,7 +197,10 @@ python -X utf8 .\scripts\refresh_youtube_comments.py `
 - every operation is journaled and verified after the API call;
 - full-plan postflight uses bounded retries for eventual YouTube indexing;
 - verify-only recovery requires a complete original write journal and cannot write;
-- optional channel-wide postflight distinguishes plan success from complete channel coverage;
+- clean-interpreter import smoke tests cover the operational scripts in CI;
+- closure proof rejects malformed or internally inconsistent audit data;
+- closure proof requires exactly one channel-authored top-level comment on every public video;
+- a cryptographic coverage certificate, not terminal wording, is the final success artifact;
 - reruns recognize already-applied content and do not duplicate it.
 
 See `youtube-comment-live-rollout-lessons.md` for the incidents and reasoning behind these rules.
