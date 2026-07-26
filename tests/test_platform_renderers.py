@@ -29,7 +29,7 @@ def test_same_record_renders_for_youtube_and_vk() -> None:
     assert "🌊 Две редакции одного морского текста" in vk.text
     assert "*" not in vk.text
     assert "_" not in vk.text
-    assert f"Сообщество проекта в VK: https://vk.com/thelegendarypoet" in vk.text
+    assert "Сообщество проекта в VK: https://vk.com/thelegendarypoet" in vk.text
     assert f"{CANONICAL_VK_COMMUNITY_LABEL} https://vk.com/thelegendarypoet" in youtube.text
     assert "VK:\n" not in vk.text
 
