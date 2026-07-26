@@ -16,6 +16,11 @@ from video_channel_manager.editorial.rendering import (
     layout_issues,
 )
 from video_channel_manager.platforms.youtube.comments import validate_comment_text
+from video_channel_manager.platforms.youtube.labels import (
+    ACCEPTED_VK_COMMUNITY_LABELS,
+    CANONICAL_VK_COMMUNITY_LABEL,
+    canonicalize_youtube_link_label,
+)
 
 _DECORATIVE_MARKERS = ("📖", "📌", "🎧", "📚", "❄️", "⚔️", "🌊", "🎭", "📝", "🎼", "🕯️", "🗂️")
 
@@ -27,7 +32,9 @@ def _links(record: EditorialContentRecord, *, surface: str) -> tuple[LinkBlock, 
 def _render_blocks(record: EditorialContentRecord, *, surface: str) -> str:
     links = _links(record, surface=surface)
     question = f"{record.question.lead} {record.question.text}".strip()
-    link_lines = [f"{link.label} {link.url}".strip() for link in links]
+    link_lines = [
+        f"{canonicalize_youtube_link_label(link.kind, link.label)} {link.url}".strip() for link in links
+    ]
     blocks = [record.fact.heading, record.fact.text, question, "\n".join(link_lines)]
     return "\n\n".join(block for block in blocks if block).strip()
 
@@ -111,12 +118,12 @@ def _youtube_style_issues(record: EditorialContentRecord, *, surface: str) -> li
             )
         )
     vk = link_by_kind.get("vk")
-    if vk is not None and vk.label != "*Сообщество проекта VK:*":
+    if vk is not None and vk.label not in ACCEPTED_VK_COMMUNITY_LABELS:
         issues.append(
             RenderIssue(
                 code="youtube_vk_label_style",
                 severity="error",
-                message="VK link label must be exactly *Сообщество проекта VK:*.",
+                message=f"VK link label must be exactly {CANONICAL_VK_COMMUNITY_LABEL}.",
             )
         )
     primary = link_by_kind.get("primary_text")
