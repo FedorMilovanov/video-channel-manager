@@ -38,15 +38,17 @@ def object_sha256(payload: object) -> str:
 
 
 def valid_sha256(value: object) -> bool:
-    return _SHA256_RE.fullmatch(str(value or "").strip()) is not None
+    return isinstance(value, str) and _SHA256_RE.fullmatch(value.strip()) is not None
 
 
 def valid_stable_id(value: object) -> bool:
-    return _STABLE_ID_RE.fullmatch(str(value or "").strip()) is not None
+    return isinstance(value, str) and _STABLE_ID_RE.fullmatch(value.strip()) is not None
 
 
 def parse_aware_datetime(value: object) -> datetime | None:
-    text = str(value or "").strip()
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
     if not text:
         return None
     try:

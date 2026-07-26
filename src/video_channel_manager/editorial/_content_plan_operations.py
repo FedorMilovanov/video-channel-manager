@@ -100,20 +100,35 @@ def operation_state(
     current_text: str | None,
     current_revision: str | None,
 ) -> OperationState:
-    desired = canonical_text(str(operation.get("rendered_text") or ""))
+    rendered_raw = operation.get("rendered_text")
+    action_raw = operation.get("action")
+    if not isinstance(rendered_raw, str) or not isinstance(action_raw, str):
+        return "conflict"
+    if current_text is not None and not isinstance(current_text, str):
+        return "conflict"
+    if current_revision is not None and not isinstance(current_revision, str):
+        return "conflict"
+
+    desired = canonical_text(rendered_raw)
+    if not desired:
+        return "conflict"
     current = canonical_text(current_text) if current_text is not None else None
     if target_exists is True and current is not None and text_sha256(current) == text_sha256(desired):
         return "already_applied"
-    action = str(operation.get("action") or "")
+    action = action_raw.strip()
     if action == "create":
         return "ready" if target_exists is False else "conflict"
     if action != "update" or target_exists is not True:
         return "conflict"
+
     expected_before = operation.get("expected_before_text")
-    expected_revision = str(operation.get("expected_revision") or "").strip() or None
-    if expected_before is None or expected_revision is None:
+    expected_revision_raw = operation.get("expected_revision")
+    if not isinstance(expected_before, str) or not isinstance(expected_revision_raw, str):
         return "conflict"
-    before = canonical_text(str(expected_before))
+    expected_revision = expected_revision_raw.strip()
+    if not expected_revision:
+        return "conflict"
+    before = canonical_text(expected_before)
     if current == before and current_revision == expected_revision:
         return "ready"
     return "conflict"

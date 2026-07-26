@@ -17,9 +17,11 @@ from video_channel_manager.editorial._content_plan_validate_operation import val
 
 def validate_content_plan(payload: dict[str, Any]) -> list[str]:
     errors: list[str] = []
-    if payload.get("schema_name") != CONTENT_PLAN_SCHEMA_NAME:
+    schema_name = payload.get("schema_name")
+    if not isinstance(schema_name, str) or schema_name != CONTENT_PLAN_SCHEMA_NAME:
         errors.append(f"schema_name must be {CONTENT_PLAN_SCHEMA_NAME}")
-    if payload.get("schema_version") != CONTENT_PLAN_SCHEMA_VERSION:
+    schema_version = payload.get("schema_version")
+    if type(schema_version) is not int or schema_version != CONTENT_PLAN_SCHEMA_VERSION:
         errors.append(f"schema_version must be {CONTENT_PLAN_SCHEMA_VERSION}")
     source_snapshot = payload.get("source_snapshot")
     if not isinstance(source_snapshot, str) or not source_snapshot.strip():
@@ -80,14 +82,37 @@ def validate_content_plan(payload: dict[str, Any]) -> list[str]:
         if duplicates:
             errors.append(f"duplicate {label}: {', '.join(duplicates)}")
 
-    if payload.get("operation_set_sha256") != object_sha256(sorted(operation_ids)):
+    operation_set_sha = payload.get("operation_set_sha256")
+    if not isinstance(operation_set_sha, str):
+        errors.append("operation_set_sha256 must be a string")
+    elif not valid_sha256(operation_set_sha):
+        errors.append("operation_set_sha256 must be a sha256: digest")
+    if operation_set_sha != object_sha256(sorted(operation_ids)):
         errors.append("operation_set_sha256 mismatch")
-    expected_counts = dict(
-        sorted(Counter(str(item.get("action")) for item in operations if isinstance(item, dict)).items())
-    )
-    if payload.get("counts") != expected_counts:
+    countable_actions = [
+        action
+        for item in operations
+        if isinstance(item, dict)
+        for action in [item.get("action")]
+        if isinstance(action, str)
+    ]
+    expected_counts = dict(sorted(Counter(countable_actions).items()))
+    counts = payload.get("counts")
+    if not isinstance(counts, dict):
+        errors.append("counts must be an object")
+    elif any(
+        key not in {"create", "update"} or type(value) is not int or value < 0
+        for key, value in counts.items()
+    ):
+        errors.append("counts must map create/update to nonnegative integers")
+    if counts != expected_counts:
         errors.append("counts mismatch")
-    if payload.get("plan_sha256") != object_sha256(without_plan_digest(payload)):
+    plan_sha = payload.get("plan_sha256")
+    if not isinstance(plan_sha, str):
+        errors.append("plan_sha256 must be a string")
+    elif not valid_sha256(plan_sha):
+        errors.append("plan_sha256 must be a sha256: digest")
+    if plan_sha != object_sha256(without_plan_digest(payload)):
         errors.append("plan_sha256 mismatch")
     return errors
 

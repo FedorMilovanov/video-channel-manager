@@ -21,16 +21,31 @@ def without_plan_digest(payload: dict[str, Any]) -> dict[str, Any]:
     return copy
 
 
+def _operation_identity(operations: list[object]) -> tuple[list[str], list[str]]:
+    operation_ids: list[str] = []
+    actions: list[str] = []
+    for index, item in enumerate(operations):
+        if not isinstance(item, dict):
+            raise ValueError(f"Content plan operations[{index}] must be an object.")
+        operation_id = item.get("operation_id")
+        if not isinstance(operation_id, str) or not operation_id.strip():
+            raise ValueError(f"Content plan operations[{index}].operation_id must be a nonblank string.")
+        action = item.get("action")
+        if not isinstance(action, str) or action not in {"create", "update"}:
+            raise ValueError(f"Content plan operations[{index}].action must be create or update.")
+        operation_ids.append(operation_id)
+        actions.append(action)
+    return operation_ids, actions
+
+
 def seal_content_plan(payload: dict[str, Any]) -> dict[str, Any]:
     plan = deepcopy(payload)
     operations = plan.get("operations")
     if not isinstance(operations, list):
         raise ValueError("Content plan operations must be a list.")
-    operation_ids = [str(item.get("operation_id") or "") for item in operations if isinstance(item, dict)]
+    operation_ids, actions = _operation_identity(operations)
     plan["operation_set_sha256"] = object_sha256(sorted(operation_ids))
-    plan["counts"] = dict(
-        sorted(Counter(str(item.get("action")) for item in operations if isinstance(item, dict)).items())
-    )
+    plan["counts"] = dict(sorted(Counter(actions).items()))
     plan["plan_sha256"] = object_sha256(without_plan_digest(plan))
     return plan
 
