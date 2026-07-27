@@ -1,8 +1,10 @@
 [CmdletBinding()]
 param(
+    [switch]$Execute,
     [switch]$NoOpen,
     [string]$SourceBundle,
     [string]$SourceSnapshot,
+    [string]$ReviewedDryRunBundle,
     [int]$ExpectedCount = 3,
     [string]$Account = "legendary-poet",
     [int]$Community = 235216998
@@ -24,6 +26,9 @@ $Plan = Join-Path $Reports "vk-editorial-title-cosmetic-$Stamp.json"
 $Report = Join-Path $Reports "vk-editorial-title-cosmetic-$Stamp.md"
 $TempRunDir = Join-Path ([System.IO.Path]::GetTempPath()) "video-channel-manager\vk-title-cosmetic-$Stamp"
 $TemporarySnapshot = Join-Path $TempRunDir "source-vk-snapshot.json"
+$ReviewedPlan = Join-Path $TempRunDir "reviewed-plan.json"
+$ReviewedReport = Join-Path $TempRunDir "reviewed-plan.md"
+$ReviewedManifest = Join-Path $TempRunDir "reviewed-manifest.json"
 
 $ExpectedTitles = [ordered]@{
     "-235216998_456239022" = "我还从未如此疲惫 ⚡ Китайская Версия «Я Усталым Таким Ещё Не Был» ⚡ Сергей Есенин"
@@ -31,10 +36,12 @@ $ExpectedTitles = [ordered]@{
     "-235216998_456239101" = "Внимая Ужасам Войны... ⚡ Николай Некрасов"
 }
 
-function Expand-SourceSnapshot {
+function Expand-BundleEntry {
     param(
         [Parameter(Mandatory)]
         [string]$Bundle,
+        [Parameter(Mandatory)]
+        [string[]]$CandidateNames,
         [Parameter(Mandatory)]
         [string]$Destination
     )
@@ -42,12 +49,8 @@ function Expand-SourceSnapshot {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $Archive = [System.IO.Compression.ZipFile]::OpenRead($Bundle)
     try {
-        $PreferredNames = @(
-            "00-source-vk-snapshot.json",
-            "04-final-vk-snapshot.json"
-        )
         $Entry = $null
-        foreach ($Name in $PreferredNames) {
+        foreach ($Name in $CandidateNames) {
             $Entry = $Archive.Entries |
                 Where-Object { [System.IO.Path]::GetFileName($_.FullName) -eq $Name } |
                 Select-Object -First 1
@@ -56,7 +59,10 @@ function Expand-SourceSnapshot {
             }
         }
         if ($null -eq $Entry) {
-            throw "В ZIP не найден исходный или финальный VK snapshot: $Bundle"
+            throw (
+                "В ZIP не найден ни один из обязательных файлов: " +
+                ($CandidateNames -join ", ")
+            )
         }
         [System.IO.Compression.ZipFileExtensions]::ExtractToFile(
             $Entry,
@@ -69,66 +75,88 @@ function Expand-SourceSnapshot {
     }
 }
 
-try {
-    Set-Location -LiteralPath $Repo
-    New-Item -ItemType Directory -Path $Reports -Force | Out-Null
-    New-Item -ItemType Directory -Path $TempRunDir -Force | Out-Null
+function Get-ManifestFile {
+    param(
+        [Parameter(Mandatory)]
+        [object]$Manifest,
+        [Parameter(Mandatory)]
+        [string]$Name
+    )
 
-    if (-not (Test-Path -LiteralPath $Policy -PathType Leaf)) {
-        throw "Не найдена редакционная политика: $Policy"
-    }
+    return @(
+        $Manifest.files |
+        Where-Object { [string]$_.name -ceq $Name }
+    ) | Select-Object -First 1
+}
 
-    if (-not [string]::IsNullOrWhiteSpace($SourceSnapshot)) {
-        $ResolvedSnapshot = (Resolve-Path -LiteralPath $SourceSnapshot).Path
-    }
-    else {
-        if ([string]::IsNullOrWhiteSpace($SourceBundle)) {
-            $LatestDescriptionBundle = Get-ChildItem `
-                -LiteralPath $Handoffs `
-                -File `
-                -Filter "vk-description-wave-dry-run-*.zip" |
-                Sort-Object LastWriteTime -Descending |
-                Select-Object -First 1
+function Assert-ReviewedBundle {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Bundle
+    )
 
-            if ($null -ne $LatestDescriptionBundle) {
-                $SourceBundle = $LatestDescriptionBundle.FullName
-            }
-            else {
-                $LatestTitleBundle = Get-ChildItem `
-                    -LiteralPath $Handoffs `
-                    -File `
-                    -Filter "vk-title-wave-apply-*.zip" |
-                    Sort-Object LastWriteTime -Descending |
-                    Select-Object -First 1
-                if ($null -eq $LatestTitleBundle) {
-                    throw "Не найден ZIP dry-run описаний или успешной волны названий."
-                }
-                $SourceBundle = $LatestTitleBundle.FullName
-            }
-        }
+    Expand-BundleEntry `
+        -Bundle $Bundle `
+        -CandidateNames @("manifest.json") `
+        -Destination $ReviewedManifest
+    Expand-BundleEntry `
+        -Bundle $Bundle `
+        -CandidateNames @("plan.json") `
+        -Destination $ReviewedPlan
+    Expand-BundleEntry `
+        -Bundle $Bundle `
+        -CandidateNames @("plan-review.md") `
+        -Destination $ReviewedReport
 
-        $ResolvedBundle = (Resolve-Path -LiteralPath $SourceBundle).Path
-        Expand-SourceSnapshot `
-            -Bundle $ResolvedBundle `
-            -Destination $TemporarySnapshot
-        $ResolvedSnapshot = $TemporarySnapshot
-    }
-
-    & py -3.11 -X utf8 .\scripts\build_vk_editorial_title_wave.py `
-        "$ResolvedSnapshot" `
-        --policy-json "$Policy" `
-        --output "$Plan" `
-        --report "$Report"
-
-    if ($LASTEXITCODE -ne 0) {
-        throw "Не удалось построить косметический title-only план."
-    }
-
-    $PlanJson = Get-Content -LiteralPath $Plan -Raw -Encoding UTF8 |
+    $Manifest = Get-Content -LiteralPath $ReviewedManifest -Raw -Encoding UTF8 |
+        ConvertFrom-Json
+    $ReviewedPlanJson = Get-Content -LiteralPath $ReviewedPlan -Raw -Encoding UTF8 |
         ConvertFrom-Json
 
+    if ([string]$Manifest.status -ne "dry_run_completed" -or
+        [string]$Manifest.mode -ne "dry-run") {
+        throw "Выбранный ZIP не является завершённым dry-run."
+    }
+    if ([int]$Manifest.community_id -ne $Community) {
+        throw "Dry-run ZIP относится к другому VK-сообществу."
+    }
+    if ([int]$Manifest.ready -ne $ExpectedCount -or
+        [int]$Manifest.already_applied -ne 0 -or
+        [int]$Manifest.conflicts -ne 0) {
+        throw (
+            "Ожидался dry-run ready=$ExpectedCount, already_applied=0, conflicts=0."
+        )
+    }
+    if ([string]$Manifest.plan_sha256 -cne [string]$ReviewedPlanJson.plan_sha256) {
+        throw "Plan SHA в manifest не совпадает с plan.json."
+    }
+
+    $ManifestPlan = Get-ManifestFile -Manifest $Manifest -Name "plan.json"
+    if ($null -eq $ManifestPlan) {
+        throw "manifest.json не содержит plan.json."
+    }
+    $ActualPlanFileSha = "sha256:$((Get-FileHash -LiteralPath $ReviewedPlan -Algorithm SHA256).Hash.ToLowerInvariant())"
+    if ($ActualPlanFileSha -cne [string]$ManifestPlan.sha256) {
+        throw "SHA-256 файла plan.json не совпадает с manifest."
+    }
+
+    return $ReviewedPlanJson
+}
+
+function Assert-CosmeticPlan {
+    param(
+        [Parameter(Mandatory)]
+        [object]$PlanJson
+    )
+
+    if ([string]$PlanJson.operation_scope -ne "editorial_only") {
+        throw "План не является editorial_only."
+    }
     if ([string]$PlanJson.component_scope -ne "titles_only") {
         throw "План не является titles_only."
+    }
+    if ([int]$PlanJson.target_community_id -ne $Community) {
+        throw "План относится к другому VK-сообществу."
     }
     if ([int]$PlanJson.summary.total_operations -ne $ExpectedCount) {
         throw (
@@ -159,6 +187,8 @@ try {
             throw "Не совпало проверенное косметическое название: $VideoId"
         }
         if ([string]$Operation.before_description -cne [string]$Operation.after_description -or
+            [string]$Operation.before_description_sha256 -cne
+                [string]$Operation.after_description_sha256 -or
             [bool]$Operation.description_changed) {
             throw "Операция пытается изменить описание: $VideoId"
         }
@@ -167,8 +197,101 @@ try {
         }
     }
 
-    Write-Host "" 
-    Write-Host "КОСМЕТИЧЕСКИЙ ПЛАН ПРОВЕРЕН" -ForegroundColor Green
+    return $Operations
+}
+
+try {
+    Set-Location -LiteralPath $Repo
+    New-Item -ItemType Directory -Path $Reports -Force | Out-Null
+    New-Item -ItemType Directory -Path $TempRunDir -Force | Out-Null
+
+    if (-not (Test-Path -LiteralPath $Policy -PathType Leaf)) {
+        throw "Не найдена редакционная политика: $Policy"
+    }
+
+    if ($Execute) {
+        if ([string]::IsNullOrWhiteSpace($ReviewedDryRunBundle)) {
+            $LatestReviewedBundle = Get-ChildItem `
+                -LiteralPath $Handoffs `
+                -File `
+                -Filter "vk-title-wave-dry-run-*.zip" |
+                Sort-Object LastWriteTime -Descending |
+                Select-Object -First 1
+            if ($null -eq $LatestReviewedBundle) {
+                throw "Не найден проверенный ZIP косметического dry-run."
+            }
+            $ReviewedDryRunBundle = $LatestReviewedBundle.FullName
+        }
+
+        $ResolvedReviewedBundle = (Resolve-Path -LiteralPath $ReviewedDryRunBundle).Path
+        $PlanJson = Assert-ReviewedBundle -Bundle $ResolvedReviewedBundle
+        $Plan = $ReviewedPlan
+        $Report = $ReviewedReport
+    }
+    else {
+        if (-not [string]::IsNullOrWhiteSpace($SourceSnapshot)) {
+            $ResolvedSnapshot = (Resolve-Path -LiteralPath $SourceSnapshot).Path
+        }
+        else {
+            if ([string]::IsNullOrWhiteSpace($SourceBundle)) {
+                $LatestDescriptionBundle = Get-ChildItem `
+                    -LiteralPath $Handoffs `
+                    -File `
+                    -Filter "vk-description-wave-dry-run-*.zip" |
+                    Sort-Object LastWriteTime -Descending |
+                    Select-Object -First 1
+
+                if ($null -ne $LatestDescriptionBundle) {
+                    $SourceBundle = $LatestDescriptionBundle.FullName
+                }
+                else {
+                    $LatestTitleBundle = Get-ChildItem `
+                        -LiteralPath $Handoffs `
+                        -File `
+                        -Filter "vk-title-wave-apply-*.zip" |
+                        Sort-Object LastWriteTime -Descending |
+                        Select-Object -First 1
+                    if ($null -eq $LatestTitleBundle) {
+                        throw "Не найден ZIP dry-run описаний или успешной волны названий."
+                    }
+                    $SourceBundle = $LatestTitleBundle.FullName
+                }
+            }
+
+            $ResolvedBundle = (Resolve-Path -LiteralPath $SourceBundle).Path
+            Expand-BundleEntry `
+                -Bundle $ResolvedBundle `
+                -CandidateNames @(
+                    "00-source-vk-snapshot.json",
+                    "04-final-vk-snapshot.json"
+                ) `
+                -Destination $TemporarySnapshot
+            $ResolvedSnapshot = $TemporarySnapshot
+        }
+
+        & py -3.11 -X utf8 .\scripts\build_vk_editorial_title_wave.py `
+            "$ResolvedSnapshot" `
+            --policy-json "$Policy" `
+            --output "$Plan" `
+            --report "$Report"
+
+        if ($LASTEXITCODE -ne 0) {
+            throw "Не удалось построить косметический title-only план."
+        }
+
+        $PlanJson = Get-Content -LiteralPath $Plan -Raw -Encoding UTF8 |
+            ConvertFrom-Json
+    }
+
+    $Operations = Assert-CosmeticPlan -PlanJson $PlanJson
+
+    Write-Host ""
+    if ($Execute) {
+        Write-Host "ПРОВЕРЕННЫЙ КОСМЕТИЧЕСКИЙ ПЛАН ДОПУЩЕН К EXECUTE" -ForegroundColor Green
+    }
+    else {
+        Write-Host "КОСМЕТИЧЕСКИЙ ПЛАН ПРОВЕРЕН" -ForegroundColor Green
+    }
     foreach ($Operation in $Operations) {
         Write-Host "  $($Operation.before_title)" -ForegroundColor DarkGray
         Write-Host "  → $($Operation.after_title)" -ForegroundColor Cyan
@@ -185,13 +308,16 @@ try {
         "-Community",
         [string]$Community
     )
+    if ($Execute) {
+        $InvokeArguments += "-Execute"
+    }
     if ($NoOpen) {
         $InvokeArguments += "-NoOpen"
     }
 
     & pwsh @InvokeArguments
     if ($LASTEXITCODE -ne 0) {
-        throw "Title-wave dry-run wrapper завершился с кодом $LASTEXITCODE."
+        throw "Title-wave wrapper завершился с кодом $LASTEXITCODE."
     }
 }
 finally {
