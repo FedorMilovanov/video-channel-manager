@@ -26,6 +26,28 @@ p1-fet-whisper-20260727
 
 Execute-helper не строит новый план, не пересчитывает формулировки и не расширяет scope. Он извлекает точный подписанный `plan.json` из dry-run ZIP.
 
+## Проверенный dry-run
+
+Независимо проверен пакет:
+
+```text
+vk-reviewed-correction-p1-fet-dry-run-20260728-011101.zip
+bundle SHA-256: sha256:0f8020fd76456f8b6490e17e2142d46ca8f18f397ded400c3c093bbf719539f5
+plan SHA-256: sha256:095c0a1cce72a46eaee0a1ea37ca2e2ee6a682bbf393f3d02d6d7abece1872ec
+decisions SHA-256: sha256:ac13aaf20358d42db1808bcda46dd2a04fffc6c56abc85d6b3246fb10b3cd2d0
+ready: 2
+already_applied: 0
+conflicts: 0
+remote_writes: 0
+```
+
+Все manifest records, размеры и SHA-256 совпали. Guard-хэши используют проектный `text_sha256`, а не raw SHA байтов:
+
+```text
+-235216998_456239127: sha256:eb10b7f1e529c26c240dada4116d2a9666b33bb4e0e167839ad3f9762e959203
+-235216998_456239143: sha256:76c74c96f9aaa93d952531094d42c4b7a168f901566688bd349febd8b7b0c6b9
+```
+
 ## Разрешённые изменения
 
 - ровно два описания «Шёпот, робкое дыханье…»;
