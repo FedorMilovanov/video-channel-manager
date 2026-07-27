@@ -49,8 +49,7 @@ def build_vk_reviewed_correction_wave(
         raise ValueError("Correction decisions target a different VK community")
     if str(decisions.get("description_guard_hash_algorithm") or "") != VK_DESCRIPTION_GUARD_HASH_ALGORITHM:
         raise ValueError(
-            "Correction decisions must declare canonical description guards with "
-            f"{VK_DESCRIPTION_GUARD_HASH_ALGORITHM}"
+            f"Correction decisions must declare canonical description guards with {VK_DESCRIPTION_GUARD_HASH_ALGORITHM}"
         )
     expected_review_sha = str(decisions.get("source_review_bundle_sha256") or "")
     if source_review_bundle_sha256 != expected_review_sha:
