@@ -128,3 +128,21 @@ def test_fet_verifier_locks_sources_scope_and_forbidden_claims() -> None:
     assert "смерть наступила от сердечного приступа" in text
     assert "No VK mutation method was called" in text
     assert "video.edit" not in text
+
+
+def test_fet_verifier_pins_the_exact_independently_reviewed_artifact() -> None:
+    text = _VERIFIER.read_text(encoding="utf-8")
+
+    assert "sha256:8e173fba66cc0b298d1d87db384cb6a15e60c0c8d36c45db4ebb3e580a2221b9" in text
+    assert "sha256:095c0a1cce72a46eaee0a1ea37ca2e2ee6a682bbf393f3d02d6d7abece1872ec" in text
+    assert "sha256:ac13aaf20358d42db1808bcda46dd2a04fffc6c56abc85d6b3246fb10b3cd2d0" in text
+    assert "Dry-run ZIP is not the exact independently reviewed Fet artifact" in text
+    assert "Canonical text SHA-256 mismatch" in text
+    assert "After-state is not exactly reconstructed by reviewed replacements" in text
+    assert "URLs changed during Fet correction" in text
+    assert "Hashtags changed during Fet correction" in text
+    assert '"schema_version": 2' in text
+    assert '"artifact_review": "exact_independently_reviewed_bundle"' in text
+    assert '"canonical_text_hashes_verified": True' in text
+    assert '"reviewed_replacements_reconstructed": True' in text
+    assert '"urls_and_hashtags_unchanged": True' in text
