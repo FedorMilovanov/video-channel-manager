@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from video_channel_manager.platforms.vk.text_writer import VkVideoTextWriter
+from video_channel_manager.platforms.vk.text_writer import (
+    VkVideoTextWriter,
+    vk_edit_response_succeeded,
+)
 from video_channel_manager.platforms.vk.writer import VkWriteError
 
 
@@ -19,7 +22,7 @@ class VkEditorialWriter(VkVideoTextWriter):
                 "title": target_title,
             },
         )
-        if response not in (1, True):
+        if not vk_edit_response_succeeded(response):
             raise VkWriteError(
                 f"video.editAlbum returned an unexpected response: {response!r}",
                 method="video.editAlbum",
