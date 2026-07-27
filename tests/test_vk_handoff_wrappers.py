@@ -34,6 +34,36 @@ def test_description_wrapper_always_packages_and_cleans_temp_files() -> None:
     assert "Remove-Item -LiteralPath $TempRunDir -Recurse -Force" in text
 
 
+def test_reviewed_description_wrapper_uses_exact_signed_dry_run_zip() -> None:
+    text = _script("Invoke-VkReviewedDescriptionWave.ps1")
+
+    assert "[switch]$Execute" in text
+    assert "[string]$ReviewedDryRunBundle" in text
+    assert "vk-description-wave-dry-run-*.zip" in text
+    assert 'status -ne "dry_run_completed"' in text
+    assert 'mode -ne "dry-run"' in text
+    assert 'component_scope -ne "descriptions_only"' in text
+    assert "Manifest.plan_sha256" in text
+    assert "Get-FileHash -LiteralPath $Path -Algorithm SHA256" in text
+    assert "00-source-vk-snapshot.json" in text
+    assert "editorial-policy.json" in text
+
+
+def test_reviewed_description_wrapper_fails_closed_on_hidden_changes() -> None:
+    text = _script("Invoke-VkReviewedDescriptionWave.ps1")
+
+    assert "[int]$ExpectedCount = 111" in text
+    assert "before_title_sha256" in text
+    assert "after_title_sha256" in text
+    assert "semantic_body_preserved" in text
+    assert "semantic_body_sha256" in text
+    assert "album_title_operations" in text
+    assert "CurrentPolicySha" in text
+    assert '"-Execute"' in text
+    assert "Invoke-VkDescriptionWave.ps1" in text
+    assert "Remove-Item -LiteralPath $TempRunDir -Recurse -Force" in text
+
+
 def test_cosmetic_title_wrapper_is_exactly_scoped_and_semantic_safe() -> None:
     text = _script("Invoke-VkCosmeticTitlePatch.ps1")
 
