@@ -7,7 +7,9 @@ import pytest
 from video_channel_manager.domain.enums import ChannelKind, PlatformName
 from video_channel_manager.domain.models import ChannelRecord, RemoteRef, VideoRecord
 from video_channel_manager.exchange.audit_package import AuditPackage
-from video_channel_manager.platforms.vk.editorial_title_wave import build_vk_editorial_title_wave
+from video_channel_manager.platforms.vk.editorial_title_wave import (
+    build_vk_editorial_title_wave,
+)
 
 
 def _ref(remote_id: str) -> RemoteRef:
@@ -69,7 +71,9 @@ def _policy() -> dict[str, object]:
         "playlist_replacements": {},
         "youtube_video_replacements": {},
         "title_overrides": {
-            "-235216998_456239047": "Исповедь Самоубийцы ⚡ ВЕРСИЯ 2 ⚡ Сергей Есенин",
+            "-235216998_456239047": (
+                "Исповедь Самоубийцы ⚡ ВЕРСИЯ 2 ⚡ Сергей Есенин"
+            ),
             "-235216998_456239040": "Сукин Сын ⚡ Сергей Есенин",
             "-235216998_456239041": "Сукин Сын ⚡ Сергей Есенин",
         },
@@ -78,6 +82,7 @@ def _policy() -> dict[str, object]:
             "-235216998_456239040",
             "-235216998_456239041",
         ],
+        "title_semantic_label_reviewed_ids": [],
         "title_review_only_reason": "Manual distinction required.",
     }
 
@@ -101,9 +106,15 @@ def test_title_wave_changes_titles_only_and_excludes_ambiguous_pairs() -> None:
     }
     operation = plan["video_text_operations"][0]
     assert operation["target_video_id"] == "-235216998_456239047"
-    assert operation["after_title"] == "Исповедь Самоубийцы ⚡ ВЕРСИЯ 2 ⚡ Сергей Есенин"
+    assert (
+        operation["after_title"]
+        == "Исповедь Самоубийцы ⚡ ВЕРСИЯ 2 ⚡ Сергей Есенин"
+    )
     assert operation["after_description"] == operation["before_description"]
     assert operation["description_changed"] is False
+    assert operation["semantic_title_labels_before"] == ["version:2"]
+    assert operation["semantic_title_labels_after"] == ["version:2"]
+    assert operation["semantic_title_labels_preserved"] is True
     excluded = {
         finding["target_video_id"]
         for finding in plan["review_only"]
@@ -146,3 +157,34 @@ def test_title_wave_rejects_unknown_review_exclusion() -> None:
 
     with pytest.raises(ValueError, match="Unknown title_review_only_ids"):
         build_vk_editorial_title_wave(_audit(), policy)
+
+
+def test_title_wave_rejects_inferred_short_or_full_labels() -> None:
+    policy = deepcopy(_policy())
+    policy["title_overrides"] = {
+        "-235216998_456239047": (
+            "Исповедь Самоубийцы ⚡ КОРОТКАЯ ВЕРСИЯ 2 ⚡ Сергей Есенин"
+        )
+    }
+
+    with pytest.raises(ValueError, match="changes semantic labels"):
+        build_vk_editorial_title_wave(_audit(), policy)
+
+
+def test_title_wave_allows_exact_reviewed_semantic_label_change() -> None:
+    policy = deepcopy(_policy())
+    policy["title_overrides"] = {
+        "-235216998_456239047": (
+            "Исповедь Самоубийцы ⚡ КОРОТКАЯ ВЕРСИЯ 2 ⚡ Сергей Есенин"
+        )
+    }
+    policy["title_semantic_label_reviewed_ids"] = [
+        "-235216998_456239047"
+    ]
+
+    plan = build_vk_editorial_title_wave(_audit(), policy)
+
+    operation = plan["video_text_operations"][0]
+    assert operation["semantic_title_labels_before"] == ["version:2"]
+    assert operation["semantic_title_labels_after"] == ["short", "version:2"]
+    assert operation["semantic_title_labels_preserved"] is False
