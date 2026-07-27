@@ -42,9 +42,7 @@ def build_vk_editorial_description_wave(
 
     operations: list[dict[str, Any]] = []
     review_only = [
-        deepcopy(finding)
-        for finding in base_plan["review_only"]
-        if finding.get("kind") == "description_too_long"
+        deepcopy(finding) for finding in base_plan["review_only"] if finding.get("kind") == "description_too_long"
     ]
     deferred_review = [
         deepcopy(finding)
@@ -76,8 +74,7 @@ def build_vk_editorial_description_wave(
         after_body = description_semantic_body(after_description, policy)
         if before_body != after_body:
             raise ValueError(
-                "Description cleanup changes semantic body for "
-                f"{remote_id}; move it to description_review_only_ids"
+                f"Description cleanup changes semantic body for {remote_id}; move it to description_review_only_ids"
             )
 
         reasons = description_change_reasons(before_description, after_description, policy)
@@ -87,9 +84,7 @@ def build_vk_editorial_description_wave(
 
         description_operation = deepcopy(operation)
         description_operation["after_title"] = description_operation["before_title"]
-        description_operation["after_title_sha256"] = description_operation[
-            "before_title_sha256"
-        ]
+        description_operation["after_title_sha256"] = description_operation["before_title_sha256"]
         description_operation["title_changed"] = False
         description_operation["change_reasons"] = reasons
         description_operation["semantic_body_sha256"] = canonical_sha256(before_body)
