@@ -41,7 +41,7 @@
       "decision_id": "correct-456239046",
       "target_video_id": "-235216998_456239046",
       "expected_title": "Исповедь Самоубийцы ⚡ ВЕРСИЯ 2 - КОРОТКАЯ ⚡ Сергей Есенин",
-      "expected_description_sha256": "sha256:db3f964d3bfff835342dcdc825f28033836682d27052d09919b51baabb819e1e",
+      "expected_description_sha256": "sha256:ce04bc297d29cb606a23ec62f8138f44f1ba92ebc7ebaab3dc1b6bdbb0895a5e",
       "replacement_ids": [
         "remove-unverifiable-final-faith-judgment",
         "correct-academic-date"
@@ -55,7 +55,7 @@
       "decision_id": "correct-456239047",
       "target_video_id": "-235216998_456239047",
       "expected_title": "Исповедь Самоубийцы ⚡ ВЕРСИЯ 2 ⚡ Сергей Есенин",
-      "expected_description_sha256": "sha256:81a2a410e6784f34475813975572e1c49357ea492671b53500cfd6cf20f638b9",
+      "expected_description_sha256": "sha256:f2256a7cf78d01aebe243a6facaa130a9ff9d8c809735f32967c20ec4936cd79",
       "replacement_ids": [
         "remove-unverifiable-final-faith-judgment",
         "correct-academic-date"
@@ -69,7 +69,7 @@
       "decision_id": "correct-456239050",
       "target_video_id": "-235216998_456239050",
       "expected_title": "Исповедь Самоубийцы ⚡ Сергей Есенин",
-      "expected_description_sha256": "sha256:f1a5a76b878f7424cd88851cab7dbacf8f9f6bea7e5b2c16bc5b366911496959",
+      "expected_description_sha256": "sha256:00434b91ad72e1e7229484f963e034d240269628f960a767c03e207d437bd1a5",
       "replacement_ids": [
         "remove-unverifiable-final-faith-judgment",
         "correct-academic-date"
