@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from copy import deepcopy
 
 import pytest
@@ -8,7 +9,10 @@ from video_channel_manager.domain.enums import ChannelKind, PlatformName
 from video_channel_manager.domain.models import ChannelRecord, RemoteRef, VideoRecord
 from video_channel_manager.exchange.audit_package import AuditPackage
 from video_channel_manager.platforms.vk.catalog import text_sha256
-from video_channel_manager.platforms.vk.editorial_correction_wave import build_vk_reviewed_correction_wave
+from video_channel_manager.platforms.vk.editorial_correction_wave import (
+    VK_DESCRIPTION_GUARD_HASH_ALGORITHM,
+    build_vk_reviewed_correction_wave,
+)
 
 
 def _ref(remote_id: str) -> RemoteRef:
@@ -45,6 +49,7 @@ def _decisions() -> dict[str, object]:
         "target_community_id": 235216998,
         "source_plan_sha256": "sha256:source-plan",
         "source_review_bundle_sha256": "sha256:review-bundle",
+        "description_guard_hash_algorithm": VK_DESCRIPTION_GUARD_HASH_ALGORITHM,
         "editorial_profile": {
             "profile_id": "the-legendary-poet-historical-evangelical-v1",
             "authority_repository": "FedorMilovanov/TheLegendaryPoet",
@@ -149,6 +154,33 @@ def test_reviewed_correction_wave_rejects_review_bundle_mismatch() -> None:
             _audit(),
             _decisions(),
             source_review_bundle_sha256="sha256:wrong",
+        )
+
+
+def test_reviewed_correction_wave_requires_declared_guard_algorithm() -> None:
+    decisions = deepcopy(_decisions())
+    decisions.pop("description_guard_hash_algorithm")
+
+    with pytest.raises(ValueError, match=VK_DESCRIPTION_GUARD_HASH_ALGORITHM):
+        build_vk_reviewed_correction_wave(
+            _audit(),
+            decisions,
+            source_review_bundle_sha256="sha256:review-bundle",
+        )
+
+
+def test_reviewed_correction_wave_rejects_raw_text_sha_as_guard() -> None:
+    decisions = deepcopy(_decisions())
+    description = _audit().videos[0].description
+    raw_sha = f"sha256:{hashlib.sha256(description.encode('utf-8')).hexdigest()}"
+    assert raw_sha != text_sha256(description)
+    decisions["decisions"][0]["expected_description_sha256"] = raw_sha
+
+    with pytest.raises(ValueError, match="raw_text_sha256"):
+        build_vk_reviewed_correction_wave(
+            _audit(),
+            decisions,
+            source_review_bundle_sha256="sha256:review-bundle",
         )
 
 
