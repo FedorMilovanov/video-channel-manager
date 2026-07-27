@@ -4,9 +4,7 @@ from pathlib import Path
 
 
 def test_correction_dry_run_verifier_locks_exact_scope() -> None:
-    text = Path("scripts/verify_vk_reviewed_correction_dry_run.py").read_text(
-        encoding="utf-8"
-    )
+    text = Path("scripts/verify_vk_reviewed_correction_dry_run.py").read_text(encoding="utf-8")
 
     assert "verified_dry_run" in text
     assert "source-review-bundle.zip" in text
@@ -23,9 +21,7 @@ def test_correction_dry_run_verifier_locks_exact_scope() -> None:
 
 
 def test_correction_apply_verifier_checks_targets_and_non_targets() -> None:
-    text = Path("scripts/verify_vk_reviewed_correction_apply_bundle.py").read_text(
-        encoding="utf-8"
-    )
+    text = Path("scripts/verify_vk_reviewed_correction_apply_bundle.py").read_text(encoding="utf-8")
 
     assert "verify_dry_run_bundle" in text
     assert "previous-reviewed-dry-run.zip" in text
@@ -41,9 +37,7 @@ def test_correction_apply_verifier_checks_targets_and_non_targets() -> None:
 
 
 def test_correction_apply_wrapper_is_explicit_and_double_verified() -> None:
-    text = Path("scripts/Invoke-VkReviewedCorrectionApply.ps1").read_text(
-        encoding="utf-8"
-    )
+    text = Path("scripts/Invoke-VkReviewedCorrectionApply.ps1").read_text(encoding="utf-8")
 
     assert "if (-not $Execute)" in text
     assert "vk-reviewed-correction-p1-dry-run-*.zip" in text
@@ -63,9 +57,7 @@ def test_correction_apply_wrapper_is_explicit_and_double_verified() -> None:
 
 
 def test_correction_dry_run_readme_matches_owner_stance() -> None:
-    text = Path("scripts/Invoke-VkReviewedCorrectionWave.ps1").read_text(
-        encoding="utf-8"
-    )
+    text = Path("scripts/Invoke-VkReviewedCorrectionWave.ps1").read_text(encoding="utf-8")
 
     assert "духовный вывод, согласованный с PROJECT_CHARTER" in text
     assert "удаление недоказуемого утверждения" not in text
