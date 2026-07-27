@@ -23,10 +23,7 @@ _SEMANTIC_LABEL_PATTERNS = {
     "full": re.compile(r"\bFULL\b|\bПОЛН\w*\b", re.IGNORECASE),
     "final": re.compile(r"\bФИНАЛЬН\w*\b", re.IGNORECASE),
 }
-_VERSION_LABEL_RE = re.compile(
-    r"\b(?:VERSION|ВЕРСИЯ)\s*([1-9]\d*)\b",
-    re.IGNORECASE,
-)
+_VERSION_LABEL_RE = re.compile(r"\b(?:VERSION|ВЕРСИЯ)\s*([1-9]\d*)\b", re.IGNORECASE)
 
 
 def _title_groups(titles: dict[str, str]) -> dict[str, set[str]]:
@@ -45,14 +42,8 @@ def _semantic_title_labels(value: str) -> set[str]:
     """
 
     title = canonical_vk_text(value)
-    labels = {
-        label
-        for label, pattern in _SEMANTIC_LABEL_PATTERNS.items()
-        if pattern.search(title)
-    }
-    labels.update(
-        f"version:{match}" for match in _VERSION_LABEL_RE.findall(title)
-    )
+    labels = {label for label, pattern in _SEMANTIC_LABEL_PATTERNS.items() if pattern.search(title)}
+    labels.update(f"version:{match}" for match in _VERSION_LABEL_RE.findall(title))
     return labels
 
 
@@ -79,9 +70,7 @@ def build_vk_editorial_title_wave(
     }
     semantic_reviewed_ids = {
         str(remote_id).strip()
-        for remote_id in list(
-            policy.get("title_semantic_label_reviewed_ids") or []
-        )
+        for remote_id in list(policy.get("title_semantic_label_reviewed_ids") or [])
         if str(remote_id).strip()
     }
     target_ids = {video.ref.remote_id for video in target.videos}
@@ -90,20 +79,11 @@ def build_vk_editorial_title_wave(
         raise ValueError(f"Unknown title_review_only_ids: {unknown_exclusions}")
     unknown_semantic_reviews = sorted(semantic_reviewed_ids - target_ids)
     if unknown_semantic_reviews:
-        raise ValueError(
-            "Unknown title_semantic_label_reviewed_ids: "
-            f"{unknown_semantic_reviews}"
-        )
+        raise ValueError(f"Unknown title_semantic_label_reviewed_ids: {unknown_semantic_reviews}")
 
     operations: list[dict[str, Any]] = []
-    proposed_by_id = {
-        video.ref.remote_id: canonical_vk_text(video.title)
-        for video in target.videos
-    }
-    base_operations = {
-        operation["target_video_id"]: operation
-        for operation in base_plan["video_text_operations"]
-    }
+    proposed_by_id = {video.ref.remote_id: canonical_vk_text(video.title) for video in target.videos}
+    base_operations = {operation["target_video_id"]: operation for operation in base_plan["video_text_operations"]}
 
     for remote_id, operation in base_operations.items():
         if not bool(operation["title_changed"]):
@@ -123,29 +103,18 @@ def build_vk_editorial_title_wave(
             )
 
         title_operation = deepcopy(operation)
-        title_operation["after_description"] = title_operation[
-            "before_description"
-        ]
-        title_operation["after_description_sha256"] = title_operation[
-            "before_description_sha256"
-        ]
+        title_operation["after_description"] = title_operation["before_description"]
+        title_operation["after_description_sha256"] = title_operation["before_description_sha256"]
         title_operation["description_changed"] = False
         title_operation["semantic_title_labels_before"] = sorted(before_labels)
         title_operation["semantic_title_labels_after"] = sorted(after_labels)
-        title_operation["semantic_title_labels_preserved"] = (
-            before_labels == after_labels
-        )
+        title_operation["semantic_title_labels_preserved"] = before_labels == after_labels
         operations.append(title_operation)
 
-    before_titles = {
-        video.ref.remote_id: canonical_vk_text(video.title)
-        for video in target.videos
-    }
+    before_titles = {video.ref.remote_id: canonical_vk_text(video.title) for video in target.videos}
     final_titles = dict(before_titles)
     for operation in operations:
-        final_titles[operation["target_video_id"]] = str(
-            operation["after_title"]
-        )
+        final_titles[operation["target_video_id"]] = str(operation["after_title"])
 
     before_groups = _title_groups(before_titles)
     final_groups = _title_groups(final_titles)
@@ -161,19 +130,14 @@ def build_vk_editorial_title_wave(
                 }
             )
     if introduced_collisions:
-        raise ValueError(
-            f"Title-only wave introduces duplicate titles: {introduced_collisions}"
-        )
+        raise ValueError(f"Title-only wave introduces duplicate titles: {introduced_collisions}")
 
     review_only = [
         deepcopy(finding)
         for finding in base_plan["review_only"]
         if finding.get("kind") == "mention_rendering_ui_test_required"
     ]
-    reason = str(
-        policy.get("title_review_only_reason")
-        or "Ambiguous title requires manual audio/visual review."
-    )
+    reason = str(policy.get("title_review_only_reason") or "Ambiguous title requires manual audio/visual review.")
     for remote_id in sorted(excluded_ids):
         before_title = before_titles[remote_id]
         proposed_title = proposed_by_id.get(remote_id, before_title)
@@ -199,9 +163,7 @@ def build_vk_editorial_title_wave(
         "target_snapshot_id": base_plan["target_snapshot_id"],
         "target_community_id": base_plan["target_community_id"],
         "target_video_ids_sha256": base_plan["target_video_ids_sha256"],
-        "initial_memberships_sha256": base_plan[
-            "initial_memberships_sha256"
-        ],
+        "initial_memberships_sha256": base_plan["initial_memberships_sha256"],
         "policy": policy,
         "policy_sha256": canonical_sha256(policy),
         "source_full_plan_sha256": base_plan["plan_sha256"],
