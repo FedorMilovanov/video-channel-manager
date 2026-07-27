@@ -51,8 +51,7 @@ def _audit() -> AuditPackage:
             _video(
                 "-235216998_456239019",
                 "Чёрный Человек ⚡ ВЕРСИЯ 4 ⚡ Сергей Есенин",
-                "Тема смерти требует отдельной фактологической проверки.\n"
-                "https://youtu.be/VIDEO_ONE",
+                "Тема смерти требует отдельной фактологической проверки.\nhttps://youtu.be/VIDEO_ONE",
             ),
         ],
         collections=[],
@@ -100,9 +99,9 @@ def test_description_wave_changes_descriptions_only_and_preserves_body() -> None
         assert operation["title_changed"] is False
         assert operation["description_changed"] is True
         assert operation["semantic_body_preserved"] is True
-        assert description_semantic_body(
-            operation["before_description"], policy
-        ) == description_semantic_body(operation["after_description"], policy)
+        assert description_semantic_body(operation["before_description"], policy) == description_semantic_body(
+            operation["after_description"], policy
+        )
         assert operation["change_reasons"]
 
     first = plan["video_text_operations"][0]
@@ -117,9 +116,7 @@ def test_description_semantic_body_detects_content_rewrite() -> None:
     before = "Сохраняем каждое содержательное слово. https://example.com/a"
     after = "Удаляем одно содержательное слово. https://example.com/b"
 
-    assert description_semantic_body(before, policy) != description_semantic_body(
-        after, policy
-    )
+    assert description_semantic_body(before, policy) != description_semantic_body(after, policy)
 
 
 def test_description_wave_excludes_explicit_manual_review_ids() -> None:
@@ -127,9 +124,7 @@ def test_description_wave_excludes_explicit_manual_review_ids() -> None:
     policy["description_review_only_ids"] = ["-235216998_456239017"]
     plan = build_vk_editorial_description_wave(_audit(), policy)
 
-    operation_ids = {
-        operation["target_video_id"] for operation in plan["video_text_operations"]
-    }
+    operation_ids = {operation["target_video_id"] for operation in plan["video_text_operations"]}
     assert "-235216998_456239017" not in operation_ids
     assert any(
         finding.get("target_video_id") == "-235216998_456239017"
