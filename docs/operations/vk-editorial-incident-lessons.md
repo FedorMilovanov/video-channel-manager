@@ -105,11 +105,14 @@ A one-file review workflow is incomplete if the operator must later search `data
 
 Permanent rules:
 
-- the cosmetic execute helper selects the latest reviewed title dry-run ZIP by default;
-- it extracts `manifest.json`, `plan.json`, and the readable report into a temporary directory;
-- execute requires `status=dry_run_completed`, `mode=dry-run`, the exact ready count, and zero conflicts;
+- reviewed execute helpers select the latest matching completed dry-run ZIP by default;
+- they extract `manifest.json`, `plan.json`, readable reports, policy, and source snapshot into a temporary directory;
+- execute requires `status=dry_run_completed`, `mode=dry-run`, the exact component scope, the exact ready count, zero already-applied operations, and zero conflicts;
 - manifest `plan_sha256`, embedded plan `plan_sha256`, and the file SHA-256 for `plan.json` must agree;
-- the exact three video IDs, exact approved after-titles, unchanged descriptions, and preserved semantic labels are revalidated before invoking the writer;
+- every extracted artifact is checked against its manifest byte size and SHA-256;
+- the current repository policy must be byte-identical to the reviewed policy in the ZIP;
+- title execute revalidates exact approved IDs, after-titles, unchanged descriptions, and preserved semantic labels;
+- description execute revalidates unchanged titles, changed descriptions, semantic-body preservation, zero album/catalog operations, and exact source snapshot identity;
 - the operator runs one short `-Execute` command and sends back one apply ZIP.
 
 ## Operator rule
