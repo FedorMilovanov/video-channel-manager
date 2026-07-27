@@ -79,9 +79,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     final_payload = _json_bytes(raw["04-final-vk-snapshot.json"], name="04-final-vk-snapshot.json")
 
     manifest_files = {
-        str(item["name"]): item
-        for item in manifest.get("files", [])
-        if isinstance(item, dict) and "name" in item
+        str(item["name"]): item for item in manifest.get("files", []) if isinstance(item, dict) and "name" in item
     }
     integrity_issues: list[str] = []
     for name, item in manifest_files.items():
@@ -160,14 +158,8 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     if mismatches:
         raise ValueError("Final VK state verification failed: " + "; ".join(mismatches[:10]))
 
-    source_collection_titles = {
-        _remote_id(item): item.title
-        for item in source.collections
-    }
-    final_collection_titles = {
-        _remote_id(item): item.title
-        for item in final.collections
-    }
+    source_collection_titles = {_remote_id(item): item.title for item in source.collections}
+    final_collection_titles = {_remote_id(item): item.title for item in final.collections}
     if source_collection_titles != final_collection_titles:
         raise ValueError("VK album inventory or titles changed during the description wave")
     if _membership_rows(source) != _membership_rows(final):
