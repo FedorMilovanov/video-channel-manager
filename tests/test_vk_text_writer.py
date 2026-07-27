@@ -80,6 +80,48 @@ def test_replace_text_accepts_structured_success_and_verifies_live_state(tmp_pat
     ]
 
 
+def test_title_only_edit_omits_equivalent_description_from_request(tmp_path: Path) -> None:
+    current = {
+        "owner_id": -235216998,
+        "id": 456239017,
+        "title": "Старое название",
+        "description": "Строка с пробелами  \nВторая строка\u200b",
+    }
+    edit_bodies: list[bytes] = []
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/video.get"):
+            return httpx.Response(200, json={"response": {"count": 1, "items": [dict(current)]}})
+        if request.url.path.endswith("/video.edit"):
+            edit_bodies.append(request.content)
+            current["title"] = "Новое название"
+            return httpx.Response(200, json={"response": {"success": 1}})
+        raise AssertionError(request.url)
+
+    writer = VkVideoTextWriter(
+        token_store=_store(tmp_path),
+        account_alias="legendary-poet",
+        http_client=httpx.Client(transport=httpx.MockTransport(respond)),
+        api_base_url="https://api.example/method",
+    )
+
+    updated = writer.replace_text_if_current(
+        owner_id=-235216998,
+        video_id=456239017,
+        expected_title="Старое название",
+        new_title="Новое название",
+        expected_description="Строка с пробелами\nВторая строка",
+        new_description="Строка с пробелами\nВторая строка",
+        verification_delay_seconds=0,
+    )
+
+    assert updated.title == "Новое название"
+    assert updated.description == "Строка с пробелами  \nВторая строка\u200b"
+    assert len(edit_bodies) == 1
+    assert b"name=" in edit_bodies[0]
+    assert b"desc=" not in edit_bodies[0]
+
+
 def test_replace_text_rejects_structured_response_without_success(tmp_path: Path) -> None:
     def respond(request: httpx.Request) -> httpx.Response:
         if request.url.path.endswith("/video.get"):
