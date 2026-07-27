@@ -76,11 +76,7 @@ def _remote_id(item: dict[str, Any]) -> str:
 
 
 def _video_map(snapshot: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    return {
-        _remote_id(item): item
-        for item in snapshot.get("videos", [])
-        if isinstance(item, dict)
-    }
+    return {_remote_id(item): item for item in snapshot.get("videos", []) if isinstance(item, dict)}
 
 
 def _coverage_sha256(snapshot: dict[str, Any]) -> str:
@@ -88,13 +84,7 @@ def _coverage_sha256(snapshot: dict[str, Any]) -> str:
 
 
 def _membership_identity_rows(snapshot: dict[str, Any]) -> list[tuple[str, str]]:
-    """Return stable membership identity, excluding read-order metadata.
-
-    VK can return two adjacent items in a system collection with exchanged
-    ``position`` values on consecutive read-only scans. A description writer
-    cannot mutate album order, so identity is the collection/video pair. Real
-    membership additions or removals still fail this strict multiset check.
-    """
+    """Return stable membership identity, excluding read-order metadata."""
 
     return [
         (
@@ -117,9 +107,7 @@ def _membership_positions(snapshot: dict[str, Any]) -> dict[tuple[str, str], int
     }
 
 
-def _membership_position_changes(
-    source: dict[str, Any], final: dict[str, Any]
-) -> list[dict[str, Any]]:
+def _membership_position_changes(source: dict[str, Any], final: dict[str, Any]) -> list[dict[str, Any]]:
     before = _membership_positions(source)
     after = _membership_positions(final)
     return [
@@ -148,15 +136,11 @@ def _collection_titles(snapshot: dict[str, Any]) -> dict[str, str]:
 
 def _verify_manifest(raw: dict[str, bytes], manifest: dict[str, Any]) -> None:
     records = {
-        str(item["name"]): item
-        for item in manifest.get("files", [])
-        if isinstance(item, dict) and item.get("name")
+        str(item["name"]): item for item in manifest.get("files", []) if isinstance(item, dict) and item.get("name")
     }
     missing_records = sorted((_REQUIRED_FILES - {"manifest.json"}) - records.keys())
     if missing_records:
-        raise ValueError(
-            "Manifest is missing required file records: " + ", ".join(missing_records)
-        )
+        raise ValueError("Manifest is missing required file records: " + ", ".join(missing_records))
     issues: list[str] = []
     for name, record in records.items():
         content = raw.get(name)
@@ -183,22 +167,12 @@ def _verify_previous_dry_run(raw_zip: bytes, plan_sha256: str) -> dict[str, Any]
     return report
 
 
-def verify_bundle(path: Path) -> dict[str, Any]:
-    with zipfile.ZipFile(path) as archive:
-        names = set(archive.namelist())
-        missing = sorted(_REQUIRED_FILES - names)
-        if missing:
-            raise ValueError("Bundle is missing required files: " + ", ".join(missing))
-        raw = {name: archive.read(name) for name in names}
-
-    manifest = _json_bytes(raw["manifest.json"], name="manifest.json")
-    plan = _json_bytes(raw["plan.json"], name="plan.json")
-    decisions = _json_bytes(raw["reviewed-decisions.json"], name="reviewed-decisions.json")
-    result = _json_bytes(raw["03-result.json"], name="03-result.json")
-    source = _json_bytes(raw["00-source-vk-snapshot.json"], name="00-source-vk-snapshot.json")
-    final = _json_bytes(raw["04-final-vk-snapshot.json"], name="04-final-vk-snapshot.json")
-    _verify_manifest(raw, manifest)
-
+def _verify_plan_and_result(
+    manifest: dict[str, Any],
+    plan: dict[str, Any],
+    decisions: dict[str, Any],
+    result: dict[str, Any],
+) -> tuple[str, str, dict[str, dict[str, Any]], Counter[str]]:
     if manifest.get("mode") != "apply":
         raise ValueError("Handoff is not an apply bundle")
     if manifest.get("component_scope") != "descriptions_only":
@@ -210,13 +184,12 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     if int(manifest.get("conflicts", -1)) != 0:
         raise ValueError("Apply handoff reports conflicts")
 
-    expected_plan_sha = _canonical_sha256(
-        {key: value for key, value in plan.items() if key != "plan_sha256"}
-    )
-    if plan.get("plan_sha256") != expected_plan_sha:
+    plan_sha256 = _canonical_sha256({key: value for key, value in plan.items() if key != "plan_sha256"})
+    if plan.get("plan_sha256") != plan_sha256:
         raise ValueError("Plan self-digest mismatch")
-    if manifest.get("plan_sha256") != expected_plan_sha:
+    if manifest.get("plan_sha256") != plan_sha256:
         raise ValueError("Manifest plan SHA-256 differs from plan.json")
+
     decisions_sha256 = _canonical_sha256(decisions)
     if plan.get("policy") != decisions:
         raise ValueError("Plan policy differs from reviewed-decisions.json")
@@ -239,7 +212,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     summary = plan.get("summary")
     if not isinstance(summary, dict):
         raise ValueError("Plan has no summary")
-    expected_zero = (
+    zero_fields = (
         "titles_to_update",
         "albums_to_rename",
         "placements_to_add",
@@ -248,7 +221,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
         "review_only",
         "deferred_editorial_review",
     )
-    if any(int(summary.get(field, -1)) != 0 for field in expected_zero):
+    if any(int(summary.get(field, -1)) != 0 for field in zero_fields):
         raise ValueError("Plan contains non-reviewed or non-description scope")
     if (
         int(summary.get("video_text_operations", -1)) != 3
@@ -264,33 +237,21 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     if set(operation_by_id) != _TARGET_IDS:
         raise ValueError("Apply target IDs differ from the reviewed set")
 
-    previous_report = _verify_previous_dry_run(
-        raw["previous-reviewed-dry-run.zip"], expected_plan_sha
-    )
-    expected_dry_run_sha = _file_sha256(raw["previous-reviewed-dry-run.zip"])
-    manifest_dry_run_sha = manifest.get("source_dry_run_bundle_sha256")
-    if manifest_dry_run_sha not in {None, expected_dry_run_sha}:
-        raise ValueError("Manifest source dry-run SHA-256 mismatch")
-
     if result.get("status") != "completed":
         raise ValueError("Result journal is not completed")
-    if result.get("plan_sha256") != expected_plan_sha:
+    if result.get("plan_sha256") != plan_sha256:
         raise ValueError("Result journal belongs to another plan")
     if int(result.get("community_id", 0)) != 235216998:
         raise ValueError("Result journal belongs to another VK community")
     result_operations = result.get("operations")
     if not isinstance(result_operations, list):
         raise ValueError("Result operations must be a list")
-    statuses = Counter(
-        str(item.get("status")) for item in result_operations if isinstance(item, dict)
-    )
+    statuses = Counter(str(item.get("status")) for item in result_operations if isinstance(item, dict))
     if sum(statuses.values()) != 3:
         raise ValueError("Result operation count differs from the plan")
     unexpected_statuses = sorted(set(statuses) - _ALLOWED_OPERATION_STATUSES)
     if unexpected_statuses:
-        raise ValueError(
-            "Unexpected result operation statuses: " + ", ".join(unexpected_statuses)
-        )
+        raise ValueError("Unexpected result operation statuses: " + ", ".join(unexpected_statuses))
     result_ids = {
         str(item.get("remote_id"))
         for item in result_operations
@@ -298,7 +259,14 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     }
     if result_ids != _TARGET_IDS:
         raise ValueError("Result operation IDs differ from the reviewed plan")
+    return plan_sha256, decisions_sha256, operation_by_id, statuses
 
+
+def _verify_snapshots(
+    source: dict[str, Any],
+    final: dict[str, Any],
+    operation_by_id: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
     source_videos = _video_map(source)
     final_videos = _video_map(final)
     if set(source_videos) != set(final_videos):
@@ -337,12 +305,39 @@ def verify_bundle(path: Path) -> dict[str, Any]:
 
     if _collection_titles(source) != _collection_titles(final):
         raise ValueError("VK album inventory or titles changed during correction")
-    source_membership_identities = Counter(_membership_identity_rows(source))
-    final_membership_identities = Counter(_membership_identity_rows(final))
-    if source_membership_identities != final_membership_identities:
+    if Counter(_membership_identity_rows(source)) != Counter(_membership_identity_rows(final)):
         raise ValueError("VK album memberships changed during correction")
-    position_changes = _membership_position_changes(source, final)
+    return _membership_position_changes(source, final)
 
+
+def verify_bundle(path: Path) -> dict[str, Any]:
+    with zipfile.ZipFile(path) as archive:
+        names = set(archive.namelist())
+        missing = sorted(_REQUIRED_FILES - names)
+        if missing:
+            raise ValueError("Bundle is missing required files: " + ", ".join(missing))
+        raw = {name: archive.read(name) for name in names}
+
+    manifest = _json_bytes(raw["manifest.json"], name="manifest.json")
+    plan = _json_bytes(raw["plan.json"], name="plan.json")
+    decisions = _json_bytes(raw["reviewed-decisions.json"], name="reviewed-decisions.json")
+    result = _json_bytes(raw["03-result.json"], name="03-result.json")
+    source = _json_bytes(raw["00-source-vk-snapshot.json"], name="00-source-vk-snapshot.json")
+    final = _json_bytes(raw["04-final-vk-snapshot.json"], name="04-final-vk-snapshot.json")
+    _verify_manifest(raw, manifest)
+
+    plan_sha256, decisions_sha256, operation_by_id, statuses = _verify_plan_and_result(
+        manifest,
+        plan,
+        decisions,
+        result,
+    )
+    previous_report = _verify_previous_dry_run(raw["previous-reviewed-dry-run.zip"], plan_sha256)
+    expected_dry_run_sha = _file_sha256(raw["previous-reviewed-dry-run.zip"])
+    if manifest.get("source_dry_run_bundle_sha256") not in {None, expected_dry_run_sha}:
+        raise ValueError("Manifest source dry-run SHA-256 mismatch")
+
+    position_changes = _verify_snapshots(source, final, operation_by_id)
     source_coverage = _coverage_sha256(source)
     final_coverage = _coverage_sha256(final)
     expected_coverage = plan.get("target_video_ids_sha256")
@@ -358,7 +353,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
 
     preflight = raw["01-preflight.txt"].decode("utf-8-sig")
     for required in (
-        f"plan: {expected_plan_sha}",
+        f"plan: {plan_sha256}",
         f"video coverage: {expected_coverage}",
         f"membership state: {expected_memberships}",
         "conflicts: 0",
@@ -369,17 +364,13 @@ def verify_bundle(path: Path) -> dict[str, Any]:
         raise ValueError("Apply preflight does not prove its read-only phase")
 
     if "05-independent-verification.json" in raw:
-        embedded = _json_bytes(
-            raw["05-independent-verification.json"],
-            name="05-independent-verification.json",
-        )
+        embedded = _json_bytes(raw["05-independent-verification.json"], name="05-independent-verification.json")
         if embedded.get("status") != "verified_completed":
             raise ValueError("Embedded postflight verification is not completed")
-        if embedded.get("plan_sha256") != expected_plan_sha:
+        if embedded.get("plan_sha256") != plan_sha256:
             raise ValueError("Embedded postflight verification belongs to another plan")
 
     wrapper_status = str(manifest.get("status") or "unknown")
-    updated_count = statuses.get("updated_and_verified", 0)
     return {
         "schema_name": "video-manager.vk-reviewed-correction-apply-verification",
         "schema_version": 2,
@@ -388,19 +379,19 @@ def verify_bundle(path: Path) -> dict[str, Any]:
         "bundle_sha256": _file_sha256(path.read_bytes()),
         "wrapper_status": wrapper_status,
         "wrapper_error": manifest.get("error"),
-        "plan_sha256": expected_plan_sha,
+        "plan_sha256": plan_sha256,
         "decisions_sha256": decisions_sha256,
         "community_id": 235216998,
         "operations": 3,
         "operation_statuses": dict(sorted(statuses.items())),
-        "remote_writes": updated_count,
+        "remote_writes": statuses.get("updated_and_verified", 0),
         "target_video_ids": sorted(_TARGET_IDS),
-        "videos": len(final_videos),
+        "videos": len(_video_map(final)),
         "collections": len(final.get("collections", [])),
         "memberships": len(final.get("memberships", [])),
         "video_coverage_sha256": final_coverage,
         "memberships_sha256": final_memberships,
-        "non_target_videos_verified_unchanged": len(final_videos) - len(_TARGET_IDS),
+        "non_target_videos_verified_unchanged": len(_video_map(final)) - len(_TARGET_IDS),
         "previous_dry_run_status": previous_report["status"],
         "membership_identity_unchanged": True,
         "membership_position_changes": position_changes,
