@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from copy import deepcopy
 from typing import Any
 
@@ -17,6 +18,8 @@ from video_channel_manager.platforms.vk.editorial_stance import (
     validate_the_legendary_poet_editorial_stance,
 )
 from video_channel_manager.platforms.vk.text_writer import canonical_vk_text
+
+VK_DESCRIPTION_GUARD_HASH_ALGORITHM = "video-manager.text-sha256-v1"
 
 
 def _indexed_items(items: list[dict[str, Any]], *, id_field: str, label: str) -> dict[str, dict[str, Any]]:
@@ -44,6 +47,11 @@ def build_vk_reviewed_correction_wave(
     community_id = int(target.channel.ref.channel_id)
     if int(decisions.get("target_community_id", 0)) != community_id:
         raise ValueError("Correction decisions target a different VK community")
+    if str(decisions.get("description_guard_hash_algorithm") or "") != VK_DESCRIPTION_GUARD_HASH_ALGORITHM:
+        raise ValueError(
+            "Correction decisions must declare canonical description guards with "
+            f"{VK_DESCRIPTION_GUARD_HASH_ALGORITHM}"
+        )
     expected_review_sha = str(decisions.get("source_review_bundle_sha256") or "")
     if source_review_bundle_sha256 != expected_review_sha:
         raise ValueError("Review bundle SHA-256 differs from the reviewed correction decisions")
@@ -82,8 +90,15 @@ def build_vk_reviewed_correction_wave(
         before_description = canonical_vk_text(video.description)
         if before_title != str(decision.get("expected_title") or ""):
             raise ValueError(f"Title guard mismatch for {remote_id}")
-        if text_sha256(before_description) != str(decision.get("expected_description_sha256") or ""):
-            raise ValueError(f"Description guard mismatch for {remote_id}")
+        expected_description_sha = str(decision.get("expected_description_sha256") or "")
+        actual_description_sha = text_sha256(before_description)
+        if actual_description_sha != expected_description_sha:
+            raw_description_sha = f"sha256:{hashlib.sha256(before_description.encode('utf-8')).hexdigest()}"
+            raise ValueError(
+                f"Description guard mismatch for {remote_id}: expected {expected_description_sha}, "
+                f"actual {actual_description_sha}, raw_text_sha256 {raw_description_sha}, "
+                f"algorithm {VK_DESCRIPTION_GUARD_HASH_ALGORITHM}"
+            )
 
         after_description = before_description
         applied_replacements: list[dict[str, Any]] = []
@@ -183,4 +198,7 @@ def build_vk_reviewed_correction_wave(
     return plan
 
 
-__all__ = ["build_vk_reviewed_correction_wave"]
+__all__ = [
+    "VK_DESCRIPTION_GUARD_HASH_ALGORITHM",
+    "build_vk_reviewed_correction_wave",
+]
