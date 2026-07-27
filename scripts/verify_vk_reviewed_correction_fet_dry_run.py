@@ -156,9 +156,7 @@ def _read_bundle(path: Path) -> tuple[dict[str, bytes], str]:
 
 def _verify_members(raw: dict[str, bytes], manifest: dict[str, Any]) -> None:
     records = {
-        str(item.get("name")): item
-        for item in manifest.get("files", [])
-        if isinstance(item, dict) and item.get("name")
+        str(item.get("name")): item for item in manifest.get("files", []) if isinstance(item, dict) and item.get("name")
     }
     _require(set(records) == set(_EXPECTED_MEMBERS), "Manifest file records differ from reviewed contents")
     for name, (expected_size, expected_sha) in _EXPECTED_MEMBERS.items():
@@ -231,11 +229,11 @@ def _verify_decisions(decisions: dict[str, Any]) -> tuple[dict[str, Any], dict[s
         old = str(replacement.get("old") or "")
         new = str(replacement.get("new") or "")
         _require(_URL_RE.findall(old) == _URL_RE.findall(new), f"Replacement changes URLs: {replacement_id}")
-        _require(_HASHTAG_RE.findall(old) == _HASHTAG_RE.findall(new), f"Replacement changes hashtags: {replacement_id}")
+        _require(
+            _HASHTAG_RE.findall(old) == _HASHTAG_RE.findall(new), f"Replacement changes hashtags: {replacement_id}"
+        )
     by_video = {
-        str(item.get("target_video_id")): item
-        for item in decisions.get("decisions", [])
-        if isinstance(item, dict)
+        str(item.get("target_video_id")): item for item in decisions.get("decisions", []) if isinstance(item, dict)
     }
     _require(set(by_video) == set(_TARGETS), "Fet decision target IDs differ from the reviewed set")
     return by_video, replacements
@@ -270,7 +268,9 @@ def _verify_operation(
         _require(operation.get(field) == expected_hash, f"Canonical text SHA-256 mismatch: {field}: {remote_id}")
     _require(hashes["before_description_sha256"] == expected["guard"], f"Reviewed guard mismatch: {remote_id}")
     _require(decision.get("expected_description_sha256") == expected["guard"], f"Decision guard mismatch: {remote_id}")
-    _require(decision.get("replacement_ids") == expected["replacements"], f"Decision replacement order differs: {remote_id}")
+    _require(
+        decision.get("replacement_ids") == expected["replacements"], f"Decision replacement order differs: {remote_id}"
+    )
     applied = operation.get("applied_replacements")
     _require(isinstance(applied, list), f"Operation has no applied replacements: {remote_id}")
     applied_ids = [str(item.get("replacement_id")) for item in applied if isinstance(item, dict)]
@@ -287,7 +287,9 @@ def _verify_operation(
         _require(rebuilt.count(old) == count, f"Replacement occurrence mismatch: {replacement_id}")
         rebuilt = rebuilt.replace(old, new, count)
     _require(rebuilt == after_desc, f"After-state is not exactly reconstructed by reviewed replacements: {remote_id}")
-    _require(_URL_RE.findall(before_desc) == _URL_RE.findall(after_desc), f"URLs changed during Fet correction: {remote_id}")
+    _require(
+        _URL_RE.findall(before_desc) == _URL_RE.findall(after_desc), f"URLs changed during Fet correction: {remote_id}"
+    )
     _require(
         _HASHTAG_RE.findall(before_desc) == _HASHTAG_RE.findall(after_desc),
         f"Hashtags changed during Fet correction: {remote_id}",
@@ -366,11 +368,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     _require(len(snapshot.get("memberships", [])) == 294, "Source snapshot must contain exactly 294 memberships")
     operations = plan.get("video_text_operations")
     _require(isinstance(operations, list) and len(operations) == 2, "Plan must contain exactly two operations")
-    by_video = {
-        str(item.get("target_video_id")): item
-        for item in operations
-        if isinstance(item, dict)
-    }
+    by_video = {str(item.get("target_video_id")): item for item in operations if isinstance(item, dict)}
     _require(set(by_video) == set(_TARGETS), "Fet correction target IDs differ from the reviewed set")
     for remote_id, operation in by_video.items():
         _verify_operation(
