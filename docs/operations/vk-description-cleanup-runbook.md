@@ -3,204 +3,172 @@
 Канал: **The Legendary Poet**  
 Сообщество: `235216998`
 
-Цель: безопасно очистить описания всей VK-видеотеки от неподдерживаемой разметки и устаревших ссылок, не переписывая факты, интерпретации и авторский текст.
+Назначение: безопасно очистить технические элементы описаний всей текущей VK-видеотеки, сохранив содержательный текст каждого ролика.
 
-## 1. Текущий рабочий процесс
+## 1. Основной принцип
 
-Описание проходит отдельной волной после каталога и названий:
+Очистка строится из фактического live-текста VK:
 
 ```text
-fresh VK snapshot
+live VK before
 → deterministic technical cleanup
-→ semantic-body gate
-→ signed descriptions_only plan
+→ semantic-body equality gate
+→ signed descriptions-only plan
 → HTML/Markdown review
 → live dry-run
 → explicit execute
-→ postflight
-→ one ZIP handoff
 ```
 
-Операция описаний не может менять:
+Разрешены только доказуемые технические изменения:
 
-- название видео;
-- название альбома;
-- membership видео в альбомах;
-- состав видеотеки;
-- содержательные слова, пунктуацию и порядок авторских абзацев.
+- замена YouTube-плейлистов на точные VK album `share_url`;
+- замена известных собственных YouTube-ссылок на точные VK Video URL;
+- снятие видимых Markdown-маркеров;
+- удаление zero-width символов;
+- нормализация переносов, пробелов и декоративных разделителей;
+- удаление старого footer и добавление канонического footer;
+- ограничение числа хэштегов.
 
-## 2. Что разрешено менять автоматически
+Запрещены автоматические изменения фактов, интерпретации, содержательной пунктуации и порядка смысловых фраз.
 
-Только механически доказуемые элементы:
+## 2. Semantic-body gate
 
-- YouTube playlist URL → точный VK album `share_url`;
-- ссылка на собственное YouTube-видео → точный URL соответствующего VK-видео;
-- видимые `*`, `` ` `` и `_` вне URL;
-- zero-width символы;
-- неправильный `https://thelegendarypoet` → `https://thelegendarypoet.ru/`;
-- старые или дублированные footer-строки;
-- количество хэштегов до policy limit;
-- избыточные пустые строки и варианты декоративного разделителя;
-- единый канонический блок The Legendary Poet.
-
-Факты и литературная интерпретация не исправляются в этой волне. Они сохраняются и попадают в `deferred_editorial_review` для отдельного фактчекинга.
-
-## 3. Semantic-body gate
-
-Для каждого before/after вычисляется содержательная форма, из которой исключены только:
-
-- URL;
-- хэштеги;
-- известный footer;
-- Markdown-маркеры;
-- декоративные линии;
-- whitespace;
-- zero-width символы.
-
-Если после такого исключения остаётся хотя бы одно отличие в слове или пунктуации, генератор останавливается:
+Для каждого описания вычисляется содержательное представление без URL, hashtags, известных footer-строк, Markdown-маркеров, декоративных линий, whitespace и zero-width символов.
 
 ```text
-Description cleanup changes semantic body for <video-id>
+semantic_body(before) == semantic_body(after)
 ```
 
-Такой ролик разрешается только через явный `description_review_only_ids` или отдельный вручную утверждённый override.
+Если равенство нарушено хотя бы для одного видео, построение всей волны завершается ошибкой до dry-run.
 
-## 4. Что было исправлено после реального запуска названий
+Фактологические и чувствительные маркеры не переписываются. Они попадают в `deferred_editorial_review` только как будущая редакционная очередь.
 
-### Структурированный успех VK
+## 3. Взаимодействие с названиями
 
-`video.edit` может вернуть не только число `1`, но и объект:
+Descriptions-only план хранит exact-before название каждого видео. Поэтому любые косметические изменения названий должны быть завершены до финального dry-run описаний.
 
-```json
-{"success": 1, "access_key": "..."}
-```
+Семантические ярлыки названий (`SHORTS`, `КОРОТКАЯ`, `ФРАГМЕНТ`, `НЕПОЛНЫЙ`, `ПОЛНАЯ`, `БОЛЕЕ ПОЛНАЯ`, `ФИНАЛЬНАЯ`, номера версий) нельзя выводить из длительности, ориентации кадра или наличия парного ролика. Они заморожены отдельной title-policy.
 
-Оба ответа считаются только acknowledgement. После них writer обязательно повторно читает live-состояние и подтверждает точный after.
+Текущий порядок:
 
-### Неизменённые поля не отправляются
+1. выполнить dry-run трёхоперационного косметического title patch;
+2. проверить и применить его отдельным signed plan;
+3. заново построить descriptions-only план на новом snapshot;
+4. выполнить свежий dry-run описаний;
+5. только после проверки выполнять descriptions execute.
 
-При title-only операции параметр `desc` не передаётся в `video.edit`. При description-only операции параметр `name` не передаётся. Это предотвращает нормализацию другого поля со стороны VK.
+## 4. Один файл вместо поиска артефактов
 
-### Resume после частичного успеха
+Все wrappers создают ZIP в `finally`. ZIP содержит доступные на момент завершения:
 
-Каждый новый запуск классифицирует состояние:
+- source snapshot;
+- signed JSON plan;
+- Markdown review;
+- HTML review;
+- editorial policy;
+- live preflight;
+- apply log;
+- result journal;
+- final snapshot;
+- README;
+- manifest с SHA-256 и размером каждого файла.
 
-- `before` → `ready`;
-- `after` → `already applied`;
-- третье состояние → `conflict`.
+В Проводнике автоматически выделяется ZIP. Оператор отправляет только его.
 
-Частично выполненная волна безопасно продолжается без повторной записи уже применённых операций.
+## 5. Косметический title patch
 
-## 5. Подготовка
+Dry-run одной командой:
 
 ```powershell
-cd C:\Users\Fedor\Projects\video-channel-manager
-
-git fetch origin
-git switch agent/vk-editorial-plan
-git pull --ff-only
-
-py -3.11 -m pip install -e ".[dev]"
+pwsh -File .\scripts\Invoke-VkCosmeticTitlePatch.ps1
 ```
 
-Не запускать одновременно другой VK writer и не сохранять те же видео вручную через VK Studio.
+Wrapper сам берёт snapshot из последнего `vk-description-wave-dry-run-*.zip` или успешного title-wave ZIP, строит новый title-only plan и требует ровно три косметические операции:
 
-## 6. Следующий шаг: построение плана и dry-run
+- удалить декоративные `《》` у китайского названия;
+- `Шабаш - Алиса Cover` → `Шабаш ⚡ АЛИСА Cover`;
+- `Внимая Ужасам Войны... - Николай Некрасов` → `Внимая Ужасам Войны... ⚡ Николай Некрасов`.
 
-Одна команда:
+Ни одна semantic-label метка не меняется. Execute в этом helper отсутствует.
+
+## 6. Новый dry-run описаний
+
+После успешного применения косметических названий:
 
 ```powershell
 pwsh -File .\scripts\Invoke-VkDescriptionWave.ps1
 ```
 
-Скрипт автоматически:
+Default-режим:
 
-1. находит последний `vk-title-wave-apply-*.zip`;
-2. извлекает из него `04-final-vk-snapshot.json`;
-3. строит подписанный `descriptions_only` plan;
-4. создаёт Markdown и удобный HTML «До/После»;
-5. выполняет свежий live dry-run;
-6. создаёт один ZIP;
-7. открывает HTML и Проводник с выделенным ZIP.
+- строит новый descriptions-only plan;
+- открывает HTML «До / После»;
+- выполняет полный live preflight;
+- не вызывает mutation API;
+- создаёт один ZIP.
 
-Отправлять нужно только:
+Разрешённый результат:
 
 ```text
-data\handoffs\vk-description-wave-dry-run-YYYYMMDD-HHMMSS.zip
+ready: N
+already applied: 0
+conflicts: 0
+review-only excluded: 0
+Dry-run only. No VK mutation method was called.
 ```
 
-## 7. Что проверить в dry-run ZIP
+## 7. Выполнение описаний
 
-Обязательно:
-
-```text
-component_scope = descriptions_only
-titles_to_update = 0
-albums_to_rename = 0
-placements_to_add = 0
-placements_to_remove = 0
-videos_to_delete = 0
-conflicts = 0
-```
-
-Для каждой операции:
-
-```text
-semantic_body_preserved = true
-semantic_body_sha256 = sha256:...
-change_reasons = [непустой список]
-```
-
-HTML-отчёт открывает before/after каждого описания отдельными раскрывающимися блоками.
-
-## 8. Execute
-
-Новый план нельзя построить и сразу исполнить. Сначала нужен отдельный dry-run и проверка ZIP.
-
-После проверки запускать с точным путём к плану:
+Execute запрещён без явно переданного ранее проверенного `-Plan`:
 
 ```powershell
 pwsh -File .\scripts\Invoke-VkDescriptionWave.ps1 `
-  -Execute `
-  -Plan .\data\reports\vk-editorial-description-wave-YYYYMMDD-HHMMSS.json
+  -Plan .\data\reports\vk-editorial-description-wave-YYYYMMDD-HHMMSS.json `
+  -Execute
 ```
 
-Скрипт самостоятельно читает фактические `ready / already applied / conflicts` и передаёт точные SHA-256 executor’у.
+Wrapper сам выполняет свежий preflight и берёт фактическое количество `ready`. Executor затем требует точные:
 
-## 9. Итоговый ZIP
+- community ID;
+- ready count;
+- plan SHA-256;
+- video coverage SHA-256;
+- membership-state SHA-256.
 
-При успехе или ошибке ZIP создаётся в `finally` и содержит:
+После single-writer lock preflight повторяется непосредственно перед первой записью.
 
-- source snapshot;
-- plan JSON;
-- Markdown report;
-- HTML review;
-- policy;
-- preflight log;
-- apply log;
-- result journal;
-- final snapshot при успехе;
-- README;
-- manifest с размером и SHA-256 каждого файла.
+## 8. Обязательные postconditions
 
-Отправлять нужно только один файл:
+Успешное завершение требует одновременно:
 
 ```text
-data\handoffs\vk-description-wave-apply-YYYYMMDD-HHMMSS.zip
+status = completed
+ready after apply = 0
+conflicts after apply = 0
+memberships SHA-256 unchanged
 ```
 
-## 10. Условия успешного завершения
+Writer передаёт в `video.edit` только реально изменяемое поле. При description-only операции `name` не отправляется.
 
-Требуется одновременно:
+## 9. Запрещённые действия
 
-```text
-result.status = completed
-final preflight ready = 0
-final preflight conflicts = 0
-membership SHA-256 не изменился
-названия видео не изменились
-альбомы не изменились
-semantic body каждого описания совпал
-```
+- не добавлять `-Execute` к свежему автоматически построенному плану;
+- не редактировать VK Studio параллельно;
+- не запускать второй VK writer;
+- не менять JSON plan вручную;
+- не использовать старый dry-run после изменения любого exact-before названия;
+- не считать ответ API достаточным доказательством без повторного provider read;
+- не переиспользовать SHA, count или snapshot из старого чата.
 
-HTTP 200 или `success: 1` сами по себе не являются доказательством успеха.
+## 10. Источник истины
+
+Приоритет имеют:
+
+1. live snapshot;
+2. signed plan;
+3. plan SHA-256;
+4. dry-run ZIP;
+5. result journal;
+6. final snapshot.
+
+Operational artifacts имеют приоритет над памятью чата.
