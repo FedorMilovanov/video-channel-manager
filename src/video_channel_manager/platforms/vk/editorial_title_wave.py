@@ -44,9 +44,7 @@ def build_vk_editorial_title_wave(
 
     operations: list[dict[str, Any]] = []
     proposed_by_id = {video.ref.remote_id: canonical_vk_text(video.title) for video in target.videos}
-    base_operations = {
-        operation["target_video_id"]: operation for operation in base_plan["video_text_operations"]
-    }
+    base_operations = {operation["target_video_id"]: operation for operation in base_plan["video_text_operations"]}
 
     for remote_id, operation in base_operations.items():
         if not bool(operation["title_changed"]):
@@ -86,10 +84,7 @@ def build_vk_editorial_title_wave(
         for finding in base_plan["review_only"]
         if finding.get("kind") == "mention_rendering_ui_test_required"
     ]
-    reason = str(
-        policy.get("title_review_only_reason")
-        or "Ambiguous title requires manual audio/visual review."
-    )
+    reason = str(policy.get("title_review_only_reason") or "Ambiguous title requires manual audio/visual review.")
     for remote_id in sorted(excluded_ids):
         before_title = before_titles[remote_id]
         proposed_title = proposed_by_id.get(remote_id, before_title)
