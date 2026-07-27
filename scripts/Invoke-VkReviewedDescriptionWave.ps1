@@ -128,15 +128,11 @@ try {
     $PlanJson = Get-Content -LiteralPath $ReviewedPlan -Raw -Encoding UTF8 | ConvertFrom-Json
     $SnapshotJson = Get-Content -LiteralPath $ReviewedSnapshot -Raw -Encoding UTF8 | ConvertFrom-Json
 
-    foreach ($Pair in @(
-        @("plan.json", $ReviewedPlan),
-        @("plan-review.md", $ReviewedReport),
-        @("plan-review.html", $ReviewedHtml),
-        @("00-source-vk-snapshot.json", $ReviewedSnapshot),
-        @("editorial-policy.json", $ReviewedPolicy)
-    )) {
-        Assert-ManifestFile -Manifest $Manifest -Name $Pair[0] -Path $Pair[1]
-    }
+    Assert-ManifestFile -Manifest $Manifest -Name "plan.json" -Path $ReviewedPlan
+    Assert-ManifestFile -Manifest $Manifest -Name "plan-review.md" -Path $ReviewedReport
+    Assert-ManifestFile -Manifest $Manifest -Name "plan-review.html" -Path $ReviewedHtml
+    Assert-ManifestFile -Manifest $Manifest -Name "00-source-vk-snapshot.json" -Path $ReviewedSnapshot
+    Assert-ManifestFile -Manifest $Manifest -Name "editorial-policy.json" -Path $ReviewedPolicy
 
     if ([string]$Manifest.status -ne "dry_run_completed" -or
         [string]$Manifest.mode -ne "dry-run" -or
@@ -213,7 +209,7 @@ try {
         throw "Текущая редакционная политика отличается от проверенной политики из ZIP."
     }
 
-    Write-Host "" 
+    Write-Host ""
     Write-Host "ПРОВЕРЕННЫЙ DESCRIPTION-ПЛАН ДОПУЩЕН К EXECUTE" -ForegroundColor Green
     Write-Host "  ZIP:             $ResolvedBundle"
     Write-Host "  operations:      $($Operations.Count)"
