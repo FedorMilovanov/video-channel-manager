@@ -206,7 +206,7 @@ def scan(
                     f"Specify --community because this account has {len(available)} managed choices: {choices}"
                 )
             community = str(available[0].community_id)
-        with console.status("Reading VK community inventory…"):
+        with console.status("Reading VK community inventory..."):
             package = VkInventoryService(client).build_audit_package(community)
     except (VkAccountNotFoundError, OSError, ValueError, VkApiError) as exc:
         console.print(f"[red]VK scan failed:[/red] {exc}")
@@ -220,7 +220,7 @@ def scan(
     output.write_text(package.model_dump_json(indent=2), encoding="utf-8")
     system_albums = sum(1 for item in package.collections if bool(item.metadata.get("is_system")))
     console.print(
-        f"[green]Exported AuditPackage → {output}[/green]\n"
+        f"[green]Exported AuditPackage -> {output}[/green]\n"
         f"Videos: {len(package.videos)} | Albums: {len(package.collections)} "
         f"({system_albums} system) | Memberships: {len(package.memberships)}"
     )
