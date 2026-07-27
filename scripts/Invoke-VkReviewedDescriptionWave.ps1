@@ -5,7 +5,11 @@ param(
     [string]$ReviewedDryRunBundle,
     [int]$ExpectedCount = 111,
     [string]$Account = "legendary-poet",
-    [int]$Community = 235216998
+    [int]$Community = 235216998,
+    [ValidateRange(1, 5)]
+    [int]$ReadRetryAttempts = 3,
+    [ValidateRange(1, 120)]
+    [int]$ReadRetryDelaySeconds = 15
 )
 
 $ErrorActionPreference = "Stop"
@@ -26,6 +30,8 @@ $ReviewedReport = Join-Path $TempRunDir "reviewed-plan.md"
 $ReviewedHtml = Join-Path $TempRunDir "reviewed-plan.html"
 $ReviewedSnapshot = Join-Path $TempRunDir "00-source-vk-snapshot.json"
 $ReviewedPolicy = Join-Path $TempRunDir "editorial-policy.json"
+$AccessDiagnostic = Join-Path $TempRunDir "vk-access-diagnostic.json"
+$AccessDiagnosticLog = Join-Path $TempRunDir "vk-access-diagnostic.txt"
 
 function Expand-BundleEntry {
     param(
@@ -93,6 +99,15 @@ function Assert-ManifestFile {
     if ($ActualSha -cne [string]$Record.sha256) {
         throw "SHA-256 $Name не совпадает с manifest.json."
     }
+}
+
+function Invoke-AccessDiagnostic {
+    & py -3.11 -X utf8 .\scripts\diagnose_vk_video_access.py `
+        --account "$Account" `
+        --community $Community `
+        --json-output "$AccessDiagnostic" 2>&1 |
+        Tee-Object -FilePath $AccessDiagnosticLog
+    return $LASTEXITCODE
 }
 
 try {
@@ -229,15 +244,67 @@ try {
         "-Account",
         $Account,
         "-Community",
-        [string]$Community
+        [string]$Community,
+        "-NoOpen"
     )
-    if ($NoOpen) {
-        $InvokeArguments += "-NoOpen"
+
+    $ApplyStarted = Get-Date
+    $Succeeded = $false
+    for ($Attempt = 1; $Attempt -le $ReadRetryAttempts; $Attempt++) {
+        $AttemptLog = Join-Path $TempRunDir "description-wrapper-attempt-$Attempt.txt"
+        Write-Host "Запуск guarded wrapper: попытка $Attempt из $ReadRetryAttempts" -ForegroundColor Yellow
+        & pwsh @InvokeArguments 2>&1 | Tee-Object -FilePath $AttemptLog
+        $WrapperExit = $LASTEXITCODE
+        if ($WrapperExit -eq 0) {
+            $Succeeded = $true
+            break
+        }
+
+        $AttemptText = Get-Content -LiteralPath $AttemptLog -Raw -Encoding UTF8
+        $IsVideoAccessDenied = $AttemptText -match "VK API 204 in video\.get: Access denied"
+        if (-not $IsVideoAccessDenied) {
+            throw "Description-wave wrapper завершился с кодом $WrapperExit."
+        }
+
+        if ($Attempt -lt $ReadRetryAttempts) {
+            $Delay = $ReadRetryDelaySeconds * $Attempt
+            Write-Host (
+                "VK временно отказал в read-only video.get. " +
+                "Запись не начиналась; повтор через $Delay секунд."
+            ) -ForegroundColor Yellow
+            Start-Sleep -Seconds $Delay
+            continue
+        }
+
+        Write-Host "VK API 204 сохранился после повторных read-only попыток. Запускается диагностика доступа." -ForegroundColor Yellow
+        $DiagnosticExit = Invoke-AccessDiagnostic
+        $DiagnosticText = if (Test-Path -LiteralPath $AccessDiagnosticLog) {
+            Get-Content -LiteralPath $AccessDiagnosticLog -Raw -Encoding UTF8
+        }
+        else {
+            "Диагностический лог не создан."
+        }
+        throw (
+            "Read-only video.get остаётся недоступен после $ReadRetryAttempts попыток. " +
+            "Диагностика завершилась с кодом $DiagnosticExit.`n$DiagnosticText"
+        )
     }
 
-    & pwsh @InvokeArguments
-    if ($LASTEXITCODE -ne 0) {
-        throw "Description-wave wrapper завершился с кодом $LASTEXITCODE."
+    if (-not $Succeeded) {
+        throw "Guarded description wrapper не завершился успешно."
+    }
+
+    if (-not $NoOpen -and $IsWindows) {
+        $SuccessfulZip = Get-ChildItem `
+            -LiteralPath $Handoffs `
+            -File `
+            -Filter "vk-description-wave-apply-*.zip" |
+            Where-Object { $_.LastWriteTime -ge $ApplyStarted } |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
+        if ($null -ne $SuccessfulZip) {
+            Start-Process explorer.exe -ArgumentList "/select,`"$($SuccessfulZip.FullName)`""
+        }
     }
 }
 finally {
