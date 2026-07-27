@@ -89,14 +89,8 @@ def _outside_urls(value: str, transform: Any) -> str:
 
 
 def _replace_urls(value: str, policy: dict[str, Any]) -> str:
-    playlists = {
-        str(key): str(url)
-        for key, url in dict(policy.get("playlist_replacements") or {}).items()
-    }
-    videos = {
-        str(key): str(url)
-        for key, url in dict(policy.get("youtube_video_replacements") or {}).items()
-    }
+    playlists = {str(key): str(url) for key, url in dict(policy.get("playlist_replacements") or {}).items()}
+    videos = {str(key): str(url) for key, url in dict(policy.get("youtube_video_replacements") or {}).items()}
     value = _PLAYLIST_RE.sub(
         lambda match: playlists.get(match.group(1), match.group(0)),
         value,
@@ -133,13 +127,7 @@ def _cap_hashtags(value: str, maximum: int) -> str:
 
 
 def _hashtag_count(value: str) -> int:
-    return len(
-        {
-            token.rstrip(".,;:").casefold()
-            for token in value.split()
-            if token.startswith("#") and len(token) > 1
-        }
-    )
+    return len({token.rstrip(".,;:").casefold() for token in value.split() if token.startswith("#") and len(token) > 1})
 
 
 def clean_vk_description(value: str, policy: dict[str, Any]) -> str:
@@ -155,9 +143,7 @@ def clean_vk_description(value: str, policy: dict[str, Any]) -> str:
     )
     text = re.sub(r"^[━─═—-]{15,}\s*$", "━━━━━━━━━━━━━━━", text, flags=re.MULTILINE)
     text = "\n".join(
-        line.rstrip()
-        for line in text.splitlines()
-        if not any(pattern.match(line) for pattern in FOOTER_PATTERNS)
+        line.rstrip() for line in text.splitlines() if not any(pattern.match(line) for pattern in FOOTER_PATTERNS)
     )
     text = re.sub(r"\n[ \t]*\n(?:[ \t]*\n)+", "\n\n", text).strip()
     settings = dict(policy.get("description_policy") or {})
@@ -178,9 +164,7 @@ def description_semantic_body(value: str, policy: dict[str, Any]) -> str:
     text = unicodedata.normalize("NFC", str(value or ""))
     text = "".join(character for character in text if character not in _ZERO_WIDTH)
     text = text.replace("\r\n", "\n").replace("\r", "\n")
-    footer = canonical_vk_text(
-        str(dict(policy.get("description_policy") or {}).get("canonical_footer") or "")
-    )
+    footer = canonical_vk_text(str(dict(policy.get("description_policy") or {}).get("canonical_footer") or ""))
     footer_lines = {line.strip() for line in footer.splitlines() if line.strip()}
     output: list[str] = []
     for line in text.splitlines():
@@ -195,11 +179,7 @@ def description_semantic_body(value: str, policy: dict[str, Any]) -> str:
         body = body.replace("*", "").replace("`", "").replace("_", "")
         body = _FOOTER_LABEL_RE.sub("", body)
         body = _LEGACY_BRAND_RE.sub("", body)
-        tokens = [
-            token
-            for token in body.split()
-            if not (token.startswith("#") and len(token) > 1)
-        ]
+        tokens = [token for token in body.split() if not (token.startswith("#") and len(token) > 1)]
         cleaned = " ".join(tokens).strip()
         if cleaned:
             output.append(cleaned)
