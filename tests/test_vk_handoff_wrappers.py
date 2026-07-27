@@ -34,7 +34,7 @@ def test_description_wrapper_always_packages_and_cleans_temp_files() -> None:
     assert "Remove-Item -LiteralPath $TempRunDir -Recurse -Force" in text
 
 
-def test_cosmetic_title_wrapper_is_dry_run_only_and_exactly_scoped() -> None:
+def test_cosmetic_title_wrapper_is_exactly_scoped_and_semantic_safe() -> None:
     text = _script("Invoke-VkCosmeticTitlePatch.ps1")
 
     assert "[int]$ExpectedCount = 3" in text
@@ -45,13 +45,25 @@ def test_cosmetic_title_wrapper_is_dry_run_only_and_exactly_scoped() -> None:
     assert "descriptions_to_update" in text
     assert "albums_to_rename" in text
     assert "Invoke-VkTitleWave.ps1" in text
-    assert "-Execute" not in text
 
 
-def test_cosmetic_title_wrapper_uses_snapshot_from_one_file_handoff() -> None:
+def test_cosmetic_title_wrapper_executes_only_a_reviewed_dry_run_bundle() -> None:
+    text = _script("Invoke-VkCosmeticTitlePatch.ps1")
+
+    assert "[switch]$Execute" in text
+    assert "[string]$ReviewedDryRunBundle" in text
+    assert 'status -ne "dry_run_completed"' in text
+    assert 'mode -ne "dry-run"' in text
+    assert "Manifest.plan_sha256" in text
+    assert "Get-FileHash -LiteralPath $ReviewedPlan -Algorithm SHA256" in text
+    assert '$InvokeArguments += "-Execute"' in text
+
+
+def test_cosmetic_title_wrapper_uses_one_file_handoffs_and_temp_storage() -> None:
     text = _script("Invoke-VkCosmeticTitlePatch.ps1")
 
     assert "vk-description-wave-dry-run-*.zip" in text
+    assert "vk-title-wave-dry-run-*.zip" in text
     assert "00-source-vk-snapshot.json" in text
     assert "04-final-vk-snapshot.json" in text
     assert "[System.IO.Path]::GetTempPath()" in text
