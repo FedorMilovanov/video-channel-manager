@@ -36,8 +36,9 @@ def main() -> int:
     args = _parser().parse_args()
     settings = get_settings()
     client = VkApiClient(
-        token_store=VkTokenStore(settings.data_dir / "secrets" / "vk"),
+        token_store=VkTokenStore(settings.data_dir),
         account_alias=args.account,
+        api_version=settings.vk_api_version,
         max_attempts=1,
     )
     report: dict[str, Any] = {
