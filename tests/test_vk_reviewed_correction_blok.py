@@ -9,6 +9,9 @@ from typing import Any
 
 _DECISIONS = Path("content/policies/vk-reviewed-corrections-p1-blok-night-20260728.json")
 _WRAPPER = Path("scripts/Invoke-VkReviewedCorrectionBlokWave.ps1")
+_DRY_VERIFIER = Path("scripts/verify_vk_reviewed_correction_blok_dry_run.py")
+_APPLY_VERIFIER = Path("scripts/verify_vk_reviewed_correction_blok_apply_bundle.py")
+_APPLY_WRAPPER = Path("scripts/Invoke-VkReviewedCorrectionBlokApply.ps1")
 _URL_RE = re.compile(r"https?://[^\s]+")
 _HASHTAG_RE = re.compile(r"(?<!\w)#[\wА-Яа-яЁё]+")
 
@@ -123,3 +126,54 @@ def test_blok_dry_run_wrapper_is_read_only_and_uses_verified_fet_apply() -> None
     assert "remote_writes = 0" in text
     assert "--execute" not in text
     assert "СОЗДАН ДИАГНОСТИЧЕСКИЙ ZIP; DRY-RUN НЕ ПОСТРОЕН" in text
+
+
+def test_blok_exact_dry_run_verifier_pins_reviewed_contents() -> None:
+    text = _DRY_VERIFIER.read_text(encoding="utf-8")
+
+    for required in (
+        "sha256:53bed1c056868731dcb1f9c04b8d3188fd4295baa5d14364b1f8b72187cea4fb",
+        "sha256:3b8e3f661d317a03483e568b90ef361de8bc325abe19d9d049076dd24b7f103e",
+        "sha256:ac95b72a59b03e7fc8ef07ecf906fbb05ef3534e7ad0757d2c65db60b893f407",
+        "sha256:753e2bc4f2bb41e37ce9285b4f6cd02a0013a9a0296f4a36dba63d97ee94cf27",
+        "exact_independently_reviewed_contents",
+        "reviewed_replacements_reconstructed",
+        "urls_and_hashtags_unchanged",
+        "exact_member_hashes_verified",
+    ):
+        assert required in text
+    assert '"-235216998_456239120"' in text
+    assert '"-235216998_456239126"' in text
+    assert "Bundle contains duplicate ZIP entries" in text
+    assert "No VK mutation method was called" in text
+
+
+def test_blok_apply_wrapper_executes_only_verified_plan() -> None:
+    text = _APPLY_WRAPPER.read_text(encoding="utf-8")
+
+    assert "[switch]$Execute" in text
+    assert "if (-not $Execute)" in text
+    assert "verify_vk_reviewed_correction_blok_dry_run.py" in text
+    assert "verify_vk_reviewed_correction_blok_apply_bundle.py" in text
+    assert "vk-reviewed-correction-p1-blok-dry-run-*.zip" in text
+    assert "$ExpectedCount = 2" in text
+    assert '"p1-blok-night-20260728"' in text
+    assert "--confirm-plan-sha256" in text
+    assert "--confirm-video-coverage" in text
+    assert "--confirm-memberships" in text
+    assert "--max-operations $ExpectedCount" in text
+    assert "--result-output" in text
+    assert "build_vk_reviewed_correction_wave.py" not in text
+
+
+def test_blok_apply_verifier_locks_postflight_scope() -> None:
+    text = _APPLY_VERIFIER.read_text(encoding="utf-8")
+
+    assert "verify_vk_reviewed_correction_blok_dry_run" in text
+    assert "sha256:53bed1c056868731dcb1f9c04b8d3188fd4295baa5d14364b1f8b72187cea4fb" in text
+    assert "sha256:3b8e3f661d317a03483e568b90ef361de8bc325abe19d9d049076dd24b7f103e" in text
+    assert '"-235216998_456239120"' in text
+    assert '"-235216998_456239126"' in text
+    assert '"non_target_videos_verified_unchanged": 109' in text
+    assert "VK album memberships changed during Blok correction" in text
+    assert "05-independent-verification.json" in text
