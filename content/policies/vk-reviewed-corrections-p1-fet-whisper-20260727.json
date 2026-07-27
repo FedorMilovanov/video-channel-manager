@@ -1,0 +1,158 @@
+{
+  "schema_name": "video-manager.vk-reviewed-correction-decisions",
+  "schema_version": 1,
+  "decision_set_id": "p1-fet-whisper-20260727",
+  "target_community_id": 235216998,
+  "source_plan_sha256": "sha256:b4eede44954bcb148550bcb2c0a372e4f23b72d892cc3aadcc5d71321a2e9294",
+  "source_review_bundle_sha256": "sha256:f38191f18d859ef2bcd445f558204ac76e3c3ebbe4f6414cb3436542df7b4c61",
+  "editorial_rule": "Only exact reviewed replacements are allowed. Titles, albums, memberships, video inventory, URLs, hashtags, poem text, music framing, and all other descriptions are frozen. Established fact, attributed testimony, scholarly inference, and later biographical tradition must remain distinct.",
+  "editorial_profile": {
+    "profile_id": "the-legendary-poet-historical-evangelical-v1",
+    "authority_repository": "FedorMilovanov/TheLegendaryPoet",
+    "theological_position": "historical_evangelical_christianity",
+    "judgment_mode": "asymmetric_evidence_based",
+    "last_hour_rule": "acknowledge_once_not_equal_to_documented_life",
+    "tone": "sorrow_without_sentimental_acquittal_or_gloating",
+    "gospel_call": "repent_and_believe_in_christ",
+    "principles": [
+      "judge_public_confession_and_stable_fruits_by_scripture",
+      "do_not_invent_last_hour_conversion",
+      "do_not_balance_documented_unbelief_with_bare_possibility",
+      "state_eternal_danger_plainly_when_evidence_is_strong",
+      "speak_with_grief_not_superiority"
+    ]
+  },
+  "stance_source_ids": [
+    "site-project-charter",
+    "site-editorial-judgment-policy",
+    "research-knowledge-base"
+  ],
+  "shared_replacements": [
+    {
+      "replacement_id": "replace-short-fet-biography-and-attribution",
+      "old": "«Шёпот, робкое дыханье…» — стихотворение без единого глагола. Чернышевский считал, что «его могла бы написать лошадь». Фет посвятил его Марии Лазич, которая сгорела заживо. Последние слова: «Он не виноват, а я…»\n\nЭто самое известное стихотворение без единого глагола. Написано в момент любви к Марии Лазич. После её трагической смерти в огне Фет всю жизнь писал только ей.\n\nОн сам лишился дворянства в 14 лет и 40 лет боролся за своё имя. Днём — жёсткий помещик, ночью — гений нежности.",
+      "new": "«Шёпот, робкое дыханье…» датируется 1850 годом. В двенадцати строках нет ни одного глагола: ночь показана как последовательность звуков, света и мгновений близости. Чернышевский позднее язвительно писал, что стихи Фета могла бы написать лошадь, и отдельно упоминал «пьеску без глаголов» — это был спор о «чистой поэзии», а не точное описание одного произведения.\n\nСтихотворение появилось в годы службы Фета в Херсонской губернии и его отношений с Марией Лазич, однако прямого авторского посвящения ей у текста нет. После трагической гибели Лазич память о ней оставалась одной из центральных тем поэта на десятилетия. Но сводить к ней всю любовную лирику Фета нельзя: академические исследователи выделяют и другой поздний любовный цикл.\n\nВ четырнадцать лет Фет лишился фамилии Шеншин, дворянского статуса и русского подданства; вернуть имя Шеншин ему удалось только в 1873 году. Этот биографический разрыв сильно повлиял на его жизненный выбор, но не объясняет механически каждое стихотворение.",
+      "expected_count": 1,
+      "reason": "Correct the poem date and Chernyshevsky attribution; remove an unsupported direct dedication, the false claim that all lifelong love lyrics were addressed only to Lazich, and a caricatured biographical contrast."
+    },
+    {
+      "replacement_id": "qualify-whisper-biographical-background",
+      "old": "Стихотворение было написано в 1850 году, когда Фет переживал пик своей любви к Марии Лазич — дочери обедневшего херсонского помещика сербского происхождения, девушке без приданого. Они познакомились осенью 1848 года, когда Фет состоял на военной службе в Херсонской губернии. «Я ждал женщины, которая поймёт меня, и дождался её», — писал он другу. Но поэт не решился пожертвовать мечтой о возвращении дворянского звания ради этой любви. В этих двенадцати строках ночное свидание превращается в отдельный мир: только двое, ночной воздух, трели соловья и зыбкий свет — всё, что останется от утра, когда реальность снова потребует холодных расчётов.",
+      "new": "Стихотворение датируется 1850 годом — временем военной службы Фета в Херсонской губернии и его отношений с Марией Лазич. Эти обстоятельства важны для биографии поэта, но прямого авторского посвящения «Шёпота…» Лазич не сохранилось; точнее говорить о возможном биографическом фоне, а не об установленном адресате. Фет писал Ивану Борисову, что считал брак невозможным из-за бедности обоих. В двенадцати строках ночное свидание превращается в отдельный мир: звуки, свет и заря передают движение чувства без единого глагола.",
+      "expected_count": 1,
+      "reason": "Preserve the 1850 and Lazich context while distinguishing a possible biographical background from a documented authorial dedication."
+    },
+    {
+      "replacement_id": "attribute-lazich-death-and-cycle",
+      "old": "Осенью того же 1850 года Мария погибла страшной смертью. От брошенной спички загорелось её кисейное платье; она выбежала на балкон, но свежий воздух лишь раздул пламя. Пробегая горящим факелом по комнатам, она кричала: «Берегите письма!» — и перед смертью прошептала: «Он не виноват — а я…» Через четыре дня мучений её не стало. Фету было двадцать девять лет, и лёгкий ночной шёпот обернулся для него неизбывным чувством вины, которому он будет подыскивать слова всю оставшуюся жизнь — более сорока лет.",
+      "new": "Вскоре после разрыва Мария Лазич погибла от ожогов: по академической биографии, её платье загорелось от неосторожно брошенной спички. Б. Я. Бухштаб допускал, что несчастье могло скрывать самоубийство, но подчёркивал это лишь как возможность. Память о Лазич сохраняла для Фета остроту десятилетиями; с ней связывают отдельный ретроспективный цикл — от «Старых писем» и «Alter ego» до «Нет, я не изменил. До старости глубокой…».",
+      "expected_count": 1,
+      "reason": "Replace an omniscient dramatic reconstruction with the academic biography's established facts, explicitly label disguised suicide as a hypothesis, and identify the supported retrospective cycle."
+    },
+    {
+      "replacement_id": "correct-late-love-cycle-and-fet-death",
+      "old": "«Нет, я не изменил. До старости глубокой я тот же преданный, я раб твоей любви», — напишет Фет в 1887 году, когда ему будет под семьдесят. Последнее стихотворение, посвящённое Марии Лазич, датировано 1892 годом — годом смерти поэта. 21 ноября 1892 года он выпил бокал шампанского, выпроводил из дома жену и, по некоторым данным, попытался покончить с собой; смерть наступила от сердечного приступа. Мария Лазич стала для Фета тем же, чем Беатриче для Данте или Лаура для Петрарки — единственной героиней любовной лирики на всю жизнь.",
+      "new": "«Нет, я не изменил. До старости глубокой я тот же преданный, я раб твоей любви», — написал Фет в 1887 году; Б. Я. Бухштаб относил этот текст к циклу памяти Лазич. Но говорить, что вся любовная лирика Фета до 1892 года обращена только к ней, нельзя: исследователь выделял и другой поздний цикл 1882–1892 годов, обращённый к живой возлюбленной или возлюбленным с неустановленным адресатом.\n\nПоследние часы Фета известны по воспоминаниям секретаря Е. В. Кудрявцевой. Тяжело больной поэт попросил шампанского; после отъезда жены продиктовал записку, взял стальной нож для писем и попытался добраться до других ножей. Кудрявцева остановила его; вскоре Фет умер. Это свидетельство подтверждает попытку самоубийства, но не установленный «сердечный приступ».",
+      "expected_count": 1,
+      "reason": "Remove the unsupported 1892 terminal dedication and sole-heroine claim; add the distinct late love cycle and accurately attribute Fet's final hours to Kudryavtseva's eyewitness account without asserting an unproved heart-attack diagnosis."
+    },
+    {
+      "replacement_id": "remove-truncated-footer-fragment",
+      "old": "🎧 The Leg\n\n",
+      "new": "",
+      "expected_count": 1,
+      "reason": "Remove an accidental truncated duplicate footer fragment."
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "rvb-fet-bukhshtab-biography",
+      "authority": "Русская виртуальная библиотека / Б. Я. Бухштаб. А. А. Фет",
+      "url": "https://rvb.ru/19vek/fet/bp/article/bukhshtab-fet.html",
+      "supports": "Academic biography documents Fet's loss of the Shenshin name and status, military service, relationship with Maria Lazich, separation, her death, the retrospective Lazich cycle, and a distinct late love cycle in 1882–1892 addressed to a living beloved or beloveds."
+    },
+    {
+      "source_id": "rvb-fet-complete-edition",
+      "authority": "Русская виртуальная библиотека / Фет. Полное собрание стихотворений, 1959",
+      "url": "https://rvb.ru/19vek/fet/bp/toc.html",
+      "supports": "The academic complete edition dates «Шёпот, робкое дыханье…» to 1850 and provides the chronology of Fet's poems, including the 1887 «Нет, я не изменил…»."
+    },
+    {
+      "source_id": "voplit-fet-verb-free-chernyshevsky",
+      "authority": "Вопросы литературы / О. Панченко. Движение поэтического слова",
+      "url": "https://voplit.ru/article/dvizhenie-poeticheskogo-slova/",
+      "supports": "Documents the verb-free structure and reproduces Chernyshevsky's letter specifically mentioning the piece without verbs and the horse comparison."
+    },
+    {
+      "source_id": "feb-fet-death-kudryavtseva",
+      "authority": "Фундаментальная электронная библиотека / О смерти А. А. Фета",
+      "url": "https://feb-web.ru/feb/rosarc/ra5/ra5-240-.htm?cmd=p",
+      "supports": "Publishes secretary E. V. Kudryavtseva's eyewitness account: champagne request, dictated note, steel letter knife, attempt to reach other knives, intervention, collapse and death."
+    },
+    {
+      "source_id": "feb-kle-fet-lazich-cycle",
+      "authority": "Фундаментальная электронная библиотека / Краткая литературная энциклопедия. Фет",
+      "url": "https://feb-web.ru/feb/kle/kle-abc/ke7/ke7-9414.htm?cmd=p&istext=1",
+      "supports": "Identifies a group of poems connected with Maria Lazich rather than treating every love poem as addressed exclusively to her."
+    },
+    {
+      "source_id": "site-project-charter",
+      "authority": "The Legendary Poet / PROJECT_CHARTER.md",
+      "url": "https://github.com/FedorMilovanov/TheLegendaryPoet/blob/main/PROJECT_CHARTER.md",
+      "supports": "Defines the project's direct, evidence-based historical and theological editorial posture."
+    },
+    {
+      "source_id": "site-editorial-judgment-policy",
+      "authority": "The Legendary Poet / EDITORIAL_JUDGMENT_AND_SOURCE_POLICY.md",
+      "url": "https://github.com/FedorMilovanov/TheLegendaryPoet/blob/main/docs/EDITORIAL_JUDGMENT_AND_SOURCE_POLICY.md",
+      "supports": "Requires clear distinctions between established fact, source attribution, inference and tradition."
+    },
+    {
+      "source_id": "research-knowledge-base",
+      "authority": "Research / owner knowledge base",
+      "url": "https://github.com/FedorMilovanov/Research",
+      "supports": "Provides the owner's research corpus and source-disciplined editorial context."
+    }
+  ],
+  "decisions": [
+    {
+      "decision_id": "correct-456239127",
+      "target_video_id": "-235216998_456239127",
+      "expected_title": "«Шёпот, Робкое Дыханье…» ⚡ Афанасий Фет",
+      "expected_description_sha256": "sha256:1b9c99ad52dc29f2df7645ae4c3dbedce20ff0c9da942e8e468709e9e35845e3",
+      "replacement_ids": [
+        "replace-short-fet-biography-and-attribution"
+      ],
+      "source_ids": [
+        "rvb-fet-bukhshtab-biography",
+        "rvb-fet-complete-edition",
+        "voplit-fet-verb-free-chernyshevsky",
+        "feb-kle-fet-lazich-cycle",
+        "site-project-charter",
+        "site-editorial-judgment-policy",
+        "research-knowledge-base"
+      ]
+    },
+    {
+      "decision_id": "correct-456239143",
+      "target_video_id": "-235216998_456239143",
+      "expected_title": "«Шёпот, Робкое Дыханье…» ⚡ Фет Слышит Пульс Зари",
+      "expected_description_sha256": "sha256:971c88b8e2aed7273cfcf0115dd957717a0d176c8b4461dcd8259c0346b51a9b",
+      "replacement_ids": [
+        "qualify-whisper-biographical-background",
+        "attribute-lazich-death-and-cycle",
+        "correct-late-love-cycle-and-fet-death",
+        "remove-truncated-footer-fragment"
+      ],
+      "source_ids": [
+        "rvb-fet-bukhshtab-biography",
+        "rvb-fet-complete-edition",
+        "feb-fet-death-kudryavtseva",
+        "feb-kle-fet-lazich-cycle",
+        "site-project-charter",
+        "site-editorial-judgment-policy",
+        "research-knowledge-base"
+      ]
+    }
+  ]
+}
