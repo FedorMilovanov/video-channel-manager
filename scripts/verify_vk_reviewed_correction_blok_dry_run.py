@@ -185,9 +185,7 @@ def _read_bundle(path: Path) -> tuple[dict[str, bytes], str]:
 
 def _verify_members(raw: dict[str, bytes], manifest: dict[str, Any]) -> None:
     records = {
-        str(item.get("name")): item
-        for item in manifest.get("files", [])
-        if isinstance(item, dict) and item.get("name")
+        str(item.get("name")): item for item in manifest.get("files", []) if isinstance(item, dict) and item.get("name")
     }
     _require(set(records) == set(_EXPECTED_MEMBERS), "Manifest file records differ from reviewed contents")
     for name, (expected_size, expected_sha) in _EXPECTED_MEMBERS.items():
@@ -220,9 +218,7 @@ def _verify_nested_review(raw_zip: bytes) -> None:
     _require(queue.get("mode") == "review_only", "Nested review is not review-only")
     _require(int(queue.get("remote_writes", -1)) == 0, "Nested review reports remote writes")
     records = {
-        str(item.get("name")): item
-        for item in manifest.get("files", [])
-        if isinstance(item, dict) and item.get("name")
+        str(item.get("name")): item for item in manifest.get("files", []) if isinstance(item, dict) and item.get("name")
     }
     _require(set(records) == required - {"manifest.json"}, "Nested manifest file records differ")
     for name, record in records.items():
@@ -279,9 +275,7 @@ def _verify_decisions(decisions: dict[str, Any]) -> tuple[dict[str, Any], dict[s
             f"Replacement changes hashtags: {replacement_id}",
         )
     by_video = {
-        str(item.get("target_video_id")): item
-        for item in decisions.get("decisions", [])
-        if isinstance(item, dict)
+        str(item.get("target_video_id")): item for item in decisions.get("decisions", []) if isinstance(item, dict)
     }
     _require(set(by_video) == set(_TARGETS), "Blok decision target IDs differ from reviewed set")
     return by_video, replacements
@@ -316,7 +310,9 @@ def _verify_operation(
     for field, expected_hash in hashes.items():
         _require(operation.get(field) == expected_hash, f"Canonical text SHA-256 mismatch: {field}: {remote_id}")
     _require(hashes["before_description_sha256"] == expected["guard"], f"Reviewed guard mismatch: {remote_id}")
-    _require(hashes["after_description_sha256"] == expected["after_guard"], f"Reviewed after guard mismatch: {remote_id}")
+    _require(
+        hashes["after_description_sha256"] == expected["after_guard"], f"Reviewed after guard mismatch: {remote_id}"
+    )
     _require(decision.get("expected_description_sha256") == expected["guard"], f"Decision guard mismatch: {remote_id}")
     _require(
         decision.get("replacement_ids") == expected["replacements"],
@@ -433,11 +429,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
 
     operations = plan.get("video_text_operations")
     _require(isinstance(operations, list) and len(operations) == 2, "Plan must contain exactly two operations")
-    by_video = {
-        str(item.get("target_video_id")): item
-        for item in operations
-        if isinstance(item, dict)
-    }
+    by_video = {str(item.get("target_video_id")): item for item in operations if isinstance(item, dict)}
     _require(set(by_video) == set(_TARGETS), "Blok correction target IDs differ from reviewed set")
     for remote_id, operation in by_video.items():
         _verify_operation(
