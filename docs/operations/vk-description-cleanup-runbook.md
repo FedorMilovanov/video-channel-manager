@@ -117,6 +117,18 @@ review-only excluded: 0
 Dry-run only. No VK mutation method was called.
 ```
 
+Текущий проверенный dry-run от `2026-07-27 16:45:35` содержит:
+
+```text
+ready: 111
+already applied: 0
+conflicts: 0
+review-only excluded: 0
+plan SHA-256: sha256:b4eede44954bcb148550bcb2c0a372e4f23b72d892cc3aadcc5d71321a2e9294
+```
+
+Source snapshot побайтно совпадает с final snapshot успешного косметического title apply. Все 111 title guards и membership coverage совпадают с live preflight.
+
 ## 7. Выполнение описаний
 
 После внешней проверки ZIP используется отдельный reviewed execute-helper:
