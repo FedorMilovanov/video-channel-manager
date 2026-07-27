@@ -69,6 +69,20 @@ Regex-cleanup допустим для ссылок и разметки, но н�
 - любое оставшееся отличие блокирует план;
 - фактические и чувствительные утверждения сохраняются и выносятся в deferred review.
 
+## Инцидент 6: успешный postflight был помечен как failed из-за символа консоли
+
+После 111 подтверждённых `updated_and_verified` операций executor завершил собственный postflight и создал `status=completed` result journal. Затем дополнительный read-only scan успел записать полный JSON snapshot, но Rich упал при печати символа `→` в перенаправленную Windows-консоль с legacy encoding.
+
+Редакционные изменения были завершены корректно, однако внешний wrapper записал `status=failed` из-за несущественного console-output exception.
+
+Постоянное исправление:
+
+- operational CLI не использует Unicode arrows или typographic ellipsis в обязательных status-строках;
+- scan success output использует ASCII `->` и `...`;
+- JSON artifact записывается до status output и остаётся источником истины;
+- acceptance определяется result journal, exact final state и artifact validation, а не декоративной печатью;
+- regression test блокирует возврат проблемных символов в VK scan output.
+
 ## Обязательные acceptance criteria для новых writers
 
 Каждый новый remote writer обязан иметь:
@@ -87,7 +101,8 @@ Regex-cleanup допустим для ссылок и разметки, но н�
 12. resume after partial success;
 13. full postflight;
 14. unchanged unrelated-state digest;
-15. one ZIP handoff with manifest.
+15. one ZIP handoff with manifest;
+16. encoding-safe mandatory console output.
 
 ## Документация имеет приоритет
 
