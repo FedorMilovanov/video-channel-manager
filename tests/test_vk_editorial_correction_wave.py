@@ -104,9 +104,7 @@ def test_reviewed_correction_wave_is_exact_and_description_only() -> None:
     assert operation["title_changed"] is False
     assert operation["description_changed"] is True
     assert operation["reviewed_correction"] is True
-    assert operation["after_description"] == (
-        "О вере по биографии нельзя судить окончательно.\n\n1913–1915 гг."
-    )
+    assert operation["after_description"] == ("О вере по биографии нельзя судить окончательно.\n\n1913–1915 гг.")
     assert [item["replacement_id"] for item in operation["applied_replacements"]] == ["faith", "date"]
     assert operation["source_evidence"][0]["source_id"] == "feb"
 
