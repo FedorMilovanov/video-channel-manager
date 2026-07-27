@@ -118,6 +118,26 @@ Permanent rules:
 - description execute revalidates unchanged titles, changed descriptions, semantic-body preservation, zero album/catalog operations, and exact source snapshot identity;
 - the operator runs one short `-Execute` command and sends back one apply ZIP.
 
+## 9. Treat `video.get` error 204 as a read failure, never as write state
+
+Observed failure before the description writer started:
+
+```text
+VK API 204 in video.get: Access denied
+```
+
+The failed handoff contained no apply log, no result journal, no final snapshot, and no preflight counts. Therefore no mutation loop had started.
+
+Permanent rules:
+
+- retry only the exact read-only `video.get` error 204, not arbitrary provider or plan errors;
+- use a bounded number of attempts with increasing delay;
+- keep `-NoOpen` on internal retry attempts so Explorer is not spammed with failed bundles;
+- never infer that error 204 means a token refresh is definitely required;
+- after persistent failure, diagnose token identity, personal `video.get` permission, managed-community visibility, and community video access separately;
+- recommend `video-manager vk login --account <alias>` only when token identity or video/groups permission is actually invalid;
+- no write is permitted until a complete fresh preflight returns exact ready/already-applied/conflict counts.
+
 ## Operator rule
 
 Operational documentation and signed artifacts are the source of truth. Never reuse a confirmation count, snapshot ID, or SHA-256 from chat memory or an older run.
