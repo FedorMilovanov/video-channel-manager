@@ -146,19 +146,19 @@ def _html(plan: dict[str, Any]) -> str:
             for source in operation["source_evidence"]
         )
         reasons = "".join(
-            f'<li><code>{html.escape(str(item["replacement_id"]))}</code> — {html.escape(str(item["reason"]))}</li>'
+            f"<li><code>{html.escape(str(item['replacement_id']))}</code> — {html.escape(str(item['reason']))}</li>"
             for item in operation["applied_replacements"]
         )
         cards.append(
             f"""
 <article class="card">
-<h2>{html.escape(str(operation['before_title']))}</h2>
-<p><code>{html.escape(str(operation['target_video_id']))}</code> · <code>{html.escape(str(operation['decision_id']))}</code></p>
+<h2>{html.escape(str(operation["before_title"]))}</h2>
+<p><code>{html.escape(str(operation["target_video_id"]))}</code> · <code>{html.escape(str(operation["decision_id"]))}</code></p>
 <h3>Причины</h3><ul>{reasons}</ul>
 <h3>Источники</h3><ul>{sources}</ul>
 <div class="columns">
-<details><summary>До</summary><pre>{html.escape(str(operation['before_description']))}</pre></details>
-<details open><summary>После</summary><pre>{html.escape(str(operation['after_description']))}</pre></details>
+<details><summary>До</summary><pre>{html.escape(str(operation["before_description"]))}</pre></details>
+<details open><summary>После</summary><pre>{html.escape(str(operation["after_description"]))}</pre></details>
 </div>
 </article>
 """
@@ -171,8 +171,8 @@ body{{font-family:Segoe UI,Arial,sans-serif;margin:0;background:#10141a;color:#e
 a{{color:#7cc7ff}}code{{color:#8bd9ff}}.card{{background:#171d25;border:1px solid #293443;border-radius:14px;padding:18px;margin:16px 0}}.columns{{display:grid;grid-template-columns:1fr 1fr;gap:16px}}details{{background:#0d1117;border-radius:10px;padding:12px;min-width:0}}summary{{cursor:pointer;font-weight:700}}pre{{white-space:pre-wrap;word-break:break-word;line-height:1.45}}@media(max-width:900px){{.columns{{grid-template-columns:1fr}}}}
 </style></head><body><main>
 <h1>VK — reviewed correction-only dry-run</h1>
-<p>План <code>{html.escape(str(plan['plan_sha256']))}</code>; точных исправлений: <strong>{plan['summary']['descriptions_to_update']}</strong>; названий/альбомов/memberships: <strong>0</strong>.</p>
-{''.join(cards)}
+<p>План <code>{html.escape(str(plan["plan_sha256"]))}</code>; точных исправлений: <strong>{plan["summary"]["descriptions_to_update"]}</strong>; названий/альбомов/memberships: <strong>0</strong>.</p>
+{"".join(cards)}
 </main></body></html>"""
 
 
