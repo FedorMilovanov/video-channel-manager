@@ -29,7 +29,7 @@ def test_fet_execute_helper_repeats_all_live_guards_and_postflight() -> None:
     assert '--confirm-plan-sha256 "$($PlanJson.plan_sha256)"' in text
     assert '--confirm-video-coverage "$($PlanJson.target_video_ids_sha256)"' in text
     assert '--confirm-memberships "$($PlanJson.initial_memberships_sha256)"' in text
-    assert "--result-output \"$ResultPath\"" in text
+    assert '--result-output "$ResultPath"' in text
     assert "video-manager vk scan" in text
     assert text.count("verify_vk_reviewed_correction_fet_apply_bundle.py") == 2
     assert "05-independent-verification.json" in text
@@ -44,7 +44,7 @@ def test_fet_apply_verifier_locks_scope_and_all_non_targets() -> None:
     assert "Plan must contain exactly two Fet description corrections" in text
     assert "Fet apply target IDs differ from the reviewed set" in text
     assert '"operations": 2' in text
-    assert 'len(_video_map(final)) - len(_TARGET_IDS)' in text
+    assert "len(_video_map(final)) - len(_TARGET_IDS)" in text
     assert "VK album memberships changed during Fet correction" in text
     assert "membership_position_changes" in text
     assert "updated_and_verified" in text
