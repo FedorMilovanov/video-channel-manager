@@ -28,6 +28,7 @@ $SourceApplyVerification = Join-Path $TempDir "source-apply-verification.json"
 $Plan = Join-Path $Reports "vk-reviewed-correction-p1-fet-$Stamp.json"
 $Report = Join-Path $Reports "vk-reviewed-correction-p1-fet-$Stamp.md"
 $HtmlReport = Join-Path $Reports "vk-reviewed-correction-p1-fet-$Stamp.html"
+$BuildLog = Join-Path $BundleDir "00-build.txt"
 $Preflight = Join-Path $BundleDir "01-preflight.txt"
 $ManifestPath = Join-Path $BundleDir "manifest.json"
 $ReadmePath = Join-Path $BundleDir "README.txt"
@@ -102,10 +103,30 @@ function Copy-File {
     }
 }
 
-function Write-Handoff {
-    $Readme = @"
-VK REVIEWED CORRECTION P1 — ФЕТ — DRY-RUN
+function Start-Safely {
+    param([scriptblock]$Action)
 
+    try {
+        & $Action
+    }
+    catch {
+        Write-Warning "Не удалось открыть артефакт автоматически: $($_.Exception.Message)"
+    }
+}
+
+function Write-Handoff {
+    New-Item -ItemType Directory -Path $Handoffs, $BundleDir -Force | Out-Null
+
+    $ArtifactKind = if ($RunStatus -eq "completed") {
+        "verified dry-run"
+    }
+    else {
+        "failed diagnostic"
+    }
+    $Readme = @"
+VK REVIEWED CORRECTION P1 — ФЕТ
+
+Тип пакета: $ArtifactKind
 Статус: $RunStatus
 Community: $Community
 Ready: $Ready
@@ -129,7 +150,10 @@ Conflicts: $Conflicts
 
 DRY-RUN НЕ ВЫЗЫВАЕТ VK MUTATION API.
 
-ОТПРАВИТЬ НУЖНО ТОЛЬКО:
+При status=completed этот ZIP можно передавать на независимую проверку.
+При status=failed это только диагностический пакет; execute по нему запрещён.
+
+Файл:
 $ZipPath
 "@
     Set-Content -LiteralPath $ReadmePath -Value $Readme -Encoding UTF8
@@ -148,9 +172,10 @@ $ZipPath
 
     $Manifest = [ordered]@{
         schema_name = "video-manager.vk-reviewed-correction-handoff"
-        schema_version = 1
+        schema_version = 2
         created_at = (Get-Date).ToUniversalTime().ToString("o")
         status = $RunStatus
+        artifact_kind = $ArtifactKind
         mode = "dry-run"
         component_scope = "descriptions_only"
         correction_scope = "reviewed_factual_and_sensitive"
@@ -182,13 +207,23 @@ $ZipPath
     Compress-Archive -Path (Join-Path $BundleDir "*") -DestinationPath $ZipPath -CompressionLevel Optimal
 
     Write-Host ""
-    Write-Host "ГОТОВ REVIEWED CORRECTION P1 FET DRY-RUN ZIP:" -ForegroundColor Green
+    if ($RunStatus -eq "completed") {
+        Write-Host "ГОТОВ VERIFIED REVIEWED CORRECTION P1 FET DRY-RUN ZIP:" -ForegroundColor Green
+    }
+    else {
+        Write-Host "СОЗДАН ДИАГНОСТИЧЕСКИЙ ZIP; DRY-RUN НЕ ПОСТРОЕН:" -ForegroundColor Yellow
+    }
     Write-Host $ZipPath -ForegroundColor Cyan
     Write-Host "VK-записей: 0"
 
     if (-not $NoOpen -and $IsWindows) {
-        Start-Process (Join-Path $BundleDir "plan-review.html")
-        Start-Process explorer.exe -ArgumentList "/select,`"$ZipPath`""
+        $PlanHtmlInBundle = Join-Path $BundleDir "plan-review.html"
+        if ($RunStatus -eq "completed" -and (Test-Path -LiteralPath $PlanHtmlInBundle -PathType Leaf)) {
+            Start-Safely { Start-Process $PlanHtmlInBundle }
+        }
+        if (Test-Path -LiteralPath $ZipPath -PathType Leaf) {
+            Start-Safely { Start-Process explorer.exe -ArgumentList "/select,`"$ZipPath`"" }
+        }
     }
 }
 
@@ -229,15 +264,24 @@ try {
 
     Expand-BundleEntry -Bundle $ApplyBundle -Name "04-final-vk-snapshot.json" -Destination $Snapshot
 
-    & py -3.11 -X utf8 .\scripts\build_vk_reviewed_correction_wave.py `
+    Copy-File $Snapshot "00-source-vk-snapshot.json"
+    Copy-File $SourceApplyVerification "source-apply-verification.json"
+    Copy-File $Decisions "reviewed-decisions.json"
+    Copy-File $ReviewBundle "source-review-bundle.zip"
+
+    $BuildOutput = & py -3.11 -X utf8 .\scripts\build_vk_reviewed_correction_wave.py `
         "$Snapshot" `
         --decisions-json "$Decisions" `
         --review-bundle "$ReviewBundle" `
         --output "$Plan" `
         --report "$Report" `
-        --html-report "$HtmlReport"
-    if ($LASTEXITCODE -ne 0) {
-        throw "Не удалось построить Fet reviewed correction plan."
+        --html-report "$HtmlReport" 2>&1
+    $BuildExitCode = $LASTEXITCODE
+    $BuildText = ($BuildOutput | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+    Set-Content -LiteralPath $BuildLog -Value $BuildText -Encoding UTF8
+    Write-Host $BuildText
+    if ($BuildExitCode -ne 0) {
+        throw "Не удалось построить Fet reviewed correction plan. Подробности сохранены в 00-build.txt.`n$BuildText"
     }
 
     $PlanJson = Get-Content -LiteralPath $Plan -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -266,10 +310,6 @@ try {
         throw "Fet correction plan содержит описание длиннее 5000 символов."
     }
 
-    Copy-File $Snapshot "00-source-vk-snapshot.json"
-    Copy-File $SourceApplyVerification "source-apply-verification.json"
-    Copy-File $Decisions "reviewed-decisions.json"
-    Copy-File $ReviewBundle "source-review-bundle.zip"
     Copy-File $Plan "plan.json"
     Copy-File $Report "plan-review.md"
     Copy-File $HtmlReport "plan-review.html"
