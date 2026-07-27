@@ -81,7 +81,9 @@ Regex-cleanup допустим для ссылок и разметки, но н�
 - scan success output использует ASCII `->` и `...`;
 - JSON artifact записывается до status output и остаётся источником истины;
 - acceptance определяется result journal, exact final state и artifact validation, а не декоративной печатью;
-- regression test блокирует возврат проблемных символов в VK scan output.
+- regression test блокирует возврат проблемных символов в VK scan output;
+- `verify_vk_description_apply_bundle.py` независимо проверяет manifest, result, plan и final snapshot;
+- `Invoke-VkDeferredEditorialReview.ps1` строит следующую review-only очередь только из apply-ZIP, прошедшего verifier.
 
 ## Обязательные acceptance criteria для новых writers
 
@@ -102,7 +104,8 @@ Regex-cleanup допустим для ссылок и разметки, но н�
 13. full postflight;
 14. unchanged unrelated-state digest;
 15. one ZIP handoff with manifest;
-16. encoding-safe mandatory console output.
+16. encoding-safe mandatory console output;
+17. independent apply-bundle verification before downstream processing.
 
 ## Документация имеет приоритет
 
@@ -111,4 +114,6 @@ Regex-cleanup допустим для ссылок и разметки, но н�
 - код текущей ветки;
 - актуальный operational runbook;
 - подписанный plan;
-- свежий dry-run ZIP.
+- свежий dry-run ZIP;
+- result journal и final snapshot;
+- независимый verifier report.
