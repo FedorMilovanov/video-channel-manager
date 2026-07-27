@@ -36,9 +36,7 @@ def test_fet_decisions_lock_exact_two_video_scope() -> None:
 
 def test_fet_replacements_distinguish_fact_attribution_and_hypothesis() -> None:
     payload = _payload()
-    replacements = {
-        item["replacement_id"]: item for item in payload["shared_replacements"]
-    }
+    replacements = {item["replacement_id"]: item for item in payload["shared_replacements"]}
 
     assert set(replacements) == {
         "replace-short-fet-biography-and-attribution",
