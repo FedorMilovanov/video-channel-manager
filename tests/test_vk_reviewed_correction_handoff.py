@@ -35,13 +35,9 @@ def test_p1_esenin_decisions_are_exactly_scoped_and_site_aligned() -> None:
 
     assert decisions["target_community_id"] == 235216998
     assert decisions["source_review_bundle_sha256"].startswith("sha256:")
-    assert decisions["editorial_profile"]["profile_id"] == (
-        "the-legendary-poet-historical-evangelical-v1"
-    )
+    assert decisions["editorial_profile"]["profile_id"] == ("the-legendary-poet-historical-evangelical-v1")
     assert decisions["editorial_profile"]["judgment_mode"] == "asymmetric_evidence_based"
-    assert decisions["editorial_profile"]["last_hour_rule"] == (
-        "acknowledge_once_not_equal_to_documented_life"
-    )
+    assert decisions["editorial_profile"]["last_hour_rule"] == ("acknowledge_once_not_equal_to_documented_life")
     assert len(decisions["decisions"]) == 3
     assert {item["target_video_id"] for item in decisions["decisions"]} == {
         "-235216998_456239046",
