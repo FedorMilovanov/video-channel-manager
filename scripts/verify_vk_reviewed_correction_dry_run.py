@@ -86,11 +86,7 @@ def _remote_id(item: dict[str, Any]) -> str:
 
 
 def _coverage_sha256(snapshot: dict[str, Any]) -> str:
-    ids = sorted(
-        _remote_id(item)
-        for item in snapshot.get("videos", [])
-        if isinstance(item, dict)
-    )
+    ids = sorted(_remote_id(item) for item in snapshot.get("videos", []) if isinstance(item, dict))
     return _canonical_sha256(ids)
 
 
@@ -108,15 +104,11 @@ def _membership_sha256(snapshot: dict[str, Any]) -> str:
 
 def _verify_manifest(raw: dict[str, bytes], manifest: dict[str, Any]) -> None:
     records = {
-        str(item["name"]): item
-        for item in manifest.get("files", [])
-        if isinstance(item, dict) and item.get("name")
+        str(item["name"]): item for item in manifest.get("files", []) if isinstance(item, dict) and item.get("name")
     }
     missing_records = sorted((_REQUIRED_FILES - {"manifest.json"}) - records.keys())
     if missing_records:
-        raise ValueError(
-            "Manifest is missing required file records: " + ", ".join(missing_records)
-        )
+        raise ValueError("Manifest is missing required file records: " + ", ".join(missing_records))
     issues: list[str] = []
     for name, record in records.items():
         content = raw.get(name)
@@ -146,9 +138,7 @@ def _verify_source_review_bundle(raw_zip: bytes, expected_sha256: str) -> dict[s
         }
         missing = sorted(required - names)
         if missing:
-            raise ValueError(
-                "Nested source review bundle is missing: " + ", ".join(missing)
-            )
+            raise ValueError("Nested source review bundle is missing: " + ", ".join(missing))
         nested_raw = {name: archive.read(name) for name in names}
     manifest = _json_bytes(nested_raw["manifest.json"], name="nested manifest.json")
     queue = _json_bytes(nested_raw["review-queue.json"], name="review-queue.json")
@@ -157,9 +147,7 @@ def _verify_source_review_bundle(raw_zip: bytes, expected_sha256: str) -> dict[s
     if queue.get("mode") != "review_only" or int(queue.get("remote_writes", -1)) != 0:
         raise ValueError("Nested source review bundle is not review-only")
     records = {
-        str(item["name"]): item
-        for item in manifest.get("files", [])
-        if isinstance(item, dict) and item.get("name")
+        str(item["name"]): item for item in manifest.get("files", []) if isinstance(item, dict) and item.get("name")
     }
     for name, record in records.items():
         content = nested_raw.get(name)
@@ -211,12 +199,8 @@ def verify_bundle(path: Path) -> dict[str, Any]:
 
     manifest = _json_bytes(raw["manifest.json"], name="manifest.json")
     plan = _json_bytes(raw["plan.json"], name="plan.json")
-    decisions = _json_bytes(
-        raw["reviewed-decisions.json"], name="reviewed-decisions.json"
-    )
-    snapshot = _json_bytes(
-        raw["00-source-vk-snapshot.json"], name="00-source-vk-snapshot.json"
-    )
+    decisions = _json_bytes(raw["reviewed-decisions.json"], name="reviewed-decisions.json")
+    snapshot = _json_bytes(raw["00-source-vk-snapshot.json"], name="00-source-vk-snapshot.json")
     _verify_manifest(raw, manifest)
 
     if manifest.get("status") != "completed" or manifest.get("mode") != "dry-run":
@@ -235,9 +219,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     ):
         raise ValueError("Unexpected dry-run preflight counts or remote_writes")
 
-    expected_plan_sha = _canonical_sha256(
-        {key: value for key, value in plan.items() if key != "plan_sha256"}
-    )
+    expected_plan_sha = _canonical_sha256({key: value for key, value in plan.items() if key != "plan_sha256"})
     if plan.get("plan_sha256") != expected_plan_sha:
         raise ValueError("Plan self-digest mismatch")
     if manifest.get("plan_sha256") != expected_plan_sha:
@@ -281,11 +263,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     if plan.get("album_title_operations"):
         raise ValueError("Correction plan contains album operations")
 
-    videos = {
-        _remote_id(item): item
-        for item in snapshot.get("videos", [])
-        if isinstance(item, dict)
-    }
+    videos = {_remote_id(item): item for item in snapshot.get("videos", []) if isinstance(item, dict)}
     if len(videos) != 111:
         raise ValueError("Source snapshot must contain exactly 111 videos")
     if len(snapshot.get("collections", [])) != 17:
@@ -336,21 +314,13 @@ def verify_bundle(path: Path) -> dict[str, Any]:
         if not bool(operation.get("reviewed_correction")):
             raise ValueError(f"reviewed_correction is false: {remote_id}")
         if source_video.get("title") != operation.get("before_title"):
-            raise ValueError(
-                f"Source title differs from reviewed before-state: {remote_id}"
-            )
+            raise ValueError(f"Source title differs from reviewed before-state: {remote_id}")
         if source_video.get("description") != operation.get("before_description"):
-            raise ValueError(
-                f"Source description differs from reviewed before-state: {remote_id}"
-            )
+            raise ValueError(f"Source description differs from reviewed before-state: {remote_id}")
         for side in ("before", "after"):
-            if operation.get(f"{side}_title_sha256") != _canonical_sha256(
-                operation.get(f"{side}_title")
-            ):
+            if operation.get(f"{side}_title_sha256") != _canonical_sha256(operation.get(f"{side}_title")):
                 raise ValueError(f"{side}-title SHA mismatch: {remote_id}")
-            if operation.get(f"{side}_description_sha256") != _canonical_sha256(
-                operation.get(f"{side}_description")
-            ):
+            if operation.get(f"{side}_description_sha256") != _canonical_sha256(operation.get(f"{side}_description")):
                 raise ValueError(f"{side}-description SHA mismatch: {remote_id}")
 
         reviewed_decision = decision_index[remote_id]
@@ -366,16 +336,17 @@ def verify_bundle(path: Path) -> dict[str, Any]:
         if set(replacement_ids) != _REPLACEMENT_IDS:
             raise ValueError(f"Applied replacements differ from approved set: {remote_id}")
         source_ids = {
-            str(item.get("source_id"))
-            for item in operation.get("source_evidence", [])
-            if isinstance(item, dict)
+            str(item.get("source_id")) for item in operation.get("source_evidence", []) if isinstance(item, dict)
         }
         if not _STANCE_SOURCE_IDS <= source_ids:
             raise ValueError(f"Operation lacks site or Research evidence: {remote_id}")
-        if not {
-            "feb-esenin-pss-v4-text",
-            "feb-esenin-pss-v4-commentary",
-        } <= source_ids:
+        if (
+            not {
+                "feb-esenin-pss-v4-text",
+                "feb-esenin-pss-v4-commentary",
+            }
+            <= source_ids
+        ):
             raise ValueError(f"Operation lacks academic dating evidence: {remote_id}")
 
         expected_after = str(operation.get("before_description") or "")
@@ -385,14 +356,10 @@ def verify_bundle(path: Path) -> dict[str, Any]:
             new = str(replacement.get("new") or "")
             expected_count = int(replacement.get("expected_count", 1))
             if expected_after.count(old) != expected_count:
-                raise ValueError(
-                    f"Replacement {replacement_id} is ambiguous in {remote_id}"
-                )
+                raise ValueError(f"Replacement {replacement_id} is ambiguous in {remote_id}")
             expected_after = expected_after.replace(old, new)
         if expected_after != operation.get("after_description"):
-            raise ValueError(
-                f"After-description differs from approved replacements: {remote_id}"
-            )
+            raise ValueError(f"After-description differs from approved replacements: {remote_id}")
         final_text = str(operation.get("after_description") or "")
         required_phrases = (
             "По доступным историческим свидетельствам Есенин умер неверующим",
@@ -401,9 +368,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
             "1913–1915 гг. (предположительная датировка академического издания)",
         )
         if not all(phrase in final_text for phrase in required_phrases):
-            raise ValueError(
-                f"Approved conclusion or academic date is missing: {remote_id}"
-            )
+            raise ValueError(f"Approved conclusion or academic date is missing: {remote_id}")
         if "окончательный суд о человеке принадлежит Богу" in final_text:
             raise ValueError(f"Superseded cautious text remains: {remote_id}")
         if "1912 г." in final_text:
