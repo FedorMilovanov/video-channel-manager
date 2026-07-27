@@ -11,7 +11,8 @@ def test_reviewed_correction_wrapper_is_dry_run_only() -> None:
     assert "apply_vk_editorial_cleanup_plan.py" in text
     assert "--max-operations 3" in text
     assert "--execute" not in text.casefold()
-    assert "vk-reviewed-correction-p1-dry-run-$Stamp.zip" in text
+    assert '$BundleName = "vk-reviewed-correction-p1-dry-run-$Stamp"' in text
+    assert '$ZipPath = Join-Path $Handoffs "$BundleName.zip"' in text
     assert "remote_writes = 0" in text
     assert "Expected exactly 3 correction operations" in text
     assert "VK-записей: 0" in text
