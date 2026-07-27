@@ -51,7 +51,7 @@ It contains five exact replacements:
 4. correct the late love-cycle and Fet-death claims using Bukhstab and Kudryavtseva;
 5. remove the accidental truncated footer line `🎧 The Leg`.
 
-Every replacement must occur exactly once. The two current descriptions are guarded by exact SHA-256 values.
+Every replacement must occur exactly once. The two current descriptions are guarded by exact canonical VK text hashes.
 
 ## Sources
 
@@ -72,6 +72,53 @@ py -3.11 -X utf8 .\scripts\verify_vk_reviewed_correction_apply_bundle.py <apply-
 ```
 
 Only after `status=verified_completed` does it extract `04-final-vk-snapshot.json` and build the Fet plan.
+
+## Canonical guard-hash incident
+
+The first dry-run attempt stopped with:
+
+```text
+Description guard mismatch for -235216998_456239127
+```
+
+The description text in the independently verified final snapshot was correct and unchanged. The policy had stored ordinary SHA-256 of UTF-8 text bytes, while the writer contract uses `text_sha256`:
+
+```text
+canonical_vk_text(text)
+→ compact JSON string with ensure_ascii=false
+→ SHA-256
+```
+
+Correct guards:
+
+```text
+-235216998_456239127
+raw SHA-256: sha256:1b9c99ad52dc29f2df7645ae4c3dbedce20ff0c9da942e8e468709e9e35845e3
+text_sha256: sha256:eb10b7f1e529c26c240dada4116d2a9666b33bb4e0e167839ad3f9762e959203
+
+-235216998_456239143
+raw SHA-256: sha256:971c88b8e2aed7273cfcf0115dd957717a0d176c8b4461dcd8259c0346b51a9b
+text_sha256: sha256:76c74c96f9aaa93d952531094d42c4b7a168f901566688bd349febd8b7b0c6b9
+```
+
+All reviewed decision sets now declare:
+
+```json
+"description_guard_hash_algorithm": "video-manager.text-sha256-v1"
+```
+
+The correction builder rejects missing or unknown guard algorithms. On mismatch it reports expected canonical hash, actual canonical hash, and raw text SHA-256 so a calculation-method bug is distinguishable from real text drift.
+
+## Honest failed-diagnostic handoff
+
+The initial wrapper incorrectly printed a green ready message after plan construction failed and then attempted to open a missing `plan-review.html`.
+
+The wrapper now distinguishes:
+
+- `artifact_kind=verified dry-run` only when plan construction and live read-only preflight complete;
+- `artifact_kind=failed diagnostic` on every failure.
+
+A failed diagnostic ZIP contains source snapshot, source apply verification, decisions, source review bundle, and `00-build.txt`. It is never eligible for execute. Missing HTML is not opened, and automatic shell opening cannot replace the original error.
 
 ## Dry-run command
 
