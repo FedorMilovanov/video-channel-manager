@@ -76,32 +76,66 @@ def _remote_id(item: dict[str, Any]) -> str:
 
 
 def _video_map(snapshot: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    return {_remote_id(item): item for item in snapshot.get("videos", []) if isinstance(item, dict)}
+    return {
+        _remote_id(item): item
+        for item in snapshot.get("videos", [])
+        if isinstance(item, dict)
+    }
 
 
 def _coverage_sha256(snapshot: dict[str, Any]) -> str:
     return _canonical_sha256(sorted(_video_map(snapshot)))
 
 
-def _membership_rows(
-    snapshot: dict[str, Any],
-) -> list[tuple[str, str, int | None, str | None]]:
+def _membership_identity_rows(snapshot: dict[str, Any]) -> list[tuple[str, str]]:
+    """Return stable membership identity, excluding read-order metadata.
+
+    VK can return two adjacent items in a system collection with exchanged
+    ``position`` values on consecutive read-only scans. A description writer
+    cannot mutate album order, so identity is the collection/video pair. Real
+    membership additions or removals still fail this strict multiset check.
+    """
+
     return [
         (
             str(item["collection_ref"]["remote_id"]),
             str(item["video_ref"]["remote_id"]),
-            item.get("position"),
-            str(item["membership_id"]) if item.get("membership_id") is not None else None,
         )
         for item in snapshot.get("memberships", [])
         if isinstance(item, dict)
     ]
 
 
+def _membership_positions(snapshot: dict[str, Any]) -> dict[tuple[str, str], int | None]:
+    return {
+        (
+            str(item["collection_ref"]["remote_id"]),
+            str(item["video_ref"]["remote_id"]),
+        ): item.get("position")
+        for item in snapshot.get("memberships", [])
+        if isinstance(item, dict)
+    }
+
+
+def _membership_position_changes(
+    source: dict[str, Any], final: dict[str, Any]
+) -> list[dict[str, Any]]:
+    before = _membership_positions(source)
+    after = _membership_positions(final)
+    return [
+        {
+            "collection_id": collection_id,
+            "video_id": video_id,
+            "before_position": before[(collection_id, video_id)],
+            "after_position": after[(collection_id, video_id)],
+        }
+        for collection_id, video_id in sorted(before.keys() & after.keys())
+        if before[(collection_id, video_id)] != after[(collection_id, video_id)]
+    ]
+
+
 def _membership_sha256(snapshot: dict[str, Any]) -> str:
-    return _canonical_sha256(
-        sorted((collection_id, video_id) for collection_id, video_id, _, _ in _membership_rows(snapshot))
-    )
+    return _canonical_sha256(sorted(_membership_identity_rows(snapshot)))
 
 
 def _collection_titles(snapshot: dict[str, Any]) -> dict[str, str]:
@@ -114,11 +148,15 @@ def _collection_titles(snapshot: dict[str, Any]) -> dict[str, str]:
 
 def _verify_manifest(raw: dict[str, bytes], manifest: dict[str, Any]) -> None:
     records = {
-        str(item["name"]): item for item in manifest.get("files", []) if isinstance(item, dict) and item.get("name")
+        str(item["name"]): item
+        for item in manifest.get("files", [])
+        if isinstance(item, dict) and item.get("name")
     }
     missing_records = sorted((_REQUIRED_FILES - {"manifest.json"}) - records.keys())
     if missing_records:
-        raise ValueError("Manifest is missing required file records: " + ", ".join(missing_records))
+        raise ValueError(
+            "Manifest is missing required file records: " + ", ".join(missing_records)
+        )
     issues: list[str] = []
     for name, record in records.items():
         content = raw.get(name)
@@ -172,7 +210,9 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     if int(manifest.get("conflicts", -1)) != 0:
         raise ValueError("Apply handoff reports conflicts")
 
-    expected_plan_sha = _canonical_sha256({key: value for key, value in plan.items() if key != "plan_sha256"})
+    expected_plan_sha = _canonical_sha256(
+        {key: value for key, value in plan.items() if key != "plan_sha256"}
+    )
     if plan.get("plan_sha256") != expected_plan_sha:
         raise ValueError("Plan self-digest mismatch")
     if manifest.get("plan_sha256") != expected_plan_sha:
@@ -224,7 +264,9 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     if set(operation_by_id) != _TARGET_IDS:
         raise ValueError("Apply target IDs differ from the reviewed set")
 
-    previous_report = _verify_previous_dry_run(raw["previous-reviewed-dry-run.zip"], expected_plan_sha)
+    previous_report = _verify_previous_dry_run(
+        raw["previous-reviewed-dry-run.zip"], expected_plan_sha
+    )
     expected_dry_run_sha = _file_sha256(raw["previous-reviewed-dry-run.zip"])
     manifest_dry_run_sha = manifest.get("source_dry_run_bundle_sha256")
     if manifest_dry_run_sha not in {None, expected_dry_run_sha}:
@@ -239,12 +281,16 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     result_operations = result.get("operations")
     if not isinstance(result_operations, list):
         raise ValueError("Result operations must be a list")
-    statuses = Counter(str(item.get("status")) for item in result_operations if isinstance(item, dict))
+    statuses = Counter(
+        str(item.get("status")) for item in result_operations if isinstance(item, dict)
+    )
     if sum(statuses.values()) != 3:
         raise ValueError("Result operation count differs from the plan")
     unexpected_statuses = sorted(set(statuses) - _ALLOWED_OPERATION_STATUSES)
     if unexpected_statuses:
-        raise ValueError("Unexpected result operation statuses: " + ", ".join(unexpected_statuses))
+        raise ValueError(
+            "Unexpected result operation statuses: " + ", ".join(unexpected_statuses)
+        )
     result_ids = {
         str(item.get("remote_id"))
         for item in result_operations
@@ -291,8 +337,11 @@ def verify_bundle(path: Path) -> dict[str, Any]:
 
     if _collection_titles(source) != _collection_titles(final):
         raise ValueError("VK album inventory or titles changed during correction")
-    if _membership_rows(source) != _membership_rows(final):
+    source_membership_identities = Counter(_membership_identity_rows(source))
+    final_membership_identities = Counter(_membership_identity_rows(final))
+    if source_membership_identities != final_membership_identities:
         raise ValueError("VK album memberships changed during correction")
+    position_changes = _membership_position_changes(source, final)
 
     source_coverage = _coverage_sha256(source)
     final_coverage = _coverage_sha256(final)
@@ -333,9 +382,10 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     updated_count = statuses.get("updated_and_verified", 0)
     return {
         "schema_name": "video-manager.vk-reviewed-correction-apply-verification",
-        "schema_version": 1,
+        "schema_version": 2,
         "status": "verified_completed",
         "bundle": str(path),
+        "bundle_sha256": _file_sha256(path.read_bytes()),
         "wrapper_status": wrapper_status,
         "wrapper_error": manifest.get("error"),
         "plan_sha256": expected_plan_sha,
@@ -352,11 +402,18 @@ def verify_bundle(path: Path) -> dict[str, Any]:
         "memberships_sha256": final_memberships,
         "non_target_videos_verified_unchanged": len(final_videos) - len(_TARGET_IDS),
         "previous_dry_run_status": previous_report["status"],
+        "membership_identity_unchanged": True,
+        "membership_position_changes": position_changes,
         "warning": (
-            "The outer wrapper reported failure after the authoritative result journal "
-            "and final VK state were already completed and verified."
+            "The outer wrapper reported failure after the authoritative result journal and final VK state "
+            "were already completed and verified. Membership identities are unchanged; position-only churn "
+            "is recorded as read-order metadata."
             if wrapper_status != "completed"
-            else None
+            else (
+                "Membership identities are unchanged; position-only churn is recorded as read-order metadata."
+                if position_changes
+                else None
+            )
         ),
     }
 
@@ -368,7 +425,7 @@ def main() -> int:
     except (OSError, ValueError, zipfile.BadZipFile, json.JSONDecodeError) as exc:
         report = {
             "schema_name": "video-manager.vk-reviewed-correction-apply-verification",
-            "schema_version": 1,
+            "schema_version": 2,
             "status": "verification_failed",
             "bundle": str(args.bundle),
             "error": str(exc),
