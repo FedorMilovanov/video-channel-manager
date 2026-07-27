@@ -84,6 +84,19 @@ Permanent rules:
 - factual and sensitive claims remain unchanged and are emitted as deferred review findings;
 - execute requires a previously generated and reviewed plan.
 
+## 7. Never infer title semantics from media metadata
+
+`SHORTS`, `КОРОТКАЯ`, `ФРАГМЕНТ`, `НЕПОЛНЫЙ`, `ПОЛНАЯ`, `БОЛЕЕ ПОЛНАЯ`, `ФИНАЛЬНАЯ`, and numbered versions are user-authored editorial labels. Duration and aspect ratio are not reliable substitutes for editorial intent: a vertical upload can be a SHORTS copy of a longer work, while a short horizontal upload can be a complete compact performance or a fragment.
+
+Permanent rules:
+
+- title automation is cosmetic by default;
+- preserve existing semantic labels exactly;
+- never add, remove, or replace semantic labels from duration, aspect ratio, pairing, or filename guesses;
+- normalize `Version N` to `ВЕРСИЯ N` only because the numbered version identity remains unchanged;
+- any actual semantic-label change requires the exact video ID in `title_semantic_label_reviewed_ids`;
+- tests must fail closed when an unreviewed title operation changes the semantic-label set.
+
 ## Operator rule
 
 Operational documentation and signed artifacts are the source of truth. Never reuse a confirmation count, snapshot ID, or SHA-256 from chat memory or an older run.
