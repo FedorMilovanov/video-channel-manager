@@ -11,7 +11,7 @@ def test_vk_description_apply_verifier_checks_authoritative_artifacts() -> None:
     assert 'result.get("status") != "completed"' in text
     assert "updated_and_verified" in text
     assert "vk_texts_equivalent" in text
-    assert "after.description != operation.get(\"after_description\")" in text
+    assert 'after.description != operation.get("after_description")' in text
     assert "before.title != after.title" in text
     assert "source_collection_titles != final_collection_titles" in text
     assert "_membership_rows(source) != _membership_rows(final)" in text
