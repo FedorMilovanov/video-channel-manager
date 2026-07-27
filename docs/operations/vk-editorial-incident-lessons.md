@@ -97,6 +97,8 @@ Permanent rules:
 - any actual semantic-label change requires the exact video ID in `title_semantic_label_reviewed_ids`;
 - tests must fail closed when an unreviewed title operation changes the semantic-label set.
 
+The current cosmetic title patch intentionally contains exactly three changes: removing the decorative `《》` from the Chinese title and replacing plain hyphen separators with the established `⚡` style in the full `Шабаш` and `Внимая Ужасам Войны...` uploads. It does not alter any version, SHORTS, short, fragment, incomplete, or full label.
+
 ## Operator rule
 
 Operational documentation and signed artifacts are the source of truth. Never reuse a confirmation count, snapshot ID, or SHA-256 from chat memory or an older run.
