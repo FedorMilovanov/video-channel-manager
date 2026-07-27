@@ -26,22 +26,46 @@ p1-fet-whisper-20260727
 
 Execute-helper не строит новый план, не пересчитывает формулировки и не расширяет scope. Он извлекает точный подписанный `plan.json` из dry-run ZIP.
 
-## Проверенный dry-run
+## Проверенные данные dry-run
 
-Независимо проверен пакет:
+Независимо проверены два внешних ZIP-представления одного и того же точного набора внутренних файлов:
 
 ```text
-vk-reviewed-correction-p1-fet-dry-run-20260728-011101.zip
-bundle SHA-256: sha256:0f8020fd76456f8b6490e17e2142d46ca8f18f397ded400c3c093bbf719539f5
-plan SHA-256: sha256:095c0a1cce72a46eaee0a1ea37ca2e2ee6a682bbf393f3d02d6d7abece1872ec
-decisions SHA-256: sha256:ac13aaf20358d42db1808bcda46dd2a04fffc6c56abc85d6b3246fb10b3cd2d0
+исходный локальный ZIP:
+sha256:0f8020fd76456f8b6490e17e2142d46ca8f18f397ded400c3c093bbf719539f5
+
+загруженная копия ZIP:
+sha256:8e173fba66cc0b298d1d87db384cb6a15e60c0c8d36c45db4ebb3e580a2221b9
+```
+
+Различие внешнего SHA возможно из-за упаковки ZIP. Допуск определяется не именем и не одним container SHA, а полным точным совпадением состава, размеров и SHA-256 каждого внутреннего файла.
+
+Ключевые подписи содержимого:
+
+```text
+plan SHA-256:
+sha256:095c0a1cce72a46eaee0a1ea37ca2e2ee6a682bbf393f3d02d6d7abece1872ec
+
+decisions SHA-256:
+sha256:ac13aaf20358d42db1808bcda46dd2a04fffc6c56abc85d6b3246fb10b3cd2d0
+
+source Esenin apply ZIP SHA-256:
+sha256:af11d5c882d8068b316b606723410f6d45bda49d5dd327c92dc011b265f23398
+
+source deferred-review ZIP SHA-256:
+sha256:f38191f18d859ef2bcd445f558204ac76e3c3ebbe4f6414cb3436542df7b4c61
+```
+
+Dry-run состояние:
+
+```text
 ready: 2
 already_applied: 0
 conflicts: 0
 remote_writes: 0
 ```
 
-Все manifest records, размеры и SHA-256 совпали. Guard-хэши используют проектный `text_sha256`, а не raw SHA байтов:
+Canonical guard-хэши используют проектный `text_sha256`, а не raw SHA байтов:
 
 ```text
 -235216998_456239127: sha256:eb10b7f1e529c26c240dada4116d2a9666b33bb4e0e167839ad3f9762e959203
@@ -73,11 +97,28 @@ Helper независимо проверяет dry-run и требует:
 
 ```text
 status: verified_dry_run
+artifact_review: exact_independently_reviewed_contents
 operations: 2
 ready + already_applied: 2
 conflicts: 0
 remote_writes: 0
+canonical_text_hashes_verified: true
+reviewed_replacements_reconstructed: true
+urls_and_hashtags_unchanged: true
+exact_member_hashes_verified: true
 ```
+
+Verifier повторно доказывает:
+
+1. ZIP содержит точный обязательный набор файлов без дубликатов entries;
+2. размер и SHA-256 каждого внутреннего файла совпадают с независимо одобренными значениями;
+3. `plan.json` имеет корректную самоподпись и точный plan SHA-256;
+4. decisions имеют точный canonical SHA-256 и guard algorithm `video-manager.text-sha256-v1`;
+5. оба before-state совпадают с source snapshot и canonical description guards;
+6. каждый из пяти reviewed replacements встречается ровно один раз и применяется в заданном порядке;
+7. after-state целиком воспроизводится только этими заменами;
+8. URL и хэштеги до и после полностью совпадают;
+9. preflight доказывает `ready: 2`, `conflicts: 0` и отсутствие VK mutation call.
 
 После этого проводится новый live read-only preflight. Execute разрешается только при совпадении:
 
@@ -120,7 +161,7 @@ data\handoffs\vk-reviewed-correction-p1-fet-apply-YYYYMMDD-HHMMSS.zip
 
 ## Возобновление
 
-Повторный запуск безопасен только с тем же проверенным dry-run ZIP. Уже применённые операции должны получить `already_applied`; writer не отправляет их повторно.
+Повторный запуск безопасен только с dry-run ZIP, внутренние файлы которого полностью совпадают с независимо одобренным набором. Уже применённые операции должны получить `already_applied`; writer не отправляет их повторно.
 
 ## Ошибка
 
