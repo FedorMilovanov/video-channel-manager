@@ -13,6 +13,9 @@ from video_channel_manager.platforms.vk.editorial_cleanup_plan import (
     target_video_ids_sha256,
     validate_vk_editorial_cleanup_plan,
 )
+from video_channel_manager.platforms.vk.editorial_stance import (
+    validate_the_legendary_poet_editorial_stance,
+)
 from video_channel_manager.platforms.vk.text_writer import canonical_vk_text
 
 
@@ -55,6 +58,7 @@ def build_vk_reviewed_correction_wave(
         id_field="source_id",
         label="source",
     )
+    editorial_profile = validate_the_legendary_poet_editorial_stance(decisions, sources)
     decision_items = [item for item in decisions.get("decisions", []) if isinstance(item, dict)]
     if not decision_items:
         raise ValueError("Correction decision set is empty")
@@ -152,6 +156,8 @@ def build_vk_reviewed_correction_wave(
         "policy_sha256": decisions_sha256,
         "decision_set_id": str(decisions.get("decision_set_id") or ""),
         "decisions_sha256": decisions_sha256,
+        "editorial_profile": deepcopy(editorial_profile),
+        "stance_source_ids": [str(value) for value in decisions.get("stance_source_ids") or []],
         "source_plan_sha256": str(decisions.get("source_plan_sha256") or ""),
         "source_review_bundle_sha256": source_review_bundle_sha256,
         "video_text_operations": operations,
