@@ -99,6 +99,19 @@ Permanent rules:
 
 The current cosmetic title patch intentionally contains exactly three changes: removing the decorative `《》` from the Chinese title and replacing plain hyphen separators with the established `⚡` style in the full `Шабаш` and `Внимая Ужасам Войны...` uploads. It does not alter any version, SHORTS, short, fragment, incomplete, or full label.
 
+## 8. Execute from the reviewed ZIP, not a manually found plan path
+
+A one-file review workflow is incomplete if the operator must later search `data\reports` for the matching JSON plan.
+
+Permanent rules:
+
+- the cosmetic execute helper selects the latest reviewed title dry-run ZIP by default;
+- it extracts `manifest.json`, `plan.json`, and the readable report into a temporary directory;
+- execute requires `status=dry_run_completed`, `mode=dry-run`, the exact ready count, and zero conflicts;
+- manifest `plan_sha256`, embedded plan `plan_sha256`, and the file SHA-256 for `plan.json` must agree;
+- the exact three video IDs, exact approved after-titles, unchanged descriptions, and preserved semantic labels are revalidated before invoking the writer;
+- the operator runs one short `-Execute` command and sends back one apply ZIP.
+
 ## Operator rule
 
 Operational documentation and signed artifacts are the source of truth. Never reuse a confirmation count, snapshot ID, or SHA-256 from chat memory or an older run.
