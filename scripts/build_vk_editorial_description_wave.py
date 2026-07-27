@@ -113,18 +113,12 @@ def _markdown_report(plan: dict[str, Any]) -> str:
     lines.extend(["", "## Excluded review-only", ""])
     if plan["review_only"]:
         for finding in plan["review_only"]:
-            lines.append(
-                f"- `{finding['kind']}` — "
-                f"`{json.dumps(finding, ensure_ascii=False, sort_keys=True)}`"
-            )
+            lines.append(f"- `{finding['kind']}` — `{json.dumps(finding, ensure_ascii=False, sort_keys=True)}`")
     else:
         lines.append("- None")
     lines.extend(["", "## Deferred factual and sensitive review", ""])
     for finding in plan["deferred_editorial_review"]:
-        lines.append(
-            f"- `{finding['kind']}` — "
-            f"`{json.dumps(finding, ensure_ascii=False, sort_keys=True)}`"
-        )
+        lines.append(f"- `{finding['kind']}` — `{json.dumps(finding, ensure_ascii=False, sort_keys=True)}`")
     lines.append("")
     return "\n".join(lines)
 
@@ -172,13 +166,13 @@ summary{{cursor:pointer;font-weight:700}} pre{{white-space:pre-wrap;word-break:b
 <body><main>
 <h1>VK — техническая волна описаний</h1>
 <section class="summary">
-<p>Snapshot: <code>{html.escape(str(plan['target_snapshot_id']))}</code></p>
-<p>Plan: <code>{html.escape(str(plan['plan_sha256']))}</code></p>
-<p>Видео: <strong>{summary['videos_in_snapshot']}</strong>; описаний: <strong>{summary['descriptions_to_update']}</strong>; названий: <strong>0</strong>; альбомов: <strong>0</strong>.</p>
+<p>Snapshot: <code>{html.escape(str(plan["target_snapshot_id"]))}</code></p>
+<p>Plan: <code>{html.escape(str(plan["plan_sha256"]))}</code></p>
+<p>Видео: <strong>{summary["videos_in_snapshot"]}</strong>; описаний: <strong>{summary["descriptions_to_update"]}</strong>; названий: <strong>0</strong>; альбомов: <strong>0</strong>.</p>
 <p>Содержательная часть каждого описания защищена semantic-body SHA-256.</p>
 <ul>{reason_items}</ul>
 </section>
-{''.join(rows)}
+{"".join(rows)}
 </main></body></html>
 """
 
