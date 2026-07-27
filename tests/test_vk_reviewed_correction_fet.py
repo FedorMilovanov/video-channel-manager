@@ -99,7 +99,7 @@ def test_fet_wrapper_does_not_label_failed_build_as_ready() -> None:
     assert "failed diagnostic" in text
     assert "СОЗДАН ДИАГНОСТИЧЕСКИЙ ZIP; DRY-RUN НЕ ПОСТРОЕН" in text
     assert "Подробности сохранены в 00-build.txt" in text
-    assert "$RunStatus -eq \"completed\" -and (Test-Path" in text
+    assert '$RunStatus -eq "completed" -and (Test-Path' in text
     assert "Start-Safely" in text
     assert "artifact_kind = $ArtifactKind" in text
 
