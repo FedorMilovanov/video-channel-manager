@@ -84,6 +84,8 @@ Permanent rules:
 - factual and sensitive claims remain unchanged and are emitted as deferred review findings;
 - execute requires a previously generated and reviewed plan.
 
+The reviewed `2026-07-27 16:45:35` description dry-run contains 111 operations, zero conflicts, zero review-only exclusions, and exact semantic-body equality for every before/after pair. Its 148 factual or sensitive findings are deferred only and are not rewritten by this wave.
+
 ## 7. Never infer title semantics from media metadata
 
 `SHORTS`, `КОРОТКАЯ`, `ФРАГМЕНТ`, `НЕПОЛНЫЙ`, `ПОЛНАЯ`, `БОЛЕЕ ПОЛНАЯ`, `ФИНАЛЬНАЯ`, and numbered versions are user-authored editorial labels. Duration and aspect ratio are not reliable substitutes for editorial intent: a vertical upload can be a SHORTS copy of a longer work, while a short horizontal upload can be a complete compact performance or a fragment.
@@ -110,6 +112,7 @@ Permanent rules:
 - execute requires `status=dry_run_completed`, `mode=dry-run`, the exact component scope, the exact ready count, zero already-applied operations, and zero conflicts;
 - manifest `plan_sha256`, embedded plan `plan_sha256`, and the file SHA-256 for `plan.json` must agree;
 - every extracted artifact is checked against its manifest byte size and SHA-256;
+- manifest checks are explicit per file rather than relying on PowerShell nested-array enumeration;
 - the current repository policy must be byte-identical to the reviewed policy in the ZIP;
 - title execute revalidates exact approved IDs, after-titles, unchanged descriptions, and preserved semantic labels;
 - description execute revalidates unchanged titles, changed descriptions, semantic-body preservation, zero album/catalog operations, and exact source snapshot identity;
