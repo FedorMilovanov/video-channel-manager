@@ -70,11 +70,20 @@ def _paragraphs(value: str) -> list[str]:
     return [paragraph for raw in re.split(r"\n\s*\n+", value) if (paragraph := _compact(raw))]
 
 
+def _expanded_term(value: str, match: re.Match[str]) -> str:
+    start, end = match.span()
+    while start > 0 and (value[start - 1].isalnum() or value[start - 1] in "_-"):
+        start -= 1
+    while end < len(value) and (value[end].isalnum() or value[end] in "_-"):
+        end += 1
+    return value[start:end]
+
+
 def _unique_matches(pattern: re.Pattern[str], value: str) -> list[str]:
     matches: list[str] = []
     seen: set[str] = set()
     for match in pattern.finditer(value):
-        term = match.group(0)
+        term = _expanded_term(value, match)
         key = term.casefold()
         if key not in seen:
             seen.add(key)
