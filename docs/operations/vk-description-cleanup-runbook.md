@@ -16,7 +16,7 @@ live VK before
 → signed descriptions-only plan
 → HTML/Markdown review
 → live dry-run
-→ explicit execute
+→ explicit execute from reviewed ZIP
 ```
 
 Разрешены только доказуемые технические изменения:
@@ -51,11 +51,11 @@ Descriptions-only план хранит exact-before название каждо
 
 Текущий порядок:
 
-1. выполнить dry-run трёхоперационного косметического title patch;
-2. проверить и применить его отдельным signed plan;
-3. заново построить descriptions-only план на новом snapshot;
-4. выполнить свежий dry-run описаний;
-5. только после проверки выполнять descriptions execute.
+1. выполнить и применить отдельный косметический title patch;
+2. заново построить descriptions-only план на новом snapshot;
+3. выполнить свежий dry-run описаний;
+4. проверить единый ZIP;
+5. выполнить descriptions execute только из этого проверенного ZIP.
 
 ## 4. Один файл вместо поиска артефактов
 
@@ -73,7 +73,7 @@ Descriptions-only план хранит exact-before название каждо
 - README;
 - manifest с SHA-256 и размером каждого файла.
 
-В Проводнике автоматически выделяется ZIP. Оператор отправляет только его.
+В Проводнике автоматически выделяется ZIP. Оператор отправляет только его. Execute-helper также принимает этот ZIP как источник истины и не требует искать JSON вручную.
 
 ## 5. Косметический title patch
 
@@ -89,7 +89,7 @@ Wrapper сам берёт snapshot из последнего `vk-description-wav
 - `Шабаш - Алиса Cover` → `Шабаш ⚡ АЛИСА Cover`;
 - `Внимая Ужасам Войны... - Николай Некрасов` → `Внимая Ужасам Войны... ⚡ Николай Некрасов`.
 
-Ни одна semantic-label метка не меняется. Execute в этом helper отсутствует.
+Ни одна semantic-label метка не меняется. После проверки dry-run ZIP execute выполняется тем же helper с явным `-Execute`; helper извлекает и проверяет подписанный план из ZIP.
 
 ## 6. Новый dry-run описаний
 
@@ -119,15 +119,26 @@ Dry-run only. No VK mutation method was called.
 
 ## 7. Выполнение описаний
 
-Execute запрещён без явно переданного ранее проверенного `-Plan`:
+После внешней проверки ZIP используется отдельный reviewed execute-helper:
 
 ```powershell
-pwsh -File .\scripts\Invoke-VkDescriptionWave.ps1 `
-  -Plan .\data\reports\vk-editorial-description-wave-YYYYMMDD-HHMMSS.json `
-  -Execute
+pwsh -File .\scripts\Invoke-VkReviewedDescriptionWave.ps1 -Execute
 ```
 
-Wrapper сам выполняет свежий preflight и берёт фактическое количество `ready`. Executor затем требует точные:
+Он автоматически выбирает последний `vk-description-wave-dry-run-*.zip` и до вызова writer проверяет:
+
+- `status=dry_run_completed` и `mode=dry-run`;
+- `component_scope=descriptions_only`;
+- exact community и expected operation count;
+- `ready=N`, `already_applied=0`, `conflicts=0`;
+- размер и SHA-256 каждого обязательного файла по `manifest.json`;
+- совпадение manifest plan SHA и embedded plan SHA;
+- exact source snapshot identity;
+- нулевые изменения названий, альбомов и каталога;
+- `description_changed=true` и `semantic_body_preserved=true` во всех операциях;
+- byte-identical текущую и проверенную editorial policy.
+
+После этого helper передаёт извлечённые plan и source snapshot основному wrapper. Основной wrapper делает новый live preflight и берёт фактическое количество `ready`. Executor затем требует точные:
 
 - community ID;
 - ready count;
@@ -153,6 +164,7 @@ Writer передаёт в `video.edit` только реально изменя
 ## 9. Запрещённые действия
 
 - не добавлять `-Execute` к свежему автоматически построенному плану;
+- не выполнять непроверенный dry-run ZIP;
 - не редактировать VK Studio параллельно;
 - не запускать второй VK writer;
 - не менять JSON plan вручную;
