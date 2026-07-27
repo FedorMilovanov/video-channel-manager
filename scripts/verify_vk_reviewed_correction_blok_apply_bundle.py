@@ -314,7 +314,9 @@ def verify_bundle(path: Path) -> dict[str, Any]:
         "previous_dry_run_status": previous_report["status"],
         "membership_identity_unchanged": True,
         "membership_position_changes": position_changes,
-        "warning": ("Membership position values changed while identity pairs remained stable." if position_changes else None),
+        "warning": (
+            "Membership position values changed while identity pairs remained stable." if position_changes else None
+        ),
     }
 
 
