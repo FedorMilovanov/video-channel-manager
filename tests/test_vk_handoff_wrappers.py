@@ -67,6 +67,30 @@ def test_reviewed_description_wrapper_fails_closed_on_hidden_changes() -> None:
     assert "Remove-Item -LiteralPath $TempRunDir -Recurse -Force" in text
 
 
+def test_reviewed_description_wrapper_retries_only_video_get_204() -> None:
+    text = _script("Invoke-VkReviewedDescriptionWave.ps1")
+
+    assert "[int]$ReadRetryAttempts = 3" in text
+    assert "[int]$ReadRetryDelaySeconds = 15" in text
+    assert '"VK API 204 in video\\.get: Access denied"' in text
+    assert "Start-Sleep -Seconds $Delay" in text
+    assert "if (-not $IsVideoAccessDenied)" in text
+    assert '"-NoOpen"' in text
+    assert "diagnose_vk_video_access.py" in text
+    assert "vk-access-diagnostic.json" in text
+
+
+def test_vk_access_diagnostic_is_read_only_and_actionable() -> None:
+    text = _script("diagnose_vk_video_access.py")
+
+    assert "client.get_current_user()" in text
+    assert "client.validate_video_access(user.user_id)" in text
+    assert "client.list_managed_communities()" in text
+    assert "client.list_videos(args.community)" in text
+    assert "video-manager vk login --account" in text
+    assert "video.edit" not in text
+
+
 def test_cosmetic_title_wrapper_is_exactly_scoped_and_semantic_safe() -> None:
     text = _script("Invoke-VkCosmeticTitlePatch.ps1")
 
