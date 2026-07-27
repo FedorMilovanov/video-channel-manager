@@ -59,9 +59,7 @@ def main() -> int:
         }
     except Exception as exc:  # noqa: BLE001 - diagnostic must serialize provider failures
         report["checks"]["token_identity"] = _error_payload(exc)
-        report["recommendation"] = (
-            f"Refresh the VK user token: video-manager vk login --account {args.account}"
-        )
+        report["recommendation"] = f"Refresh the VK user token: video-manager vk login --account {args.account}"
         exit_code = 2
     else:
         exit_code = 0
