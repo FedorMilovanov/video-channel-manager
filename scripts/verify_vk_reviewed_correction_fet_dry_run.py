@@ -74,9 +74,7 @@ def _remote_id(item: dict[str, Any]) -> str:
 
 def _verify_manifest(raw: dict[str, bytes], manifest: dict[str, Any]) -> None:
     records = {
-        str(item["name"]): item
-        for item in manifest.get("files", [])
-        if isinstance(item, dict) and item.get("name")
+        str(item["name"]): item for item in manifest.get("files", []) if isinstance(item, dict) and item.get("name")
     }
     missing_records = sorted((_REQUIRED_FILES - {"manifest.json"}) - records.keys())
     if missing_records:
@@ -119,9 +117,7 @@ def _verify_source_review_bundle(raw_zip: bytes, expected_sha256: str) -> None:
     if queue.get("mode") != "review_only" or int(queue.get("remote_writes", -1)) != 0:
         raise ValueError("Nested source review bundle is not review-only")
     records = {
-        str(item["name"]): item
-        for item in manifest.get("files", [])
-        if isinstance(item, dict) and item.get("name")
+        str(item["name"]): item for item in manifest.get("files", []) if isinstance(item, dict) and item.get("name")
     }
     for name, record in records.items():
         content = nested_raw.get(name)
@@ -164,9 +160,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     ):
         raise ValueError("Unexpected dry-run counts or remote_writes")
 
-    expected_plan_sha = _canonical_sha256(
-        {key: value for key, value in plan.items() if key != "plan_sha256"}
-    )
+    expected_plan_sha = _canonical_sha256({key: value for key, value in plan.items() if key != "plan_sha256"})
     if plan.get("plan_sha256") != expected_plan_sha:
         raise ValueError("Plan self-digest mismatch")
     if manifest.get("plan_sha256") != expected_plan_sha:
@@ -214,11 +208,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     if int(source_apply.get("non_target_videos_verified_unchanged", -1)) != 108:
         raise ValueError("Source apply did not verify the remaining 108 videos")
 
-    videos = {
-        _remote_id(item): item
-        for item in snapshot.get("videos", [])
-        if isinstance(item, dict)
-    }
+    videos = {_remote_id(item): item for item in snapshot.get("videos", []) if isinstance(item, dict)}
     if len(videos) != 111:
         raise ValueError("Source snapshot must contain exactly 111 videos")
     if len(snapshot.get("collections", [])) != 17:
@@ -234,9 +224,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
         raise ValueError("Fet correction target IDs differ from the reviewed set")
 
     replacement_ids = {
-        str(item.get("replacement_id"))
-        for item in decisions.get("shared_replacements", [])
-        if isinstance(item, dict)
+        str(item.get("replacement_id")) for item in decisions.get("shared_replacements", []) if isinstance(item, dict)
     }
     if replacement_ids != _REPLACEMENT_IDS:
         raise ValueError("Fet replacement IDs differ from the reviewed set")
@@ -259,9 +247,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
         if not after_description or len(after_description) > 5000:
             raise ValueError(f"Invalid corrected description length: {remote_id}")
 
-    combined_after = "\n".join(
-        str(operation["after_description"]) for operation in operation_by_id.values()
-    )
+    combined_after = "\n".join(str(operation["after_description"]) for operation in operation_by_id.values())
     for required in (
         "датируется 1850 годом",
         "прямого авторского посвящения",
