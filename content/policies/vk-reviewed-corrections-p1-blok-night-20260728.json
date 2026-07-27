@@ -1,0 +1,172 @@
+{
+  "schema_name": "video-manager.vk-reviewed-correction-decisions",
+  "schema_version": 1,
+  "decision_set_id": "p1-blok-night-20260728",
+  "target_community_id": 235216998,
+  "source_plan_sha256": "sha256:b4eede44954bcb148550bcb2c0a372e4f23b72d892cc3aadcc5d71321a2e9294",
+  "source_review_bundle_sha256": "sha256:f38191f18d859ef2bcd445f558204ac76e3c3ebbe4f6414cb3436542df7b4c61",
+  "editorial_rule": "Only exact reviewed replacements are allowed. Titles, albums, memberships, video inventory, URLs, hashtags, poem text, music framing, and all other descriptions are frozen. Established fact, attributed testimony, scholarly inference, literary interpretation, and later tradition must remain distinct.",
+  "editorial_profile": {
+    "profile_id": "the-legendary-poet-historical-evangelical-v1",
+    "authority_repository": "FedorMilovanov/TheLegendaryPoet",
+    "theological_position": "historical_evangelical_christianity",
+    "judgment_mode": "asymmetric_evidence_based",
+    "last_hour_rule": "acknowledge_once_not_equal_to_documented_life",
+    "tone": "sorrow_without_sentimental_acquittal_or_gloating",
+    "gospel_call": "repent_and_believe_in_christ",
+    "principles": [
+      "judge_public_confession_and_stable_fruits_by_scripture",
+      "do_not_invent_last_hour_conversion",
+      "do_not_balance_documented_unbelief_with_bare_possibility",
+      "state_eternal_danger_plainly_when_evidence_is_strong",
+      "speak_with_grief_not_superiority"
+    ]
+  },
+  "stance_source_ids": [
+    "site-project-charter",
+    "site-editorial-judgment-policy",
+    "research-knowledge-base"
+  ],
+  "shared_replacements": [
+    {
+      "replacement_id": "correct-gippius-memory-and-limit-inference",
+      "old": "По воспоминаниям Василия Гиппиуса, уже 14 октября 1912 года Блок достал из ящика стола четвертушку бумаги с только что написанным текстом и прочитал его вслух — Гиппиус был поражён «мрачной иронией» этих строк. Этот эпизод фиксирует почти точный момент рождения стихотворения и подтверждает его камерное происхождение: не газетный отклик и не заказ, а внезапный кристалл позднего блоковского настроения, выросший из бессонной петербургской осени.",
+      "new": "По воспоминаниям Василия Гиппиуса, 14 октября 1912 года Блок достал из ящика стола четвертушку бумаги с восьмистишием, датированным 10 октября. Гиппиуса поразила «мрачная ирония» текста; на шутку об аптеке возле его дома Блок серьёзно ответил: «Около каждого дома есть аптека». Это свидетельство фиксирует раннее восприятие стихотворения, но не устанавливает единственный реальный прототип аптеки.",
+      "expected_count": 1,
+      "reason": "Correct the date and content of Gippius's eyewitness memoir; remove unsupported claims about the exact moment of composition and a single physical prototype."
+    },
+    {
+      "replacement_id": "attribute-competing-pharmacy-prototypes",
+      "old": "За лаконичным пейзажем стоит вполне реальная география. Исследователи связывают блоковский «фонарь, аптеку и канал» то с аптекой на углу Большой Зелениной улицы и набережной Малой Невки, которую из‑за частых самоубийств в этом районе называли «аптекой самоубийц», то с Ново‑Мариинской аптекой Якова Мандельштама у Крюкова канала, в нескольких шагах от блоковского дома. Важно не столько точное здание, сколько мотив пограничного пространства: тёмная вода, мост, редкий керосиновый свет и место, где по ночам пытаются вернуть к жизни тех, кто уже сделал шаг к смерти. Петербург у Блока — не декорация, а механизм судьбы: город, в котором фонарь не побеждает тьму, а только делает её видимой.",
+      "new": "Конкретный адрес блоковской аптеки источниками не установлен: Музей-квартира Блока прямо отмечает, что спор о прототипе продолжается. Корней Чуковский связывал образ с Алексеевской аптекой Винникова на Офицерской, 51, рядом с Пряжкой; Дмитрий Лихачёв, ссылаясь на Евгения Иванова, — с аптекой у Большой Зелениной и Малой Невки, где оказывали помощь спасённым из воды; В. С. Карташов предложил Ново-Мариинскую аптеку Я. И. Мандельштама на Офицерской, 27, у Крюкова канала. Точнее говорить о нескольких документированных версиях, а не выдавать одну из них за установленный факт.",
+      "expected_count": 1,
+      "reason": "Replace an asserted geography with three attributed documentary hypotheses and state that no single pharmacy prototype is established."
+    },
+    {
+      "replacement_id": "separate-cycle-fact-from-interpretation",
+      "old": "Художественный мир «Плясок смерти» безысходен. Во всех пяти стихотворениях цикла присутствует образ мертвеца, действующие лица — призраки и тени, время становится вечно настоящим. В «Страшном мире» всё прекрасное и духовное уничтожено: пустые улицы, разрушенные храмы, кладбища, лица без черт. «Ночь, улица, фонарь, аптека…» — самый короткий и самый жёсткий из этих текстов, его минимализм почти физиологичен: чем меньше слов, тем плотнее ощущение, что выбраться невозможно.",
+      "new": "Цикл «Пляски смерти» состоит из пяти стихотворений, и «Ночь, улица, фонарь, аптека…» занимает в нём второе место. Образы мертвеца, пустой улицы, воды, тусклого света и повторения связывают цикл с книгой «Страшный мир». Минимализм восьмистишия усиливает ощущение замкнутости, но формулы вроде «всё прекрасное и духовное уничтожено» остаются литературной интерпретацией, а не установленным историческим фактом.",
+      "expected_count": 1,
+      "reason": "Preserve the five-poem cycle and literary context while distinguishing textual facts from absolute interpretive claims."
+    },
+    {
+      "replacement_id": "correct-blok-final-illness-and-exit-timeline",
+      "old": "7 августа 1921 года Александр Блок умер в той же квартире на Офицерской — в сорок лет, истощённый болезнью, голодом послереволюционного Петрограда и многомесячной волокитой с разрешением на выезд за границу для лечения. По воспоминаниям близких, последние недели он почти не приходил в сознание. Поздние тексты — «О назначении поэта» и «Пушкинскому Дому» — звучат как его завещание, а короткая ночная формула 1912 года задним числом выглядит сжатым пророчеством собственной судьбы: поэт слушает мир, но мир отвечает ему не голосом, а глухим эхом лампы над чёрной водой.",
+      "new": "7 августа 1921 года Александр Блок умер в той же квартире на Офицерской улице, в сорок лет, после тяжёлой болезни. Весной он просил разрешения выехать на лечение за границу; разрешение для него было получено лишь 23 июля, а для сопровождавшей его жены — 1 августа, когда состояние уже резко ухудшилось. Источники подтверждают эту задержку, но точный диагноз и утверждение, что один выезд непременно спас бы поэта, нельзя выдавать за доказанный факт. Большая российская энциклопедия называет речь «О назначении поэта» и стихотворение «Пушкинскому Дому» его художественным и человеческим завещанием.",
+      "expected_count": 1,
+      "reason": "Correct the foreign-treatment permission timeline; avoid unsupported diagnosis, consciousness, and counterfactual survival claims; retain the supported testament characterization."
+    },
+    {
+      "replacement_id": "remove-unsupported-silver-age-superlative",
+      "old": "«Ночь, улица, фонарь, аптека…» — самое безысходное стихотворение Серебряного века",
+      "new": "«Ночь, улица, фонарь, аптека…» — одно из самых узнаваемых и мрачных восьмистиший Александра Блока",
+      "expected_count": 1,
+      "reason": "Replace an unverifiable absolute ranking with a strong but supportable description."
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "rvb-blok-complete-edition",
+      "authority": "Русская виртуальная библиотека / Александр Блок. Полное собрание сочинений, том 3",
+      "url": "https://rvb.ru/20vek/blok/pss20/vol3/text/0548.html",
+      "supports": "Provides the authoritative poem text and places «Ночь, улица, фонарь, аптека…» second in the five-poem cycle «Пляски смерти»."
+    },
+    {
+      "source_id": "feb-gippius-meetings",
+      "authority": "Фундаментальная электронная библиотека / В. В. Гиппиус. Встречи с Блоком",
+      "url": "https://feb-web.ru/feb/classics/critics/gippius_v/gip/gip-331-.htm?cmd=p",
+      "supports": "Primary memoir records the 14 October 1912 visit, the manuscript dated 10 October, Gippius's reaction to its dark irony, and Blok's reply that every house has a pharmacy."
+    },
+    {
+      "source_id": "culture-blok-pharmacy-exhibition",
+      "authority": "Культура.РФ / Музей-квартира А. А. Блока",
+      "url": "https://www.culture.ru/events/2298833/noch-ulica-fonar-apteka-k-110-letiyu-so-dnya-sozdaniya-stikhotvoreniya",
+      "supports": "The museum exhibition states that debate over the real pharmacy prototype continues and presents documentary candidate addresses."
+    },
+    {
+      "source_id": "likhachev-blok-pharmacy-commentary",
+      "authority": "Фонд Д. С. Лихачёва / Из комментария к стихотворению А. Блока «Ночь, улица, фонарь, аптека»",
+      "url": "https://www.lihachev.ru/lihachev/bibliografiya/4390/",
+      "supports": "Documents Likhachev's attribution, based on Evgeny Ivanov, to the pharmacy near Bolshaya Zelenina and the Malaya Nevka."
+    },
+    {
+      "source_id": "russian-thought-first-publication",
+      "authority": "Русская мысль, 1914, книга III",
+      "url": "https://ru.wikisource.org/wiki/Русская_мысль/1914/Книга_III/Пляски_смерти_(Блок)",
+      "supports": "Scanned first publication of the poem in March 1914 under the cycle heading Totentanz / «Пляски смерти»."
+    },
+    {
+      "source_id": "culture-blok-biography",
+      "authority": "Культура.РФ / Александр Блок. Биография",
+      "url": "https://www.culture.ru/persons/8190/aleksandr-blok",
+      "supports": "Documents the 1921 requests and delayed permissions for foreign treatment, including the dates 23 July for Blok and 1 August for his wife, and his death on 7 August."
+    },
+    {
+      "source_id": "bigenc-blok",
+      "authority": "Большая российская энциклопедия / Блок Александр Александрович",
+      "url": "https://old.bigenc.ru/literature/text/1873433",
+      "supports": "Characterizes «О назначении поэта» and «Пушкинскому Дому» as Blok's artistic and human testament."
+    },
+    {
+      "source_id": "site-project-charter",
+      "authority": "The Legendary Poet / PROJECT_CHARTER.md",
+      "url": "https://github.com/FedorMilovanov/TheLegendaryPoet/blob/main/PROJECT_CHARTER.md",
+      "supports": "Defines the project's direct, evidence-based historical and theological editorial posture."
+    },
+    {
+      "source_id": "site-editorial-judgment-policy",
+      "authority": "The Legendary Poet / EDITORIAL_JUDGMENT_AND_SOURCE_POLICY.md",
+      "url": "https://github.com/FedorMilovanov/TheLegendaryPoet/blob/main/docs/EDITORIAL_JUDGMENT_AND_SOURCE_POLICY.md",
+      "supports": "Requires clear distinctions between established fact, source attribution, inference, interpretation, and tradition."
+    },
+    {
+      "source_id": "research-knowledge-base",
+      "authority": "Research / owner knowledge base",
+      "url": "https://github.com/FedorMilovanov/Research",
+      "supports": "Provides the owner's research corpus and source-disciplined editorial context."
+    }
+  ],
+  "decisions": [
+    {
+      "decision_id": "correct-456239126",
+      "target_video_id": "-235216998_456239126",
+      "expected_title": "«Ночь, Улица, Фонарь, Аптека…» ⚡ Пульс Мёртвого Города ⚡ Александр Блок",
+      "expected_description_sha256": "sha256:dd321580877a2be9dec0109e2f875204973c2471e9790d9d4d8c145ffe82e9b0",
+      "replacement_ids": [
+        "correct-gippius-memory-and-limit-inference",
+        "attribute-competing-pharmacy-prototypes",
+        "separate-cycle-fact-from-interpretation",
+        "correct-blok-final-illness-and-exit-timeline"
+      ],
+      "source_ids": [
+        "rvb-blok-complete-edition",
+        "feb-gippius-meetings",
+        "culture-blok-pharmacy-exhibition",
+        "likhachev-blok-pharmacy-commentary",
+        "russian-thought-first-publication",
+        "culture-blok-biography",
+        "bigenc-blok",
+        "site-project-charter",
+        "site-editorial-judgment-policy",
+        "research-knowledge-base"
+      ]
+    },
+    {
+      "decision_id": "correct-456239120",
+      "target_video_id": "-235216998_456239120",
+      "expected_title": "Бесконечная Петля Блока ⚡ «Ночь, улица, фонарь, аптека…»",
+      "expected_description_sha256": "sha256:252ec08971ddaa0b2fbffee2fc428cdd0641879abd10dc09bf7c44504eae15f1",
+      "replacement_ids": [
+        "remove-unsupported-silver-age-superlative"
+      ],
+      "source_ids": [
+        "rvb-blok-complete-edition",
+        "feb-gippius-meetings",
+        "site-project-charter",
+        "site-editorial-judgment-policy",
+        "research-knowledge-base"
+      ]
+    }
+  ],
+  "description_guard_hash_algorithm": "video-manager.text-sha256-v1"
+}
