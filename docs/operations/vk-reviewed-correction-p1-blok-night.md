@@ -23,14 +23,14 @@ p1-blok-night-20260728
 Разрешённые изменения:
 
 1. точно передать встречу Гиппиуса с Блоком 14 октября 1912 года и дату рукописи 10 октября;
-2. не выдавать один адрес аптеки за установленный прототип, а атрибутировать три документированные версии;
+2. не выдавать один адрес аптеки за установленный прототип, а атрибутировать несколько документированных версий;
 3. отделить факты о пятичастном цикле «Пляски смерти» от абсолютной литературной интерпретации;
 4. исправить хронологию разрешений на лечение за границей и убрать недоказанные диагноз, состояние сознания и контрфактическое утверждение о спасении;
 5. заменить абсолютный суперлатив «самое безысходное стихотворение Серебряного века» на сильную, но проверяемую формулировку.
 
 ## Заморожено
 
-- оба названия;
+- все 111 названий;
 - остальные 109 описаний;
 - 17 коллекций и их названия;
 - 294 membership identity pairs;
@@ -43,39 +43,107 @@ p1-blok-night-20260728
 
 ```text
 -235216998_456239120
-sha256:252ec08971ddaa0b2fbffee2fc428cdd0641879abd10dc09bf7c44504eae15f1
+before: sha256:252ec08971ddaa0b2fbffee2fc428cdd0641879abd10dc09bf7c44504eae15f1
+after:  sha256:ac95b72a59b03e7fc8ef07ecf906fbb05ef3534e7ad0757d2c65db60b893f407
+length: 713
 
 -235216998_456239126
-sha256:dd321580877a2be9dec0109e2f875204973c2471e9790d9d4d8c145ffe82e9b0
+before: sha256:dd321580877a2be9dec0109e2f875204973c2471e9790d9d4d8c145ffe82e9b0
+after:  sha256:753e2bc4f2bb41e37ce9285b4f6cd02a0013a9a0296f4a36dba63d97ee94cf27
+length: 4735
 ```
 
-Каждая замена обязана встретиться ровно один раз. После всех замен итоговые длины ожидаются в пределах VK: короткое описание — 713 символов, длинное — 4735 символов.
+Каждая из пяти замен обязана встретиться ровно один раз и примениться в утверждённом порядке.
 
-## Dry-run
+## Независимо проверенный dry-run
 
-Перед запуском helper независимо проверяет завершённый Fet apply-ZIP и извлекает из него фактический финальный VK snapshot.
-
-```powershell
-pwsh -File .\scripts\Invoke-VkReviewedCorrectionBlokWave.ps1
-```
-
-Флаг `-Execute` отсутствует и не поддерживается. Команда выполняет только read-only preflight.
-
-Ожидается:
+Проверен пакет:
 
 ```text
+vk-reviewed-correction-p1-blok-dry-run-20260728-021826.zip
+
+uploaded bundle SHA-256:
+sha256:03303cb0b2c726f684fa62620423205929b10c58e801747a59d26f72adc4229a
+
+plan SHA-256:
+sha256:53bed1c056868731dcb1f9c04b8d3188fd4295baa5d14364b1f8b72187cea4fb
+
+decisions SHA-256:
+sha256:3b8e3f661d317a03483e568b90ef361de8bc325abe19d9d049076dd24b7f103e
+
 ready: 2
 already applied: 0
 conflicts: 0
 remote writes: 0
 ```
 
+Verifier независимо подтверждает:
+
+- точный набор из 11 ZIP members без дублей;
+- размер и SHA-256 каждого внутреннего файла;
+- самоподпись плана и точный digest decisions;
+- source Fet apply receipt;
+- nested deferred-review bundle;
+- два target ID и инвентарь 111 / 17 / 294;
+- canonical before/after text hashes;
+- exact-once и точный порядок пяти replacements;
+- реконструкцию after-state только этими replacements;
+- неизменность URL, хэштегов и footer;
+- live read-only preflight без mutation API.
+
+Проверяется точное внутреннее содержимое пакета. Внешний SHA ZIP используется как дополнительный идентификатор, но ZIP container metadata не может подменить member-level proof.
+
+## Guarded execute
+
+Execute-helper не перестраивает план и не пересчитывает формулировки. Он извлекает только независимо проверенный `plan.json`, повторяет свежий live preflight и требует точного совпадения:
+
+- community ID;
+- `ready + already_applied = 2`;
+- `conflicts = 0`;
+- plan SHA-256;
+- coverage SHA-256 всех 111 видео;
+- membership identity SHA-256 всех 294 пар;
+- двух целевых video ID.
+
+Закрыть ручное редактирование двух роликов в VK Studio и выполнить:
+
+```powershell
+pwsh -File .\scripts\Invoke-VkReviewedCorrectionBlokApply.ps1 -Execute
+```
+
+Ожидаемый первый preflight:
+
+```text
+ready: 2
+already applied: 0
+conflicts: 0
+```
+
 Результат:
 
 ```text
-data\handoffs\vk-reviewed-correction-p1-blok-dry-run-YYYYMMDD-HHMMSS.zip
+data\handoffs\vk-reviewed-correction-p1-blok-apply-YYYYMMDD-HHMMSS.zip
 ```
 
-## После dry-run
+## Postflight
 
-Apply запрещён до независимой проверки ZIP, точного плана, обоих after-state, источников, guard-хэшей и отсутствия скрытых изменений. Guarded execute создаётся отдельным следующим этапом.
+Независимый verifier требует:
+
+1. result journal со статусами `updated_and_verified` или `already_applied`;
+2. точное совпадение двух финальных описаний с reviewed after-state;
+3. неизменность всех 111 названий;
+4. неизменность остальных 109 описаний;
+5. неизменность 17 коллекций и их названий;
+6. неизменность 294 membership identity pairs;
+7. неизменность состава из 111 видео;
+8. совпадение coverage и membership SHA с проверенным планом;
+9. повторную проверку вложенного reviewed dry-run;
+10. обязательные исправленные формулировки и отсутствие прежних утверждений.
+
+Изменения `position` при неизменных membership identity pairs отражаются отдельно и не маскируют реальные добавления, удаления или перемещения между коллекциями.
+
+## Ошибка и повторный запуск
+
+При ошибке helper создаёт диагностический apply-ZIP. Он не объявляет волну завершённой, даже если запись могла успеть пройти до ошибки wrapper или postflight.
+
+Повторный запуск допустим только с тем же independently verified dry-run. Уже применённые операции должны получить `already_applied` и не записываться повторно.
