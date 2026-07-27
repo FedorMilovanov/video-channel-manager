@@ -109,20 +109,18 @@ def _html(items: list[dict[str, Any]], summary: dict[str, Any]) -> str:
     cards: list[str] = []
     for index, item in enumerate(items, start=1):
         messages = "".join(f"<li>{html.escape(message)}</li>" for message in item["messages"])
-        kinds = " ".join(
-            f'<span class="tag">{html.escape(kind)}</span>' for kind in item["finding_kinds"]
-        )
+        kinds = " ".join(f'<span class="tag">{html.escape(kind)}</span>' for kind in item["finding_kinds"])
         cards.append(
             f"""
 <section class="card">
   <div class="number">{index}</div>
-  <h2>{html.escape(item['title'])}</h2>
-  <p><a href="{html.escape(item['url'])}">{html.escape(item['video_id'])}</a></p>
+  <h2>{html.escape(item["title"])}</h2>
+  <p><a href="{html.escape(item["url"])}">{html.escape(item["video_id"])}</a></p>
   <div class="tags">{kinds}</div>
   <ul>{messages}</ul>
   <details>
     <summary>Текущее описание</summary>
-    <pre>{html.escape(item['description'])}</pre>
+    <pre>{html.escape(item["description"])}</pre>
   </details>
   <div class="decision">Оставить / Проверить / Подготовить отдельную correction</div>
 </section>
@@ -152,8 +150,8 @@ summary {{ cursor: pointer; color: #d2a8ff; }}
 <body>
 <main>
 <h1>VK deferred editorial review</h1>
-<p class="summary">{summary['videos']} роликов, {summary['findings']} маркеров; пакет только для проверки, без автоматических изменений.</p>
-{''.join(cards)}
+<p class="summary">{summary["videos"]} роликов, {summary["findings"]} маркеров; пакет только для проверки, без автоматических изменений.</p>
+{"".join(cards)}
 </main>
 </body>
 </html>
@@ -177,11 +175,7 @@ def build_bundle(apply_bundle: Path, output: Path) -> dict[str, Any]:
     if not isinstance(videos_raw, list) or not isinstance(findings_raw, list):
         raise ValueError("Apply bundle does not contain deferred review data")
 
-    videos = {
-        _remote_id(item): item
-        for item in videos_raw
-        if isinstance(item, dict)
-    }
+    videos = {_remote_id(item): item for item in videos_raw if isinstance(item, dict)}
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for finding in findings_raw:
         if not isinstance(finding, dict):
