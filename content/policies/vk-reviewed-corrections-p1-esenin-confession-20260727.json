@@ -157,5 +157,6 @@
         "research-false-peace"
       ]
     }
-  ]
+  ],
+  "description_guard_hash_algorithm": "video-manager.text-sha256-v1"
 }
