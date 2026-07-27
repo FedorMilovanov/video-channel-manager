@@ -119,7 +119,7 @@
       "decision_id": "correct-456239127",
       "target_video_id": "-235216998_456239127",
       "expected_title": "«Шёпот, Робкое Дыханье…» ⚡ Афанасий Фет",
-      "expected_description_sha256": "sha256:1b9c99ad52dc29f2df7645ae4c3dbedce20ff0c9da942e8e468709e9e35845e3",
+      "expected_description_sha256": "sha256:eb10b7f1e529c26c240dada4116d2a9666b33bb4e0e167839ad3f9762e959203",
       "replacement_ids": [
         "replace-short-fet-biography-and-attribution"
       ],
@@ -137,7 +137,7 @@
       "decision_id": "correct-456239143",
       "target_video_id": "-235216998_456239143",
       "expected_title": "«Шёпот, Робкое Дыханье…» ⚡ Фет Слышит Пульс Зари",
-      "expected_description_sha256": "sha256:971c88b8e2aed7273cfcf0115dd957717a0d176c8b4461dcd8259c0346b51a9b",
+      "expected_description_sha256": "sha256:76c74c96f9aaa93d952531094d42c4b7a168f901566688bd349febd8b7b0c6b9",
       "replacement_ids": [
         "qualify-whisper-biographical-background",
         "attribute-lazich-death-and-cycle",
@@ -154,5 +154,6 @@
         "research-knowledge-base"
       ]
     }
-  ]
+  ],
+  "description_guard_hash_algorithm": "video-manager.text-sha256-v1"
 }
