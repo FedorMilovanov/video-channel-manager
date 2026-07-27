@@ -76,11 +76,7 @@ def _remote_id(item: dict[str, Any]) -> str:
 
 
 def _video_map(snapshot: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    return {
-        _remote_id(item): item
-        for item in snapshot.get("videos", [])
-        if isinstance(item, dict)
-    }
+    return {_remote_id(item): item for item in snapshot.get("videos", []) if isinstance(item, dict)}
 
 
 def _coverage_sha256(snapshot: dict[str, Any]) -> str:
@@ -95,9 +91,7 @@ def _membership_rows(
             str(item["collection_ref"]["remote_id"]),
             str(item["video_ref"]["remote_id"]),
             item.get("position"),
-            str(item["membership_id"])
-            if item.get("membership_id") is not None
-            else None,
+            str(item["membership_id"]) if item.get("membership_id") is not None else None,
         )
         for item in snapshot.get("memberships", [])
         if isinstance(item, dict)
@@ -106,10 +100,7 @@ def _membership_rows(
 
 def _membership_sha256(snapshot: dict[str, Any]) -> str:
     return _canonical_sha256(
-        sorted(
-            (collection_id, video_id)
-            for collection_id, video_id, _, _ in _membership_rows(snapshot)
-        )
+        sorted((collection_id, video_id) for collection_id, video_id, _, _ in _membership_rows(snapshot))
     )
 
 
@@ -123,15 +114,11 @@ def _collection_titles(snapshot: dict[str, Any]) -> dict[str, str]:
 
 def _verify_manifest(raw: dict[str, bytes], manifest: dict[str, Any]) -> None:
     records = {
-        str(item["name"]): item
-        for item in manifest.get("files", [])
-        if isinstance(item, dict) and item.get("name")
+        str(item["name"]): item for item in manifest.get("files", []) if isinstance(item, dict) and item.get("name")
     }
     missing_records = sorted((_REQUIRED_FILES - {"manifest.json"}) - records.keys())
     if missing_records:
-        raise ValueError(
-            "Manifest is missing required file records: " + ", ".join(missing_records)
-        )
+        raise ValueError("Manifest is missing required file records: " + ", ".join(missing_records))
     issues: list[str] = []
     for name, record in records.items():
         content = raw.get(name)
@@ -168,16 +155,10 @@ def verify_bundle(path: Path) -> dict[str, Any]:
 
     manifest = _json_bytes(raw["manifest.json"], name="manifest.json")
     plan = _json_bytes(raw["plan.json"], name="plan.json")
-    decisions = _json_bytes(
-        raw["reviewed-decisions.json"], name="reviewed-decisions.json"
-    )
+    decisions = _json_bytes(raw["reviewed-decisions.json"], name="reviewed-decisions.json")
     result = _json_bytes(raw["03-result.json"], name="03-result.json")
-    source = _json_bytes(
-        raw["00-source-vk-snapshot.json"], name="00-source-vk-snapshot.json"
-    )
-    final = _json_bytes(
-        raw["04-final-vk-snapshot.json"], name="04-final-vk-snapshot.json"
-    )
+    source = _json_bytes(raw["00-source-vk-snapshot.json"], name="00-source-vk-snapshot.json")
+    final = _json_bytes(raw["04-final-vk-snapshot.json"], name="04-final-vk-snapshot.json")
     _verify_manifest(raw, manifest)
 
     if manifest.get("mode") != "apply":
@@ -191,9 +172,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     if int(manifest.get("conflicts", -1)) != 0:
         raise ValueError("Apply handoff reports conflicts")
 
-    expected_plan_sha = _canonical_sha256(
-        {key: value for key, value in plan.items() if key != "plan_sha256"}
-    )
+    expected_plan_sha = _canonical_sha256({key: value for key, value in plan.items() if key != "plan_sha256"})
     if plan.get("plan_sha256") != expected_plan_sha:
         raise ValueError("Plan self-digest mismatch")
     if manifest.get("plan_sha256") != expected_plan_sha:
@@ -211,7 +190,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     if plan.get("component_scope") != "descriptions_only":
         raise ValueError("Plan is not descriptions_only")
     if plan.get("correction_scope") != "reviewed_factual_and_sensitive":
-        raise ValueError("Plan has an unexpected correction scope")
+        raise ValueError("Plan has an unexpected correction_scope")
     if int(plan.get("target_community_id", 0)) != 235216998:
         raise ValueError("Plan targets another VK community")
     if plan.get("album_title_operations"):
@@ -245,9 +224,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     if set(operation_by_id) != _TARGET_IDS:
         raise ValueError("Apply target IDs differ from the reviewed set")
 
-    previous_report = _verify_previous_dry_run(
-        raw["previous-reviewed-dry-run.zip"], expected_plan_sha
-    )
+    previous_report = _verify_previous_dry_run(raw["previous-reviewed-dry-run.zip"], expected_plan_sha)
     expected_dry_run_sha = _file_sha256(raw["previous-reviewed-dry-run.zip"])
     manifest_dry_run_sha = manifest.get("source_dry_run_bundle_sha256")
     if manifest_dry_run_sha not in {None, expected_dry_run_sha}:
@@ -262,18 +239,12 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     result_operations = result.get("operations")
     if not isinstance(result_operations, list):
         raise ValueError("Result operations must be a list")
-    statuses = Counter(
-        str(item.get("status"))
-        for item in result_operations
-        if isinstance(item, dict)
-    )
+    statuses = Counter(str(item.get("status")) for item in result_operations if isinstance(item, dict))
     if sum(statuses.values()) != 3:
         raise ValueError("Result operation count differs from the plan")
     unexpected_statuses = sorted(set(statuses) - _ALLOWED_OPERATION_STATUSES)
     if unexpected_statuses:
-        raise ValueError(
-            "Unexpected result operation statuses: " + ", ".join(unexpected_statuses)
-        )
+        raise ValueError("Unexpected result operation statuses: " + ", ".join(unexpected_statuses))
     result_ids = {
         str(item.get("remote_id"))
         for item in result_operations
@@ -304,27 +275,19 @@ def verify_bundle(path: Path) -> dict[str, Any]:
                 mismatches.append(f"{remote_id}: non-target description changed")
             continue
         if before_video.get("title") != operation.get("before_title"):
-            mismatches.append(
-                f"{remote_id}: source title differs from reviewed before-state"
-            )
+            mismatches.append(f"{remote_id}: source title differs from reviewed before-state")
         if before_video.get("description") != operation.get("before_description"):
-            mismatches.append(
-                f"{remote_id}: source description differs from reviewed before-state"
-            )
+            mismatches.append(f"{remote_id}: source description differs from reviewed before-state")
         if after_video.get("title") != operation.get("after_title"):
             mismatches.append(f"{remote_id}: final title differs from reviewed title")
         if before_video.get("title") != after_video.get("title"):
             mismatches.append(f"{remote_id}: title changed during correction")
         if after_video.get("description") != operation.get("after_description"):
-            mismatches.append(
-                f"{remote_id}: final description differs from reviewed after-state"
-            )
+            mismatches.append(f"{remote_id}: final description differs from reviewed after-state")
         if not bool(operation.get("reviewed_correction")):
             mismatches.append(f"{remote_id}: reviewed_correction is false")
     if mismatches:
-        raise ValueError(
-            "Final VK state verification failed: " + "; ".join(mismatches[:12])
-        )
+        raise ValueError("Final VK state verification failed: " + "; ".join(mismatches[:12]))
 
     if _collection_titles(source) != _collection_titles(final):
         raise ValueError("VK album inventory or titles changed during correction")
@@ -339,10 +302,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     source_memberships = _membership_sha256(source)
     final_memberships = _membership_sha256(final)
     expected_memberships = plan.get("initial_memberships_sha256")
-    if (
-        source_memberships != expected_memberships
-        or final_memberships != expected_memberships
-    ):
+    if source_memberships != expected_memberships or final_memberships != expected_memberships:
         raise ValueError("Membership SHA-256 differs from the reviewed plan")
     if result.get("initial_memberships_sha256") != expected_memberships:
         raise ValueError("Result membership SHA-256 differs from the reviewed plan")
@@ -367,9 +327,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
         if embedded.get("status") != "verified_completed":
             raise ValueError("Embedded postflight verification is not completed")
         if embedded.get("plan_sha256") != expected_plan_sha:
-            raise ValueError(
-                "Embedded postflight verification belongs to another plan"
-            )
+            raise ValueError("Embedded postflight verification belongs to another plan")
 
     wrapper_status = str(manifest.get("status") or "unknown")
     updated_count = statuses.get("updated_and_verified", 0)
