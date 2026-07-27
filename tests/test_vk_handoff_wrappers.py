@@ -45,11 +45,11 @@ def test_reviewed_description_wrapper_uses_exact_signed_dry_run_zip() -> None:
     assert 'component_scope -ne "descriptions_only"' in text
     assert "Manifest.plan_sha256" in text
     assert "Get-FileHash -LiteralPath $Path -Algorithm SHA256" in text
-    assert "Assert-ManifestFile -Manifest $Manifest -Name \"plan.json\"" in text
-    assert "Assert-ManifestFile -Manifest $Manifest -Name \"plan-review.md\"" in text
-    assert "Assert-ManifestFile -Manifest $Manifest -Name \"plan-review.html\"" in text
-    assert "Assert-ManifestFile -Manifest $Manifest -Name \"00-source-vk-snapshot.json\"" in text
-    assert "Assert-ManifestFile -Manifest $Manifest -Name \"editorial-policy.json\"" in text
+    assert 'Assert-ManifestFile -Manifest $Manifest -Name "plan.json"' in text
+    assert 'Assert-ManifestFile -Manifest $Manifest -Name "plan-review.md"' in text
+    assert 'Assert-ManifestFile -Manifest $Manifest -Name "plan-review.html"' in text
+    assert 'Assert-ManifestFile -Manifest $Manifest -Name "00-source-vk-snapshot.json"' in text
+    assert 'Assert-ManifestFile -Manifest $Manifest -Name "editorial-policy.json"' in text
 
 
 def test_reviewed_description_wrapper_fails_closed_on_hidden_changes() -> None:
