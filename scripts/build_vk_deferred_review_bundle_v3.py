@@ -308,15 +308,15 @@ def _html(units: list[dict[str, Any]], summary: dict[str, Any]) -> str:
     for index, unit in enumerate(units, start=1):
         video_links = "".join(
             f'<li><a href="{html.escape(video["url"])}">{html.escape(video["title"])}</a> '
-            f'<code>{html.escape(video["video_id"])}</code></li>'
+            f"<code>{html.escape(video['video_id'])}</code></li>"
             for video in unit["videos"]
         )
         evidence = "".join(
             "<li>"
-            f'<strong>{html.escape(entry["finding_kind"])}</strong> '
-            f'<span>{html.escape(entry["localization_status"])}</span> '
-            f'<code>{html.escape(", ".join(entry["matched_terms"]))}</code>'
-            f'<blockquote>{html.escape(entry["excerpt"])}</blockquote>'
+            f"<strong>{html.escape(entry['finding_kind'])}</strong> "
+            f"<span>{html.escape(entry['localization_status'])}</span> "
+            f"<code>{html.escape(', '.join(entry['matched_terms']))}</code>"
+            f"<blockquote>{html.escape(entry['excerpt'])}</blockquote>"
             "</li>"
             for entry in unit["evidence"]
         )
@@ -331,18 +331,18 @@ def _html(units: list[dict[str, Any]], summary: dict[str, Any]) -> str:
         ).casefold()
         cards.append(
             f"""
-<section class="card" data-priority="{unit['priority']}" data-search="{html.escape(search_text)}">
+<section class="card" data-priority="{unit["priority"]}" data-search="{html.escape(search_text)}">
   <div class="number">{index}</div>
-  <h2><span class="priority {unit['priority']}">{unit['priority']}</span>
-      {html.escape(unit['videos'][0]['title'])}</h2>
-  <p class="meta">{html.escape(unit['priority_reason'])}</p>
-  <p>Активные: {html.escape(', '.join(unit['active_finding_kinds']) or 'нет')}<br>
-     Legacy: {html.escape(', '.join(unit['legacy_finding_kinds']) or 'нет')}</p>
+  <h2><span class="priority {unit["priority"]}">{unit["priority"]}</span>
+      {html.escape(unit["videos"][0]["title"])}</h2>
+  <p class="meta">{html.escape(unit["priority_reason"])}</p>
+  <p>Активные: {html.escape(", ".join(unit["active_finding_kinds"]) or "нет")}<br>
+     Legacy: {html.escape(", ".join(unit["legacy_finding_kinds"]) or "нет")}</p>
   <ul>{video_links}</ul>
   <h3>Что именно проверять</h3>
   <ul>{evidence}</ul>
   <details><summary>Полное финальное описание</summary>
-    <pre>{html.escape(unit['description'])}</pre>
+    <pre>{html.escape(unit["description"])}</pre>
   </details>
 </section>
 """
@@ -365,9 +365,9 @@ blockquote{{margin:8px 0 18px;padding:10px 14px;border-left:3px solid #8957e5;ba
 .hidden{{display:none}}.meta{{color:#9da7b3}}
 </style></head><body><main>
 <h1>VK deferred editorial review</h1>
-<p>{summary['videos']} видео · {summary['source_findings']} исходных маркеров · {summary['active_findings']} активных · remote writes: 0.</p>
+<p>{summary["videos"]} видео · {summary["source_findings"]} исходных маркеров · {summary["active_findings"]} активных · remote writes: 0.</p>
 <div class="toolbar"><input id="search" type="search" placeholder="Поиск"><select id="priority"><option value="">Все</option>{options}</select></div>
-{''.join(cards)}
+{"".join(cards)}
 </main><script>
 const search=document.getElementById('search');const priority=document.getElementById('priority');
 function filterCards(){{const q=search.value.trim().toLocaleLowerCase('ru');const p=priority.value;document.querySelectorAll('.card').forEach(card=>{{card.classList.toggle('hidden',!((!q||card.dataset.search.includes(q))&&(!p||card.dataset.priority===p)));}});}}
@@ -447,9 +447,7 @@ def build_bundle(apply_bundle: Path, output: Path) -> dict[str, Any]:
     items.sort(key=lambda item: (item["title"].casefold(), item["video_id"]))
 
     units = _research_units(items)
-    status_counts = Counter(
-        marker["localization_status"] for item in items for marker in item["markers"]
-    )
+    status_counts = Counter(marker["localization_status"] for item in items for marker in item["markers"])
     priority_counts = Counter(unit["priority"] for unit in units)
     duplicate_units = [unit for unit in units if len(unit["videos"]) > 1]
     summary = {
