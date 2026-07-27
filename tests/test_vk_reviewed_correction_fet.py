@@ -8,6 +8,7 @@ from typing import Any
 _DECISIONS = Path("content/policies/vk-reviewed-corrections-p1-fet-whisper-20260727.json")
 _WRAPPER = Path("scripts/Invoke-VkReviewedCorrectionFetWave.ps1")
 _VERIFIER = Path("scripts/verify_vk_reviewed_correction_fet_dry_run.py")
+_BUILDER = Path("src/video_channel_manager/platforms/vk/editorial_correction_wave.py")
 
 
 def _payload() -> dict[str, Any]:
@@ -24,14 +25,18 @@ def test_fet_decisions_lock_exact_two_video_scope() -> None:
     assert payload["source_review_bundle_sha256"] == (
         "sha256:f38191f18d859ef2bcd445f558204ac76e3c3ebbe4f6414cb3436542df7b4c61"
     )
+    assert payload["description_guard_hash_algorithm"] == "video-manager.text-sha256-v1"
     assert {item["target_video_id"] for item in decisions} == {
         "-235216998_456239127",
         "-235216998_456239143",
     }
-    assert {item["expected_description_sha256"] for item in decisions} == {
-        "sha256:1b9c99ad52dc29f2df7645ae4c3dbedce20ff0c9da942e8e468709e9e35845e3",
-        "sha256:971c88b8e2aed7273cfcf0115dd957717a0d176c8b4461dcd8259c0346b51a9b",
+    canonical_guards = {item["expected_description_sha256"] for item in decisions}
+    assert canonical_guards == {
+        "sha256:eb10b7f1e529c26c240dada4116d2a9666b33bb4e0e167839ad3f9762e959203",
+        "sha256:76c74c96f9aaa93d952531094d42c4b7a168f901566688bd349febd8b7b0c6b9",
     }
+    assert "sha256:1b9c99ad52dc29f2df7645ae4c3dbedce20ff0c9da942e8e468709e9e35845e3" not in canonical_guards
+    assert "sha256:971c88b8e2aed7273cfcf0115dd957717a0d176c8b4461dcd8259c0346b51a9b" not in canonical_guards
 
 
 def test_fet_replacements_distinguish_fact_attribution_and_hypothesis() -> None:
@@ -86,6 +91,26 @@ def test_fet_dry_run_wrapper_is_read_only_and_uses_verified_source_apply() -> No
     assert "-235216998_456239143" in text
     assert "remote_writes = 0" in text
     assert "--execute" not in text
+
+
+def test_fet_wrapper_does_not_label_failed_build_as_ready() -> None:
+    text = _WRAPPER.read_text(encoding="utf-8")
+
+    assert "failed diagnostic" in text
+    assert "СОЗДАН ДИАГНОСТИЧЕСКИЙ ZIP; DRY-RUN НЕ ПОСТРОЕН" in text
+    assert "Подробности сохранены в 00-build.txt" in text
+    assert "$RunStatus -eq \"completed\" -and (Test-Path" in text
+    assert "Start-Safely" in text
+    assert "artifact_kind = $ArtifactKind" in text
+
+
+def test_fet_builder_explains_raw_vs_canonical_guard_mismatch() -> None:
+    text = _BUILDER.read_text(encoding="utf-8")
+
+    assert "VK_DESCRIPTION_GUARD_HASH_ALGORITHM" in text
+    assert "video-manager.text-sha256-v1" in text
+    assert "raw_text_sha256" in text
+    assert "actual_description_sha" in text
 
 
 def test_fet_verifier_locks_sources_scope_and_forbidden_claims() -> None:
