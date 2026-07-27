@@ -34,8 +34,8 @@ if ([string]::IsNullOrWhiteSpace($ApplyBundle)) {
 
 $ResolvedBundle = (Resolve-Path -LiteralPath $ApplyBundle).Path
 
-Write-Host "Проверяется apply-ZIP и строится локализованная review-only очередь..." -ForegroundColor Yellow
-& py -3.11 -X utf8 .\scripts\build_vk_deferred_review_bundle.py `
+Write-Host "Проверяется apply-ZIP и строится legacy-safe review-only очередь..." -ForegroundColor Yellow
+& py -3.11 -X utf8 .\scripts\build_vk_deferred_review_bundle_v3.py `
     "$ResolvedBundle" `
     --output "$Output"
 if ($LASTEXITCODE -ne 0) {
@@ -46,7 +46,7 @@ Write-Host ""
 Write-Host "ГОТОВ ЛОКАЛИЗОВАННЫЙ REVIEW-ONLY ZIP:" -ForegroundColor Green
 Write-Host $Output
 Write-Host "Записей, удалений или изменений данных VK: 0"
-Write-Host "Откройте review-queue.html: там есть поиск, приоритеты и точные фрагменты."
+Write-Host "P1/P2 — активные маркеры финального текста; P3 legacy — старые или технические срабатывания."
 
 if (-not $NoOpen -and $IsWindows) {
     Start-Process explorer.exe -ArgumentList "/select,`"$Output`""
