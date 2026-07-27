@@ -130,7 +130,34 @@ Verifier проверяет:
 
 Он умеет отличить успешный writer/result/final-state от последующего несущественного wrapper-output failure.
 
-## 8. Read-only отказ VK API 204
+## 8. Следующий этап: deferred editorial review
+
+Следующий этап является строго review-only:
+
+```powershell
+pwsh -File .\scripts\Invoke-VkDeferredEditorialReview.ps1
+```
+
+Helper:
+
+1. автоматически берёт последний apply-ZIP описаний;
+2. пропускает его через независимый verifier;
+3. извлекает 148 отложенных маркеров по 96 роликам;
+4. создаёт JSON, Markdown и HTML с полными текущими описаниями;
+5. создаёт один ZIP `vk-deferred-editorial-review-*.zip`;
+6. не вызывает VK mutation API и не создаёт correction plan.
+
+В очереди:
+
+```text
+factual_editorial_review: 96
+sensitive_claim_review: 52
+remote writes: 0
+```
+
+Любые реальные исправления после этой очереди должны строиться отдельными reviewed correction-планами с точными source citations. Наличие маркера само по себе не означает, что текст ошибочен.
+
+## 9. Read-only отказ VK API 204
 
 Если VK возвращает точный ответ:
 
@@ -148,7 +175,7 @@ VK API 204 in video.get: Access denied
 
 До полного успешного live preflight мутации запрещены.
 
-## 9. Обязательные postconditions
+## 10. Обязательные postconditions
 
 Успешное завершение требует одновременно:
 
@@ -161,7 +188,7 @@ memberships SHA-256 unchanged
 
 Writer передаёт в `video.edit` только реально изменяемое поле. При description-only операции `name` не отправляется.
 
-## 10. Запрещённые действия
+## 11. Запрещённые действия
 
 - не выполнять непроверенный dry-run ZIP;
 - не редактировать VK Studio параллельно;
@@ -171,7 +198,7 @@ Writer передаёт в `video.edit` только реально изменя
 - не считать ответ API достаточным доказательством без повторного provider read;
 - не переиспользовать SHA, count или snapshot из старого чата.
 
-## 11. Источник истины
+## 12. Источник истины
 
 Приоритет имеют:
 
