@@ -15,6 +15,7 @@ from video_channel_manager.domain.models import (
 from video_channel_manager.exchange.audit_package import AuditPackage
 from video_channel_manager.platforms.vk.editorial_cleanup import clean_vk_title
 from video_channel_manager.platforms.vk.editorial_cleanup_plan import (
+    build_vk_deferred_editorial_findings,
     build_vk_editorial_cleanup_plan,
     calculate_vk_editorial_plan_sha256,
     membership_state_sha256,
@@ -98,6 +99,29 @@ def test_title_cleanup_preserves_brand_style_without_pipe() -> None:
     assert title == "DJ Маяковский 🎶 𝖭𝖮𝖪TU𝖱𝖭 🎶 А Вы Могли Бы?"
     assert "|" not in title
     assert "@TheLegendaryPoet" not in title
+
+
+def test_deferred_findings_include_exact_terms_and_excerpts() -> None:
+    description = (
+        "Стихотворение написано в 1923 году и впервые опубликовано позднее.\n\n"
+        "Автор размышляет о смерти и самоубийстве."
+    )
+
+    findings = build_vk_deferred_editorial_findings("-235216998_1", description)
+
+    assert [item["kind"] for item in findings] == [
+        "factual_editorial_review",
+        "sensitive_claim_review",
+    ]
+    factual = findings[0]
+    sensitive = findings[1]
+    assert {"1923", "написано", "впервые"}.issubset(set(factual["matched_terms"]))
+    assert "dates" in factual["trigger_families"]
+    assert "authorship_or_creation" in factual["trigger_families"]
+    assert any("1923" in item["excerpt"] for item in factual["evidence"])
+    assert {"смерти", "самоубийстве"}.issubset(set(sensitive["matched_terms"]))
+    assert "psychology_or_self_harm" in sensitive["trigger_families"]
+    assert any("самоубийстве" in item["excerpt"] for item in sensitive["evidence"])
 
 
 def test_editorial_plan_is_brand_preserving_and_catalog_safe() -> None:
