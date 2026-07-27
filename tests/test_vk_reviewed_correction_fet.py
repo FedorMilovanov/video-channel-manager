@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 
 _DECISIONS = Path("content/policies/vk-reviewed-corrections-p1-fet-whisper-20260727.json")
 _WRAPPER = Path("scripts/Invoke-VkReviewedCorrectionFetWave.ps1")
 
 
-def _payload() -> dict[str, object]:
-    return json.loads(_DECISIONS.read_text(encoding="utf-8"))
+def _payload() -> dict[str, Any]:
+    payload = json.loads(_DECISIONS.read_text(encoding="utf-8"))
+    assert isinstance(payload, dict)
+    return payload
 
 
 def test_fet_decisions_lock_exact_two_video_scope() -> None:
