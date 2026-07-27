@@ -136,6 +136,7 @@ def build_vk_reviewed_correction_wave(
         )
 
     operations.sort(key=lambda item: item["operation_id"])
+    decisions_sha256 = canonical_sha256(decisions)
     plan: dict[str, Any] = {
         "schema_name": VK_EDITORIAL_CLEANUP_SCHEMA,
         "schema_version": VK_EDITORIAL_CLEANUP_VERSION,
@@ -147,8 +148,10 @@ def build_vk_reviewed_correction_wave(
         "target_community_id": community_id,
         "target_video_ids_sha256": target_video_ids_sha256(target),
         "initial_memberships_sha256": membership_state_sha256(target),
+        "policy": decisions,
+        "policy_sha256": decisions_sha256,
         "decision_set_id": str(decisions.get("decision_set_id") or ""),
-        "decisions_sha256": canonical_sha256(decisions),
+        "decisions_sha256": decisions_sha256,
         "source_plan_sha256": str(decisions.get("source_plan_sha256") or ""),
         "source_review_bundle_sha256": source_review_bundle_sha256,
         "video_text_operations": operations,
