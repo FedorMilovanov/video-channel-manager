@@ -1,0 +1,83 @@
+{
+  "schema_name": "video-manager.vk-reviewed-correction-decisions",
+  "schema_version": 1,
+  "decision_set_id": "p1-esenin-confession-20260727",
+  "target_community_id": 235216998,
+  "source_plan_sha256": "sha256:b4eede44954bcb148550bcb2c0a372e4f23b72d892cc3aadcc5d71321a2e9294",
+  "source_review_bundle_sha256": "sha256:f38191f18d859ef2bcd445f558204ac76e3c3ebbe4f6414cb3436542df7b4c61",
+  "editorial_rule": "Only exact reviewed replacements are allowed. Titles, albums, memberships, video inventory, URLs, hashtags, poem text and all other descriptions are frozen.",
+  "shared_replacements": [
+    {
+      "replacement_id": "remove-unverifiable-final-faith-judgment",
+      "old": "Иисус Христос пришёл в мир не к сильным и безупречным — а к израненным, уставшим, потерявшим надежду. Он знает, что такое человеческая боль. Он не отталкивает тех, кто чувствует себя на грани; наоборот — именно им Он протягивает руку первой. Без Него мы погибаем в пустоте. Только Он способен заполнить человеческую пустоту и понести весь наш грех на Себе. Очень жаль, что Сергей, скорее всего, не обратился к Нему и не заполнил эту пустоту и умер в неверии и такой боли. Иисус единственный путь спастись.",
+      "new": "Иисус Христос пришёл в мир не к сильным и безупречным — а к израненным, уставшим, потерявшим надежду. Он знает, что такое человеческая боль. Он не отталкивает тех, кто чувствует себя на грани; наоборот — именно им Он протягивает руку первой. Без Него мы погибаем в пустоте. Только Он способен заполнить человеческую пустоту и понести весь наш грех на Себе. Иисус — единственный путь спасения. Но по художественному тексту и биографическим свидетельствам нельзя с уверенностью судить о последнем состоянии веры Есенина; окончательный суд о человеке принадлежит Богу.",
+      "expected_count": 1,
+      "reason": "Remove an unverifiable claim about the poet's final personal faith while retaining the channel's stated Christian interpretation."
+    },
+    {
+      "replacement_id": "correct-academic-date",
+      "old": "1912 г.",
+      "new": "1913–1915 гг. (предположительная датировка академического издания)",
+      "expected_count": 1,
+      "reason": "The academic complete edition dates the undated autograph to 1913–1915, not 1912."
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "feb-esenin-pss-v4-text",
+      "authority": "Фундаментальная электронная библиотека / Есенин. Полное собрание сочинений в 7 томах, том 4",
+      "url": "https://feb-web.ru/feb/esenin/texts/e74/e74-047-.htm?cmd=p",
+      "supports": "Academic text prints the poem with the date range 1913–1915."
+    },
+    {
+      "source_id": "feb-esenin-pss-v4-commentary",
+      "authority": "Фундаментальная электронная библиотека / академический комментарий к тому 4",
+      "url": "https://feb-web.ru/feb/esenin/texts/e74/e74-323-.htm?cmd=p",
+      "supports": "The poem is printed from an undated autograph and dated 1913–1915; the autograph is attributed to Esenin."
+    }
+  ],
+  "decisions": [
+    {
+      "decision_id": "correct-456239046",
+      "target_video_id": "-235216998_456239046",
+      "expected_title": "Исповедь Самоубийцы ⚡ ВЕРСИЯ 2 - КОРОТКАЯ ⚡ Сергей Есенин",
+      "expected_description_sha256": "sha256:db3f964d3bfff835342dcdc825f28033836682d27052d09919b51baabb819e1e",
+      "replacement_ids": [
+        "remove-unverifiable-final-faith-judgment",
+        "correct-academic-date"
+      ],
+      "source_ids": [
+        "feb-esenin-pss-v4-text",
+        "feb-esenin-pss-v4-commentary"
+      ]
+    },
+    {
+      "decision_id": "correct-456239047",
+      "target_video_id": "-235216998_456239047",
+      "expected_title": "Исповедь Самоубийцы ⚡ ВЕРСИЯ 2 ⚡ Сергей Есенин",
+      "expected_description_sha256": "sha256:81a2a410e6784f34475813975572e1c49357ea492671b53500cfd6cf20f638b9",
+      "replacement_ids": [
+        "remove-unverifiable-final-faith-judgment",
+        "correct-academic-date"
+      ],
+      "source_ids": [
+        "feb-esenin-pss-v4-text",
+        "feb-esenin-pss-v4-commentary"
+      ]
+    },
+    {
+      "decision_id": "correct-456239050",
+      "target_video_id": "-235216998_456239050",
+      "expected_title": "Исповедь Самоубийцы ⚡ Сергей Есенин",
+      "expected_description_sha256": "sha256:f1a5a76b878f7424cd88851cab7dbacf8f9f6bea7e5b2c16bc5b366911496959",
+      "replacement_ids": [
+        "remove-unverifiable-final-faith-judgment",
+        "correct-academic-date"
+      ],
+      "source_ids": [
+        "feb-esenin-pss-v4-text",
+        "feb-esenin-pss-v4-commentary"
+      ]
+    }
+  ]
+}
