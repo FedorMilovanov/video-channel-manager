@@ -26,8 +26,12 @@ $Mode = if ($Execute) { "apply" } else { "dry-run" }
 $BundleName = "vk-description-wave-$Mode-$Stamp"
 $BundleDir = Join-Path $Handoffs $BundleName
 $ZipPath = Join-Path $Handoffs "$BundleName.zip"
+$TempRoot = Join-Path ([System.IO.Path]::GetTempPath()) "video-channel-manager"
+$TempRunDir = Join-Path $TempRoot $BundleName
+$TemporarySnapshot = Join-Path $TempRunDir "source-vk-snapshot.json"
 
 New-Item -ItemType Directory -Path $BundleDir -Force | Out-Null
+New-Item -ItemType Directory -Path $TempRunDir -Force | Out-Null
 
 $PreflightLog = Join-Path $BundleDir "01-preflight.txt"
 $ApplyLog = Join-Path $BundleDir "02-apply.txt"
@@ -35,7 +39,6 @@ $ResultPath = Join-Path $BundleDir "03-result.json"
 $FinalSnapshot = Join-Path $BundleDir "04-final-vk-snapshot.json"
 $ReadmePath = Join-Path $BundleDir "README.txt"
 $ManifestPath = Join-Path $BundleDir "manifest.json"
-$SourceSnapshotCopy = Join-Path $BundleDir "00-source-vk-snapshot.json"
 
 $RunStatus = "started"
 $RunError = $null
@@ -43,10 +46,21 @@ $Ready = $null
 $AlreadyApplied = $null
 $Conflicts = $null
 $PlanJson = $null
-$ResolvedPlan = $null
 $ResolvedSourceSnapshot = $null
 $ResolvedSourceBundle = $null
 $GeneratedPlan = $false
+
+function Get-NormalizedFullPath {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path
+    )
+
+    return [System.IO.Path]::GetFullPath($Path).TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar
+    )
+}
 
 function Copy-Artifact {
     param(
@@ -60,7 +74,19 @@ function Copy-Artifact {
     }
 
     $TargetName = if ($Name) { $Name } else { Split-Path -Leaf $Path }
-    Copy-Item -LiteralPath $Path -Destination (Join-Path $BundleDir $TargetName) -Force
+    $Destination = Join-Path $BundleDir $TargetName
+    $SourceFullPath = Get-NormalizedFullPath -Path $Path
+    $DestinationFullPath = Get-NormalizedFullPath -Path $Destination
+
+    if ([string]::Equals(
+        $SourceFullPath,
+        $DestinationFullPath,
+        [System.StringComparison]::OrdinalIgnoreCase
+    )) {
+        return
+    }
+
+    Copy-Item -LiteralPath $SourceFullPath -Destination $DestinationFullPath -Force
 }
 
 function Read-PreflightCount {
@@ -87,15 +113,25 @@ function Expand-SnapshotFromBundle {
         [string]$Destination
     )
 
+    if (-not (Test-Path -LiteralPath $Bundle -PathType Leaf)) {
+        throw "Не найден исходный ZIP: $Bundle"
+    }
+
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $Archive = [System.IO.Compression.ZipFile]::OpenRead($Bundle)
     try {
         $Entry = $Archive.Entries |
-            Where-Object { [System.IO.Path]::GetFileName($_.FullName) -eq "04-final-vk-snapshot.json" } |
+            Where-Object {
+                [System.IO.Path]::GetFileName($_.FullName) -eq "04-final-vk-snapshot.json"
+            } |
             Select-Object -First 1
+
         if ($null -eq $Entry) {
             throw "В ZIP не найден 04-final-vk-snapshot.json: $Bundle"
         }
+
+        $DestinationDirectory = Split-Path -Parent $Destination
+        New-Item -ItemType Directory -Path $DestinationDirectory -Force | Out-Null
         [System.IO.Compression.ZipFileExtensions]::ExtractToFile(
             $Entry,
             $Destination,
@@ -138,7 +174,9 @@ $ZipPath
 ВАЖНО:
 - default-режим является dry-run и ничего не записывает в VK;
 - execute разрешён только с явно переданным ранее проверенным -Plan;
-- план блокируется, если меняется содержательная часть хотя бы одного описания.
+- план блокируется, если меняется содержательная часть хотя бы одного описания;
+- snapshot распаковывается во временную папку вне handoff-пакета;
+- self-copy артефакта безопасно пропускается.
 "@
     Set-Content -LiteralPath $ReadmePath -Value $Readme -Encoding UTF8
 
@@ -170,15 +208,27 @@ $ZipPath
         error = $RunError
         source_snapshot = $ResolvedSourceSnapshot
         source_bundle = $ResolvedSourceBundle
-        plan_sha256 = if ($null -ne $PlanJson) { [string]$PlanJson.plan_sha256 } else { $null }
+        plan_sha256 = if ($null -ne $PlanJson) {
+            [string]$PlanJson.plan_sha256
+        }
+        else {
+            $null
+        }
         files = $Files
     }
-    $Manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $ManifestPath -Encoding UTF8
+
+    $Manifest |
+        ConvertTo-Json -Depth 8 |
+        Set-Content -LiteralPath $ManifestPath -Encoding UTF8
 
     if (Test-Path -LiteralPath $ZipPath) {
         Remove-Item -LiteralPath $ZipPath -Force
     }
-    Compress-Archive -Path (Join-Path $BundleDir "*") -DestinationPath $ZipPath -CompressionLevel Optimal
+
+    Compress-Archive `
+        -Path (Join-Path $BundleDir "*") `
+        -DestinationPath $ZipPath `
+        -CompressionLevel Optimal
 
     Write-Host ""
     Write-Host "ГОТОВ ОДИН ФАЙЛ ДЛЯ ОТПРАВКИ:" -ForegroundColor Green
@@ -201,7 +251,10 @@ try {
     }
 
     if ($Execute -and [string]::IsNullOrWhiteSpace($Plan)) {
-        throw "Execute требует явно переданный ранее проверенный -Plan. Новый план нельзя построить и тут же исполнить."
+        throw (
+            "Execute требует явно переданный ранее проверенный -Plan. " +
+            "Новый план нельзя построить и тут же исполнить."
+        )
     }
 
     if (-not [string]::IsNullOrWhiteSpace($SourceSnapshot)) {
@@ -209,30 +262,47 @@ try {
     }
     elseif (-not [string]::IsNullOrWhiteSpace($SourceBundle)) {
         $ResolvedSourceBundle = (Resolve-Path -LiteralPath $SourceBundle).Path
-        Expand-SnapshotFromBundle -Bundle $ResolvedSourceBundle -Destination $SourceSnapshotCopy
-        $ResolvedSourceSnapshot = $SourceSnapshotCopy
+        Expand-SnapshotFromBundle `
+            -Bundle $ResolvedSourceBundle `
+            -Destination $TemporarySnapshot
+        $ResolvedSourceSnapshot = $TemporarySnapshot
     }
     else {
-        $LatestBundle = Get-ChildItem -LiteralPath $Handoffs -File -Filter "vk-title-wave-apply-*.zip" |
+        $LatestBundle = Get-ChildItem `
+            -LiteralPath $Handoffs `
+            -File `
+            -Filter "vk-title-wave-apply-*.zip" |
             Sort-Object LastWriteTime -Descending |
             Select-Object -First 1
+
         if ($null -ne $LatestBundle) {
             $ResolvedSourceBundle = $LatestBundle.FullName
-            Expand-SnapshotFromBundle -Bundle $ResolvedSourceBundle -Destination $SourceSnapshotCopy
-            $ResolvedSourceSnapshot = $SourceSnapshotCopy
+            Expand-SnapshotFromBundle `
+                -Bundle $ResolvedSourceBundle `
+                -Destination $TemporarySnapshot
+            $ResolvedSourceSnapshot = $TemporarySnapshot
         }
         else {
-            $LatestSnapshot = Get-ChildItem -LiteralPath $Exports -File -Filter "vk-*-post-title-wave-*.json" |
+            $LatestSnapshot = Get-ChildItem `
+                -LiteralPath $Exports `
+                -File `
+                -Filter "vk-*-post-title-wave-*.json" |
                 Sort-Object LastWriteTime -Descending |
                 Select-Object -First 1
+
             if ($null -eq $LatestSnapshot) {
-                throw "Не найден финальный snapshot волны названий или её ZIP в data\handoffs."
+                throw (
+                    "Не найден финальный snapshot волны названий " +
+                    "или её ZIP в data\handoffs."
+                )
             }
             $ResolvedSourceSnapshot = $LatestSnapshot.FullName
         }
     }
 
-    Copy-Artifact -Path $ResolvedSourceSnapshot -Name "00-source-vk-snapshot.json"
+    Copy-Artifact `
+        -Path $ResolvedSourceSnapshot `
+        -Name "00-source-vk-snapshot.json"
     Copy-Artifact -Path $PolicyPath -Name "editorial-policy.json"
 
     if ([string]::IsNullOrWhiteSpace($Plan)) {
@@ -258,8 +328,11 @@ try {
         $HtmlReport = [System.IO.Path]::ChangeExtension($Plan, ".html")
     }
 
-    $ResolvedPlan = Get-Item -LiteralPath $Plan
-    $PlanJson = Get-Content -LiteralPath $Plan -Raw -Encoding UTF8 | ConvertFrom-Json
+    $PlanJson = Get-Content `
+        -LiteralPath $Plan `
+        -Raw `
+        -Encoding UTF8 |
+        ConvertFrom-Json
 
     if ([string]$PlanJson.operation_scope -ne "editorial_only") {
         throw "План не является editorial_only."
@@ -276,9 +349,11 @@ try {
     if ([int]$PlanJson.summary.albums_to_rename -ne 0) {
         throw "План содержит переименование альбомов."
     }
-    if ([int]$PlanJson.summary.placements_to_add -ne 0 -or
+    if (
+        [int]$PlanJson.summary.placements_to_add -ne 0 -or
         [int]$PlanJson.summary.placements_to_remove -ne 0 -or
-        [int]$PlanJson.summary.videos_to_delete -ne 0) {
+        [int]$PlanJson.summary.videos_to_delete -ne 0
+    ) {
         throw "План содержит каталожные изменения или удаления."
     }
 
@@ -304,7 +379,10 @@ try {
         }
     )
     if ($UnprotectedDescriptions.Count -gt 0) {
-        throw "План содержит описание без semantic-body защиты или причины изменения."
+        throw (
+            "План содержит описание без semantic-body защиты " +
+            "или причины изменения."
+        )
     }
 
     Copy-Artifact -Path $Plan -Name "plan.json"
@@ -312,11 +390,17 @@ try {
     Copy-Artifact -Path $HtmlReport -Name "plan-review.html"
 
     if ($Execute) {
-        $PreviousDryRun = Get-ChildItem -LiteralPath $Handoffs -File -Filter "vk-description-wave-dry-run-*.zip" |
+        $PreviousDryRun = Get-ChildItem `
+            -LiteralPath $Handoffs `
+            -File `
+            -Filter "vk-description-wave-dry-run-*.zip" |
             Sort-Object LastWriteTime -Descending |
             Select-Object -First 1
+
         if ($null -ne $PreviousDryRun) {
-            Copy-Artifact -Path $PreviousDryRun.FullName -Name "previous-reviewed-dry-run.zip"
+            Copy-Artifact `
+                -Path $PreviousDryRun.FullName `
+                -Name "previous-reviewed-dry-run.zip"
         }
     }
 
@@ -335,9 +419,14 @@ try {
         throw "Live preflight завершился с кодом $PreflightExit."
     }
 
-    $PreflightText = Get-Content -LiteralPath $PreflightLog -Raw -Encoding UTF8
+    $PreflightText = Get-Content `
+        -LiteralPath $PreflightLog `
+        -Raw `
+        -Encoding UTF8
     $Ready = Read-PreflightCount -Text $PreflightText -Label "ready"
-    $AlreadyApplied = Read-PreflightCount -Text $PreflightText -Label "already applied"
+    $AlreadyApplied = Read-PreflightCount `
+        -Text $PreflightText `
+        -Label "already applied"
     $Conflicts = Read-PreflightCount -Text $PreflightText -Label "conflicts"
 
     if ($Conflicts -ne 0) {
@@ -347,12 +436,14 @@ try {
     if (-not $Execute) {
         $RunStatus = "dry_run_completed"
         Write-Host ""
-        Write-Host "Dry-run описаний завершён. Записей в VK не было." -ForegroundColor Green
+        Write-Host "Dry-run описаний завершён. Записей в VK не было." `
+            -ForegroundColor Green
         return
     }
 
     Write-Host ""
-    Write-Host "Выполняется безопасное продолжение описаний:" -ForegroundColor Yellow
+    Write-Host "Выполняется безопасное продолжение описаний:" `
+        -ForegroundColor Yellow
     Write-Host "  ready:           $Ready"
     Write-Host "  already applied: $AlreadyApplied"
     Write-Host "  total plan ops:  $($PlanJson.summary.total_operations)"
@@ -381,7 +472,12 @@ try {
         throw "Не создан result journal."
     }
 
-    $ResultJson = Get-Content -LiteralPath $ResultPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $ResultJson = Get-Content `
+        -LiteralPath $ResultPath `
+        -Raw `
+        -Encoding UTF8 |
+        ConvertFrom-Json
+
     if ([string]$ResultJson.status -ne "completed") {
         throw "Result journal не получил status=completed."
     }
@@ -400,7 +496,8 @@ try {
 
     $RunStatus = "completed"
     Write-Host ""
-    Write-Host "VK description wave завершена и postflight-подтверждена." -ForegroundColor Green
+    Write-Host "VK description wave завершена и postflight-подтверждена." `
+        -ForegroundColor Green
 }
 catch {
     $RunStatus = "failed"
@@ -410,5 +507,12 @@ catch {
     throw
 }
 finally {
-    Write-Bundle
+    try {
+        Write-Bundle
+    }
+    finally {
+        if (Test-Path -LiteralPath $TempRunDir) {
+            Remove-Item -LiteralPath $TempRunDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
 }
