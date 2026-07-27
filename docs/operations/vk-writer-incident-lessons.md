@@ -67,7 +67,9 @@ Regex-cleanup допустим для ссылок и разметки, но н�
 - description wave использует semantic-body fingerprint;
 - из сравнения исключаются только URL, footer, hashtags, Markdown, decorative rules, whitespace и zero-width;
 - любое оставшееся отличие блокирует план;
-- фактические и чувствительные утверждения сохраняются и выносятся в deferred review.
+- фактические и чувствительные утверждения сохраняются и выносятся в deferred review;
+- deferred marker означает «нужна проверка», а не «обнаружена ошибка»;
+- review-only bundle не создаёт correction plan и не вызывает mutation API.
 
 ## Инцидент 6: успешный postflight был помечен как failed из-за символа консоли
 
