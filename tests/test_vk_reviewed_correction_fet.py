@@ -7,6 +7,7 @@ from typing import Any
 
 _DECISIONS = Path("content/policies/vk-reviewed-corrections-p1-fet-whisper-20260727.json")
 _WRAPPER = Path("scripts/Invoke-VkReviewedCorrectionFetWave.ps1")
+_VERIFIER = Path("scripts/verify_vk_reviewed_correction_fet_dry_run.py")
 
 
 def _payload() -> dict[str, Any]:
@@ -87,3 +88,20 @@ def test_fet_dry_run_wrapper_is_read_only_and_uses_verified_source_apply() -> No
     assert "-235216998_456239143" in text
     assert "remote_writes = 0" in text
     assert "--execute" not in text
+
+
+def test_fet_verifier_locks_sources_scope_and_forbidden_claims() -> None:
+    text = _VERIFIER.read_text(encoding="utf-8")
+
+    assert "verified_dry_run" in text
+    assert "source-apply-verification.json" in text
+    assert "Nested source review bundle SHA-256 mismatch" in text
+    assert "Plan self-digest mismatch" in text
+    assert "Fet correction target IDs differ from the reviewed set" in text
+    assert "Invalid corrected description length" in text
+    assert "прямого авторского посвящения" in text
+    assert "другой поздний цикл 1882–1892 годов" in text
+    assert "Фет всю жизнь писал только ей" in text
+    assert "смерть наступила от сердечного приступа" in text
+    assert "No VK mutation method was called" in text
+    assert "video.edit" not in text
