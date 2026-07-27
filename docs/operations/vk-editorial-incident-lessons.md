@@ -136,7 +136,8 @@ Permanent rules:
 - never infer that error 204 means a token refresh is definitely required;
 - after persistent failure, diagnose token identity, personal `video.get` permission, managed-community visibility, and community video access separately;
 - recommend `video-manager vk login --account <alias>` only when token identity or video/groups permission is actually invalid;
-- no write is permitted until a complete fresh preflight returns exact ready/already-applied/conflict counts.
+- no write is permitted until a complete fresh preflight returns exact ready/already-applied/conflict counts;
+- CI must pass compile, Ruff, formatting, mypy, and tests for all supported Python versions before retry instructions are issued.
 
 ## Operator rule
 
