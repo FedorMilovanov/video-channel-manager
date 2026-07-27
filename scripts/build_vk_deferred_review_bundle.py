@@ -79,10 +79,7 @@ def _localized_item(
 ) -> dict[str, Any]:
     description = str(video.get("description") or "")
     expected_kinds = sorted({str(item.get("kind") or "unknown") for item in source_findings})
-    localized = {
-        str(item.get("kind")): item
-        for item in build_vk_deferred_editorial_findings(video_id, description)
-    }
+    localized = {str(item.get("kind")): item for item in build_vk_deferred_editorial_findings(video_id, description)}
     missing_kinds = sorted(set(expected_kinds) - set(localized))
     if missing_kinds:
         raise ValueError(f"Cannot localize deferred findings for {video_id}: {missing_kinds}")
@@ -253,14 +250,14 @@ def _html(units: list[dict[str, Any]], summary: dict[str, Any]) -> str:
     for index, unit in enumerate(units, start=1):
         video_links = "".join(
             f'<li><a href="{html.escape(video["url"])}">{html.escape(video["title"])}</a> '
-            f'<code>{html.escape(video["video_id"])}</code></li>'
+            f"<code>{html.escape(video['video_id'])}</code></li>"
             for video in unit["videos"]
         )
         evidence = "".join(
             "<li>"
             f'<span class="kind">{html.escape(entry["finding_kind"])}</span> '
-            f'<code>{html.escape(", ".join(entry["matched_terms"]))}</code>'
-            f'<blockquote>{html.escape(entry["excerpt"])}</blockquote>'
+            f"<code>{html.escape(', '.join(entry['matched_terms']))}</code>"
+            f"<blockquote>{html.escape(entry['excerpt'])}</blockquote>"
             "</li>"
             for entry in unit["evidence"]
         )
@@ -274,12 +271,12 @@ def _html(units: list[dict[str, Any]], summary: dict[str, Any]) -> str:
         ).casefold()
         cards.append(
             f"""
-<section class="card" data-priority="{unit['priority']}" data-search="{html.escape(search_text)}">
+<section class="card" data-priority="{unit["priority"]}" data-search="{html.escape(search_text)}">
   <div class="number">{index}</div>
-  <h2><span class="priority {unit['priority']}">{unit['priority']}</span>
-      {html.escape(unit['videos'][0]['title'])}</h2>
-  <p class="meta"><code>{html.escape(unit['research_unit_id'])}</code> ·
-     {len(unit['videos'])} видео · {html.escape(unit['priority_reason'])}</p>
+  <h2><span class="priority {unit["priority"]}">{unit["priority"]}</span>
+      {html.escape(unit["videos"][0]["title"])}</h2>
+  <p class="meta"><code>{html.escape(unit["research_unit_id"])}</code> ·
+     {len(unit["videos"])} видео · {html.escape(unit["priority_reason"])}</p>
   <ul>{video_links}</ul>
   <h3>Что именно проверять</h3>
   <ul class="evidence">{evidence}</ul>
@@ -288,7 +285,7 @@ def _html(units: list[dict[str, Any]], summary: dict[str, Any]) -> str:
   </div>
   <details>
     <summary>Полное текущее описание</summary>
-    <pre>{html.escape(unit['description'])}</pre>
+    <pre>{html.escape(unit["description"])}</pre>
   </details>
 </section>
 """
@@ -330,8 +327,8 @@ summary {{ cursor: pointer; color: #d2a8ff; }}
 <body>
 <main>
 <h1>VK deferred editorial review</h1>
-<p>{summary['videos']} видео · {summary['findings']} маркеров ·
-{summary['research_units']} исследовательских единиц · remote writes: 0.</p>
+<p>{summary["videos"]} видео · {summary["findings"]} маркеров ·
+{summary["research_units"]} исследовательских единиц · remote writes: 0.</p>
 <div class="toolbar">
   <input id="search" type="search" placeholder="Поиск по названию, фрагменту, триггеру">
   <select id="priority"><option value="">Все приоритеты</option>{priorities}</select>
