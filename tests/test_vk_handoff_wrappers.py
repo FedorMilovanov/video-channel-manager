@@ -83,6 +83,9 @@ def test_reviewed_description_wrapper_retries_only_video_get_204() -> None:
 def test_vk_access_diagnostic_is_read_only_and_actionable() -> None:
     text = _script("diagnose_vk_video_access.py")
 
+    assert "VkTokenStore(settings.data_dir)" in text
+    assert 'VkTokenStore(settings.data_dir / "secrets" / "vk")' not in text
+    assert "api_version=settings.vk_api_version" in text
     assert "client.get_current_user()" in text
     assert "client.validate_video_access(user.user_id)" in text
     assert "client.list_managed_communities()" in text
