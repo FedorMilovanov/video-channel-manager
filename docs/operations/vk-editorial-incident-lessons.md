@@ -1,0 +1,89 @@
+# VK editorial incident lessons and permanent safeguards
+
+This document records real failures observed while operating The Legendary Poet VK community and the permanent invariants added to Video Channel Manager.
+
+## 1. Structured VK success responses
+
+Observed response from `video.edit`:
+
+```json
+{"access_key": "…", "success": 1}
+```
+
+The original writer accepted only the scalar response `1` and therefore reported a false failure after VK had already committed the mutation.
+
+Permanent rules:
+
+- accept both scalar `1` and an object with `success: 1`;
+- never treat an acknowledgement as final proof;
+- read the target again and verify the exact live postcondition;
+- classify a resumed operation as `already_applied` when live state already equals the reviewed after-state.
+
+## 2. Do not resend unchanged fields
+
+A title-only `video.edit` request originally included the unchanged description. VK normalized trailing whitespace and zero-width characters in several descriptions even though no editorial description change was intended.
+
+Permanent rules:
+
+- include `name` only when the title changes;
+- include `desc` only when the description changes;
+- verify both fields after the mutation;
+- tests must inspect outgoing request parameters.
+
+## 3. Partial success must be resumable
+
+A process may fail after VK commits a mutation but before the local result journal is updated.
+
+Permanent rules:
+
+- every execution starts with a full live preflight;
+- `before` means `ready`;
+- `after` means `already_applied`;
+- any third state means `conflict` and blocks all writes;
+- execute repeats preflight under the single-writer lock immediately before the first mutation.
+
+## 4. Handoff bundles must be one-file and failure-safe
+
+Operators should not manually search for plans, logs, snapshots, reports, and journals.
+
+Permanent rules:
+
+- every wrapper writes one ZIP handoff in `finally`;
+- the ZIP contains README, manifest, plan, reports, policy, preflight, apply log, result journal, and snapshots when available;
+- manifest records SHA-256 and byte size for every member;
+- Explorer opens with the ZIP selected;
+- a failed run still produces a useful ZIP.
+
+## 5. Never copy an artifact over itself
+
+Observed failure:
+
+```text
+Cannot overwrite ...\00-source-vk-snapshot.json with itself.
+```
+
+The description wrapper extracted a snapshot directly into the future handoff directory and then passed it through the generic copy helper using the same destination name.
+
+Permanent rules:
+
+- extract source snapshots into a unique temporary directory outside `data\handoffs`;
+- normalize source and destination absolute paths before every copy;
+- skip an idempotent self-copy instead of raising;
+- remove temporary extraction files in `finally` after the ZIP is written;
+- static regression tests must assert these invariants in the PowerShell wrapper.
+
+## 6. Description cleanup requires semantic-body preservation
+
+Technical cleanup may change URLs, Markdown markers, footer blocks, hashtags, line endings, whitespace, and zero-width characters. It must not rewrite facts, interpretation, or punctuation in the content body.
+
+Permanent rules:
+
+- compute a content-only semantic body before and after cleanup;
+- exclude only approved technical surfaces from this comparison;
+- block the entire plan if the semantic body differs;
+- factual and sensitive claims remain unchanged and are emitted as deferred review findings;
+- execute requires a previously generated and reviewed plan.
+
+## Operator rule
+
+Operational documentation and signed artifacts are the source of truth. Never reuse a confirmation count, snapshot ID, or SHA-256 from chat memory or an older run.
