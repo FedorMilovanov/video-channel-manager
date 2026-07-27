@@ -6,13 +6,37 @@
   "source_plan_sha256": "sha256:b4eede44954bcb148550bcb2c0a372e4f23b72d892cc3aadcc5d71321a2e9294",
   "source_review_bundle_sha256": "sha256:f38191f18d859ef2bcd445f558204ac76e3c3ebbe4f6414cb3436542df7b4c61",
   "editorial_rule": "Only exact reviewed replacements are allowed. Titles, albums, memberships, video inventory, URLs, hashtags, poem text and all other descriptions are frozen.",
+  "editorial_profile": {
+    "profile_id": "the-legendary-poet-historical-evangelical-v1",
+    "authority_repository": "FedorMilovanov/TheLegendaryPoet",
+    "theological_position": "historical_evangelical_christianity",
+    "judgment_mode": "asymmetric_evidence_based",
+    "last_hour_rule": "acknowledge_once_not_equal_to_documented_life",
+    "tone": "sorrow_without_sentimental_acquittal_or_gloating",
+    "gospel_call": "repent_and_believe_in_christ",
+    "principles": [
+      "judge_public_confession_and_stable_fruits_by_scripture",
+      "do_not_invent_last_hour_conversion",
+      "do_not_balance_documented_unbelief_with_bare_possibility",
+      "state_eternal_danger_plainly_when_evidence_is_strong",
+      "speak_with_grief_not_superiority"
+    ]
+  },
+  "stance_source_ids": [
+    "site-project-charter",
+    "site-theological-guidelines",
+    "site-editorial-judgment-policy",
+    "site-yesenin-profile",
+    "research-religious-heart",
+    "research-false-peace"
+  ],
   "shared_replacements": [
     {
-      "replacement_id": "remove-unverifiable-final-faith-judgment",
+      "replacement_id": "align-yesenin-spiritual-verdict-with-site-standard",
       "old": "Иисус Христос пришёл в мир не к сильным и безупречным — а к израненным, уставшим, потерявшим надежду. Он знает, что такое человеческая боль. Он не отталкивает тех, кто чувствует себя на грани; наоборот — именно им Он протягивает руку первой. Без Него мы погибаем в пустоте. Только Он способен заполнить человеческую пустоту и понести весь наш грех на Себе. Очень жаль, что Сергей, скорее всего, не обратился к Нему и не заполнил эту пустоту и умер в неверии и такой боли. Иисус единственный путь спастись.",
-      "new": "Иисус Христос пришёл в мир не к сильным и безупречным — а к израненным, уставшим, потерявшим надежду. Он знает, что такое человеческая боль. Он не отталкивает тех, кто чувствует себя на грани; наоборот — именно им Он протягивает руку первой. Без Него мы погибаем в пустоте. Только Он способен заполнить человеческую пустоту и понести весь наш грех на Себе. Иисус — единственный путь спасения. Но по художественному тексту и биографическим свидетельствам нельзя с уверенностью судить о последнем состоянии веры Есенина; окончательный суд о человеке принадлежит Богу.",
+      "new": "Иисус Христос пришёл не к сильным и безупречным, а к израненным, уставшим и потерявшим надежду. Он знает человеческую боль и не отвергает того, кто приходит к Нему с покаянием и верой. Без Христа человек остаётся в своей вине; только Он понёс грех на кресте и воскрес, чтобы спасти кающихся. По доступным историческим свидетельствам Есенин умер неверующим. Ясных признаков его покаяния и обращения ко Христу перед смертью не сохранилось. Бог мог спасти его и в последний час, но одна теоретическая возможность не уравновешивает собственные слова поэта, сознательный отказ от молитвы и многолетние плоды жизни. Если человек умирает без покаяния и веры во Христа, его ждёт не спасение, а вечная погибель под Божьим судом. Поэтому конец Есенина — не только трагедия великого дара, но и духовно страшная гибель. Для живого читателя здесь звучит прямое предупреждение Христа: «если не покаетесь, все так же погибнете» (Лк. 13:3).",
       "expected_count": 1,
-      "reason": "Remove an unverifiable claim about the poet's final personal faith while retaining the channel's stated Christian interpretation."
+      "reason": "Apply the site's historical-evangelical standard: judge known confession and stable fruits directly, acknowledge an undocumented last-hour conversion only once, and do not use bare possibility to neutralize documented unbelief."
     },
     {
       "replacement_id": "correct-academic-date",
@@ -34,6 +58,42 @@
       "authority": "Фундаментальная электронная библиотека / академический комментарий к тому 4",
       "url": "https://feb-web.ru/feb/esenin/texts/e74/e74-323-.htm?cmd=p",
       "supports": "The poem is printed from an undated autograph and dated 1913–1915; the autograph is attributed to Esenin."
+    },
+    {
+      "source_id": "site-project-charter",
+      "authority": "The Legendary Poet / PROJECT_CHARTER.md",
+      "url": "https://github.com/FedorMilovanov/TheLegendaryPoet/blob/main/PROJECT_CHARTER.md",
+      "supports": "Requires direct spiritual conclusions when confession and long-term fruits show unbelief; a theoretical last-hour conversion must not balance documented unbelief."
+    },
+    {
+      "source_id": "site-theological-guidelines",
+      "authority": "The Legendary Poet / THEOLOGICAL_GUIDELINES.md",
+      "url": "https://github.com/FedorMilovanov/TheLegendaryPoet/blob/main/src/docs/THEOLOGICAL_GUIDELINES.md",
+      "supports": "Allows warning of the perdition of an unrepentant person and states that known unbelief may be described as the sad end of an unbeliever."
+    },
+    {
+      "source_id": "site-editorial-judgment-policy",
+      "authority": "The Legendary Poet / EDITORIAL_JUDGMENT_AND_SOURCE_POLICY.md",
+      "url": "https://github.com/FedorMilovanov/TheLegendaryPoet/blob/main/docs/EDITORIAL_JUDGMENT_AND_SOURCE_POLICY.md",
+      "supports": "Rejects agnostic caution, requires righteous judgment by public confession and fruits, and permits a strong conclusion without claiming omniscience."
+    },
+    {
+      "source_id": "site-yesenin-profile",
+      "authority": "The Legendary Poet / Сергей Есенин profile",
+      "url": "https://github.com/FedorMilovanov/TheLegendaryPoet/blob/main/src/data/library/sergeiYesenin.ts",
+      "supports": "The approved site profile states that no reliable evidence of return to Christ or repentance survives and that, by available historical evidence, Esenin died an unbeliever."
+    },
+    {
+      "source_id": "research-religious-heart",
+      "authority": "Research / СЕРИЯ СЕРДЦЕ / Religious heart, repentance and assurance",
+      "url": "https://github.com/FedorMilovanov/Research/blob/main/%D0%A1%D0%95%D0%A0%D0%98%D0%AF%20%D0%A1%D0%95%D0%A0%D0%94%D0%A6%D0%95/12_RELIGIOUS_HEART_HYPOCRISY_REPENTANCE_ASSURANCE.md",
+      "supports": "Distinguishes religious language, fear and partial reform from true repentance and a new heart."
+    },
+    {
+      "source_id": "research-false-peace",
+      "authority": "Research / СЕРИЯ СЕРДЦЕ / False peace and almost-Christian",
+      "url": "https://github.com/FedorMilovanov/Research/blob/main/%D0%A1%D0%95%D0%A0%D0%98%D0%AF%20%D0%A1%D0%95%D0%A0%D0%94%D0%A6%D0%95/44_V68_FALSE_PEACE_ALMOST_CHRISTIAN_ASSURANCE_GOSPEL_SANCTIFICATION.md",
+      "supports": "Warns against comforting the unconverted without evidence of conversion while preserving pastoral care for genuine weak believers."
     }
   ],
   "decisions": [
@@ -43,12 +103,18 @@
       "expected_title": "Исповедь Самоубийцы ⚡ ВЕРСИЯ 2 - КОРОТКАЯ ⚡ Сергей Есенин",
       "expected_description_sha256": "sha256:ce04bc297d29cb606a23ec62f8138f44f1ba92ebc7ebaab3dc1b6bdbb0895a5e",
       "replacement_ids": [
-        "remove-unverifiable-final-faith-judgment",
+        "align-yesenin-spiritual-verdict-with-site-standard",
         "correct-academic-date"
       ],
       "source_ids": [
         "feb-esenin-pss-v4-text",
-        "feb-esenin-pss-v4-commentary"
+        "feb-esenin-pss-v4-commentary",
+        "site-project-charter",
+        "site-theological-guidelines",
+        "site-editorial-judgment-policy",
+        "site-yesenin-profile",
+        "research-religious-heart",
+        "research-false-peace"
       ]
     },
     {
@@ -57,12 +123,18 @@
       "expected_title": "Исповедь Самоубийцы ⚡ ВЕРСИЯ 2 ⚡ Сергей Есенин",
       "expected_description_sha256": "sha256:f2256a7cf78d01aebe243a6facaa130a9ff9d8c809735f32967c20ec4936cd79",
       "replacement_ids": [
-        "remove-unverifiable-final-faith-judgment",
+        "align-yesenin-spiritual-verdict-with-site-standard",
         "correct-academic-date"
       ],
       "source_ids": [
         "feb-esenin-pss-v4-text",
-        "feb-esenin-pss-v4-commentary"
+        "feb-esenin-pss-v4-commentary",
+        "site-project-charter",
+        "site-theological-guidelines",
+        "site-editorial-judgment-policy",
+        "site-yesenin-profile",
+        "research-religious-heart",
+        "research-false-peace"
       ]
     },
     {
@@ -71,12 +143,18 @@
       "expected_title": "Исповедь Самоубийцы ⚡ Сергей Есенин",
       "expected_description_sha256": "sha256:00434b91ad72e1e7229484f963e034d240269628f960a767c03e207d437bd1a5",
       "replacement_ids": [
-        "remove-unverifiable-final-faith-judgment",
+        "align-yesenin-spiritual-verdict-with-site-standard",
         "correct-academic-date"
       ],
       "source_ids": [
         "feb-esenin-pss-v4-text",
-        "feb-esenin-pss-v4-commentary"
+        "feb-esenin-pss-v4-commentary",
+        "site-project-charter",
+        "site-theological-guidelines",
+        "site-editorial-judgment-policy",
+        "site-yesenin-profile",
+        "research-religious-heart",
+        "research-false-peace"
       ]
     }
   ]
