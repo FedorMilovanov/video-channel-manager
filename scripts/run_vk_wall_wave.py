@@ -178,9 +178,7 @@ def _plan_markdown(policy: dict[str, Any], preflight: dict[str, Any]) -> str:
 
 def _operation_states(preflight: dict[str, Any]) -> dict[str, str]:
     return {
-        str(item["operation_id"]): str(item["state"])
-        for item in preflight.get("states", [])
-        if isinstance(item, dict)
+        str(item["operation_id"]): str(item["state"]) for item in preflight.get("states", []) if isinstance(item, dict)
     }
 
 
