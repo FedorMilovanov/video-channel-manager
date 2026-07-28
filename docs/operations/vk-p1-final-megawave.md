@@ -55,3 +55,7 @@ data\handoffs\vk-p1-final-megawave-apply-YYYYMMDD-HHMMSS.zip
 ```
 
 A failed run also produces one diagnostic ZIP with the completed journal and error report.
+
+## Retired path
+
+`content/policies/vk-p1-megawave-policy-20260728.json` is deliberately retired. The old descriptions-only implementation must not be used because it did not complete canonical links, VK playlists, titles, album names, or memberships.
