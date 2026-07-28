@@ -197,8 +197,7 @@ def test_resume_guards_reproduce_37_shared_replacements_for_42_targets() -> None
     assert len({item["legacy_intermediate_description"] for item in shared}) == 1
     assert all("Заголовок 00" in item["legacy_intermediate_description"] for item in shared)
     assert all(
-        item["legacy_intermediate_metadata"]["shared_research_unit_first_video_id"] == "video-00"
-        for item in shared
+        item["legacy_intermediate_metadata"]["shared_research_unit_first_video_id"] == "video-00" for item in shared
     )
 
 
