@@ -1,0 +1,125 @@
+{
+  "schema_name": "video-manager.vk-p1-fast-lane-batches",
+  "schema_version": 1,
+  "created_at": "2026-07-28",
+  "community_id": 235216998,
+  "source_review_bundle_sha256": "sha256:f38191f18d859ef2bcd445f558204ac76e3c3ebbe4f6414cb3436542df7b4c61",
+  "mode": "author_batches",
+  "rule": "After Pushkin Cloud, do not create one-video correction waves. Research, review, dry-run, execute, and postflight each batch as one guarded unit. Duplicate-description videos remain grouped.",
+  "completed_or_in_flight": {
+    "esenin_confession": [
+      "-235216998_456239046",
+      "-235216998_456239047",
+      "-235216998_456239050"
+    ],
+    "fet_whisper": [
+      "-235216998_456239127",
+      "-235216998_456239143"
+    ],
+    "blok_night": [
+      "-235216998_456239120",
+      "-235216998_456239126"
+    ],
+    "pushkin_cloud": [
+      "-235216998_456239106"
+    ]
+  },
+  "batches": [
+    {
+      "sequence": 1,
+      "batch_id": "p1-fast-pushkin-remaining-20260728",
+      "target_count": 7,
+      "targets": [
+        {"video_id": "-235216998_456239048", "title": "Песнь о Вещем Олеге ⚡ Александр Пушкин"},
+        {"video_id": "-235216998_456239140", "title": "Песнь о Вещем Олеге ⚡ ВЕРСИЯ 2 ⚡ Александр Пушкин"},
+        {"video_id": "-235216998_456239049", "title": "Песнь о Вещем Олеге ⚡ КОРОТКАЯ ВЕРСИЯ ⚡ Александр Пушкин"},
+        {"video_id": "-235216998_456239028", "title": "Письмо Татьяны к Онегину ⚡ КОРОТКАЯ ВЕРСИЯ ⚡ Александр Пушкин"},
+        {"video_id": "-235216998_456239061", "title": "Пророк ⚡ Александр Пушкин"},
+        {"video_id": "-235216998_456239060", "title": "Пророк ⚡ КОРОТКАЯ ВЕРСИЯ ⚡ Александр Пушкин"},
+        {"video_id": "-235216998_456239093", "title": "Сказка о Царе Салтане ⚡ АКТ I ⚡ Александр Пушкин"}
+      ],
+      "handoffs": 2,
+      "handoff_rule": "one reviewed dry-run ZIP and one verified apply ZIP for the whole batch"
+    },
+    {
+      "sequence": 2,
+      "batch_id": "p1-fast-lermontov-20260728",
+      "target_count": 9,
+      "targets": [
+        {"video_id": "-235216998_456239063", "title": "Бородино ⚡ Михаил Лермонтов"},
+        {"video_id": "-235216998_456239111", "title": "Выхожу Один Я На Дорогу 🌌 Лермонтов - Диалог с Совестью 🎧"},
+        {"video_id": "-235216998_456239017", "title": "Парус 🎶 DJ ВЕРСИЯ - КОРОТКАЯ 🎶 Михаил Лермонтов"},
+        {"video_id": "-235216998_456239018", "title": "Парус 🎶 DJ ВЕРСИЯ 🎶 Михаил Лермонтов"},
+        {"video_id": "-235216998_456239035", "title": "Родина ⚡ КОРОТКАЯ ВЕРСИЯ ⚡ Михаил Лермонтов"},
+        {"video_id": "-235216998_456239116", "title": "Самый Депрессивный Стих Лермонтова ⚡ «И Скучно и Грустно»"},
+        {"video_id": "-235216998_456239070", "title": "Смерть Поэта ⚡ ВЕРСИЯ 1 ⚡ Михаил Лермонтов"},
+        {"video_id": "-235216998_456239067", "title": "Смерть Поэта ⚡ ВЕРСИЯ 2 ⚡ Михаил Лермонтов"},
+        {"video_id": "-235216998_456239109", "title": "🌌 «Выхожу один я на дорогу…» - Лермонтов написал это за 6 недель до гибели - Ему было 26"}
+      ],
+      "handoffs": 2,
+      "handoff_rule": "one reviewed dry-run ZIP and one verified apply ZIP for the whole batch"
+    },
+    {
+      "sequence": 3,
+      "batch_id": "p1-fast-esenin-remaining-20260728",
+      "target_count": 10,
+      "targets": [
+        {"video_id": "-235216998_456239114", "title": "Поёт Зима, Аукает... ⚡ NORDIC FOLK ВЕРСИЯ ⚡ Сергей Есенин"},
+        {"video_id": "-235216998_456239037", "title": "Письмо к Женщине ⚡ Неполный Текст Стихотворения ⚡ Сергей Есенин"},
+        {"video_id": "-235216998_456239036", "title": "Письмо к Женщине ⚡ ФРАГМЕНТ ⚡ Сергей Есенин"},
+        {"video_id": "-235216998_456239041", "title": "Сукин Сын - Сергей Есенин @TheLegendaryPoet"},
+        {"video_id": "-235216998_456239040", "title": "Сукин Сын - Сергей Есенин @TheLegendaryPoet"},
+        {"video_id": "-235216998_456239020", "title": "Чёрный Человек ⚡ ВЕРСИЯ 4 - БОЛЕЕ ПОЛНАЯ ⚡ Сергей Есенин"},
+        {"video_id": "-235216998_456239019", "title": "Чёрный Человек ⚡ ВЕРСИЯ 4 - КОРОТКАЯ ⚡ Сергей Есенин"},
+        {"video_id": "-235216998_456239147", "title": "Чёрный Человек ⚡ Предсмертный Диалог с Двойником ⚡ Сергей Есенин (1925)"},
+        {"video_id": "-235216998_456239091", "title": "Чёрный Человек ⚡ Финальная Полная Версия Стихотворения ⚡ Музыкальный Фильм 4K"},
+        {"video_id": "-235216998_456239110", "title": "В Этой Жизни Помереть Не Трудно ⚡ «Сергею Есенину» ⚡ Владимир Маяковский"}
+      ],
+      "handoffs": 2,
+      "handoff_rule": "one reviewed dry-run ZIP and one verified apply ZIP for the whole batch"
+    },
+    {
+      "sequence": 4,
+      "batch_id": "p1-fast-mayakovsky-20260728",
+      "target_count": 3,
+      "targets": [
+        {"video_id": "-235216998_456239075", "title": "Лиличка! ⚡ Владимир Маяковский"},
+        {"video_id": "-235216998_456239098", "title": "Послушайте! ⚡ КОРОТКАЯ Лирическая Рок-Версия ⚡ Владимир Маяковский"},
+        {"video_id": "-235216998_456239077", "title": "Послушайте! ⚡ Лирическая Рок-Версия ⚡ Владимир Маяковский"}
+      ],
+      "handoffs": 2,
+      "handoff_rule": "one reviewed dry-run ZIP and one verified apply ZIP for the whole batch"
+    },
+    {
+      "sequence": 5,
+      "batch_id": "p1-fast-simonov-20260728",
+      "target_count": 4,
+      "targets": [
+        {"video_id": "-235216998_456239055", "title": "Жди Меня, и Я Вернусь... ⚡ Константин Симонов"},
+        {"video_id": "-235216998_456239054", "title": "Жди Меня, и Я Вернусь... ⚡ КОРОТКАЯ ВЕРСИЯ ⚡ Константин Симонов"},
+        {"video_id": "-235216998_456239024", "title": "Родина ⚡ Касаясь Трёх Великих Океанов - КОРОТКАЯ ⚡ Константин Симонов"},
+        {"video_id": "-235216998_456239025", "title": "Родина ⚡ Касаясь Трёх Великих Океанов ⚡ Константин Симонов"}
+      ],
+      "handoffs": 2,
+      "handoff_rule": "one reviewed dry-run ZIP and one verified apply ZIP for the whole batch"
+    },
+    {
+      "sequence": 6,
+      "batch_id": "p1-fast-mixed-final-20260728",
+      "target_count": 9,
+      "targets": [
+        {"video_id": "-235216998_456239134", "title": "«Я Научилась Просто, Мудро Жить…» ⚡ Ахматова Учится Тишине"},
+        {"video_id": "-235216998_456239148", "title": "Веня Д’ркин ⚡ Anno Domini ⚡ Руины, Свет и Слепые Санитары"},
+        {"video_id": "-235216998_456239141", "title": "Как Хорошо Ты, о Море Ночное… ⚡ Тютчев и Тайна Живого Моря"},
+        {"video_id": "-235216998_456239145", "title": "Кино ⚡ ТРАНКВИЛИЗАТОР ⚡ Молнии Индры (Dark Post-Punk Version)"},
+        {"video_id": "-235216998_456239026", "title": "Страшная Сказка ⚡ КОРОТКАЯ ВЕРСИЯ ⚡ Борис Пастернак"},
+        {"video_id": "-235216998_456239103", "title": "Творчество ⚡ ВЕРСИЯ 2 - КОРОТКАЯ ⚡ Валерий Брюсов"},
+        {"video_id": "-235216998_456239107", "title": "Творчество ⚡ ВЕРСИЯ 2 ⚡ Валерий Брюсов"},
+        {"video_id": "-235216998_456239096", "title": "Шабаш ⚡ АЛИСА Cover"},
+        {"video_id": "-235216998_456239092", "title": "Шабаш ⚡ КОРОТКАЯ ВЕРСИЯ ⚡ АЛИСА Cover"}
+      ],
+      "handoffs": 2,
+      "handoff_rule": "one reviewed dry-run ZIP and one verified apply ZIP for the whole batch"
+    }
+  ]
+}
