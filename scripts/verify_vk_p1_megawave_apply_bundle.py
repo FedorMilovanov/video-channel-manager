@@ -210,8 +210,10 @@ def verify_bundle(path: Path) -> dict[str, Any]:
         if before_video.get("description") != after_video.get("description"):
             changed_descriptions.append(remote_id)
 
-    if len(changed_descriptions) != remote_writes:
-        raise ValueError("Final snapshot changed-description count differs from result journal")
+    if len(changed_descriptions) != 42:
+        raise ValueError("Final snapshot does not contain all 42 reviewed after-states")
+    if remote_writes + int(statuses.get("already_applied", 0)) != 42:
+        raise ValueError("Result journal does not account for all 42 megawave operations")
     if _collection_titles(source) != _collection_titles(final):
         raise ValueError("VK collection identities or titles changed")
     if Counter(_membership_identity_rows(source)) != Counter(_membership_identity_rows(final)):
