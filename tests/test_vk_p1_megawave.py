@@ -5,7 +5,11 @@ from pathlib import Path
 
 from video_channel_manager.platforms.vk.editorial_final_megawave import (
     extract_poem_blocks,
+    managed_membership_pairs,
+    membership_pairs,
     render_final_description,
+    system_membership_counts,
+    system_membership_pairs,
 )
 
 
@@ -13,12 +17,20 @@ _POLICY = Path("content/policies/vk-p1-final-megawave-policy-20260728.json")
 _RETIRED_POLICY = Path("content/policies/vk-p1-megawave-policy-20260728.json")
 _WRAPPER = Path("scripts/Invoke-VkP1Megawave.ps1")
 _EXECUTOR = Path("scripts/run_vk_p1_final_megawave.py")
+_FINAL_BUILDER = Path("src/video_channel_manager/platforms/vk/editorial_final_megawave.py")
 
 
 def _policy() -> dict[str, object]:
     payload = json.loads(_POLICY.read_text(encoding="utf-8"))
     assert isinstance(payload, dict)
     return payload
+
+
+def _membership(collection_id: str, video_id: str) -> dict[str, object]:
+    return {
+        "collection_ref": {"remote_id": collection_id},
+        "video_ref": {"remote_id": video_id},
+    }
 
 
 def test_final_megawave_policy_closes_full_scope_once() -> None:
@@ -103,12 +115,49 @@ def test_poem_extraction_rejects_prose_lists() -> None:
     assert extract_poem_blocks(prose) == []
 
 
+def test_managed_and_dynamic_system_memberships_are_separated() -> None:
+    snapshot = {
+        "memberships": [
+            _membership("4", "video-a"),
+            _membership("9", "video-a"),
+            _membership("-2", "video-a"),
+            _membership("-2", "video-b"),
+            _membership("-13", "video-b"),
+        ]
+    }
+
+    assert membership_pairs(snapshot) == {
+        ("4", "video-a"),
+        ("9", "video-a"),
+        ("-2", "video-a"),
+        ("-2", "video-b"),
+        ("-13", "video-b"),
+    }
+    assert managed_membership_pairs(snapshot) == {("4", "video-a"), ("9", "video-a")}
+    assert system_membership_pairs(snapshot) == {
+        ("-2", "video-a"),
+        ("-2", "video-b"),
+        ("-13", "video-b"),
+    }
+    assert system_membership_counts(snapshot) == {"-13": 1, "-2": 2}
+
+
 def test_partial_descriptions_only_policy_is_retired() -> None:
     payload = json.loads(_RETIRED_POLICY.read_text(encoding="utf-8"))
 
     assert payload["status"] == "retired"
     assert payload["approved_decision_set"] == "p1-final-all-in-one-20260728"
     assert payload["superseded_by"] == str(_POLICY).replace("\\", "/")
+
+
+def test_final_plan_records_the_exact_legacy_intermediate_state() -> None:
+    builder = _FINAL_BUILDER.read_text(encoding="utf-8")
+
+    assert '"legacy_intermediate_description"' in builder
+    assert '"legacy_intermediate_description_sha256"' in builder
+    assert '"accepted_intermediate_decision_set_id"' in builder
+    assert "p1-all-remaining-megawave-20260728" in builder
+    assert '"schema_version": 2' in builder
 
 
 def test_wrapper_invokes_only_final_executor() -> None:
@@ -122,5 +171,9 @@ def test_wrapper_invokes_only_final_executor() -> None:
     assert "apply_vk_editorial_cleanup_plan.py" not in wrapper
     assert '"placements_to_add": 32' in executor
     assert '"total_operations": 77' in executor
+    assert "ready_legacy" in executor
+    assert "managed_membership_pairs" in executor
+    assert "system_membership_identity_drift_ignored" in executor
+    assert "recent_album_identity_drift_allowed" in executor
     assert "writer.add_to_album" in executor
     assert "writer.rename_album" in executor
