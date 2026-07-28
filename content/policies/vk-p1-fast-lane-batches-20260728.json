@@ -1,11 +1,11 @@
 {
   "schema_name": "video-manager.vk-p1-fast-lane-batches",
-  "schema_version": 2,
+  "schema_version": 3,
   "created_at": "2026-07-28",
   "community_id": 235216998,
   "source_review_bundle_sha256": "sha256:f38191f18d859ef2bcd445f558204ac76e3c3ebbe4f6414cb3436542df7b4c61",
-  "mode": "single_megawave",
-  "rule": "After Pushkin Cloud, all remaining active P1 targets must be built, verified, preflighted, executed, scanned, and postflight-verified in one local command. Author batches, one-video waves, and intermediate user handoffs are forbidden.",
+  "mode": "single_final_megawave",
+  "rule": "After Pushkin Cloud, all remaining active P1 work must be completed in one final local command. Author batches, descriptions-only waves, one-video waves, and intermediate user handoffs are forbidden.",
   "completed": {
     "esenin_confession": [
       "-235216998_456239046",
@@ -25,12 +25,16 @@
     ]
   },
   "megawave": {
-    "decision_set_id": "p1-all-remaining-megawave-20260728",
-    "policy": "content/policies/vk-p1-megawave-policy-20260728.json",
+    "decision_set_id": "p1-final-all-in-one-20260728",
+    "policy": "content/policies/vk-p1-final-megawave-policy-20260728.json",
     "wrapper": "scripts/Invoke-VkP1Megawave.ps1",
     "target_count": 42,
-    "unique_description_count": 37,
+    "description_updates": 42,
+    "title_updates": 3,
+    "album_title_updates": 3,
+    "membership_additions": 32,
+    "total_operations": 77,
     "user_handoffs": 1,
-    "output": "data/handoffs/vk-reviewed-correction-p1-megawave-apply-YYYYMMDD-HHMMSS.zip"
+    "output": "data/handoffs/vk-p1-final-megawave-apply-YYYYMMDD-HHMMSS.zip"
   }
 }
