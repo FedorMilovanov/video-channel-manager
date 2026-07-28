@@ -20,6 +20,10 @@ from video_channel_manager.config import get_settings
 from video_channel_manager.platforms.vk import VkApiClient, VkInventoryService, VkTokenStore
 from video_channel_manager.platforms.vk.editorial_final_megawave import (
     build_final_megawave_plan,
+    managed_membership_pairs,
+    membership_pairs,
+    system_membership_counts,
+    system_membership_pairs,
     verify_final_megawave_plan,
 )
 from video_channel_manager.platforms.vk.editorial_writer import VkEditorialWriter
@@ -160,9 +164,9 @@ def _verify_review_bundle(
             source_video = source_videos.get(remote_id)
             if source_video is None:
                 raise ValueError(f"Final megawave target is absent from source snapshot: {remote_id}")
-            if canonical_vk_text(str(unit.get("description") or "")) != canonical_vk_text(
-                str(source_video.get("description") or "")
-            ):
+            queue_description = canonical_vk_text(str(unit.get("description") or ""))
+            source_description = canonical_vk_text(str(source_video.get("description") or ""))
+            if queue_description != source_description:
                 raise ValueError(f"Review queue description differs from source snapshot: {remote_id}")
             seen.add(remote_id)
     missing = sorted(target_ids - seen)
@@ -191,13 +195,6 @@ def _collection_map(snapshot: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {str(item["ref"]["remote_id"]): item for item in snapshot.get("collections", [])}
 
 
-def _membership_pairs(snapshot: dict[str, Any]) -> set[tuple[str, str]]:
-    return {
-        (str(item["collection_ref"]["remote_id"]), str(item["video_ref"]["remote_id"]))
-        for item in snapshot.get("memberships", [])
-    }
-
-
 def _parse_remote_id(remote_id: str) -> tuple[int, int]:
     owner_text, separator, video_text = remote_id.partition("_")
     if not separator:
@@ -209,13 +206,59 @@ def _parse_remote_id(remote_id: str) -> tuple[int, int]:
     return owner_id, video_id
 
 
+def _video_text_state(operation: dict[str, Any], video: dict[str, Any] | None) -> dict[str, Any]:
+    if video is None:
+        return {
+            "state": "conflict",
+            "detail": "target video is absent",
+            "expected_title": None,
+            "expected_description": None,
+        }
+
+    title = canonical_vk_text(str(video.get("title") or ""))
+    description = canonical_vk_text(str(video.get("description") or ""))
+    final_match = title == operation["after_title"] and description == operation["after_description"]
+    source_match = title == operation["before_title"] and description == operation["before_description"]
+    legacy_match = (
+        title == operation["legacy_intermediate_title"]
+        and description == operation["legacy_intermediate_description"]
+    )
+    if final_match:
+        return {
+            "state": "already_applied",
+            "detail": "live text equals final after-state",
+            "expected_title": title,
+            "expected_description": description,
+        }
+    if source_match:
+        return {
+            "state": "ready_source",
+            "detail": "live text equals verified Pushkin-source state",
+            "expected_title": operation["before_title"],
+            "expected_description": operation["before_description"],
+        }
+    if legacy_match:
+        return {
+            "state": "ready_legacy",
+            "detail": "live text equals the exact previously applied descriptions-only intermediate state",
+            "expected_title": operation["legacy_intermediate_title"],
+            "expected_description": operation["legacy_intermediate_description"],
+        }
+    return {
+        "state": "conflict",
+        "detail": "live text is not source, accepted legacy intermediate, or final after-state",
+        "expected_title": None,
+        "expected_description": None,
+    }
+
+
 def _preflight(source: dict[str, Any], live: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any]:
     source_videos = _video_map(source)
     live_videos = _video_map(live)
     source_collections = _collection_map(source)
     live_collections = _collection_map(live)
-    source_memberships = _membership_pairs(source)
-    live_memberships = _membership_pairs(live)
+    source_managed = managed_membership_pairs(source)
+    live_managed = managed_membership_pairs(live)
     planned_additions = {
         (str(item["target_collection_id"]), str(item["target_video_id"]))
         for item in plan.get("placement_operations", [])
@@ -226,31 +269,24 @@ def _preflight(source: dict[str, Any], live: dict[str, Any], plan: dict[str, Any
         global_conflicts.append("video inventory differs from verified source")
     if set(source_collections) != set(live_collections):
         global_conflicts.append("collection inventory differs from verified source")
-    missing_memberships = sorted(source_memberships - live_memberships)
-    unexpected_memberships = sorted(live_memberships - source_memberships - planned_additions)
-    if missing_memberships:
-        global_conflicts.append(f"source memberships removed: {missing_memberships[:5]}")
-    if unexpected_memberships:
-        global_conflicts.append(f"unexpected memberships added: {unexpected_memberships[:5]}")
+    missing_managed = sorted(source_managed - live_managed)
+    unexpected_managed = sorted(live_managed - source_managed - planned_additions)
+    if missing_managed:
+        global_conflicts.append(f"managed memberships removed: {missing_managed[:5]}")
+    if unexpected_managed:
+        global_conflicts.append(f"unexpected managed memberships added: {unexpected_managed[:5]}")
 
     states: list[dict[str, Any]] = []
     for operation in plan.get("video_text_operations", []):
         remote_id = str(operation["target_video_id"])
-        video = live_videos.get(remote_id)
-        if video is None:
-            state, detail = "conflict", "target video is absent"
-        else:
-            title = canonical_vk_text(str(video.get("title") or ""))
-            description = canonical_vk_text(str(video.get("description") or ""))
-            before = title == operation["before_title"] and description == operation["before_description"]
-            after = title == operation["after_title"] and description == operation["after_description"]
-            if after:
-                state, detail = "already_applied", "live text equals final after-state"
-            elif before:
-                state, detail = "ready", "live text equals verified source state"
-            else:
-                state, detail = "conflict", "live text is neither before-state nor after-state"
-        states.append({"operation_id": operation["operation_id"], "kind": "video_text", "state": state, "detail": detail})
+        state = _video_text_state(operation, live_videos.get(remote_id))
+        states.append(
+            {
+                "operation_id": operation["operation_id"],
+                "kind": "video_text",
+                **state,
+            }
+        )
 
     for operation in plan.get("album_title_operations", []):
         collection_id = str(operation["target_collection_id"])
@@ -262,35 +298,79 @@ def _preflight(source: dict[str, Any], live: dict[str, Any], plan: dict[str, Any
             if title == operation["after_title"]:
                 state, detail = "already_applied", "live album title equals final after-state"
             elif title == operation["before_title"]:
-                state, detail = "ready", "live album title equals verified source state"
+                state, detail = "ready_source", "live album title equals verified source state"
             else:
-                state, detail = "conflict", "live album title is neither before-state nor after-state"
-        states.append({"operation_id": operation["operation_id"], "kind": "album_title", "state": state, "detail": detail})
+                state, detail = "conflict", "live album title is neither source nor final state"
+        states.append(
+            {
+                "operation_id": operation["operation_id"],
+                "kind": "album_title",
+                "state": state,
+                "detail": detail,
+            }
+        )
 
     for operation in plan.get("placement_operations", []):
         pair = (str(operation["target_collection_id"]), str(operation["target_video_id"]))
-        if pair in live_memberships:
-            state, detail = "already_applied", "video is already present in the final VK playlist"
+        if pair in live_managed:
+            state, detail = "already_applied", "video is already present in the final managed VK playlist"
         else:
-            state, detail = "ready", "expected VK playlist membership is absent"
-        states.append({"operation_id": operation["operation_id"], "kind": "placement_add", "state": state, "detail": detail})
+            state, detail = "ready_source", "expected managed VK playlist membership is absent"
+        states.append(
+            {
+                "operation_id": operation["operation_id"],
+                "kind": "placement_add",
+                "state": state,
+                "detail": detail,
+            }
+        )
 
     counts = Counter(item["state"] for item in states)
+    ready = counts["ready_source"] + counts["ready_legacy"]
     return {
         "status": "conflict" if global_conflicts or counts["conflict"] else "ready",
         "global_conflicts": global_conflicts,
         "states": states,
-        "ready": counts["ready"],
+        "ready": ready,
+        "ready_source": counts["ready_source"],
+        "ready_legacy": counts["ready_legacy"],
         "already_applied": counts["already_applied"],
         "conflicts": counts["conflict"] + len(global_conflicts),
-        "source_memberships": len(source_memberships),
-        "live_memberships": len(live_memberships),
-        "planned_additions": len(planned_additions),
+        "source_managed_memberships": len(source_managed),
+        "live_managed_memberships": len(live_managed),
+        "planned_managed_additions": len(planned_additions),
+        "source_system_membership_counts": system_membership_counts(source),
+        "live_system_membership_counts": system_membership_counts(live),
+        "system_membership_identity_drift_ignored": sorted(
+            system_membership_pairs(source) ^ system_membership_pairs(live)
+        ),
     }
 
 
-def _state_by_id(preflight: dict[str, Any]) -> dict[str, str]:
-    return {str(item["operation_id"]): str(item["state"]) for item in preflight["states"]}
+def _state_by_id(preflight: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {str(item["operation_id"]): item for item in preflight["states"]}
+
+
+def _verify_system_memberships(source: dict[str, Any], final: dict[str, Any]) -> dict[str, Any]:
+    source_counts = system_membership_counts(source)
+    final_counts = system_membership_counts(final)
+    if final_counts != source_counts:
+        raise ValueError(f"System membership counts changed: source={source_counts}, final={final_counts}")
+
+    final_videos = set(_video_map(final))
+    system_pairs = system_membership_pairs(final)
+    all_videos_members = {video_id for collection_id, video_id in system_pairs if collection_id == "-2"}
+    if all_videos_members != final_videos:
+        raise ValueError("VK system All Videos album no longer contains exactly all 111 videos")
+    recent_members = {video_id for collection_id, video_id in system_pairs if collection_id == "-13"}
+    if not recent_members.issubset(final_videos):
+        raise ValueError("VK system recent album contains an unknown video")
+    return {
+        "counts_verified": final_counts,
+        "all_videos_album_verified": len(all_videos_members),
+        "recent_album_count_verified": len(recent_members),
+        "recent_album_identity_drift_allowed": True,
+    }
 
 
 def _verify_final_state(source: dict[str, Any], final: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any]:
@@ -298,13 +378,13 @@ def _verify_final_state(source: dict[str, Any], final: dict[str, Any], plan: dic
     final_videos = _video_map(final)
     source_collections = _collection_map(source)
     final_collections = _collection_map(final)
-    source_memberships = _membership_pairs(source)
+    source_managed = managed_membership_pairs(source)
     expected_additions = {
         (str(item["target_collection_id"]), str(item["target_video_id"]))
         for item in plan.get("placement_operations", [])
     }
-    expected_memberships = source_memberships | expected_additions
-    final_memberships = _membership_pairs(final)
+    expected_managed = source_managed | expected_additions
+    final_managed = managed_membership_pairs(final)
 
     if set(source_videos) != set(final_videos) or len(final_videos) != 111:
         raise ValueError("Final video inventory differs from the verified 111-video source")
@@ -316,9 +396,13 @@ def _verify_final_state(source: dict[str, Any], final: dict[str, Any], plan: dic
         after = final_videos[remote_id]
         operation = video_operations.get(remote_id)
         if operation is None:
-            if canonical_vk_text(str(before.get("title") or "")) != canonical_vk_text(str(after.get("title") or "")):
+            before_title = canonical_vk_text(str(before.get("title") or ""))
+            after_title = canonical_vk_text(str(after.get("title") or ""))
+            before_description = canonical_vk_text(str(before.get("description") or ""))
+            after_description = canonical_vk_text(str(after.get("description") or ""))
+            if before_title != after_title:
                 raise ValueError(f"Non-target title changed: {remote_id}")
-            if canonical_vk_text(str(before.get("description") or "")) != canonical_vk_text(str(after.get("description") or "")):
+            if before_description != after_description:
                 raise ValueError(f"Non-target description changed: {remote_id}")
         else:
             if canonical_vk_text(str(after.get("title") or "")) != operation["after_title"]:
@@ -336,19 +420,27 @@ def _verify_final_state(source: dict[str, Any], final: dict[str, Any], plan: dic
         if before.get("metadata", {}).get("share_url") != after.get("metadata", {}).get("share_url"):
             raise ValueError(f"VK playlist share URL changed unexpectedly: {collection_id}")
 
-    if final_memberships != expected_memberships:
-        missing = sorted(expected_memberships - final_memberships)
-        extra = sorted(final_memberships - expected_memberships)
-        raise ValueError(f"Final memberships differ: missing={missing[:5]} extra={extra[:5]}")
+    if final_managed != expected_managed:
+        missing = sorted(expected_managed - final_managed)
+        extra = sorted(final_managed - expected_managed)
+        raise ValueError(f"Final managed memberships differ: missing={missing[:5]} extra={extra[:5]}")
+
+    system_verification = _verify_system_memberships(source, final)
+    final_all_pairs = membership_pairs(final)
+    expected_total = len(expected_managed) + sum(system_verification["counts_verified"].values())
+    if len(final_all_pairs) != expected_total:
+        raise ValueError(f"Final total membership count differs: expected {expected_total}, actual {len(final_all_pairs)}")
 
     return {
         "status": "verified_completed",
         "plan_sha256": plan["plan_sha256"],
         "videos": 111,
         "collections": 17,
-        "source_memberships": len(source_memberships),
-        "added_memberships": len(expected_additions),
-        "final_memberships": len(final_memberships),
+        "source_managed_memberships": len(source_managed),
+        "added_managed_memberships": len(expected_additions),
+        "final_managed_memberships": len(final_managed),
+        "final_total_memberships": len(final_all_pairs),
+        "system_memberships": system_verification,
         "target_descriptions_verified": 42,
         "target_titles_changed": int(plan["summary"]["titles_to_update"]),
         "album_titles_changed": int(plan["summary"]["albums_to_rename"]),
@@ -364,6 +456,7 @@ def _plan_markdown(plan: dict[str, Any]) -> str:
         f"- Decision set: `{plan['decision_set_id']}`",
         f"- Plan: `{plan['plan_sha256']}`",
         f"- Target descriptions: **{plan['summary']['descriptions_to_update']}**",
+        f"- Accepted legacy intermediate descriptions: **{len(plan['video_text_operations'])}**",
         f"- Title corrections: **{plan['summary']['titles_to_update']}**",
         f"- Album title normalizations: **{plan['summary']['albums_to_rename']}**",
         f"- Missing VK playlist placements: **{plan['summary']['placements_to_add']}**",
@@ -373,16 +466,20 @@ def _plan_markdown(plan: dict[str, Any]) -> str:
         "",
     ]
     for operation in plan["video_text_operations"]:
-        lines.extend([
-            f"### {operation['after_title']}",
-            "",
-            f"- Video: `{operation['target_video_id']}`",
-            f"- Title changed: `{operation['title_changed']}`",
-            f"- Description: `{operation['before_description_sha256']}` → `{operation['after_description_sha256']}`",
-            f"- Poem blocks preserved: `{operation['metadata']['poem_blocks_preserved']}`",
-            f"- VK playlists: {', '.join(operation['metadata']['playlist_urls'])}",
-            "",
-        ])
+        lines.extend(
+            [
+                f"### {operation['after_title']}",
+                "",
+                f"- Video: `{operation['target_video_id']}`",
+                f"- Title changed: `{operation['title_changed']}`",
+                f"- Source: `{operation['before_description_sha256']}`",
+                f"- Accepted legacy intermediate: `{operation['legacy_intermediate_description_sha256']}`",
+                f"- Final: `{operation['after_description_sha256']}`",
+                f"- Poem blocks preserved: `{operation['metadata']['poem_blocks_preserved']}`",
+                f"- VK playlists: {', '.join(operation['metadata']['playlist_urls'])}",
+                "",
+            ]
+        )
     lines.extend(["## Playlist placements", ""])
     for operation in plan["placement_operations"]:
         lines.append(f"- `{operation['target_video_id']}` → album `{operation['target_collection_id']}`")
@@ -405,6 +502,16 @@ def _package(bundle_dir: Path, zip_path: Path) -> None:
         for path in sorted(bundle_dir.iterdir(), key=lambda value: value.name):
             if path.is_file():
                 archive.write(path, arcname=path.name)
+
+
+def _same_preflight(first: dict[str, Any], second: dict[str, Any]) -> bool:
+    keys = ("ready", "ready_source", "ready_legacy", "already_applied", "conflicts")
+    return all(first.get(key) == second.get(key) for key in keys)
+
+
+def _sleep(delay: float) -> None:
+    if delay:
+        time.sleep(delay)
 
 
 def run(args: argparse.Namespace) -> Path:
@@ -466,7 +573,8 @@ def run(args: argparse.Namespace) -> Path:
             "VK P1 FINAL MEGAWAVE PREFLIGHT\n"
             f"  plan: {plan['plan_sha256']}\n"
             f"  total operations: {plan['summary']['total_operations']}\n"
-            f"  ready: {preflight['ready']}\n"
+            f"  ready from source: {preflight['ready_source']}\n"
+            f"  ready from legacy intermediate: {preflight['ready_legacy']}\n"
             f"  already applied: {preflight['already_applied']}\n"
             f"  conflicts: {preflight['conflicts']}"
         )
@@ -474,16 +582,25 @@ def run(args: argparse.Namespace) -> Path:
             raise ValueError(f"Final megawave preflight conflicts: {preflight['global_conflicts']}")
 
         lock_path = settings.data_dir / "locks" / f"vk-{args.account}-{args.community}.lock"
-        with local_vk_write_lock(lock_path, account=args.account, community_id=args.community, operation="apply-vk-p1-final-megawave"):
+        with local_vk_write_lock(
+            lock_path,
+            account=args.account,
+            community_id=args.community,
+            operation="apply-vk-p1-final-megawave",
+        ):
             locked_live = _snapshot_dict(VkInventoryService(reader).build_audit_package(args.community))
             locked_preflight = _preflight(source_snapshot, locked_live, plan)
-            if locked_preflight["conflicts"] or locked_preflight["ready"] != preflight["ready"] or locked_preflight["already_applied"] != preflight["already_applied"]:
+            if locked_preflight["conflicts"] or not _same_preflight(preflight, locked_preflight):
                 raise RuntimeError("Locked re-preflight differs from confirmed final megawave preflight")
             states = _state_by_id(locked_preflight)
-            writer = VkEditorialWriter(token_store=store, account_alias=args.account, api_version=settings.vk_api_version)
+            writer = VkEditorialWriter(
+                token_store=store,
+                account_alias=args.account,
+                api_version=settings.vk_api_version,
+            )
             result = {
                 "schema_name": "video-manager.vk-p1-final-megawave-result",
-                "schema_version": 1,
+                "schema_version": 2,
                 "status": "running",
                 "started_at": datetime.now(UTC).isoformat(),
                 "plan_sha256": plan["plan_sha256"],
@@ -494,40 +611,70 @@ def run(args: argparse.Namespace) -> Path:
 
             for operation in plan["video_text_operations"]:
                 operation_id = str(operation["operation_id"])
-                if states[operation_id] == "already_applied":
-                    item = {"operation_id": operation_id, "kind": "video_text", "status": "already_applied"}
+                state = states[operation_id]
+                if state["state"] == "already_applied":
+                    item = {
+                        "operation_id": operation_id,
+                        "kind": "video_text",
+                        "status": "already_applied",
+                    }
                 else:
+                    expected_title = str(state["expected_title"])
+                    expected_description = str(state["expected_description"])
                     owner_id, video_id = _parse_remote_id(str(operation["target_video_id"]))
                     updated = writer.replace_text_if_current(
                         owner_id=owner_id,
                         video_id=video_id,
-                        expected_title=str(operation["before_title"]),
-                        expected_description=str(operation["before_description"]),
+                        expected_title=expected_title,
+                        expected_description=expected_description,
                         new_title=str(operation["after_title"]),
                         new_description=str(operation["after_description"]),
                     )
-                    item = {"operation_id": operation_id, "kind": "video_text", "status": "updated_and_verified", "remote_id": updated.remote_id}
+                    item = {
+                        "operation_id": operation_id,
+                        "kind": "video_text",
+                        "status": "updated_and_verified",
+                        "transition": str(state["state"]),
+                        "remote_id": updated.remote_id,
+                    }
                 result["operations"].append(item)
                 _atomic_json(bundle_dir / "06-result.json", result)
-                if args.write_delay:
-                    time.sleep(args.write_delay)
+                _sleep(args.write_delay)
 
             for operation in plan["album_title_operations"]:
                 operation_id = str(operation["operation_id"])
-                if states[operation_id] == "already_applied":
-                    item = {"operation_id": operation_id, "kind": "album_title", "status": "already_applied"}
+                state = states[operation_id]
+                if state["state"] == "already_applied":
+                    item = {
+                        "operation_id": operation_id,
+                        "kind": "album_title",
+                        "status": "already_applied",
+                    }
                 else:
-                    writer.rename_album(community_id=args.community, album_id=int(operation["target_collection_id"]), title=str(operation["after_title"]))
-                    item = {"operation_id": operation_id, "kind": "album_title", "status": "updated_pending_postflight", "album_id": int(operation["target_collection_id"])}
+                    writer.rename_album(
+                        community_id=args.community,
+                        album_id=int(operation["target_collection_id"]),
+                        title=str(operation["after_title"]),
+                    )
+                    item = {
+                        "operation_id": operation_id,
+                        "kind": "album_title",
+                        "status": "updated_pending_postflight",
+                        "album_id": int(operation["target_collection_id"]),
+                    }
                 result["operations"].append(item)
                 _atomic_json(bundle_dir / "06-result.json", result)
-                if args.write_delay:
-                    time.sleep(args.write_delay)
+                _sleep(args.write_delay)
 
             for operation in plan["placement_operations"]:
                 operation_id = str(operation["operation_id"])
-                if states[operation_id] == "already_applied":
-                    item = {"operation_id": operation_id, "kind": "placement_add", "status": "already_applied"}
+                state = states[operation_id]
+                if state["state"] == "already_applied":
+                    item = {
+                        "operation_id": operation_id,
+                        "kind": "placement_add",
+                        "status": "already_applied",
+                    }
                 else:
                     owner_id, video_id = _parse_remote_id(str(operation["target_video_id"]))
                     changed = writer.add_to_album(
@@ -545,8 +692,7 @@ def run(args: argparse.Namespace) -> Path:
                     }
                 result["operations"].append(item)
                 _atomic_json(bundle_dir / "06-result.json", result)
-                if args.write_delay:
-                    time.sleep(args.write_delay)
+                _sleep(args.write_delay)
 
             final_snapshot = _snapshot_dict(VkInventoryService(reader).build_audit_package(args.community))
             _atomic_json(bundle_dir / "07-final-vk-snapshot.json", final_snapshot)
@@ -555,6 +701,9 @@ def run(args: argparse.Namespace) -> Path:
             result["status"] = "completed"
             result["completed_at"] = datetime.now(UTC).isoformat()
             result["operation_statuses"] = dict(Counter(str(item["status"]) for item in result["operations"]))
+            result["transition_statuses"] = dict(
+                Counter(str(item.get("transition") or "none") for item in result["operations"])
+            )
             _atomic_json(bundle_dir / "06-result.json", result)
 
         status = "completed"
@@ -564,21 +713,25 @@ def run(args: argparse.Namespace) -> Path:
             f"Decision set: {policy['decision_set_id']}\n"
             f"Plan: {plan['plan_sha256']}\n"
             "Descriptions rewritten: 42\n"
+            "Accepted previous descriptions-only intermediate states: 42\n"
             "Misleading titles corrected: 3\n"
             "Album titles normalized: 3\n"
-            "Missing VK playlist memberships added: 32\n"
+            "Missing managed VK playlist memberships added: 32\n"
             "Total guarded operations: 77\n\n"
-            "All target descriptions now use VK-native playlist links, the canonical https://thelegendarypoet.ru site links, canonical project channels, standardized hashtags, full-version links for short videos, and rights notices for modern copyrighted works.\n"
+            "System VK albums are verified by collection counts and All Videos coverage, while their dynamic recent-video identities are not treated as user-managed data.\n"
         )
         (bundle_dir / "README.txt").write_text(readme, encoding="utf-8")
     except Exception as exc:
         status = "failed"
         error = str(exc)
-        _atomic_json(bundle_dir / "ERROR.json", {"status": status, "error": error, "created_at": datetime.now(UTC).isoformat()})
+        _atomic_json(
+            bundle_dir / "ERROR.json",
+            {"status": status, "error": error, "created_at": datetime.now(UTC).isoformat()},
+        )
     finally:
         manifest_metadata = {
             "schema_name": "video-manager.vk-p1-final-megawave-handoff",
-            "schema_version": 1,
+            "schema_version": 2,
             "created_at": datetime.now(UTC).isoformat(),
             "status": status,
             "mode": "apply",
@@ -586,6 +739,8 @@ def run(args: argparse.Namespace) -> Path:
             "community_id": args.community,
             "plan_sha256": plan.get("plan_sha256") if plan else None,
             "ready": preflight.get("ready") if preflight else None,
+            "ready_source": preflight.get("ready_source") if preflight else None,
+            "ready_legacy": preflight.get("ready_legacy") if preflight else None,
             "already_applied": preflight.get("already_applied") if preflight else None,
             "conflicts": preflight.get("conflicts") if preflight else None,
             "verification_status": verification.get("status") if verification else None,
