@@ -106,7 +106,9 @@ def _verify_required_urls(policy: dict[str, Any]) -> dict[str, Any]:
             if str(operation.get("required_url") or "").strip()
         }
     )
-    with httpx.Client(timeout=30.0, follow_redirects=True, headers={"User-Agent": "video-channel-manager/0.1"}) as client:
+    with httpx.Client(
+        timeout=30.0, follow_redirects=True, headers={"User-Agent": "video-channel-manager/0.1"}
+    ) as client:
         for url in required_urls:
             response = client.get(url)
             final_url = str(response.url)
@@ -150,9 +152,7 @@ def _wall_snapshot(client: VkApiClient, community_id: int) -> tuple[list[dict[st
 
 def _plan_markdown(policy: dict[str, Any], preflight: dict[str, Any]) -> str:
     state_by_id = {
-        str(item["operation_id"]): str(item["state"])
-        for item in preflight["states"]
-        if isinstance(item, dict)
+        str(item["operation_id"]): str(item["state"]) for item in preflight["states"] if isinstance(item, dict)
     }
     lines = [
         "# VK wall wave — August 2026",
@@ -281,7 +281,9 @@ def run(args: argparse.Namespace) -> Path:
                     published_posts=locked_published,
                     postponed_posts=locked_postponed,
                 )
-                if locked_preflight["conflicts"] or comparable_preflight(locked_preflight) != comparable_preflight(preflight):
+                if locked_preflight["conflicts"] or comparable_preflight(locked_preflight) != comparable_preflight(
+                    preflight
+                ):
                     raise RuntimeError("Locked VK wall wave re-preflight differs from the confirmed preflight")
                 locked_url_verification = _verify_required_urls(policy)
                 if locked_url_verification["status"] != "verified":
@@ -345,9 +347,7 @@ def run(args: argparse.Namespace) -> Path:
                 _atomic_json(bundle_dir / "12-independent-verification.json", verification)
                 result["status"] = "completed"
                 result["completed_at"] = datetime.now(UTC).isoformat()
-                result["operation_statuses"] = dict(
-                    Counter(str(item["status"]) for item in result["operations"])
-                )
+                result["operation_statuses"] = dict(Counter(str(item["status"]) for item in result["operations"]))
                 _atomic_json(bundle_dir / "08-result.json", result)
             status = "completed"
 
