@@ -30,12 +30,27 @@ def test_evidence_safe_description_preserves_service_blocks_and_poem() -> None:
 
     assert "Неподтверждённая" not in rendered
     assert poem in rendered
-    assert "https://example.test/list" in rendered
+    assert "Плейлист: https://example.test/list" in rendered
     assert "#Поэзия #Test" in rendered
     assert "🎧 The Legendary Poet" in rendered
     assert metadata["urls_unchanged"] is True
     assert metadata["hashtags_unchanged"] is True
     assert metadata["after_length"] <= 5000
+
+
+def test_evidence_safe_description_strips_prose_around_source_url() -> None:
+    source = (
+        "Длинное неподтверждённое историческое утверждение, которое нельзя сохранять "
+        "только потому, что в конце стоит ссылка. "
+        "(Источник: https://example.test/source)"
+    )
+
+    rendered, metadata = build_evidence_safe_description(source, "Тестовый ролик")
+
+    assert "Длинное неподтверждённое" not in rendered
+    assert "https://example.test/source)" in rendered
+    assert "extracted_urls" in metadata["preserved_block_kinds"]
+    assert metadata["urls_unchanged"] is True
 
 
 def test_poem_detection_rejects_prose_list() -> None:
