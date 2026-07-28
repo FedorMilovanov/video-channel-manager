@@ -249,9 +249,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
         "membership_identity_unchanged": True,
         "membership_position_changes": position_changes,
         "warning": (
-            "Membership position values changed while identity pairs remained stable."
-            if position_changes
-            else None
+            "Membership position values changed while identity pairs remained stable." if position_changes else None
         ),
     }
 
