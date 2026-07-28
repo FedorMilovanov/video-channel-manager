@@ -185,8 +185,7 @@ def build_wall_content_audit(
         for video_id in sorted(known_video_ids)
         if len(published_index.get(video_id, [])) > 1
         or len(postponed_index.get(video_id, [])) > 1
-        or video_id in published_index
-        and video_id in postponed_index
+        or (video_id in published_index and video_id in postponed_index)
     ]
 
     audit: dict[str, Any] = {
