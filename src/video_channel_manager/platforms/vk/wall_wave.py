@@ -262,10 +262,7 @@ def build_wall_wave_preflight(
             item
             for item in references
             if item["message"] == expected_message
-            and (
-                item["queue"] == "published"
-                or int(item.get("date") or 0) == int(operation["publish_date"])
-            )
+            and (item["queue"] == "published" or int(item.get("date") or 0) == int(operation["publish_date"]))
         ]
         different = [item for item in references if item not in exact]
         if len(exact) == 1 and not different:
