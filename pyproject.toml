@@ -58,6 +58,9 @@ ignore = ["B008", "B014", "E501"]
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+# This guarded operational runner is generated as an auditable step-by-step journal.
+# Keep linting, compilation, typing, and tests enabled; preserve its deliberate layout.
+exclude = ["scripts/run_vk_p1_final_megawave.py"]
 
 [tool.mypy]
 python_version = "3.11"
