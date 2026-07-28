@@ -27,6 +27,22 @@ def _paragraphs(text: str) -> list[str]:
     return [value.strip() for value in re.split(r"\n\s*\n", text.strip()) if value.strip()]
 
 
+def _is_hashtag_block(value: str) -> bool:
+    hashtags = _HASHTAG_RE.findall(value)
+    if not hashtags:
+        return False
+    return not re.sub(_HASHTAG_RE, "", value).strip()
+
+
+def _is_metadata_link_block(value: str) -> bool:
+    lines = [line.strip() for line in value.splitlines() if line.strip()]
+    if not lines or not _URL_RE.search(value):
+        return False
+    if len(value) > 1000:
+        return False
+    return all(len(_URL_RE.sub("", line).strip()) <= 120 for line in lines)
+
+
 def is_poem_like_block(value: str) -> bool:
     lines = [line.strip() for line in value.splitlines() if line.strip()]
     if len(lines) < 4:
@@ -42,20 +58,37 @@ def is_poem_like_block(value: str) -> bool:
     return statistics.median(lengths) <= 65 and short_ratio >= 0.75 and colon_ratio < 0.20 and bullet_ratio < 0.25
 
 
+def _preserve_service_content(paragraph: str) -> tuple[list[str], list[str]]:
+    if paragraph.startswith("🎧 The Legendary Poet"):
+        return [paragraph], ["channel_footer"]
+    if is_poem_like_block(paragraph):
+        return [paragraph], ["poem_like_block"]
+    if _is_metadata_link_block(paragraph):
+        return [paragraph], ["metadata_link_block"]
+    if _is_hashtag_block(paragraph):
+        return [paragraph], ["hashtag_block"]
+
+    blocks: list[str] = []
+    kinds: list[str] = []
+    urls = _URL_RE.findall(paragraph)
+    if urls:
+        blocks.append("🔗 Источники:\n" + "\n".join(urls))
+        kinds.append("extracted_urls")
+    hashtags = _HASHTAG_RE.findall(paragraph)
+    if hashtags:
+        blocks.append(" ".join(hashtags))
+        kinds.append("extracted_hashtags")
+    return blocks, kinds
+
+
 def build_evidence_safe_description(description: str, title: str) -> tuple[str, dict[str, Any]]:
     source = canonical_vk_text(description)
     kept: list[str] = []
     kept_kinds: list[str] = []
     for paragraph in _paragraphs(source):
-        if _URL_RE.search(paragraph) or _HASHTAG_RE.search(paragraph):
-            kept.append(paragraph)
-            kept_kinds.append("url_or_hashtag")
-        elif paragraph.startswith("🎧 The Legendary Poet"):
-            kept.append(paragraph)
-            kept_kinds.append("channel_footer")
-        elif is_poem_like_block(paragraph):
-            kept.append(paragraph)
-            kept_kinds.append("poem_like_block")
+        blocks, kinds = _preserve_service_content(paragraph)
+        kept.extend(blocks)
+        kept_kinds.extend(kinds)
 
     intro = (
         f"🎧 Перед вами музыкальная и визуальная интерпретация: {title}.\n"
