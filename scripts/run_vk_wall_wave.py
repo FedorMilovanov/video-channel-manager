@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import shutil
 import sys
@@ -62,11 +61,7 @@ def _atomic_json(path: Path, value: object) -> None:
 
 
 def _sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return f"sha256:{digest.hexdigest()}"
+    return sha256_bytes(path.read_bytes())
 
 
 def _write_manifest(bundle_dir: Path, metadata: dict[str, Any]) -> None:
