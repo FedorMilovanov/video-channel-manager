@@ -1,0 +1,10 @@
+{
+  "schema_name": "video-manager.vk-p1-megawave-policy-retired",
+  "schema_version": 1,
+  "created_at": "2026-07-28",
+  "status": "retired",
+  "superseded_by": "content/policies/vk-p1-final-megawave-policy-20260728.json",
+  "reason": "The former descriptions-only megawave did not close VK-native playlists, canonical site/channel links, title cleanup, album naming, or missing album memberships. It must not be executed.",
+  "approved_runner": "scripts/Invoke-VkP1Megawave.ps1",
+  "approved_decision_set": "p1-final-all-in-one-20260728"
+}

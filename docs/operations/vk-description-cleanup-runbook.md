@@ -1,332 +1,213 @@
-# Полная очистка описаний VK Видео — операционный регламент
+# Техническая волна описаний VK Видео — операционный регламент
 
 Канал: **The Legendary Poet**  
-Сообщество: `235216998`  
-Назначение: безопасно убрать неподдерживаемую YouTube/Markdown-разметку из **всей текущей VK-видеотеки**, сохранив фактический текст каждого ролика.
+Сообщество: `235216998`
+
+Назначение: безопасно очистить технические элементы описаний всей текущей VK-видеотеки, сохранив содержательный текст каждого ролика.
 
 ## 1. Основной принцип
 
-Очистка строится не из старого YouTube-описания, а из фактического live-текста VK:
+Очистка строится из фактического live-текста VK:
 
 ```text
-live VK before → детерминированный plain-text renderer → reviewed VK after
+live VK before
+→ deterministic technical cleanup
+→ semantic-body equality gate
+→ signed descriptions-only plan
+→ HTML/Markdown review
+→ live dry-run
+→ explicit execute from reviewed ZIP
 ```
 
-Поэтому сохраняются:
+Разрешены только доказуемые технические изменения:
 
-- ручные дополнения;
-- старые ссылки;
-- уникальные абзацы;
-- фактическая пунктуация и формулировки;
-- названия вида `К ***`;
-- подчёркивания внутри URL и технических ID.
+- замена YouTube-плейлистов на точные VK album `share_url`;
+- замена известных собственных YouTube-ссылок на точные VK Video URL;
+- снятие видимых Markdown-маркеров;
+- удаление zero-width символов;
+- нормализация переносов, пробелов и декоративных разделителей;
+- удаление старого footer и добавление канонического footer;
+- ограничение числа хэштегов.
 
-Автоматически снимаются только парные маркеры, которые обычное описание VK показывает буквально, удаляются zero-width символы, нормализуются переносы и добавляется фирменный блок при отсутствии сайта.
+Внешние, исходные или общие YouTube-ссылки, для которых нет точного собственного VK-соответствия, сохраняются. В завершённой волне осталось пять таких ссылок: две ссылки на исходный материал «Шабаш» группы АЛИСА, две ссылки на источник KINO для `Calm Night` и одна общая ссылка на страницу плейлистов The Legendary Poet.
 
-## 2. Что нельзя делать
+Запрещены автоматические изменения фактов, интерпретации, содержательной пунктуации и порядка смысловых фраз.
 
-- Не запускать старый plan schema v1.
-- Не редактировать VK Studio параллельно с `--execute`.
-- Не запускать второй VK writer для сообщества `235216998`.
-- Не передавать `--execute` до полного dry-run.
-- Не менять JSON-план вручную после проверки Markdown diff.
-- Не использовать `scripts/sync_youtube_to_vk.py` напрямую для новых публикаций; только безопасный wrapper.
-- Не считать сообщение API об успехе достаточной проверкой: обязательна повторная live-проверка.
+## 2. Semantic-body gate
 
-## 3. Почему старый план нужно пересоздать
-
-План:
+Для каждого описания вычисляется содержательное представление без URL, hashtags, известных footer-строк, Markdown-маркеров, декоративных линий, whitespace и zero-width символов.
 
 ```text
-vk-live-description-cleanup-20260725-054112.json
+semantic_body(before) == semantic_body(after)
 ```
 
-был создан до введения schema v2. Он корректно зафиксировал 111 live-видео на тот момент, но не содержит:
+Если равенство нарушено хотя бы для одного видео, построение всей волны завершается ошибкой до dry-run.
 
-- `policy_version`;
-- `coverage_remote_ids_sha256`;
-- `plan_sha256`;
-- строгой самопроверки счётчиков и before/after hashes.
+Фактологические и чувствительные маркеры не переписываются. Они попадают в `deferred_editorial_review` только как будущая редакционная очередь.
 
-Новый apply-скрипт намеренно отклоняет такие планы. Старый JSON и Markdown остаются диагностической историей, но не являются разрешением на запись.
+## 3. Взаимодействие с названиями
 
-## 4. Подготовка окружения
+Descriptions-only план хранит exact-before название каждого видео. Поэтому любые косметические изменения названий должны быть завершены до финального dry-run описаний.
+
+Семантические ярлыки названий (`SHORTS`, `КОРОТКАЯ`, `ФРАГМЕНТ`, `НЕПОЛНЫЙ`, `ПОЛНАЯ`, `БОЛЕЕ ПОЛНАЯ`, `ФИНАЛЬНАЯ`, номера версий) нельзя выводить из длительности, ориентации кадра или наличия парного ролика. Они заморожены отдельной title-policy.
+
+## 4. Один файл вместо поиска артефактов
+
+Все wrappers создают ZIP в `finally`. ZIP содержит доступные на момент завершения:
+
+- source snapshot;
+- signed JSON plan;
+- Markdown review;
+- HTML review;
+- editorial policy;
+- live preflight;
+- apply log;
+- result journal;
+- final snapshot;
+- README;
+- manifest с SHA-256 и размером каждого файла.
+
+В Проводнике автоматически выделяется ZIP. Оператор отправляет только его.
+
+## 5. Завершённый dry-run
+
+Проверенный dry-run от `2026-07-27 16:45:35` содержал:
+
+```text
+ready: 111
+already applied: 0
+conflicts: 0
+review-only excluded: 0
+plan SHA-256: sha256:b4eede44954bcb148550bcb2c0a372e4f23b72d892cc3aadcc5d71321a2e9294
+```
+
+Source snapshot побайтно совпадал с final snapshot успешного косметического title apply. Все 111 title guards и membership coverage совпали с live preflight.
+
+## 6. Завершённый apply
+
+Apply от `2026-07-27 19:29:11` выполнил:
+
+```text
+operations: 111
+updated_and_verified: 111
+result status: completed
+final descriptions matching reviewed after-state: 111
+```
+
+Независимая проверка подтвердила:
+
+- 111 видео до и после;
+- 111 изменённых описаний;
+- 0 изменённых названий;
+- 17 неизменённых альбомов;
+- 294 неизменённых memberships;
+- неизменный membership SHA-256 `sha256:bdb556321dce7b5dd9400de33c92fb186dce55faac327f0a5a077491bfd5b966`;
+- все файлы ZIP совпали с manifest по размеру и SHA-256;
+- все новые описания имеют канонический footer, не более 10 хэштегов и длину не более 5000 символов.
+
+Внешний wrapper записал `status=failed` только потому, что дополнительный read-only scan после успешного writer postflight упал при печати Unicode-стрелки в legacy Windows console. Итоговый snapshot был полностью записан до console exception и прошёл независимую проверку.
+
+## 7. Независимый verifier apply-ZIP
+
+Для повторной машинной проверки используется:
 
 ```powershell
-cd "C:\Users\Fedor\Projects\video-channel-manager-vk"
-
-git fetch origin
-git switch feature/vk-description-rendering-v1
-git pull --ff-only
-
-python -m pip install -e ".[dev]"
-
-$mainRepo = "C:\Users\Fedor\Projects\video-channel-manager"
-$env:VCM_DATA_DIR = "$mainRepo\data"
+py -3.11 -X utf8 .\scripts\verify_vk_description_apply_bundle.py `
+  .\data\handoffs\vk-description-wave-apply-YYYYMMDD-HHMMSS.zip
 ```
 
-Перед операцией убедиться, что нет другого локального VK writer:
+Verifier проверяет:
+
+- размеры и SHA-256 manifest;
+- `03-result.json status=completed`;
+- operation IDs и допустимые operation statuses;
+- точные reviewed after-title и after-description всех роликов;
+- отсутствие title changes;
+- неизменность video inventory, album titles и memberships;
+- video coverage SHA-256;
+- membership SHA-256;
+- semantic-body guards.
+
+Он умеет отличить успешный writer/result/final-state от последующего несущественного wrapper-output failure.
+
+## 8. Следующий этап: deferred editorial review
+
+Следующий этап является строго review-only:
 
 ```powershell
-Get-CimInstance Win32_Process |
-  Where-Object {
-    $_.CommandLine -match "sync_youtube_to_vk|resume_youtube_to_vk|apply_all_vk_description|video-manager vk"
-  } |
-  Select-Object ProcessId, Name, CommandLine
+pwsh -File .\scripts\Invoke-VkDeferredEditorialReview.ps1
 ```
 
-Read-only команды допускаются, но для согласованного снимка лучше на время аудита также не сохранять описания вручную.
+Helper:
 
-## 5. Создание свежего plan v2 — только чтение
+1. автоматически берёт последний apply-ZIP описаний;
+2. пропускает его через независимый verifier;
+3. извлекает 148 отложенных маркеров по 96 роликам;
+4. создаёт JSON, Markdown и HTML с полными текущими описаниями;
+5. создаёт один ZIP `vk-deferred-editorial-review-*.zip`;
+6. не вызывает VK mutation API и не создаёт correction plan.
 
-```powershell
-$stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-
-python .\scripts\audit_all_vk_descriptions.py `
-  --account legendary-poet `
-  --community 235216998 `
-  --plan-output "$env:VCM_DATA_DIR\reports\vk-live-description-cleanup-$stamp.json" `
-  --report-output "$env:VCM_DATA_DIR\reports\vk-live-description-cleanup-$stamp.md"
-```
-
-Скрипт обязан вывести:
+В очереди:
 
 ```text
-Checked N | ready A | review only B | already safe C
-Live snapshot confirmation value: <UUID>
-Plan SHA-256 confirmation value: sha256:<digest>
-Coverage SHA-256: sha256:<digest>
+factual_editorial_review: 96
+sensitive_claim_review: 52
+remote writes: 0
 ```
 
-Инварианты:
+Любые реальные исправления после этой очереди должны строиться отдельными reviewed correction-планами с точными source citations. Наличие маркера само по себе не означает, что текст ошибочен.
+
+## 9. Read-only отказ VK API 204
+
+Если VK возвращает точный ответ:
 
 ```text
-N = A + B + C
-remote ID каждого видео встречается ровно один раз
+VK API 204 in video.get: Access denied
 ```
 
-Для автоматического исполнения требуется:
+до появления preflight counts, запись не начиналась. Reviewed helper:
+
+1. повторяет только этот точный read-only отказ не более трёх раз;
+2. использует увеличивающуюся паузу;
+3. не открывает Проводник для внутренних неудачных попыток;
+4. не повторяет plan, writer, validation или другие ошибки;
+5. при устойчивом отказе запускает `diagnose_vk_video_access.py`.
+
+До полного успешного live preflight мутации запрещены.
+
+## 10. Обязательные postconditions
+
+Успешное завершение требует одновременно:
 
 ```text
-review only = 0
+result status = completed
+all operations = updated_and_verified or already_applied
+final reviewed after-state = exact
+memberships SHA-256 unchanged
 ```
 
-Если `review only > 0`, запись блокируется до отдельной редакторской проверки и нового аудита.
+Writer передаёт в `video.edit` только реально изменяемое поле. При description-only операции `name` не отправляется.
 
-## 6. Проверка читаемого diff
+## 11. Запрещённые действия
 
-Открыть созданный Markdown:
+- не выполнять непроверенный dry-run ZIP;
+- не редактировать VK Studio параллельно;
+- не запускать второй VK writer;
+- не менять JSON plan вручную;
+- не считать декоративный console-output источником истины;
+- не считать ответ API достаточным доказательством без повторного provider read;
+- не переиспользовать SHA, count или snapshot из старого чата.
 
-```powershell
-notepad "$env:VCM_DATA_DIR\reports\vk-live-description-cleanup-$stamp.md"
-```
+## 12. Источник истины
 
-Проверить как минимум:
+Приоритет имеют:
 
-- начало, середину и конец отчёта;
-- несколько длинных описаний;
-- названия с `***`;
-- URL с `_`;
-- строки `VK:`, `Telegram:`, `RUTUBE:`;
-- описания с цитатами и многоточиями;
-- отсутствие изменений фактов и порядка абзацев;
-- отсутствие дубля `https://thelegendarypoet.ru/`.
+1. live snapshot;
+2. signed plan;
+3. plan SHA-256;
+4. result journal;
+5. final snapshot;
+6. независимый verifier;
+7. handoff manifest.
 
-JSON не редактировать. Любая модификация нарушит `plan_sha256`.
-
-## 7. Выбор свежего плана
-
-```powershell
-$plan = Get-ChildItem `
-  "$env:VCM_DATA_DIR\reports\vk-live-description-cleanup-*.json" |
-  Sort-Object LastWriteTime -Descending |
-  Select-Object -First 1
-
-$plan.FullName
-```
-
-Убедиться, что это новый schema v2:
-
-```powershell
-$planJson = Get-Content $plan.FullName -Raw | ConvertFrom-Json
-$planJson.schema_version
-$planJson.videos_checked
-$planJson.plan_sha256
-$planJson.coverage_remote_ids_sha256
-```
-
-Ожидается `schema_version = 2`.
-
-## 8. Обязательный dry-run
-
-```powershell
-python .\scripts\apply_all_vk_description_cleanup.py `
-  "$($plan.FullName)" `
-  --account legendary-poet `
-  --community 235216998
-```
-
-Dry-run:
-
-1. проверяет self-digest плана;
-2. проверяет before/after hashes;
-3. читает полный live-набор VK-ID;
-4. требует точного совпадения coverage;
-5. повторно читает описание каждой операции;
-6. классифицирует `ready / already applied / conflict`;
-7. не вызывает ни одного write-метода.
-
-Разрешённый результат:
-
-```text
-ready A | already applied C | conflicts 0 | review-only excluded 0
-Dry-run only. No remote write method was called.
-```
-
-При любом конфликте ничего не менять и создать свежий аудит после выяснения причины.
-
-## 9. Зафиксировать подтверждения
-
-```powershell
-$ready = <число ready из dry-run>
-$snapshot = $planJson.live_snapshot_id
-$planSha = $planJson.plan_sha256
-```
-
-Не копировать значения из старого плана или старого чата.
-
-## 10. Выполнение
-
-Перед запуском остановить все другие VK writers и не сохранять вручную через VK Studio.
-
-```powershell
-python .\scripts\apply_all_vk_description_cleanup.py `
-  "$($plan.FullName)" `
-  --account legendary-poet `
-  --community 235216998 `
-  --execute `
-  --confirm-community 235216998 `
-  --confirm-count $ready `
-  --confirm-live-snapshot $snapshot `
-  --confirm-plan-sha256 $planSha
-```
-
-После захвата single-writer lock скрипт заново выполняет полный coverage/text preflight. Это закрывает гонку между dry-run и `--execute`.
-
-До первой записи создаётся backup:
-
-```text
-vk-live-description-backup-<timestamp>.json
-```
-
-После каждой операции обновляется result journal:
-
-```text
-vk-live-description-apply-<timestamp>.json
-```
-
-## 11. Успешный итог
-
-Требуется одновременно:
-
-```text
-status = completed
-applied = ready
-postflight_verified = ready
-postflight_failures = []
-rollback = []
-```
-
-Консоль должна завершиться сообщением:
-
-```text
-Completed A verified VK description updates; final postflight verified the whole batch.
-```
-
-## 12. Сбой и откат
-
-При исключении или `Ctrl+C` скрипт:
-
-1. прекращает новые операции;
-2. читает фактический текст затронутых роликов в обратном порядке;
-3. восстанавливает before только когда live-текст равен плановому after;
-4. оставляет без изменения ролики, уже находящиеся в before;
-5. не трогает третье неизвестное состояние;
-6. записывает результат каждого отката.
-
-Статусы:
-
-```text
-failed_rolled_back
-failed_partial_rollback
-```
-
-При `failed_partial_rollback` не запускать новый массовый план. Сначала разобрать конкретные `rollback_failed`.
-
-## 13. Контроль после операции
-
-Повторный dry-run того же плана должен показать:
-
-```text
-ready 0
-already applied A
-conflicts 0
-```
-
-Затем создать новый read-only live-аудит. Он должен показать, что очищенные описания уже `already safe`, а неподдерживаемые маркеры не возвращаются.
-
-Рекомендуется вручную открыть 5–10 роликов разных типов в VK:
-
-- старый длинный ролик;
-- недавно перенесённый ролик;
-- очень длинное описание;
-- описание с несколькими URL;
-- название `К ***`;
-- короткое видео, если оно входит в live-набор.
-
-## 14. Новые YouTube → VK публикации
-
-Используется только:
-
-```powershell
-python .\scripts\sync_youtube_to_vk_textsafe.py <аргументы>
-```
-
-Safe wrapper включает:
-
-- VK plain-text renderer;
-- централизованное название;
-- блокировку сообщества;
-- `ffprobe` QC;
-- наличие видео- и аудиопотока;
-- положительную длительность;
-- SHA-256 медиафайла.
-
-Для точечного восстановления exact-ID используется обновлённый:
-
-```powershell
-python .\scripts\resume_youtube_to_vk_exact_ids.py <source> <video-id...> ...
-```
-
-Он дополнительно требует `--confirm-manifest-sha256` и записывает промежуточные состояния `upload_reserved`, `uploaded_processing`, `uploaded_and_verified`.
-
-## 15. Хранение результатов
-
-Сохранять локально в ignored `data/`:
-
-```text
-data/exports/
-data/reports/
-data/cache/
-data/locks/
-```
-
-В Git не коммитить:
-
-- OAuth/VK токены;
-- cookies;
-- полные live-описания;
-- backups и result journals;
-- медиакэш.
-
-Для внешней резервной копии использовать зашифрованный restic-репозиторий либо другой отдельный защищённый носитель. Проверка резервной копии важнее самого факта копирования.
+Operational artifacts имеют приоритет над памятью чата и декоративным CLI output.

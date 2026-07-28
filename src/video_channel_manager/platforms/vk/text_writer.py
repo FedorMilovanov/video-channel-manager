@@ -33,6 +33,23 @@ def vk_texts_equivalent(left: str, right: str) -> bool:
     return canonical_vk_text(left) == canonical_vk_text(right)
 
 
+def vk_edit_response_succeeded(response: object) -> bool:
+    """Return whether VK acknowledged an edit mutation.
+
+    ``video.edit`` and ``video.editAlbum`` may return either the legacy scalar
+    ``1`` or an object such as ``{"success": 1, "access_key": "..."}``.
+    The caller must still verify the resulting live state after this
+    acknowledgement; this helper deliberately does not treat an access key by
+    itself as success.
+    """
+
+    if response in (1, True):
+        return True
+    if not isinstance(response, dict):
+        return False
+    return response.get("success") in (1, True)
+
+
 class VkVideoTextWriter(VkVideoWriter):
     """Guarded editor for VK video titles and plain-text descriptions."""
 
@@ -86,22 +103,22 @@ class VkVideoTextWriter(VkVideoWriter):
         if not target_title:
             raise ValueError("VK video title cannot be blank")
 
-        if vk_texts_equivalent(current.title, target_title) and vk_texts_equivalent(
-            current.description,
-            target_description,
-        ):
+        title_changed = not vk_texts_equivalent(current.title, target_title)
+        description_changed = not vk_texts_equivalent(current.description, target_description)
+        if not title_changed and not description_changed:
             return current
 
-        response = self._call(
-            "video.edit",
-            params={
-                "owner_id": owner_id,
-                "video_id": video_id,
-                "name": target_title,
-                "desc": target_description,
-            },
-        )
-        if response not in (1, True):
+        params: dict[str, str | int] = {
+            "owner_id": owner_id,
+            "video_id": video_id,
+        }
+        if title_changed:
+            params["name"] = target_title
+        if description_changed:
+            params["desc"] = target_description
+
+        response = self._call("video.edit", params=params)
+        if not vk_edit_response_succeeded(response):
             raise VkWriteError(
                 f"video.edit returned an unexpected response: {response!r}",
                 method="video.edit",
@@ -115,10 +132,7 @@ class VkVideoTextWriter(VkVideoWriter):
             if (
                 last is not None
                 and vk_texts_equivalent(last.title, target_title)
-                and vk_texts_equivalent(
-                    last.description,
-                    target_description,
-                )
+                and vk_texts_equivalent(last.description, target_description)
             ):
                 return last
             if attempt + 1 < attempts and delay:
@@ -139,5 +153,6 @@ __all__ = [
     "VkVideoTextSnapshot",
     "VkVideoTextWriter",
     "canonical_vk_text",
+    "vk_edit_response_succeeded",
     "vk_texts_equivalent",
 ]
