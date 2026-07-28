@@ -55,9 +55,7 @@ def _file_sha(raw: bytes) -> str:
 
 
 def _canonical_sha(value: Any) -> str:
-    return _file_sha(
-        json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    )
+    return _file_sha(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8"))
 
 
 def _json(raw: bytes, name: str) -> dict[str, Any]:
@@ -88,9 +86,7 @@ def verify_bundle(path: Path) -> dict[str, Any]:
     source_apply = _json(raw["source-apply-verification.json"], "source-apply-verification.json")
 
     records = {
-        str(item.get("name")): item
-        for item in manifest.get("files", [])
-        if isinstance(item, dict) and item.get("name")
+        str(item.get("name")): item for item in manifest.get("files", []) if isinstance(item, dict) and item.get("name")
     }
     _require(set(records) == set(_EXPECTED_MEMBERS), "Manifest records differ")
     for name, (size, expected_sha) in _EXPECTED_MEMBERS.items():
