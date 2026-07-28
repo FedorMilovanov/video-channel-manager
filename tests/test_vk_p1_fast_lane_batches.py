@@ -18,11 +18,7 @@ def test_fast_lane_covers_remaining_p1_targets_once() -> None:
     assert len(set(targets)) == 42
     assert all(batch["handoffs"] == 2 for batch in batches)
 
-    completed = {
-        video_id
-        for group in payload["completed_or_in_flight"].values()
-        for video_id in group
-    }
+    completed = {video_id for group in payload["completed_or_in_flight"].values() for video_id in group}
     assert completed.isdisjoint(targets)
 
 
