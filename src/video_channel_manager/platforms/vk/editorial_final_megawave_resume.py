@@ -27,9 +27,7 @@ def rebuild_legacy_intermediate_guards(
     operations = [item for item in corrected.get("video_text_operations", []) if isinstance(item, dict)]
     operations_by_video = {str(item["target_video_id"]): item for item in operations}
     ordered_video_ids = [
-        str(item["video_id"])
-        for item in policy.get("targets", [])
-        if isinstance(item, dict) and item.get("video_id")
+        str(item["video_id"]) for item in policy.get("targets", []) if isinstance(item, dict) and item.get("video_id")
     ]
     if len(ordered_video_ids) != 42 or set(ordered_video_ids) != set(operations_by_video):
         raise ValueError("Resume guard target order does not match the 42 final megawave operations")
@@ -43,8 +41,7 @@ def rebuild_legacy_intermediate_guards(
     duplicate_targets = sum(size - 1 for size in group_sizes.values())
     if duplicate_targets != _EXPECTED_DUPLICATE_TARGETS:
         raise ValueError(
-            "Resume guard duplicate target count does not reproduce the retired megawave: "
-            f"actual={duplicate_targets}"
+            f"Resume guard duplicate target count does not reproduce the retired megawave: actual={duplicate_targets}"
         )
 
     legacy_by_source: dict[str, tuple[str, dict[str, Any], str]] = {}
