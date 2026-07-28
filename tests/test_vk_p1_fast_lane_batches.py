@@ -4,27 +4,32 @@ import json
 from pathlib import Path
 
 
-_POLICY = Path("content/policies/vk-p1-fast-lane-batches-20260728.json")
+_FAST_LANE = Path("content/policies/vk-p1-fast-lane-batches-20260728.json")
+_MEGAWAVE = Path("content/policies/vk-p1-megawave-policy-20260728.json")
 
 
-def test_fast_lane_covers_remaining_p1_targets_once() -> None:
-    payload = json.loads(_POLICY.read_text(encoding="utf-8"))
-    batches = payload["batches"]
-    targets = [target["video_id"] for batch in batches for target in batch["targets"]]
+def test_fast_lane_is_one_megawave() -> None:
+    payload = json.loads(_FAST_LANE.read_text(encoding="utf-8"))
+    megawave = payload["megawave"]
 
-    assert payload["mode"] == "author_batches"
-    assert [batch["target_count"] for batch in batches] == [7, 9, 10, 3, 4, 9]
+    assert payload["mode"] == "single_megawave"
+    assert "Author batches" in payload["rule"]
+    assert megawave["target_count"] == 42
+    assert megawave["unique_description_count"] == 37
+    assert megawave["user_handoffs"] == 1
+    assert megawave["wrapper"] == "scripts/Invoke-VkP1Megawave.ps1"
+
+
+def test_megawave_policy_covers_each_remaining_target_once() -> None:
+    payload = json.loads(_MEGAWAVE.read_text(encoding="utf-8"))
+    targets = [item["video_id"] for item in payload["targets"]]
+
+    assert payload["mode"] == "single_megawave"
+    assert payload["target_count"] == 42
+    assert payload["expected_research_units"] == 37
     assert len(targets) == 42
     assert len(set(targets)) == 42
-    assert all(batch["handoffs"] == 2 for batch in batches)
 
-    completed = {video_id for group in payload["completed_or_in_flight"].values() for video_id in group}
+    fast_lane = json.loads(_FAST_LANE.read_text(encoding="utf-8"))
+    completed = {video_id for group in fast_lane["completed"].values() for video_id in group}
     assert completed.isdisjoint(targets)
-
-
-def test_fast_lane_forbids_one_video_waves_after_cloud() -> None:
-    payload = json.loads(_POLICY.read_text(encoding="utf-8"))
-
-    assert "do not create one-video correction waves" in payload["rule"]
-    assert payload["batches"][0]["batch_id"] == "p1-fast-pushkin-remaining-20260728"
-    assert payload["batches"][0]["target_count"] == 7
