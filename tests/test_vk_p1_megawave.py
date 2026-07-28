@@ -1,74 +1,117 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
-from video_channel_manager.platforms.vk.editorial_megawave import (
-    build_evidence_safe_description,
-    is_poem_like_block,
+from video_channel_manager.platforms.vk.editorial_final_megawave import (
+    extract_poem_blocks,
+    render_final_description,
 )
 
 
+_POLICY = Path("content/policies/vk-p1-final-megawave-policy-20260728.json")
 _WRAPPER = Path("scripts/Invoke-VkP1Megawave.ps1")
+_EXECUTOR = Path("scripts/run_vk_p1_final_megawave.py")
 
 
-def test_evidence_safe_description_preserves_service_blocks_and_poem() -> None:
-    poem = """Первая строка
-Вторая строка
-Третья строка
-Четвёртая строка"""
-    source = "\n\n".join(
-        [
-            "Неподтверждённая биографическая и психологическая история.",
-            poem,
-            "Плейлист: https://example.test/list",
-            "#Поэзия #Test",
-            "🎧 The Legendary Poet - поэзия, музыка и литературные материалы.\n🌐 Сайт: https://example.test/",
-        ]
+def _policy() -> dict[str, object]:
+    payload = json.loads(_POLICY.read_text(encoding="utf-8"))
+    assert isinstance(payload, dict)
+    return payload
+
+
+def test_final_megawave_policy_closes_full_scope_once() -> None:
+    payload = _policy()
+    targets = payload["targets"]
+    assert isinstance(targets, list)
+    target_ids = [str(item["video_id"]) for item in targets]
+
+    assert payload["decision_set_id"] == "p1-final-all-in-one-20260728"
+    assert len(target_ids) == 42
+    assert len(set(target_ids)) == 42
+    assert sum("title_override" in item for item in targets) == 3
+    assert payload["rules"]["single_command"] is True
+    assert payload["rules"]["replace_legacy_playlist_links_with_vk"] is True
+    assert payload["rules"]["canonicalize_brand_links"] is True
+    assert payload["rules"]["canonicalize_hashtags"] is True
+    assert payload["rules"]["add_missing_expected_memberships"] is True
+    assert payload["rules"]["remove_memberships"] is False
+
+
+def test_every_target_has_work_author_and_vk_playlist_mapping() -> None:
+    payload = _policy()
+    work_metadata = payload["work_metadata"]
+    author_names = payload["author_names"]
+    collection_labels = payload["collection_labels"]
+
+    for target in payload["targets"]:
+        assert target["work_key"] in work_metadata
+        assert target["author_key"] in author_names
+        assert target["expected_collection_ids"]
+        for collection_id in target["expected_collection_ids"]:
+            assert str(collection_id) in collection_labels
+            assert not str(collection_id).startswith("-")
+
+
+def test_short_versions_have_full_vk_links_and_playlist_memberships() -> None:
+    payload = _policy()
+    short_targets = [item for item in payload["targets"] if item["format"] == "short"]
+
+    assert len(short_targets) == 13
+    assert all(item.get("full_version_video_id") for item in short_targets)
+    poetry_shorts = [item for item in short_targets if item["author_key"] != "alisa"]
+    assert all("4" in item["expected_collection_ids"] for item in poetry_shorts)
+
+
+def test_final_description_uses_vk_site_channels_and_standard_tags() -> None:
+    payload = _policy()
+    target = next(item for item in payload["targets"] if item["video_id"] == "-235216998_456239049")
+    poem = "Первая строка\nВторая строка\nТретья строка\nЧетвёртая строка"
+    collections = {
+        "4": {"metadata": {"share_url": "https://vkvideo.ru/playlist/-235216998_4?uh=singing"}},
+        "9": {"metadata": {"share_url": "https://vkvideo.ru/playlist/-235216998_9?uh=pushkin"}},
+    }
+
+    rendered, metadata = render_final_description(
+        "Старая неподтверждённая биография.\n\n" + poem + "\n\nhttps://youtube.com/old-playlist",
+        policy=payload,
+        target=target,
+        collections=collections,
     )
 
-    rendered, metadata = build_evidence_safe_description(source, "Тестовый ролик")
-
-    assert "Неподтверждённая" not in rendered
+    assert "Старая неподтверждённая" not in rendered
     assert poem in rendered
-    assert "Плейлист: https://example.test/list" in rendered
-    assert "#Поэзия #Test" in rendered
-    assert "🎧 The Legendary Poet" in rendered
-    assert metadata["urls_unchanged"] is True
-    assert metadata["hashtags_unchanged"] is True
-    assert metadata["after_length"] <= 5000
+    assert "https://youtube.com/old-playlist" not in rendered
+    assert "https://vkvideo.ru/playlist/-235216998_4?uh=singing" in rendered
+    assert "https://vkvideo.ru/playlist/-235216998_9?uh=pushkin" in rendered
+    assert "https://vkvideo.ru/video-235216998_456239048" in rendered
+    assert "https://thelegendarypoet.ru/poets/alexander-pushkin" in rendered
+    assert "https://thelegendarypoet.ru/music" in rendered
+    assert "https://vk.com/thelegendarypoet" in rendered
+    assert "https://t.me/thelegendarypoet" in rendered
+    assert "#АлександрПушкин" in rendered
+    assert "#Shorts" in rendered
+    assert metadata["all_legacy_links_replaced"] is True
 
 
-def test_evidence_safe_description_strips_prose_around_source_url() -> None:
-    source = (
-        "Длинное неподтверждённое историческое утверждение, которое нельзя сохранять "
-        "только потому, что в конце стоит ссылка. "
-        "(Источник: https://example.test/source)"
-    )
-
-    rendered, metadata = build_evidence_safe_description(source, "Тестовый ролик")
-
-    assert "Длинное неподтверждённое" not in rendered
-    assert "https://example.test/source)" in rendered
-    assert "extracted_urls" in metadata["preserved_block_kinds"]
-    assert metadata["urls_unchanged"] is True
-
-
-def test_poem_detection_rejects_prose_list() -> None:
+def test_poem_extraction_rejects_prose_lists() -> None:
     poem = "Первая строка\nВторая строка\nТретья строка\nЧетвёртая строка"
     prose = "Основные идеи:\n➛ первый тезис\n➛ второй тезис\n➛ третий тезис"
 
-    assert is_poem_like_block(poem) is True
-    assert is_poem_like_block(prose) is False
+    assert extract_poem_blocks(poem) == [poem]
+    assert extract_poem_blocks(prose) == []
 
 
-def test_wrapper_is_one_guarded_execute() -> None:
-    text = _WRAPPER.read_text(encoding="utf-8")
+def test_wrapper_invokes_only_final_executor() -> None:
+    wrapper = _WRAPPER.read_text(encoding="utf-8")
+    executor = _EXECUTOR.read_text(encoding="utf-8")
 
-    assert "$ExpectedCount = 42" in text
-    assert "p1-all-remaining-megawave-20260728" in text
-    assert "build_vk_p1_megawave_decisions.py" in text
-    assert "verify_vk_p1_megawave_plan.py" in text
-    assert "verify_vk_p1_megawave_apply_bundle.py" in text
-    assert "--max-operations $ExpectedCount" in text
-    assert "--execute" in text
-    assert "author_batches" not in text
+    assert "run_vk_p1_final_megawave.py" in wrapper
+    assert "vk-p1-final-megawave-policy-20260728.json" in wrapper
+    assert "--execute" in wrapper
+    assert "build_vk_p1_megawave_decisions.py" not in wrapper
+    assert "apply_vk_editorial_cleanup_plan.py" not in wrapper
+    assert '"placements_to_add": 32' in executor
+    assert '"total_operations": 77' in executor
+    assert "writer.add_to_album" in executor
+    assert "writer.rename_album" in executor
