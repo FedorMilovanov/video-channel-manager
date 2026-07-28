@@ -7,6 +7,7 @@ from copy import deepcopy
 from typing import Any
 
 from video_channel_manager.platforms.vk.catalog import canonical_sha256, text_sha256
+from video_channel_manager.platforms.vk.editorial_megawave import build_evidence_safe_description
 from video_channel_manager.platforms.vk.text_writer import canonical_vk_text
 
 _URL_RE = re.compile(r"https?://[^\s]+")
@@ -24,6 +25,7 @@ _BAD_POEM_MARKERS = (
     "Подписывайтесь",
     "The Legendary Poet",
 )
+_LEGACY_DECISION_SET = "p1-all-remaining-megawave-20260728"
 
 
 def _paragraphs(text: str) -> list[str]:
@@ -84,11 +86,24 @@ def _video_map(snapshot: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {str(item["ref"]["remote_id"]): item for item in snapshot.get("videos", [])}
 
 
-def _membership_pairs(snapshot: dict[str, Any]) -> set[tuple[str, str]]:
+def membership_pairs(snapshot: dict[str, Any]) -> set[tuple[str, str]]:
     return {
         (str(item["collection_ref"]["remote_id"]), str(item["video_ref"]["remote_id"]))
         for item in snapshot.get("memberships", [])
     }
+
+
+def managed_membership_pairs(snapshot: dict[str, Any]) -> set[tuple[str, str]]:
+    return {pair for pair in membership_pairs(snapshot) if int(pair[0]) > 0}
+
+
+def system_membership_pairs(snapshot: dict[str, Any]) -> set[tuple[str, str]]:
+    return {pair for pair in membership_pairs(snapshot) if int(pair[0]) < 0}
+
+
+def system_membership_counts(snapshot: dict[str, Any]) -> dict[str, int]:
+    counts = Counter(collection_id for collection_id, _video_id in system_membership_pairs(snapshot))
+    return dict(sorted(counts.items()))
 
 
 def render_final_description(
@@ -230,7 +245,8 @@ def build_final_megawave_plan(snapshot: dict[str, Any], policy: dict[str, Any]) 
 
     videos = _video_map(snapshot)
     collections = _collection_map(snapshot)
-    memberships = _membership_pairs(snapshot)
+    memberships = membership_pairs(snapshot)
+    managed_memberships = managed_membership_pairs(snapshot)
     targets = [item for item in policy.get("targets", []) if isinstance(item, dict)]
     if len(targets) != 42 or len({item["video_id"] for item in targets}) != 42:
         raise ValueError("Final megawave policy must contain exactly 42 unique targets")
@@ -248,6 +264,7 @@ def build_final_megawave_plan(snapshot: dict[str, Any], policy: dict[str, Any]) 
         if before_title != str(target["expected_title"]):
             raise ValueError(f"Title guard mismatch: {remote_id}")
         before_description = canonical_vk_text(str(video.get("description") or ""))
+        legacy_description, legacy_metadata = build_evidence_safe_description(before_description, before_title)
         after_title = canonical_vk_text(str(target.get("title_override") or before_title))
         after_description, metadata = render_final_description(
             before_description,
@@ -255,18 +272,26 @@ def build_final_megawave_plan(snapshot: dict[str, Any], policy: dict[str, Any]) 
             target=target,
             collections=collections,
         )
+        if legacy_description == after_description:
+            raise ValueError(f"Legacy and final descriptions unexpectedly match: {remote_id}")
         video_operations.append(
             {
                 "operation_id": f"video-text:final-megawave:{remote_id}",
                 "target_video_id": remote_id,
                 "before_title": before_title,
+                "legacy_intermediate_title": before_title,
                 "after_title": after_title,
                 "before_description": before_description,
+                "legacy_intermediate_description": legacy_description,
                 "after_description": after_description,
                 "before_title_sha256": text_sha256(before_title),
+                "legacy_intermediate_title_sha256": text_sha256(before_title),
                 "after_title_sha256": text_sha256(after_title),
                 "before_description_sha256": text_sha256(before_description),
+                "legacy_intermediate_description_sha256": text_sha256(legacy_description),
                 "after_description_sha256": text_sha256(after_description),
+                "legacy_intermediate_decision_set_id": _LEGACY_DECISION_SET,
+                "legacy_intermediate_metadata": legacy_metadata,
                 "title_changed": before_title != after_title,
                 "description_changed": True,
                 "metadata": metadata,
@@ -278,7 +303,7 @@ def build_final_megawave_plan(snapshot: dict[str, Any], policy: dict[str, Any]) 
                 raise ValueError("Final megawave cannot mutate system albums")
             if collection_id not in collections:
                 raise ValueError(f"Missing expected target collection: {collection_id}")
-            if (collection_id, remote_id) not in memberships:
+            if (collection_id, remote_id) not in managed_memberships:
                 placement_operations.append(
                     {
                         "operation_id": f"placement:add:{collection_id}:{remote_id}",
@@ -314,15 +339,18 @@ def build_final_megawave_plan(snapshot: dict[str, Any], policy: dict[str, Any]) 
 
     plan: dict[str, Any] = {
         "schema_name": "video-manager.vk-p1-final-megawave-plan",
-        "schema_version": 1,
+        "schema_version": 2,
         "decision_set_id": str(policy["decision_set_id"]),
         "target_community_id": int(policy["target_community_id"]),
         "source_snapshot_id": str(snapshot["snapshot_id"]),
         "source_video_ids_sha256": canonical_sha256(sorted(videos)),
         "source_memberships_sha256": canonical_sha256(sorted(memberships)),
+        "source_managed_memberships_sha256": canonical_sha256(sorted(managed_memberships)),
+        "source_system_membership_counts": system_membership_counts(snapshot),
         "source_snapshot_sha256": canonical_sha256(snapshot),
         "source_apply_bundle_sha256": str(policy["source_apply_bundle_sha256"]),
         "source_review_bundle_sha256": str(policy["source_review_bundle_sha256"]),
+        "accepted_intermediate_decision_set_id": _LEGACY_DECISION_SET,
         "policy": deepcopy(policy),
         "policy_sha256": canonical_sha256(policy),
         "target_video_ids": sorted(target_ids),
@@ -355,6 +383,8 @@ def verify_final_megawave_plan(
 ) -> dict[str, Any]:
     if plan.get("schema_name") != "video-manager.vk-p1-final-megawave-plan":
         raise ValueError("Unexpected final megawave plan schema")
+    if int(plan.get("schema_version", 0)) != 2:
+        raise ValueError("Unexpected final megawave plan version")
     expected_sha = canonical_sha256({key: value for key, value in plan.items() if key != "plan_sha256"})
     if plan.get("plan_sha256") != expected_sha:
         raise ValueError("Final megawave plan SHA mismatch")
@@ -362,17 +392,25 @@ def verify_final_megawave_plan(
         raise ValueError("Final megawave policy SHA mismatch")
     if plan.get("source_snapshot_sha256") != canonical_sha256(snapshot):
         raise ValueError("Final megawave source snapshot SHA mismatch")
+    if plan.get("source_managed_memberships_sha256") != canonical_sha256(sorted(managed_membership_pairs(snapshot))):
+        raise ValueError("Final megawave managed-membership SHA mismatch")
+    if plan.get("source_system_membership_counts") != system_membership_counts(snapshot):
+        raise ValueError("Final megawave system-membership counts mismatch")
 
     operation_ids: list[str] = []
     for operation in plan.get("video_text_operations", []):
         operation_ids.append(str(operation["operation_id"]))
-        for side in ("before", "after"):
+        for side in ("before", "legacy_intermediate", "after"):
             title = str(operation[f"{side}_title"])
             description = str(operation[f"{side}_description"])
             if operation[f"{side}_title_sha256"] != text_sha256(title):
                 raise ValueError(f"Title SHA mismatch: {operation['operation_id']} {side}")
             if operation[f"{side}_description_sha256"] != text_sha256(description):
                 raise ValueError(f"Description SHA mismatch: {operation['operation_id']} {side}")
+        if operation.get("legacy_intermediate_decision_set_id") != _LEGACY_DECISION_SET:
+            raise ValueError(f"Legacy intermediate guard mismatch: {operation['operation_id']}")
+        if operation["legacy_intermediate_description"] == operation["after_description"]:
+            raise ValueError(f"Legacy intermediate equals final state: {operation['operation_id']}")
         if len(str(operation["after_description"])) > int(policy["rules"]["max_description_length"]):
             raise ValueError(f"Description too long: {operation['operation_id']}")
     for operation in plan.get("album_title_operations", []):
@@ -398,6 +436,7 @@ def verify_final_megawave_plan(
         "plan_sha256": plan["plan_sha256"],
         "targets": 42,
         "description_updates": 42,
+        "accepted_legacy_intermediate_descriptions": 42,
         "title_updates": int(summary["titles_to_update"]),
         "album_renames": int(summary["albums_to_rename"]),
         "placements_to_add": int(summary["placements_to_add"]),
@@ -408,6 +447,10 @@ def verify_final_megawave_plan(
 __all__ = [
     "build_final_megawave_plan",
     "extract_poem_blocks",
+    "managed_membership_pairs",
+    "membership_pairs",
     "render_final_description",
+    "system_membership_counts",
+    "system_membership_pairs",
     "verify_final_megawave_plan",
 ]
