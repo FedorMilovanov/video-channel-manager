@@ -59,3 +59,7 @@ A failed run also produces one diagnostic ZIP with the completed journal and err
 ## Retired path
 
 `content/policies/vk-p1-megawave-policy-20260728.json` is deliberately retired. The old descriptions-only implementation must not be used because it did not complete canonical links, VK playlists, titles, album names, or memberships.
+
+## CI
+
+GitHub Actions run `30322983115` passed on Python 3.11, 3.12, and 3.13. Dependency audit, compilation, Ruff correctness, Ruff formatting, mypy, all tests, and final job conclusions are green.
