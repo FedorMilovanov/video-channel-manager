@@ -39,12 +39,7 @@ def is_poem_like_block(value: str) -> bool:
     short_ratio = sum(length <= 85 for length in lengths) / len(lengths)
     colon_ratio = sum(":" in line for line in lines) / len(lines)
     bullet_ratio = sum(line.startswith(("➛", "•", "— ", "- ")) for line in lines) / len(lines)
-    return (
-        statistics.median(lengths) <= 65
-        and short_ratio >= 0.75
-        and colon_ratio < 0.20
-        and bullet_ratio < 0.25
-    )
+    return statistics.median(lengths) <= 65 and short_ratio >= 0.75 and colon_ratio < 0.20 and bullet_ratio < 0.25
 
 
 def build_evidence_safe_description(description: str, title: str) -> tuple[str, dict[str, Any]]:
@@ -169,9 +164,7 @@ def build_vk_p1_megawave_decisions(
     for index, unit in enumerate(ordered_units, start=1):
         unit_id = str(unit["research_unit_id"])
         unit_targets = [
-            remote_id
-            for remote_id in target_ids
-            if str(unit_by_video[remote_id].get("research_unit_id")) == unit_id
+            remote_id for remote_id in target_ids if str(unit_by_video[remote_id].get("research_unit_id")) == unit_id
         ]
         first_video = videos[unit_targets[0]]
         before = canonical_vk_text(first_video.description)
