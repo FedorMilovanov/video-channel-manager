@@ -1,0 +1,171 @@
+{
+  "schema_name": "video-manager.vk-reviewed-correction-decisions",
+  "schema_version": 1,
+  "decision_set_id": "p1-pushkin-cloud-20260728",
+  "target_community_id": 235216998,
+  "source_plan_sha256": "sha256:b4eede44954bcb148550bcb2c0a372e4f23b72d892cc3aadcc5d71321a2e9294",
+  "source_review_bundle_sha256": "sha256:f38191f18d859ef2bcd445f558204ac76e3c3ebbe4f6414cb3436542df7b4c61",
+  "editorial_rule": "Only exact reviewed replacements are allowed. Titles, albums, memberships, video inventory, URLs, hashtags, poem text, music framing, and all other descriptions are frozen. Established fact, primary-source testimony, scholarly hypothesis, literary interpretation, and later biographical hindsight must remain distinct.",
+  "editorial_profile": {
+    "profile_id": "the-legendary-poet-historical-evangelical-v1",
+    "authority_repository": "FedorMilovanov/TheLegendaryPoet",
+    "theological_position": "historical_evangelical_christianity",
+    "judgment_mode": "asymmetric_evidence_based",
+    "last_hour_rule": "acknowledge_once_not_equal_to_documented_life",
+    "tone": "sorrow_without_sentimental_acquittal_or_gloating",
+    "gospel_call": "repent_and_believe_in_christ",
+    "principles": [
+      "judge_public_confession_and_stable_fruits_by_scripture",
+      "do_not_invent_last_hour_conversion",
+      "do_not_balance_documented_unbelief_with_bare_possibility",
+      "state_eternal_danger_plainly_when_evidence_is_strong",
+      "speak_with_grief_not_superiority"
+    ]
+  },
+  "stance_source_ids": [
+    "site-project-charter",
+    "site-editorial-judgment-policy",
+    "research-knowledge-base"
+  ],
+  "shared_replacements": [
+    {
+      "replacement_id": "remove-unsupported-personal-superlative",
+      "old": "✍️ Стихотворение «Туча» — это не просто прозрачная пейзажная зарисовка, а один из самых философски напряжённых и личных текстов Александра Пушкина. Всего двенадцать строк — но внутри них целая жизнь, сломанная и собранная заново. С первых слов мы попадаем в пространство, где природа становится зеркалом глубокого человеческого перелома.",
+      "new": "✍️ «Туча» — лаконичное пейзажное стихотворение из двенадцати строк и трёх строф. Природа здесь олицетворена: последняя туча ещё затемняет ясное небо, затем вспоминается прошедшая гроза, а финал возвращает обновлённую землю и успокоенные небеса. Такая композиция открывает философские и психологические прочтения, но сам текст не называет конкретного автобиографического события.",
+      "expected_count": 1,
+      "reason": "Replace unsupported superlatives and totalizing autobiographical claims with text-based formal description."
+    },
+    {
+      "replacement_id": "qualify-cloud-psychological-autobiography",
+      "old": "➡️ Центральный образ — последняя туча, непокорный остаток разрушительного хаоса. Пушкин обращается к ней как к живому существу, как к равному противнику: «Одна ты несешься по ясной лазури, / Одна ты наводишь унылую тень…» Это удивительно точная метафора сложнейшего психологического состояния. Худшее уже позади, буря закончилась, но человек ещё не готов отпустить свою боль. Свет вернулся, но душа всё ещё держится за тень былой тревоги. И вот что поразительно: Пушкин написал эти строки, когда сам был этой тучей — человеком, который уже пережил катастрофу, но не мог позволить себе радоваться.",
+      "new": "➡️ Центральный образ — последняя туча, оставшаяся после уже рассеявшейся бури. Пушкин обращается к ней как к живому существу: «Одна ты несешься по ясной лазури, / Одна ты наводишь унылую тень…» Во второй строфе вспоминается её недавняя сила, а в третьей земля уже освежилась и ветер гонит тучу с успокоенных небес. Читать этот образ как след неотпущенной тревоги возможно, но прямого основания превращать тучу в документированный психологический автопортрет Пушкина нет. Это литературная интерпретация, а не установленный биографический факт.",
+      "expected_count": 1,
+      "reason": "Keep a possible psychological reading while clearly distinguishing it from documented Pushkin biography."
+    },
+    {
+      "replacement_id": "correct-pushkin-1835-biography-and-context",
+      "old": "👤 Исторический контекст: стихотворение написано 13 апреля 1835 года. Пушкину тридцать шесть лет. Это тяжелейший, возможно самый безнадёжный период его жизни. Он обременён чудовищными карточными долгами — около 60 000 рублей, что по тем временам равнялось стоимости нескольких усадеб. У него четверо детей, беременная жена Наталья Николаевна, мать, сёстры, целая свора родственников на его шее. Император Николай I лично, собственноручно назначил ему унизительное придворное звание камер-юнкера — младший чин, который давали двадцатилетним юнцам, — только чтобы Наталья Гончарова могла танцевать на придворных балах. Пушкин был в клетке. Он задыхался в Петербурге, умолял государя об отставке и отъезде в деревню — и получал жёсткий, ледяной отказ. В письмах жене он писал: «Я здесь как в тюрьме». Поэтому «Туча» — это не пейзаж. Это скрытая исповедь пленника светского общества, человека, у которого отобрали свободу, но оставили талант — и этот талант горел внутри, как молния в запертой комнате. Многие современники и позднейшие исследователи — от Белинского до Набокова — видели в уходящей «буре» подавленное восстание декабристов 1825 года, а в упрямой «туче» — давящую николаевскую реакцию и жестокую цензуру, которая душила свободу творца. Сам Пушкин в 1836 году напишет в дневнике: «Я не могу дышать в этом воздухе рабства». «Туча» — первый крик этого удушья, замаскированный под облако.",
+      "new": "👤 Исторический контекст: стихотворение написано 13 апреля 1835 года; Пушкину было тридцать пять лет. Впервые оно появилось в майской книжке «Московского наблюдателя» того же года. Денежные и служебные трудности этого периода документированы, но прежнее описание смешивало разные даты и преувеличивало детали. В апреле 1835 года у Пушкиных было двое детей; третий, Григорий, родился 14 мая. В камер-юнкеры поэта пожаловали в конце декабря 1833 года, а попытка выйти в отставку относится к лету 1834-го. В дневнике Пушкин сам связывал пожалование с желанием двора видеть Наталью Николаевну на балах; официальный ответ не запрещал отставку, но предупреждал, что после неё ему закроют доступ в архивы. Документальных оснований выдавать «Тучу» за прямую исповедь о придворной службе или установленный отклик на восстание декабристов нет.",
+      "expected_count": 1,
+      "reason": "Correct Pushkin's age, child count, publication context, chamber-junker and resignation chronology; remove fabricated or unattributed quotations and deterministic claims."
+    },
+    {
+      "replacement_id": "correct-duel-death-and-limit-prophecy",
+      "old": "⚡ Главный нерв стихотворения — фраза: «Довольно, сокройся! Пора миновалась.» Это звучит как отчаянный приказ небесам, судьбе и самому себе. Хватит жить вчерашней грозой! Хватит отравлять ясный день! Обратите внимание: Пушкин не просит — он приказывает. И не туче — он приказывает себе. Это момент, когда поэт впервые пытается силой воли отогнать собственную тьму. В музыкальной аранжировке этот момент становится абсолютной кульминацией: электроника взмывает вверх, пульсируют биты, индустриальный бас раскалывается — и сквозь треск пробивается чистый синтезаторный свет, символизируя очищение и свежий ветер, который гонит прошлое прочь. Пушкин превращает пейзаж в мощнейшее духовное действие: прошлое должно уйти, чтобы настоящее стало живым. И трагическая ирония в том, что сам Пушкин так и не смог отпустить свою тучу — через двадцать два месяца, 27 января 1837 года, он погибнет на дуэли с Дантесом, так и не вырвавшись из петербургской клетки.",
+      "new": "⚡ Главный нерв стихотворения — фраза: «Довольно, сокройся! Пора миновалась.» По грамматике и композиции приказ обращён к туче; услышать в нём внутреннее обращение поэта к самому себе можно как интерпретацию, но не как установленное авторское признание. В музыкальной аранжировке этот момент становится абсолютной кульминацией: электроника взмывает вверх, пульсируют биты, индустриальный бас раскалывается — и сквозь треск пробивается чистый синтезаторный свет, символизируя очищение и свежий ветер, который гонит прошлое прочь. Трагическая биографическая перспектива возникла позднее: 27 января 1837 года Пушкин был смертельно ранен на дуэли с Дантесом и умер 29 января. Эти события не доказывают, что стихотворение было пророчеством собственной гибели.",
+      "expected_count": 1,
+      "reason": "Distinguish the duel date from Pushkin's death two days later and prevent later biography from being used as proof of prophecy."
+    },
+    {
+      "replacement_id": "attribute-interpretation-and-document-publication",
+      "old": "📖 Литературная глубина: стихотворение построено на идеальной трёхчастной драматургии. Первая строфа — созерцание и тревога: туча одна среди ясного неба. Вторая — воспоминание о мощи: «И молния грозно тебя обвивала, / И гром гремел, и дождь лил потоками» — здесь Пушкин вспоминает не только грозу, но и свою собственную молодость, бунтарство, стихи «Вольность», «К Чаадаеву», высылку 1820 года. Третья строфа — освобождение и приказ: «Земля освежилась, и буря промчалась…» — и вот тут происходит тот самый внутренний перелом. Двенадцать строк — и в них вся биография Пушкина: от юношеского урагана к зрелой мольбе о покое. Белинский назвал «Тучу» «жемчужиной русской лирики», а Набоков включил её в свой личный канон «величайших стихотворений мировой поэзии».",
+      "new": "📖 Литературная глубина: стихотворение построено на ясной трёхчастной композиции. Первая строфа показывает одинокую тучу среди ликующего дня; вторая вспоминает недавнюю грозу — «И молния грозно тебя обвивала, / И гром гремел, и дождь лил потоками»; третья завершает движение очищением земли и уходом тучи. Такая композиция допускает психологические и политические прочтения, но сводить двенадцать строк ко «всей биографии Пушкина» нельзя. Исследователь Н. В. Измайлов позднее предполагал скрытый политический смысл образа бури, однако это атрибутированная научная гипотеза, а не свидетельство самого поэта или его современников. Документально установлено другое: после первой публикации Пушкин 18 июня 1835 года просил А. А. Краевского исправить предпоследний стих «Тучи».",
+      "expected_count": 1,
+      "reason": "Preserve the three-part formal reading, attribute the political interpretation as a later scholarly hypothesis, remove unverified Belinsky/Nabokov claims, and add Pushkin's documented textual correction."
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "rvb-pushkin-tucha-text",
+      "authority": "Русская виртуальная библиотека / А. С. Пушкин. «Туча»",
+      "url": "https://rvb.ru/pushkin/01text/01versus/0423_36/1835/0600.htm",
+      "supports": "Provides the authoritative poem text used to preserve quoted lines and formal structure."
+    },
+    {
+      "source_id": "feb-pushkin-tucha-comment",
+      "authority": "Фундаментальная электронная библиотека / Б. В. Томашевский. Примечания к ПСС Пушкина",
+      "url": "https://feb-web.ru/feb/pushkin/texts/push10/v03/d03-433.htm?cmd=2",
+      "supports": "Dates «Туча» to 13 April 1835 and records its May 1835 publication in «Московский наблюдатель»."
+    },
+    {
+      "source_id": "bigenc-pushkin",
+      "authority": "Большая российская энциклопедия / Пушкин Александр Сергеевич",
+      "url": "https://bigenc.ru/c/pushkin-aleksandr-sergeevich-8cab44",
+      "supports": "Provides Pushkin's birth and death dates, proving he was 35 on 13 April 1835 and died on 29 January 1837."
+    },
+    {
+      "source_id": "rvb-pushkin-diary-1834",
+      "authority": "Русская виртуальная библиотека / Дневник Пушкина 1833–1835",
+      "url": "https://rvb.ru/pushkin/01text/08history/03memoires/1160.htm",
+      "supports": "Primary diary entry records the chamber-junker appointment and Pushkin's own explanation connecting it with Natalia Nikolaevna's court dancing."
+    },
+    {
+      "source_id": "feb-pushkin-resignation-comment",
+      "authority": "Фундаментальная электронная библиотека / «Письма последних лет». Комментарий об отставке",
+      "url": "https://feb-web.ru/feb/pushkin/texts/selected/ppl/ppl-2083.htm?cmd=p",
+      "supports": "Documents that the resignation attempt occurred in 1834 and that loss of archive access, not a simple imperial prohibition, shaped its withdrawal."
+    },
+    {
+      "source_id": "pushkinmuseum-grigory-birth",
+      "authority": "Государственный музей А. С. Пушкина / Портрет Г. А. Пушкина",
+      "url": "https://www.pushkinmuseum.ru/?q=content%2Fportret-ga-pushkina",
+      "supports": "Records the birth of Pushkin's third child Grigory on 14 May 1835."
+    },
+    {
+      "source_id": "pushkinmuseum-duel-death",
+      "authority": "Государственный музей А. С. Пушкина / День памяти А. С. Пушкина",
+      "url": "https://www.pushkinmuseum.ru/?q=event%2Fden-pamyati-pushkina188-ya-godovshchina-so-dnya-gibeli-poeta",
+      "supports": "Distinguishes the duel on 27 January 1837 from Pushkin's death on 29 January."
+    },
+    {
+      "source_id": "rvb-pushkin-kraevsky-letter",
+      "authority": "Русская виртуальная библиотека / Письмо А. А. Краевскому, 18 июня 1835",
+      "url": "https://rvb.ru/pushkin/01text/10letters/1831_37/01text/1835/1841_653.htm",
+      "supports": "Primary letter asks Kraevsky to correct the penultimate line of «Туча» after publication."
+    },
+    {
+      "source_id": "feb-izmailov-pushkin-cycles",
+      "authority": "Фундаментальная электронная библиотека / Н. В. Измайлов. Лирические циклы в поэзии Пушкина",
+      "url": "https://feb-web.ru/feb/classics/critics/izmailov_n/izm/izm-213-.htm?cmd=p",
+      "supports": "Provides an attributed later scholarly proposal of hidden political meaning rather than proof of authorial intent or contemporary consensus."
+    },
+    {
+      "source_id": "site-project-charter",
+      "authority": "The Legendary Poet / PROJECT_CHARTER.md",
+      "url": "https://github.com/FedorMilovanov/TheLegendaryPoet/blob/main/PROJECT_CHARTER.md",
+      "supports": "Defines the project's direct, evidence-based historical and theological editorial posture."
+    },
+    {
+      "source_id": "site-editorial-judgment-policy",
+      "authority": "The Legendary Poet / EDITORIAL_JUDGMENT_AND_SOURCE_POLICY.md",
+      "url": "https://github.com/FedorMilovanov/TheLegendaryPoet/blob/main/docs/EDITORIAL_JUDGMENT_AND_SOURCE_POLICY.md",
+      "supports": "Requires clear distinctions between established fact, attribution, inference, interpretation, and tradition."
+    },
+    {
+      "source_id": "research-knowledge-base",
+      "authority": "Research / owner knowledge base",
+      "url": "https://github.com/FedorMilovanov/Research",
+      "supports": "Provides the owner's research corpus and source-disciplined editorial context."
+    }
+  ],
+  "decisions": [
+    {
+      "decision_id": "correct-456239106",
+      "target_video_id": "-235216998_456239106",
+      "expected_title": "«Последняя Туча Рассеянной Бури» ⚡ Пушкин Танцует Последнюю Бурю",
+      "expected_description_sha256": "sha256:c06815c12dc652d793823bd1c65d7b34edbdfd1e614c0bc7bfaffca77a555eeb",
+      "replacement_ids": [
+        "remove-unsupported-personal-superlative",
+        "qualify-cloud-psychological-autobiography",
+        "correct-pushkin-1835-biography-and-context",
+        "correct-duel-death-and-limit-prophecy",
+        "attribute-interpretation-and-document-publication"
+      ],
+      "source_ids": [
+        "rvb-pushkin-tucha-text",
+        "feb-pushkin-tucha-comment",
+        "bigenc-pushkin",
+        "rvb-pushkin-diary-1834",
+        "feb-pushkin-resignation-comment",
+        "pushkinmuseum-grigory-birth",
+        "pushkinmuseum-duel-death",
+        "rvb-pushkin-kraevsky-letter",
+        "feb-izmailov-pushkin-cycles",
+        "site-project-charter",
+        "site-editorial-judgment-policy",
+        "research-knowledge-base"
+      ]
+    }
+  ],
+  "description_guard_hash_algorithm": "video-manager.text-sha256-v1"
+}
