@@ -62,10 +62,7 @@ def test_extract_video_ids_from_attachments_links_and_reposts() -> None:
     post = _post(
         11,
         video_id="-235216998_456239109",
-        text=(
-            "Смотрите https://vkvideo.ru/video-235216998_456239111 и "
-            "https://vk.com/clip-235216998_456239112"
-        ),
+        text=("Смотрите https://vkvideo.ru/video-235216998_456239111 и https://vk.com/clip-235216998_456239112"),
         copy_history=[_post(10, text="Повтор: video-235216998_456239113")],
     )
 
