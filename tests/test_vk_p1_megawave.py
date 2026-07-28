@@ -10,6 +10,7 @@ from video_channel_manager.platforms.vk.editorial_final_megawave import (
 
 
 _POLICY = Path("content/policies/vk-p1-final-megawave-policy-20260728.json")
+_RETIRED_POLICY = Path("content/policies/vk-p1-megawave-policy-20260728.json")
 _WRAPPER = Path("scripts/Invoke-VkP1Megawave.ps1")
 _EXECUTOR = Path("scripts/run_vk_p1_final_megawave.py")
 
@@ -100,6 +101,14 @@ def test_poem_extraction_rejects_prose_lists() -> None:
 
     assert extract_poem_blocks(poem) == [poem]
     assert extract_poem_blocks(prose) == []
+
+
+def test_partial_descriptions_only_policy_is_retired() -> None:
+    payload = json.loads(_RETIRED_POLICY.read_text(encoding="utf-8"))
+
+    assert payload["status"] == "retired"
+    assert payload["approved_decision_set"] == "p1-final-all-in-one-20260728"
+    assert payload["superseded_by"] == str(_POLICY).replace("\\", "/")
 
 
 def test_wrapper_invokes_only_final_executor() -> None:
