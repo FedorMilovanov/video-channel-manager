@@ -41,7 +41,7 @@ if (-not (Test-Path -LiteralPath $Policy -PathType Leaf)) {
 Set-Location -LiteralPath $Repo
 Write-Host "Запускается финальная VK P1-мегаволна: 42 описания, 3 заголовка, 3 альбома, 32 размещения." -ForegroundColor Yellow
 
-& py -3.11 -X utf8 .\scripts\run_vk_p1_final_megawave.py `
+& py -3.11 -X utf8 .\scripts\run_vk_p1_final_megawave_resume.py `
     --source-apply-bundle "$SourceApplyBundle" `
     --policy "$Policy" `
     --account "$Account" `
