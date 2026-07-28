@@ -29,6 +29,22 @@ Every target description is rebuilt from the verified final VK snapshot and cont
 
 Legacy arbitrary playlist links, obsolete footer blocks, unsupported biography, medical diagnosis, prophecy, and unsourced spiritual claims are not carried forward.
 
+## Resumable migration states
+
+Each of the 42 video-text operations records three exact guarded states:
+
+1. the verified Pushkin Cloud source description;
+2. the exact descriptions-only intermediate state previously applied by decision set `p1-all-remaining-megawave-20260728`;
+3. the final VK-native description.
+
+A live video is writable only when it exactly matches state 1 or state 2. This permits safe completion after the earlier partial megawave without accepting arbitrary text drift.
+
+## Managed and system VK albums
+
+Positive album IDs are user-managed playlists and are compared by exact membership identity. The final managed set must equal the verified source managed set plus exactly 32 planned additions.
+
+Negative album IDs are VK system albums. They are never mutated. The runner verifies their collection counts and verifies that system album `-2` still contains all 111 videos, while permitting identity churn inside the automatically updated recent-video album `-13`.
+
 ## Guarded execution
 
 ```powershell
@@ -37,15 +53,17 @@ pwsh -File .\scripts\Invoke-VkP1Megawave.ps1 `
   -SourceApplyBundle ".\data\handoffs\vk-reviewed-correction-p1-pushkin-cloud-apply-20260728-034634.zip"
 ```
 
-The runner independently verifies the Pushkin source apply and review bundle, rebuilds the exact plan, reads fresh VK state, performs a locked re-preflight, applies only before-state operations, rescans all VK state, and verifies:
+The runner independently verifies the Pushkin source apply and review bundle, rebuilds the exact plan, reads fresh VK state, performs a locked re-preflight, applies only accepted before-states, rescans all VK state, and verifies:
 
 - 111 video identities remain present;
 - 17 collection identities remain present;
 - all 69 non-target videos remain text-identical;
-- all 42 target descriptions equal the exact after-state;
+- all 42 target descriptions equal the exact final after-state;
 - the 3 target titles equal the exact after-state;
 - the 3 album titles equal the exact after-state;
-- the final membership set equals the original 294 identities plus exactly 32 planned additions, for 326 total identities;
+- managed memberships equal the verified 133 managed identities plus exactly 32 planned additions, for 165 managed identities;
+- system album counts remain `-2: 111` and `-13: 50`;
+- total membership identities equal 326;
 - all VK playlist share URLs remain unchanged.
 
 A successful run produces one file:
@@ -62,4 +80,4 @@ A failed run also produces one diagnostic ZIP with the completed journal and err
 
 ## CI
 
-GitHub Actions run `30322983115` passed on Python 3.11, 3.12, and 3.13. Dependency audit, compilation, Ruff correctness, Ruff formatting, mypy, all tests, and final job conclusions are green.
+GitHub Actions run `30352060107` passed on Python 3.11, 3.12, and 3.13. Dependency audit, compilation, Ruff correctness, Ruff formatting, mypy, all tests, and final job conclusions are green.
