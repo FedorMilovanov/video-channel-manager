@@ -11,12 +11,16 @@ from video_channel_manager.platforms.vk.editorial_final_megawave import (
     system_membership_counts,
     system_membership_pairs,
 )
+from video_channel_manager.platforms.vk.editorial_final_megawave_resume import (
+    rebuild_legacy_intermediate_guards,
+)
 
 
 _POLICY = Path("content/policies/vk-p1-final-megawave-policy-20260728.json")
 _RETIRED_POLICY = Path("content/policies/vk-p1-megawave-policy-20260728.json")
 _WRAPPER = Path("scripts/Invoke-VkP1Megawave.ps1")
 _EXECUTOR = Path("scripts/run_vk_p1_final_megawave.py")
+_RESUME_EXECUTOR = Path("scripts/run_vk_p1_final_megawave_resume.py")
 _FINAL_BUILDER = Path("src/video_channel_manager/platforms/vk/editorial_final_megawave.py")
 
 
@@ -160,15 +164,55 @@ def test_final_plan_records_the_exact_legacy_intermediate_state() -> None:
     assert '"schema_version": 2' in builder
 
 
-def test_wrapper_invokes_only_final_executor() -> None:
+def test_resume_guards_reproduce_37_shared_replacements_for_42_targets() -> None:
+    operations: list[dict[str, object]] = []
+    targets: list[dict[str, str]] = []
+    for index in range(42):
+        group = 0 if index < 6 else index - 5
+        video_id = f"video-{index:02d}"
+        targets.append({"video_id": video_id})
+        operations.append(
+            {
+                "operation_id": f"operation-{index:02d}",
+                "target_video_id": video_id,
+                "before_title": f"Заголовок {index:02d}",
+                "before_description": f"Исходное описание общей группы {group:02d}.",
+                "legacy_intermediate_title": f"Заголовок {index:02d}",
+                "legacy_intermediate_description": "неверный индивидуальный guard",
+                "legacy_intermediate_title_sha256": "old",
+                "legacy_intermediate_description_sha256": "old",
+                "legacy_intermediate_metadata": {},
+            }
+        )
+
+    corrected = rebuild_legacy_intermediate_guards(
+        {"video_text_operations": operations, "plan_sha256": "old"},
+        {"targets": targets},
+    )
+    corrected_operations = corrected["video_text_operations"]
+    shared = [item for item in corrected_operations if item["before_description"].endswith("00.")]
+
+    assert corrected["accepted_intermediate_research_unit_count"] == 37
+    assert corrected["accepted_intermediate_duplicate_target_count"] == 5
+    assert len({item["legacy_intermediate_description"] for item in shared}) == 1
+    assert all("Заголовок 00" in item["legacy_intermediate_description"] for item in shared)
+    assert all(
+        item["legacy_intermediate_metadata"]["shared_research_unit_first_video_id"] == "video-00"
+        for item in shared
+    )
+
+
+def test_wrapper_invokes_only_final_resumable_executor() -> None:
     wrapper = _WRAPPER.read_text(encoding="utf-8")
     executor = _EXECUTOR.read_text(encoding="utf-8")
+    resume_executor = _RESUME_EXECUTOR.read_text(encoding="utf-8")
 
-    assert "run_vk_p1_final_megawave.py" in wrapper
+    assert "run_vk_p1_final_megawave_resume.py" in wrapper
     assert "vk-p1-final-megawave-policy-20260728.json" in wrapper
     assert "--execute" in wrapper
     assert "build_vk_p1_megawave_decisions.py" not in wrapper
     assert "apply_vk_editorial_cleanup_plan.py" not in wrapper
+    assert "rebuild_legacy_intermediate_guards" in resume_executor
     assert '"placements_to_add": 32' in executor
     assert '"total_operations": 77' in executor
     assert "ready_legacy" in executor
