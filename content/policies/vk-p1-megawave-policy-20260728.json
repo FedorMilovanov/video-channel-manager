@@ -1,0 +1,261 @@
+{
+  "schema_name": "video-manager.vk-p1-megawave-policy",
+  "schema_version": 1,
+  "created_at": "2026-07-28",
+  "decision_set_id": "p1-all-remaining-megawave-20260728",
+  "target_community_id": 235216998,
+  "source_plan_sha256": "sha256:b4eede44954bcb148550bcb2c0a372e4f23b72d892cc3aadcc5d71321a2e9294",
+  "source_review_bundle_sha256": "sha256:f38191f18d859ef2bcd445f558204ac76e3c3ebbe4f6414cb3436542df7b4c61",
+  "source_apply_bundle_sha256": "sha256:2c964ca70a7e625638d1cb9f2731e94898f0e16bbcb1b7ddfd485f115437db67",
+  "mode": "single_megawave",
+  "target_count": 42,
+  "expected_research_units": 37,
+  "rule": "Build, independently verify, preflight, execute, scan, and postflight every remaining active P1 target in one local command and one final handoff ZIP. No author batches or intermediate user handoffs.",
+  "preservation": {
+    "titles": 111,
+    "non_target_descriptions": 69,
+    "collections": 17,
+    "memberships": 294,
+    "video_inventory": 111,
+    "urls": true,
+    "hashtags": true,
+    "poem_blocks": true,
+    "channel_footer": true
+  },
+  "rewrite_strategy": {
+    "strategy_id": "conservative-evidence-safe-v1",
+    "intro_template": "music_and_visual_interpretation",
+    "keep_blocks": [
+      "url_or_hashtag",
+      "channel_footer",
+      "poem_like_block"
+    ],
+    "remove_blocks": "all remaining legacy prose in active P1 descriptions",
+    "caveat": "Biographical, historical, psychological, and theological parallels are interpretation unless directly sourced.",
+    "max_description_length": 5000
+  },
+  "editorial_profile": {
+    "profile_id": "the-legendary-poet-historical-evangelical-v1",
+    "authority_repository": "FedorMilovanov/TheLegendaryPoet",
+    "theological_position": "historical_evangelical_christianity",
+    "judgment_mode": "asymmetric_evidence_based",
+    "last_hour_rule": "acknowledge_once_not_equal_to_documented_life",
+    "tone": "sorrow_without_sentimental_acquittal_or_gloating",
+    "gospel_call": "repent_and_believe_in_christ",
+    "principles": [
+      "judge_public_confession_and_stable_fruits_by_scripture",
+      "do_not_invent_last_hour_conversion",
+      "do_not_balance_documented_unbelief_with_bare_possibility",
+      "state_eternal_danger_plainly_when_evidence_is_strong",
+      "speak_with_grief_not_superiority"
+    ]
+  },
+  "stance_source_ids": [
+    "site-project-charter",
+    "site-editorial-judgment-policy",
+    "research-knowledge-base"
+  ],
+  "sources": [
+    {
+      "source_id": "verified-deferred-review-bundle",
+      "authority": "Verified VK deferred editorial review bundle",
+      "url": "https://github.com/FedorMilovanov/video-channel-manager/pull/26",
+      "supports": "Identifies the exact active P1 factual and sensitive claim paragraphs present in the verified final VK descriptions."
+    },
+    {
+      "source_id": "verified-pushkin-cloud-apply",
+      "authority": "Verified Pushkin Cloud final VK snapshot",
+      "url": "https://github.com/FedorMilovanov/video-channel-manager/pull/26",
+      "supports": "Provides the exact 111-video source state after the completed Pushkin Cloud correction."
+    },
+    {
+      "source_id": "site-project-charter",
+      "authority": "The Legendary Poet / PROJECT_CHARTER.md",
+      "url": "https://github.com/FedorMilovanov/TheLegendaryPoet/blob/main/PROJECT_CHARTER.md",
+      "supports": "Defines the project's direct, evidence-based historical and theological editorial posture."
+    },
+    {
+      "source_id": "site-editorial-judgment-policy",
+      "authority": "The Legendary Poet / EDITORIAL_JUDGMENT_AND_SOURCE_POLICY.md",
+      "url": "https://github.com/FedorMilovanov/TheLegendaryPoet/blob/main/docs/EDITORIAL_JUDGMENT_AND_SOURCE_POLICY.md",
+      "supports": "Requires explicit distinction between established fact, attribution, inference, interpretation, and tradition."
+    },
+    {
+      "source_id": "research-knowledge-base",
+      "authority": "Research / owner knowledge base",
+      "url": "https://github.com/FedorMilovanov/Research",
+      "supports": "Provides the owner's source-disciplined research context."
+    }
+  ],
+  "targets": [
+    {
+      "video_id": "-235216998_456239048",
+      "expected_title": "Песнь о Вещем Олеге ⚡ Александр Пушкин"
+    },
+    {
+      "video_id": "-235216998_456239140",
+      "expected_title": "Песнь о Вещем Олеге ⚡ ВЕРСИЯ 2 ⚡ Александр Пушкин"
+    },
+    {
+      "video_id": "-235216998_456239049",
+      "expected_title": "Песнь о Вещем Олеге ⚡ КОРОТКАЯ ВЕРСИЯ ⚡ Александр Пушкин"
+    },
+    {
+      "video_id": "-235216998_456239028",
+      "expected_title": "Письмо Татьяны к Онегину ⚡ КОРОТКАЯ ВЕРСИЯ ⚡ Александр Пушкин"
+    },
+    {
+      "video_id": "-235216998_456239061",
+      "expected_title": "Пророк ⚡ Александр Пушкин"
+    },
+    {
+      "video_id": "-235216998_456239060",
+      "expected_title": "Пророк ⚡ КОРОТКАЯ ВЕРСИЯ ⚡ Александр Пушкин"
+    },
+    {
+      "video_id": "-235216998_456239093",
+      "expected_title": "Сказка о Царе Салтане ⚡ АКТ I ⚡ Александр Пушкин"
+    },
+    {
+      "video_id": "-235216998_456239063",
+      "expected_title": "Бородино ⚡ Михаил Лермонтов"
+    },
+    {
+      "video_id": "-235216998_456239111",
+      "expected_title": "Выхожу Один Я На Дорогу 🌌 Лермонтов - Диалог с Совестью 🎧"
+    },
+    {
+      "video_id": "-235216998_456239017",
+      "expected_title": "Парус 🎶 DJ ВЕРСИЯ - КОРОТКАЯ 🎶 Михаил Лермонтов"
+    },
+    {
+      "video_id": "-235216998_456239018",
+      "expected_title": "Парус 🎶 DJ ВЕРСИЯ 🎶 Михаил Лермонтов"
+    },
+    {
+      "video_id": "-235216998_456239035",
+      "expected_title": "Родина ⚡ КОРОТКАЯ ВЕРСИЯ ⚡ Михаил Лермонтов"
+    },
+    {
+      "video_id": "-235216998_456239116",
+      "expected_title": "Самый Депрессивный Стих Лермонтова ⚡ «И Скучно и Грустно»"
+    },
+    {
+      "video_id": "-235216998_456239070",
+      "expected_title": "Смерть Поэта ⚡ ВЕРСИЯ 1 ⚡ Михаил Лермонтов"
+    },
+    {
+      "video_id": "-235216998_456239067",
+      "expected_title": "Смерть Поэта ⚡ ВЕРСИЯ 2 ⚡ Михаил Лермонтов"
+    },
+    {
+      "video_id": "-235216998_456239109",
+      "expected_title": "🌌 «Выхожу один я на дорогу…» - Лермонтов написал это за 6 недель до гибели - Ему было 26"
+    },
+    {
+      "video_id": "-235216998_456239114",
+      "expected_title": "Поёт Зима, Аукает... ⚡ NORDIC FOLK ВЕРСИЯ ⚡ Сергей Есенин"
+    },
+    {
+      "video_id": "-235216998_456239037",
+      "expected_title": "Письмо к Женщине ⚡ Неполный Текст Стихотворения ⚡ Сергей Есенин"
+    },
+    {
+      "video_id": "-235216998_456239036",
+      "expected_title": "Письмо к Женщине ⚡ ФРАГМЕНТ ⚡ Сергей Есенин"
+    },
+    {
+      "video_id": "-235216998_456239041",
+      "expected_title": "Сукин Сын - Сергей Есенин @TheLegendaryPoet"
+    },
+    {
+      "video_id": "-235216998_456239040",
+      "expected_title": "Сукин Сын - Сергей Есенин @TheLegendaryPoet"
+    },
+    {
+      "video_id": "-235216998_456239020",
+      "expected_title": "Чёрный Человек ⚡ ВЕРСИЯ 4 - БОЛЕЕ ПОЛНАЯ ⚡ Сергей Есенин"
+    },
+    {
+      "video_id": "-235216998_456239019",
+      "expected_title": "Чёрный Человек ⚡ ВЕРСИЯ 4 - КОРОТКАЯ ⚡ Сергей Есенин"
+    },
+    {
+      "video_id": "-235216998_456239147",
+      "expected_title": "Чёрный Человек ⚡ Предсмертный Диалог с Двойником ⚡ Сергей Есенин (1925)"
+    },
+    {
+      "video_id": "-235216998_456239091",
+      "expected_title": "Чёрный Человек ⚡ Финальная Полная Версия Стихотворения ⚡ Музыкальный Фильм 4K"
+    },
+    {
+      "video_id": "-235216998_456239110",
+      "expected_title": "В Этой Жизни Помереть Не Трудно ⚡ «Сергею Есенину» ⚡ Владимир Маяковский"
+    },
+    {
+      "video_id": "-235216998_456239075",
+      "expected_title": "Лиличка! ⚡ Владимир Маяковский"
+    },
+    {
+      "video_id": "-235216998_456239098",
+      "expected_title": "Послушайте! ⚡ КОРОТКАЯ Лирическая Рок-Версия ⚡ Владимир Маяковский"
+    },
+    {
+      "video_id": "-235216998_456239077",
+      "expected_title": "Послушайте! ⚡ Лирическая Рок-Версия ⚡ Владимир Маяковский"
+    },
+    {
+      "video_id": "-235216998_456239055",
+      "expected_title": "Жди Меня, и Я Вернусь... ⚡ Константин Симонов"
+    },
+    {
+      "video_id": "-235216998_456239054",
+      "expected_title": "Жди Меня, и Я Вернусь... ⚡ КОРОТКАЯ ВЕРСИЯ ⚡ Константин Симонов"
+    },
+    {
+      "video_id": "-235216998_456239024",
+      "expected_title": "Родина ⚡ Касаясь Трёх Великих Океанов - КОРОТКАЯ ⚡ Константин Симонов"
+    },
+    {
+      "video_id": "-235216998_456239025",
+      "expected_title": "Родина ⚡ Касаясь Трёх Великих Океанов ⚡ Константин Симонов"
+    },
+    {
+      "video_id": "-235216998_456239134",
+      "expected_title": "«Я Научилась Просто, Мудро Жить…» ⚡ Ахматова Учится Тишине"
+    },
+    {
+      "video_id": "-235216998_456239148",
+      "expected_title": "Веня Д’ркин ⚡ Anno Domini ⚡ Руины, Свет и Слепые Санитары"
+    },
+    {
+      "video_id": "-235216998_456239141",
+      "expected_title": "Как Хорошо Ты, о Море Ночное… ⚡ Тютчев и Тайна Живого Моря"
+    },
+    {
+      "video_id": "-235216998_456239145",
+      "expected_title": "Кино ⚡ ТРАНКВИЛИЗАТОР ⚡ Молнии Индры (Dark Post-Punk Version)"
+    },
+    {
+      "video_id": "-235216998_456239026",
+      "expected_title": "Страшная Сказка ⚡ КОРОТКАЯ ВЕРСИЯ ⚡ Борис Пастернак"
+    },
+    {
+      "video_id": "-235216998_456239103",
+      "expected_title": "Творчество ⚡ ВЕРСИЯ 2 - КОРОТКАЯ ⚡ Валерий Брюсов"
+    },
+    {
+      "video_id": "-235216998_456239107",
+      "expected_title": "Творчество ⚡ ВЕРСИЯ 2 ⚡ Валерий Брюсов"
+    },
+    {
+      "video_id": "-235216998_456239096",
+      "expected_title": "Шабаш ⚡ АЛИСА Cover"
+    },
+    {
+      "video_id": "-235216998_456239092",
+      "expected_title": "Шабаш ⚡ КОРОТКАЯ ВЕРСИЯ ⚡ АЛИСА Cover"
+    }
+  ],
+  "description_guard_hash_algorithm": "video-manager.text-sha256-v1"
+}
