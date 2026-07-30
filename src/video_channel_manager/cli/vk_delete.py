@@ -33,9 +33,7 @@ def _read_json_or_zip(path: Path) -> dict[str, Any]:
         return payload
     with zipfile.ZipFile(path) as archive:
         candidates = [
-            name
-            for name in archive.namelist()
-            if name.endswith("10-journal.json") or name.endswith("journal.json")
+            name for name in archive.namelist() if name.endswith("10-journal.json") or name.endswith("journal.json")
         ]
         if len(candidates) != 1:
             raise ValueError(f"Diagnostic ZIP must contain exactly one journal JSON: {candidates}")
