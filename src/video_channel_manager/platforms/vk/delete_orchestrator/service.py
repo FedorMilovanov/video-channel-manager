@@ -189,7 +189,7 @@ class DeleteOrchestrator:
                     visibility_deadline_hours=self.config.visibility_deadline_hours,
                 )
             else:
-                outcome = AttemptOutcome.ACCEPTED if response in {1, True} else AttemptOutcome.UNKNOWN
+                outcome = AttemptOutcome.ACCEPTED if response == 1 else AttemptOutcome.UNKNOWN
                 self.ledger.record_dispatch_result(
                     operation_id,
                     outcome=outcome,
