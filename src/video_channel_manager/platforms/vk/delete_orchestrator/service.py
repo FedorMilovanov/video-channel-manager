@@ -136,9 +136,7 @@ class DeleteOrchestrator:
             if available_slots <= 0:
                 return 0
             successful_epochs = self.ledger.successful_epochs(run_id)
-            configured_batch = (
-                self.config.canary_batch_size if successful_epochs < 2 else self.config.steady_batch_size
-            )
+            configured_batch = self.config.canary_batch_size if successful_epochs < 2 else self.config.steady_batch_size
             planned = self.ledger.next_planned(run_id, limit=min(configured_batch, available_slots))
             if not planned:
                 return 0
@@ -211,14 +209,14 @@ class DeleteOrchestrator:
                         operation_id,
                         outcome=outcome,
                         response=response,
-                        error_message=None if outcome == AttemptOutcome.ACCEPTED else f"unexpected_response:{response!r}",
+                        error_message=None
+                        if outcome == AttemptOutcome.ACCEPTED
+                        else f"unexpected_response:{response!r}",
                         first_reconcile_delay_seconds=self.config.first_reconcile_delay_seconds,
                         visibility_deadline_hours=self.config.visibility_deadline_hours,
                     )
                 dispatched += 1
-                delay = self.config.write_delay_seconds + self.random_uniform(
-                    0.0, self.config.write_jitter_seconds
-                )
+                delay = self.config.write_delay_seconds + self.random_uniform(0.0, self.config.write_jitter_seconds)
                 self.sleeper(delay)
         if not self.ledger.close_epoch_if_terminal(run_id, epoch_id):
             self.ledger.start_epoch_cooldown(
