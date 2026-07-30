@@ -5,6 +5,7 @@ import zipfile
 from pathlib import Path
 from typing import Annotated, Any
 
+import httpx
 import typer
 from rich.console import Console
 from rich.table import Table
@@ -73,16 +74,27 @@ def _resolve_account_alias(store: VkTokenStore, requested: str) -> str:
     )
 
 
+def _print_progress(stage: str, payload: dict[str, object]) -> None:
+    details = " ".join(f"{key}={value}" for key, value in payload.items())
+    console.print(f"[cyan]VK READ[/cyan] {stage} {details}".rstrip())
+
+
 def _components(account: str) -> tuple[VkTokenStore, VkApiClient, str]:
     settings = get_settings()
     store = VkTokenStore(settings.data_dir)
     resolved_account = _resolve_account_alias(store, account)
+    http_client = httpx.Client(
+        timeout=httpx.Timeout(connect=10.0, read=20.0, write=20.0, pool=10.0),
+        follow_redirects=True,
+    )
     return (
         store,
         VkApiClient(
             token_store=store,
             account_alias=resolved_account,
             api_version=settings.vk_api_version,
+            http_client=http_client,
+            max_attempts=2,
         ),
         resolved_account,
     )
@@ -104,7 +116,7 @@ def _build(
         policy=policy,
         evidence=evidence,
         ledger=ledger,
-        gateway=VkDeleteGateway(client),
+        gateway=VkDeleteGateway(client, progress_callback=_print_progress),
         config=OrchestratorConfig(),
     )
     legacy = _read_json_or_zip(legacy_journal_path) if legacy_journal_path is not None else None
