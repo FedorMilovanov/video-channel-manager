@@ -103,6 +103,13 @@ def run_delete(
     ] = None,
     ledger: Annotated[Path, typer.Option("--ledger")] = Path("data/vk/delete-orchestrator.db"),
     execute: Annotated[bool, typer.Option("--execute", help="Enable the signed destructive dispatcher")] = False,
+    watch_read_only: Annotated[
+        bool,
+        typer.Option(
+            "--watch-read-only",
+            help="Keep reconciling accepted legacy operations without enabling new VK writes",
+        ),
+    ] = False,
     confirm_policy_sha256: Annotated[str | None, typer.Option("--confirm-policy-sha256")] = None,
     confirm_community: Annotated[int | None, typer.Option("--confirm-community")] = None,
     confirm_operations: Annotated[int | None, typer.Option("--confirm-operations")] = None,
@@ -111,6 +118,8 @@ def run_delete(
 ) -> None:
     """Bootstrap/import once, then reconcile and continue automatically from SQLite."""
 
+    if execute and watch_read_only:
+        raise typer.BadParameter("--execute and --watch-read-only are mutually exclusive")
     settings = get_settings()
     settings.ensure_runtime_directories()
     orchestrator, run_id = _build(
@@ -141,6 +150,7 @@ def run_delete(
                 summary = orchestrator.run_forever(
                     run_id,
                     execute=True,
+                    continuous=True,
                     idle_poll_seconds=idle_poll_seconds,
                     max_cycles=max_cycles,
                 )
@@ -148,8 +158,9 @@ def run_delete(
             summary = orchestrator.run_forever(
                 run_id,
                 execute=False,
+                continuous=watch_read_only,
                 idle_poll_seconds=idle_poll_seconds,
-                max_cycles=1,
+                max_cycles=max_cycles if watch_read_only else 1,
             )
     except Exception as exc:
         console.print(f"[red]VK delete orchestrator stopped safely:[/red] {exc}")
