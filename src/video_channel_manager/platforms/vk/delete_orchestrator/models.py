@@ -150,7 +150,10 @@ class DeletePolicy(BaseModel):
             raise ValueError(f"A primary is also scheduled for deletion: {sorted(overlap)[:5]}")
         expected_owner = -self.community_id
         for operation in self.operations:
-            if operation.candidate_guard.owner_id != expected_owner or operation.primary_guard.owner_id != expected_owner:
+            if (
+                operation.candidate_guard.owner_id != expected_owner
+                or operation.primary_guard.owner_id != expected_owner
+            ):
                 raise ValueError(f"Operation targets another owner: {operation.operation_id}")
         return self
 
