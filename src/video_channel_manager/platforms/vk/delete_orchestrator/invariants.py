@@ -34,7 +34,16 @@ def raw_video_guard(payload: dict[str, Any]) -> VideoGuard:
 def guard_differences(expected: VideoGuard, payload: dict[str, Any]) -> dict[str, tuple[object, object]]:
     actual = raw_video_guard(payload)
     differences: dict[str, tuple[object, object]] = {}
-    for field in ("remote_id", "title", "description_sha256", "duration_seconds", "owner_id", "video_id", "vk_type", "date"):
+    for field in (
+        "remote_id",
+        "title",
+        "description_sha256",
+        "duration_seconds",
+        "owner_id",
+        "video_id",
+        "vk_type",
+        "date",
+    ):
         expected_value = getattr(expected, field)
         actual_value = getattr(actual, field)
         if expected_value != actual_value:
@@ -78,6 +87,10 @@ class FatalInvariantError(RuntimeError):
     pass
 
 
+class TransientInvariantError(RuntimeError):
+    pass
+
+
 class OperationConflictError(RuntimeError):
     pass
 
@@ -88,7 +101,7 @@ def stable_owner_inventory(*, community_id: int, gateway: DeleteGateway) -> Owne
     if first.ids != second.ids:
         only_first = sorted(first.ids - second.ids)
         only_second = sorted(second.ids - first.ids)
-        raise RuntimeError(
+        raise TransientInvariantError(
             "VK owner inventory did not produce two identical ID sets: "
             f"only_first={only_first[:5]} only_second={only_second[:5]}"
         )
@@ -168,7 +181,8 @@ def precheck_operation(
         raise OperationConflictError(f"Candidate views exceed signed maximum: {operation.operation_id}: {views}")
     if operation.required_zero_engagement and any((comments, likes, reposts)):
         raise OperationConflictError(
-            f"Candidate acquired engagement: {operation.operation_id}: comments={comments}, likes={likes}, reposts={reposts}"
+            f"Candidate acquired engagement: {operation.operation_id}: "
+            f"comments={comments}, likes={likes}, reposts={reposts}"
         )
     if operation.candidate_vk_id in epoch_guard.published_video_ids:
         raise OperationConflictError(f"Candidate is now published on the wall: {operation.operation_id}")
