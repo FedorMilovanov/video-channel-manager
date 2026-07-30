@@ -69,9 +69,7 @@ def _resolve_account_alias(store: VkTokenStore, requested: str) -> str:
         )
         return selected
     available_text = ", ".join(available) if available else "none"
-    raise VkAccountNotFoundError(
-        f"VK account token not found: {requested}. Available stored aliases: {available_text}"
-    )
+    raise VkAccountNotFoundError(f"VK account token not found: {requested}. Available stored aliases: {available_text}")
 
 
 def _print_progress(stage: str, payload: dict[str, object]) -> None:
