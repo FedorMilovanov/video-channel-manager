@@ -85,7 +85,10 @@ class VkDeleteGateway:
         return found
 
     def owner_inventory(self, community_id: int) -> OwnerInventory:
-        page_size = 200
+        # VK video.get returns at most 100 items for an owner catalog. Using a
+        # larger requested count and stopping on a short page truncated a
+        # 3,251-item catalog to its first 100 rows.
+        page_size = 100
         offset = 0
         reported_count: int | None = None
         items: list[dict[str, Any]] = []
@@ -105,6 +108,7 @@ class VkDeleteGateway:
                 reported_count = raw_count if reported_count is None else max(reported_count, raw_count)
             page = response.get("items")
             page_items = [item for item in page if isinstance(item, dict)] if isinstance(page, list) else []
+            previous_unique_count = len(items)
             for item in page_items:
                 owner_id = item.get("owner_id")
                 video_id = item.get("id")
@@ -125,8 +129,15 @@ class VkDeleteGateway:
             )
             if not page_items:
                 break
+            if len(items) == previous_unique_count:
+                raise RuntimeError(
+                    "VK owner inventory pagination made no unique-ID progress: "
+                    f"page={page_no} offset={offset} returned={len(page_items)}"
+                )
             offset += len(page_items)
-            if len(page_items) < page_size:
+            if reported_count is not None and offset >= reported_count:
+                break
+            if reported_count is None and len(page_items) < page_size:
                 break
         self._emit("owner_inventory_complete", pages=page_no, collected=len(items), reported_count=reported_count)
         return OwnerInventory(reported_count=reported_count, items=tuple(items))
