@@ -11,6 +11,7 @@ from video_channel_manager.platforms.vk.catalog import canonical_sha256
 from video_channel_manager.platforms.vk.delete_orchestrator.evidence import DeleteEvidence
 from video_channel_manager.platforms.vk.delete_orchestrator.gateway import OwnerInventory
 from video_channel_manager.platforms.vk.delete_orchestrator.invariants import (
+    FatalInvariantError,
     TransientInvariantError,
     build_epoch_guard,
 )
@@ -124,13 +125,18 @@ class FakeGateway:
         return 1
 
 
-class AlternatingGateway(FakeGateway):
-    def __init__(self, inventories: list[OwnerInventory]) -> None:
-        super().__init__(inventories[0], {})
-        self.inventories = iter(inventories)
+class SequencedGateway(FakeGateway):
+    def __init__(self, inventories: list[OwnerInventory], exact: dict[str, dict[str, Any] | None] | None = None) -> None:
+        super().__init__(inventories[-1], exact or {})
+        self.inventories = list(inventories)
+        self.index = 0
 
     def owner_inventory(self, community_id: int) -> OwnerInventory:
-        return next(self.inventories)
+        if self.index < len(self.inventories):
+            value = self.inventories[self.index]
+            self.index += 1
+            return value
+        return self.inventories[-1]
 
 
 def evidence_for(policy: DeletePolicy, inventory_items: list[dict[str, Any]]) -> DeleteEvidence:
@@ -150,23 +156,29 @@ def evidence_for(policy: DeletePolicy, inventory_items: list[dict[str, Any]]) ->
     )
 
 
+def accepted_journal(policy: DeletePolicy) -> dict[str, Any]:
+    return {
+        "updated_at": datetime.now(UTC).isoformat(),
+        "completed": {},
+        "quarantined": {},
+        "attempts": {
+            operation.operation_id: {"response": 1, "target_id": -policy.community_id}
+            for operation in policy.operations
+        },
+    }
+
+
 def test_legacy_quarantine_is_reopened_as_accepted(tmp_path: Path) -> None:
     policy = build_policy(3)
     ledger = DeleteLedger(tmp_path / "ledger.db")
     run_id = ledger.initialize_run(policy, policy_path=tmp_path / "policy.json")
     op1, op2, _ = policy.operations
-    journal = {
-        "updated_at": datetime.now(UTC).isoformat(),
-        "completed": {op1.operation_id: {"verified_at": datetime.now(UTC).isoformat()}},
-        "quarantined": {op2.operation_id: {"status": "quarantined_no_effect"}},
-        "attempts": {
-            op1.operation_id: {"response": 1, "target_id": -policy.community_id},
-            op2.operation_id: {"response": 1, "target_id": -policy.community_id},
-        },
-    }
+    journal = accepted_journal(policy)
+    journal["completed"] = {op1.operation_id: {"verified_at": datetime.now(UTC).isoformat()}}
+    journal["quarantined"] = {op2.operation_id: {"status": "quarantined_no_effect"}}
     imported = ledger.import_legacy_journal(run_id, journal)
     rows = {row["operation_id"]: row for row in ledger.list_operations(run_id)}
-    assert imported == {"confirmed": 1, "accepted": 1, "planned": 1}
+    assert imported == {"confirmed": 1, "accepted": 2, "planned": 0}
     assert rows[op1.operation_id]["state"] == OperationState.CONFIRMED_DELETED.value
     assert rows[op2.operation_id]["state"] == OperationState.ACCEPTED.value
     assert rows[op2.operation_id]["dispatch_count"] == 1
@@ -175,6 +187,26 @@ def test_legacy_quarantine_is_reopened_as_accepted(tmp_path: Path) -> None:
 
 
 def test_shadow_protected_video_is_exactly_guarded_not_counted_as_missing() -> None:
+    policy = build_policy(1)
+    primary = policy.operations[0].primary_vk_id
+    primary_raw = raw_video(primary, title="primary-1")
+    fake = FakeGateway(OwnerInventory(reported_count=1, items=()), {primary: primary_raw})
+    evidence = DeleteEvidence(
+        all_video_ids=frozenset({primary, policy.operations[0].candidate_vk_id}),
+        protected_video_ids=frozenset({primary}),
+        published_video_ids=frozenset(),
+        postponed_video_ids=frozenset(),
+        video_guards=MappingProxyType({primary: VideoGuard.model_validate(guard(primary, title="primary-1"))}),
+        audit_sha256="sha256:test",
+        bundle_sha256="sha256:test",
+    )
+    epoch = build_epoch_guard(community_id=policy.community_id, evidence=evidence, gateway=fake)
+    assert epoch.inventory.reported_count == 1
+    assert len(epoch.inventory.ids) == 0
+    assert epoch.exact_protected_fallbacks == frozenset({primary})
+
+
+def test_unexplained_count_items_gap_blocks_candidate_absence() -> None:
     policy = build_policy(1)
     primary = policy.operations[0].primary_vk_id
     primary_raw = raw_video(primary, title="primary-1")
@@ -188,17 +220,15 @@ def test_shadow_protected_video_is_exactly_guarded_not_counted_as_missing() -> N
         audit_sha256="sha256:test",
         bundle_sha256="sha256:test",
     )
-    epoch = build_epoch_guard(community_id=policy.community_id, evidence=evidence, gateway=fake)
-    assert epoch.inventory.reported_count == 2
-    assert len(epoch.inventory.ids) == 0
-    assert epoch.exact_protected_fallbacks == frozenset({primary})
+    with pytest.raises(TransientInvariantError, match="unexplained count/items gap"):
+        build_epoch_guard(community_id=policy.community_id, evidence=evidence, gateway=fake)
 
 
-def test_inconsistent_owner_sets_are_transient_not_fatal() -> None:
+def test_inconsistent_owner_sets_or_counts_are_transient_not_fatal() -> None:
     policy = build_policy(1)
     primary = raw_video(policy.operations[0].primary_vk_id, title="primary-1")
     candidate = raw_video(policy.operations[0].candidate_vk_id, title="candidate-1")
-    fake = AlternatingGateway(
+    fake = SequencedGateway(
         [
             OwnerInventory(reported_count=2, items=(primary, candidate)),
             OwnerInventory(reported_count=1, items=(primary,)),
@@ -228,16 +258,10 @@ def test_two_late_effects_are_reconciled_by_id_set_without_count_arithmetic(tmp_
         config=OrchestratorConfig(absent_confirmation_delay_seconds=30),
         sleeper=lambda _: None,
     )
-    journal = {
-        "updated_at": datetime.now(UTC).isoformat(),
-        "completed": {},
-        "quarantined": {},
-        "attempts": {
-            operation.operation_id: {"response": 1, "target_id": -policy.community_id}
-            for operation in policy.operations
-        },
-    }
-    run_id = orchestrator.bootstrap(policy_path=tmp_path / "policy.json", legacy_journal=journal)
+    run_id = orchestrator.bootstrap(
+        policy_path=tmp_path / "policy.json",
+        legacy_journal=accepted_journal(policy),
+    )
     first = orchestrator.reconcile_once(run_id)
     assert first.checked == 2
     assert first.confirmed == 0
@@ -260,7 +284,6 @@ def test_unknown_write_outcome_cannot_be_dispatched_twice(tmp_path: Path) -> Non
     ledger = DeleteLedger(tmp_path / "ledger.db")
     run_id = ledger.initialize_run(policy, policy_path=tmp_path / "policy.json")
     operation = policy.operations[0]
-    ledger.mark_prechecked(operation.operation_id)
     ledger.begin_dispatch(operation.operation_id, request_payload={"method": "video.delete"})
     ledger.record_dispatch_result(
         operation.operation_id,
@@ -275,3 +298,118 @@ def test_unknown_write_outcome_cannot_be_dispatched_twice(tmp_path: Path) -> Non
     with pytest.raises(RuntimeError):
         ledger.begin_dispatch(operation.operation_id, request_payload={"method": "video.delete"})
     assert ledger.summary(run_id)["unresolved"] == 1
+
+
+def test_crash_after_dispatch_intent_gets_a_bounded_visibility_deadline(tmp_path: Path) -> None:
+    policy = build_policy(1)
+    ledger = DeleteLedger(tmp_path / "ledger.db")
+    ledger.initialize_run(policy, policy_path=tmp_path / "policy.json")
+    operation = policy.operations[0]
+    ledger.begin_dispatch(operation.operation_id, request_payload={"method": "video.delete"})
+    with ledger.connect(immediate=True) as connection:
+        old = iso(datetime.now(UTC) - timedelta(hours=25))
+        connection.execute(
+            "UPDATE delete_operations SET updated_at=?,next_reconcile_at=? WHERE operation_id=?",
+            (old, iso(), operation.operation_id),
+        )
+    state = ledger.record_observation(
+        operation.operation_id,
+        candidate_present=True,
+        primary_present=True,
+        source="test",
+        payload={},
+        absent_confirmation_delay_seconds=30,
+        visibility_deadline_hours=24,
+    )
+    row = ledger.get_operation(operation.operation_id)
+    assert state == OperationState.MANUAL_REVIEW
+    assert row["visibility_deadline"] is not None
+    assert row["dispatch_count"] == 1
+
+
+def test_dispatch_epoch_resumes_after_crash_between_epoch_open_and_first_write(tmp_path: Path) -> None:
+    policy = build_policy(1)
+    operation = policy.operations[0]
+    candidate = raw_video(operation.candidate_vk_id, title="candidate-1")
+    primary = raw_video(operation.primary_vk_id, title="primary-1")
+    fake = FakeGateway(OwnerInventory(reported_count=2, items=(candidate, primary)), {})
+    ledger = DeleteLedger(tmp_path / "ledger.db")
+    orchestrator = DeleteOrchestrator(
+        policy=policy,
+        evidence=evidence_for(policy, [primary]),
+        ledger=ledger,
+        gateway=fake,
+        config=OrchestratorConfig(first_reconcile_delay_seconds=30),
+        sleeper=lambda _: None,
+    )
+    run_id = orchestrator.bootstrap(policy_path=tmp_path / "policy.json")
+    ledger.open_epoch(run_id, [operation.operation_id])
+    assert orchestrator.dispatch_epoch(run_id) == 1
+    assert fake.delete_calls == [operation.candidate_vk_id]
+    assert ledger.get_operation(operation.operation_id)["state"] == OperationState.ACCEPTED.value
+    assert orchestrator.dispatch_epoch(run_id) == 0
+    assert fake.delete_calls == [operation.candidate_vk_id]
+
+
+def test_epoch_with_only_terminal_precheck_results_closes(tmp_path: Path) -> None:
+    policy = build_policy(1)
+    operation = policy.operations[0]
+    ledger = DeleteLedger(tmp_path / "ledger.db")
+    run_id = ledger.initialize_run(policy, policy_path=tmp_path / "policy.json")
+    epoch_id = ledger.open_epoch(run_id, [operation.operation_id])
+    ledger.mark_terminal(operation.operation_id, state=OperationState.MANUAL_REVIEW, reason="test conflict")
+    assert ledger.close_epoch_if_terminal(run_id, epoch_id) is True
+    assert ledger.active_epoch(run_id) is None
+
+
+def test_primary_guard_drift_is_fatal_during_reconciliation(tmp_path: Path) -> None:
+    policy = build_policy(1)
+    operation = policy.operations[0]
+    wrong_primary = raw_video(operation.primary_vk_id, title="changed-primary")
+    expected_primary = raw_video(operation.primary_vk_id, title="primary-1")
+    fake = FakeGateway(OwnerInventory(reported_count=1, items=(wrong_primary,)), {})
+    ledger = DeleteLedger(tmp_path / "ledger.db")
+    orchestrator = DeleteOrchestrator(
+        policy=policy,
+        evidence=evidence_for(policy, [expected_primary]),
+        ledger=ledger,
+        gateway=fake,
+        sleeper=lambda _: None,
+    )
+    run_id = orchestrator.bootstrap(
+        policy_path=tmp_path / "policy.json",
+        legacy_journal=accepted_journal(policy),
+    )
+    with pytest.raises(FatalInvariantError, match="Primary immutable guard changed"):
+        orchestrator.reconcile_once(run_id)
+
+
+def test_run_forever_recovers_from_transient_inventory_observation_without_delete(tmp_path: Path) -> None:
+    policy = build_policy(1)
+    operation = policy.operations[0]
+    candidate = raw_video(operation.candidate_vk_id, title="candidate-1")
+    primary = raw_video(operation.primary_vk_id, title="primary-1")
+    fake = SequencedGateway(
+        [
+            OwnerInventory(reported_count=2, items=(candidate, primary)),
+            OwnerInventory(reported_count=1, items=(primary,)),
+            OwnerInventory(reported_count=1, items=(primary,)),
+            OwnerInventory(reported_count=1, items=(primary,)),
+        ]
+    )
+    ledger = DeleteLedger(tmp_path / "ledger.db")
+    orchestrator = DeleteOrchestrator(
+        policy=policy,
+        evidence=evidence_for(policy, [primary]),
+        ledger=ledger,
+        gateway=fake,
+        config=OrchestratorConfig(absent_confirmation_delay_seconds=30),
+        sleeper=lambda _: None,
+    )
+    run_id = orchestrator.bootstrap(
+        policy_path=tmp_path / "policy.json",
+        legacy_journal=accepted_journal(policy),
+    )
+    summary = orchestrator.run_forever(run_id, execute=True, idle_poll_seconds=5, max_cycles=2)
+    assert summary["states"][OperationState.OBSERVED_ABSENT.value] == 1
+    assert fake.delete_calls == []
