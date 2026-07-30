@@ -35,11 +35,13 @@ def _video_guard(raw: dict[str, object]) -> VideoGuard:
     if not isinstance(owner_id, int) or not isinstance(video_id, int) or not isinstance(remote_id, str):
         raise ValueError("Wall-audit video record has invalid identity")
     description = str(raw.get("description") or "")
+    raw_duration = raw.get("duration_seconds")
+    duration_seconds = raw_duration if isinstance(raw_duration, int) else 0
     return VideoGuard(
         remote_id=remote_id,
         title=str(raw.get("title") or ""),
         description_sha256=text_sha256(description),
-        duration_seconds=int(raw.get("duration_seconds") or 0),
+        duration_seconds=duration_seconds,
         owner_id=owner_id,
         video_id=video_id,
         vk_type=str(metadata.get("type") or "video"),
