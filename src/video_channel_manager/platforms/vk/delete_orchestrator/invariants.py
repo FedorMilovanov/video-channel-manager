@@ -9,6 +9,8 @@ from video_channel_manager.platforms.vk.delete_orchestrator.evidence import Dele
 from video_channel_manager.platforms.vk.delete_orchestrator.gateway import DeleteGateway, OwnerInventory
 from video_channel_manager.platforms.vk.delete_orchestrator.models import DeleteOperation, VideoGuard
 
+MAX_EXACT_PROTECTED_FALLBACKS = 16
+
 
 def text_sha256(value: str) -> str:
     return f"sha256:{hashlib.sha256(value.encode('utf-8')).hexdigest()}"
@@ -119,6 +121,12 @@ def build_epoch_guard(
     by_id = inventory_index(inventory)
     visible = frozenset(by_id)
     missing_protected = sorted(evidence.protected_video_ids - visible)
+    if len(missing_protected) > MAX_EXACT_PROTECTED_FALLBACKS:
+        raise TransientInvariantError(
+            "VK owner inventory is clearly incomplete; refusing thousands of exact fallback reads: "
+            f"reported={inventory.reported_count} visible={len(visible)} "
+            f"missing_protected={len(missing_protected)} limit={MAX_EXACT_PROTECTED_FALLBACKS}"
+        )
     exact_fallbacks: set[str] = set()
     truly_missing: list[str] = []
     guard_drift: dict[str, dict[str, tuple[object, object]]] = {}
