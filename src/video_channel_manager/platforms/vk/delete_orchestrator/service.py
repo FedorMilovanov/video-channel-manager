@@ -238,6 +238,13 @@ class DeleteOrchestrator:
         keep_running = execute if continuous is None else continuous
         lease_owner = self.ledger.new_lease_owner()
         self.ledger.acquire_lease(run_id, owner=lease_owner, ttl_seconds=self.config.lease_ttl_seconds)
+        progress_adder = getattr(self.gateway, "add_progress_callback", None)
+        if callable(progress_adder):
+
+            def heartbeat_progress(_stage: str, _payload: dict[str, object]) -> None:
+                self.ledger.heartbeat(run_id, owner=lease_owner, ttl_seconds=self.config.lease_ttl_seconds)
+
+            progress_adder(heartbeat_progress)
         cycle = 0
         try:
             self.ledger.set_run_state(run_id, RunState.RUNNING)
