@@ -47,6 +47,8 @@ legacy journal:
 
 The legacy argument can point directly to the diagnostic ZIP; the orchestrator extracts `10-journal.json` itself.
 
+The established local VK account alias for this cleanup is `legendary-poet`. The CLI also resolves `default` to the only stored token when exactly one unambiguous account exists, but operational commands use the explicit alias.
+
 ## One-command continuous read-only reconciliation
 
 This is the required first live step. It contains no `--execute`, does not set the destructive environment gate, and cannot open a new deletion epoch. It waits through transient VK reads and performs both absence confirmations for operations 30 and 31 automatically.
@@ -55,7 +57,7 @@ This is the required first live step. It contains no `--execute`, does not set t
 $env:VCM_DATA_DIR = "$repo\data"
 
 & "$worktree\.venv\Scripts\python.exe" -m video_channel_manager.cli.vk_delete run `
-  --account default `
+  --account legendary-poet `
   --policy "$repo\data\handoffs\vk-lord-strength-delete-megawave-v10-20260730\vk-delete-megawave-policy-20260730.json" `
   --wall-audit "$repo\data\handoffs\vk-lord-strength-delete-megawave-v10-20260730\source-wall-audit.zip" `
   --legacy-journal "$repo\data\handoffs\vk-lord-strength-delete-megawave-apply-20260730-173341.zip" `
@@ -101,7 +103,7 @@ Then start one durable process:
 
 ```powershell
 & "$worktree\.venv\Scripts\python.exe" -m video_channel_manager.cli.vk_delete run `
-  --account default `
+  --account legendary-poet `
   --policy "$repo\data\handoffs\vk-lord-strength-delete-megawave-v10-20260730\vk-delete-megawave-policy-20260730.json" `
   --wall-audit "$repo\data\handoffs\vk-lord-strength-delete-megawave-v10-20260730\source-wall-audit.zip" `
   --legacy-journal "$repo\data\handoffs\vk-lord-strength-delete-megawave-apply-20260730-173341.zip" `
