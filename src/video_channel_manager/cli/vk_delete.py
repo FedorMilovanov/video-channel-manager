@@ -10,7 +10,7 @@ from rich.console import Console
 from rich.table import Table
 
 from video_channel_manager.config import get_settings
-from video_channel_manager.platforms.vk import VkApiClient, VkTokenStore
+from video_channel_manager.platforms.vk import VkAccountNotFoundError, VkApiClient, VkTokenStore
 from video_channel_manager.platforms.vk.delete_orchestrator import (
     DeleteEvidence,
     DeleteLedger,
@@ -43,13 +43,48 @@ def _read_json_or_zip(path: Path) -> dict[str, Any]:
         return payload
 
 
-def _components(account: str) -> tuple[VkTokenStore, VkApiClient]:
+def _available_token_aliases(store: VkTokenStore) -> tuple[str, ...]:
+    aliases = {account.alias for account in store.list_accounts() if store.token_exists(account.alias)}
+    if store.token_dir.is_dir():
+        for token_path in store.token_dir.glob("*.json"):
+            try:
+                alias = store.validate_alias(token_path.stem)
+            except ValueError:
+                continue
+            if store.token_exists(alias):
+                aliases.add(alias)
+    return tuple(sorted(aliases))
+
+
+def _resolve_account_alias(store: VkTokenStore, requested: str) -> str:
+    requested = store.validate_alias(requested)
+    if store.token_exists(requested):
+        return requested
+    available = _available_token_aliases(store)
+    if requested == "default" and len(available) == 1:
+        selected = available[0]
+        console.print(
+            f"[yellow]VK account 'default' is not stored; using the only available account '{selected}'.[/yellow]"
+        )
+        return selected
+    available_text = ", ".join(available) if available else "none"
+    raise VkAccountNotFoundError(
+        f"VK account token not found: {requested}. Available stored aliases: {available_text}"
+    )
+
+
+def _components(account: str) -> tuple[VkTokenStore, VkApiClient, str]:
     settings = get_settings()
     store = VkTokenStore(settings.data_dir)
-    return store, VkApiClient(
-        token_store=store,
-        account_alias=account,
-        api_version=settings.vk_api_version,
+    resolved_account = _resolve_account_alias(store, account)
+    return (
+        store,
+        VkApiClient(
+            token_store=store,
+            account_alias=resolved_account,
+            api_version=settings.vk_api_version,
+        ),
+        resolved_account,
     )
 
 
@@ -60,11 +95,11 @@ def _build(
     wall_audit_zip: Path,
     ledger_path: Path,
     legacy_journal_path: Path | None,
-) -> tuple[DeleteOrchestrator, str]:
+) -> tuple[DeleteOrchestrator, str, str]:
     policy = DeletePolicy.from_file(policy_path)
     evidence = DeleteEvidence.from_wall_audit_zip(wall_audit_zip, policy)
     ledger = DeleteLedger(ledger_path)
-    _, client = _components(account)
+    _, client, resolved_account = _components(account)
     orchestrator = DeleteOrchestrator(
         policy=policy,
         evidence=evidence,
@@ -74,7 +109,7 @@ def _build(
     )
     legacy = _read_json_or_zip(legacy_journal_path) if legacy_journal_path is not None else None
     run_id = orchestrator.bootstrap(policy_path=policy_path, legacy_journal=legacy)
-    return orchestrator, run_id
+    return orchestrator, run_id, resolved_account
 
 
 def _print_summary(summary: dict[str, Any]) -> None:
@@ -122,7 +157,7 @@ def run_delete(
         raise typer.BadParameter("--execute and --watch-read-only are mutually exclusive")
     settings = get_settings()
     settings.ensure_runtime_directories()
-    orchestrator, run_id = _build(
+    orchestrator, run_id, resolved_account = _build(
         account=account,
         policy_path=policy,
         wall_audit_zip=wall_audit,
@@ -143,7 +178,7 @@ def run_delete(
         if execute:
             with local_vk_write_lock(
                 lock_path,
-                account=account,
+                account=resolved_account,
                 community_id=orchestrator.policy.community_id,
                 operation="durable-video-delete-orchestrator",
             ):
