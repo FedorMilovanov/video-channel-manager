@@ -231,9 +231,11 @@ class DeleteOrchestrator:
         run_id: str,
         *,
         execute: bool,
+        continuous: bool | None = None,
         idle_poll_seconds: float = 30.0,
         max_cycles: int | None = None,
     ) -> dict[str, Any]:
+        keep_running = execute if continuous is None else continuous
         lease_owner = self.ledger.new_lease_owner()
         self.ledger.acquire_lease(run_id, owner=lease_owner, ttl_seconds=self.config.lease_ttl_seconds)
         cycle = 0
@@ -250,7 +252,7 @@ class DeleteOrchestrator:
                 except Exception as exc:
                     if self._is_transient_read_error(exc):
                         self.ledger.set_run_state(run_id, RunState.PAUSED_TRANSIENT, reason=str(exc))
-                        if not execute:
+                        if not keep_running:
                             return self.ledger.summary(run_id)
                         self.sleeper(idle_poll_seconds)
                         continue
@@ -260,6 +262,7 @@ class DeleteOrchestrator:
                 states = summary["states"]
                 planned_count = int(states.get(OperationState.PLANNED.value, 0))
                 unresolved = int(summary["unresolved"])
+                legacy_unresolved = self.ledger.unresolved_legacy_count(run_id)
                 if int(summary["terminal"]) == int(summary["total"]):
                     has_exceptions = any(
                         int(states.get(state.value, 0))
@@ -272,14 +275,13 @@ class DeleteOrchestrator:
                     final_state = RunState.COMPLETED_WITH_QUARANTINE if has_exceptions else RunState.COMPLETED
                     self.ledger.set_run_state(run_id, final_state)
                     return self.ledger.summary(run_id)
+                if not execute and keep_running and legacy_unresolved == 0:
+                    self.ledger.set_run_state(run_id, RunState.VALIDATED)
+                    return self.ledger.summary(run_id)
                 active = self.ledger.active_epoch(run_id)
                 resumable_dispatch = active is not None and str(active["status"]) == "dispatching"
                 can_open_epoch = active is None and planned_count > 0
-                if (
-                    execute
-                    and self.ledger.unresolved_legacy_count(run_id) == 0
-                    and (resumable_dispatch or can_open_epoch)
-                ):
+                if execute and legacy_unresolved == 0 and (resumable_dispatch or can_open_epoch):
                     try:
                         dispatched = self.dispatch_epoch(run_id)
                     except FatalInvariantError as exc:
@@ -296,7 +298,7 @@ class DeleteOrchestrator:
                         self.ledger.set_run_state(run_id, RunState.COOLDOWN)
                         self.sleeper(min(float(self.config.first_reconcile_delay_seconds), idle_poll_seconds))
                         continue
-                if not execute:
+                if not keep_running:
                     return self.ledger.summary(run_id)
                 if planned_count == 0 and unresolved == 0:
                     return self.ledger.summary(run_id)
