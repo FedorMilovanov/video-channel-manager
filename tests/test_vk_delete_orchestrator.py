@@ -95,9 +95,7 @@ def build_policy(count: int = 3) -> DeletePolicy:
         },
         "operations": operations,
     }
-    policy["policy_sha256"] = canonical_sha256(
-        {key: value for key, value in policy.items() if key != "policy_sha256"}
-    )
+    policy["policy_sha256"] = canonical_sha256({key: value for key, value in policy.items() if key != "policy_sha256"})
     return DeletePolicy.model_validate(policy)
 
 
@@ -126,7 +124,9 @@ class FakeGateway:
 
 
 class SequencedGateway(FakeGateway):
-    def __init__(self, inventories: list[OwnerInventory], exact: dict[str, dict[str, Any] | None] | None = None) -> None:
+    def __init__(
+        self, inventories: list[OwnerInventory], exact: dict[str, dict[str, Any] | None] | None = None
+    ) -> None:
         super().__init__(inventories[-1], exact or {})
         self.inventories = list(inventories)
         self.index = 0
@@ -273,9 +273,7 @@ def test_two_late_effects_are_reconciled_by_id_set_without_count_arithmetic(tmp_
         )
     second = orchestrator.reconcile_once(run_id)
     assert second.confirmed == 2
-    assert {row["state"] for row in ledger.list_operations(run_id)} == {
-        OperationState.CONFIRMED_DELETED.value
-    }
+    assert {row["state"] for row in ledger.list_operations(run_id)} == {OperationState.CONFIRMED_DELETED.value}
     assert fake.delete_calls == []
 
 
