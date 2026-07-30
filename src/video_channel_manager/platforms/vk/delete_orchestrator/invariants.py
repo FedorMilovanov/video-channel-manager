@@ -98,11 +98,12 @@ class OperationConflictError(RuntimeError):
 def stable_owner_inventory(*, community_id: int, gateway: DeleteGateway) -> OwnerInventory:
     first = gateway.owner_inventory(community_id)
     second = gateway.owner_inventory(community_id)
-    if first.ids != second.ids:
+    if first.ids != second.ids or first.reported_count != second.reported_count:
         only_first = sorted(first.ids - second.ids)
         only_second = sorted(second.ids - first.ids)
         raise TransientInvariantError(
-            "VK owner inventory did not produce two identical ID sets: "
+            "VK owner inventory did not produce two identical complete observations: "
+            f"first_count={first.reported_count} second_count={second.reported_count} "
             f"only_first={only_first[:5]} only_second={only_second[:5]}"
         )
     return second
@@ -136,6 +137,14 @@ def build_epoch_guard(
     if guard_drift:
         sample = {key: guard_drift[key] for key in sorted(guard_drift)[:3]}
         raise FatalInvariantError(f"Protected exact fallback did not match signed evidence: {sample}")
+    if inventory.reported_count is not None:
+        logical_count = len(visible) + len(exact_fallbacks)
+        if inventory.reported_count != logical_count:
+            raise TransientInvariantError(
+                "VK owner inventory has an unexplained count/items gap; candidate absence is not yet provable: "
+                f"reported={inventory.reported_count} visible={len(visible)} "
+                f"guarded_shadow={len(exact_fallbacks)} logical={logical_count}"
+            )
     published = gateway.wall_video_ids(community_id=community_id, postponed=False)
     postponed = gateway.wall_video_ids(community_id=community_id, postponed=True)
     missing_published = sorted(evidence.published_video_ids - published)
