@@ -160,6 +160,6 @@ def test_continuous_read_only_watch_settles_legacy_operation_without_write(tmp_p
         idle_poll_seconds=5,
         max_cycles=1,
     )
-    assert summary["status"] == "validated"
+    assert summary["status"] == "completed"
     assert summary["states"] == {OperationState.CONFIRMED_DELETED.value: 1}
     assert gateway.delete_calls == []
