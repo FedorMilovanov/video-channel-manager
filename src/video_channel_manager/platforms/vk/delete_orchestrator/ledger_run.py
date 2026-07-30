@@ -70,9 +70,12 @@ class RunLedgerMixin(LedgerBase):
         return run_id
 
     def import_legacy_journal(self, run_id: str, journal: dict[str, Any]) -> dict[str, int]:
-        completed = journal.get("completed") if isinstance(journal.get("completed"), dict) else {}
-        attempts = journal.get("attempts") if isinstance(journal.get("attempts"), dict) else {}
-        quarantined = journal.get("quarantined") if isinstance(journal.get("quarantined"), dict) else {}
+        completed_raw = journal.get("completed")
+        attempts_raw = journal.get("attempts")
+        quarantined_raw = journal.get("quarantined")
+        completed: dict[str, Any] = completed_raw if isinstance(completed_raw, dict) else {}
+        attempts: dict[str, Any] = attempts_raw if isinstance(attempts_raw, dict) else {}
+        quarantined: dict[str, Any] = quarantined_raw if isinstance(quarantined_raw, dict) else {}
         result = {"confirmed": 0, "accepted": 0, "planned": 0}
         with self.connect(immediate=True) as db:
             rows = db.execute(
@@ -86,17 +89,21 @@ class RunLedgerMixin(LedgerBase):
                 operation_id = str(row["operation_id"])
                 if OperationState(str(row["state"])) != OperationState.PLANNED:
                     continue
-                attempt = attempts.get(operation_id)
+                attempt_raw = attempts.get(operation_id)
+                attempt: dict[str, Any] | None = attempt_raw if isinstance(attempt_raw, dict) else None
+                accepted_at: str | None
+                confirmed_at: str | None
+                next_reconcile: str | None
                 if operation_id in completed:
                     state = OperationState.CONFIRMED_DELETED
                     accepted_at = str((attempt or {}).get("response_at") or journal.get("updated_at") or iso())
-                    confirmed_at = str(completed[operation_id].get("verified_at") or accepted_at)
+                    completed_item = completed[operation_id]
+                    verified_at = completed_item.get("verified_at") if isinstance(completed_item, dict) else None
+                    confirmed_at = str(verified_at or accepted_at)
                     dispatch_count = 1
                     next_reconcile = None
                     result["confirmed"] += 1
-                elif isinstance(attempt, dict) and attempt.get("response") == 1:
-                    # Old quarantine depended on immediate count arithmetic. Reopen it as accepted:
-                    # exact set reconciliation decides whether the late effect actually happened.
+                elif attempt is not None and attempt.get("response") == 1:
                     state = OperationState.ACCEPTED
                     accepted_at = str(attempt.get("response_at") or journal.get("updated_at") or iso())
                     confirmed_at = None
@@ -140,7 +147,9 @@ class RunLedgerMixin(LedgerBase):
     def acquire_lease(self, run_id: str, *, owner: str, ttl_seconds: int) -> None:
         now = utc_now()
         with self.connect(immediate=True) as db:
-            row = db.execute("SELECT lease_owner,lease_expires_at FROM delete_runs WHERE run_id=?", (run_id,)).fetchone()
+            row = db.execute(
+                "SELECT lease_owner,lease_expires_at FROM delete_runs WHERE run_id=?", (run_id,)
+            ).fetchone()
             if not row:
                 raise KeyError(run_id)
             expires = parse_time(row["lease_expires_at"])
@@ -215,14 +224,19 @@ class RunLedgerMixin(LedgerBase):
             ).fetchone()
             if active:
                 raise RuntimeError("Another delete epoch is still active")
-            epoch_no = int(
-                db.execute("SELECT COALESCE(MAX(epoch_no),0)+1 FROM delete_epochs WHERE run_id=?", (run_id,)).fetchone()[0]
-            )
+            epoch_no_raw = db.execute(
+                "SELECT COALESCE(MAX(epoch_no),0)+1 FROM delete_epochs WHERE run_id=?", (run_id,)
+            ).fetchone()[0]
+            if not isinstance(epoch_no_raw, int):
+                raise RuntimeError("SQLite did not return an epoch number")
+            epoch_no = epoch_no_raw
             cursor = db.execute(
                 "INSERT INTO delete_epochs (run_id,epoch_no,status,batch_size,started_at) VALUES (?,?,?,?,?)",
                 (run_id, epoch_no, "dispatching", len(operation_ids), iso()),
             )
-            epoch_id = int(cursor.lastrowid)
+            if cursor.lastrowid is None:
+                raise RuntimeError("SQLite did not return an epoch ID")
+            epoch_id = cursor.lastrowid
             placeholders = ",".join("?" for _ in operation_ids)
             rows = db.execute(
                 f"SELECT operation_id,state FROM delete_operations WHERE run_id=? AND operation_id IN ({placeholders})",
