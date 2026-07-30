@@ -99,7 +99,9 @@ class OperationLedgerMixin(LedgerBase):
                 event_type="DISPATCH_INTENT",
                 payload={"request_sha256": request_sha},
             )
-            return int(cursor.lastrowid)
+            if cursor.lastrowid is None:
+                raise RuntimeError("SQLite did not return an attempt ID")
+            return cursor.lastrowid
 
     def record_dispatch_result(
         self,
@@ -113,6 +115,9 @@ class OperationLedgerMixin(LedgerBase):
         error_message: str | None = None,
     ) -> None:
         now = utc_now()
+        accepted_at: str | None
+        next_reconcile: str | None
+        deadline: str | None
         if outcome == AttemptOutcome.ACCEPTED:
             target = OperationState.ACCEPTED
             accepted_at = iso(now)
@@ -221,8 +226,8 @@ class OperationLedgerMixin(LedgerBase):
                 reason = "primary_missing"
             elif candidate_present:
                 first_absent_at = None
-                deadline = parse_time(row["visibility_deadline"])
-                if deadline and deadline <= now:
+                visibility_deadline = parse_time(row["visibility_deadline"])
+                if visibility_deadline and visibility_deadline <= now:
                     target = OperationState.MANUAL_REVIEW
                     next_reconcile = None
                     reason = "visibility_deadline_exceeded"
