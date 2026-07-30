@@ -33,6 +33,7 @@ dev = [
 
 [project.scripts]
 video-manager = "video_channel_manager.cli.app:run"
+vk-delete-orchestrator = "video_channel_manager.cli.vk_delete:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
