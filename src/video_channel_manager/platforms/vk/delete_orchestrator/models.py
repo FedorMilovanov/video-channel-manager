@@ -173,7 +173,7 @@ class OrchestratorConfig(BaseModel):
     first_reconcile_delay_seconds: int = Field(default=120, ge=30, le=3600)
     absent_confirmation_delay_seconds: int = Field(default=120, ge=30, le=3600)
     visibility_deadline_hours: int = Field(default=24, ge=1, le=168)
-    lease_ttl_seconds: int = Field(default=120, ge=30, le=600)
+    lease_ttl_seconds: int = Field(default=600, ge=60, le=1800)
 
     @property
     def visibility_deadline(self) -> timedelta:
