@@ -38,6 +38,14 @@ class OperationLedgerMixin(LedgerBase):
                 ).fetchall()
             return [dict(row) for row in rows]
 
+    def epoch_planned_operations(self, epoch_id: int) -> list[dict[str, Any]]:
+        with self.connect() as db:
+            rows = db.execute(
+                """SELECT * FROM delete_operations WHERE epoch_id=? AND state=? ORDER BY ordinal""",
+                (epoch_id, OperationState.PLANNED.value),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
     def due_for_reconcile(self, run_id: str, *, limit: int = 100) -> list[dict[str, Any]]:
         values = sorted(state.value for state in UNRESOLVED_OPERATION_STATES)
         placeholders = ",".join("?" for _ in values)
@@ -80,7 +88,7 @@ class OperationLedgerMixin(LedgerBase):
             if not row:
                 raise KeyError(operation_id)
             current = OperationState(str(row["state"]))
-            if current != OperationState.PRECHECKED or int(row["dispatch_count"]) != 0:
+            if current not in {OperationState.PLANNED, OperationState.PRECHECKED} or int(row["dispatch_count"]) != 0:
                 raise RuntimeError(f"Invalid operation transition {current.value} -> dispatch_intent: {operation_id}")
             request_sha = canonical_sha256(request_payload)
             db.execute(
@@ -97,7 +105,7 @@ class OperationLedgerMixin(LedgerBase):
                 run_id=str(row["run_id"]),
                 operation_id=operation_id,
                 event_type="DISPATCH_INTENT",
-                payload={"request_sha256": request_sha},
+                payload={"request_sha256": request_sha, "from_state": current.value},
             )
             if cursor.lastrowid is None:
                 raise RuntimeError("SQLite did not return an attempt ID")
@@ -184,12 +192,14 @@ class OperationLedgerMixin(LedgerBase):
         source: str,
         payload: dict[str, Any],
         absent_confirmation_delay_seconds: int,
+        visibility_deadline_hours: int = 24,
         retry_delay_seconds: int = 300,
     ) -> OperationState:
         now = utc_now()
         with self.connect(immediate=True) as db:
             row = db.execute(
-                "SELECT run_id,state,first_absent_at,visibility_deadline FROM delete_operations WHERE operation_id=?",
+                """SELECT run_id,state,first_absent_at,visibility_deadline,accepted_at,updated_at
+                FROM delete_operations WHERE operation_id=?""",
                 (operation_id,),
             ).fetchone()
             if not row:
@@ -219,6 +229,13 @@ class OperationLedgerMixin(LedgerBase):
                     canonical_sha256(payload),
                 ),
             )
+            persisted_deadline = parse_time(row["visibility_deadline"])
+            if persisted_deadline is None:
+                deadline_base = parse_time(row["accepted_at"]) or parse_time(row["updated_at"]) or now
+                persisted_deadline = deadline_base + timedelta(hours=visibility_deadline_hours)
+                visibility_deadline_value: str | None = iso(persisted_deadline)
+            else:
+                visibility_deadline_value = None
             if not primary_present:
                 target = OperationState.MANUAL_REVIEW
                 first_absent_at = row["first_absent_at"]
@@ -226,8 +243,7 @@ class OperationLedgerMixin(LedgerBase):
                 reason = "primary_missing"
             elif candidate_present:
                 first_absent_at = None
-                visibility_deadline = parse_time(row["visibility_deadline"])
-                if visibility_deadline and visibility_deadline <= now:
+                if persisted_deadline <= now:
                     target = OperationState.MANUAL_REVIEW
                     next_reconcile = None
                     reason = "visibility_deadline_exceeded"
@@ -255,8 +271,18 @@ class OperationLedgerMixin(LedgerBase):
             confirmed_at = iso(now) if target == OperationState.CONFIRMED_DELETED else None
             db.execute(
                 """UPDATE delete_operations SET state=?,first_absent_at=?,confirmed_at=COALESCE(?,confirmed_at),
-                next_reconcile_at=?,updated_at=?,last_error_class=? WHERE operation_id=?""",
-                (target.value, first_absent_at, confirmed_at, next_reconcile, iso(now), reason, operation_id),
+                visibility_deadline=COALESCE(visibility_deadline,?),next_reconcile_at=?,updated_at=?,last_error_class=?
+                WHERE operation_id=?""",
+                (
+                    target.value,
+                    first_absent_at,
+                    confirmed_at,
+                    visibility_deadline_value,
+                    next_reconcile,
+                    iso(now),
+                    reason,
+                    operation_id,
+                ),
             )
             self._event(
                 db,
