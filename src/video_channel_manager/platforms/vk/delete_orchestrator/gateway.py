@@ -49,6 +49,18 @@ class VkDeleteGateway:
     def set_progress_callback(self, callback: ProgressCallback | None) -> None:
         self._progress_callback = callback
 
+    def add_progress_callback(self, callback: ProgressCallback) -> None:
+        previous = self._progress_callback
+        if previous is None:
+            self._progress_callback = callback
+            return
+
+        def combined(stage: str, payload: dict[str, object]) -> None:
+            previous(stage, payload)
+            callback(stage, payload)
+
+        self._progress_callback = combined
+
     def _emit(self, stage: str, **payload: object) -> None:
         if self._progress_callback is not None:
             self._progress_callback(stage, payload)
