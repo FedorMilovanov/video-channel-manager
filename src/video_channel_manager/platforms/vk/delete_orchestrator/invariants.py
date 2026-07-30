@@ -203,8 +203,7 @@ def precheck_operation(
     actual_primary_managed = primary_albums.intersection(managed_album_ids)
     if actual_candidate_managed != frozenset(operation.candidate_managed_album_ids):
         raise OperationConflictError(
-            f"Candidate managed album memberships changed: {operation.operation_id}: "
-            f"{sorted(actual_candidate_managed)}"
+            f"Candidate managed album memberships changed: {operation.operation_id}: {sorted(actual_candidate_managed)}"
         )
     if actual_primary_managed != frozenset(operation.primary_managed_album_ids):
         raise FatalInvariantError(
