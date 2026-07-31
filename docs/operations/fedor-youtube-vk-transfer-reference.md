@@ -18,10 +18,13 @@ This document is the operational source of truth for the remaining YouTube → V
 
 - Community ID: `60805374`
 - VK API owner ID: `-60805374`
+- Canonical community URL: https://vk.com/gospod_bog
 - Stable numeric community URL: https://vk.com/public60805374
+- Video section: https://vk.com/video/@gospod_bog
+- Clips section: https://vk.com/clips/gospod_bog
 - Stored VK account alias used by Video Channel Manager: `legendary-poet`
 
-If the community has a vanity URL, add it here only after resolving it from the live community. Never replace the numeric ID in API operations.
+The live vanity screen name is `gospod_bog`. API operations must still use numeric community ID `60805374` and owner ID `-60805374`; never use the vanity name as an API identity guard.
 
 ### Repository and local paths
 
