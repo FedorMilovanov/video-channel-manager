@@ -28,3 +28,4 @@ Safety and project state:
 6. Do not infer transfer boundaries only from screenshots or relative labels such as “4 months ago”. Build current inventories.
 7. Playlist organization, VK-native descriptions, postponed wall posts, and MP3 extraction happen only after the upload catalog is verified.
 8. Never commit OAuth tokens, VK tokens, downloaded media, local exports, ledgers, logs, backups, or other ignored operational data.
+9. For YouTube Shorts, canonical membership and order come from the flat ID list of `https://www.youtube.com/@fedormilovanov/shorts`. Resolve metadata only for those exact IDs. A resolved uploader/channel mismatch is a review warning, not a reason to abort the entire inventory, and no resolved ID may enter the manifest unless it was present in the canonical flat page list.
