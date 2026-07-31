@@ -15,11 +15,7 @@ def _write_zip(path: Path, files: dict[str, str]) -> None:
 
 
 def _valid_files() -> dict[str, str]:
-    launcher = (
-        '$ErrorActionPreference = "Stop"\n'
-        "$Root = $PSScriptRoot\n"
-        "Write-Host $Root\n"
-    )
+    launcher = '$ErrorActionPreference = "Stop"\n$Root = $PSScriptRoot\nWrite-Host $Root\n'
     manifest = {
         "schema_name": "example",
         "schema_version": "1.0",
