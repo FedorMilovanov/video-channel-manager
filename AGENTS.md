@@ -36,3 +36,15 @@ Safety and project state:
 11. Playlist organization, VK-native descriptions, postponed wall posts, and MP3 extraction happen only after the upload catalog is verified.
 12. Never commit OAuth tokens, VK tokens, downloaded media, local exports, ledgers, logs, backups, or other ignored operational data.
 13. For YouTube Shorts, canonical membership and order come from the flat ID list of `https://www.youtube.com/@fedormilovanov/shorts`. Resolve metadata only for those exact IDs. A resolved uploader/channel mismatch is a review warning, not a reason to abort the entire inventory, and no resolved ID may enter the manifest unless it was present in the canonical flat page list.
+
+Verified 26-video upload execution rules:
+
+14. The authorized long-form upload scope is exactly the 26 operations in the queue with SHA-256 `b9c0268be62ea8fb9281cc9a551ebc5621dfdd4bfeb22a9d8f4b50707baa33ed`; do not expand this scope implicitly.
+15. Upload to community `60805374` only, with `wallpost=0`; do not create albums/playlists or wall posts during the raw upload pass.
+16. Use a durable SQLite ledger. Persist intent before `video.save`, persist returned `owner_id`, `video_id`, and `upload_url` before file upload, and persist the upload-server response before continuing.
+17. Never automatically repeat `video.save` or a file upload after an unknown transport outcome. Reconcile the exact known VK ID first; if no exact ID is known, stop for review.
+18. Perform a complete live VK preflight before the first upload and a recent live preflight before every subsequent source item. Skip items that have appeared since the signed queue was built.
+19. Download one source at a time from the owned public YouTube channel, prefer MP4/H.264/AAC up to 1080p, transcode only when needed, and remove temporary media after VK has accepted and exposed the exact new VK ID.
+20. Use YouTube ID `nNf8jaSeUKI` as the short canary, then process remaining queue items oldest-to-newest. Canary failure stops the batch; a later clean retry resumes from the same ledger.
+21. A VK video that is visible but still processing is not re-uploaded. Record its exact VK ID as `processing` and reconcile it on the next run.
+22. The temporary VK description must include the exact source YouTube URL and YouTube ID so later matching is deterministic. Editorial rewriting happens after transfer verification.
