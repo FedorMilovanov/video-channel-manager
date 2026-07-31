@@ -110,6 +110,14 @@ Until the result is inspected, status is:
 
 Do not infer completion from terminal silence, VK processing messages, or elapsed time.
 
+## GitHub tracking
+
+- [Issue #31 — verify the 26-video upload result and reconcile the ledger](https://github.com/FedorMilovanov/video-channel-manager/issues/31)
+- [Issue #32 — inventory the real VK Clips surface and derive the exact Shorts queue](https://github.com/FedorMilovanov/video-channel-manager/issues/32)
+- [Issue #33 — organize and publish the verified VK catalog after transfer completion](https://github.com/FedorMilovanov/video-channel-manager/issues/33)
+
+Issue #33 is blocked until issues #31 and #32 have no silent unknown outcomes and their exact target IDs/manifests are recorded.
+
 ## Shorts status
 
 The preliminary matcher reported:
