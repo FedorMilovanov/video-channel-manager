@@ -1,0 +1,3 @@
+- [Current state](current-state.md)
+- [Postmortem](2026-07-31-youtube-vk-transfer-postmortem.md)
+- [Artifact standard](operational-artifact-standard.md)
