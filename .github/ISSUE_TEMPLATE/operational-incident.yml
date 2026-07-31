@@ -67,8 +67,8 @@ body:
       label: Is automatic retry known to be safe?
       options:
         - unknown — reconcile first
-        - no
-        - yes
+        - "no"
+        - "yes"
     validations:
       required: true
   - type: textarea
