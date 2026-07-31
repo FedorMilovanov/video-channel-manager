@@ -144,8 +144,7 @@ def verify_bundle(
 
         if result.total_uncompressed_bytes > max_uncompressed_bytes:
             result.errors.append(
-                "archive uncompressed size exceeds limit: "
-                f"{result.total_uncompressed_bytes} > {max_uncompressed_bytes}"
+                f"archive uncompressed size exceeds limit: {result.total_uncompressed_bytes} > {max_uncompressed_bytes}"
             )
 
         normalized_to_info: dict[str, zipfile.ZipInfo] = {}
@@ -206,18 +205,14 @@ def verify_bundle(
                 else:
                     if "$PSScriptRoot" not in launcher_text:
                         result.errors.append(
-                            "PowerShell entrypoint is not self-locating with $PSScriptRoot: "
-                            f"{normalized_entrypoint}"
+                            f"PowerShell entrypoint is not self-locating with $PSScriptRoot: {normalized_entrypoint}"
                         )
                     if "$ErrorActionPreference" not in launcher_text:
                         result.warnings.append(
-                            "PowerShell entrypoint does not set $ErrorActionPreference: "
-                            f"{normalized_entrypoint}"
+                            f"PowerShell entrypoint does not set $ErrorActionPreference: {normalized_entrypoint}"
                         )
 
-        manifest_names = sorted(
-            name for name in names if PurePosixPath(name).name.casefold() == "manifest.json"
-        )
+        manifest_names = sorted(name for name in names if PurePosixPath(name).name.casefold() == "manifest.json")
         for manifest_name in manifest_names:
             try:
                 payload = json.loads(archive.read(manifest_name).decode("utf-8-sig"))
@@ -226,14 +221,9 @@ def verify_bundle(
                 continue
             secret_paths = _find_secret_json_values(payload)
             for secret_path in secret_paths:
-                result.errors.append(
-                    "manifest contains a non-empty secret-like field: "
-                    f"{manifest_name}:{secret_path}"
-                )
+                result.errors.append(f"manifest contains a non-empty secret-like field: {manifest_name}:{secret_path}")
 
-        checksum_names = sorted(
-            name for name in names if PurePosixPath(name).name == "SHA256SUMS.txt"
-        )
+        checksum_names = sorted(name for name in names if PurePosixPath(name).name == "SHA256SUMS.txt")
         for checksum_name in checksum_names:
             try:
                 checksum_rows = _parse_sha256sums(archive.read(checksum_name).decode("utf-8-sig"))
@@ -243,29 +233,22 @@ def verify_bundle(
             checksum_dir = PurePosixPath(checksum_name).parent
             for expected_digest, listed_path in checksum_rows:
                 candidate = (
-                    PurePosixPath(listed_path)
-                    if checksum_dir == PurePosixPath(".")
-                    else checksum_dir / listed_path
+                    PurePosixPath(listed_path) if checksum_dir == PurePosixPath(".") else checksum_dir / listed_path
                 ).as_posix()
                 if candidate not in names:
-                    result.errors.append(
-                        f"checksum references missing member: {checksum_name} -> {candidate}"
-                    )
+                    result.errors.append(f"checksum references missing member: {checksum_name} -> {candidate}")
                     continue
                 actual_digest = hashlib.sha256(archive.read(candidate)).hexdigest()
                 if actual_digest != expected_digest:
                     result.errors.append(
-                        f"checksum mismatch for {candidate}: "
-                        f"expected {expected_digest}, actual {actual_digest}"
+                        f"checksum mismatch for {candidate}: expected {expected_digest}, actual {actual_digest}"
                     )
 
     return result
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="Verify a user-facing operational ZIP before handoff."
-    )
+    parser = argparse.ArgumentParser(description="Verify a user-facing operational ZIP before handoff.")
     parser.add_argument("archive", type=Path)
     parser.add_argument("--entrypoint")
     parser.add_argument("--require", action="append", default=[])

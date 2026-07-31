@@ -1,0 +1,80 @@
+name: Operational incident
+description: Report a failed or ambiguous YouTube/VK operational run
+title: "[Operational incident] "
+labels: []
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not paste tokens, OAuth secrets, downloaded media, or private logs containing credentials.
+  - type: input
+    id: operation
+    attributes:
+      label: Operation
+      placeholder: YouTube → VK upload, VK cleanup, Shorts inventory, etc.
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Mode
+      options:
+        - read-only
+        - dry-run
+        - canary
+        - execute
+    validations:
+      required: true
+  - type: textarea
+    id: identities
+    attributes:
+      label: Exact identities
+      description: Source channel ID/URL, target community/owner ID/URL, and local account alias.
+    validations:
+      required: true
+  - type: textarea
+    id: immutable-inputs
+    attributes:
+      label: Immutable inputs
+      description: Manifest path/SHA-256 and source/target snapshot IDs.
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Exact error and last successful stage
+      description: Include exact error text and whether remote bytes may already have been accepted.
+    validations:
+      required: true
+  - type: textarea
+    id: counts
+    attributes:
+      label: Counts
+      description: Planned, attempted, accepted, processing, verified, rejected, and unknown.
+    validations:
+      required: true
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Artifact paths
+      description: Ledger, result JSON, append-only log, and unresolved report.
+    validations:
+      required: true
+  - type: dropdown
+    id: retry
+    attributes:
+      label: Is automatic retry known to be safe?
+      options:
+        - unknown — reconcile first
+        - "no"
+        - "yes"
+    validations:
+      required: true
+  - type: textarea
+    id: next-action
+    attributes:
+      label: Exact next action
+      description: State the reconciliation or recovery action and evidence required.
+    validations:
+      required: true
