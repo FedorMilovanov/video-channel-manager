@@ -1,6 +1,8 @@
 name: Operational incident
-about: Report a failed or ambiguous YouTube/VK operational run
+description: Report a failed or ambiguous YouTube/VK operational run
+title: "[Operational incident] "
 labels: []
+assignees: []
 body:
   - type: markdown
     attributes:
