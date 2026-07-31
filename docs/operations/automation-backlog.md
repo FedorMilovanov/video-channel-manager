@@ -2,6 +2,14 @@
 
 This backlog converts the 2026-07-31 lessons into durable repository improvements.
 
+## Active issue tracking
+
+- [#31 — Verify the 26-video upload result and reconcile the ledger](https://github.com/FedorMilovanov/video-channel-manager/issues/31)
+- [#32 — Inventory the real VK Clips surface and derive the exact Shorts queue](https://github.com/FedorMilovanov/video-channel-manager/issues/32)
+- [#33 — Organize and publish the verified VK catalog after transfer completion](https://github.com/FedorMilovanov/video-channel-manager/issues/33)
+
+Issue #33 is blocked by #31 and #32.
+
 ## P0 — required before the next operational ZIP handoff
 
 - [x] Add root `AGENTS.md` with exact identities and current verified state.
@@ -13,6 +21,8 @@ This backlog converts the 2026-07-31 lessons into durable repository improvement
 - [ ] Run the bundle verifier against the next produced ZIP and retain its JSON output beside the handoff artifact.
 
 ## P1 — complete the current transfer safely
+
+Tracked by issues #31 and #32.
 
 - [ ] Inspect `upload-result.json` for the 26-item long-form queue.
 - [ ] Reconcile accepted, processing, and unknown ledger records against live VK.
@@ -31,6 +41,8 @@ This backlog converts the 2026-07-31 lessons into durable repository improvement
 - [ ] Add reusable checkpoint discovery so successful audits are reused automatically.
 
 ## P3 — catalog organization after transfer verification
+
+Tracked by issue #33 and blocked until issues #31 and #32 are resolved.
 
 - [ ] Build VK playlist taxonomy and exact placement plan.
 - [ ] Repair transfer title artifacts such as trailing `()`.

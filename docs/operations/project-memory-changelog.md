@@ -12,7 +12,22 @@ This file records durable updates to the repository's operational memory.
 - `docs/operations/operational-artifact-standard.md` defining ZIP, launcher, manifest, ledger, resume, postcondition, and handoff requirements.
 - `docs/operations/README.md` as an index for operational documentation.
 - `scripts/verify_operational_bundle.py` for pre-handoff ZIP validation.
-- Regression tests for valid bundles, nested roots, missing entrypoints, path traversal, secret leakage, and checksum mismatches.
+- Regression tests for valid bundles, nested roots, missing entrypoints, path traversal, secret leakage, checksum mismatches, and critical operational-memory references.
+- Pull-request checklist, operational incident issue form, run-report template, incident-report template, and decision-log template.
+- Prioritized automation backlog.
+
+### Repository workflow completed
+
+- PR #30, `Complete operational memory and reporting workflow`, passed CI on Python 3.11, 3.12, and 3.13 and was squash-merged into `main`.
+- Merge commit: `dcc91326ab50f9ead0a97f0e3aa7cae8a1ff652f`.
+
+### Active operational issues
+
+- [Issue #31 — verify the 26-video upload result and reconcile the ledger](https://github.com/FedorMilovanov/video-channel-manager/issues/31)
+- [Issue #32 — inventory the real VK Clips surface and derive the exact Shorts queue](https://github.com/FedorMilovanov/video-channel-manager/issues/32)
+- [Issue #33 — organize and publish the verified VK catalog after transfer completion](https://github.com/FedorMilovanov/video-channel-manager/issues/33)
+
+Issue #33 is explicitly blocked by #31 and #32.
 
 ### Current operational status
 
