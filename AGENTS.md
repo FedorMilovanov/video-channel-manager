@@ -15,12 +15,25 @@ These operational documents are the source of truth and take priority over chat 
 - YouTube Shorts: https://www.youtube.com/@fedormilovanov/shorts
 - public YouTube channel ID resolved from canonical pages: `UCeSJsC6go2c9pdJCuUI1BYA`
 - stored OAuth alias currently reports a different/incomplete channel ID: `UC-78ys2S3cQ3lpqgXfo-SvQ`
-- VK community: https://vk.com/gospod_bog
-- VK videos: https://vk.com/video/@gospod_bog
-- VK clips: https://vk.com/clips/gospod_bog
+- VK community: https://vk.com/the_lord_god_is_my_strength
+- VK Video: https://vkvideo.ru/@the_lord_god_is_my_strength
+- VK Clips canonical URL: not recorded until the live Clips surface is verified; do not invent it from a vanity name
 - VK community ID: `60805374`
 - VK API owner ID: `-60805374`
 - local account alias: `legendary-poet`
+- Telegram: https://t.me/lordchrist
+- website: https://gospod-bog.ru
+- Rutube: https://rutube.ru/channel/1876662
+- Facebook group: https://facebook.com/groups/116164165395881
+
+## Branch discipline
+
+- Do not create throwaway, status-only, or duplicate branches.
+- Small, low-risk documentation, link, configuration, and narrowly scoped maintenance changes go directly to `main`.
+- Use a branch only for a substantial or risky code change that genuinely benefits from isolated CI or review.
+- Keep at most one active working branch for the current task.
+- Merge it promptly after green CI and do not open another branch for follow-up documentation.
+- Never create branches merely to record progress, add pointers, or split one operational task into artificial PRs.
 
 ## Current verified state
 
