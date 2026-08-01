@@ -1,13 +1,16 @@
 # Two-project link audit — 2026-08-01
 
+Updated after owner confirmation of The Legendary Poet website, VK identities, VK Clips route, and VK Video author-cabinet routes.
+
 ## Purpose
 
-Verify the public identities and links for the two separate projects and identify repository places where aliases, historical URLs, or project links were mixed.
+Verify the public identities and links for the two separate projects and identify repository places where aliases, historical URLs, operational URLs, or project links were mixed.
 
 Status vocabulary:
 
 - `verified` — confirmed by the owner, live project page, local provider account output, or current published project metadata;
 - `compatibility` — currently published or historically used, but not the preferred new viewer-facing form;
+- `operational-admin` — valid only for an authenticated operator workflow and forbidden in public output;
 - `operational-history` — retained only to explain old artifacts and reports;
 - `unverified` — do not place into a new executable plan until live-confirmed.
 
@@ -21,6 +24,8 @@ Two separate OAuth aliases are correct:
 - `legendary-poet` → The Legendary Poet, write-capable on 2026-08-01.
 
 For theological-channel writes, reauthorize `fedor-milovanov` with `--write --force` and require exact channel ID `UCeSJsC6go2c9pdJCuUI1BYA`.
+
+For a The Legendary Poet write, require exact channel ID `UC-78ys2S3cQ3lpqgXfo-SvQ`.
 
 ### VK
 
@@ -70,57 +75,66 @@ These may remain in postmortems, snapshots, or old reports as evidence. Do not i
 | Surface | URL or ID | Status | Evidence/decision |
 | --- | --- | --- | --- |
 | YouTube | `https://www.youtube.com/@TheLegendaryPoet` | verified | local OAuth title/alias and published project references |
-| YouTube numeric channel ID | not recorded | unverified | run `youtube channels` before any new write plan |
-| VK community | `https://vk.com/thelegendarypoet` | verified/published | current Rutube project descriptions |
-| VK.ru equivalent | not recorded | unverified | do not infer automatically |
-| VK Video | not recorded | unverified | do not construct from the community handle without a live check |
-| VK numeric community/owner IDs | not recorded in current CLI output | unverified | live `vk communities` output required |
-| Telegram | `https://t.me/thelegendarypoet` | verified/published | current Rutube project descriptions |
+| YouTube channel ID | `UC-78ys2S3cQ3lpqgXfo-SvQ` | verified | resolved local OAuth identity and current code profile |
+| Website | `https://thelegendarypoet.ru/` | verified | owner-confirmed project site |
+| VK community | `https://vk.ru/thelegendarypoet` | verified | owner-confirmed canonical URL |
+| VK compatibility | `https://vk.com/thelegendarypoet` | compatibility | owner-confirmed working route and existing published route |
+| VK Clips | `https://vkvideo.ru/@thelegendarypoet/clips` | verified | owner-confirmed public clips route |
+| VK community number | `club235216998` | verified | owner-provided VK community number |
+| VK community ID | `235216998` | verified | numeric form of the confirmed community number |
+| VK owner ID | `-235216998` | verified | VK API owner form for the confirmed community |
+| Telegram | `https://t.me/thelegendarypoet` | verified/published | current project descriptions |
 | Rutube | `https://rutube.ru/channel/74579453/` | verified | active project channel |
-| Website | `https://thelegendarypoet.ru/` | unverified externally | repository legacy allowlist only; confirm ownership and availability before a new mass rollout |
+| VK Video dashboard | `https://cabinet.vkvideo.ru/dashboard/@thelegendarypoet` | operational-admin | owner-confirmed author dashboard; never public |
+| VK Video published clips view | `https://cabinet.vkvideo.ru/dashboard/@thelegendarypoet?filterPreset=published&section=video_my_content&subsection=video_my_content_clips` | operational-admin | owner-confirmed filtered cabinet route; never public |
 
-### Temporary compact footer
+### Canonical public footer
 
-Until missing identities are confirmed, use only:
+Use only links required for the target surface:
 
-- `https://vk.com/thelegendarypoet`
+- `https://thelegendarypoet.ru/`
 - `https://t.me/thelegendarypoet`
+- `https://vk.ru/thelegendarypoet`
 - `https://rutube.ru/channel/74579453/`
 
-Do not substitute the theological website or theological VK route.
+For short-form promotion, this additional public route is allowed:
+
+- `https://vkvideo.ru/@thelegendarypoet/clips`
+
+The compatibility route `https://vk.com/thelegendarypoet` may remain in historical content or migration input, but new canonical output should prefer the `vk.ru` form.
+
+The two `cabinet.vkvideo.ru` routes are operational only. They must never be rendered into public descriptions, comments, posts, footers, or promotion blocks.
 
 ## Repository findings
 
-### Fixed directly in `main`
+### Resolved in `main`
 
 - Added a canonical two-project registry.
-- Corrected the current theological VK URL to `vk.ru`.
+- Corrected the theological VK URL to the canonical `vk.ru` form.
 - Documented two YouTube OAuth aliases and one shared VK user token.
-- Updated root agent instructions, current state, operations index, and project-memory changelog.
+- Replaced the old global editorial project-link model with project-specific profiles and cross-project rejection.
+- Added regression coverage for separate project identities.
+- Recorded The Legendary Poet website as verified.
+- Recorded The Legendary Poet YouTube channel ID.
+- Recorded The Legendary Poet canonical and compatibility VK URLs.
+- Recorded The Legendary Poet VK community and owner IDs.
+- Recorded the public VK Clips route.
+- Classified VK Video cabinet URLs separately from public links.
 
-### Code defect identified
+### Remaining implementation synchronization
 
-The unified editorial validator used one global `APPROVED_PROJECT_URLS` set containing only The Legendary Poet links. This caused two risks:
+The canonical documentation now prefers `https://vk.ru/thelegendarypoet` and permits `https://vkvideo.ru/@thelegendarypoet/clips` for short-form promotion. Source-code allowlists and validators must be checked and synchronized before an executable plan uses those two newly confirmed routes.
 
-1. theological records could not use their own project links through the generic pipeline;
-2. simply adding all links to one union would allow cross-project mixing.
+The author-cabinet routes must not be added to public renderer allowlists.
 
-A guarded code change is being prepared in `agent/project-link-profiles` to:
-
-- resolve `project_key` from the explicit record and registered channel ID;
-- use exactly one project link profile;
-- reject a URL registered to the other project even when placed in a source ledger;
-- retain compatibility for existing poet records;
-- add regression tests for both profiles.
-
-### Documentation ambiguity identified
+### Documentation scope
 
 The following documents are The Legendary Poet-specific despite generic-looking filenames:
 
 - `docs/youtube-description-rendering-standard.md`;
 - `docs/vk-description-rendering-standard.md`.
 
-They must not be applied to Господь Бог — Сила Моя as generic defaults. Project-specific scope labels and a theological description profile are required.
+They must not be applied to Господь Бог — Сила Моя as generic defaults. Project-specific scope labels and the theological description profile remain mandatory.
 
 ## Fail-closed rules
 
@@ -130,3 +144,5 @@ They must not be applied to Господь Бог — Сила Моя as generic
 4. A YouTube write token may be used only when the resolved channel ID equals the plan channel ID.
 5. A description/comment may use only one project footer profile.
 6. Exact playlist URLs must come from live membership, a reviewed plan, or named source evidence.
+7. Public and operational/admin routes must remain separate.
+8. `cabinet.vkvideo.ru` URLs are never valid public-footer links.
