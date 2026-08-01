@@ -1,0 +1,114 @@
+# The Legendary Poet — профиль описаний и ссылок
+
+Project key: `legendary-poet`
+
+Этот профиль относится только к проекту **The Legendary Poet — Легендарный Поэт**. Он не должен подмешивать сайт, YouTube, VK, Telegram, Rutube, плейлисты или идентификаторы проекта **Господь Бог — Сила Моя**.
+
+## Точные идентификаторы
+
+### YouTube
+
+- Название канала: `The Legendary Poet`
+- Handle: `@TheLegendaryPoet`
+- Канал: https://www.youtube.com/@TheLegendaryPoet
+- Видео: https://www.youtube.com/@TheLegendaryPoet/videos
+- Shorts: https://www.youtube.com/@TheLegendaryPoet/shorts
+- Channel ID: `UC-78ys2S3cQ3lpqgXfo-SvQ`
+- OAuth alias: `legendary-poet`
+
+### VK
+
+- Сообщество: `The Legendary Poet - Легендарный Поэт`
+- Канонический публичный адрес: https://vk.ru/thelegendarypoet
+- Совместимый адрес: https://vk.com/thelegendarypoet
+- Публичная страница клипов: https://vkvideo.ru/@thelegendarypoet/clips
+- Номер сообщества в интерфейсе VK: `club235216998`
+- Community ID: `235216998`
+- API owner ID: `-235216998`
+- Общий локальный VK token alias: `legendary-poet`
+
+Общий alias токена не определяет проект. Любая VK-операция обязана привязать `project_key`, `community_id` и `owner_id`.
+
+## Подтверждённые публичные ссылки
+
+- Сайт: https://thelegendarypoet.ru/
+- Telegram: https://t.me/thelegendarypoet
+- VK: https://vk.ru/thelegendarypoet
+- VK compatibility: https://vk.com/thelegendarypoet
+- VK Clips: https://vkvideo.ru/@thelegendarypoet/clips
+- Rutube: https://rutube.ru/channel/74579453/
+
+## Служебные ссылки кабинета VK Видео
+
+Эти адреса предназначены только для владельца и оператора. Их нельзя вставлять в публичные описания, комментарии, посты, футеры, манифесты для зрителей или рекламные блоки.
+
+- Кабинет автора: https://cabinet.vkvideo.ru/dashboard/@thelegendarypoet
+- Опубликованные клипы в кабинете: https://cabinet.vkvideo.ru/dashboard/@thelegendarypoet?filterPreset=published&section=video_my_content&subsection=video_my_content_clips
+
+## Канонический публичный футер
+
+Для новых описаний предпочтителен такой набор:
+
+```text
+🌐 Сайт проекта: https://thelegendarypoet.ru/
+Telegram: https://t.me/thelegendarypoet
+Сообщество проекта в VK: https://vk.ru/thelegendarypoet
+RUTUBE: https://rutube.ru/channel/74579453/
+```
+
+Для роликов и публикаций, которые продвигают именно короткий формат, можно добавить:
+
+```text
+VK Клипы: https://vkvideo.ru/@thelegendarypoet/clips
+```
+
+Адрес `https://vk.com/thelegendarypoet` остаётся рабочим и допустим как compatibility/migration input, но новый канонический вывод должен предпочитать `https://vk.ru/thelegendarypoet`.
+
+## Правила YouTube-описаний
+
+1. Первый абзац должен точно описывать произведение, автора, исторический материал, музыкальную адаптацию или визуальный эксперимент.
+2. Нельзя выдумывать даты, обстоятельства создания, цитаты, архивные факты, посвящения или авторские намерения.
+3. URL остаются обычным текстом.
+4. Плейлисты добавляются только по точному членству или из отдельно проверенного плана.
+5. Ссылки проекта Господь Бог — Сила Моя запрещены.
+6. Кабинетные ссылки `cabinet.vkvideo.ru` запрещены.
+
+## Правила VK Видео и VK Клипов
+
+VK-описания являются простым текстом. Перед публикацией нужно снять неподдерживаемые YouTube-маркеры форматирования, сохранив слова, пунктуацию, абзацы, ссылки, хештеги и проверенные таймкоды.
+
+Для обычного VK Видео можно использовать сайт, Telegram, канонический VK и Rutube. Публичную ссылку на VK Clips добавлять только там, где она действительно помогает зрителю перейти к коротким роликам.
+
+Внутри самого VK не нужно дублировать несколько вариантов одного и того же сообщества.
+
+## Обязательные guards плана
+
+Каждый исполняемый план для проекта должен включать или привязывать:
+
+```text
+project_key: legendary-poet
+youtube_channel_id: UC-78ys2S3cQ3lpqgXfo-SvQ
+vk_community_id: 235216998
+vk_owner_id: -235216998
+link_profile: legendary-poet
+```
+
+Перед состоянием `ready` preflight обязан отклонить:
+
+- другой YouTube channel ID;
+- другое VK community ID или owner ID;
+- любую зарегистрированную ссылку проекта Господь Бог — Сила Моя;
+- неизвестный сайт, Telegram, VK, VK Video, Clips или Rutube маршрут;
+- кабинетный URL в публичном поле;
+- выдуманную ссылку на плейлист;
+- cross-project promotion без отдельного явного разрешения.
+
+## Источник истины
+
+Полный реестр двух проектов находится в:
+
+```text
+docs/operations/project-identity-registry.md
+```
+
+При расхождении этот реестр имеет приоритет, а операция останавливается до синхронизации документации, исходного allowlist и валидатора.
