@@ -15,7 +15,7 @@ param(
 $ErrorActionPreference = "Stop"
 $PSNativeCommandUseErrorActionPreference = $false
 
-$Script = Join-Path $Repo "scripts\vk_shorts_reset.py"
+$Script = Join-Path $Repo "scripts\vk_shorts_reset_20260801.py"
 $VenvPython = Join-Path $Repo ".venv\Scripts\python.exe"
 $Python = if (Test-Path -LiteralPath $VenvPython -PathType Leaf) {
     $VenvPython
@@ -25,12 +25,12 @@ else {
 }
 
 if (-not (Test-Path -LiteralPath $Script -PathType Leaf)) {
-    throw "Не найден исполнитель: $Script. Сначала выполните git pull."
+    throw "Не найден исправленный исполнитель: $Script. Сначала выполните git pull."
 }
 
 $env:VCM_DATA_DIR = Join-Path $Repo "data"
 $env:PYTHONPATH = Join-Path $Repo "src"
-$OperationRoot = Join-Path $Repo "data\vk-shorts-reset-20260801"
+$OperationRoot = Join-Path $Repo "data\vk-shorts-reset-20260801-v2"
 New-Item -ItemType Directory -Path $OperationRoot -Force | Out-Null
 $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $Log = Join-Path $OperationRoot ("{0}-{1}.log" -f $Mode.ToLowerInvariant(), $Timestamp)
@@ -38,7 +38,7 @@ $Log = Join-Path $OperationRoot ("{0}-{1}.log" -f $Mode.ToLowerInvariant(), $Tim
 function Get-ConfirmationToken {
     $Summary = Join-Path $OperationRoot "plan-summary.json"
     if (-not (Test-Path -LiteralPath $Summary -PathType Leaf)) {
-        throw "Нет plan-summary.json. Сначала запустите -Mode Prepare."
+        throw "Нет исправленного plan-summary.json. Сначала запустите -Mode Prepare."
     }
     $Payload = Get-Content -LiteralPath $Summary -Raw -Encoding UTF8 | ConvertFrom-Json
     $Token = [string]$Payload.confirmation_token
@@ -113,11 +113,11 @@ try {
     $TranscriptStarted = $true
 
     Write-Host ""
-    Write-Host "VK SHORTS RESET — $Mode" -ForegroundColor Cyan
+    Write-Host "VK SHORTS RESET V2 — $Mode" -ForegroundColor Cyan
     Write-Host "Project: Господь Бог — Сила Моя" -ForegroundColor Cyan
     Write-Host "Community: 60805374" -ForegroundColor Cyan
     Write-Host "Сохраняем стену до post_id 12400 включительно." -ForegroundColor Green
-    Write-Host "Wallpost при новых загрузках: отключён." -ForegroundColor Green
+    Write-Host "Новые загрузки не публикуются на стене." -ForegroundColor Green
     Write-Host "Log: $Log" -ForegroundColor Cyan
     Write-Host ""
 
