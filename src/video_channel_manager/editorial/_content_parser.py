@@ -6,6 +6,7 @@ from typing import Any
 from video_channel_manager.editorial._content_types import (
     CANONICAL_SCHEMA_NAME,
     CANONICAL_SCHEMA_VERSION,
+    LEGACY_YOUTUBE_SCHEMA_NAME,
     EditorialContentRecord,
     FactBlock,
     LinkBlock,
@@ -13,6 +14,10 @@ from video_channel_manager.editorial._content_types import (
     SourceLedgerEntry,
 )
 from video_channel_manager.editorial._content_validation import validate_content_record
+from video_channel_manager.editorial._project_profiles import (
+    LEGENDARY_POET,
+    resolve_project_key,
+)
 
 
 def _string_list(value: object) -> list[str]:
@@ -87,6 +92,13 @@ def parse_content_record(
     variation_key = str(payload["variation_key"]).strip()
     content_id = str(payload.get("content_id") or "").strip() or video_id or variation_key
     schema_name = str(payload.get("schema_name") or "")
+    project_key = (
+        resolve_project_key(
+            payload,
+            legacy_default=schema_name == LEGACY_YOUTUBE_SCHEMA_NAME,
+        )
+        or LEGENDARY_POET
+    )
     return EditorialContentRecord(
         schema_name=CANONICAL_SCHEMA_NAME,
         schema_version=CANONICAL_SCHEMA_VERSION,
@@ -115,6 +127,7 @@ def parse_content_record(
         rendering_metadata=rendering_metadata,
         platform_suitability=MappingProxyType(suitability),
         platform_targets=platform_targets,
+        project_key=project_key,
     )
 
 

@@ -1,6 +1,7 @@
 {
   "schema_name": "video-manager.editorial-content",
   "schema_version": 1,
+  "project_key": "legendary-poet",
   "content_id": "tyutchev-night-sea",
   "status": "approved",
   "profile": "long_form_poetry",

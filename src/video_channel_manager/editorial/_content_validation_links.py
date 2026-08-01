@@ -5,7 +5,7 @@ from typing import Any
 from video_channel_manager.editorial._content_types import (
     ALLOWED_LINK_KINDS,
     ALLOWED_SURFACES,
-    APPROVED_PROJECT_URLS,
+    LEGACY_YOUTUBE_SCHEMA_NAME,
 )
 from video_channel_manager.editorial._content_urls import (
     balanced_emphasis,
@@ -16,6 +16,22 @@ from video_channel_manager.editorial._content_validation_support import (
     _string_field,
     _validate_string_list,
 )
+from video_channel_manager.editorial._project_profiles import (
+    PROJECT_LINK_PROFILES,
+    resolve_project_key,
+)
+
+
+def _canonical_profile_urls(project_key: str | None) -> set[str]:
+    if project_key is None:
+        return set()
+    return {canonicalize_url(item) for item in PROJECT_LINK_PROFILES[project_key]}
+
+
+def _foreign_project_urls(project_key: str | None) -> set[str]:
+    return {
+        canonicalize_url(item) for key, urls in PROJECT_LINK_PROFILES.items() if key != project_key for item in urls
+    }
 
 
 def validate_links(payload: dict[str, Any], *, source_urls: set[str]) -> list[str]:
@@ -25,8 +41,11 @@ def validate_links(payload: dict[str, Any], *, source_urls: set[str]) -> list[st
         errors.append("links must contain 1-5 compact inline links")
         raw_links = []
     link_kinds: list[str] = []
-    approved_urls = {canonicalize_url(item) for item in APPROVED_PROJECT_URLS}
-    allowed_urls = source_urls | approved_urls
+    legacy_default = payload.get("schema_name") == LEGACY_YOUTUBE_SCHEMA_NAME
+    project_key = resolve_project_key(payload, legacy_default=legacy_default)
+    project_urls = _canonical_profile_urls(project_key)
+    foreign_urls = _foreign_project_urls(project_key)
+    allowed_urls = source_urls | project_urls
     for index, raw_value in enumerate(raw_links):
         if not isinstance(raw_value, dict):
             errors.append(f"links[{index}] must be an object")
@@ -64,7 +83,12 @@ def validate_links(payload: dict[str, Any], *, source_urls: set[str]) -> list[st
         except ValueError as exc:
             errors.append(f"{location}.url: {exc}")
             canonical_url = ""
-        if canonical_url and canonical_url not in allowed_urls:
+        if canonical_url and canonical_url in foreign_urls:
+            errors.append(f"{location}.url belongs to another project profile: {canonical_url}")
+        elif canonical_url and kind in {"site", "vk"} and canonical_url not in project_urls:
+            selected = project_key or "unresolved"
+            errors.append(f"{location}.url is not approved for project {selected}: {canonical_url}")
+        elif canonical_url and canonical_url not in allowed_urls:
             errors.append(f"{location}.url is absent from sources/project link map: {canonical_url}")
         platforms_value = raw_value.get("platforms")
         platforms = (
