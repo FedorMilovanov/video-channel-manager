@@ -4,6 +4,20 @@ This file records durable updates to the repository's operational memory.
 
 ## 2026-08-01
 
+### The Legendary Poet identities and links confirmed
+
+- Confirmed the project website: `https://thelegendarypoet.ru/`.
+- Confirmed the YouTube channel ID: `UC-78ys2S3cQ3lpqgXfo-SvQ`.
+- Confirmed the canonical VK route: `https://vk.ru/thelegendarypoet`.
+- Retained `https://vk.com/thelegendarypoet` as a working compatibility/migration route.
+- Confirmed VK community number `club235216998`, community ID `235216998`, and API owner ID `-235216998`.
+- Confirmed the public VK Clips route: `https://vkvideo.ru/@thelegendarypoet/clips`.
+- Confirmed the VK Video author dashboard and filtered published-clips view as operational/admin routes.
+- Explicitly prohibited `cabinet.vkvideo.ru` URLs in public descriptions, comments, posts, footers, and promotion blocks.
+- Added `docs/operations/legendary-poet-description-profile.md`.
+- Updated the canonical project registry, link audit, and operations index.
+- Recorded that source-code link profiles and validators still require synchronization before the newly confirmed `vk.ru` and VK Clips routes are used by an executable plan.
+
 ### Two-project identity separation
 
 - Added `docs/operations/project-identity-registry.md` as the canonical registry for the two distinct projects:
@@ -20,12 +34,15 @@ This file records durable updates to the repository's operational memory.
   - shared VK token alias `legendary-poet`.
 - Replaced the current canonical theological VK community link with `https://vk.ru/the_lord_god_is_my_strength` and retained the published `vk.com` form only as a compatibility URL.
 - Registered the current compact footer links for the theological project: website, Telegram, VK, VK Video, and Rutube.
-- Marked the poet-project website and numeric VK identity as unverified rather than preserving unsupported assumptions.
+- Initially marked the poet-project website and numeric VK identity as unverified; this was superseded later the same day by direct owner confirmation recorded above.
 - Updated root `AGENTS.md`, `docs/operations/current-state.md`, and the operations index so future work must bind `project_key`, exact provider IDs, and a project-specific link profile.
 
-### Identified code-level follow-up
+### Project-specific editorial profiles
 
-The unified editorial code currently contains a global project-link allowlist centered on The Legendary Poet. It must be replaced with project-specific link profiles before the theological project's descriptions or comments use that generic pipeline. A dedicated guarded code change is being prepared separately.
+- Replaced the old global editorial link model with project-specific link profiles.
+- Added cross-project link rejection and regression coverage.
+- Added a dedicated theological description profile.
+- Added a dedicated The Legendary Poet description profile after the missing identities were confirmed.
 
 ## 2026-07-31
 
@@ -56,7 +73,7 @@ Issue #33 is explicitly blocked by #31 and #32.
 
 ### Current operational status
 
-- VK duplicate cleanup: complete and verified (`403` deleted, `0` unresolved).
+- VK duplicate cleanup: complete and verified (`403 confirmed_deleted`, `0 planned`, `0 unresolved`).
 - Public YouTube inventory: `1781` items (`1673` long-form, `108` Shorts).
 - VK ordinary-video inventory after cleanup: `2879`.
 - Verified long-form upload queue: `26` items.
