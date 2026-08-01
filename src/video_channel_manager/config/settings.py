@@ -3,6 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
+from dotenv import dotenv_values
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -36,6 +37,9 @@ class AppSettings(BaseSettings):
 
     vk_app_id: str | None = None
     vk_access_token: SecretStr | None = None
+    vk_shared_env_file: Path = Field(
+        default_factory=lambda: Path.home() / "Projects" / "mp3telegrambot" / ".env"
+    )
     vk_api_version: str = "5.199"
 
     @field_validator("environment")
@@ -58,6 +62,26 @@ class AppSettings(BaseSettings):
         (self.data_dir / "vk").mkdir(exist_ok=True)
 
 
+def _read_shared_vk_access_token(path: Path) -> SecretStr | None:
+    """Read VK_API_TOKEN from an external .env without logging secret material."""
+
+    try:
+        values = dotenv_values(path, encoding="utf-8")
+    except (OSError, UnicodeError):
+        return None
+    raw_value = values.get("VK_API_TOKEN")
+    if not isinstance(raw_value, str):
+        return None
+    value = raw_value.strip()
+    return SecretStr(value) if value else None
+
+
 @lru_cache(maxsize=1)
 def get_settings() -> AppSettings:
-    return AppSettings()
+    settings = AppSettings()
+    if settings.vk_access_token is not None:
+        return settings
+    shared_token = _read_shared_vk_access_token(settings.vk_shared_env_file)
+    if shared_token is None:
+        return settings
+    return settings.model_copy(update={"vk_access_token": shared_token})
