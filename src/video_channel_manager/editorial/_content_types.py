@@ -15,9 +15,7 @@ LEGACY_YOUTUBE_SCHEMA_VERSION = 2
 
 # Backward-compatible union for callers that still import the historical name.
 # Validation no longer uses this union: it selects exactly one project profile.
-APPROVED_PROJECT_URLS = frozenset(
-    url for profile_urls in PROJECT_LINK_PROFILES.values() for url in profile_urls
-)
+APPROVED_PROJECT_URLS = frozenset(url for profile_urls in PROJECT_LINK_PROFILES.values() for url in profile_urls)
 
 ALLOWED_STATUSES = frozenset({"approved", "needs-research", "draft", "fact-check", "link-check", "rejected"})
 ALLOWED_FACT_TYPES = frozenset(
