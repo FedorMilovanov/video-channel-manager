@@ -3,9 +3,10 @@
 Before any work involving Fedor Milovanov's YouTube/VK media workflow, read these files in order:
 
 1. `docs/operations/project-identity-registry.md`
-2. `docs/operations/current-state.md`
-3. `docs/operations/2026-07-31-youtube-vk-transfer-postmortem.md`
-4. `docs/operations/operational-artifact-standard.md`
+2. `docs/operations/local-credential-sources.md`
+3. `docs/operations/current-state.md`
+4. `docs/operations/2026-07-31-youtube-vk-transfer-postmortem.md`
+5. `docs/operations/operational-artifact-standard.md`
 
 These operational documents are the source of truth and take priority over chat memory.
 
@@ -34,6 +35,13 @@ Reauthorizing one alias with `--force` replaces only that alias. Never use the `
 ### VK
 
 VK intentionally uses one user access token for both communities. The current stored token alias is `legendary-poet`, but the alias is only a credential name and does not identify the target project.
+
+The token source is stored outside this repository:
+
+- file: `C:\Users\Fedor\Projects\mp3telegrambot\.env`;
+- key: `VK_API_TOKEN`.
+
+Never copy, print, commit, log, package, or place the token value in a command line. Do not ask the operator to paste a token manually while the configured external file exists. Normal operations use the already imported local token-store alias. A re-import may read the external file silently.
 
 Every VK operation must select the project with exact numeric guards:
 
@@ -87,18 +95,19 @@ Every provider plan must bind `project_key`, exact YouTube channel ID, exact VK 
 
 1. Never use the `legendary-poet` YouTube write token for `lord-god-strength`.
 2. Never select a VK target only from the shared token alias; confirm numeric community `60805374` and owner `-60805374` for the current project.
-3. Never rerun any old delete, canary, recovery, v3/v4, or fast-cleanup executor. The deletion phase is closed.
-4. Never infer absence from an endpoint that does not cover the relevant surface. `video.get` ordinary-video absence is not proof of VK Clip absence.
-5. Never infer a transfer boundary from screenshots or relative labels such as “4 months ago”. Use exact IDs and current inventories.
-6. Never upload an ambiguous match.
-7. Never repeat an upload with an unknown outcome. Reconcile the ledger and live VK state first.
-8. Keep long-form videos and Shorts/Clips in separate manifests and ledgers.
-9. Preserve local masters or controlled exports when available. Do not use screen capture as a source.
-10. Do not publish to the wall, create playlists, rewrite descriptions, or extract MP3 until the uploaded catalog has been verified.
-11. Never commit OAuth tokens, VK tokens, downloaded media, local exports, ledgers, logs, backups, or generated upload packages.
-12. Every operational ZIP must pass `python scripts/verify_operational_bundle.py ...` before being handed to a user.
-13. Descriptions, comments, playlists, and footers must use only the selected project's registered links unless a cross-project link has been explicitly reviewed for that exact operation.
-14. Unknown or unregistered links fail closed; never invent a vanity handle, site, Clips URL, or numeric ID.
+3. Never expose or request manual entry of the configured VK token when the external source is available.
+4. Never rerun any old delete, canary, recovery, v3/v4, or fast-cleanup executor. The deletion phase is closed.
+5. Never infer absence from an endpoint that does not cover the relevant surface. `video.get` ordinary-video absence is not proof of VK Clip absence.
+6. Never infer a transfer boundary from screenshots or relative labels such as “4 months ago”. Use exact IDs and current inventories.
+7. Never upload an ambiguous match.
+8. Never repeat an upload with an unknown outcome. Reconcile the ledger and live VK state first.
+9. Keep long-form videos and Shorts/Clips in separate manifests and ledgers.
+10. Preserve local masters or controlled exports when available. Do not use screen capture as a source.
+11. Do not publish to the wall, create playlists, rewrite descriptions, or extract MP3 until the uploaded catalog has been verified.
+12. Never commit OAuth tokens, VK tokens, downloaded media, local exports, ledgers, logs, backups, or generated upload packages.
+13. Every operational ZIP must pass `python scripts/verify_operational_bundle.py ...` before being handed to a user.
+14. Descriptions, comments, playlists, and footers must use only the selected project's registered links unless a cross-project link has been explicitly reviewed for that exact operation.
+15. Unknown or unregistered links fail closed; never invent a vanity handle, site, Clips URL, or numeric ID.
 
 ## Execution and handoff rules
 
