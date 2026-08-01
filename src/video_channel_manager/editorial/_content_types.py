@@ -3,30 +3,20 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping
 
+from video_channel_manager.editorial._project_profiles import (
+    LEGENDARY_POET,
+    PROJECT_LINK_PROFILES,
+)
+
 CANONICAL_SCHEMA_NAME = "video-manager.editorial-content"
 CANONICAL_SCHEMA_VERSION = 1
 LEGACY_YOUTUBE_SCHEMA_NAME = "video-manager.youtube-comment-content"
 LEGACY_YOUTUBE_SCHEMA_VERSION = 2
 
+# Backward-compatible union for callers that still import the historical name.
+# Validation no longer uses this union: it selects exactly one project profile.
 APPROVED_PROJECT_URLS = frozenset(
-    {
-        "https://thelegendarypoet.ru/",
-        "https://vk.com/thelegendarypoet",
-        "https://t.me/thelegendarypoet",
-        "https://rutube.ru/channel/74579453/",
-        "https://www.youtube.com/@TheLegendaryPoet/playlists",
-        "https://www.youtube.com/playlist?list=PLy9lLJfoq3uYdxFo5bxzXEUI8HYIo-sHb",
-        "https://www.youtube.com/playlist?list=PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8",
-        "https://www.youtube.com/playlist?list=PLy9lLJfoq3uaI7EGOexBWQp7WX-KVabKM",
-        "https://www.youtube.com/playlist?list=PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q",
-        "https://www.youtube.com/playlist?list=PLy9lLJfoq3ubOdGfY8orpQzGNAAvkqul5",
-        "https://www.youtube.com/playlist?list=PLy9lLJfoq3ua0FhqDhByHxyaBjVrk0-pE",
-        "https://www.youtube.com/playlist?list=PLy9lLJfoq3ua3Q9BQe1Dhuzn7Knbz2djU",
-        "https://www.youtube.com/playlist?list=PLKzLtO0ERdzg",
-        "https://www.youtube.com/playlist?list=PLy9lLJfoq3uYTrhcN1TDMUeks46Y-TT_M",
-        "https://www.youtube.com/playlist?list=PLy9lLJfoq3ua1QeVsZutwScsM0l-asll4",
-        "https://www.youtube.com/playlist?list=PLy9lLJfoq3uZcrWY0F3Qux93xos6kIS7-",
-    }
+    url for profile_urls in PROJECT_LINK_PROFILES.values() for url in profile_urls
 )
 
 ALLOWED_STATUSES = frozenset({"approved", "needs-research", "draft", "fact-check", "link-check", "rejected"})
@@ -142,6 +132,7 @@ class EditorialContentRecord:
     rendering_metadata: Mapping[str, Any]
     platform_suitability: Mapping[str, frozenset[str]]
     platform_targets: Mapping[str, str]
+    project_key: str = LEGENDARY_POET
 
     def supports(self, platform: str, surface: str) -> bool:
         return surface in self.platform_suitability.get(platform, frozenset())
