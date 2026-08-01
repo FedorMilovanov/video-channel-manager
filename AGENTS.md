@@ -20,22 +20,47 @@ They are not aliases of one project. Never mix their YouTube channels, VK commun
 
 The complete canonical link and identity allowlists are in `docs/operations/project-identity-registry.md`.
 
-### Current selected project
+## Credential model
+
+### YouTube
+
+YouTube uses two local OAuth aliases, one for each selected YouTube/Brand Account channel:
+
+- `fedor-milovanov` — current `lord-god-strength` authorization; presently read-only;
+- `legendary-poet` — `The Legendary Poet`; presently write-capable.
+
+Reauthorizing one alias with `--force` replaces only that alias. Never use the `legendary-poet` YouTube token for the current theological project.
+
+### VK
+
+VK intentionally uses one user access token for both communities. The current stored token alias is `legendary-poet`, but the alias is only a credential name and does not identify the target project.
+
+Every VK operation must select the project with exact numeric guards:
+
+- `project_key`;
+- `community_id`;
+- `owner_id`;
+- project-specific link profile.
+
+A shared VK token is normal. Selecting a target only by token alias, community display order, or remembered context is forbidden.
+
+## Current selected project
 
 Current work is restricted to `lord-god-strength`:
 
 - YouTube: https://www.youtube.com/@fedormilovanov
 - YouTube channel ID: `UCeSJsC6go2c9pdJCuUI1BYA`
 - current YouTube OAuth alias: `fedor-milovanov`
-- current YouTube access: `read-only`; do not attempt YouTube writes until a write-capable token resolves to the same channel ID
-- VK community: https://vk.com/the_lord_god_is_my_strength
+- current YouTube access: `read-only`; reauthorize this same alias with `--write --force` before YouTube mutation and verify the returned channel ID
+- canonical VK community: https://vk.ru/the_lord_god_is_my_strength
+- VK Video: https://vkvideo.ru/@the_lord_god_is_my_strength
 - VK community ID: `60805374`
 - VK API owner ID: `-60805374`
-- current VK user-token alias: `legendary-poet`, which is only a credential label and can see multiple communities
+- shared VK user-token alias: `legendary-poet`
 
 The YouTube alias `legendary-poet` resolves to `The Legendary Poet` and is prohibited for the current rollout.
 
-Every provider plan must bind `project_key`, exact YouTube channel ID, exact VK community/owner ID, account alias, and the selected project's link profile. Alias names and display titles are never sufficient identity guards.
+Every provider plan must bind `project_key`, exact YouTube channel ID, exact VK community/owner ID, credential alias, and the selected project's link profile. Alias names and display titles are never sufficient identity guards.
 
 ## Branch discipline
 
@@ -61,7 +86,7 @@ Every provider plan must bind `project_key`, exact YouTube channel ID, exact VK 
 ## Non-negotiable safety rules
 
 1. Never use the `legendary-poet` YouTube write token for `lord-god-strength`.
-2. Never select a VK target only from the `legendary-poet` token alias; confirm numeric community `60805374` for the current project.
+2. Never select a VK target only from the shared token alias; confirm numeric community `60805374` and owner `-60805374` for the current project.
 3. Never rerun any old delete, canary, recovery, v3/v4, or fast-cleanup executor. The deletion phase is closed.
 4. Never infer absence from an endpoint that does not cover the relevant surface. `video.get` ordinary-video absence is not proof of VK Clip absence.
 5. Never infer a transfer boundary from screenshots or relative labels such as “4 months ago”. Use exact IDs and current inventories.
