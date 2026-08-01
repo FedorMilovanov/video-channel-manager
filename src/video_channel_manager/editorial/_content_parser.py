@@ -92,10 +92,13 @@ def parse_content_record(
     variation_key = str(payload["variation_key"]).strip()
     content_id = str(payload.get("content_id") or "").strip() or video_id or variation_key
     schema_name = str(payload.get("schema_name") or "")
-    project_key = resolve_project_key(
-        payload,
-        legacy_default=schema_name == LEGACY_YOUTUBE_SCHEMA_NAME,
-    ) or LEGENDARY_POET
+    project_key = (
+        resolve_project_key(
+            payload,
+            legacy_default=schema_name == LEGACY_YOUTUBE_SCHEMA_NAME,
+        )
+        or LEGENDARY_POET
+    )
     return EditorialContentRecord(
         schema_name=CANONICAL_SCHEMA_NAME,
         schema_version=CANONICAL_SCHEMA_VERSION,
