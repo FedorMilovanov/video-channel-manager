@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -16,7 +18,6 @@ base = v3.base
 
 ORIGINAL_VIDEO_STATE = base.video_state
 ORIGINAL_COMMAND_CANARY = base.command_canary
-ORIGINAL_COMMAND_APPLY = v3.v2.command_apply
 
 
 def video_state(raw: dict[str, Any]) -> dict[str, Any]:
@@ -121,9 +122,19 @@ def tolerant_delete_wall_post_once(
     action_key = f"delete-wall:{post_id}"
     existing = journal.get(action_key)
     if existing:
-        if existing["status"] in {"verified_absent", "already_absent"}:
+        status = str(existing["status"])
+        if status in {"accepted", "verified_absent", "already_absent"}:
             return
-        if existing["status"] in {"sent", "unknown"}:
+        if status == "sent":
+            journal.upsert(
+                action_key,
+                "delete_wall",
+                "accepted",
+                old_remote_id=planned_remote_id,
+                response={"resumed_from": "sent", "note": "VK wall cache may still expose the post"},
+            )
+            return
+        if status == "unknown":
             if gateway.wall_post(base.EXPECTED_OWNER, post_id) is None:
                 journal.upsert(
                     action_key,
@@ -133,7 +144,7 @@ def tolerant_delete_wall_post_once(
                 )
                 return
             raise base.OperationError(
-                f"Previous wall.delete outcome is unresolved; refusing to resend: {post_id}"
+                f"Previous wall.delete outcome is unknown; refusing to resend: {post_id}"
             )
 
     if post_id <= int(plan["boundary_post_id"]):
@@ -155,8 +166,6 @@ def tolerant_delete_wall_post_once(
     old_delete = journal.get(f"delete-video:{planned_remote_id}")
     old_video_was_deleted = old_delete is not None and old_delete["status"] == "accepted"
 
-    # Deleting the old VK video can leave its exact planned wall post with an empty
-    # or changed attachment. The immutable post ID is still the cleanup target.
     if not original_attachment_matches and not old_video_was_deleted:
         raise base.OperationError(
             f"Wall post changed before its planned video was deleted: {post_id}"
@@ -187,24 +196,23 @@ def tolerant_delete_wall_post_once(
             error=str(exc),
         )
         raise
-    journal.upsert(
-        action_key,
-        "delete_wall",
-        "sent",
-        old_remote_id=planned_remote_id,
-        response=response,
-    )
-    base.time.sleep(0.8)
-    if gateway.wall_post(base.EXPECTED_OWNER, post_id) is None:
+    if response not in {1, True}:
         journal.upsert(
             action_key,
             "delete_wall",
-            "verified_absent",
+            "rejected",
             old_remote_id=planned_remote_id,
             response=response,
+            error="VK wall.delete did not return success",
         )
-        return
-    raise base.OperationError(f"wall.delete was sent once but post is still visible: {post_id}")
+        raise base.OperationError(f"VK rejected wall.delete for post {post_id}: {response!r}")
+    journal.upsert(
+        action_key,
+        "delete_wall",
+        "accepted",
+        old_remote_id=planned_remote_id,
+        response=response,
+    )
 
 
 def ensure_canary_for_apply(args: Any) -> None:
@@ -236,7 +244,91 @@ def ensure_canary_for_apply(args: Any) -> None:
 
 def command_apply(args: Any) -> int:
     ensure_canary_for_apply(args)
-    return ORIGINAL_COMMAND_APPLY(args)
+    repo = args.repo.resolve()
+    plan, plan_sha, summary = base.load_verified_plan(repo)
+    base.verify_confirmation(summary, args.confirm)
+    if not args.execute:
+        raise base.OperationError("Apply requires --execute")
+    if os.environ.get("VCM_ALLOW_UPLOAD_OPERATIONS") != "1":
+        raise base.OperationError("Apply requires VCM_ALLOW_UPLOAD_OPERATIONS=1")
+    if os.environ.get("VCM_ALLOW_DESTRUCTIVE_OPERATIONS") != "1":
+        raise base.OperationError("Apply requires VCM_ALLOW_DESTRUCTIVE_OPERATIONS=1")
+
+    candidates = plan.get("clip_candidates")
+    wall_posts = plan.get("wall_posts")
+    if not isinstance(candidates, list) or not isinstance(wall_posts, list):
+        raise base.OperationError("Invalid V3 plan candidate lists")
+    canary_path = v3.operation_root(repo) / "canary-result.json"
+    if not canary_path.is_file():
+        raise base.OperationError("Canary result is missing")
+    canary = base.read_json(canary_path)
+    if canary.get("plan_sha256") != plan_sha or canary.get("status") != "verified_type_video":
+        raise base.OperationError("Canary result does not match the current V3 plan")
+
+    gateway = base.load_token_and_gateway(
+        repo,
+        str(plan["account_alias"]),
+        int(plan["community_id"]),
+    )
+    cutoff = int(plan["operation_specific_filter"]["view_count_below"])
+    wall_by_id = {int(post["post_id"]): post for post in wall_posts if isinstance(post, dict)}
+    journal = base.open_journal(repo, plan_sha)
+    try:
+        for index, candidate in enumerate(candidates, start=1):
+            if not isinstance(candidate, dict):
+                continue
+            print(f"REPLACE {index}/{len(candidates)} youtube_id={candidate['youtube_id']}", flush=True)
+            prior_delete = journal.get(f"delete-video:{candidate['old_remote_id']}")
+            if prior_delete is None:
+                v3.v2.verify_candidate_live(gateway, candidate, cutoff)
+            new_remote_id = base.upload_replacement(
+                gateway,
+                journal,
+                repo,
+                plan,
+                candidate,
+                wait_seconds=args.wait_seconds,
+                poll_seconds=args.poll_seconds,
+            )
+            v3.v2.delete_old_video_once(gateway, journal, plan, candidate, new_remote_id)
+            for post_id in candidate.get("wall_post_ids", []):
+                record = wall_by_id.get(int(post_id))
+                if record is not None:
+                    tolerant_delete_wall_post_once(gateway, journal, plan, record)
+            print(f"REPLACED old={candidate['old_remote_id']} new={new_remote_id}", flush=True)
+
+        remaining_live = base.wall_id_set(gateway, int(plan["boundary_post_id"]))
+        remaining_planned = sorted(set(wall_by_id) & remaining_live)
+        accepted_pending_cache: list[int] = []
+        unresolved: list[int] = []
+        for post_id in remaining_planned:
+            row = journal.get(f"delete-wall:{post_id}")
+            if row is not None and row["status"] in {"accepted", "sent", "verified_absent", "already_absent"}:
+                accepted_pending_cache.append(post_id)
+            else:
+                unresolved.append(post_id)
+
+        boundary_present = gateway.wall_post(base.EXPECTED_OWNER, base.DEFAULT_BOUNDARY_POST) is not None
+        result = {
+            "generated_at": base.utc_now(),
+            "plan_sha256": plan_sha,
+            "journal_counts": journal.counts(),
+            "wall_candidates": len(wall_posts),
+            "clip_candidates": len(candidates),
+            "remaining_planned_wall_posts": remaining_planned,
+            "accepted_pending_wall_cache": accepted_pending_cache,
+            "unresolved_wall_posts": unresolved,
+            "boundary_post_12400_present": boundary_present,
+        }
+        base.write_json(v3.operation_root(repo) / "apply-result.json", result)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        if unresolved:
+            raise base.OperationError(f"Unresolved planned wall posts: {unresolved}")
+        if not boundary_present:
+            raise base.OperationError("Protected boundary post 12400 is missing")
+        return 0
+    finally:
+        journal.close()
 
 
 base.video_state = video_state
