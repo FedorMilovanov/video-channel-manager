@@ -99,9 +99,7 @@ def validate_identity(payload: dict[str, Any], *, expected_channel_id: str | Non
         errors.append(f"unsupported project_key: {project_key}")
     inferred_project = channel_project_key(payload)
     if project_key in PROJECT_KEYS and inferred_project is not None and project_key != inferred_project:
-        errors.append(
-            f"project_key {project_key} does not match channel_id project {inferred_project}"
-        )
+        errors.append(f"project_key {project_key} does not match channel_id project {inferred_project}")
     if schema_is_canonical and project_key is None and inferred_project is None:
         errors.append("canonical content requires project_key when channel_id is not registered")
 
