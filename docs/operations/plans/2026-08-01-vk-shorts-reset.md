@@ -51,9 +51,71 @@ A wall post after boundary `12400` is eligible only when live hydration confirms
 
 Wall-post view counts do not control this owner-approved boundary cleanup. The view-count filter above applies only to replacement of the underlying clip objects in this specific batch.
 
+## Implemented executor
+
+- Python executor: `scripts/vk_shorts_reset.py`
+- PowerShell launcher: `scripts/run-vk-shorts-reset.ps1`
+- Existing source ledger: `data/vk-upload/verified-shorts/shorts-upload-ledger.db`
+- Operation directory: `data/vk-shorts-reset-20260801`
+- Resume journal: `data/vk-shorts-reset-20260801/operation-ledger.db`
+
+The launcher reads the stored VK token alias `legendary-poet`. No token value, hash, candidate count, VK ID, or confirmation string needs to be pasted manually.
+
+### Phase 1 — read-only plan
+
+```powershell
+pwsh -ExecutionPolicy Bypass -File .\scripts\run-vk-shorts-reset.ps1 -Mode Prepare
+```
+
+This phase performs no remote writes. It produces:
+
+- `plan.json`;
+- `plan.sha256`;
+- `plan-summary.json`;
+- a timestamped transcript.
+
+### Phase 2 — one ordinary-video canary
+
+```powershell
+pwsh -ExecutionPolicy Bypass -File .\scripts\run-vk-shorts-reset.ps1 -Mode Canary -Execute
+```
+
+This phase:
+
+- creates one 16:9 source with the complete vertical frame preserved;
+- uploads exactly one new VK-hosted video;
+- explicitly disables wall posting and auto-publication;
+- waits for final `type=video`;
+- fails if an unexpected wall post appears;
+- does not delete the old clip.
+
+### Phase 3 — resumable apply
+
+```powershell
+pwsh -ExecutionPolicy Bypass -File .\scripts\run-vk-shorts-reset.ps1 -Mode Apply -Execute
+```
+
+This phase is allowed only after the matching canary result exists. It:
+
+- deletes only planned simple Shorts wall posts after boundary `12400`;
+- revalidates every old clip immediately before action;
+- uploads and verifies the new ordinary video first;
+- deletes the old clip only after the replacement is final `type=video`;
+- skips candidates whose live state no longer matches this operation;
+- records every accepted, verified, skipped, or unknown outcome in SQLite;
+- never repeats a mutation with an accepted or unknown prior outcome.
+
+### Status and resume
+
+```powershell
+pwsh -ExecutionPolicy Bypass -File .\scripts\run-vk-shorts-reset.ps1 -Mode Status
+```
+
+After interruption, rerun the same phase. The journal resumes verified work and refuses unsafe duplicate writes.
+
 ## Required confirmations
 
-The executable plan must bind:
+The executable plan binds:
 
 - project key `lord-god-strength`;
 - community ID `60805374`;
