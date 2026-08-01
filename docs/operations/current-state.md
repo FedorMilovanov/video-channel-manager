@@ -25,7 +25,9 @@ For current YouTube writes, reauthorize the same `fedor-milovanov` alias with `-
 
 ### VK
 
-One shared VK user token is intentionally used for both communities. Its stored alias is `legendary-poet`, but the alias is only a credential label. Project isolation is enforced with exact numeric community and owner IDs in each operation.
+One shared VK user token is intentionally used for both communities. Its canonical operational alias is `legendary-poet`, but the alias is only a credential label. Project isolation is enforced with exact numeric community and owner IDs in each operation.
+
+A second local alias `default` was created on 2026-08-01 by running `video-manager vk login` without `--account`. Do not use `default` in operational commands. It does not represent a third project and must not replace the reviewed `legendary-poet` alias.
 
 ## Canonical accounts and links
 
@@ -87,7 +89,8 @@ No current description, comment, playlist, post, or footer may use The Legendary
 - Delete ledger: `C:\Users\Fedor\Projects\video-channel-manager\data\vk\delete-orchestrator.db`
 - Final cleanup log: `C:\Users\Fedor\Projects\video-channel-manager\data\vk\fast-cleanup-final-20260731-031942.log`
 - Inventory report directory: `C:\Users\Fedor\Projects\video-channel-manager\data\reports\youtube-vk-transfer-20260731-140628`
-- Upload ledger directory: `C:\Users\Fedor\Projects\video-channel-manager\data\vk-upload\verified-longform-26`
+- Long-form upload ledger directory: `C:\Users\Fedor\Projects\video-channel-manager\data\vk-upload\verified-longform-26`
+- Shorts upload ledger directory: `C:\Users\Fedor\Projects\video-channel-manager\data\vk-upload\verified-shorts`
 
 ## Required identity preflight
 
@@ -115,6 +118,27 @@ video-manager youtube login --account fedor-milovanov --write --force
 
 The authorization command must print exactly channel ID `UCeSJsC6go2c9pdJCuUI1BYA`. Otherwise stop without scanning or writing.
 
+## Critical VK wall safety block
+
+The owner reports that a previous transfer produced a large sequence of one-video wall posts instead of a gradual postponed queue.
+
+Current wall mutation status:
+
+`BLOCKED_PENDING_ISSUE_36_AND_FRESH_READ_ONLY_WALL_AUDIT`
+
+Mandatory rules:
+
+1. Video upload and wall publication are separate operations.
+2. Every upload executor must explicitly send `wallpost=0`, `auto_publish=0`, and `repeat=0` unless a reviewed video-specific exception exists.
+3. Every upload manifest must state `wall_mutation_authorized=false`.
+4. Upload postflight must fail if any unexpected wall post appears.
+5. Shorts/Clips must never be shared to the wall automatically.
+6. Wall publication must use a separate postponed plan with exact `publish_date`, deterministic `guid`, duplicate scan, dry-run, lock, repeated preflight, and postflight.
+7. Immediate `wall.post` is prohibited for the current project by default.
+8. Existing wall posts must not be bulk-deleted without a fresh exact-ID, engagement-aware, reviewed deletion plan.
+
+Incident details: [`2026-08-01-vk-wall-and-short-player-incident.md`](2026-08-01-vk-wall-and-short-player-incident.md).
+
 ## Completed work
 
 ### VK duplicate cleanup
@@ -137,15 +161,14 @@ This phase is closed. Do not rerun any deletion executor from it.
 
 ### Public YouTube and VK inventory
 
-Final read-only public inventory:
+Final read-only public inventory used for transfer classification:
 
 - YouTube total: `1781`
 - YouTube long-form: `1673`
 - YouTube Shorts: `108`
-- VK ordinary videos: `2879`
-- VK Clips covered by the ordinary API snapshot: `0`
+- complete VK owner inventory observed by the Shorts workflow: `2903`
 
-The zero Clips count is a coverage limitation, not proof that no clips exist.
+Ordinary and short-form surfaces must still be distinguished by final VK object `type` and processing state.
 
 ### Exact long-form tail
 
@@ -173,62 +196,59 @@ Verified 26-item upload queue SHA-256:
 
 ## Work currently in progress
 
-A resumable uploader for the 26 verified-missing long-form videos has been prepared for local execution.
+### Long-form reconciliation
 
-The upload is not considered complete until this result exists and is reviewed:
+The upload is not considered complete until this result and ledger are reviewed:
 
-`C:\Users\Fedor\Projects\video-channel-manager\data\vk-upload\verified-longform-26\upload-result.json`
-
-Expected durable ledger:
-
-`C:\Users\Fedor\Projects\video-channel-manager\data\vk-upload\verified-longform-26\upload-ledger.db`
-
-Until the result is inspected, status is:
-
-`UPLOAD_26 = IN_PROGRESS_OR_UNVERIFIED`
+- `C:\Users\Fedor\Projects\video-channel-manager\data\vk-upload\verified-longform-26\upload-result.json`
+- `C:\Users\Fedor\Projects\video-channel-manager\data\vk-upload\verified-longform-26\upload-ledger.db`
 
 Do not infer completion from terminal silence, VK processing messages, or elapsed time.
+
+### Shorts reconciliation
+
+Authoritative source classification from the completed owner inventory:
+
+- canonical YouTube Shorts: `108`;
+- already present: `42`;
+- already present duplicate source: `1`;
+- originally confirmed missing: `65`;
+- ambiguous: `0`.
+
+Last reviewed state for 64 native uploads accepted by VK:
+
+- confirmed `type=short_video`: `44`;
+- still processing: `6`;
+- accepted but not yet visible through exact-object reconciliation: `14`;
+- wrong completed type: `0`;
+- one source remained failed before VK upload because YouTube authentication blocked the download.
+
+No retransmission is allowed for accepted/processing objects. Reconcile exact VK IDs first.
+
+Direct native uploads may look and play differently from external YouTube imports because VK exposes a distinct `short_video` type and clip player. During conversion, a future clip may temporarily appear as ordinary `video`; final classification must be checked after processing.
 
 ## GitHub tracking
 
 - [Issue #31 — verify the 26-video upload result and reconcile the ledger](https://github.com/FedorMilovanov/video-channel-manager/issues/31)
-- [Issue #32 — inventory the real VK Clips surface and derive the exact Shorts queue](https://github.com/FedorMilovanov/video-channel-manager/issues/32)
+- [Issue #32 — inventory/reconcile the real VK Clips surface and final Shorts types](https://github.com/FedorMilovanov/video-channel-manager/issues/32)
 - [Issue #33 — organize and publish the verified VK catalog after transfer completion](https://github.com/FedorMilovanov/video-channel-manager/issues/33)
+- [Issue #36 — block upload-triggered wall spam and require postponed publishing](https://github.com/FedorMilovanov/video-channel-manager/issues/36)
 
-Issue #33 is blocked until issues #31 and #32 have no silent unknown outcomes and their exact target IDs/manifests are recorded.
+Issue #33 is blocked until issues #31, #32, and #36 have no silent unknown outcomes and their exact target IDs/manifests are recorded.
 
-## Shorts status
+## Required next actions
 
-The preliminary matcher reported:
-
-- YouTube Shorts: `108`
-- matched in ordinary VK inventory: `42`
-- provisional missing: `65`
-- ambiguous: `1`
-- VK Clips seen by current API snapshot: `0`
-
-The 65-item list is explicitly `DO_NOT_UPLOAD` because the current inventory did not cover the real VK Clips surface. Existing clips are visible in the VK UI, including title artifacts such as trailing `()`.
-
-Required next step:
-
-1. Inventory the live VK Clips surface.
-2. Resolve exact clip IDs, titles, durations, and publication order.
-3. Compare all 108 canonical YouTube Shorts against that inventory.
-4. Produce separate present, missing, ambiguous, and title-repair manifests.
-5. Upload only the exact confirmed-missing set with a separate ledger.
-
-## Work after transfer verification
-
-Proceed in this order:
-
-1. Verify every newly uploaded VK ID and duration.
-2. Build clean VK playlists/albums.
-3. Repair titles and remove transfer artifacts such as trailing `()`.
-4. Write VK-native plain-text descriptions using only the current project's registered links.
-5. Build a deduplicated postponed wall-post queue with exact timestamps.
-6. Extract MP3 from controlled source files with FFmpeg.
-7. Normalize loudness and add ID3 tags and cover art.
-8. Test VK audio-upload permissions with one file before any audio batch.
+1. Reconcile every long-form upload outcome against exact live VK IDs.
+2. Reconcile all 64 accepted Shorts after processing and record final `type`, dimensions, player/platform fields, and wall references.
+3. Obtain or document the single remaining blocked YouTube Short without repeating accepted uploads.
+4. Run a fresh read-only wall audit covering both published and postponed posts.
+5. Classify historical wall posts into intentional, auto-generated, duplicate, engaged/manual-review, and safe-removal candidates.
+6. Build clean VK playlists/albums.
+7. Repair titles and remove transfer artifacts such as trailing `()`.
+8. Write VK-native plain-text descriptions using only the current project's registered links.
+9. Build a deduplicated postponed wall-post queue with exact timestamps. No immediate posts.
+10. Extract MP3 from controlled source files with FFmpeg only after the video catalog is verified.
+11. Test VK audio-upload permissions with one file before any audio batch.
 
 ## Required update protocol
 
@@ -239,7 +259,8 @@ After every operational run, update this document with:
 - run timestamp;
 - manifest SHA-256;
 - attempted/accepted/verified/failed/unknown counts;
+- published/postponed wall counts when a wall audit is involved;
 - result and ledger paths;
 - exact remaining work;
 - whether a retry is safe;
-- any new provider, identity, link-profile, or packaging failure.
+- any new provider, identity, link-profile, media-type, wall, or packaging failure.
