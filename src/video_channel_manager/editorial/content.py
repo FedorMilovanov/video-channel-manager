@@ -20,6 +20,14 @@ from video_channel_manager.editorial._content_urls import (
     extract_urls,
 )
 from video_channel_manager.editorial._content_validation import validate_content_record
+from video_channel_manager.editorial._project_profiles import (
+    LEGENDARY_POET,
+    LORD_GOD_STRENGTH,
+    PROJECT_CHANNEL_IDS,
+    PROJECT_KEYS,
+    PROJECT_LINK_PROFILES,
+    resolve_project_key,
+)
 
 __all__ = [
     "APPROVED_PROJECT_URLS",
@@ -29,7 +37,12 @@ __all__ = [
     "FactBlock",
     "LEGACY_YOUTUBE_SCHEMA_NAME",
     "LEGACY_YOUTUBE_SCHEMA_VERSION",
+    "LEGENDARY_POET",
+    "LORD_GOD_STRENGTH",
     "LinkBlock",
+    "PROJECT_CHANNEL_IDS",
+    "PROJECT_KEYS",
+    "PROJECT_LINK_PROFILES",
     "QuestionBlock",
     "SourceLedgerEntry",
     "balanced_emphasis",
@@ -37,6 +50,7 @@ __all__ = [
     "contains_banned_circle",
     "extract_urls",
     "parse_content_record",
+    "resolve_project_key",
     "validate_content_collection",
     "validate_content_record",
 ]
