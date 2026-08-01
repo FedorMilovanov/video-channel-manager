@@ -51,11 +51,7 @@ PROJECT_LINK_PROFILES: Mapping[str, frozenset[str]] = MappingProxyType(
 )
 
 CHANNEL_ID_TO_PROJECT_KEY: Mapping[str, str] = MappingProxyType(
-    {
-        channel_id: project_key
-        for project_key, channel_ids in PROJECT_CHANNEL_IDS.items()
-        for channel_id in channel_ids
-    }
+    {channel_id: project_key for project_key, channel_ids in PROJECT_CHANNEL_IDS.items() for channel_id in channel_ids}
 )
 
 PROJECT_KEYS = frozenset(PROJECT_LINK_PROFILES)
