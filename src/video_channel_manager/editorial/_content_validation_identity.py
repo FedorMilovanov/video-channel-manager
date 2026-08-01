@@ -14,6 +14,11 @@ from video_channel_manager.editorial._content_validation_support import (
     _valid_aware_datetime,
     _valid_stable_id,
 )
+from video_channel_manager.editorial._project_profiles import (
+    PROJECT_KEYS,
+    channel_project_key,
+    explicit_project_key,
+)
 
 
 def _optional_string(
@@ -85,6 +90,20 @@ def validate_identity(payload: dict[str, Any], *, expected_channel_id: str | Non
         errors.append("channel_id does not match the requested channel")
     if schema_is_legacy and not channel_id:
         errors.append("channel_id cannot be blank")
+
+    raw_project_key = payload.get("project_key")
+    if raw_project_key is not None and not isinstance(raw_project_key, str):
+        errors.append("project_key must be a string or null")
+    project_key = explicit_project_key(payload)
+    if project_key is not None and project_key not in PROJECT_KEYS:
+        errors.append(f"unsupported project_key: {project_key}")
+    inferred_project = channel_project_key(payload)
+    if project_key in PROJECT_KEYS and inferred_project is not None and project_key != inferred_project:
+        errors.append(
+            f"project_key {project_key} does not match channel_id project {inferred_project}"
+        )
+    if schema_is_canonical and project_key is None and inferred_project is None:
+        errors.append("canonical content requires project_key when channel_id is not registered")
 
     video_id = _optional_string(payload, "video_id", errors=errors)
     if schema_is_legacy and not video_id:
