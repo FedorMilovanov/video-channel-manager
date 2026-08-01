@@ -4,11 +4,17 @@ Operational documents are living sources of truth. They take priority over chat 
 
 ## Start here
 
-- [`project-identity-registry.md`](project-identity-registry.md) — the two separate projects, their verified links, YouTube OAuth aliases, shared VK token model, exact numeric identities, and no-mixing rules.
+- [`project-identity-registry.md`](project-identity-registry.md) — the two separate projects, their verified links, YouTube OAuth aliases, shared VK token model, exact numeric identities, public/admin route separation, and no-mixing rules.
+- [`lord-god-strength-description-profile.md`](lord-god-strength-description-profile.md) — exact identities, links, footer rules, and guards for Господь Бог — Сила Моя.
+- [`legendary-poet-description-profile.md`](legendary-poet-description-profile.md) — exact identities, links, footer rules, VK Clips route, author-cabinet separation, and guards for The Legendary Poet.
 - [`current-state.md`](current-state.md) — selected project, exact current identities, counts, paths, completed work, active work, blocked work, and required next actions.
 - [`project-memory-changelog.md`](project-memory-changelog.md) — dated changes to durable operational memory.
 - [`2026-07-31-youtube-vk-transfer-postmortem.md`](2026-07-31-youtube-vk-transfer-postmortem.md) — what succeeded, what failed, root causes, and permanent lessons.
 - [`operational-artifact-standard.md`](operational-artifact-standard.md) — required structure and verification for ZIP packages, manifests, launchers, ledgers, retries, and handoffs.
+
+## Link and identity audits
+
+- [`project-link-audit-20260801.md`](project-link-audit-20260801.md) — verified public routes, compatibility routes, operational/admin routes, resolved inconsistencies, and remaining implementation synchronization.
 
 ## Templates
 
@@ -27,14 +33,16 @@ Operational documents are living sources of truth. They take priority over chat 
 
 1. Read `../../AGENTS.md`.
 2. Select exactly one `project_key` from `project-identity-registry.md`.
-3. Confirm exact YouTube channel ID and VK community/owner IDs.
-4. Confirm the inventory covers the intended provider surface.
-5. Validate that every project/footer link belongs to the selected project's link profile.
-6. Validate the immutable manifest and SHA-256.
-7. Run the operational bundle verifier.
-8. Run read-only preflight or dry-run.
-9. Confirm ledger and result paths.
-10. Confirm unknown-outcome reconciliation behavior.
+3. Read the matching project-specific description profile.
+4. Confirm exact YouTube channel ID and VK community/owner IDs.
+5. Confirm the inventory covers the intended provider surface.
+6. Validate that every project/footer link belongs to the selected project's link profile.
+7. Keep public links separate from operational/admin URLs.
+8. Validate the immutable manifest and SHA-256.
+9. Run the operational bundle verifier.
+10. Run read-only preflight or dry-run.
+11. Confirm ledger and result paths.
+12. Confirm unknown-outcome reconciliation behavior.
 
 Validate every user-facing operational ZIP before handoff:
 
