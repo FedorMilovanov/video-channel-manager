@@ -30,10 +30,7 @@ def _canonical_profile_urls(project_key: str | None) -> set[str]:
 
 def _foreign_project_urls(project_key: str | None) -> set[str]:
     return {
-        canonicalize_url(item)
-        for key, urls in PROJECT_LINK_PROFILES.items()
-        if key != project_key
-        for item in urls
+        canonicalize_url(item) for key, urls in PROJECT_LINK_PROFILES.items() if key != project_key for item in urls
     }
 
 
@@ -87,14 +84,10 @@ def validate_links(payload: dict[str, Any], *, source_urls: set[str]) -> list[st
             errors.append(f"{location}.url: {exc}")
             canonical_url = ""
         if canonical_url and canonical_url in foreign_urls:
-            errors.append(
-                f"{location}.url belongs to another project profile: {canonical_url}"
-            )
+            errors.append(f"{location}.url belongs to another project profile: {canonical_url}")
         elif canonical_url and kind in {"site", "vk"} and canonical_url not in project_urls:
             selected = project_key or "unresolved"
-            errors.append(
-                f"{location}.url is not approved for project {selected}: {canonical_url}"
-            )
+            errors.append(f"{location}.url is not approved for project {selected}: {canonical_url}")
         elif canonical_url and canonical_url not in allowed_urls:
             errors.append(f"{location}.url is absent from sources/project link map: {canonical_url}")
         platforms_value = raw_value.get("platforms")
