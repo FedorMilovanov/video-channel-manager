@@ -15,7 +15,7 @@ param(
 $ErrorActionPreference = "Stop"
 $PSNativeCommandUseErrorActionPreference = $false
 
-$Script = Join-Path $Repo "scripts\vk_shorts_reset_20260801_v3.py"
+$Script = Join-Path $Repo "scripts\vk_shorts_reset_current.py"
 $VenvPython = Join-Path $Repo ".venv\Scripts\python.exe"
 $Python = if (Test-Path -LiteralPath $VenvPython -PathType Leaf) {
     $VenvPython
@@ -25,7 +25,7 @@ else {
 }
 
 if (-not (Test-Path -LiteralPath $Script -PathType Leaf)) {
-    throw "Не найден исполнитель V3: $Script. Сначала выполните git pull."
+    throw "Не найден актуальный исполнитель V3: $Script. Сначала выполните git pull."
 }
 
 $env:VCM_DATA_DIR = Join-Path $Repo "data"
