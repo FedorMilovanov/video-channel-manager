@@ -12,6 +12,21 @@ The repository manages two separate projects. Read [`project-identity-registry.m
 - Project: `Господь Бог — Сила Моя`
 - The separate project `legendary-poet` / `The Legendary Poet — Легендарный Поэт` is outside the current scope and must not be touched.
 
+## Credential model
+
+### YouTube
+
+Two separate local OAuth aliases are used, one per selected YouTube/Brand Account channel:
+
+- `fedor-milovanov` — current theological channel authorization, presently read-only;
+- `legendary-poet` — The Legendary Poet, presently write-capable.
+
+For current YouTube writes, reauthorize the same `fedor-milovanov` alias with `--write --force`. Never substitute the poet alias.
+
+### VK
+
+One shared VK user token is intentionally used for both communities. Its stored alias is `legendary-poet`, but the alias is only a credential label. Project isolation is enforced with exact numeric community and owner IDs in each operation.
+
 ## Canonical accounts and links
 
 ### YouTube — current project
@@ -31,27 +46,35 @@ Important identity warning: an earlier stored OAuth identity returned channel ID
 
 Current YouTube mutation status:
 
-`BLOCKED_NO_VERIFIED_WRITE_TOKEN_FOR_CURRENT_PROJECT`
+`BLOCKED_UNTIL_FEDOR_MILOVANOV_ALIAS_IS_REAUTHORIZED_FOR_WRITE_AND_ID_VERIFIED`
 
 ### VK — current project
 
 - Community title: `† Господь Бог - Сила Моя! †`
-- Canonical community: https://vk.com/the_lord_god_is_my_strength
-- Alternate/historical vanity URL: https://vk.com/gospod_bog
+- Canonical viewer-facing community: https://vk.ru/the_lord_god_is_my_strength
+- Published compatibility URL: https://vk.com/the_lord_god_is_my_strength
 - VK Video: https://vkvideo.ru/@the_lord_god_is_my_strength
-- Historical browser videos path: https://vk.com/video/@gospod_bog
-- Historical browser Clips path: https://vk.com/clips/gospod_bog
 - Community ID: `60805374`
 - API owner ID: `-60805374`
-- Current local user-token alias: `legendary-poet`
+- Shared local user-token alias: `legendary-poet`
 
-The VK alias is only a credential label. The token belongs to user `Федор Милованов` and can see multiple communities, including both projects. Every current VK write must bind and confirm numeric community ID `60805374` and owner ID `-60805374`.
+The shared VK token belongs to user `Федор Милованов` and can see several communities. Every current VK write must bind and confirm numeric community ID `60805374` and owner ID `-60805374`.
+
+Historical `gospod_bog` vanity paths are operational history, not current canonical viewer links. Do not insert them into new descriptions without a fresh live verification.
 
 ### Current project links
 
+Default compact footer:
+
 - Website: https://gospod-bog.ru/
 - Telegram: https://t.me/lordchrist
+- VK: https://vk.ru/the_lord_god_is_my_strength
+- VK Video: https://vkvideo.ru/@the_lord_god_is_my_strength
 - Rutube: https://rutube.ru/channel/1876662/
+
+Additional registered links, not part of the default compact footer:
+
+- Odnoklassniki: https://ok.ru/christjesus
 - Facebook group: https://facebook.com/groups/116164165395881
 
 No current description, comment, playlist, post, or footer may use The Legendary Poet links unless an explicit per-operation cross-project exception has been reviewed.
@@ -84,7 +107,13 @@ VK community ID: 60805374
 VK API owner ID: -60805374
 ```
 
-A YouTube write additionally requires a write-capable OAuth token for the same channel ID. The existing `legendary-poet` YouTube write token is not acceptable.
+For YouTube mutation, first reauthorize the current-project alias:
+
+```powershell
+video-manager youtube login --account fedor-milovanov --write --force
+```
+
+The authorization command must print exactly channel ID `UCeSJsC6go2c9pdJCuUI1BYA`. Otherwise stop without scanning or writing.
 
 ## Completed work
 
