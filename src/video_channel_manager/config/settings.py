@@ -37,9 +37,7 @@ class AppSettings(BaseSettings):
 
     vk_app_id: str | None = None
     vk_access_token: SecretStr | None = None
-    vk_shared_env_file: Path = Field(
-        default_factory=lambda: Path.home() / "Projects" / "mp3telegrambot" / ".env"
-    )
+    vk_shared_env_file: Path = Field(default_factory=lambda: Path.home() / "Projects" / "mp3telegrambot" / ".env")
     vk_api_version: str = "5.199"
 
     @field_validator("environment")
