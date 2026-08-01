@@ -15,7 +15,7 @@ param(
 $ErrorActionPreference = "Stop"
 $PSNativeCommandUseErrorActionPreference = $false
 
-$Script = Join-Path $Repo "scripts\vk_shorts_reset_20260801.py"
+$Script = Join-Path $Repo "scripts\vk_shorts_reset_20260801_v3.py"
 $VenvPython = Join-Path $Repo ".venv\Scripts\python.exe"
 $Python = if (Test-Path -LiteralPath $VenvPython -PathType Leaf) {
     $VenvPython
@@ -25,12 +25,12 @@ else {
 }
 
 if (-not (Test-Path -LiteralPath $Script -PathType Leaf)) {
-    throw "Не найден исправленный исполнитель: $Script. Сначала выполните git pull."
+    throw "Не найден исполнитель V3: $Script. Сначала выполните git pull."
 }
 
 $env:VCM_DATA_DIR = Join-Path $Repo "data"
 $env:PYTHONPATH = Join-Path $Repo "src"
-$OperationRoot = Join-Path $Repo "data\vk-shorts-reset-20260801-v2"
+$OperationRoot = Join-Path $Repo "data\vk-shorts-reset-20260801-v3"
 New-Item -ItemType Directory -Path $OperationRoot -Force | Out-Null
 $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $Log = Join-Path $OperationRoot ("{0}-{1}.log" -f $Mode.ToLowerInvariant(), $Timestamp)
@@ -38,7 +38,7 @@ $Log = Join-Path $OperationRoot ("{0}-{1}.log" -f $Mode.ToLowerInvariant(), $Tim
 function Get-ConfirmationToken {
     $Summary = Join-Path $OperationRoot "plan-summary.json"
     if (-not (Test-Path -LiteralPath $Summary -PathType Leaf)) {
-        throw "Нет исправленного plan-summary.json. Сначала запустите -Mode Prepare."
+        throw "Нет plan-summary.json V3. Сначала запустите -Mode Prepare."
     }
     $Payload = Get-Content -LiteralPath $Summary -Raw -Encoding UTF8 | ConvertFrom-Json
     $Token = [string]$Payload.confirmation_token
@@ -46,6 +46,21 @@ function Get-ConfirmationToken {
         throw "В plan-summary.json отсутствует confirmation_token."
     }
     return $Token
+}
+
+function Assert-MediaTools {
+    foreach ($Tool in @("ffmpeg", "ffprobe")) {
+        if (-not (Get-Command $Tool -ErrorAction SilentlyContinue)) {
+            throw "Не найден $Tool в PATH."
+        }
+    }
+    $YtDlpCommand = Get-Command "yt-dlp" -ErrorAction SilentlyContinue
+    if (-not $YtDlpCommand) {
+        & $Python -c "import yt_dlp" 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            throw "Не найден yt-dlp. Установите: python -m pip install -U yt-dlp"
+        }
+    }
 }
 
 $Arguments = @(
@@ -71,11 +86,7 @@ switch ($Mode) {
         if (-not $Execute) {
             throw "Canary выполняет одну загрузку. Добавьте -Execute."
         }
-        foreach ($Tool in @("ffmpeg", "ffprobe")) {
-            if (-not (Get-Command $Tool -ErrorAction SilentlyContinue)) {
-                throw "Не найден $Tool в PATH."
-            }
-        }
+        Assert-MediaTools
         $env:VCM_ALLOW_UPLOAD_OPERATIONS = "1"
         $Arguments += @(
             "canary",
@@ -88,11 +99,7 @@ switch ($Mode) {
         if (-not $Execute) {
             throw "Apply выполняет загрузки и удаления. Добавьте -Execute."
         }
-        foreach ($Tool in @("ffmpeg", "ffprobe")) {
-            if (-not (Get-Command $Tool -ErrorAction SilentlyContinue)) {
-                throw "Не найден $Tool в PATH."
-            }
-        }
+        Assert-MediaTools
         $env:VCM_ALLOW_UPLOAD_OPERATIONS = "1"
         $env:VCM_ALLOW_DESTRUCTIVE_OPERATIONS = "1"
         $Arguments += @(
@@ -113,10 +120,11 @@ try {
     $TranscriptStarted = $true
 
     Write-Host ""
-    Write-Host "VK SHORTS RESET V2 — $Mode" -ForegroundColor Cyan
+    Write-Host "VK SHORTS RESET V3 — $Mode" -ForegroundColor Cyan
     Write-Host "Project: Господь Бог — Сила Моя" -ForegroundColor Cyan
     Write-Host "Community: 60805374" -ForegroundColor Cyan
     Write-Host "Сохраняем стену до post_id 12400 включительно." -ForegroundColor Green
+    Write-Host "Источник при отсутствии MP4: существующий VK-клип." -ForegroundColor Green
     Write-Host "Новые загрузки не публикуются на стене." -ForegroundColor Green
     Write-Host "Log: $Log" -ForegroundColor Cyan
     Write-Host ""
