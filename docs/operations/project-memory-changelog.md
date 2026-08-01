@@ -2,6 +2,31 @@
 
 This file records durable updates to the repository's operational memory.
 
+## 2026-08-01
+
+### Two-project identity separation
+
+- Added `docs/operations/project-identity-registry.md` as the canonical registry for the two distinct projects:
+  - `lord-god-strength` — Господь Бог — Сила Моя;
+  - `legendary-poet` — The Legendary Poet — Легендарный Поэт.
+- Recorded the credential model correctly:
+  - YouTube uses two separate OAuth aliases, one per selected channel;
+  - VK uses one shared user token for both communities;
+  - every VK operation must select its target by exact numeric community and owner IDs.
+- Recorded the current theological-project identities:
+  - YouTube channel ID `UCeSJsC6go2c9pdJCuUI1BYA`;
+  - YouTube alias `fedor-milovanov`, currently read-only;
+  - VK community ID `60805374` and owner ID `-60805374`;
+  - shared VK token alias `legendary-poet`.
+- Replaced the current canonical theological VK community link with `https://vk.ru/the_lord_god_is_my_strength` and retained the published `vk.com` form only as a compatibility URL.
+- Registered the current compact footer links for the theological project: website, Telegram, VK, VK Video, and Rutube.
+- Marked the poet-project website and numeric VK identity as unverified rather than preserving unsupported assumptions.
+- Updated root `AGENTS.md`, `docs/operations/current-state.md`, and the operations index so future work must bind `project_key`, exact provider IDs, and a project-specific link profile.
+
+### Identified code-level follow-up
+
+The unified editorial code currently contains a global project-link allowlist centered on The Legendary Poet. It must be replaced with project-specific link profiles before the theological project's descriptions or comments use that generic pipeline. A dedicated guarded code change is being prepared separately.
+
 ## 2026-07-31
 
 ### Added
