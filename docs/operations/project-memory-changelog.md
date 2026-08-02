@@ -6,11 +6,12 @@ This file records durable updates to the repository's operational memory.
 
 ### Daily article-link queue prepared
 
-- Prepared 10 postponed article posts for `lord-god-strength`, one daily at 14:00 UTC+03:00 from 2026-08-03 through 2026-08-12.
-- Source truth is `FedorMilovanov/gb-is-my-strength` search-manifest blob `952cfbd8b276fc7e877a784660fb4481dc8bd83f`; post copy is derived from the selected articles and points to their canonical public URLs.
-- Only pages with declared `.webp` Open Graph images are included. No separate photos are uploaded: the article URL is attached as a VK link card.
-- The executor verifies each live canonical URL and OG image before any write, blocks duplicate article URLs or occupied 14:00 slots, journals every attempt, and requires a VK link card with an image after every accepted post before continuing.
-- Policy SHA-256: `sha256:458b716dad898f7a692da7204259b43c42b1803387e9ea5ca855d456f044b85b`. Entrypoint: `scripts/run-lord-god-article-wave.ps1`.
+- Prepared 10 postponed article posts for `lord-god-strength`, one daily at 14:00 UTC+03:00 from 2026-08-03 through 2026-08-12; the revised mix covers exegesis, apologetics, church history, the Sermon on the Mount, hermeneutics, pastoral authority, pastoral care, and difficult texts.
+- Source truth is `FedorMilovanov/gb-is-my-strength` search-manifest blob `952cfbd8b276fc7e877a784660fb4481dc8bd83f`; every post contains source-grounded copy, one natural discussion question, and the canonical public URL.
+- Only pages with declared `.webp` Open Graph images are included. The executor verifies live HTML, canonical and OG metadata, indexability, WebP MIME, dimensions, aspect ratio, bytes, and SHA-256 before any VK write.
+- VK link previews are now parsed through `wall.parseAttachedLink` before `wall.post`; returned photo tokens are attached with the canonical URL when available. Direct URL attachment alone is not accepted as sufficient evidence of a usable card.
+- The write sequence is `Plan → Canary → Apply`: the canary schedules only article 1 and must become an exact postponed link card with an image before the remaining nine can be scheduled. The executor waits up to 90 seconds, blocks duplicate URLs and any postponed post within two hours, and distinguishes explicit VK rejection from an unknown outcome.
+- Policy SHA-256: `sha256:b3467af4911d5faa2550b2c2f0e53ce051b0365651e82abfc57cae8a68a66f5a`. Entrypoint: `scripts/run-lord-god-article-wave.ps1`.
 
 ### Theological postponed wall queue prepared
 
