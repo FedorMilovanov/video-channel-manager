@@ -15,7 +15,6 @@ from .common import (
     DECISION_SET_ID,
     MIN_FUTURE_SECONDS,
     MIN_GAP_SECONDS,
-    OWNER_ID,
     PHOTO_TOKEN_RE,
     RESUMABLE_WITH_PHOTO,
     URL_RE,
@@ -209,7 +208,8 @@ def preflight(
         exact = [
             ref
             for ref in references
-            if exact_reference(
+            if expected_photo is not None
+            and exact_reference(
                 operation,
                 ref,
                 expected_photo_token=expected_photo,
@@ -225,7 +225,15 @@ def preflight(
 
         if len(exact) == 1 and len(references) == 1 and not nearby:
             state = "already_applied"
-            detail = "one exact post with the reviewed text URL and a wall photo exists"
+            detail = (
+                "one exact post with the reviewed text URL and journal photo "
+                "identity exists"
+            )
+        elif references and expected_photo is None:
+            state = "conflict"
+            detail = (
+                "existing article post has no journal photo identity and cannot be adopted"
+            )
         elif references:
             state = "conflict"
             detail = "article URL already appears in another wall post"
