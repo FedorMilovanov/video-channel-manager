@@ -27,6 +27,7 @@ if (-not (Test-Path -LiteralPath $Python)) {
 $Script = Join-Path $PSScriptRoot "schedule_lord_god_article_wave_v3.py"
 $Package = Join-Path $PSScriptRoot "lord_god_article_wave_v3"
 $Policy = Join-Path $Repo "content\policies\lord-god-article-wave-v3-202608.json"
+$SourceContract = Join-Path $Repo "content\policies\lord-god-article-wave-v3-source-contract.json"
 
 if (-not (Test-Path -LiteralPath $Script)) {
     throw "Не найден исполнитель: $Script"
@@ -37,6 +38,9 @@ if (-not (Test-Path -LiteralPath $Package)) {
 if (-not (Test-Path -LiteralPath $Policy)) {
     throw "Не найдена политика: $Policy"
 }
+if (-not (Test-Path -LiteralPath $SourceContract)) {
+    throw "Не найден контракт источников: $SourceContract"
+}
 
 & $Python -m compileall -q $Package $Script
 if ($LASTEXITCODE -ne 0) {
@@ -44,7 +48,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 if ($Mode -eq "Plan") {
-    Write-Host "Господь Бог — Сила Моя: read-only аудит 30 URL и 10 отложенных постов." -ForegroundColor Cyan
+    Write-Host "Господь Бог — Сила Моя: read-only аудит 40 ресурсов и 10 отложенных постов." -ForegroundColor Cyan
     & $Python $Script --repo $Repo
     if ($LASTEXITCODE -ne 0) {
         throw "Проверка очереди статей завершилась ошибкой. Запись в VK не выполнялась."
