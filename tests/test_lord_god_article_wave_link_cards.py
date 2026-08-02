@@ -198,12 +198,8 @@ def test_link_card_source_does_not_contain_vk_photo_mutations_or_jpeg_conversion
 
 
 def test_entrypoint_routes_runtime_to_link_cards() -> None:
-    entrypoint = (ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py").read_text(
-        encoding="utf-8"
-    )
-    runner = (ROOT / "scripts" / "run-lord-god-article-wave.ps1").read_text(
-        encoding="utf-8"
-    )
+    entrypoint = (ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py").read_text(encoding="utf-8")
+    runner = (ROOT / "scripts" / "run-lord-god-article-wave.ps1").read_text(encoding="utf-8")
 
     assert "link_cards_module.guarded_main()" in entrypoint
     assert "режим link-карточек без загрузки фото" in runner
