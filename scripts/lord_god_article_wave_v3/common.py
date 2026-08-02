@@ -24,7 +24,7 @@ SOURCE_CONTRACT_PATH = Path(
 )
 EXPECTED_POLICY_SHA = "sha256:f0175b4783e6eb8b449a4558bef662b53bd95b583deb71a01ce7edfd1202dcc7"
 EXPECTED_SOURCE_CONTRACT_SHA = (
-    "sha256:d7ae3ba05f044f9dd8f1c2c6dce66ce4231e96a7fa0cdda6dd626121b99db3b0"
+    "sha256:659912a978d7b8442a9a8106783aa12eec81c2facdc1127f6cf21ead01dffac6"
 )
 MOSCOW = timezone(timedelta(hours=3), name="UTC+03:00")
 MIN_GAP_SECONDS = 2 * 60 * 60
@@ -275,6 +275,7 @@ def validate_source_contract(
         raise ValueError("Article source contract must contain exactly ten operations")
 
     external_urls: set[str] = set()
+    seen_content_paths: set[str] = set()
     seen_metadata_paths: set[str] = set()
     for ordinal, (operation, source) in enumerate(
         zip(policy_operations, contract_operations, strict=True),
@@ -287,24 +288,38 @@ def validate_source_contract(
             raise ValueError(f"Source contract operation identity mismatch: {ordinal}")
         if normalize_url(source.get("article_url")) != normalize_url(operation["url"]):
             raise ValueError(f"Source contract article URL mismatch: {operation_id}")
-        if source.get("content_source_path") != operation["source_path"]:
-            raise ValueError(f"Source contract content path mismatch: {operation_id}")
 
         image_url = normalize_url(source.get("image_url"))
+        content_path = str(source.get("content_source_path") or "").strip()
         metadata_path = str(source.get("metadata_source_path") or "").strip()
+        content_markers = source.get("content_markers")
         if not image_url.startswith("https://gospod-bog.ru/images/"):
             raise ValueError(f"Invalid contracted image URL: {operation_id}")
+        if not content_path.startswith("src/") or ".." in Path(content_path).parts:
+            raise ValueError(f"Invalid content evidence path: {operation_id}")
         if not metadata_path.startswith("src/") or ".." in Path(metadata_path).parts:
             raise ValueError(f"Invalid metadata source path: {operation_id}")
+        if (
+            not isinstance(content_markers, list)
+            or len(content_markers) != 2
+            or any(
+                not isinstance(marker, str) or len(marker.strip()) < 8
+                for marker in content_markers
+            )
+        ):
+            raise ValueError(f"Invalid content evidence markers: {operation_id}")
+        if content_path in seen_content_paths:
+            raise ValueError("Content evidence paths must be unique")
         if metadata_path in seen_metadata_paths:
             raise ValueError("Metadata source paths must be unique")
+        seen_content_paths.add(content_path)
         seen_metadata_paths.add(metadata_path)
 
         external_urls.update(
             {
                 normalize_url(operation["url"]),
                 image_url,
-                repository_raw_url(policy, operation["source_path"]),
+                repository_raw_url(policy, content_path),
                 repository_raw_url(policy, metadata_path),
             }
         )
@@ -328,12 +343,20 @@ def materialize_policy(
         operation_id = str(operation["operation_id"])
         source = by_id[operation_id]
         original_image = normalize_url(operation["image_url"])
+        original_source_path = str(operation["source_path"])
+        original_source_markers = list(operation["source_markers"])
         effective_image = normalize_url(source["image_url"])
         operation["metadata_source_path"] = source["metadata_source_path"]
         operation["content_source_path"] = source["content_source_path"]
+        operation["source_path"] = source["content_source_path"]
+        operation["source_markers"] = list(source["content_markers"])
         operation["image_url"] = effective_image
         if original_image != effective_image:
             operation["legacy_policy_image_url"] = original_image
+        if original_source_path != operation["source_path"]:
+            operation["legacy_policy_source_path"] = original_source_path
+        if original_source_markers != operation["source_markers"]:
+            operation["legacy_policy_source_markers"] = original_source_markers
 
     effective["source_contract_sha256"] = contract["contract_sha256"]
     effective["execution_contract_sha256"] = canonical_sha(
@@ -346,6 +369,7 @@ def materialize_policy(
                     "article_url": normalize_url(operation["url"]),
                     "image_url": normalize_url(operation["image_url"]),
                     "content_source_path": operation["source_path"],
+                    "content_markers": operation["source_markers"],
                     "metadata_source_path": operation["metadata_source_path"],
                 }
                 for operation in effective["operations"]
