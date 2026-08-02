@@ -24,14 +24,17 @@ if (-not (Test-Path -LiteralPath $Python)) {
     $Python = (Get-Command python -ErrorAction Stop).Source
 }
 
-$Script = Join-Path $PSScriptRoot "schedule_lord_god_article_wave.py"
-if (-not (Test-Path -LiteralPath $Script)) {
-    throw "Не найден исполнитель: $Script"
+$GuardedScript = Join-Path $PSScriptRoot "schedule_lord_god_article_wave.py"
+$Script = Join-Path $PSScriptRoot "schedule_lord_god_article_wave_current.py"
+foreach ($Path in @($GuardedScript, $Script)) {
+    if (-not (Test-Path -LiteralPath $Path)) {
+        throw "Не найден исполнитель: $Path"
+    }
 }
 
-& $Python -m py_compile $Script
+& $Python -m py_compile $GuardedScript $Script
 if ($LASTEXITCODE -ne 0) {
-    throw "Проверка Python-скрипта завершилась ошибкой."
+    throw "Проверка Python-скриптов завершилась ошибкой."
 }
 
 if ($Mode -eq "Plan") {
