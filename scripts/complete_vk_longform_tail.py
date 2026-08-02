@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Finish the reviewed 26-video VK tail, thumbnails, and Sproul album.
+"""Finish the reviewed 26-video VK tail, source thumbnails, and Sproul album.
 
-Without ``--execute`` this is a read-only live audit. Execution is locked to the
-current theological project and may upload only ledger rows with no VK ID and no
-prior upload attempt. It also sets each source YouTube thumbnail and fills the
-five-part Sproul VK album. Video uploads always use ``wallpost=0`` through the
-standard writer; this script has no wall or delete methods.
+Without ``--execute`` this is a read-only live audit. Execution is hard-locked to
+``lord-god-strength`` / VK community ``60805374``. It may upload only ledger rows
+with no VK ID and no prior upload attempt, never posts to the wall, resumes from
+one local journal, applies source YouTube thumbnails, and fills the exact
+five-part Sproul album.
 """
 
 from __future__ import annotations
@@ -33,16 +33,17 @@ from video_channel_manager.platforms.vk.writer import VkUploadTicket, VkVideoWri
 PROJECT_KEY = "lord-god-strength"
 COMMUNITY_ID = 60805374
 OWNER_ID = -60805374
-ACCOUNT_ALIAS = "legendary-poet"
+ACCOUNT_ALIAS = "legendary-poet"  # Local shared VK credential alias, not a project identity.
 YOUTUBE_CHANNEL_ID = "UCeSJsC6go2c9pdJCuUI1BYA"
 SOURCE_PLAYLIST_ID = "PLW_VRhdOSkXo"
 TARGET_ALBUM_TITLE = "Архитектура мышления — Р. Ч. Спроул"
 QUEUE_SHA256 = "b9c0268be62ea8fb9281cc9a551ebc5621dfdd4bfeb22a9d8f4b50707baa33ed"
 SERIES_IDS = ["pDU8kdhDfLo", "uI-wfRaq2SA", "-q2TcD8ldb4", "T8s9DNkuavQ", "QswEQFZfV2U"]
+THUMBNAIL_URL_NAMES = ("maxresdefault", "sddefault", "hqdefault")
 
 
 def now() -> str:
-    return datetime.now(UTC).isoformat()
+    return datetime.now(UTC).astimezone().isoformat()
 
 
 def digest(path: Path) -> str:
@@ -51,6 +52,10 @@ def digest(path: Path) -> str:
         while chunk := stream.read(1024 * 1024):
             value.update(chunk)
     return value.hexdigest()
+
+
+def text_digest(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
 def write_json(path: Path, value: object) -> None:
@@ -111,7 +116,7 @@ def state(repo: Path) -> dict[str, Any]:
     if not isinstance(value, dict):
         value = {}
     value.setdefault("schema_name", "video-manager.vk-longform-tail-completion")
-    value.setdefault("schema_version", 1)
+    value.setdefault("schema_version", 2)
     value.setdefault("project_key", PROJECT_KEY)
     value.setdefault("queue_sha256", QUEUE_SHA256)
     value.setdefault("uploads", {})
@@ -134,6 +139,13 @@ def ytdlp() -> list[str]:
     except ImportError as exc:
         raise RuntimeError("Install yt-dlp: python -m pip install -U yt-dlp") from exc
     return [sys.executable, "-m", "yt_dlp"]
+
+
+def ffmpeg() -> str:
+    executable = shutil.which("ffmpeg")
+    if not executable:
+        raise RuntimeError("ffmpeg is required to normalize source thumbnails")
+    return executable
 
 
 def run_json(arguments: list[str], label: str) -> dict[str, Any]:
@@ -199,24 +211,59 @@ def download_video(row: dict[str, Any], target: Path) -> Path:
     return target
 
 
-def download_thumbnail(youtube_id: str, target: Path) -> tuple[Path, str]:
+def normalize_thumbnail(source: Path, target: Path) -> Path:
     target.parent.mkdir(parents=True, exist_ok=True)
-    urls = [
-        f"https://i.ytimg.com/vi/{youtube_id}/maxresdefault.jpg",
-        f"https://i.ytimg.com/vi/{youtube_id}/sddefault.jpg",
-        f"https://i.ytimg.com/vi/{youtube_id}/hqdefault.jpg",
+    command = [
+        ffmpeg(),
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-y",
+        "-i",
+        str(source),
+        "-vf",
+        "scale=1280:720:force_original_aspect_ratio=decrease,"
+        "pad=1280:720:(ow-iw)/2:(oh-ih)/2:color=black,format=yuvj420p",
+        "-frames:v",
+        "1",
+        "-q:v",
+        "2",
+        str(target),
     ]
+    result = subprocess.run(command, capture_output=True, text=True, check=False)
+    if result.returncode != 0 or not target.is_file() or target.stat().st_size <= 10_000:
+        raise RuntimeError(f"ffmpeg thumbnail normalization failed: {result.stderr[-1000:]}")
+    return target
+
+
+def thumbnail_candidates(repo: Path, youtube_id: str) -> list[tuple[Path, str]]:
+    raw_dir = op_root(repo) / "thumbnails" / "raw"
+    normalized_dir = op_root(repo) / "thumbnails" / "normalized"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    normalized_dir.mkdir(parents=True, exist_ok=True)
+    candidates: list[tuple[Path, str]] = []
+    seen: set[str] = set()
     with httpx.Client(timeout=60.0, follow_redirects=True) as client:
-        for url in urls:
+        for index, name in enumerate(THUMBNAIL_URL_NAMES, start=1):
+            url = f"https://i.ytimg.com/vi/{youtube_id}/{name}.jpg"
             response = client.get(url)
             if (
-                response.status_code == 200
-                and response.headers.get("content-type", "").startswith("image/")
-                and len(response.content) > 10_000
+                response.status_code != 200
+                or not response.headers.get("content-type", "").startswith("image/")
+                or len(response.content) <= 10_000
             ):
-                target.write_bytes(response.content)
-                return target, url
-    raise RuntimeError(f"No usable source thumbnail for {youtube_id}")
+                continue
+            raw = raw_dir / f"{youtube_id}-{index}.jpg"
+            raw.write_bytes(response.content)
+            raw_sha = digest(raw)
+            if raw_sha in seen:
+                continue
+            seen.add(raw_sha)
+            normalized = normalize_thumbnail(raw, normalized_dir / f"{youtube_id}-{index}-1280x720.jpg")
+            candidates.append((normalized, url))
+    if not candidates:
+        raise RuntimeError(f"No usable source thumbnail for {youtube_id}")
+    return candidates
 
 
 def normalize(value: str) -> str:
@@ -236,12 +283,7 @@ def live_video(writer: VkVideoWriter, row: dict[str, Any]) -> dict[str, Any] | N
     return writer.read_video(owner_id=identity[0], video_id=identity[1]) if identity else None
 
 
-def audit(
-    repo: Path,
-    queue: list[dict[str, Any]],
-    writer: VkVideoWriter,
-    client: VkApiClient,
-) -> dict[str, Any]:
+def audit(repo: Path, queue: list[dict[str, Any]], writer: VkVideoWriter, client: VkApiClient) -> dict[str, Any]:
     live: dict[str, Any] = {}
     missing: list[str] = []
     for row in queue:
@@ -299,7 +341,7 @@ def audit(
     ]
     return {
         "schema_name": "video-manager.vk-longform-tail-plan",
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": now(),
         "project_key": PROJECT_KEY,
         "youtube_channel_id": YOUTUBE_CHANNEL_ID,
@@ -358,7 +400,8 @@ def upload_missing(repo: Path, row: dict[str, Any], writer: VkVideoWriter, journ
     previous = journal["uploads"].get(youtube_id)
     if isinstance(previous, dict) and previous.get("remote_id"):
         owner_text, video_text = str(previous["remote_id"]).split("_", 1)
-        if writer.read_video(owner_id=int(owner_text), video_id=int(video_text)) is not None:
+        item = writer.read_video(owner_id=int(owner_text), video_id=int(video_text))
+        if item is not None:
             row["vk_owner_id"], row["vk_video_id"] = int(owner_text), int(video_text)
             return
 
@@ -414,12 +457,16 @@ def upload_missing(repo: Path, row: dict[str, Any], writer: VkVideoWriter, journ
     )
 
 
+def explicit_parameter_rejection(exc: BaseException) -> bool:
+    return isinstance(exc, VkWriteError) and exc.method == "video.saveUploadedThumb" and exc.code == 100
+
+
 def set_source_thumbnail(
     repo: Path,
     row: dict[str, Any],
     writer: VkThumbnailWriter,
     journal: dict[str, Any],
-) -> None:
+) -> bool:
     youtube_id = str(row["youtube_id"])
     identity = remote(row)
     if identity is None:
@@ -428,34 +475,87 @@ def set_source_thumbnail(
     previous = journal["thumbnails"].get(youtube_id)
     if isinstance(previous, dict):
         if previous.get("status") == "verified" and previous.get("remote_id") == remote_id:
-            return
-        if previous.get("status") in {"started", "unknown"}:
+            return True
+        if previous.get("status") in {"started", "unknown"} and not (
+            previous.get("status") == "unknown" and "VK API 100" in str(previous.get("error") or "")
+        ):
             raise RuntimeError(f"Thumbnail outcome requires manual reconciliation: {youtube_id}")
 
-    image, source_url = download_thumbnail(
-        youtube_id,
-        op_root(repo) / "thumbnails" / f"{youtube_id}.jpg",
-    )
+    attempts: list[dict[str, Any]] = []
     journal["thumbnails"][youtube_id] = {
-        "status": "started",
+        "status": "retrying",
         "remote_id": remote_id,
-        "source_url": source_url,
-        "sha256": digest(image),
+        "attempts": attempts,
         "started_at": now(),
     }
     save_state(repo, journal)
-    try:
-        result = writer.set_thumbnail(owner_id=identity[0], video_id=identity[1], path=image)
-    except BaseException as exc:
+
+    for image, source_url in thumbnail_candidates(repo, youtube_id):
+        attempt = {
+            "source_url": source_url,
+            "path": str(image),
+            "sha256": digest(image),
+            "started_at": now(),
+        }
+        attempts.append(attempt)
+        save_state(repo, journal)
+        try:
+            upload_url = writer.get_upload_url(owner_id=identity[0])
+            upload_payload = writer.upload_image(upload_url=upload_url, path=image)
+            meta = upload_payload.get("meta")
+            if isinstance(meta, dict):
+                width, height = meta.get("width"), meta.get("height")
+                if str(width).isdigit() and str(height).isdigit():
+                    upload_payload.setdefault("thumb_size", f"{width}x{height}")
+            thumb_json = upload_payload.get("thumb_json")
+            attempt["upload_payload"] = {
+                "keys": sorted(str(key) for key in upload_payload),
+                "thumb_json_sha256": text_digest(thumb_json) if isinstance(thumb_json, str) else None,
+                "thumb_size": upload_payload.get("thumb_size"),
+            }
+            result = writer.save_uploaded_thumbnail(
+                owner_id=identity[0],
+                video_id=identity[1],
+                upload_payload=upload_payload,
+            )
+        except BaseException as exc:
+            attempt.update({"finished_at": now(), "error": f"{type(exc).__name__}: {exc}"})
+            if explicit_parameter_rejection(exc):
+                attempt["status"] = "rejected"
+                journal["thumbnails"][youtube_id].update(
+                    {"status": "retrying", "last_error": attempt["error"]}
+                )
+                save_state(repo, journal)
+                continue
+            attempt["status"] = "unknown"
+            journal["thumbnails"][youtube_id].update(
+                {"status": "unknown", "error": attempt["error"], "finished_at": now()}
+            )
+            save_state(repo, journal)
+            raise
+
+        attempt.update({"status": "verified", "finished_at": now(), "result": result})
         journal["thumbnails"][youtube_id].update(
-            {"status": "unknown", "error": f"{type(exc).__name__}: {exc}"}
+            {
+                "status": "verified",
+                "source_url": source_url,
+                "sha256": digest(image),
+                "verified_at": now(),
+                "result": result,
+            }
         )
         save_state(repo, journal)
-        raise
+        return True
+
     journal["thumbnails"][youtube_id].update(
-        {"status": "verified", "verified_at": now(), "result": result}
+        {
+            "status": "rejected",
+            "error": "VK rejected all normalized source-thumbnail variants with API code 100",
+            "finished_at": now(),
+        }
     )
     save_state(repo, journal)
+    return False
 
 
 def fill_album(
@@ -487,29 +587,7 @@ def fill_album(
     return album_id
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--repo", type=Path, default=Path.cwd())
-    parser.add_argument("--account", default=ACCOUNT_ALIAS)
-    parser.add_argument("--community", type=int, default=COMMUNITY_ID)
-    parser.add_argument("--execute", action="store_true")
-    args = parser.parse_args()
-
-    repo = args.repo.resolve()
-    if args.account != ACCOUNT_ALIAS or args.community != COMMUNITY_ID:
-        raise RuntimeError("This operation is locked to alias legendary-poet and community 60805374")
-    queue = rows(repo)
-    settings = get_settings()
-    store = VkTokenStore(settings.data_dir)
-    video_writer = VkVideoWriter(token_store=store, account_alias=args.account, api_version=settings.vk_api_version)
-    client = VkApiClient(token_store=store, account_alias=args.account, api_version=settings.vk_api_version)
-    community = client.get_community(COMMUNITY_ID)
-    if community.ref.remote_id != str(COMMUNITY_ID) or not community.metadata.get("managed_by_token"):
-        raise RuntimeError("Wrong or unmanaged VK community")
-
-    plan = audit(repo, queue, video_writer, client)
-    plan_path = op_root(repo) / "plan.json"
-    write_json(plan_path, plan)
+def print_plan(plan: dict[str, Any], plan_path: Path) -> None:
     print(
         json.dumps(
             {
@@ -529,6 +607,32 @@ def main() -> int:
             indent=2,
         )
     )
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--repo", type=Path, default=Path.cwd())
+    parser.add_argument("--account", default=ACCOUNT_ALIAS, help=argparse.SUPPRESS)
+    parser.add_argument("--community", type=int, default=COMMUNITY_ID, help=argparse.SUPPRESS)
+    parser.add_argument("--execute", action="store_true")
+    args = parser.parse_args()
+
+    repo = args.repo.resolve()
+    if args.account != ACCOUNT_ALIAS or args.community != COMMUNITY_ID:
+        raise RuntimeError("This operation is locked to lord-god-strength / VK community 60805374")
+    queue = rows(repo)
+    settings = get_settings()
+    store = VkTokenStore(settings.data_dir)
+    video_writer = VkVideoWriter(token_store=store, account_alias=ACCOUNT_ALIAS, api_version=settings.vk_api_version)
+    client = VkApiClient(token_store=store, account_alias=ACCOUNT_ALIAS, api_version=settings.vk_api_version)
+    community = client.get_community(COMMUNITY_ID)
+    if community.ref.remote_id != str(COMMUNITY_ID) or not community.metadata.get("managed_by_token"):
+        raise RuntimeError("Wrong or unmanaged VK community")
+
+    plan = audit(repo, queue, video_writer, client)
+    plan_path = op_root(repo) / "plan.json"
+    write_json(plan_path, plan)
+    print_plan(plan, plan_path)
     if plan["blocked_missing_ids"]:
         raise RuntimeError(f"Ambiguous missing rows: {plan['blocked_missing_ids']}")
     if not args.execute:
@@ -544,34 +648,49 @@ def main() -> int:
 
     thumbnail_writer = VkThumbnailWriter(
         token_store=store,
-        account_alias=args.account,
+        account_alias=ACCOUNT_ALIAS,
         api_version=settings.vk_api_version,
     )
+    thumbnail_failures: list[str] = []
     for index, row in enumerate(queue, start=1):
-        print(f"THUMBNAIL {index}/26 {row['youtube_id']}", flush=True)
-        set_source_thumbnail(repo, row, thumbnail_writer, journal)
+        youtube_id = str(row["youtube_id"])
+        print(f"THUMBNAIL {index}/26 {youtube_id}", flush=True)
+        if not set_source_thumbnail(repo, row, thumbnail_writer, journal):
+            thumbnail_failures.append(youtube_id)
+            print(f"THUMBNAIL REJECTED {youtube_id}; continuing exact queue", flush=True)
 
     album_id = fill_album(repo, queue, video_writer, client, journal)
     final = audit(repo, queue, video_writer, client)
     final["completed_at"] = now()
+    verified_count = sum(
+        1
+        for item in journal["thumbnails"].values()
+        if isinstance(item, dict) and item.get("status") == "verified"
+    )
     final["remote_writes"] = {
         "new_uploads": len(plan["safe_upload_ids"]),
-        "thumbnail_repairs_verified": sum(
-            1
-            for item in journal["thumbnails"].values()
-            if isinstance(item, dict) and item.get("status") == "verified"
-        ),
+        "thumbnail_repairs_verified": verified_count,
+        "thumbnail_failures": thumbnail_failures,
         "sproul_album_id": album_id,
     }
+    final_status = (
+        "completed"
+        if not final["missing_youtube_ids"]
+        and verified_count == 26
+        and not final["target_album"]["missing_series_ids"]
+        else "partial"
+    )
+    final["status"] = final_status
     result_path = op_root(repo) / "result.json"
     write_json(result_path, final)
     print(
         json.dumps(
             {
-                "status": "completed",
+                "status": final_status,
                 "live_count": final["live_count"],
                 "missing_youtube_ids": final["missing_youtube_ids"],
-                "thumbnails_verified": final["remote_writes"]["thumbnail_repairs_verified"],
+                "thumbnails_verified": verified_count,
+                "thumbnail_failures": thumbnail_failures,
                 "sproul_album_id": album_id,
                 "sproul_album_missing": final["target_album"]["missing_series_ids"],
                 "result_path": str(result_path),
@@ -580,7 +699,7 @@ def main() -> int:
             indent=2,
         )
     )
-    return 0
+    return 0 if final_status == "completed" else 2
 
 
 if __name__ == "__main__":
