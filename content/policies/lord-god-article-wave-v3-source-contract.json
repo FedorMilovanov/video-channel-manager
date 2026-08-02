@@ -1,0 +1,82 @@
+{
+  "base_policy_sha256": "sha256:f0175b4783e6eb8b449a4558bef662b53bd95b583deb71a01ce7edfd1202dcc7",
+  "contract_sha256": "sha256:d7ae3ba05f044f9dd8f1c2c6dce66ce4231e96a7fa0cdda6dd626121b99db3b0",
+  "decision_set_id": "lord-god-article-wave-v3-202608",
+  "expected_external_resources": 40,
+  "operations": [
+    {
+      "article_url": "https://gospod-bog.ru/articles/rimlyanam-7-veruyushchiy-ili-neveruyushchiy/",
+      "content_source_path": "src/content/articles/rimlyanam-7-veruyushchiy-ili-neveruyushchiy.mdx",
+      "image_url": "https://gospod-bog.ru/images/og-rimlyanam-7.webp",
+      "metadata_source_path": "src/components/article-pilots/rimlyanam7/Rimlyanam7PageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-01-rimlyanam-7"
+    },
+    {
+      "article_url": "https://gospod-bog.ru/articles/kod-da-vinchi/",
+      "content_source_path": "src/content/articles/kod-da-vinchi.mdx",
+      "image_url": "https://gospod-bog.ru/images/og-kod-da-vinchi.webp",
+      "metadata_source_path": "src/components/article-pilots/kod-da-vinchi/KodDaVinchiPageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-02-kod-da-vinchi"
+    },
+    {
+      "article_url": "https://gospod-bog.ru/articles/dzhon-gill-istoricheskiy-kontekst/",
+      "content_source_path": "src/content/articles/dzhon-gill-istoricheskiy-kontekst.mdx",
+      "image_url": "https://gospod-bog.ru/images/og-dzhon-gill-istoricheskiy-kontekst.webp",
+      "metadata_source_path": "src/components/article-pilots/gill-context/GillContextPageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-03-gill-context"
+    },
+    {
+      "article_url": "https://gospod-bog.ru/nagornaya/chast-1/",
+      "content_source_path": "src/components/nagornaya/chast-1/NagornayaChast1MainShell.astro",
+      "image_url": "https://gospod-bog.ru/images/og-nagornaya-propoved-chast-1.webp",
+      "metadata_source_path": "src/components/nagornaya/chast-1/NagornayaChast1PageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-04-nagornaya-ch1"
+    },
+    {
+      "article_url": "https://gospod-bog.ru/articles/hermenevticheskaya-otsenka-hristotsentrichnoy-germenevtiki/",
+      "content_source_path": "src/content/articles/hermenevticheskaya-otsenka-hristotsentrichnoy-germenevtiki.mdx",
+      "image_url": "https://gospod-bog.ru/images/og-hermenevtika-hristotsentrichnaya-otsenka.webp",
+      "metadata_source_path": "src/components/article-pilots/hermenevtika/HermenevtikaPageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-05-hermenevtika"
+    },
+    {
+      "article_url": "https://gospod-bog.ru/articles/krajne-li-isporcheno-serdce/",
+      "content_source_path": "src/content/articles/krajne-li-isporcheno-serdce.mdx",
+      "image_url": "https://gospod-bog.ru/images/og-krajne-isporcheno.webp",
+      "metadata_source_path": "src/components/article-pilots/krajne/KrajnePageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-06-krajne-isporcheno"
+    },
+    {
+      "article_url": "https://gospod-bog.ru/articles/20-antisovetov-pastoru/",
+      "content_source_path": "src/content/articles/20-antisovetov-pastoru.mdx",
+      "image_url": "https://gospod-bog.ru/images/pastor-series/og-20-antisovetov-pastoru.webp",
+      "metadata_source_path": "src/components/article-pilots/antisovetov/AntisovetovPageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-07-antisovetov"
+    },
+    {
+      "article_url": "https://gospod-bog.ru/articles/dzhon-gill-chast-1-chelovek/",
+      "content_source_path": "src/content/articles/dzhon-gill-chast-1-chelovek.mdx",
+      "image_url": "https://gospod-bog.ru/images/og-dzhon-gill-chast-1-chelovek.webp",
+      "metadata_source_path": "src/components/article-pilots/gill-part1/GillPart1PageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-08-gill-part1"
+    },
+    {
+      "article_url": "https://gospod-bog.ru/nagornaya/chast-2/",
+      "content_source_path": "src/components/nagornaya/chast-2/NagornayaChast2MainShell.astro",
+      "image_url": "https://gospod-bog.ru/images/og-nagornaya-propoved-chast-2.webp",
+      "metadata_source_path": "src/components/nagornaya/chast-2/NagornayaChast2PageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-09-nagornaya-ch2"
+    },
+    {
+      "article_url": "https://gospod-bog.ru/nagornaya/chast-3/",
+      "content_source_path": "src/components/nagornaya/chast-3/NagornayaChast3MainShell.astro",
+      "image_url": "https://gospod-bog.ru/images/og-nagornaya-propoved-chast-3.webp",
+      "metadata_source_path": "src/components/nagornaya/chast-3/NagornayaChast3PageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-10-nagornaya-ch3"
+    }
+  ],
+  "schema_name": "video-manager.vk-lord-god-article-wave-source-contract",
+  "schema_version": 1,
+  "source_repository": "FedorMilovanov/gb-is-my-strength",
+  "source_repository_commit": "aed8ed2244ad566b0458e490f629d394122dbf95"
+}
