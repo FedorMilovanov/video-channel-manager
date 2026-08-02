@@ -5,13 +5,20 @@ The original immutable plan referenced one superseded social image and one
 article that exists only as a publication-hold draft without a public route.
 This entrypoint applies two exact reviewed corrections in memory before the
 normal policy, source, VK-card, duplicate, canary, and postflight guards run.
-No schedule, community identity, or other post is changed.
+
+VK ``wall.parseAttachedLink`` returns an array of generic wall attachments. In
+current production behavior it may return the prepared image as a ``photo``
+attachment without a separate ``link`` attachment. This wrapper accepts that
+exact response shape only when a valid VK photo token exists, then combines the
+photo token with the exact reviewed article URL for ``wall.post``. Empty or
+otherwise unusable parse results remain blocking.
 """
 
 from __future__ import annotations
 
 import copy
 import importlib.util
+import json
 import os
 import sys
 from pathlib import Path
@@ -118,9 +125,83 @@ def install_reviewed_policy_corrections(module: Any) -> None:
     module.load_policy = load_current_policy
 
 
+def install_vk_link_parse_compatibility(module: Any) -> None:
+    def parse_attached_link(client: Any, article_url: str) -> dict[str, Any]:
+        normalized = module.normalize_url(article_url)
+        links_json = json.dumps(
+            [{"type": "link", "link": normalized}],
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+        response = client._call(
+            "wall.parseAttachedLink",
+            params={"links": links_json, "extended": False},
+        )
+        data = response.get("data") if isinstance(response, dict) else None
+        attachments = (
+            [item for item in data if isinstance(item, dict)]
+            if isinstance(data, list)
+            else []
+        )
+        attachment_types = [str(item.get("type") or "unknown") for item in attachments]
+        links = [module.link_payload_from_attachment(item) for item in attachments]
+        links = [item for item in links if isinstance(item, dict)]
+        if len(links) > 1:
+            raise RuntimeError(
+                f"wall.parseAttachedLink returned {len(links)} link cards for {normalized}"
+            )
+
+        link = links[0] if links else {}
+        photo_tokens = module.parsed_photo_tokens(attachments, link)
+
+        if link:
+            resolved = module.normalize_url(
+                link.get("url") or link.get("target_url") or normalized
+            )
+            if resolved != normalized:
+                raise RuntimeError(
+                    f"VK resolved a different article URL: {normalized} -> {resolved}"
+                )
+            if not module.link_has_image(link) and not photo_tokens:
+                raise RuntimeError(f"VK parsed the article without an image: {normalized}")
+            parse_mode = "link_card"
+            title = str(link.get("title") or "")
+            description_length = len(str(link.get("description") or ""))
+        else:
+            if not photo_tokens:
+                shape = ",".join(attachment_types) or "empty"
+                raise RuntimeError(
+                    "wall.parseAttachedLink returned no usable image attachment "
+                    f"for {normalized}; attachment_types={shape}"
+                )
+            resolved = normalized
+            parse_mode = "photo_tokens_plus_external_url"
+            title = ""
+            description_length = 0
+
+        attachment_parts = [*photo_tokens, normalized]
+        return {
+            "article_url": normalized,
+            "resolved_url": resolved,
+            "attachment_type": "link" if link else "photo+external-link",
+            "parse_mode": parse_mode,
+            "attachment_types": attachment_types,
+            "response_data_sha256": module.canonical_sha(attachments),
+            "title": title,
+            "description_length": description_length,
+            "link_card_has_image": True,
+            "photo_tokens": photo_tokens,
+            "wall_post_attachments": ",".join(attachment_parts),
+            "status": "verified",
+        }
+
+    module.parse_attached_link = parse_attached_link
+
+
 def main() -> int:
     module = load_guarded_module()
     install_reviewed_policy_corrections(module)
+    install_vk_link_parse_compatibility(module)
     return int(module.main())
 
 
