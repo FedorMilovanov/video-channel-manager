@@ -2,6 +2,23 @@
 
 This file records durable updates to the repository's operational memory.
 
+## 2026-08-02
+
+### Long-form tail correction
+
+- Confirmed the only pre-upload failure in the reviewed 26-video queue: YouTube `uI-wfRaq2SA`, part 2 of `Архитектура мышления`; the download failed with HTTP 403 before any VK reservation or upload, so no duplicate ambiguity exists.
+- Added `scripts/complete_vk_longform_tail.py` as the single focused completion entrypoint. It reconciles all 26 exact rows, uploads only safe never-attempted gaps, repairs source thumbnails, and verifies the five-part Sproul VK album.
+- Added the durable transfer rule: when source artwork exists, the transfer is incomplete until that exact YouTube thumbnail or a reviewed local branded override is applied to VK and its source, SHA-256, target ID, and result are journaled. A VK-generated frame requires an explicit no-artwork exception.
+- Recorded a cross-project renderer defect: the generic VK publication helper still contains a poet-specific title convention, so it must not be used for `lord-god-strength` until made project-aware. The focused completion script preserves the current theological video's exact title and description.
+- The previous broad playlist audit was not accepted as current evidence because one run paginated only the first 100 VK videos and another failed VK authorization. Playlist completion now uses exact series IDs and live album membership.
+- Issue #40 tracks this one correction; accidental temporary issues #41–#43 were closed and contain no work.
+
+### Shorts reset completed
+
+- Replaced 34 reviewed low-view Shorts with verified ordinary VK videos.
+- Accepted 34 old-video deletions and 34 generated wall-post deletions.
+- Final result reported no remaining planned or unresolved wall posts; protected wall post `12400` remained present.
+
 ## 2026-08-01
 
 ### The Legendary Poet identities and links confirmed
