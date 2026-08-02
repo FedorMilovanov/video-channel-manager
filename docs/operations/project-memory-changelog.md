@@ -4,6 +4,14 @@ This file records durable updates to the repository's operational memory.
 
 ## 2026-08-02
 
+### Theological postponed wall queue prepared
+
+- Prepared one immutable 26-video wall plan for `lord-god-strength`, VK community `60805374` / owner `-60805374`; no VK write occurs during plan creation.
+- Cadence is two postponed posts per day at 09:00 and 19:00 Moscow time, from 2026-08-03 through 2026-08-15, ordered oldest-to-newest within the verified long-form tail.
+- Every post has an individual compact introduction, a discussion question, the exact YouTube source, a reviewed relevant playlist, and the registered project links for the site, Telegram, VK Video, and Rutube.
+- The executor revalidates all exact videos, scans both published and postponed wall queues, blocks duplicates or changed text/times, journals intent before `wall.post`, and verifies all scheduled posts afterward. It has no edit, delete, or immediate-post method.
+- Policy SHA-256: `sha256:2f9e4de476ad7267b6f8423b7e23bd89173964af9d31641d3698a051c82041c5`. Entrypoint: `scripts/run-lord-god-wall-tail.ps1`.
+
 ### Long-form tail correction
 
 - Confirmed the only pre-upload failure in the reviewed 26-video queue: YouTube `uI-wfRaq2SA`, part 2 of `Архитектура мышления`; the download failed with HTTP 403 before any VK reservation or upload, so no duplicate ambiguity exists.
@@ -72,7 +80,7 @@ This file records durable updates to the repository's operational memory.
 - `docs/operations/README.md` as an index for operational documentation.
 - `scripts/verify_operational_bundle.py` for pre-handoff ZIP validation.
 - Regression tests for valid bundles, nested roots, missing entrypoints, path traversal, secret leakage, checksum mismatches, and critical operational-memory references.
-- Pull-request checklist, operational incident issue form, run-report template, incident-report template, and decision-log template.
+- Pull-request checklist, operational incident issue form, incident-report template, and decision-log template.
 - Prioritized automation backlog.
 
 ### Repository workflow completed
