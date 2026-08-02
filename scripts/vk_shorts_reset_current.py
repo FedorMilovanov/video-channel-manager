@@ -196,7 +196,7 @@ def tolerant_delete_wall_post_once(
             error=str(exc),
         )
         raise
-    if response not in {1, True}:
+    if response != 1:
         journal.upsert(
             action_key,
             "delete_wall",
