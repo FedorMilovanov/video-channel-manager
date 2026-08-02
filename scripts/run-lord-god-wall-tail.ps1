@@ -24,7 +24,7 @@ if (-not (Test-Path -LiteralPath $Python)) {
     $Python = (Get-Command python -ErrorAction Stop).Source
 }
 
-$Script = Join-Path $PSScriptRoot "schedule_lord_god_wall_tail.py"
+$Script = Join-Path $PSScriptRoot "schedule_lord_god_wall_tail_current.py"
 if (-not (Test-Path -LiteralPath $Script)) {
     throw "Не найден исполнитель: $Script"
 }
