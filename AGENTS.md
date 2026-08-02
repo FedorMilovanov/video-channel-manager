@@ -82,38 +82,38 @@ Every provider plan must bind `project_key`, exact YouTube channel ID, exact VK 
 ## Current verified state
 
 - The reviewed VK duplicate cleanup is complete: `403 confirmed_deleted`, `0 planned`, `0 unresolved`, `run=completed`.
-- The final stable VK ordinary-video inventory after cleanup contains `2879` records.
 - The public YouTube inventory contains `1781` items: `1673` long-form videos and `108` Shorts.
 - The exact long-form transfer boundary is YouTube ID `KobOzfBqzic`, title `Рождество: Правда и Вымысел - Джон МакАртур`. It is already present in VK and must not be uploaded again.
 - There are `27` long-form uploads newer than that boundary. Exactly `26` were verified missing in the VK snapshot.
 - YouTube ID `s512Opa8Eu4` is already present as VK ID `-60805374_456241938`; duration delta is one second.
 - Verified 26-item upload queue SHA-256: `b9c0268be62ea8fb9281cc9a551ebc5621dfdd4bfeb22a9d8f4b50707baa33ed`.
-- The 26-item upload executor was prepared, but completion is not verified until `upload-result.json` is inspected.
-- Shorts are not upload-authoritative yet: the ordinary VK API snapshot reported `vk_clips=0`, although clips visibly exist in the VK UI.
+- Historical long-form result: `23 confirmed`, `2 processing`, `1 failed before VK upload`. The sole pre-upload failure is `uI-wfRaq2SA`, part 2 of `Архитектура мышления`; it has no VK ID and no upload attempt.
+- The 34 reviewed low-view Shorts were replaced by ordinary videos and their generated wall posts were removed: `34 upload verified`, `34 old video delete accepted`, `34 wall delete accepted`; protected post `12400` remained present.
 
 ## Non-negotiable safety rules
 
 1. Never use the `legendary-poet` YouTube write token for `lord-god-strength`.
 2. Never select a VK target only from the shared token alias; confirm numeric community `60805374` and owner `-60805374` for the current project.
 3. Never expose or request manual entry of the configured VK token when the external source is available.
-4. Never rerun any old delete, canary, recovery, v3/v4, or fast-cleanup executor. The deletion phase is closed.
-5. Never infer absence from an endpoint that does not cover the relevant surface. `video.get` ordinary-video absence is not proof of VK Clip absence.
+4. Never rerun any closed deletion or Shorts-reset executor. Use only the current focused completion entrypoint for remaining long-form work.
+5. Never infer absence from an endpoint that does not cover the relevant surface.
 6. Never infer a transfer boundary from screenshots or relative labels such as “4 months ago”. Use exact IDs and current inventories.
 7. Never upload an ambiguous match.
 8. Never repeat an upload with an unknown outcome. Reconcile the ledger and live VK state first.
 9. Keep long-form videos and Shorts/Clips in separate manifests and ledgers.
 10. Preserve local masters or controlled exports when available. Do not use screen capture as a source.
-11. Do not publish to the wall, create playlists, rewrite descriptions, or extract MP3 until the uploaded catalog has been verified.
-12. Never commit OAuth tokens, VK tokens, downloaded media, local exports, ledgers, logs, backups, or generated upload packages.
-13. Every operational ZIP must pass `python scripts/verify_operational_bundle.py ...` before being handed to a user.
-14. Descriptions, comments, playlists, and footers must use only the selected project's registered links unless a cross-project link has been explicitly reviewed for that exact operation.
-15. Unknown or unregistered links fail closed; never invent a vanity handle, site, Clips URL, or numeric ID.
+11. Preserve the exact source thumbnail whenever one exists. A transfer is incomplete until the source URL or reviewed local artwork path, SHA-256, target video ID, and thumbnail-write result are journaled. VK's automatic frame is allowed only when no usable source artwork exists or an explicit exception is recorded.
+12. Video upload and wall publishing are separate operations. Every upload must disable automatic wall publication.
+13. Never commit OAuth tokens, VK tokens, downloaded media, local exports, ledgers, logs, backups, or generated upload packages.
+14. Every operational ZIP must pass `python scripts/verify_operational_bundle.py ...` before being handed to a user.
+15. Descriptions, comments, playlists, and footers must use only the selected project's registered links unless a cross-project link has been explicitly reviewed for that exact operation.
+16. Unknown or unregistered links fail closed; never invent a vanity handle, site, Clips URL, or numeric ID.
 
 ## Execution and handoff rules
 
-- Read-only inventory first; writes only from a reviewed immutable manifest.
-- Store exact project key, source ID, target ID, title, duration, status, attempt timestamps, and provider responses in a durable ledger.
-- A successful HTTP response is not a postcondition. Re-read the remote object.
+- Read-only inventory first; writes only from a reviewed exact-ID scope.
+- Store exact project key, source ID, target ID, title, duration, status, attempt timestamps, provider responses, source artwork identity, and artwork result in a durable ledger.
+- A successful HTTP response is not a postcondition. Re-read the remote object or use the provider's final accepted result when its read endpoint is known to lag.
 - Preserve intermediate successful audits and support resume; do not repeat expensive scans unnecessarily.
 - Every handoff must state: selected project, exact command, exact entrypoint path, expected outputs, ledger path, result path, and recovery behavior.
 - Operational ZIPs must be flat unless the launch command explicitly includes the nested directory.
