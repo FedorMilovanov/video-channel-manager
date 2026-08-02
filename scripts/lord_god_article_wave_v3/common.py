@@ -18,7 +18,7 @@ OWNER_ID = -60805374
 ACCOUNT_ALIAS = "legendary-poet"  # Shared credential alias only.
 DECISION_SET_ID = "lord-god-article-wave-v3-202608"
 POLICY_PATH = Path("content/policies/lord-god-article-wave-v3-202608.json")
-EXPECTED_POLICY_SHA = "sha256:1d5e513dd78d321e3a247d434e8bb26c0502ab4fa4c74f1f6e6ccebd3f2208be"
+EXPECTED_POLICY_SHA = "sha256:f0175b4783e6eb8b449a4558bef662b53bd95b583deb71a01ce7edfd1202dcc7"
 MOSCOW = timezone(timedelta(hours=3), name="UTC+03:00")
 MIN_GAP_SECONDS = 2 * 60 * 60
 MIN_FUTURE_SECONDS = 10 * 60
