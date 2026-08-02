@@ -13,6 +13,7 @@ from .common import (
     PageMetadata,
     bytes_sha,
     canonical_sha,
+    canonical_text,
     contract_identity,
     convert_webp_to_jpeg,
     find_ffmpeg,
@@ -94,6 +95,7 @@ def _verify_metadata(
     row[f"{stage}_og_url"] = og_url
     row[f"{stage}_og_image"] = og_image
     row[f"{stage}_og_title"] = metadata.og_title
+    row[f"{stage}_og_description"] = metadata.og_description
     row[f"{stage}_og_description_length"] = len(metadata.og_description)
 
     if canonical != article_url:
@@ -123,6 +125,50 @@ def _verify_metadata(
         _conflict(row, f"{stage}_noindex", "Page metadata contains noindex")
         valid = False
     return valid
+
+
+def _compare_live_and_pinned_metadata(
+    live: PageMetadata,
+    pinned: PageMetadata,
+    *,
+    row: dict[str, Any],
+) -> bool:
+    valid = True
+    comparisons = {
+        "og_title": (
+            canonical_text(live.og_title),
+            canonical_text(pinned.og_title),
+        ),
+        "og_description": (
+            canonical_text(live.og_description),
+            canonical_text(pinned.og_description),
+        ),
+    }
+    for name, (live_value, pinned_value) in comparisons.items():
+        if live_value != pinned_value:
+            _conflict(
+                row,
+                f"live_metadata_{name}_differs_from_pinned_source",
+                f"live={live_value!r}; pinned={pinned_value!r}",
+            )
+            valid = False
+    return valid
+
+
+def _verify_markers(
+    text: str,
+    markers: list[str],
+    *,
+    row: dict[str, Any],
+    stage: str,
+) -> bool:
+    missing = [marker for marker in markers if marker not in text]
+    row[f"{stage}_markers_expected"] = markers
+    row[f"{stage}_markers_missing"] = missing
+    if missing:
+        _conflict(row, f"{stage}_markers_missing", repr(missing))
+        return False
+    return True
 
 
 def materialize_and_verify_sources(
@@ -159,6 +205,7 @@ def materialize_and_verify_sources(
             image_url = normalize_url(operation["image_url"])
             content_url = source_raw_url(policy, operation)
             metadata_url = metadata_raw_url(policy, operation)
+            source_markers = [str(value) for value in operation["source_markers"]]
             row: dict[str, Any] = {
                 "operation_id": operation_id,
                 "article_url": article_url,
@@ -168,15 +215,25 @@ def materialize_and_verify_sources(
                 "metadata_source_path": str(operation["metadata_source_path"]),
                 "metadata_source_url": metadata_url,
                 "legacy_policy_image_url": operation.get("legacy_policy_image_url"),
+                "legacy_policy_source_path": operation.get(
+                    "legacy_policy_source_path"
+                ),
+                "legacy_policy_source_markers": operation.get(
+                    "legacy_policy_source_markers"
+                ),
                 "conflicts": [],
                 "checks": {
                     "live_page_verified": False,
+                    "live_content_markers_verified": False,
                     "live_image_verified": False,
                     "content_source_verified": False,
                     "metadata_source_verified": False,
+                    "live_metadata_matches_pinned_source": False,
                     "jpeg_asset_prepared": False,
                 },
             }
+            live_metadata: PageMetadata | None = None
+            pinned_metadata: PageMetadata | None = None
 
             page_response = _response_or_conflict(
                 http,
@@ -195,19 +252,26 @@ def materialize_and_verify_sources(
                         f"Unexpected content-type: {content_type}",
                     )
                 else:
-                    metadata = _metadata_from_text(
+                    live_metadata = _metadata_from_text(
                         page_response.text,
                         row=row,
                         stage="live_page",
                     )
-                    if metadata is not None and _verify_metadata(
-                        metadata,
+                    if live_metadata is not None and _verify_metadata(
+                        live_metadata,
                         article_url=article_url,
                         image_url=image_url,
                         row=row,
                         stage="live_page",
                     ):
                         row["checks"]["live_page_verified"] = True
+                    if _verify_markers(
+                        page_response.text,
+                        source_markers,
+                        row=row,
+                        stage="live_content",
+                    ):
+                        row["checks"]["live_content_markers_verified"] = True
 
             metadata_response = _response_or_conflict(
                 http,
@@ -225,19 +289,27 @@ def materialize_and_verify_sources(
                     stage="metadata_source",
                 )
                 if metadata_text is not None:
-                    metadata = _metadata_from_text(
+                    pinned_metadata = _metadata_from_text(
                         metadata_text,
                         row=row,
                         stage="metadata_source",
                     )
-                    if metadata is not None and _verify_metadata(
-                        metadata,
+                    if pinned_metadata is not None and _verify_metadata(
+                        pinned_metadata,
                         article_url=article_url,
                         image_url=image_url,
                         row=row,
                         stage="metadata_source",
                     ):
                         row["checks"]["metadata_source_verified"] = True
+
+            if live_metadata is not None and pinned_metadata is not None:
+                if _compare_live_and_pinned_metadata(
+                    live_metadata,
+                    pinned_metadata,
+                    row=row,
+                ):
+                    row["checks"]["live_metadata_matches_pinned_source"] = True
 
             image_response = _response_or_conflict(
                 http,
@@ -308,22 +380,13 @@ def materialize_and_verify_sources(
                     row=row,
                     stage="content_source",
                 )
-                if source_text is not None:
-                    source_markers = [
-                        str(value) for value in operation["source_markers"]
-                    ]
-                    missing_markers = [
-                        marker for marker in source_markers if marker not in source_text
-                    ]
-                    row["source_markers_expected"] = source_markers
-                    row["source_markers_missing"] = missing_markers
-                    if missing_markers:
-                        _conflict(
-                            row,
-                            "content_source_markers_missing",
-                            repr(missing_markers),
-                        )
-                    elif len(source_bytes) >= 40:
+                if source_text is not None and _verify_markers(
+                    source_text,
+                    source_markers,
+                    row=row,
+                    stage="content_source",
+                ):
+                    if len(source_bytes) >= 40:
                         row["checks"]["content_source_verified"] = True
 
             row_conflicts = row["conflicts"]
@@ -360,7 +423,9 @@ def materialize_and_verify_sources(
         return sum(bool(row["checks"].get(check)) for row in rows)
 
     item_conflicts = sum(1 for row in rows if row["status"] == "conflict")
-    conflict_count = item_conflicts + len(global_conflicts)
+    finding_count = sum(len(row["conflicts"]) for row in rows) + len(
+        global_conflicts
+    )
     manifest: dict[str, Any] = {
         "schema_name": "video-manager.vk-lord-god-article-assets",
         "schema_version": 4,
@@ -368,15 +433,21 @@ def materialize_and_verify_sources(
         "policy_sha256": policy["policy_sha256"],
         "source_contract_sha256": policy["source_contract_sha256"],
         "execution_contract_sha256": contract_identity(policy),
-        "status": "verified" if conflict_count == 0 else "blocked",
+        "status": "verified" if finding_count == 0 else "blocked",
         "expected_external_resources": 40,
         "external_urls_checked": checked_unique,
         "article_pages_verified": verified("live_page_verified"),
+        "live_content_markers_verified": verified(
+            "live_content_markers_verified"
+        ),
         "source_images_verified": verified("live_image_verified"),
         "pinned_source_files_verified": verified("content_source_verified"),
         "pinned_metadata_files_verified": verified("metadata_source_verified"),
+        "live_metadata_matches_pinned_source": verified(
+            "live_metadata_matches_pinned_source"
+        ),
         "prepared_jpeg_assets": verified("jpeg_asset_prepared"),
-        "conflicts": conflict_count,
+        "conflicts": finding_count,
         "conflicting_operations": item_conflicts,
         "global_conflicts": global_conflicts,
         "items": rows,
