@@ -57,13 +57,14 @@ ignore = ["B008", "B014", "E501"]
 
 [tool.ruff.format]
 quote-style = "double"
-indent-style = "space"
 # These guarded operational runners are intentionally written as explicit,
 # auditable step-by-step journals. Keep linting and compilation enabled while
 # preserving their deliberate layout.
 exclude = [
   "scripts/run_vk_p1_final_megawave.py",
   "scripts/schedule_lord_god_article_wave.py",
+  "scripts/schedule_lord_god_article_wave_v3.py",
+  "scripts/lord_god_article_wave_v3/**",
   "scripts/schedule_lord_god_wall_tail.py",
   "scripts/vk_shorts_reset.py",
 ]
