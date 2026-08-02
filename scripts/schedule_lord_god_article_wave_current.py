@@ -1,28 +1,38 @@
 #!/usr/bin/env python3
 """Current guarded entrypoint for the theological article wall queue.
 
-The original immutable plan referenced one superseded social image and one
-article that exists only as a publication-hold draft without a public route.
-This entrypoint applies two exact reviewed corrections in memory before the
-normal policy, source, VK-card, duplicate, canary, and postflight guards run.
+The immutable plan needed two exact content corrections:
+* the current Hermeneutics social image;
+* replacement of the unpublished Diotrophes draft with a public article.
 
-VK ``wall.parseAttachedLink`` returns an array of generic wall attachments. In
-current production behavior it may return the prepared image as a ``photo``
-attachment without a separate ``link`` attachment. This wrapper accepts that
-exact response shape only when a valid VK photo token exists, then combines the
-photo token with the exact reviewed article URL for ``wall.post``. Empty or
-otherwise unusable parse results remain blocking.
+VK ``wall.parseAttachedLink`` is deliberately not used. The connected VK
+account returns an empty parse result for valid project URLs, so this entrypoint
+uses the documented photo-wall flow instead:
+
+1. verify the public Open Graph image;
+2. convert it to a deterministic 1280x720 JPEG with ffmpeg;
+3. obtain ``photos.getWallUploadServer`` for the managed community;
+4. upload and save it with ``photos.saveWallPhoto``;
+5. call ``wall.post`` with the saved photo and the exact external article URL.
+
+Plan remains read-only: it validates all source pages, converts all ten images
+locally, verifies the user token can obtain a wall upload server, audits wall
+duplicates and schedule gaps, and sends no upload or wall-post request.
+Canary still creates only the first postponed post.
 """
 
 from __future__ import annotations
 
 import copy
+import hashlib
 import importlib.util
-import json
 import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -62,6 +72,9 @@ KRAJNE_OPERATION: dict[str, Any] = {
     "publish_date": 1786186800,
 }
 
+JPEG_MIN_BYTES = 10_000
+UPLOAD_TIMEOUT_SECONDS = 120.0
+
 
 def load_guarded_module() -> Any:
     spec = importlib.util.spec_from_file_location(MODULE_NAME, MODULE_PATH)
@@ -97,7 +110,9 @@ def install_reviewed_policy_corrections(module: Any) -> None:
                     "https://gospod-bog.ru/images/hermenevtika-preview.webp"
                 )
                 if module.normalize_url(operation.get("og_image")) != expected_old_image:
-                    raise RuntimeError("Hermeneutics policy no longer matches reviewed source")
+                    raise RuntimeError(
+                        "Hermeneutics policy no longer matches reviewed source"
+                    )
                 operation["og_image"] = HERMENEUTICS_IMAGE
                 hermeneutics_seen = True
 
@@ -105,7 +120,9 @@ def install_reviewed_policy_corrections(module: Any) -> None:
                 if module.normalize_url(operation.get("url")) != (
                     "https://gospod-bog.ru/articles/diotrefy-nashego-vremeni/"
                 ):
-                    raise RuntimeError("Diotrophes policy no longer matches reviewed draft")
+                    raise RuntimeError(
+                        "Diotrophes policy no longer matches reviewed draft"
+                    )
                 operation = copy.deepcopy(KRAJNE_OPERATION)
                 operation["message_sha256"] = module.message_sha(operation["message"])
                 diotrophes_seen = True
@@ -113,7 +130,9 @@ def install_reviewed_policy_corrections(module: Any) -> None:
             corrected.append(operation)
 
         if not hermeneutics_seen or not diotrophes_seen:
-            raise RuntimeError("Reviewed article corrections could not be applied exactly")
+            raise RuntimeError(
+                "Reviewed article corrections could not be applied exactly"
+            )
 
         policy["operations"] = corrected
         policy["policy_sha256"] = module.canonical_sha(
@@ -125,83 +144,265 @@ def install_reviewed_policy_corrections(module: Any) -> None:
     module.load_policy = load_current_policy
 
 
-def install_vk_link_parse_compatibility(module: Any) -> None:
-    def parse_attached_link(client: Any, article_url: str) -> dict[str, Any]:
-        normalized = module.normalize_url(article_url)
-        links_json = json.dumps(
-            [{"type": "link", "link": normalized}],
-            ensure_ascii=False,
-            separators=(",", ":"),
+def find_ffmpeg() -> str:
+    configured = str(os.environ.get("FFMPEG_BINARY") or "").strip()
+    if configured:
+        candidate = Path(configured).expanduser()
+        if candidate.is_file():
+            return str(candidate)
+        raise RuntimeError(f"FFMPEG_BINARY does not exist: {candidate}")
+    discovered = shutil.which("ffmpeg")
+    if not discovered:
+        raise RuntimeError(
+            "ffmpeg is required to convert article WebP images to JPEG"
         )
+    return discovered
+
+
+def convert_webp_to_jpeg(payload: bytes, *, ffmpeg: str) -> bytes:
+    if len(payload) < 10_000:
+        raise RuntimeError("Source Open Graph image is unexpectedly small")
+    command = [
+        ffmpeg,
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-i",
+        "pipe:0",
+        "-vf",
+        (
+            "scale=1280:720:force_original_aspect_ratio=decrease,"
+            "pad=1280:720:(ow-iw)/2:(oh-ih)/2:color=black"
+        ),
+        "-frames:v",
+        "1",
+        "-pix_fmt",
+        "yuvj420p",
+        "-q:v",
+        "2",
+        "-f",
+        "image2pipe",
+        "-vcodec",
+        "mjpeg",
+        "pipe:1",
+    ]
+    completed = subprocess.run(
+        command,
+        input=payload,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+        timeout=60,
+    )
+    if completed.returncode != 0:
+        detail = completed.stderr.decode("utf-8", errors="replace").strip()
+        raise RuntimeError(f"ffmpeg image conversion failed: {detail}")
+    jpeg = completed.stdout
+    if len(jpeg) < JPEG_MIN_BYTES or not jpeg.startswith(b"\xff\xd8"):
+        raise RuntimeError("ffmpeg did not produce a usable JPEG")
+    return jpeg
+
+
+def install_explicit_photo_flow(module: Any) -> None:
+    original_verify_live_sources = module.verify_live_sources
+
+    def verify_live_sources(policy: dict[str, Any]) -> list[dict[str, Any]]:
+        checks = original_verify_live_sources(policy)
+        ffmpeg = find_ffmpeg()
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 Chrome/148 Safari/537.36"
+            )
+        }
+        by_operation = {
+            str(item.get("operation_id") or ""): item
+            for item in checks
+            if isinstance(item, dict)
+        }
+        with httpx.Client(
+            headers=headers,
+            follow_redirects=True,
+            timeout=45.0,
+        ) as http:
+            for operation in policy["operations"]:
+                operation_id = str(operation["operation_id"])
+                image_url = module.normalize_url(operation["og_image"])
+                response = http.get(image_url)
+                response.raise_for_status()
+                jpeg = convert_webp_to_jpeg(response.content, ffmpeg=ffmpeg)
+                check = by_operation.get(operation_id)
+                if check is None:
+                    raise RuntimeError(
+                        f"Missing source verification row: {operation_id}"
+                    )
+                check.update(
+                    {
+                        "wall_image_mode": "explicit_uploaded_photo",
+                        "wall_jpeg_width": 1280,
+                        "wall_jpeg_height": 720,
+                        "wall_jpeg_bytes": len(jpeg),
+                        "wall_jpeg_sha256": (
+                            f"sha256:{hashlib.sha256(jpeg).hexdigest()}"
+                        ),
+                        "ffmpeg_conversion_verified": True,
+                    }
+                )
+        return checks
+
+    def verify_vk_link_cards(
+        policy: dict[str, Any],
+        client: Any,
+    ) -> list[dict[str, Any]]:
         response = client._call(
-            "wall.parseAttachedLink",
-            params={"links": links_json, "extended": False},
+            "photos.getWallUploadServer",
+            params={"group_id": module.COMMUNITY_ID},
         )
-        data = response.get("data") if isinstance(response, dict) else None
-        attachments = (
-            [item for item in data if isinstance(item, dict)]
-            if isinstance(data, list)
+        upload_url = (
+            str(response.get("upload_url") or "").strip()
+            if isinstance(response, dict)
+            else ""
+        )
+        parsed_upload_url = urlsplit(upload_url)
+        if parsed_upload_url.scheme != "https" or not parsed_upload_url.netloc:
+            raise RuntimeError(
+                "photos.getWallUploadServer returned no usable HTTPS upload URL"
+            )
+        return [
+            {
+                "operation_id": operation["operation_id"],
+                "article_url": module.normalize_url(operation["url"]),
+                "og_image": module.normalize_url(operation["og_image"]),
+                "parse_mode": "explicit_wall_photo_plus_external_url",
+                "attachment_type": "photo+external-link",
+                "upload_server_host": parsed_upload_url.netloc,
+                "upload_server_verified": True,
+                "link_card_has_image": True,
+                "photo_tokens": [],
+                "status": "verified_read_only",
+            }
+            for operation in policy["operations"]
+        ]
+
+    def upload_wall_photo(client: Any, operation: dict[str, Any]) -> str:
+        image_url = module.normalize_url(operation["og_image"])
+        ffmpeg = find_ffmpeg()
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 Chrome/148 Safari/537.36"
+            )
+        }
+        with httpx.Client(
+            headers=headers,
+            follow_redirects=True,
+            timeout=45.0,
+        ) as http:
+            image_response = http.get(image_url)
+            image_response.raise_for_status()
+        jpeg = convert_webp_to_jpeg(image_response.content, ffmpeg=ffmpeg)
+
+        server_response = client._call(
+            "photos.getWallUploadServer",
+            params={"group_id": module.COMMUNITY_ID},
+        )
+        upload_url = (
+            str(server_response.get("upload_url") or "").strip()
+            if isinstance(server_response, dict)
+            else ""
+        )
+        parsed_upload_url = urlsplit(upload_url)
+        if parsed_upload_url.scheme != "https" or not parsed_upload_url.netloc:
+            raise RuntimeError(
+                "photos.getWallUploadServer returned no usable HTTPS upload URL"
+            )
+
+        with httpx.Client(
+            follow_redirects=True,
+            timeout=UPLOAD_TIMEOUT_SECONDS,
+        ) as http:
+            upload_response = http.post(
+                upload_url,
+                files={
+                    "photo": (
+                        f"{operation['id']}.jpg",
+                        jpeg,
+                        "image/jpeg",
+                    )
+                },
+            )
+            upload_response.raise_for_status()
+            upload_payload = upload_response.json()
+
+        if not isinstance(upload_payload, dict):
+            raise RuntimeError("VK photo upload server returned a non-object response")
+        photo_value = upload_payload.get("photo")
+        server_value = upload_payload.get("server")
+        hash_value = upload_payload.get("hash")
+        if (
+            not isinstance(photo_value, str)
+            or not photo_value.strip()
+            or not isinstance(hash_value, str)
+            or not hash_value.strip()
+            or not isinstance(server_value, (int, str))
+            or not str(server_value).strip()
+        ):
+            raise RuntimeError(
+                "VK photo upload server response lacks photo/server/hash"
+            )
+
+        saved_response = client._call(
+            "photos.saveWallPhoto",
+            params={
+                "group_id": module.COMMUNITY_ID,
+                "photo": photo_value,
+                "server": server_value,
+                "hash": hash_value,
+            },
+        )
+        saved_photos = (
+            [item for item in saved_response if isinstance(item, dict)]
+            if isinstance(saved_response, list)
             else []
         )
-        attachment_types = [str(item.get("type") or "unknown") for item in attachments]
-        links = [module.link_payload_from_attachment(item) for item in attachments]
-        links = [item for item in links if isinstance(item, dict)]
-        if len(links) > 1:
+        if len(saved_photos) != 1:
             raise RuntimeError(
-                f"wall.parseAttachedLink returned {len(links)} link cards for {normalized}"
+                f"photos.saveWallPhoto returned {len(saved_photos)} photos"
             )
-
-        link = links[0] if links else {}
-        photo_tokens = module.parsed_photo_tokens(attachments, link)
-
-        if link:
-            resolved = module.normalize_url(
-                link.get("url") or link.get("target_url") or normalized
+        token = module.photo_token(saved_photos[0])
+        if not token:
+            raise RuntimeError("photos.saveWallPhoto returned no usable photo token")
+        owner_id = saved_photos[0].get("owner_id")
+        if owner_id != module.OWNER_ID:
+            raise RuntimeError(
+                f"Saved wall photo has unexpected owner_id: {owner_id!r}"
             )
-            if resolved != normalized:
-                raise RuntimeError(
-                    f"VK resolved a different article URL: {normalized} -> {resolved}"
-                )
-            if not module.link_has_image(link) and not photo_tokens:
-                raise RuntimeError(f"VK parsed the article without an image: {normalized}")
-            parse_mode = "link_card"
-            title = str(link.get("title") or "")
-            description_length = len(str(link.get("description") or ""))
-        else:
-            if not photo_tokens:
-                shape = ",".join(attachment_types) or "empty"
-                raise RuntimeError(
-                    "wall.parseAttachedLink returned no usable image attachment "
-                    f"for {normalized}; attachment_types={shape}"
-                )
-            resolved = normalized
-            parse_mode = "photo_tokens_plus_external_url"
-            title = ""
-            description_length = 0
+        return token
 
-        attachment_parts = [*photo_tokens, normalized]
-        return {
-            "article_url": normalized,
-            "resolved_url": resolved,
-            "attachment_type": "link" if link else "photo+external-link",
-            "parse_mode": parse_mode,
-            "attachment_types": attachment_types,
-            "response_data_sha256": module.canonical_sha(attachments),
-            "title": title,
-            "description_length": description_length,
-            "link_card_has_image": True,
-            "photo_tokens": photo_tokens,
-            "wall_post_attachments": ",".join(attachment_parts),
-            "status": "verified",
-        }
+    def post_once(client: Any, operation: dict[str, Any]) -> object:
+        photo = upload_wall_photo(client, operation)
+        article_url = module.normalize_url(operation["url"])
+        return client._call(
+            "wall.post",
+            params={
+                "owner_id": module.OWNER_ID,
+                "from_group": True,
+                "message": str(operation["message"]),
+                "attachments": f"{photo},{article_url}",
+                "publish_date": int(operation["publish_date"]),
+                "guid": str(operation["operation_id"]),
+            },
+        )
 
-    module.parse_attached_link = parse_attached_link
+    module.verify_live_sources = verify_live_sources
+    module.verify_vk_link_cards = verify_vk_link_cards
+    module.post_once = post_once
 
 
 def main() -> int:
     module = load_guarded_module()
     install_reviewed_policy_corrections(module)
-    install_vk_link_parse_compatibility(module)
+    install_explicit_photo_flow(module)
     return int(module.main())
 
 
