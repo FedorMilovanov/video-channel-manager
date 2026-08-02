@@ -74,13 +74,16 @@ def test_current_entrypoint_applies_only_reviewed_live_corrections() -> None:
     assert "module.EXPECTED_SHA = policy[\"policy_sha256\"]" in source
 
 
-def test_current_entrypoint_accepts_only_usable_vk_link_parse_shapes() -> None:
+def test_current_entrypoint_uses_explicit_wall_photo_flow() -> None:
     source = CURRENT.read_text(encoding="utf-8")
 
-    assert "install_vk_link_parse_compatibility" in source
-    assert "module.parsed_photo_tokens(attachments, link)" in source
-    assert 'parse_mode = "photo_tokens_plus_external_url"' in source
-    assert '"attachment_type": "link" if link else "photo+external-link"' in source
-    assert 'attachment_parts = [*photo_tokens, normalized]' in source
-    assert "wall.parseAttachedLink returned no usable image attachment" in source
-    assert "module.parse_attached_link = parse_attached_link" in source
+    assert "install_explicit_photo_flow" in source
+    assert '"photos.getWallUploadServer"' in source
+    assert '"photos.saveWallPhoto"' in source
+    assert '"wall.post"' in source
+    assert '"attachments": f"{photo},{article_url}"' in source
+    assert '"parse_mode": "explicit_wall_photo_plus_external_url"' in source
+    assert '"wall_image_mode": "explicit_uploaded_photo"' in source
+    assert "convert_webp_to_jpeg" in source
+    assert "ffmpeg" in source
+    assert "client._call(\n            \"wall.parseAttachedLink\"" not in source
