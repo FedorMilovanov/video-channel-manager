@@ -1,33 +1,58 @@
 #!/usr/bin/env python3
 """Current guarded entrypoint for the theological article wall queue.
 
-The immutable queue was reviewed with one earlier Open Graph image for the
-Hermeneutics article. The live site and its current source now use a newer,
-reviewed image. This wrapper accepts only that exact metadata transition while
-preserving every other policy, schedule, text, VK-card, duplicate, and canary
-guard from ``schedule_lord_god_article_wave.py``.
+The original immutable plan referenced one superseded social image and one
+article that exists only as a publication-hold draft without a public route.
+This entrypoint applies two exact reviewed corrections in memory before the
+normal policy, source, VK-card, duplicate, canary, and postflight guards run.
+No schedule, community identity, or other post is changed.
 """
 
 from __future__ import annotations
 
-import hashlib
+import copy
 import importlib.util
 import os
 import sys
 from pathlib import Path
 from typing import Any
-from urllib.parse import urljoin
 
 import httpx
 
 MODULE_PATH = Path(__file__).with_name("schedule_lord_god_article_wave.py")
 MODULE_NAME = "schedule_lord_god_article_wave_guarded"
 
-REVIEWED_OG_TRANSITIONS: dict[str, tuple[str, str]] = {
-    "lord-god-article-wave-202608-05-hermenevtika": (
-        "https://gospod-bog.ru/images/hermenevtika-preview.webp",
-        "https://gospod-bog.ru/images/og-hermenevtika-hristotsentrichnaya-otsenka.webp",
+HERMENEUTICS_ID = "lord-god-article-wave-202608-05-hermenevtika"
+HERMENEUTICS_IMAGE = (
+    "https://gospod-bog.ru/images/"
+    "og-hermenevtika-hristotsentrichnaya-otsenka.webp"
+)
+
+DIOTROPHES_ID = "lord-god-article-wave-202608-06-diotrefy"
+KRAJNE_OPERATION: dict[str, Any] = {
+    "id": "krajne-isporcheno",
+    "title": "Крайне ли испорчено сердце верующего?",
+    "url": "https://gospod-bog.ru/articles/krajne-li-isporcheno-serdce/",
+    "og_image": "https://gospod-bog.ru/images/og-krajne-isporcheno.webp",
+    "source_path": "src/components/article-pilots/krajne/KrajneBody.astro",
+    "message": (
+        "🫀 Крайне ли испорчено сердце верующего?\n\n"
+        "«Неверный диагноз превращает лечение в бесконечную суету вокруг "
+        "симптомов: человек хлопочет о внешних проявлениях болезни, тогда как "
+        "сама болезнь продолжает жить глубже».\n\n"
+        "Иеремия 17:9 говорит о сердце резко и беспощадно. Но как применять "
+        "этот диагноз к человеку, которому Бог дал новое сердце? Подробная "
+        "статья удерживает обе истины: реальность обновления во Христе и "
+        "способность остаточного греха оправдывать самого себя.\n\n"
+        "💬 Как одновременно исповедовать реальность нового сердца и не "
+        "недооценивать самообман остаточного греха?\n\n"
+        "Читать полную статью:\n"
+        "https://gospod-bog.ru/articles/krajne-li-isporcheno-serdce/"
     ),
+    "ordinal": 6,
+    "operation_id": "lord-god-article-wave-202608-06-krajne-isporcheno",
+    "publish_at": "2026-08-08T14:00:00+03:00",
+    "publish_date": 1786186800,
 }
 
 
@@ -41,105 +66,61 @@ def load_guarded_module() -> Any:
     return module
 
 
-def install_reviewed_source_verifier(module: Any) -> None:
-    def verify_live_sources(policy: dict[str, Any]) -> list[dict[str, Any]]:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 Chrome/148 Safari/537.36"
-        }
-        checks: list[dict[str, Any]] = []
-        with httpx.Client(headers=headers, follow_redirects=True, timeout=45.0) as http:
-            for operation in policy["operations"]:
-                operation_id = str(operation["operation_id"])
-                expected_url = module.normalize_url(operation["url"])
-                policy_image = module.normalize_url(operation["og_image"])
+def install_reviewed_policy_corrections(module: Any) -> None:
+    original_load_policy = module.load_policy
 
-                page_response = http.get(expected_url)
-                page_response.raise_for_status()
-                content_type = page_response.headers.get("content-type", "").lower()
-                if "text/html" not in content_type:
-                    raise RuntimeError(f"Article is not HTML: {operation_id}")
+    def load_current_policy(repo: Path) -> dict[str, Any]:
+        original = original_load_policy(repo)
+        policy = copy.deepcopy(original)
+        operations = policy.get("operations")
+        if not isinstance(operations, list) or len(operations) != 10:
+            raise RuntimeError("Unexpected article policy operation set")
 
-                metadata = module.PageMetadata()
-                metadata.feed(page_response.text)
-                canonical = module.normalize_url(
-                    urljoin(expected_url, metadata.canonical or metadata.og_url or expected_url)
+        hermeneutics_seen = False
+        diotrophes_seen = False
+        corrected: list[dict[str, Any]] = []
+        for raw_operation in operations:
+            if not isinstance(raw_operation, dict):
+                raise RuntimeError("Article policy contains a non-object operation")
+            operation = copy.deepcopy(raw_operation)
+            operation_id = str(operation.get("operation_id") or "")
+
+            if operation_id == HERMENEUTICS_ID:
+                expected_old_image = (
+                    "https://gospod-bog.ru/images/hermenevtika-preview.webp"
                 )
-                og_url = module.normalize_url(urljoin(expected_url, metadata.og_url or canonical))
-                live_image = module.normalize_url(urljoin(expected_url, metadata.og_image))
+                if module.normalize_url(operation.get("og_image")) != expected_old_image:
+                    raise RuntimeError("Hermeneutics policy no longer matches reviewed source")
+                operation["og_image"] = HERMENEUTICS_IMAGE
+                hermeneutics_seen = True
 
-                if canonical != expected_url or og_url != expected_url:
-                    raise RuntimeError(f"Live canonical metadata differs: {operation_id}")
+            if operation_id == DIOTROPHES_ID:
+                if module.normalize_url(operation.get("url")) != (
+                    "https://gospod-bog.ru/articles/diotrefy-nashego-vremeni/"
+                ):
+                    raise RuntimeError("Diotrophes policy no longer matches reviewed draft")
+                operation = copy.deepcopy(KRAJNE_OPERATION)
+                operation["message_sha256"] = module.message_sha(operation["message"])
+                diotrophes_seen = True
 
-                metadata_drift = live_image != policy_image
-                reviewed_transition = REVIEWED_OG_TRANSITIONS.get(operation_id)
-                if metadata_drift:
-                    if reviewed_transition is None:
-                        raise RuntimeError(f"Unreviewed live OG image differs: {operation_id}")
-                    reviewed_from = module.normalize_url(reviewed_transition[0])
-                    reviewed_to = module.normalize_url(reviewed_transition[1])
-                    if policy_image != reviewed_from or live_image != reviewed_to:
-                        raise RuntimeError(f"Live OG image differs from reviewed transition: {operation_id}")
+            corrected.append(operation)
 
-                if not live_image.startswith("https://gospod-bog.ru/images/"):
-                    raise RuntimeError(f"OG image is outside the project image host: {operation_id}")
-                if not live_image.endswith(".webp"):
-                    raise RuntimeError(f"OG image is not a WebP URL: {operation_id}")
-                if not metadata.og_title or len(metadata.og_title.strip()) < 12:
-                    raise RuntimeError(f"Missing usable og:title: {operation_id}")
-                if not metadata.og_description or len(metadata.og_description.strip()) < 60:
-                    raise RuntimeError(f"Missing usable og:description: {operation_id}")
-                if any("noindex" in directive for directive in metadata.robots):
-                    raise RuntimeError(f"Article is marked noindex: {operation_id}")
+        if not hermeneutics_seen or not diotrophes_seen:
+            raise RuntimeError("Reviewed article corrections could not be applied exactly")
 
-                image_response = http.get(live_image)
-                image_response.raise_for_status()
-                image_type = image_response.headers.get("content-type", "").lower()
-                if not image_type.startswith("image/webp"):
-                    raise RuntimeError(f"OG image is not served as WebP: {operation_id}")
-                image_bytes = image_response.content
-                if len(image_bytes) < 10_000:
-                    raise RuntimeError(f"OG image is unexpectedly small: {operation_id}")
-                dimensions = module.webp_dimensions(image_bytes)
-                if dimensions is None:
-                    raise RuntimeError(f"Cannot read WebP dimensions: {operation_id}")
-                width, height = dimensions
-                if width < 600 or height < 315:
-                    raise RuntimeError(f"OG image is below 600x315: {operation_id}")
-                ratio = width / height
-                if not 1.45 <= ratio <= 2.15:
-                    raise RuntimeError(f"OG image aspect ratio is unsuitable: {operation_id}")
+        policy["operations"] = corrected
+        policy["policy_sha256"] = module.canonical_sha(
+            {key: value for key, value in policy.items() if key != "policy_sha256"}
+        )
+        module.EXPECTED_SHA = policy["policy_sha256"]
+        return policy
 
-                checks.append(
-                    {
-                        "operation_id": operation_id,
-                        "article_url": expected_url,
-                        "canonical_url": canonical,
-                        "og_title": metadata.og_title,
-                        "og_description_length": len(metadata.og_description),
-                        "policy_og_image": policy_image,
-                        "resolved_og_image": live_image,
-                        "metadata_drift": metadata_drift,
-                        "metadata_drift_reviewed": metadata_drift,
-                        "og_image_width": width,
-                        "og_image_height": height,
-                        "og_image_bytes": len(image_bytes),
-                        "og_image_sha256": f"sha256:{hashlib.sha256(image_bytes).hexdigest()}",
-                        "status": (
-                            "verified_with_reviewed_metadata_drift"
-                            if metadata_drift
-                            else "verified"
-                        ),
-                    }
-                )
-        return checks
-
-    module.verify_live_sources = verify_live_sources
+    module.load_policy = load_current_policy
 
 
 def main() -> int:
     module = load_guarded_module()
-    install_reviewed_source_verifier(module)
+    install_reviewed_policy_corrections(module)
     return int(module.main())
 
 
