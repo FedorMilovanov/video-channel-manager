@@ -39,6 +39,7 @@ def test_current_state_preserves_verified_operational_identity() -> None:
     text = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
 
     required_facts = (
+        "lord-god-strength",
         "UCeSJsC6go2c9pdJCuUI1BYA",
         "UC-78ys2S3cQ3lpqgXfo-SvQ",
         "60805374",
@@ -48,9 +49,10 @@ def test_current_state_preserves_verified_operational_identity() -> None:
         "KobOzfBqzic",
         "s512Opa8Eu4",
         "-60805374_456241938",
+        "verified missing: `26`",
         "b9c0268be62ea8fb9281cc9a551ebc5621dfdd4bfeb22a9d8f4b50707baa33ed",
-        "UPLOAD_26 = IN_PROGRESS_OR_UNVERIFIED",
-        "DO_NOT_UPLOAD",
+        "data\\vk-upload\\verified-longform-26",
+        "BLOCKED_PENDING_ISSUE_36_AND_FRESH_READ_ONLY_WALL_AUDIT",
     )
 
     for fact in required_facts:

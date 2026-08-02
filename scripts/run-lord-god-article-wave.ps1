@@ -24,21 +24,27 @@ if (-not (Test-Path -LiteralPath $Python)) {
     $Python = (Get-Command python -ErrorAction Stop).Source
 }
 
-$GuardedScript = Join-Path $PSScriptRoot "schedule_lord_god_article_wave.py"
-$Script = Join-Path $PSScriptRoot "schedule_lord_god_article_wave_current.py"
-foreach ($Path in @($GuardedScript, $Script)) {
-    if (-not (Test-Path -LiteralPath $Path)) {
-        throw "Не найден исполнитель: $Path"
-    }
+$Script = Join-Path $PSScriptRoot "schedule_lord_god_article_wave_v3.py"
+$Package = Join-Path $PSScriptRoot "lord_god_article_wave_v3"
+$Policy = Join-Path $Repo "content\policies\lord-god-article-wave-v3-202608.json"
+
+if (-not (Test-Path -LiteralPath $Script)) {
+    throw "Не найден исполнитель: $Script"
+}
+if (-not (Test-Path -LiteralPath $Package)) {
+    throw "Не найден пакет исполнителя: $Package"
+}
+if (-not (Test-Path -LiteralPath $Policy)) {
+    throw "Не найдена политика: $Policy"
 }
 
-& $Python -m py_compile $GuardedScript $Script
+& $Python -m compileall -q $Package $Script
 if ($LASTEXITCODE -ne 0) {
-    throw "Проверка Python-скриптов завершилась ошибкой."
+    throw "Python-исполнитель не прошёл проверку синтаксиса."
 }
 
 if ($Mode -eq "Plan") {
-    Write-Host "Господь Бог — Сила Моя: полный read-only аудит 10 статей и VK-карточек." -ForegroundColor Cyan
+    Write-Host "Господь Бог — Сила Моя: read-only аудит 30 URL и 10 отложенных постов." -ForegroundColor Cyan
     & $Python $Script --repo $Repo
     if ($LASTEXITCODE -ne 0) {
         throw "Проверка очереди статей завершилась ошибкой. Запись в VK не выполнялась."
@@ -47,22 +53,25 @@ if ($Mode -eq "Plan") {
 }
 
 if (-not $Execute) {
-    throw "Для Canary или Apply укажи -Execute."
+    throw "Для записи укажи -Mode $Mode -Execute."
 }
 
 $env:VCM_ALLOW_WALL_POSTS = "1"
 try {
     if ($Mode -eq "Canary") {
-        Write-Host "Господь Бог — Сила Моя: постановка только первой проверочной статьи." -ForegroundColor Yellow
+        Write-Host "Господь Бог — Сила Моя: один проверочный отложенный пост." -ForegroundColor Yellow
         & $Python $Script --repo $Repo --canary
     }
-    else {
-        Write-Host "Господь Бог — Сила Моя: постановка оставшихся девяти статей после проверенного canary." -ForegroundColor Cyan
+    elseif ($Mode -eq "Apply") {
+        Write-Host "Господь Бог — Сила Моя: остальные девять отложенных постов." -ForegroundColor Cyan
         & $Python $Script --repo $Repo --execute
+    }
+    else {
+        throw "Неподдерживаемый режим: $Mode"
     }
 
     if ($LASTEXITCODE -ne 0) {
-        throw "Операция $Mode завершилась ошибкой. Повторять можно только этим же исполнителем после чтения результата."
+        throw "Постановка очереди остановилась. Повторный запуск разрешён только через этот исполнитель после проверки журнала."
     }
 }
 finally {
