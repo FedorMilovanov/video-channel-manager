@@ -64,20 +64,37 @@ class FakeHttpClient:
         return self.responses[url]
 
 
-def metadata_html(article_url: str, image_url: str) -> str:
+def metadata_html(
+    article_url: str,
+    image_url: str,
+    *,
+    title: str = "Проверенный заголовок публикации",
+    description: str | None = None,
+) -> str:
+    usable_description = description or (
+        "Проверенное описание публикации и её содержания. " * 3
+    )
     return (
-        '<link rel="canonical" href="' + article_url + '">'
-        '<meta property="og:url" content="' + article_url + '">'
-        '<meta property="og:title" content="Проверенный заголовок публикации">'
-        '<meta property="og:description" content="'
-        + ("Проверенное описание публикации и её содержания. " * 3)
+        '<link rel="canonical" href="'
+        + article_url
         + '">'
-        '<meta property="og:image" content="' + image_url + '">'
-        '<meta name="robots" content="index, follow">'
+        + '<meta property="og:url" content="'
+        + article_url
+        + '">'
+        + '<meta property="og:title" content="'
+        + title
+        + '">'
+        + '<meta property="og:description" content="'
+        + usable_description
+        + '">'
+        + '<meta property="og:image" content="'
+        + image_url
+        + '">'
+        + '<meta name="robots" content="index, follow">'
     )
 
 
-def test_load_policy_materializes_native_metadata_contract() -> None:
+def test_load_policy_materializes_native_source_contract() -> None:
     module = load_module()
 
     policy = module.load_policy(ROOT)
@@ -92,6 +109,14 @@ def test_load_policy_materializes_native_metadata_contract() -> None:
         == "https://gospod-bog.ru/images/og-gill-authentic-study-cover.webp"
     )
     assert gill["metadata_source_path"].endswith("GillPart1PageHead.astro")
+    assert gill["source_path"].endswith("GillPart1HeaderHero.astro")
+    assert gill["source_markers"] == [
+        "Джон Гилл (1697–1771). Часть I: Человек",
+        "самостоятельно освоивший иврит",
+    ]
+    assert gill["legacy_policy_source_path"].endswith(
+        "dzhon-gill-chast-1-chelovek.mdx"
+    )
     assert policy["source_contract_sha256"] == module.EXPECTED_SOURCE_CONTRACT_SHA
     assert module.contract_identity(policy).startswith("sha256:")
     assert module.contract_identity(policy) != policy["policy_sha256"]
@@ -113,7 +138,9 @@ def test_source_contract_covers_forty_unique_resources() -> None:
     }
 
     assert len(urls) == 40
+    assert len({item["source_path"] for item in policy["operations"]}) == 10
     assert len({item["metadata_source_path"] for item in policy["operations"]}) == 10
+    assert all("/src/content/articles/" not in url for url in urls)
 
 
 def test_source_audit_aggregates_all_findings(
@@ -129,9 +156,10 @@ def test_source_audit_aggregates_all_findings(
         image_url = module.normalize_url(operation["image_url"])
         content_url = module.source_raw_url(policy, operation)
         metadata_url = module.metadata_raw_url(policy, operation)
-        page_html = metadata_html(article_url, image_url)
-        metadata_source = page_html
-        source_text = "\n".join(str(value) for value in operation["source_markers"])
+        markers = [str(value) for value in operation["source_markers"]]
+        metadata_source = metadata_html(article_url, image_url)
+        page_html = metadata_source + "\n" + "\n".join(markers)
+        source_text = "\n".join(markers)
 
         responses[article_url] = FakeResponse(
             content=page_html.encode(),
@@ -153,9 +181,13 @@ def test_source_audit_aggregates_all_findings(
     first = policy["operations"][0]
     first_url = module.normalize_url(first["url"])
     responses[first_url] = FakeResponse(
-        content=metadata_html(
-            first_url,
-            "https://gospod-bog.ru/images/wrong-first.webp",
+        content=(
+            metadata_html(
+                first_url,
+                "https://gospod-bog.ru/images/wrong-first.webp",
+            )
+            + "\n"
+            + "\n".join(str(value) for value in first["source_markers"])
         ).encode(),
         content_type="text/html; charset=utf-8",
     )
@@ -189,16 +221,46 @@ def test_source_audit_aggregates_all_findings(
     assert len(rows) == 10
     assert manifest["external_urls_checked"] == 40
     assert manifest["article_pages_verified"] == 9
+    assert manifest["live_content_markers_verified"] == 10
     assert manifest["pinned_metadata_files_verified"] == 9
+    assert manifest["live_metadata_matches_pinned_source"] == 10
     assert manifest["source_images_verified"] == 10
     assert manifest["pinned_source_files_verified"] == 10
     assert manifest["prepared_jpeg_assets"] == 10
     assert manifest["conflicting_operations"] == 2
-    assert manifest["conflicts"] == 2
+    assert manifest["conflicts"] == 3
     assert manifest["status"] == "blocked"
     assert rows[0]["status"] == "conflict"
     assert rows[1]["status"] == "conflict"
     assert rows[9]["status"] == "verified"
+
+
+def test_live_title_drift_is_blocking() -> None:
+    module = load_module()
+    article_url = "https://gospod-bog.ru/articles/example/"
+    image_url = "https://gospod-bog.ru/images/example.webp"
+    live = module.PageMetadata()
+    live.feed(metadata_html(article_url, image_url, title="Живой заголовок статьи"))
+    pinned = module.PageMetadata()
+    pinned.feed(
+        metadata_html(article_url, image_url, title="Закреплённый заголовок статьи")
+    )
+    row: dict[str, Any] = {"conflicts": []}
+
+    assert not module.sources_module._compare_live_and_pinned_metadata(
+        live,
+        pinned,
+        row=row,
+    )
+    assert row["conflicts"] == [
+        {
+            "code": "live_metadata_og_title_differs_from_pinned_source",
+            "detail": (
+                "live='Живой заголовок статьи'; "
+                "pinned='Закреплённый заголовок статьи'"
+            ),
+        }
+    ]
 
 
 def test_blocked_source_audit_is_written_before_vk_preflight(
@@ -214,9 +276,11 @@ def test_blocked_source_audit_is_written_before_vk_preflight(
         "expected_external_resources": 40,
         "external_urls_checked": 40,
         "article_pages_verified": 9,
+        "live_content_markers_verified": 10,
         "source_images_verified": 10,
         "pinned_source_files_verified": 10,
         "pinned_metadata_files_verified": 9,
+        "live_metadata_matches_pinned_source": 9,
         "prepared_jpeg_assets": 10,
         "conflicts": 2,
         "items": [],
