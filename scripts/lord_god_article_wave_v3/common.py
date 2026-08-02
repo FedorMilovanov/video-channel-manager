@@ -10,7 +10,7 @@ from datetime import UTC, datetime, timedelta, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote, urljoin, urlsplit, urlunsplit
+from urllib.parse import quote, urlsplit, urlunsplit
 
 PROJECT_KEY = "lord-god-strength"
 COMMUNITY_ID = 60805374
@@ -18,7 +18,7 @@ OWNER_ID = -60805374
 ACCOUNT_ALIAS = "legendary-poet"  # Shared credential alias only.
 DECISION_SET_ID = "lord-god-article-wave-v3-202608"
 POLICY_PATH = Path("content/policies/lord-god-article-wave-v3-202608.json")
-EXPECTED_POLICY_SHA = "sha256:5592f3e9089fdc6395cd2b2f0d10fb275a30aa5791041a18f1e9003f6c588ebf"
+EXPECTED_POLICY_SHA = "sha256:1d5e513dd78d321e3a247d434e8bb26c0502ab4fa4c74f1f6e6ccebd3f2208be"
 MOSCOW = timezone(timedelta(hours=3), name="UTC+03:00")
 MIN_GAP_SECONDS = 2 * 60 * 60
 MIN_FUTURE_SECONDS = 10 * 60
@@ -182,6 +182,7 @@ def validate_policy(policy: dict[str, Any]) -> None:
         publish_at = datetime.fromisoformat(str(operation.get("publish_at") or ""))
         publish_date = operation.get("publish_date")
         source_path = str(operation.get("source_path") or "").strip()
+        source_markers = operation.get("source_markers")
 
         if not operation_id.startswith(f"{DECISION_SET_ID}-{ordinal:02d}-"):
             raise ValueError(f"Invalid operation identity: {ordinal}")
@@ -191,6 +192,15 @@ def validate_policy(policy: dict[str, Any]) -> None:
             raise ValueError(f"Invalid image URL: {ordinal}")
         if not source_path.startswith("src/") or ".." in Path(source_path).parts:
             raise ValueError(f"Invalid source path: {ordinal}")
+        if (
+            not isinstance(source_markers, list)
+            or len(source_markers) != 2
+            or any(
+                not isinstance(marker, str) or len(marker.strip()) < 8
+                for marker in source_markers
+            )
+        ):
+            raise ValueError(f"Invalid source markers: {ordinal}")
         if article_url not in message or not 400 <= len(message) <= 1000:
             raise ValueError(f"Invalid post length or missing article URL: {ordinal}")
         if "💬" not in message:
