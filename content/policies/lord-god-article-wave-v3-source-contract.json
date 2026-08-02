@@ -1,0 +1,122 @@
+{
+  "base_policy_sha256": "sha256:f0175b4783e6eb8b449a4558bef662b53bd95b583deb71a01ce7edfd1202dcc7",
+  "contract_sha256": "sha256:659912a978d7b8442a9a8106783aa12eec81c2facdc1127f6cf21ead01dffac6",
+  "decision_set_id": "lord-god-article-wave-v3-202608",
+  "expected_external_resources": 40,
+  "operations": [
+    {
+      "article_url": "https://gospod-bog.ru/articles/rimlyanam-7-veruyushchiy-ili-neveruyushchiy/",
+      "content_markers": [
+        "Римлянам 7: верующий, неверующий или человек под законом?",
+        "Тайны человеческого сердца"
+      ],
+      "content_source_path": "src/components/article-pilots/rimlyanam7/Rimlyanam7Body.astro",
+      "image_url": "https://gospod-bog.ru/images/og-rimlyanam-7.webp",
+      "metadata_source_path": "src/components/article-pilots/rimlyanam7/Rimlyanam7PageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-01-rimlyanam-7"
+    },
+    {
+      "article_url": "https://gospod-bog.ru/articles/kod-da-vinchi/",
+      "content_markers": [
+        "«Код да Винчи»: блестящий триллер или историческая подмена?",
+        "канон Нового Завета"
+      ],
+      "content_source_path": "src/components/article-pilots/kod-da-vinchi/KodDaVinchiArticleHeaderHero.astro",
+      "image_url": "https://gospod-bog.ru/images/og-kod-da-vinchi.webp",
+      "metadata_source_path": "src/components/article-pilots/kod-da-vinchi/KodDaVinchiPageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-02-kod-da-vinchi"
+    },
+    {
+      "article_url": "https://gospod-bog.ru/articles/dzhon-gill-istoricheskiy-kontekst/",
+      "content_markers": [
+        "Джон Гилл: исторический контекст",
+        "правового бесправия диссентеров"
+      ],
+      "content_source_path": "src/components/article-pilots/gill-context/GillContextHeaderHero.astro",
+      "image_url": "https://gospod-bog.ru/images/og-dzhon-gill-istoricheskiy-kontekst.webp",
+      "metadata_source_path": "src/components/article-pilots/gill-context/GillContextPageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-03-gill-context"
+    },
+    {
+      "article_url": "https://gospod-bog.ru/nagornaya/chast-1/",
+      "content_markers": [
+        "Два текста, один Иисус",
+        "Блаженства"
+      ],
+      "content_source_path": "src/components/nagornaya/chast-1/NagornayaChast1MainShell.astro",
+      "image_url": "https://gospod-bog.ru/images/og-nagornaya-propoved-chast-1.webp",
+      "metadata_source_path": "src/components/nagornaya/chast-1/NagornayaChast1PageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-04-nagornaya-ch1"
+    },
+    {
+      "article_url": "https://gospod-bog.ru/articles/hermenevticheskaya-otsenka-hristotsentrichnoy-germenevtiki/",
+      "content_markers": [
+        "Оценка христоцентричной герменевтики",
+        "Богословие не должно подменять экзегезу"
+      ],
+      "content_source_path": "src/components/article-pilots/hermenevtika/HermenevtikaBody.astro",
+      "image_url": "https://gospod-bog.ru/images/og-hermenevtika-hristotsentrichnaya-otsenka.webp",
+      "metadata_source_path": "src/components/article-pilots/hermenevtika/HermenevtikaPageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-05-hermenevtika"
+    },
+    {
+      "article_url": "https://gospod-bog.ru/articles/krajne-li-isporcheno-serdce/",
+      "content_markers": [
+        "Крайне ли испорчено сердце верующего?",
+        "Тайны человеческого сердца"
+      ],
+      "content_source_path": "src/components/article-pilots/krajne/KrajneBody.astro",
+      "image_url": "https://gospod-bog.ru/images/og-krajne-isporcheno.webp",
+      "metadata_source_path": "src/components/article-pilots/krajne/KrajnePageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-06-krajne-isporcheno"
+    },
+    {
+      "article_url": "https://gospod-bog.ru/articles/20-antisovetov-pastoru/",
+      "content_markers": [
+        "20 антисоветов, как пастору разрушить своё служение",
+        "Пасторское служение почти никогда не разрушается в один день"
+      ],
+      "content_source_path": "src/components/article-pilots/antisovetov/AntisovetovBody.astro",
+      "image_url": "https://gospod-bog.ru/images/pastor-series/og-20-antisovetov-pastoru.webp",
+      "metadata_source_path": "src/components/article-pilots/antisovetov/AntisovetovPageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-07-antisovetov"
+    },
+    {
+      "article_url": "https://gospod-bog.ru/articles/dzhon-gill-chast-1-chelovek/",
+      "content_markers": [
+        "Джон Гилл (1697–1771). Часть I: Человек",
+        "самостоятельно освоивший иврит"
+      ],
+      "content_source_path": "src/components/article-pilots/gill-part1/GillPart1HeaderHero.astro",
+      "image_url": "https://gospod-bog.ru/images/og-dzhon-gill-chast-1-chelovek.webp",
+      "metadata_source_path": "src/components/article-pilots/gill-part1/GillPart1PageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-08-gill-part1"
+    },
+    {
+      "article_url": "https://gospod-bog.ru/nagornaya/chast-2/",
+      "content_markers": [
+        "Как это записывалось",
+        "Богодухновенность не означает диктовку"
+      ],
+      "content_source_path": "src/components/nagornaya/chast-2/NagornayaChast2MainShell.astro",
+      "image_url": "https://gospod-bog.ru/images/og-nagornaya-propoved-chast-2.webp",
+      "metadata_source_path": "src/components/nagornaya/chast-2/NagornayaChast2PageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-09-nagornaya-ch2"
+    },
+    {
+      "article_url": "https://gospod-bog.ru/nagornaya/chast-3/",
+      "content_markers": [
+        "Кому это сказано?",
+        "Этика Нагорной проповеди не диспенсационно «отложена»"
+      ],
+      "content_source_path": "src/components/nagornaya/chast-3/NagornayaChast3MainShell.astro",
+      "image_url": "https://gospod-bog.ru/images/og-nagornaya-propoved-chast-3.webp",
+      "metadata_source_path": "src/components/nagornaya/chast-3/NagornayaChast3PageHead.astro",
+      "operation_id": "lord-god-article-wave-v3-202608-10-nagornaya-ch3"
+    }
+  ],
+  "schema_name": "video-manager.vk-lord-god-article-wave-source-contract",
+  "schema_version": 1,
+  "source_repository": "FedorMilovanov/gb-is-my-strength",
+  "source_repository_commit": "aed8ed2244ad566b0458e490f629d394122dbf95"
+}

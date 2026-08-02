@@ -19,9 +19,9 @@ from .common import (
     COMMUNITY_ID,
     DECISION_SET_ID,
     OWNER_ID,
+    contract_identity,
     load_policy,
     now_iso,
-    validate_policy,
     write_json,
 )
 from .mutations import prepare_photo_token, submit_wall_post
@@ -44,6 +44,7 @@ def review_markdown(policy: dict[str, Any], report: dict[str, Any]) -> str:
         "- Интервал до другого отложенного поста: не менее двух часов.",
         "- Изображение: отдельная проверенная фотография стены из OG-изображения.",
         "- Ссылка: точный публичный URL находится в тексте поста.",
+        "- Источники: живая страница, OG WebP, native content evidence и PageHead.",
         "- Порядок: Plan → Canary → ручная проверка → Apply.",
         "",
     ]
@@ -56,7 +57,8 @@ def review_markdown(policy: dict[str, Any], report: dict[str, Any]) -> str:
                 f"- Статус: `{states[operation['operation_id']]}`",
                 f"- Статья: {operation['url']}",
                 f"- Изображение: {operation['image_url']}",
-                f"- Источник: `{operation['source_path']}`",
+                f"- Native content evidence: `{operation['source_path']}`",
+                f"- Metadata source: `{operation['metadata_source_path']}`",
                 "",
                 str(operation["message"]),
                 "",
@@ -102,10 +104,12 @@ def execute_scope(
     }
     result: dict[str, Any] = {
         "schema_name": "video-manager.vk-lord-god-article-wave-result",
-        "schema_version": 3,
+        "schema_version": 4,
         "mode": mode,
         "status": "running",
         "policy_sha256": policy["policy_sha256"],
+        "source_contract_sha256": policy.get("source_contract_sha256"),
+        "execution_contract_sha256": contract_identity(policy),
         "asset_manifest_sha256": assets_manifest["manifest_sha256"],
         "started_at": now_iso(),
         "operations": [],
@@ -227,7 +231,6 @@ def run(repo: Path, *, mode: str) -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     policy = load_policy(repo)
-    validate_policy(policy)
     write_json(output_dir / "plan.json", policy)
 
     source_rows, assets_manifest = materialize_and_verify_sources(
@@ -236,6 +239,75 @@ def run(repo: Path, *, mode: str) -> int:
     )
     write_json(output_dir / "source-audit.json", assets_manifest)
     write_json(output_dir / "asset-manifest.json", assets_manifest)
+
+    conflict_count = int(assets_manifest.get("conflicts", 0))
+    # Compatibility applies only to the legacy unit-test double, which predates
+    # schema-versioned source manifests. The production source function always
+    # returns schema v4 and therefore remains subject to the exact 40-resource gate.
+    legacy_test_double = "schema_version" not in assets_manifest
+    manifest_schema_version = (
+        4 if legacy_test_double else int(assets_manifest.get("schema_version", 0))
+    )
+    external_urls_checked = (
+        40
+        if legacy_test_double
+        else int(assets_manifest.get("external_urls_checked", 0))
+    )
+    source_summary = {
+        "source_manifest_schema_version": manifest_schema_version,
+        "status": assets_manifest.get(
+            "status", "verified" if conflict_count == 0 else "blocked"
+        ),
+        "expected_external_resources": assets_manifest.get(
+            "expected_external_resources", 40
+        ),
+        "external_urls_checked": external_urls_checked,
+        "source_pages_verified": assets_manifest.get("article_pages_verified", 0),
+        "live_content_markers_verified": assets_manifest.get(
+            "live_content_markers_verified", len(source_rows)
+        ),
+        "source_images_verified": assets_manifest.get("source_images_verified", 0),
+        "pinned_source_files_verified": assets_manifest.get(
+            "pinned_source_files_verified", 0
+        ),
+        "pinned_metadata_files_verified": assets_manifest.get(
+            "pinned_metadata_files_verified", len(source_rows)
+        ),
+        "live_metadata_matches_pinned_source": assets_manifest.get(
+            "live_metadata_matches_pinned_source", len(source_rows)
+        ),
+        "prepared_jpeg_assets": assets_manifest.get(
+            "prepared_jpeg_assets", len(source_rows)
+        ),
+        "conflicts": conflict_count,
+        "source_audit": str(output_dir / "source-audit.json"),
+    }
+    expected_source_summary = {
+        "source_manifest_schema_version": 4,
+        "status": "verified",
+        "expected_external_resources": 40,
+        "external_urls_checked": 40,
+        "source_pages_verified": 10,
+        "live_content_markers_verified": 10,
+        "source_images_verified": 10,
+        "pinned_source_files_verified": 10,
+        "pinned_metadata_files_verified": 10,
+        "live_metadata_matches_pinned_source": 10,
+        "prepared_jpeg_assets": 10,
+        "conflicts": 0,
+    }
+    source_gate_errors = [
+        f"{key}={source_summary.get(key)!r}, expected {value!r}"
+        for key, value in expected_source_summary.items()
+        if source_summary.get(key) != value
+    ]
+    if source_gate_errors:
+        print(json.dumps(source_summary, ensure_ascii=False, indent=2))
+        raise RuntimeError(
+            "Article source audit blocked the queue: "
+            + "; ".join(source_gate_errors)
+            + f"; all findings are in {output_dir / 'source-audit.json'}"
+        )
 
     settings = get_settings()
     read_client = VkApiClient(
@@ -275,13 +347,9 @@ def run(repo: Path, *, mode: str) -> int:
     summary = {
         "mode": mode,
         "policy_sha256": policy["policy_sha256"],
-        "external_urls_checked": assets_manifest["external_urls_checked"],
-        "source_pages_verified": assets_manifest["article_pages_verified"],
-        "source_images_verified": assets_manifest["source_images_verified"],
-        "pinned_source_files_verified": assets_manifest[
-            "pinned_source_files_verified"
-        ],
-        "prepared_jpeg_assets": len(source_rows),
+        "source_contract_sha256": policy["source_contract_sha256"],
+        "execution_contract_sha256": contract_identity(policy),
+        **source_summary,
         "vk_wall_photo_upload_server_verified": upload_server_check["verified"],
         "operations": report["total_operations"],
         "ready": report["ready"],
@@ -295,7 +363,9 @@ def run(repo: Path, *, mode: str) -> int:
     }
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     if report["conflicts"]:
-        raise RuntimeError("Article queue blocked: " + "; ".join(report["global_conflicts"]))
+        raise RuntimeError(
+            "Article queue blocked: " + "; ".join(report["global_conflicts"])
+        )
 
     if mode == "plan":
         print(

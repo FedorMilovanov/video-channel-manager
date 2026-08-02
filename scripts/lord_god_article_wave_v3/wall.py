@@ -19,6 +19,7 @@ from .common import (
     RESUMABLE_WITH_PHOTO,
     URL_RE,
     canonical_text,
+    contract_identity,
     normalize_url,
     now_iso,
     read_json,
@@ -149,9 +150,10 @@ def exact_reference(
 def fresh_journal(policy: dict[str, Any]) -> dict[str, Any]:
     return {
         "schema_name": "video-manager.vk-lord-god-article-wave-journal",
-        "schema_version": 3,
+        "schema_version": 4,
         "decision_set_id": DECISION_SET_ID,
         "policy_sha256": policy["policy_sha256"],
+        "execution_contract_sha256": contract_identity(policy),
         "operations": {},
     }
 
@@ -163,6 +165,7 @@ def load_journal(path: Path, policy: dict[str, Any]) -> dict[str, Any]:
     if (
         journal.get("decision_set_id") != DECISION_SET_ID
         or journal.get("policy_sha256") != policy["policy_sha256"]
+        or journal.get("execution_contract_sha256") != contract_identity(policy)
     ):
         operations = journal.get("operations")
         if not isinstance(operations, dict):
@@ -277,9 +280,10 @@ def preflight(
     counts = Counter(item["state"] for item in states)
     return {
         "schema_name": "video-manager.vk-lord-god-article-wave-preflight",
-        "schema_version": 3,
+        "schema_version": 4,
         "generated_at": now_iso(),
         "policy_sha256": policy["policy_sha256"],
+        "execution_contract_sha256": contract_identity(policy),
         "published_wall_posts": len(published),
         "postponed_wall_posts": len(postponed),
         "minimum_gap_minutes": MIN_GAP_SECONDS // 60,

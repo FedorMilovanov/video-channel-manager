@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import os
@@ -18,7 +19,13 @@ OWNER_ID = -60805374
 ACCOUNT_ALIAS = "legendary-poet"  # Shared credential alias only.
 DECISION_SET_ID = "lord-god-article-wave-v3-202608"
 POLICY_PATH = Path("content/policies/lord-god-article-wave-v3-202608.json")
+SOURCE_CONTRACT_PATH = Path(
+    "content/policies/lord-god-article-wave-v3-source-contract.json"
+)
 EXPECTED_POLICY_SHA = "sha256:f0175b4783e6eb8b449a4558bef662b53bd95b583deb71a01ce7edfd1202dcc7"
+EXPECTED_SOURCE_CONTRACT_SHA = (
+    "sha256:659912a978d7b8442a9a8106783aa12eec81c2facdc1127f6cf21ead01dffac6"
+)
 MOSCOW = timezone(timedelta(hours=3), name="UTC+03:00")
 MIN_GAP_SECONDS = 2 * 60 * 60
 MIN_FUTURE_SECONDS = 10 * 60
@@ -126,13 +133,6 @@ def read_json(path: Path, fallback: object) -> Any:
     return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else fallback
 
 
-def load_policy(repo: Path) -> dict[str, Any]:
-    value = json.loads((repo / POLICY_PATH).read_text(encoding="utf-8"))
-    if not isinstance(value, dict):
-        raise ValueError("Article policy root must be an object")
-    return value
-
-
 def validate_policy(policy: dict[str, Any]) -> None:
     expected = {
         "schema_name": "video-manager.vk-lord-god-article-wave-policy",
@@ -222,6 +222,173 @@ def validate_policy(policy: dict[str, Any]) -> None:
 
     if len(seen_images) != 10:
         raise ValueError("Every article must have its own reviewed image")
+
+
+def repository_raw_url(policy: dict[str, Any], path: object) -> str:
+    repository = str(policy["source_repository"])
+    commit = str(policy["source_repository_commit"])
+    encoded_path = quote(str(path), safe="/")
+    return f"https://raw.githubusercontent.com/{repository}/{commit}/{encoded_path}"
+
+
+def source_raw_url(policy: dict[str, Any], operation: dict[str, Any]) -> str:
+    return repository_raw_url(policy, operation["source_path"])
+
+
+def metadata_raw_url(policy: dict[str, Any], operation: dict[str, Any]) -> str:
+    return repository_raw_url(policy, operation["metadata_source_path"])
+
+
+def contract_identity(policy: dict[str, Any]) -> str:
+    return str(policy.get("execution_contract_sha256") or policy["policy_sha256"])
+
+
+def validate_source_contract(
+    policy: dict[str, Any],
+    contract: dict[str, Any],
+) -> None:
+    expected = {
+        "schema_name": "video-manager.vk-lord-god-article-wave-source-contract",
+        "schema_version": 1,
+        "decision_set_id": DECISION_SET_ID,
+        "base_policy_sha256": EXPECTED_POLICY_SHA,
+        "source_repository": policy["source_repository"],
+        "source_repository_commit": policy["source_repository_commit"],
+        "expected_external_resources": 40,
+    }
+    for key, value in expected.items():
+        if contract.get(key) != value:
+            raise ValueError(f"Article source contract identity mismatch: {key}")
+
+    actual_sha = canonical_sha(
+        {key: value for key, value in contract.items() if key != "contract_sha256"}
+    )
+    if (
+        contract.get("contract_sha256") != actual_sha
+        or actual_sha != EXPECTED_SOURCE_CONTRACT_SHA
+    ):
+        raise ValueError("Article source contract digest mismatch")
+
+    policy_operations = policy["operations"]
+    contract_operations = contract.get("operations")
+    if not isinstance(contract_operations, list) or len(contract_operations) != 10:
+        raise ValueError("Article source contract must contain exactly ten operations")
+
+    external_urls: set[str] = set()
+    seen_content_paths: set[str] = set()
+    seen_metadata_paths: set[str] = set()
+    for ordinal, (operation, source) in enumerate(
+        zip(policy_operations, contract_operations, strict=True),
+        start=1,
+    ):
+        if not isinstance(source, dict):
+            raise ValueError(f"Source contract operation {ordinal} is not an object")
+        operation_id = str(operation["operation_id"])
+        if source.get("operation_id") != operation_id:
+            raise ValueError(f"Source contract operation identity mismatch: {ordinal}")
+        if normalize_url(source.get("article_url")) != normalize_url(operation["url"]):
+            raise ValueError(f"Source contract article URL mismatch: {operation_id}")
+
+        image_url = normalize_url(source.get("image_url"))
+        content_path = str(source.get("content_source_path") or "").strip()
+        metadata_path = str(source.get("metadata_source_path") or "").strip()
+        content_markers = source.get("content_markers")
+        if not image_url.startswith("https://gospod-bog.ru/images/"):
+            raise ValueError(f"Invalid contracted image URL: {operation_id}")
+        if not content_path.startswith("src/") or ".." in Path(content_path).parts:
+            raise ValueError(f"Invalid content evidence path: {operation_id}")
+        if not metadata_path.startswith("src/") or ".." in Path(metadata_path).parts:
+            raise ValueError(f"Invalid metadata source path: {operation_id}")
+        if (
+            not isinstance(content_markers, list)
+            or len(content_markers) != 2
+            or any(
+                not isinstance(marker, str) or len(marker.strip()) < 8
+                for marker in content_markers
+            )
+        ):
+            raise ValueError(f"Invalid content evidence markers: {operation_id}")
+        if content_path in seen_content_paths:
+            raise ValueError("Content evidence paths must be unique")
+        if metadata_path in seen_metadata_paths:
+            raise ValueError("Metadata source paths must be unique")
+        seen_content_paths.add(content_path)
+        seen_metadata_paths.add(metadata_path)
+
+        external_urls.update(
+            {
+                normalize_url(operation["url"]),
+                image_url,
+                repository_raw_url(policy, content_path),
+                repository_raw_url(policy, metadata_path),
+            }
+        )
+
+    if len(external_urls) != 40:
+        raise ValueError("Article source contract must identify 40 unique resources")
+
+
+def materialize_policy(
+    policy: dict[str, Any],
+    contract: dict[str, Any],
+) -> dict[str, Any]:
+    validate_source_contract(policy, contract)
+    effective = copy.deepcopy(policy)
+    by_id = {
+        str(item["operation_id"]): item
+        for item in contract["operations"]
+        if isinstance(item, dict)
+    }
+    for operation in effective["operations"]:
+        operation_id = str(operation["operation_id"])
+        source = by_id[operation_id]
+        original_image = normalize_url(operation["image_url"])
+        original_source_path = str(operation["source_path"])
+        original_source_markers = list(operation["source_markers"])
+        effective_image = normalize_url(source["image_url"])
+        operation["metadata_source_path"] = source["metadata_source_path"]
+        operation["content_source_path"] = source["content_source_path"]
+        operation["source_path"] = source["content_source_path"]
+        operation["source_markers"] = list(source["content_markers"])
+        operation["image_url"] = effective_image
+        if original_image != effective_image:
+            operation["legacy_policy_image_url"] = original_image
+        if original_source_path != operation["source_path"]:
+            operation["legacy_policy_source_path"] = original_source_path
+        if original_source_markers != operation["source_markers"]:
+            operation["legacy_policy_source_markers"] = original_source_markers
+
+    effective["source_contract_sha256"] = contract["contract_sha256"]
+    effective["execution_contract_sha256"] = canonical_sha(
+        {
+            "base_policy_sha256": effective["policy_sha256"],
+            "source_contract_sha256": contract["contract_sha256"],
+            "operations": [
+                {
+                    "operation_id": operation["operation_id"],
+                    "article_url": normalize_url(operation["url"]),
+                    "image_url": normalize_url(operation["image_url"]),
+                    "content_source_path": operation["source_path"],
+                    "content_markers": operation["source_markers"],
+                    "metadata_source_path": operation["metadata_source_path"],
+                }
+                for operation in effective["operations"]
+            ],
+        }
+    )
+    return effective
+
+
+def load_policy(repo: Path) -> dict[str, Any]:
+    policy = json.loads((repo / POLICY_PATH).read_text(encoding="utf-8"))
+    if not isinstance(policy, dict):
+        raise ValueError("Article policy root must be an object")
+    validate_policy(policy)
+
+    contract = json.loads((repo / SOURCE_CONTRACT_PATH).read_text(encoding="utf-8"))
+    if not isinstance(contract, dict):
+        raise ValueError("Article source contract root must be an object")
+    return materialize_policy(policy, contract)
 
 
 def find_ffmpeg() -> str:
@@ -319,10 +486,3 @@ def convert_webp_to_jpeg(payload: bytes, *, ffmpeg: str) -> bytes:
     ):
         raise RuntimeError("ffmpeg did not produce a complete usable JPEG")
     return jpeg
-
-
-def source_raw_url(policy: dict[str, Any], operation: dict[str, Any]) -> str:
-    repository = str(policy["source_repository"])
-    commit = str(policy["source_repository_commit"])
-    path = quote(str(operation["source_path"]), safe="/")
-    return f"https://raw.githubusercontent.com/{repository}/{commit}/{path}"
