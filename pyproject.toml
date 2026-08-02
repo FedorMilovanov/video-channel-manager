@@ -63,6 +63,7 @@ indent-style = "space"
 # preserving their deliberate layout.
 exclude = [
   "scripts/run_vk_p1_final_megawave.py",
+  "scripts/schedule_lord_god_wall_tail.py",
   "scripts/vk_shorts_reset.py",
 ]
 
