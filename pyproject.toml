@@ -74,6 +74,7 @@ exclude = [
   "scripts/vk_shorts_reset_current.py",
   "tests/test_schedule_lord_god_article_wave.py",
   "tests/test_schedule_lord_god_article_wave_v3.py",
+  "tests/test_schedule_lord_god_article_source_contract.py",
 ]
 
 [tool.mypy]
