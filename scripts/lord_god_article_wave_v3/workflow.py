@@ -19,9 +19,9 @@ from .common import (
     COMMUNITY_ID,
     DECISION_SET_ID,
     OWNER_ID,
+    contract_identity,
     load_policy,
     now_iso,
-    validate_policy,
     write_json,
 )
 from .mutations import prepare_photo_token, submit_wall_post
@@ -44,6 +44,7 @@ def review_markdown(policy: dict[str, Any], report: dict[str, Any]) -> str:
         "- Интервал до другого отложенного поста: не менее двух часов.",
         "- Изображение: отдельная проверенная фотография стены из OG-изображения.",
         "- Ссылка: точный публичный URL находится в тексте поста.",
+        "- Источники: живая страница, OG WebP, content source и PageHead source.",
         "- Порядок: Plan → Canary → ручная проверка → Apply.",
         "",
     ]
@@ -56,7 +57,8 @@ def review_markdown(policy: dict[str, Any], report: dict[str, Any]) -> str:
                 f"- Статус: `{states[operation['operation_id']]}`",
                 f"- Статья: {operation['url']}",
                 f"- Изображение: {operation['image_url']}",
-                f"- Источник: `{operation['source_path']}`",
+                f"- Content source: `{operation['source_path']}`",
+                f"- Metadata source: `{operation['metadata_source_path']}`",
                 "",
                 str(operation["message"]),
                 "",
@@ -102,10 +104,12 @@ def execute_scope(
     }
     result: dict[str, Any] = {
         "schema_name": "video-manager.vk-lord-god-article-wave-result",
-        "schema_version": 3,
+        "schema_version": 4,
         "mode": mode,
         "status": "running",
         "policy_sha256": policy["policy_sha256"],
+        "source_contract_sha256": policy.get("source_contract_sha256"),
+        "execution_contract_sha256": contract_identity(policy),
         "asset_manifest_sha256": assets_manifest["manifest_sha256"],
         "started_at": now_iso(),
         "operations": [],
@@ -227,7 +231,6 @@ def run(repo: Path, *, mode: str) -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     policy = load_policy(repo)
-    validate_policy(policy)
     write_json(output_dir / "plan.json", policy)
 
     source_rows, assets_manifest = materialize_and_verify_sources(
@@ -236,6 +239,33 @@ def run(repo: Path, *, mode: str) -> int:
     )
     write_json(output_dir / "source-audit.json", assets_manifest)
     write_json(output_dir / "asset-manifest.json", assets_manifest)
+
+    source_summary = {
+        "status": assets_manifest.get("status", "unknown"),
+        "expected_external_resources": assets_manifest.get(
+            "expected_external_resources", 40
+        ),
+        "external_urls_checked": assets_manifest.get("external_urls_checked", 0),
+        "source_pages_verified": assets_manifest.get("article_pages_verified", 0),
+        "source_images_verified": assets_manifest.get("source_images_verified", 0),
+        "pinned_source_files_verified": assets_manifest.get(
+            "pinned_source_files_verified", 0
+        ),
+        "pinned_metadata_files_verified": assets_manifest.get(
+            "pinned_metadata_files_verified", len(source_rows)
+        ),
+        "prepared_jpeg_assets": assets_manifest.get(
+            "prepared_jpeg_assets", len(source_rows)
+        ),
+        "conflicts": assets_manifest.get("conflicts", 0),
+        "source_audit": str(output_dir / "source-audit.json"),
+    }
+    if int(source_summary["conflicts"]) != 0:
+        print(json.dumps(source_summary, ensure_ascii=False, indent=2))
+        raise RuntimeError(
+            "Article source audit blocked the queue; "
+            f"all findings are in {output_dir / 'source-audit.json'}"
+        )
 
     settings = get_settings()
     read_client = VkApiClient(
@@ -275,13 +305,9 @@ def run(repo: Path, *, mode: str) -> int:
     summary = {
         "mode": mode,
         "policy_sha256": policy["policy_sha256"],
-        "external_urls_checked": assets_manifest["external_urls_checked"],
-        "source_pages_verified": assets_manifest["article_pages_verified"],
-        "source_images_verified": assets_manifest["source_images_verified"],
-        "pinned_source_files_verified": assets_manifest[
-            "pinned_source_files_verified"
-        ],
-        "prepared_jpeg_assets": len(source_rows),
+        "source_contract_sha256": policy["source_contract_sha256"],
+        "execution_contract_sha256": contract_identity(policy),
+        **source_summary,
         "vk_wall_photo_upload_server_verified": upload_server_check["verified"],
         "operations": report["total_operations"],
         "ready": report["ready"],
@@ -295,7 +321,9 @@ def run(repo: Path, *, mode: str) -> int:
     }
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     if report["conflicts"]:
-        raise RuntimeError("Article queue blocked: " + "; ".join(report["global_conflicts"]))
+        raise RuntimeError(
+            "Article queue blocked: " + "; ".join(report["global_conflicts"])
+        )
 
     if mode == "plan":
         print(
