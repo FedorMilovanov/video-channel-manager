@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY = ROOT / "content" / "policies" / "lord-god-article-wave-202608.json"
+CURRENT = ROOT / "scripts" / "schedule_lord_god_article_wave_current.py"
 EXPECTED_SHA = "sha256:b3467af4911d5faa2550b2c2f0e53ce051b0365651e82abfc57cae8a68a66f5a"
 MOSCOW = timezone(timedelta(hours=3))
 
@@ -57,3 +58,17 @@ def test_article_wave_has_ten_daily_image_cards_at_fourteen() -> None:
         assert "💬" in operation["message"]
         assert 400 <= len(operation["message"]) <= 1000
         assert operation["message_sha256"] == message_sha(operation["message"])
+
+
+def test_current_entrypoint_applies_only_reviewed_live_corrections() -> None:
+    source = CURRENT.read_text(encoding="utf-8")
+
+    assert "lord-god-article-wave-202608-05-hermenevtika" in source
+    assert "og-hermenevtika-hristotsentrichnaya-otsenka.webp" in source
+    assert "lord-god-article-wave-202608-06-diotrefy" in source
+    assert "lord-god-article-wave-202608-06-krajne-isporcheno" in source
+    assert "https://gospod-bog.ru/articles/krajne-li-isporcheno-serdce/" in source
+    assert "https://gospod-bog.ru/images/og-krajne-isporcheno.webp" in source
+    assert '"ordinal": 6' in source
+    assert '"publish_date": 1786186800' in source
+    assert "module.EXPECTED_SHA = policy[\"policy_sha256\"]" in source
