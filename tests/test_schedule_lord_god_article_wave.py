@@ -72,3 +72,15 @@ def test_current_entrypoint_applies_only_reviewed_live_corrections() -> None:
     assert '"ordinal": 6' in source
     assert '"publish_date": 1786186800' in source
     assert "module.EXPECTED_SHA = policy[\"policy_sha256\"]" in source
+
+
+def test_current_entrypoint_accepts_only_usable_vk_link_parse_shapes() -> None:
+    source = CURRENT.read_text(encoding="utf-8")
+
+    assert "install_vk_link_parse_compatibility" in source
+    assert "module.parsed_photo_tokens(attachments, link)" in source
+    assert 'parse_mode = "photo_tokens_plus_external_url"' in source
+    assert '"attachment_type": "link" if link else "photo+external-link"' in source
+    assert 'attachment_parts = [*photo_tokens, normalized]' in source
+    assert "wall.parseAttachedLink returned no usable image attachment" in source
+    assert "module.parse_attached_link = parse_attached_link" in source
