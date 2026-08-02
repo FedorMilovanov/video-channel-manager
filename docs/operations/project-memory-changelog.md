@@ -4,6 +4,14 @@ This file records durable updates to the repository's operational memory.
 
 ## 2026-08-02
 
+### Daily article-link queue prepared
+
+- Prepared 10 postponed article posts for `lord-god-strength`, one daily at 14:00 UTC+03:00 from 2026-08-03 through 2026-08-12.
+- Source truth is `FedorMilovanov/gb-is-my-strength` search-manifest blob `952cfbd8b276fc7e877a784660fb4481dc8bd83f`; post copy is derived from the selected articles and points to their canonical public URLs.
+- Only pages with declared `.webp` Open Graph images are included. No separate photos are uploaded: the article URL is attached as a VK link card.
+- The executor verifies each live canonical URL and OG image before any write, blocks duplicate article URLs or occupied 14:00 slots, journals every attempt, and requires a VK link card with an image after every accepted post before continuing.
+- Policy SHA-256: `sha256:458b716dad898f7a692da7204259b43c42b1803387e9ea5ca855d456f044b85b`. Entrypoint: `scripts/run-lord-god-article-wave.ps1`.
+
 ### Theological postponed wall queue prepared
 
 - Prepared one immutable 26-video wall plan for `lord-god-strength`, VK community `60805374` / owner `-60805374`; no VK write occurs during plan creation.
