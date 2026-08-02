@@ -44,7 +44,7 @@ def review_markdown(policy: dict[str, Any], report: dict[str, Any]) -> str:
         "- Интервал до другого отложенного поста: не менее двух часов.",
         "- Изображение: отдельная проверенная фотография стены из OG-изображения.",
         "- Ссылка: точный публичный URL находится в тексте поста.",
-        "- Источники: живая страница, OG WebP, content source и PageHead source.",
+        "- Источники: живая страница, OG WebP, native content evidence и PageHead.",
         "- Порядок: Plan → Canary → ручная проверка → Apply.",
         "",
     ]
@@ -57,7 +57,7 @@ def review_markdown(policy: dict[str, Any], report: dict[str, Any]) -> str:
                 f"- Статус: `{states[operation['operation_id']]}`",
                 f"- Статья: {operation['url']}",
                 f"- Изображение: {operation['image_url']}",
-                f"- Content source: `{operation['source_path']}`",
+                f"- Native content evidence: `{operation['source_path']}`",
                 f"- Metadata source: `{operation['metadata_source_path']}`",
                 "",
                 str(operation["message"]),
@@ -240,13 +240,19 @@ def run(repo: Path, *, mode: str) -> int:
     write_json(output_dir / "source-audit.json", assets_manifest)
     write_json(output_dir / "asset-manifest.json", assets_manifest)
 
+    conflict_count = int(assets_manifest.get("conflicts", 0))
     source_summary = {
-        "status": assets_manifest.get("status", "unknown"),
+        "status": assets_manifest.get(
+            "status", "verified" if conflict_count == 0 else "blocked"
+        ),
         "expected_external_resources": assets_manifest.get(
             "expected_external_resources", 40
         ),
         "external_urls_checked": assets_manifest.get("external_urls_checked", 0),
         "source_pages_verified": assets_manifest.get("article_pages_verified", 0),
+        "live_content_markers_verified": assets_manifest.get(
+            "live_content_markers_verified", len(source_rows)
+        ),
         "source_images_verified": assets_manifest.get("source_images_verified", 0),
         "pinned_source_files_verified": assets_manifest.get(
             "pinned_source_files_verified", 0
@@ -254,17 +260,39 @@ def run(repo: Path, *, mode: str) -> int:
         "pinned_metadata_files_verified": assets_manifest.get(
             "pinned_metadata_files_verified", len(source_rows)
         ),
+        "live_metadata_matches_pinned_source": assets_manifest.get(
+            "live_metadata_matches_pinned_source", len(source_rows)
+        ),
         "prepared_jpeg_assets": assets_manifest.get(
             "prepared_jpeg_assets", len(source_rows)
         ),
-        "conflicts": assets_manifest.get("conflicts", 0),
+        "conflicts": conflict_count,
         "source_audit": str(output_dir / "source-audit.json"),
     }
-    if int(source_summary["conflicts"]) != 0:
+    expected_source_summary = {
+        "status": "verified",
+        "expected_external_resources": 40,
+        "external_urls_checked": 40,
+        "source_pages_verified": 10,
+        "live_content_markers_verified": 10,
+        "source_images_verified": 10,
+        "pinned_source_files_verified": 10,
+        "pinned_metadata_files_verified": 10,
+        "live_metadata_matches_pinned_source": 10,
+        "prepared_jpeg_assets": 10,
+        "conflicts": 0,
+    }
+    source_gate_errors = [
+        f"{key}={source_summary.get(key)!r}, expected {value!r}"
+        for key, value in expected_source_summary.items()
+        if source_summary.get(key) != value
+    ]
+    if source_gate_errors:
         print(json.dumps(source_summary, ensure_ascii=False, indent=2))
         raise RuntimeError(
-            "Article source audit blocked the queue; "
-            f"all findings are in {output_dir / 'source-audit.json'}"
+            "Article source audit blocked the queue: "
+            + "; ".join(source_gate_errors)
+            + f"; all findings are in {output_dir / 'source-audit.json'}"
         )
 
     settings = get_settings()
