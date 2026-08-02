@@ -94,6 +94,19 @@ def materialize_and_verify_sources(
             source_bytes = source_response.content
             if len(source_bytes) < 40:
                 raise RuntimeError(f"Pinned source file is unexpectedly small: {operation_id}")
+            try:
+                source_text = source_bytes.decode("utf-8")
+            except UnicodeDecodeError as exc:
+                raise RuntimeError(f"Pinned source file is not UTF-8: {operation_id}") from exc
+            source_markers = [str(value) for value in operation["source_markers"]]
+            missing_markers = [
+                marker for marker in source_markers if marker not in source_text
+            ]
+            if missing_markers:
+                raise RuntimeError(
+                    f"Pinned source markers are missing: {operation_id}: "
+                    f"{missing_markers!r}"
+                )
 
             rows.append(
                 {
@@ -109,6 +122,7 @@ def materialize_and_verify_sources(
                     "source_url": raw_url,
                     "source_bytes": len(source_bytes),
                     "source_sha256": bytes_sha(source_bytes),
+                    "source_markers_verified": source_markers,
                     "asset_path": str(asset_path),
                     "asset_bytes": len(jpeg),
                     "asset_sha256": bytes_sha(jpeg),
