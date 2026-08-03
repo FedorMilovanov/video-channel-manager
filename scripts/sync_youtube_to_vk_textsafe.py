@@ -52,7 +52,7 @@ def _download_video(*, yt_dlp: str, video_id: str, cache_dir: Path) -> Path:
     return path
 
 
-def _community_identity(args: argparse.Namespace) -> tuple[int, str]:
+def _provider_identity(args: argparse.Namespace) -> tuple[int, str]:
     settings = get_settings()
     store = VkTokenStore(settings.data_dir)
     reader = VkApiClient(
@@ -62,11 +62,17 @@ def _community_identity(args: argparse.Namespace) -> tuple[int, str]:
     )
     community = reader.get_community(str(args.community))
     community_id = int(community.ref.channel_id)
-    project_key = resolve_project_key({"community_id": community_id})
+    source = sync._load_audit(Path(args.source))
+    project_key = resolve_project_key(
+        {
+            "channel_id": source.channel.ref.channel_id,
+            "community_id": community_id,
+        }
+    )
     if project_key is None:
         raise ValueError(
-            f"VK community {community_id} is not bound to a registered project; "
-            "publishing renderer will not guess a brand"
+            "Source YouTube channel and target VK community do not resolve to one registered project; "
+            "sync is blocked before rendering or mutation"
         )
     return community_id, project_key
 
@@ -89,7 +95,7 @@ def main() -> int:
     global _ACTIVE_PROJECT_KEY
 
     args = sync._parser().parse_args()
-    community_id, _ACTIVE_PROJECT_KEY = _community_identity(args)
+    community_id, _ACTIVE_PROJECT_KEY = _provider_identity(args)
     sync._vk_title = _vk_title
     sync._vk_description = _vk_description
     sync._download_video = _download_video
