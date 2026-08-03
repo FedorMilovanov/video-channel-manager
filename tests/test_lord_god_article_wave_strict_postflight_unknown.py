@@ -23,9 +23,7 @@ def test_network_failure_persists_unknown_before_raising(
     expectations: dict[str, dict[str, str]] = {
         str(operation["operation_id"]): {
             "title": str(operation["title"]),
-            "description": (
-                "Проверенное полное описание карточки длиной более сорока символов."
-            ),
+            "description": ("Проверенное полное описание карточки длиной более сорока символов."),
         }
         for operation in policy["operations"]
     }
