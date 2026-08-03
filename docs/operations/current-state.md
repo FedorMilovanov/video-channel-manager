@@ -1,266 +1,165 @@
 # Current operational state
 
-Updated: 2026-08-01
+Updated: 2026-08-04  
+Repository baseline: `main@43070fb4eb04bd2c1055bcc45e3881996f39aad7`  
+Canonical audit: [`master-audit-2026-08-04.md`](master-audit-2026-08-04.md)  
+Machine register: [`audit-register-2026-08-04.json`](audit-register-2026-08-04.json)
 
-This file is the first place to check before continuing the current **Господь Бог — Сила Моя** YouTube → VK workflow.
+This is the first file to read before any YouTube/VK work. Chat history, screenshots, remembered counts, and retired package instructions do not override this state.
 
-The repository manages two separate projects. Read [`project-identity-registry.md`](project-identity-registry.md) before using any account alias or public link.
+## Current engineering mode
 
-## Current project selection
+`WAVE_0_CANONICAL_STATE_COMPLETE / WAVE_1_UPLOAD_STATE_MACHINE_NEXT`
 
-- Project key: `lord-god-strength`
-- Project: `Господь Бог — Сила Моя`
-- The separate project `legendary-poet` / `The Legendary Poet — Легендарный Поэт` is outside the current scope and must not be touched.
+No VK or YouTube provider write is authorized by Wave 0. Live queue completion and retransmission remain blocked until the upload reservation/recovery state machine in issue #65 is merged and the relevant local ledgers are reconciled.
 
-## Credential model
+## Project boundary
 
-### YouTube
+The repository manages two separate projects. Their exact IDs and links are in [`project-identity-registry.md`](project-identity-registry.md).
 
-Two separate local OAuth aliases are used, one per selected YouTube/Brand Account channel:
+### `lord-god-strength`
 
-- `fedor-milovanov` — current theological channel authorization, presently read-only;
-- `legendary-poet` — The Legendary Poet, presently write-capable.
+- YouTube channel: `UCeSJsC6go2c9pdJCuUI1BYA`
+- YouTube OAuth alias: `fedor-milovanov`
+- current documented YouTube access: read-only
+- VK community: `60805374`
+- VK owner: `-60805374`
+- shared VK credential alias: `legendary-poet` — credential label only
 
-For current YouTube writes, reauthorize the same `fedor-milovanov` alias with `--write --force`. Never substitute the poet alias.
+### `legendary-poet`
 
-### VK
+- YouTube channel: `UC-78ys2S3cQ3lpqgXfo-SvQ`
+- YouTube OAuth alias: `legendary-poet`
+- VK community: `235216998`
+- VK owner: `-235216998`
 
-One shared VK user token is intentionally used for both communities. Its canonical operational alias is `legendary-poet`, but the alias is only a credential label. Project isolation is enforced with exact numeric community and owner IDs in each operation.
+Never infer project identity from the shared VK alias. Every operation must bind `project_key`, exact provider IDs, and the matching registered link profile.
 
-A second local alias `default` was created on 2026-08-01 by running `video-manager vk login` without `--account`. Do not use `default` in operational commands. It does not represent a third project and must not replace the reviewed `legendary-poet` alias.
+## Verified repository baseline
 
-## Canonical accounts and links
+### Closed reliability work
 
-### YouTube — current project
+PR #61, merge `51cc2144508c33adf78380ab35e32ee88c10f90f`:
 
-- Project/channel currently shown by the local account listing as: `Fedor Milovanov`
-- Handle: `@fedormilovanov`
-- Channel: https://www.youtube.com/@fedormilovanov
-- Long-form videos: https://www.youtube.com/@fedormilovanov/videos
-- Shorts: https://www.youtube.com/@fedormilovanov/shorts
-- Authoritative public channel ID: `UCeSJsC6go2c9pdJCuUI1BYA`
-- Current local account alias: `fedor-milovanov`
-- Current access as of 2026-08-01: `read-only`
+- exact project identity and cross-project fail-closed guards;
+- project-bound publication rendering and guarded legacy plan upgrade;
+- SQLite WAL, `busy_timeout=5000`, and `foreign_keys=ON`.
 
-The local YouTube alias `legendary-poet` has write access but resolves to the separate channel `The Legendary Poet`. It is prohibited for the current project.
+PR #62, merge `55477df06ae0ae5238634aad829ba2fe8fe70fd7`:
 
-Important identity warning: an earlier stored OAuth identity returned channel ID `UC-78ys2S3cQ3lpqgXfo-SvQ` and an incomplete 131-video inventory. Before any YouTube write, the write-capable OAuth identity must be verified to resolve exactly to `UCeSJsC6go2c9pdJCuUI1BYA`.
+- persistent owned/borrowed HTTP clients for VK and YouTube inventory reads.
 
-Current YouTube mutation status:
+PR #63, merge `b19d4faa7e58ff4c0ae7f974092e9fd2441c571d`:
 
-`BLOCKED_UNTIL_FEDOR_MILOVANOV_ALIAS_IS_REAUTHORIZED_FOR_WRITE_AND_ID_VERIFIED`
+- persistent clients for VK video/thumbnail writers, YouTube description writer, OAuth exchange/refresh, and VK processing polling;
+- ambiguous mutations remain non-retryable by default.
 
-### VK — current project
+### Current code blockers
 
-- Community title: `† Господь Бог - Сила Моя! †`
-- Canonical viewer-facing community: https://vk.ru/the_lord_god_is_my_strength
-- Published compatibility URL: https://vk.com/the_lord_god_is_my_strength
-- VK Video: https://vkvideo.ru/@the_lord_god_is_my_strength
-- Community ID: `60805374`
-- API owner ID: `-60805374`
-- Shared local user-token alias: `legendary-poet`
+The following are confirmed on the 2026-08-04 baseline and block broad upload continuation:
 
-The shared VK token belongs to user `Федор Милованов` and can see several communities. Every current VK write must bind and confirm numeric community ID `60805374` and owner ID `-60805374`.
+1. base sync journals the upload only after reservation, transfer, and processing verification;
+2. a visible journal `remote_id` can be reused without verified stage/readiness/content reconciliation;
+3. upload readiness is weaker than the required exact duration/type/playability/source postcondition;
+4. content preview/plan loading does not run full per-record validation;
+5. the supported textsafe wrapper still monkeypatches a directly executable Poet-hardcoded base sync;
+6. YouTube read requests have no bounded transient retry;
+7. provider transport, limiter, PowerShell runner, wave-generation, coverage, album identity, and media-cache work remain in later waves.
 
-Historical `gospod_bog` vanity paths are operational history, not current canonical viewer links. Do not insert them into new descriptions without a fresh live verification.
+Issue #65 owns the immediate upload state-machine P0. Issue #64 owns the remaining reliability roadmap.
 
-### Current project links
+## `lord-god-strength` operational state
 
-Default compact footer:
+### Closed — do not rerun
 
-- Website: https://gospod-bog.ru/
-- Telegram: https://t.me/lordchrist
-- VK: https://vk.ru/the_lord_god_is_my_strength
-- VK Video: https://vkvideo.ru/@the_lord_god_is_my_strength
-- Rutube: https://rutube.ru/channel/1876662/
+- reviewed VK duplicate cleanup: `403 confirmed_deleted`, `0 planned`, `0 unresolved`;
+- exact transfer boundary YouTube `KobOzfBqzic` is already present and must never be uploaded again;
+- YouTube `s512Opa8Eu4` is already mapped to VK `-60805374_456241938`;
+- 34 reviewed low-view Shorts were replaced by ordinary videos; their generated wall posts were removed; protected post `12400` remained present;
+- theological article photo wave: `10/10` verified postponed posts, IDs `12471–12480`, scheduled 2026-08-04 through 2026-08-13; Apply must not be repeated.
 
-Additional registered links, not part of the default compact footer:
+### Requires local/live reconciliation
 
-- Odnoklassniki: https://ok.ru/christjesus
-- Facebook group: https://facebook.com/groups/116164165395881
+Long-form queue:
 
-No current description, comment, playlist, post, or footer may use The Legendary Poet links unless an explicit per-operation cross-project exception has been reviewed.
+- reviewed queue size: `26`;
+- queue SHA-256: `b9c0268be62ea8fb9281cc9a551ebc5621dfdd4bfeb22a9d8f4b50707baa33ed`;
+- local evidence directory: `C:\Users\Fedor\Projects\video-channel-manager\data\vk-upload\verified-longform-26`;
+- tracked by issue #31;
+- no accepted, processing, or unknown row may be retransmitted before exact live reconciliation.
 
-### Repository and local paths
+Shorts/Clips:
 
-- Repository: https://github.com/FedorMilovanov/video-channel-manager
-- Local repository: `C:\Users\Fedor\Projects\video-channel-manager`
-- Historical delete worktree: `C:\Users\Fedor\Projects\video-channel-manager-orchestrator`
-- Delete ledger: `C:\Users\Fedor\Projects\video-channel-manager\data\vk\delete-orchestrator.db`
-- Final cleanup log: `C:\Users\Fedor\Projects\video-channel-manager\data\vk\fast-cleanup-final-20260731-031942.log`
-- Inventory report directory: `C:\Users\Fedor\Projects\video-channel-manager\data\reports\youtube-vk-transfer-20260731-140628`
-- Long-form upload ledger directory: `C:\Users\Fedor\Projects\video-channel-manager\data\vk-upload\verified-longform-26`
-- Shorts upload ledger directory: `C:\Users\Fedor\Projects\video-channel-manager\data\vk-upload\verified-shorts`
+- canonical source inventory recorded as `108` Shorts;
+- final accepted/processing objects and final `short_video` types still require exact reconciliation;
+- tracked by issues #32 and #38;
+- keep Shorts and long-form in separate manifests and ledgers.
 
-## Required identity preflight
+Wall:
 
-Before the current API rollout, run:
+- upload and wall publication remain separate operations;
+- immediate publication is blocked by default;
+- issue #36 owns the universal upload/wall contract and fresh published+postponed audit;
+- issue #37 is limited to its exact approved post-boundary cleanup scope;
+- `guid` is only an additional short-window guard, not complete idempotency.
 
-```powershell
-video-manager youtube channels --account fedor-milovanov
-video-manager vk communities --account legendary-poet
-```
+Catalog/publishing:
 
-Continue only when the selected identities are exactly:
+- issue #33 remains blocked until upload, Shorts, and wall unknown outcomes are resolved;
+- do not begin combined catalog/description/wall/audio mutation work.
 
-```text
-project_key: lord-god-strength
-YouTube channel ID: UCeSJsC6go2c9pdJCuUI1BYA
-VK community ID: 60805374
-VK API owner ID: -60805374
-```
+## `legendary-poet` operational state
 
-For YouTube mutation, first reauthorize the current-project alias:
+Latest supplied reviewed Shorts matrix:
 
-```powershell
-video-manager youtube login --account fedor-milovanov --write --force
-```
+- 56 exact YouTube Shorts;
+- 41 exact YouTube→VK pairs;
+- 15 confirmed missing;
+- 0 ambiguous;
+- 0 extra vertical VK objects;
+- `BXZeRiEOHmQ` maps to VK `-235216998_456239039`;
+- the old `59/40/19/1` matrix is retired;
+- two protective stops performed no new VK writes;
+- a V3 canary package was prepared, but completed V3 Apply/postflight is not proven in the retained evidence.
 
-The authorization command must print exactly channel ID `UCeSJsC6go2c9pdJCuUI1BYA`. Otherwise stop without scanning or writing.
+Current status: `REVIEWED_MANIFEST_PREPARED / UPLOAD_COMPLETION_NOT_PROVEN`.
 
-## Critical VK wall safety block
+Do not run the old package or upload the 15 candidates until the exact V3 canary/apply state is recovered and the Wave 1 lifecycle is available.
 
-The owner reports that a previous transfer produced a large sequence of one-video wall posts instead of a gradual postponed queue.
+## Separate VK Audio browser workflow
 
-Current wall mutation status:
+The browser-based VK Audio automation belongs to the adjacent `mp3telegrambot` workflow. It uses a browser profile and undocumented web contracts. Treat it as a separate state machine and do not import it into the VK Video API core without a formal manifest/result/unknown-outcome interface.
 
-`BLOCKED_PENDING_ISSUE_36_AND_FRESH_READ_ONLY_WALL_AUDIT`
+## Active issue graph
 
-Mandatory rules:
+- #31 — reconcile the 26-item long-form result and ledger;
+- #32 — exact VK Clips inventory and Shorts queue;
+- #33 — catalog and publishing after dependencies;
+- #36 — upload-triggered wall safety and postponed publishing;
+- #37 — exact approved Shorts wall cleanup scope;
+- #38 — VK Shorts upload modes and final player/type behavior;
+- #64 — master reliability roadmap after PR #61–63;
+- #65 — Wave 1 journaled upload state machine and recovery.
 
-1. Video upload and wall publication are separate operations.
-2. Every upload executor must explicitly send `wallpost=0`, `auto_publish=0`, and `repeat=0` unless a reviewed video-specific exception exists.
-3. Every upload manifest must state `wall_mutation_authorized=false`.
-4. Upload postflight must fail if any unexpected wall post appears.
-5. Shorts/Clips must never be shared to the wall automatically.
-6. Wall publication must use a separate postponed plan with exact `publish_date`, deterministic `guid`, duplicate scan, dry-run, lock, repeated preflight, and postflight.
-7. Immediate `wall.post` is prohibited for the current project by default.
-8. Existing wall posts must not be bulk-deleted without a fresh exact-ID, engagement-aware, reviewed deletion plan.
+## Next allowed work
 
-Incident details: [`2026-08-01-vk-wall-and-short-player-incident.md`](2026-08-01-vk-wall-and-short-player-incident.md).
+1. Implement issue #65 on one isolated branch/PR.
+2. Run offline state-transition and crash fault-injection tests.
+3. Preserve all project identity, media QC, lock, and no-blind-retry guarantees.
+4. Merge only after exact-head CI on Python 3.11/3.12/3.13.
+5. Perform no live queue retransmission as part of the code PR.
+6. After Wave 1 merge, reconcile local ledgers before any canary or resume.
 
-## Completed work
+## Update protocol
 
-### VK duplicate cleanup
+After every wave or operational run, update this file with:
 
-The reviewed exact deletion set contained 403 videos.
-
-Final verified result:
-
-- `confirmed_deleted=403`
-- `planned=0`
-- `unresolved=0`
-- `run=completed`
-- stable ordinary-video inventory after cleanup: `2879`
-
-Policy SHA-256:
-
-`sha256:6c5f6f856c72c685d7e6bf33a163b9e9c3513464e76ec3d45edaa57c73539ded`
-
-This phase is closed. Do not rerun any deletion executor from it.
-
-### Public YouTube and VK inventory
-
-Final read-only public inventory used for transfer classification:
-
-- YouTube total: `1781`
-- YouTube long-form: `1673`
-- YouTube Shorts: `108`
-- complete VK owner inventory observed by the Shorts workflow: `2903`
-
-Ordinary and short-form surfaces must still be distinguished by final VK object `type` and processing state.
-
-### Exact long-form tail
-
-Boundary already present in VK:
-
-- YouTube ID: `KobOzfBqzic`
-- title: `Рождество: Правда и Вымысел - Джон МакАртур`
-- action: never upload again
-
-Newer long-form items:
-
-- total newer than boundary: `27`
-- verified missing: `26`
-- resolved already present: `1`
-
-Resolved present item:
-
-- YouTube ID: `s512Opa8Eu4`
-- VK ID: `-60805374_456241938`
-- evidence: same sermon/title identity and one-second duration difference
-
-Verified 26-item upload queue SHA-256:
-
-`b9c0268be62ea8fb9281cc9a551ebc5621dfdd4bfeb22a9d8f4b50707baa33ed`
-
-## Work currently in progress
-
-### Long-form reconciliation
-
-The upload is not considered complete until this result and ledger are reviewed:
-
-- `C:\Users\Fedor\Projects\video-channel-manager\data\vk-upload\verified-longform-26\upload-result.json`
-- `C:\Users\Fedor\Projects\video-channel-manager\data\vk-upload\verified-longform-26\upload-ledger.db`
-
-Do not infer completion from terminal silence, VK processing messages, or elapsed time.
-
-### Shorts reconciliation
-
-Authoritative source classification from the completed owner inventory:
-
-- canonical YouTube Shorts: `108`;
-- already present: `42`;
-- already present duplicate source: `1`;
-- originally confirmed missing: `65`;
-- ambiguous: `0`.
-
-Last reviewed state for 64 native uploads accepted by VK:
-
-- confirmed `type=short_video`: `44`;
-- still processing: `6`;
-- accepted but not yet visible through exact-object reconciliation: `14`;
-- wrong completed type: `0`;
-- one source remained failed before VK upload because YouTube authentication blocked the download.
-
-No retransmission is allowed for accepted/processing objects. Reconcile exact VK IDs first.
-
-Direct native uploads may look and play differently from external YouTube imports because VK exposes a distinct `short_video` type and clip player. During conversion, a future clip may temporarily appear as ordinary `video`; final classification must be checked after processing.
-
-## GitHub tracking
-
-- [Issue #31 — verify the 26-video upload result and reconcile the ledger](https://github.com/FedorMilovanov/video-channel-manager/issues/31)
-- [Issue #32 — inventory/reconcile the real VK Clips surface and final Shorts types](https://github.com/FedorMilovanov/video-channel-manager/issues/32)
-- [Issue #33 — organize and publish the verified VK catalog after transfer completion](https://github.com/FedorMilovanov/video-channel-manager/issues/33)
-- [Issue #36 — block upload-triggered wall spam and require postponed publishing](https://github.com/FedorMilovanov/video-channel-manager/issues/36)
-
-Issue #33 is blocked until issues #31, #32, and #36 have no silent unknown outcomes and their exact target IDs/manifests are recorded.
-
-## Required next actions
-
-1. Reconcile every long-form upload outcome against exact live VK IDs.
-2. Reconcile all 64 accepted Shorts after processing and record final `type`, dimensions, player/platform fields, and wall references.
-3. Obtain or document the single remaining blocked YouTube Short without repeating accepted uploads.
-4. Run a fresh read-only wall audit covering both published and postponed posts.
-5. Classify historical wall posts into intentional, auto-generated, duplicate, engaged/manual-review, and safe-removal candidates.
-6. Build clean VK playlists/albums.
-7. Repair titles and remove transfer artifacts such as trailing `()`.
-8. Write VK-native plain-text descriptions using only the current project's registered links.
-9. Build a deduplicated postponed wall-post queue with exact timestamps. No immediate posts.
-10. Extract MP3 from controlled source files with FFmpeg only after the video catalog is verified.
-11. Test VK audio-upload permissions with one file before any audio batch.
-
-## Required update protocol
-
-After every operational run, update this document with:
-
-- selected `project_key`;
-- resolved YouTube channel ID and VK community/owner ID;
-- run timestamp;
-- manifest SHA-256;
-- attempted/accepted/verified/failed/unknown counts;
-- published/postponed wall counts when a wall audit is involved;
+- exact repository HEAD;
+- selected `project_key` and exact provider IDs;
+- manifest/plan digest;
+- attempted, reserved, accepted, processing, verified, rejected, and unknown counts;
 - result and ledger paths;
+- whether retry is safe;
 - exact remaining work;
-- whether a retry is safe;
-- any new provider, identity, link-profile, media-type, wall, or packaging failure.
+- linked issue/PR;
+- any new provider-contract, identity, media, wall, wrapper, or packaging failure.
