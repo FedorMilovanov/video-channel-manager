@@ -17,6 +17,7 @@ from video_channel_manager.domain.models import (
     RemoteRef,
     VideoRecord,
 )
+from video_channel_manager.platforms.http import HttpClientOwner
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow
 from video_channel_manager.platforms.youtube.store import TokenStore
@@ -81,7 +82,7 @@ def _chunks(items: list[str], size: int) -> Iterable[list[str]]:
         yield items[index : index + size]
 
 
-class YouTubeApiClient:
+class YouTubeApiClient(HttpClientOwner):
     """Read-only YouTube Data API client with transparent refresh-token handling."""
 
     def __init__(
@@ -96,7 +97,11 @@ class YouTubeApiClient:
         self.client_config = client_config
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
-        self._http_client = http_client
+        self._initialize_http_client(
+            http_client,
+            timeout=45.0,
+            follow_redirects=True,
+        )
         self.api_base_url = api_base_url.rstrip("/")
 
     def _get_access_token(self) -> str:
@@ -107,10 +112,8 @@ class YouTubeApiClient:
         return token.access_token
 
     def _get(self, resource: str, *, params: QueryParams) -> dict[str, Any]:
-        client = self._http_client or httpx.Client(timeout=45.0, follow_redirects=True)
-        close_client = self._http_client is None
         try:
-            response = client.get(
+            response = self._http_client.get(
                 f"{self.api_base_url}/{resource.lstrip('/')}",
                 params=httpx.QueryParams(params),
                 headers={"Authorization": f"Bearer {self._get_access_token()}"},
@@ -131,9 +134,6 @@ class YouTubeApiClient:
             return payload
         except httpx.HTTPError as exc:
             raise YouTubeApiError(f"YouTube API request failed: {exc}") from exc
-        finally:
-            if close_client:
-                client.close()
 
     def _list_all(self, resource: str, *, params: QueryParams) -> list[dict[str, Any]]:
         items: list[dict[str, Any]] = []
