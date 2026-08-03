@@ -62,6 +62,7 @@ def ready_report(policy: dict[str, Any]) -> dict[str, Any]:
     return {
         "schema_name": "video-manager.vk-lord-god-article-link-card-hardened-preflight",
         "schema_version": 2,
+        "description_match_mode": entry.DESCRIPTION_MATCH_MODE,
         "total_operations": 10,
         "ready": 10,
         "already_applied": 0,
@@ -77,6 +78,20 @@ def ready_report(policy: dict[str, Any]) -> dict[str, Any]:
             for operation in policy["operations"]
         ],
     }
+
+
+def test_description_match_is_one_way_and_rejects_appended_text() -> None:
+    expected = (
+        "Проверенное полное описание карточки, которое может быть усечено "
+        "ВКонтакте, но не может быть самовольно расширено."
+    )
+    truncated = expected[:60]
+
+    assert entry.strict_description_matches(expected, expected)
+    assert entry.strict_description_matches(truncated, expected)
+    assert not entry.strict_description_matches(expected + " Лишний хвост.", expected)
+    assert not entry.strict_description_matches(expected[:39], expected)
+    assert not entry.strict_description_matches("", expected)
 
 
 def test_active_hardened_plan_never_calls_execute_scope(
@@ -121,8 +136,8 @@ def test_active_hardened_plan_never_calls_execute_scope(
     monkeypatch.setattr(entry, "VkApiClient", FakeVkClient)
     monkeypatch.setattr(entry, "wall_snapshot", lambda client: ([], []))
     monkeypatch.setattr(
-        entry.core,
-        "preflight",
+        entry,
+        "strict_preflight",
         lambda *args, **kwargs: report,
     )
     monkeypatch.setattr(
@@ -143,6 +158,53 @@ def test_active_hardened_plan_never_calls_execute_scope(
     written = json.loads((output_dir / "link-card-source-audit.json").read_text(encoding="utf-8"))
     assert written["status"] == "verified"
     assert written["og_image_dimensions_verified"] == 10
+
+
+def test_strict_postflight_failure_overwrites_completed_result(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    policy, contract = entry.core.load_hardened_policy(ROOT)
+    expectations = {
+        str(operation["operation_id"]): {
+            "title": str(operation["title"]),
+            "description": "Проверенное полное описание карточки длиной более сорока символов.",
+        }
+        for operation in policy["operations"]
+    }
+    rejected = {
+        "conflicts": 1,
+        "already_applied": 0,
+        "ready": 9,
+        "global_conflicts": ["description mismatch"],
+    }
+    result = {"status": "completed", "operations": []}
+
+    monkeypatch.setattr(entry, "wall_snapshot", lambda client: ([], []))
+    monkeypatch.setattr(
+        entry,
+        "strict_preflight",
+        lambda *args, **kwargs: rejected,
+    )
+
+    with pytest.raises(RuntimeError, match="strict link-card postflight rejected"):
+        entry.verify_strict_postflight(
+            mode="canary",
+            policy=policy,
+            contract=contract,
+            expectations=expectations,
+            read_client=object(),
+            journal=entry.core.fresh_journal(policy, contract),
+            output_dir=tmp_path,
+            result=result,
+        )
+
+    written = json.loads(
+        (tmp_path / "link-card-canary-result.json").read_text(encoding="utf-8")
+    )
+    assert written["status"] == "strict_postflight_failed"
+    assert written["description_match_mode"] == entry.DESCRIPTION_MATCH_MODE
+    assert written["strict_postflight_conflicts"] == 1
 
 
 def test_blocked_source_audit_stops_before_vk_settings(
