@@ -58,10 +58,14 @@ def test_repeated_og_read_checksum_drift_blocks_source_audit(
     assert audited["manifest_sha256"] != "sha256:before"
 
 
-def test_active_entrypoint_uses_checksum_bound_hardened_wrapper() -> None:
+def test_active_entrypoint_activates_guard_before_running_hardened_core() -> None:
     source = (
         ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py"
     ).read_text(encoding="utf-8")
 
-    assert "link_cards_hardened_entry as link_cards_module" in source
+    core_import = "link_cards_hardened as link_cards_module"
+    guard_import = "link_cards_hardened_entry as checksum_guard_module"
+    assert core_import in source
+    assert guard_import in source
+    assert source.index(core_import) < source.index(guard_import)
     assert "link_cards_module.guarded_main()" in source
