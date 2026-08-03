@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 from typer.testing import CliRunner
 
@@ -35,8 +36,8 @@ def _manifest() -> dict[str, object]:
     }
 
 
-def _normalized_stdout(result: object) -> str:
-    stdout = getattr(result, "stdout")
+def _normalized_stdout(result: Any) -> str:
+    stdout = result.stdout
     assert isinstance(stdout, str)
     return " ".join(stdout.split())
 
@@ -173,10 +174,7 @@ def test_strict_cli_requires_exact_content_coverage(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 2
-    assert (
-        "target manifest is missing content_id operations: tyutchev-night-sea-second"
-        in _normalized_stdout(result)
-    )
+    assert "target manifest is missing content_id operations: tyutchev-night-sea-second" in _normalized_stdout(result)
     assert not output_path.exists()
 
 
