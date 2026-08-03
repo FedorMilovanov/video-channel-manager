@@ -42,8 +42,7 @@ def run(repo: Path) -> int:
     ]
     if len(recoverable) != 1:
         raise RuntimeError(
-            "Expected exactly one recoverable photo_save_unknown operation; "
-            f"found {len(recoverable)}"
+            f"Expected exactly one recoverable photo_save_unknown operation; found {len(recoverable)}"
         )
 
     operation_id, entry = recoverable[0]
@@ -64,9 +63,8 @@ def run(repo: Path) -> int:
     )
     current_user = read_client.get_current_user()
     community = read_client.get_community(COMMUNITY_ID)
-    if (
-        community.ref.remote_id != str(COMMUNITY_ID)
-        or not community.metadata.get("managed_by_token")
+    if community.ref.remote_id != str(COMMUNITY_ID) or not community.metadata.get(
+        "managed_by_token"
     ):
         raise RuntimeError("Stored token does not manage VK community 60805374")
 
