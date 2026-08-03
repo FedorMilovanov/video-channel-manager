@@ -59,9 +59,7 @@ def test_repeated_og_read_checksum_drift_blocks_source_audit(
 
 
 def test_active_entrypoint_activates_guard_before_running_hardened_core() -> None:
-    source = (
-        ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py"
-    ).read_text(encoding="utf-8")
+    source = (ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py").read_text(encoding="utf-8")
 
     core_import = "link_cards_hardened as link_cards_module"
     guard_import = "link_cards_hardened_entry as checksum_guard_module"
