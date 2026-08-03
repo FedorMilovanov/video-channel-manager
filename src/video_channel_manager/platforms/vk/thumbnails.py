@@ -8,6 +8,7 @@ from typing import Any, TypeAlias
 
 import httpx
 
+from video_channel_manager.platforms.http import HttpClientOwner
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.writer import VkWriteError
 
@@ -18,7 +19,7 @@ ApiParam: TypeAlias = str | int | bool
 ApiParams: TypeAlias = dict[str, ApiParam]
 
 
-class VkThumbnailWriter:
+class VkThumbnailWriter(HttpClientOwner):
     """Guarded writer for setting an existing image as a VK video thumbnail."""
 
     def __init__(
@@ -34,7 +35,11 @@ class VkThumbnailWriter:
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
         self.api_version = api_version
-        self._http_client = http_client
+        self._initialize_http_client(
+            http_client,
+            timeout=60.0,
+            follow_redirects=True,
+        )
         self.api_base_url = api_base_url.rstrip("/")
         self.max_attempts = max(1, max_attempts)
 
@@ -89,10 +94,8 @@ class VkThumbnailWriter:
         raise last_error
 
     def _call_once(self, method: str, request_data: dict[str, str]) -> object:
-        client = self._http_client or httpx.Client(timeout=60.0, follow_redirects=True)
-        close_client = self._http_client is None
         try:
-            response = client.post(
+            response = self._http_client.post(
                 f"{self.api_base_url}/{method}",
                 data=request_data,
                 headers={"User-Agent": "video-channel-manager/0.1"},
@@ -124,9 +127,6 @@ class VkThumbnailWriter:
             raise VkWriteError(f"VK API request failed in {method}: {exc}", method=method, retryable=True) from exc
         except ValueError as exc:
             raise VkWriteError(f"VK API returned invalid JSON in {method}.", method=method) from exc
-        finally:
-            if close_client:
-                client.close()
 
     def get_upload_url(self, *, owner_id: int) -> str:
         if owner_id == 0:
@@ -160,17 +160,13 @@ class VkThumbnailWriter:
         content_type = mimetypes.guess_type(path.name)[0] or "image/jpeg"
         if not content_type.startswith("image/"):
             raise ValueError(f"Thumbnail path has a non-image media type: {content_type}")
-        client = self._http_client or httpx.Client(
-            timeout=httpx.Timeout(connect=60.0, read=600.0, write=600.0, pool=60.0),
-            follow_redirects=True,
-        )
-        close_client = self._http_client is None
         try:
             with path.open("rb") as stream:
-                response = client.post(
+                response = self._http_client.post(
                     upload_url,
                     files={"file": (path.name, stream, content_type)},
                     headers={"User-Agent": "video-channel-manager/0.1"},
+                    timeout=httpx.Timeout(connect=60.0, read=600.0, write=600.0, pool=60.0),
                 )
             if response.status_code >= 400:
                 raise VkWriteError(
@@ -212,9 +208,6 @@ class VkThumbnailWriter:
                 "VK thumbnail upload server returned invalid JSON.",
                 method="video.thumbUpload",
             ) from exc
-        finally:
-            if close_client:
-                client.close()
 
     def save_uploaded_thumbnail(
         self,

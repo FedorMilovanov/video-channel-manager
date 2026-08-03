@@ -12,7 +12,11 @@ from video_channel_manager.platforms.http import HttpClientOwner
 from video_channel_manager.platforms.vk.client import VkApiClient
 from video_channel_manager.platforms.vk.models import VkAccessToken
 from video_channel_manager.platforms.vk.store import VkTokenStore
+from video_channel_manager.platforms.vk.thumbnails import VkThumbnailWriter
+from video_channel_manager.platforms.vk.writer import VkVideoWriter
 from video_channel_manager.platforms.youtube.client import YouTubeApiClient
+from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow
+from video_channel_manager.platforms.youtube.writer import YouTubeDescriptionWriter
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -104,16 +108,27 @@ def test_owned_client_closes_on_context_exit(
     assert owned.close_count == 1
 
 
-def test_inventory_clients_share_the_lifecycle_contract() -> None:
-    assert issubclass(VkApiClient, HttpClientOwner)
-    assert issubclass(YouTubeApiClient, HttpClientOwner)
+def test_provider_clients_share_the_lifecycle_contract() -> None:
+    for provider_class in (
+        VkApiClient,
+        VkVideoWriter,
+        VkThumbnailWriter,
+        YouTubeApiClient,
+        YouTubeDescriptionWriter,
+        InstalledOAuthFlow,
+    ):
+        assert issubclass(provider_class, HttpClientOwner)
 
 
-def test_inventory_request_methods_do_not_construct_per_call_clients() -> None:
+def test_provider_request_methods_do_not_construct_per_call_clients() -> None:
     offenders: list[str] = []
     for relative_path in (
         "src/video_channel_manager/platforms/vk/client.py",
+        "src/video_channel_manager/platforms/vk/writer.py",
+        "src/video_channel_manager/platforms/vk/thumbnails.py",
         "src/video_channel_manager/platforms/youtube/client.py",
+        "src/video_channel_manager/platforms/youtube/writer.py",
+        "src/video_channel_manager/platforms/youtube/oauth.py",
     ):
         path = ROOT / relative_path
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))

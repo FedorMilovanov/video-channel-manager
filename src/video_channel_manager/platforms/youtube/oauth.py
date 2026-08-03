@@ -13,6 +13,7 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 import httpx
 
+from video_channel_manager.platforms.http import HttpClientOwner
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
 
 YOUTUBE_READONLY_SCOPE = "https://www.googleapis.com/auth/youtube.readonly"
@@ -30,7 +31,7 @@ class CallbackResult:
     state: str | None = None
 
 
-class InstalledOAuthFlow:
+class InstalledOAuthFlow(HttpClientOwner):
     """OAuth 2.0 Desktop flow using PKCE and a loopback callback server."""
 
     def __init__(
@@ -42,7 +43,11 @@ class InstalledOAuthFlow:
     ) -> None:
         self.config = config
         self.scopes = scopes
-        self._http_client = http_client
+        self._initialize_http_client(
+            http_client,
+            timeout=30.0,
+            follow_redirects=True,
+        )
 
     def build_authorization_url(
         self,
@@ -68,10 +73,8 @@ class InstalledOAuthFlow:
         return f"{self.config.auth_uri}?{urlencode(params)}"
 
     def exchange_code(self, *, code: str, redirect_uri: str, code_verifier: str) -> OAuthToken:
-        client = self._http_client or httpx.Client(timeout=30.0, follow_redirects=True)
-        close_client = self._http_client is None
         try:
-            response = client.post(
+            response = self._http_client.post(
                 self.config.token_uri,
                 data={
                     "client_id": self.config.client_id,
@@ -86,9 +89,6 @@ class InstalledOAuthFlow:
             payload = response.json()
         except (httpx.HTTPError, ValueError, KeyError) as exc:
             raise OAuthFlowError(f"Google token exchange failed: {exc}") from exc
-        finally:
-            if close_client:
-                client.close()
         try:
             return OAuthToken.from_token_response(payload, previous_scopes=list(self.scopes))
         except (KeyError, TypeError, ValueError) as exc:
@@ -97,10 +97,8 @@ class InstalledOAuthFlow:
     def refresh(self, token: OAuthToken) -> OAuthToken:
         if not token.refresh_token:
             raise OAuthFlowError("Stored credentials do not contain a refresh token; run youtube login again.")
-        client = self._http_client or httpx.Client(timeout=30.0, follow_redirects=True)
-        close_client = self._http_client is None
         try:
-            response = client.post(
+            response = self._http_client.post(
                 self.config.token_uri,
                 data={
                     "client_id": self.config.client_id,
@@ -118,9 +116,6 @@ class InstalledOAuthFlow:
             )
         except (httpx.HTTPError, ValueError, KeyError) as exc:
             raise OAuthFlowError(f"Google access-token refresh failed: {exc}") from exc
-        finally:
-            if close_client:
-                client.close()
 
     def authorize(
         self,
