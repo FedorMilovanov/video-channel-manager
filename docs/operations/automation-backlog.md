@@ -1,64 +1,139 @@
 # Operational automation backlog
 
-This backlog converts the 2026-07-31 lessons into durable repository improvements.
+Updated: 2026-08-04
 
-## Active issue tracking
+This backlog is subordinate to [`master-audit-2026-08-04.md`](master-audit-2026-08-04.md) and the machine-readable [`audit-register-2026-08-04.json`](audit-register-2026-08-04.json). It must not re-activate retracted findings, retired executors, or completed destructive operations.
 
-- [#31 — Verify the 26-video upload result and reconcile the ledger](https://github.com/FedorMilovanov/video-channel-manager/issues/31)
-- [#32 — Inventory the real VK Clips surface and derive the exact Shorts queue](https://github.com/FedorMilovanov/video-channel-manager/issues/32)
-- [#33 — Organize and publish the verified VK catalog after transfer completion](https://github.com/FedorMilovanov/video-channel-manager/issues/33)
+## Active tracking
 
-Issue #33 is blocked by #31 and #32.
+- #31 — reconcile the 26-item long-form upload result and ledger;
+- #32 — inventory the real VK Clips surface and classify the Shorts queue;
+- #33 — organize and publish the verified VK catalog after dependencies;
+- #36 — universal upload/wall separation and postponed publishing;
+- #37 — exact approved Shorts wall-cleanup scope;
+- #38 — VK Shorts upload modes and final type/player behavior;
+- #64 — master reliability roadmap after PR #61–63;
+- #65 — Wave 1 journaled upload state machine and recovery.
 
-## P0 — required before the next operational ZIP handoff
+Issue #33 remains blocked until #31, #32/#38, and #36 have no silent unknown outcomes. Live queue retransmission is additionally blocked until the required Wave 1 lifecycle is merged.
 
-- [x] Add root `AGENTS.md` with exact identities and current verified state.
-- [x] Add living `current-state.md`.
-- [x] Add postmortem and permanent rules.
-- [x] Add operational artifact standard.
-- [x] Add ZIP verifier and regression tests.
-- [x] Add PR and incident-report templates.
-- [ ] Run the bundle verifier against the next produced ZIP and retain its JSON output beside the handoff artifact.
+## Wave 0 — canonical state
 
-## P1 — complete the current transfer safely
+- [x] Add the master reliability audit and wave roadmap.
+- [x] Add a machine-readable finding register with status, severity, owner issue, and wave.
+- [x] Update `current-state.md` with PR #61–63, completed article wave, separate project queues, and current blockers.
+- [x] Link the operations index to the new sources of truth.
+- [x] Create focused Wave 1 issue #65.
+- [ ] Expand issue #64 with all omitted P0/P1 findings and wave dependencies.
+- [ ] Append the project-memory changelog.
+- [ ] Close superseded draft PR #29 after preserving its reusable ledger/reconciliation lessons.
+- [ ] Update root `AGENTS.md` to require the master audit/register before code or provider work.
 
-Tracked by issues #31 and #32.
+## Wave 1 — upload state machine and recovery
 
-- [ ] Inspect `upload-result.json` for the 26-item long-form queue.
-- [ ] Reconcile accepted, processing, and unknown ledger records against live VK.
-- [ ] Update `current-state.md` with exact verified upload counts and target IDs.
-- [ ] Build a live VK Clips inventory that covers the actual Clips surface.
-- [ ] Compare all 108 canonical YouTube Shorts against real VK Clip IDs.
-- [ ] Produce a separate immutable Shorts manifest and ledger.
+Tracked by issue #65.
 
-## P2 — reduce manual wrapper failures
+- [ ] Persist reservation intent before `video.save`.
+- [ ] Persist exact upload ticket immediately after reservation.
+- [ ] Add explicit `unknown_requires_reconciliation` behavior.
+- [ ] Require verified stage or full exact reconciliation before reuse.
+- [ ] Define duration/type/playability/source readiness contract.
+- [ ] Add crash fault-injection tests after every state boundary.
+- [ ] Prove replay cannot create a second reservation.
+- [ ] Keep orphan cleanup out of scope and reviewed separately.
 
-- [ ] Add a repository command that builds a flat operational ZIP and immediately verifies it.
-- [ ] Generate launch commands from the actual archive member list instead of duplicating path assumptions.
-- [ ] Add launcher contract tests for required sibling files and `$PSScriptRoot` use.
-- [ ] Add channel-identity preflight that compares expected handle, public channel ID, OAuth channel ID, and returned item channel IDs.
-- [ ] Add endpoint-coverage metadata to every inventory schema.
-- [ ] Add reusable checkpoint discovery so successful audits are reused automatically.
+## Wave 2 — fail-closed content and project pipeline
 
-## P3 — catalog organization after transfer verification
+Tracked by issue #64 until split into a focused implementation issue.
 
-Tracked by issue #33 and blocked until issues #31 and #32 are resolved.
+- [ ] Run full per-record validation inside every load/preview/plan path.
+- [ ] Remove implicit project defaults from reusable parsing.
+- [ ] Require complete targets↔operations coverage.
+- [ ] Make base sync project-aware or internal-only.
+- [ ] Keep exactly one supported public sync entrypoint.
+- [ ] Add cross-project and direct-bypass behavioral tests.
 
-- [ ] Build VK playlist taxonomy and exact placement plan.
-- [ ] Repair transfer title artifacts such as trailing `()`.
-- [ ] Render VK-native descriptions from canonical records.
-- [ ] Build postponed wall-post plans with idempotency and deduplication.
-- [ ] Build MP3 extraction, loudness normalization, ID3, and artwork workflow.
-- [ ] Test VK audio-upload capability with one controlled file.
+## Wave 3 — transport, retries, and limiter
+
+- [ ] Move `YouTubeCommentWriter` to the shared HTTP ownership lifecycle.
+- [ ] Inventory all remaining `httpx.Client()` sites.
+- [ ] Centralize request construction, redaction, parsing, and provider error taxonomy.
+- [ ] Add bounded read-only retry/backoff for YouTube.
+- [ ] Add configurable proactive VK limiter after provider-policy verification.
+- [ ] Keep ambiguous mutation retry policy separate and fail closed.
+- [ ] Cache the YouTube uploads playlist ID for the client lifecycle.
+
+## Wave 4 — wall safety subsystem
+
+- [ ] Preserve proven `wallpost=0` upload behavior.
+- [ ] Research disputed `auto_publish`/`repeat` provider contract before a universal mandate.
+- [ ] Require `wall_mutation_authorized=false` in upload manifests.
+- [ ] Add before/after wall delta audit for uploads.
+- [ ] Use postponed publication as the default path.
+- [ ] Scan published and postponed posts and exact schedule-slot collisions.
+- [ ] Treat `guid` as an additional guard, not complete idempotency.
+
+## Wave 5 — Windows/operator contract
+
+- [ ] One Python/version/venv bootstrap.
+- [ ] Structured `preflight-summary.json` and `result.json` for wrappers.
+- [ ] No mandatory count parsing from human stdout.
+- [ ] `$PSScriptRoot` and repository-root discovery instead of user paths.
+- [ ] Exact artifact path and digest instead of newest-ZIP selection.
+- [ ] Shared PowerShell guard library and correct exit-code tests.
+- [ ] Automatically run the bundle verifier before handoff/apply.
+
+## Wave 6 — stable wave engine
+
+- [ ] Data/policy-driven waves over shared interfaces.
+- [ ] Dependency injection instead of production monkeypatching.
+- [ ] Remove private cross-script imports.
+- [ ] One versioned journal schema with guarded migrations.
+- [ ] One canonical text/URL normalizer.
+- [ ] Archive retired executors only after reference scans.
+
+## Wave 7 — risk-based tests
+
+- [ ] Module-specific coverage gates for clients, writers, CLI, and executors.
+- [ ] Fault matrix for intent, acceptance, lost response, delayed visibility, journal write, and restart.
+- [ ] Property tests for idempotency and project isolation.
+- [ ] Windows wrapper integration tests.
+- [ ] Test-order/repeat stability where useful.
+
+## Wave 8 — matching, catalog, and media correctness
+
+- [ ] Exact reviewed mapping before fuzzy fallback.
+- [ ] Globally consistent pair matching instead of order-sensitive greediness.
+- [ ] Duplicate normalized album names become explicit conflicts.
+- [ ] Semantic membership comparison ignores position churn.
+- [ ] Strict ID parser rejects booleans.
+- [ ] Authoritative final media path, ffprobe, A/V, duration, and fingerprint validation.
+
+## Wave 9 — finish live queues separately
+
+Only after the required core gates:
+
+- [ ] Reconcile `lord-god-strength` long-form local result and ledger.
+- [ ] Reconcile all accepted/processing Shorts and exact final types.
+- [ ] Recover the exact `legendary-poet` V3 canary/apply state before any upload.
+- [ ] Build project-separated catalog, editorial, and postponed plans.
+- [ ] Keep the VK Audio browser workflow separate until it has a formal interface.
+
+## Wave 10 — retirement and governance
+
+- [ ] Maintain an explicit supported/retired entrypoint registry.
+- [ ] Remove dead generations only after proof of no active references.
+- [ ] Generate documentation/CLI consistency checks.
+- [ ] Record architecture decisions for state machine, retry taxonomy, project identity, and wave engine.
+- [ ] Convert every live incident into a regression test and durable rule.
 
 ## Definition of done
 
-A backlog item involving a provider write is complete only when:
+A code wave is complete only when:
 
-- exact source and target IDs are recorded;
-- immutable inputs and SHA-256 are stored;
-- a durable ledger exists;
-- postconditions are verified by provider reread;
-- no unknown outcome remains silent;
-- `current-state.md` and the project-memory changelog are updated;
-- relevant tests pass in CI.
+- the exact issue scope and non-goals are preserved;
+- no unrelated provider mutation is included;
+- exact-head CI is green on Python 3.11, 3.12, and 3.13;
+- every ambiguous provider outcome remains fail-closed;
+- `current-state.md`, audit register, changelog, and issue state are synchronized;
+- live canary work, when authorized, has exact before/after evidence and a safe recovery decision.
