@@ -1,27 +1,26 @@
 # Current operational state
 
 Updated: 2026-08-04  
-Repository baseline: `main@43070fb4eb04bd2c1055bcc45e3881996f39aad7`  
+Verified code baseline: `main@b19d4faa7e58ff4c0ae7f974092e9fd2441c571d`  
+Wave 0 status: `completed`  
 Canonical audit: [`master-audit-2026-08-04.md`](master-audit-2026-08-04.md)  
 Machine register: [`audit-register-2026-08-04.json`](audit-register-2026-08-04.json)
 
-This is the first file to read before any YouTube/VK work. Chat history, screenshots, remembered counts, and retired package instructions do not override this state.
+This is the first state board to read before YouTube/VK work. Chat history, screenshots, remembered counts, retired packages, and older agent audits do not override it.
 
 ## Current engineering mode
 
-`WAVE_0_CANONICAL_STATE_COMPLETE / WAVE_1_UPLOAD_STATE_MACHINE_NEXT`
+`WAVE_1_UPLOAD_STATE_MACHINE_NEXT`
 
-No VK or YouTube provider write is authorized by Wave 0. Live queue completion and retransmission remain blocked until the upload reservation/recovery state machine in issue #65 is merged and the relevant local ledgers are reconciled.
+Wave 0 performed no VK or YouTube writes. Broad upload continuation and retransmission remain blocked until issue #65 is merged and the relevant local ledgers are reconciled.
 
 ## Project boundary
-
-The repository manages two separate projects. Their exact IDs and links are in [`project-identity-registry.md`](project-identity-registry.md).
 
 ### `lord-god-strength`
 
 - YouTube channel: `UCeSJsC6go2c9pdJCuUI1BYA`
-- YouTube OAuth alias: `fedor-milovanov`
-- current documented YouTube access: read-only
+- OAuth alias: `fedor-milovanov`
+- documented access: read-only
 - VK community: `60805374`
 - VK owner: `-60805374`
 - shared VK credential alias: `legendary-poet` — credential label only
@@ -29,88 +28,87 @@ The repository manages two separate projects. Their exact IDs and links are in [
 ### `legendary-poet`
 
 - YouTube channel: `UC-78ys2S3cQ3lpqgXfo-SvQ`
-- YouTube OAuth alias: `legendary-poet`
+- OAuth alias: `legendary-poet`
 - VK community: `235216998`
 - VK owner: `-235216998`
 
-Never infer project identity from the shared VK alias. Every operation must bind `project_key`, exact provider IDs, and the matching registered link profile.
+Every operation must bind `project_key`, exact provider IDs, and the matching registered link profile. The shared VK alias never selects a project.
 
-## Verified repository baseline
+## Verified repository state
 
 ### Closed reliability work
 
 PR #61, merge `51cc2144508c33adf78380ab35e32ee88c10f90f`:
 
 - exact project identity and cross-project fail-closed guards;
-- project-bound publication rendering and guarded legacy plan upgrade;
+- project-bound publication rendering and guarded legacy-plan upgrades;
 - SQLite WAL, `busy_timeout=5000`, and `foreign_keys=ON`.
 
 PR #62, merge `55477df06ae0ae5238634aad829ba2fe8fe70fd7`:
 
-- persistent owned/borrowed HTTP clients for VK and YouTube inventory reads.
+- persistent owned/borrowed clients for VK and YouTube inventory reads.
 
 PR #63, merge `b19d4faa7e58ff4c0ae7f974092e9fd2441c571d`:
 
 - persistent clients for VK video/thumbnail writers, YouTube description writer, OAuth exchange/refresh, and VK processing polling;
 - ambiguous mutations remain non-retryable by default.
 
-### Current code blockers
+### Confirmed current blockers
 
-The following are confirmed on the 2026-08-04 baseline and block broad upload continuation:
-
-1. base sync journals the upload only after reservation, transfer, and processing verification;
-2. a visible journal `remote_id` can be reused without verified stage/readiness/content reconciliation;
-3. upload readiness is weaker than the required exact duration/type/playability/source postcondition;
+1. base sync journals an upload only after reservation, transfer, and processing verification;
+2. a visible journal `remote_id` can be reused without verified-stage/readiness/content reconciliation;
+3. upload readiness lacks the required exact duration/type/playability/source postcondition;
 4. content preview/plan loading does not run full per-record validation;
 5. the supported textsafe wrapper still monkeypatches a directly executable Poet-hardcoded base sync;
-6. YouTube read requests have no bounded transient retry;
-7. provider transport, limiter, PowerShell runner, wave-generation, coverage, album identity, and media-cache work remain in later waves.
+6. YouTube safe reads have no bounded transient retry;
+7. provider transport/limiter, Windows runners, wave generations, risk coverage, album identity, matching, and media-cache work remain in later waves.
 
-Issue #65 owns the immediate upload state-machine P0. Issue #64 owns the remaining reliability roadmap.
+Issue #65 owns the immediate upload-lifecycle P0. Issue #64 owns the remaining roadmap.
 
 ## `lord-god-strength` operational state
 
-### Closed — do not rerun
+### Closed — never rerun
 
 - reviewed VK duplicate cleanup: `403 confirmed_deleted`, `0 planned`, `0 unresolved`;
-- exact transfer boundary YouTube `KobOzfBqzic` is already present and must never be uploaded again;
-- YouTube `s512Opa8Eu4` is already mapped to VK `-60805374_456241938`;
-- 34 reviewed low-view Shorts were replaced by ordinary videos; their generated wall posts were removed; protected post `12400` remained present;
-- theological article photo wave: `10/10` verified postponed posts, IDs `12471–12480`, scheduled 2026-08-04 through 2026-08-13; Apply must not be repeated.
+- YouTube `KobOzfBqzic` is the already-present transfer boundary;
+- YouTube `s512Opa8Eu4` maps to VK `-60805374_456241938`;
+- 34 reviewed low-view Shorts were replaced by ordinary videos, their generated wall posts were removed, and protected post `12400` remained present;
+- theological article photo wave: `10/10` postponed posts verified, IDs `12471–12480`, scheduled 2026-08-04 through 2026-08-13; Apply is retired;
+- draft PR #29 is superseded and closed without merge; its historical deletion executors are prohibited.
 
-### Requires local/live reconciliation
+### Requires exact local/live reconciliation
 
 Long-form queue:
 
-- reviewed queue size: `26`;
-- queue SHA-256: `b9c0268be62ea8fb9281cc9a551ebc5621dfdd4bfeb22a9d8f4b50707baa33ed`;
-- local evidence directory: `C:\Users\Fedor\Projects\video-channel-manager\data\vk-upload\verified-longform-26`;
-- tracked by issue #31;
-- no accepted, processing, or unknown row may be retransmitted before exact live reconciliation.
+- reviewed queue: `26`;
+- SHA-256: `b9c0268be62ea8fb9281cc9a551ebc5621dfdd4bfeb22a9d8f4b50707baa33ed`;
+- local evidence: `C:\Users\Fedor\Projects\video-channel-manager\data\vk-upload\verified-longform-26`;
+- owner issue: #31;
+- accepted, processing, or unknown rows must not be retransmitted before reconciliation.
 
 Shorts/Clips:
 
 - canonical source inventory recorded as `108` Shorts;
 - final accepted/processing objects and final `short_video` types still require exact reconciliation;
-- tracked by issues #32 and #38;
-- keep Shorts and long-form in separate manifests and ledgers.
+- owner issues: #32 and #38;
+- long-form and Shorts remain separate manifests and ledgers.
 
 Wall:
 
 - upload and wall publication remain separate operations;
 - immediate publication is blocked by default;
 - issue #36 owns the universal upload/wall contract and fresh published+postponed audit;
-- issue #37 is limited to its exact approved post-boundary cleanup scope;
-- `guid` is only an additional short-window guard, not complete idempotency.
+- issue #37 is limited to its exact approved cleanup scope;
+- `guid` is an additional guard, not complete idempotency.
 
 Catalog/publishing:
 
-- issue #33 remains blocked until upload, Shorts, and wall unknown outcomes are resolved;
-- do not begin combined catalog/description/wall/audio mutation work.
+- issue #33 remains blocked until upload, Shorts, and wall unknowns are resolved;
+- do not combine catalog, description, wall, and audio mutation work.
 
 ## `legendary-poet` operational state
 
-Latest supplied reviewed Shorts matrix:
+Latest retained reviewed Shorts matrix:
 
 - 56 exact YouTube Shorts;
 - 41 exact YouTube→VK pairs;
@@ -118,48 +116,47 @@ Latest supplied reviewed Shorts matrix:
 - 0 ambiguous;
 - 0 extra vertical VK objects;
 - `BXZeRiEOHmQ` maps to VK `-235216998_456239039`;
-- the old `59/40/19/1` matrix is retired;
+- old `59/40/19/1` matrix is retired;
 - two protective stops performed no new VK writes;
-- a V3 canary package was prepared, but completed V3 Apply/postflight is not proven in the retained evidence.
+- V3 canary preparation is evidenced, but completed V3 Apply/postflight is not.
 
-Current status: `REVIEWED_MANIFEST_PREPARED / UPLOAD_COMPLETION_NOT_PROVEN`.
+Status: `REVIEWED_MANIFEST_PREPARED / UPLOAD_COMPLETION_NOT_PROVEN`.
 
 Do not run the old package or upload the 15 candidates until the exact V3 canary/apply state is recovered and the Wave 1 lifecycle is available.
 
 ## Separate VK Audio browser workflow
 
-The browser-based VK Audio automation belongs to the adjacent `mp3telegrambot` workflow. It uses a browser profile and undocumented web contracts. Treat it as a separate state machine and do not import it into the VK Video API core without a formal manifest/result/unknown-outcome interface.
+The browser-based VK Audio workflow belongs to the adjacent `mp3telegrambot` system and uses undocumented web contracts. Keep it separate until a formal manifest/result/unknown-outcome interface exists.
 
 ## Active issue graph
 
-- #31 — reconcile the 26-item long-form result and ledger;
+- #31 — long-form result and ledger reconciliation;
 - #32 — exact VK Clips inventory and Shorts queue;
 - #33 — catalog and publishing after dependencies;
-- #36 — upload-triggered wall safety and postponed publishing;
-- #37 — exact approved Shorts wall cleanup scope;
-- #38 — VK Shorts upload modes and final player/type behavior;
-- #64 — master reliability roadmap after PR #61–63;
+- #36 — wall safety and postponed publishing;
+- #37 — exact approved wall-cleanup scope;
+- #38 — Shorts upload modes and final type/player behavior;
+- #64 — master reliability roadmap;
 - #65 — Wave 1 journaled upload state machine and recovery.
 
 ## Next allowed work
 
-1. Implement issue #65 on one isolated branch/PR.
+1. Implement issue #65 on one isolated branch and focused PR.
 2. Run offline state-transition and crash fault-injection tests.
-3. Preserve all project identity, media QC, lock, and no-blind-retry guarantees.
+3. Preserve project identity, media QC, write lock, wall separation, and no-blind-retry guarantees.
 4. Merge only after exact-head CI on Python 3.11/3.12/3.13.
-5. Perform no live queue retransmission as part of the code PR.
+5. Perform no live queue retransmission in the refactor PR.
 6. After Wave 1 merge, reconcile local ledgers before any canary or resume.
 
 ## Update protocol
 
-After every wave or operational run, update this file with:
+After every wave or operational run record:
 
-- exact repository HEAD;
+- verified code baseline and owning issue/PR;
 - selected `project_key` and exact provider IDs;
 - manifest/plan digest;
-- attempted, reserved, accepted, processing, verified, rejected, and unknown counts;
+- planned, reserved, accepted, processing, verified, rejected, and unknown counts;
 - result and ledger paths;
 - whether retry is safe;
 - exact remaining work;
-- linked issue/PR;
-- any new provider-contract, identity, media, wall, wrapper, or packaging failure.
+- new provider-contract, identity, media, wall, wrapper, or packaging failures.
