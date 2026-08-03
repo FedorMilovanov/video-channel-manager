@@ -324,12 +324,14 @@ def submit_wall_post(
     journal_path: Path,
 ) -> tuple[int, dict[str, Any]]:
     operation_id = str(operation["operation_id"])
+    guid = str(operation.get("guid") or operation_id)
     set_journal_stage(
         journal,
         journal_path,
         operation,
         "wall_post_intent",
         photo_token=photo_token_value,
+        guid=guid,
     )
     try:
         response = mutation_client._call(
@@ -340,7 +342,7 @@ def submit_wall_post(
                 "message": str(operation["message"]),
                 "attachments": photo_token_value,
                 "publish_date": int(operation["publish_date"]),
-                "guid": operation_id,
+                "guid": guid,
             },
         )
     except VkApiError as exc:
@@ -352,6 +354,7 @@ def submit_wall_post(
             operation,
             stage,
             photo_token=photo_token_value,
+            guid=guid,
             error=f"{type(exc).__name__}: {exc}",
         )
         if not explicit:
@@ -368,6 +371,7 @@ def submit_wall_post(
                     operation,
                     "verified",
                     photo_token=photo_token_value,
+                    guid=guid,
                     post_id=post_id,
                     reconciled_from="wall_post_unknown",
                 )
@@ -382,6 +386,7 @@ def submit_wall_post(
             operation,
             "wall_post_unknown",
             photo_token=photo_token_value,
+            guid=guid,
             error=f"{type(exc).__name__}: {exc}",
         )
         reconciled = find_exact_post(
@@ -397,6 +402,7 @@ def submit_wall_post(
                 operation,
                 "verified",
                 photo_token=photo_token_value,
+                guid=guid,
                 post_id=post_id,
                 reconciled_from="wall_post_unknown",
             )
@@ -412,6 +418,7 @@ def submit_wall_post(
         operation,
         "wall_post_accepted",
         photo_token=photo_token_value,
+        guid=guid,
         post_id=post_id,
     )
     try:
@@ -428,6 +435,7 @@ def submit_wall_post(
             operation,
             "wall_post_accepted_unverified",
             photo_token=photo_token_value,
+            guid=guid,
             post_id=post_id,
             error=f"{type(exc).__name__}: {exc}",
         )
@@ -439,6 +447,7 @@ def submit_wall_post(
         operation,
         "verified",
         photo_token=photo_token_value,
+        guid=guid,
         post_id=post_id,
     )
     return post_id, reference

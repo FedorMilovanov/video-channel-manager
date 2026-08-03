@@ -28,45 +28,31 @@ $Script = Join-Path $PSScriptRoot "schedule_lord_god_article_wave_v3.py"
 $Package = Join-Path $PSScriptRoot "lord_god_article_wave_v3"
 $Policy = Join-Path $Repo "content\policies\lord-god-article-wave-v3-202608.json"
 $SourceContract = Join-Path $Repo "content\policies\lord-god-article-wave-v3-source-contract.json"
-$LegacyDeliveryContract = Join-Path $Repo "content\policies\lord-god-article-wave-v3-link-card-delivery-contract.json"
-$DeliveryContract = Join-Path $Repo "content\policies\lord-god-article-wave-v3-link-card-delivery-contract-v3.json"
-$LegacyHardenedCore = Join-Path $Package "link_cards_hardened.py"
-$LegacyHardenedEntrypoint = Join-Path $Package "link_cards_hardened_entry.py"
-$ParsedEntrypoint = Join-Path $Package "link_cards_parsed.py"
-$ParsedContract = Join-Path $Package "parsed_link_contract.py"
-$ParsedPreview = Join-Path $Package "parsed_link_preview.py"
-$ParsedState = Join-Path $Package "parsed_link_state.py"
-$ParsedMutations = Join-Path $Package "parsed_link_mutations.py"
+$PhotoExecutor = Join-Path $Package "photo_wave_v4.py"
+$PhotoMutations = Join-Path $Package "mutations.py"
+$PhotoSources = Join-Path $Package "sources.py"
+$PhotoWall = Join-Path $Package "wall.py"
 
-if (-not (Test-Path -LiteralPath $Script)) {
-    throw "Не найден исполнитель: $Script"
-}
-if (-not (Test-Path -LiteralPath $Package)) {
-    throw "Не найден пакет исполнителя: $Package"
-}
-if (-not (Test-Path -LiteralPath $Policy)) {
-    throw "Не найдена политика: $Policy"
-}
-if (-not (Test-Path -LiteralPath $SourceContract)) {
-    throw "Не найден контракт источников: $SourceContract"
-}
-if (-not (Test-Path -LiteralPath $LegacyDeliveryContract)) {
-    throw "Не найден исторический link-card delivery-contract v2: $LegacyDeliveryContract"
-}
-if (-not (Test-Path -LiteralPath $DeliveryContract)) {
-    throw "Не найден parsed link-card delivery-contract v3: $DeliveryContract"
-}
-foreach ($RequiredModule in @(
-    $LegacyHardenedCore,
-    $LegacyHardenedEntrypoint,
-    $ParsedEntrypoint,
-    $ParsedContract,
-    $ParsedPreview,
-    $ParsedState,
-    $ParsedMutations
+# Retired parsed-link artifacts are retained in Git history and unit tests only.
+$RetiredParsedLinkArtifacts = @(
+    "link_cards_hardened.py",
+    "link-card-delivery-contract.json",
+    "delivery-contract-v3.json"
+)
+$null = $RetiredParsedLinkArtifacts
+
+foreach ($RequiredPath in @(
+    $Script,
+    $Package,
+    $Policy,
+    $SourceContract,
+    $PhotoExecutor,
+    $PhotoMutations,
+    $PhotoSources,
+    $PhotoWall
 )) {
-    if (-not (Test-Path -LiteralPath $RequiredModule)) {
-        throw "Не найден модуль parsed link-card исполнителя: $RequiredModule"
+    if (-not (Test-Path -LiteralPath $RequiredPath)) {
+        throw "Не найден обязательный файл фото-волны v4: $RequiredPath"
     }
 }
 
@@ -76,10 +62,11 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 if ($Mode -eq "Plan") {
-    Write-Host "Господь Бог — Сила Моя: read-only аудит 40 ресурсов и 10 VK-превью через wall.parseAttachedLink; без загрузки фото и без wall.post." -ForegroundColor Cyan
+    Remove-Item Env:VCM_ALLOW_WALL_POSTS -ErrorAction SilentlyContinue
+    Write-Host "Господь Бог — Сила Моя: read-only подготовка 10 JPEG-обложек и проверка фото-пути VK; без загрузки фото и без wall.post." -ForegroundColor Cyan
     & $Python $Script --repo $Repo
     if ($LASTEXITCODE -ne 0) {
-        throw "Parsed link-card Plan завершился ошибкой. wall.post не выполнялся."
+        throw "Photo-wave v4 Plan завершился ошибкой. Ни photos.saveWallPhoto, ни wall.post не выполнялись."
     }
     exit 0
 }
@@ -91,11 +78,11 @@ if (-not $Execute) {
 $env:VCM_ALLOW_WALL_POSTS = "1"
 try {
     if ($Mode -eq "Canary") {
-        Write-Host "Господь Бог — Сила Моя: одна parsed link-карточка; wall.parseAttachedLink перед wall.post, без отдельной фотографии." -ForegroundColor Yellow
+        Write-Host "Господь Бог — Сила Моя: один отложенный пост с JPEG-обложкой и ссылкой в тексте." -ForegroundColor Yellow
         & $Python $Script --repo $Repo --canary
     }
     elseif ($Mode -eq "Apply") {
-        Write-Host "Господь Бог — Сила Моя: остальные девять parsed link-карточек; без загрузки отдельных фотографий." -ForegroundColor Cyan
+        Write-Host "Господь Бог — Сила Моя: остальные девять отложенных постов с JPEG-обложками и ссылками в тексте." -ForegroundColor Cyan
         & $Python $Script --repo $Repo --execute
     }
     else {
@@ -103,7 +90,7 @@ try {
     }
 
     if ($LASTEXITCODE -ne 0) {
-        throw "Постановка parsed link-карточек остановилась. Повторный запуск разрешён только после проверки journal v3."
+        throw "Фото-волна v4 остановилась. Не повторяй команду до проверки photo-journal-v4.json."
     }
 }
 finally {
