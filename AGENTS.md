@@ -3,12 +3,17 @@
 Before any work involving Fedor Milovanov's YouTube/VK media workflow, read these files in order:
 
 1. `docs/operations/project-identity-registry.md`
-2. `docs/operations/local-credential-sources.md`
-3. `docs/operations/current-state.md`
-4. `docs/operations/2026-07-31-youtube-vk-transfer-postmortem.md`
-5. `docs/operations/operational-artifact-standard.md`
+2. `docs/operations/master-audit-2026-08-04.md`
+3. `docs/operations/audit-register-2026-08-04.json`
+4. `docs/operations/current-state.md`
+5. the GitHub issue that owns the finding/wave
+6. `docs/operations/local-credential-sources.md`
+7. `docs/operations/2026-07-31-youtube-vk-transfer-postmortem.md`
+8. `docs/operations/operational-artifact-standard.md`
 
-These operational documents are the source of truth and take priority over chat memory.
+These operational documents and current repository evidence take priority over chat memory, screenshots, remembered counts, retired ZIP instructions, and older agent audits.
+
+A finding marked `fixed`, `retracted`, or `disputed-provider-contract` in the machine register must not be silently converted back into an active implementation task.
 
 ## Two-project identity boundary
 
@@ -17,104 +22,138 @@ This repository manages two separate projects:
 - `lord-god-strength` — **Господь Бог — Сила Моя**;
 - `legendary-poet` — **The Legendary Poet — Легендарный Поэт**.
 
-They are not aliases of one project. Never mix their YouTube channels, VK communities, sites, Telegram channels, Rutube channels, playlist links, descriptions, comments, manifests, journals, or reports.
+They are not aliases. Never mix their YouTube channels, VK communities, sites, Telegram channels, Rutube channels, playlist links, descriptions, comments, manifests, journals, reports, or public footers.
 
-The complete canonical link and identity allowlists are in `docs/operations/project-identity-registry.md`.
+The canonical identity and link allowlists are in `docs/operations/project-identity-registry.md`.
 
 ## Credential model
 
 ### YouTube
 
-YouTube uses two local OAuth aliases, one for each selected YouTube/Brand Account channel:
+YouTube uses separate local OAuth aliases per selected channel:
 
-- `fedor-milovanov` — current `lord-god-strength` authorization; presently read-only;
-- `legendary-poet` — `The Legendary Poet`; presently write-capable.
+- `fedor-milovanov` — `lord-god-strength`; currently documented as read-only;
+- `legendary-poet` — The Legendary Poet; currently documented as write-capable.
 
-Reauthorizing one alias with `--force` replaces only that alias. Never use the `legendary-poet` YouTube token for the current theological project.
+Reauthorizing one alias with `--force` replaces only that alias. Never use the poet YouTube token for the theological project.
 
 ### VK
 
-VK intentionally uses one user access token for both communities. The current stored token alias is `legendary-poet`, but the alias is only a credential name and does not identify the target project.
+VK intentionally uses one user access token for both communities. The stored alias `legendary-poet` is a credential label, not a project selector.
 
-The token source is stored outside this repository:
+The configured token source is outside this repository:
 
 - file: `C:\Users\Fedor\Projects\mp3telegrambot\.env`;
 - key: `VK_API_TOKEN`.
 
-Never copy, print, commit, log, package, or place the token value in a command line. Do not ask the operator to paste a token manually while the configured external file exists. Normal operations use the already imported local token-store alias. A re-import may read the external file silently.
+Never copy, print, commit, log, package, or place the token value in a command line. Do not request manual token entry while the configured external source exists.
 
-Every VK operation must select the project with exact numeric guards:
+Every VK operation must bind:
 
 - `project_key`;
-- `community_id`;
-- `owner_id`;
-- project-specific link profile.
+- exact `community_id`;
+- exact `owner_id`;
+- the matching project link profile.
 
-A shared VK token is normal. Selecting a target only by token alias, community display order, or remembered context is forbidden.
+Selecting a target only by token alias, display order, vanity route, or remembered context is forbidden.
 
-## Current selected project
+## Canonical project IDs
 
-Current work is restricted to `lord-god-strength`:
+### `lord-god-strength`
 
-- YouTube: https://www.youtube.com/@fedormilovanov
 - YouTube channel ID: `UCeSJsC6go2c9pdJCuUI1BYA`
-- current YouTube OAuth alias: `fedor-milovanov`
-- current YouTube access: `read-only`; reauthorize this same alias with `--write --force` before YouTube mutation and verify the returned channel ID
-- canonical VK community: https://vk.ru/the_lord_god_is_my_strength
-- VK Video: https://vkvideo.ru/@the_lord_god_is_my_strength
+- YouTube OAuth alias: `fedor-milovanov`
 - VK community ID: `60805374`
-- VK API owner ID: `-60805374`
-- shared VK user-token alias: `legendary-poet`
+- VK owner ID: `-60805374`
+- shared VK token alias: `legendary-poet`
 
-The YouTube alias `legendary-poet` resolves to `The Legendary Poet` and is prohibited for the current rollout.
+### `legendary-poet`
 
-Every provider plan must bind `project_key`, exact YouTube channel ID, exact VK community/owner ID, credential alias, and the selected project's link profile. Alias names and display titles are never sufficient identity guards.
+- YouTube channel ID: `UC-78ys2S3cQ3lpqgXfo-SvQ`
+- YouTube OAuth alias: `legendary-poet`
+- VK community ID: `235216998`
+- VK owner ID: `-235216998`
+- shared VK token alias: `legendary-poet`
+
+Every provider plan must bind the exact expected IDs and project-specific link profile. Alias names and display titles are never sufficient guards.
+
+## Current engineering sequence
+
+Wave 0 established the canonical audit, machine register, current state, and issue graph. No provider write was authorized by Wave 0.
+
+The next code task is issue #65: journaled VK upload state machine and recovery. Until it is merged and the relevant local ledgers are reconciled:
+
+- do not resume broad upload queues;
+- do not retransmit accepted, processing, or unknown items;
+- do not run old Legendary Poet V3 packages without recovering their exact canary/apply state;
+- do not begin combined catalog/description/wall/audio operations.
+
+Issue #64 is the master roadmap for Waves 2–10.
 
 ## Branch discipline
 
-- Do not create throwaway, status-only, or duplicate branches.
-- Small, low-risk documentation, link, configuration, and narrowly scoped maintenance changes go directly to `main`.
-- Use a branch only for a substantial or risky code change that genuinely benefits from isolated CI or review.
-- Keep at most one active working branch for the current task.
-- Merge it promptly after green CI and do not open another branch for follow-up documentation.
-- Never create branches merely to record progress, add pointers, or split one operational task into artificial PRs.
+- Documentation, links, configuration, and narrowly scoped low-risk maintenance may go directly to `main` when the current task explicitly requires it.
+- Substantial or risky code changes use one `agent/{description}` branch and one focused PR.
+- Keep at most one active working branch for the current wave.
+- Do not create status-only, duplicate, or artificial follow-up branches.
+- Merge promptly after exact-head green CI and update operational memory in the same wave.
+- Do not mix live provider reconciliation into a reliability-refactor PR.
 
-## Current verified state
+## Verified closed state
 
-- The reviewed VK duplicate cleanup is complete: `403 confirmed_deleted`, `0 planned`, `0 unresolved`, `run=completed`.
-- The public YouTube inventory contains `1781` items: `1673` long-form videos and `108` Shorts.
-- The exact long-form transfer boundary is YouTube ID `KobOzfBqzic`, title `Рождество: Правда и Вымысел - Джон МакАртур`. It is already present in VK and must not be uploaded again.
-- There are `27` long-form uploads newer than that boundary. Exactly `26` were verified missing in the VK snapshot.
-- YouTube ID `s512Opa8Eu4` is already present as VK ID `-60805374_456241938`; duration delta is one second.
-- Verified 26-item upload queue SHA-256: `b9c0268be62ea8fb9281cc9a551ebc5621dfdd4bfeb22a9d8f4b50707baa33ed`.
-- Historical long-form result: `23 confirmed`, `2 processing`, `1 failed before VK upload`. The sole pre-upload failure is `uI-wfRaq2SA`, part 2 of `Архитектура мышления`; it has no VK ID and no upload attempt.
-- The 34 reviewed low-view Shorts were replaced by ordinary videos and their generated wall posts were removed: `34 upload verified`, `34 old video delete accepted`, `34 wall delete accepted`; protected post `12400` remained present.
+- PR #61 closed the main project-identity/branding defects in supported paths and hardened SQLite.
+- PR #62/#63 migrated the main inventory, writer, upload, description, and OAuth paths to persistent client ownership without blind mutation retry.
+- Reviewed VK duplicate cleanup is complete: `403 confirmed_deleted`, `0 planned`, `0 unresolved`.
+- YouTube `KobOzfBqzic` is the already-present long-form boundary and must not be uploaded again.
+- YouTube `s512Opa8Eu4` is already mapped to VK `-60805374_456241938`.
+- The 34-item Shorts reset completed and protected wall post `12400` remained present.
+- Theological article photo wave completed: postponed post IDs `12471–12480`, `10/10` verified. Do not rerun Apply.
+- Draft PR #29 is superseded and closed without merge. Never rerun its historical deletion executors.
+
+## Current blockers
+
+The current audit confirms:
+
+- upload reservation/ticket is journaled too late in base sync;
+- visible incomplete remote objects can be treated as reusable;
+- upload readiness lacks a complete exact postcondition;
+- content preview/plan loading does not perform full per-record validation;
+- supported sync still monkeypatches an executable Poet-hardcoded base sync;
+- YouTube safe reads lack bounded retry;
+- transport/limiter, Windows wrappers, wave generations, risk coverage, matching, album identity, and media cache require later waves.
+
+Do not "fix" retracted claims such as the system YouTube `Uploads` playlist creating a VK album. Do not invent a VK chunk/resume protocol. Do not treat `guid` as complete wall idempotency. Do not mandate disputed provider parameters without current evidence.
 
 ## Non-negotiable safety rules
 
 1. Never use the `legendary-poet` YouTube write token for `lord-god-strength`.
-2. Never select a VK target only from the shared token alias; confirm numeric community `60805374` and owner `-60805374` for the current project.
-3. Never expose or request manual entry of the configured VK token when the external source is available.
-4. Never rerun any closed deletion or Shorts-reset executor. Use only the current focused completion entrypoint for remaining long-form work.
+2. Never select a VK target only from the shared token alias; confirm exact project/community/owner identity.
+3. Never expose or request manual entry of the configured VK token.
+4. Never rerun a closed deletion, reset, article-wave, or superseded executor.
 5. Never infer absence from an endpoint that does not cover the relevant surface.
-6. Never infer a transfer boundary from screenshots or relative labels such as “4 months ago”. Use exact IDs and current inventories.
+6. Never infer a transfer boundary from screenshots or relative dates; use exact IDs and inventories.
 7. Never upload an ambiguous match.
-8. Never repeat an upload with an unknown outcome. Reconcile the ledger and live VK state first.
-9. Keep long-form videos and Shorts/Clips in separate manifests and ledgers.
-10. Preserve local masters or controlled exports when available. Do not use screen capture as a source.
-11. Preserve the exact source thumbnail whenever one exists. A transfer is incomplete until the source URL or reviewed local artwork path, SHA-256, target video ID, and thumbnail-write result are journaled. VK's automatic frame is allowed only when no usable source artwork exists or an explicit exception is recorded.
-12. Video upload and wall publishing are separate operations. Every upload must disable automatic wall publication.
-13. Never commit OAuth tokens, VK tokens, downloaded media, local exports, ledgers, logs, backups, or generated upload packages.
-14. Every operational ZIP must pass `python scripts/verify_operational_bundle.py ...` before being handed to a user.
-15. Descriptions, comments, playlists, and footers must use only the selected project's registered links unless a cross-project link has been explicitly reviewed for that exact operation.
-16. Unknown or unregistered links fail closed; never invent a vanity handle, site, Clips URL, or numeric ID.
+8. Never repeat an upload with an unknown outcome. Reconcile journal and live state first.
+9. Keep long-form and Shorts/Clips in separate manifests and ledgers.
+10. Preserve controlled local masters when available; do not use screen capture as source media.
+11. Preserve exact source artwork identity and result; a generated frame requires an explicit exception.
+12. Video upload and wall publication are separate operations. Upload must disable wall publication.
+13. Never commit tokens, media, local exports, ledgers, logs, backups, or generated upload packages.
+14. Every operational ZIP must pass `scripts/verify_operational_bundle.py` before handoff.
+15. Public text may use only the selected project's registered links unless the exact cross-project exception is reviewed.
+16. Unknown or unregistered links fail closed.
+17. Transport reuse must not broaden mutation retry semantics.
+18. A successful HTTP response is not a postcondition; verify the exact remote effect.
+19. Machine state belongs in journals/results, not only human console output.
+20. Live queue retransmission is never a side effect of code refactoring.
 
 ## Execution and handoff rules
 
 - Read-only inventory first; writes only from a reviewed exact-ID scope.
-- Store exact project key, source ID, target ID, title, duration, status, attempt timestamps, provider responses, source artwork identity, and artwork result in a durable ledger.
-- A successful HTTP response is not a postcondition. Re-read the remote object or use the provider's final accepted result when its read endpoint is known to lag.
-- Preserve intermediate successful audits and support resume; do not repeat expensive scans unnecessarily.
-- Every handoff must state: selected project, exact command, exact entrypoint path, expected outputs, ledger path, result path, and recovery behavior.
-- Operational ZIPs must be flat unless the launch command explicitly includes the nested directory.
-- The launch script must verify its own location and required sibling files before any network write.
+- Store exact project key, source ID, target ID, title, duration, state, attempt timestamps, provider evidence, artwork identity, and postflight result in a durable ledger.
+- Persist mutation intent before dispatch and preserve unknown outcomes for reconciliation.
+- Preserve intermediate successful audits and resume from durable state; do not repeat expensive scans unnecessarily.
+- Every handoff states the selected project, exact entrypoint, exact command, expected outputs, ledger path, result path, and recovery behavior.
+- Operational ZIPs are flat unless the launch command explicitly includes the nested directory.
+- Launchers verify their own location and required sibling files before network writes.
+- After every wave or run, update `current-state.md`, the audit register, the changelog, the owning issue, and regression coverage.
