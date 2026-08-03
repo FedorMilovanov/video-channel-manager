@@ -31,17 +31,23 @@ $SourceContract = Join-Path $Repo "content\policies\lord-god-article-wave-v3-sou
 $DeliveryContract = Join-Path $Repo "content\policies\lord-god-article-wave-v3-link-card-delivery-contract.json"
 $LinkCardModule = Join-Path $Package "link_cards_hardened.py"
 
-foreach ($RequiredPath in @(
-    $Script,
-    $Package,
-    $Policy,
-    $SourceContract,
-    $DeliveryContract,
-    $LinkCardModule
-)) {
-    if (-not (Test-Path -LiteralPath $RequiredPath)) {
-        throw "Не найден обязательный файл усиленного link-card исполнителя: $RequiredPath"
-    }
+if (-not (Test-Path -LiteralPath $Script)) {
+    throw "Не найден исполнитель: $Script"
+}
+if (-not (Test-Path -LiteralPath $Package)) {
+    throw "Не найден пакет исполнителя: $Package"
+}
+if (-not (Test-Path -LiteralPath $Policy)) {
+    throw "Не найдена политика: $Policy"
+}
+if (-not (Test-Path -LiteralPath $SourceContract)) {
+    throw "Не найден контракт источников: $SourceContract"
+}
+if (-not (Test-Path -LiteralPath $DeliveryContract)) {
+    throw "Не найден контракт доставки link-карточек: $DeliveryContract"
+}
+if (-not (Test-Path -LiteralPath $LinkCardModule)) {
+    throw "Не найден усиленный исполнитель link-карточек: $LinkCardModule"
 }
 
 & $Python -m compileall -q $Package $Script
