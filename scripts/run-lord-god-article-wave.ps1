@@ -28,7 +28,10 @@ $Script = Join-Path $PSScriptRoot "schedule_lord_god_article_wave_v3.py"
 $Package = Join-Path $PSScriptRoot "lord_god_article_wave_v3"
 $Policy = Join-Path $Repo "content\policies\lord-god-article-wave-v3-202608.json"
 $SourceContract = Join-Path $Repo "content\policies\lord-god-article-wave-v3-source-contract.json"
+$LegacyDeliveryContract = Join-Path $Repo "content\policies\lord-god-article-wave-v3-link-card-delivery-contract.json"
 $DeliveryContract = Join-Path $Repo "content\policies\lord-god-article-wave-v3-link-card-delivery-contract-v3.json"
+$LegacyHardenedCore = Join-Path $Package "link_cards_hardened.py"
+$LegacyHardenedEntrypoint = Join-Path $Package "link_cards_hardened_entry.py"
 $ParsedEntrypoint = Join-Path $Package "link_cards_parsed.py"
 $ParsedContract = Join-Path $Package "parsed_link_contract.py"
 $ParsedPreview = Join-Path $Package "parsed_link_preview.py"
@@ -47,10 +50,15 @@ if (-not (Test-Path -LiteralPath $Policy)) {
 if (-not (Test-Path -LiteralPath $SourceContract)) {
     throw "Не найден контракт источников: $SourceContract"
 }
+if (-not (Test-Path -LiteralPath $LegacyDeliveryContract)) {
+    throw "Не найден исторический link-card delivery-contract v2: $LegacyDeliveryContract"
+}
 if (-not (Test-Path -LiteralPath $DeliveryContract)) {
     throw "Не найден parsed link-card delivery-contract v3: $DeliveryContract"
 }
 foreach ($RequiredModule in @(
+    $LegacyHardenedCore,
+    $LegacyHardenedEntrypoint,
     $ParsedEntrypoint,
     $ParsedContract,
     $ParsedPreview,
