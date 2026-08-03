@@ -8,6 +8,7 @@ from typing import Any, TypeAlias
 
 import httpx
 
+from video_channel_manager.platforms.http import HttpClientOwner
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow, YOUTUBE_FORCE_SSL_SCOPE
 from video_channel_manager.platforms.youtube.store import TokenStore
@@ -77,7 +78,7 @@ def _dict_items(payload: dict[str, Any], key: str = "items") -> list[dict[str, A
     return [item for item in value if isinstance(item, dict)]
 
 
-class YouTubeDescriptionWriter:
+class YouTubeDescriptionWriter(HttpClientOwner):
     """Narrow YouTube writer for guarded description replacement only."""
 
     def __init__(
@@ -92,7 +93,11 @@ class YouTubeDescriptionWriter:
         self.client_config = client_config
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
-        self._http_client = http_client
+        self._initialize_http_client(
+            http_client,
+            timeout=45.0,
+            follow_redirects=True,
+        )
         self.api_base_url = api_base_url.rstrip("/")
 
     def _token(self, *, require_write: bool) -> OAuthToken:
@@ -116,10 +121,8 @@ class YouTubeDescriptionWriter:
         json_body: dict[str, Any] | None = None,
         require_write: bool = False,
     ) -> dict[str, Any]:
-        client = self._http_client or httpx.Client(timeout=45.0, follow_redirects=True)
-        close_client = self._http_client is None
         try:
-            response = client.request(
+            response = self._http_client.request(
                 method,
                 f"{self.api_base_url}/{resource.lstrip('/')}",
                 params=httpx.QueryParams(params),
@@ -142,9 +145,6 @@ class YouTubeDescriptionWriter:
             return payload
         except httpx.HTTPError as exc:
             raise YouTubeWriteError(f"YouTube API request failed: {exc}") from exc
-        finally:
-            if close_client:
-                client.close()
 
     def read_description(self, video_id: str) -> VideoDescriptionSnapshot:
         payload = self._request(
