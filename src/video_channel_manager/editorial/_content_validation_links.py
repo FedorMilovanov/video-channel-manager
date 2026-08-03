@@ -5,7 +5,6 @@ from typing import Any
 from video_channel_manager.editorial._content_types import (
     ALLOWED_LINK_KINDS,
     ALLOWED_SURFACES,
-    LEGACY_YOUTUBE_SCHEMA_NAME,
 )
 from video_channel_manager.editorial._content_urls import (
     balanced_emphasis,
@@ -41,8 +40,7 @@ def validate_links(payload: dict[str, Any], *, source_urls: set[str]) -> list[st
         errors.append("links must contain 1-5 compact inline links")
         raw_links = []
     link_kinds: list[str] = []
-    legacy_default = payload.get("schema_name") == LEGACY_YOUTUBE_SCHEMA_NAME
-    project_key = resolve_project_key(payload, legacy_default=legacy_default)
+    project_key = resolve_project_key(payload)
     project_urls = _canonical_profile_urls(project_key)
     foreign_urls = _foreign_project_urls(project_key)
     allowed_urls = source_urls | project_urls
