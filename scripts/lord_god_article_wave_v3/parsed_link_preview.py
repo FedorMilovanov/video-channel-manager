@@ -15,7 +15,7 @@ def parse_request_json(article_url: object) -> str:
     if not url:
         raise ValueError("Cannot parse an empty article URL")
     return json.dumps(
-        [{"url": url}],
+        [{"type": "link", "link": url}],
         ensure_ascii=False,
         separators=(",", ":"),
     )
@@ -189,6 +189,7 @@ def audit_parsed_link_cards(
         "schema_version": 1,
         "generated_at": now_iso(),
         "method": LINK_PARSE_METHOD,
+        "request_item_shape": "type-link/link-url",
         "calls": len(items),
         "operations": len(items),
         "verified": sum(item["status"] == "verified" for item in items),
