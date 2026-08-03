@@ -22,9 +22,7 @@ _RETRYABLE_API_CODES = frozenset({6, 9, 10, 29})
 _RETRYABLE_HTTP_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 ApiParam: TypeAlias = str | int | bool
 ApiParams: TypeAlias = dict[str, ApiParam]
-UploadObservationCallback: TypeAlias = Callable[
-    [dict[str, Any] | None, VkUploadReadinessAssessment | None], None
-]
+UploadObservationCallback: TypeAlias = Callable[[dict[str, Any] | None, VkUploadReadinessAssessment | None], None]
 
 
 class VkWriteError(RuntimeError):
