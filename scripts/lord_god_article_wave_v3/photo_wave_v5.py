@@ -85,21 +85,31 @@ def prepare_photo_token(
     journal: dict[str, Any],
     journal_path: Path,
 ) -> str:
+    kwargs = {
+        "operation": operation,
+        "jpeg": jpeg,
+        "read_client": read_client,
+        "journal": journal,
+        "journal_path": journal_path,
+    }
+    get_current_user = getattr(read_client, "get_current_user", None)
+    if not callable(get_current_user):
+        return mutations.prepare_photo_token(
+            **kwargs,
+            mutation_client=mutation_client,
+        )
+
     # Resolve token ownership before any photos.saveWallPhoto mutation. The
     # returned user object is then served locally if the save response is
     # user-owned, eliminating a fallible API request after a successful save.
-    current_user = read_client.get_current_user()
+    current_user = get_current_user()
     pinned_mutation_client = _PinnedUserMutationClient(
         mutation_client,
         current_user,
     )
     return mutations.prepare_photo_token(
-        operation=operation,
-        jpeg=jpeg,
-        read_client=read_client,
+        **kwargs,
         mutation_client=pinned_mutation_client,
-        journal=journal,
-        journal_path=journal_path,
     )
 
 
