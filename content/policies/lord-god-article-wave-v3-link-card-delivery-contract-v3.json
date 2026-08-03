@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-manager.vk-lord-god-article-link-card-delivery-contract",
+  "schema_version": 3,
+  "decision_set_id": "lord-god-article-wave-v3-202608",
+  "base_policy_sha256": "sha256:f0175b4783e6eb8b449a4558bef662b53bd95b583deb71a01ce7edfd1202dcc7",
+  "source_contract_sha256": "sha256:659912a978d7b8442a9a8106783aa12eec81c2facdc1127f6cf21ead01dffac6",
+  "attachment_mode": "parsed-external-link-card",
+  "asset_mode": "remote-open-graph-only",
+  "link_preparation_method": "wall.parseAttachedLink",
+  "write_method": "wall.post",
+  "attachment_value": "exact-article-url",
+  "link_title_source": "parsed-link-title",
+  "link_photo_id_source": "parsed-link-photo-owner-id-and-id",
+  "allowed_attachment_types": [
+    "link"
+  ],
+  "required_link_attachments": 1,
+  "require_link_title_match": true,
+  "require_link_description_match": true,
+  "require_link_preview_photo": true,
+  "separate_vk_photo": false,
+  "vk_photo_api_calls": 0,
+  "prepared_jpeg_assets": 0,
+  "guid_mode": "contract-bound-sha256",
+  "journal_schema_version": 3,
+  "postflight_requires_exact_schedule": true,
+  "postflight_requires_exact_text": true,
+  "supersedes_delivery_contract_sha256": "sha256:23ed39ed344d3429140e9bafaaee4aabd8509d0701a916c608ef8d64e68daa96",
+  "superseded_failure_code": 100,
+  "superseded_failure_marker": "link_photo_sizing_rule",
+  "contract_sha256": "sha256:5b39a2a9f7edf2f970ad3fa561499f3fa3e0c6f0510893ad45cc07967490df37"
+}
