@@ -43,15 +43,29 @@ def write_json(path: Path, payload: dict[str, Any]) -> None:
     temporary.replace(path)
 
 
-def load_records(input_path: Path) -> tuple[list[EditorialContentRecord], list[str]]:
+def load_records(
+    input_path: Path,
+    *,
+    expected_project_key: str | None = None,
+    expected_channel_id: str | None = None,
+) -> tuple[list[EditorialContentRecord], list[str]]:
     records: list[EditorialContentRecord] = []
     errors: list[str] = []
     for path in json_paths(input_path):
         try:
-            records.append(parse_content_record(read_json(path)))
+            records.append(
+                parse_content_record(
+                    read_json(path),
+                    expected_project_key=expected_project_key,
+                    expected_channel_id=expected_channel_id,
+                )
+            )
         except ValueError as exc:
             errors.append(f"{path}: {exc}")
     errors.extend(validate_content_collection(records))
+    projects = sorted({record.project_key for record in records})
+    if len(projects) > 1:
+        errors.append(f"mixed project batch is forbidden: {', '.join(projects)}")
     return records, errors
 
 
