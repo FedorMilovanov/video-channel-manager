@@ -430,7 +430,7 @@ def test_active_entrypoint_and_runner_require_hardened_contract() -> None:
     runner = (ROOT / "scripts" / "run-lord-god-article-wave.ps1").read_text(encoding="utf-8")
     source = Path(hardened.__file__).read_text(encoding="utf-8")
 
-    assert "link_cards_hardened as link_cards_module" in entrypoint
+    assert "link_cards_hardened_entry as link_cards_module" in entrypoint
     assert "link_cards_module.guarded_main()" in entrypoint
     assert "link_cards_hardened.py" in runner
     assert "link-card-delivery-contract.json" in runner
