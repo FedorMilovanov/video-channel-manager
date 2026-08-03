@@ -91,7 +91,9 @@ def inspect(repo: Path) -> dict[str, Any]:
     date_matches = reference["date"] == operation["publish_date"]
     url_matches = article_url in reference["text_urls"]
     has_photo = bool(reference["has_photo"])
-    photo_identity_matches = expected_photo_identity is not None and expected_photo_identity in reference["photo_identities"]
+    photo_identity_matches = (
+        expected_photo_identity is not None and expected_photo_identity in reference["photo_identities"]
+    )
 
     return {
         "status": "inspected",
