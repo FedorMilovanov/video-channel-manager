@@ -41,14 +41,10 @@ def run(repo: Path) -> int:
         if unexpected_saved_photo_owner(entry) is not None
     ]
     if len(recoverable) != 1:
-        raise RuntimeError(
-            f"Expected exactly one recoverable photo_save_unknown operation; found {len(recoverable)}"
-        )
+        raise RuntimeError(f"Expected exactly one recoverable photo_save_unknown operation; found {len(recoverable)}")
 
     operation_id, entry = recoverable[0]
-    operation_by_id: dict[str, dict[str, Any]] = {
-        str(item["operation_id"]): item for item in policy["operations"]
-    }
+    operation_by_id: dict[str, dict[str, Any]] = {str(item["operation_id"]): item for item in policy["operations"]}
     operation = operation_by_id.get(str(operation_id))
     if operation is None:
         raise RuntimeError("Recoverable journal operation is absent from photo policy")
@@ -63,9 +59,7 @@ def run(repo: Path) -> int:
     )
     current_user = read_client.get_current_user()
     community = read_client.get_community(COMMUNITY_ID)
-    if community.ref.remote_id != str(COMMUNITY_ID) or not community.metadata.get(
-        "managed_by_token"
-    ):
+    if community.ref.remote_id != str(COMMUNITY_ID) or not community.metadata.get("managed_by_token"):
         raise RuntimeError("Stored token does not manage VK community 60805374")
 
     token = recover_saved_photo_token(
