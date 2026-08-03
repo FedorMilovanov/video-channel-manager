@@ -147,7 +147,10 @@ def execute_scope(
             locked_postponed,
             journal,
         )
-        if locked["conflicts"] or state_fingerprint(locked) != state_fingerprint(report):
+        if (
+            locked["conflicts"]
+            or state_fingerprint(locked) != state_fingerprint(report)
+        ):
             raise RuntimeError(
                 "Locked parsed link-card preflight differs from reviewed preflight"
             )
@@ -386,11 +389,7 @@ def run(repo: Path, *, mode: str) -> int:
         }
     )
     parsed_audit["report_sha256"] = canonical_sha(
-        {
-            key: value
-            for key, value in parsed_audit.items()
-            if key != "report_sha256"
-        }
+        {key: value for key, value in parsed_audit.items() if key != "report_sha256"}
     )
     parsed_audit_path = output_dir / "parsed-link-preview-audit.json"
     write_json(parsed_audit_path, parsed_audit)
@@ -449,9 +448,7 @@ def run(repo: Path, *, mode: str) -> int:
         "parsed_link_cards_verified": parsed_audit["verified"],
         "parsed_link_conflicts": parsed_audit["conflicts"],
         "vk_photo_api_calls": 0,
-        "legacy_v2_rejection_observed": bool(
-            v2_observation["observed_operations"]
-        ),
+        "legacy_v2_rejection_observed": bool(v2_observation["observed_operations"]),
         "legacy_v2_rejection_safe_to_supersede": v2_observation[
             "safe_to_supersede"
         ],
