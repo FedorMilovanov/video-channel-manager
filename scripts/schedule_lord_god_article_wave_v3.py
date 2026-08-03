@@ -13,8 +13,6 @@ from lord_god_article_wave_v3.sources import *  # noqa: F403
 from lord_god_article_wave_v3.wall import *  # noqa: F403
 from lord_god_article_wave_v3.workflow import *  # noqa: F403
 
-# Historical audit lineage retained in parsed-link v3:
-# link_cards_hardened_entry as link_cards_module
 
 if __name__ == "__main__":
     link_cards_module.guarded_main()
