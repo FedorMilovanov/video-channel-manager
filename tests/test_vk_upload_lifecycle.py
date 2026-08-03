@@ -215,7 +215,7 @@ def test_happy_path_persists_every_boundary_and_replay_is_noop(tmp_path: Path) -
     assert writer.begin_calls == 1
     assert writer.upload_calls == 1
     assert writer.wait_calls == 1
-    assert persists >= 7
+    assert persists >= 8
     transitions = [item["to"] for item in record["transitions"]]
     assert transitions == [
         UploadStage.PLANNED.value,
@@ -227,6 +227,7 @@ def test_happy_path_persists_every_boundary_and_replay_is_noop(tmp_path: Path) -
         UploadStage.PROCESSING.value,
         UploadStage.VERIFIED.value,
     ]
+    assert record["reservation_dispatch_started_at"]
 
     run(record, writer, None)
     assert writer.begin_calls == 1
@@ -239,6 +240,12 @@ def test_happy_path_persists_every_boundary_and_replay_is_noop(tmp_path: Path) -
     [
         ("before_reservation_intent_commit", UploadStage.MEDIA_VERIFIED, 0, 0),
         ("after_reservation_intent_commit", UploadStage.RESERVATION_INTENT_COMMITTED, 0, 0),
+        (
+            "after_reservation_dispatch_started_commit",
+            UploadStage.RESERVATION_INTENT_COMMITTED,
+            0,
+            0,
+        ),
         (
             "after_provider_reservation_before_ticket_commit",
             UploadStage.RESERVATION_INTENT_COMMITTED,
@@ -276,6 +283,11 @@ def test_crash_boundaries_never_allow_second_reservation(
         assert writer.begin_calls == 1
         return
     if expected_stage == UploadStage.RESERVATION_INTENT_COMMITTED:
+        if boundary == "after_reservation_intent_commit":
+            run(record, writer, media)
+            assert writer.begin_calls == 1
+            assert writer.upload_calls == 1
+            return
         with pytest.raises(UploadRecoveryRequired, match="no exact VK ID"):
             run(record, writer, media)
         assert writer.begin_calls == expected_begin
