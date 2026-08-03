@@ -90,7 +90,10 @@ def test_submit_uses_article_url_attachment_and_never_calls_photo_api(
     operation = current_policy["operations"][0]
     journal = link_cards.fresh_link_card_journal(current_policy)
     mutation = FakeClient({"wall.post": {"post_id": 123}})
-    expected_reference = post_reference(exact_link_post(operation, post_id=123), "postponed")
+    expected_reference = post_reference(
+        exact_link_post(operation, post_id=123),
+        "postponed",
+    )
     monkeypatch.setattr(
         link_cards,
         "wait_for_exact_link_card",
@@ -197,12 +200,16 @@ def test_link_card_source_does_not_contain_vk_photo_mutations_or_jpeg_conversion
     assert '"vk_photo_api_calls": 0' in source
 
 
-def test_entrypoint_routes_runtime_to_parsed_link_cards_v3() -> None:
-    entrypoint = (ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py").read_text(encoding="utf-8")
-    runner = (ROOT / "scripts" / "run-lord-god-article-wave.ps1").read_text(encoding="utf-8")
+def test_entrypoint_routes_runtime_to_photo_wave_v4() -> None:
+    entrypoint = (
+        ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py"
+    ).read_text(encoding="utf-8")
+    runner = (ROOT / "scripts" / "run-lord-god-article-wave.ps1").read_text(
+        encoding="utf-8"
+    )
 
-    assert "link_cards_parsed as link_cards_module" in entrypoint
-    assert "link_cards_module.guarded_main()" in entrypoint
-    assert "10 VK-превью через wall.parseAttachedLink" in runner
-    assert "одна parsed link-карточка" in runner
-    assert "без загрузки фото и без wall.post" in runner
+    assert "photo_wave_v4 as photo_wave_module" in entrypoint
+    assert "photo_wave_module.guarded_main()" in entrypoint
+    assert "10 JPEG-обложек" in runner
+    assert "один отложенный пост с JPEG-обложкой" in runner
+    assert "wall.parseAttachedLink" not in runner
