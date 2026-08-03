@@ -9,18 +9,18 @@ from typing import Any
 from video_channel_manager.config import get_settings
 from video_channel_manager.platforms.vk import VkApiClient, VkTokenStore
 
-from scripts.lord_god_article_wave_v3.common import (
+from lord_god_article_wave_v3.common import (
     ACCOUNT_ALIAS,
     OWNER_ID,
     canonical_text,
     normalize_url,
     read_json,
 )
-from scripts.lord_god_article_wave_v3.photo_wave_v5 import (
+from lord_god_article_wave_v3.photo_wave_v5 import (
     PHOTO_DECISION_SET_ID,
     build_photo_policy,
 )
-from scripts.lord_god_article_wave_v3.wall import (
+from lord_god_article_wave_v3.wall import (
     photo_identity_from_token,
     post_reference,
     wall_snapshot,
