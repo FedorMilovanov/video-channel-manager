@@ -275,10 +275,7 @@ def test_submit_never_calls_wall_post_when_preview_is_invalid(
 
 def test_parse_audit_calls_all_ten_urls_without_wall_post() -> None:
     policy, _ = load()
-    expectations = {
-        str(operation["operation_id"]): expected(operation)
-        for operation in policy["operations"]
-    }
+    expectations = {str(operation["operation_id"]): expected(operation) for operation in policy["operations"]}
     responses = {
         operation["url"]: parse_response(
             operation,
@@ -373,18 +370,12 @@ def test_superseded_v2_unknown_or_post_id_blocks_new_contract(
 
 
 def test_active_entrypoint_and_runner_use_photo_wave_v4() -> None:
-    entrypoint = (
-        ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py"
-    ).read_text(encoding="utf-8")
-    runner = (ROOT / "scripts" / "run-lord-god-article-wave.ps1").read_text(
+    entrypoint = (ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py").read_text(encoding="utf-8")
+    runner = (ROOT / "scripts" / "run-lord-god-article-wave.ps1").read_text(encoding="utf-8")
+    photo_orchestrator = (ROOT / "scripts" / "lord_god_article_wave_v3" / "photo_wave_v4.py").read_text(
         encoding="utf-8"
     )
-    photo_orchestrator = (
-        ROOT / "scripts" / "lord_god_article_wave_v3" / "photo_wave_v4.py"
-    ).read_text(encoding="utf-8")
-    photo_mutations = (
-        ROOT / "scripts" / "lord_god_article_wave_v3" / "mutations.py"
-    ).read_text(encoding="utf-8")
+    photo_mutations = (ROOT / "scripts" / "lord_god_article_wave_v3" / "mutations.py").read_text(encoding="utf-8")
 
     assert "photo_wave_v4 as photo_wave_module" in entrypoint
     assert "photo_wave_module.guarded_main()" in entrypoint
