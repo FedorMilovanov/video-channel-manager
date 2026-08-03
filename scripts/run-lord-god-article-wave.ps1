@@ -33,6 +33,14 @@ $PhotoMutations = Join-Path $Package "mutations.py"
 $PhotoSources = Join-Path $Package "sources.py"
 $PhotoWall = Join-Path $Package "wall.py"
 
+# Retired parsed-link artifacts are retained in Git history and unit tests only.
+$RetiredParsedLinkArtifacts = @(
+    "link_cards_hardened.py",
+    "link-card-delivery-contract.json",
+    "delivery-contract-v3.json"
+)
+$null = $RetiredParsedLinkArtifacts
+
 foreach ($RequiredPath in @(
     $Script,
     $Package,
