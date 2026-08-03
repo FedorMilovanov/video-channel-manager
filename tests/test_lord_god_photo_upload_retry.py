@@ -134,7 +134,7 @@ def test_three_safe_upload_failures_stop_before_photo_save(
     assert mutation_client.calls == []
     entry = journal["operations"][operation()["operation_id"]]
     assert entry["stage"] == "photo_upload_failed"
-    assert entry["post_id"] if "post_id" in entry else None is None
+    assert entry.get("post_id") is None
     assert not entry.get("photo_token")
     assert not entry.get("upload_payload")
     assert entry["upload_attempt_count"] == 3
@@ -259,11 +259,10 @@ def test_retry_journal_redacts_upload_urls(
     assert "<redacted-url>" in serialized
 
 
-def test_install_patches_only_the_inherited_v5_executor() -> None:
-    original = v5.base.prepare_photo_token
-    try:
-        retry.install()
-        assert v5.base.prepare_photo_token is retry.prepare_photo_token
-        assert v5.prepare_photo_token is retry._original_prepare_photo_token
-    finally:
-        v5.base.prepare_photo_token = original
+def test_install_patches_only_the_inherited_v5_executor(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(v5.base, "prepare_photo_token", v5.prepare_photo_token)
+    retry.install()
+    assert v5.base.prepare_photo_token is retry.prepare_photo_token
+    assert v5.prepare_photo_token is retry._original_prepare_photo_token
