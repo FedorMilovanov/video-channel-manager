@@ -231,23 +231,17 @@ def test_submit_parses_then_posts_with_link_title_and_link_photo_id(
     assert post_id == 771
     assert found == reference
     assert parsed["link_photo_id"] == "-60805374_991"
-    assert [method for method, _ in read_client.calls] == [
-        "wall.parseAttachedLink"
-    ]
+    assert [method for method, _ in read_client.calls] == ["wall.parseAttachedLink"]
     assert [method for method, _ in mutation_client.calls] == ["wall.post"]
     parse_params = read_client.calls[0][1]
-    assert json.loads(str(parse_params["links"])) == [
-        {"url": operation["url"]}
-    ]
+    assert json.loads(str(parse_params["links"])) == [{"url": operation["url"]}]
     post_params = mutation_client.calls[0][1]
     assert post_params["attachments"] == operation["url"]
     assert post_params["link_title"] == metadata["title"]
     assert post_params["link_photo_id"] == "-60805374_991"
     assert post_params["publish_date"] == operation["publish_date"]
     assert all(not method.startswith("photos.") for method, _ in read_client.calls)
-    assert all(
-        not method.startswith("photos.") for method, _ in mutation_client.calls
-    )
+    assert all(not method.startswith("photos.") for method, _ in mutation_client.calls)
     entry = journal["operations"][operation["operation_id"]]
     assert entry["stage"] == "verified"
     assert entry["post_id"] == 771
@@ -277,9 +271,7 @@ def test_submit_never_calls_wall_post_when_preview_is_invalid(
             journal_path=tmp_path / "journal.json",
         )
 
-    assert [method for method, _ in read_client.calls] == [
-        "wall.parseAttachedLink"
-    ]
+    assert [method for method, _ in read_client.calls] == ["wall.parseAttachedLink"]
     assert mutation_client.calls == []
     entry = journal["operations"][operation["operation_id"]]
     assert entry["stage"] == "link_parse_unknown"
@@ -401,7 +393,7 @@ def test_active_entrypoint_and_runner_use_parsed_link_contract_v3() -> None:
     assert "link_cards_module.guarded_main()" in entrypoint
     assert "wall.parseAttachedLink" in runner
     assert "delivery-contract-v3.json" in runner
-    assert "parsed_link-journal-v3.json" in orchestrator
+    assert "parsed-link-journal-v3.json" in orchestrator
     assert '"link_title"' in mutation_source
     assert '"link_photo_id"' in mutation_source
     assert '"photos.getWallUploadServer"' not in mutation_source
