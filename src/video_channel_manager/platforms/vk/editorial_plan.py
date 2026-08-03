@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import Counter
-from copy import deepcopy
 from datetime import datetime
 from typing import Any
 
@@ -11,6 +10,7 @@ from video_channel_manager.platforms.vk.catalog import (
     text_sha256,
     validate_vk_catalog_plan,
 )
+from video_channel_manager.platforms.vk.catalog_upgrade import upgrade_vk_catalog_plan_identity
 from video_channel_manager.platforms.vk.renderers import VKVideoDescriptionRenderer
 from video_channel_manager.platforms.vk.text_writer import canonical_vk_text
 
@@ -38,11 +38,11 @@ def apply_editorial_records_to_vk_catalog_plan(
 
     The existing VK catalog plan remains the safety envelope: source/target snapshot
     IDs, target inventory digest, exact before-text hashes, operation IDs, and the
-    guarded executor are preserved. Only approved, reviewed ``after_description``
-    values and their hashes are replaced, then the whole plan is re-signed.
+    guarded executor are preserved. Legacy plans are first upgraded from their
+    verified self-digest to one exact project identity. Only approved, reviewed
+    ``after_description`` values and their hashes are then replaced.
     """
 
-    validate_vk_catalog_plan(plan)
     by_video_id: dict[str, EditorialContentRecord] = {}
     for candidate in records:
         if candidate.status != "approved" or not _valid_review_timestamp(candidate.reviewed_at):
@@ -55,7 +55,8 @@ def apply_editorial_records_to_vk_catalog_plan(
             raise ValueError(f"Duplicate editorial record for source video: {candidate.video_id}")
         by_video_id[candidate.video_id] = candidate
 
-    adapted = deepcopy(plan)
+    adapted = upgrade_vk_catalog_plan_identity(plan)
+    validate_vk_catalog_plan(adapted)
     raw_operations = adapted.get("text_operations")
     if not isinstance(raw_operations, list):
         raise ValueError("VK catalog plan text_operations must be a list")
