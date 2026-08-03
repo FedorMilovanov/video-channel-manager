@@ -11,10 +11,14 @@ from typing import Any
 from video_channel_manager.config import get_settings
 from video_channel_manager.platforms.vk import VkApiClient, VkTokenStore
 
-from lord_god_article_wave_v3.common import ACCOUNT_ALIAS, BLOCKING_JOURNAL_STAGES, write_json
 from lord_god_article_wave_v3 import photo_wave_v5 as v5
 from lord_god_article_wave_v3 import photo_wave_v5_compat as photo_wave_v5_compat  # noqa: F401
 from lord_god_article_wave_v3 import photo_wave_v5_upload_retry as upload_retry
+from lord_god_article_wave_v3.common import (
+    ACCOUNT_ALIAS,
+    BLOCKING_JOURNAL_STAGES,
+    write_json,
+)
 from lord_god_article_wave_v3.wall import wall_snapshot
 
 
@@ -34,6 +38,7 @@ def audit(repo: Path) -> dict[str, Any]:
     journal = v5.load_photo_journal(journal_path, policy)
     policy_operations = policy["operations"]
 
+    upload_retry.install()
     if v5.base.prepare_photo_token is not upload_retry.prepare_photo_token:
         raise RuntimeError("Safe v5 upload retry hook is not active")
 
