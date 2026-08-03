@@ -16,7 +16,8 @@ from lord_god_article_wave_v3.sources import *  # noqa: F403
 from lord_god_article_wave_v3.wall import *  # noqa: F403
 
 if TYPE_CHECKING:
-    # Retired runtime marker retained only for migration regression tests:
+    # Retired runtime markers retained only for migration regression tests:
+    # photo_wave_v4 as photo_wave_module
     # link_cards_module.guarded_main()
     from lord_god_article_wave_v3 import (  # noqa: F401
         link_cards_parsed as link_cards_module,
