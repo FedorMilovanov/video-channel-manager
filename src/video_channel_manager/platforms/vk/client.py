@@ -16,6 +16,7 @@ from video_channel_manager.domain.models import (
     RemoteRef,
     VideoRecord,
 )
+from video_channel_manager.platforms.http import HttpClientOwner
 from video_channel_manager.platforms.vk.models import VkCommunityIdentity, VkUserIdentity
 from video_channel_manager.platforms.vk.store import VkTokenStore
 
@@ -81,7 +82,7 @@ def _community_url(payload: dict[str, Any], community_id: int) -> str:
     return f"https://vk.com/{screen_name}" if screen_name else f"https://vk.com/club{community_id}"
 
 
-class VkApiClient:
+class VkApiClient(HttpClientOwner):
     """Read-only VK API 5.199 client using a locally stored user access token."""
 
     def __init__(
@@ -97,7 +98,11 @@ class VkApiClient:
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
         self.api_version = api_version
-        self._http_client = http_client
+        self._initialize_http_client(
+            http_client,
+            timeout=45.0,
+            follow_redirects=True,
+        )
         self.api_base_url = api_base_url.rstrip("/")
         self.max_attempts = max(1, max_attempts)
 
@@ -135,10 +140,8 @@ class VkApiClient:
         raise last_error
 
     def _call_once(self, method: str, request_data: dict[str, str]) -> object:
-        client = self._http_client or httpx.Client(timeout=45.0, follow_redirects=True)
-        close_client = self._http_client is None
         try:
-            response = client.post(
+            response = self._http_client.post(
                 f"{self.api_base_url}/{method}",
                 data=request_data,
                 headers={"User-Agent": "video-channel-manager/0.1"},
@@ -170,9 +173,6 @@ class VkApiClient:
             raise VkApiError(f"VK API request failed in {method}: {exc}", method=method, retryable=True) from exc
         except ValueError as exc:
             raise VkApiError(f"VK API returned invalid JSON in {method}.", method=method) from exc
-        finally:
-            if close_client:
-                client.close()
 
     def _list_offset(self, method: str, *, params: ApiParams, page_size: int) -> list[dict[str, Any]]:
         items: list[dict[str, Any]] = []
