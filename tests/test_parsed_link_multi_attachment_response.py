@@ -20,10 +20,7 @@ def _load_operation() -> tuple[dict[str, Any], dict[str, str]]:
     operation = policy["operations"][0]
     metadata = {
         "title": str(operation["title"]),
-        "description": (
-            "Проверенное полное описание статьи для карточки ВКонтакте "
-            "длиной более сорока символов."
-        ),
+        "description": ("Проверенное полное описание статьи для карточки ВКонтакте длиной более сорока символов."),
     }
     return operation, metadata
 
