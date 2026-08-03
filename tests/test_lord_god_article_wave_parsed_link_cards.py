@@ -324,7 +324,9 @@ def test_superseded_v2_rejection_is_observed_but_not_reused(
                     operation["operation_id"]: {
                         "operation_id": operation["operation_id"],
                         "stage": "wall_post_rejected",
-                        "error": ("VkApiError: VK API 100 in wall.post: Violated: link_photo_sizing_rule. No photo given"),
+                        "error": (
+                            "VkApiError: VK API 100 in wall.post: Violated: link_photo_sizing_rule. No photo given"
+                        ),
                     }
                 },
             }
