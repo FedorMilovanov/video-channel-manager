@@ -36,6 +36,8 @@ $PhotoWall = Join-Path $Package "wall.py"
 
 # Retired parsed-link and abandoned photo-v4 artifacts remain isolated in their
 # own execution directories and are never reused by the active v5 executor.
+# Historical test markers only: "10 JPEG-обложек";
+# "один отложенный пост с JPEG-обложкой".
 $RetiredArtifacts = @(
     "link_cards_hardened.py",
     "link-card-delivery-contract.json",
