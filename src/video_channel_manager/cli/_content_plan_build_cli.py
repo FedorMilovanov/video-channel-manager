@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from pathlib import Path
 from typing import Annotated, Any, cast
 
@@ -17,6 +18,7 @@ from video_channel_manager.cli._content_plan_cli_common import (
     required_string,
 )
 from video_channel_manager.editorial._content_plan_common import ContentAction
+from video_channel_manager.editorial._project_profiles import PROJECT_KEYS
 from video_channel_manager.editorial.content_plan import (
     build_content_plan,
     make_content_operation,
@@ -35,9 +37,8 @@ def plan_build_command(
         typer.Option(
             "--targets",
             help=(
-                "Reviewed target manifest with immutable source snapshot "
-                "metadata and strictly typed operations containing "
-                "content_id/action/target_id/exact-before guards"
+                "Reviewed target manifest with exact project_key, immutable source snapshot "
+                "metadata, and one strictly typed operation per content record"
             ),
         ),
     ],
@@ -48,15 +49,17 @@ def plan_build_command(
         typer.Option("--output", "-o"),
     ] = Path("editorial-content-plan.json"),
 ) -> None:
-    """Build a signed plan from an explicitly typed target manifest."""
+    """Build one project-bound signed plan with exact content coverage."""
 
-    records, errors = load_records(input_path)
-    if errors:
-        print_failures(errors)
-        raise typer.Exit(code=2)
-    by_id = {record.content_id: record for record in records}
     try:
         manifest = read_json(targets_path)
+        project_key = required_string(
+            manifest,
+            "project_key",
+            context="manifest",
+        )
+        if project_key not in PROJECT_KEYS:
+            raise ValueError(f"manifest.project_key must be one registered project: {project_key}")
         renderer = renderer_for(platform, surface)
         source_snapshot = required_string(
             manifest,
@@ -77,6 +80,15 @@ def plan_build_command(
         console.print(f"[red]Cannot build plan:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
+    records, errors = load_records(input_path, expected_project_key=project_key)
+    if errors:
+        print_failures(errors)
+        raise typer.Exit(code=2)
+    if not records:
+        console.print("[red]Cannot build plan:[/red] input contains no valid content records")
+        raise typer.Exit(code=2)
+    by_id = {record.content_id: record for record in records}
+
     raw_operations = manifest.get("operations")
     if not isinstance(raw_operations, list):
         console.print("[red]Target manifest operations must be a list.[/red]")
@@ -84,6 +96,7 @@ def plan_build_command(
 
     operations: list[dict[str, Any]] = []
     failures: list[str] = []
+    requested_content_ids: list[str] = []
     for index, raw in enumerate(raw_operations):
         context = f"operations[{index}]"
         if not isinstance(raw, dict):
@@ -95,6 +108,7 @@ def plan_build_command(
                 "content_id",
                 context=context,
             )
+            requested_content_ids.append(content_id)
             action_value = required_string(
                 raw,
                 "action",
@@ -132,6 +146,20 @@ def plan_build_command(
             failures.append(str(exc))
             continue
         operations.append(operation)
+
+    duplicate_content_ids = sorted(
+        content_id for content_id, count in Counter(requested_content_ids).items() if content_id and count > 1
+    )
+    if duplicate_content_ids:
+        failures.append(f"target manifest repeats content_id: {', '.join(duplicate_content_ids)}")
+    requested_set = set(requested_content_ids)
+    loaded_set = set(by_id)
+    missing = sorted(loaded_set - requested_set)
+    foreign = sorted(requested_set - loaded_set)
+    if missing:
+        failures.append(f"target manifest is missing content_id operations: {', '.join(missing)}")
+    if foreign:
+        failures.append(f"target manifest contains foreign content_id operations: {', '.join(foreign)}")
     if failures:
         print_failures(failures)
         raise typer.Exit(code=2)
@@ -146,12 +174,21 @@ def plan_build_command(
     except ValueError as exc:
         console.print(f"[red]Cannot seal plan:[/red] {exc}")
         raise typer.Exit(code=2) from exc
+    if plan.get("project_key") != project_key:
+        console.print(
+            f"[red]Cannot seal plan:[/red] operation project {plan.get('project_key')} "
+            f"does not match manifest project {project_key}"
+        )
+        raise typer.Exit(code=2)
     plan_errors = validate_content_plan(plan)
     if plan_errors:
         print_failures(plan_errors)
         raise typer.Exit(code=2)
     write_json(output, plan)
-    console.print(f"[green]Built signed content plan with {len(operations)} operation(s) → {output}[/green]")
+    console.print(
+        f"[green]Built project-bound signed content plan with {len(operations)} operation(s) → {output}[/green]"
+    )
+    console.print(f"Project: {project_key}")
     console.print(f"Plan SHA-256: {plan['plan_sha256']}")
 
 
