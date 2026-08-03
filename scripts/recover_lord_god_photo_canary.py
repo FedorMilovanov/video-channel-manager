@@ -37,19 +37,13 @@ def _photo_has_expected_dimensions(photo: dict[str, Any]) -> bool:
     if photo.get("width") == JPEG_WIDTH and photo.get("height") == JPEG_HEIGHT:
         return True
     orig = photo.get("orig_photo")
-    if (
-        isinstance(orig, dict)
-        and orig.get("width") == JPEG_WIDTH
-        and orig.get("height") == JPEG_HEIGHT
-    ):
+    if isinstance(orig, dict) and orig.get("width") == JPEG_WIDTH and orig.get("height") == JPEG_HEIGHT:
         return True
     sizes = photo.get("sizes")
     if not isinstance(sizes, list):
         return False
     return any(
-        isinstance(item, dict)
-        and item.get("width") == JPEG_WIDTH
-        and item.get("height") == JPEG_HEIGHT
+        isinstance(item, dict) and item.get("width") == JPEG_WIDTH and item.get("height") == JPEG_HEIGHT
         for item in sizes
     )
 
@@ -62,9 +56,7 @@ def recover_saved_photo_token_from_all(
 ) -> str:
     owner_id = unexpected_saved_photo_owner(entry)
     if owner_id != current_user_id:
-        raise RuntimeError(
-            "Unexpected-owner photo recovery is allowed only for the current token user"
-        )
+        raise RuntimeError("Unexpected-owner photo recovery is allowed only for the current token user")
     try:
         reference_time = datetime.fromisoformat(str(entry["updated_at"])).timestamp()
     except (KeyError, TypeError, ValueError) as exc:
@@ -84,11 +76,7 @@ def recover_saved_photo_token_from_all(
         },
     )
     items = response.get("items") if isinstance(response, dict) else None
-    photos = (
-        [item for item in items if isinstance(item, dict)]
-        if isinstance(items, list)
-        else []
-    )
+    photos = [item for item in items if isinstance(item, dict)] if isinstance(items, list) else []
 
     same_owner = 0
     with_valid_id_and_date = 0
@@ -103,11 +91,7 @@ def recover_saved_photo_token_from_all(
 
         photo_id = photo.get("id")
         photo_date = photo.get("date")
-        if (
-            not isinstance(photo_id, int)
-            or photo_id <= 0
-            or not isinstance(photo_date, int)
-        ):
+        if not isinstance(photo_id, int) or photo_id <= 0 or not isinstance(photo_date, int):
             continue
         with_valid_id_and_date += 1
 
@@ -151,15 +135,10 @@ def run(repo: Path) -> int:
         if unexpected_saved_photo_owner(entry) is not None
     ]
     if len(recoverable) != 1:
-        raise RuntimeError(
-            "Expected exactly one recoverable photo_save_unknown operation; "
-            f"found {len(recoverable)}"
-        )
+        raise RuntimeError(f"Expected exactly one recoverable photo_save_unknown operation; found {len(recoverable)}")
 
     operation_id, entry = recoverable[0]
-    operation_by_id: dict[str, dict[str, Any]] = {
-        str(item["operation_id"]): item for item in policy["operations"]
-    }
+    operation_by_id: dict[str, dict[str, Any]] = {str(item["operation_id"]): item for item in policy["operations"]}
     operation = operation_by_id.get(str(operation_id))
     if operation is None:
         raise RuntimeError("Recoverable journal operation is absent from photo policy")
@@ -174,10 +153,7 @@ def run(repo: Path) -> int:
     )
     current_user = read_client.get_current_user()
     community = read_client.get_community(COMMUNITY_ID)
-    if (
-        community.ref.remote_id != str(COMMUNITY_ID)
-        or not community.metadata.get("managed_by_token")
-    ):
+    if community.ref.remote_id != str(COMMUNITY_ID) or not community.metadata.get("managed_by_token"):
         raise RuntimeError("Stored token does not manage VK community 60805374")
 
     token = recover_saved_photo_token_from_all(
