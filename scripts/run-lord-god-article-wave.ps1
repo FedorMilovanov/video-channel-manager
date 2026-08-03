@@ -29,6 +29,7 @@ $Package = Join-Path $PSScriptRoot "lord_god_article_wave_v3"
 $Policy = Join-Path $Repo "content\policies\lord-god-article-wave-v3-202608.json"
 $SourceContract = Join-Path $Repo "content\policies\lord-god-article-wave-v3-source-contract.json"
 $PhotoExecutor = Join-Path $Package "photo_wave_v5.py"
+$PhotoUploadRetry = Join-Path $Package "photo_wave_v5_upload_retry.py"
 $PhotoBaseExecutor = Join-Path $Package "photo_wave_v4.py"
 $PhotoMutations = Join-Path $Package "mutations.py"
 $PhotoSources = Join-Path $Package "sources.py"
@@ -52,6 +53,7 @@ foreach ($RequiredPath in @(
     $Policy,
     $SourceContract,
     $PhotoExecutor,
+    $PhotoUploadRetry,
     $PhotoBaseExecutor,
     $PhotoMutations,
     $PhotoSources,
@@ -88,7 +90,7 @@ try {
         & $Python $Script --repo $Repo --canary
     }
     elseif ($Mode -eq "Apply") {
-        Write-Host "Господь Бог — Сила Моя: остальные девять отложенных постов v5 с JPEG-обложками и ссылками в тексте." -ForegroundColor Cyan
+        Write-Host "Господь Бог — Сила Моя: безопасное продолжение оставшихся готовых постов v5; уже verified операции будут пропущены." -ForegroundColor Cyan
         & $Python $Script --repo $Repo --execute
     }
     else {
