@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import re
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
@@ -12,6 +14,8 @@ from video_channel_manager.platforms.vk import VkApiClient, VkApiError
 from .common import (
     BLOCKING_JOURNAL_STAGES,
     COMMUNITY_ID,
+    JPEG_HEIGHT,
+    JPEG_WIDTH,
     OWNER_ID,
     POST_WAIT_SECONDS,
     RESUMABLE_WITH_PHOTO,
@@ -29,6 +33,11 @@ from .wall import (
     post_reference,
     wall_snapshot,
 )
+
+_UNEXPECTED_OWNER_RE = re.compile(
+    r"^RuntimeError: Saved wall photo has unexpected owner: (-?\d+)$"
+)
+_RECOVERY_WINDOW_SECONDS = 10 * 60
 
 
 def upload_photo_bytes(upload_url: str, *, operation_id: str, jpeg: bytes) -> dict[str, Any]:
@@ -90,9 +99,95 @@ def set_journal_stage(
     return entry
 
 
+def unexpected_saved_photo_owner(entry: object) -> int | None:
+    if not isinstance(entry, dict):
+        return None
+    if str(entry.get("stage") or "") != "photo_save_unknown":
+        return None
+    if not isinstance(entry.get("upload_payload"), dict):
+        return None
+    if entry.get("post_id") is not None or entry.get("photo_token"):
+        return None
+    match = _UNEXPECTED_OWNER_RE.fullmatch(str(entry.get("error") or "").strip())
+    return int(match.group(1)) if match else None
+
+
+def _photo_has_expected_dimensions(photo: dict[str, Any]) -> bool:
+    if photo.get("width") == JPEG_WIDTH and photo.get("height") == JPEG_HEIGHT:
+        return True
+    orig = photo.get("orig_photo")
+    if isinstance(orig, dict) and orig.get("width") == JPEG_WIDTH and orig.get("height") == JPEG_HEIGHT:
+        return True
+    sizes = photo.get("sizes")
+    return any(
+        isinstance(item, dict)
+        and item.get("width") == JPEG_WIDTH
+        and item.get("height") == JPEG_HEIGHT
+        for item in sizes
+        if isinstance(sizes, list)
+    )
+
+
+def recover_saved_photo_token(
+    read_client: VkApiClient,
+    entry: dict[str, Any],
+    *,
+    current_user_id: int,
+) -> str:
+    owner_id = unexpected_saved_photo_owner(entry)
+    if owner_id != current_user_id:
+        raise RuntimeError(
+            "Unexpected-owner photo recovery is allowed only for the current token user"
+        )
+    try:
+        reference_time = datetime.fromisoformat(str(entry["updated_at"])).timestamp()
+    except (KeyError, TypeError, ValueError) as exc:
+        raise RuntimeError("Photo recovery journal has no valid updated_at") from exc
+
+    response = read_client._call(
+        "photos.get",
+        params={
+            "owner_id": current_user_id,
+            "album_id": "wall",
+            "rev": True,
+            "extended": False,
+            "photo_sizes": True,
+            "count": 20,
+        },
+    )
+    items = response.get("items") if isinstance(response, dict) else None
+    photos = [item for item in items if isinstance(item, dict)] if isinstance(items, list) else []
+    candidates: list[dict[str, Any]] = []
+    for photo in photos:
+        photo_date = photo.get("date")
+        if photo.get("owner_id") != current_user_id:
+            continue
+        if not isinstance(photo.get("id"), int) or int(photo["id"]) <= 0:
+            continue
+        if not isinstance(photo_date, int):
+            continue
+        if abs(float(photo_date) - reference_time) > _RECOVERY_WINDOW_SECONDS:
+            continue
+        if not _photo_has_expected_dimensions(photo):
+            continue
+        candidates.append(photo)
+
+    if len(candidates) != 1:
+        raise RuntimeError(
+            "Saved-photo recovery did not find exactly one recent 1200x630 wall photo; "
+            f"candidates={len(candidates)}"
+        )
+    token = photo_token(candidates[0])
+    if not token:
+        raise RuntimeError("Recovered wall photo has no usable attachment token")
+    return token
+
+
 def saved_photo_token(
     mutation_client: VkApiClient,
     upload_payload: dict[str, Any],
+    *,
+    current_user_id: int,
 ) -> str:
     response = mutation_client._call(
         "photos.saveWallPhoto",
@@ -113,10 +208,9 @@ def saved_photo_token(
     token = photo_token(photos[0])
     if not token:
         raise RuntimeError("photos.saveWallPhoto returned no usable photo token")
-    if photos[0].get("owner_id") != OWNER_ID:
-        raise RuntimeError(
-            f"Saved wall photo has unexpected owner: {photos[0].get('owner_id')!r}"
-        )
+    owner_id = photos[0].get("owner_id")
+    if owner_id not in {OWNER_ID, current_user_id}:
+        raise RuntimeError(f"Saved wall photo has unexpected owner: {owner_id!r}")
     return token
 
 
@@ -137,6 +231,25 @@ def prepare_photo_token(
 
     if stage in RESUMABLE_WITH_PHOTO and existing_token:
         return existing_token
+
+    current_user_id = read_client.get_current_user().user_id
+    if unexpected_saved_photo_owner(entry) is not None:
+        token = recover_saved_photo_token(
+            read_client,
+            entry,
+            current_user_id=current_user_id,
+        )
+        set_journal_stage(
+            journal,
+            journal_path,
+            operation,
+            "photo_saved",
+            photo_token=token,
+            recovered_from="photo_save_unknown",
+            recovered_owner_id=current_user_id,
+        )
+        return token
+
     if stage in BLOCKING_JOURNAL_STAGES:
         raise RuntimeError(f"Cannot prepare photo from blocking journal stage: {stage}")
     if stage == "photo_uploaded":
@@ -200,7 +313,11 @@ def prepare_photo_token(
         "photo_save_intent",
     )
     try:
-        token = saved_photo_token(mutation_client, upload_payload)
+        token = saved_photo_token(
+            mutation_client,
+            upload_payload,
+            current_user_id=current_user_id,
+        )
     except VkApiError as exc:
         stage = (
             "photo_save_rejected"
