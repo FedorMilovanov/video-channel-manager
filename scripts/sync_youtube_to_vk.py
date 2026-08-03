@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Safely synchronize missing YouTube videos and playlist memberships to VK.
+"""Internal YouTube→VK synchronization engine.
 
-The default run is a live preflight. Remote writes require --execute plus exact
-community, candidate-count, ambiguity-count, and source-snapshot confirmations.
-Every state boundary is journaled atomically so a failed run can be reconciled
-without reserving or uploading the same source operation twice.
+This module contains the shared guarded workflow and is intentionally not a
+standalone provider entrypoint. A supported caller must supply one immutable
+``SyncRuntime`` with exact project/source/community identity plus explicit text
+rendering and media-download dependencies.
 """
 
 from __future__ import annotations
@@ -16,9 +16,11 @@ import shutil
 import subprocess
 import sys
 import time
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from pydantic import ValidationError
 
@@ -29,6 +31,7 @@ from video_channel_manager.application.cross_platform import (
 )
 from video_channel_manager.config import get_settings
 from video_channel_manager.domain.enums import PlatformName
+from video_channel_manager.editorial._project_profiles import PROJECT_KEYS
 from video_channel_manager.exchange.audit_package import AuditPackage
 from video_channel_manager.platforms.vk import VkApiClient, VkInventoryService, VkTokenStore
 from video_channel_manager.platforms.vk.upload_lifecycle import (
@@ -40,11 +43,30 @@ from video_channel_manager.platforms.vk.upload_lifecycle import (
 )
 from video_channel_manager.platforms.vk.writer import VkVideoWriter, VkWriteError
 
-_SITE_URL = "https://thelegendarypoet.ru/"
-_SITE_FOOTER = f"🎧 The Legendary Poet — русская поэзия, музыка и литературные материалы.\n🌐 {_SITE_URL}"
+
+class MediaDownloader(Protocol):
+    def __call__(self, *, yt_dlp: str, video_id: str, cache_dir: Path) -> Path: ...
 
 
-def _parser() -> argparse.ArgumentParser:
+@dataclass(frozen=True, slots=True)
+class SyncRuntime:
+    project_key: str
+    expected_source_channel_id: str
+    expected_community_id: int
+    render_title: Callable[[str], str]
+    render_description: Callable[[str], str]
+    download_media: MediaDownloader
+
+    def __post_init__(self) -> None:
+        if self.project_key not in PROJECT_KEYS:
+            raise ValueError(f"Unsupported sync project_key: {self.project_key}")
+        if not self.expected_source_channel_id.strip():
+            raise ValueError("Sync runtime requires expected_source_channel_id")
+        if self.expected_community_id <= 0:
+            raise ValueError("Sync runtime requires a positive expected_community_id")
+
+
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", type=Path, help="Fresh YouTube AuditPackage JSON")
     parser.add_argument("--account", default="legendary-poet", help="Local VK token alias")
@@ -81,7 +103,7 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _load_audit(path: Path) -> AuditPackage:
+def load_audit(path: Path) -> AuditPackage:
     try:
         payload = json.loads(path.read_text(encoding="utf-8-sig"))
         return AuditPackage.model_validate(payload)
@@ -178,22 +200,6 @@ def _source_memberships(source: AuditPackage) -> dict[str, list[str]]:
     return result
 
 
-def _vk_title(source_title: str) -> str:
-    title = " ".join(source_title.split())
-    if "⚡" in title:
-        return title
-    if "🔥" in title:
-        return title.replace("🔥", "⚡", 1)
-    return f"{title} ⚡"
-
-
-def _vk_description(source_description: str) -> str:
-    description = source_description.strip()
-    if _SITE_URL in description:
-        return description
-    return f"{description}\n\n{_SITE_FOOTER}" if description else _SITE_FOOTER
-
-
 def _minimum_duration_seconds(source_duration_seconds: int | None) -> int:
     if source_duration_seconds is None or source_duration_seconds <= 0:
         return 1
@@ -206,7 +212,7 @@ def _pause(seconds: float) -> None:
         time.sleep(seconds)
 
 
-def _resolve_executable(value: str) -> str:
+def resolve_executable(value: str) -> str:
     path = shutil.which(value)
     if path is None:
         candidate = Path(value)
@@ -216,7 +222,7 @@ def _resolve_executable(value: str) -> str:
     return path
 
 
-def _download_video(*, yt_dlp: str, video_id: str, cache_dir: Path) -> Path:
+def download_media_file(*, yt_dlp: str, video_id: str, cache_dir: Path) -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
     existing = sorted(path for path in cache_dir.glob(f"{video_id}.*") if path.is_file() and path.suffix != ".part")
     mp4 = next((path for path in existing if path.suffix.lower() == ".mp4"), None)
@@ -350,6 +356,7 @@ def _media_path_for_stage(
     source_id: str,
     yt_dlp: str,
     cache_dir: Path,
+    runtime: SyncRuntime,
 ) -> Path | None:
     stage = UploadStage(str(record["stage"]))
     if stage not in {
@@ -366,7 +373,7 @@ def _media_path_for_stage(
             stored_path = Path(raw_path)
             if stored_path.is_file():
                 return stored_path
-    return _download_video(yt_dlp=yt_dlp, video_id=source_id, cache_dir=cache_dir)
+    return runtime.download_media(yt_dlp=yt_dlp, video_id=source_id, cache_dir=cache_dir)
 
 
 def _upload_candidates(
@@ -384,6 +391,7 @@ def _upload_candidates(
     processing_timeout: int,
     place_in_albums: bool,
     write_delay: float,
+    runtime: SyncRuntime,
 ) -> None:
     source_videos = {item.ref.remote_id: item for item in source.videos}
     uploads = journal.setdefault("uploads", {})
@@ -391,8 +399,8 @@ def _upload_candidates(
 
     for index, source_id in enumerate(candidate_ids, start=1):
         source_video = source_videos[source_id]
-        published_title = _vk_title(source_video.title)
-        published_description = _vk_description(source_video.description)
+        published_title = runtime.render_title(source_video.title)
+        published_description = runtime.render_description(source_video.description)
         readiness = VkUploadReadiness(
             expected_title=published_title,
             minimum_duration_seconds=_minimum_duration_seconds(source_video.duration_seconds),
@@ -421,6 +429,7 @@ def _upload_candidates(
             source_id=source_id,
             yt_dlp=yt_dlp,
             cache_dir=cache_dir,
+            runtime=runtime,
         )
         if media_path is not None:
             print(f"[{index}/{len(candidate_ids)}] Media ready {source_id} — {media_path.name}")
@@ -471,15 +480,20 @@ def _upload_candidates(
                 _pause(write_delay)
 
 
-def main() -> int:
-    args = _parser().parse_args()
+def run(args: argparse.Namespace, *, runtime: SyncRuntime) -> int:
     if args.write_delay < 0:
         raise SystemExit("--write-delay cannot be negative")
 
     settings = get_settings()
-    source = _load_audit(args.source)
+    source = load_audit(args.source)
     if source.channel.ref.platform != PlatformName.YOUTUBE:
         raise SystemExit("The source AuditPackage must be YouTube.")
+    source_channel_id = str(source.channel.ref.channel_id)
+    if source_channel_id != runtime.expected_source_channel_id:
+        raise SystemExit(
+            f"Source channel {source_channel_id} does not match runtime project "
+            f"{runtime.project_key} channel {runtime.expected_source_channel_id}."
+        )
 
     store = VkTokenStore(settings.data_dir)
     reader = VkApiClient(
@@ -489,6 +503,11 @@ def main() -> int:
     )
     community_record = reader.get_community(args.community)
     community_id = int(community_record.ref.channel_id)
+    if community_id != runtime.expected_community_id:
+        raise SystemExit(
+            f"Target community {community_id} does not match runtime project "
+            f"{runtime.project_key} community {runtime.expected_community_id}."
+        )
     if not bool(community_record.metadata.get("managed_by_token")):
         raise SystemExit("The authorized VK user is not reported as an administrator of this community.")
 
@@ -504,18 +523,24 @@ def main() -> int:
     placement_count = sum(gap.missing_placement_count for gap in comparison.collection_gaps)
     nonempty_playlist_descriptions = sum(bool(item.description.strip()) for item in source.collections)
     source_videos = {item.ref.remote_id: item for item in source.videos}
-    lightning_title_changes = sum(
-        _vk_title(source_videos[video_id].title) != source_videos[video_id].title for video_id in candidate_ids
+    title_changes = sum(
+        runtime.render_title(source_videos[video_id].title) != source_videos[video_id].title for video_id in candidate_ids
+    )
+    description_changes = sum(
+        runtime.render_description(source_videos[video_id].description) != source_videos[video_id].description.strip()
+        for video_id in candidate_ids
     )
     print(
         "VK synchronization preflight:\n"
+        f"  project: {runtime.project_key}\n"
         f"  source snapshot: {source.snapshot_id}\n"
+        f"  source channel: {source_channel_id}\n"
         f"  target community: {community_id} — {community_record.title}\n"
         f"  scope: {args.scope}\n"
         f"  phase: {args.phase}\n"
         f"  videos to upload now: {len(candidate_ids)}\n"
-        f"  titles receiving the ⚡ standard: {lightning_title_changes}\n"
-        f"  descriptions receiving site link: {sum(_SITE_URL not in source_videos[item].description for item in candidate_ids)}\n"
+        f"  titles changed by project renderer: {title_changes}\n"
+        f"  descriptions changed by project renderer: {description_changes}\n"
         f"  write delay: {args.write_delay:.2f}s\n"
         f"  ambiguous existing matches: {comparison.ambiguous_match_count}\n"
         f"  albums to create: {missing_albums}\n"
@@ -525,8 +550,8 @@ def main() -> int:
 
     yt_dlp: str | None = None
     if args.phase in {"videos", "all"}:
-        yt_dlp = _resolve_executable(args.yt_dlp)
-        _resolve_executable("ffmpeg")
+        yt_dlp = resolve_executable(args.yt_dlp)
+        resolve_executable("ffmpeg")
     if not args.execute:
         print("Dry-run only. No remote write method was called.")
         print(
@@ -590,6 +615,7 @@ def main() -> int:
             processing_timeout=args.processing_timeout,
             place_in_albums=args.phase == "all",
             write_delay=args.write_delay,
+            runtime=runtime,
         )
 
     print("Reading final live VK inventory…")
@@ -617,6 +643,16 @@ def main() -> int:
     print(f"Final VK AuditPackage → {result_output}")
     print(f"Journal → {args.journal}")
     return 0
+
+
+def main(argv: list[str] | None = None, *, runtime: SyncRuntime | None = None) -> int:
+    if runtime is None:
+        raise SystemExit(
+            "sync_youtube_to_vk.py is an internal engine. "
+            "Use scripts/sync_youtube_to_vk_textsafe.py so project rendering, media QC, and writer locking are bound."
+        )
+    args = build_parser().parse_args(argv)
+    return run(args, runtime=runtime)
 
 
 if __name__ == "__main__":
