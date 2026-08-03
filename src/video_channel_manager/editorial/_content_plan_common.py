@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Literal
 
 CONTENT_PLAN_SCHEMA_NAME = "video-manager.editorial-content-plan"
-CONTENT_PLAN_SCHEMA_VERSION = 1
+CONTENT_PLAN_SCHEMA_VERSION = 2
 ContentAction = Literal["create", "update"]
 OperationState = Literal["ready", "already_applied", "conflict"]
 
@@ -94,6 +94,7 @@ def target_state_key(*, platform: str, surface: str, target_id: str) -> str:
 
 def operation_id_for(
     *,
+    project_key: str,
     action: ContentAction,
     platform: str,
     surface: str,
@@ -109,6 +110,7 @@ def operation_id_for(
 ) -> str:
     digest = object_sha256(
         {
+            "project_key": project_key,
             "action": action,
             "platform": platform,
             "surface": surface,
