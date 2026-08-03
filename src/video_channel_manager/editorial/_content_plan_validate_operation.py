@@ -15,11 +15,20 @@ from video_channel_manager.editorial._content_plan_common import (
     valid_sha256,
     valid_stable_id,
 )
+from video_channel_manager.editorial._project_profiles import PROJECT_KEYS
 
 
 def validate_operation(raw: dict[str, Any], *, index: int) -> tuple[list[str], str, str, str, str]:
     errors: list[str] = []
     prefix = f"operations[{index}]"
+
+    project_raw = raw.get("project_key")
+    if not isinstance(project_raw, str):
+        errors.append(f"{prefix}.project_key must be a string")
+    project_key = project_raw.strip() if isinstance(project_raw, str) else ""
+    if project_key not in PROJECT_KEYS:
+        errors.append(f"{prefix}.project_key must be a registered project")
+
     action_raw = raw.get("action")
     if not isinstance(action_raw, str):
         errors.append(f"{prefix}.action must be a string")
@@ -112,7 +121,7 @@ def validate_operation(raw: dict[str, Any], *, index: int) -> tuple[list[str], s
         errors.append(f"{prefix}: create cannot include exact-before data")
     if action == "update" and (before is None or expected_revision is None):
         errors.append(f"{prefix}: update requires exact before-text and expected_revision")
-    if not all((platform, surface, target_id, content_id, variation_key, rendered_text)):
+    if not all((project_key, platform, surface, target_id, content_id, variation_key, rendered_text)):
         errors.append(f"{prefix} contains blank identity or rendered-text fields")
 
     source_ids_raw = raw.get("source_ids")
@@ -150,6 +159,7 @@ def validate_operation(raw: dict[str, Any], *, index: int) -> tuple[list[str], s
         errors.append(f"{prefix} must be approved with a timezone-aware reviewed_at")
 
     expected_id = operation_id_for(
+        project_key=project_key,
         action=cast(ContentAction, action),
         platform=platform,
         surface=surface,
