@@ -3,13 +3,15 @@
 
 The default run is a live preflight. Remote writes require --execute plus exact
 community, candidate-count, ambiguity-count, and source-snapshot confirmations.
-Every completed step is journaled atomically so a failed run can be resumed.
+Every state boundary is journaled atomically so a failed run can be reconciled
+without reserving or uploading the same source operation twice.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -29,7 +31,14 @@ from video_channel_manager.config import get_settings
 from video_channel_manager.domain.enums import PlatformName
 from video_channel_manager.exchange.audit_package import AuditPackage
 from video_channel_manager.platforms.vk import VkApiClient, VkInventoryService, VkTokenStore
-from video_channel_manager.platforms.vk.writer import VkUploadTicket, VkVideoWriter, VkWriteError
+from video_channel_manager.platforms.vk.upload_lifecycle import (
+    UploadStage,
+    VkUploadReadiness,
+    ensure_upload_record,
+    execute_upload_operation,
+    ticket_from_record,
+)
+from video_channel_manager.platforms.vk.writer import VkVideoWriter, VkWriteError
 
 _SITE_URL = "https://thelegendarypoet.ru/"
 _SITE_FOOTER = f"🎧 The Legendary Poet — русская поэзия, музыка и литературные материалы.\n🌐 {_SITE_URL}"
@@ -83,8 +92,22 @@ def _load_audit(path: Path) -> AuditPackage:
 def _atomic_write(path: Path, payload: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    serialized = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+    with temporary.open("w", encoding="utf-8", newline="\n") as stream:
+        stream.write(serialized)
+        stream.flush()
+        os.fsync(stream.fileno())
     temporary.replace(path)
+    try:
+        directory_fd = os.open(path.parent, os.O_RDONLY)
+    except OSError:
+        return
+    try:
+        os.fsync(directory_fd)
+    except OSError:
+        pass
+    finally:
+        os.close(directory_fd)
 
 
 def _load_journal(path: Path, *, source: AuditPackage, community_id: int) -> dict[str, Any]:
@@ -92,14 +115,18 @@ def _load_journal(path: Path, *, source: AuditPackage, community_id: int) -> dic
         payload = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(payload, dict) or payload.get("schema_name") != "video-manager.youtube-vk-sync-journal":
             raise ValueError(f"Unexpected journal schema: {path}")
+        raw_version = payload.get("schema_version", 2)
+        if not isinstance(raw_version, int) or raw_version not in {2, 3}:
+            raise ValueError(f"Unsupported journal version {raw_version!r}: {path}")
         if payload.get("source_snapshot_id") != str(source.snapshot_id):
             raise ValueError("Existing journal belongs to a different YouTube snapshot.")
         if payload.get("community_id") != community_id:
             raise ValueError("Existing journal belongs to a different VK community.")
+        payload["schema_version"] = 3
         return payload
     return {
         "schema_name": "video-manager.youtube-vk-sync-journal",
-        "schema_version": 2,
+        "schema_version": 3,
         "created_at": datetime.now(UTC).isoformat(),
         "updated_at": datetime.now(UTC).isoformat(),
         "source_snapshot_id": str(source.snapshot_id),
@@ -165,6 +192,13 @@ def _vk_description(source_description: str) -> str:
     if _SITE_URL in description:
         return description
     return f"{description}\n\n{_SITE_FOOTER}" if description else _SITE_FOOTER
+
+
+def _minimum_duration_seconds(source_duration_seconds: int | None) -> int:
+    if source_duration_seconds is None or source_duration_seconds <= 0:
+        return 1
+    tolerance = max(5, min(30, round(source_duration_seconds * 0.02)))
+    return max(1, source_duration_seconds - tolerance)
 
 
 def _pause(seconds: float) -> None:
@@ -310,6 +344,26 @@ def _place_existing_videos(
                 _pause(write_delay)
 
 
+def _media_path_for_stage(
+    *,
+    record: dict[str, Any],
+    source_id: str,
+    yt_dlp: str,
+    cache_dir: Path,
+) -> Path | None:
+    stage = UploadStage(str(record["stage"]))
+    if stage not in {UploadStage.PLANNED, UploadStage.MEDIA_VERIFIED, UploadStage.RESERVED}:
+        return None
+    media = record.get("media")
+    if isinstance(media, dict):
+        raw_path = media.get("path")
+        if isinstance(raw_path, str):
+            stored_path = Path(raw_path)
+            if stored_path.is_file():
+                return stored_path
+    return _download_video(yt_dlp=yt_dlp, video_id=source_id, cache_dir=cache_dir)
+
+
 def _upload_candidates(
     *,
     source: AuditPackage,
@@ -334,42 +388,59 @@ def _upload_candidates(
         source_video = source_videos[source_id]
         published_title = _vk_title(source_video.title)
         published_description = _vk_description(source_video.description)
+        readiness = VkUploadReadiness(
+            expected_title=published_title,
+            minimum_duration_seconds=_minimum_duration_seconds(source_video.duration_seconds),
+            allowed_types=("video",),
+            require_playable=True,
+        )
         existing = uploads.get(source_id)
-        ticket: VkUploadTicket | None = None
-        if isinstance(existing, dict):
-            remote_id = existing.get("remote_id")
-            if isinstance(remote_id, str):
-                owner_id, video_id = _parse_vk_remote_id(remote_id)
-                if writer.read_video(owner_id=owner_id, video_id=video_id) is not None:
-                    ticket = VkUploadTicket(owner_id=owner_id, video_id=video_id, upload_url="journal-resume")
-
-        if ticket is None:
-            print(f"[{index}/{len(candidate_ids)}] Downloading {source_id} — {published_title}")
-            media_path = _download_video(yt_dlp=yt_dlp, video_id=source_id, cache_dir=cache_dir)
-            print(f"[{index}/{len(candidate_ids)}] Uploading {media_path.name} to VK…")
-            ticket = writer.begin_upload(
-                community_id=community_id,
-                title=published_title,
-                description=published_description,
-            )
-            upload_response = writer.upload_file(ticket, media_path)
-            processed = writer.wait_until_available(ticket, timeout_seconds=processing_timeout)
-            uploads[source_id] = {
-                "source_video_id": source_id,
-                "remote_id": ticket.remote_id,
-                "source_title": source_video.title,
-                "published_title": published_title,
-                "site_url": _SITE_URL,
-                "media_path": str(media_path),
-                "upload_response": upload_response,
-                "vk_type": processed.get("type"),
-                "status": "uploaded_and_verified",
-            }
+        record, changed = ensure_upload_record(
+            existing if isinstance(existing, dict) else None,
+            source_snapshot_id=str(source.snapshot_id),
+            community_id=community_id,
+            source_video_id=source_id,
+            source_title=source_video.title,
+            source_duration_seconds=source_video.duration_seconds,
+            published_title=published_title,
+            published_description=published_description,
+            readiness=readiness,
+        )
+        uploads[source_id] = record
+        if changed:
             _save_journal(journal_path, journal)
+
+        initial_stage = UploadStage(str(record["stage"]))
+        media_path = _media_path_for_stage(
+            record=record,
+            source_id=source_id,
+            yt_dlp=yt_dlp,
+            cache_dir=cache_dir,
+        )
+        if media_path is not None:
+            print(f"[{index}/{len(candidate_ids)}] Media ready {source_id} — {media_path.name}")
+        else:
+            print(f"[{index}/{len(candidate_ids)}] Reconciling {source_id} from stage {initial_stage.value}")
+
+        execute_upload_operation(
+            record,
+            writer=writer,
+            community_id=community_id,
+            title=published_title,
+            description=published_description,
+            media_path=media_path,
+            readiness=readiness,
+            processing_timeout=processing_timeout,
+            persist=lambda: _save_journal(journal_path, journal),
+        )
+        if UploadStage(str(record["stage"])) != UploadStage.VERIFIED:
+            raise RuntimeError(f"Upload operation did not reach verified stage: {source_id}")
+        ticket = ticket_from_record(record)
+        if initial_stage == UploadStage.VERIFIED:
+            print(f"[{index}/{len(candidate_ids)}] Verified journal no-op {ticket.remote_id}")
+        else:
             print(f"[{index}/{len(candidate_ids)}] Verified https://vk.com/video{ticket.remote_id}")
             _pause(write_delay)
-        else:
-            print(f"[{index}/{len(candidate_ids)}] Reusing verified journal upload {ticket.remote_id}")
 
         if not place_in_albums:
             continue
