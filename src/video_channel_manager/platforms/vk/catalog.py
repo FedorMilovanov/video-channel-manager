@@ -7,13 +7,14 @@ from datetime import UTC, datetime
 from typing import Any
 
 from video_channel_manager.application.cross_platform import compare_audit_packages, normalize_title
+from video_channel_manager.editorial._project_profiles import PROJECT_KEYS, resolve_project_key
 from video_channel_manager.exchange.audit_package import AuditPackage
 from video_channel_manager.platforms.vk.publishing import render_vk_publication
 from video_channel_manager.platforms.vk.text_writer import canonical_vk_text
 
 VK_CATALOG_PLAN_SCHEMA = "video-manager.vk-catalog-plan"
-VK_CATALOG_PLAN_VERSION = 1
-VK_CATALOG_POLICY_VERSION = "vk-catalog-structured-v1"
+VK_CATALOG_PLAN_VERSION = 2
+VK_CATALOG_POLICY_VERSION = "vk-catalog-project-bound-v2"
 
 
 def canonical_sha256(value: object) -> str:
@@ -145,6 +146,21 @@ def _build_mapping(
     return mapping, review_only
 
 
+def _resolved_catalog_project(source: AuditPackage, target: AuditPackage) -> str:
+    project_key = resolve_project_key(
+        {
+            "channel_id": source.channel.ref.channel_id,
+            "community_id": target.channel.ref.channel_id,
+        }
+    )
+    if project_key is None:
+        raise ValueError(
+            "VK catalog project identity is unknown or conflicting; "
+            "source channel and target community must resolve to one registered project"
+        )
+    return project_key
+
+
 def build_vk_catalog_plan(
     source: AuditPackage,
     target: AuditPackage,
@@ -156,6 +172,7 @@ def build_vk_catalog_plan(
     if target.channel.ref.platform.value != "vk":
         raise ValueError("VK catalog target must be a VK AuditPackage")
 
+    project_key = _resolved_catalog_project(source, target)
     mapping, review_only = _build_mapping(source, target, reviewed_mappings or {})
     source_videos = {item.ref.remote_id: item for item in source.videos}
     target_videos = {item.ref.remote_id: item for item in target.videos}
@@ -228,7 +245,11 @@ def build_vk_catalog_plan(
         source_video = source_videos[source_video_id]
         target_video = target_videos[target_video_id]
         try:
-            publication = render_vk_publication(source_video.title, source_video.description)
+            publication = render_vk_publication(
+                source_video.title,
+                source_video.description,
+                project_key=project_key,
+            )
         except ValueError as exc:
             review_only.append(
                 {
@@ -259,6 +280,7 @@ def build_vk_catalog_plan(
                 "before_description_sha256": text_sha256(before_description),
                 "after_description_sha256": text_sha256(after_description),
                 "publication_policy_version": publication.policy_version,
+                "project_key": publication.project_key,
             }
         )
 
@@ -267,6 +289,7 @@ def build_vk_catalog_plan(
         "schema_version": VK_CATALOG_PLAN_VERSION,
         "policy_version": VK_CATALOG_POLICY_VERSION,
         "generated_at": datetime.now(UTC).isoformat(),
+        "project_key": project_key,
         "source_snapshot_id": str(source.snapshot_id),
         "target_snapshot_id": str(target.snapshot_id),
         "source_channel_id": source.channel.ref.channel_id,
@@ -303,8 +326,20 @@ def validate_vk_catalog_plan(plan: dict[str, Any]) -> None:
     if plan.get("schema_version") != VK_CATALOG_PLAN_VERSION:
         raise ValueError("Unsupported VK catalog plan version")
     community_id = plan.get("target_community_id")
-    if not isinstance(community_id, int) or community_id <= 0:
+    if not isinstance(community_id, int) or isinstance(community_id, bool) or community_id <= 0:
         raise ValueError("target_community_id must be a positive integer")
+    project_key = plan.get("project_key")
+    if project_key not in PROJECT_KEYS:
+        raise ValueError("project_key must identify a registered project")
+    resolved_project = resolve_project_key(
+        {
+            "project_key": project_key,
+            "channel_id": plan.get("source_channel_id"),
+            "community_id": community_id,
+        }
+    )
+    if resolved_project != project_key:
+        raise ValueError("VK catalog plan project identity does not match its exact provider targets")
     for field in ("target_video_ids_sha256", "initial_catalog_state_sha256", "plan_sha256"):
         value = plan.get(field)
         if not isinstance(value, str) or not value.startswith("sha256:"):
@@ -327,6 +362,8 @@ def validate_vk_catalog_plan(plan: dict[str, Any]) -> None:
         raise ValueError(f"Duplicate operation IDs: {duplicates}")
 
     for operation in plan["text_operations"]:
+        if operation.get("project_key") != project_key:
+            raise ValueError(f"Text operation project mismatch: {operation.get('operation_id')}")
         for side in ("before", "after"):
             for field in ("title", "description"):
                 value = str(operation[f"{side}_{field}"])

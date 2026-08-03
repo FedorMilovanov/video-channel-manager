@@ -16,6 +16,7 @@ if str(ROOT) not in sys.path:
 
 from scripts import sync_youtube_to_vk as sync  # noqa: E402
 from video_channel_manager.config import get_settings  # noqa: E402
+from video_channel_manager.editorial._project_profiles import resolve_project_key  # noqa: E402
 from video_channel_manager.local_media.quality import MediaQualityError, probe_media  # noqa: E402
 from video_channel_manager.platforms.vk import VkApiClient, VkTokenStore  # noqa: E402
 from video_channel_manager.platforms.vk.lock import local_vk_write_lock  # noqa: E402
@@ -25,14 +26,15 @@ from video_channel_manager.platforms.vk.publishing import (  # noqa: E402
 )
 
 _ORIGINAL_DOWNLOAD = sync._download_video
+_ACTIVE_PROJECT_KEY: str | None = None
 
 
 def _vk_title(source_title: str) -> str:
-    return render_vk_publication_title(source_title)
+    return render_vk_publication_title(source_title, project_key=_ACTIVE_PROJECT_KEY)
 
 
 def _vk_description(source_description: str) -> str:
-    return render_vk_publication_description(source_description).text
+    return render_vk_publication_description(source_description, project_key=_ACTIVE_PROJECT_KEY).text
 
 
 def _download_video(*, yt_dlp: str, video_id: str, cache_dir: Path) -> Path:
@@ -50,20 +52,36 @@ def _download_video(*, yt_dlp: str, video_id: str, cache_dir: Path) -> Path:
     return path
 
 
-def _write_lock(args: argparse.Namespace) -> ContextManager[None]:
+def _provider_identity(args: argparse.Namespace) -> tuple[int, str]:
+    settings = get_settings()
+    store = VkTokenStore(settings.data_dir)
+    reader = VkApiClient(
+        token_store=store,
+        account_alias=str(args.account),
+        api_version=settings.vk_api_version,
+    )
+    community = reader.get_community(str(args.community))
+    community_id = int(community.ref.channel_id)
+    source = sync._load_audit(Path(args.source))
+    project_key = resolve_project_key(
+        {
+            "channel_id": source.channel.ref.channel_id,
+            "community_id": community_id,
+        }
+    )
+    if project_key is None:
+        raise ValueError(
+            "Source YouTube channel and target VK community do not resolve to one registered project; "
+            "sync is blocked before rendering or mutation"
+        )
+    return community_id, project_key
+
+
+def _write_lock(args: argparse.Namespace, community_id: int) -> ContextManager[None]:
     if not args.execute:
         return nullcontext()
     settings = get_settings()
     account = str(args.account)
-    community_value = str(args.community)
-    store = VkTokenStore(settings.data_dir)
-    reader = VkApiClient(
-        token_store=store,
-        account_alias=account,
-        api_version=settings.vk_api_version,
-    )
-    community = reader.get_community(community_value)
-    community_id = int(community.ref.channel_id)
     lock_path = settings.data_dir / "locks" / f"vk-{account}-{community_id}.lock"
     return local_vk_write_lock(
         lock_path,
@@ -74,15 +92,19 @@ def _write_lock(args: argparse.Namespace) -> ContextManager[None]:
 
 
 def main() -> int:
+    global _ACTIVE_PROJECT_KEY
+
     args = sync._parser().parse_args()
+    community_id, _ACTIVE_PROJECT_KEY = _provider_identity(args)
     sync._vk_title = _vk_title
     sync._vk_description = _vk_description
     sync._download_video = _download_video
     print(
-        "Safe VK publishing profile enabled: plain-text descriptions, centralized title policy, "
+        "Safe VK publishing profile enabled: "
+        f"project={_ACTIVE_PROJECT_KEY}, plain-text descriptions, centralized title policy, "
         "ffprobe A/V validation, SHA-256 media fingerprints, and a single-writer community lock."
     )
-    with _write_lock(args):
+    with _write_lock(args, community_id):
         return sync.main()
 
 

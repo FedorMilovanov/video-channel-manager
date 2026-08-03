@@ -13,6 +13,13 @@ PROJECT_CHANNEL_IDS: Mapping[str, frozenset[str]] = MappingProxyType(
     }
 )
 
+PROJECT_VK_COMMUNITY_IDS: Mapping[str, frozenset[int]] = MappingProxyType(
+    {
+        LORD_GOD_STRENGTH: frozenset({60805374}),
+        LEGENDARY_POET: frozenset({235216998}),
+    }
+)
+
 PROJECT_LINK_PROFILES: Mapping[str, frozenset[str]] = MappingProxyType(
     {
         LORD_GOD_STRENGTH: frozenset(
@@ -30,7 +37,9 @@ PROJECT_LINK_PROFILES: Mapping[str, frozenset[str]] = MappingProxyType(
         LEGENDARY_POET: frozenset(
             {
                 "https://thelegendarypoet.ru/",
+                "https://vk.ru/thelegendarypoet",
                 "https://vk.com/thelegendarypoet",
+                "https://vkvideo.ru/@thelegendarypoet/clips",
                 "https://t.me/thelegendarypoet",
                 "https://rutube.ru/channel/74579453/",
                 "https://www.youtube.com/@TheLegendaryPoet/playlists",
@@ -53,15 +62,20 @@ PROJECT_LINK_PROFILES: Mapping[str, frozenset[str]] = MappingProxyType(
 CHANNEL_ID_TO_PROJECT_KEY: Mapping[str, str] = MappingProxyType(
     {channel_id: project_key for project_key, channel_ids in PROJECT_CHANNEL_IDS.items() for channel_id in channel_ids}
 )
+VK_COMMUNITY_ID_TO_PROJECT_KEY: Mapping[int, str] = MappingProxyType(
+    {
+        community_id: project_key
+        for project_key, community_ids in PROJECT_VK_COMMUNITY_IDS.items()
+        for community_id in community_ids
+    }
+)
 
 PROJECT_KEYS = frozenset(PROJECT_LINK_PROFILES)
 
 
 def explicit_project_key(payload: Mapping[str, Any]) -> str | None:
     value = payload.get("project_key")
-    if value is None:
-        return None
-    if not isinstance(value, str):
+    if value is None or not isinstance(value, str):
         return None
     normalized = value.strip()
     return normalized or None
@@ -74,15 +88,58 @@ def channel_project_key(payload: Mapping[str, Any]) -> str | None:
     return CHANNEL_ID_TO_PROJECT_KEY.get(value.strip())
 
 
+def _strict_positive_int(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value > 0 else None
+    if isinstance(value, str):
+        normalized = value.strip()
+        if normalized.isdigit():
+            parsed = int(normalized)
+            return parsed if parsed > 0 else None
+    return None
+
+
+def vk_community_project_key(payload: Mapping[str, Any]) -> str | None:
+    community_id = _strict_positive_int(payload.get("community_id"))
+    if community_id is None:
+        owner_id = payload.get("owner_id")
+        if isinstance(owner_id, bool):
+            return None
+        if isinstance(owner_id, int) and owner_id < 0:
+            community_id = -owner_id
+        elif isinstance(owner_id, str):
+            normalized = owner_id.strip()
+            if normalized.startswith("-") and normalized[1:].isdigit():
+                community_id = int(normalized[1:])
+    return VK_COMMUNITY_ID_TO_PROJECT_KEY.get(community_id) if community_id is not None else None
+
+
 def resolve_project_key(
     payload: Mapping[str, Any],
     *,
     legacy_default: bool = False,
 ) -> str | None:
     explicit = explicit_project_key(payload)
-    if explicit in PROJECT_KEYS:
+    if explicit is not None and explicit not in PROJECT_KEYS:
+        return None
+
+    inferred_values = {
+        value
+        for value in (
+            channel_project_key(payload),
+            vk_community_project_key(payload),
+        )
+        if value is not None
+    }
+    if len(inferred_values) > 1:
+        return None
+    inferred = next(iter(inferred_values), None)
+    if explicit is not None and inferred is not None and explicit != inferred:
+        return None
+    if explicit is not None:
         return explicit
-    inferred = channel_project_key(payload)
     if inferred is not None:
         return inferred
     return LEGENDARY_POET if legacy_default else None
@@ -95,7 +152,10 @@ __all__ = [
     "PROJECT_CHANNEL_IDS",
     "PROJECT_KEYS",
     "PROJECT_LINK_PROFILES",
+    "PROJECT_VK_COMMUNITY_IDS",
+    "VK_COMMUNITY_ID_TO_PROJECT_KEY",
     "channel_project_key",
     "explicit_project_key",
     "resolve_project_key",
+    "vk_community_project_key",
 ]

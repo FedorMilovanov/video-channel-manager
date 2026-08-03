@@ -103,6 +103,7 @@ def test_catalog_plan_builds_album_placement_and_text_update() -> None:
 
     plan = build_vk_catalog_plan(source, target)
 
+    assert plan["project_key"] == "legendary-poet"
     assert plan["summary"] == {
         "resolved_video_mappings": 1,
         "albums_to_create": 1,
@@ -113,10 +114,70 @@ def test_catalog_plan_builds_album_placement_and_text_update() -> None:
     }
     assert plan["album_operations"][0]["title"] == "Сергей Есенин"
     assert plan["placement_operations"][0]["target_video_id"] == "-235216998_1"
+    assert plan["text_operations"][0]["project_key"] == "legendary-poet"
     assert plan["text_operations"][0]["after_title"].endswith("⚡")
     assert plan["text_operations"][0]["after_description"].count("https://thelegendarypoet.ru/") == 1
+    assert "gospod-bog.ru" not in plan["text_operations"][0]["after_description"]
     assert plan["target_video_ids_sha256"] == target_video_ids_sha256(target)
     validate_vk_catalog_plan(plan)
+
+
+def test_lord_god_catalog_never_receives_poet_branding() -> None:
+    source_channel = "UCeSJsC6go2c9pdJCuUI1BYA"
+    source = _audit(
+        PlatformName.YOUTUBE,
+        source_channel,
+        [_video(PlatformName.YOUTUBE, source_channel, "yt-1", "Послание к Римлянам", "Разбор текста.")],
+    )
+    target = _audit(
+        PlatformName.VK,
+        "60805374",
+        [_video(PlatformName.VK, "60805374", "-60805374_1", "Старый заголовок", "Старое описание")],
+    )
+
+    plan = build_vk_catalog_plan(source, target, reviewed_mappings={"yt-1": "-60805374_1"})
+    operation = plan["text_operations"][0]
+
+    assert plan["project_key"] == "lord-god-strength"
+    assert operation["project_key"] == "lord-god-strength"
+    assert operation["after_title"] == "Послание к Римлянам"
+    assert "https://gospod-bog.ru/" in operation["after_description"]
+    assert "The Legendary Poet" not in operation["after_description"]
+    assert "thelegendarypoet.ru" not in operation["after_description"]
+    assert not operation["after_title"].endswith("⚡")
+
+
+def test_catalog_plan_rejects_cross_project_provider_targets() -> None:
+    source_channel = "UC-78ys2S3cQ3lpqgXfo-SvQ"
+    source = _audit(
+        PlatformName.YOUTUBE,
+        source_channel,
+        [_video(PlatformName.YOUTUBE, source_channel, "yt-1", "Поэтический материал", "Описание")],
+    )
+    target = _audit(
+        PlatformName.VK,
+        "60805374",
+        [_video(PlatformName.VK, "60805374", "-60805374_1", "Старое", "Старое")],
+    )
+
+    with pytest.raises(ValueError, match="unknown or conflicting"):
+        build_vk_catalog_plan(source, target, reviewed_mappings={"yt-1": "-60805374_1"})
+
+
+def test_catalog_plan_rejects_unknown_project_identity() -> None:
+    source = _audit(
+        PlatformName.YOUTUBE,
+        "unknown-youtube-channel",
+        [_video(PlatformName.YOUTUBE, "unknown-youtube-channel", "yt-1", "Материал", "Описание")],
+    )
+    target = _audit(
+        PlatformName.VK,
+        "999999999",
+        [_video(PlatformName.VK, "999999999", "-999999999_1", "Старое", "Старое")],
+    )
+
+    with pytest.raises(ValueError, match="unknown or conflicting"):
+        build_vk_catalog_plan(source, target, reviewed_mappings={"yt-1": "-999999999_1"})
 
 
 def test_catalog_plan_preserves_existing_album_and_membership() -> None:

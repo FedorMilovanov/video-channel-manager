@@ -23,6 +23,7 @@ from pydantic import ValidationError
 
 from video_channel_manager.config import get_settings
 from video_channel_manager.domain.enums import PlatformName
+from video_channel_manager.editorial._project_profiles import resolve_project_key
 from video_channel_manager.exchange.audit_package import AuditPackage
 from video_channel_manager.local_media.quality import MediaQualityError, MediaQualityReport, probe_media
 from video_channel_manager.platforms.vk import VkApiClient, VkTokenStore
@@ -127,6 +128,7 @@ def _manifest_sha256(
     payload = [
         {
             "source_video_id": video_id,
+            "project_key": publications[video_id].project_key,
             "title": publications[video_id].title,
             "description_sha256": publications[video_id].description_sha256,
             "policy_version": publications[video_id].policy_version,
@@ -184,6 +186,17 @@ def main() -> int:
     community_id = int(community.ref.channel_id)
     if not bool(community.metadata.get("managed_by_token")):
         raise SystemExit("The authorized VK user is not reported as an administrator of this community.")
+    project_key = resolve_project_key(
+        {
+            "channel_id": source.channel.ref.channel_id,
+            "community_id": community_id,
+        }
+    )
+    if project_key is None:
+        raise SystemExit(
+            "Source YouTube channel and target VK community do not resolve to one registered project; "
+            "upload is blocked before rendering or mutation."
+        )
 
     requested_ids = _unique_ids(args.video_ids)
     if len(requested_ids) > args.max_videos:
@@ -198,7 +211,11 @@ def main() -> int:
             raise ValueError(f"YouTube video {source_id} is not public in the source snapshot.")
         if (video.duration_seconds or 0) <= 180:
             raise ValueError(f"YouTube video {source_id} is not a full-length candidate (>180 seconds).")
-        publications[source_id] = render_vk_publication(video.title, video.description)
+        publications[source_id] = render_vk_publication(
+            video.title,
+            video.description,
+            project_key=project_key,
+        )
 
     with _write_lock_context(
         execute=args.execute,
@@ -207,6 +224,10 @@ def main() -> int:
         community_id=community_id,
     ):
         journal = _load_journal(args.journal, source=source, community_id=community_id)
+        journal_project = journal.get("project_key")
+        if journal_project not in (None, "", project_key):
+            raise ValueError("Transfer journal project identity conflicts with the exact provider targets.")
+        journal["project_key"] = project_key
         uploads = journal["uploads"]
         writer = VkVideoWriter(
             token_store=store,
@@ -237,7 +258,8 @@ def main() -> int:
                 media_paths[source_id] = media_path
 
         print(
-            "Exact-ID YouTube → VK resume preflight:\n"
+            "Exact-ID YouTube -> VK resume preflight:\n"
+            f"  project: {project_key}\n"
             f"  source snapshot: {source.snapshot_id}\n"
             f"  target community: {community_id} — {community.title}\n"
             f"  explicitly allowed IDs: {len(requested_ids)}\n"
@@ -312,6 +334,7 @@ def main() -> int:
             )
             uploads[source_id] = {
                 "source_video_id": source_id,
+                "project_key": project_key,
                 "remote_id": ticket.remote_id,
                 "superseded_remote_id": superseded_remote_id,
                 "source_title": source_video.title,
@@ -352,7 +375,7 @@ def main() -> int:
                 time.sleep(args.write_delay)
 
         print(f"Exact-ID resume completed: {len(new_ids)} new video(s) uploaded; {len(reusable)} reused.")
-        print(f"Journal → {args.journal}")
+        print(f"Journal -> {args.journal}")
         return 0
 
 
