@@ -44,9 +44,7 @@ def test_group_wall_photo_identity_accepts_one_group_owned_photo() -> None:
     assert group_wall_photo_identity(reference) == f"photo{OWNER_ID}_457246560"
     assert group_wall_photo_identity({"photo_identities": ["photo631487_457250594"]}) is None
     assert group_wall_photo_identity({"photo_identities": []}) is None
-    assert group_wall_photo_identity(
-        {"photo_identities": [f"photo{OWNER_ID}_1", f"photo{OWNER_ID}_2"]}
-    ) is None
+    assert group_wall_photo_identity({"photo_identities": [f"photo{OWNER_ID}_1", f"photo{OWNER_ID}_2"]}) is None
 
 
 def test_reference_matches_exact_post_with_vk_group_rehost() -> None:
