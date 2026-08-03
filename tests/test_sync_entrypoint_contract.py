@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 from scripts import sync_youtube_to_vk as sync
+from scripts import sync_youtube_to_vk_textsafe as textsafe
 from video_channel_manager.domain.enums import PlatformName
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -55,6 +56,47 @@ def test_base_run_rejects_wrong_source_channel_before_token_access(monkeypatch: 
 
     with pytest.raises(SystemExit, match="does not match runtime project"):
         sync.run(args, runtime=_runtime())
+
+
+def test_supported_entrypoint_rejects_cross_project_pair_before_render_or_mutation(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    source = SimpleNamespace(
+        channel=SimpleNamespace(
+            ref=SimpleNamespace(channel_id="UC-78ys2S3cQ3lpqgXfo-SvQ")
+        )
+    )
+    community = SimpleNamespace(ref=SimpleNamespace(channel_id="60805374"))
+    monkeypatch.setattr(
+        textsafe,
+        "get_settings",
+        lambda: SimpleNamespace(data_dir=tmp_path, vk_api_version="5.199"),
+    )
+    monkeypatch.setattr(textsafe, "VkTokenStore", lambda _data_dir: object())
+
+    class FakeReader:
+        def __init__(self, **_kwargs: object) -> None:
+            pass
+
+        def get_community(self, _community: str) -> object:
+            return community
+
+    monkeypatch.setattr(textsafe, "VkApiClient", FakeReader)
+    monkeypatch.setattr(textsafe.sync, "load_audit", lambda _path: source)
+    monkeypatch.setattr(
+        textsafe,
+        "_render_title",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("renderer called")),
+    )
+    args = argparse.Namespace(
+        account="legendary-poet",
+        community="60805374",
+        source=Path("source.json"),
+    )
+
+    with pytest.raises(ValueError, match="do not resolve to one registered project"):
+        textsafe._provider_identity(args)
 
 
 def test_supported_entrypoint_uses_explicit_runtime_not_global_monkeypatch() -> None:
