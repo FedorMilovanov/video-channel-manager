@@ -230,9 +230,7 @@ def test_submit_parses_then_posts_with_link_title_and_link_photo_id(
     assert [method for method, _ in read_client.calls] == ["wall.parseAttachedLink"]
     assert [method for method, _ in mutation_client.calls] == ["wall.post"]
     parse_params = read_client.calls[0][1]
-    assert json.loads(str(parse_params["links"])) == [
-        {"type": "link", "link": operation["url"]}
-    ]
+    assert json.loads(str(parse_params["links"])) == [{"type": "link", "link": operation["url"]}]
     post_params = mutation_client.calls[0][1]
     assert post_params["attachments"] == operation["url"]
     assert post_params["link_title"] == metadata["title"]
