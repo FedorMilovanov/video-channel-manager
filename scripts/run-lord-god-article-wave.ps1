@@ -28,18 +28,21 @@ $Script = Join-Path $PSScriptRoot "schedule_lord_god_article_wave_v3.py"
 $Package = Join-Path $PSScriptRoot "lord_god_article_wave_v3"
 $Policy = Join-Path $Repo "content\policies\lord-god-article-wave-v3-202608.json"
 $SourceContract = Join-Path $Repo "content\policies\lord-god-article-wave-v3-source-contract.json"
-$PhotoExecutor = Join-Path $Package "photo_wave_v4.py"
+$PhotoExecutor = Join-Path $Package "photo_wave_v5.py"
+$PhotoBaseExecutor = Join-Path $Package "photo_wave_v4.py"
 $PhotoMutations = Join-Path $Package "mutations.py"
 $PhotoSources = Join-Path $Package "sources.py"
 $PhotoWall = Join-Path $Package "wall.py"
 
-# Retired parsed-link artifacts are retained in Git history and unit tests only.
-$RetiredParsedLinkArtifacts = @(
+# Retired parsed-link and abandoned photo-v4 artifacts remain isolated in their
+# own execution directories and are never reused by the active v5 executor.
+$RetiredArtifacts = @(
     "link_cards_hardened.py",
     "link-card-delivery-contract.json",
-    "delivery-contract-v3.json"
+    "delivery-contract-v3.json",
+    "lord-god-article-photo-wave-v4-202608\photo-journal-v4.json"
 )
-$null = $RetiredParsedLinkArtifacts
+$null = $RetiredArtifacts
 
 foreach ($RequiredPath in @(
     $Script,
@@ -47,12 +50,13 @@ foreach ($RequiredPath in @(
     $Policy,
     $SourceContract,
     $PhotoExecutor,
+    $PhotoBaseExecutor,
     $PhotoMutations,
     $PhotoSources,
     $PhotoWall
 )) {
     if (-not (Test-Path -LiteralPath $RequiredPath)) {
-        throw "Не найден обязательный файл фото-волны v4: $RequiredPath"
+        throw "Не найден обязательный файл фото-волны v5: $RequiredPath"
     }
 }
 
@@ -63,10 +67,10 @@ if ($LASTEXITCODE -ne 0) {
 
 if ($Mode -eq "Plan") {
     Remove-Item Env:VCM_ALLOW_WALL_POSTS -ErrorAction SilentlyContinue
-    Write-Host "Господь Бог — Сила Моя: read-only подготовка 10 JPEG-обложек и проверка фото-пути VK; без загрузки фото и без wall.post." -ForegroundColor Cyan
+    Write-Host "Господь Бог — Сила Моя: read-only подготовка новой изолированной фото-волны v5; без загрузки фото и без wall.post." -ForegroundColor Cyan
     & $Python $Script --repo $Repo
     if ($LASTEXITCODE -ne 0) {
-        throw "Photo-wave v4 Plan завершился ошибкой. Ни photos.saveWallPhoto, ни wall.post не выполнялись."
+        throw "Photo-wave v5 Plan завершился ошибкой. Ни photos.saveWallPhoto, ни wall.post не выполнялись."
     }
     exit 0
 }
@@ -78,11 +82,11 @@ if (-not $Execute) {
 $env:VCM_ALLOW_WALL_POSTS = "1"
 try {
     if ($Mode -eq "Canary") {
-        Write-Host "Господь Бог — Сила Моя: один отложенный пост с JPEG-обложкой и ссылкой в тексте." -ForegroundColor Yellow
+        Write-Host "Господь Бог — Сила Моя: один новый отложенный пост v5 с JPEG-обложкой и ссылкой в тексте." -ForegroundColor Yellow
         & $Python $Script --repo $Repo --canary
     }
     elseif ($Mode -eq "Apply") {
-        Write-Host "Господь Бог — Сила Моя: остальные девять отложенных постов с JPEG-обложками и ссылками в тексте." -ForegroundColor Cyan
+        Write-Host "Господь Бог — Сила Моя: остальные девять отложенных постов v5 с JPEG-обложками и ссылками в тексте." -ForegroundColor Cyan
         & $Python $Script --repo $Repo --execute
     }
     else {
@@ -90,7 +94,7 @@ try {
     }
 
     if ($LASTEXITCODE -ne 0) {
-        throw "Фото-волна v4 остановилась. Не повторяй команду до проверки photo-journal-v4.json."
+        throw "Фото-волна v5 остановилась. Не повторяй команду до проверки нового изолированного журнала."
     }
 }
 finally {
