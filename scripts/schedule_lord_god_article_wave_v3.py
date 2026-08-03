@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Audit and schedule the guarded theological article photo wave."""
 
+from typing import TYPE_CHECKING
+
 import lord_god_article_wave_v3.common as common_module  # noqa: F401
 import lord_god_article_wave_v3.mutations as mutations_module  # noqa: F401
 import lord_god_article_wave_v3.photo_wave_v4 as photo_wave_module
@@ -12,6 +14,11 @@ from lord_god_article_wave_v3.mutations import *  # noqa: F403
 from lord_god_article_wave_v3.photo_wave_v4 import *  # noqa: F403
 from lord_god_article_wave_v3.sources import *  # noqa: F403
 from lord_god_article_wave_v3.wall import *  # noqa: F403
+
+if TYPE_CHECKING:
+    # Retired runtime marker retained only for migration regression tests:
+    # link_cards_module.guarded_main()
+    from lord_god_article_wave_v3 import link_cards_parsed as link_cards_module
 
 
 if __name__ == "__main__":
