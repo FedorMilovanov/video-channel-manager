@@ -38,10 +38,7 @@ def upgrade_vk_catalog_plan_identity(plan: dict[str, Any]) -> dict[str, Any]:
         }
     )
     if project_key is None:
-        raise ValueError(
-            "VK catalog project identity is unknown or conflicting; "
-            "legacy plan cannot be upgraded safely"
-        )
+        raise ValueError("VK catalog project identity is unknown or conflicting; legacy plan cannot be upgraded safely")
 
     upgraded = deepcopy(plan)
     upgraded["schema_version"] = VK_CATALOG_PLAN_VERSION
@@ -56,8 +53,7 @@ def upgrade_vk_catalog_plan_identity(plan: dict[str, Any]) -> dict[str, Any]:
         existing_project = operation.get("project_key")
         if existing_project not in (None, "", project_key):
             raise ValueError(
-                f"VK catalog text operation project conflicts with provider identity: "
-                f"{operation.get('operation_id')}"
+                f"VK catalog text operation project conflicts with provider identity: {operation.get('operation_id')}"
             )
         operation["project_key"] = project_key
 
