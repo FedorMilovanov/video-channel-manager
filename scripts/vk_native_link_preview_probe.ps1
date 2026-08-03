@@ -32,7 +32,8 @@ if (-not (Test-Path -LiteralPath (Join-Path $RepoRoot "content"))) {
 }
 
 function Get-VkTokenSafe {
-    $candidates = @("VCM_VK_ACCESS_TOKEN", "VK_TOKEN", "VK_USER_TOKEN", "VK_ACCESS_TOKEN")
+    # 1. Прямые переменные окружения
+    $candidates = @("VCM_VK_ACCESS_TOKEN", "VK_API_TOKEN", "VK_TOKEN", "VK_USER_TOKEN", "VK_ACCESS_TOKEN")
     foreach ($name in $candidates) {
         $val = [Environment]::GetEnvironmentVariable($name)
         if (![string]::IsNullOrWhiteSpace($val)) {
@@ -40,23 +41,52 @@ function Get-VkTokenSafe {
         }
     }
 
-    $envFile = Join-Path $RepoRoot ".env"
-    if (Test-Path -LiteralPath $envFile) {
-        $lines = Get-Content -LiteralPath $envFile -Encoding UTF8
-        foreach ($line in $lines) {
-            if ($line -match "^\s*(VCM_VK_ACCESS_TOKEN|VK_TOKEN|VK_USER_TOKEN|VK_ACCESS_TOKEN)\s*=\s*(.+)$") {
-                $val = $Matches[2].Trim()
-                if ($val.StartsWith('"') -and $val.EndsWith('"')) {
-                    $val = $val.Substring(1, $val.Length - 2)
-                }
-                if (![string]::IsNullOrWhiteSpace($val)) {
-                    return $val
+    # 2. Внутреннее хранилище токенов репозитория (data\secrets\vk\*.json)
+    $tokenDir = Join-Path $RepoRoot "data\secrets\vk"
+    if (Test-Path -LiteralPath $tokenDir) {
+        $jsonFiles = @("legendary-poet.json", "lord-god.json") + (Get-ChildItem -LiteralPath $tokenDir -Filter "*.json" -File | Select-Object -ExpandProperty Name)
+        foreach ($jf in ($jsonFiles | Select-Object -Unique)) {
+            $jp = Join-Path $tokenDir $jf
+            if (Test-Path -LiteralPath $jp) {
+                try {
+                    $obj = Get-Content -LiteralPath $jp -Raw -Encoding UTF8 | ConvertFrom-Json
+                    if (![string]::IsNullOrWhiteSpace($obj.access_token)) {
+                        return $obj.access_token.Trim()
+                    }
+                } catch {}
+            }
+        }
+    }
+
+    # 3. Внешний общий файл настроек (C:\Users\Fedor\Projects\mp3telegrambot\.env или VCM_VK_SHARED_ENV_FILE)
+    $sharedPaths = @()
+    if (![string]::IsNullOrWhiteSpace($env:VCM_VK_SHARED_ENV_FILE)) {
+        $sharedPaths += $env:VCM_VK_SHARED_ENV_FILE
+    }
+    if (![string]::IsNullOrWhiteSpace($env:USERPROFILE)) {
+        $sharedPaths += Join-Path $env:USERPROFILE "Projects\mp3telegrambot\.env"
+    }
+    $sharedPaths += "C:\Users\Fedor\Projects\mp3telegrambot\.env"
+    $sharedPaths += Join-Path $RepoRoot ".env"
+
+    foreach ($path in ($sharedPaths | Select-Object -Unique)) {
+        if (Test-Path -LiteralPath $path) {
+            $lines = Get-Content -LiteralPath $path -Encoding UTF8
+            foreach ($line in $lines) {
+                if ($line -match "^\s*(VK_API_TOKEN|VCM_VK_ACCESS_TOKEN|VK_TOKEN|VK_USER_TOKEN|VK_ACCESS_TOKEN)\s*=\s*(.+)$") {
+                    $val = $Matches[2].Trim()
+                    if ($val.StartsWith('"') -and $val.EndsWith('"')) {
+                        $val = $val.Substring(1, $val.Length - 2)
+                    }
+                    if (![string]::IsNullOrWhiteSpace($val)) {
+                        return $val
+                    }
                 }
             }
         }
     }
 
-    throw "Не найден токен пользователя VK. Установите переменную VCM_VK_ACCESS_TOKEN или добавьте её в файл .env."
+    throw "Не найден токен пользователя VK (VK_API_TOKEN). Проверены окружение, data\secrets\vk\ и C:\Users\Fedor\Projects\mp3telegrambot\.env."
 }
 
 function Invoke-VkApi {
