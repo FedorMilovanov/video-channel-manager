@@ -114,18 +114,19 @@ def test_delivery_contract_v3_is_digest_locked() -> None:
     assert policy["attachment_mode"] == "parsed-external-link-card"
 
 
-def test_parse_request_is_exact_single_url_json() -> None:
+def test_parse_request_is_exact_single_link_attachment_json() -> None:
     policy, _ = load()
     article_url = policy["operations"][0]["url"]
 
     payload = preview.parse_request_json(article_url)
 
+    expected_payload = [{"type": "link", "link": article_url}]
     assert payload == json.dumps(
-        [{"url": article_url}],
+        expected_payload,
         ensure_ascii=False,
         separators=(",", ":"),
     )
-    assert json.loads(payload) == [{"url": article_url}]
+    assert json.loads(payload) == expected_payload
 
 
 def test_parse_response_requires_matching_complete_link_preview() -> None:
@@ -229,7 +230,9 @@ def test_submit_parses_then_posts_with_link_title_and_link_photo_id(
     assert [method for method, _ in read_client.calls] == ["wall.parseAttachedLink"]
     assert [method for method, _ in mutation_client.calls] == ["wall.post"]
     parse_params = read_client.calls[0][1]
-    assert json.loads(str(parse_params["links"])) == [{"url": operation["url"]}]
+    assert json.loads(str(parse_params["links"])) == [
+        {"type": "link", "link": operation["url"]}
+    ]
     post_params = mutation_client.calls[0][1]
     assert post_params["attachments"] == operation["url"]
     assert post_params["link_title"] == metadata["title"]
@@ -294,7 +297,8 @@ def test_parse_audit_calls_all_ten_urls_without_wall_post() -> None:
             self.calls.append((method, dict(params or {})))
             assert method == "wall.parseAttachedLink"
             links = json.loads(str((params or {})["links"]))
-            return responses[links[0]["url"]]
+            assert links[0]["type"] == "link"
+            return responses[links[0]["link"]]
 
     client = ParseClient()
     items, report = preview.audit_parsed_link_cards(
@@ -307,6 +311,7 @@ def test_parse_audit_calls_all_ten_urls_without_wall_post() -> None:
     assert report["calls"] == 10
     assert report["verified"] == 10
     assert report["conflicts"] == 0
+    assert report["request_item_shape"] == "type-link/link-url"
     assert {method for method, _ in client.calls} == {"wall.parseAttachedLink"}
 
 
