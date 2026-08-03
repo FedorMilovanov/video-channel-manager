@@ -24,10 +24,12 @@ Issue #33 remains blocked until #31, #32/#38, and #36 have no silent unknown out
 - [x] Update `current-state.md` with PR #61–63, completed article wave, separate project queues, and current blockers.
 - [x] Link the operations index to the new sources of truth.
 - [x] Create focused Wave 1 issue #65.
-- [ ] Expand issue #64 with all omitted P0/P1 findings and wave dependencies.
-- [ ] Append the project-memory changelog.
-- [ ] Close superseded draft PR #29 after preserving its reusable ledger/reconciliation lessons.
-- [ ] Update root `AGENTS.md` to require the master audit/register before code or provider work.
+- [x] Expand issue #64 with all omitted P0/P1 findings and wave dependencies.
+- [x] Append the project-memory changelog.
+- [x] Close superseded draft PR #29 after preserving its reusable ledger/reconciliation lessons.
+- [x] Update root `AGENTS.md` to require the master audit/register before code or provider work.
+
+Wave 0 is complete. It performed no provider writes.
 
 ## Wave 1 — upload state machine and recovery
 
