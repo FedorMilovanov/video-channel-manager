@@ -1,0 +1,26 @@
+{
+  "schema_name": "video-manager.vk-lord-god-article-link-card-delivery-contract",
+  "schema_version": 2,
+  "decision_set_id": "lord-god-article-wave-v3-202608",
+  "base_policy_sha256": "sha256:f0175b4783e6eb8b449a4558bef662b53bd95b583deb71a01ce7edfd1202dcc7",
+  "source_contract_sha256": "sha256:659912a978d7b8442a9a8106783aa12eec81c2facdc1127f6cf21ead01dffac6",
+  "attachment_mode": "external-link-card",
+  "asset_mode": "remote-open-graph-only",
+  "write_method": "wall.post",
+  "attachment_value": "exact-article-url",
+  "allowed_attachment_types": [
+    "link"
+  ],
+  "required_link_attachments": 1,
+  "require_link_title_match": true,
+  "require_link_description_match": true,
+  "require_link_preview_photo": true,
+  "separate_vk_photo": false,
+  "vk_photo_api_calls": 0,
+  "prepared_jpeg_assets": 0,
+  "guid_mode": "contract-bound-sha256",
+  "journal_schema_version": 2,
+  "postflight_requires_exact_schedule": true,
+  "postflight_requires_exact_text": true,
+  "contract_sha256": "sha256:23ed39ed344d3429140e9bafaaee4aabd8509d0701a916c608ef8d64e68daa96"
+}
