@@ -2,6 +2,27 @@
 
 This file records durable updates to the repository's operational memory.
 
+## 2026-08-04
+
+### Wave 0 — canonical audit and issue graph
+
+- Added `docs/operations/master-audit-2026-08-04.md` as the canonical synthesis of the 2026-08-03/04 audit marathon.
+- Added `docs/operations/audit-register-2026-08-04.json` with 25 findings classified as fixed, partial, confirmed-current, confirmed-operational, needs-reverification, disputed-provider-contract, retracted, or separate-system; every finding has an owner issue and target wave.
+- Updated `current-state.md` to record PR #61–63, the current P0 upload/content/base-sync blockers, the completed article photo wave, and separate `lord-god-strength` / `legendary-poet` operational states.
+- Updated the operations index, automation backlog, and root `AGENTS.md` so new work must start from the master audit, machine register, current state, and owning issue rather than chat history or retired package instructions.
+- Expanded issue #64 into the master roadmap for Waves 0–10.
+- Created issue #65 for the first code wave: journaled VK upload state machine, exact recovery, verified-only reuse, and crash fault injection.
+- Closed draft PR #29 without merge because the 403-video cleanup is already complete and its imported destructive state is historical. Preserved the reusable ideas—durable ledger, intent-before-dispatch, at-most-once semantics, exact-ID reconciliation, leases, and read-only settlement—in the current roadmap.
+- Recorded retracted/disputed conclusions so they are not reimplemented: no system `Uploads` album bug, no invented VK chunk/resume protocol, no assumption that `guid` is complete wall idempotency, and no universal `auto_publish`/`repeat` mandate without current provider evidence.
+- Wave 0 performed no VK or YouTube provider writes.
+
+### Reliability work verified in `main`
+
+- PR #61 merge `51cc2144508c33adf78380ab35e32ee88c10f90f`: project identity hardening, cross-project fail-closed behavior, guarded legacy plan upgrades, and SQLite WAL/timeout/foreign-key reliability.
+- PR #62 merge `55477df06ae0ae5238634aad829ba2fe8fe70fd7`: persistent HTTP client lifecycle for VK and YouTube inventory reads.
+- PR #63 merge `b19d4faa7e58ff4c0ae7f974092e9fd2441c571d`: persistent clients for VK video/thumbnail writers, YouTube description writer, OAuth, and processing polling while preserving no-blind-retry mutation semantics.
+- Theological article photo wave verified complete: postponed post IDs `12471–12480`, 10/10 operations, photo and article URL present, Apply retired.
+
 ## 2026-08-02
 
 ### Daily article-link queue prepared
