@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run YouTube→VK sync with mandatory text rendering, media QC, and writer locking."""
+"""Supported YouTube→VK sync entrypoint with explicit project-safe dependencies."""
 
 from __future__ import annotations
 
@@ -25,20 +25,17 @@ from video_channel_manager.platforms.vk.publishing import (  # noqa: E402
     render_vk_publication_title,
 )
 
-_ORIGINAL_DOWNLOAD = sync._download_video
-_ACTIVE_PROJECT_KEY: str | None = None
+
+def _render_title(source_title: str, *, project_key: str) -> str:
+    return render_vk_publication_title(source_title, project_key=project_key)
 
 
-def _vk_title(source_title: str) -> str:
-    return render_vk_publication_title(source_title, project_key=_ACTIVE_PROJECT_KEY)
-
-
-def _vk_description(source_description: str) -> str:
-    return render_vk_publication_description(source_description, project_key=_ACTIVE_PROJECT_KEY).text
+def _render_description(source_description: str, *, project_key: str) -> str:
+    return render_vk_publication_description(source_description, project_key=project_key).text
 
 
 def _download_video(*, yt_dlp: str, video_id: str, cache_dir: Path) -> Path:
-    path = _ORIGINAL_DOWNLOAD(yt_dlp=yt_dlp, video_id=video_id, cache_dir=cache_dir)
+    path = sync.download_media_file(yt_dlp=yt_dlp, video_id=video_id, cache_dir=cache_dir)
     report = probe_media(
         path,
         ffprobe=os.environ.get("VCM_FFPROBE", "ffprobe"),
@@ -52,7 +49,7 @@ def _download_video(*, yt_dlp: str, video_id: str, cache_dir: Path) -> Path:
     return path
 
 
-def _provider_identity(args: argparse.Namespace) -> tuple[int, str]:
+def _provider_identity(args: argparse.Namespace) -> tuple[int, str, str]:
     settings = get_settings()
     store = VkTokenStore(settings.data_dir)
     reader = VkApiClient(
@@ -62,10 +59,11 @@ def _provider_identity(args: argparse.Namespace) -> tuple[int, str]:
     )
     community = reader.get_community(str(args.community))
     community_id = int(community.ref.channel_id)
-    source = sync._load_audit(Path(args.source))
+    source = sync.load_audit(Path(args.source))
+    source_channel_id = str(source.channel.ref.channel_id)
     project_key = resolve_project_key(
         {
-            "channel_id": source.channel.ref.channel_id,
+            "channel_id": source_channel_id,
             "community_id": community_id,
         }
     )
@@ -74,7 +72,7 @@ def _provider_identity(args: argparse.Namespace) -> tuple[int, str]:
             "Source YouTube channel and target VK community do not resolve to one registered project; "
             "sync is blocked before rendering or mutation"
         )
-    return community_id, project_key
+    return community_id, source_channel_id, project_key
 
 
 def _write_lock(args: argparse.Namespace, community_id: int) -> ContextManager[None]:
@@ -91,21 +89,25 @@ def _write_lock(args: argparse.Namespace, community_id: int) -> ContextManager[N
     )
 
 
-def main() -> int:
-    global _ACTIVE_PROJECT_KEY
-
-    args = sync._parser().parse_args()
-    community_id, _ACTIVE_PROJECT_KEY = _provider_identity(args)
-    sync._vk_title = _vk_title
-    sync._vk_description = _vk_description
-    sync._download_video = _download_video
+def main(argv: list[str] | None = None) -> int:
+    args = sync.build_parser().parse_args(argv)
+    community_id, source_channel_id, project_key = _provider_identity(args)
+    runtime = sync.SyncRuntime(
+        project_key=project_key,
+        expected_source_channel_id=source_channel_id,
+        expected_community_id=community_id,
+        render_title=lambda value: _render_title(value, project_key=project_key),
+        render_description=lambda value: _render_description(value, project_key=project_key),
+        download_media=_download_video,
+    )
     print(
         "Safe VK publishing profile enabled: "
-        f"project={_ACTIVE_PROJECT_KEY}, plain-text descriptions, centralized title policy, "
-        "ffprobe A/V validation, SHA-256 media fingerprints, and a single-writer community lock."
+        f"project={project_key}, source={source_channel_id}, community={community_id}, "
+        "plain-text project rendering, ffprobe A/V validation, SHA-256 media fingerprints, "
+        "journaled upload recovery, and a single-writer community lock."
     )
     with _write_lock(args, community_id):
-        return sync.main()
+        return sync.run(args, runtime=runtime)
 
 
 if __name__ == "__main__":
