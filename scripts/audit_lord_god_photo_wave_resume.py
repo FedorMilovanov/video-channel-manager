@@ -97,11 +97,7 @@ def audit(repo: Path) -> dict[str, Any]:
         journal,
         minimum_future_seconds=0,
     )
-    if (
-        report["already_applied"] != 7
-        or report["ready"] != 3
-        or report["conflicts"] != 0
-    ):
+    if report["already_applied"] != 7 or report["ready"] != 3 or report["conflicts"] != 0:
         raise RuntimeError(
             "Live resume state is not exact: "
             f"applied={report['already_applied']} ready={report['ready']} "
