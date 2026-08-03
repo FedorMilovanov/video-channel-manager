@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -16,13 +17,22 @@ from lord_god_article_wave_v3 import mutations  # noqa: E402
 
 
 class FakeClient:
-    def __init__(self, responses: dict[str, object]) -> None:
+    def __init__(
+        self,
+        responses: dict[str, object],
+        *,
+        current_user_id: int = 631487,
+    ) -> None:
         self.responses = responses
+        self.current_user_id = current_user_id
         self.calls: list[tuple[str, dict[str, object]]] = []
 
     def _call(self, method: str, *, params: dict[str, object] | None = None) -> object:
         self.calls.append((method, dict(params or {})))
         return self.responses[method]
+
+    def get_current_user(self) -> SimpleNamespace:
+        return SimpleNamespace(user_id=self.current_user_id)
 
 
 def unknown_entry(*, owner_id: int = 631487) -> dict[str, Any]:
@@ -60,7 +70,6 @@ def test_saved_photo_token_accepts_current_token_user_owner() -> None:
     token = mutations.saved_photo_token(
         client,
         {"photo": "temporary", "server": 1, "hash": "hash"},
-        current_user_id=631487,
     )
 
     assert token == "photo631487_55_private-key"
@@ -68,22 +77,17 @@ def test_saved_photo_token_accepts_current_token_user_owner() -> None:
 
 
 def test_saved_photo_token_blocks_unrelated_owner() -> None:
-    client = FakeClient(
-        {"photos.saveWallPhoto": [{"id": 55, "owner_id": 999999}]}
-    )
+    client = FakeClient({"photos.saveWallPhoto": [{"id": 55, "owner_id": 999999}]})
 
     with pytest.raises(RuntimeError, match="unexpected owner"):
         mutations.saved_photo_token(
             client,
             {"photo": "temporary", "server": 1, "hash": "hash"},
-            current_user_id=631487,
         )
 
 
 def test_recover_saved_photo_token_uses_one_recent_wall_photo_read_only() -> None:
-    client = FakeClient(
-        {"photos.get": {"count": 1, "items": [wall_photo(photo_id=77)]}}
-    )
+    client = FakeClient({"photos.get": {"count": 1, "items": [wall_photo(photo_id=77)]}})
 
     token = mutations.recover_saved_photo_token(
         client,
