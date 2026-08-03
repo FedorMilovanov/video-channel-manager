@@ -149,7 +149,7 @@ def prepare_photo_token(
     raise AssertionError("unreachable upload retry state")
 
 
-# The v5 executor is inherited from photo_wave_v4 and resolves this global at
-# runtime. Patch only that active v5 hook; save/post mutation clients stay at
-# max_attempts=1 and are not wrapped or retried here.
-v5.base.prepare_photo_token = prepare_photo_token
+def install() -> None:
+    """Install the retry hook only for the active inherited v5 executor."""
+
+    v5.base.prepare_photo_token = prepare_photo_token
