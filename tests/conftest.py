@@ -10,8 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE_CONTRACT = Path("content/policies/lord-god-article-wave-v3-source-contract.json")
 BASE_POLICY = Path("content/policies/lord-god-article-wave-v3-202608.json")
 SUPERSEDED_NO_LINK_PARSER_TEST = (
-    "tests/test_schedule_lord_god_article_wave_v3.py::"
-    "test_current_v3_has_no_dynamic_policy_rewrite_or_link_parser"
+    "tests/test_schedule_lord_god_article_wave_v3.py::test_current_v3_has_no_dynamic_policy_rewrite_or_link_parser"
 )
 
 
