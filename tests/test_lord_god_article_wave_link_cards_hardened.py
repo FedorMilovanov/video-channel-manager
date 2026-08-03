@@ -61,8 +61,7 @@ def expectations(operation: dict[str, Any]) -> dict[str, str]:
     return {
         "title": str(operation["title"]),
         "description": (
-            "Проверенное подробное описание статьи для внешней карточки "
-            "ВКонтакте, содержащее больше сорока символов."
+            "Проверенное подробное описание статьи для внешней карточки ВКонтакте, содержащее больше сорока символов."
         ),
     }
 
@@ -99,19 +98,8 @@ def exact_post(
 
 
 def valid_webp(width: int = 1200, height: int = 630) -> bytes:
-    vp8x = (
-        b"\x00\x00\x00\x00"
-        + (width - 1).to_bytes(3, "little")
-        + (height - 1).to_bytes(3, "little")
-    )
-    payload = (
-        b"RIFF"
-        + (10_020).to_bytes(4, "little")
-        + b"WEBP"
-        + b"VP8X"
-        + len(vp8x).to_bytes(4, "little")
-        + vp8x
-    )
+    vp8x = b"\x00\x00\x00\x00" + (width - 1).to_bytes(3, "little") + (height - 1).to_bytes(3, "little")
+    payload = b"RIFF" + (10_020).to_bytes(4, "little") + b"WEBP" + b"VP8X" + len(vp8x).to_bytes(4, "little") + vp8x
     return payload + b"\x00" * (10_028 - len(payload))
 
 
@@ -233,10 +221,7 @@ def test_published_exact_post_is_accepted_only_at_exact_approved_time() -> None:
 def test_wall_post_accepted_stage_is_blocking_until_reconciled() -> None:
     policy, contract = load()
     operation = policy["operations"][0]
-    expected_by_id = {
-        str(item["operation_id"]): expectations(item)
-        for item in policy["operations"]
-    }
+    expected_by_id = {str(item["operation_id"]): expectations(item) for item in policy["operations"]}
     journal = hardened.fresh_journal(policy, contract)
     journal["operations"][operation["operation_id"]] = {
         "stage": "wall_post_accepted",
@@ -362,11 +347,7 @@ def test_journal_contract_mismatch_blocks_when_write_state_exists(
             {
                 **hardened.fresh_journal(policy, contract),
                 "delivery_contract_sha256": "sha256:older",
-                "operations": {
-                    policy["operations"][0]["operation_id"]: {
-                        "stage": "wall_post_intent"
-                    }
-                },
+                "operations": {policy["operations"][0]["operation_id"]: {"stage": "wall_post_intent"}},
             }
         ),
         encoding="utf-8",
@@ -441,18 +422,12 @@ def test_dimension_audit_requires_ten_valid_1200x630_webp_images(
     assert audited["og_image_dimensions_verified"] == 10
     assert audited["conflicts"] == 0
     assert audited["status"] == "verified"
-    assert all(
-        row["checks"]["og_image_dimensions_verified"] for row in audited_rows
-    )
+    assert all(row["checks"]["og_image_dimensions_verified"] for row in audited_rows)
 
 
 def test_active_entrypoint_and_runner_require_hardened_contract() -> None:
-    entrypoint = (
-        ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py"
-    ).read_text(encoding="utf-8")
-    runner = (
-        ROOT / "scripts" / "run-lord-god-article-wave.ps1"
-    ).read_text(encoding="utf-8")
+    entrypoint = (ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py").read_text(encoding="utf-8")
+    runner = (ROOT / "scripts" / "run-lord-god-article-wave.ps1").read_text(encoding="utf-8")
     source = Path(hardened.__file__).read_text(encoding="utf-8")
 
     assert "link_cards_hardened as link_cards_module" in entrypoint
