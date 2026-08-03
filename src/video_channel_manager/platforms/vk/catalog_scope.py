@@ -1,21 +1,21 @@
 from __future__ import annotations
 
-from copy import deepcopy
 from typing import Any
 
 from video_channel_manager.platforms.vk.catalog import (
     calculate_vk_catalog_plan_sha256,
     validate_vk_catalog_plan,
 )
+from video_channel_manager.platforms.vk.catalog_upgrade import upgrade_vk_catalog_plan_identity
 
 VK_CATALOG_OPERATION_SCOPE_CATALOG_ONLY = "catalog_only"
 _DESCRIPTION_REVIEW_KINDS = frozenset({"description_requires_editorial_review"})
 
 
 def restrict_vk_catalog_plan_to_catalog_only(plan: dict[str, Any]) -> dict[str, Any]:
-    """Return a self-validating copy that can only mutate albums and placements."""
+    """Return a project-bound copy that can mutate only albums and placements."""
 
-    scoped = deepcopy(plan)
+    scoped = upgrade_vk_catalog_plan_identity(plan)
     scoped["operation_scope"] = VK_CATALOG_OPERATION_SCOPE_CATALOG_ONLY
     scoped["text_operations"] = []
     scoped["review_only"] = [
