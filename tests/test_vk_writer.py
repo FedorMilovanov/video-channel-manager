@@ -7,6 +7,7 @@ import pytest
 
 from video_channel_manager.platforms.vk.models import VkAccessToken
 from video_channel_manager.platforms.vk.store import VkTokenStore
+from video_channel_manager.platforms.vk.upload_lifecycle import VkUploadReadiness
 from video_channel_manager.platforms.vk.writer import VkUploadTicket, VkVideoWriter, VkWriteError
 
 
@@ -48,6 +49,11 @@ def test_create_album_and_begin_upload(tmp_path: Path) -> None:
     ticket = writer.begin_upload(community_id=235216998, title="Берёза", description="Описание")
 
     assert ticket.remote_id == "-235216998_501"
+    assert ticket.reservation_response == {
+        "owner_id": -235216998,
+        "video_id": 501,
+        "upload_url": "https://upload.example/video",
+    }
     assert len(requests) == 2
     assert b"access_token=secret" in requests[0].content
     assert b"group_id=235216998" in requests[0].content
@@ -198,3 +204,55 @@ def test_wait_until_available_rejects_nonpositive_timing(tmp_path: Path) -> None
 
     with pytest.raises(ValueError, match="must be positive"):
         writer.wait_until_available(ticket, timeout_seconds=0)
+
+
+def test_wait_until_available_requires_full_readiness_contract(tmp_path: Path) -> None:
+    calls = 0
+    observations: list[tuple[dict[str, object] | None, tuple[str, ...] | None]] = []
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        duration = 0 if calls == 1 else 119
+        return httpx.Response(
+            200,
+            json={
+                "response": {
+                    "count": 1,
+                    "items": [
+                        {
+                            "owner_id": -235216998,
+                            "id": 501,
+                            "title": "Берёза ⚡",
+                            "duration": duration,
+                            "type": "video",
+                            "processing": 0,
+                            "converting": 0,
+                            "can_watch": 1,
+                        }
+                    ],
+                }
+            },
+        )
+
+    writer = _writer(tmp_path, httpx.MockTransport(respond))
+    ticket = VkUploadTicket(owner_id=-235216998, video_id=501, upload_url="https://upload.example/video")
+    result = writer.wait_until_available(
+        ticket,
+        readiness=VkUploadReadiness(
+            expected_title="Берёза ⚡",
+            minimum_duration_seconds=115,
+            allowed_types=("video",),
+            require_playable=True,
+        ),
+        timeout_seconds=1,
+        poll_seconds=0.001,
+        on_observation=lambda item, assessment: observations.append(
+            (item, assessment.reasons if assessment is not None else None)
+        ),
+    )
+
+    assert result["duration"] == 119
+    assert calls == 2
+    assert observations[0][1] == ("duration_below_minimum",)
+    assert observations[1][1] == ()
