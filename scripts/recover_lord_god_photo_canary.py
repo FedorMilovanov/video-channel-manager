@@ -6,15 +6,20 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from video_channel_manager.config import get_settings
 from video_channel_manager.platforms.vk import VkApiClient, VkTokenStore
 
-from lord_god_article_wave_v3.common import ACCOUNT_ALIAS, COMMUNITY_ID
+from lord_god_article_wave_v3.common import (
+    ACCOUNT_ALIAS,
+    COMMUNITY_ID,
+    JPEG_HEIGHT,
+    JPEG_WIDTH,
+)
 from lord_god_article_wave_v3.mutations import (
-    recover_saved_photo_token,
     set_journal_stage,
     unexpected_saved_photo_owner,
 )
@@ -23,6 +28,111 @@ from lord_god_article_wave_v3.photo_wave_v4 import (
     build_photo_policy,
     load_photo_journal,
 )
+from lord_god_article_wave_v3.wall import photo_token
+
+_RECOVERY_WINDOW_SECONDS = 10 * 60
+
+
+def _photo_has_expected_dimensions(photo: dict[str, Any]) -> bool:
+    if photo.get("width") == JPEG_WIDTH and photo.get("height") == JPEG_HEIGHT:
+        return True
+    orig = photo.get("orig_photo")
+    if (
+        isinstance(orig, dict)
+        and orig.get("width") == JPEG_WIDTH
+        and orig.get("height") == JPEG_HEIGHT
+    ):
+        return True
+    sizes = photo.get("sizes")
+    if not isinstance(sizes, list):
+        return False
+    return any(
+        isinstance(item, dict)
+        and item.get("width") == JPEG_WIDTH
+        and item.get("height") == JPEG_HEIGHT
+        for item in sizes
+    )
+
+
+def recover_saved_photo_token_from_all(
+    read_client: VkApiClient,
+    entry: dict[str, Any],
+    *,
+    current_user_id: int,
+) -> str:
+    owner_id = unexpected_saved_photo_owner(entry)
+    if owner_id != current_user_id:
+        raise RuntimeError(
+            "Unexpected-owner photo recovery is allowed only for the current token user"
+        )
+    try:
+        reference_time = datetime.fromisoformat(str(entry["updated_at"])).timestamp()
+    except (KeyError, TypeError, ValueError) as exc:
+        raise RuntimeError("Photo recovery journal has no valid updated_at") from exc
+
+    response = read_client._call(
+        "photos.getAll",
+        params={
+            "owner_id": current_user_id,
+            "extended": False,
+            "offset": 0,
+            "count": 200,
+            "photo_sizes": True,
+            "no_service_albums": False,
+            "need_hidden": True,
+            "skip_hidden": False,
+        },
+    )
+    items = response.get("items") if isinstance(response, dict) else None
+    photos = (
+        [item for item in items if isinstance(item, dict)]
+        if isinstance(items, list)
+        else []
+    )
+
+    same_owner = 0
+    with_valid_id_and_date = 0
+    within_window = 0
+    expected_dimensions = 0
+    candidates: list[dict[str, Any]] = []
+
+    for photo in photos:
+        if photo.get("owner_id") != current_user_id:
+            continue
+        same_owner += 1
+
+        photo_id = photo.get("id")
+        photo_date = photo.get("date")
+        if (
+            not isinstance(photo_id, int)
+            or photo_id <= 0
+            or not isinstance(photo_date, int)
+        ):
+            continue
+        with_valid_id_and_date += 1
+
+        if abs(float(photo_date) - reference_time) > _RECOVERY_WINDOW_SECONDS:
+            continue
+        within_window += 1
+
+        if not _photo_has_expected_dimensions(photo):
+            continue
+        expected_dimensions += 1
+        candidates.append(photo)
+
+    if len(candidates) != 1:
+        raise RuntimeError(
+            "Saved-photo recovery did not find exactly one recent 1200x630 photo "
+            "through photos.getAll; "
+            f"candidates={len(candidates)}; photos_seen={len(photos)}; "
+            f"same_owner={same_owner}; valid_id_and_date={with_valid_id_and_date}; "
+            f"within_window={within_window}; expected_dimensions={expected_dimensions}"
+        )
+
+    token = photo_token(candidates[0])
+    if not token:
+        raise RuntimeError("Recovered wall photo has no usable attachment token")
+    return token
 
 
 def run(repo: Path) -> int:
@@ -41,10 +151,15 @@ def run(repo: Path) -> int:
         if unexpected_saved_photo_owner(entry) is not None
     ]
     if len(recoverable) != 1:
-        raise RuntimeError(f"Expected exactly one recoverable photo_save_unknown operation; found {len(recoverable)}")
+        raise RuntimeError(
+            "Expected exactly one recoverable photo_save_unknown operation; "
+            f"found {len(recoverable)}"
+        )
 
     operation_id, entry = recoverable[0]
-    operation_by_id: dict[str, dict[str, Any]] = {str(item["operation_id"]): item for item in policy["operations"]}
+    operation_by_id: dict[str, dict[str, Any]] = {
+        str(item["operation_id"]): item for item in policy["operations"]
+    }
     operation = operation_by_id.get(str(operation_id))
     if operation is None:
         raise RuntimeError("Recoverable journal operation is absent from photo policy")
@@ -59,10 +174,13 @@ def run(repo: Path) -> int:
     )
     current_user = read_client.get_current_user()
     community = read_client.get_community(COMMUNITY_ID)
-    if community.ref.remote_id != str(COMMUNITY_ID) or not community.metadata.get("managed_by_token"):
+    if (
+        community.ref.remote_id != str(COMMUNITY_ID)
+        or not community.metadata.get("managed_by_token")
+    ):
         raise RuntimeError("Stored token does not manage VK community 60805374")
 
-    token = recover_saved_photo_token(
+    token = recover_saved_photo_token_from_all(
         read_client,
         entry,
         current_user_id=current_user.user_id,
@@ -75,6 +193,7 @@ def run(repo: Path) -> int:
         photo_token=token,
         recovered_from="photo_save_unknown",
         recovered_owner_id=current_user.user_id,
+        recovered_via="photos.getAll",
     )
 
     print(
@@ -85,7 +204,8 @@ def run(repo: Path) -> int:
                 "stage": "photo_saved",
                 "photo_owner_id": current_user.user_id,
                 "photo_token_present": True,
-                "vk_read_methods": ["users.get", "groups.get", "photos.get"],
+                "recovered_via": "photos.getAll",
+                "vk_read_methods": ["users.get", "groups.get", "photos.getAll"],
                 "vk_write_methods": [],
                 "journal": str(journal_path),
             },
