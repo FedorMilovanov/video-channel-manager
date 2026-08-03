@@ -18,6 +18,7 @@ def _legacy_record() -> dict[str, object]:
     return {
         "schema_name": "video-manager.youtube-comment-content",
         "schema_version": 1,
+        "project_key": "legendary-poet",
         "status": "approved",
         "channel_id": "channel-1",
         "video_id": "video-1",
@@ -45,6 +46,7 @@ def _v2_record() -> dict[str, object]:
     return {
         "schema_name": "video-manager.youtube-comment-content",
         "schema_version": 2,
+        "project_key": "legendary-poet",
         "status": "approved",
         "profile": "long_form_poetry",
         "variation_key": "blok-publication-history-1908-v1",
