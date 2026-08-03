@@ -121,6 +121,14 @@ def resolve_project_key(
     *,
     legacy_default: bool = False,
 ) -> str | None:
+    """Resolve one registered project from explicit and provider identities.
+
+    ``legacy_default`` is retained only for source compatibility with older
+    callers. It no longer supplies an implicit project: reusable parsing must
+    never silently assign legacy content to Legendary Poet.
+    """
+
+    _ = legacy_default
     explicit = explicit_project_key(payload)
     if explicit is not None and explicit not in PROJECT_KEYS:
         return None
@@ -140,9 +148,7 @@ def resolve_project_key(
         return None
     if explicit is not None:
         return explicit
-    if inferred is not None:
-        return inferred
-    return LEGENDARY_POET if legacy_default else None
+    return inferred
 
 
 __all__ = [
