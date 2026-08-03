@@ -275,7 +275,10 @@ def test_submit_never_calls_wall_post_when_preview_is_invalid(
 
 def test_parse_audit_calls_all_ten_urls_without_wall_post() -> None:
     policy, _ = load()
-    expectations = {str(operation["operation_id"]): expected(operation) for operation in policy["operations"]}
+    expectations = {
+        str(operation["operation_id"]): expected(operation)
+        for operation in policy["operations"]
+    }
     responses = {
         operation["url"]: parse_response(
             operation,
@@ -369,18 +372,27 @@ def test_superseded_v2_unknown_or_post_id_blocks_new_contract(
         contract.observe_superseded_v2(path, policy)
 
 
-def test_active_entrypoint_and_runner_use_parsed_link_contract_v3() -> None:
-    entrypoint = (ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py").read_text(encoding="utf-8")
-    runner = (ROOT / "scripts" / "run-lord-god-article-wave.ps1").read_text(encoding="utf-8")
-    orchestrator = (ROOT / "scripts" / "lord_god_article_wave_v3" / "link_cards_parsed.py").read_text(encoding="utf-8")
-    mutation_source = Path(mutations.__file__).read_text(encoding="utf-8")
+def test_active_entrypoint_and_runner_use_photo_wave_v4() -> None:
+    entrypoint = (
+        ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py"
+    ).read_text(encoding="utf-8")
+    runner = (ROOT / "scripts" / "run-lord-god-article-wave.ps1").read_text(
+        encoding="utf-8"
+    )
+    photo_orchestrator = (
+        ROOT / "scripts" / "lord_god_article_wave_v3" / "photo_wave_v4.py"
+    ).read_text(encoding="utf-8")
+    photo_mutations = (
+        ROOT / "scripts" / "lord_god_article_wave_v3" / "mutations.py"
+    ).read_text(encoding="utf-8")
 
-    assert "link_cards_parsed as link_cards_module" in entrypoint
-    assert "link_cards_module.guarded_main()" in entrypoint
-    assert "wall.parseAttachedLink" in runner
-    assert "delivery-contract-v3.json" in runner
-    assert "parsed-link-journal-v3.json" in orchestrator
-    assert '"link_title"' in mutation_source
-    assert '"link_photo_id"' in mutation_source
-    assert '"photos.getWallUploadServer"' not in mutation_source
-    assert '"photos.saveWallPhoto"' not in mutation_source
+    assert "photo_wave_v4 as photo_wave_module" in entrypoint
+    assert "photo_wave_module.guarded_main()" in entrypoint
+    assert "photo_wave_v4.py" in runner
+    assert "wall.parseAttachedLink" not in runner
+    assert "photo-journal-v4.json" in photo_orchestrator
+    assert "lord-god-article-photo-wave-v4-202608" in photo_orchestrator
+    assert '"photos.getWallUploadServer"' in photo_mutations
+    assert '"photos.saveWallPhoto"' in photo_mutations
+    assert '"attachments": photo_token_value' in photo_mutations
+    assert '"publish_date": int(operation["publish_date"])' in photo_mutations
