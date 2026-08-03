@@ -735,8 +735,17 @@ def execute_upload_operation(
         return record
     if stage == UploadStage.REJECTED:
         raise UploadRejected(str(record.get("last_error") or "Upload was rejected"))
+    if stage == UploadStage.RESERVATION_INTENT_COMMITTED and record.get("reservation_dispatch_started_at"):
+        return _resume_or_reconcile(
+            record,
+            writer=writer,
+            readiness=readiness,
+            processing_timeout=processing_timeout,
+            persist=persist,
+            fault_hook=fault_hook,
+            clock=clock,
+        )
     if stage in {
-        UploadStage.RESERVATION_INTENT_COMMITTED,
         UploadStage.UPLOAD_STARTED,
         UploadStage.UPLOAD_RESPONSE_RECEIVED,
         UploadStage.PROCESSING,
@@ -770,27 +779,31 @@ def execute_upload_operation(
         _fault(fault_hook, "after_media_verified_commit")
         stage = UploadStage.MEDIA_VERIFIED
 
-    if stage == UploadStage.MEDIA_VERIFIED:
-        _fault(fault_hook, "before_reservation_intent_commit")
-        intent = {
-            "community_id": community_id,
-            "title": title,
-            "description_sha256": _text_sha256(description),
-            "media_sha256": media_evidence["sha256"],
-        }
-        record["reservation_intent"] = {
-            **intent,
-            "intent_sha256": _canonical_sha256(intent),
-            "committed_at": _iso(clock),
-        }
-        _persist_transition(
-            record,
-            UploadStage.RESERVATION_INTENT_COMMITTED,
-            persist=persist,
-            evidence={"intent_sha256": record["reservation_intent"]["intent_sha256"]},
-            clock=clock,
-        )
-        _fault(fault_hook, "after_reservation_intent_commit")
+    if stage in {UploadStage.MEDIA_VERIFIED, UploadStage.RESERVATION_INTENT_COMMITTED}:
+        if stage == UploadStage.MEDIA_VERIFIED:
+            _fault(fault_hook, "before_reservation_intent_commit")
+            intent = {
+                "community_id": community_id,
+                "title": title,
+                "description_sha256": _text_sha256(description),
+                "media_sha256": media_evidence["sha256"],
+            }
+            record["reservation_intent"] = {
+                **intent,
+                "intent_sha256": _canonical_sha256(intent),
+                "committed_at": _iso(clock),
+            }
+            _persist_transition(
+                record,
+                UploadStage.RESERVATION_INTENT_COMMITTED,
+                persist=persist,
+                evidence={"intent_sha256": record["reservation_intent"]["intent_sha256"]},
+                clock=clock,
+            )
+            _fault(fault_hook, "after_reservation_intent_commit")
+        record["reservation_dispatch_started_at"] = _iso(clock)
+        persist()
+        _fault(fault_hook, "after_reservation_dispatch_started_commit")
         try:
             ticket = writer.begin_upload(community_id=community_id, title=title, description=description)
         except Exception as exc:
