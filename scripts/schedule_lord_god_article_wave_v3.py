@@ -18,7 +18,9 @@ from lord_god_article_wave_v3.wall import *  # noqa: F403
 if TYPE_CHECKING:
     # Retired runtime marker retained only for migration regression tests:
     # link_cards_module.guarded_main()
-    from lord_god_article_wave_v3 import link_cards_parsed as link_cards_module
+    from lord_god_article_wave_v3 import (  # noqa: F401
+        link_cards_parsed as link_cards_module,
+    )
 
 
 if __name__ == "__main__":
