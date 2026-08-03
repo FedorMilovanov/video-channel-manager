@@ -25,9 +25,7 @@ class UploadStage(StrEnum):
 
 _ALLOWED_TRANSITIONS: Mapping[UploadStage, frozenset[UploadStage]] = {
     UploadStage.PLANNED: frozenset({UploadStage.MEDIA_VERIFIED, UploadStage.REJECTED}),
-    UploadStage.MEDIA_VERIFIED: frozenset(
-        {UploadStage.RESERVATION_INTENT_COMMITTED, UploadStage.REJECTED}
-    ),
+    UploadStage.MEDIA_VERIFIED: frozenset({UploadStage.RESERVATION_INTENT_COMMITTED, UploadStage.REJECTED}),
     UploadStage.RESERVATION_INTENT_COMMITTED: frozenset(
         {
             UploadStage.RESERVED,
@@ -57,12 +55,8 @@ _ALLOWED_TRANSITIONS: Mapping[UploadStage, frozenset[UploadStage]] = {
             UploadStage.UNKNOWN_REQUIRES_RECONCILIATION,
         }
     ),
-    UploadStage.PROCESSING: frozenset(
-        {UploadStage.VERIFIED, UploadStage.UNKNOWN_REQUIRES_RECONCILIATION}
-    ),
-    UploadStage.UNKNOWN_REQUIRES_RECONCILIATION: frozenset(
-        {UploadStage.PROCESSING, UploadStage.VERIFIED}
-    ),
+    UploadStage.PROCESSING: frozenset({UploadStage.VERIFIED, UploadStage.UNKNOWN_REQUIRES_RECONCILIATION}),
+    UploadStage.UNKNOWN_REQUIRES_RECONCILIATION: frozenset({UploadStage.PROCESSING, UploadStage.VERIFIED}),
     UploadStage.VERIFIED: frozenset(),
     UploadStage.REJECTED: frozenset(),
 }
@@ -117,10 +111,17 @@ class VkUploadReadinessAssessment:
 
 
 class UploadTicketProtocol(Protocol):
-    owner_id: int
-    video_id: int
-    upload_url: str
-    reservation_response: dict[str, Any] | None
+    @property
+    def owner_id(self) -> int: ...
+
+    @property
+    def video_id(self) -> int: ...
+
+    @property
+    def upload_url(self) -> str: ...
+
+    @property
+    def reservation_response(self) -> dict[str, Any] | None: ...
 
     @property
     def remote_id(self) -> str: ...
@@ -191,7 +192,7 @@ def _normalized_title(value: str) -> str:
 
 def _is_playable(item: Mapping[str, Any]) -> bool:
     can_watch = item.get("can_watch")
-    if can_watch in {True, 1, "1"}:
+    if can_watch is True or can_watch == 1 or can_watch == "1":
         return True
     player = item.get("player")
     if isinstance(player, str) and player.strip():
