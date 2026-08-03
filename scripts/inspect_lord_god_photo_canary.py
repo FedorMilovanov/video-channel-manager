@@ -51,18 +51,11 @@ def inspect(repo: Path) -> dict[str, Any]:
         and isinstance(entry.get("post_id"), int)
     ]
     if len(candidates) != 1:
-        raise RuntimeError(
-            "Expected exactly one wall_post_accepted_unverified operation; "
-            f"found={len(candidates)}"
-        )
+        raise RuntimeError(f"Expected exactly one wall_post_accepted_unverified operation; found={len(candidates)}")
     operation_id, entry = candidates[0]
 
     policy = build_photo_policy(repo)
-    policy_operations = {
-        str(item["operation_id"]): item
-        for item in policy["operations"]
-        if isinstance(item, dict)
-    }
+    policy_operations = {str(item["operation_id"]): item for item in policy["operations"] if isinstance(item, dict)}
     operation = policy_operations.get(str(operation_id))
     if not isinstance(operation, dict):
         raise RuntimeError("Journal operation is not present in the active v5 policy")
@@ -98,10 +91,7 @@ def inspect(repo: Path) -> dict[str, Any]:
     date_matches = reference["date"] == operation["publish_date"]
     url_matches = article_url in reference["text_urls"]
     has_photo = bool(reference["has_photo"])
-    photo_identity_matches = (
-        expected_photo_identity is not None
-        and expected_photo_identity in reference["photo_identities"]
-    )
+    photo_identity_matches = expected_photo_identity is not None and expected_photo_identity in reference["photo_identities"]
 
     return {
         "status": "inspected",
@@ -122,11 +112,7 @@ def inspect(repo: Path) -> dict[str, Any]:
         "actual_photo_identities": reference["photo_identities"],
         "photo_identity_matches": photo_identity_matches,
         "only_photo_identity_differs": (
-            message_matches
-            and date_matches
-            and url_matches
-            and has_photo
-            and not photo_identity_matches
+            message_matches and date_matches and url_matches and has_photo and not photo_identity_matches
         ),
         "vk_write_methods": [],
     }
