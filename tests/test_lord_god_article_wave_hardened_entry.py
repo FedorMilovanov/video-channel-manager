@@ -199,9 +199,7 @@ def test_strict_postflight_failure_overwrites_completed_result(
             result=result,
         )
 
-    written = json.loads(
-        (tmp_path / "link-card-canary-result.json").read_text(encoding="utf-8")
-    )
+    written = json.loads((tmp_path / "link-card-canary-result.json").read_text(encoding="utf-8"))
     assert written["status"] == "strict_postflight_failed"
     assert written["description_match_mode"] == entry.DESCRIPTION_MATCH_MODE
     assert written["strict_postflight_conflicts"] == 1
