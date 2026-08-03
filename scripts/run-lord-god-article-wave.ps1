@@ -29,7 +29,8 @@ $Package = Join-Path $PSScriptRoot "lord_god_article_wave_v3"
 $Policy = Join-Path $Repo "content\policies\lord-god-article-wave-v3-202608.json"
 $SourceContract = Join-Path $Repo "content\policies\lord-god-article-wave-v3-source-contract.json"
 $DeliveryContract = Join-Path $Repo "content\policies\lord-god-article-wave-v3-link-card-delivery-contract.json"
-$LinkCardModule = Join-Path $Package "link_cards_hardened.py"
+$LinkCardCore = Join-Path $Package "link_cards_hardened.py"
+$LinkCardEntrypoint = Join-Path $Package "link_cards_hardened_entry.py"
 
 if (-not (Test-Path -LiteralPath $Script)) {
     throw "Не найден исполнитель: $Script"
@@ -46,8 +47,11 @@ if (-not (Test-Path -LiteralPath $SourceContract)) {
 if (-not (Test-Path -LiteralPath $DeliveryContract)) {
     throw "Не найден контракт доставки link-карточек: $DeliveryContract"
 }
-if (-not (Test-Path -LiteralPath $LinkCardModule)) {
-    throw "Не найден усиленный исполнитель link-карточек: $LinkCardModule"
+if (-not (Test-Path -LiteralPath $LinkCardCore)) {
+    throw "Не найден усиленный core link-карточек: $LinkCardCore"
+}
+if (-not (Test-Path -LiteralPath $LinkCardEntrypoint)) {
+    throw "Не найден явный orchestrator link-карточек: $LinkCardEntrypoint"
 }
 
 & $Python -m compileall -q $Package $Script
