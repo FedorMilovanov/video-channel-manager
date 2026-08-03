@@ -39,10 +39,7 @@ def load() -> tuple[dict[str, Any], dict[str, Any]]:
 def expected(operation: dict[str, Any]) -> dict[str, str]:
     return {
         "title": str(operation["title"]),
-        "description": (
-            "Проверенное полное описание статьи для карточки ВКонтакте длиной "
-            "более сорока символов."
-        ),
+        "description": ("Проверенное полное описание статьи для карточки ВКонтакте длиной более сорока символов."),
     }
 
 
@@ -205,9 +202,7 @@ def test_submit_parses_then_posts_with_link_title_and_link_photo_id(
     policy, delivery = load()
     operation = policy["operations"][0]
     metadata = expected(operation)
-    read_client = FakeClient(
-        {"wall.parseAttachedLink": parse_response(operation, metadata)}
-    )
+    read_client = FakeClient({"wall.parseAttachedLink": parse_response(operation, metadata)})
     mutation_client = FakeClient({"wall.post": {"post_id": 771}})
     reference = exact_reference(operation, metadata, post_id=771)
     journal = contract.fresh_journal(policy, delivery)
@@ -240,9 +235,7 @@ def test_submit_parses_then_posts_with_link_title_and_link_photo_id(
     assert post_params["link_title"] == metadata["title"]
     assert post_params["link_photo_id"] == "-60805374_991"
     assert post_params["publish_date"] == operation["publish_date"]
-    assert all(
-        not method.startswith("photos.") for method, _ in read_client.calls
-    )
+    assert all(not method.startswith("photos.") for method, _ in read_client.calls)
     assert all(not method.startswith("photos.") for method, _ in mutation_client.calls)
     entry = journal["operations"][operation["operation_id"]]
     assert entry["stage"] == "verified"
@@ -281,10 +274,7 @@ def test_submit_never_calls_wall_post_when_preview_is_invalid(
 
 def test_parse_audit_calls_all_ten_urls_without_wall_post() -> None:
     policy, _ = load()
-    expectations = {
-        str(operation["operation_id"]): expected(operation)
-        for operation in policy["operations"]
-    }
+    expectations = {str(operation["operation_id"]): expected(operation) for operation in policy["operations"]}
     responses = {
         operation["url"]: parse_response(
             operation,
@@ -334,10 +324,7 @@ def test_superseded_v2_rejection_is_observed_but_not_reused(
                     operation["operation_id"]: {
                         "operation_id": operation["operation_id"],
                         "stage": "wall_post_rejected",
-                        "error": (
-                            "VkApiError: VK API 100 in wall.post: "
-                            "Violated: link_photo_sizing_rule. No photo given"
-                        ),
+                        "error": ("VkApiError: VK API 100 in wall.post: Violated: link_photo_sizing_rule. No photo given"),
                     }
                 },
             }
@@ -349,9 +336,7 @@ def test_superseded_v2_rejection_is_observed_but_not_reused(
 
     assert observation["safe_to_supersede"] is True
     assert len(observation["observed_operations"]) == 1
-    assert observation["observed_operations"][0][
-        "accepted_superseded_rejection"
-    ] is True
+    assert observation["observed_operations"][0]["accepted_superseded_rejection"] is True
 
 
 def test_superseded_v2_unknown_or_post_id_blocks_new_contract(
@@ -380,15 +365,9 @@ def test_superseded_v2_unknown_or_post_id_blocks_new_contract(
 
 
 def test_active_entrypoint_and_runner_use_parsed_link_contract_v3() -> None:
-    entrypoint = (
-        ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py"
-    ).read_text(encoding="utf-8")
-    runner = (
-        ROOT / "scripts" / "run-lord-god-article-wave.ps1"
-    ).read_text(encoding="utf-8")
-    orchestrator = (
-        ROOT / "scripts" / "lord_god_article_wave_v3" / "link_cards_parsed.py"
-    ).read_text(encoding="utf-8")
+    entrypoint = (ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py").read_text(encoding="utf-8")
+    runner = (ROOT / "scripts" / "run-lord-god-article-wave.ps1").read_text(encoding="utf-8")
+    orchestrator = (ROOT / "scripts" / "lord_god_article_wave_v3" / "link_cards_parsed.py").read_text(encoding="utf-8")
     mutation_source = Path(mutations.__file__).read_text(encoding="utf-8")
 
     assert "link_cards_parsed as link_cards_module" in entrypoint
