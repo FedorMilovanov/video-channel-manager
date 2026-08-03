@@ -58,12 +58,15 @@ def test_repeated_og_read_checksum_drift_blocks_source_audit(
     assert audited["manifest_sha256"] != "sha256:before"
 
 
-def test_active_entrypoint_uses_photo_wave_v4_orchestrator() -> None:
+def test_active_entrypoint_uses_photo_wave_v5_orchestrator() -> None:
     entrypoint = (ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py").read_text(encoding="utf-8")
+    wrapper = (ROOT / "scripts" / "lord_god_article_wave_v3" / "photo_wave_v5.py").read_text(encoding="utf-8")
     orchestrator = (ROOT / "scripts" / "lord_god_article_wave_v3" / "photo_wave_v4.py").read_text(encoding="utf-8")
 
-    assert "photo_wave_v4 as photo_wave_module" in entrypoint
+    assert "photo_wave_v5 as photo_wave_module" in entrypoint
     assert "photo_wave_module.guarded_main()" in entrypoint
+    assert "lord-god-article-photo-wave-v5-202608" in wrapper
+    assert "lgp5-" in wrapper
     assert "materialize_and_verify_sources(" in orchestrator
     assert "verify_upload_server(" in orchestrator
     assert "execute_scope(" in orchestrator
