@@ -140,9 +140,7 @@ def test_active_hardened_plan_never_calls_execute_scope(
     assert (output_dir / "link-card-source-audit.json").is_file()
     assert (output_dir / "link-card-preflight.json").is_file()
     assert (output_dir / "link-card-delivery-contract.json").is_file()
-    written = json.loads(
-        (output_dir / "link-card-source-audit.json").read_text(encoding="utf-8")
-    )
+    written = json.loads((output_dir / "link-card-source-audit.json").read_text(encoding="utf-8"))
     assert written["status"] == "verified"
     assert written["og_image_dimensions_verified"] == 10
 
@@ -188,13 +186,7 @@ def test_blocked_source_audit_stops_before_vk_settings(
     with pytest.raises(RuntimeError, match="source audit blocked"):
         entry.run(tmp_path, mode="plan")
 
-    audit_path = (
-        tmp_path
-        / "data"
-        / "vk-wall"
-        / entry.DECISION_SET_ID
-        / "link-card-source-audit.json"
-    )
+    audit_path = tmp_path / "data" / "vk-wall" / entry.DECISION_SET_ID / "link-card-source-audit.json"
     assert audit_path.is_file()
     written = json.loads(audit_path.read_text(encoding="utf-8"))
     assert written["status"] == "blocked"
