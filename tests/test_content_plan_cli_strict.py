@@ -35,6 +35,12 @@ def _manifest() -> dict[str, object]:
     }
 
 
+def _normalized_stdout(result: object) -> str:
+    stdout = getattr(result, "stdout")
+    assert isinstance(stdout, str)
+    return " ".join(stdout.split())
+
+
 def _build(tmp_path: Path) -> tuple[Path, object]:
     manifest_path = tmp_path / "targets.json"
     output_path = tmp_path / "plan.json"
@@ -99,7 +105,7 @@ def test_strict_cli_rejects_manifest_without_project_identity(tmp_path: Path) ->
     )
 
     assert result.exit_code == 2
-    assert "manifest.project_key must be a nonblank string" in result.stdout
+    assert "manifest.project_key must be a nonblank string" in _normalized_stdout(result)
     assert not output_path.exists()
 
 
@@ -130,7 +136,7 @@ def test_strict_cli_rejects_wrong_project_before_rendering(tmp_path: Path) -> No
     )
 
     assert result.exit_code == 2
-    assert "does not match requested project" in result.stdout
+    assert "does not match requested project" in _normalized_stdout(result)
     assert not output_path.exists()
 
 
@@ -167,7 +173,10 @@ def test_strict_cli_requires_exact_content_coverage(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 2
-    assert "target manifest is missing content_id operations: tyutchev-night-sea-second" in result.stdout
+    assert (
+        "target manifest is missing content_id operations: tyutchev-night-sea-second"
+        in _normalized_stdout(result)
+    )
     assert not output_path.exists()
 
 
@@ -200,7 +209,7 @@ def test_strict_cli_rejects_duplicate_content_operation(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 2
-    assert "target manifest repeats content_id: tyutchev-night-sea" in result.stdout
+    assert "target manifest repeats content_id: tyutchev-night-sea" in _normalized_stdout(result)
     assert not output_path.exists()
 
 
@@ -236,7 +245,7 @@ def test_strict_cli_rejects_manifest_scalar_coercion(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 2
-    assert "manifest.source_snapshot must be a nonblank string" in result.stdout
+    assert "manifest.source_snapshot must be a nonblank string" in _normalized_stdout(result)
     assert not output_path.exists()
 
 
