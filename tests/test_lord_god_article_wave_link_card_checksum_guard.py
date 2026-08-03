@@ -59,12 +59,8 @@ def test_repeated_og_read_checksum_drift_blocks_source_audit(
 
 
 def test_active_entrypoint_uses_parsed_link_card_v3_orchestrator() -> None:
-    entrypoint = (
-        ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py"
-    ).read_text(encoding="utf-8")
-    orchestrator = (
-        ROOT / "scripts" / "lord_god_article_wave_v3" / "link_cards_parsed.py"
-    ).read_text(encoding="utf-8")
+    entrypoint = (ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py").read_text(encoding="utf-8")
+    orchestrator = (ROOT / "scripts" / "lord_god_article_wave_v3" / "link_cards_parsed.py").read_text(encoding="utf-8")
 
     assert "link_cards_parsed as link_cards_module" in entrypoint
     assert "link_cards_module.guarded_main()" in entrypoint
