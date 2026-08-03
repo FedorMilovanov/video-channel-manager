@@ -28,12 +28,8 @@ def test_photo_v4_builds_new_ids_and_future_schedule() -> None:
     assert len({item["guid"] for item in policy["operations"]}) == 10
 
     for ordinal, operation in enumerate(policy["operations"], start=1):
-        assert operation["operation_id"].startswith(
-            f"{photo.PHOTO_DECISION_SET_ID}-{ordinal:02d}-"
-        )
-        assert operation["source_operation_id"].startswith(
-            "lord-god-article-wave-v3-202608-"
-        )
+        assert operation["operation_id"].startswith(f"{photo.PHOTO_DECISION_SET_ID}-{ordinal:02d}-")
+        assert operation["source_operation_id"].startswith("lord-god-article-wave-v3-202608-")
         assert operation["guid"].startswith(f"lgp4-{ordinal:02d}-")
         assert len(operation["guid"]) < 40
         publish_at = datetime.fromisoformat(operation["publish_at"])
@@ -67,19 +63,13 @@ def test_photo_v4_fresh_journal_has_no_imported_operations() -> None:
 
     assert journal["decision_set_id"] == photo.PHOTO_DECISION_SET_ID
     assert journal["policy_sha256"] == policy["policy_sha256"]
-    assert journal["execution_contract_sha256"] == policy[
-        "execution_contract_sha256"
-    ]
+    assert journal["execution_contract_sha256"] == policy["execution_contract_sha256"]
     assert journal["operations"] == {}
 
 
 def test_active_runner_has_no_parsed_link_call() -> None:
-    runner = (ROOT / "scripts" / "run-lord-god-article-wave.ps1").read_text(
-        encoding="utf-8"
-    )
-    entrypoint = (
-        ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py"
-    ).read_text(encoding="utf-8")
+    runner = (ROOT / "scripts" / "run-lord-god-article-wave.ps1").read_text(encoding="utf-8")
+    entrypoint = (ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py").read_text(encoding="utf-8")
 
     assert "wall.parseAttachedLink" not in runner
     assert "photo_wave_v4 as photo_wave_module" in entrypoint
