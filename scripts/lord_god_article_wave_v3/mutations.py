@@ -119,12 +119,13 @@ def _photo_has_expected_dimensions(photo: dict[str, Any]) -> bool:
     if isinstance(orig, dict) and orig.get("width") == JPEG_WIDTH and orig.get("height") == JPEG_HEIGHT:
         return True
     sizes = photo.get("sizes")
+    if not isinstance(sizes, list):
+        return False
     return any(
         isinstance(item, dict)
         and item.get("width") == JPEG_WIDTH
         and item.get("height") == JPEG_HEIGHT
         for item in sizes
-        if isinstance(sizes, list)
     )
 
 
@@ -186,8 +187,6 @@ def recover_saved_photo_token(
 def saved_photo_token(
     mutation_client: VkApiClient,
     upload_payload: dict[str, Any],
-    *,
-    current_user_id: int,
 ) -> str:
     response = mutation_client._call(
         "photos.saveWallPhoto",
@@ -209,8 +208,13 @@ def saved_photo_token(
     if not token:
         raise RuntimeError("photos.saveWallPhoto returned no usable photo token")
     owner_id = photos[0].get("owner_id")
-    if owner_id not in {OWNER_ID, current_user_id}:
-        raise RuntimeError(f"Saved wall photo has unexpected owner: {owner_id!r}")
+    if owner_id != OWNER_ID:
+        get_current_user = getattr(mutation_client, "get_current_user", None)
+        current_user_id = (
+            get_current_user().user_id if callable(get_current_user) else None
+        )
+        if owner_id != current_user_id:
+            raise RuntimeError(f"Saved wall photo has unexpected owner: {owner_id!r}")
     return token
 
 
@@ -232,8 +236,9 @@ def prepare_photo_token(
     if stage in RESUMABLE_WITH_PHOTO and existing_token:
         return existing_token
 
-    current_user_id = read_client.get_current_user().user_id
-    if unexpected_saved_photo_owner(entry) is not None:
+    recover_owner = unexpected_saved_photo_owner(entry)
+    if recover_owner is not None:
+        current_user_id = read_client.get_current_user().user_id
         token = recover_saved_photo_token(
             read_client,
             entry,
@@ -313,11 +318,7 @@ def prepare_photo_token(
         "photo_save_intent",
     )
     try:
-        token = saved_photo_token(
-            mutation_client,
-            upload_payload,
-            current_user_id=current_user_id,
-        )
+        token = saved_photo_token(mutation_client, upload_payload)
     except VkApiError as exc:
         stage = (
             "photo_save_rejected"
