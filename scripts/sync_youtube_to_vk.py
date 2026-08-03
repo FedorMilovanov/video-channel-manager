@@ -352,7 +352,12 @@ def _media_path_for_stage(
     cache_dir: Path,
 ) -> Path | None:
     stage = UploadStage(str(record["stage"]))
-    if stage not in {UploadStage.PLANNED, UploadStage.MEDIA_VERIFIED, UploadStage.RESERVED}:
+    if stage not in {
+        UploadStage.PLANNED,
+        UploadStage.MEDIA_VERIFIED,
+        UploadStage.RESERVATION_INTENT_COMMITTED,
+        UploadStage.RESERVED,
+    }:
         return None
     media = record.get("media")
     if isinstance(media, dict):
