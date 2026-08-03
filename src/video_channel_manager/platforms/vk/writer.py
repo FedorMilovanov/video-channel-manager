@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import json
 import time
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, TypeAlias
 
@@ -10,12 +11,18 @@ import httpx
 
 from video_channel_manager.platforms.http import HttpClientOwner
 from video_channel_manager.platforms.vk.store import VkTokenStore
+from video_channel_manager.platforms.vk.upload_lifecycle import (
+    VkUploadReadiness,
+    VkUploadReadinessAssessment,
+    assess_vk_upload_readiness,
+)
 
 _API_BASE_URL = "https://api.vk.com/method"
 _RETRYABLE_API_CODES = frozenset({6, 9, 10, 29})
 _RETRYABLE_HTTP_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 ApiParam: TypeAlias = str | int | bool
 ApiParams: TypeAlias = dict[str, ApiParam]
+UploadObservationCallback: TypeAlias = Callable[[dict[str, Any] | None, VkUploadReadinessAssessment | None], None]
 
 
 class VkWriteError(RuntimeError):
@@ -31,6 +38,7 @@ class VkUploadTicket:
     owner_id: int
     video_id: int
     upload_url: str
+    reservation_response: dict[str, Any] | None = field(default=None, repr=False, compare=False)
 
     @property
     def remote_id(self) -> str:
@@ -253,7 +261,12 @@ class VkVideoWriter(HttpClientOwner):
             )
         if video_id <= 0 or not upload_url or not upload_url.lower().startswith(("https://", "http://")):
             raise VkWriteError("video.save returned an invalid upload ticket.", method="video.save")
-        return VkUploadTicket(owner_id=owner_id, video_id=video_id, upload_url=upload_url)
+        return VkUploadTicket(
+            owner_id=owner_id,
+            video_id=video_id,
+            upload_url=upload_url,
+            reservation_response=dict(response),
+        )
 
     def upload_file(self, ticket: VkUploadTicket, path: Path) -> dict[str, Any]:
         if ticket.video_id <= 0 or ticket.owner_id == 0 or not ticket.upload_url:
@@ -325,25 +338,48 @@ class VkVideoWriter(HttpClientOwner):
         self,
         ticket: VkUploadTicket,
         *,
+        readiness: VkUploadReadiness | None = None,
         timeout_seconds: int = 3600,
         poll_seconds: float = 10.0,
+        on_observation: UploadObservationCallback | None = None,
     ) -> dict[str, Any]:
         if timeout_seconds <= 0 or poll_seconds <= 0:
             raise ValueError("timeout_seconds and poll_seconds must be positive")
         deadline = time.monotonic() + timeout_seconds
         last_item: dict[str, Any] | None = None
+        last_assessment: VkUploadReadinessAssessment | None = None
         while time.monotonic() < deadline:
             item = self.read_video(owner_id=ticket.owner_id, video_id=ticket.video_id)
+            assessment: VkUploadReadinessAssessment | None = None
             if item is not None:
                 last_item = item
-                processing = bool(item.get("processing")) or bool(item.get("converting"))
-                if not processing:
-                    return item
+                if readiness is None:
+                    processing = bool(item.get("processing")) or bool(item.get("converting"))
+                    if on_observation is not None:
+                        on_observation(item, None)
+                    if not processing:
+                        return item
+                else:
+                    assessment = assess_vk_upload_readiness(
+                        item,
+                        expected_owner_id=ticket.owner_id,
+                        expected_video_id=ticket.video_id,
+                        readiness=readiness,
+                    )
+                    last_assessment = assessment
+                    if on_observation is not None:
+                        on_observation(item, assessment)
+                    if assessment.ready:
+                        return item
+            elif on_observation is not None:
+                on_observation(None, None)
             remaining = deadline - time.monotonic()
             if remaining > 0:
                 time.sleep(min(poll_seconds, remaining))
         state = json.dumps(last_item, ensure_ascii=False)[:500] if last_item else "not visible"
+        reasons = f"; readiness reasons: {last_assessment.reasons}" if last_assessment is not None else ""
         raise VkWriteError(
-            f"Uploaded video {ticket.remote_id} did not finish processing within {timeout_seconds}s; last state: {state}",
+            f"Uploaded video {ticket.remote_id} did not become ready within {timeout_seconds}s; "
+            f"last state: {state}{reasons}",
             method="video.get",
         )
