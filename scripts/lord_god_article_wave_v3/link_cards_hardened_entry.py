@@ -258,22 +258,41 @@ def verify_strict_postflight(
     output_dir: Path,
     result: dict[str, Any],
 ) -> dict[str, Any]:
-    published, postponed = wall_snapshot(read_client)
-    final = strict_preflight(
-        policy,
-        contract,
-        expectations,
-        published,
-        postponed,
-        journal,
-        minimum_future_seconds=0,
-    )
     postflight_path = (
         output_dir / "link-card-canary-strict-postflight.json"
         if mode == "canary"
         else output_dir / "link-card-strict-postflight.json"
     )
-    write_json(postflight_path, final)
+    result_path = output_dir / (
+        "link-card-canary-result.json"
+        if mode == "canary"
+        else "link-card-result.json"
+    )
+    try:
+        published, postponed = wall_snapshot(read_client)
+        final = strict_preflight(
+            policy,
+            contract,
+            expectations,
+            published,
+            postponed,
+            journal,
+            minimum_future_seconds=0,
+        )
+        write_json(postflight_path, final)
+    except Exception as exc:
+        result.update(
+            {
+                "status": "strict_postflight_unknown",
+                "description_match_mode": DESCRIPTION_MATCH_MODE,
+                "strict_postflight": str(postflight_path),
+                "strict_postflight_error": f"{type(exc).__name__}: {exc}",
+            }
+        )
+        write_json(result_path, result)
+        raise RuntimeError(
+            f"{mode.capitalize()} strict link-card postflight outcome is unknown"
+        ) from exc
 
     expected_applied = 1 if mode == "canary" else 10
     expected_ready = 9 if mode == "canary" else 0
@@ -281,11 +300,6 @@ def verify_strict_postflight(
         final["conflicts"] == 0
         and final["already_applied"] == expected_applied
         and final["ready"] == expected_ready
-    )
-    result_path = output_dir / (
-        "link-card-canary-result.json"
-        if mode == "canary"
-        else "link-card-result.json"
     )
     if not accepted:
         result.update(
