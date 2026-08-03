@@ -197,10 +197,12 @@ def test_link_card_source_does_not_contain_vk_photo_mutations_or_jpeg_conversion
     assert '"vk_photo_api_calls": 0' in source
 
 
-def test_entrypoint_routes_runtime_to_link_cards() -> None:
+def test_entrypoint_routes_runtime_to_parsed_link_cards_v3() -> None:
     entrypoint = (ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py").read_text(encoding="utf-8")
     runner = (ROOT / "scripts" / "run-lord-god-article-wave.ps1").read_text(encoding="utf-8")
 
+    assert "link_cards_parsed as link_cards_module" in entrypoint
     assert "link_cards_module.guarded_main()" in entrypoint
-    assert "режим link-карточек без загрузки фото" in runner
-    assert "одна link-карточка без загрузки фото" in runner
+    assert "10 VK-превью через wall.parseAttachedLink" in runner
+    assert "одна parsed link-карточка" in runner
+    assert "без загрузки фото и без wall.post" in runner

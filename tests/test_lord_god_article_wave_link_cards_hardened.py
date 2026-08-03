@@ -425,15 +425,16 @@ def test_dimension_audit_requires_ten_valid_1200x630_webp_images(
     assert all(row["checks"]["og_image_dimensions_verified"] for row in audited_rows)
 
 
-def test_active_entrypoint_and_runner_require_hardened_contract() -> None:
+def test_active_entrypoint_uses_parsed_v3_and_retains_hardened_audit_dependencies() -> None:
     entrypoint = (ROOT / "scripts" / "schedule_lord_god_article_wave_v3.py").read_text(encoding="utf-8")
     runner = (ROOT / "scripts" / "run-lord-god-article-wave.ps1").read_text(encoding="utf-8")
     source = Path(hardened.__file__).read_text(encoding="utf-8")
 
-    assert "link_cards_hardened_entry as link_cards_module" in entrypoint
+    assert "link_cards_parsed as link_cards_module" in entrypoint
     assert "link_cards_module.guarded_main()" in entrypoint
     assert "link_cards_hardened.py" in runner
     assert "link-card-delivery-contract.json" in runner
+    assert "delivery-contract-v3.json" in runner
     assert '"photos.getWallUploadServer"' not in source
     assert '"photos.saveWallPhoto"' not in source
     assert "convert_webp_to_jpeg" not in source
