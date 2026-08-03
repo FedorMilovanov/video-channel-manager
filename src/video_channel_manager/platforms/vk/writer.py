@@ -8,6 +8,7 @@ from typing import Any, TypeAlias
 
 import httpx
 
+from video_channel_manager.platforms.http import HttpClientOwner
 from video_channel_manager.platforms.vk.store import VkTokenStore
 
 _API_BASE_URL = "https://api.vk.com/method"
@@ -36,7 +37,7 @@ class VkUploadTicket:
         return f"{self.owner_id}_{self.video_id}"
 
 
-class VkVideoWriter:
+class VkVideoWriter(HttpClientOwner):
     """Narrow guarded writer for VK video uploads and video-album operations."""
 
     def __init__(
@@ -52,7 +53,11 @@ class VkVideoWriter:
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
         self.api_version = api_version
-        self._http_client = http_client
+        self._initialize_http_client(
+            http_client,
+            timeout=60.0,
+            follow_redirects=True,
+        )
         self.api_base_url = api_base_url.rstrip("/")
         self.max_attempts = max(1, max_attempts)
 
@@ -108,10 +113,8 @@ class VkVideoWriter:
         raise last_error
 
     def _call_once(self, method: str, request_data: dict[str, str]) -> object:
-        client = self._http_client or httpx.Client(timeout=60.0, follow_redirects=True)
-        close_client = self._http_client is None
         try:
-            response = client.post(
+            response = self._http_client.post(
                 f"{self.api_base_url}/{method}",
                 data=request_data,
                 headers={"User-Agent": "video-channel-manager/0.1"},
@@ -143,9 +146,6 @@ class VkVideoWriter:
             raise VkWriteError(f"VK API request failed in {method}: {exc}", method=method, retryable=True) from exc
         except ValueError as exc:
             raise VkWriteError(f"VK API returned invalid JSON in {method}.", method=method) from exc
-        finally:
-            if close_client:
-                client.close()
 
     def create_album(self, *, community_id: int, title: str) -> int:
         title = title.strip()
@@ -262,17 +262,13 @@ class VkVideoWriter:
             raise FileNotFoundError(path)
         if path.stat().st_size <= 0:
             raise ValueError(f"VK upload file is empty: {path}")
-        client = self._http_client or httpx.Client(
-            timeout=httpx.Timeout(connect=60.0, read=7200.0, write=7200.0, pool=60.0),
-            follow_redirects=True,
-        )
-        close_client = self._http_client is None
         try:
             with path.open("rb") as stream:
-                response = client.post(
+                response = self._http_client.post(
                     ticket.upload_url,
                     files={"video_file": (path.name, stream, "video/mp4")},
                     headers={"User-Agent": "video-channel-manager/0.1"},
+                    timeout=httpx.Timeout(connect=60.0, read=7200.0, write=7200.0, pool=60.0),
                 )
             if response.status_code >= 400:
                 raise VkWriteError(
@@ -299,9 +295,6 @@ class VkVideoWriter:
             raise VkWriteError(f"VK video upload failed: {exc}", method="video.upload", retryable=True) from exc
         except json.JSONDecodeError as exc:
             raise VkWriteError("VK upload server returned invalid JSON.", method="video.upload") from exc
-        finally:
-            if close_client:
-                client.close()
 
     def read_video(self, *, owner_id: int, video_id: int) -> dict[str, Any] | None:
         if owner_id == 0 or video_id <= 0:
