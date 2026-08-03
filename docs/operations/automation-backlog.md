@@ -12,10 +12,11 @@ This backlog is subordinate to [`master-audit-2026-08-04.md`](master-audit-2026-
 - #36 — universal upload/wall separation and postponed publishing;
 - #37 — exact approved Shorts wall-cleanup scope;
 - #38 — VK Shorts upload modes and final type/player behavior;
-- #64 — master reliability roadmap after PR #61–63;
-- #65 — Wave 1 journaled upload state machine and recovery.
+- #64 — master reliability roadmap;
+- #65 — completed Wave 1 upload state machine and recovery;
+- #66 — merged Wave 1 implementation.
 
-Issue #33 remains blocked until #31, #32/#38, and #36 have no silent unknown outcomes. Live queue retransmission is additionally blocked until the required Wave 1 lifecycle is merged.
+Issue #33 remains blocked until #31, #32/#38, and #36 have no silent unknown outcomes. Wave 1 now prevents blind reservation/upload retries, but live queue continuation remains blocked until exact historical journal reconciliation.
 
 ## Wave 0 — canonical state
 
@@ -33,20 +34,25 @@ Wave 0 is complete. It performed no provider writes.
 
 ## Wave 1 — upload state machine and recovery
 
-Tracked by issue #65.
+Completed by PR #66, merge `56da03247f60ec9d25f1646fb9ccdfbb651aff9c`.
 
-- [ ] Persist reservation intent before `video.save`.
-- [ ] Persist exact upload ticket immediately after reservation.
-- [ ] Add explicit `unknown_requires_reconciliation` behavior.
-- [ ] Require verified stage or full exact reconciliation before reuse.
-- [ ] Define duration/type/playability/source readiness contract.
-- [ ] Add crash fault-injection tests after every state boundary.
-- [ ] Prove replay cannot create a second reservation.
-- [ ] Keep orphan cleanup out of scope and reviewed separately.
+- [x] Persist reservation intent before `video.save`.
+- [x] Persist a separate dispatch marker so pre-dispatch restart and ambiguous dispatch are distinguishable.
+- [x] Persist exact upload ticket immediately after reservation.
+- [x] Add explicit `unknown_requires_reconciliation` behavior.
+- [x] Require verified stage or full exact reconciliation before reuse.
+- [x] Define identity/title/duration/type/processing/playability readiness contract.
+- [x] Add crash fault-injection tests after every state boundary.
+- [x] Prove verified replay is a no-op and ambiguous boundaries cannot create a second reservation or upload.
+- [x] Migrate legacy upload records fail closed.
+- [x] Keep orphan cleanup, live queue reconciliation, wall work, and provider-protocol invention out of scope.
+- [x] Pass exact-head CI on Python 3.11, 3.12, and 3.13.
+
+Wave 1 is complete. It performed no VK or YouTube writes.
 
 ## Wave 2 — fail-closed content and project pipeline
 
-Tracked by issue #64 until split into a focused implementation issue.
+Next engineering wave. It must be split into one focused issue and one isolated PR from the Wave 1 merge baseline.
 
 - [ ] Run full per-record validation inside every load/preview/plan path.
 - [ ] Remove implicit project defaults from reusable parsing.
@@ -54,6 +60,7 @@ Tracked by issue #64 until split into a focused implementation issue.
 - [ ] Make base sync project-aware or internal-only.
 - [ ] Keep exactly one supported public sync entrypoint.
 - [ ] Add cross-project and direct-bypass behavioral tests.
+- [ ] Preserve the Wave 1 lifecycle and no-live-retransmission boundary.
 
 ## Wave 3 — transport, retries, and limiter
 
@@ -97,7 +104,7 @@ Tracked by issue #64 until split into a focused implementation issue.
 ## Wave 7 — risk-based tests
 
 - [ ] Module-specific coverage gates for clients, writers, CLI, and executors.
-- [ ] Fault matrix for intent, acceptance, lost response, delayed visibility, journal write, and restart.
+- [ ] Preserve and extend the Wave 1 fault matrix for intent, acceptance, lost response, delayed visibility, journal write, and restart.
 - [ ] Property tests for idempotency and project isolation.
 - [ ] Windows wrapper integration tests.
 - [ ] Test-order/repeat stability where useful.
@@ -136,6 +143,6 @@ A code wave is complete only when:
 - the exact issue scope and non-goals are preserved;
 - no unrelated provider mutation is included;
 - exact-head CI is green on Python 3.11, 3.12, and 3.13;
-- every ambiguous provider outcome remains fail-closed;
+- every ambiguous provider outcome remains fail closed;
 - `current-state.md`, audit register, changelog, and issue state are synchronized;
 - live canary work, when authorized, has exact before/after evidence and a safe recovery decision.
