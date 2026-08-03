@@ -28,9 +28,12 @@ $Script = Join-Path $PSScriptRoot "schedule_lord_god_article_wave_v3.py"
 $Package = Join-Path $PSScriptRoot "lord_god_article_wave_v3"
 $Policy = Join-Path $Repo "content\policies\lord-god-article-wave-v3-202608.json"
 $SourceContract = Join-Path $Repo "content\policies\lord-god-article-wave-v3-source-contract.json"
-$DeliveryContract = Join-Path $Repo "content\policies\lord-god-article-wave-v3-link-card-delivery-contract.json"
-$LinkCardCore = Join-Path $Package "link_cards_hardened.py"
-$LinkCardEntrypoint = Join-Path $Package "link_cards_hardened_entry.py"
+$DeliveryContract = Join-Path $Repo "content\policies\lord-god-article-wave-v3-link-card-delivery-contract-v3.json"
+$ParsedEntrypoint = Join-Path $Package "link_cards_parsed.py"
+$ParsedContract = Join-Path $Package "parsed_link_contract.py"
+$ParsedPreview = Join-Path $Package "parsed_link_preview.py"
+$ParsedState = Join-Path $Package "parsed_link_state.py"
+$ParsedMutations = Join-Path $Package "parsed_link_mutations.py"
 
 if (-not (Test-Path -LiteralPath $Script)) {
     throw "Не найден исполнитель: $Script"
@@ -45,13 +48,18 @@ if (-not (Test-Path -LiteralPath $SourceContract)) {
     throw "Не найден контракт источников: $SourceContract"
 }
 if (-not (Test-Path -LiteralPath $DeliveryContract)) {
-    throw "Не найден контракт доставки link-карточек: $DeliveryContract"
+    throw "Не найден parsed link-card delivery-contract v3: $DeliveryContract"
 }
-if (-not (Test-Path -LiteralPath $LinkCardCore)) {
-    throw "Не найден усиленный core link-карточек: $LinkCardCore"
-}
-if (-not (Test-Path -LiteralPath $LinkCardEntrypoint)) {
-    throw "Не найден явный orchestrator link-карточек: $LinkCardEntrypoint"
+foreach ($RequiredModule in @(
+    $ParsedEntrypoint,
+    $ParsedContract,
+    $ParsedPreview,
+    $ParsedState,
+    $ParsedMutations
+)) {
+    if (-not (Test-Path -LiteralPath $RequiredModule)) {
+        throw "Не найден модуль parsed link-card исполнителя: $RequiredModule"
+    }
 }
 
 & $Python -m compileall -q $Package $Script
@@ -60,10 +68,10 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 if ($Mode -eq "Plan") {
-    Write-Host "Господь Бог — Сила Моя: read-only аудит 40 ресурсов и 10 отложенных постов; усиленный режим link-карточек без загрузки фото." -ForegroundColor Cyan
+    Write-Host "Господь Бог — Сила Моя: read-only аудит 40 ресурсов и 10 VK-превью через wall.parseAttachedLink; без загрузки фото и без wall.post." -ForegroundColor Cyan
     & $Python $Script --repo $Repo
     if ($LASTEXITCODE -ne 0) {
-        throw "Усиленная проверка очереди link-карточек завершилась ошибкой. Запись в VK не выполнялась."
+        throw "Parsed link-card Plan завершился ошибкой. wall.post не выполнялся."
     }
     exit 0
 }
@@ -75,11 +83,11 @@ if (-not $Execute) {
 $env:VCM_ALLOW_WALL_POSTS = "1"
 try {
     if ($Mode -eq "Canary") {
-        Write-Host "Господь Бог — Сила Моя: одна link-карточка без загрузки фото; проверяются заголовок, описание, превью и отсутствие лишних вложений." -ForegroundColor Yellow
+        Write-Host "Господь Бог — Сила Моя: одна parsed link-карточка; wall.parseAttachedLink перед wall.post, без отдельной фотографии." -ForegroundColor Yellow
         & $Python $Script --repo $Repo --canary
     }
     elseif ($Mode -eq "Apply") {
-        Write-Host "Господь Бог — Сила Моя: остальные девять link-карточек без загрузки фото; усиленный postflight." -ForegroundColor Cyan
+        Write-Host "Господь Бог — Сила Моя: остальные девять parsed link-карточек; без загрузки отдельных фотографий." -ForegroundColor Cyan
         & $Python $Script --repo $Repo --execute
     }
     else {
@@ -87,7 +95,7 @@ try {
     }
 
     if ($LASTEXITCODE -ne 0) {
-        throw "Постановка усиленных link-карточек остановилась. Повторный запуск разрешён только после проверки нового журнала v2."
+        throw "Постановка parsed link-карточек остановилась. Повторный запуск разрешён только после проверки journal v3."
     }
 }
 finally {
