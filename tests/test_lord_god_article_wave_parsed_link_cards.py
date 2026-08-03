@@ -240,7 +240,9 @@ def test_submit_parses_then_posts_with_link_title_and_link_photo_id(
     assert post_params["link_title"] == metadata["title"]
     assert post_params["link_photo_id"] == "-60805374_991"
     assert post_params["publish_date"] == operation["publish_date"]
-    assert all(not method.startswith("photos.") for method, _ in read_client.calls)
+    assert all(
+        not method.startswith("photos.") for method, _ in read_client.calls
+    )
     assert all(not method.startswith("photos.") for method, _ in mutation_client.calls)
     entry = journal["operations"][operation["operation_id"]]
     assert entry["stage"] == "verified"
