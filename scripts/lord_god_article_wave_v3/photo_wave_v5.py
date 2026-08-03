@@ -7,7 +7,7 @@ from typing import Any
 
 from . import mutations
 from . import photo_wave_v4 as base
-from .common import canonical_sha, canonical_text, normalize_url
+from .common import MIN_FUTURE_SECONDS, canonical_sha, canonical_text, normalize_url
 from .wall import post_reference
 
 PHOTO_DECISION_SET_ID = "lord-god-article-photo-wave-v5-202608"
@@ -214,7 +214,7 @@ def preflight(
     postponed: list[dict[str, Any]],
     journal: dict[str, Any],
     *,
-    minimum_future_seconds: int = base.MIN_FUTURE_SECONDS,
+    minimum_future_seconds: int = MIN_FUTURE_SECONDS,
 ) -> dict[str, Any]:
     """Use the posted group photo identity after VK rehosts an uploaded photo."""
 
