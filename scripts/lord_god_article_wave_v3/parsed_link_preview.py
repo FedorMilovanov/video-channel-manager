@@ -21,6 +21,12 @@ def parse_request_json(article_url: object) -> str:
     )
 
 
+def _attachment_type(value: object) -> str:
+    if not isinstance(value, dict):
+        return "<invalid>"
+    return str(value.get("type") or "<missing>").strip()
+
+
 def parse_link_response(
     response: object,
     *,
@@ -30,25 +36,44 @@ def parse_link_response(
     if not isinstance(response, dict):
         raise RuntimeError("wall.parseAttachedLink returned a non-object response")
     data = response.get("data")
-    if not isinstance(data, list) or len(data) != 1:
-        raise RuntimeError(
-            "wall.parseAttachedLink must return exactly one attachment for one URL"
-        )
-    attachment = data[0]
-    if not isinstance(attachment, dict) or attachment.get("type") != "link":
-        raise RuntimeError("wall.parseAttachedLink returned no single link attachment")
-    link = attachment.get("link")
-    if not isinstance(link, dict):
-        raise RuntimeError("wall.parseAttachedLink returned no link object")
+    if not isinstance(data, list):
+        raise RuntimeError("wall.parseAttachedLink returned no attachment array")
 
     expected_url = normalize_url(article_url)
-    parsed_url = normalize_url(link.get("url") or link.get("target_url"))
+    link_attachments: list[tuple[dict[str, Any], dict[str, Any], str]] = []
+    matching_links: list[tuple[dict[str, Any], dict[str, Any], str]] = []
+    for attachment in data:
+        if not isinstance(attachment, dict) or attachment.get("type") != "link":
+            continue
+        link = attachment.get("link")
+        if not isinstance(link, dict):
+            continue
+        parsed_url = normalize_url(link.get("url") or link.get("target_url"))
+        candidate = (attachment, link, parsed_url)
+        link_attachments.append(candidate)
+        if parsed_url == expected_url:
+            matching_links.append(candidate)
+
+    if not matching_links:
+        if len(link_attachments) == 1:
+            parsed_url = link_attachments[0][2]
+            raise RuntimeError(
+                f"Parsed link URL mismatch: {parsed_url!r}, expected {expected_url!r}"
+            )
+        attachment_types = [_attachment_type(item) for item in data]
+        link_urls = [item[2] for item in link_attachments]
+        raise RuntimeError(
+            "wall.parseAttachedLink returned no matching link attachment; "
+            f"attachment_types={attachment_types!r}; link_urls={link_urls!r}"
+        )
+    if len(matching_links) != 1:
+        raise RuntimeError(
+            "wall.parseAttachedLink returned multiple matching link attachments"
+        )
+
+    _, link, parsed_url = matching_links[0]
     title = canonical_text(link.get("title"))
     description = canonical_text(link.get("description"))
-    if parsed_url != expected_url:
-        raise RuntimeError(
-            f"Parsed link URL mismatch: {parsed_url!r}, expected {expected_url!r}"
-        )
     if title != canonical_text(expected_metadata["title"]):
         raise RuntimeError("Parsed link title does not match audited OG title")
     if not strict.strict_description_matches(
@@ -67,8 +92,21 @@ def parse_link_response(
     if not isinstance(photo_id, int) or photo_id <= 0:
         raise RuntimeError("Parsed link preview photo has no valid id")
 
+    ignored_attachment_types = [
+        _attachment_type(item)
+        for item in data
+        if not (
+            isinstance(item, dict)
+            and item.get("type") == "link"
+            and isinstance(item.get("link"), dict)
+            and normalize_url(
+                item["link"].get("url") or item["link"].get("target_url")
+            )
+            == expected_url
+        )
+    ]
     return {
-        "article_url": expected_url,
+        "article_url": parsed_url,
         "title": title,
         "description": description,
         "photo_owner_id": owner_id,
@@ -76,6 +114,8 @@ def parse_link_response(
         "link_photo_id": f"{owner_id}_{photo_id}",
         "attachment_type": "link",
         "has_preview_photo": True,
+        "response_attachment_count": len(data),
+        "ignored_attachment_types": ignored_attachment_types,
     }
 
 
@@ -126,6 +166,12 @@ def audit_parsed_link_cards(
                     "preview_photo_id": parsed["photo_id"],
                     "attachment_type": parsed["attachment_type"],
                     "has_preview_photo": parsed["has_preview_photo"],
+                    "response_attachment_count": parsed[
+                        "response_attachment_count"
+                    ],
+                    "ignored_attachment_types": parsed[
+                        "ignored_attachment_types"
+                    ],
                 }
             )
         except Exception as exc:
