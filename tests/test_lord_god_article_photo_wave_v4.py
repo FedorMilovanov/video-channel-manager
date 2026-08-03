@@ -25,6 +25,7 @@ def test_photo_v4_builds_new_ids_and_future_schedule() -> None:
     assert len(policy["operations"]) == 10
     assert policy["summary"]["first_publish_at"] == "2026-08-04T14:00:00+03:00"
     assert policy["summary"]["last_publish_at"] == "2026-08-13T14:00:00+03:00"
+    assert len({item["guid"] for item in policy["operations"]}) == 10
 
     for ordinal, operation in enumerate(policy["operations"], start=1):
         assert operation["operation_id"].startswith(
@@ -33,6 +34,8 @@ def test_photo_v4_builds_new_ids_and_future_schedule() -> None:
         assert operation["source_operation_id"].startswith(
             "lord-god-article-wave-v3-202608-"
         )
+        assert operation["guid"].startswith(f"lgp4-{ordinal:02d}-")
+        assert len(operation["guid"]) < 40
         publish_at = datetime.fromisoformat(operation["publish_at"])
         assert publish_at.day == ordinal + 3
         assert publish_at.hour == 14
