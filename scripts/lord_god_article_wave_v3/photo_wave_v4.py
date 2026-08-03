@@ -42,6 +42,7 @@ def build_photo_policy(repo: Path) -> dict[str, Any]:
     policy = copy.deepcopy(base)
     base_policy_sha = str(base["policy_sha256"])
     source_contract_sha = str(base["source_contract_sha256"])
+    guid_seed = base_policy_sha.removeprefix("sha256:")[:16]
 
     policy["schema_name"] = "video-manager.vk-lord-god-article-photo-wave-policy"
     policy["schema_version"] = 4
@@ -57,7 +58,10 @@ def build_photo_policy(repo: Path) -> dict[str, Any]:
         operation["operation_id"] = (
             f"{PHOTO_DECISION_SET_ID}-{ordinal:02d}-{slug}"
         )
-        operation["publish_date"] = int(operation["publish_date"]) + SCHEDULE_SHIFT_SECONDS
+        operation["guid"] = f"lgp4-{ordinal:02d}-{guid_seed}"
+        operation["publish_date"] = (
+            int(operation["publish_date"]) + SCHEDULE_SHIFT_SECONDS
+        )
         operation["publish_at"] = datetime.fromtimestamp(
             int(operation["publish_date"]),
             tz=MOSCOW,
@@ -79,6 +83,7 @@ def build_photo_policy(repo: Path) -> dict[str, Any]:
             {
                 "operation_id": item["operation_id"],
                 "source_operation_id": item["source_operation_id"],
+                "guid": item["guid"],
                 "article_url": item["url"],
                 "image_url": item["image_url"],
                 "message_sha256": item["message_sha256"],
@@ -106,7 +111,9 @@ def fresh_photo_journal(policy: dict[str, Any]) -> dict[str, Any]:
 
 def load_photo_journal(path: Path, policy: dict[str, Any]) -> dict[str, Any]:
     journal = read_json(path, fresh_photo_journal(policy))
-    if not isinstance(journal, dict) or not isinstance(journal.get("operations"), dict):
+    if not isinstance(journal, dict) or not isinstance(
+        journal.get("operations"), dict
+    ):
         raise RuntimeError("Invalid photo-wave v4 journal")
     expected = fresh_photo_journal(policy)
     for key in (
@@ -181,7 +188,9 @@ def execute_scope(
         ):
             locked_published, locked_postponed = wall_snapshot(read_client)
             locked = preflight(policy, locked_published, locked_postponed, journal)
-            if locked["conflicts"] or state_fingerprint(locked) != state_fingerprint(report):
+            if locked["conflicts"] or state_fingerprint(locked) != state_fingerprint(
+                report
+            ):
                 raise RuntimeError("Locked preflight differs from reviewed preflight")
             locked_states = {
                 item["operation_id"]: item["state"] for item in locked["states"]
@@ -368,7 +377,10 @@ def run(repo: Path, *, mode: str) -> int:
     }
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     if report["conflicts"]:
-        raise RuntimeError("Photo article queue is blocked: " + "; ".join(report["global_conflicts"]))
+        raise RuntimeError(
+            "Photo article queue is blocked: "
+            + "; ".join(report["global_conflicts"])
+        )
 
     if mode == "plan":
         print(
