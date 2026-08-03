@@ -46,19 +46,12 @@ def reconcile(repo: Path) -> dict[str, Any]:
         and isinstance(entry.get("post_id"), int)
     ]
     if len(candidates) != 1:
-        raise RuntimeError(
-            "Expected exactly one accepted-unverified canary; "
-            f"found={len(candidates)}"
-        )
+        raise RuntimeError(f"Expected exactly one accepted-unverified canary; found={len(candidates)}")
     operation_id, entry = candidates[0]
     if "Accepted post has a different wall photo" not in str(entry.get("error") or ""):
         raise RuntimeError("Accepted-unverified journal reason is not the known VK photo rehost")
 
-    policy_operations = {
-        str(item["operation_id"]): item
-        for item in policy["operations"]
-        if isinstance(item, dict)
-    }
+    policy_operations = {str(item["operation_id"]): item for item in policy["operations"] if isinstance(item, dict)}
     operation = policy_operations.get(str(operation_id))
     if not isinstance(operation, dict) or int(operation.get("ordinal") or 0) != 1:
         raise RuntimeError("Accepted-unverified operation is not the v5 canary")
@@ -72,16 +65,9 @@ def reconcile(repo: Path) -> dict[str, Any]:
     )
     published, postponed = wall_snapshot(client)
     post_id = int(entry["post_id"])
-    raw_matches = [
-        post
-        for post in postponed
-        if post.get("owner_id") == OWNER_ID and post.get("id") == post_id
-    ]
+    raw_matches = [post for post in postponed if post.get("owner_id") == OWNER_ID and post.get("id") == post_id]
     if len(raw_matches) != 1:
-        raise RuntimeError(
-            "Expected exactly one postponed post for accepted post_id; "
-            f"found={len(raw_matches)}"
-        )
+        raise RuntimeError(f"Expected exactly one postponed post for accepted post_id; found={len(raw_matches)}")
 
     reference = post_reference(raw_matches[0], "postponed")
     if not reference_matches_group_rehost(operation, reference):
