@@ -1,9 +1,9 @@
 # Current operational state
 
 Updated: 2026-08-04  
-Verified code baseline: `main@cf44f64ab9333f512a054a283005fa262f043dc3`  
+Verified code baseline: `main@56da03247f60ec9d25f1646fb9ccdfbb651aff9c`  
 Wave 0 status: `completed`  
-Wave 1 status: `PR #66 IN REVIEW — NO LIVE PROVIDER WRITES`  
+Wave 1 status: `completed — PR #66 merged, no live provider writes`  
 Canonical audit: [`master-audit-2026-08-04.md`](master-audit-2026-08-04.md)  
 Machine register: [`audit-register-2026-08-04.json`](audit-register-2026-08-04.json)
 
@@ -11,9 +11,9 @@ This is the first state board to read before YouTube/VK work. Chat history, scre
 
 ## Current engineering mode
 
-`WAVE_1_UPLOAD_STATE_MACHINE_PR_66`
+`WAVE_2_FAIL_CLOSED_CONTENT_AND_PROJECT_PIPELINE_NEXT`
 
-Wave 0 performed no VK or YouTube writes. Wave 1 is an offline reliability refactor in PR #66. Broad upload continuation and retransmission remain blocked until the PR is merged and the relevant local ledgers are reconciled.
+Waves 0 and 1 performed no VK or YouTube writes. Broad upload continuation and retransmission remain blocked until the relevant local journals and exact live objects are reconciled. The new Wave 1 lifecycle makes future reservation/upload recovery fail closed; it does not itself prove any historical live queue complete.
 
 ## Project boundary
 
@@ -54,24 +54,36 @@ PR #63, merge `b19d4faa7e58ff4c0ae7f974092e9fd2441c571d`:
 - persistent clients for VK video/thumbnail writers, YouTube description writer, OAuth exchange/refresh, and VK processing polling;
 - ambiguous mutations remain non-retryable by default.
 
-### Wave 1 implementation under review
+PR #66, merge `56da03247f60ec9d25f1646fb9ccdfbb651aff9c`:
 
-PR #66 addresses the three upload-lifecycle P0 defects present on the verified `main` baseline:
+- versioned VK upload lifecycle: `planned → media_verified → reservation_intent_committed → reserved → upload_started → upload_response_received → processing → verified`;
+- explicit `rejected` and `unknown_requires_reconciliation` states;
+- separate durable reservation-dispatch marker distinguishes a safe pre-dispatch restart from an ambiguous provider outcome;
+- reservation intent is persisted before `video.save` and exact ticket evidence before media transfer;
+- ambiguous reservation/upload outcomes cannot be retried blindly;
+- recovery uses exact owner/video identity and journal stage;
+- `verified` requires exact identity, normalized title, minimum duration, expected type, stable processing state, and playability;
+- old `uploaded_and_verified` rows migrate fail-closed to exact reconciliation;
+- JSON journal writes use flush, `fsync`, atomic replace, and directory synchronization where supported;
+- crash/replay matrix and full CI passed on Python 3.11, 3.12, and 3.13;
+- no live VK or YouTube write occurred.
 
-1. reservation intent and exact upload ticket were not durably committed before the next network boundary;
-2. a visible journal `remote_id` could be reused without a verified stage and exact readiness/content reconciliation;
-3. upload readiness lacked exact identity, minimum duration, final type, stable processing state, title evidence, and playability requirements.
+### Remaining engineering blockers
 
-The PR adds a versioned state machine, exact legacy-journal migration, crash fault injection, reconciliation-only unknown states, and verified replay no-op behavior. It performs no live VK or YouTube write.
-
-### Remaining blockers after Wave 1
+Wave 2:
 
 - content preview/plan loading does not run full per-record validation;
+- reusable parsing still permits implicit project/default paths in some surfaces;
+- targets and operations need complete bidirectional coverage checks;
 - the supported textsafe wrapper still monkeypatches a directly executable Poet-hardcoded base sync;
-- YouTube safe reads have no bounded transient retry;
-- provider transport/limiter, Windows runners, wave generations, risk coverage, album identity, matching, and media-cache work remain in later waves.
+- the base sync must become project-aware or internal-only, with one supported public entrypoint.
 
-Issue #65 owns Wave 1. Issue #64 owns the remaining roadmap.
+Later waves:
+
+- YouTube safe reads have no bounded transient retry;
+- provider transport/limiter, Windows runners, stable wave engine, broader risk coverage, album identity, matching, and authoritative media-cache work remain open.
+
+Issue #64 owns the remaining roadmap. Issue #65 is complete.
 
 ## `lord-god-strength` operational state
 
@@ -133,7 +145,7 @@ Latest retained reviewed Shorts matrix:
 
 Status: `REVIEWED_MANIFEST_PREPARED / UPLOAD_COMPLETION_NOT_PROVEN`.
 
-Do not run the old package or upload the 15 candidates until the exact V3 canary/apply state is recovered, Wave 1 is merged, and the corresponding journal is reconciled.
+Do not run the old package or upload the 15 candidates until the exact V3 canary/apply state and corresponding journal are recovered and reconciled under the merged lifecycle.
 
 ## Separate VK Audio browser workflow
 
@@ -148,16 +160,18 @@ The browser-based VK Audio workflow belongs to the adjacent `mp3telegrambot` sys
 - #37 — exact approved wall-cleanup scope;
 - #38 — Shorts upload modes and final type/player behavior;
 - #64 — master reliability roadmap;
-- #65 — Wave 1 journaled upload state machine and recovery;
-- PR #66 — focused Wave 1 implementation.
+- #65 — completed Wave 1 upload lifecycle;
+- #66 — merged Wave 1 implementation.
 
 ## Next allowed work
 
-1. Complete exact-head CI and review for PR #66.
-2. Merge only when dependency audit, compileall, Ruff, formatting, strict mypy, and full pytest pass on Python 3.11, 3.12, and 3.13.
-3. Perform no live queue retransmission in the refactor PR.
-4. After Wave 1 merge, inspect and reconcile local journals before any canary or resume.
-5. Begin Wave 2 only from the merged Wave 1 baseline.
+1. Start Wave 2 from `main@56da03247f60ec9d25f1646fb9ccdfbb651aff9c` in one focused branch/PR.
+2. Make all load/preview/plan content paths fail closed with full per-record validation.
+3. Remove implicit project identity from reusable parsing and require complete target/operation coverage.
+4. Make the base sync project-aware or internal-only and retain one supported public entrypoint.
+5. Add direct-bypass and cross-project regression tests.
+6. Perform no live queue retransmission while implementing Wave 2.
+7. Reconcile historical local journals separately before any future canary or resume.
 
 ## Update protocol
 
