@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -14,8 +14,26 @@ from video_channel_manager.local_media.artifact import (
     MediaArtifactEvidence,
     MediaProbe,
     validate_cached_media_artifact,
+    validate_media_artifact_evidence,
 )
 from video_channel_manager.local_media.quality import probe_media
+from video_channel_manager.platforms.vk.upload_lifecycle import (
+    Clock,
+    FaultHook,
+    PersistCallback,
+    UploadRejected,
+    UploadStage,
+    UploadTicketProtocol,
+    UploadWriterProtocol,
+    VkUploadReadiness,
+    VkUploadReadinessAssessment,
+    _canonical_sha256,
+    execute_upload_operation as _execute_legacy_upload_operation,
+)
+from video_channel_manager.platforms.vk.wall_safety import (
+    VkUploadWallPolicy,
+    VkWallSnapshot,
+)
 
 
 class UploadMediaAuthorityError(RuntimeError):
@@ -51,7 +69,11 @@ def verify_upload_media_authority(
     if not isinstance(source_video_id, str) or not source_video_id.strip():
         raise UploadMediaAuthorityError("upload journal has no exact source_video_id")
     raw_duration = record.get("source_duration_seconds")
-    source_duration = float(raw_duration) if isinstance(raw_duration, int | float) and raw_duration > 0 else None
+    source_duration = (
+        float(raw_duration)
+        if isinstance(raw_duration, int | float) and not isinstance(raw_duration, bool) and raw_duration > 0
+        else None
+    )
     try:
         evidence = validate_cached_media_artifact(
             media_artifact,
@@ -74,8 +96,14 @@ def verify_upload_media_authority(
             )
         try:
             previous = MediaArtifactEvidence.model_validate(previous_payload)
+            validate_media_artifact_evidence(previous)
         except Exception as exc:
             raise UploadMediaAuthorityError(f"journaled media artifact is invalid: {exc}") from exc
+        top_level_digest = previous_media.get("manifest_sha256")
+        if top_level_digest != previous.manifest_sha256:
+            raise UploadMediaAuthorityError(
+                "journaled media manifest digest does not match its nested artifact"
+            )
         if previous.manifest_sha256 != evidence.manifest_sha256:
             raise UploadMediaAuthorityError(
                 "media artifact manifest changed after MEDIA_VERIFIED"
@@ -96,8 +124,226 @@ def journal_media_evidence(evidence: MediaArtifactEvidence) -> dict[str, object]
     }
 
 
+def _bind_media_record(record: dict[str, Any], evidence: MediaArtifactEvidence) -> None:
+    previous = record.get("media")
+    verified_at = previous.get("verified_at") if isinstance(previous, Mapping) else None
+    bound = journal_media_evidence(evidence)
+    if isinstance(verified_at, str) and verified_at:
+        bound["verified_at"] = verified_at
+    record["media"] = bound
+
+
+def _bind_reservation_intent(record: dict[str, Any], manifest_sha256: str) -> None:
+    raw_intent = record.get("reservation_intent")
+    if not isinstance(raw_intent, dict):
+        return
+    existing = raw_intent.get("media_manifest_sha256")
+    if existing not in {None, manifest_sha256}:
+        raise UploadMediaAuthorityError(
+            "reservation intent is bound to another media artifact manifest"
+        )
+    payload = {
+        key: value
+        for key, value in raw_intent.items()
+        if key not in {"committed_at", "intent_sha256"}
+    }
+    payload["media_manifest_sha256"] = manifest_sha256
+    raw_intent.update(payload)
+    raw_intent["intent_sha256"] = _canonical_sha256(payload)
+    transitions = record.get("transitions")
+    if isinstance(transitions, list):
+        for transition in reversed(transitions):
+            if not isinstance(transition, dict):
+                continue
+            if transition.get("to") != UploadStage.RESERVATION_INTENT_COMMITTED.value:
+                continue
+            evidence = transition.get("evidence")
+            if isinstance(evidence, dict):
+                evidence["intent_sha256"] = raw_intent["intent_sha256"]
+            break
+
+
+class _AuthorityWriter:
+    def __init__(
+        self,
+        delegate: UploadWriterProtocol,
+        *,
+        record: dict[str, Any],
+        community_id: int,
+        media_path: Path,
+        media_artifact: MediaArtifactEvidence,
+        probe: MediaProbe,
+    ) -> None:
+        self._delegate = delegate
+        self._record = record
+        self._community_id = community_id
+        self._media_path = media_path
+        self._media_artifact = media_artifact
+        self._probe = probe
+
+    def begin_upload(
+        self,
+        *,
+        community_id: int,
+        title: str,
+        description: str,
+        wall_policy: VkUploadWallPolicy,
+    ) -> UploadTicketProtocol:
+        return self._delegate.begin_upload(
+            community_id=community_id,
+            title=title,
+            description=description,
+            wall_policy=wall_policy,
+        )
+
+    def upload_file(
+        self,
+        ticket: UploadTicketProtocol,
+        path: Path,
+    ) -> dict[str, Any]:
+        previous = self._record.get("media")
+        previous_media = previous if isinstance(previous, Mapping) else None
+        try:
+            verify_upload_media_authority(
+                self._record,
+                community_id=self._community_id,
+                media_path=path,
+                media_artifact=self._media_artifact,
+                previous_media=previous_media,
+                probe=self._probe,
+            )
+        except UploadMediaAuthorityError as exc:
+            raise UploadRejected(f"Upload media authority is invalid: {exc}") from exc
+        return self._delegate.upload_file(ticket, path)
+
+    def read_video(self, *, owner_id: int, video_id: int) -> dict[str, Any] | None:
+        return self._delegate.read_video(owner_id=owner_id, video_id=video_id)
+
+    def wait_until_available(
+        self,
+        ticket: UploadTicketProtocol,
+        *,
+        readiness: VkUploadReadiness,
+        timeout_seconds: int,
+        on_observation: Callable[
+            [dict[str, Any] | None, VkUploadReadinessAssessment | None],
+            None,
+        ]
+        | None = None,
+    ) -> dict[str, Any]:
+        return self._delegate.wait_until_available(
+            ticket,
+            readiness=readiness,
+            timeout_seconds=timeout_seconds,
+            on_observation=on_observation,
+        )
+
+    def capture_wall_snapshot(
+        self,
+        *,
+        community_id: int,
+        max_posts_per_surface: int = 10000,
+    ) -> VkWallSnapshot:
+        return self._delegate.capture_wall_snapshot(
+            community_id=community_id,
+            max_posts_per_surface=max_posts_per_surface,
+        )
+
+
+def execute_upload_operation(
+    record: dict[str, Any],
+    *,
+    writer: UploadWriterProtocol,
+    community_id: int,
+    title: str,
+    description: str,
+    media_path: Path | None,
+    media_artifact: MediaArtifactEvidence | Mapping[str, Any] | None,
+    readiness: VkUploadReadiness,
+    processing_timeout: int,
+    wall_before_snapshot: VkWallSnapshot,
+    persist: PersistCallback,
+    media_probe: MediaProbe = probe_media,
+    fault_hook: FaultHook | None = None,
+    clock: Clock,
+) -> dict[str, Any]:
+    """Run the VK upload lifecycle through mandatory Wave 8D media authority.
+
+    The wrapped state machine remains responsible for mutation ordering and
+    reconciliation. This facade makes the immutable media manifest part of the
+    durable journal and reservation intent, and revalidates it at dispatch.
+    """
+
+    stage = UploadStage(str(record.get("stage")))
+    reservation_dispatched = (
+        stage == UploadStage.RESERVATION_INTENT_COMMITTED
+        and bool(record.get("reservation_dispatch_started_at"))
+    )
+    requires_media = stage in {
+        UploadStage.PLANNED,
+        UploadStage.MEDIA_VERIFIED,
+        UploadStage.RESERVATION_INTENT_COMMITTED,
+        UploadStage.RESERVED,
+    } and not reservation_dispatched
+
+    authoritative: MediaArtifactEvidence | None = None
+    if requires_media:
+        if media_path is None:
+            raise UploadRejected(
+                f"media_path is required while upload stage is {stage.value}"
+            )
+        previous = record.get("media")
+        previous_media = previous if isinstance(previous, Mapping) else None
+        try:
+            authoritative = verify_upload_media_authority(
+                record,
+                community_id=community_id,
+                media_path=media_path,
+                media_artifact=media_artifact,
+                previous_media=previous_media,
+                probe=media_probe,
+            )
+            _bind_media_record(record, authoritative)
+            _bind_reservation_intent(record, authoritative.manifest_sha256)
+        except UploadMediaAuthorityError as exc:
+            raise UploadRejected(f"Upload media authority is invalid: {exc}") from exc
+
+    def persist_with_authority() -> None:
+        if authoritative is not None:
+            _bind_media_record(record, authoritative)
+            _bind_reservation_intent(record, authoritative.manifest_sha256)
+        persist()
+
+    delegated_writer: UploadWriterProtocol = writer
+    if authoritative is not None and media_path is not None:
+        delegated_writer = _AuthorityWriter(
+            writer,
+            record=record,
+            community_id=community_id,
+            media_path=media_path,
+            media_artifact=authoritative,
+            probe=media_probe,
+        )
+
+    return _execute_legacy_upload_operation(
+        record,
+        writer=delegated_writer,
+        community_id=community_id,
+        title=title,
+        description=description,
+        media_path=media_path,
+        readiness=readiness,
+        processing_timeout=processing_timeout,
+        wall_before_snapshot=wall_before_snapshot,
+        persist=persist_with_authority,
+        fault_hook=fault_hook,
+        clock=clock,
+    )
+
+
 __all__ = [
     "UploadMediaAuthorityError",
+    "execute_upload_operation",
     "journal_media_evidence",
     "verify_upload_media_authority",
 ]
