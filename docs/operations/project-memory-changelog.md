@@ -4,6 +4,23 @@ This file records durable changes to operational memory. Add an entry whenever p
 
 ## 2026-08-04
 
+### Wave 7 completed — exact mutation-boundary fault coverage
+
+- Merged PR #84 as `df956bbbf19af6652f8711f95fb4fecf272e9951`.
+- Exact-head CI run `30918639372` passed dependency audit, compileall, Ruff, formatting, strict mypy, and full pytest on Python 3.11, 3.12, and 3.13: `657 passed, 1 xfailed`.
+- Pester passed `25/25` on Windows PowerShell 5.1, PowerShell 7 on Windows, and PowerShell 7 on Linux.
+- Added a versioned register for all 15 supported mutation boundaries and an AST gate that rejects unregistered or stale provider mutation markers.
+- Added an exact fault-proof register binding every required stage to pytest node IDs or Pester `It` titles; aggregate coverage remains informational only.
+- Added 27 mandatory cross-cutting corruption, migration, identity, bounded-read, operator, and replay scenarios.
+- Added dependency-injected WaveEngine crash modelling and durable apply/reconciliation replay barriers without environment-controlled fault activation.
+- Proved unknown ambiguous outcomes are one-attempt, non-retry-safe, stop later operations, and require exact reconciliation.
+- Added fail-closed malformed/truncated/reordered/stale/wrong-digest/cross-project/wrong-owner/wrong-snapshot/wrong-policy/duplicate/incomplete evidence coverage.
+- Added interrupted atomic replacement and orphan temporary-file cleanup coverage.
+- Added bounded PowerShell child timeout, cross-version process termination, concurrent stdout/stderr draining, and structured-result validation independent of stdout wording.
+- No `.github/workflows` or temporary trigger/formatter workflow was added.
+- No VK or YouTube provider write occurred during implementation or CI.
+- Wave 7 issue #80 is complete; Wave 8 matching/catalog/media correctness is owned by issue #86. Issue #33 remains the later dependency-blocked live catalog/publication workflow.
+
 ### Wave 6 completed — stable versioned wave engine
 
 - Merged PR #78 as `c4c4d3233ec20b8f939343c5d667d8687d7ff040`.
