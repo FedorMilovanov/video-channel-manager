@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -9,12 +10,17 @@ import pytest
 from video_channel_manager.platforms.vk.upload_lifecycle import (
     StoredUploadTicket,
     UploadRecoveryRequired,
+    UploadRejected,
     UploadStage,
     VkUploadReadiness,
     assess_vk_upload_readiness,
     create_upload_record,
     ensure_upload_record,
     execute_upload_operation,
+)
+from video_channel_manager.platforms.vk.wall_safety import (
+    DEFAULT_UPLOAD_WALL_POLICY,
+    VkUploadWallPolicy,
 )
 
 
@@ -32,9 +38,18 @@ class FakeWriter:
         self.upload_error: Exception | None = None
         self.begin_error: Exception | None = None
         self.preserve_remote_item = False
+        self.observed_wall_policy: VkUploadWallPolicy | None = None
 
-    def begin_upload(self, *, community_id: int, title: str, description: str) -> StoredUploadTicket:
+    def begin_upload(
+        self,
+        *,
+        community_id: int,
+        title: str,
+        description: str,
+        wall_policy: VkUploadWallPolicy,
+    ) -> StoredUploadTicket:
         self.begin_calls += 1
+        self.observed_wall_policy = wall_policy
         if self.begin_error is not None:
             raise self.begin_error
         return StoredUploadTicket(
@@ -203,7 +218,67 @@ def test_readiness_requires_identity_title_duration_type_and_playability() -> No
     }
 
 
-def test_happy_path_persists_every_boundary_and_replay_is_noop(tmp_path: Path) -> None:
+def test_new_upload_record_binds_versioned_wall_policy_into_operation_identity() -> None:
+    record = new_record()
+    policy = record["wall_policy"]
+
+    assert policy == DEFAULT_UPLOAD_WALL_POLICY.as_dict()
+    assert policy["policy_sha256"].startswith("sha256:")
+    assert record["transitions"][0]["evidence"]["operation_id"] == record["operation_id"]
+
+    changed_policy_record = create_upload_record(
+        source_snapshot_id="snapshot-1",
+        community_id=235216998,
+        source_video_id="yt-1",
+        source_title="Берёза",
+        source_duration_seconds=120,
+        published_title="Берёза ⚡",
+        published_description="Описание",
+        readiness=readiness(),
+        wall_policy=VkUploadWallPolicy(),
+    )
+    assert changed_policy_record["operation_id"] == record["operation_id"]
+
+
+def test_existing_schema_record_without_wall_policy_migrates_to_safe_default() -> None:
+    record = new_record()
+    record.pop("wall_policy")
+
+    migrated, changed = ensure_upload_record(
+        record,
+        source_snapshot_id="snapshot-1",
+        community_id=235216998,
+        source_video_id="yt-1",
+        source_title="Берёза",
+        source_duration_seconds=120,
+        published_title="Берёза ⚡",
+        published_description="Описание",
+        readiness=readiness(),
+    )
+
+    assert changed is True
+    assert migrated["wall_policy"] == DEFAULT_UPLOAD_WALL_POLICY.as_dict()
+
+
+def test_tampered_wall_policy_blocks_before_media_or_provider_dispatch(tmp_path: Path) -> None:
+    media = tmp_path / "yt-1.mp4"
+    media.write_bytes(b"video")
+    record = new_record()
+    tampered = deepcopy(record["wall_policy"])
+    tampered["wall_mutation_authorized"] = True
+    record["wall_policy"] = tampered
+    writer = FakeWriter()
+
+    with pytest.raises(UploadRejected, match="wall policy is invalid"):
+        run(record, writer, media)
+
+    assert record["stage"] == UploadStage.PLANNED.value
+    assert record["media"] is None
+    assert writer.begin_calls == 0
+    assert writer.upload_calls == 0
+
+
+def test_happy_path_persists_policy_at_intent_and_reservation_boundaries(tmp_path: Path) -> None:
     media = tmp_path / "yt-1.mp4"
     media.write_bytes(b"video")
     record = new_record()
@@ -212,6 +287,10 @@ def test_happy_path_persists_every_boundary_and_replay_is_noop(tmp_path: Path) -
     persists = run(record, writer, media)
 
     assert record["stage"] == UploadStage.VERIFIED.value
+    assert writer.observed_wall_policy == DEFAULT_UPLOAD_WALL_POLICY
+    policy_sha256 = record["wall_policy"]["policy_sha256"]
+    assert record["reservation_intent"]["wall_policy_sha256"] == policy_sha256
+    assert record["reservation"]["wall_policy_sha256"] == policy_sha256
     assert writer.begin_calls == 1
     assert writer.upload_calls == 1
     assert writer.wait_calls == 1
@@ -410,3 +489,4 @@ def test_legacy_verified_record_requires_exact_reconciliation() -> None:
     assert record["stage"] == UploadStage.PROCESSING.value
     assert record["verification"] is None
     assert record["reservation"]["remote_id"] == "-235216998_501"
+    assert record["wall_policy"] == DEFAULT_UPLOAD_WALL_POLICY.as_dict()
