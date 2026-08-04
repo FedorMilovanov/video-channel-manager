@@ -15,6 +15,7 @@ from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.thumbnails import VkThumbnailWriter
 from video_channel_manager.platforms.vk.writer import VkVideoWriter
 from video_channel_manager.platforms.youtube.client import YouTubeApiClient
+from video_channel_manager.platforms.youtube.comments import YouTubeCommentWriter
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow
 from video_channel_manager.platforms.youtube.writer import YouTubeDescriptionWriter
 
@@ -114,6 +115,7 @@ def test_provider_clients_share_the_lifecycle_contract() -> None:
         VkVideoWriter,
         VkThumbnailWriter,
         YouTubeApiClient,
+        YouTubeCommentWriter,
         YouTubeDescriptionWriter,
         InstalledOAuthFlow,
     ):
@@ -127,6 +129,7 @@ def test_provider_request_methods_do_not_construct_per_call_clients() -> None:
         "src/video_channel_manager/platforms/vk/writer.py",
         "src/video_channel_manager/platforms/vk/thumbnails.py",
         "src/video_channel_manager/platforms/youtube/client.py",
+        "src/video_channel_manager/platforms/youtube/comments.py",
         "src/video_channel_manager/platforms/youtube/writer.py",
         "src/video_channel_manager/platforms/youtube/oauth.py",
     ):

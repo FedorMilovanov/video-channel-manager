@@ -10,7 +10,7 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -27,44 +27,6 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - name: Import Wave 3 product patch
-        if: github.event_name == 'pull_request' && matrix.python-version == '3.11'
-        run: |
-          git fetch origin "${GITHUB_HEAD_REF}:refs/remotes/origin/${GITHUB_HEAD_REF}" --depth=1
-          git checkout -B "${GITHUB_HEAD_REF}" "refs/remotes/origin/${GITHUB_HEAD_REF}"
-          cat .wave3-patch-00 .wave3-patch-01 | base64 -d > /tmp/wave3-code.patch.gz
-          echo "735afde5e6df1854db40be7f5db22e79ee52b1bc4ee7bc6f40291fc25cb64bac  /tmp/wave3-code.patch.gz" | sha256sum --check --strict
-          gzip -d /tmp/wave3-code.patch.gz
-          set +e
-          patch --batch --forward -p4 < /tmp/wave3-code.patch 2>&1 | tee /tmp/wave3-patch.log
-          patch_status=${PIPESTATUS[0]}
-          set -e
-          if [ "$patch_status" -ne 1 ]; then
-            echo "Expected exactly one known create-vs-existing skip, got status $patch_status"
-            exit 1
-          fi
-          test "$(grep -c 'hunk ignored' /tmp/wave3-patch.log)" -eq 1
-          grep -Fq 'src/video_channel_manager/platforms/youtube/resilient_writer.py' /tmp/wave3-patch.log
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path('.github/workflows/ci.yml')
-          text = path.read_text(encoding='utf-8')
-          text = text.replace('permissions:\n  contents: write\n', 'permissions:\n  contents: read\n', 1)
-          start = text.index('      - name: Import Wave 3 product patch\n')
-          end = text.index('      - name: Set up Python\n', start)
-          text = text[:start] + text[end:]
-          path.write_text(text, encoding='utf-8')
-          PY
-          ! grep -Fq 'Import Wave 3 product patch' .github/workflows/ci.yml
-          ! grep -Fq 'contents: write' .github/workflows/ci.yml
-          grep -Fq 'contents: read' .github/workflows/ci.yml
-          rm -f .wave3-product.b64 .wave3-chunk-* .wave3-patch-* tests/test_wave3_http_inventory_probe.py
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "feat: centralize HTTP retry and ownership policy"
-          git push origin "HEAD:${GITHUB_HEAD_REF}"
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:

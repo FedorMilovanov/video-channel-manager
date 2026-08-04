@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import random
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -9,7 +10,16 @@ from typing import Any, TypeAlias
 
 import httpx
 
-from video_channel_manager.platforms.http import HttpClientOwner
+from video_channel_manager.platforms.http import (
+    HttpClientOwner,
+    HttpFailureKind,
+    HttpOperationClass,
+    HttpTransportFailure,
+    RequestRateLimiter,
+    RetryPolicy,
+    execute_http_request,
+    redact_sensitive_text,
+)
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.upload_lifecycle import (
     VkUploadReadiness,
@@ -26,11 +36,39 @@ UploadObservationCallback: TypeAlias = Callable[[dict[str, Any] | None, VkUpload
 
 
 class VkWriteError(RuntimeError):
-    def __init__(self, message: str, *, method: str, code: int | None = None, retryable: bool = False) -> None:
+    def __init__(
+        self,
+        message: str,
+        *,
+        method: str,
+        code: int | None = None,
+        retryable: bool = False,
+        kind: HttpFailureKind | None = None,
+        attempts: int = 1,
+    ) -> None:
         super().__init__(message)
         self.method = method
         self.code = code
         self.retryable = retryable
+        self.kind = kind
+        self.attempts = attempts
+
+
+def _provider_response_kind(response: httpx.Response) -> HttpFailureKind | None:
+    if response.status_code >= 400:
+        return None
+    try:
+        payload = response.json()
+    except ValueError:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    raw_error = payload.get("error")
+    if not isinstance(raw_error, dict):
+        return None
+    raw_code = raw_error.get("error_code")
+    code = int(raw_code) if isinstance(raw_code, int | str) and str(raw_code).isdigit() else None
+    return HttpFailureKind.PROVIDER_TRANSIENT if code in _RETRYABLE_API_CODES else HttpFailureKind.PROVIDER_ERROR
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,6 +95,10 @@ class VkVideoWriter(HttpClientOwner):
         http_client: httpx.Client | None = None,
         api_base_url: str = _API_BASE_URL,
         max_attempts: int = 4,
+        retry_policy: RetryPolicy | None = None,
+        request_limiter: RequestRateLimiter | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+        jitter: Callable[[], float] = random.random,
     ) -> None:
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
@@ -68,6 +110,14 @@ class VkVideoWriter(HttpClientOwner):
         )
         self.api_base_url = api_base_url.rstrip("/")
         self.max_attempts = max(1, max_attempts)
+        self.retry_policy = retry_policy or RetryPolicy(
+            max_attempts=self.max_attempts,
+            base_delay_seconds=0.5,
+            max_delay_seconds=8.0,
+        )
+        self.request_limiter = request_limiter or RequestRateLimiter()
+        self._request_sleep = sleep
+        self._jitter = jitter
 
     def _token_value(self) -> str:
         token = self.token_store.load_token(self.account_alias)
@@ -90,70 +140,103 @@ class VkVideoWriter(HttpClientOwner):
         params: ApiParams | None = None,
         retry_transient: bool = False,
     ) -> object:
-        """Call VK, retrying only when the caller proves the request is read-only.
+        """Call VK under explicit read or ambiguous-mutation authority."""
 
-        A network/5xx error after ``video.save`` or ``video.addAlbum`` is
-        ambiguous: VK may have completed the mutation before the response was
-        lost. Blindly retrying can reserve or create a duplicate. Mutation
-        workflows must instead journal intent and reconcile live state.
-        """
-
+        access_token = self._token_value()
         request_data: dict[str, str] = {
-            "access_token": self._token_value(),
+            "access_token": access_token,
             "v": self.api_version,
         }
         for key, value in (params or {}).items():
             request_data[key] = "1" if value is True else "0" if value is False else str(value)
 
-        attempts = self.max_attempts if retry_transient else 1
-        delay_seconds = 0.5
-        last_error: VkWriteError | None = None
-        for attempt in range(attempts):
-            try:
-                return self._call_once(method, request_data)
-            except VkWriteError as exc:
-                last_error = exc
-                if not exc.retryable or attempt + 1 >= attempts:
-                    raise
-                time.sleep(delay_seconds)
-                delay_seconds *= 2
-        assert last_error is not None
-        raise last_error
-
-    def _call_once(self, method: str, request_data: dict[str, str]) -> object:
+        operation = (
+            HttpOperationClass.SAFE_READ
+            if retry_transient
+            else HttpOperationClass.AMBIGUOUS_MUTATION
+        )
         try:
-            response = self._http_client.post(
-                f"{self.api_base_url}/{method}",
-                data=request_data,
-                headers={"User-Agent": "video-channel-manager/0.1"},
+            result = execute_http_request(
+                lambda: self._http_client.post(
+                    f"{self.api_base_url}/{method}",
+                    data=request_data,
+                    headers={"User-Agent": "video-channel-manager/0.1"},
+                ),
+                provider="VK",
+                operation=operation,
+                method="POST",
+                resource=method,
+                retry_policy=self.retry_policy,
+                limiter=self.request_limiter,
+                response_classifier=_provider_response_kind,
+                sleep=self._request_sleep,
+                jitter=self._jitter,
             )
-            if response.status_code >= 400:
-                raise VkWriteError(
-                    f"VK API HTTP {response.status_code} while calling {method}.",
-                    method=method,
-                    retryable=response.status_code in _RETRYABLE_HTTP_STATUS_CODES,
-                )
+        except HttpTransportFailure as exc:
+            raise VkWriteError(
+                str(exc),
+                method=method,
+                retryable=True,
+                kind=exc.kind,
+                attempts=exc.attempts,
+            ) from exc
+
+        response = result.response
+        if response.status_code >= 400:
+            kind = result.failure_kind or HttpFailureKind.PERMANENT_HTTP
+            raise VkWriteError(
+                f"VK API HTTP {response.status_code} while calling {method} "
+                f"[kind={kind.value} attempts={result.attempts}]",
+                method=method,
+                retryable=kind in {HttpFailureKind.RATE_LIMIT, HttpFailureKind.TRANSIENT_HTTP},
+                kind=kind,
+                attempts=result.attempts,
+            )
+        try:
             payload = response.json()
-            if not isinstance(payload, dict):
-                raise VkWriteError("VK API returned a non-object response.", method=method)
-            raw_error = payload.get("error")
-            if isinstance(raw_error, dict):
-                raw_code = raw_error.get("error_code")
-                code = int(raw_code) if isinstance(raw_code, int | str) and str(raw_code).isdigit() else None
-                message = str(raw_error.get("error_msg") or "Unknown VK API error")
-                raise VkWriteError(
-                    f"VK API {code or 'error'} in {method}: {message}",
-                    method=method,
-                    code=code,
-                    retryable=code in _RETRYABLE_API_CODES,
-                )
-            if "response" not in payload:
-                raise VkWriteError("VK API response has no 'response' field.", method=method)
-            return payload["response"]
-        except httpx.HTTPError as exc:
-            raise VkWriteError(f"VK API request failed in {method}: {exc}", method=method, retryable=True) from exc
         except ValueError as exc:
-            raise VkWriteError(f"VK API returned invalid JSON in {method}.", method=method) from exc
+            raise VkWriteError(
+                f"VK API returned invalid JSON in {method} "
+                f"[kind={HttpFailureKind.INVALID_JSON.value} attempts={result.attempts}]",
+                method=method,
+                kind=HttpFailureKind.INVALID_JSON,
+                attempts=result.attempts,
+            ) from exc
+        if not isinstance(payload, dict):
+            raise VkWriteError(
+                f"VK API returned a non-object response in {method} "
+                f"[kind={HttpFailureKind.INVALID_PAYLOAD.value} attempts={result.attempts}]",
+                method=method,
+                kind=HttpFailureKind.INVALID_PAYLOAD,
+                attempts=result.attempts,
+            )
+        raw_error = payload.get("error")
+        if isinstance(raw_error, dict):
+            raw_code = raw_error.get("error_code")
+            code = int(raw_code) if isinstance(raw_code, int | str) and str(raw_code).isdigit() else None
+            message = redact_sensitive_text(
+                raw_error.get("error_msg") or "Unknown VK API error",
+                secrets=(access_token,),
+            )
+            kind = result.failure_kind or HttpFailureKind.PROVIDER_ERROR
+            raise VkWriteError(
+                f"VK API {code or 'error'} in {method}: {message} "
+                f"[kind={kind.value} attempts={result.attempts}]",
+                method=method,
+                code=code,
+                retryable=code in _RETRYABLE_API_CODES,
+                kind=kind,
+                attempts=result.attempts,
+            )
+        if "response" not in payload:
+            raise VkWriteError(
+                f"VK API response has no 'response' field in {method} "
+                f"[kind={HttpFailureKind.INVALID_PAYLOAD.value} attempts={result.attempts}]",
+                method=method,
+                kind=HttpFailureKind.INVALID_PAYLOAD,
+                attempts=result.attempts,
+            )
+        return payload["response"]
 
     def create_album(self, *, community_id: int, title: str) -> int:
         title = title.strip()
@@ -275,39 +358,79 @@ class VkVideoWriter(HttpClientOwner):
             raise FileNotFoundError(path)
         if path.stat().st_size <= 0:
             raise ValueError(f"VK upload file is empty: {path}")
-        try:
+
+        def send_upload() -> httpx.Response:
             with path.open("rb") as stream:
-                response = self._http_client.post(
+                return self._http_client.post(
                     ticket.upload_url,
                     files={"video_file": (path.name, stream, "video/mp4")},
                     headers={"User-Agent": "video-channel-manager/0.1"},
                     timeout=httpx.Timeout(connect=60.0, read=7200.0, write=7200.0, pool=60.0),
                 )
-            if response.status_code >= 400:
-                raise VkWriteError(
-                    f"VK upload server returned HTTP {response.status_code}.",
-                    method="video.upload",
-                    retryable=response.status_code in _RETRYABLE_HTTP_STATUS_CODES,
-                )
-            payload = response.json()
-            if not isinstance(payload, dict):
-                raise VkWriteError("VK upload server returned a non-object response.", method="video.upload")
-            upload_video_id_raw = payload.get("video_id")
-            upload_video_id = (
-                int(upload_video_id_raw)
-                if isinstance(upload_video_id_raw, int | str) and str(upload_video_id_raw).isdigit()
-                else None
+
+        try:
+            result = execute_http_request(
+                send_upload,
+                provider="VK upload",
+                operation=HttpOperationClass.AMBIGUOUS_MUTATION,
+                method="POST",
+                resource="video.upload",
+                retry_policy=self.retry_policy,
+                sleep=self._request_sleep,
+                jitter=self._jitter,
             )
-            if upload_video_id is not None and upload_video_id != ticket.video_id:
-                raise VkWriteError(
-                    f"VK upload response video ID {upload_video_id} differs from ticket {ticket.video_id}.",
-                    method="video.upload",
-                )
-            return payload
-        except httpx.HTTPError as exc:
-            raise VkWriteError(f"VK video upload failed: {exc}", method="video.upload", retryable=True) from exc
-        except json.JSONDecodeError as exc:
-            raise VkWriteError("VK upload server returned invalid JSON.", method="video.upload") from exc
+        except HttpTransportFailure as exc:
+            raise VkWriteError(
+                str(exc),
+                method="video.upload",
+                retryable=True,
+                kind=exc.kind,
+                attempts=exc.attempts,
+            ) from exc
+
+        response = result.response
+        if response.status_code >= 400:
+            kind = result.failure_kind or HttpFailureKind.PERMANENT_HTTP
+            raise VkWriteError(
+                f"VK upload server returned HTTP {response.status_code} "
+                f"[kind={kind.value} attempts={result.attempts}]",
+                method="video.upload",
+                retryable=kind in {HttpFailureKind.RATE_LIMIT, HttpFailureKind.TRANSIENT_HTTP},
+                kind=kind,
+                attempts=result.attempts,
+            )
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            raise VkWriteError(
+                f"VK upload server returned invalid JSON "
+                f"[kind={HttpFailureKind.INVALID_JSON.value} attempts={result.attempts}]",
+                method="video.upload",
+                kind=HttpFailureKind.INVALID_JSON,
+                attempts=result.attempts,
+            ) from exc
+        if not isinstance(payload, dict):
+            raise VkWriteError(
+                f"VK upload server returned a non-object response "
+                f"[kind={HttpFailureKind.INVALID_PAYLOAD.value} attempts={result.attempts}]",
+                method="video.upload",
+                kind=HttpFailureKind.INVALID_PAYLOAD,
+                attempts=result.attempts,
+            )
+        upload_video_id_raw = payload.get("video_id")
+        upload_video_id = (
+            int(upload_video_id_raw)
+            if isinstance(upload_video_id_raw, int | str) and str(upload_video_id_raw).isdigit()
+            else None
+        )
+        if upload_video_id is not None and upload_video_id != ticket.video_id:
+            raise VkWriteError(
+                f"VK upload response video ID {upload_video_id} differs from ticket {ticket.video_id}.",
+                method="video.upload",
+                kind=HttpFailureKind.INVALID_PAYLOAD,
+                attempts=result.attempts,
+            )
+        return payload
 
     def read_video(self, *, owner_id: int, video_id: int) -> dict[str, Any] | None:
         if owner_id == 0 or video_id <= 0:

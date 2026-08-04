@@ -118,3 +118,78 @@ def test_complete_inventory_package(tmp_path: Path) -> None:
     assert len(package.memberships) == 1
     assert package.memberships[0].membership_id == "PLI1"
     assert package.metadata["read_only"] is True
+
+
+def test_safe_read_retries_transient_http_and_reports_attempts(tmp_path: Path) -> None:
+    store = TokenStore(tmp_path)
+    store.save_token(
+        "default",
+        OAuthToken(
+            access_token="access",
+            refresh_token="refresh",
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
+        ),
+    )
+    calls = 0
+    sleeps: list[float] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return httpx.Response(503, text="temporary")
+        return httpx.Response(200, json={"items": []})
+
+    from video_channel_manager.platforms.http import RetryPolicy
+
+    client = YouTubeApiClient(
+        client_config=InstalledClientConfig(client_id="id", client_secret="secret"),
+        token_store=store,
+        account_alias="default",
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        api_base_url="https://example.test/youtube/v3",
+        retry_policy=RetryPolicy(max_attempts=2, base_delay_seconds=0.25, jitter_seconds=0.0),
+        sleep=sleeps.append,
+    )
+
+    assert client._get("channels", params={"part": "snippet", "mine": "true"}) == {"items": []}
+    assert calls == 2
+    assert sleeps == [0.25]
+
+
+def test_uploads_playlist_id_is_cached_for_client_lifecycle(tmp_path: Path) -> None:
+    store = TokenStore(tmp_path)
+    store.save_token(
+        "default",
+        OAuthToken(
+            access_token="access",
+            refresh_token="refresh",
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
+        ),
+    )
+    channel_lookups = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal channel_lookups
+        resource = request.url.path.rsplit("/", 1)[-1]
+        if resource == "channels":
+            channel_lookups += 1
+            return httpx.Response(
+                200,
+                json={"items": [{"id": "UC1", "contentDetails": {"relatedPlaylists": {"uploads": "UU1"}}}]},
+            )
+        if resource == "playlistItems":
+            return httpx.Response(200, json={"items": []})
+        raise AssertionError(request.url)
+
+    client = YouTubeApiClient(
+        client_config=InstalledClientConfig(client_id="id", client_secret="secret"),
+        token_store=store,
+        account_alias="default",
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        api_base_url="https://example.test/youtube/v3",
+    )
+
+    assert client.list_videos("UC1") == []
+    assert client.list_videos("UC1") == []
+    assert channel_lookups == 1
