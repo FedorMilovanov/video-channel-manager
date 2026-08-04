@@ -58,17 +58,18 @@ def render_comparison_markdown(comparison: CrossPlatformComparison) -> str:
         "## Итог",
         "",
         f"- Сопоставлено видео: **{len(comparison.matches)}**.",
-        f"- Конфликтных групп без выбранной пары: **{comparison.conflict_count}**.",
-        f"- Source-объектов в конфликтах: **{comparison.unresolved_source_count}**.",
-        f"- Target-объектов в конфликтах: **{comparison.unresolved_target_count}**.",
+        f"- Конфликтных video-групп: **{comparison.conflict_count}**.",
+        f"- Source-объектов в video-конфликтах: **{comparison.unresolved_source_count}**.",
+        f"- Target-объектов в video-конфликтах: **{comparison.unresolved_target_count}**.",
         f"- Отсутствует на целевой платформе: **{len(comparison.missing_on_target)}**.",
         f"- Есть только на целевой платформе: **{len(comparison.extra_on_target)}**.",
         f"- Расхождений названий: **{comparison.title_drift_count}**.",
         f"- Расхождений описаний: **{comparison.description_drift_count}**.",
-        f"- Отсутствующих целевых коллекций: **{comparison.missing_collection_count}**.",
-        f"- Недостающих размещений в существующих коллекциях: **{comparison.missing_placement_count}**.",
+        f"- Collection-конфликтов: **{comparison.collection_conflict_count}**.",
+        f"- Одобренных коллекций к созданию: **{comparison.missing_collection_count}**.",
+        f"- Недостающих semantic placements: **{comparison.missing_placement_count}**.",
         "",
-        "## Конфликты сопоставления",
+        "## Конфликты сопоставления видео",
         "",
         "Конфликтные объекты не считаются отсутствующими и не попадают в mapping или план загрузки.",
         "",
@@ -92,25 +93,27 @@ def render_comparison_markdown(comparison: CrossPlatformComparison) -> str:
         "",
         "## Коллекции",
         "",
-        "| Исходная коллекция | В источнике | Уже сопоставлено | На цели | Не хватает размещений | Статус |",
-        "|---|---:|---:|---:|---:|---|",
+        "| Исходная коллекция | Решение | Target | Source | Mapped | Target members | Missing | Extra |",
+        "|---|---|---|---:|---:|---:|---:|---:|",
     ]
     for gap in comparison.collection_gaps:
-        status = "существует" if gap.target_collection_id is not None else "нет целевой коллекции"
+        decision = gap.decision if gap.conflict_reason is None else f"conflict: {gap.conflict_reason}"
+        target_id = f"`{gap.target_collection_id}`" if gap.target_collection_id is not None else "—"
         lines.append(
-            f"| {gap.source_title.replace('|', '¦')} | {gap.source_member_count} | "
-            f"{gap.matched_source_member_count} | {gap.target_member_count} | "
-            f"{gap.missing_placement_count} | {status} |"
+            f"| {gap.source_title.replace('|', '¦')} | {decision} | {target_id} | "
+            f"{gap.source_member_count} | {gap.matched_source_member_count} | {gap.target_member_count} | "
+            f"{gap.missing_placement_count} | {len(gap.extra_target_video_ids)} |"
         )
     lines.extend(
         [
             "",
             "## Метод",
             "",
-            "Сначала применяются точные reviewed mappings, затем уникальные exact-normalized-title пары. "
-            "Fuzzy-кандидаты рассматриваются только после exact-фазы и выбираются лишь тогда, когда "
-            "связная кандидатная группа содержит ровно один source и один target. Любая неуникальная "
-            "группа становится конфликтом и не создаёт mapping. Порядок входных объектов не влияет.",
+            "Video matching использует reviewed mappings, unique exact canonical titles и только затем bounded fuzzy fallback. "
+            "Collection identity использует exact reviewed IDs либо отдельное explicit create approval. Title-кандидаты "
+            "никогда не выбираются автоматически: один существующий кандидат, дубликаты и неразрешённое создание "
+            "становятся конфликтами. Membership сравнивается как множество exact target video IDs; позиции провайдера "
+            "не являются identity.",
         ]
     )
     return "\n".join(lines)
