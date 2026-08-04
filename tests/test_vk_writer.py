@@ -8,6 +8,7 @@ import pytest
 from video_channel_manager.platforms.vk.models import VkAccessToken
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.upload_lifecycle import VkUploadReadiness
+from video_channel_manager.platforms.vk.wall_safety import VkUploadWallPolicy
 from video_channel_manager.platforms.vk.writer import VkUploadTicket, VkVideoWriter, VkWriteError
 
 
@@ -59,6 +60,38 @@ def test_create_album_and_begin_upload(tmp_path: Path) -> None:
     assert b"access_token=secret" in requests[0].content
     assert b"group_id=235216998" in requests[0].content
     assert b"wallpost=0" in requests[1].content
+    assert b"auto_publish=0" in requests[1].content
+    assert b"repeat=0" in requests[1].content
+
+
+def test_begin_upload_rejects_unvalidated_wall_policy_before_network(tmp_path: Path) -> None:
+    calls = 0
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(500)
+
+    writer = _writer(tmp_path, httpx.MockTransport(respond))
+
+    with pytest.raises(TypeError, match="validated VkUploadWallPolicy"):
+        writer.begin_upload(
+            community_id=235216998,
+            title="Берёза",
+            description="Описание",
+            wall_policy={"wallpost": False},  # type: ignore[arg-type]
+        )
+
+    assert calls == 0
+
+
+def test_upload_wall_policy_cannot_authorize_wall_or_auto_publish() -> None:
+    with pytest.raises(ValueError, match="cannot authorize"):
+        VkUploadWallPolicy(wall_mutation_authorized=True)
+    with pytest.raises(ValueError, match="disable wallpost and auto_publish"):
+        VkUploadWallPolicy(auto_publish=True)
+    with pytest.raises(ValueError, match="separately reviewed loop policy"):
+        VkUploadWallPolicy(repeat=True)
 
 
 def test_add_to_album_is_idempotent(tmp_path: Path) -> None:
