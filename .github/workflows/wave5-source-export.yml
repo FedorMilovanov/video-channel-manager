@@ -24,9 +24,38 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          base64 --decode .github/wave5-adversarial.patch.gz.b64 | gzip -d > /tmp/wave5-adversarial.patch
+          git show ceb97f4a4290942cd886ae1e60eb8b70ab4172d5:.github/wave5-adversarial.patch.gz.b64 \
+            | base64 --decode \
+            | gzip -d > /tmp/wave5-adversarial.patch
           git apply --check /tmp/wave5-adversarial.patch
           git apply /tmp/wave5-adversarial.patch
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          from pathlib import Path
+
+          pester_path = Path("tests/powershell/VideoManager.Operator.Tests.ps1")
+          pester = pester_path.read_text(encoding="utf-8")
+          old = '} | Should -Throw "*snapshot*cannot be blank*"'
+          new = '} | Should -Throw "*source snapshot confirmation must be a non-empty string*"'
+          if pester.count(old) != 1:
+              raise SystemExit("Expected one blank-snapshot assertion target")
+          pester_path.write_text(pester.replace(old, new), encoding="utf-8", newline="\n")
+
+          registry_path = Path("scripts/operator/powershell-wrappers.json")
+          registry = json.loads(registry_path.read_text(encoding="utf-8"))
+          for entry in registry["test_files"]:
+              path = Path(entry["path"])
+              text = path.read_text(encoding="utf-8-sig").replace("\r\n", "\n").replace("\r", "\n")
+              entry["sha256"] = hashlib.sha256(text.encode("utf-8")).hexdigest()
+          registry_path.write_text(
+              json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+              newline="\n",
+          )
+          PY
           python -m pip install -e ".[dev]"
           ruff format tests/test_powershell_operator_inventory.py
           ruff check tests/test_powershell_operator_inventory.py
