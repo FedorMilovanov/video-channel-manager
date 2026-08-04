@@ -52,7 +52,7 @@ def test_current_state_preserves_verified_operational_identity() -> None:
         "verified missing: `26`",
         "b9c0268be62ea8fb9281cc9a551ebc5621dfdd4bfeb22a9d8f4b50707baa33ed",
         "data\\vk-upload\\verified-longform-26",
-        "BLOCKED_PENDING_ISSUE_36_AND_FRESH_READ_ONLY_WALL_AUDIT",
+        "BLOCKED_PENDING_WAVE_4_ISSUE_36_AND_FRESH_READ_ONLY_WALL_AUDIT",
     )
 
     for fact in required_facts:

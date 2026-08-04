@@ -26,6 +26,10 @@ from video_channel_manager.platforms.vk.upload_lifecycle import (
     VkUploadReadinessAssessment,
     assess_vk_upload_readiness,
 )
+from video_channel_manager.platforms.vk.wall_safety import (
+    DEFAULT_UPLOAD_WALL_POLICY,
+    VkUploadWallPolicy,
+)
 
 _API_BASE_URL = "https://api.vk.com/method"
 _RETRYABLE_API_CODES = frozenset({6, 9, 10, 29})
@@ -310,19 +314,28 @@ class VkVideoWriter(HttpClientOwner):
             method="video.addToAlbum",
         )
 
-    def begin_upload(self, *, community_id: int, title: str, description: str) -> VkUploadTicket:
+    def begin_upload(
+        self,
+        *,
+        community_id: int,
+        title: str,
+        description: str,
+        wall_policy: VkUploadWallPolicy = DEFAULT_UPLOAD_WALL_POLICY,
+    ) -> VkUploadTicket:
         title = title.strip()
         if community_id <= 0:
             raise ValueError("community_id must be positive")
         if not title:
             raise ValueError("VK video title cannot be blank")
+        if not isinstance(wall_policy, VkUploadWallPolicy):
+            raise TypeError("wall_policy must be a validated VkUploadWallPolicy")
         response = self._call(
             "video.save",
             params={
                 "group_id": community_id,
                 "name": title,
                 "description": description,
-                "wallpost": False,
+                **wall_policy.video_save_params(),
                 "is_private": False,
                 "no_comments": False,
             },

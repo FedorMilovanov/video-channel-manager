@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from copy import deepcopy
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -9,12 +11,19 @@ import pytest
 from video_channel_manager.platforms.vk.upload_lifecycle import (
     StoredUploadTicket,
     UploadRecoveryRequired,
+    UploadRejected,
     UploadStage,
     VkUploadReadiness,
     assess_vk_upload_readiness,
     create_upload_record,
     ensure_upload_record,
     execute_upload_operation,
+)
+from video_channel_manager.platforms.vk.wall_safety import (
+    DEFAULT_UPLOAD_WALL_POLICY,
+    VkUploadWallPolicy,
+    VkWallSnapshot,
+    build_wall_snapshot,
 )
 
 
@@ -32,9 +41,20 @@ class FakeWriter:
         self.upload_error: Exception | None = None
         self.begin_error: Exception | None = None
         self.preserve_remote_item = False
+        self.observed_wall_policy: VkUploadWallPolicy | None = None
+        self.wall_snapshot = clean_wall_snapshot()
+        self.wall_snapshot_calls = 0
 
-    def begin_upload(self, *, community_id: int, title: str, description: str) -> StoredUploadTicket:
+    def begin_upload(
+        self,
+        *,
+        community_id: int,
+        title: str,
+        description: str,
+        wall_policy: VkUploadWallPolicy,
+    ) -> StoredUploadTicket:
         self.begin_calls += 1
+        self.observed_wall_policy = wall_policy
         if self.begin_error is not None:
             raise self.begin_error
         return StoredUploadTicket(
@@ -94,9 +114,57 @@ class FakeWriter:
             raise RuntimeError(f"not ready within {timeout_seconds}: {assessment.reasons}")
         return item
 
+    def capture_wall_snapshot(
+        self,
+        *,
+        community_id: int,
+        max_posts_per_surface: int = 10000,
+    ) -> VkWallSnapshot:
+        assert community_id == 235216998
+        assert max_posts_per_surface == 10000
+        self.wall_snapshot_calls += 1
+        return self.wall_snapshot
+
 
 class RetryableReservationError(RuntimeError):
     retryable = True
+
+
+def clean_wall_snapshot() -> VkWallSnapshot:
+    return build_wall_snapshot(
+        community_id=235216998,
+        published_items=[],
+        postponed_items=[],
+        published_pages=1,
+        postponed_pages=1,
+        complete=True,
+        captured_at=datetime(2026, 8, 4, 2, 0, tzinfo=UTC),
+    )
+
+
+def changed_wall_snapshot(*, complete: bool = True) -> VkWallSnapshot:
+    return build_wall_snapshot(
+        community_id=235216998,
+        published_items=[
+            {
+                "owner_id": -235216998,
+                "id": 77,
+                "date": 1785800000,
+                "text": "Unexpected upload wall post",
+                "attachments": [
+                    {
+                        "type": "video",
+                        "video": {"owner_id": -235216998, "id": 501},
+                    }
+                ],
+            }
+        ],
+        postponed_items=[],
+        published_pages=1,
+        postponed_pages=1,
+        complete=complete,
+        captured_at=datetime(2026, 8, 4, 2, 5, tzinfo=UTC),
+    )
 
 
 def ready_item(owner_id: int = -235216998, video_id: int = 501) -> dict[str, Any]:
@@ -141,6 +209,7 @@ def run(
     media: Path | None,
     *,
     crash_boundary: str | None = None,
+    wall_before_snapshot: VkWallSnapshot | None = None,
 ) -> int:
     persists = 0
 
@@ -161,6 +230,7 @@ def run(
         media_path=media,
         readiness=readiness(),
         processing_timeout=60,
+        wall_before_snapshot=wall_before_snapshot or clean_wall_snapshot(),
         persist=persist,
         fault_hook=fault,
     )
@@ -203,7 +273,67 @@ def test_readiness_requires_identity_title_duration_type_and_playability() -> No
     }
 
 
-def test_happy_path_persists_every_boundary_and_replay_is_noop(tmp_path: Path) -> None:
+def test_new_upload_record_binds_versioned_wall_policy_into_operation_identity() -> None:
+    record = new_record()
+    policy = record["wall_policy"]
+
+    assert policy == DEFAULT_UPLOAD_WALL_POLICY.as_dict()
+    assert policy["policy_sha256"].startswith("sha256:")
+    assert record["transitions"][0]["evidence"]["operation_id"] == record["operation_id"]
+
+    changed_policy_record = create_upload_record(
+        source_snapshot_id="snapshot-1",
+        community_id=235216998,
+        source_video_id="yt-1",
+        source_title="Берёза",
+        source_duration_seconds=120,
+        published_title="Берёза ⚡",
+        published_description="Описание",
+        readiness=readiness(),
+        wall_policy=VkUploadWallPolicy(),
+    )
+    assert changed_policy_record["operation_id"] == record["operation_id"]
+
+
+def test_existing_schema_record_without_wall_policy_migrates_to_safe_default() -> None:
+    record = new_record()
+    record.pop("wall_policy")
+
+    migrated, changed = ensure_upload_record(
+        record,
+        source_snapshot_id="snapshot-1",
+        community_id=235216998,
+        source_video_id="yt-1",
+        source_title="Берёза",
+        source_duration_seconds=120,
+        published_title="Берёза ⚡",
+        published_description="Описание",
+        readiness=readiness(),
+    )
+
+    assert changed is True
+    assert migrated["wall_policy"] == DEFAULT_UPLOAD_WALL_POLICY.as_dict()
+
+
+def test_tampered_wall_policy_blocks_before_media_or_provider_dispatch(tmp_path: Path) -> None:
+    media = tmp_path / "yt-1.mp4"
+    media.write_bytes(b"video")
+    record = new_record()
+    tampered = deepcopy(record["wall_policy"])
+    tampered["wall_mutation_authorized"] = True
+    record["wall_policy"] = tampered
+    writer = FakeWriter()
+
+    with pytest.raises(UploadRejected, match="wall policy is invalid"):
+        run(record, writer, media)
+
+    assert record["stage"] == UploadStage.PLANNED.value
+    assert record["media"] is None
+    assert writer.begin_calls == 0
+    assert writer.upload_calls == 0
+
+
+def test_happy_path_persists_policy_at_intent_and_reservation_boundaries(tmp_path: Path) -> None:
     media = tmp_path / "yt-1.mp4"
     media.write_bytes(b"video")
     record = new_record()
@@ -212,10 +342,17 @@ def test_happy_path_persists_every_boundary_and_replay_is_noop(tmp_path: Path) -
     persists = run(record, writer, media)
 
     assert record["stage"] == UploadStage.VERIFIED.value
+    assert writer.observed_wall_policy == DEFAULT_UPLOAD_WALL_POLICY
+    policy_sha256 = record["wall_policy"]["policy_sha256"]
+    assert record["reservation_intent"]["wall_policy_sha256"] == policy_sha256
+    assert record["reservation"]["wall_policy_sha256"] == policy_sha256
     assert writer.begin_calls == 1
     assert writer.upload_calls == 1
     assert writer.wait_calls == 1
-    assert persists >= 8
+    assert writer.wall_snapshot_calls == 1
+    assert record["wall_safety"]["delta"]["status"] == "clean"
+    assert record["verification"]["wall_delta_status"] == "clean"
+    assert persists >= 10
     transitions = [item["to"] for item in record["transitions"]]
     assert transitions == [
         UploadStage.PLANNED.value,
@@ -233,6 +370,7 @@ def test_happy_path_persists_every_boundary_and_replay_is_noop(tmp_path: Path) -
     assert writer.begin_calls == 1
     assert writer.upload_calls == 1
     assert writer.wait_calls == 1
+    assert writer.wall_snapshot_calls == 1
 
 
 @pytest.mark.parametrize(
@@ -388,6 +526,65 @@ def test_visible_zero_duration_object_is_not_verified(tmp_path: Path) -> None:
     assert record["verification"] is None
 
 
+def test_unexpected_wall_delta_blocks_verified_and_requires_reconciliation(tmp_path: Path) -> None:
+    media = tmp_path / "yt-1.mp4"
+    media.write_bytes(b"video")
+    record = new_record()
+    writer = FakeWriter()
+    writer.wall_snapshot = changed_wall_snapshot()
+
+    with pytest.raises(UploadRecoveryRequired, match="wall postflight is changed"):
+        run(record, writer, media)
+
+    assert record["stage"] == UploadStage.UNKNOWN_REQUIRES_RECONCILIATION.value
+    assert record["wall_safety"]["delta"]["status"] == "changed"
+    assert record["verification"] is None
+    assert writer.begin_calls == 1
+    assert writer.upload_calls == 1
+
+
+def test_incomplete_wall_postflight_is_unknown(tmp_path: Path) -> None:
+    media = tmp_path / "yt-1.mp4"
+    media.write_bytes(b"video")
+    record = new_record()
+    writer = FakeWriter()
+    writer.wall_snapshot = changed_wall_snapshot(complete=False)
+
+    with pytest.raises(UploadRecoveryRequired, match="unknown_requires_reconciliation"):
+        run(record, writer, media)
+
+    assert record["stage"] == UploadStage.UNKNOWN_REQUIRES_RECONCILIATION.value
+    assert record["wall_safety"]["delta"]["status"] == "unknown_requires_reconciliation"
+
+
+def test_historical_in_progress_record_without_wall_baseline_is_blocked(tmp_path: Path) -> None:
+    media = tmp_path / "yt-1.mp4"
+    media.write_bytes(b"video")
+    record = new_record()
+    writer = FakeWriter()
+    run(record, writer, media)
+    record["stage"] = UploadStage.PROCESSING.value
+    record.pop("wall_safety")
+
+    with pytest.raises(UploadRecoveryRequired, match="no pre-dispatch wall baseline"):
+        run(record, writer, None)
+
+    assert writer.begin_calls == 1
+    assert writer.upload_calls == 1
+
+
+def test_verified_record_without_clean_wall_evidence_cannot_replay(tmp_path: Path) -> None:
+    media = tmp_path / "yt-1.mp4"
+    media.write_bytes(b"video")
+    record = new_record()
+    writer = FakeWriter()
+    run(record, writer, media)
+    record["wall_safety"]["delta"] = None
+
+    with pytest.raises(UploadRecoveryRequired, match="lacks a clean wall postflight"):
+        run(record, writer, None)
+
+
 def test_legacy_verified_record_requires_exact_reconciliation() -> None:
     legacy = {
         "remote_id": "-235216998_501",
@@ -410,3 +607,4 @@ def test_legacy_verified_record_requires_exact_reconciliation() -> None:
     assert record["stage"] == UploadStage.PROCESSING.value
     assert record["verification"] is None
     assert record["reservation"]["remote_id"] == "-235216998_501"
+    assert record["wall_policy"] == DEFAULT_UPLOAD_WALL_POLICY.as_dict()
