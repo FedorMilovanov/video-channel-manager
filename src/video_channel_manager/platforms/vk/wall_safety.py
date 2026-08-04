@@ -280,11 +280,7 @@ class VkWallSnapshot:
         raw_posts = raw.get("posts")
         if not isinstance(raw_posts, list):
             raise ValueError("Wall snapshot posts must be a list")
-        posts = tuple(
-            VkWallPostFingerprint.from_mapping(item)
-            for item in raw_posts
-            if isinstance(item, Mapping)
-        )
+        posts = tuple(VkWallPostFingerprint.from_mapping(item) for item in raw_posts if isinstance(item, Mapping))
         if len(posts) != len(raw_posts):
             raise ValueError("Wall snapshot contains a non-object post fingerprint")
         snapshot = cls(
