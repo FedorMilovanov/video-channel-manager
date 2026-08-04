@@ -650,8 +650,7 @@ def _bind_wall_baseline(
     raw_wall_safety = record.get("wall_safety")
     if raw_wall_safety is None:
         safe_to_bind = stage in {UploadStage.PLANNED, UploadStage.MEDIA_VERIFIED} or (
-            stage == UploadStage.RESERVATION_INTENT_COMMITTED
-            and not record.get("reservation_dispatch_started_at")
+            stage == UploadStage.RESERVATION_INTENT_COMMITTED and not record.get("reservation_dispatch_started_at")
         )
         if not safe_to_bind:
             raise UploadRecoveryRequired(
@@ -904,9 +903,7 @@ def execute_upload_operation(
     stage = UploadStage(str(record.get("stage")))
     if stage == UploadStage.VERIFIED:
         if not _verified_wall_evidence_is_clean(record):
-            raise UploadRecoveryRequired(
-                "Verified upload lacks a clean wall postflight and cannot be reused"
-            )
+            raise UploadRecoveryRequired("Verified upload lacks a clean wall postflight and cannot be reused")
         return record
     if stage == UploadStage.REJECTED:
         raise UploadRejected(str(record.get("last_error") or "Upload was rejected"))
