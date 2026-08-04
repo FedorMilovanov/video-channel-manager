@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import struct
 import time
 from dataclasses import dataclass
@@ -22,7 +23,11 @@ from video_channel_manager.platforms.vk.wall_safety import (
     compare_wall_snapshots,
 )
 from video_channel_manager.platforms.vk.writer import VkWriteError
-from video_channel_manager.wave_engine.canonical import file_sha256, resolve_repository_relative_path
+from video_channel_manager.wave_engine.canonical import (
+    file_sha256,
+    object_sha256,
+    resolve_repository_relative_path,
+)
 from video_channel_manager.wave_engine.engine import (
     OperationRejectedError,
     UnknownProviderOutcomeError,
@@ -35,6 +40,10 @@ VK_ARTICLE_COMMUNITY_ID = 235216998
 VK_ARTICLE_OWNER_ID = -235216998
 VK_ARTICLE_ACCOUNT_ALIAS = "legendary-poet"
 VK_ARTICLE_SITE_HOST = "thelegendarypoet.ru"
+VK_ARTICLE_POLICY_RELATIVE_PATH = "data/editorial/legendary-poet-article-wave-202608.json"
+VK_ARTICLE_APPROVED_POLICY_SHA256 = (
+    "sha256:af210867d2ea392394e2034cffa9d43c3e1adc632386e9ec4827b033c8fff9a0"
+)
 
 
 class VkArticleWallError(RuntimeError):
@@ -55,6 +64,7 @@ class ArticleOperation:
     asset_sha256: str
     asset_width: int
     asset_height: int
+    policy_sha256: str
     required_canary: dict[str, Any] | None
 
 
@@ -171,6 +181,9 @@ def parse_article_operation(operation: WaveOperation) -> ArticleOperation:
     asset_sha256 = _exact_string(payload.get("asset_sha256"), field="asset_sha256")
     if len(asset_sha256) != 64 or any(character not in "0123456789abcdef" for character in asset_sha256):
         raise VkArticleWallError("asset_sha256 must be a lowercase SHA-256 digest")
+    policy_sha256 = _exact_string(payload.get("policy_sha256"), field="policy_sha256")
+    if policy_sha256 != VK_ARTICLE_APPROVED_POLICY_SHA256:
+        raise VkArticleWallError("operation is not bound to the approved article policy")
     guid = _exact_string(payload.get("guid"), field="guid")
     if not guid.startswith("vcm-art-") or len(guid) > 40:
         raise VkArticleWallError("guid must be a deterministic vcm-art- identifier no longer than 40 characters")
@@ -190,8 +203,102 @@ def parse_article_operation(operation: WaveOperation) -> ArticleOperation:
         asset_sha256=asset_sha256,
         asset_width=_exact_int(payload.get("asset_width"), field="asset_width"),
         asset_height=_exact_int(payload.get("asset_height"), field="asset_height"),
+        policy_sha256=policy_sha256,
         required_canary=_parse_required_canary(payload.get("required_canary")),
     )
+
+
+def _policy_digest(policy: dict[str, Any]) -> str:
+    payload = {key: value for key, value in policy.items() if key != "policy_sha256"}
+    return "sha256:" + object_sha256(payload)
+
+
+def _expected_canary(policy: dict[str, Any]) -> dict[str, Any]:
+    operations = policy.get("operations")
+    if not isinstance(operations, list) or not operations or not isinstance(operations[0], dict):
+        raise VkArticleWallError("approved article policy has no canary operation")
+    canary = operations[0]
+    return {
+        "editorial_operation_id": str(canary.get("operation_id") or ""),
+        "article_url": str(canary.get("url") or ""),
+        "message": str(canary.get("message") or ""),
+        "message_sha256": str(canary.get("message_sha256") or ""),
+        "publish_date": canary.get("publish_date"),
+    }
+
+
+def assert_approved_article_operation(
+    *,
+    repository_root: Path,
+    article: ArticleOperation,
+) -> None:
+    policy_path = resolve_repository_relative_path(
+        repository_root,
+        VK_ARTICLE_POLICY_RELATIVE_PATH,
+        require_file=True,
+    )
+    try:
+        policy = json.loads(policy_path.read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise VkArticleWallError(f"cannot read approved article policy: {exc}") from exc
+    if not isinstance(policy, dict):
+        raise VkArticleWallError("approved article policy must be a JSON object")
+    if (
+        policy.get("policy_sha256") != VK_ARTICLE_APPROVED_POLICY_SHA256
+        or _policy_digest(policy) != VK_ARTICLE_APPROVED_POLICY_SHA256
+        or article.policy_sha256 != VK_ARTICLE_APPROVED_POLICY_SHA256
+    ):
+        raise VkArticleWallError("approved article policy digest mismatch")
+    if (
+        policy.get("project_key") != VK_ARTICLE_PROJECT_KEY
+        or policy.get("vk_community_id") != VK_ARTICLE_COMMUNITY_ID
+        or policy.get("vk_owner_id") != VK_ARTICLE_OWNER_ID
+        or policy.get("account_alias") != VK_ARTICLE_ACCOUNT_ALIAS
+    ):
+        raise VkArticleWallError("approved article policy project binding mismatch")
+
+    operations = policy.get("operations")
+    if not isinstance(operations, list) or len(operations) != 10:
+        raise VkArticleWallError("approved article policy must contain exactly ten operations")
+    matches = [
+        row
+        for row in operations
+        if isinstance(row, dict) and row.get("operation_id") == article.editorial_operation_id
+    ]
+    if len(matches) != 1:
+        raise VkArticleWallError("article operation is absent or duplicated in the approved policy")
+    row = matches[0]
+    expected = {
+        "article_url": row.get("url"),
+        "image_source_url": row.get("image_url"),
+        "message": row.get("message"),
+        "message_sha256": row.get("message_sha256"),
+        "publish_date": row.get("publish_date"),
+    }
+    actual = {
+        "article_url": article.article_url,
+        "image_source_url": article.image_source_url,
+        "message": article.message,
+        "message_sha256": article.message_sha256,
+        "publish_date": article.publish_date,
+    }
+    if actual != expected:
+        raise VkArticleWallError("article operation differs from its exact approved policy row")
+
+    seed = (
+        f"{VK_ARTICLE_APPROVED_POLICY_SHA256}:{article.editorial_operation_id}:"
+        f"{article.publish_date}:{article.message_sha256}"
+    )
+    expected_guid = "vcm-art-" + hashlib.sha256(seed.encode("utf-8")).hexdigest()[:28]
+    if article.guid != expected_guid:
+        raise VkArticleWallError("article operation guid differs from approved deterministic identity")
+
+    ordinal = row.get("ordinal")
+    if ordinal == 1:
+        if article.required_canary is not None:
+            raise VkArticleWallError("canary operation cannot require itself")
+    elif article.required_canary != _expected_canary(policy):
+        raise VkArticleWallError("batch operation lacks the exact approved canary requirement")
 
 
 def jpeg_dimensions(data: bytes) -> tuple[int, int]:
@@ -273,12 +380,7 @@ def _exact_post(
         return None
     text = canonical_vk_text(str(item.get("text") or ""))
     photos = _photo_tokens(item)
-    if (
-        text == message
-        and text.count(article_url) == 1
-        and date == publish_date
-        and len(photos) == 1
-    ):
+    if text == message and text.count(article_url) == 1 and date == publish_date and len(photos) == 1:
         return ExactArticlePost(
             owner_id=owner_id,
             post_id=post_id,
@@ -369,14 +471,8 @@ class VkArticleWallWriter(VkWallWriter):
                     raise VkArticleWallError(
                         f"article message already occurs in a non-exact {surface.value} post: {remote}"
                     )
-                if (
-                    surface is VkWallSurface.POSTPONED
-                    and type(date) is int
-                    and date == article.publish_date
-                ):
-                    raise VkArticleWallError(
-                        f"postponed schedule slot is already occupied: {remote}"
-                    )
+                if surface is VkWallSurface.POSTPONED and type(date) is int and date == article.publish_date:
+                    raise VkArticleWallError(f"postponed schedule slot is already occupied: {remote}")
         return None
 
     @staticmethod
@@ -470,11 +566,7 @@ class VkArticleWallWriter(VkWallWriter):
         mutation_started = False
         try:
             mutation_started = True
-            upload = self._upload_jpeg_once(
-                upload_url=upload_url,
-                article=article,
-                jpeg=jpeg,
-            )
+            upload = self._upload_jpeg_once(upload_url=upload_url, article=article, jpeg=jpeg)
             photo_token, saved_photo_owner_id, saved_photo_id = self._save_wall_photo(upload)
             response = self._call(
                 "wall.post",
@@ -532,18 +624,14 @@ class VkArticleWallWriter(VkWallWriter):
             raise
         except Exception as exc:
             if mutation_started:
-                raise UnknownProviderOutcomeError(
-                    f"{type(exc).__name__}: {exc}"
-                ) from exc
+                raise UnknownProviderOutcomeError(f"{type(exc).__name__}: {exc}") from exc
             raise
 
     def reconcile_exact(self, *, article: ArticleOperation) -> dict[str, Any]:
         capture = self.capture_complete_wall()
         matches = self.find_exact(capture, article)
         if len(matches) != 1:
-            raise RuntimeError(
-                f"exact postponed article reconciliation requires one match; found {len(matches)}"
-            )
+            raise RuntimeError(f"exact postponed article reconciliation requires one match; found {len(matches)}")
         match = matches[0]
         if match.surface != VkWallSurface.POSTPONED.value:
             raise RuntimeError("reconciled article post is not on the postponed surface")
@@ -580,6 +668,10 @@ class VkPostponedArticlePhotoAdapter:
             article = parse_article_operation(operation)
             if article.account_alias != self.account_alias:
                 raise VkArticleWallError("operation account alias differs from the provider alias")
+            assert_approved_article_operation(
+                repository_root=self.repository_root,
+                article=article,
+            )
             asset_path = resolve_repository_relative_path(
                 self.repository_root,
                 article.asset_path,
@@ -619,14 +711,20 @@ class VkPostponedArticlePhotoAdapter:
         article = parse_article_operation(operation)
         if article.account_alias != self.account_alias:
             raise RuntimeError("operation account alias differs from the provider alias")
+        assert_approved_article_operation(
+            repository_root=self.repository_root,
+            article=article,
+        )
         return self.writer.reconcile_exact(article=article)
 
 
 __all__ = [
     "VK_ARTICLE_ACCOUNT_ALIAS",
+    "VK_ARTICLE_APPROVED_POLICY_SHA256",
     "VK_ARTICLE_COMMUNITY_ID",
     "VK_ARTICLE_OPERATION_KIND",
     "VK_ARTICLE_OWNER_ID",
+    "VK_ARTICLE_POLICY_RELATIVE_PATH",
     "VK_ARTICLE_PROJECT_KEY",
     "VK_ARTICLE_SITE_HOST",
     "ArticleOperation",
@@ -635,6 +733,7 @@ __all__ = [
     "VkArticleWallError",
     "VkArticleWallWriter",
     "VkPostponedArticlePhotoAdapter",
+    "assert_approved_article_operation",
     "jpeg_dimensions",
     "parse_article_operation",
 ]
