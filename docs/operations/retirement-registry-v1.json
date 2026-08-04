@@ -1,0 +1,99 @@
+{
+  "schema_name": "video-manager.retirement-registry",
+  "schema_version": 1,
+  "updated_at": "2026-08-05T01:00:00+03:00",
+  "repository": "FedorMilovanov/video-channel-manager",
+  "execution_authority": false,
+  "provider_writes_authorized": false,
+  "supported_entrypoints": [
+    {
+      "id": "package-a-read-only",
+      "entrypoint": "video-manager-package-a",
+      "scope": "wave-9a-wave-9b-wave-10-read-only-evidence",
+      "provider_queries": 0,
+      "provider_writes": 0,
+      "write_plan_created": false,
+      "status": "supported_read_only"
+    },
+    {
+      "id": "production-operator",
+      "entrypoint": "scripts/operator/Invoke-VideoManager.ps1",
+      "scope": "separately-reviewed-production-plans-only",
+      "status": "supported_guarded_operator"
+    }
+  ],
+  "retired_families": [
+    {
+      "id": "legendary-poet-shorts-sync-v1-v4",
+      "kind": "operational_package_family",
+      "issues": [32, 38],
+      "status": "retired_non_executable",
+      "execution_prohibited": true,
+      "replacement": "video-manager-package-a",
+      "reason": "Superseded inventory, matching and replay assumptions; retained only as historical evidence."
+    },
+    {
+      "id": "legendary-poet-48-clips",
+      "kind": "historical_queue_and_browser_workflow",
+      "issues": [32, 38],
+      "status": "retired_non_executable",
+      "execution_prohibited": true,
+      "replacement": "fresh bounded evidence under issues #32 and #38",
+      "reason": "The historical number 48 is not a current queue contract."
+    },
+    {
+      "id": "lord-god-longform-old-launchers",
+      "kind": "operational_launcher_family",
+      "issues": [31],
+      "status": "retired_non_executable",
+      "execution_prohibited": true,
+      "replacement": "video-manager-package-a for reconciliation; separately reviewed production operator for later writes",
+      "reason": "Old launchers had incomplete pagination and unsafe retry semantics."
+    },
+    {
+      "id": "vk-audio-browser-internal-web",
+      "kind": "separate_experimental_system",
+      "issues": [],
+      "status": "archived_not_core_supported",
+      "execution_prohibited": true,
+      "replacement": null,
+      "reason": "Browser/internal-web experiments have partial or unknown causal outcomes and no supported adapter contract."
+    },
+    {
+      "id": "direct-write-python-powershell-wrappers",
+      "kind": "repository_executor_family",
+      "issues": [64],
+      "status": "retired_non_executable",
+      "execution_prohibited": true,
+      "replacement": "scripts/operator/Invoke-VideoManager.ps1",
+      "reason": "Wave 6 retired direct provider-write wrappers in favor of the guarded versioned operator."
+    }
+  ],
+  "history_archives": [
+    {
+      "id": "legendary-poet-vk-clips-2026-08-03-04",
+      "path": "docs/history/operational-attempts/legendary-poet-vk-clips-2026-08-03-04",
+      "source_pr": 85,
+      "source_head": "84761c0eca19483e9c64044fd03c1d769aeb199e",
+      "current_main_import_commit": "86a3a0f9cf45fe674eb28602d1d86cb8bc2f079c",
+      "status": "documentation_only_non_executable",
+      "execution_prohibited": true
+    },
+    {
+      "id": "lord-god-strength-vk-audio-2026-08-03-04",
+      "path": "docs/history/operational-attempts/lord-god-strength-vk-audio-2026-08-03-04",
+      "source_pr": 85,
+      "source_head": "84761c0eca19483e9c64044fd03c1d769aeb199e",
+      "current_main_import_commit": "86a3a0f9cf45fe674eb28602d1d86cb8bc2f079c",
+      "status": "documentation_only_non_executable",
+      "execution_prohibited": true
+    }
+  ],
+  "permanent_rules": [
+    "Historical archives never authorize execution or provider writes.",
+    "Accepted, processing, verified or unknown mutations are reconciled and never blindly replayed.",
+    "A proven missing item requires a separate reviewed exact-ID write plan.",
+    "Lord God and Legendary Poet identities, ledgers and snapshots remain separate.",
+    "Long-form and Shorts/Clips remain separate manifests and evidence objects."
+  ]
+}
