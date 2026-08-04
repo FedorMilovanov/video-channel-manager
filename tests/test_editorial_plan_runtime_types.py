@@ -132,7 +132,7 @@ def test_plan_validation_reports_strict_envelope_and_operation_types() -> None:
     errors = validate_content_plan(plan)
 
     expected = {
-        "schema_version must be 1",
+        "schema_version must be 2",
         "operation_set_sha256 must be a string",
         "counts must map create/update to nonnegative integers",
         "plan_sha256 must be a string",

@@ -7,17 +7,9 @@ import typer
 
 from video_channel_manager.cli._content_io import (
     console,
-    json_paths,
     load_records,
     print_failures,
-    read_json,
     write_json,
-)
-from video_channel_manager.editorial.content import (
-    EditorialContentRecord,
-    parse_content_record,
-    validate_content_collection,
-    validate_content_record,
 )
 from video_channel_manager.editorial.preview import preview_records
 
@@ -28,22 +20,9 @@ def validate_command(
         typer.Option("--input", "-i", help="Canonical JSON file or directory"),
     ],
 ) -> None:
-    """Validate canonical/legacy-v2 records, evidence mapping, and collection uniqueness."""
+    """Validate content records, project identity, evidence, and collection uniqueness."""
 
-    paths = json_paths(input_path)
-    failures: list[str] = []
-    records: list[EditorialContentRecord] = []
-    for path in paths:
-        try:
-            payload = read_json(path)
-        except ValueError as exc:
-            failures.append(str(exc))
-            continue
-        errors = validate_content_record(payload)
-        failures.extend(f"{path}: {error}" for error in errors)
-        if not errors:
-            records.append(parse_content_record(payload))
-    failures.extend(validate_content_collection(records))
+    records, failures = load_records(input_path)
     if failures:
         print_failures(failures)
         raise typer.Exit(code=2)
@@ -81,7 +60,7 @@ def preview_command(
         ),
     ] = False,
 ) -> None:
-    """Render one record or a batch without any remote mutation."""
+    """Render one exact-project record or batch without any remote mutation."""
 
     records, errors = load_records(input_path)
     if errors:
@@ -110,6 +89,7 @@ def preview_command(
         report_items.append(
             {
                 "content_id": item.record.content_id,
+                "project_key": item.record.project_key,
                 "variation_key": item.record.variation_key,
                 "platform": item.rendered.platform,
                 "surface": item.rendered.surface,
@@ -131,9 +111,11 @@ def preview_command(
     for error in batch.errors:
         console.print(f"[red]BATCH ERROR:[/red] {error}")
     if json_output is not None:
+        project_keys = sorted({item.record.project_key for item in batch.items})
         write_json(
             json_output,
             {
+                "project_key": project_keys[0] if len(project_keys) == 1 else None,
                 "platform": platform,
                 "surface": surface,
                 "items": report_items,

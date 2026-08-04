@@ -13,6 +13,7 @@ from video_channel_manager.editorial._content_plan_common import (
     valid_sha256,
 )
 from video_channel_manager.editorial._content_plan_validate_operation import validate_operation
+from video_channel_manager.editorial._project_profiles import PROJECT_KEYS
 
 
 def validate_content_plan(payload: dict[str, Any]) -> list[str]:
@@ -23,6 +24,14 @@ def validate_content_plan(payload: dict[str, Any]) -> list[str]:
     schema_version = payload.get("schema_version")
     if type(schema_version) is not int or schema_version != CONTENT_PLAN_SCHEMA_VERSION:
         errors.append(f"schema_version must be {CONTENT_PLAN_SCHEMA_VERSION}")
+
+    project_raw = payload.get("project_key")
+    if not isinstance(project_raw, str):
+        errors.append("project_key must be a string")
+    project_key = project_raw.strip() if isinstance(project_raw, str) else ""
+    if project_key not in PROJECT_KEYS:
+        errors.append("project_key must be a registered project")
+
     source_snapshot = payload.get("source_snapshot")
     if not isinstance(source_snapshot, str) or not source_snapshot.strip():
         errors.append("source_snapshot must be a nonblank string")
@@ -51,6 +60,8 @@ def validate_content_plan(payload: dict[str, Any]) -> list[str]:
     operations = payload.get("operations")
     if not isinstance(operations, list):
         return errors + ["operations must be a list"]
+    if not operations:
+        errors.append("operations must contain at least one operation")
     if len(operations) > 500:
         errors.append("operations exceed the hard safety cap of 500")
 
@@ -58,6 +69,8 @@ def validate_content_plan(payload: dict[str, Any]) -> list[str]:
     target_keys: list[str] = []
     variation_keys: list[str] = []
     rendered_hashes: list[str] = []
+    content_ids: list[str] = []
+    operation_projects: list[str] = []
     for index, raw in enumerate(operations):
         if not isinstance(raw, dict):
             errors.append(f"operations[{index}] must be an object")
@@ -71,16 +84,30 @@ def validate_content_plan(payload: dict[str, Any]) -> list[str]:
         target_keys.append(target_key)
         variation_keys.append(variation_key)
         rendered_hashes.append(rendered_sha)
+        content_raw = raw.get("content_id")
+        if isinstance(content_raw, str):
+            content_ids.append(content_raw.strip())
+        operation_project_raw = raw.get("project_key")
+        if isinstance(operation_project_raw, str):
+            operation_project = operation_project_raw.strip()
+            operation_projects.append(operation_project)
+            if project_key and operation_project != project_key:
+                errors.append(
+                    f"operations[{index}].project_key {operation_project} does not match plan project {project_key}"
+                )
 
     for label, values in (
         ("operation IDs", operation_ids),
         ("targets", target_keys),
+        ("content IDs", content_ids),
         ("variation keys", variation_keys),
         ("rendered texts", rendered_hashes),
     ):
         duplicates = sorted(value for value, count in Counter(values).items() if value and count > 1)
         if duplicates:
             errors.append(f"duplicate {label}: {', '.join(duplicates)}")
+    if operation_projects and set(operation_projects) != {project_key}:
+        errors.append("content plan operations must belong to the declared project")
 
     operation_set_sha = payload.get("operation_set_sha256")
     if not isinstance(operation_set_sha, str):

@@ -14,6 +14,7 @@ from video_channel_manager.editorial._content_plan_common import (
     valid_sha256,
 )
 from video_channel_manager.editorial._content_plan_validate_operation import validate_operation
+from video_channel_manager.editorial._project_profiles import PROJECT_KEYS
 
 
 def without_plan_digest(payload: dict[str, Any]) -> dict[str, Any]:
@@ -22,9 +23,10 @@ def without_plan_digest(payload: dict[str, Any]) -> dict[str, Any]:
     return copy
 
 
-def _operation_identity(operations: list[object]) -> tuple[list[str], list[str]]:
+def _operation_identity(operations: list[object]) -> tuple[list[str], list[str], str]:
     operation_ids: list[str] = []
     actions: list[str] = []
+    project_keys: set[str] = set()
     for index, item in enumerate(operations):
         if not isinstance(item, dict):
             raise ValueError(f"Content plan operations[{index}] must be an object.")
@@ -33,10 +35,20 @@ def _operation_identity(operations: list[object]) -> tuple[list[str], list[str]]
             detail = "; ".join(errors)
             raise ValueError(f"Cannot seal invalid content plan: {detail}")
         action = item["action"]
+        project_key = item["project_key"]
         assert isinstance(action, str)
+        assert isinstance(project_key, str)
         operation_ids.append(operation_id)
         actions.append(action)
-    return operation_ids, actions
+        project_keys.add(project_key)
+    if not operation_ids:
+        raise ValueError("Content plan requires at least one operation.")
+    if len(project_keys) != 1:
+        raise ValueError(f"Content plan operations must belong to one project: {sorted(project_keys)}")
+    project_key = next(iter(project_keys))
+    if project_key not in PROJECT_KEYS:
+        raise ValueError(f"unsupported content plan project_key: {project_key}")
+    return operation_ids, actions, project_key
 
 
 def seal_content_plan(payload: dict[str, Any]) -> dict[str, Any]:
@@ -44,7 +56,13 @@ def seal_content_plan(payload: dict[str, Any]) -> dict[str, Any]:
     operations = plan.get("operations")
     if not isinstance(operations, list):
         raise ValueError("Content plan operations must be a list.")
-    operation_ids, actions = _operation_identity(operations)
+    operation_ids, actions, project_key = _operation_identity(operations)
+    declared_project = plan.get("project_key")
+    if declared_project is not None and declared_project != project_key:
+        raise ValueError(
+            f"Content plan project_key {declared_project!r} does not match operations project {project_key!r}."
+        )
+    plan["project_key"] = project_key
     plan["operation_set_sha256"] = object_sha256(sorted(operation_ids))
     plan["counts"] = dict(sorted(Counter(actions).items()))
     plan["plan_sha256"] = object_sha256(without_plan_digest(plan))

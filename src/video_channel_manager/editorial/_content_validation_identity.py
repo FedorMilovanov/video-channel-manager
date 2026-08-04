@@ -18,6 +18,7 @@ from video_channel_manager.editorial._project_profiles import (
     PROJECT_KEYS,
     channel_project_key,
     explicit_project_key,
+    resolve_project_key,
 )
 
 
@@ -49,7 +50,12 @@ def _required_string(
     return value.strip()
 
 
-def validate_identity(payload: dict[str, Any], *, expected_channel_id: str | None) -> tuple[list[str], bool]:
+def validate_identity(
+    payload: dict[str, Any],
+    *,
+    expected_channel_id: str | None,
+    expected_project_key: str | None = None,
+) -> tuple[list[str], bool]:
     errors: list[str] = []
     schema_name = _required_string(payload, "schema_name", errors=errors)
     version = payload.get("schema_version")
@@ -100,8 +106,15 @@ def validate_identity(payload: dict[str, Any], *, expected_channel_id: str | Non
     inferred_project = channel_project_key(payload)
     if project_key in PROJECT_KEYS and inferred_project is not None and project_key != inferred_project:
         errors.append(f"project_key {project_key} does not match channel_id project {inferred_project}")
-    if schema_is_canonical and project_key is None and inferred_project is None:
-        errors.append("canonical content requires project_key when channel_id is not registered")
+
+    resolved_project = resolve_project_key(payload)
+    if resolved_project is None:
+        errors.append("content requires one registered project identity")
+    if expected_project_key is not None:
+        if expected_project_key not in PROJECT_KEYS:
+            errors.append(f"unsupported expected project_key: {expected_project_key}")
+        elif resolved_project is not None and resolved_project != expected_project_key:
+            errors.append(f"content project {resolved_project} does not match requested project {expected_project_key}")
 
     video_id = _optional_string(payload, "video_id", errors=errors)
     if schema_is_legacy and not video_id:

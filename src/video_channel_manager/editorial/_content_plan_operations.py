@@ -14,6 +14,7 @@ from video_channel_manager.editorial._content_plan_common import (
     valid_aware_datetime,
 )
 from video_channel_manager.editorial._content_plan_validate_operation import validate_operation
+from video_channel_manager.editorial._project_profiles import PROJECT_KEYS
 from video_channel_manager.editorial.content import EditorialContentRecord
 from video_channel_manager.editorial.rendering import RenderedContent
 
@@ -29,6 +30,8 @@ def make_content_operation(
 ) -> dict[str, Any]:
     if record.status != "approved" or not valid_aware_datetime(record.reviewed_at):
         raise ValueError("Content plans can include only approved records with a timezone-aware reviewed_at.")
+    if record.project_key not in PROJECT_KEYS:
+        raise ValueError("Content plans require one registered project_key.")
     if action not in {"create", "update"}:
         raise ValueError(f"unsupported content action: {action}")
     normalized_target = normalized_target_id(target_id)
@@ -60,6 +63,7 @@ def make_content_operation(
     source_ids = sorted(record.source_ids)
     source_ids_sha = object_sha256(source_ids)
     operation_id = operation_id_for(
+        project_key=record.project_key,
         action=action,
         platform=rendered.platform,
         surface=rendered.surface,
@@ -75,6 +79,7 @@ def make_content_operation(
     )
     return {
         "operation_id": operation_id,
+        "project_key": record.project_key,
         "action": action,
         "platform": rendered.platform,
         "surface": rendered.surface,
