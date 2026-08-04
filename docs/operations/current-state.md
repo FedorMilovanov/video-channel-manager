@@ -36,6 +36,7 @@ The supported orchestration surface is explicit and versioned:
 - ambiguous mutations are attempted at most once and any lost or unclassified outcome becomes `unknown_requires_reconciliation`, non-retry-safe;
 - reconciliation may cover only the exact unknown operations bound to the original plan and result;
 - the Wave 5 PowerShell operator accepts provider mutation manifests only through the complete Wave 6 `wave apply` argument contract;
+- the only supported production PowerShell entrypoint remains `scripts/operator/Invoke-VideoManager.ps1`;
 - no production provider adapter is implicitly registered by the CLI; absent reviewed dependency injection, provider apply fails closed.
 
 ## Live-operation gate
