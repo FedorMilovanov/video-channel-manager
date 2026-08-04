@@ -293,10 +293,7 @@ def validate_vk_wall_post_plan(plan: dict[str, Any]) -> None:
         raise ValueError("VK wall plan publish_date must be a positive exact integer")
     if not isinstance(plan.get("guid"), str) or not plan["guid"].startswith("vcm-"):
         raise ValueError("VK wall plan guid is invalid")
-    guid_seed = (
-        f"{resolved_project}:{community_id}:{owner_id}_{video_id}:"
-        f"{publish_date}:{plan['message_sha256']}"
-    )
+    guid_seed = f"{resolved_project}:{community_id}:{owner_id}_{video_id}:{publish_date}:{plan['message_sha256']}"
     expected_guid = "vcm-" + hashlib.sha256(guid_seed.encode("utf-8")).hexdigest()[:28]
     if plan.get("guid") != expected_guid:
         raise ValueError("VK wall plan guid does not match immutable operation identity")
@@ -453,9 +450,7 @@ class VkWallWriter(VkVideoWriter):
         post_id: int | None,
     ) -> list[VkWallPostFingerprint]:
         attachment = f"video{video_owner_id}_{video_id}"
-        message_digest = "sha256:" + hashlib.sha256(
-            canonical_vk_text(message).encode("utf-8")
-        ).hexdigest()
+        message_digest = "sha256:" + hashlib.sha256(canonical_vk_text(message).encode("utf-8")).hexdigest()
         return [
             post
             for post in snapshot.posts
