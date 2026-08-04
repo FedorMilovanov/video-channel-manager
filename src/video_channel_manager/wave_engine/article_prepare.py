@@ -13,6 +13,11 @@ from urllib.parse import quote, urljoin, urlsplit, urlunsplit
 
 import httpx
 
+from video_channel_manager.platforms.http import (
+    HttpClientOwner,
+    HttpOperationClass,
+    execute_http_request,
+)
 from video_channel_manager.platforms.vk.text_writer import canonical_vk_text
 from video_channel_manager.wave_engine.canonical import (
     file_sha256,
@@ -48,6 +53,30 @@ JPEG_HEIGHT = 630
 
 class ArticlePreparationError(RuntimeError):
     pass
+
+
+class _ArticleHttpClient(HttpClientOwner):
+    def __init__(self) -> None:
+        self._initialize_http_client(
+            None,
+            timeout=60.0,
+            follow_redirects=True,
+        )
+        self._http_client.headers.update(
+            {
+                "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/148 Safari/537.36")
+            }
+        )
+
+    def get(self, url: str) -> httpx.Response:
+        result = execute_http_request(
+            lambda: self._http_client.get(url),
+            provider="article-source",
+            operation=HttpOperationClass.SAFE_READ,
+            method="GET",
+            resource=urlsplit(url).path or "/",
+        )
+        return result.response
 
 
 class _PageMetadata(HTMLParser):
@@ -145,9 +174,7 @@ def load_approved_policy(path: Path) -> dict[str, Any]:
     }
     for field, expected in exact_identity.items():
         if policy.get(field) != expected:
-            raise ArticlePreparationError(
-                f"Approved policy {field} mismatch: {policy.get(field)!r} != {expected!r}"
-            )
+            raise ArticlePreparationError(f"Approved policy {field} mismatch: {policy.get(field)!r} != {expected!r}")
     if policy.get("policy_sha256") != _policy_digest(policy):
         raise ArticlePreparationError("Approved policy self-digest mismatch")
     commit = str(policy.get("source_repository_commit") or "")
@@ -195,11 +222,12 @@ def load_approved_policy(path: Path) -> dict[str, Any]:
             publish_at = datetime.fromisoformat(str(operation.get("publish_at") or ""))
         except ValueError as exc:
             raise ArticlePreparationError(f"Operation {ordinal} publish_at is invalid") from exc
-        if publish_at.tzinfo is None or publish_at.utcoffset() is None:
+        offset = publish_at.utcoffset()
+        if publish_at.tzinfo is None or offset is None:
             raise ArticlePreparationError(f"Operation {ordinal} publish_at lacks a timezone")
         if int(publish_at.timestamp()) != publish_date:
             raise ArticlePreparationError(f"Operation {ordinal} publish time mismatch")
-        if publish_at.utcoffset().total_seconds() != 3 * 3600:
+        if offset.total_seconds() != 3 * 3600:
             raise ArticlePreparationError(f"Operation {ordinal} must use UTC+03:00")
         if publish_at.hour != 19 or publish_at.minute != 0:
             raise ArticlePreparationError(f"Operation {ordinal} must be scheduled for 19:00")
@@ -219,13 +247,10 @@ def load_approved_policy(path: Path) -> dict[str, Any]:
 def _raw_source_url(policy: dict[str, Any], relative_path: str) -> str:
     owner, repository = str(policy["source_repository"]).split("/", maxsplit=1)
     encoded_path = "/".join(quote(part) for part in PurePosixPath(relative_path).parts)
-    return (
-        f"{RAW_GITHUB_BASE}/{quote(owner)}/{quote(repository)}/"
-        f"{policy['source_repository_commit']}/{encoded_path}"
-    )
+    return f"{RAW_GITHUB_BASE}/{quote(owner)}/{quote(repository)}/{policy['source_repository_commit']}/{encoded_path}"
 
 
-def _get(http: httpx.Client, url: str, *, label: str) -> httpx.Response:
+def _get(http: _ArticleHttpClient, url: str, *, label: str) -> httpx.Response:
     try:
         response = http.get(url)
         response.raise_for_status()
@@ -234,7 +259,11 @@ def _get(http: httpx.Client, url: str, *, label: str) -> httpx.Response:
     return response
 
 
-def _verify_page(http: httpx.Client, *, operation: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+def _verify_page(
+    http: _ArticleHttpClient,
+    *,
+    operation: dict[str, Any],
+) -> tuple[str, dict[str, Any]]:
     article_url = str(operation["url"])
     response = _get(http, article_url, label="article page")
     content_type = response.headers.get("content-type", "")
@@ -269,7 +298,7 @@ def _verify_page(http: httpx.Client, *, operation: dict[str, Any]) -> tuple[str,
 
 
 def _verify_pinned_source(
-    http: httpx.Client,
+    http: _ArticleHttpClient,
     *,
     policy: dict[str, Any],
     operation: dict[str, Any],
@@ -279,9 +308,7 @@ def _verify_pinned_source(
     try:
         text = response.content.decode("utf-8")
     except UnicodeDecodeError as exc:
-        raise ArticlePreparationError(
-            f"Pinned article source is not UTF-8: {operation['source_path']}"
-        ) from exc
+        raise ArticlePreparationError(f"Pinned article source is not UTF-8: {operation['source_path']}") from exc
     missing = [marker for marker in operation["source_markers"] if marker not in text]
     if missing:
         raise ArticlePreparationError(
@@ -353,7 +380,7 @@ def _materialize_jpeg(
 
 
 def _verify_local_image_source(
-    http: httpx.Client,
+    http: _ArticleHttpClient,
     *,
     policy: dict[str, Any],
     operation: dict[str, Any],
@@ -577,20 +604,15 @@ def prepare_legendary_poet_article_wave(
     assets_directory.mkdir(parents=True, exist_ok=True)
     asset_rows: list[dict[str, Any]] = []
     all_asset_paths: list[Path] = []
-    with httpx.Client(
-        headers={
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 Chrome/148 Safari/537.36"
-            )
-        },
-        follow_redirects=True,
-        timeout=60.0,
-    ) as http:
+    with _ArticleHttpClient() as http:
         for operation in policy["operations"]:
             editorial_id = str(operation["operation_id"])
             live_image_url, metadata = _verify_page(http, operation=operation)
-            source_evidence = _verify_pinned_source(http, policy=policy, operation=operation)
+            source_evidence = _verify_pinned_source(
+                http,
+                policy=policy,
+                operation=operation,
+            )
             image_response = _get(http, live_image_url, label="article cover")
             if not image_response.headers.get("content-type", "").lower().startswith("image/"):
                 raise ArticlePreparationError(f"Article cover is not an image: {live_image_url}")
@@ -704,13 +726,13 @@ def prepare_legendary_poet_article_wave(
 Project: `{VK_ARTICLE_PROJECT_KEY}`  
 VK community: `{VK_ARTICLE_COMMUNITY_ID}`  
 VK owner: `{VK_ARTICLE_OWNER_ID}`  
-Approved policy: `{summary['policy_sha256']}`  
+Approved policy: `{summary["policy_sha256"]}`  
 Assets: `{len(asset_rows)}` JPEG files, each {JPEG_WIDTH}×{JPEG_HEIGHT}
 
 ## Canary
 
-Request: `{canary['request_path']}`  
-Expected request SHA-256: `{canary['request_sha256']}`  
+Request: `{canary["request_path"]}`  
+Expected request SHA-256: `{canary["request_sha256"]}`  
 Operations: 1
 
 Run the supported PowerShell operator with `-EnableProviderWrites`.
@@ -719,8 +741,8 @@ postponed post is visible with its text, date, article URL, and one photo.
 
 ## Batch
 
-Request: `{batch['request_path']}`  
-Expected request SHA-256: `{batch['request_sha256']}`  
+Request: `{batch["request_path"]}`  
+Expected request SHA-256: `{batch["request_sha256"]}`  
 Operations: 9
 
 Every batch operation independently requires the exact postponed canary.
