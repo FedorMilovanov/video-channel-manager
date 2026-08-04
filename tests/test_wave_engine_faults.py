@@ -9,14 +9,19 @@ import pytest
 from video_channel_manager.wave_engine import (
     EvidenceArtifact,
     MutationClass,
+    OperationStatus,
     ProjectBinding,
     WaveApplyIntent,
     WaveEngine,
     WaveFaultStage,
     WaveOperation,
+    WaveOperationResult,
     WaveOperationSpec,
     WavePlan,
+    WaveReconciliationRequest,
+    WaveResult,
     WaveSourceEvidence,
+    WaveStatus,
 )
 from video_channel_manager.wave_engine.canonical import file_sha256, write_json_atomic
 
@@ -34,6 +39,15 @@ class RecordingAdapter:
     def execute(self, operation: WaveOperation) -> dict[str, object]:
         self.calls.append(operation.operation_id)
         return {"remote_identity": f"remote-{operation.sequence}"}
+
+
+class RecordingReconciliationAdapter:
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def reconcile(self, operation: WaveOperation) -> dict[str, object]:
+        self.calls.append(operation.operation_id)
+        return {"remote_identity": f"reconciled-{operation.sequence}"}
 
 
 def _clear_ci(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -92,6 +106,26 @@ def _prepare(tmp_path: Path) -> tuple[WaveSourceEvidence, WavePlan, WaveApplyInt
         enable_provider_writes=True,
     )
     return source, plan, intent, source_path, plan_path
+
+
+def _unknown_result(plan: WavePlan) -> WaveResult:
+    operation = plan.operations[0]
+    return WaveResult.build(
+        plan=plan,
+        status=WaveStatus.UNKNOWN_REQUIRES_RECONCILIATION,
+        operations=(
+            WaveOperationResult(
+                operation_id=operation.operation_id,
+                status=OperationStatus.UNKNOWN_REQUIRES_RECONCILIATION,
+                attempt_count=1,
+                retry_safe=False,
+                unknown_requires_reconciliation=True,
+                evidence={},
+                error_kind="unknown_provider_outcome",
+                error_message="response lost after dispatch",
+            ),
+        ),
+    )
 
 
 def _journal_stage(journal: Path) -> str | None:
@@ -171,6 +205,84 @@ def test_apply_fault_boundaries_preserve_durable_replay_barrier(
                 plan_file_path=plan_path,
                 journal_directory=journal,
                 provider_writes_enabled=True,
+            )
+        assert len(adapter.calls) == expected_calls
+
+
+@pytest.mark.parametrize(
+    ("fault_stage", "expected_calls", "expected_journal_stage", "expected_output"),
+    [
+        (WaveFaultStage.BEFORE_RECONCILIATION_INTENT_COMMIT, 0, None, False),
+        (WaveFaultStage.AFTER_RECONCILIATION_INTENT_COMMIT, 0, "intent_committed", False),
+        (
+            WaveFaultStage.AFTER_RECONCILIATION_DISPATCH_STARTED_COMMIT,
+            0,
+            "dispatch_started",
+            False,
+        ),
+        (
+            WaveFaultStage.AFTER_RECONCILIATION_OUTCOME_BEFORE_RESULT_COMMIT,
+            1,
+            "dispatch_started",
+            False,
+        ),
+        (
+            WaveFaultStage.AFTER_RECONCILIATION_OPERATION_RESULT_COMMIT,
+            1,
+            "operation_result_committed",
+            False,
+        ),
+        (
+            WaveFaultStage.BEFORE_RECONCILIATION_RESULT_COMMIT,
+            1,
+            "operation_result_committed",
+            False,
+        ),
+        (WaveFaultStage.AFTER_RECONCILIATION_RESULT_COMMIT, 1, "completed", True),
+    ],
+)
+def test_reconciliation_fault_boundaries_preserve_durable_replay_barrier(
+    tmp_path: Path,
+    fault_stage: WaveFaultStage,
+    expected_calls: int,
+    expected_journal_stage: str | None,
+    expected_output: bool,
+) -> None:
+    plan = _plan()
+    result = _unknown_result(plan)
+    request = WaveReconciliationRequest.build(plan=plan, result=result)
+    output = tmp_path / "reconciliation-result.json"
+    journal = tmp_path / ".reconciliation-result.json.journal.json"
+    adapter = RecordingReconciliationAdapter()
+
+    def crash(stage: WaveFaultStage, operation: WaveOperation | None) -> None:
+        del operation
+        if stage is fault_stage:
+            raise CrashAt(stage.value)
+
+    with pytest.raises(CrashAt, match=fault_stage.value):
+        WaveEngine().reconcile(
+            plan=plan,
+            result=result,
+            request=request,
+            adapter=adapter,
+            output_path=output,
+            fault_hook=crash,
+        )
+
+    assert len(adapter.calls) == expected_calls
+    assert journal.exists() is (fault_stage is not WaveFaultStage.BEFORE_RECONCILIATION_INTENT_COMMIT)
+    assert output.exists() is expected_output
+    if journal.exists():
+        journal_payload = json.loads(journal.read_text(encoding="utf-8"))
+        assert journal_payload["stage"] == expected_journal_stage
+        with pytest.raises(ValueError, match="automatic replay is prohibited"):
+            WaveEngine().reconcile(
+                plan=plan,
+                result=result,
+                request=request,
+                adapter=adapter,
+                output_path=output,
             )
         assert len(adapter.calls) == expected_calls
 
