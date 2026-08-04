@@ -14,7 +14,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 from video_channel_manager.editorial._project_profiles import VK_COMMUNITY_ID_TO_PROJECT_KEY
 from video_channel_manager.local_media.image_quality import ImageQualityReport, inspect_image
-from video_channel_manager.platforms.vk.thumbnails import VkThumbnailWriter
+from video_channel_manager.platforms.vk.thumbnail_writer import VerifiedVkThumbnailWriter
 from video_channel_manager.platforms.vk.writer import VkWriteError
 
 THUMBNAIL_EVIDENCE_SCHEMA = "video-manager.vk-thumbnail-evidence"
@@ -36,6 +36,8 @@ class ThumbnailPostflightUnverified(ThumbnailEvidenceError):
 
 class ThumbnailStatus(StrEnum):
     PREPARED = "prepared"
+    UPLOAD_INTENT_RECORDED = "upload_intent_recorded"
+    SAVE_INTENT_RECORDED = "save_intent_recorded"
     SAVED = "saved"
     VERIFIED = "verified"
     UNKNOWN_REQUIRES_RECONCILIATION = "unknown_requires_reconciliation"
@@ -47,30 +49,6 @@ class ThumbnailImageDescriptor:
     height: int
     canonical_url: str
     digest: str
-
-    @classmethod
-    def from_payload(cls, payload: Mapping[str, Any]) -> ThumbnailImageDescriptor | None:
-        raw_url = payload.get("url")
-        width = payload.get("width")
-        height = payload.get("height")
-        if not isinstance(raw_url, str) or not raw_url.strip():
-            return None
-        if not isinstance(width, int) or isinstance(width, bool) or width <= 0:
-            return None
-        if not isinstance(height, int) or isinstance(height, bool) or height <= 0:
-            return None
-        canonical_url = canonical_thumbnail_url(raw_url)
-        body = {
-            "canonical_url": canonical_url,
-            "height": height,
-            "width": width,
-        }
-        return cls(
-            width=width,
-            height=height,
-            canonical_url=canonical_url,
-            digest=_sha256_json(body),
-        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -127,31 +105,73 @@ def _sha256_json(payload: object) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def _strict_int(value: object, *, field: str, positive: bool = False) -> int:
+    if isinstance(value, bool):
+        raise ThumbnailEvidenceError(f"{field} must be an integer")
+    if isinstance(value, int):
+        parsed = value
+    elif isinstance(value, str) and value.strip().lstrip("-").isdigit():
+        parsed = int(value.strip())
+    else:
+        raise ThumbnailEvidenceError(f"{field} must be an integer")
+    if positive and parsed <= 0:
+        raise ThumbnailEvidenceError(f"{field} must be positive")
+    return parsed
+
+
+def _strict_text(value: object, *, field: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ThumbnailEvidenceError(f"{field} must be non-empty text")
+    return value.strip()
+
+
 def canonical_thumbnail_url(value: str) -> str:
     """Remove volatile query/fragment while preserving exact CDN host and path."""
 
-    normalized = value.strip()
-    parsed = urlsplit(normalized)
+    parsed = urlsplit(value.strip())
     if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
         raise ThumbnailEvidenceError("thumbnail image URL must be absolute http(s)")
+    try:
+        port = parsed.port
+    except ValueError as exc:
+        raise ThumbnailEvidenceError("thumbnail image URL has an invalid port") from exc
     host = parsed.hostname.lower() if parsed.hostname else ""
-    port = parsed.port
     if port is not None:
         host = f"{host}:{port}"
     return urlunsplit((parsed.scheme.lower(), host, parsed.path or "/", "", ""))
 
 
+def _descriptor_from_payload(payload: Mapping[str, Any]) -> ThumbnailImageDescriptor | None:
+    raw_url = payload.get("url")
+    width = payload.get("width")
+    height = payload.get("height")
+    if not isinstance(raw_url, str) or not raw_url.strip():
+        return None
+    if not isinstance(width, int) or isinstance(width, bool) or width <= 0:
+        return None
+    if not isinstance(height, int) or isinstance(height, bool) or height <= 0:
+        return None
+    canonical_url = canonical_thumbnail_url(raw_url)
+    body = {"canonical_url": canonical_url, "height": height, "width": width}
+    return ThumbnailImageDescriptor(
+        width=width,
+        height=height,
+        canonical_url=canonical_url,
+        digest=_sha256_json(body),
+    )
+
+
 def image_descriptors(payload: object) -> tuple[ThumbnailImageDescriptor, ...]:
     if not isinstance(payload, list):
         return ()
-    values: dict[str, ThumbnailImageDescriptor] = {}
+    unique: dict[str, ThumbnailImageDescriptor] = {}
     for raw in payload:
         if not isinstance(raw, Mapping):
             continue
-        descriptor = ThumbnailImageDescriptor.from_payload(raw)
+        descriptor = _descriptor_from_payload(raw)
         if descriptor is not None:
-            values[descriptor.digest] = descriptor
-    return tuple(sorted(values.values(), key=lambda item: (item.width, item.height, item.digest)))
+            unique[descriptor.digest] = descriptor
+    return tuple(sorted(unique.values(), key=lambda item: (item.width, item.height, item.digest)))
 
 
 def _receipt_from_response(
@@ -160,21 +180,15 @@ def _receipt_from_response(
     video_id: int,
     response: JsonMapping,
 ) -> SavedThumbnailReceipt:
-    photo_owner_id = response.get("photo_owner_id")
-    photo_id = response.get("photo_id")
-    photo_hash = response.get("photo_hash")
-    if not isinstance(photo_owner_id, int) or isinstance(photo_owner_id, bool) or photo_owner_id != owner_id:
+    photo_owner_id = _strict_int(response.get("photo_owner_id"), field="photo_owner_id")
+    if photo_owner_id != owner_id:
         raise ThumbnailEvidenceError("thumbnail save receipt does not contain the exact expected photo owner")
-    if not isinstance(photo_id, int) or isinstance(photo_id, bool) or photo_id <= 0:
-        raise ThumbnailEvidenceError("thumbnail save receipt does not contain a positive photo ID")
-    if not isinstance(photo_hash, str) or not photo_hash.strip():
-        raise ThumbnailEvidenceError("thumbnail save receipt does not contain a photo hash")
     return SavedThumbnailReceipt(
         owner_id=owner_id,
         video_id=video_id,
         photo_owner_id=photo_owner_id,
-        photo_id=photo_id,
-        photo_hash=photo_hash.strip(),
+        photo_id=_strict_int(response.get("photo_id"), field="photo_id", positive=True),
+        photo_hash=_strict_text(response.get("photo_hash"), field="photo_hash"),
         image_descriptors=image_descriptors(response.get("image")),
         response_digest=_sha256_json(response),
     )
@@ -186,9 +200,7 @@ def _readback_from_response(
     video_id: int,
     response: JsonMapping,
 ) -> ThumbnailReadback:
-    actual_owner_id = response.get("owner_id")
-    actual_video_id = response.get("id")
-    if actual_owner_id != owner_id or actual_video_id != video_id:
+    if response.get("owner_id") != owner_id or response.get("id") != video_id:
         raise ThumbnailEvidenceError("thumbnail readback does not identify the exact expected video")
     return ThumbnailReadback(
         owner_id=owner_id,
@@ -207,8 +219,6 @@ def readback_proves_saved_thumbnail(
     receipt: SavedThumbnailReceipt,
     readback: ThumbnailReadback,
 ) -> bool:
-    """Require exact video identity and a non-empty canonical descriptor-set match."""
-
     if (receipt.owner_id, receipt.video_id) != (readback.owner_id, readback.video_id):
         return False
     expected = _descriptor_digests(receipt.image_descriptors)
@@ -319,26 +329,33 @@ def write_thumbnail_record(path: Path, record: ThumbnailOperationRecord) -> None
     os.replace(temporary, path)
 
 
+def _optional_mapping(value: object) -> dict[str, object] | None:
+    return dict(value) if isinstance(value, Mapping) else None
+
+
 def _record_from_payload(payload: JsonMapping) -> ThumbnailOperationRecord:
     try:
+        local_thumbnail = payload["local_thumbnail"]
+        if not isinstance(local_thumbnail, Mapping):
+            raise ThumbnailEvidenceError("local_thumbnail must be an object")
         record = ThumbnailOperationRecord(
             schema_name=str(payload["schema_name"]),
             schema_version=str(payload["schema_version"]),
             ruleset=str(payload["ruleset"]),
             operation_id=str(payload["operation_id"]),
             project_key=str(payload["project_key"]),
-            owner_id=int(payload["owner_id"]),
-            video_id=int(payload["video_id"]),
-            local_thumbnail=dict(payload["local_thumbnail"]),
+            owner_id=_strict_int(payload["owner_id"], field="owner_id"),
+            video_id=_strict_int(payload["video_id"], field="video_id", positive=True),
+            local_thumbnail=dict(local_thumbnail),
             status=str(payload["status"]),
-            saved_receipt=dict(payload["saved_receipt"]) if isinstance(payload.get("saved_receipt"), Mapping) else None,
-            readback=dict(payload["readback"]) if isinstance(payload.get("readback"), Mapping) else None,
+            saved_receipt=_optional_mapping(payload.get("saved_receipt")),
+            readback=_optional_mapping(payload.get("readback")),
             failure=str(payload["failure"]) if payload.get("failure") is not None else None,
             created_at=str(payload["created_at"]),
             updated_at=str(payload["updated_at"]),
             evidence_digest=str(payload["evidence_digest"]),
         )
-    except (KeyError, TypeError, ValueError) as exc:
+    except KeyError as exc:
         raise ThumbnailEvidenceError("thumbnail evidence record is malformed") from exc
     if record.schema_name != THUMBNAIL_EVIDENCE_SCHEMA or record.schema_version != THUMBNAIL_EVIDENCE_VERSION:
         raise ThumbnailEvidenceError("thumbnail evidence record has an unsupported schema")
@@ -361,6 +378,17 @@ def read_thumbnail_record(path: Path) -> ThumbnailOperationRecord:
     return _record_from_payload(payload)
 
 
+def _descriptor_from_record(payload: Mapping[str, object]) -> ThumbnailImageDescriptor:
+    width = _strict_int(payload.get("width"), field="descriptor.width", positive=True)
+    height = _strict_int(payload.get("height"), field="descriptor.height", positive=True)
+    canonical_url = _strict_text(payload.get("canonical_url"), field="descriptor.canonical_url")
+    digest = _strict_text(payload.get("digest"), field="descriptor.digest")
+    expected = _sha256_json({"canonical_url": canonical_url, "height": height, "width": width})
+    if digest != expected:
+        raise ThumbnailEvidenceError("thumbnail descriptor digest does not match its fields")
+    return ThumbnailImageDescriptor(width=width, height=height, canonical_url=canonical_url, digest=digest)
+
+
 def _receipt_from_record(record: ThumbnailOperationRecord) -> SavedThumbnailReceipt | None:
     payload = record.saved_receipt
     if payload is None:
@@ -370,30 +398,17 @@ def _receipt_from_record(record: ThumbnailOperationRecord) -> SavedThumbnailRece
     if isinstance(raw_descriptors, list):
         for raw in raw_descriptors:
             if not isinstance(raw, Mapping):
-                continue
-            try:
-                descriptors.append(
-                    ThumbnailImageDescriptor(
-                        width=int(raw["width"]),
-                        height=int(raw["height"]),
-                        canonical_url=str(raw["canonical_url"]),
-                        digest=str(raw["digest"]),
-                    )
-                )
-            except (KeyError, TypeError, ValueError) as exc:
-                raise ThumbnailEvidenceError("saved thumbnail receipt is malformed") from exc
-    try:
-        return SavedThumbnailReceipt(
-            owner_id=int(payload["owner_id"]),
-            video_id=int(payload["video_id"]),
-            photo_owner_id=int(payload["photo_owner_id"]),
-            photo_id=int(payload["photo_id"]),
-            photo_hash=str(payload["photo_hash"]),
-            image_descriptors=tuple(descriptors),
-            response_digest=str(payload["response_digest"]),
-        )
-    except (KeyError, TypeError, ValueError) as exc:
-        raise ThumbnailEvidenceError("saved thumbnail receipt is malformed") from exc
+                raise ThumbnailEvidenceError("saved thumbnail descriptor is malformed")
+            descriptors.append(_descriptor_from_record(raw))
+    return SavedThumbnailReceipt(
+        owner_id=_strict_int(payload.get("owner_id"), field="receipt.owner_id"),
+        video_id=_strict_int(payload.get("video_id"), field="receipt.video_id", positive=True),
+        photo_owner_id=_strict_int(payload.get("photo_owner_id"), field="receipt.photo_owner_id"),
+        photo_id=_strict_int(payload.get("photo_id"), field="receipt.photo_id", positive=True),
+        photo_hash=_strict_text(payload.get("photo_hash"), field="receipt.photo_hash"),
+        image_descriptors=tuple(descriptors),
+        response_digest=_strict_text(payload.get("response_digest"), field="receipt.response_digest"),
+    )
 
 
 def _validate_scope(*, project_key: str, owner_id: int, video_id: int) -> None:
@@ -428,61 +443,110 @@ def _validate_existing_record(
         raise ThumbnailEvidenceError("existing thumbnail journal has conflicting local image identity")
 
 
+def _persist_unknown(
+    *,
+    record: ThumbnailOperationRecord,
+    journal_path: Path,
+    failure: str,
+    receipt: SavedThumbnailReceipt | None = None,
+    readback: ThumbnailReadback | None = None,
+) -> ThumbnailPostflightUnverified:
+    unknown = _transition(
+        record,
+        status=ThumbnailStatus.UNKNOWN_REQUIRES_RECONCILIATION,
+        receipt=receipt,
+        readback=readback,
+        failure=failure,
+    )
+    write_thumbnail_record(journal_path, unknown)
+    return ThumbnailPostflightUnverified(failure, record=unknown)
+
+
 def _reconcile_saved_thumbnail(
     *,
-    writer: VkThumbnailWriter,
+    writer: VerifiedVkThumbnailWriter,
     record: ThumbnailOperationRecord,
     receipt: SavedThumbnailReceipt,
     journal_path: Path,
     postflight_delays: tuple[float, ...],
     sleep: Callable[[float], None],
 ) -> ThumbnailOperationRecord:
-    latest_readback: ThumbnailReadback | None = None
     if not receipt.image_descriptors:
-        unknown = _transition(
-            record,
-            status=ThumbnailStatus.UNKNOWN_REQUIRES_RECONCILIATION,
+        raise _persist_unknown(
+            record=record,
+            journal_path=journal_path,
+            receipt=receipt,
             failure="save receipt has no image descriptors that can be compared with video.get readback",
         )
-        write_thumbnail_record(journal_path, unknown)
-        raise ThumbnailPostflightUnverified(unknown.failure or "thumbnail postflight is unverified", record=unknown)
 
+    latest: ThumbnailReadback | None = None
     for delay in postflight_delays:
         if delay < 0:
             raise ValueError("postflight delays cannot be negative")
         if delay:
             sleep(delay)
         payload = writer.get_video_thumbnail_state(owner_id=record.owner_id, video_id=record.video_id)
-        latest_readback = _readback_from_response(
-            owner_id=record.owner_id,
-            video_id=record.video_id,
-            response=payload,
-        )
-        if readback_proves_saved_thumbnail(receipt, latest_readback):
+        latest = _readback_from_response(owner_id=record.owner_id, video_id=record.video_id, response=payload)
+        if readback_proves_saved_thumbnail(receipt, latest):
             verified = _transition(
                 record,
                 status=ThumbnailStatus.VERIFIED,
                 receipt=receipt,
-                readback=latest_readback,
+                readback=latest,
                 failure=None,
             )
             write_thumbnail_record(journal_path, verified)
             return verified
 
-    unknown = _transition(
-        record,
-        status=ThumbnailStatus.UNKNOWN_REQUIRES_RECONCILIATION,
+    raise _persist_unknown(
+        record=record,
+        journal_path=journal_path,
         receipt=receipt,
-        readback=latest_readback,
+        readback=latest,
         failure="delayed video.get readback did not prove the saved thumbnail descriptor set",
     )
-    write_thumbnail_record(journal_path, unknown)
-    raise ThumbnailPostflightUnverified(unknown.failure or "thumbnail postflight is unverified", record=unknown)
+
+
+def _resume_existing(
+    *,
+    writer: VerifiedVkThumbnailWriter,
+    record: ThumbnailOperationRecord,
+    journal_path: Path,
+    postflight_delays: tuple[float, ...],
+    sleep: Callable[[float], None],
+) -> ThumbnailOperationRecord | None:
+    status = ThumbnailStatus(record.status)
+    if status is ThumbnailStatus.VERIFIED:
+        return record
+    if status in {ThumbnailStatus.UPLOAD_INTENT_RECORDED, ThumbnailStatus.SAVE_INTENT_RECORDED}:
+        raise _persist_unknown(
+            record=record,
+            journal_path=journal_path,
+            failure=(
+                f"previous run stopped after {status.value}; the mutation may have been dispatched and must not be replayed"
+            ),
+        )
+    if status in {ThumbnailStatus.SAVED, ThumbnailStatus.UNKNOWN_REQUIRES_RECONCILIATION}:
+        receipt = _receipt_from_record(record)
+        if receipt is None:
+            raise ThumbnailPostflightUnverified(
+                "thumbnail mutation outcome is unknown and no exact save receipt is available",
+                record=record,
+            )
+        return _reconcile_saved_thumbnail(
+            writer=writer,
+            record=record,
+            receipt=receipt,
+            journal_path=journal_path,
+            postflight_delays=postflight_delays,
+            sleep=sleep,
+        )
+    return None
 
 
 def execute_thumbnail_operation(
     *,
-    writer: VkThumbnailWriter,
+    writer: VerifiedVkThumbnailWriter,
     project_key: str,
     owner_id: int,
     video_id: int,
@@ -506,26 +570,15 @@ def execute_thumbnail_operation(
             video_id=video_id,
             local_thumbnail=local_thumbnail,
         )
-        if record.status == ThumbnailStatus.VERIFIED.value:
-            return record
-        receipt = _receipt_from_record(record)
-        if record.status in {
-            ThumbnailStatus.SAVED.value,
-            ThumbnailStatus.UNKNOWN_REQUIRES_RECONCILIATION.value,
-        }:
-            if receipt is None:
-                raise ThumbnailPostflightUnverified(
-                    "thumbnail mutation outcome is unknown and no exact save receipt is available",
-                    record=record,
-                )
-            return _reconcile_saved_thumbnail(
-                writer=writer,
-                record=record,
-                receipt=receipt,
-                journal_path=journal_path,
-                postflight_delays=postflight_delays,
-                sleep=sleep,
-            )
+        resumed = _resume_existing(
+            writer=writer,
+            record=record,
+            journal_path=journal_path,
+            postflight_delays=postflight_delays,
+            sleep=sleep,
+        )
+        if resumed is not None:
+            return resumed
     else:
         record = _new_record(
             project_key=project_key,
@@ -535,37 +588,35 @@ def execute_thumbnail_operation(
         )
         write_thumbnail_record(journal_path, record)
 
+    upload_url = writer.get_upload_url(owner_id=owner_id)
+    upload_intent = _transition(record, status=ThumbnailStatus.UPLOAD_INTENT_RECORDED)
+    write_thumbnail_record(journal_path, upload_intent)
     try:
-        upload_url = writer.get_upload_url(owner_id=owner_id)
         upload_payload = writer.upload_image(upload_url=upload_url, path=image_path)
+    except VkWriteError as exc:
+        raise _persist_unknown(
+            record=upload_intent,
+            journal_path=journal_path,
+            failure=f"video.thumbUpload did not produce a fully verifiable outcome: {exc}",
+        ) from exc
+
+    save_intent = _transition(upload_intent, status=ThumbnailStatus.SAVE_INTENT_RECORDED)
+    write_thumbnail_record(journal_path, save_intent)
+    try:
         save_response = writer.save_uploaded_thumbnail(
             owner_id=owner_id,
             video_id=video_id,
             upload_payload=upload_payload,
         )
-        receipt = _receipt_from_response(
-            owner_id=owner_id,
-            video_id=video_id,
-            response=save_response,
-        )
+        receipt = _receipt_from_response(owner_id=owner_id, video_id=video_id, response=save_response)
     except (VkWriteError, ThumbnailEvidenceError) as exc:
-        method = exc.method if isinstance(exc, VkWriteError) else "video.saveUploadedThumb"
-        if method in {"video.thumbUpload", "video.saveUploadedThumb"}:
-            unknown = _transition(
-                record,
-                status=ThumbnailStatus.UNKNOWN_REQUIRES_RECONCILIATION,
-                failure=f"{method} did not produce a fully verifiable outcome: {exc}",
-            )
-            write_thumbnail_record(journal_path, unknown)
-            raise ThumbnailPostflightUnverified(unknown.failure or str(exc), record=unknown) from exc
-        raise
+        raise _persist_unknown(
+            record=save_intent,
+            journal_path=journal_path,
+            failure=f"video.saveUploadedThumb did not produce a fully verifiable outcome: {exc}",
+        ) from exc
 
-    saved = _transition(
-        record,
-        status=ThumbnailStatus.SAVED,
-        receipt=receipt,
-        failure=None,
-    )
+    saved = _transition(save_intent, status=ThumbnailStatus.SAVED, receipt=receipt)
     write_thumbnail_record(journal_path, saved)
     return _reconcile_saved_thumbnail(
         writer=writer,
