@@ -134,8 +134,4 @@ class CrossPlatformComparison(StrictModel):
 
     @property
     def missing_placement_count(self) -> int:
-        return sum(
-            item.missing_placement_count
-            for item in self.collection_gaps
-            if item.decision != "conflict"
-        )
+        return sum(item.missing_placement_count for item in self.collection_gaps if item.decision != "conflict")
