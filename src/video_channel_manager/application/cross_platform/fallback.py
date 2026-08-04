@@ -14,6 +14,7 @@ from video_channel_manager.application.cross_platform.normalize import (
     duration_delta,
     video_match,
 )
+from video_channel_manager.application.identity import canonicalize_identity_title
 from video_channel_manager.exchange.audit_package import AuditPackage
 
 
@@ -110,16 +111,18 @@ def fallback_components(
                 )
             )
             continue
+        source_indices = sorted(component_source, key=lambda i: source.videos[i].ref.remote_id)
+        target_indices = sorted(component_target, key=lambda i: target.videos[i].ref.remote_id)
         conflicts.append(
             MatchConflict(
                 reason="non_unique_fallback",
-                source_refs=[
-                    source.videos[index].ref
-                    for index in sorted(component_source, key=lambda i: source.videos[i].ref.remote_id)
+                source_refs=[source.videos[index].ref for index in source_indices],
+                target_refs=[target.videos[index].ref for index in target_indices],
+                source_title_identities=[
+                    canonicalize_identity_title(source.videos[index].title) for index in source_indices
                 ],
-                target_refs=[
-                    target.videos[index].ref
-                    for index in sorted(component_target, key=lambda i: target.videos[i].ref.remote_id)
+                target_title_identities=[
+                    canonicalize_identity_title(target.videos[index].title) for index in target_indices
                 ],
                 candidates=evidence,
             )
