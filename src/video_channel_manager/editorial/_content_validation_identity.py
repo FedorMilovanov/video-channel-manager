@@ -115,7 +115,8 @@ def validate_identity(
             errors.append(f"unsupported expected project_key: {expected_project_key}")
         elif resolved_project is not None and resolved_project != expected_project_key:
             errors.append(
-                f"content project {resolved_project} does not match requested project {expected_project_key}"
+                f"content project {resolved_project} does not match requested project "
+                f"{expected_project_key}"
             )
 
     video_id = _optional_string(payload, "video_id", errors=errors)
