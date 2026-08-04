@@ -27,11 +27,14 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-      - name: Apply exact production patch
+      - name: Assemble and apply exact production patch
         shell: bash
         run: |
           set -euo pipefail
-          base64 --decode .github/wave6-production.patch.gz.b64 | gzip -d > /tmp/wave6-production.patch
+          cat .github/wave6-patch/chunk-* > /tmp/wave6-production.patch.gz.b64
+          echo "8bbcf5c2911bab6792efdbf7fbd0b4702c6cebff10d9e777bcbdc96ee609e174  /tmp/wave6-production.patch.gz.b64" | sha256sum -c -
+          base64 --decode /tmp/wave6-production.patch.gz.b64 | gzip -d > /tmp/wave6-production.patch
+          echo "b4833a04115e2af8b527348b7fc3307a94e764e429060381f3b3e6518cb21523  /tmp/wave6-production.patch" | sha256sum -c -
           git apply --check /tmp/wave6-production.patch
           git apply /tmp/wave6-production.patch
           python -m pip install -e ".[dev]"
@@ -90,7 +93,11 @@ jobs:
         run: |
           set -euo pipefail
           git checkout origin/main -- .github/workflows/ci.yml
-          rm -f .github/wave6-production.patch.gz.b64 .github/workflows/wave6-apply.yml
+          rm -rf .github/wave6-patch
+          rm -f \
+            .github/wave6-production.patch.gz.b64 \
+            .github/wave6-apply-trigger \
+            .github/workflows/wave6-apply.yml
           git config user.name "Wave 6 Engine"
           git config user.email "wave6-engine@users.noreply.github.com"
           git add -A
