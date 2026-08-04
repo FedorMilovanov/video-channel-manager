@@ -120,6 +120,46 @@ Some tracks succeeded while others failed based on upload-host selection, showin
 
 **Rule:** compare successful and failed transport evidence before assigning a cause. Host, path, HTTP status, bytes transferred, timing, and reservation response shape are required.
 
+## FP-A16 — Background controls mistaken for the active nested modal
+
+**Seen in:** Playlist Workhorse v1.0.
+
+A page-global `Быстрый поиск` field remained visible outside the selector and was treated as proof that the nested selector had not closed.
+
+**Rule:** transition predicates must be scoped to the active topmost modal and require hit visibility. Background elements do not define current workflow state.
+
+## FP-A17 — Local transition failure treated as provider failure
+
+**Seen in:** Playlist Workhorse v1.0 followed by the v1.1 exact verification.
+
+The local workflow raised an exception after the inner save, while a later read-only run found the exact completed playlist.
+
+**Rule:** after a write boundary with an ambiguous response or UI transition, freeze writes and reconcile. Never authorize a full retry from the local exception alone.
+
+## FP-A18 — Exact remote completion confused with exact write attribution
+
+**Seen in:** playlist `85093900`.
+
+The final remote playlist state is verified, but the exact request/click that created it was not captured.
+
+**Rule:** record `remote_state_verified` and `causal_write_attribution` separately. Use `unknown` when write evidence is absent.
+
+## FP-A19 — Nested and final saves treated as one action
+
+**Seen in:** playlist creation form.
+
+The inner save commits track selection/returns to the parent form, while the final save creates or updates the playlist. Replaying both stages risks duplicate or unintended mutation.
+
+**Rule:** model each write boundary separately, persist its evidence, allow at most one bounded retry for an unresolved inner transition, and dispatch the final save once.
+
+## FP-A20 — Existing exact playlist not used as the primary idempotency key
+
+**Seen in:** the successful v1.1 no-write rerun.
+
+The safest successful result came from detecting exact remote title, membership, uniqueness, and order before attempting another write.
+
+**Rule:** exact remote state is the primary idempotency mechanism. A rerun that finds the exact desired playlist must end with zero writes.
+
 # Required regression themes
 
 Future supported implementations should include tests for:
@@ -135,4 +175,14 @@ Future supported implementations should include tests for:
 9. per-item partial batch outcomes and resume;
 10. explicit declared-wait heartbeats and silent-hang timeout;
 11. exact source-position deduplication;
-12. clear evidence-level labels for designed, self-tested, canary-verified, and batch-verified states.
+12. clear evidence-level labels for designed, self-tested, canary-verified, and batch-verified states;
+13. background search visible after the selector is no longer active;
+14. selector still in the DOM but covered/not hit-visible;
+15. exact playlist found after a local transition exception;
+16. exact no-write rerun;
+17. same title with partial or wrong membership;
+18. exact members in the wrong order;
+19. duplicate playlist member detection;
+20. final create save cannot be dispatched twice;
+21. remote completion with `causal_write_attribution: unknown`;
+22. exact active-modal fingerprint before and after nested save.
