@@ -26,7 +26,11 @@ jobs:
           cat > /tmp/wave4-migration.patch <<'PATCH'
           --- a/src/video_channel_manager/platforms/vk/upload_lifecycle.py
           +++ b/src/video_channel_manager/platforms/vk/upload_lifecycle.py
-          @@ -466,19 +466,51 @@
+          @@ -472,70 +472,114 @@
+                           readiness=readiness,
+                           wall_policy=wall_policy,
+                           clock=clock,
+                       ),
                        True,
                    )
                record = dict(existing)
@@ -79,7 +83,12 @@ jobs:
                    published_description=published_description,
                    readiness=readiness,
                    wall_policy=wall_policy,
-          @@ -491,8 +523,10 @@
+               )
+               return record, changed
+           
+           
+           def _validate_record_binding(
+               record: Mapping[str, Any],
                *,
                source_snapshot_id: str,
                community_id: int,
@@ -90,7 +99,11 @@ jobs:
                published_description: str,
                readiness: VkUploadReadiness,
                wall_policy: VkUploadWallPolicy,
-          @@ -504,24 +538,34 @@
+           ) -> None:
+               raw_policy = record.get("wall_policy")
+               if not isinstance(raw_policy, Mapping):
+                   raise ValueError("Upload journal is missing its wall policy")
+               observed_policy = VkUploadWallPolicy.from_mapping(raw_policy)
                expected = {
                    "source_snapshot_id": source_snapshot_id,
                    "community_id": community_id,
@@ -127,8 +140,11 @@ jobs:
            def _transition(
                record: dict[str, Any],
                target: UploadStage,
+               *,
+               evidence: Mapping[str, Any] | None = None,
+               clock: Clock = _utc_now,
+           ) -> None:
           PATCH
-          sed -i 's/^          //' /tmp/wave4-migration.patch
           git apply --check /tmp/wave4-migration.patch
           git apply /tmp/wave4-migration.patch
           python - <<'PY'
