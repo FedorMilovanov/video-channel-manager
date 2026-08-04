@@ -38,7 +38,7 @@ jobs:
           git apply --check /tmp/wave6-production.patch
           git apply /tmp/wave6-production.patch
           python -m pip install -e ".[dev]"
-          mapfile -t changed_python < <(git diff --name-only -- '*.py')
+          mapfile -t changed_python < <(git ls-files --modified --others --exclude-standard -- '*.py')
           if ((${#changed_python[@]})); then
             ruff check --fix "${changed_python[@]}"
             ruff format "${changed_python[@]}"
