@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import random
 import time
 from collections.abc import Callable, Sequence
 
 import httpx
 
+from video_channel_manager.platforms.http import RequestRateLimiter, RetryPolicy
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig
 from video_channel_manager.platforms.youtube.store import TokenStore
 from video_channel_manager.platforms.youtube.writer import (
@@ -36,7 +38,10 @@ class YouTubeDescriptionWriter(BaseYouTubeDescriptionWriter):
         http_client: httpx.Client | None = None,
         api_base_url: str = _API_BASE_URL,
         verification_delays: Sequence[float] = (0.25, 0.5, 1.0, 2.0),
+        retry_policy: RetryPolicy | None = None,
+        request_limiter: RequestRateLimiter | None = None,
         sleep: Callable[[float], None] = time.sleep,
+        jitter: Callable[[], float] = random.random,
     ) -> None:
         super().__init__(
             client_config=client_config,
@@ -44,6 +49,10 @@ class YouTubeDescriptionWriter(BaseYouTubeDescriptionWriter):
             account_alias=account_alias,
             http_client=http_client,
             api_base_url=api_base_url,
+            retry_policy=retry_policy,
+            request_limiter=request_limiter,
+            sleep=sleep,
+            jitter=jitter,
         )
         self._verification_delays = tuple(max(0.0, float(delay)) for delay in verification_delays)
         self._sleep = sleep
