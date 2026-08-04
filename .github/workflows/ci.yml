@@ -17,6 +17,86 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  powershell-inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Export exact PowerShell surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p wave5-inventory/files
+          find . -type f -name '*.ps1' -not -path './.git/*' -print | LC_ALL=C sort | sed 's#^./##' > wave5-inventory/paths.txt
+          while IFS= read -r path; do
+            mkdir -p "wave5-inventory/files/$(dirname "$path")"
+            cp "$path" "wave5-inventory/files/$path"
+          done < wave5-inventory/paths.txt
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import re
+          from pathlib import Path
+
+          root = Path('.')
+          paths = [line for line in Path('wave5-inventory/paths.txt').read_text(encoding='utf-8').splitlines() if line]
+          records = []
+          for raw_path in paths:
+              path = root / raw_path
+              data = path.read_bytes()
+              text = data.decode('utf-8-sig', errors='replace')
+              code = '\n'.join(
+                  line for line in text.splitlines()
+                  if not line.lstrip().startswith('#')
+              )
+              records.append(
+                  {
+                      'path': raw_path,
+                      'sha256': hashlib.sha256(data).hexdigest(),
+                      'size_bytes': len(data),
+                      'has_param_block': bool(re.search(r'(?im)^\s*param\s*\(', code)),
+                      'python_launch': bool(re.search(r'(?im)(?:^|[\s&])(?:py(?:\.exe)?|python(?:3(?:\.\d+)?)?(?:\.exe)?|video-manager)(?:\s|$)', code)),
+                      'nested_powershell': bool(re.search(r'(?im)(?:^|[\s&])(?:pwsh|powershell)(?:\.exe)?(?:\s|$)', code)),
+                      'last_write_time_selection': 'LastWriteTime' in code,
+                      'user_path_hardcode': bool(re.search(r'(?i)[A-Z]:\\Users\\', code)),
+                      'reads_last_exit_code': '$LASTEXITCODE' in code,
+                      'provider_write_markers': sorted(
+                          marker
+                          for marker in (
+                              'video.save',
+                              'video.delete',
+                              'wall.post',
+                              'wall.delete',
+                              'wall.edit',
+                              'upload',
+                              'apply',
+                              'delete',
+                              'publish',
+                          )
+                          if marker.lower() in code.lower()
+                      ),
+                      'stdout_parsing_markers': sorted(
+                          marker
+                          for marker in ('Select-String', '-match', 'regex', 'ConvertFrom-Json')
+                          if marker.lower() in code.lower()
+                      ),
+                  }
+              )
+          Path('wave5-inventory/inventory.json').write_text(
+              json.dumps({'schema_name': 'video-manager.wave5-powershell-inventory', 'schema_version': 1, 'count': len(records), 'records': records}, ensure_ascii=False, indent=2) + '\n',
+              encoding='utf-8',
+              newline='\n',
+          )
+          PY
+      - name: Upload PowerShell inventory
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: wave5-powershell-inventory
+          path: wave5-inventory
+          if-no-files-found: error
+
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 25
