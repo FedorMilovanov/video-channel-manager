@@ -43,7 +43,20 @@ jobs:
           fi
           test "$(grep -c 'hunk ignored' /tmp/wave3-patch.log)" -eq 1
           grep -Fq 'src/video_channel_manager/platforms/youtube/resilient_writer.py' /tmp/wave3-patch.log
-          git show HEAD^1:.github/workflows/ci.yml > .github/workflows/ci.yml
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('.github/workflows/ci.yml')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('permissions:\n  contents: write\n', 'permissions:\n  contents: read\n', 1)
+          start = text.index('      - name: Import Wave 3 product patch\n')
+          end = text.index('      - name: Set up Python\n', start)
+          text = text[:start] + text[end:]
+          path.write_text(text, encoding='utf-8')
+          PY
+          ! grep -Fq 'Import Wave 3 product patch' .github/workflows/ci.yml
+          ! grep -Fq 'contents: write' .github/workflows/ci.yml
+          grep -Fq 'contents: read' .github/workflows/ci.yml
           rm -f .wave3-product.b64 .wave3-chunk-* .wave3-patch-* tests/test_wave3_http_inventory_probe.py
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
