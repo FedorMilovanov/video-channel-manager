@@ -38,7 +38,7 @@
       "ordinal": 1,
       "operation_id": "legendary-poet-article-wave-202608-01-lermontov-no-death-prophecy",
       "publish_at": "2026-08-06T19:00:00+03:00",
-      "publish_date": 1786021200,
+      "publish_date": 1786032000,
       "message_sha256": "sha256:052c238bdceaa924aa386e5578aa977f4443660a175ee4d8596d8a804dedac82",
       "attachment_mode": "explicit-wall-photo-plus-text-link",
       "guid": "tlp26-01-a824"
@@ -60,8 +60,8 @@
       "ordinal": 2,
       "operation_id": "legendary-poet-article-wave-202608-02-briks-not-simple-triangle",
       "publish_at": "2026-08-08T19:00:00+03:00",
-      "publish_date": 1786194000,
-      "message_sha256": "sha256:c80d061f7d70708f15a697ebba424eb33945b3752714eb16cc9185b4eb8d38d4",
+      "publish_date": 1786204800,
+      "message_sha256": "sha256:37398f24306058862ac70b9c34224684ce84f04ada976dc8d2b7815ebd458317",
       "attachment_mode": "explicit-wall-photo-plus-text-link",
       "guid": "tlp26-02-a824"
     },
@@ -82,8 +82,8 @@
       "ordinal": 3,
       "operation_id": "legendary-poet-article-wave-202608-03-yesenin-part-one-two-calendars",
       "publish_at": "2026-08-10T19:00:00+03:00",
-      "publish_date": 1786366800,
-      "message_sha256": "sha256:71048c7c6ac4d1c275055640681c414cc9d13bf8ce4dd060b75404f635e3ab2c",
+      "publish_date": 1786377600,
+      "message_sha256": "sha256:bd7205f01e23567f9abd405ebdcfe69f75b3df9841ef73ef6e7e5f9dfc8dd05a",
       "attachment_mode": "explicit-wall-photo-plus-text-link",
       "guid": "tlp26-03-a824"
     },
@@ -104,8 +104,8 @@
       "ordinal": 4,
       "operation_id": "legendary-poet-article-wave-202608-04-mayakovsky-part-two-work-and-crisis",
       "publish_at": "2026-08-12T19:00:00+03:00",
-      "publish_date": 1786539600,
-      "message_sha256": "sha256:12115f52f9644015d1bad69ae653fa698c0378730bb2f691c7ea47c8c367a80d",
+      "publish_date": 1786550400,
+      "message_sha256": "sha256:27516059317d0ac4423e6b8fbc3a91295a8dfe5eabd7cbdd534f9e1ba8126bdc",
       "attachment_mode": "explicit-wall-photo-plus-text-link",
       "guid": "tlp26-04-a824"
     },
@@ -126,8 +126,8 @@
       "ordinal": 5,
       "operation_id": "legendary-poet-article-wave-202608-05-duncan-came-not-for-yesenin",
       "publish_at": "2026-08-14T19:00:00+03:00",
-      "publish_date": 1786712400,
-      "message_sha256": "sha256:b1ce814b4bac4ac4ef0e31b50cc95d87054b9471fafc1f71297a0db804bb26f6",
+      "publish_date": 1786723200,
+      "message_sha256": "sha256:f9c4e1782cff082f53eb8fd94f02ead5cfffe98fd6a58f54906b0fc4732b8888",
       "attachment_mode": "explicit-wall-photo-plus-text-link",
       "guid": "tlp26-05-a824"
     },
@@ -148,8 +148,8 @@
       "ordinal": 6,
       "operation_id": "legendary-poet-article-wave-202608-06-lermontov-road-composition",
       "publish_at": "2026-08-16T19:00:00+03:00",
-      "publish_date": 1786885200,
-      "message_sha256": "sha256:d3afe3bc9acd352fb7d2d1d5d6678e911d72ec84b18af26086b1dd3fd11bf793",
+      "publish_date": 1786896000,
+      "message_sha256": "sha256:499701b535032a026f3dda0976897f6fb02af85ea5589dad00c29672a6f5f7ac",
       "attachment_mode": "explicit-wall-photo-plus-text-link",
       "guid": "tlp26-06-a824"
     },
@@ -170,8 +170,8 @@
       "ordinal": 7,
       "operation_id": "legendary-poet-article-wave-202608-07-mayakovsky-part-one-before-monument",
       "publish_at": "2026-08-18T19:00:00+03:00",
-      "publish_date": 1787058000,
-      "message_sha256": "sha256:758dc426c4ae085316d93f0bc196232d0a2c8f4684bd4f0758ee6200a477c843",
+      "publish_date": 1787068800,
+      "message_sha256": "sha256:20fed300b39a10741bf05d63cc93765a2cdbe5b3326ee81f08f3f8ee05fb1cfd",
       "attachment_mode": "explicit-wall-photo-plus-text-link",
       "guid": "tlp26-07-a824"
     },
@@ -192,8 +192,8 @@
       "ordinal": 8,
       "operation_id": "legendary-poet-article-wave-202608-08-yesenin-part-two-not-countdown",
       "publish_at": "2026-08-20T19:00:00+03:00",
-      "publish_date": 1787230800,
-      "message_sha256": "sha256:8c300771116fc9331d7039801b5ea28e2c6188e6fe0e6abdc90ddf618af3b0cc",
+      "publish_date": 1787241600,
+      "message_sha256": "sha256:93829ee9ee17042aa88e030b55c7d65983aeff32fdd7efbb8b8a8282c6ba29cf",
       "attachment_mode": "explicit-wall-photo-plus-text-link",
       "guid": "tlp26-08-a824"
     },
@@ -214,8 +214,8 @@
       "ordinal": 9,
       "operation_id": "legendary-poet-article-wave-202608-09-briks-ring-and-separation",
       "publish_at": "2026-08-22T19:00:00+03:00",
-      "publish_date": 1787403600,
-      "message_sha256": "sha256:144b1031f657243f1aa8fc90ceee0794cd72668f417b22005988283ae833875d",
+      "publish_date": 1787414400,
+      "message_sha256": "sha256:3225d9e14af62a93ab98735a8f58b9e4af91a774a0e524e8e5a4dc800c3769ec",
       "attachment_mode": "explicit-wall-photo-plus-text-link",
       "guid": "tlp26-09-a824"
     },
@@ -236,8 +236,8 @@
       "ordinal": 10,
       "operation_id": "legendary-poet-article-wave-202608-10-yesenin-mask-became-life",
       "publish_at": "2026-08-24T19:00:00+03:00",
-      "publish_date": 1787576400,
-      "message_sha256": "sha256:80abc1f8cf523a18a0046d67ba21ff72c3b68789c9078c9be619d410a14bad41",
+      "publish_date": 1787587200,
+      "message_sha256": "sha256:d4cd0a89c0a36a6cf4ad7b5d4fe0f1a91048ef8692f2128657752c5f839101c3",
       "attachment_mode": "explicit-wall-photo-plus-text-link",
       "guid": "tlp26-10-a824"
     }
