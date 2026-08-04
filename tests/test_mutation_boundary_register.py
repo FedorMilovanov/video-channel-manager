@@ -30,6 +30,11 @@ REQUIRED_BOUNDARY_FIELDS = {
     "owning_tests",
 }
 REQUIRED_HIGH_RISK_STAGES = {"before_dispatch", "after_dispatch_before_response"}
+_SAFE_VK_API_METHODS = {
+    "groups.getById",
+    "users.get",
+    "video.get",
+}
 
 
 def _load_register() -> dict[str, Any]:
@@ -78,7 +83,11 @@ def _scan_python_mutation_markers() -> set[str]:
             name = _call_name(node.func)
             if name == "_call" and node.args:
                 method = _constant_string(node.args[0])
-                if method and not _is_true(_keyword(node, "retry_transient")):
+                if (
+                    method
+                    and method not in _SAFE_VK_API_METHODS
+                    and not _is_true(_keyword(node, "retry_transient"))
+                ):
                     markers.add(f"vk_api:{method}")
             if name == "execute_http_request":
                 operation = _keyword(node, "operation")
@@ -162,9 +171,7 @@ def test_ambiguous_boundaries_are_never_replayed() -> None:
 
 def test_ast_mutation_inventory_matches_registered_python_markers() -> None:
     payload = _load_register()
-    registered = {
-        item["scanner_marker"] for item in payload["boundaries"] if item["language"] == "python"
-    }
+    registered = {item["scanner_marker"] for item in payload["boundaries"] if item["language"] == "python"}
     discovered = _scan_python_mutation_markers()
     assert discovered == registered, {
         "unregistered": sorted(discovered - registered),
