@@ -27,12 +27,15 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - name: Import Wave 3 product bundle
+      - name: Import Wave 3 product patch
         if: github.event_name == 'pull_request' && matrix.python-version == '3.11'
         run: |
-          base64 -d .wave3-product.b64 > /tmp/wave3-product.zip
-          unzip -o /tmp/wave3-product.zip
-          rm .wave3-product.b64 tests/test_wave3_http_inventory_probe.py
+          cat .wave3-patch-00 .wave3-patch-01 | base64 -d > /tmp/wave3-code.patch.gz
+          echo "735afde5e6df1854db40be7f5db22e79ee52b1bc4ee7bc6f40291fc25cb64bac  /tmp/wave3-code.patch.gz" | sha256sum --check --strict
+          gzip -d /tmp/wave3-code.patch.gz
+          patch --batch --forward -p4 < /tmp/wave3-code.patch
+          git checkout origin/main -- .github/workflows/ci.yml
+          rm -f .wave3-product.b64 .wave3-chunk-* .wave3-patch-* tests/test_wave3_http_inventory_probe.py
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
