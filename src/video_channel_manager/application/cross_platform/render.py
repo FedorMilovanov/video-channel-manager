@@ -46,7 +46,9 @@ def render_comparison_markdown(comparison: CrossPlatformComparison) -> str:
         for item in comparison.missing_on_target
         if item.privacy_status == "public" and (item.duration_seconds or 0) <= 180
     ]
-    non_public = [item for item in comparison.missing_on_target if item.privacy_status != "public"]
+    non_public = [
+        item for item in comparison.missing_on_target if item.privacy_status != "public"
+    ]
     lines = [
         "# Сопоставление снимков каналов",
         "",
@@ -97,8 +99,16 @@ def render_comparison_markdown(comparison: CrossPlatformComparison) -> str:
         "|---|---|---|---:|---:|---:|---:|---:|",
     ]
     for gap in comparison.collection_gaps:
-        decision = gap.decision if gap.conflict_reason is None else f"conflict: {gap.conflict_reason}"
-        target_id = f"`{gap.target_collection_id}`" if gap.target_collection_id is not None else "—"
+        decision = (
+            gap.decision
+            if gap.conflict_reason is None
+            else f"conflict: {gap.conflict_reason}"
+        )
+        target_id = (
+            f"`{gap.target_collection_id}`"
+            if gap.target_collection_id is not None
+            else "—"
+        )
         lines.append(
             f"| {gap.source_title.replace('|', '¦')} | {decision} | {target_id} | "
             f"{gap.source_member_count} | {gap.matched_source_member_count} | {gap.target_member_count} | "
