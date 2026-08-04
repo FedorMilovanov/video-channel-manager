@@ -1,10 +1,11 @@
 # Current operational state
 
 Updated: 2026-08-04  
-Verified code baseline: `main@19c2671bf91c8376def527a592e0bb7674841d03`  
+Verified code baseline: `main@995167bdadc90d8d53414570cc3e5010bc4a93f2`  
 Wave 0 status: `completed`  
 Wave 1 status: `completed — PR #66 merged, no live provider writes`  
 Wave 2 status: `completed — PR #68 merged, no live provider writes`  
+Wave 3 status: `completed — PR #70 merged, no live provider writes`  
 Canonical audit: [`master-audit-2026-08-04.md`](master-audit-2026-08-04.md)  
 Machine register: [`audit-register-2026-08-04.json`](audit-register-2026-08-04.json)
 
@@ -12,9 +13,9 @@ This is the first state board to read before YouTube/VK work. Chat history, scre
 
 ## Current engineering mode
 
-`WAVE_3_TRANSPORT_RETRY_LIMITER_NEXT`
+`WAVE_4_WALL_SAFETY_NEXT`
 
-Waves 0–2 performed no VK or YouTube writes. Broad upload continuation and retransmission remain blocked until the relevant local journals and exact live objects are reconciled. Wave 1 makes reservation/upload recovery fail closed; Wave 2 makes reusable content and sync entrypoints project-bound and fail closed. Neither wave proves any historical live queue complete.
+Waves 0–3 performed no VK or YouTube writes. Broad upload continuation and retransmission remain blocked until the relevant local journals and exact live objects are reconciled. Wave 1 makes reservation/upload recovery fail closed; Wave 2 makes reusable content and sync entrypoints project-bound; Wave 3 makes reusable HTTP ownership explicit and allows bounded retry only for classified safe reads. None of these engineering waves proves any historical live queue complete.
 
 ## Project boundary
 
@@ -64,7 +65,7 @@ PR #66, merge `56da03247f60ec9d25f1646fb9ccdfbb651aff9c`:
 - ambiguous reservation/upload outcomes cannot be retried blindly;
 - recovery uses exact owner/video identity and journal stage;
 - `verified` requires exact identity, normalized title, minimum duration, expected type, stable processing state, and playability;
-- old `uploaded_and_verified` rows migrate fail-closed to exact reconciliation;
+- old `uploaded_and_verified` rows migrate fail closed to exact reconciliation;
 - JSON journal writes use flush, `fsync`, atomic replace, and directory synchronization where supported;
 - crash/replay matrix and full CI passed on Python 3.11, 3.12, and 3.13;
 - no live VK or YouTube write occurred.
@@ -83,22 +84,40 @@ PR #68, merge `19c2671bf91c8376def527a592e0bb7674841d03`:
 - exact-head CI run `30867659234` passed all gates on Python 3.11, 3.12, and 3.13;
 - no live VK or YouTube write occurred.
 
+PR #70, merge `995167bdadc90d8d53414570cc3e5010bc4a93f2`:
+
+- `platforms/http.py` is the only reusable `src/` factory for direct `httpx.Client()` construction;
+- reusable provider clients use one owned or borrowed persistent client; `YouTubeCommentWriter` no longer constructs a client per request;
+- ten remaining bounded one-shot script constructors are documented and protected by an AST inventory gate;
+- retry authority is explicit through `SAFE_READ` versus `AMBIGUOUS_MUTATION`, never inferred from HTTP method alone;
+- classified safe reads receive bounded exponential backoff, bounded valid `Retry-After`, injectable jitter, and an injectable thread-safe minimum-interval limiter;
+- ambiguous YouTube, VK, OAuth, upload-server, and thumbnail mutations execute once and surface non-retryable outcomes to outer orchestrators;
+- transport, rate-limit, transient/permanent HTTP, provider-transient/provider-error, invalid JSON, and invalid payload failures have redaction-safe classifications and attempt counts;
+- access tokens, OAuth secrets, token endpoints, authorization headers, opaque upload URLs, and full sensitive payloads are excluded from errors;
+- YouTube uploads playlist ID is cached for the client lifecycle;
+- VK limiter interval is configurable/injectable and defaults to zero rather than embedding an unverified numeric provider limit;
+- exact-head CI run `30871435907` passed all gates on Python 3.11, 3.12, and 3.13;
+- no live VK or YouTube write occurred.
+
 ### Remaining engineering blockers
 
-Wave 3:
+Wave 4 / issue #36:
 
-- complete HTTP ownership inventory, including `YouTubeCommentWriter` and remaining direct `httpx.Client()` sites;
-- centralize redaction-safe request/parse/provider-error taxonomy without hiding operation semantics;
-- add bounded retry/backoff only to classified safe reads;
-- preserve fail-closed behavior for ambiguous mutations;
-- cache the YouTube uploads playlist ID for the owned client lifecycle;
-- add a configurable proactive VK limiter only after current provider-policy verification.
+- introduce a universal upload-side wall firewall with `wall_mutation_authorized=false` as the required default;
+- bind exact published+postponed before-snapshot evidence to upload plans/journals;
+- require postflight wall delta verification after any upload request may have reached VK;
+- preserve explicit `wallpost=0` in every supported `video.save` path;
+- make postponed publication the only default wall-write path;
+- block immediate publication without a separate immutable reviewed exception;
+- scan published and postponed surfaces for exact duplicates and schedule-slot collisions;
+- keep ambiguous `wall.post` outcomes single-attempt and reconciliation-only;
+- do not mandate unverified `auto_publish` or misuse playback `repeat` as wall safety.
 
 Later waves:
 
-- wall safety, Windows runners, stable wave engine, broader risk coverage, album identity, matching, and authoritative media-cache work remain open.
+- Windows runners, stable wave engine, broader risk coverage, album identity, matching, authoritative media-cache work, live reconciliation, and governed retirement remain open.
 
-Issue #64 owns the remaining roadmap. Issues #65 and #67 are complete.
+Issue #64 owns the remaining roadmap. Issues #65, #67, and #69 are complete. Issue #36 owns Wave 4.
 
 ## `lord-god-strength` operational state
 
@@ -132,12 +151,13 @@ Shorts/Clips:
 
 Wall:
 
-- wall mutation status: `BLOCKED_PENDING_ISSUE_36_AND_FRESH_READ_ONLY_WALL_AUDIT`;
+- wall mutation status: `BLOCKED_PENDING_WAVE_4_ISSUE_36_AND_FRESH_READ_ONLY_WALL_AUDIT`;
 - upload and wall publication remain separate operations;
 - immediate publication is blocked by default;
-- issue #36 owns the universal upload/wall contract and fresh published+postponed audit;
+- issue #36 owns the universal upload/wall contract and future fresh published+postponed audit;
 - issue #37 is limited to its exact approved cleanup scope;
-- `guid` is an additional guard, not complete idempotency.
+- `guid` is an additional guard, not complete idempotency;
+- no current wall counts or cleanup authorization are inferred from the architecture merge.
 
 Catalog/publishing:
 
@@ -171,24 +191,23 @@ The browser-based VK Audio workflow belongs to the adjacent `mp3telegrambot` sys
 - #31 — long-form result and ledger reconciliation;
 - #32 — exact VK Clips inventory and Shorts queue;
 - #33 — catalog and publishing after dependencies;
-- #36 — wall safety and postponed publishing;
+- #36 — active Wave 4 wall safety and postponed publishing;
 - #37 — exact approved wall-cleanup scope;
 - #38 — Shorts upload modes and final type/player behavior;
 - #64 — master reliability roadmap;
-- #65 — completed Wave 1 upload lifecycle;
-- #66 — merged Wave 1 implementation;
-- #67 — completed Wave 2 fail-closed content/project pipeline;
-- #68 — merged Wave 2 implementation.
+- #65/#66 — completed Wave 1 issue and implementation;
+- #67/#68 — completed Wave 2 issue and implementation;
+- #69/#70 — completed Wave 3 issue and implementation.
 
 ## Next allowed work
 
-1. Create one focused Wave 3 issue from `main@19c2671bf91c8376def527a592e0bb7674841d03`.
-2. Create one isolated `agent/` branch from the synchronized Wave 2 baseline.
-3. Inventory every remaining HTTP client ownership and request path before refactoring.
-4. Introduce explicit safe-read versus ambiguous-mutation retry classification.
-5. Add bounded safe-read backoff, redaction-safe error taxonomy, uploads-playlist caching, and configurable limiter policy with tests.
-6. Perform no live queue retransmission or provider write while implementing Wave 3.
-7. Reconcile historical local journals separately before any future canary or resume.
+1. Synchronize the Wave 3 merge into the audit register, backlog, changelog, operations index, and issue #64.
+2. Create one isolated `agent/wave-4-wall-safety` branch from the synchronized `main` baseline.
+3. Treat issue #36 as the authoritative Wave 4 contract; do not create a duplicate issue.
+4. Inventory every supported `video.save`, upload manifest/plan, wall reader, wall writer, postponed scheduler, and immediate-post entrypoint before refactoring.
+5. Implement the upload wall firewall and postponed-only publication contract with local/fake provider evidence only.
+6. Perform no live upload, wall publication, canary, cleanup, or queue reconciliation during Wave 4 implementation/CI.
+7. Reconcile historical local journals and obtain a fresh read-only wall audit separately before any future live wall action.
 
 ## Update protocol
 
