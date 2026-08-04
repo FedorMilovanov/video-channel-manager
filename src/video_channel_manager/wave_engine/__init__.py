@@ -7,6 +7,13 @@ from video_channel_manager.wave_engine.engine import (
     WaveFaultHook,
     WaveFaultStage,
 )
+from video_channel_manager.wave_engine.integration import (
+    IntegrationEvidenceError,
+    IntegrationOutcome,
+    IntegrationStageKind,
+    OperationIntegrationEvidence,
+    build_operation_integration_evidence,
+)
 from video_channel_manager.wave_engine.models import (
     EvidenceArtifact,
     MutationClass,
@@ -26,8 +33,12 @@ from video_channel_manager.wave_engine.models import (
 
 __all__ = [
     "EvidenceArtifact",
+    "IntegrationEvidenceError",
+    "IntegrationOutcome",
+    "IntegrationStageKind",
     "MutationClass",
     "OperationAdapter",
+    "OperationIntegrationEvidence",
     "OperationRejectedError",
     "OperationStatus",
     "ProjectBinding",
@@ -46,4 +57,5 @@ __all__ = [
     "WaveResult",
     "WaveSourceEvidence",
     "WaveStatus",
+    "build_operation_integration_evidence",
 ]
