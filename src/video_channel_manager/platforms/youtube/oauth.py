@@ -142,9 +142,7 @@ class InstalledOAuthFlow(HttpClientOwner):
                 f"Google OAuth {resource} returned invalid JSON [attempts={result.attempts}]."
             ) from exc
         if not isinstance(payload, dict):
-            raise OAuthFlowError(
-                f"Google OAuth {resource} returned a non-object payload [attempts={result.attempts}]."
-            )
+            raise OAuthFlowError(f"Google OAuth {resource} returned a non-object payload [attempts={result.attempts}].")
         return payload
 
     def exchange_code(self, *, code: str, redirect_uri: str, code_verifier: str) -> OAuthToken:
