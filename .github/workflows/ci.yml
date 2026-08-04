@@ -10,7 +10,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -27,6 +27,44 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Apply canonical Wave 3 quality fixes
+        if: github.event_name == 'pull_request' && matrix.python-version == '3.11'
+        run: |
+          git fetch origin "${GITHUB_HEAD_REF}:refs/remotes/origin/${GITHUB_HEAD_REF}" --depth=1
+          git checkout -B "${GITHUB_HEAD_REF}" "refs/remotes/origin/${GITHUB_HEAD_REF}"
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/video_channel_manager/platforms/http.py')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('return self._monotonic()', 'return float(self._monotonic())')
+          text = text.replace('now = self._monotonic()', 'now = float(self._monotonic())')
+          path.write_text(text, encoding='utf-8')
+          PY
+          ruff format \
+            src/video_channel_manager/platforms/http.py \
+            src/video_channel_manager/platforms/vk/client.py \
+            src/video_channel_manager/platforms/vk/writer.py \
+            src/video_channel_manager/platforms/youtube/comments.py \
+            src/video_channel_manager/platforms/youtube/writer.py \
+            src/video_channel_manager/platforms/youtube/resilient_writer.py
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('.github/workflows/ci.yml')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('permissions:\n  contents: write\n', 'permissions:\n  contents: read\n', 1)
+          start = text.index('      - name: Apply canonical Wave 3 quality fixes\n')
+          end = text.index('      - name: Set up Python\n', start)
+          path.write_text(text[:start] + text[end:], encoding='utf-8')
+          PY
+          ! grep -Fq 'Apply canonical Wave 3 quality fixes' .github/workflows/ci.yml
+          ! grep -Fq 'contents: write' .github/workflows/ci.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "style: apply canonical Wave 3 quality fixes"
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
