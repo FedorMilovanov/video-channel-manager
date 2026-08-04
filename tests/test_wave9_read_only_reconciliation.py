@@ -374,7 +374,7 @@ def test_reconciliation_evidence_digest_detects_tampering() -> None:
         ),
         evaluated_at=NOW,
     )
-    payload = evidence.model_dump(mode="json")
+    payload = evidence.model_dump()
     payload["self_digest"] = "0" * 64
 
     with pytest.raises(ValidationError, match="self_digest mismatch"):
