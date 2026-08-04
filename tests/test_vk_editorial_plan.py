@@ -6,6 +6,12 @@ from pathlib import Path
 
 import pytest
 
+from video_channel_manager.application.catalog_identity import (
+    CatalogIdentityEvidence,
+    calculate_catalog_identity_digest,
+)
+from video_channel_manager.domain.enums import PlatformName
+from video_channel_manager.domain.models import RemoteRef
 from video_channel_manager.editorial.content import parse_content_record
 from video_channel_manager.platforms.vk.catalog import (
     VK_CATALOG_PLAN_SCHEMA,
@@ -16,6 +22,10 @@ from video_channel_manager.platforms.vk.catalog import (
 )
 from video_channel_manager.platforms.vk.editorial_plan import apply_editorial_records_to_vk_catalog_plan
 
+_SOURCE_CHANNEL_ID = "UC-78ys2S3cQ3lpqgXfo-SvQ"
+_TARGET_COMMUNITY_ID = 235216998
+_TARGET_VIDEO_ID = "-235216998_456"
+
 
 def _record():
     path = Path(__file__).resolve().parents[1] / "content" / "editorial" / "examples" / "tyutchev-night-sea.json"
@@ -23,31 +33,59 @@ def _record():
     return parse_content_record(payload)
 
 
+def _catalog_identity() -> CatalogIdentityEvidence:
+    provisional = CatalogIdentityEvidence(
+        project_key="legendary-poet",
+        source_snapshot_id="source-snapshot",
+        target_snapshot_id="target-snapshot",
+        source_channel=RemoteRef(
+            platform=PlatformName.YOUTUBE,
+            channel_id=_SOURCE_CHANNEL_ID,
+            remote_id=_SOURCE_CHANNEL_ID,
+        ),
+        target_channel=RemoteRef(
+            platform=PlatformName.VK,
+            channel_id=str(_TARGET_COMMUNITY_ID),
+            remote_id=str(_TARGET_COMMUNITY_ID),
+        ),
+        digest="0" * 64,
+    )
+    return provisional.model_copy(
+        update={"digest": calculate_catalog_identity_digest(provisional)}
+    )
+
+
 def _catalog_plan() -> dict[str, object]:
     before_title = "Старое название"
     after_title = "Новое название"
     before_description = "Старое описание"
     after_description = "Временное описание"
+    identity = _catalog_identity()
     plan: dict[str, object] = {
         "schema_name": VK_CATALOG_PLAN_SCHEMA,
         "schema_version": VK_CATALOG_PLAN_VERSION,
         "policy_version": "vk-catalog-structured-v1",
         "generated_at": "2026-07-25T20:30:00+00:00",
+        "project_key": "legendary-poet",
         "source_snapshot_id": "source-snapshot",
         "target_snapshot_id": "target-snapshot",
-        "source_channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
-        "target_community_id": 123,
+        "source_channel_id": _SOURCE_CHANNEL_ID,
+        "target_community_id": _TARGET_COMMUNITY_ID,
         "target_video_ids_sha256": "sha256:inventory",
         "initial_catalog_state_sha256": "sha256:state",
-        "reviewed_mappings": {"RQIlUvFf1KQ": "123_456"},
-        "resolved_video_mappings": {"RQIlUvFf1KQ": "123_456"},
+        "reviewed_mappings": {"RQIlUvFf1KQ": _TARGET_VIDEO_ID},
+        "resolved_video_mappings": {"RQIlUvFf1KQ": _TARGET_VIDEO_ID},
+        "reviewed_collection_mappings": {},
+        "approved_collection_creates": [],
+        "catalog_identity": identity.model_dump(mode="json"),
+        "catalog_identity_sha256": identity.digest,
         "album_operations": [],
         "placement_operations": [],
         "text_operations": [
             {
-                "operation_id": "video-text:update:123_456",
+                "operation_id": f"video-text:update:{_TARGET_VIDEO_ID}",
                 "source_video_id": "RQIlUvFf1KQ",
-                "target_video_id": "123_456",
+                "target_video_id": _TARGET_VIDEO_ID,
                 "before_title": before_title,
                 "after_title": after_title,
                 "before_description": before_description,
@@ -57,12 +95,15 @@ def _catalog_plan() -> dict[str, object]:
                 "before_description_sha256": text_sha256(before_description),
                 "after_description_sha256": text_sha256(after_description),
                 "publication_policy_version": "legacy",
+                "project_key": "legendary-poet",
             }
         ],
         "review_only": [],
         "summary": {
             "resolved_video_mappings": 1,
+            "resolved_collection_mappings": 0,
             "albums_to_create": 0,
+            "collection_conflicts": 0,
             "placements_to_add": 0,
             "video_texts_to_update": 1,
             "review_only": 0,
