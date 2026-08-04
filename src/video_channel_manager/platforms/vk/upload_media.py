@@ -28,6 +28,7 @@ from video_channel_manager.platforms.vk.upload_lifecycle import (
     VkUploadReadiness,
     VkUploadReadinessAssessment,
     _canonical_sha256,
+    _utc_now,
     execute_upload_operation as _execute_legacy_upload_operation,
 )
 from video_channel_manager.platforms.vk.wall_safety import (
@@ -43,9 +44,7 @@ class UploadMediaAuthorityError(RuntimeError):
 def _exact_project_channel_id(project_key: str) -> str:
     channel_ids = PROJECT_CHANNEL_IDS.get(project_key, frozenset())
     if len(channel_ids) != 1:
-        raise UploadMediaAuthorityError(
-            f"project {project_key!r} does not have exactly one registered source channel"
-        )
+        raise UploadMediaAuthorityError(f"project {project_key!r} does not have exactly one registered source channel")
     return next(iter(channel_ids))
 
 
@@ -62,9 +61,7 @@ def verify_upload_media_authority(
         raise UploadMediaAuthorityError("authoritative media artifact evidence is required")
     project_key = resolve_project_key({"community_id": community_id})
     if project_key is None:
-        raise UploadMediaAuthorityError(
-            f"community_id {community_id} does not resolve to one registered project"
-        )
+        raise UploadMediaAuthorityError(f"community_id {community_id} does not resolve to one registered project")
     source_video_id = record.get("source_video_id")
     if not isinstance(source_video_id, str) or not source_video_id.strip():
         raise UploadMediaAuthorityError("upload journal has no exact source_video_id")
@@ -101,13 +98,9 @@ def verify_upload_media_authority(
             raise UploadMediaAuthorityError(f"journaled media artifact is invalid: {exc}") from exc
         top_level_digest = previous_media.get("manifest_sha256")
         if top_level_digest != previous.manifest_sha256:
-            raise UploadMediaAuthorityError(
-                "journaled media manifest digest does not match its nested artifact"
-            )
+            raise UploadMediaAuthorityError("journaled media manifest digest does not match its nested artifact")
         if previous.manifest_sha256 != evidence.manifest_sha256:
-            raise UploadMediaAuthorityError(
-                "media artifact manifest changed after MEDIA_VERIFIED"
-            )
+            raise UploadMediaAuthorityError("media artifact manifest changed after MEDIA_VERIFIED")
     return evidence
 
 
@@ -139,14 +132,8 @@ def _bind_reservation_intent(record: dict[str, Any], manifest_sha256: str) -> No
         return
     existing = raw_intent.get("media_manifest_sha256")
     if existing not in {None, manifest_sha256}:
-        raise UploadMediaAuthorityError(
-            "reservation intent is bound to another media artifact manifest"
-        )
-    payload = {
-        key: value
-        for key, value in raw_intent.items()
-        if key not in {"committed_at", "intent_sha256"}
-    }
+        raise UploadMediaAuthorityError("reservation intent is bound to another media artifact manifest")
+    payload = {key: value for key, value in raw_intent.items() if key not in {"committed_at", "intent_sha256"}}
     payload["media_manifest_sha256"] = manifest_sha256
     raw_intent.update(payload)
     raw_intent["intent_sha256"] = _canonical_sha256(payload)
@@ -170,14 +157,12 @@ class _AuthorityWriter:
         *,
         record: dict[str, Any],
         community_id: int,
-        media_path: Path,
         media_artifact: MediaArtifactEvidence,
         probe: MediaProbe,
     ) -> None:
         self._delegate = delegate
         self._record = record
         self._community_id = community_id
-        self._media_path = media_path
         self._media_artifact = media_artifact
         self._probe = probe
 
@@ -250,6 +235,10 @@ class _AuthorityWriter:
         )
 
 
+def _legacy_media_change_error(exc: ValueError) -> bool:
+    return str(exc).startswith("Upload media changed after verification:")
+
+
 def execute_upload_operation(
     record: dict[str, Any],
     *,
@@ -265,7 +254,7 @@ def execute_upload_operation(
     persist: PersistCallback,
     media_probe: MediaProbe = probe_media,
     fault_hook: FaultHook | None = None,
-    clock: Clock,
+    clock: Clock = _utc_now,
 ) -> dict[str, Any]:
     """Run the VK upload lifecycle through mandatory Wave 8D media authority.
 
@@ -275,23 +264,24 @@ def execute_upload_operation(
     """
 
     stage = UploadStage(str(record.get("stage")))
-    reservation_dispatched = (
-        stage == UploadStage.RESERVATION_INTENT_COMMITTED
-        and bool(record.get("reservation_dispatch_started_at"))
+    reservation_dispatched = stage == UploadStage.RESERVATION_INTENT_COMMITTED and bool(
+        record.get("reservation_dispatch_started_at")
     )
-    requires_media = stage in {
-        UploadStage.PLANNED,
-        UploadStage.MEDIA_VERIFIED,
-        UploadStage.RESERVATION_INTENT_COMMITTED,
-        UploadStage.RESERVED,
-    } and not reservation_dispatched
+    requires_media = (
+        stage
+        in {
+            UploadStage.PLANNED,
+            UploadStage.MEDIA_VERIFIED,
+            UploadStage.RESERVATION_INTENT_COMMITTED,
+            UploadStage.RESERVED,
+        }
+        and not reservation_dispatched
+    )
 
     authoritative: MediaArtifactEvidence | None = None
     if requires_media:
         if media_path is None:
-            raise UploadRejected(
-                f"media_path is required while upload stage is {stage.value}"
-            )
+            raise UploadRejected(f"media_path is required while upload stage is {stage.value}")
         previous = record.get("media")
         previous_media = previous if isinstance(previous, Mapping) else None
         try:
@@ -320,25 +310,31 @@ def execute_upload_operation(
             writer,
             record=record,
             community_id=community_id,
-            media_path=media_path,
             media_artifact=authoritative,
             probe=media_probe,
         )
 
-    return _execute_legacy_upload_operation(
-        record,
-        writer=delegated_writer,
-        community_id=community_id,
-        title=title,
-        description=description,
-        media_path=media_path,
-        readiness=readiness,
-        processing_timeout=processing_timeout,
-        wall_before_snapshot=wall_before_snapshot,
-        persist=persist_with_authority,
-        fault_hook=fault_hook,
-        clock=clock,
-    )
+    try:
+        return _execute_legacy_upload_operation(
+            record,
+            writer=delegated_writer,
+            community_id=community_id,
+            title=title,
+            description=description,
+            media_path=media_path,
+            readiness=readiness,
+            processing_timeout=processing_timeout,
+            wall_before_snapshot=wall_before_snapshot,
+            persist=persist_with_authority,
+            fault_hook=fault_hook,
+            clock=clock,
+        )
+    except ValueError as exc:
+        if _legacy_media_change_error(exc):
+            raise UploadRejected(
+                "Upload media changed after reservation; restore the exact authoritative artifact and resume the same reservation"
+            ) from exc
+        raise
 
 
 __all__ = [
