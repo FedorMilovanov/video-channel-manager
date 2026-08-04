@@ -9,15 +9,15 @@ This backlog is subordinate to [`master-audit-2026-08-04.md`](master-audit-2026-
 - #31 — reconcile the 26-item long-form upload result and ledger;
 - #32 — inventory the real VK Clips surface and classify the Shorts queue;
 - #33 — organize and publish the verified VK catalog after dependencies;
-- #36 — universal upload/wall separation and postponed publishing;
+- #36 — active Wave 4 upload/wall firewall and postponed publishing;
 - #37 — exact approved Shorts wall-cleanup scope;
 - #38 — VK Shorts upload modes and final type/player behavior;
 - #64 — master reliability roadmap;
 - #65/#66 — completed Wave 1 issue and implementation;
 - #67/#68 — completed Wave 2 issue and implementation;
-- #69 — active Wave 3 transport/retry/limiter contract.
+- #69/#70 — completed Wave 3 issue and implementation.
 
-Issue #33 remains blocked until #31, #32/#38, and #36 have no silent unknown outcomes. Waves 1–2 prevent blind reservation/upload retries and project-identity bypass, but live queue continuation remains blocked until exact historical journal reconciliation.
+Issue #33 remains blocked until #31, #32/#38, and #36 have no silent unknown outcomes. Waves 1–3 prevent blind reservation/upload retries, project-identity bypass, and transport-level mutation retry, but live queue continuation remains blocked until exact historical journal reconciliation.
 
 ## Wave 0 — canonical state
 
@@ -70,30 +70,42 @@ Wave 2 is complete. It performed no VK or YouTube writes.
 
 ## Wave 3 — transport, retries, and limiter
 
-Tracked by issue #69. This is the next engineering wave.
+Completed by PR #70, merge `995167bdadc90d8d53414570cc3e5010bc4a93f2`, exact-head CI run `30871435907`.
 
-- [ ] Inventory every remaining direct `httpx.Client()` construction.
-- [ ] Classify each lifecycle as owned, borrowed, or intentional one-shot.
-- [ ] Move `YouTubeCommentWriter` and remaining reusable paths to explicit ownership.
-- [ ] Centralize redaction-safe request context, response parsing, and provider error taxonomy.
-- [ ] Define explicit safe-read versus ambiguous-mutation operation classes.
-- [ ] Add bounded retry/backoff only for classified safe reads.
-- [ ] Respect bounded valid `Retry-After`; never permit unbounded sleeps.
-- [ ] Keep ambiguous mutation attempts single-shot and fail closed.
-- [ ] Cache the YouTube uploads playlist ID for the client lifecycle.
-- [ ] Add an injectable configurable VK limiter only after primary provider-policy verification.
-- [ ] Add deterministic fake-clock/fault tests and preserve the Wave 1 crash matrix.
-- [ ] Pass exact-head CI on Python 3.11, 3.12, and 3.13 with zero provider writes.
+- [x] Inventory every remaining direct `httpx.Client()` construction.
+- [x] Classify each lifecycle as owned, borrowed, or intentional one-shot.
+- [x] Move `YouTubeCommentWriter` and all reusable paths to explicit ownership.
+- [x] Centralize redaction-safe transport, response, and provider-error taxonomy.
+- [x] Define explicit `SAFE_READ` versus `AMBIGUOUS_MUTATION` operation classes.
+- [x] Add bounded retry/backoff only for classified safe reads.
+- [x] Respect bounded valid `Retry-After`; invalid values cannot create unbounded sleep.
+- [x] Keep ambiguous mutation attempts single-shot and externally `retryable=false`.
+- [x] Cache the YouTube uploads playlist ID for the client lifecycle.
+- [x] Add an injectable thread-safe VK limiter with a zero default instead of an invented provider rate.
+- [x] Add deterministic fake-clock/fault/redaction/ownership tests and preserve the Wave 1 crash matrix.
+- [x] Cover YouTube inventory/comments/descriptions/OAuth and VK inventory/video/thumbnail paths.
+- [x] Pass exact-head CI on Python 3.11, 3.12, and 3.13 with zero provider writes.
+
+Wave 3 is complete. It performed no VK or YouTube writes.
 
 ## Wave 4 — wall safety subsystem
 
-- [ ] Preserve proven `wallpost=0` upload behavior.
-- [ ] Research disputed `auto_publish`/`repeat` provider contract before a mandate.
-- [ ] Require `wall_mutation_authorized=false` in upload manifests.
-- [ ] Add before/after wall delta audit for uploads.
-- [ ] Use postponed publication as the default path.
-- [ ] Scan published and postponed posts and exact schedule-slot collisions.
-- [ ] Treat `guid` as an additional guard, not complete idempotency.
+Tracked by issue #36. This is the active engineering wave.
+
+- [ ] Preserve proven `wallpost=0` in every supported `video.save` path.
+- [ ] Do not mandate unverified `auto_publish` or misuse playback `repeat` as wall safety.
+- [ ] Require a versioned upload contract with `wall_mutation_authorized=false`.
+- [ ] Reject missing/true/coerced/wrong-project wall authorization before config/network.
+- [ ] Bind published+postponed before-snapshot identity/digest to upload plans and journals.
+- [ ] Add mandatory postflight wall delta verification after any upload request may have reached VK.
+- [ ] Treat any unexpected published/postponed create/edit/delete/move as reconciliation-only; never auto-delete.
+- [ ] Make postponed publication the only default wall-write path.
+- [ ] Require exact project/community/owner/attachment/text/time/guid/plan binding.
+- [ ] Scan published and postponed surfaces for duplicate identity and exact/near schedule-slot collisions.
+- [ ] Journal wall intent before dispatch and keep lost responses single-shot/unknown.
+- [ ] Block immediate publication without a separate immutable reviewed exception.
+- [ ] Keep issue #37 cleanup isolated and perform zero live writes during implementation/CI.
+- [ ] Pass exact-head CI on Python 3.11, 3.12, and 3.13.
 
 ## Wave 5 — Windows/operator contract
 
@@ -146,7 +158,7 @@ Only after the required core gates:
 - [ ] Maintain an explicit supported/retired entrypoint registry.
 - [ ] Remove dead generations only after proof of no active references.
 - [ ] Generate documentation/CLI consistency checks.
-- [ ] Record architecture decisions for state machine, retry taxonomy, project identity, and wave engine.
+- [ ] Record architecture decisions for state machine, retry taxonomy, project identity, wall firewall, and wave engine.
 - [ ] Convert every live incident into a regression test and durable rule.
 
 ## Definition of done
@@ -156,6 +168,6 @@ A code wave is complete only when:
 - the exact issue scope and non-goals are preserved;
 - no unrelated provider mutation is included;
 - exact-head CI is green on Python 3.11, 3.12, and 3.13;
-- every ambiguous provider outcome remains fail closed;
+- every ambiguous provider outcome remains fail closed and externally non-retryable;
 - `current-state.md`, audit register, changelog, and issue state are synchronized;
-- live canary work, when authorized, has exact before/after evidence and a safe recovery decision.
+- live canary work, when separately authorized, has exact before/after evidence and a safe recovery decision.
