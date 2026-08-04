@@ -1,14 +1,26 @@
 from __future__ import annotations
 
 import hashlib
+import random
 import time
 import unicodedata
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, TypeAlias
 
 import httpx
 
+from video_channel_manager.platforms.http import (
+    HttpClientOwner,
+    HttpFailureKind,
+    HttpOperationClass,
+    HttpTransportFailure,
+    RequestRateLimiter,
+    RetryPolicy,
+    execute_http_request,
+    redact_sensitive_text,
+)
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow, YOUTUBE_FORCE_SSL_SCOPE
 from video_channel_manager.platforms.youtube.store import TokenStore
@@ -127,7 +139,7 @@ def _author_channel_id(snippet: dict[str, Any]) -> str | None:
     return value or None
 
 
-class YouTubeCommentWriter:
+class YouTubeCommentWriter(HttpClientOwner):
     """Read and guardedly write top-level comments through YouTube Data API v3.
 
     The writer deliberately reads every moderation view available to the
@@ -145,12 +157,24 @@ class YouTubeCommentWriter:
         http_client: httpx.Client | None = None,
         api_base_url: str = _API_BASE_URL,
         verify_delays_seconds: tuple[float, ...] = _DEFAULT_VERIFY_DELAYS_SECONDS,
+        retry_policy: RetryPolicy | None = None,
+        request_limiter: RequestRateLimiter | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+        jitter: Callable[[], float] = random.random,
     ) -> None:
         self.client_config = client_config
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
-        self._http_client = http_client
+        self._initialize_http_client(
+            http_client,
+            timeout=45.0,
+            follow_redirects=True,
+        )
         self.api_base_url = api_base_url.rstrip("/")
+        self.retry_policy = retry_policy or RetryPolicy()
+        self.request_limiter = request_limiter or RequestRateLimiter()
+        self._sleep = sleep
+        self._jitter = jitter
         cleaned_delays = tuple(max(0.0, float(item)) for item in verify_delays_seconds)
         self.verify_delays_seconds = cleaned_delays or (0.0,)
 
@@ -175,41 +199,63 @@ class YouTubeCommentWriter:
         json_body: dict[str, Any] | None = None,
         require_write: bool = False,
     ) -> dict[str, Any]:
-        client = self._http_client or httpx.Client(timeout=45.0, follow_redirects=True)
-        close_client = self._http_client is None
+        operation = HttpOperationClass.AMBIGUOUS_MUTATION if require_write else HttpOperationClass.SAFE_READ
+        access_token = self._token(require_write=require_write).access_token
         try:
-            response = client.request(
-                method,
-                f"{self.api_base_url}/{resource.lstrip('/')}",
-                params=httpx.QueryParams(params),
-                headers={"Authorization": f"Bearer {self._token(require_write=require_write).access_token}"},
-                json=json_body,
+            result = execute_http_request(
+                lambda: self._http_client.request(
+                    method,
+                    f"{self.api_base_url}/{resource.lstrip('/')}",
+                    params=httpx.QueryParams(params),
+                    headers={"Authorization": f"Bearer {access_token}"},
+                    json=json_body,
+                ),
+                provider="YouTube",
+                operation=operation,
+                method=method,
+                resource=resource,
+                retry_policy=self.retry_policy,
+                limiter=self.request_limiter,
+                sleep=self._sleep,
+                jitter=self._jitter,
             )
-            if response.status_code >= 400:
-                message = response.text[:500]
-                reason: str | None = None
-                try:
-                    payload = response.json()
-                    if isinstance(payload, dict):
-                        error = _dict_field(payload, "error")
-                        message = str(error.get("message") or message)
-                        reason = _error_reason(payload)
-                except ValueError:
-                    pass
-                if reason == "commentsDisabled":
-                    raise YouTubeCommentsDisabledError(message)
-                raise YouTubeCommentError(
-                    f"YouTube API {response.status_code}" + (f" ({reason})" if reason else "") + f": {message}"
-                )
+        except HttpTransportFailure as exc:
+            raise YouTubeCommentError(str(exc)) from exc
+
+        response = result.response
+        if response.status_code >= 400:
+            message = response.text
+            reason: str | None = None
+            try:
+                error_payload = response.json()
+                if isinstance(error_payload, dict):
+                    error = _dict_field(error_payload, "error")
+                    message = str(error.get("message") or message)
+                    reason = _error_reason(error_payload)
+            except ValueError:
+                pass
+            safe_message = redact_sensitive_text(message, secrets=(access_token,))
+            if reason == "commentsDisabled":
+                raise YouTubeCommentsDisabledError(safe_message)
+            kind = result.failure_kind or HttpFailureKind.PERMANENT_HTTP
+            raise YouTubeCommentError(
+                f"YouTube API {response.status_code}"
+                + (f" ({reason})" if reason else "")
+                + f": {safe_message} [kind={kind.value} attempts={result.attempts}]"
+            )
+        try:
             payload = response.json()
-            if not isinstance(payload, dict):
-                raise YouTubeCommentError("YouTube API returned a non-object response.")
-            return payload
-        except httpx.HTTPError as exc:
-            raise YouTubeCommentError(f"YouTube API request failed: {exc}") from exc
-        finally:
-            if close_client:
-                client.close()
+        except ValueError as exc:
+            raise YouTubeCommentError(
+                f"YouTube API returned invalid JSON in {resource} "
+                f"[kind={HttpFailureKind.INVALID_JSON.value} attempts={result.attempts}]"
+            ) from exc
+        if not isinstance(payload, dict):
+            raise YouTubeCommentError(
+                f"YouTube API returned a non-object response in {resource} "
+                f"[kind={HttpFailureKind.INVALID_PAYLOAD.value} attempts={result.attempts}]"
+            )
+        return payload
 
     def read_video_identity(self, video_id: str) -> VideoIdentity:
         payload = self._request(
@@ -384,7 +430,7 @@ class YouTubeCommentWriter:
         last_error: YouTubeCommentError | None = None
         for delay in self.verify_delays_seconds:
             if delay:
-                time.sleep(delay)
+                self._sleep(delay)
             try:
                 verified = self._find_top_level_comment(
                     comment_id=comment_id,

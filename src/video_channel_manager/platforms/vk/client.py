@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import hashlib
+import random
 import json
 import time
 from datetime import UTC, datetime
+from collections.abc import Callable
 from typing import Any, TypeAlias
 
 import httpx
@@ -16,7 +18,16 @@ from video_channel_manager.domain.models import (
     RemoteRef,
     VideoRecord,
 )
-from video_channel_manager.platforms.http import HttpClientOwner
+from video_channel_manager.platforms.http import (
+    HttpClientOwner,
+    HttpFailureKind,
+    HttpOperationClass,
+    HttpTransportFailure,
+    RequestRateLimiter,
+    RetryPolicy,
+    execute_http_request,
+    redact_sensitive_text,
+)
 from video_channel_manager.platforms.vk.models import VkCommunityIdentity, VkUserIdentity
 from video_channel_manager.platforms.vk.store import VkTokenStore
 
@@ -28,11 +39,39 @@ ApiParams: TypeAlias = dict[str, ApiParam]
 
 
 class VkApiError(RuntimeError):
-    def __init__(self, message: str, *, method: str, code: int | None = None, retryable: bool = False) -> None:
+    def __init__(
+        self,
+        message: str,
+        *,
+        method: str,
+        code: int | None = None,
+        retryable: bool = False,
+        kind: HttpFailureKind | None = None,
+        attempts: int = 1,
+    ) -> None:
         super().__init__(message)
         self.method = method
         self.code = code
         self.retryable = retryable
+        self.kind = kind
+        self.attempts = attempts
+
+
+def _provider_response_kind(response: httpx.Response) -> HttpFailureKind | None:
+    if response.status_code >= 400:
+        return None
+    try:
+        payload = response.json()
+    except ValueError:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    raw_error = payload.get("error")
+    if not isinstance(raw_error, dict):
+        return None
+    raw_code = raw_error.get("error_code")
+    code = int(raw_code) if isinstance(raw_code, int | str) and str(raw_code).isdigit() else None
+    return HttpFailureKind.PROVIDER_TRANSIENT if code in _RETRYABLE_API_CODES else HttpFailureKind.PROVIDER_ERROR
 
 
 def _revision(payload: object) -> str:
@@ -94,6 +133,10 @@ class VkApiClient(HttpClientOwner):
         http_client: httpx.Client | None = None,
         api_base_url: str = _API_BASE_URL,
         max_attempts: int = 4,
+        retry_policy: RetryPolicy | None = None,
+        request_limiter: RequestRateLimiter | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+        jitter: Callable[[], float] = random.random,
     ) -> None:
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
@@ -105,6 +148,14 @@ class VkApiClient(HttpClientOwner):
         )
         self.api_base_url = api_base_url.rstrip("/")
         self.max_attempts = max(1, max_attempts)
+        self.retry_policy = retry_policy or RetryPolicy(
+            max_attempts=self.max_attempts,
+            base_delay_seconds=0.35,
+            max_delay_seconds=4.0,
+        )
+        self.request_limiter = request_limiter or RequestRateLimiter()
+        self._sleep = sleep
+        self._jitter = jitter
 
     def _call(self, method: str, *, params: ApiParams | None = None) -> object:
         token = self.token_store.load_token(self.account_alias)
@@ -113,6 +164,7 @@ class VkApiClient(HttpClientOwner):
                 "VK access token is expired. Import a fresh user token with 'video' and 'groups' permissions.",
                 method=method,
                 code=5,
+                kind=HttpFailureKind.PROVIDER_ERROR,
             )
 
         request_data: dict[str, str] = {
@@ -125,54 +177,87 @@ class VkApiClient(HttpClientOwner):
             else:
                 request_data[key] = str(value)
 
-        delay_seconds = 0.35
-        last_error: VkApiError | None = None
-        for attempt in range(self.max_attempts):
-            try:
-                return self._call_once(method, request_data)
-            except VkApiError as exc:
-                last_error = exc
-                if not exc.retryable or attempt + 1 >= self.max_attempts:
-                    raise
-                time.sleep(delay_seconds)
-                delay_seconds *= 2
-        assert last_error is not None
-        raise last_error
-
-    def _call_once(self, method: str, request_data: dict[str, str]) -> object:
         try:
-            response = self._http_client.post(
-                f"{self.api_base_url}/{method}",
-                data=request_data,
-                headers={"User-Agent": "video-channel-manager/0.1"},
+            result = execute_http_request(
+                lambda: self._http_client.post(
+                    f"{self.api_base_url}/{method}",
+                    data=request_data,
+                    headers={"User-Agent": "video-channel-manager/0.1"},
+                ),
+                provider="VK",
+                operation=HttpOperationClass.SAFE_READ,
+                method="POST",
+                resource=method,
+                retry_policy=self.retry_policy,
+                limiter=self.request_limiter,
+                response_classifier=_provider_response_kind,
+                sleep=self._sleep,
+                jitter=self._jitter,
             )
-            if response.status_code >= 400:
-                raise VkApiError(
-                    f"VK API HTTP {response.status_code} while calling {method}.",
-                    method=method,
-                    retryable=response.status_code in _RETRYABLE_HTTP_STATUS_CODES,
-                )
+        except HttpTransportFailure as exc:
+            raise VkApiError(
+                str(exc),
+                method=method,
+                retryable=True,
+                kind=exc.kind,
+                attempts=exc.attempts,
+            ) from exc
+
+        response = result.response
+        if response.status_code >= 400:
+            kind = result.failure_kind or HttpFailureKind.PERMANENT_HTTP
+            raise VkApiError(
+                f"VK API HTTP {response.status_code} while calling {method} "
+                f"[kind={kind.value} attempts={result.attempts}]",
+                method=method,
+                retryable=kind in {HttpFailureKind.RATE_LIMIT, HttpFailureKind.TRANSIENT_HTTP},
+                kind=kind,
+                attempts=result.attempts,
+            )
+        try:
             payload = response.json()
-            if not isinstance(payload, dict):
-                raise VkApiError("VK API returned a non-object response.", method=method)
-            raw_error = payload.get("error")
-            if isinstance(raw_error, dict):
-                raw_code = raw_error.get("error_code")
-                code = int(raw_code) if isinstance(raw_code, int | str) and str(raw_code).isdigit() else None
-                message = str(raw_error.get("error_msg") or "Unknown VK API error")
-                raise VkApiError(
-                    f"VK API {code or 'error'} in {method}: {message}",
-                    method=method,
-                    code=code,
-                    retryable=code in _RETRYABLE_API_CODES,
-                )
-            if "response" not in payload:
-                raise VkApiError("VK API response has no 'response' field.", method=method)
-            return payload["response"]
-        except httpx.HTTPError as exc:
-            raise VkApiError(f"VK API request failed in {method}: {exc}", method=method, retryable=True) from exc
         except ValueError as exc:
-            raise VkApiError(f"VK API returned invalid JSON in {method}.", method=method) from exc
+            raise VkApiError(
+                f"VK API returned invalid JSON in {method} "
+                f"[kind={HttpFailureKind.INVALID_JSON.value} attempts={result.attempts}]",
+                method=method,
+                kind=HttpFailureKind.INVALID_JSON,
+                attempts=result.attempts,
+            ) from exc
+        if not isinstance(payload, dict):
+            raise VkApiError(
+                f"VK API returned a non-object response in {method} "
+                f"[kind={HttpFailureKind.INVALID_PAYLOAD.value} attempts={result.attempts}]",
+                method=method,
+                kind=HttpFailureKind.INVALID_PAYLOAD,
+                attempts=result.attempts,
+            )
+        raw_error = payload.get("error")
+        if isinstance(raw_error, dict):
+            raw_code = raw_error.get("error_code")
+            code = int(raw_code) if isinstance(raw_code, int | str) and str(raw_code).isdigit() else None
+            message = redact_sensitive_text(
+                raw_error.get("error_msg") or "Unknown VK API error",
+                secrets=(token.access_token,),
+            )
+            kind = result.failure_kind or HttpFailureKind.PROVIDER_ERROR
+            raise VkApiError(
+                f"VK API {code or 'error'} in {method}: {message} [kind={kind.value} attempts={result.attempts}]",
+                method=method,
+                code=code,
+                retryable=code in _RETRYABLE_API_CODES,
+                kind=kind,
+                attempts=result.attempts,
+            )
+        if "response" not in payload:
+            raise VkApiError(
+                f"VK API response has no 'response' field in {method} "
+                f"[kind={HttpFailureKind.INVALID_PAYLOAD.value} attempts={result.attempts}]",
+                method=method,
+                kind=HttpFailureKind.INVALID_PAYLOAD,
+                attempts=result.attempts,
+            )
+        return payload["response"]
 
     def _list_offset(self, method: str, *, params: ApiParams, page_size: int) -> list[dict[str, Any]]:
         items: list[dict[str, Any]] = []

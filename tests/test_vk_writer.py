@@ -20,6 +20,7 @@ def _writer(tmp_path: Path, handler: httpx.MockTransport, *, max_attempts: int =
         http_client=httpx.Client(transport=handler),
         api_base_url="https://api.example/method",
         max_attempts=max_attempts,
+        sleep=lambda _: None,
     )
 
 
@@ -148,7 +149,7 @@ def test_begin_upload_does_not_retry_ambiguous_server_failure(tmp_path: Path) ->
     with pytest.raises(VkWriteError, match="HTTP 503") as error:
         writer.begin_upload(community_id=235216998, title="Берёза", description="Описание")
 
-    assert error.value.retryable is True
+    assert error.value.retryable is False
     assert calls == 1
 
 
@@ -256,3 +257,29 @@ def test_wait_until_available_requires_full_readiness_contract(tmp_path: Path) -
     assert calls == 2
     assert observations[0][1] == ("duration_below_minimum",)
     assert observations[1][1] == ()
+
+
+def test_upload_transport_timeout_is_single_attempt_and_redacts_url(tmp_path: Path) -> None:
+    calls = 0
+    media = tmp_path / "video.mp4"
+    media.write_bytes(b"video")
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        raise httpx.ReadTimeout("lost response from https://upload.example/private-ticket", request=request)
+
+    writer = _writer(tmp_path, httpx.MockTransport(respond), max_attempts=9)
+    ticket = VkUploadTicket(
+        owner_id=-235216998,
+        video_id=501,
+        upload_url="https://upload.example/private-ticket",
+    )
+
+    with pytest.raises(VkWriteError) as captured:
+        writer.upload_file(ticket, media)
+
+    assert captured.value.attempts == 1
+    assert captured.value.retryable is False
+    assert "upload.example" not in str(captured.value)
+    assert calls == 1

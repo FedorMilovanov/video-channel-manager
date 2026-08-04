@@ -10,10 +10,12 @@ import pytest
 
 from video_channel_manager.platforms.youtube.comments import (
     YouTubeCommentConflictError,
+    YouTubeCommentError,
     YouTubeCommentWriter,
     YouTubeCommentsDisabledError,
     comments_equivalent,
 )
+from video_channel_manager.platforms.http import RetryPolicy
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
 from video_channel_manager.platforms.youtube.oauth import YOUTUBE_FORCE_SSL_SCOPE, YOUTUBE_READONLY_SCOPE
 from video_channel_manager.platforms.youtube.store import TokenStore
@@ -33,6 +35,8 @@ def _writer(
     handler: httpx.MockTransport,
     *,
     verify_delays_seconds: tuple[float, ...] = (0.0,),
+    retry_policy: RetryPolicy | None = None,
+    sleep: Any = lambda _: None,
 ) -> YouTubeCommentWriter:
     store = TokenStore(tmp_path)
     store.save_token("account", _token(YOUTUBE_READONLY_SCOPE, YOUTUBE_FORCE_SSL_SCOPE))
@@ -43,6 +47,8 @@ def _writer(
         http_client=httpx.Client(transport=handler),
         api_base_url="https://youtube.test",
         verify_delays_seconds=verify_delays_seconds,
+        retry_policy=retry_policy,
+        sleep=sleep,
     )
 
 
@@ -302,3 +308,57 @@ def test_update_accepts_write_response_without_target_fields_and_verifies(tmp_pa
     assert result.video_id == "video-1"
     assert result.channel_id == "channel-1"
     assert result.text == "Approved after"
+
+
+def test_comment_safe_read_retries_transient_http(tmp_path: Path) -> None:
+    calls = 0
+    sleeps: list[float] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return httpx.Response(503, text="temporary")
+        return httpx.Response(200, json={"items": []})
+
+    writer = _writer(
+        tmp_path,
+        httpx.MockTransport(handle),
+        retry_policy=RetryPolicy(max_attempts=2, base_delay_seconds=0.2, jitter_seconds=0.0),
+        sleep=sleeps.append,
+    )
+
+    assert writer.list_top_level_comments("video-1") == []
+    assert calls == 4
+    assert sleeps == [0.2]
+
+
+def test_comment_mutation_timeout_is_attempted_once(tmp_path: Path) -> None:
+    post_calls = 0
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        nonlocal post_calls
+        if request.url.path == "/videos":
+            return httpx.Response(200, json={"items": [_video()]})
+        if request.method == "GET" and request.url.path == "/commentThreads":
+            return httpx.Response(200, json={"items": []})
+        assert request.method == "POST"
+        assert request.url.path == "/commentThreads"
+        post_calls += 1
+        raise httpx.ReadTimeout("response lost for https://upload.example/private", request=request)
+
+    writer = _writer(
+        tmp_path,
+        httpx.MockTransport(handle),
+        retry_policy=RetryPolicy(max_attempts=7),
+    )
+
+    with pytest.raises(YouTubeCommentError, match="ambiguous_mutation") as captured:
+        writer.create_top_level_comment(
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            text="Pinned comment",
+        )
+
+    assert "upload.example" not in str(captured.value)
+    assert post_calls == 1

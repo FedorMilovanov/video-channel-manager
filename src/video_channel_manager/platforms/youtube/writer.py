@@ -1,14 +1,26 @@
 from __future__ import annotations
 
 import hashlib
+import random
 import json
+import time
 import unicodedata
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, TypeAlias
 
 import httpx
 
-from video_channel_manager.platforms.http import HttpClientOwner
+from video_channel_manager.platforms.http import (
+    HttpClientOwner,
+    HttpFailureKind,
+    HttpOperationClass,
+    HttpTransportFailure,
+    RequestRateLimiter,
+    RetryPolicy,
+    execute_http_request,
+    redact_sensitive_text,
+)
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow, YOUTUBE_FORCE_SSL_SCOPE
 from video_channel_manager.platforms.youtube.store import TokenStore
@@ -89,6 +101,10 @@ class YouTubeDescriptionWriter(HttpClientOwner):
         account_alias: str,
         http_client: httpx.Client | None = None,
         api_base_url: str = _API_BASE_URL,
+        retry_policy: RetryPolicy | None = None,
+        request_limiter: RequestRateLimiter | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+        jitter: Callable[[], float] = random.random,
     ) -> None:
         self.client_config = client_config
         self.token_store = token_store
@@ -99,6 +115,10 @@ class YouTubeDescriptionWriter(HttpClientOwner):
             follow_redirects=True,
         )
         self.api_base_url = api_base_url.rstrip("/")
+        self.retry_policy = retry_policy or RetryPolicy()
+        self.request_limiter = request_limiter or RequestRateLimiter()
+        self._request_sleep = sleep
+        self._jitter = jitter
 
     def _token(self, *, require_write: bool) -> OAuthToken:
         token = self.token_store.load_token(self.account_alias)
@@ -121,30 +141,58 @@ class YouTubeDescriptionWriter(HttpClientOwner):
         json_body: dict[str, Any] | None = None,
         require_write: bool = False,
     ) -> dict[str, Any]:
+        operation = HttpOperationClass.AMBIGUOUS_MUTATION if require_write else HttpOperationClass.SAFE_READ
+        access_token = self._token(require_write=require_write).access_token
         try:
-            response = self._http_client.request(
-                method,
-                f"{self.api_base_url}/{resource.lstrip('/')}",
-                params=httpx.QueryParams(params),
-                headers={"Authorization": f"Bearer {self._token(require_write=require_write).access_token}"},
-                json=json_body,
+            result = execute_http_request(
+                lambda: self._http_client.request(
+                    method,
+                    f"{self.api_base_url}/{resource.lstrip('/')}",
+                    params=httpx.QueryParams(params),
+                    headers={"Authorization": f"Bearer {access_token}"},
+                    json=json_body,
+                ),
+                provider="YouTube",
+                operation=operation,
+                method=method,
+                resource=resource,
+                retry_policy=self.retry_policy,
+                limiter=self.request_limiter,
+                sleep=self._request_sleep,
+                jitter=self._jitter,
             )
-            if response.status_code >= 400:
-                message = response.text[:500]
-                try:
-                    payload = response.json()
-                    if isinstance(payload, dict):
-                        error = _dict_field(payload, "error")
-                        message = str(error.get("message") or message)
-                except ValueError:
-                    pass
-                raise YouTubeWriteError(f"YouTube API {response.status_code}: {message}")
+        except HttpTransportFailure as exc:
+            raise YouTubeWriteError(str(exc)) from exc
+
+        response = result.response
+        if response.status_code >= 400:
+            message = response.text
+            try:
+                error_payload = response.json()
+                if isinstance(error_payload, dict):
+                    error = _dict_field(error_payload, "error")
+                    message = str(error.get("message") or message)
+            except ValueError:
+                pass
+            kind = result.failure_kind or HttpFailureKind.PERMANENT_HTTP
+            safe_message = redact_sensitive_text(message, secrets=(access_token,))
+            raise YouTubeWriteError(
+                f"YouTube API {response.status_code} in {resource}: {safe_message} "
+                f"[kind={kind.value} attempts={result.attempts}]"
+            )
+        try:
             payload = response.json()
-            if not isinstance(payload, dict):
-                raise YouTubeWriteError("YouTube API returned a non-object response.")
-            return payload
-        except httpx.HTTPError as exc:
-            raise YouTubeWriteError(f"YouTube API request failed: {exc}") from exc
+        except ValueError as exc:
+            raise YouTubeWriteError(
+                f"YouTube API returned invalid JSON in {resource} "
+                f"[kind={HttpFailureKind.INVALID_JSON.value} attempts={result.attempts}]"
+            ) from exc
+        if not isinstance(payload, dict):
+            raise YouTubeWriteError(
+                f"YouTube API returned a non-object response in {resource} "
+                f"[kind={HttpFailureKind.INVALID_PAYLOAD.value} attempts={result.attempts}]"
+            )
+        return payload
 
     def read_description(self, video_id: str) -> VideoDescriptionSnapshot:
         payload = self._request(

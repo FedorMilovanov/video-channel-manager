@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import hashlib
+import random
 import json
 import re
-from collections.abc import Iterable
+import time
+from collections.abc import Callable, Iterable
 from datetime import datetime
 from typing import Any, TypeAlias
 
@@ -17,7 +19,16 @@ from video_channel_manager.domain.models import (
     RemoteRef,
     VideoRecord,
 )
-from video_channel_manager.platforms.http import HttpClientOwner
+from video_channel_manager.platforms.http import (
+    HttpClientOwner,
+    HttpFailureKind,
+    HttpOperationClass,
+    HttpTransportFailure,
+    RequestRateLimiter,
+    RetryPolicy,
+    execute_http_request,
+    redact_sensitive_text,
+)
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig
 from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow
 from video_channel_manager.platforms.youtube.store import TokenStore
@@ -93,6 +104,10 @@ class YouTubeApiClient(HttpClientOwner):
         account_alias: str,
         http_client: httpx.Client | None = None,
         api_base_url: str = _API_BASE_URL,
+        retry_policy: RetryPolicy | None = None,
+        request_limiter: RequestRateLimiter | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+        jitter: Callable[[], float] = random.random,
     ) -> None:
         self.client_config = client_config
         self.token_store = token_store
@@ -103,6 +118,11 @@ class YouTubeApiClient(HttpClientOwner):
             follow_redirects=True,
         )
         self.api_base_url = api_base_url.rstrip("/")
+        self.retry_policy = retry_policy or RetryPolicy()
+        self.request_limiter = request_limiter or RequestRateLimiter()
+        self._sleep = sleep
+        self._jitter = jitter
+        self._uploads_playlist_cache: dict[str, str] = {}
 
     def _get_access_token(self) -> str:
         token = self.token_store.load_token(self.account_alias)
@@ -112,28 +132,55 @@ class YouTubeApiClient(HttpClientOwner):
         return token.access_token
 
     def _get(self, resource: str, *, params: QueryParams) -> dict[str, Any]:
+        access_token = self._get_access_token()
         try:
-            response = self._http_client.get(
-                f"{self.api_base_url}/{resource.lstrip('/')}",
-                params=httpx.QueryParams(params),
-                headers={"Authorization": f"Bearer {self._get_access_token()}"},
+            result = execute_http_request(
+                lambda: self._http_client.get(
+                    f"{self.api_base_url}/{resource.lstrip('/')}",
+                    params=httpx.QueryParams(params),
+                    headers={"Authorization": f"Bearer {access_token}"},
+                ),
+                provider="YouTube",
+                operation=HttpOperationClass.SAFE_READ,
+                method="GET",
+                resource=resource,
+                retry_policy=self.retry_policy,
+                limiter=self.request_limiter,
+                sleep=self._sleep,
+                jitter=self._jitter,
             )
-            if response.status_code >= 400:
-                message = response.text[:500]
-                try:
-                    payload = response.json()
-                    if isinstance(payload, dict):
-                        error = _dict_field(payload, "error")
-                        message = str(error.get("message") or message)
-                except ValueError:
-                    pass
-                raise YouTubeApiError(f"YouTube API {response.status_code}: {message}")
+        except HttpTransportFailure as exc:
+            raise YouTubeApiError(str(exc)) from exc
+
+        response = result.response
+        if response.status_code >= 400:
+            message = response.text
+            try:
+                error_payload = response.json()
+                if isinstance(error_payload, dict):
+                    error = _dict_field(error_payload, "error")
+                    message = str(error.get("message") or message)
+            except ValueError:
+                pass
+            kind = result.failure_kind or HttpFailureKind.PERMANENT_HTTP
+            safe_message = redact_sensitive_text(message, secrets=(access_token,))
+            raise YouTubeApiError(
+                f"YouTube API {response.status_code} in {resource}: {safe_message} "
+                f"[kind={kind.value} attempts={result.attempts}]"
+            )
+        try:
             payload = response.json()
-            if not isinstance(payload, dict):
-                raise YouTubeApiError("YouTube API returned a non-object response.")
-            return payload
-        except httpx.HTTPError as exc:
-            raise YouTubeApiError(f"YouTube API request failed: {exc}") from exc
+        except ValueError as exc:
+            raise YouTubeApiError(
+                f"YouTube API returned invalid JSON in {resource} "
+                f"[kind={HttpFailureKind.INVALID_JSON.value} attempts={result.attempts}]"
+            ) from exc
+        if not isinstance(payload, dict):
+            raise YouTubeApiError(
+                f"YouTube API returned a non-object response in {resource} "
+                f"[kind={HttpFailureKind.INVALID_PAYLOAD.value} attempts={result.attempts}]"
+            )
+        return payload
 
     def _list_all(self, resource: str, *, params: QueryParams) -> list[dict[str, Any]]:
         items: list[dict[str, Any]] = []
@@ -177,6 +224,9 @@ class YouTubeApiClient(HttpClientOwner):
         return records
 
     def _uploads_playlist_id(self, channel_id: str) -> str:
+        cached = self._uploads_playlist_cache.get(channel_id)
+        if cached is not None:
+            return cached
         payload = self._get(
             "channels",
             params={"part": "contentDetails", "id": channel_id, "maxResults": 1},
@@ -189,6 +239,7 @@ class YouTubeApiClient(HttpClientOwner):
         uploads = str(related.get("uploads") or "").strip()
         if not uploads:
             raise YouTubeApiError(f"Channel does not expose an uploads playlist: {channel_id}")
+        self._uploads_playlist_cache[channel_id] = uploads
         return uploads
 
     def list_videos(self, channel_id: str) -> list[VideoRecord]:

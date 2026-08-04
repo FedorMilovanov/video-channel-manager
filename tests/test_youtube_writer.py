@@ -7,6 +7,7 @@ from typing import Any
 import httpx
 import pytest
 
+from video_channel_manager.platforms.http import RetryPolicy
 from video_channel_manager.platforms.youtube import (
     InstalledClientConfig,
     OAuthToken,
@@ -15,6 +16,7 @@ from video_channel_manager.platforms.youtube import (
     YOUTUBE_READONLY_SCOPE,
     YouTubeDescriptionWriter,
     YouTubeRevisionConflictError,
+    YouTubeWriteError,
     YouTubeWriteScopeError,
 )
 from video_channel_manager.platforms.youtube.writer import descriptions_equivalent
@@ -56,6 +58,8 @@ def _writer(
     handler: httpx.MockTransport,
     *,
     verification_delays: tuple[float, ...] = (),
+    retry_policy: RetryPolicy | None = None,
+    sleep: Any = lambda _: None,
 ) -> YouTubeDescriptionWriter:
     store = TokenStore(tmp_path)
     store.save_token("account", _token(*scopes))
@@ -67,7 +71,8 @@ def _writer(
         http_client=client,
         api_base_url="https://youtube.test",
         verification_delays=verification_delays,
-        sleep=lambda _: None,
+        retry_policy=retry_policy,
+        sleep=sleep,
     )
 
 
@@ -312,3 +317,59 @@ def test_recovery_refuses_unknown_third_state(tmp_path: Path) -> None:
             restore_description="Before",
         )
     assert methods == ["GET"]
+
+
+def test_description_safe_read_retries_transient_http(tmp_path: Path) -> None:
+    raw = _raw_video("Before")
+    calls = 0
+    sleeps: list[float] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return httpx.Response(503, text="temporary")
+        return httpx.Response(200, json={"items": [raw]})
+
+    writer = _writer(
+        tmp_path,
+        (YOUTUBE_READONLY_SCOPE,),
+        httpx.MockTransport(handle),
+        retry_policy=RetryPolicy(max_attempts=2, base_delay_seconds=0.3, jitter_seconds=0.0),
+        sleep=sleeps.append,
+    )
+
+    assert writer.read_description("video-1").description == "Before"
+    assert calls == 2
+    assert sleeps == [0.3]
+
+
+def test_description_mutation_server_error_is_not_retried(tmp_path: Path) -> None:
+    raw = _raw_video("Before")
+    put_calls = 0
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        nonlocal put_calls
+        if request.method == "GET":
+            return httpx.Response(200, json={"items": [raw]})
+        put_calls += 1
+        return httpx.Response(503, text="uncertain")
+
+    writer = _writer(
+        tmp_path,
+        (YOUTUBE_READONLY_SCOPE, YOUTUBE_FORCE_SSL_SCOPE),
+        httpx.MockTransport(handle),
+        retry_policy=RetryPolicy(max_attempts=8),
+    )
+    current = writer.read_description("video-1")
+
+    with pytest.raises(YouTubeWriteError, match="attempts=1"):
+        writer.replace_description(
+            video_id="video-1",
+            expected_channel_id="channel-1",
+            expected_revision=current.revision,
+            expected_description="Before",
+            new_description="After",
+        )
+
+    assert put_calls == 1

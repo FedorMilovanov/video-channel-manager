@@ -1,22 +1,48 @@
 from __future__ import annotations
 
-import json
 import mimetypes
+import random
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, TypeAlias
 
 import httpx
 
-from video_channel_manager.platforms.http import HttpClientOwner
+from video_channel_manager.platforms.http import (
+    HttpClientOwner,
+    HttpFailureKind,
+    HttpOperationClass,
+    HttpTransportFailure,
+    RequestRateLimiter,
+    RetryPolicy,
+    execute_http_request,
+    redact_sensitive_text,
+)
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.writer import VkWriteError
 
 _API_BASE_URL = "https://api.vk.com/method"
 _RETRYABLE_API_CODES = frozenset({6, 9, 10, 29})
-_RETRYABLE_HTTP_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 ApiParam: TypeAlias = str | int | bool
 ApiParams: TypeAlias = dict[str, ApiParam]
+
+
+def _provider_response_kind(response: httpx.Response) -> HttpFailureKind | None:
+    if response.status_code >= 400:
+        return None
+    try:
+        payload = response.json()
+    except ValueError:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    raw_error = payload.get("error")
+    if not isinstance(raw_error, dict):
+        return None
+    raw_code = raw_error.get("error_code")
+    code = int(raw_code) if isinstance(raw_code, int | str) and str(raw_code).isdigit() else None
+    return HttpFailureKind.PROVIDER_TRANSIENT if code in _RETRYABLE_API_CODES else HttpFailureKind.PROVIDER_ERROR
 
 
 class VkThumbnailWriter(HttpClientOwner):
@@ -31,6 +57,10 @@ class VkThumbnailWriter(HttpClientOwner):
         http_client: httpx.Client | None = None,
         api_base_url: str = _API_BASE_URL,
         max_attempts: int = 4,
+        retry_policy: RetryPolicy | None = None,
+        request_limiter: RequestRateLimiter | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+        jitter: Callable[[], float] = random.random,
     ) -> None:
         self.token_store = token_store
         self.account_alias = token_store.validate_alias(account_alias)
@@ -41,7 +71,10 @@ class VkThumbnailWriter(HttpClientOwner):
             follow_redirects=True,
         )
         self.api_base_url = api_base_url.rstrip("/")
-        self.max_attempts = max(1, max_attempts)
+        self.retry_policy = retry_policy or RetryPolicy(max_attempts=max(1, max_attempts))
+        self.request_limiter = request_limiter or RequestRateLimiter(0.0)
+        self._sleep = sleep
+        self._jitter = jitter
 
     def _token_value(self) -> str:
         token = self.token_store.load_token(self.account_alias)
@@ -67,66 +100,100 @@ class VkThumbnailWriter(HttpClientOwner):
         """Retry only read/reservation-URL methods explicitly marked safe.
 
         ``video.saveUploadedThumb`` changes the selected thumbnail and can create
-        an additional photo object. An ambiguous 5xx/network response must not be
-        blindly repeated by the low-level client.
+        an additional photo object. An ambiguous provider response must not be
+        replayed by this low-level client.
         """
 
+        access_token = self._token_value()
         request_data: dict[str, str] = {
-            "access_token": self._token_value(),
+            "access_token": access_token,
             "v": self.api_version,
         }
         for key, value in (params or {}).items():
             request_data[key] = "1" if value is True else "0" if value is False else str(value)
 
-        attempts = self.max_attempts if retry_transient else 1
-        delay_seconds = 0.5
-        last_error: VkWriteError | None = None
-        for attempt in range(attempts):
-            try:
-                return self._call_once(method, request_data)
-            except VkWriteError as exc:
-                last_error = exc
-                if not exc.retryable or attempt + 1 >= attempts:
-                    raise
-                time.sleep(delay_seconds)
-                delay_seconds *= 2
-        assert last_error is not None
-        raise last_error
-
-    def _call_once(self, method: str, request_data: dict[str, str]) -> object:
+        operation = HttpOperationClass.SAFE_READ if retry_transient else HttpOperationClass.AMBIGUOUS_MUTATION
         try:
-            response = self._http_client.post(
-                f"{self.api_base_url}/{method}",
-                data=request_data,
-                headers={"User-Agent": "video-channel-manager/0.1"},
+            result = execute_http_request(
+                lambda: self._http_client.post(
+                    f"{self.api_base_url}/{method}",
+                    data=request_data,
+                    headers={"User-Agent": "video-channel-manager/0.1"},
+                ),
+                provider="VK",
+                operation=operation,
+                method="POST",
+                resource=method,
+                retry_policy=self.retry_policy,
+                limiter=self.request_limiter,
+                response_classifier=_provider_response_kind,
+                sleep=self._sleep,
+                jitter=self._jitter,
             )
-            if response.status_code >= 400:
-                raise VkWriteError(
-                    f"VK API HTTP {response.status_code} while calling {method}.",
-                    method=method,
-                    retryable=response.status_code in _RETRYABLE_HTTP_STATUS_CODES,
-                )
+        except HttpTransportFailure as exc:
+            raise VkWriteError(
+                str(exc),
+                method=method,
+                retryable=operation is HttpOperationClass.SAFE_READ,
+                kind=exc.kind,
+                attempts=exc.attempts,
+            ) from exc
+
+        response = result.response
+        if response.status_code >= 400:
+            kind = result.failure_kind or HttpFailureKind.PERMANENT_HTTP
+            raise VkWriteError(
+                f"VK API HTTP {response.status_code} while calling {method} "
+                f"[kind={kind.value} attempts={result.attempts}].",
+                method=method,
+                retryable=(
+                    operation is HttpOperationClass.SAFE_READ
+                    and kind in {HttpFailureKind.RATE_LIMIT, HttpFailureKind.TRANSIENT_HTTP}
+                ),
+                kind=kind,
+                attempts=result.attempts,
+            )
+        try:
             payload = response.json()
-            if not isinstance(payload, dict):
-                raise VkWriteError("VK API returned a non-object response.", method=method)
-            raw_error = payload.get("error")
-            if isinstance(raw_error, dict):
-                raw_code = raw_error.get("error_code")
-                code = int(raw_code) if isinstance(raw_code, int | str) and str(raw_code).isdigit() else None
-                message = str(raw_error.get("error_msg") or "Unknown VK API error")
-                raise VkWriteError(
-                    f"VK API {code or 'error'} in {method}: {message}",
-                    method=method,
-                    code=code,
-                    retryable=code in _RETRYABLE_API_CODES,
-                )
-            if "response" not in payload:
-                raise VkWriteError("VK API response has no 'response' field.", method=method)
-            return payload["response"]
-        except httpx.HTTPError as exc:
-            raise VkWriteError(f"VK API request failed in {method}: {exc}", method=method, retryable=True) from exc
         except ValueError as exc:
-            raise VkWriteError(f"VK API returned invalid JSON in {method}.", method=method) from exc
+            raise VkWriteError(
+                f"VK API returned invalid JSON in {method} [attempts={result.attempts}].",
+                method=method,
+                kind=HttpFailureKind.INVALID_PAYLOAD,
+                attempts=result.attempts,
+            ) from exc
+        if not isinstance(payload, dict):
+            raise VkWriteError(
+                "VK API returned a non-object response.",
+                method=method,
+                kind=HttpFailureKind.INVALID_PAYLOAD,
+                attempts=result.attempts,
+            )
+        raw_error = payload.get("error")
+        if isinstance(raw_error, dict):
+            raw_code = raw_error.get("error_code")
+            code = int(raw_code) if isinstance(raw_code, int | str) and str(raw_code).isdigit() else None
+            message = redact_sensitive_text(
+                raw_error.get("error_msg") or "Unknown VK API error",
+                secrets=(access_token,),
+            )
+            kind = result.failure_kind or HttpFailureKind.PROVIDER_ERROR
+            raise VkWriteError(
+                f"VK API {code or 'error'} in {method}: {message} [kind={kind.value} attempts={result.attempts}]",
+                method=method,
+                code=code,
+                retryable=operation is HttpOperationClass.SAFE_READ and code in _RETRYABLE_API_CODES,
+                kind=kind,
+                attempts=result.attempts,
+            )
+        if "response" not in payload:
+            raise VkWriteError(
+                "VK API response has no 'response' field.",
+                method=method,
+                kind=HttpFailureKind.INVALID_PAYLOAD,
+                attempts=result.attempts,
+            )
+        return payload["response"]
 
     def get_upload_url(self, *, owner_id: int) -> str:
         if owner_id == 0:
@@ -160,54 +227,80 @@ class VkThumbnailWriter(HttpClientOwner):
         content_type = mimetypes.guess_type(path.name)[0] or "image/jpeg"
         if not content_type.startswith("image/"):
             raise ValueError(f"Thumbnail path has a non-image media type: {content_type}")
+
         try:
             with path.open("rb") as stream:
-                response = self._http_client.post(
-                    upload_url,
-                    files={"file": (path.name, stream, content_type)},
-                    headers={"User-Agent": "video-channel-manager/0.1"},
-                    timeout=httpx.Timeout(connect=60.0, read=600.0, write=600.0, pool=60.0),
+                result = execute_http_request(
+                    lambda: self._http_client.post(
+                        upload_url,
+                        files={"file": (path.name, stream, content_type)},
+                        headers={"User-Agent": "video-channel-manager/0.1"},
+                        timeout=httpx.Timeout(connect=60.0, read=600.0, write=600.0, pool=60.0),
+                    ),
+                    provider="VK",
+                    operation=HttpOperationClass.AMBIGUOUS_MUTATION,
+                    method="POST",
+                    resource="video.thumbUpload",
+                    retry_policy=self.retry_policy,
+                    limiter=self.request_limiter,
+                    sleep=self._sleep,
+                    jitter=self._jitter,
                 )
-            if response.status_code >= 400:
-                raise VkWriteError(
-                    f"VK thumbnail upload server returned HTTP {response.status_code}.",
-                    method="video.thumbUpload",
-                    retryable=response.status_code in _RETRYABLE_HTTP_STATUS_CODES,
-                )
-            payload = response.json()
-            if not isinstance(payload, dict):
-                raise VkWriteError(
-                    "VK thumbnail upload server returned a non-object response.",
-                    method="video.thumbUpload",
-                )
-
-            # VK has two upload-server response shapes in production. Older
-            # responses wrap the opaque value in `thumb_json`; current servers
-            # return the opaque JSON object itself (server/hash/secret/meta/etc.).
-            # video.saveUploadedThumb expects the complete raw upload response as
-            # its `thumb_json` parameter, so preserve the exact response text.
-            thumb_json = payload.get("thumb_json")
-            if not isinstance(thumb_json, str) or not thumb_json:
-                raw_thumb_json = response.text.strip()
-                if not raw_thumb_json:
-                    raise VkWriteError(
-                        "VK thumbnail upload server returned an empty response.",
-                        method="video.thumbUpload",
-                    )
-                payload = dict(payload)
-                payload["thumb_json"] = raw_thumb_json
-            return payload
-        except httpx.HTTPError as exc:
+        except HttpTransportFailure as exc:
             raise VkWriteError(
-                f"VK thumbnail upload failed: {exc}",
+                str(exc),
                 method="video.thumbUpload",
-                retryable=True,
+                retryable=False,
+                kind=exc.kind,
+                attempts=exc.attempts,
             ) from exc
-        except json.JSONDecodeError as exc:
+
+        response = result.response
+        if response.status_code >= 400:
+            kind = result.failure_kind or HttpFailureKind.PERMANENT_HTTP
+            raise VkWriteError(
+                f"VK thumbnail upload server returned HTTP {response.status_code} "
+                f"[kind={kind.value} attempts={result.attempts}].",
+                method="video.thumbUpload",
+                retryable=False,
+                kind=kind,
+                attempts=result.attempts,
+            )
+        try:
+            payload = response.json()
+        except ValueError as exc:
             raise VkWriteError(
                 "VK thumbnail upload server returned invalid JSON.",
                 method="video.thumbUpload",
+                kind=HttpFailureKind.INVALID_PAYLOAD,
+                attempts=result.attempts,
             ) from exc
+        if not isinstance(payload, dict):
+            raise VkWriteError(
+                "VK thumbnail upload server returned a non-object response.",
+                method="video.thumbUpload",
+                kind=HttpFailureKind.INVALID_PAYLOAD,
+                attempts=result.attempts,
+            )
+
+        # VK has two upload-server response shapes in production. Older
+        # responses wrap the opaque value in `thumb_json`; current servers
+        # return the opaque JSON object itself (server/hash/secret/meta/etc.).
+        # video.saveUploadedThumb expects the complete raw upload response as
+        # its `thumb_json` parameter, so preserve the exact response text.
+        thumb_json = payload.get("thumb_json")
+        if not isinstance(thumb_json, str) or not thumb_json:
+            raw_thumb_json = response.text.strip()
+            if not raw_thumb_json:
+                raise VkWriteError(
+                    "VK thumbnail upload server returned an empty response.",
+                    method="video.thumbUpload",
+                    kind=HttpFailureKind.INVALID_PAYLOAD,
+                    attempts=result.attempts,
+                )
+            payload = dict(payload)
+            payload["thumb_json"] = raw_thumb_json
+        return payload
 
     def save_uploaded_thumbnail(
         self,
