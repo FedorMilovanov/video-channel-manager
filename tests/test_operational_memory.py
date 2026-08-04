@@ -70,7 +70,7 @@ def test_current_state_preserves_verified_operational_identity() -> None:
         "15 supported mutation boundaries",
         "25/25",
         "unknown_requires_reconciliation",
-        "provider writes in development and CI: 0",
+        "Provider writes in Wave 8 development and CI remain `0`",
         "SEPARATE_EXPERIMENTAL_SYSTEM",
     )
 
