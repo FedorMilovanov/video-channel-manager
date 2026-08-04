@@ -1,8 +1,8 @@
 # Current operational state
 
 Updated: 2026-08-04  
-Verified code baseline: `main@c4c4d3233ec20b8f939343c5d667d8687d7ff040`  
-Program state: `WAVE_6_COMPLETED_WAVE_7_NEXT`  
+Verified code baseline: `main@df956bbbf19af6652f8711f95fb4fecf272e9951`  
+Program state: `WAVE_7_COMPLETED_WAVE_8_NEXT`  
 Canonical audit: [`master-audit-2026-08-04.md`](master-audit-2026-08-04.md)  
 Machine register: [`audit-register-2026-08-04.json`](audit-register-2026-08-04.json)
 
@@ -16,32 +16,35 @@ This is the first state board to read before YouTube/VK work. Chat history, scre
 - Wave 3: shared HTTP ownership, safe-read retry taxonomy, redaction, and limiter infrastructure — PR #70;
 - Wave 4: fail-closed separation of VK video upload and VK wall publication — PR #71, merge `d85f7cf94b8ba0b30947291b3a08491239438843`;
 - Wave 5: one tested fail-closed Windows/PowerShell operator layer — PR #75, merge `1a62779293a404e4654b6230644dfc78e9b20dc1`;
-- Wave 6: one stable versioned source/plan/apply/result/reconciliation engine — PR #78, merge `c4c4d3233ec20b8f939343c5d667d8687d7ff040`.
+- Wave 6: one stable versioned source/plan/apply/result/reconciliation engine — PR #78, merge `c4c4d3233ec20b8f939343c5d667d8687d7ff040`;
+- Wave 7: exact risk-based mutation-boundary and fault/replay coverage — PR #84, merge `df956bbbf19af6652f8711f95fb4fecf272e9951`.
 
-Wave 6 exact-head CI run `30908185487` passed dependency audit, compileall, Ruff, Ruff format, strict mypy, and the full suite on Python 3.11, 3.12, and 3.13: `611 passed, 1 xfailed`. Pester passed `20/20` on Windows PowerShell 5.1, PowerShell 7 on Windows, and PowerShell 7 on Linux. Development and CI performed zero VK or YouTube writes.
+Wave 7 exact-head CI run `30918639372` passed dependency audit, compileall, Ruff, Ruff format, strict mypy, and the full suite on Python 3.11, 3.12, and 3.13: `657 passed, 1 xfailed`. Pester passed `25/25` on Windows PowerShell 5.1, PowerShell 7 on Windows, and PowerShell 7 on Linux. Development and CI performed zero VK or YouTube writes.
 
-## Wave 6 guarantees now in `main`
+## Wave 7 guarantees now in `main`
 
-The supported orchestration surface is explicit and versioned:
+The supported reliability surface is explicitly inventoried and proof-bound:
 
-- all 91 tracked Python scripts are classified and canonical-SHA-bound;
-- 26 direct provider-write executors are `retired` and stop before functions, credentials, paths, or provider dispatch;
-- historical private cross-script imports are confined to `compatibility_adapter` entries;
-- the supported `video_channel_manager.wave_engine` imports no historical `scripts.*` module;
-- strict immutable v1 schemas cover source evidence, plan, apply intent, result, reconciliation request, and reconciliation result;
-- operation identity binds project/community/owner, source snapshot, policy version, deterministic sequence/order key, mutation class, payload, and operation-set digest;
-- source and plan evidence are bound by exact relative paths, raw-file SHA-256, self-digests, and exact project/snapshot/policy confirmation;
-- the engine writes atomic UTF-8 preflight, per-operation intent/dispatch/result journals, and a final structured result;
-- an existing journal directory blocks execution, so a historical or interrupted wave is never replayed automatically;
-- ambiguous mutations are attempted at most once and any lost or unclassified outcome becomes `unknown_requires_reconciliation`, non-retry-safe;
-- reconciliation may cover only the exact unknown operations bound to the original plan and result;
-- the Wave 5 PowerShell operator accepts provider mutation manifests only through the complete Wave 6 `wave apply` argument contract;
-- the only supported production PowerShell entrypoint remains `scripts/operator/Invoke-VideoManager.ps1`;
-- no production provider adapter is implicitly registered by the CLI; absent reviewed dependency injection, provider apply fails closed.
+- 15 supported mutation boundaries are recorded in `mutation-boundary-register.json` with exact callable, risk, intent/dispatch/response/postflight evidence, reconciliation identity, attempt limit, replay policy, required fault stages, and owning tests;
+- an AST gate scans all `src/` provider calls and rejects unregistered or stale mutation markers;
+- `mutation-fault-proof-register.json` binds every required stage to an exact pytest node ID or exact Pester `It` title;
+- CI requires exact equality between the mutation-boundary set and proof set and rejects missing, unexpected, stale, or duplicate proof claims;
+- aggregate coverage is informational only; the safety gate is boundary- and scenario-specific;
+- deterministic dependency-injected WaveEngine faults cover intent, dispatch, response persistence, operation-result, final-result, and reconciliation boundaries without environment-controlled activation;
+- apply and reconciliation journals form durable replay barriers before ambiguous provider calls;
+- interrupted or lost ambiguous outcomes remain one-attempt, non-retry-safe, stop later operations, enter `unknown_requires_reconciliation`, and require exact reconciliation;
+- malformed, truncated, reordered, stale, wrong-digest, cross-project, wrong-owner, wrong-snapshot, wrong-policy, duplicate, and incomplete evidence fails closed;
+- interrupted atomic replacement preserves prior evidence and removes orphan temporary files;
+- historical pre-dispatch journal migration remains narrowly allowed, while provider-dispatched incomplete historical evidence remains blocked;
+- the only supported production operator remains `scripts/operator/Invoke-VideoManager.ps1`;
+- the PowerShell operator has bounded child execution, timeout exit `124`, process termination compatible with Windows PowerShell 5.1 and PowerShell 7, concurrent stdout/stderr draining, and structured-result validation independent of stdout wording;
+- missing, malformed, or internally inconsistent operator results fail closed;
+- the permanent PowerShell fault suite is canonical-SHA-bound in the wrapper registry;
+- no VK or YouTube provider write occurred during Wave 7 development or CI.
 
 ## Live-operation gate
 
-Waves 1–6 close architecture, operator, and orchestration gaps; they do not prove the current remote wall, video inventory, or historical local queue state. Broad live upload/publication remains blocked until the exact project has:
+Waves 1–7 close architecture, operator, orchestration, and tested mutation-boundary gaps; they do not prove the current remote wall, video inventory, or historical local queue state. Broad live upload/publication remains blocked until the exact project has:
 
 1. a fresh read-only VK video inventory;
 2. a fresh complete published+postponed wall snapshot;
@@ -105,15 +108,18 @@ Do not run the old package or upload the 15 candidates until the exact V3 canary
 
 ## Next engineering wave
 
-Wave 7 / issue #80 owns risk-based fault injection and mutation-boundary tests:
+Wave 8 / issue #86 owns exact matching, catalog identity, and media correctness without live provider mutation:
 
-- machine-readable inventory of every supported mutation boundary and its owning tests;
-- deterministic faults around intent, dispatch, response, processing, postflight, result commit, and reconciliation;
-- proof that ambiguous mutations cannot be replayed under any tested crash path;
-- corruption/staleness/cross-project evidence rejection;
-- Windows PowerShell 5.1/7 child-process and structured-result failure coverage;
-- risk-specific safety gates rather than aggregate-coverage gaming;
+- deterministic exact-first matching with explicit ambiguity/conflict states;
+- field-specific Unicode/text/URL normalization that preserves original evidence;
+- exact album/catalog identity rather than normalized-title-only selection;
+- semantic membership comparison independent of provider position churn;
+- authoritative downloader final path and cache identity;
+- ffprobe-equivalent structured duration/stream/container/playability validation;
+- exact thumbnail identity and caller-owned selected-thumbnail postflight;
 - provider writes in development and CI: 0.
+
+Issue #33 remains the later catalog/publication workflow and stays blocked by exact queue reconciliation under issues #31 and #32.
 
 ## Active issue graph
 
@@ -123,13 +129,13 @@ Wave 7 / issue #80 owns risk-based fault injection and mutation-boundary tests:
 - #37 — exact approved wall-cleanup scope;
 - #38 — Shorts upload modes and final type/player behavior;
 - #64 — master reliability roadmap;
-- #80 — active Wave 7 fault-injection and mutation-boundary tests;
-- #36/#65/#67/#69/#72/#76 — completed wave issues.
+- #86 — active Wave 8 exact matching/catalog/media correctness;
+- #36/#65/#67/#69/#72/#76/#80 — completed wave issues.
 
 ## Global prohibitions
 
 - Do not mix `lord-god-strength` and `legendary-poet` IDs, credentials, links, journals, or manifests.
-- Do not repeat completed Waves 0–6.
+- Do not repeat completed Waves 0–7.
 - Do not blind-retry `video.save`, upload-server POST, `wall.post`, `wall.edit`, `wall.delete`, or any ambiguous mutation.
 - Do not execute a retired Python or PowerShell provider-write wrapper.
 - Do not infer live success from green CI, an old package, a duration/format heuristic, a visible object, stdout wording, or a stale count.
