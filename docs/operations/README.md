@@ -24,7 +24,7 @@ Historical baselines retained for evidence:
 ## Current engineering sequence
 
 1. **Waves 0–7 — completed.** Upload lifecycle, project/content identity, HTTP reliability, upload/wall separation, supported PowerShell operator, versioned wave engine, mutation-boundary fault/corruption/operator proofs.
-2. **Audit Wave A0 / issue #88 — current documentation/state synchronization.** No provider writes and no changes to Wave 8 executors.
+2. **Audit Wave A0 / issue #88 — completed in PR #89.** The master audit/register v2 and authoritative entrypoints are synchronized; exact-head CI `30925523584` was green; provider writes were `0`.
 3. **Wave 8 / issue #86 — active core engineering.** Exact-first matching, field-specific canonical identity, exact album/catalog mapping, authoritative media/cache evidence, structured media validation, exact thumbnail postcondition.
 4. **Wave 9 — live reconciliation.** Issues #31/#32/#33/#38, each project and surface separately, only after Wave 8 and fresh read-only evidence.
 5. **Issue #37 — independent reviewed cleanup scope only.** It does not authorize broader deletion.

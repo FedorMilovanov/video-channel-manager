@@ -1,12 +1,30 @@
 # Current operational state
 
 Updated: 2026-08-04  
-Verified code baseline: `main@df956bbbf19af6652f8711f95fb4fecf272e9951`  
-Program state: `WAVE_7_COMPLETED_WAVE_8_NEXT`  
-Canonical audit: [`master-audit-2026-08-04.md`](master-audit-2026-08-04.md)  
-Machine register: [`audit-register-2026-08-04.json`](audit-register-2026-08-04.json)
+Verified repository baseline: `main@a06a93e1ec16b4ddb0f578a92e47ce76b4ee78a5`  
+Wave 7 code baseline: `df956bbbf19af6652f8711f95fb4fecf272e9951`  
+Program state: `AUDIT_A0_COMPLETED_WAVE_8_ACTIVE`  
+Canonical audit: [`master-audit-marathon-v2-2026-08-04.md`](master-audit-marathon-v2-2026-08-04.md)  
+Machine register: [`audit-register-v2-2026-08-04.json`](audit-register-v2-2026-08-04.json)
 
 This is the first state board to read before YouTube/VK work. Chat history, screenshots, remembered counts, retired packages, and older agent audits do not override it.
+
+## Completed Audit Wave A0
+
+Audit Marathon V2 was completed in PR #89 and merged as `a06a93e1ec16b4ddb0f578a92e47ce76b4ee78a5`.
+
+It:
+
+- reviewed six uploaded multi-agent/audit sources totaling 6,531 lines and recorded their SHA-256 values;
+- added the post-Wave-7 master audit and machine register v2;
+- corrected root `AGENTS.md` and the operations index so future agents cannot restart completed Waves 1–7;
+- closed duplicate Wave 7 issue #79 and stale duplicate PR #83;
+- preserved draft PR #85 as valuable historical evidence and identified its archive-specific Ruff-format boundary;
+- confirmed the exact Wave 8 matching/catalog/media/thumbnail gaps;
+- separated Wave 9 live reconciliation and VK Audio incubation from core reliability work;
+- performed zero VK or YouTube provider writes.
+
+Audit A0 exact-head CI run `30925523584` passed dependency audit, compileall, Ruff correctness, Ruff format, strict mypy, and the full suite on Python 3.11, 3.12, and 3.13: `657 passed, 1 xfailed`. PowerShell passed on Windows PowerShell 5.1, PowerShell 7 on Windows, and PowerShell 7 on Linux.
 
 ## Completed reliability waves
 
@@ -44,7 +62,7 @@ The supported reliability surface is explicitly inventoried and proof-bound:
 
 ## Live-operation gate
 
-Waves 1–7 close architecture, operator, orchestration, and tested mutation-boundary gaps; they do not prove the current remote wall, video inventory, or historical local queue state. Broad live upload/publication remains blocked until the exact project has:
+Waves 1–7 close architecture, operator, orchestration, and tested mutation-boundary gaps; Audit A0 closes documentation/source-of-truth drift. They do not prove the current remote wall, video inventory, or historical local queue state. Broad live upload/publication remains blocked until the exact project has:
 
 1. a fresh read-only VK video inventory;
 2. a fresh complete published+postponed wall snapshot;
@@ -99,25 +117,44 @@ Latest retained reviewed Shorts matrix:
 - 0 ambiguous;
 - 0 extra vertical VK objects;
 - `BXZeRiEOHmQ` maps to VK `-235216998_456239039`;
-- old `59/40/19/1` matrix is retired;
+- old `59/40/19/1` and historical `48` queues are retired as current authority;
 - V3 canary preparation exists, but completed V3 Apply/postflight is not proven.
 
 Status: `REVIEWED_MANIFEST_PREPARED / UPLOAD_COMPLETION_NOT_PROVEN`.
 
-Do not run the old package or upload the 15 candidates until the exact V3 canary/apply state and journal are recovered, converted into Wave 6 evidence, and reconciled through the supported operator and merged lifecycle/wall contracts.
+Do not run an old package or upload the 15 candidates until the exact canary/apply state and journal are recovered, converted into current evidence, and reconciled through the supported operator and merged lifecycle/wall contracts.
 
-## Next engineering wave
+## Separate VK Audio state
 
-Wave 8 / issue #86 owns exact matching, catalog identity, and media correctness without live provider mutation:
+VK Audio browser/internal-web experiments are not a supported part of the core YouTube→VK Video engine.
 
-- deterministic exact-first matching with explicit ambiguity/conflict states;
-- field-specific Unicode/text/URL normalization that preserves original evidence;
-- exact album/catalog identity rather than normalized-title-only selection;
-- semantic membership comparison independent of provider position churn;
-- authoritative downloader final path and cache identity;
-- ffprobe-equivalent structured duration/stream/container/playability validation;
-- exact thumbnail identity and caller-owned selected-thumbnail postflight;
-- provider writes in development and CI: 0.
+Retained facts:
+
+- one MP3 canary upload was verified;
+- later playlist/metadata stages produced hangs, false-positive `already_correct`, wrong UI-target selection, and observer attachment failures;
+- a read-only internal-web probe was verified;
+- one series was prepared as 10 source positions / 8 unique tracks;
+- later batch attempts include pre-write failure and partial/deferred item outcomes;
+- upload-host behavior differed between observed `vk.ru` and `pu.vk.ru` tickets.
+
+Status: `SEPARATE_EXPERIMENTAL_SYSTEM / PARTIAL_OR_UNKNOWN_OUTCOMES / NOT_CORE_SUPPORTED`.
+
+Do not run historical Audio ZIP versions as production. A future incubation issue must first define versioned schemas, exact per-item ledger, adapter boundary, allowlisted ticket contract, deadlines, canary, postflight, and reconciliation.
+
+## Active engineering wave
+
+Wave 8 / issue #86 owns exact matching, catalog identity, and media correctness without live provider mutation.
+
+The implementation order is:
+
+1. Wave 8A — exact-first matching kernel and conflict-explicit deterministic assignment;
+2. Wave 8B — field-specific canonical text and URL identity with original evidence;
+3. Wave 8C — exact reviewed catalog/album identity and semantic membership;
+4. Wave 8D — authoritative downloader final path, cache SHA/size/fingerprint, structured ffprobe validation;
+5. Wave 8E — exact thumbnail identity and selected-thumbnail postflight;
+6. Wave 8F — integration proof and living-state synchronization.
+
+Provider writes in Wave 8 development and CI remain `0`.
 
 Issue #33 remains the later catalog/publication workflow and stays blocked by exact queue reconciliation under issues #31 and #32.
 
@@ -129,14 +166,20 @@ Issue #33 remains the later catalog/publication workflow and stays blocked by ex
 - #37 — exact approved wall-cleanup scope;
 - #38 — Shorts upload modes and final type/player behavior;
 - #64 — master reliability roadmap;
+- #85 — draft non-executable operational-history archive; archive/CI boundary still unresolved;
 - #86 — active Wave 8 exact matching/catalog/media correctness;
-- #36/#65/#67/#69/#72/#76/#80 — completed wave issues.
+- #88 — completed Audit Marathon V2;
+- #36/#65/#67/#69/#72/#76/#80 — completed wave issues;
+- #79 — closed duplicate of #80.
 
 ## Global prohibitions
 
 - Do not mix `lord-god-strength` and `legendary-poet` IDs, credentials, links, journals, or manifests.
-- Do not repeat completed Waves 0–7.
+- Do not repeat completed Waves 0–7 or Audit A0.
 - Do not blind-retry `video.save`, upload-server POST, `wall.post`, `wall.edit`, `wall.delete`, or any ambiguous mutation.
 - Do not execute a retired Python or PowerShell provider-write wrapper.
 - Do not infer live success from green CI, an old package, a duration/format heuristic, a visible object, stdout wording, or a stale count.
 - Do not perform bulk deletion outside issue #37’s exact immutable scope.
+- Do not treat the historical `48 clips` package as a current manifest.
+- Do not treat vertical format or duration as proof of VK Clip type/surface.
+- Do not import VK Audio browser/internal-web attempts into core without a reviewed adapter contract.

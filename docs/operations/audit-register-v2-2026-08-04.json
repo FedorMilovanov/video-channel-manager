@@ -3,9 +3,11 @@
   "schema_version": "2.0",
   "created_at": "2026-08-04T18:24:00+03:00",
   "repository": "FedorMilovanov/video-channel-manager",
-  "verified_main_head": "963955230e6fac269635337e8a2366fbfe54652d",
+  "verified_pre_audit_main_head": "963955230e6fac269635337e8a2366fbfe54652d",
+  "audit_a0_merge_head": "a06a93e1ec16b4ddb0f578a92e47ce76b4ee78a5",
   "wave_7_code_head": "df956bbbf19af6652f8711f95fb4fecf272e9951",
-  "program_state": "AUDIT_A0_ACTIVE_WAVE_8_ACTIVE_NO_PROVIDER_WRITES",
+  "audit_a0_ci_run": 30925523584,
+  "program_state": "AUDIT_A0_COMPLETED_WAVE_8_ACTIVE_NO_PROVIDER_WRITES",
   "source_line_count": 6531,
   "sources": [
     {"name":"Вставленный текст(275).txt","lines":474,"sha256":"a59baae832b96e4e961b88e68706fc642b51a06223c18bfd22d0a63056037cb0"},
@@ -16,9 +18,9 @@
     {"name":"Вставленный текст (5)(1).txt","lines":1249,"sha256":"8852e93a8d7e2e9513c1bc0271e8c32b4cd0339c18f1150a92c78456a8dc82c8"}
   ],
   "findings": [
-    {"id":"TRUTH-001","severity":"P0","status":"confirmed","owner":"issue-88","target_wave":"Audit-A0","title":"Authoritative entry documents disagree with current Wave 8 state"},
-    {"id":"ADMIN-001","severity":"P1","status":"fixed_during_audit","owner":"issue-88","target_wave":"Audit-A0","title":"Duplicate Wave 7 issue and PR remained open"},
-    {"id":"ARCHIVE-001","severity":"P1","status":"confirmed","owner":"pr-85/issue-88","target_wave":"Audit-A0","title":"Production Ruff formatting targets literal historical Python in Markdown"},
+    {"id":"TRUTH-001","severity":"P0","status":"fixed","owner":"issue-88","target_wave":"Audit-A0","title":"Authoritative entry documents disagreed with current Wave 8 state","evidence":"PR #89 merged; AGENTS.md and operations index now point to v2/current Wave 8 state"},
+    {"id":"ADMIN-001","severity":"P1","status":"fixed","owner":"issue-88","target_wave":"Audit-A0","title":"Duplicate Wave 7 issue and PR remained open","evidence":"issue #79 and PR #83 closed without merge"},
+    {"id":"ARCHIVE-001","severity":"P1","status":"confirmed","owner":"pr-85/wave-10","target_wave":"Wave-10","title":"Production Ruff formatting targets literal historical Python in Markdown"},
     {"id":"MATCH-001","severity":"P0","status":"confirmed","owner":"issue-86","target_wave":"Wave-8A","title":"Matching has no exact-first phase"},
     {"id":"MATCH-002","severity":"P0","status":"confirmed","owner":"issue-86","target_wave":"Wave-8A","title":"Ambiguous selected pair can still produce a mapping"},
     {"id":"MATCH-003","severity":"P1","status":"confirmed","owner":"issue-86","target_wave":"Wave-8A","title":"Full O(N*M) fuzzy comparison remains expensive"},
@@ -32,7 +34,7 @@
     {"id":"LIVE-POET-001","severity":"P0","status":"requires_reconciliation","owner":"issues-32-38","target_wave":"Wave-9B","title":"Legendary Poet Shorts/Clips live queue is not proven complete"},
     {"id":"LIVE-LORD-001","severity":"P0","status":"requires_reconciliation","owner":"issue-31","target_wave":"Wave-9A","title":"Lord God queue requires reconciliation with local ledgers/results"},
     {"id":"AUDIO-001","severity":"P1","status":"separate_system","owner":"future-audio-incubation","target_wave":"Wave-9D-separate","title":"VK Audio remains a partial experimental browser/internal-web integration"},
-    {"id":"GOV-001","severity":"P2","status":"confirmed","owner":"issue-88/wave-10","target_wave":"Wave-10","title":"Historical archive, supported code and operational state need distinct CI/retention rules"}
+    {"id":"GOV-001","severity":"P2","status":"confirmed","owner":"wave-10","target_wave":"Wave-10","title":"Historical archive, supported code and operational state need distinct CI/retention rules"}
   ],
   "provider_writes_during_audit": 0
 }

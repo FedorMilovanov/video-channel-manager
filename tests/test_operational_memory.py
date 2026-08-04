@@ -14,6 +14,8 @@ def test_agent_instructions_reference_existing_sources_of_truth() -> None:
 
     text = agents_path.read_text(encoding="utf-8")
     required_sources = (
+        "docs/operations/master-audit-marathon-v2-2026-08-04.md",
+        "docs/operations/audit-register-v2-2026-08-04.json",
         "docs/operations/current-state.md",
         "docs/operations/2026-07-31-youtube-vk-transfer-postmortem.md",
         "docs/operations/operational-artifact-standard.md",
@@ -58,13 +60,18 @@ def test_current_state_preserves_verified_operational_identity() -> None:
         "c4c4d3233ec20b8f939343c5d667d8687d7ff040",
         "df956bbbf19af6652f8711f95fb4fecf272e9951",
         "30918639372",
-        "WAVE_7_COMPLETED_WAVE_8_NEXT",
+        "a06a93e1ec16b4ddb0f578a92e47ce76b4ee78a5",
+        "30925523584",
+        "AUDIT_A0_COMPLETED_WAVE_8_ACTIVE",
+        "master-audit-marathon-v2-2026-08-04.md",
+        "audit-register-v2-2026-08-04.json",
         "Wave 8 / issue #86",
         "scripts/operator/Invoke-VideoManager.ps1",
         "15 supported mutation boundaries",
         "25/25",
         "unknown_requires_reconciliation",
-        "provider writes in development and CI: 0",
+        "Provider writes in Wave 8 development and CI remain `0`",
+        "SEPARATE_EXPERIMENTAL_SYSTEM",
     )
 
     for fact in required_facts:
