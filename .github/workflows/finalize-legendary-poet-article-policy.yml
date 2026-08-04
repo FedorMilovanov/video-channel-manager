@@ -20,18 +20,20 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Repair exact policy digests and fault proofs
+      - name: Repair exact policy times, digests and fault proofs
         shell: bash
         run: |
           python - <<'PY'
           import hashlib
           import json
+          from datetime import datetime
           from pathlib import Path
 
           expected_policy_digest = "sha256:af210867d2ea392394e2034cffa9d43c3e1adc632386e9ec4827b033c8fff9a0"
           policy_path = Path("data/editorial/legendary-poet-article-wave-202608.json")
           policy = json.loads(policy_path.read_text(encoding="utf-8"))
           for operation in policy["operations"]:
+              operation["publish_date"] = int(datetime.fromisoformat(operation["publish_at"]).timestamp())
               operation["message_sha256"] = "sha256:" + hashlib.sha256(
                   operation["message"].encode("utf-8")
               ).hexdigest()
