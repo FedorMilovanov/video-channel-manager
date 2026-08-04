@@ -258,12 +258,13 @@ def test_changed_file_after_reservation_is_blocked_before_upload_dispatch(tmp_pa
     record = _record()
     writer = FakeWriter(media_to_mutate=media)
 
-    with pytest.raises(UploadRejected, match="size|SHA-256|ffprobe"):
+    with pytest.raises(UploadRejected, match="changed after reservation"):
         _execute(record, writer, media, _artifact(media))
 
     assert writer.begin_calls == 1
     assert writer.upload_calls == 0
-    assert record["stage"] == UploadStage.UPLOAD_STARTED.value
+    assert record["stage"] == UploadStage.RESERVED.value
+    assert record["reservation"]["remote_id"] == "-235216998_501"
 
 
 def test_manifest_cannot_change_after_media_verified(tmp_path: Path) -> None:
