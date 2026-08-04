@@ -60,7 +60,7 @@ def test_current_state_preserves_completed_wave8_and_read_only_wave9() -> None:
         "Wave 9A — Lord God reconciliation",
         "Wave 9B — Legendary Poet reconciliation",
         "do not create a write plan",
-        "do not perform provider writes during Wave 9 read-only reconciliation",
+        "Do not perform provider writes during Wave 9 read-only reconciliation",
         "scripts/operator/Invoke-VideoManager.ps1",
         "15 supported mutation boundaries",
         "25/25",
