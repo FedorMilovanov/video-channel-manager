@@ -13,7 +13,11 @@ from video_channel_manager.platforms.youtube.models import (
     OAuthToken,
     YouTubeConfigurationError,
 )
-from video_channel_manager.platforms.youtube.oauth import InstalledOAuthFlow, YOUTUBE_READONLY_SCOPE
+from video_channel_manager.platforms.youtube.oauth import (
+    OAuthFlowError,
+    InstalledOAuthFlow,
+    YOUTUBE_READONLY_SCOPE,
+)
 
 
 def _config(tmp_path: Path) -> InstalledClientConfig:
@@ -94,6 +98,74 @@ def test_exchange_and_refresh_preserve_refresh_token(tmp_path: Path) -> None:
     assert refreshed.access_token == "access-2"
     assert refreshed.refresh_token == "refresh-1"
     assert len(requests) == 2
+
+
+def test_oauth_transport_failure_is_single_attempt_and_redacted(tmp_path: Path) -> None:
+    config = _config(tmp_path)
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        raise httpx.ReadTimeout(
+            f"lost response from {request.url} client_secret=secret",
+            request=request,
+        )
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    flow = InstalledOAuthFlow(config, http_client=client)
+
+    with pytest.raises(OAuthFlowError) as captured:
+        flow.exchange_code(
+            code="code-secret",
+            redirect_uri="http://127.0.0.1/private-callback",
+            code_verifier="verifier-secret",
+        )
+
+    message = str(captured.value)
+    assert calls == 1
+    assert "attempt(s)" in message
+    assert "oauth2.googleapis.com" not in message
+    assert "client_secret" not in message
+    assert "code-secret" not in message
+    assert "verifier-secret" not in message
+    assert "private-callback" not in message
+
+
+def test_oauth_refresh_transient_http_is_not_replayed_and_detail_is_redacted(tmp_path: Path) -> None:
+    config = _config(tmp_path)
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(
+            503,
+            json={
+                "error": "temporarily_unavailable",
+                "error_description": "refresh-1 client_secret=secret https://private.example/token",
+            },
+        )
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    flow = InstalledOAuthFlow(config, http_client=client)
+    token = OAuthToken(
+        access_token="access-1",
+        refresh_token="refresh-1",
+        expires_at=datetime.now(UTC) - timedelta(minutes=5),
+        scopes=[YOUTUBE_READONLY_SCOPE],
+    )
+
+    with pytest.raises(OAuthFlowError) as captured:
+        flow.refresh(token)
+
+    message = str(captured.value)
+    assert calls == 1
+    assert "kind=transient_http" in message
+    assert "attempts=1" in message
+    assert "refresh-1" not in message
+    assert "client_secret" not in message
+    assert "private.example" not in message
 
 
 def test_needs_refresh_uses_leeway() -> None:
