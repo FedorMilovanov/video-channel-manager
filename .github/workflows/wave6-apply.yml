@@ -40,6 +40,7 @@ jobs:
           python -m pip install -e ".[dev]"
           mapfile -t changed_python < <(git diff --name-only -- '*.py')
           if ((${#changed_python[@]})); then
+            ruff check --fix "${changed_python[@]}"
             ruff format "${changed_python[@]}"
           fi
           python - <<'PY'
@@ -70,6 +71,7 @@ jobs:
               encoding="utf-8",
           )
           PY
+          pip check
           ruff check .
           ruff format --check .
           mypy src --show-error-codes
