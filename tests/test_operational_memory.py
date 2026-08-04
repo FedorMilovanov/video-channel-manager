@@ -37,19 +37,25 @@ def test_operations_index_has_no_broken_local_markdown_links() -> None:
 def test_current_state_preserves_program_and_project_identity() -> None:
     text = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
     required_facts = (
-        "WAVE_8B_COMPLETED_WAVE_8C_ACTIVE",
-        "c28aee4177d6f99e8f52fd82b60f4c1d93d50c29",
-        "30936757433",
-        "680 passed, 1 xfailed",
+        "WAVE_8C_COMPLETED_WAVE_8D_ACTIVE",
+        "ee7766a651cd55a0f51bd3cd5acfbe3f29bfbaed",
+        "30940734221",
+        "694 passed, 1 xfailed",
         "wave-8b-v1",
-        "Cross-platform comparison schema is `2.1`",
-        "original value",
-        "ordered transformations",
-        "exact field-by-field readback",
-        "cross-project and unknown-profile URLs fail closed",
-        "Wave 8C — exact catalog and album identity",
-        "reviewed one-to-one source collection ID",
-        "semantic membership compares sets",
+        "video-manager.catalog-identity-evidence",
+        "wave-8c-v1",
+        "Cross-platform comparison schema is `3.0`",
+        "VK catalog plan version is 3",
+        "exact target album ID",
+        "duplicate_canonical_target_title",
+        "unreviewed_existing_candidate",
+        "Conflict decisions create no album operation",
+        "exact target video ID sets",
+        "Wave 8D — authoritative media and cache evidence",
+        "authoritative final path",
+        "structured ffprobe evidence",
+        "directory glob fallback",
+        "MP4 alone does not prove H.264/AAC",
         "scripts/operator/Invoke-VideoManager.ps1",
         "15 supported mutation boundaries",
         "25/25",
@@ -83,12 +89,12 @@ def test_current_state_preserves_program_and_project_identity() -> None:
         assert fact in text
 
 
-def test_audit_register_tracks_wave_8b_and_active_catalog_findings() -> None:
+def test_audit_register_tracks_wave_8c_and_active_media_findings() -> None:
     payload = json.loads((OPERATIONS_DIR / "audit-register-v2-2026-08-04.json").read_text(encoding="utf-8"))
-    assert payload["schema_version"] == "2.2"
-    assert payload["wave_8b_code_head"] == "c28aee4177d6f99e8f52fd82b60f4c1d93d50c29"
-    assert payload["wave_8b_ci_run"] == 30936757433
-    assert payload["program_state"] == "WAVE_8B_COMPLETED_WAVE_8C_ACTIVE_NO_PROVIDER_WRITES"
+    assert payload["schema_version"] == "2.3"
+    assert payload["wave_8c_code_head"] == "ee7766a651cd55a0f51bd3cd5acfbe3f29bfbaed"
+    assert payload["wave_8c_ci_run"] == 30940734221
+    assert payload["program_state"] == "WAVE_8C_COMPLETED_WAVE_8D_ACTIVE_NO_PROVIDER_WRITES"
     assert payload["source_line_count"] == 7046
 
     source = next(item for item in payload["sources"] if item["name"] == "Вставленный текст(276).txt")
@@ -103,12 +109,16 @@ def test_audit_register_tracks_wave_8b_and_active_catalog_findings() -> None:
     assert findings["IDENTITY-001"]["status"] == "fixed"
     assert findings["IDENTITY-002"]["status"] == "fixed"
     assert findings["URL-001"]["status"] == "fixed"
-    assert findings["ALBUM-001"]["status"] == "active"
-    assert findings["CATALOG-001"]["status"] == "active"
-    assert findings["CATALOG-002"]["status"] == "active"
-    assert findings["CATALOG-003"]["status"] == "active"
+    assert findings["ALBUM-001"]["status"] == "fixed"
+    assert findings["CATALOG-001"]["status"] == "fixed"
+    assert findings["CATALOG-002"]["status"] == "fixed"
+    assert findings["CATALOG-003"]["status"] == "fixed"
+    assert findings["MEDIA-001"]["status"] == "active"
+    assert findings["MEDIA-002"]["status"] == "active"
+    assert findings["MEDIA-003"]["status"] == "active"
     assert findings["OPS-SCOPE-001"]["status"] == "policy_recorded"
     assert findings["UPLOAD-TICKET-001"]["status"] == "policy_recorded"
     assert payload["provider_writes_during_wave_8a"] == 0
     assert payload["provider_writes_during_wave_8b"] == 0
+    assert payload["provider_writes_during_wave_8c"] == 0
     assert payload["provider_writes_during_state_sync"] == 0
