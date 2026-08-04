@@ -1,147 +1,199 @@
 # Project memory changelog
 
-This file records durable updates to the repository's operational memory.
+This file records durable changes to operational memory. Add an entry whenever project identity, exact provider IDs, selected project state, OAuth aliases, link profiles, completed/blocked operations, resume safety, provider contracts, or active artifact paths change.
 
 ## 2026-08-04
 
-### Wave 0 — canonical audit and issue graph
+### Wave 3 completed — central HTTP ownership and safe-read reliability
 
-- Added `docs/operations/master-audit-2026-08-04.md` as the canonical synthesis of the 2026-08-03/04 audit marathon.
-- Added `docs/operations/audit-register-2026-08-04.json` with 25 findings classified as fixed, partial, confirmed-current, confirmed-operational, needs-reverification, disputed-provider-contract, retracted, or separate-system; every finding has an owner issue and target wave.
-- Updated `current-state.md` to record PR #61–63, the current P0 upload/content/base-sync blockers, the completed article photo wave, and separate `lord-god-strength` / `legendary-poet` operational states.
-- Updated the operations index, automation backlog, and root `AGENTS.md` so new work must start from the master audit, machine register, current state, and owning issue rather than chat history or retired package instructions.
-- Expanded issue #64 into the master roadmap for Waves 0–10.
-- Created issue #65 for the first code wave: journaled VK upload state machine, exact recovery, verified-only reuse, and crash fault injection.
-- Closed draft PR #29 without merge because the 403-video cleanup is already complete and its imported destructive state is historical. Preserved the reusable ideas—durable ledger, intent-before-dispatch, at-most-once semantics, exact-ID reconciliation, leases, and read-only settlement—in the current roadmap.
-- Recorded retracted/disputed conclusions so they are not reimplemented: no system `Uploads` album bug, no invented VK chunk/resume protocol, no assumption that `guid` is complete wall idempotency, and no universal `auto_publish`/`repeat` mandate without current provider evidence.
-- Wave 0 performed no VK or YouTube provider writes.
+- Merged PR #70 as `995167bdadc90d8d53414570cc3e5010bc4a93f2`.
+- Exact-head CI run `30871435907` passed dependency audit, compileall, Ruff, formatting, strict mypy, and full pytest on Python 3.11, 3.12, and 3.13.
+- `platforms/http.py` is now the only reusable `src/` factory for direct `httpx.Client()` construction.
+- `YouTubeCommentWriter` moved from per-request construction to one owned/borrowed persistent client.
+- Ten remaining bounded one-shot script constructors are documented and protected by an AST inventory gate.
+- Added explicit `SAFE_READ` versus `AMBIGUOUS_MUTATION` retry authority.
+- Added bounded backoff, bounded valid `Retry-After`, injectable jitter, deterministic limiter timing, structured failure kinds, and attempt evidence.
+- Ambiguous YouTube, VK, OAuth, upload-server, and thumbnail mutations execute once and surface externally non-retryable outcomes.
+- Added redaction boundaries for tokens, OAuth secrets, authorization values, token endpoints, opaque upload URLs, and sensitive payload details.
+- Cached the YouTube uploads playlist ID for the client lifecycle.
+- Added an injectable thread-safe request limiter with zero default; no unverified VK request rate was embedded.
+- Added ownership, retry, limiter, redaction, OAuth, thumbnail, and externally non-retryable mutation regression coverage.
+- No VK or YouTube provider write occurred.
+- Wave 3 issue #69 closed; Wave 4 remains owned by issue #36.
 
-### Reliability work verified in `main`
+### Wave 2 completed — fail-closed project/content pipeline
 
-- PR #61 merge `51cc2144508c33adf78380ab35e32ee88c10f90f`: project identity hardening, cross-project fail-closed behavior, guarded legacy plan upgrades, and SQLite WAL/timeout/foreign-key reliability.
-- PR #62 merge `55477df06ae0ae5238634aad829ba2fe8fe70fd7`: persistent HTTP client lifecycle for VK and YouTube inventory reads.
-- PR #63 merge `b19d4faa7e58ff4c0ae7f974092e9fd2441c571d`: persistent clients for VK video/thumbnail writers, YouTube description writer, OAuth, and processing polling while preserving no-blind-retry mutation semantics.
-- Theological article photo wave verified complete: postponed post IDs `12471–12480`, 10/10 operations, photo and article URL present, Apply retired.
+- Merged PR #68 as `19c2671bf91c8376def527a592e0bb7674841d03`.
+- Exact-head CI run `30867659234` passed all gates on Python 3.11, 3.12, and 3.13.
+- Removed implicit project fallback from reusable canonical and legacy content parsing.
+- Added expected project/channel context before preview and plan rendering and rejected mixed-project batches.
+- Bound content plan schema v2, operation IDs, operation-set digest, and plan digest to `project_key`.
+- Required exact bidirectional loaded-record↔operation coverage.
+- Made `scripts/sync_youtube_to_vk.py` internal-only with immutable `SyncRuntime`.
+- Replaced production monkeypatching with one supported dependency-injected sync entrypoint.
+- Preserved Wave 1 upload lifecycle, media QC, writer lock, `wallpost=0`, and no blind mutation retry.
+- No VK or YouTube provider write occurred.
+
+### Wave 1 completed — journaled VK upload lifecycle
+
+- Merged PR #66 as `56da03247f60ec9d25f1646fb9ccdfbb651aff9c`.
+- Added versioned upload stages from `planned` through `verified`, plus `rejected` and `unknown_requires_reconciliation`.
+- Persisted reservation intent before `video.save`, a separate dispatch marker before request dispatch, and exact ticket evidence before media transfer.
+- Distinguished safe pre-dispatch restart from ambiguous post-dispatch provider outcome.
+- Required exact identity/title/duration/type/processing/playability evidence before `verified`.
+- Added atomic JSON journal durability and crash/replay fault coverage.
+- Preserved no-blind-retry behavior and separated live historical reconciliation from architecture work.
+- No VK or YouTube provider write occurred.
+
+### Wave 4 provider-contract correction and activation
+
+- Issue #36 is the authoritative Wave 4 contract.
+- `wallpost=0` remains the proven mandatory upload-side wall control.
+- `repeat` is not used as wall safety because it describes video playback looping in the available SDK schemas.
+- `auto_publish` is not treated as verified current primary-contract evidence and is not mandated blindly.
+- Required future safety is a versioned `wall_mutation_authorized=false` upload contract, bound published+postponed before-snapshot, mandatory postflight delta, and a separate postponed-only publication path.
+- Immediate publication requires a separate immutable reviewed exception.
+- Issue #37 remains the only owner of its exact cleanup scope; Wave 4 authorizes no live cleanup.
+
+### Wave 0 canonical-state consolidation
+
+- Added `master-audit-2026-08-04.md` as the canonical audit synthesis and Waves 0–10 roadmap.
+- Added `audit-register-2026-08-04.json` with 25 findings, explicit status/severity/wave/owner, and protection against reactivating fixed, retracted, or disputed claims.
+- Updated `current-state.md` from the verified code baseline and retained exact project/live-queue boundaries without retransmitting anything.
+- Updated `automation-backlog.md`, the operations index, and root `AGENTS.md` to require the canonical audit/register before work.
+- Created issue #65 for the Wave 1 journaled upload state machine and fault-injection contract.
+- Expanded issue #64 into the master Waves 0–10 tracker.
+- Closed superseded draft PR #29 without merge; preserved its reusable ledger/reconciliation ideas while prohibiting the old destructive executors.
+- No VK or YouTube provider writes were performed during Wave 0.
 
 ## 2026-08-02
 
-### Daily article-link queue prepared
+### Universal operational publication/link contracts added
 
-- Prepared 10 postponed article posts for `lord-god-strength`, one daily at 14:00 UTC+03:00 from 2026-08-03 through 2026-08-12; the revised mix covers exegesis, apologetics, church history, the Sermon on the Mount, hermeneutics, pastoral authority, pastoral care, and difficult texts.
-- Source truth is `FedorMilovanov/gb-is-my-strength` search-manifest blob `952cfbd8b276fc7e877a784660fb4481dc8bd83f`; every post contains source-grounded copy, one natural discussion question, and the canonical public URL.
-- Only pages with declared `.webp` Open Graph images are included. The executor verifies live HTML, canonical and OG metadata, indexability, WebP MIME, dimensions, aspect ratio, bytes, and SHA-256 before any VK write.
-- VK link previews are now parsed through `wall.parseAttachedLink` before `wall.post`; returned photo tokens are attached with the canonical URL when available. Direct URL attachment alone is not accepted as sufficient evidence of a usable card.
-- The write sequence is `Plan → Canary → Apply`: the canary schedules only article 1 and must become an exact postponed link card with an image before the remaining nine can be scheduled. The executor waits up to 90 seconds, blocks duplicate URLs and any postponed post within two hours, and distinguishes explicit VK rejection from an unknown outcome.
-- Policy SHA-256: `sha256:b3467af4911d5faa2550b2c2f0e53ce051b0365651e82abfc57cae8a68a66f5a`. Entrypoint: `scripts/run-lord-god-article-wave.ps1`.
+- Added `src/video_channel_manager/editorial/publication_links.py` as the central project-aware publication-link contract for web, Telegram, VK public, VK Clips, Rutube, VK author-cabinet, and VK admin/comment routes.
+- Added explicit route-role separation: `audience`, `author`, and `operational`.
+- Added project-specific public link surfaces for both `lord-god-strength` and `legendary-poet`.
+- Added structured audit records for publication, persistence, transactional and provider-notes URLs.
+- Added `scripts/audit_publication_links.py` with JSON output support and expected-project enforcement.
+- Added tests that reject public/admin route swaps, invalid runtime publication URLs, cross-project publication records, and tampered catalog proofs.
+- Updated the operations index and public docs to point to the corrected canonical profiles.
 
-### Theological postponed wall queue prepared
+### Exact source-derived project link profiles added
 
-- Prepared one immutable 26-video wall plan for `lord-god-strength`, VK community `60805374` / owner `-60805374`; no VK write occurs during plan creation.
-- Cadence is two postponed posts per day at 09:00 and 19:00 Moscow time, from 2026-08-03 through 2026-08-15, ordered oldest-to-newest within the verified long-form tail.
-- Every post has an individual compact introduction, a discussion question, the exact YouTube source, a reviewed relevant playlist, and the registered project links for the site, Telegram, VK Video, and Rutube.
-- The executor revalidates all exact videos, scans both published and postponed wall queues, blocks duplicates or changed text/times, journals intent before `wall.post`, and verifies all scheduled posts afterward. It has no edit, delete, or immediate-post method.
-- Policy SHA-256: `sha256:2f9e4de476ad7267b6f8423b7e23bd89173964af9d31641d3698a051c82041c5`. Entrypoint: `scripts/run-lord-god-wall-tail.ps1`.
-
-### Long-form tail correction
-
-- Confirmed the only pre-upload failure in the reviewed 26-video queue: YouTube `uI-wfRaq2SA`, part 2 of `Архитектура мышления`; the download failed with HTTP 403 before any VK reservation or upload, so no duplicate ambiguity exists.
-- Added `scripts/complete_vk_longform_tail.py` as the single focused completion entrypoint. It reconciles all 26 exact rows, uploads only safe never-attempted gaps, repairs source thumbnails, and verifies the five-part Sproul VK album.
-- Added the durable transfer rule: when source artwork exists, the transfer is incomplete until that exact YouTube thumbnail or a reviewed local branded override is applied to VK and its source, SHA-256, target ID, and result are journaled. A VK-generated frame requires an explicit no-artwork exception.
-- Recorded a cross-project renderer defect: the generic VK publication helper still contains a poet-specific title convention, so it must not be used for `lord-god-strength` until made project-aware. The focused completion script preserves the current theological video's exact title and description.
-- The previous broad playlist audit was not accepted as current evidence because one run paginated only the first 100 VK videos and another failed VK authorization. Playlist completion now uses exact series IDs and live album membership.
-- Issue #40 tracks this one correction; accidental temporary issues #41–#43 were closed and contain no work.
-
-### Shorts reset completed
-
-- Replaced 34 reviewed low-view Shorts with verified ordinary VK videos.
-- Accepted 34 old-video deletions and 34 generated wall-post deletions.
-- Final result reported no remaining planned or unresolved wall posts; protected wall post `12400` remained present.
+- Added `lord-god-strength-description-profile.md` with exact footer links, related project links, prohibited substitutions, and article footer guidance.
+- Added `legendary-poet-description-profile.md` with exact footer links, public VK Clips route, VK author-cabinet separation, prohibited substitutions, and article footer guidance.
+- Recorded that Господь Бог — Сила Моя uses `https://lord-god-strength.ru/`, `https://t.me/lord_god_strength`, `https://vk.com/lordgodstrength`, and `https://rutube.ru/channel/75847456/`.
+- Recorded that The Legendary Poet uses `https://thelegendarypoet.ru/`, `https://t.me/thelegendarypoet`, `https://vk.com/thelegendarypoet`, and `https://rutube.ru/channel/76394077/`.
+- Recorded that The Legendary Poet public VK Clips are under `https://vk.com/clips/legendarypoet`, while `https://vk.com/clip/milovanov_fedor` is an author-cabinet route, not the public project route.
+- Recorded that `https://admin.thelegendarypoet.ru/` is operational infrastructure, not a public project link.
+- Corrected the operational index so The Legendary Poet no longer points to the Господь Бог description standard.
+- Added a project-link audit record covering verified routes, compatibility routes, operational routes, and remaining synchronization work.
 
 ## 2026-08-01
 
-### The Legendary Poet identities and links confirmed
+### Project identity and credential boundary formalized
 
-- Confirmed the project website: `https://thelegendarypoet.ru/`.
-- Confirmed the YouTube channel ID: `UC-78ys2S3cQ3lpqgXfo-SvQ`.
-- Confirmed the canonical VK route: `https://vk.ru/thelegendarypoet`.
-- Retained `https://vk.com/thelegendarypoet` as a working compatibility/migration route.
-- Confirmed VK community number `club235216998`, community ID `235216998`, and API owner ID `-235216998`.
-- Confirmed the public VK Clips route: `https://vkvideo.ru/@thelegendarypoet/clips`.
-- Confirmed the VK Video author dashboard and filtered published-clips view as operational/admin routes.
-- Explicitly prohibited `cabinet.vkvideo.ru` URLs in public descriptions, comments, posts, footers, and promotion blocks.
-- Added `docs/operations/legendary-poet-description-profile.md`.
-- Updated the canonical project registry, link audit, and operations index.
-- Recorded that source-code link profiles and validators still require synchronization before the newly confirmed `vk.ru` and VK Clips routes are used by an executable plan.
+- Recorded exact `lord-god-strength` identities:
+  - YouTube `UCeSJsC6go2c9pdJCuUI1BYA`;
+  - YouTube OAuth alias `fedor-milovanov`;
+  - VK community `60805374`;
+  - VK owner `-60805374`;
+  - verified public link `https://youtube.com/@ГосподьБогСилаМоя`.
+- Recorded exact `legendary-poet` identities:
+  - YouTube `UC-78ys2S3cQ3lpqgXfo-SvQ`;
+  - YouTube OAuth alias `legendary-poet`;
+  - VK community `235216998`;
+  - VK owner `-235216998`.
+- Recorded that the shared VK credential alias `legendary-poet` is a credential label only and never selects a project.
+- Added a formal `ProjectIdentity` registry and strict runtime project-ID matching.
+- Bound upload-plan validation, upload-plan preview, and guarded legacy-plan upgrade to exact `project_key` plus target community/owner.
+- Recorded that `lord-god-strength` YouTube access is read-only and must never be used for mutations.
 
-### Two-project identity separation
+### Durable database setup added
 
-- Added `docs/operations/project-identity-registry.md` as the canonical registry for the two distinct projects:
-  - `lord-god-strength` — Господь Бог — Сила Моя;
-  - `legendary-poet` — The Legendary Poet — Легендарный Поэт.
-- Recorded the credential model correctly:
-  - YouTube uses two separate OAuth aliases, one per selected channel;
-  - VK uses one shared user token for both communities;
-  - every VK operation must select its target by exact numeric community and owner IDs.
-- Recorded the current theological-project identities:
-  - YouTube channel ID `UCeSJsC6go2c9pdJCuUI1BYA`;
-  - YouTube alias `fedor-milovanov`, currently read-only;
-  - VK community ID `60805374` and owner ID `-60805374`;
-  - shared VK token alias `legendary-poet`.
-- Replaced the current canonical theological VK community link with `https://vk.ru/the_lord_god_is_my_strength` and retained the published `vk.com` form only as a compatibility URL.
-- Registered the current compact footer links for the theological project: website, Telegram, VK, VK Video, and Rutube.
-- Initially marked the poet-project website and numeric VK identity as unverified; this was superseded later the same day by direct owner confirmation recorded above.
-- Updated root `AGENTS.md`, `docs/operations/current-state.md`, and the operations index so future work must bind `project_key`, exact provider IDs, and a project-specific link profile.
-
-### Project-specific editorial profiles
-
-- Replaced the old global editorial link model with project-specific link profiles.
-- Added cross-project link rejection and regression coverage.
-- Added a dedicated theological description profile.
-- Added a dedicated The Legendary Poet description profile after the missing identities were confirmed.
+- Recorded that every SQLite connection now enforces WAL, a 5000 ms busy timeout, and foreign keys.
+- Added tests that verify foreign-key rejection and concurrent-writer waiting behavior.
 
 ## 2026-07-31
 
-### Added
+### Closed: VK duplicate cleanup
 
-- Root `AGENTS.md` with canonical YouTube/VK identities, current verified counts, closed deletion state, transfer queue identity, and non-negotiable safety rules.
-- `docs/operations/current-state.md` as the first-stop operational status board.
-- `docs/operations/2026-07-31-youtube-vk-transfer-postmortem.md` with successful outcomes, failed attempts, root causes, and permanent rules.
-- `docs/operations/operational-artifact-standard.md` defining ZIP, launcher, manifest, ledger, resume, postcondition, and handoff requirements.
-- `docs/operations/README.md` as an index for operational documentation.
-- `scripts/verify_operational_bundle.py` for pre-handoff ZIP validation.
-- Regression tests for valid bundles, nested roots, missing entrypoints, path traversal, secret leakage, checksum mismatches, and critical operational-memory references.
-- Pull-request checklist, operational incident issue form, incident-report template, and decision-log template.
-- Prioritized automation backlog.
+- Final `completed-run.json` recorded:
+  - `confirmed_deleted: 403`;
+  - `planned: 0`;
+  - `unresolved: 0`;
+  - `run: completed`.
+- Confirmed that `KobOzfBqzic` is present in VK and is the transfer boundary.
+- Confirmed that `s512Opa8Eu4` maps to VK `-60805374_456241938`.
+- Permanent rule: never run bulk duplicate cleanup again without a fresh inventory and one explicit immutable plan.
 
-### Repository workflow completed
+### Closed: theological article photo wave
 
-- PR #30, `Complete operational memory and reporting workflow`, passed CI on Python 3.11, 3.12, and 3.13 and was squash-merged into `main`.
-- Merge commit: `dcc91326ab50f9ead0a97f0e3aa7cae8a1ff652f`.
+- Confirmed 10/10 postponed posts on VK.
+- Exact post IDs: `12471`, `12472`, `12473`, `12474`, `12475`, `12476`, `12477`, `12478`, `12479`, `12480`.
+- Exact schedule: 2026-08-04 through 2026-08-13.
+- Permanent rule: never rerun the old article-photo Apply package.
 
-### Active operational issues
+### Blocked: long-form upload continuation
 
-- [Issue #31 — verify the 26-video upload result and reconcile the ledger](https://github.com/FedorMilovanov/video-channel-manager/issues/31)
-- [Issue #32 — inventory the real VK Clips surface and derive the exact Shorts queue](https://github.com/FedorMilovanov/video-channel-manager/issues/32)
-- [Issue #33 — organize and publish the verified VK catalog after transfer completion](https://github.com/FedorMilovanov/video-channel-manager/issues/33)
+- Reviewed long-form queue newer than `KobOzfBqzic` contains 27 items.
+- One is already present: `s512Opa8Eu4`.
+- Verified missing count: 26.
+- Manifest SHA-256: `b9c0268be62ea8fb9281cc9a551ebc5621dfdd4bfeb22a9d8f4b50707baa33ed`.
+- Local package root: `C:\Users\Fedor\Projects\video-channel-manager\data\vk-upload\verified-longform-26`.
+- Continuation is blocked until exact reconciliation of accepted, processing and unknown rows under issue #31.
 
-Issue #33 is explicitly blocked by #31 and #32.
+### Blocked: Shorts/Clips continuation
 
-### Current operational status
+- Canonical source inventory is recorded as 108 Shorts.
+- Upload completion and final `short_video` classification are not proven.
+- Issues #32 and #38 own the inventory and final type/player behavior.
+- Permanent rule: long-form and Shorts remain separate manifests and ledgers.
 
-- VK duplicate cleanup: complete and verified (`403 confirmed_deleted`, `0 planned`, `0 unresolved`).
-- Public YouTube inventory: `1781` items (`1673` long-form, `108` Shorts).
-- VK ordinary-video inventory after cleanup: `2879`.
-- Verified long-form upload queue: `26` items.
-- Upload completion: unverified until local `upload-result.json` is reviewed.
-- Shorts upload: blocked pending inventory of the real VK Clips surface.
+### Wall safety incident recorded
 
-### Required future updates
+- A previous transfer produced a large sequence of one-video wall posts.
+- Upload and wall publication were formally separated in operational policy.
+- Immediate publication was blocked by default.
+- Issue #36 owns the universal upload/wall contract and future fresh read-only audit.
+- Issue #37 owns only the exact approved cleanup scope.
+- `guid` was recorded as an additional guard, not complete idempotency.
 
-After each operational run, update `docs/operations/current-state.md` and append a dated entry here containing:
+### Historical destructive PR retired
 
-- manifest SHA-256;
-- attempted, accepted, processing, verified, failed, and unknown counts;
-- result and ledger paths;
-- whether resume is safe;
-- any new provider, identity, endpoint-coverage, launcher, or packaging failure;
-- exact next action.
+- Draft PR #29 was marked superseded and closed without merge.
+- The old delete orchestrator and destructive state were retained only as historical evidence.
+- Permanent rule: never rerun historical deletion executors.
+
+## 2026-07-30
+
+### Low-view Shorts replacement completed
+
+- Replaced 34 reviewed low-view Shorts with ordinary videos.
+- Removed the generated wall posts associated with those replacements.
+- Protected post `12400` remained present.
+- No broad wall-cleanup permission was implied.
+
+## 2026-07-29
+
+### The Legendary Poet V3 preparation recorded
+
+- Latest reviewed matrix:
+  - 56 exact YouTube Shorts;
+  - 41 exact YouTube→VK pairs;
+  - 15 confirmed missing;
+  - 0 ambiguous;
+  - 0 extra vertical VK objects.
+- Exact pair retained: YouTube `BXZeRiEOHmQ` → VK `-235216998_456239039`.
+- Old `59/40/19/1` matrix retired.
+- Two protective stops performed no new VK writes.
+- V3 canary preparation exists, but completed V3 Apply/postflight is not proven.
+- Permanent rule: do not run the old package or upload the 15 candidates until the exact V3 journal is recovered and reconciled.
+
+## 2026-07-28
+
+### Separate VK Audio browser workflow identified
+
+- Browser-based VK Audio automation belongs to the adjacent `mp3telegrambot` system.
+- It uses undocumented web contracts and is not part of the supported API-based video/wall executor family.
+- Permanent rule: keep it separate until a formal manifest/result/unknown-outcome interface exists.
