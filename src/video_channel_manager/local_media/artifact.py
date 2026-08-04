@@ -474,9 +474,7 @@ def validate_cached_media_artifact(
 ) -> MediaArtifactEvidence:
     try:
         parsed = (
-            evidence
-            if isinstance(evidence, MediaArtifactEvidence)
-            else MediaArtifactEvidence.model_validate(evidence)
+            evidence if isinstance(evidence, MediaArtifactEvidence) else MediaArtifactEvidence.model_validate(evidence)
         )
     except Exception as exc:
         raise MediaArtifactError(f"media manifest is invalid: {exc}") from exc
