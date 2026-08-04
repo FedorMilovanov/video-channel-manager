@@ -83,11 +83,7 @@ def _scan_python_mutation_markers() -> set[str]:
             name = _call_name(node.func)
             if name == "_call" and node.args:
                 method = _constant_string(node.args[0])
-                if (
-                    method
-                    and method not in _SAFE_VK_API_METHODS
-                    and not _is_true(_keyword(node, "retry_transient"))
-                ):
+                if method and method not in _SAFE_VK_API_METHODS and not _is_true(_keyword(node, "retry_transient")):
                     markers.add(f"vk_api:{method}")
             if name == "execute_http_request":
                 operation = _keyword(node, "operation")
