@@ -1,0 +1,74 @@
+name: Fix Legendary Poet cover download
+
+on:
+  push:
+    branches:
+      - agent/fix-legendary-poet-cover-download
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: agent/fix-legendary-poet-cover-download
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.11"
+      - name: Patch exact Wikimedia download URL
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/video_channel_manager/wave_engine/article_prepare.py")
+          text = path.read_text(encoding="utf-8")
+          anchor = "\ndef _get(http: _ArticleHttpClient, url: str, *, label: str) -> httpx.Response:\n"
+          insertion = '''\n_ARTICLE_DOWNLOAD_URL_OVERRIDES: dict[str, str] = {\n    "https://commons.wikimedia.org/wiki/Special:Redirect/file/Esenin1925.jpg": (\n        "https://upload.wikimedia.org/wikipedia/commons/1/14/Esenin1925.jpg"\n    ),\n}\n\n\ndef _article_download_url(url: str) -> str:\n    return _ARTICLE_DOWNLOAD_URL_OVERRIDES.get(url, url)\n\n'''
+          if insertion.strip() not in text:
+              if anchor not in text:
+                  raise SystemExit("_get anchor not found")
+              text = text.replace(anchor, insertion + anchor, 1)
+          old = "        response = http.get(url)\n"
+          new = "        response = http.get(_article_download_url(url))\n"
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif new not in text:
+              raise SystemExit("HTTP GET line not found")
+          path.write_text(text, encoding="utf-8")
+
+          test = Path("tests/test_article_cover_download_url.py")
+          test.write_text('''from __future__ import annotations\n\nfrom video_channel_manager.wave_engine.article_prepare import _article_download_url\n\n\ndef test_exact_yesenin_commons_redirect_uses_original_file_url() -> None:\n    assert _article_download_url(\n        "https://commons.wikimedia.org/wiki/Special:Redirect/file/Esenin1925.jpg"\n    ) == "https://upload.wikimedia.org/wikipedia/commons/1/14/Esenin1925.jpg"\n\n\ndef test_unreviewed_urls_are_not_rewritten() -> None:\n    url = "https://thelegendarypoet.ru/images/essays/example.webp"\n    assert _article_download_url(url) == url\n''', encoding="utf-8")
+          PY
+          python -m pip install --upgrade "pip>=25" "setuptools>=83,<84" wheel
+          pip install -e ".[dev]"
+          ruff format src/video_channel_manager/wave_engine/article_prepare.py tests/test_article_cover_download_url.py
+          ruff check src/video_channel_manager/wave_engine/article_prepare.py tests/test_article_cover_download_url.py
+          python -m pytest -q tests/test_article_cover_download_url.py tests/test_article_prepare_source_markers.py
+      - name: Live original-file smoke test
+        shell: bash
+        run: |
+          python - <<'PY'
+          import httpx
+          url = "https://upload.wikimedia.org/wikipedia/commons/1/14/Esenin1925.jpg"
+          response = httpx.get(url, follow_redirects=True, timeout=30, headers={"User-Agent": "TheLegendaryPoet/1.0"})
+          response.raise_for_status()
+          assert response.headers.get("content-type", "").lower().startswith("image/jpeg")
+          assert len(response.content) > 100_000
+          print(len(response.content), response.headers.get("content-type"))
+          PY
+      - name: Commit repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/fix-legendary-poet-cover-download.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Use stable original URL for Yesenin cover download"
+          git push origin HEAD:agent/fix-legendary-poet-cover-download
