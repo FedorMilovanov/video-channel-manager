@@ -335,8 +335,8 @@ def build_vk_catalog_plan(
         "initial_catalog_state_sha256": catalog_state_sha256(target),
         "reviewed_mappings": dict(sorted((reviewed_mappings or {}).items())),
         "resolved_video_mappings": mapping,
-        "reviewed_collection_mappings": dict(sorted((reviewed_collection_mappings or {}).items())),
-        "approved_collection_creates": sorted(approved_collection_creates or set()),
+        "reviewed_collection_mappings": catalog_identity.reviewed_collection_mappings,
+        "approved_collection_creates": catalog_identity.approved_collection_creates,
         "catalog_identity": catalog_identity.model_dump(mode="json"),
         "catalog_identity_sha256": catalog_identity.digest,
         "album_operations": sorted(album_operations, key=lambda item: item["operation_id"]),
@@ -392,6 +392,10 @@ def _validate_catalog_operations(plan: dict[str, Any], evidence: CatalogIdentity
             raise ValueError("Album operation catalog identity digest mismatch")
 
 
+def _is_bare_sha256(value: object) -> bool:
+    return isinstance(value, str) and len(value) == 64 and all(character in "0123456789abcdef" for character in value)
+
+
 def validate_vk_catalog_plan(plan: dict[str, Any]) -> None:
     if plan.get("schema_name") != VK_CATALOG_PLAN_SCHEMA:
         raise ValueError("Unexpected VK catalog plan schema")
@@ -412,15 +416,12 @@ def validate_vk_catalog_plan(plan: dict[str, Any]) -> None:
     )
     if resolved_project != project_key:
         raise ValueError("VK catalog plan project identity does not match its exact provider targets")
-    for field in (
-        "target_video_ids_sha256",
-        "initial_catalog_state_sha256",
-        "catalog_identity_sha256",
-        "plan_sha256",
-    ):
+    for field in ("target_video_ids_sha256", "initial_catalog_state_sha256", "plan_sha256"):
         value = plan.get(field)
         if not isinstance(value, str) or not value.startswith("sha256:"):
             raise ValueError(f"{field} must contain a SHA-256 digest")
+    if not _is_bare_sha256(plan.get("catalog_identity_sha256")):
+        raise ValueError("catalog_identity_sha256 must contain a bare SHA-256 digest")
     expected = calculate_vk_catalog_plan_sha256(plan)
     if plan["plan_sha256"] != expected:
         raise ValueError("VK catalog plan self-digest does not match its contents")
