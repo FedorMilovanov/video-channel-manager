@@ -69,7 +69,7 @@ def candidate_keys(title: str) -> set[str]:
     normalized = normalize_title(title)
     tokens = {f"token:{token}" for token in normalized.split() if len(token) >= 3}
     compact = normalized.replace(" ", "")
-    trigrams = {f"gram:{compact[index:index + 3]}" for index in range(max(0, len(compact) - 2))}
+    trigrams = {f"gram:{compact[index : index + 3]}" for index in range(max(0, len(compact) - 2))}
     return tokens | trigrams
 
 
