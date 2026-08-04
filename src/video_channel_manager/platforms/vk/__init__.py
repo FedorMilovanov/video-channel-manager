@@ -24,9 +24,16 @@ from video_channel_manager.platforms.vk.text_writer import (
     canonical_vk_text,
     vk_texts_equivalent,
 )
+from video_channel_manager.platforms.vk.upload_media import (
+    UploadMediaAuthorityError,
+    execute_upload_operation,
+    journal_media_evidence,
+    verify_upload_media_authority,
+)
 from video_channel_manager.platforms.vk.writer import VkUploadTicket, VkVideoWriter, VkWriteError
 
 __all__ = [
+    "UploadMediaAuthorityError",
     "VKCommentRenderer",
     "VKPostRenderer",
     "VKVideoDescriptionRenderer",
@@ -50,8 +57,11 @@ __all__ = [
     "VkVideoWriter",
     "VkWriteError",
     "canonical_vk_text",
+    "execute_upload_operation",
+    "journal_media_evidence",
     "local_vk_write_lock",
     "render_vk_clip_description",
     "render_vk_video_description",
+    "verify_upload_media_authority",
     "vk_texts_equivalent",
 ]
