@@ -114,7 +114,6 @@ class FakeWriter:
             raise RuntimeError(f"not ready within {timeout_seconds}: {assessment.reasons}")
         return item
 
-
     def capture_wall_snapshot(
         self,
         *,
