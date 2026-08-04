@@ -107,11 +107,10 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            .github/workflows/ci.yml \
-            data/editorial/legendary-poet-article-wave-202608.json \
-            docs/operations/mutation-fault-proof-register.json \
-            tests/test_vk_article_provider_postflight.py
+          git add .github/workflows/ci.yml
+          git add -f data/editorial/legendary-poet-article-wave-202608.json
+          git add docs/operations/mutation-fault-proof-register.json
+          git add tests/test_vk_article_provider_postflight.py
           git add -u .github/workflows
           git commit -m "Finalize Legendary Poet article policy evidence"
           git push origin HEAD:agent/legendary-poet-article-wave
