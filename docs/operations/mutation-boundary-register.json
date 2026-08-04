@@ -47,6 +47,27 @@
       "owning_tests": ["tests/test_vk_writer.py"]
     },
     {
+      "boundary_id": "vk.video.album.edit",
+      "risk": "P1",
+      "provider": "VK",
+      "language": "python",
+      "source_file": "src/video_channel_manager/platforms/vk/editorial_writer.py",
+      "module": "video_channel_manager.platforms.vk.editorial_writer",
+      "callable": "VkEditorialWriter.rename_album",
+      "scanner_marker": "vk_api:video.editAlbum",
+      "mutation_class": "ambiguous_mutation",
+      "intent_evidence": "exact community_id, album_id and reviewed non-empty target title",
+      "dispatch_evidence": "one video.editAlbum request",
+      "response_evidence": "explicit scalar or structured VK success acknowledgement",
+      "postflight_evidence": "caller must verify exact album title before treating the mutation as final",
+      "reconciliation_identity": "community_id, album_id and exact target title",
+      "retry_policy": "never_replay",
+      "unknown_status": "unknown_requires_reconciliation",
+      "attempt_limit": 1,
+      "required_fault_stages": ["before_dispatch", "after_dispatch_before_response", "during_postflight"],
+      "owning_tests": ["tests/test_vk_text_writer.py"]
+    },
+    {
       "boundary_id": "vk.video.upload.reserve",
       "risk": "P0",
       "provider": "VK",
@@ -254,7 +275,7 @@
       "unknown_status": "unknown_requires_reconciliation",
       "attempt_limit": 1,
       "required_fault_stages": ["before_intent_commit", "after_intent_commit", "before_dispatch", "after_dispatch_before_response", "after_response_before_commit", "before_final_commit"],
-      "owning_tests": ["tests/test_wave_engine_contract.py", "tests/test_wave_engine_cli.py"]
+      "owning_tests": ["tests/test_wave_engine_contract.py", "tests/test_wave_engine_cli.py", "tests/test_wave_engine_faults.py"]
     },
     {
       "boundary_id": "wave.reconciliation.dispatch",
@@ -267,15 +288,15 @@
       "scanner_marker": "wave:adapter.reconcile",
       "mutation_class": "reconciliation_read_or_exact_repair",
       "intent_evidence": "exact plan, original result and reconciliation request unknown-operation set",
-      "dispatch_evidence": "one adapter reconciliation call per exact unknown operation",
-      "response_evidence": "exact reconciled operation identity and evidence",
-      "postflight_evidence": "complete reconciliation result covering only requested unknown operations",
+      "dispatch_evidence": "durable reconciliation intent and dispatch_started sidecar journal before one adapter call",
+      "response_evidence": "per-operation reconciled evidence committed before final result",
+      "postflight_evidence": "complete reconciliation result plus completed sidecar journal covering only requested unknown operations",
       "reconciliation_identity": "ordered unknown operation IDs and original result digest",
       "retry_policy": "never_retransmit_original_mutation",
       "unknown_status": "unknown_requires_reconciliation",
       "attempt_limit": 1,
-      "required_fault_stages": ["before_dispatch", "after_dispatch_before_response", "before_final_commit"],
-      "owning_tests": ["tests/test_wave_engine_contract.py", "tests/test_wave_engine_cli.py"]
+      "required_fault_stages": ["before_intent_commit", "after_intent_commit", "before_dispatch", "after_dispatch_before_response", "after_response_before_commit", "before_final_commit"],
+      "owning_tests": ["tests/test_wave_engine_contract.py", "tests/test_wave_engine_cli.py", "tests/test_wave_engine_faults.py"]
     },
     {
       "boundary_id": "operator.native.child",
