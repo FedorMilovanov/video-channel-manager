@@ -11,6 +11,13 @@ from typing import Any, Sequence
 
 from video_channel_manager.config import get_settings
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical executor is retired by Wave 6. "
+        "Use the versioned `video-manager wave` engine through the reviewed operator contract."
+    )
+
 _PREFLIGHT_SCHEMA = "video-manager.youtube-comment-preflight"
 _ACTIONABLE_AUDIT_STATUSES = ("missing", "foreign_only")
 

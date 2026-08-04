@@ -25,6 +25,13 @@ from video_channel_manager.platforms.youtube import (
 )
 from video_channel_manager.platforms.youtube.write_lock import local_youtube_write_lock
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical executor is retired by Wave 6. "
+        "Use the versioned `video-manager wave` engine through the reviewed operator contract."
+    )
+
 
 def _load_backup(path: Path) -> dict[str, Any]:
     try:

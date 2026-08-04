@@ -191,7 +191,7 @@
   "test_files": [
     {
       "path": "tests/powershell/VideoManager.Operator.Tests.ps1",
-      "sha256": "94c04d3db606a558e7f2960e7c62a94a3c4d54ac74269a7d268b6f48bac67e17",
+      "sha256": "5e6fe88ca18016d41e167bed14696ad9ffafc29c0aecd2a725b76b17d628d01b",
       "reason": "Pester contract tests for Windows PowerShell 5.1 and PowerShell 7."
     }
   ]

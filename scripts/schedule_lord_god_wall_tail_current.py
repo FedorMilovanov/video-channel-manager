@@ -14,6 +14,13 @@ from datetime import timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical executor is retired by Wave 6. "
+        "Use the versioned `video-manager wave` engine through the reviewed operator contract."
+    )
+
 _ORIGINAL_ZONEINFO = zoneinfo.ZoneInfo
 
 

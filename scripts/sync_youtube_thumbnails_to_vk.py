@@ -32,6 +32,13 @@ from video_channel_manager.platforms.vk.lock import local_vk_write_lock
 from video_channel_manager.platforms.vk.thumbnails import VkThumbnailWriter
 from video_channel_manager.platforms.vk.writer import VkVideoWriter, VkWriteError
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical executor is retired by Wave 6. "
+        "Use the versioned `video-manager wave` engine through the reviewed operator contract."
+    )
+
 _SUCCESS_STATUS = "installed_youtube_thumbnail_copied_to_vk"
 
 

@@ -20,6 +20,13 @@ from video_channel_manager.platforms.vk.text import render_vk_video_description
 from video_channel_manager.platforms.vk.text_writer import VkVideoTextWriter, vk_texts_equivalent
 from video_channel_manager.platforms.vk.writer import VkWriteError
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical executor is retired by Wave 6. "
+        "Use the versioned `video-manager wave` engine through the reviewed operator contract."
+    )
+
 _SITE_URL = "https://thelegendarypoet.ru/"
 _SITE_FOOTER = f"🎧 The Legendary Poet — русская поэзия, музыка и литературные материалы.\n🌐 {_SITE_URL}"
 

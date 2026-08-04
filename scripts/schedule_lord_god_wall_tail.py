@@ -29,6 +29,13 @@ from video_channel_manager.platforms.vk.wall_content_audit import (
     fetch_wall_posts,
 )
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical executor is retired by Wave 6. "
+        "Use the versioned `video-manager wave` engine through the reviewed operator contract."
+    )
+
 PROJECT_KEY = "lord-god-strength"
 COMMUNITY_ID = 60805374
 OWNER_ID = -60805374
@@ -134,7 +141,9 @@ def post_ref(post: dict[str, Any], queue: str) -> dict[str, Any]:
         "post_id": post_id if isinstance(post_id, int) else None,
         "date": post.get("date") if isinstance(post.get("date"), int) else None,
         "message": canonical_text(post.get("text")),
-        "url": f"https://vk.ru/wall{owner_id}_{post_id}" if isinstance(owner_id, int) and isinstance(post_id, int) else None,
+        "url": f"https://vk.ru/wall{owner_id}_{post_id}"
+        if isinstance(owner_id, int) and isinstance(post_id, int)
+        else None,
     }
 
 
@@ -183,7 +192,12 @@ def preflight(
         video_id = str(operation["video_id"])
         expected_text = canonical_text(operation["message"])
         refs = index.get(video_id, [])
-        exact = [ref for ref in refs if ref["message"] == expected_text and (ref["queue"] == "published" or ref["date"] == operation["publish_date"])]
+        exact = [
+            ref
+            for ref in refs
+            if ref["message"] == expected_text
+            and (ref["queue"] == "published" or ref["date"] == operation["publish_date"])
+        ]
         live = exact_video(client, video_id)
         previous = journal_ops.get(op_id)
         previous_status = previous.get("status") if isinstance(previous, dict) else None
@@ -201,16 +215,18 @@ def preflight(
             state, detail = "ready", "playable video is absent from both wall queues"
         if state == "conflict":
             conflicts.append(f"{op_id}: {detail}")
-        states.append({
-            "operation_id": op_id,
-            "ordinal": operation["ordinal"],
-            "video_id": video_id,
-            "video_title": operation["video_title"],
-            "publish_at": operation["publish_at"],
-            "state": state,
-            "detail": detail,
-            "references": refs,
-        })
+        states.append(
+            {
+                "operation_id": op_id,
+                "ordinal": operation["ordinal"],
+                "video_id": video_id,
+                "video_title": operation["video_title"],
+                "publish_at": operation["publish_at"],
+                "state": state,
+                "detail": detail,
+                "references": refs,
+            }
+        )
         time.sleep(0.1)
     counts = Counter(item["state"] for item in states)
     return {
@@ -240,16 +256,19 @@ def post_once(client: VkApiClient, operation: dict[str, Any]) -> object:
     token = client.token_store.load_token(client.account_alias)
     if token.is_expired():
         raise RuntimeError("Stored VK token is expired")
-    return client._call_once("wall.post", {
-        "access_token": token.access_token,
-        "v": client.api_version,
-        "owner_id": str(OWNER_ID),
-        "from_group": "1",
-        "message": str(operation["message"]),
-        "attachments": str(operation["attachment"]),
-        "publish_date": str(operation["publish_date"]),
-        "guid": str(operation["operation_id"]),
-    })
+    return client._call_once(
+        "wall.post",
+        {
+            "access_token": token.access_token,
+            "v": client.api_version,
+            "owner_id": str(OWNER_ID),
+            "from_group": "1",
+            "message": str(operation["message"]),
+            "attachments": str(operation["attachment"]),
+            "publish_date": str(operation["publish_date"]),
+            "guid": str(operation["operation_id"]),
+        },
+    )
 
 
 def post_id(response: object) -> int:
@@ -273,7 +292,9 @@ def review_markdown(policy: dict[str, Any], report: dict[str, Any]) -> str:
         "|---:|---|---|---|",
     ]
     for operation in policy["operations"]:
-        lines.append(f"| {operation['ordinal']} | {operation['publish_at']} | {operation['video_title']} | `{states[operation['operation_id']]}` |")
+        lines.append(
+            f"| {operation['ordinal']} | {operation['publish_at']} | {operation['video_title']} | `{states[operation['operation_id']]}` |"
+        )
     return "\n".join(lines) + "\n"
 
 
@@ -293,31 +314,44 @@ def run(repo: Path, *, execute: bool) -> int:
         raise RuntimeError("Stored token does not manage VK community 60805374")
 
     journal_path = out / "journal.json"
-    journal = read_json(journal_path, {
-        "schema_name": "video-manager.vk-lord-god-wall-tail-journal",
-        "schema_version": 1,
-        "decision_set_id": DECISION_SET_ID,
-        "policy_sha256": policy["policy_sha256"],
-        "operations": {},
-    })
-    if not isinstance(journal, dict) or journal.get("decision_set_id") != DECISION_SET_ID or journal.get("policy_sha256") != policy["policy_sha256"]:
+    journal = read_json(
+        journal_path,
+        {
+            "schema_name": "video-manager.vk-lord-god-wall-tail-journal",
+            "schema_version": 1,
+            "decision_set_id": DECISION_SET_ID,
+            "policy_sha256": policy["policy_sha256"],
+            "operations": {},
+        },
+    )
+    if (
+        not isinstance(journal, dict)
+        or journal.get("decision_set_id") != DECISION_SET_ID
+        or journal.get("policy_sha256") != policy["policy_sha256"]
+    ):
         raise RuntimeError("Local journal belongs to another immutable plan")
 
     published, postponed = wall_snapshot(client)
     report = preflight(policy, client, published, postponed, journal)
     write_json(out / "preflight.json", report)
     (out / "plan-review.md").write_text(review_markdown(policy, report), encoding="utf-8")
-    print(json.dumps({
-        "mode": "apply" if execute else "plan",
-        "policy_sha256": policy["policy_sha256"],
-        "operations": report["total_operations"],
-        "ready": report["ready"],
-        "already_applied": report["already_applied"],
-        "conflicts": report["conflicts"],
-        "first_publish_at": policy["summary"]["first_publish_at"],
-        "last_publish_at": policy["summary"]["last_publish_at"],
-        "plan_review": str(out / "plan-review.md"),
-    }, ensure_ascii=False, indent=2))
+    print(
+        json.dumps(
+            {
+                "mode": "apply" if execute else "plan",
+                "policy_sha256": policy["policy_sha256"],
+                "operations": report["total_operations"],
+                "ready": report["ready"],
+                "already_applied": report["already_applied"],
+                "conflicts": report["conflicts"],
+                "first_publish_at": policy["summary"]["first_publish_at"],
+                "last_publish_at": policy["summary"]["last_publish_at"],
+                "plan_review": str(out / "plan-review.md"),
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
     if report["conflicts"]:
         raise RuntimeError("Wall queue blocked: " + "; ".join(report["global_conflicts"]))
     if not execute:
@@ -364,17 +398,27 @@ def run(repo: Path, *, execute: bool) -> int:
             try:
                 response = post_once(client, operation)
             except Exception as exc:
-                journal_ops[op_id].update({"status": "unknown", "error": f"{type(exc).__name__}: {exc}", "updated_at": now_iso()})
+                journal_ops[op_id].update(
+                    {"status": "unknown", "error": f"{type(exc).__name__}: {exc}", "updated_at": now_iso()}
+                )
                 journal["updated_at"] = now_iso()
                 write_json(journal_path, journal)
-                result.update({"status": "stopped_unknown", "error": f"{op_id}: {type(exc).__name__}: {exc}", "stopped_at": now_iso()})
+                result.update(
+                    {
+                        "status": "stopped_unknown",
+                        "error": f"{op_id}: {type(exc).__name__}: {exc}",
+                        "stopped_at": now_iso(),
+                    }
+                )
                 write_json(result_path, result)
                 raise RuntimeError(f"wall.post outcome is unknown for {op_id}; do not retry blindly") from exc
             accepted_id = post_id(response)
             journal_ops[op_id].update({"status": "accepted", "post_id": accepted_id, "accepted_at": now_iso()})
             journal["updated_at"] = now_iso()
             write_json(journal_path, journal)
-            result["operations"].append({"operation_id": op_id, "post_id": accepted_id, "status": "scheduled_pending_postflight"})
+            result["operations"].append(
+                {"operation_id": op_id, "post_id": accepted_id, "status": "scheduled_pending_postflight"}
+            )
             write_json(result_path, result)
             time.sleep(0.8)
 
@@ -389,23 +433,31 @@ def run(repo: Path, *, execute: bool) -> int:
                 item.update({"status": "verified", "verified_at": now_iso()})
         journal["updated_at"] = now_iso()
         write_json(journal_path, journal)
-        result.update({
-            "status": "completed",
-            "completed_at": now_iso(),
-            "verified_operations": 26,
-            "verified_postponed": 26,
-            "conflicts": 0,
-            "first_publish_at": policy["summary"]["first_publish_at"],
-            "last_publish_at": policy["summary"]["last_publish_at"],
-        })
+        result.update(
+            {
+                "status": "completed",
+                "completed_at": now_iso(),
+                "verified_operations": 26,
+                "verified_postponed": 26,
+                "conflicts": 0,
+                "first_publish_at": policy["summary"]["first_publish_at"],
+                "last_publish_at": policy["summary"]["last_publish_at"],
+            }
+        )
         write_json(result_path, result)
-    print(json.dumps({
-        "status": "completed",
-        "verified_operations": 26,
-        "first_publish_at": result["first_publish_at"],
-        "last_publish_at": result["last_publish_at"],
-        "result_path": str(result_path),
-    }, ensure_ascii=False, indent=2))
+    print(
+        json.dumps(
+            {
+                "status": "completed",
+                "verified_operations": 26,
+                "first_publish_at": result["first_publish_at"],
+                "last_publish_at": result["last_publish_at"],
+                "result_path": str(result_path),
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
     return 0
 
 

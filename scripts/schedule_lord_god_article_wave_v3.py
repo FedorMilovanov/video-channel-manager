@@ -18,6 +18,13 @@ from lord_god_article_wave_v3.photo_wave_v5_compat import submit_wall_post  # no
 from lord_god_article_wave_v3.sources import *  # noqa: F403
 from lord_god_article_wave_v3.wall import *  # noqa: F403
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical executor is retired by Wave 6. "
+        "Use the versioned `video-manager wave` engine through the reviewed operator contract."
+    )
+
 photo_wave_v5_upload_retry.install()
 
 if TYPE_CHECKING:

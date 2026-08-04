@@ -18,6 +18,13 @@ import httpx
 
 from video_channel_manager.platforms.vk.store import VkTokenStore
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical executor is retired by Wave 6. "
+        "Use the versioned `video-manager wave` engine through the reviewed operator contract."
+    )
+
 API_BASE = "https://api.vk.com/method"
 API_VERSION = "5.199"
 EXPECTED_PROJECT = "lord-god-strength"

@@ -565,7 +565,17 @@ function Test-VcmSafeCliArguments {
     if ($first -in @("version", "doctor")) {
         return $true
     }
+    $third = if ($Arguments.Count -gt 2) { $Arguments[2].ToLowerInvariant() } else { "" }
     $prefix = "$first $second"
+    $prefix3 = "$first $second $third"
+    if ($prefix3 -in @(
+        "wave source verify",
+        "wave plan validate",
+        "wave result verify",
+        "wave result verify-reconciliation"
+    )) {
+        return $true
+    }
     return $prefix -in @(
         "plan validate",
         "plan preview",
@@ -574,8 +584,38 @@ function Test-VcmSafeCliArguments {
         "example export",
         "vk accounts",
         "vk communities",
-        "vk scan"
+        "vk scan",
+        "wave preview",
+        "wave reconcile"
     )
+}
+
+function Test-VcmMutationCliArguments {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$Arguments
+    )
+
+    if ($Arguments.Count -lt 2) {
+        return $false
+    }
+    $normalized = @($Arguments | ForEach-Object { ([string]$_).ToLowerInvariant() })
+    if ($normalized[0] -ne "wave" -or $normalized[1] -ne "apply") {
+        return $false
+    }
+    $valueFlags = @("--source", "--plan", "--intent", "--repository-root")
+    foreach ($flag in $valueFlags) {
+        $matches = @($normalized | Where-Object { $_ -eq $flag })
+        if ($matches.Count -ne 1) {
+            return $false
+        }
+        $index = [Array]::IndexOf($normalized, $flag)
+        if ($index -lt 0 -or $index + 1 -ge $normalized.Count -or $normalized[$index + 1].StartsWith("--")) {
+            return $false
+        }
+    }
+    return @($normalized | Where-Object { $_ -eq "--enable-provider-writes" }).Count -eq 1
 }
 
 function Invoke-VcmOperatorRequest {
@@ -751,6 +791,9 @@ function Invoke-VcmOperatorRequest {
         if (Test-VcmCiEnvironment) {
             throw "Provider mutations are prohibited in CI."
         }
+        if (-not (Test-VcmMutationCliArguments -Arguments $arguments)) {
+            throw "Provider mutation manifests may call only the supported Wave 6 `wave apply` interface."
+        }
         if (-not $EnableProviderWrites) {
             throw "Apply mode requires the explicit -EnableProviderWrites switch."
         }
@@ -861,6 +904,7 @@ Export-ModuleMember -Function @(
     "Resolve-VcmPython",
     "Stop-VcmRetiredWrapper",
     "Test-VcmCiEnvironment",
+    "Test-VcmMutationCliArguments",
     "Test-VcmSafeCliArguments",
     "Write-VcmJsonAtomic",
     "Write-VcmUtf8Text"

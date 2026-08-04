@@ -28,6 +28,13 @@ from video_channel_manager.platforms.vk import VkApiClient, VkApiError, VkTokenS
 from video_channel_manager.platforms.vk.lock import local_vk_write_lock
 from video_channel_manager.platforms.vk.wall_content_audit import fetch_wall_posts
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical executor is retired by Wave 6. "
+        "Use the versioned `video-manager wave` engine through the reviewed operator contract."
+    )
+
 PROJECT_KEY = "lord-god-strength"
 COMMUNITY_ID = 60805374
 OWNER_ID = -60805374
@@ -219,10 +226,7 @@ def webp_dimensions(payload: bytes) -> tuple[int, int] | None:
 
 
 def verify_live_sources(policy: dict[str, Any]) -> list[dict[str, Any]]:
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 Chrome/148 Safari/537.36"
-    }
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/148 Safari/537.36"}
     checks: list[dict[str, Any]] = []
     with httpx.Client(headers=headers, follow_redirects=True, timeout=45.0) as http:
         for operation in policy["operations"]:
@@ -292,11 +296,7 @@ def recursive_image_url(value: object, *, path: tuple[str, ...] = ()) -> bool:
             key_text = str(key).lower()
             next_path = (*path, key_text)
             if isinstance(child, str) and child.startswith(("http://", "https://")):
-                if any(
-                    marker in segment
-                    for segment in next_path
-                    for marker in ("photo", "image", "preview", "thumb")
-                ):
+                if any(marker in segment for segment in next_path for marker in ("photo", "image", "preview", "thumb")):
                     return True
             if recursive_image_url(child, path=next_path):
                 return True
@@ -317,8 +317,7 @@ def link_has_image(link: dict[str, Any]) -> bool:
     if isinstance(photo, dict):
         sizes = photo.get("sizes")
         if isinstance(sizes, list) and any(
-            isinstance(item, dict) and str(item.get("url") or "").startswith(("http://", "https://"))
-            for item in sizes
+            isinstance(item, dict) and str(item.get("url") or "").startswith(("http://", "https://")) for item in sizes
         ):
             return True
     return recursive_image_url(link)
@@ -416,11 +415,7 @@ def post_reference(post: dict[str, Any], queue: str) -> dict[str, Any]:
             image_states.append(link_has_image(link))
 
     message = canonical_text(post.get("text"))
-    text_urls = [
-        normalize_url(match.group(0))
-        for match in URL_RE.finditer(message)
-        if normalize_url(match.group(0))
-    ]
+    text_urls = [normalize_url(match.group(0)) for match in URL_RE.finditer(message) if normalize_url(match.group(0))]
     owner_id = post.get("owner_id")
     post_id = post.get("id")
     return {
@@ -431,9 +426,7 @@ def post_reference(post: dict[str, Any], queue: str) -> dict[str, Any]:
         "message": message,
         "link_urls": sorted(set(link_urls)),
         "text_urls": sorted(set(text_urls)),
-        "link_card_has_image": bool(link_urls) and (
-            has_photo_attachment or (bool(image_states) and all(image_states))
-        ),
+        "link_card_has_image": bool(link_urls) and (has_photo_attachment or (bool(image_states) and all(image_states))),
         "url": (
             f"https://vk.ru/wall{owner_id}_{post_id}"
             if isinstance(owner_id, int) and isinstance(post_id, int)
@@ -474,9 +467,7 @@ def preflight(
     minimum_future_seconds: int = MIN_FUTURE_SECONDS,
 ) -> dict[str, Any]:
     by_url, postponed_references = wall_indexes(published, postponed)
-    journal_operations = (
-        journal.get("operations") if isinstance(journal.get("operations"), dict) else {}
-    )
+    journal_operations = journal.get("operations") if isinstance(journal.get("operations"), dict) else {}
     current = int(datetime.now(UTC).timestamp())
     states: list[dict[str, Any]] = []
     conflicts: list[str] = []
@@ -493,10 +484,7 @@ def preflight(
             if reference["message"] == expected_message
             and article_url in reference["link_urls"]
             and reference["link_card_has_image"]
-            and (
-                reference["queue"] == "published"
-                or reference["date"] == publish_date
-            )
+            and (reference["queue"] == "published" or reference["date"] == publish_date)
         ]
         nearby = [
             reference
@@ -660,24 +648,17 @@ def load_journal(path: Path, policy: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(journal, dict):
         raise RuntimeError("Invalid local article journal")
     identity_matches = (
-        journal.get("decision_set_id") == DECISION_SET_ID
-        and journal.get("policy_sha256") == policy["policy_sha256"]
+        journal.get("decision_set_id") == DECISION_SET_ID and journal.get("policy_sha256") == policy["policy_sha256"]
     )
     if identity_matches:
         return journal
 
     old_operations = journal.get("operations")
     old_items = old_operations.values() if isinstance(old_operations, dict) else []
-    statuses = {
-        str(item.get("status") or "")
-        for item in old_items
-        if isinstance(item, dict)
-    }
+    statuses = {str(item.get("status") or "") for item in old_items if isinstance(item, dict)}
     risky = statuses & {"intent", "unknown", "accepted", "accepted_unverified", "verified"}
     if risky:
-        raise RuntimeError(
-            "Local journal belongs to an older article plan and contains remote-write state"
-        )
+        raise RuntimeError("Local journal belongs to an older article plan and contains remote-write state")
     return fresh_journal(policy)
 
 
@@ -744,9 +725,7 @@ def execute_scope(
         for operation in selected:
             operation_id = str(operation["operation_id"])
             if locked_states[operation_id] == "already_applied":
-                result["operations"].append(
-                    {"operation_id": operation_id, "status": "already_applied"}
-                )
+                result["operations"].append({"operation_id": operation_id, "status": "already_applied"})
                 write_result(result_path, result)
                 continue
             if locked_states[operation_id] != "ready":
@@ -785,12 +764,8 @@ def execute_scope(
                 )
                 write_result(result_path, result)
                 if explicit_rejection:
-                    raise RuntimeError(
-                        f"VK explicitly rejected {operation_id}; no post was created"
-                    ) from exc
-                raise RuntimeError(
-                    f"wall.post outcome is unknown for {operation_id}; do not retry blindly"
-                ) from exc
+                    raise RuntimeError(f"VK explicitly rejected {operation_id}; no post was created") from exc
+                raise RuntimeError(f"wall.post outcome is unknown for {operation_id}; do not retry blindly") from exc
             except Exception as exc:
                 journal_operations[operation_id].update(
                     {
@@ -809,9 +784,7 @@ def execute_scope(
                     }
                 )
                 write_result(result_path, result)
-                raise RuntimeError(
-                    f"wall.post outcome is unknown for {operation_id}; do not retry blindly"
-                ) from exc
+                raise RuntimeError(f"wall.post outcome is unknown for {operation_id}; do not retry blindly") from exc
 
             post_id = response_post_id(response)
             journal_operations[operation_id].update(
@@ -844,9 +817,7 @@ def execute_scope(
                     }
                 )
                 write_result(result_path, result)
-                raise RuntimeError(
-                    f"Accepted post requires inspection: {operation_id}"
-                ) from exc
+                raise RuntimeError(f"Accepted post requires inspection: {operation_id}") from exc
 
             journal_operations[operation_id].update(
                 {
@@ -867,10 +838,7 @@ def execute_scope(
                 }
             )
             write_result(result_path, result)
-            print(
-                f"SCHEDULED {operation['ordinal']}/10 "
-                f"post={OWNER_ID}_{post_id} image=yes"
-            )
+            print(f"SCHEDULED {operation['ordinal']}/10 post={OWNER_ID}_{post_id} image=yes")
             time.sleep(1)
 
         final_published, final_postponed = wall_snapshot(client)
@@ -888,8 +856,7 @@ def execute_scope(
         expected_applied = 1 if mode == "canary" else 10
         if final["conflicts"] or final["already_applied"] != expected_applied:
             raise RuntimeError(
-                f"{mode.capitalize()} postflight verified "
-                f"{final['already_applied']} of expected {expected_applied}"
+                f"{mode.capitalize()} postflight verified {final['already_applied']} of expected {expected_applied}"
             )
         if mode == "canary" and final["ready"] != 9:
             raise RuntimeError("Canary postflight did not leave exactly nine ready posts")
@@ -907,9 +874,7 @@ def execute_scope(
                 "conflicts": 0,
                 "first_publish_at": policy["summary"]["first_publish_at"],
                 "last_publish_at": (
-                    canary_operation["publish_at"]
-                    if mode == "canary"
-                    else policy["summary"]["last_publish_at"]
+                    canary_operation["publish_at"] if mode == "canary" else policy["summary"]["last_publish_at"]
                 ),
             }
         )
@@ -943,10 +908,7 @@ def run(repo: Path, *, mode: str) -> int:
         api_version=settings.vk_api_version,
     )
     community = client.get_community(COMMUNITY_ID)
-    if (
-        community.ref.remote_id != str(COMMUNITY_ID)
-        or not community.metadata.get("managed_by_token")
-    ):
+    if community.ref.remote_id != str(COMMUNITY_ID) or not community.metadata.get("managed_by_token"):
         raise RuntimeError("Stored token does not manage VK community 60805374")
 
     parsed_cards = verify_vk_link_cards(policy, client)
@@ -1016,13 +978,8 @@ def run(repo: Path, *, mode: str) -> int:
                 "status": result["status"],
                 "mode": mode,
                 "verified_operations": result["verified_operations"],
-                "verified_link_cards_with_images": result[
-                    "verified_link_cards_with_images"
-                ],
-                "result_path": str(
-                    output_dir
-                    / ("canary-result.json" if mode == "canary" else "result.json")
-                ),
+                "verified_link_cards_with_images": result["verified_link_cards_with_images"],
+                "result_path": str(output_dir / ("canary-result.json" if mode == "canary" else "result.json")),
             },
             ensure_ascii=False,
             indent=2,
