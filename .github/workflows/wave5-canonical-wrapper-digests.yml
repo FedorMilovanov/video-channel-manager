@@ -1,0 +1,149 @@
+name: Wave 5 canonical wrapper digests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: agent/wave-5-operator-layer
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.11"
+      - name: Canonicalize reviewed wrapper digests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          from pathlib import Path
+
+          module_path = Path("scripts/operator/VideoManager.Operator.psm1")
+          module = module_path.read_text(encoding="utf-8")
+          anchor = "\nfunction Get-VcmRepositoryRoot {"
+          function = r'''
+          function Get-VcmCanonicalTextSha256 {
+              [CmdletBinding()]
+              param(
+                  [Parameter(Mandatory = $true)]
+                  [string]$Path
+              )
+
+              if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+                  throw "Cannot hash missing text file: $Path"
+              }
+              $text = [System.IO.File]::ReadAllText($Path, [System.Text.Encoding]::UTF8)
+              $normalized = $text.Replace("`r`n", "`n").Replace("`r", "`n")
+              $bytes = [System.Text.Encoding]::UTF8.GetBytes($normalized)
+              $algorithm = [System.Security.Cryptography.SHA256]::Create()
+              try {
+                  $hash = $algorithm.ComputeHash($bytes)
+              }
+              finally {
+                  $algorithm.Dispose()
+              }
+              return (($hash | ForEach-Object { $_.ToString("x2") }) -join "")
+          }
+          '''.strip("\n")
+          if module.count(anchor) != 1:
+              raise SystemExit("Canonical digest insertion anchor mismatch")
+          module = module.replace(anchor, "\n" + function + "\n\nfunction Get-VcmRepositoryRoot {", 1)
+          old = "$actual = Get-VcmSha256 -Path $WrapperPath"
+          new = "$actual = Get-VcmCanonicalTextSha256 -Path $WrapperPath"
+          if module.count(old) != 1:
+              raise SystemExit("Retired digest call target mismatch")
+          module = module.replace(old, new, 1)
+          export_anchor = '    "Get-VcmRepositoryRoot",\n'
+          if module.count(export_anchor) != 1:
+              raise SystemExit("Export anchor mismatch")
+          module = module.replace(
+              export_anchor,
+              '    "Get-VcmCanonicalTextSha256",\n' + export_anchor,
+              1,
+          )
+          module_path.write_text(module, encoding="utf-8", newline="\n")
+
+          test_path = Path("tests/test_powershell_operator_inventory.py")
+          test = test_path.read_text(encoding="utf-8")
+          test = test.replace(
+              '''def _sha256(path: Path) -> str:\n    return hashlib.sha256(path.read_bytes()).hexdigest()\n''',
+              '''def _canonical_text_sha256(path: Path) -> str:\n    text = path.read_text(encoding="utf-8-sig").replace("\\r\\n", "\\n").replace("\\r", "\\n")\n    return hashlib.sha256(text.encode("utf-8")).hexdigest()\n''',
+              1,
+          )
+          test = test.replace(
+              '''    return "\\n".join(\n        line\n        for line in path.read_text(encoding="utf-8-sig").splitlines()\n        if not line.lstrip().startswith("#")\n    )\n''',
+              '''    return "\\n".join(\n        line for line in path.read_text(encoding="utf-8-sig").splitlines() if not line.lstrip().startswith("#")\n    )\n''',
+              1,
+          )
+          test = test.replace(
+              '''    discovered_paths = sorted(\n        path.relative_to(ROOT).as_posix()\n        for path in (ROOT / "scripts").rglob("*.ps1")\n    )\n''',
+              '''    discovered_paths = sorted(path.relative_to(ROOT).as_posix() for path in (ROOT / "scripts").rglob("*.ps1"))\n''',
+              1,
+          )
+          test = test.replace(
+              '        assert _sha256(ROOT / str(item["path"])) == expected, item["path"]',
+              '        assert _canonical_text_sha256(ROOT / str(item["path"])) == expected, item["path"]',
+              1,
+          )
+          test = test.replace(
+              '    assert [item["path"] for item in supported] == [SUPPORTED_PATH]\n',
+              '    assert [item["path"] for item in supported] == [SUPPORTED_PATH]\n    assert supported[0]["provider_write_capable"] is True\n',
+              1,
+          )
+          test_path.write_text(test, encoding="utf-8", newline="\n")
+
+          pester_path = Path("tests/powershell/VideoManager.Operator.Tests.ps1")
+          pester = pester_path.read_text(encoding="utf-8")
+          pester_anchor = '''    It "resolves only a supported Python interpreter" {\n'''
+          pester_test = '''    It "canonicalizes text digests across LF and CRLF checkouts" {\n        $LfPath = Join-Path $TestRoot "lf.ps1"\n        $CrlfPath = Join-Path $TestRoot "crlf.ps1"\n        [System.IO.File]::WriteAllText($LfPath, "one`ntwo`n", (New-Object System.Text.UTF8Encoding($false)))\n        [System.IO.File]::WriteAllText($CrlfPath, "one`r`ntwo`r`n", (New-Object System.Text.UTF8Encoding($false)))\n\n        (Get-VcmCanonicalTextSha256 -Path $LfPath) | Should -Be (Get-VcmCanonicalTextSha256 -Path $CrlfPath)\n    }\n\n'''
+          if pester.count(pester_anchor) != 1:
+              raise SystemExit("Pester insertion anchor mismatch")
+          pester = pester.replace(pester_anchor, pester_test + pester_anchor, 1)
+          pester_path.write_text(pester, encoding="utf-8", newline="\n")
+
+          registry_path = Path("scripts/operator/powershell-wrappers.json")
+          registry = json.loads(registry_path.read_text(encoding="utf-8"))
+          for entry in registry["wrappers"]:
+              path = Path(str(entry["path"]))
+              text = path.read_text(encoding="utf-8-sig").replace("\r\n", "\n").replace("\r", "\n")
+              entry["sha256"] = hashlib.sha256(text.encode("utf-8")).hexdigest()
+              if entry["path"] == "scripts/operator/Invoke-VideoManager.ps1":
+                  entry["provider_write_capable"] = True
+          registry_path.write_text(
+              json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+              newline="\n",
+          )
+
+          docs_path = Path("docs/operations/powershell-operator-contract.md")
+          docs = docs_path.read_text(encoding="utf-8")
+          docs = docs.replace(
+              "A new unclassified `.ps1`, duplicate registry path, invalid status, or wrapper digest change fails CI.",
+              "A new unclassified `.ps1`, duplicate registry path, invalid status, or canonical UTF-8/LF wrapper digest change fails CI. Canonical wrapper digests remain stable across Windows CRLF and Linux LF checkouts.",
+              1,
+          )
+          docs_path.write_text(docs, encoding="utf-8", newline="\n")
+          PY
+          python -m pip install -e ".[dev]"
+          ruff format tests/test_powershell_operator_inventory.py
+          ruff check tests/test_powershell_operator_inventory.py
+          pytest -q tests/test_powershell_operator_inventory.py
+          rm -f .github/wave5-canonical-digest-trigger .github/workflows/wave5-canonical-wrapper-digests.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Wave 5: canonicalize wrapper digests across platforms"
+          git push origin HEAD:agent/wave-5-operator-layer
