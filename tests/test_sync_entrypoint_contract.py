@@ -62,11 +62,7 @@ def test_supported_entrypoint_rejects_cross_project_pair_before_render_or_mutati
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    source = SimpleNamespace(
-        channel=SimpleNamespace(
-            ref=SimpleNamespace(channel_id="UC-78ys2S3cQ3lpqgXfo-SvQ")
-        )
-    )
+    source = SimpleNamespace(channel=SimpleNamespace(ref=SimpleNamespace(channel_id="UC-78ys2S3cQ3lpqgXfo-SvQ")))
     community = SimpleNamespace(ref=SimpleNamespace(channel_id="60805374"))
     monkeypatch.setattr(
         textsafe,

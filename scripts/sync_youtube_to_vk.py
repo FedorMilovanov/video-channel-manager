@@ -524,7 +524,8 @@ def run(args: argparse.Namespace, *, runtime: SyncRuntime) -> int:
     nonempty_playlist_descriptions = sum(bool(item.description.strip()) for item in source.collections)
     source_videos = {item.ref.remote_id: item for item in source.videos}
     title_changes = sum(
-        runtime.render_title(source_videos[video_id].title) != source_videos[video_id].title for video_id in candidate_ids
+        runtime.render_title(source_videos[video_id].title) != source_videos[video_id].title
+        for video_id in candidate_ids
     )
     description_changes = sum(
         runtime.render_description(source_videos[video_id].description) != source_videos[video_id].description.strip()

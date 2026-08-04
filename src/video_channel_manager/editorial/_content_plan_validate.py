@@ -93,8 +93,7 @@ def validate_content_plan(payload: dict[str, Any]) -> list[str]:
             operation_projects.append(operation_project)
             if project_key and operation_project != project_key:
                 errors.append(
-                    f"operations[{index}].project_key {operation_project} "
-                    f"does not match plan project {project_key}"
+                    f"operations[{index}].project_key {operation_project} does not match plan project {project_key}"
                 )
 
     for label, values in (
