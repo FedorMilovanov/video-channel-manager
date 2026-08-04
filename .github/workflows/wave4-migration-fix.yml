@@ -27,30 +27,59 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
+          import re
 
           lifecycle = Path("src/video_channel_manager/platforms/vk/upload_lifecycle.py")
           text = lifecycle.read_text(encoding="utf-8")
-          old = '''    record = dict(existing)
-              changed = False
-              raw_wall_policy = record.get("wall_policy")
-              if raw_wall_policy is None:
-                  record["wall_policy"] = wall_policy.as_dict()
-                  changed = True
-              elif not isinstance(raw_wall_policy, Mapping):
-                  raise ValueError("Upload journal wall_policy must be an object")
-              _validate_record_binding(
-                  record,
-                  source_snapshot_id=source_snapshot_id,
-                  community_id=community_id,
-                  source_video_id=source_video_id,
-                  published_title=published_title,
-                  published_description=published_description,
-                  readiness=readiness,
-                  wall_policy=wall_policy,
-              )
-              return record, changed
-          '''.replace("              ", "")
-          new = '''    record = dict(existing)
+
+          ensure_function = '''def ensure_upload_record(
+              existing: Mapping[str, Any] | None,
+              *,
+              source_snapshot_id: str,
+              community_id: int,
+              source_video_id: str,
+              source_title: str,
+              source_duration_seconds: int | None,
+              published_title: str,
+              published_description: str,
+              readiness: VkUploadReadiness,
+              wall_policy: VkUploadWallPolicy = DEFAULT_UPLOAD_WALL_POLICY,
+              clock: Clock = _utc_now,
+          ) -> tuple[dict[str, Any], bool]:
+              if existing is None:
+                  return (
+                      create_upload_record(
+                          source_snapshot_id=source_snapshot_id,
+                          community_id=community_id,
+                          source_video_id=source_video_id,
+                          source_title=source_title,
+                          source_duration_seconds=source_duration_seconds,
+                          published_title=published_title,
+                          published_description=published_description,
+                          readiness=readiness,
+                          wall_policy=wall_policy,
+                          clock=clock,
+                      ),
+                      True,
+                  )
+              if existing.get("schema_name") != "video-manager.vk-upload-operation":
+                  return (
+                      migrate_legacy_upload_record(
+                          existing,
+                          source_snapshot_id=source_snapshot_id,
+                          community_id=community_id,
+                          source_video_id=source_video_id,
+                          source_title=source_title,
+                          source_duration_seconds=source_duration_seconds,
+                          published_title=published_title,
+                          published_description=published_description,
+                          readiness=readiness,
+                          wall_policy=wall_policy,
+                          clock=clock,
+                      ),
+                      True,
+                  )
+              record = dict(existing)
               changed = False
               stage = UploadStage(str(record.get("stage")))
               raw_wall_policy = record.get("wall_policy")
@@ -101,24 +130,9 @@ jobs:
                   wall_policy=wall_policy,
               )
               return record, changed
-          '''.replace("              ", "")
-          if text.count(old) != 1:
-              raise SystemExit("ensure_upload_record target count mismatch")
-          text = text.replace(old, new)
+          '''.replace("          ", "")
 
-          old_sig = '''def _validate_record_binding(
-              record: Mapping[str, Any],
-              *,
-              source_snapshot_id: str,
-              community_id: int,
-              source_video_id: str,
-              published_title: str,
-              published_description: str,
-              readiness: VkUploadReadiness,
-              wall_policy: VkUploadWallPolicy,
-          ) -> None:
-          '''.replace("              ", "")
-          new_sig = '''def _validate_record_binding(
+          validate_function = '''def _validate_record_binding(
               record: Mapping[str, Any],
               *,
               source_snapshot_id: str,
@@ -131,27 +145,11 @@ jobs:
               readiness: VkUploadReadiness,
               wall_policy: VkUploadWallPolicy,
           ) -> None:
-          '''.replace("              ", "")
-          if text.count(old_sig) != 1:
-              raise SystemExit("binding signature target count mismatch")
-          text = text.replace(old_sig, new_sig)
-
-          old_expected = '''    expected = {
-                  "source_snapshot_id": source_snapshot_id,
-                  "community_id": community_id,
-                  "source_video_id": source_video_id,
-                  "published_title": published_title,
-                  "published_description_sha256": _text_sha256(published_description),
-                  "readiness": readiness.as_dict(),
-                  "wall_policy": wall_policy.as_dict(),
-              }
-              mismatches = {
-                  key: {"expected": value, "actual": record.get(key)}
-                  for key, value in expected.items()
-                  if record.get(key) != value
-              }
-          '''.replace("              ", "")
-          new_expected = '''    expected = {
+              raw_policy = record.get("wall_policy")
+              if not isinstance(raw_policy, Mapping):
+                  raise ValueError("Upload journal is missing its wall policy")
+              observed_policy = VkUploadWallPolicy.from_mapping(raw_policy)
+              expected = {
                   "source_snapshot_id": source_snapshot_id,
                   "community_id": community_id,
                   "source_video_id": source_video_id,
@@ -173,10 +171,25 @@ jobs:
                       "expected": expected_operation_id,
                       "actual": record.get("operation_id"),
                   }
-          '''.replace("              ", "")
-          if text.count(old_expected) != 1:
-              raise SystemExit("binding expected target count mismatch")
-          lifecycle.write_text(text.replace(old_expected, new_expected), encoding="utf-8", newline="\n")
+              if observed_policy != wall_policy:
+                  mismatches["wall_policy_value"] = {
+                      "expected": wall_policy.as_dict(),
+                      "actual": observed_policy.as_dict(),
+                  }
+              if mismatches:
+                  raise ValueError(f"Upload journal binding mismatch: {mismatches}")
+              UploadStage(str(record.get("stage")))
+          '''.replace("          ", "")
+
+          pattern = re.compile(
+              r"def ensure_upload_record\(.*?\n\ndef _validate_record_binding\(.*?\n\ndef _transition\(",
+              re.DOTALL,
+          )
+          replacement = ensure_function + "\n\n" + validate_function + "\n\ndef _transition("
+          text, count = pattern.subn(replacement, text)
+          if count != 1:
+              raise SystemExit(f"Expected one lifecycle function region, found {count}")
+          lifecycle.write_text(text, encoding="utf-8", newline="\n")
 
           memory = Path("tests/test_operational_memory.py")
           memory_text = memory.read_text(encoding="utf-8")
