@@ -18,7 +18,9 @@ PROJECT_KEY = "legendary-poet"
 
 
 def _png(path: Path) -> Path:
-    path.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00\x00\x00\rIHDR" + (1280).to_bytes(4, "big") + (720).to_bytes(4, "big"))
+    path.write_bytes(
+        b"\x89PNG\r\n\x1a\n" + b"\x00\x00\x00\rIHDR" + (1280).to_bytes(4, "big") + (720).to_bytes(4, "big")
+    )
     return path
 
 
