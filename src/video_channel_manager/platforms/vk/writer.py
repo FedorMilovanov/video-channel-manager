@@ -150,11 +150,7 @@ class VkVideoWriter(HttpClientOwner):
         for key, value in (params or {}).items():
             request_data[key] = "1" if value is True else "0" if value is False else str(value)
 
-        operation = (
-            HttpOperationClass.SAFE_READ
-            if retry_transient
-            else HttpOperationClass.AMBIGUOUS_MUTATION
-        )
+        operation = HttpOperationClass.SAFE_READ if retry_transient else HttpOperationClass.AMBIGUOUS_MUTATION
         try:
             result = execute_http_request(
                 lambda: self._http_client.post(
@@ -220,8 +216,7 @@ class VkVideoWriter(HttpClientOwner):
             )
             kind = result.failure_kind or HttpFailureKind.PROVIDER_ERROR
             raise VkWriteError(
-                f"VK API {code or 'error'} in {method}: {message} "
-                f"[kind={kind.value} attempts={result.attempts}]",
+                f"VK API {code or 'error'} in {method}: {message} [kind={kind.value} attempts={result.attempts}]",
                 method=method,
                 code=code,
                 retryable=code in _RETRYABLE_API_CODES,
@@ -392,8 +387,7 @@ class VkVideoWriter(HttpClientOwner):
         if response.status_code >= 400:
             kind = result.failure_kind or HttpFailureKind.PERMANENT_HTTP
             raise VkWriteError(
-                f"VK upload server returned HTTP {response.status_code} "
-                f"[kind={kind.value} attempts={result.attempts}]",
+                f"VK upload server returned HTTP {response.status_code} [kind={kind.value} attempts={result.attempts}]",
                 method="video.upload",
                 retryable=kind in {HttpFailureKind.RATE_LIMIT, HttpFailureKind.TRANSIENT_HTTP},
                 kind=kind,

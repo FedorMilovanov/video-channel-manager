@@ -141,11 +141,7 @@ class YouTubeDescriptionWriter(HttpClientOwner):
         json_body: dict[str, Any] | None = None,
         require_write: bool = False,
     ) -> dict[str, Any]:
-        operation = (
-            HttpOperationClass.AMBIGUOUS_MUTATION
-            if require_write
-            else HttpOperationClass.SAFE_READ
-        )
+        operation = HttpOperationClass.AMBIGUOUS_MUTATION if require_write else HttpOperationClass.SAFE_READ
         access_token = self._token(require_write=require_write).access_token
         try:
             result = execute_http_request(

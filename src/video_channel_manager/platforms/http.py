@@ -102,13 +102,13 @@ class RequestRateLimiter:
 
     def wait(self) -> float:
         if self.min_interval_seconds == 0:
-            return self._monotonic()
+            return float(self._monotonic())
         with self._lock:
-            now = self._monotonic()
+            now = float(self._monotonic())
             delay = max(0.0, self._next_allowed_at - now)
             if delay:
                 self._sleep(delay)
-                now = self._monotonic()
+                now = float(self._monotonic())
             acquired_at = max(now, self._next_allowed_at)
             self._next_allowed_at = acquired_at + self.min_interval_seconds
             return acquired_at
@@ -250,11 +250,7 @@ def execute_http_request(
         kind = classify_http_status(response.status_code)
         if kind is None and response_classifier is not None:
             kind = response_classifier(response)
-        if (
-            operation is HttpOperationClass.SAFE_READ
-            and attempt < max_attempts
-            and _is_retryable(kind)
-        ):
+        if operation is HttpOperationClass.SAFE_READ and attempt < max_attempts and _is_retryable(kind):
             retry_after = parse_retry_after_seconds(response.headers.get("Retry-After"), now=now)
             sleep(
                 policy.delay_seconds(

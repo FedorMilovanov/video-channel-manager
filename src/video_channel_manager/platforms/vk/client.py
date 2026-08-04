@@ -57,7 +57,6 @@ class VkApiError(RuntimeError):
         self.attempts = attempts
 
 
-
 def _provider_response_kind(response: httpx.Response) -> HttpFailureKind | None:
     if response.status_code >= 400:
         return None
@@ -73,6 +72,7 @@ def _provider_response_kind(response: httpx.Response) -> HttpFailureKind | None:
     raw_code = raw_error.get("error_code")
     code = int(raw_code) if isinstance(raw_code, int | str) and str(raw_code).isdigit() else None
     return HttpFailureKind.PROVIDER_TRANSIENT if code in _RETRYABLE_API_CODES else HttpFailureKind.PROVIDER_ERROR
+
 
 def _revision(payload: object) -> str:
     encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -242,8 +242,7 @@ class VkApiClient(HttpClientOwner):
             )
             kind = result.failure_kind or HttpFailureKind.PROVIDER_ERROR
             raise VkApiError(
-                f"VK API {code or 'error'} in {method}: {message} "
-                f"[kind={kind.value} attempts={result.attempts}]",
+                f"VK API {code or 'error'} in {method}: {message} [kind={kind.value} attempts={result.attempts}]",
                 method=method,
                 code=code,
                 retryable=code in _RETRYABLE_API_CODES,
