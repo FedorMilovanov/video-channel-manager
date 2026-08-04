@@ -86,7 +86,53 @@ def _audit(
     )
 
 
-def test_catalog_plan_builds_album_placement_and_text_update() -> None:
+def test_catalog_plan_builds_only_explicitly_approved_album_and_placement() -> None:
+    source = _audit(
+        PlatformName.YOUTUBE,
+        "youtube-channel",
+        [_video(PlatformName.YOUTUBE, "youtube-channel", "yt-1", "Берёза — Сергей Есенин", "О стихотворении.")],
+        collection_id="playlist-esenin",
+        collection_title="Сергей Есенин",
+        member_ids=["yt-1"],
+    )
+    target = _audit(
+        PlatformName.VK,
+        "235216998",
+        [_video(PlatformName.VK, "235216998", "-235216998_1", "Береза — Сергей Есенин", "Старое описание")],
+    )
+
+    plan = build_vk_catalog_plan(
+        source,
+        target,
+        approved_collection_creates={"playlist-esenin"},
+    )
+
+    assert plan["schema_version"] == 3
+    assert plan["project_key"] == "legendary-poet"
+    assert plan["summary"] == {
+        "resolved_video_mappings": 1,
+        "resolved_collection_mappings": 0,
+        "albums_to_create": 1,
+        "collection_conflicts": 0,
+        "placements_to_add": 1,
+        "video_texts_to_update": 1,
+        "review_only": 0,
+        "total_operations": 3,
+    }
+    assert plan["approved_collection_creates"] == ["playlist-esenin"]
+    assert plan["album_operations"][0]["title"] == "Сергей Есенин"
+    assert plan["placement_operations"][0]["target_video_id"] == "-235216998_1"
+    assert plan["album_operations"][0]["catalog_identity_digest"] == plan["catalog_identity_sha256"]
+    assert plan["placement_operations"][0]["catalog_identity_digest"] == plan["catalog_identity_sha256"]
+    assert plan["text_operations"][0]["project_key"] == "legendary-poet"
+    assert plan["text_operations"][0]["after_title"].endswith("⚡")
+    assert plan["text_operations"][0]["after_description"].count("https://thelegendarypoet.ru/") == 1
+    assert "gospod-bog.ru" not in plan["text_operations"][0]["after_description"]
+    assert plan["target_video_ids_sha256"] == target_video_ids_sha256(target)
+    validate_vk_catalog_plan(plan)
+
+
+def test_unapproved_collection_creation_produces_no_album_or_placement() -> None:
     source = _audit(
         PlatformName.YOUTUBE,
         "youtube-channel",
@@ -103,23 +149,13 @@ def test_catalog_plan_builds_album_placement_and_text_update() -> None:
 
     plan = build_vk_catalog_plan(source, target)
 
-    assert plan["project_key"] == "legendary-poet"
-    assert plan["summary"] == {
-        "resolved_video_mappings": 1,
-        "albums_to_create": 1,
-        "placements_to_add": 1,
-        "video_texts_to_update": 1,
-        "review_only": 0,
-        "total_operations": 3,
-    }
-    assert plan["album_operations"][0]["title"] == "Сергей Есенин"
-    assert plan["placement_operations"][0]["target_video_id"] == "-235216998_1"
-    assert plan["text_operations"][0]["project_key"] == "legendary-poet"
-    assert plan["text_operations"][0]["after_title"].endswith("⚡")
-    assert plan["text_operations"][0]["after_description"].count("https://thelegendarypoet.ru/") == 1
-    assert "gospod-bog.ru" not in plan["text_operations"][0]["after_description"]
-    assert plan["target_video_ids_sha256"] == target_video_ids_sha256(target)
-    validate_vk_catalog_plan(plan)
+    assert plan["album_operations"] == []
+    assert plan["placement_operations"] == []
+    assert plan["summary"]["collection_conflicts"] == 1
+    assert any(
+        item["kind"] == "collection_identity_conflict" and item["reason"] == "creation_not_approved"
+        for item in plan["review_only"]
+    )
 
 
 def test_lord_god_catalog_never_receives_poet_branding() -> None:
@@ -180,7 +216,7 @@ def test_catalog_plan_rejects_unknown_project_identity() -> None:
         build_vk_catalog_plan(source, target, reviewed_mappings={"yt-1": "-999999999_1"})
 
 
-def test_catalog_plan_preserves_existing_album_and_membership() -> None:
+def test_catalog_plan_preserves_reviewed_existing_album_and_membership() -> None:
     source = _audit(
         PlatformName.YOUTUBE,
         "youtube-channel",
@@ -198,11 +234,77 @@ def test_catalog_plan_preserves_existing_album_and_membership() -> None:
         member_ids=["-235216998_1"],
     )
 
+    plan = build_vk_catalog_plan(
+        source,
+        target,
+        reviewed_collection_mappings={"playlist-esenin": "77"},
+    )
+
+    assert plan["reviewed_collection_mappings"] == {"playlist-esenin": "77"}
+    assert plan["album_operations"] == []
+    assert plan["placement_operations"] == []
+    assert plan["summary"]["resolved_collection_mappings"] == 1
+    assert plan["summary"]["collection_conflicts"] == 0
+    assert plan["summary"]["video_texts_to_update"] == 1
+
+
+def test_same_title_album_without_reviewed_id_is_conflict_not_authority() -> None:
+    source = _audit(
+        PlatformName.YOUTUBE,
+        "youtube-channel",
+        [_video(PlatformName.YOUTUBE, "youtube-channel", "yt-1", "Берёза — Сергей Есенин", "Описание")],
+        collection_id="playlist-esenin",
+        collection_title="Сергей Есенин",
+        member_ids=["yt-1"],
+    )
+    target = _audit(
+        PlatformName.VK,
+        "235216998",
+        [_video(PlatformName.VK, "235216998", "-235216998_1", "Береза — Сергей Есенин", "Старое")],
+        collection_id="77",
+        collection_title="Сергей Есенин",
+        member_ids=[],
+    )
+
     plan = build_vk_catalog_plan(source, target)
 
     assert plan["album_operations"] == []
     assert plan["placement_operations"] == []
-    assert plan["summary"]["video_texts_to_update"] == 1
+    assert any(
+        item["kind"] == "collection_identity_conflict"
+        and item["reason"] == "unreviewed_existing_candidate"
+        and item["candidate_target_collection_ids"] == ["77"]
+        for item in plan["review_only"]
+    )
+
+
+def test_reviewed_renamed_album_remains_exact_target() -> None:
+    source = _audit(
+        PlatformName.YOUTUBE,
+        "youtube-channel",
+        [_video(PlatformName.YOUTUBE, "youtube-channel", "yt-1", "Берёза — Сергей Есенин", "Описание")],
+        collection_id="playlist-esenin",
+        collection_title="Сергей Есенин",
+        member_ids=["yt-1"],
+    )
+    target = _audit(
+        PlatformName.VK,
+        "235216998",
+        [_video(PlatformName.VK, "235216998", "-235216998_1", "Береза — Сергей Есенин", "Старое")],
+        collection_id="77",
+        collection_title="Есенин — архив",
+        member_ids=[],
+    )
+
+    plan = build_vk_catalog_plan(
+        source,
+        target,
+        reviewed_collection_mappings={"playlist-esenin": "77"},
+    )
+
+    assert plan["album_operations"] == []
+    assert plan["placement_operations"][0]["target_collection_id"] == "77"
+    assert any(item["kind"] == "reviewed_collection_title_drift" for item in plan["review_only"])
 
 
 def test_reviewed_mapping_resolves_ambiguous_matches() -> None:
@@ -236,7 +338,34 @@ def test_reviewed_mapping_resolves_ambiguous_matches() -> None:
     assert plan["review_only"] == []
 
 
-def test_catalog_plan_rejects_tampering() -> None:
+def test_catalog_plan_rejects_catalog_identity_tampering() -> None:
+    source = _audit(
+        PlatformName.YOUTUBE,
+        "youtube-channel",
+        [_video(PlatformName.YOUTUBE, "youtube-channel", "yt-1", "Берёза — Сергей Есенин", "Описание")],
+        collection_id="playlist-esenin",
+        collection_title="Сергей Есенин",
+        member_ids=["yt-1"],
+    )
+    target = _audit(
+        PlatformName.VK,
+        "235216998",
+        [_video(PlatformName.VK, "235216998", "-235216998_1", "Береза — Сергей Есенин", "Старое")],
+    )
+    plan = build_vk_catalog_plan(
+        source,
+        target,
+        approved_collection_creates={"playlist-esenin"},
+    )
+    tampered = deepcopy(plan)
+    tampered["catalog_identity"]["decisions"][0]["decision"] = "conflict"
+    tampered["plan_sha256"] = calculate_vk_catalog_plan_sha256(tampered)
+
+    with pytest.raises(ValueError, match="digest"):
+        validate_vk_catalog_plan(tampered)
+
+
+def test_catalog_plan_rejects_text_tampering() -> None:
     source = _audit(
         PlatformName.YOUTUBE,
         "youtube-channel",

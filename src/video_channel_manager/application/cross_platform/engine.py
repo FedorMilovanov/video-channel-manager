@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from video_channel_manager.application.catalog_identity import build_catalog_identity_evidence
 from video_channel_manager.application.cross_platform.collections import (
     build_collection_gaps,
     collection_titles_by_video,
@@ -18,6 +19,9 @@ def compare_audit_packages(
     min_score: float = 0.65,
     max_duration_delta_seconds: int = 3,
     reviewed_video_mapping: dict[str, str] | None = None,
+    project_key: str | None = None,
+    reviewed_collection_mapping: dict[str, str] | None = None,
+    approved_collection_creates: set[str] | None = None,
 ) -> CrossPlatformComparison:
     if source.channel.ref.platform == target.channel.ref.platform:
         raise ValueError("cross-platform comparison requires different source and target platforms")
@@ -83,6 +87,14 @@ def compare_audit_packages(
     missing_on_target.sort(key=lambda item: (item.title.casefold(), item.ref.remote_id))
     extra_on_target.sort(key=lambda item: (item.title.casefold(), item.ref.remote_id))
     source_to_target_video = {item.source_ref.remote_id: item.target_ref.remote_id for item in matches}
+    catalog_identity = build_catalog_identity_evidence(
+        source,
+        target,
+        project_key=project_key,
+        video_mapping=source_to_target_video,
+        reviewed_collection_mappings=reviewed_collection_mapping,
+        approved_collection_creates=approved_collection_creates,
+    )
 
     return CrossPlatformComparison(
         source_snapshot_id=str(source.snapshot_id),
@@ -93,5 +105,6 @@ def compare_audit_packages(
         conflicts=conflicts,
         missing_on_target=missing_on_target,
         extra_on_target=extra_on_target,
-        collection_gaps=build_collection_gaps(source, target, source_to_target_video),
+        catalog_identity=catalog_identity,
+        collection_gaps=build_collection_gaps(source, target, catalog_identity),
     )

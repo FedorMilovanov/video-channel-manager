@@ -6,15 +6,20 @@ from collections import Counter, defaultdict
 from datetime import UTC, datetime
 from typing import Any
 
-from video_channel_manager.application.cross_platform import compare_audit_packages, normalize_title
+from video_channel_manager.application.catalog_identity import (
+    CatalogIdentityEvidence,
+    build_catalog_identity_evidence,
+    validate_catalog_identity_evidence,
+)
+from video_channel_manager.application.cross_platform import compare_audit_packages
 from video_channel_manager.editorial._project_profiles import PROJECT_KEYS, resolve_project_key
 from video_channel_manager.exchange.audit_package import AuditPackage
 from video_channel_manager.platforms.vk.publishing import render_vk_publication
 from video_channel_manager.platforms.vk.text_writer import canonical_vk_text
 
 VK_CATALOG_PLAN_SCHEMA = "video-manager.vk-catalog-plan"
-VK_CATALOG_PLAN_VERSION = 2
-VK_CATALOG_POLICY_VERSION = "vk-catalog-project-bound-v2"
+VK_CATALOG_PLAN_VERSION = 3
+VK_CATALOG_POLICY_VERSION = "vk-catalog-exact-collection-v3"
 
 
 def canonical_sha256(value: object) -> str:
@@ -86,20 +91,12 @@ def _validated_reviewed_mappings(
     return result
 
 
-def _target_collection_index(target: AuditPackage) -> dict[str, list[Any]]:
-    result: dict[str, list[Any]] = defaultdict(list)
-    for collection in target.collections:
-        if not _is_system_collection(collection):
-            result[normalize_title(collection.title)].append(collection)
-    return result
-
-
 def _build_mapping(
     source: AuditPackage,
     target: AuditPackage,
     reviewed_mappings: dict[str, str],
 ) -> tuple[dict[str, str], list[dict[str, Any]]]:
-    comparison = compare_audit_packages(source, target)
+    comparison = compare_audit_packages(source, target, reviewed_video_mapping=reviewed_mappings)
     mapping = _validated_reviewed_mappings(source, target, reviewed_mappings)
     used_target_ids = set(mapping.values())
     review_only: list[dict[str, Any]] = []
@@ -108,18 +105,6 @@ def _build_mapping(
         source_id = match.source_ref.remote_id
         target_id = match.target_ref.remote_id
         if source_id in mapping:
-            continue
-        if match.ambiguous:
-            review_only.append(
-                {
-                    "kind": "ambiguous_video_match",
-                    "source_video_id": source_id,
-                    "suggested_target_video_id": target_id,
-                    "source_title": match.source_title,
-                    "target_title": match.target_title,
-                    "score": match.score,
-                }
-            )
             continue
         if target_id in used_target_ids:
             review_only.append(
@@ -134,6 +119,15 @@ def _build_mapping(
         used_target_ids.add(target_id)
 
     mapped_source_ids = set(mapping)
+    for conflict in comparison.conflicts:
+        review_only.append(
+            {
+                "kind": "video_identity_conflict",
+                "reason": conflict.reason,
+                "source_video_ids": sorted(item.remote_id for item in conflict.source_refs),
+                "target_video_ids": sorted(item.remote_id for item in conflict.target_refs),
+            }
+        )
     for missing in comparison.missing_on_target:
         if missing.ref.remote_id not in mapped_source_ids:
             review_only.append(
@@ -143,7 +137,7 @@ def _build_mapping(
                     "source_title": missing.title,
                 }
             )
-    return mapping, review_only
+    return dict(sorted(mapping.items())), review_only
 
 
 def _resolved_catalog_project(source: AuditPackage, target: AuditPackage) -> str:
@@ -161,11 +155,52 @@ def _resolved_catalog_project(source: AuditPackage, target: AuditPackage) -> str
     return project_key
 
 
+def _collection_review_items(evidence: CatalogIdentityEvidence) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    for decision in evidence.decisions:
+        source_id = decision.source_ref.remote_id
+        if decision.decision == "conflict":
+            items.append(
+                {
+                    "kind": "collection_identity_conflict",
+                    "reason": decision.conflict_reason,
+                    "source_collection_id": source_id,
+                    "source_title": decision.source_title_identity.original,
+                    "candidate_target_collection_ids": sorted(
+                        item.remote_id for item in decision.candidate_target_refs
+                    ),
+                }
+            )
+        elif decision.decision == "mapped" and decision.title_drift:
+            items.append(
+                {
+                    "kind": "reviewed_collection_title_drift",
+                    "source_collection_id": source_id,
+                    "target_collection_id": decision.target_ref.remote_id if decision.target_ref is not None else None,
+                    "source_title": decision.source_title_identity.original,
+                    "target_title": (
+                        decision.target_title_identity.original if decision.target_title_identity is not None else None
+                    ),
+                }
+            )
+        if decision.unmapped_source_video_ids:
+            items.append(
+                {
+                    "kind": "collection_contains_unmapped_source_videos",
+                    "source_collection_id": source_id,
+                    "source_video_ids": decision.unmapped_source_video_ids,
+                }
+            )
+    return items
+
+
 def build_vk_catalog_plan(
     source: AuditPackage,
     target: AuditPackage,
     *,
     reviewed_mappings: dict[str, str] | None = None,
+    reviewed_collection_mappings: dict[str, str] | None = None,
+    approved_collection_creates: set[str] | None = None,
 ) -> dict[str, Any]:
     if source.channel.ref.platform.value != "youtube":
         raise ValueError("VK catalog source must be a YouTube AuditPackage")
@@ -177,53 +212,54 @@ def build_vk_catalog_plan(
     source_videos = {item.ref.remote_id: item for item in source.videos}
     target_videos = {item.ref.remote_id: item for item in target.videos}
     source_collections = {item.ref.remote_id: item for item in source.collections}
-    target_collections = _target_collection_index(target)
-    target_memberships = {
-        (membership.collection_ref.remote_id, membership.video_ref.remote_id) for membership in target.memberships
-    }
+    catalog_identity = build_catalog_identity_evidence(
+        source,
+        target,
+        project_key=project_key,
+        video_mapping=mapping,
+        reviewed_collection_mappings=reviewed_collection_mappings,
+        approved_collection_creates=approved_collection_creates,
+    )
+    review_only.extend(_collection_review_items(catalog_identity))
 
     album_operations: list[dict[str, Any]] = []
     collection_targets: dict[str, str | None] = {}
-    for source_collection in sorted(source.collections, key=lambda item: item.title.casefold()):
-        normalized = normalize_title(source_collection.title)
-        candidates = target_collections.get(normalized, [])
-        if len(candidates) > 1:
-            review_only.append(
-                {
-                    "kind": "duplicate_target_album_title",
-                    "source_collection_id": source_collection.ref.remote_id,
-                    "title": source_collection.title,
-                    "target_collection_ids": sorted(item.ref.remote_id for item in candidates),
-                }
-            )
+    resolved_collection_ids: set[str] = set()
+    for decision in catalog_identity.decisions:
+        source_id = decision.source_ref.remote_id
+        if decision.decision == "conflict":
             continue
-        if candidates:
-            collection_targets[source_collection.ref.remote_id] = candidates[0].ref.remote_id
+        resolved_collection_ids.add(source_id)
+        if decision.decision == "mapped":
+            if decision.target_ref is None:
+                raise ValueError("Mapped catalog identity decision has no target collection")
+            collection_targets[source_id] = decision.target_ref.remote_id
             continue
-        collection_targets[source_collection.ref.remote_id] = None
+        collection_targets[source_id] = None
+        source_collection = source_collections[source_id]
         album_operations.append(
             {
-                "operation_id": f"album:create:{source_collection.ref.remote_id}",
-                "source_collection_id": source_collection.ref.remote_id,
+                "operation_id": f"album:create:{source_id}",
+                "source_collection_id": source_id,
                 "title": canonical_vk_text(source_collection.title),
-                "normalized_title": normalized,
                 "source_description": canonical_vk_text(source_collection.description),
+                "catalog_identity_digest": catalog_identity.digest,
             }
         )
 
     placement_operations: list[dict[str, Any]] = []
     seen_placements: set[tuple[str, str]] = set()
+    decision_by_source = {item.source_ref.remote_id: item for item in catalog_identity.decisions}
     for membership in source.memberships:
+        source_collection_id = membership.collection_ref.remote_id
+        if source_collection_id not in resolved_collection_ids:
+            continue
         source_video_id = membership.video_ref.remote_id
         target_video_id = mapping.get(source_video_id)
         if target_video_id is None:
             continue
-        source_collection_id = membership.collection_ref.remote_id
-        membership_collection = source_collections.get(source_collection_id)
-        if membership_collection is None or source_collection_id not in collection_targets:
-            continue
-        target_collection_id = collection_targets[source_collection_id]
-        if target_collection_id is not None and (target_collection_id, target_video_id) in target_memberships:
+        decision = decision_by_source[source_collection_id]
+        if target_video_id not in decision.missing_target_video_ids:
             continue
         key = (source_collection_id, target_video_id)
         if key in seen_placements:
@@ -233,10 +269,11 @@ def build_vk_catalog_plan(
             {
                 "operation_id": f"placement:add:{source_collection_id}:{target_video_id}",
                 "source_collection_id": source_collection_id,
-                "album_title": canonical_vk_text(membership_collection.title),
-                "target_collection_id": target_collection_id,
+                "album_title": canonical_vk_text(source_collections[source_collection_id].title),
+                "target_collection_id": collection_targets[source_collection_id],
                 "target_video_id": target_video_id,
                 "source_video_id": source_video_id,
+                "catalog_identity_digest": catalog_identity.digest,
             }
         )
 
@@ -297,15 +334,21 @@ def build_vk_catalog_plan(
         "target_video_ids_sha256": target_video_ids_sha256(target),
         "initial_catalog_state_sha256": catalog_state_sha256(target),
         "reviewed_mappings": dict(sorted((reviewed_mappings or {}).items())),
-        "resolved_video_mappings": dict(sorted(mapping.items())),
-        "album_operations": album_operations,
+        "resolved_video_mappings": mapping,
+        "reviewed_collection_mappings": catalog_identity.reviewed_collection_mappings,
+        "approved_collection_creates": catalog_identity.approved_collection_creates,
+        "catalog_identity": catalog_identity.model_dump(mode="json"),
+        "catalog_identity_sha256": catalog_identity.digest,
+        "album_operations": sorted(album_operations, key=lambda item: item["operation_id"]),
         "placement_operations": sorted(placement_operations, key=lambda item: item["operation_id"]),
         "text_operations": text_operations,
         "review_only": sorted(review_only, key=lambda item: json.dumps(item, ensure_ascii=False, sort_keys=True)),
     }
     plan["summary"] = {
         "resolved_video_mappings": len(mapping),
+        "resolved_collection_mappings": catalog_identity.mapped_count,
         "albums_to_create": len(album_operations),
+        "collection_conflicts": catalog_identity.conflict_count,
         "placements_to_add": len(placement_operations),
         "video_texts_to_update": len(text_operations),
         "review_only": len(review_only),
@@ -318,6 +361,39 @@ def build_vk_catalog_plan(
 
 def calculate_vk_catalog_plan_sha256(plan: dict[str, Any]) -> str:
     return canonical_sha256({key: value for key, value in plan.items() if key != "plan_sha256"})
+
+
+def _validate_catalog_operations(plan: dict[str, Any], evidence: CatalogIdentityEvidence) -> None:
+    decision_by_source = {item.source_ref.remote_id: item for item in evidence.decisions}
+    create_ids = {item.source_ref.remote_id for item in evidence.decisions if item.decision == "create"}
+    actual_create_ids = {str(item["source_collection_id"]) for item in plan["album_operations"]}
+    if actual_create_ids != create_ids:
+        raise ValueError("Album operations do not exactly match approved catalog create decisions")
+
+    placements: dict[str, set[str]] = defaultdict(set)
+    for operation in plan["placement_operations"]:
+        source_id = str(operation["source_collection_id"])
+        decision = decision_by_source.get(source_id)
+        if decision is None or decision.decision == "conflict":
+            raise ValueError("Placement operation references unresolved collection identity")
+        expected_target_id = decision.target_ref.remote_id if decision.target_ref is not None else None
+        if operation.get("target_collection_id") != expected_target_id:
+            raise ValueError("Placement operation target collection does not match catalog identity")
+        if operation.get("catalog_identity_digest") != evidence.digest:
+            raise ValueError("Placement operation catalog identity digest mismatch")
+        placements[source_id].add(str(operation["target_video_id"]))
+    for decision in evidence.decisions:
+        expected = set(decision.missing_target_video_ids) if decision.decision != "conflict" else set()
+        if placements.get(decision.source_ref.remote_id, set()) != expected:
+            raise ValueError("Placement operations do not match semantic membership delta")
+
+    for operation in plan["album_operations"]:
+        if operation.get("catalog_identity_digest") != evidence.digest:
+            raise ValueError("Album operation catalog identity digest mismatch")
+
+
+def _is_bare_sha256(value: object) -> bool:
+    return isinstance(value, str) and len(value) == 64 and all(character in "0123456789abcdef" for character in value)
 
 
 def validate_vk_catalog_plan(plan: dict[str, Any]) -> None:
@@ -344,9 +420,26 @@ def validate_vk_catalog_plan(plan: dict[str, Any]) -> None:
         value = plan.get(field)
         if not isinstance(value, str) or not value.startswith("sha256:"):
             raise ValueError(f"{field} must contain a SHA-256 digest")
+    if not _is_bare_sha256(plan.get("catalog_identity_sha256")):
+        raise ValueError("catalog_identity_sha256 must contain a bare SHA-256 digest")
     expected = calculate_vk_catalog_plan_sha256(plan)
     if plan["plan_sha256"] != expected:
         raise ValueError("VK catalog plan self-digest does not match its contents")
+
+    evidence = CatalogIdentityEvidence.model_validate(plan.get("catalog_identity"))
+    validate_catalog_identity_evidence(evidence)
+    if evidence.digest != plan["catalog_identity_sha256"]:
+        raise ValueError("VK catalog plan catalog identity digest mismatch")
+    if evidence.project_key != project_key:
+        raise ValueError("Catalog identity project mismatch")
+    if evidence.source_snapshot_id != plan.get("source_snapshot_id"):
+        raise ValueError("Catalog identity source snapshot mismatch")
+    if evidence.target_snapshot_id != plan.get("target_snapshot_id"):
+        raise ValueError("Catalog identity target snapshot mismatch")
+    if evidence.reviewed_collection_mappings != plan.get("reviewed_collection_mappings"):
+        raise ValueError("Reviewed collection mappings do not match catalog identity evidence")
+    if evidence.approved_collection_creates != plan.get("approved_collection_creates"):
+        raise ValueError("Approved collection creates do not match catalog identity evidence")
 
     operation_ids: list[str] = []
     for section in ("album_operations", "placement_operations", "text_operations"):
@@ -361,6 +454,7 @@ def validate_vk_catalog_plan(plan: dict[str, Any]) -> None:
     if duplicates:
         raise ValueError(f"Duplicate operation IDs: {duplicates}")
 
+    _validate_catalog_operations(plan, evidence)
     for operation in plan["text_operations"]:
         if operation.get("project_key") != project_key:
             raise ValueError(f"Text operation project mismatch: {operation.get('operation_id')}")

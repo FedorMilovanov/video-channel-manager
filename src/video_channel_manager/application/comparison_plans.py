@@ -34,18 +34,19 @@ def summarize_placements(comparison: CrossPlatformComparison) -> PlacementSummar
 
 def render_detailed_comparison_markdown(comparison: CrossPlatformComparison) -> str:
     summary = summarize_placements(comparison)
-    old_line = f"- Недостающих размещений в существующих коллекциях: **{comparison.missing_placement_count}**."
-    replacement = "\n".join(
+    rendered = render_comparison_markdown(comparison)
+    section_marker = "\n## Конфликты сопоставления видео\n"
+    if section_marker not in rendered:
+        raise ValueError("comparison Markdown section structure changed unexpectedly")
+    placement_summary = "\n".join(
         [
             f"- Недостающих размещений в уже существующих коллекциях: **{summary.existing_collection_placements}**.",
             f"- Размещений, ожидающих создания отсутствующих коллекций: **{summary.pending_collection_placements}**.",
             f"- Всего требуемых размещений: **{summary.total_placements}**.",
+            "",
         ]
     )
-    rendered = render_comparison_markdown(comparison)
-    if old_line not in rendered:
-        raise ValueError("comparison Markdown summary format changed unexpectedly")
-    return rendered.replace(old_line, replacement, 1)
+    return rendered.replace(section_marker, f"\n{placement_summary}## Конфликты сопоставления видео\n", 1)
 
 
 def build_disabled_transfer_plan(

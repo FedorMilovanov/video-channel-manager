@@ -2,11 +2,9 @@ from __future__ import annotations
 
 from collections import defaultdict
 
+from video_channel_manager.application.catalog_identity import CatalogIdentityEvidence
 from video_channel_manager.application.cross_platform.models import CollectionGap, MissingVideo
-from video_channel_manager.application.identity import (
-    canonicalize_collection_title,
-    canonicalize_identity_title,
-)
+from video_channel_manager.application.identity import canonicalize_identity_title
 from video_channel_manager.domain.models import VideoRecord
 from video_channel_manager.exchange.audit_package import AuditPackage
 
@@ -32,57 +30,35 @@ def missing_video(video: VideoRecord, collection_titles: dict[str, list[str]]) -
     )
 
 
-def _is_system_collection(collection_id: str, privacy_status: str | None, metadata: dict[str, object]) -> bool:
-    raw_id = metadata.get("id")
-    return privacy_status == "system" or collection_id.startswith("-") or isinstance(raw_id, int) and raw_id < 0
-
-
 def build_collection_gaps(
     source: AuditPackage,
     target: AuditPackage,
-    source_to_target_video: dict[str, str],
+    evidence: CatalogIdentityEvidence,
 ) -> list[CollectionGap]:
-    # Wave 8C will replace this title-only lookup with reviewed collection IDs.
-    target_collections = {
-        canonicalize_collection_title(item.title).canonical: item
-        for item in target.collections
-        if not _is_system_collection(item.ref.remote_id, item.privacy_status, item.metadata)
-    }
-    source_members: dict[str, set[str]] = defaultdict(set)
-    target_members: dict[str, set[str]] = defaultdict(set)
-    for membership in source.memberships:
-        source_members[membership.collection_ref.remote_id].add(membership.video_ref.remote_id)
-    for membership in target.memberships:
-        target_members[membership.collection_ref.remote_id].add(membership.video_ref.remote_id)
-
+    source_collections = {item.ref.remote_id: item for item in source.collections}
+    target_collections = {item.ref.remote_id: item for item in target.collections}
     gaps: list[CollectionGap] = []
-    for source_collection in sorted(source.collections, key=lambda item: item.title.casefold()):
-        source_title_identity = canonicalize_collection_title(source_collection.title)
-        target_collection = target_collections.get(source_title_identity.canonical)
-        target_title_identity = (
-            canonicalize_collection_title(target_collection.title) if target_collection is not None else None
-        )
-        source_video_ids = source_members.get(source_collection.ref.remote_id, set())
-        expected_target_ids = {
-            source_to_target_video[source_video_id]
-            for source_video_id in source_video_ids
-            if source_video_id in source_to_target_video
-        }
-        actual_target_ids = (
-            target_members.get(target_collection.ref.remote_id, set()) if target_collection is not None else set()
+    for decision in evidence.decisions:
+        source_collection = source_collections[decision.source_ref.remote_id]
+        target_collection = (
+            target_collections.get(decision.target_ref.remote_id) if decision.target_ref is not None else None
         )
         gaps.append(
             CollectionGap(
                 source_collection_id=source_collection.ref.remote_id,
                 source_title=source_collection.title,
-                source_title_identity=source_title_identity,
+                source_title_identity=decision.source_title_identity,
+                decision=decision.decision,
+                conflict_reason=decision.conflict_reason,
                 target_collection_id=target_collection.ref.remote_id if target_collection is not None else None,
                 target_title=target_collection.title if target_collection is not None else None,
-                target_title_identity=target_title_identity,
-                source_member_count=len(source_video_ids),
-                matched_source_member_count=len(expected_target_ids),
-                target_member_count=len(actual_target_ids),
-                missing_target_video_ids=sorted(expected_target_ids - actual_target_ids),
+                target_title_identity=decision.target_title_identity,
+                source_member_count=len(decision.source_member_video_ids),
+                matched_source_member_count=len(decision.mapped_target_video_ids),
+                target_member_count=len(decision.actual_target_video_ids),
+                unmapped_source_video_ids=decision.unmapped_source_video_ids,
+                missing_target_video_ids=decision.missing_target_video_ids,
+                extra_target_video_ids=decision.extra_target_video_ids,
             )
         )
     return gaps

@@ -89,7 +89,7 @@ def test_compare_matches_by_title_and_duration_and_reports_missing() -> None:
 
     result = compare_audit_packages(source, target)
 
-    assert result.schema_version == "2.1"
+    assert result.schema_version == "3.0"
     assert len(result.matches) == 1
     match = result.matches[0]
     assert match.source_ref.remote_id == "yt-1"
@@ -104,9 +104,45 @@ def test_compare_matches_by_title_and_duration_and_reports_missing() -> None:
     assert result.missing_on_target[0].title_identity.purpose == TextPurpose.IDENTITY_TITLE
     assert result.extra_on_target == []
     assert result.conflicts == []
+    assert result.catalog_identity is not None
+    assert result.catalog_identity.decisions == []
 
 
-def test_compare_reports_missing_collection_placement() -> None:
+def test_compare_reports_missing_collection_placement_from_reviewed_ids() -> None:
+    source = _audit(
+        PlatformName.YOUTUBE,
+        "youtube-channel",
+        [_video(PlatformName.YOUTUBE, "youtube-channel", "yt-1", "Берёза — Сергей Есенин", 242)],
+        collection_title="Сергей Есенин",
+        member_ids=["yt-1"],
+    )
+    target = _audit(
+        PlatformName.VK,
+        "vk-channel",
+        [_video(PlatformName.VK, "vk-channel", "vk-1", "Береза — Сергей Есенин", 241)],
+        collection_title="Сергей Есенин",
+        member_ids=[],
+    )
+
+    result = compare_audit_packages(
+        source,
+        target,
+        reviewed_collection_mapping={"playlist": "album"},
+    )
+
+    assert len(result.collection_gaps) == 1
+    gap = result.collection_gaps[0]
+    assert gap.decision == "mapped"
+    assert gap.target_collection_id == "album"
+    assert gap.source_title_identity.purpose == TextPurpose.COLLECTION_TITLE
+    assert gap.target_title_identity is not None
+    assert gap.target_title_identity.purpose == TextPurpose.COLLECTION_TITLE
+    assert gap.missing_target_video_ids == ["vk-1"]
+    assert result.collection_conflict_count == 0
+    assert result.missing_placement_count == 1
+
+
+def test_same_title_collection_without_review_is_conflict() -> None:
     source = _audit(
         PlatformName.YOUTUBE,
         "youtube-channel",
@@ -124,14 +160,13 @@ def test_compare_reports_missing_collection_placement() -> None:
 
     result = compare_audit_packages(source, target)
 
-    assert len(result.collection_gaps) == 1
     gap = result.collection_gaps[0]
-    assert gap.target_collection_id == "album"
-    assert gap.source_title_identity.purpose == TextPurpose.COLLECTION_TITLE
-    assert gap.target_title_identity is not None
-    assert gap.target_title_identity.purpose == TextPurpose.COLLECTION_TITLE
-    assert gap.missing_target_video_ids == ["vk-1"]
-    assert result.missing_placement_count == 1
+    assert gap.decision == "conflict"
+    assert gap.conflict_reason == "unreviewed_existing_candidate"
+    assert gap.target_collection_id is None
+    assert gap.missing_target_video_ids == []
+    assert result.collection_conflict_count == 1
+    assert result.missing_placement_count == 0
 
 
 def test_duplicate_exact_titles_are_conflict_not_selected_pairs() -> None:
