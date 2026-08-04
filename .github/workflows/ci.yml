@@ -24,7 +24,7 @@ jobs:
           ref: agent/wave-6-stable-engine
           fetch-depth: 0
       - name: Set up Python 3.11
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        uses: actions/setup-python@a26af69be951213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.11"
           cache: pip
@@ -51,7 +51,11 @@ jobs:
             tests/test_wave_engine_contract.py \
             tests/test_wave_executor_inventory.py
           ruff check tests/test_wave_engine_contract.py --fix
-          ruff format tests/test_wave_engine_contract.py
+          ruff format \
+            src/video_channel_manager/wave_engine \
+            scripts/wave_engine.py \
+            tests/test_wave_engine_contract.py \
+            tests/test_wave_executor_inventory.py
           python - <<'PY'
           import hashlib
           import json
