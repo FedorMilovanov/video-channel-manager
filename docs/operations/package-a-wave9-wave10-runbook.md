@@ -2,7 +2,7 @@
 
 Package A is a provider-read-only control plane for exact local-ledger reconciliation, recovery decision support, and static operator reporting.
 
-It does not query YouTube or VK. It does not create a `WavePlan`, reserve an upload, upload media, edit metadata, save a thumbnail, publish to a wall, or authorize any provider mutation.
+It does not query YouTube or VK. It does not create a `WavePlan`, reserve an upload, upload media, edit metadata, save a thumbnail, publish to a wall, or authorize any provider mutation. Package A does not authorize provider writes.
 
 ## Evidence levels
 
