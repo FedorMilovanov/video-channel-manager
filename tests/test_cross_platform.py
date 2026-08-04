@@ -1,4 +1,5 @@
 from video_channel_manager.application.cross_platform import compare_audit_packages, normalize_title
+from video_channel_manager.application.identity import TextPurpose
 from video_channel_manager.domain.enums import ChannelKind, CollectionKind, PlatformName
 from video_channel_manager.domain.models import (
     ChannelRecord,
@@ -88,13 +89,19 @@ def test_compare_matches_by_title_and_duration_and_reports_missing() -> None:
 
     result = compare_audit_packages(source, target)
 
-    assert result.schema_version == "2.0"
+    assert result.schema_version == "2.1"
     assert len(result.matches) == 1
-    assert result.matches[0].source_ref.remote_id == "yt-1"
-    assert result.matches[0].target_ref.remote_id == "vk-1"
-    assert result.matches[0].match_method == "exact_normalized_title"
-    assert result.matches[0].duration_delta_seconds == 1
+    match = result.matches[0]
+    assert match.source_ref.remote_id == "yt-1"
+    assert match.target_ref.remote_id == "vk-1"
+    assert match.match_method == "exact_normalized_title"
+    assert match.duration_delta_seconds == 1
+    assert match.source_title_identity.purpose == TextPurpose.IDENTITY_TITLE
+    assert match.source_title_identity.original == "Берёза — Сергей Есенин"
+    assert match.source_title_identity.canonical == match.target_title_identity.canonical
+    assert match.source_description_identity.purpose == TextPurpose.DESCRIPTION
     assert [item.ref.remote_id for item in result.missing_on_target] == ["yt-2"]
+    assert result.missing_on_target[0].title_identity.purpose == TextPurpose.IDENTITY_TITLE
     assert result.extra_on_target == []
     assert result.conflicts == []
 
@@ -120,6 +127,9 @@ def test_compare_reports_missing_collection_placement() -> None:
     assert len(result.collection_gaps) == 1
     gap = result.collection_gaps[0]
     assert gap.target_collection_id == "album"
+    assert gap.source_title_identity.purpose == TextPurpose.COLLECTION_TITLE
+    assert gap.target_title_identity is not None
+    assert gap.target_title_identity.purpose == TextPurpose.COLLECTION_TITLE
     assert gap.missing_target_video_ids == ["vk-1"]
     assert result.missing_placement_count == 1
 
@@ -147,8 +157,14 @@ def test_duplicate_exact_titles_are_conflict_not_selected_pairs() -> None:
     assert result.matches == []
     assert result.conflict_count == 1
     assert result.ambiguous_match_count == 1
-    assert result.conflicts[0].reason == "duplicate_exact_title"
-    assert [item.remote_id for item in result.conflicts[0].source_refs] == ["yt-a", "yt-b"]
-    assert [item.remote_id for item in result.conflicts[0].target_refs] == ["vk-a", "vk-b"]
+    conflict = result.conflicts[0]
+    assert conflict.reason == "duplicate_exact_title"
+    assert [item.remote_id for item in conflict.source_refs] == ["yt-a", "yt-b"]
+    assert [item.remote_id for item in conflict.target_refs] == ["vk-a", "vk-b"]
+    assert [item.original for item in conflict.source_title_identities] == [
+        "Сукин сын — Сергей Есенин",
+        "Сукин сын — Сергей Есенин",
+    ]
+    assert len(conflict.target_title_identities) == 2
     assert result.missing_on_target == []
     assert result.extra_on_target == []

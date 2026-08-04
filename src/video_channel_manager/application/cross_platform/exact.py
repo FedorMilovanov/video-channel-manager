@@ -9,6 +9,7 @@ from video_channel_manager.application.cross_platform.normalize import (
     normalize_title,
     video_match,
 )
+from video_channel_manager.application.identity import canonicalize_identity_title
 from video_channel_manager.exchange.audit_package import AuditPackage
 
 
@@ -69,6 +70,8 @@ def exact_title_phase(
         target_indices = sorted(target_groups[normalized_title], key=lambda i: target.videos[i].ref.remote_id)
         resolved_source.update(source_indices)
         resolved_target.update(target_indices)
+        source_identities = [canonicalize_identity_title(source.videos[index].title) for index in source_indices]
+        target_identities = [canonicalize_identity_title(target.videos[index].title) for index in target_indices]
         if len(source_indices) != 1 or len(target_indices) != 1:
             conflicts.append(
                 MatchConflict(
@@ -76,6 +79,8 @@ def exact_title_phase(
                     normalized_title=normalized_title,
                     source_refs=[source.videos[index].ref for index in source_indices],
                     target_refs=[target.videos[index].ref for index in target_indices],
+                    source_title_identities=source_identities,
+                    target_title_identities=target_identities,
                 )
             )
             continue
@@ -90,6 +95,8 @@ def exact_title_phase(
                     normalized_title=normalized_title,
                     source_refs=[source_video.ref],
                     target_refs=[target_video.ref],
+                    source_title_identities=source_identities,
+                    target_title_identities=target_identities,
                     candidates=[candidate_evidence(source_video, target_video, score=score, delta=delta)],
                 )
             )

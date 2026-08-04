@@ -5,6 +5,7 @@ from typing import Literal
 
 from pydantic import Field
 
+from video_channel_manager.application.identity import CanonicalTextEvidence
 from video_channel_manager.domain.models import RemoteRef, StrictModel
 
 MatchMethod = Literal["reviewed_mapping", "exact_normalized_title", "fuzzy_unique"]
@@ -18,6 +19,8 @@ ConflictReason = Literal[
 class MatchCandidateEvidence(StrictModel):
     source_ref: RemoteRef
     target_ref: RemoteRef
+    source_title_identity: CanonicalTextEvidence
+    target_title_identity: CanonicalTextEvidence
     score: float = Field(ge=0.0, le=1.0)
     duration_delta_seconds: int | None = Field(default=None, ge=0)
     exact_normalized_title: bool
@@ -28,6 +31,10 @@ class VideoMatch(StrictModel):
     target_ref: RemoteRef
     source_title: str
     target_title: str
+    source_title_identity: CanonicalTextEvidence
+    target_title_identity: CanonicalTextEvidence
+    source_description_identity: CanonicalTextEvidence
+    target_description_identity: CanonicalTextEvidence
     score: float = Field(ge=0.0, le=1.0)
     duration_delta_seconds: int | None = Field(default=None, ge=0)
     exact_normalized_title: bool
@@ -41,12 +48,15 @@ class MatchConflict(StrictModel):
     normalized_title: str | None = None
     source_refs: list[RemoteRef] = Field(min_length=1)
     target_refs: list[RemoteRef] = Field(min_length=1)
+    source_title_identities: list[CanonicalTextEvidence] = Field(default_factory=list)
+    target_title_identities: list[CanonicalTextEvidence] = Field(default_factory=list)
     candidates: list[MatchCandidateEvidence] = Field(default_factory=list)
 
 
 class MissingVideo(StrictModel):
     ref: RemoteRef
     title: str
+    title_identity: CanonicalTextEvidence
     duration_seconds: int | None = Field(default=None, ge=0)
     privacy_status: str | None = None
     collection_titles: list[str] = Field(default_factory=list)
@@ -55,8 +65,10 @@ class MissingVideo(StrictModel):
 class CollectionGap(StrictModel):
     source_collection_id: str
     source_title: str
+    source_title_identity: CanonicalTextEvidence
     target_collection_id: str | None = None
     target_title: str | None = None
+    target_title_identity: CanonicalTextEvidence | None = None
     source_member_count: int = Field(ge=0)
     matched_source_member_count: int = Field(ge=0)
     target_member_count: int = Field(ge=0)
@@ -69,7 +81,7 @@ class CollectionGap(StrictModel):
 
 class CrossPlatformComparison(StrictModel):
     schema_name: str = "video-manager.cross-platform-comparison"
-    schema_version: str = "2.0"
+    schema_version: str = "2.1"
     generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     source_snapshot_id: str
     target_snapshot_id: str

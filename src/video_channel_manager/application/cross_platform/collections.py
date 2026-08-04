@@ -3,7 +3,10 @@ from __future__ import annotations
 from collections import defaultdict
 
 from video_channel_manager.application.cross_platform.models import CollectionGap, MissingVideo
-from video_channel_manager.application.cross_platform.normalize import normalize_title
+from video_channel_manager.application.identity import (
+    canonicalize_collection_title,
+    canonicalize_identity_title,
+)
 from video_channel_manager.domain.models import VideoRecord
 from video_channel_manager.exchange.audit_package import AuditPackage
 
@@ -22,6 +25,7 @@ def missing_video(video: VideoRecord, collection_titles: dict[str, list[str]]) -
     return MissingVideo(
         ref=video.ref,
         title=video.title,
+        title_identity=canonicalize_identity_title(video.title),
         duration_seconds=video.duration_seconds,
         privacy_status=video.privacy_status,
         collection_titles=sorted(collection_titles.get(video.ref.remote_id, []), key=str.casefold),
@@ -40,7 +44,7 @@ def build_collection_gaps(
 ) -> list[CollectionGap]:
     # Wave 8C will replace this title-only lookup with reviewed collection IDs.
     target_collections = {
-        normalize_title(item.title): item
+        canonicalize_collection_title(item.title).canonical: item
         for item in target.collections
         if not _is_system_collection(item.ref.remote_id, item.privacy_status, item.metadata)
     }
@@ -53,7 +57,11 @@ def build_collection_gaps(
 
     gaps: list[CollectionGap] = []
     for source_collection in sorted(source.collections, key=lambda item: item.title.casefold()):
-        target_collection = target_collections.get(normalize_title(source_collection.title))
+        source_title_identity = canonicalize_collection_title(source_collection.title)
+        target_collection = target_collections.get(source_title_identity.canonical)
+        target_title_identity = (
+            canonicalize_collection_title(target_collection.title) if target_collection is not None else None
+        )
         source_video_ids = source_members.get(source_collection.ref.remote_id, set())
         expected_target_ids = {
             source_to_target_video[source_video_id]
@@ -67,8 +75,10 @@ def build_collection_gaps(
             CollectionGap(
                 source_collection_id=source_collection.ref.remote_id,
                 source_title=source_collection.title,
+                source_title_identity=source_title_identity,
                 target_collection_id=target_collection.ref.remote_id if target_collection is not None else None,
                 target_title=target_collection.title if target_collection is not None else None,
+                target_title_identity=target_title_identity,
                 source_member_count=len(source_video_ids),
                 matched_source_member_count=len(expected_target_ids),
                 target_member_count=len(actual_target_ids),
