@@ -5,6 +5,8 @@ $script:OperatorRequestSchema = "video-manager.operator-request"
 $script:OperatorManifestSchema = "video-manager.operator-manifest"
 $script:WrapperRegistrySchema = "video-manager.powershell-wrapper-registry"
 $script:OperatorSchemaVersion = 1
+$script:DefaultChildTimeoutSeconds = 900
+$script:TimeoutExitCode = 124
 
 function Get-VcmUtf8NoBomEncoding {
     return New-Object System.Text.UTF8Encoding($false)
@@ -307,6 +309,29 @@ function Protect-VcmArguments {
     return $protected.ToArray()
 }
 
+function Stop-VcmNativeProcessTree {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.Diagnostics.Process]$Process
+    )
+
+    if ($Process.HasExited) {
+        return
+    }
+    try {
+        $Process.Kill($true)
+    }
+    catch {
+        if (-not $Process.HasExited) {
+            $Process.Kill()
+        }
+    }
+    if (-not $Process.WaitForExit(5000)) {
+        throw "Timed-out native process could not be terminated."
+    }
+}
+
 function Invoke-VcmNativeProcess {
     [CmdletBinding()]
     param(
@@ -322,7 +347,10 @@ function Invoke-VcmNativeProcess {
         [string]$StdoutPath,
 
         [Parameter(Mandatory = $true)]
-        [string]$StderrPath
+        [string]$StderrPath,
+
+        [ValidateRange(1, 86400)]
+        [int]$TimeoutSeconds = $script:DefaultChildTimeoutSeconds
     )
 
     $startedAt = [DateTime]::UtcNow
@@ -347,7 +375,13 @@ function Invoke-VcmNativeProcess {
         }
         $stdoutTask = $process.StandardOutput.ReadToEndAsync()
         $stderrTask = $process.StandardError.ReadToEndAsync()
-        $process.WaitForExit()
+        $timedOut = -not $process.WaitForExit($TimeoutSeconds * 1000)
+        if ($timedOut) {
+            Stop-VcmNativeProcessTree -Process $process
+        }
+        else {
+            $process.WaitForExit()
+        }
         $stdout = $stdoutTask.GetAwaiter().GetResult()
         $stderr = $stderrTask.GetAwaiter().GetResult()
         Write-VcmUtf8Text -Path $StdoutPath -Text $stdout
@@ -359,7 +393,10 @@ function Invoke-VcmNativeProcess {
             started_at = $startedAt.ToString("o")
             finished_at = $finishedAt.ToString("o")
             duration_ms = [int][Math]::Round(($finishedAt - $startedAt).TotalMilliseconds)
-            exit_code = [int]$process.ExitCode
+            exit_code = if ($timedOut) { $script:TimeoutExitCode } else { [int]$process.ExitCode }
+            timed_out = [bool]$timedOut
+            termination_kind = if ($timedOut) { "timeout" } else { "exit" }
+            timeout_seconds = $TimeoutSeconds
             stdout_path = [System.IO.Path]::GetFullPath($StdoutPath)
             stderr_path = [System.IO.Path]::GetFullPath($StderrPath)
             stdout_text = $stdout
@@ -368,6 +405,40 @@ function Invoke-VcmNativeProcess {
     }
     finally {
         $process.Dispose()
+    }
+}
+
+function Get-VcmOperatorOutcome {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet("safe_read", "ambiguous_mutation")]
+        [string]$OperationClass,
+
+        [Parameter(Mandatory = $true)]
+        [int]$ExitCode,
+
+        [bool]$TimedOut = $false
+    )
+
+    if (-not $TimedOut -and $ExitCode -eq 0) {
+        return [pscustomobject]@{
+            status = "succeeded"
+            retry_safe = $false
+            unknown_requires_reconciliation = $false
+        }
+    }
+    if ($OperationClass -eq "ambiguous_mutation") {
+        return [pscustomobject]@{
+            status = "unknown_requires_reconciliation"
+            retry_safe = $false
+            unknown_requires_reconciliation = $true
+        }
+    }
+    return [pscustomobject]@{
+        status = "failed"
+        retry_safe = $true
+        unknown_requires_reconciliation = $false
     }
 }
 
@@ -423,7 +494,7 @@ function Resolve-VcmPython {
             $probe = Invoke-VcmNativeProcess -FilePath $candidate -ArgumentList @(
                 "-X", "utf8", "-c",
                 'import json,sys; print(json.dumps({"major":sys.version_info.major,"minor":sys.version_info.minor,"executable":sys.executable}))'
-            ) -WorkingDirectory $RepositoryRoot -StdoutPath $probeOut -StderrPath $probeErr
+            ) -WorkingDirectory $RepositoryRoot -StdoutPath $probeOut -StderrPath $probeErr -TimeoutSeconds 30
             if ($probe.exit_code -ne 0) {
                 continue
             }
@@ -618,6 +689,76 @@ function Test-VcmMutationCliArguments {
     return @($normalized | Where-Object { $_ -eq "--enable-provider-writes" }).Count -eq 1
 }
 
+function Read-VcmOperatorResult {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $result = Read-VcmJsonFile -Path $Path
+    Assert-VcmRequiredJsonProperties -Value $result -Label "Operator result" -Names @(
+        "schema_name",
+        "schema_version",
+        "status",
+        "exit_code",
+        "retry_safe",
+        "unknown_requires_reconciliation",
+        "mode",
+        "project_key",
+        "request_sha256",
+        "manifest_sha256",
+        "preflight_path",
+        "result_path",
+        "child"
+    )
+    if (
+        $result.schema_name -ne "video-manager.operator-result" -or
+        -not (Test-VcmExactInteger -Value $result.schema_version) -or
+        [int64]$result.schema_version -ne 1
+    ) {
+        throw "Unsupported operator result schema."
+    }
+    if ($result.status -isnot [string] -or [string]$result.status -notin @(
+        "planned",
+        "succeeded",
+        "failed",
+        "unknown_requires_reconciliation"
+    )) {
+        throw "Unsupported operator result status."
+    }
+    if (-not (Test-VcmExactInteger -Value $result.exit_code)) {
+        throw "Operator result exit_code must be an exact integer."
+    }
+    if ($result.retry_safe -isnot [bool] -or $result.unknown_requires_reconciliation -isnot [bool]) {
+        throw "Operator result retry and unknown flags must be exact booleans."
+    }
+    if (-not (Test-VcmSha256Text -Value $result.request_sha256) -or -not (Test-VcmSha256Text -Value $result.manifest_sha256)) {
+        throw "Operator result digests must be exact SHA-256 strings."
+    }
+
+    $status = [string]$result.status
+    $exitCode = [int]$result.exit_code
+    if ($status -in @("planned", "succeeded") -and $exitCode -ne 0) {
+        throw "Successful operator results require exit_code 0."
+    }
+    if ($status -eq "unknown_requires_reconciliation") {
+        if (-not [bool]$result.unknown_requires_reconciliation -or [bool]$result.retry_safe -or $exitCode -eq 0) {
+            throw "Unknown operator result semantics are inconsistent."
+        }
+    }
+    elseif ([bool]$result.unknown_requires_reconciliation) {
+        throw "Only unknown operator results may require reconciliation."
+    }
+    if ($status -eq "planned" -and $null -ne $result.child) {
+        throw "Planned operator results cannot contain child evidence."
+    }
+    if ($status -ne "planned" -and $null -eq $result.child) {
+        throw "Executed operator results require child evidence."
+    }
+    return $result
+}
+
 function Invoke-VcmOperatorRequest {
     [CmdletBinding()]
     param(
@@ -633,6 +774,8 @@ function Invoke-VcmOperatorRequest {
 
         [string]$PythonPath,
         [switch]$EnableProviderWrites,
+        [ValidateRange(1, 86400)]
+        [int]$TimeoutSeconds = $script:DefaultChildTimeoutSeconds,
         [string]$RepositoryRoot = (Get-VcmRepositoryRoot -StartPath $PSScriptRoot)
     )
 
@@ -831,6 +974,7 @@ function Invoke-VcmOperatorRequest {
         manifest_path = $manifestFile
         manifest_sha256 = $manifestSha
         output_directory = [System.IO.Path]::GetFullPath($output)
+        child_timeout_seconds = $TimeoutSeconds
     }
     Write-VcmJsonAtomic -Path $preflightPath -Value $preflight
 
@@ -851,27 +995,19 @@ function Invoke-VcmOperatorRequest {
             child = $null
         }
         Write-VcmJsonAtomic -Path $resultPath -Value $planned
-        return [pscustomobject]$planned
+        return Read-VcmOperatorResult -Path $resultPath
     }
 
     $python = Resolve-VcmPython -RepositoryRoot $root -ExplicitPath $PythonPath -ProbeDirectory $output
-    $child = Invoke-VcmNativeProcess -FilePath $python.path -ArgumentList (@("-X", "utf8", "-m", "video_channel_manager.cli.app") + $arguments) -WorkingDirectory $root -StdoutPath $stdoutPath -StderrPath $stderrPath
-    $status = if ($child.exit_code -eq 0) {
-        "succeeded"
-    }
-    elseif ($operationClass -eq "ambiguous_mutation") {
-        "unknown_requires_reconciliation"
-    }
-    else {
-        "failed"
-    }
+    $child = Invoke-VcmNativeProcess -FilePath $python.path -ArgumentList (@("-X", "utf8", "-m", "video_channel_manager.cli.app") + $arguments) -WorkingDirectory $root -StdoutPath $stdoutPath -StderrPath $stderrPath -TimeoutSeconds $TimeoutSeconds
+    $outcome = Get-VcmOperatorOutcome -OperationClass $operationClass -ExitCode ([int]$child.exit_code) -TimedOut ([bool]$child.timed_out)
     $result = [ordered]@{
         schema_name = "video-manager.operator-result"
         schema_version = 1
-        status = $status
+        status = $outcome.status
         exit_code = [int]$child.exit_code
-        retry_safe = ($operationClass -eq "safe_read" -and $child.exit_code -ne 0)
-        unknown_requires_reconciliation = ($status -eq "unknown_requires_reconciliation")
+        retry_safe = [bool]$outcome.retry_safe
+        unknown_requires_reconciliation = [bool]$outcome.unknown_requires_reconciliation
         mode = $mode
         project_key = [string]$manifest.project_key
         request_sha256 = $actualRequestSha
@@ -884,22 +1020,28 @@ function Invoke-VcmOperatorRequest {
             started_at = $child.started_at
             finished_at = $child.finished_at
             duration_ms = $child.duration_ms
+            exit_code = [int]$child.exit_code
+            timed_out = [bool]$child.timed_out
+            termination_kind = $child.termination_kind
+            timeout_seconds = [int]$child.timeout_seconds
             stdout_path = $child.stdout_path
             stderr_path = $child.stderr_path
         }
     }
     Write-VcmJsonAtomic -Path $resultPath -Value $result
-    return [pscustomobject]$result
+    return Read-VcmOperatorResult -Path $resultPath
 }
 
 Export-ModuleMember -Function @(
     "Get-VcmCanonicalTextSha256",
+    "Get-VcmOperatorOutcome",
     "Get-VcmRepositoryRoot",
     "Get-VcmSha256",
     "Get-VcmWrapperRegistry",
     "Invoke-VcmNativeProcess",
     "Invoke-VcmOperatorRequest",
     "Read-VcmJsonFile",
+    "Read-VcmOperatorResult",
     "Resolve-VcmExactPath",
     "Resolve-VcmPython",
     "Stop-VcmRetiredWrapper",
