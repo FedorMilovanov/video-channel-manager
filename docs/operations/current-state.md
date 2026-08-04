@@ -1,11 +1,12 @@
 # Current operational state
 
 Updated: 2026-08-04  
-Verified code baseline: `main@c28aee4177d6f99e8f52fd82b60f4c1d93d50c29`  
+Verified code baseline: `main@ee7766a651cd55a0f51bd3cd5acfbe3f29bfbaed`  
 Wave 7 baseline: `df956bbbf19af6652f8711f95fb4fecf272e9951`  
 Wave 8A baseline: `09babd9176049d8271c50b6f5e44b7b0fd10d39f`  
 Wave 8B baseline: `c28aee4177d6f99e8f52fd82b60f4c1d93d50c29`  
-Program state: `WAVE_8B_COMPLETED_WAVE_8C_ACTIVE`  
+Wave 8C baseline: `ee7766a651cd55a0f51bd3cd5acfbe3f29bfbaed`  
+Program state: `WAVE_8C_COMPLETED_WAVE_8D_ACTIVE`  
 Canonical audit: [`master-audit-marathon-v2-2026-08-04.md`](master-audit-marathon-v2-2026-08-04.md)  
 Machine register: [`audit-register-v2-2026-08-04.json`](audit-register-v2-2026-08-04.json)
 
@@ -20,7 +21,9 @@ This file overrides old chats, screenshots, packages, remembered counts, and sup
 - Wave 7 — 15 supported mutation boundaries, 27 cross-cutting fault/corruption/replay scenarios, merge `df956bbbf19af6652f8711f95fb4fecf272e9951`, CI `30918639372`, `657 passed, 1 xfailed`, Pester `25/25`.
 - Wave 8A — exact-first conflict-explicit matching, PR #91, merge `09babd9176049d8271c50b6f5e44b7b0fd10d39f`, CI `30933582322`, `664 passed, 1 xfailed`, provider writes 0.
 - Wave 8A state sync — PR #92, merge `160382e4dea51d2691081e42c86c878a58ccdd97`, CI `30934601690`, `665 passed, 1 xfailed`.
-- Wave 8B — versioned canonical text and URL identity, PR #93, merge `c28aee4177d6f99e8f52fd82b60f4c1d93d50c29`, exact-head CI `30936757433`, `680 passed, 1 xfailed` on Python 3.11/3.12/3.13; Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux green; provider writes 0.
+- Wave 8B — versioned canonical text and URL identity, PR #93, merge `c28aee4177d6f99e8f52fd82b60f4c1d93d50c29`, CI `30936757433`, `680 passed, 1 xfailed` on Python 3.11/3.12/3.13; three PowerShell environments green; provider writes 0.
+- Wave 8B state sync — PR #94, merge `801cc108043cd592dc0620c9996bda16d2cf5b55`.
+- Wave 8C — exact catalog and album identity, PR #95, merge `ee7766a651cd55a0f51bd3cd5acfbe3f29bfbaed`, exact-head CI `30940734221`, `694 passed, 1 xfailed` on Python 3.11/3.12/3.13; Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux green; provider writes 0.
 
 ## Wave 8A guarantees
 
@@ -40,24 +43,9 @@ Conflicts create no selected match, mapping, missing/upload candidate, or collec
 
 ## Wave 8B guarantees
 
-The identity ruleset is `wave-8b-v1`. Cross-platform comparison schema is `2.1`.
+The identity ruleset is `wave-8b-v1`.
 
-Separate typed canonicalizers now exist for:
-
-- identity title;
-- display title;
-- description comparison;
-- collection title;
-- version/variation;
-- HTTP/public/project URL identity.
-
-Every canonical result preserves:
-
-- original value;
-- canonical value;
-- ruleset version;
-- ordered transformations;
-- deterministic SHA-256 evidence digest.
+Separate typed canonicalizers exist for identity title, display title, description comparison, collection title, version/variation, and HTTP/public/project URL identity. Every canonical result preserves the original value, canonical value, ruleset version, ordered transformations, and deterministic SHA-256 evidence digest.
 
 Permanent exactness rules:
 
@@ -71,28 +59,46 @@ Permanent exactness rules:
 - collection titles and video titles do not share one authority contract;
 - version numbers remain identity-significant.
 
+## Wave 8C guarantees
+
+The catalog identity schema is `video-manager.catalog-identity-evidence` ruleset `wave-8c-v1`. Cross-platform comparison schema is `3.0`; VK catalog plan version is 3.
+
+- A reviewed one-to-one source collection ID → exact target album ID is the only automatic existing-album authority.
+- Reviewed source and target IDs must exist in the exact bound snapshots.
+- A target album ID cannot be reused by multiple source collections.
+- A single title candidate without reviewed ID is `unreviewed_existing_candidate`, not an automatic match.
+- Duplicate canonical target album titles are `duplicate_canonical_target_title`, never last-write-wins dictionary entries.
+- Album creation requires explicit approval and no conflicting existing candidate.
+- `mapped`, `create`, and `conflict` are mutually exclusive decisions.
+- Conflict decisions create no album operation and no placement operation.
+- Renamed reviewed albums remain bound to exact ID and record title drift.
+- Membership is compared as exact target video ID sets; provider order/position churn is ignored.
+- Evidence records mapped, unmapped, actual, missing, and extra IDs and is project/snapshot/channel bound with a deterministic digest.
+- Extra membership is evidence only; Wave 8C does not delete anything.
+- Detailed comparison rendering is attached to stable document structure, not a brittle exact wording replacement.
+
 ## Active engineering wave
 
-Wave 8 / issue #86 remains the only active core-engineering owner. Waves 8A and 8B are complete. **Wave 8C is active.**
+Wave 8 / issue #86 remains the only active core-engineering owner. Waves 8A, 8B, and 8C are complete. **Wave 8D is active.**
 
-### Wave 8C — exact catalog and album identity
+### Wave 8D — authoritative media and cache evidence
 
 Required outcomes:
 
-- reviewed one-to-one source collection ID → exact target album ID mapping;
-- validate every reviewed source/target ID against the exact snapshots;
-- reject reused target album IDs;
-- duplicate canonical target album names are conflicts, never dictionary overwrite;
-- renamed or unmapped existing albums require review, not automatic selection;
-- album creation is allowed only for an explicitly approved source collection with no reviewed target ID and no conflicting target candidates;
-- collection mapping evidence is immutable, versioned, project/snapshot bound, and digest protected;
-- semantic membership compares sets of exact target video IDs; provider position churn is ignored;
-- unresolved collection conflicts produce no album or placement operation;
-- issue #33 receives exact catalog evidence later but no live writes occur in Wave 8C.
+- define one versioned immutable media-artifact evidence schema;
+- bind exact project key, source platform/source ID/source URL, acquisition method, requested output path, authoritative final path, file size, SHA-256, and structured ffprobe evidence;
+- accept cache reuse only when the manifest, final file, digest, source identity, and probe evidence all agree;
+- reject stale, missing, renamed, glob-selected, or tampered cache entries;
+- prohibit directory glob fallback from becoming authoritative output selection;
+- capture downloader-produced final path from a structured result, not from a guessed extension;
+- distinguish container format from codec compatibility;
+- prove required video/audio codec, stream counts, dimensions, duration, and other selected profile constraints before an artifact is upload-eligible;
+- treat remux as container conversion only; MP4 alone does not prove H.264/AAC;
+- keep probing and manifest validation local/read-only; provider writes remain 0;
+- do not mix thumbnail identity or selected-thumbnail postflight into Wave 8D.
 
 Later phases:
 
-- Wave 8D — authoritative downloader path, SHA/size/fingerprint and structured ffprobe validation;
 - Wave 8E — exact thumbnail identity and selected-thumbnail delayed postflight;
 - Wave 8F — integration proof and final Wave 8 state sync.
 
@@ -111,7 +117,7 @@ For each operation:
 
 Do not require a whole-account rescan, full-library visual fingerprint, GitHub commit of mutable provider state after each operation, or a multi-hour audit for a bounded task.
 
-## Permanent stage/evidence rules
+## Permanent stage and evidence rules
 
 - `file_selected` is not `upload_completed`.
 - `upload_completed` is not `remote_object_visible`.
@@ -197,17 +203,17 @@ Status: `SEPARATE_EXPERIMENTAL_SYSTEM / PARTIAL_OR_UNKNOWN_OUTCOMES / NOT_CORE_S
 - #37 exact approved cleanup only;
 - #64 master roadmap;
 - #85 draft history archive;
-- #86 active Wave 8, Wave 8C;
+- #86 active Wave 8, Wave 8D;
 - #88 completed audit;
-- #91 merged Wave 8A;
-- #92 merged Wave 8A state sync;
-- #93 merged Wave 8B.
+- #91/#92 completed Wave 8A;
+- #93/#94 completed Wave 8B;
+- #95 completed Wave 8C.
 
 ## Global prohibitions
 
 - Never mix project identities, credentials, IDs, journals, links, or manifests.
-- Do not repeat completed Waves 0–8B through retired scripts or ZIP packages.
-- Do not infer success from green CI, stdout, a visible object, duration/orientation, stale counts, substring matching, or title-only album lookup.
+- Do not repeat completed Waves 0–8C through retired scripts or ZIP packages.
+- Do not infer success from green CI, stdout, a visible object, duration/orientation, stale counts, substring matching, title-only album lookup, file extension, or container name.
 - Do not blind-retry ambiguous mutations.
 - Do not perform bulk deletion outside issue #37.
 - Do not treat vertical format/duration as proof of VK Clip type.
