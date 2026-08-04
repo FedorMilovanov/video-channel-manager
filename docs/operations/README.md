@@ -8,6 +8,7 @@ Operational documents are living sources of truth. They take priority over chat 
 - [`master-audit-2026-08-04.md`](master-audit-2026-08-04.md) — canonical synthesis of the audit marathon, active/retracted/disputed findings, system boundaries, wave order, and acceptance gates.
 - [`audit-register-2026-08-04.json`](audit-register-2026-08-04.json) — machine-readable finding status, severity, owner issue, and target wave.
 - [`current-state.md`](current-state.md) — selected project, exact current identities, completed work, active blockers, separate project queues, and the next allowed work.
+- [`http-client-ownership.md`](http-client-ownership.md) — Wave 3 reusable-client ownership, one-shot script allowlist, safe-read versus ambiguous-mutation retry authority, redaction, and limiter rules.
 - [`lord-god-strength-description-profile.md`](lord-god-strength-description-profile.md) — exact identities, links, footer rules, and guards for Господь Бог — Сила Моя.
 - [`legendary-poet-description-profile.md`](legendary-poet-description-profile.md) — exact identities, links, footer rules, VK Clips route, author-cabinet separation, and guards for The Legendary Poet.
 - [`project-memory-changelog.md`](project-memory-changelog.md) — dated changes to durable operational memory.
@@ -17,11 +18,11 @@ Operational documents are living sources of truth. They take priority over chat 
 
 ## Current engineering sequence
 
-1. Wave 0 canonical-state baseline — documentation and issue graph only, no provider writes.
-2. Issue #65 — journaled VK upload state machine and recovery.
-3. Issue #64 — Waves 2–10 reliability roadmap.
-4. Issues #31/#32/#36/#38 — exact live reconciliation only after the required core gates.
-5. Issue #33 — catalog and publishing after all dependency unknowns are resolved.
+1. Waves 0–3 — completed canonical state, upload lifecycle, project pipeline, and HTTP reliability; no provider writes.
+2. Issue #36 — active Wave 4 upload/wall firewall and postponed-only publication contract.
+3. Issues #31/#32/#37/#38 — exact live reconciliation or approved cleanup only after the required core gates and a fresh read-only audit.
+4. Issue #33 — catalog and publishing after all dependency unknowns are resolved.
+5. Issue #64 — Waves 5–10 reliability roadmap.
 
 Do not begin from a retired ZIP, historical executor, old numeric matrix, or chat-only instruction.
 
@@ -61,6 +62,7 @@ Historical runbooks and executors are not automatically active. `current-state.m
 13. Confirm ledger and result paths.
 14. Confirm unknown-outcome reconciliation behavior.
 15. Confirm that no accepted, processing, or unknown mutation is being retransmitted.
+16. For any upload, confirm `wall_mutation_authorized=false`, explicit `wallpost=0`, and bound published+postponed before/postflight evidence.
 
 Validate every user-facing operational ZIP before handoff:
 
@@ -84,4 +86,4 @@ The verifier checks archive structure, exact entrypoints, required files, path t
 3. Update `audit-register-2026-08-04.json` when a finding changes state or ownership.
 4. Append `project-memory-changelog.md`.
 5. Update the owning GitHub issue and PR.
-6. Add or update a regression test when the work exposed a tooling, identity, link-profile, state-machine, provider-contract, wrapper, or packaging defect.
+6. Add or update a regression test when the work exposed a tooling, identity, link-profile, state-machine, transport, wall, provider-contract, wrapper, or packaging defect.
