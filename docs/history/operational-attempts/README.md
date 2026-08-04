@@ -27,6 +27,7 @@ Archive an attempt when it produced a meaningful failure, false conclusion, prov
 
 Do not commit secrets, tokens, cookies, browser profiles, media files, private logs, mutable live snapshots, or full local `data/` directories. Do not use this archive as operational state. Fresh provider state is acquired only when a concrete operation needs it.
 
-## Current archive
+## Current archives
 
 - [`legendary-poet-vk-clips-2026-08-03-04/`](legendary-poet-vk-clips-2026-08-03-04/) — progression from automated Shorts sync through native VK Clips upload and successive checkers.
+- [`lord-god-strength-vk-audio-2026-08-03-04/`](lord-god-strength-vk-audio-2026-08-03-04/) — progression from one-file VK Audio canaries through playlist/metadata automation, read-only network probes, and reliable batch upload experiments.
