@@ -55,9 +55,14 @@ def test_current_state_preserves_verified_operational_identity() -> None:
         "BLOCKED_PENDING_FRESH_READ_ONLY_WALL_AUDIT_AND_LOCAL_LEDGER_RECONCILIATION",
         "d85f7cf94b8ba0b30947291b3a08491239438843",
         "1a62779293a404e4654b6230644dfc78e9b20dc1",
-        "WAVE_5_COMPLETED_WAVE_6_NEXT",
-        "Wave 6 / issue #76",
+        "c4c4d3233ec20b8f939343c5d667d8687d7ff040",
+        "30908185487",
+        "WAVE_6_COMPLETED_WAVE_7_NEXT",
+        "Wave 7 / issue #80",
         "scripts/operator/Invoke-VideoManager.ps1",
+        "all 91 tracked Python scripts",
+        "26 direct provider-write executors",
+        "unknown_requires_reconciliation",
     )
 
     for fact in required_facts:

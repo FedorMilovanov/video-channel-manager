@@ -4,6 +4,19 @@ This file records durable changes to operational memory. Add an entry whenever p
 
 ## 2026-08-04
 
+### Wave 6 completed — stable versioned wave engine
+
+- Merged PR #78 as `c4c4d3233ec20b8f939343c5d667d8687d7ff040`.
+- Exact-head CI run `30908185487` passed dependency audit, compileall, Ruff, formatting, strict mypy, and full pytest on Python 3.11, 3.12, and 3.13: `611 passed, 1 xfailed`.
+- Pester passed `20/20` on Windows PowerShell 5.1, PowerShell 7 on Windows, and PowerShell 7 on Linux.
+- Added strict immutable v1 source/plan/apply/result/reconciliation schemas with exact project, snapshot, policy, file, operation-set, and self-digest binding.
+- Classified all 91 Python scripts; retired 26 direct provider-write executors before functions, credentials, paths, or provider dispatch.
+- Confined historical private cross-script imports to compatibility adapters; the supported engine imports no historical `scripts.*` modules.
+- Added atomic per-operation journals, automatic replay prohibition, one-attempt ambiguous mutation semantics, and exact unknown-operation reconciliation.
+- Restricted PowerShell provider mutations to the complete Wave 6 `wave apply` contract; no implicit production provider adapter is registered by the CLI.
+- No VK or YouTube provider write occurred during implementation or CI.
+- Wave 6 issue #76 closed; Wave 7 fault-injection work is owned by issue #80.
+
 ### Wave 5 completed — reliable Windows/PowerShell operator layer
 
 - Merged PR #75 as `1a62779293a404e4654b6230644dfc78e9b20dc1`.
