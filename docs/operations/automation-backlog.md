@@ -1,178 +1,143 @@
 # Operational automation backlog
 
 Updated: 2026-08-04  
-Program state: `WAVE_8A_COMPLETED_WAVE_8B_ACTIVE`
+Program state: `WAVE_8B_COMPLETED_WAVE_8C_ACTIVE`
 
-This backlog is subordinate to [`current-state.md`](current-state.md), [`master-audit-marathon-v2-2026-08-04.md`](master-audit-marathon-v2-2026-08-04.md), and [`audit-register-v2-2026-08-04.json`](audit-register-v2-2026-08-04.json). It must not reactivate retracted findings, retired executors, historical ZIP packages, or completed destructive work.
+This backlog is subordinate to [`current-state.md`](current-state.md), [`master-audit-marathon-v2-2026-08-04.md`](master-audit-marathon-v2-2026-08-04.md), and [`audit-register-v2-2026-08-04.json`](audit-register-v2-2026-08-04.json).
 
-## Completed work
+## Completed foundation
 
-### Waves 0–7
+- Waves 0–7: project boundaries, durable upload lifecycle, fail-closed identity, shared HTTP/retry/redaction, upload/wall separation, one supported PowerShell operator, versioned Wave Engine, and 15 mutation-boundary proof ownership.
+- Audit A0: PR #89, merge `a06a93e1ec16b4ddb0f578a92e47ce76b4ee78a5`, CI `30925523584`, provider writes 0.
+- Wave 8A: PR #91, merge `09babd9176049d8271c50b6f5e44b7b0fd10d39f`, CI `30933582322`, `664 passed, 1 xfailed`, exact-first conflict-explicit matching, provider writes 0.
+- Wave 8A state sync: PR #92, merge `160382e4dea51d2691081e42c86c878a58ccdd97`, CI `30934601690`, `665 passed, 1 xfailed`.
+- Wave 8B: PR #93, merge `c28aee4177d6f99e8f52fd82b60f4c1d93d50c29`, CI `30936757433`, `680 passed, 1 xfailed` on Python 3.11/3.12/3.13, all three PowerShell environments green, provider writes 0.
 
-Completed reliability foundation:
+## Closed Wave 8A findings
 
-- canonical project/state boundaries;
-- durable journaled upload lifecycle and exact-ID recovery;
-- fail-closed project/content identity;
-- shared HTTP ownership, bounded safe-read retry, redaction, and limiter;
-- upload/wall separation;
-- one supported PowerShell operator;
-- versioned source/plan/apply/result/reconciliation engine;
-- 15 mutation boundaries with exact fault/replay/corruption/operator proofs.
+- reviewed one-to-one video mapping runs first;
+- unique exact canonical-title pairs run second;
+- bounded indexed fuzzy fallback runs only afterward;
+- duplicate exact titles, excessive exact-title duration differences, and non-unique fallback components are conflicts;
+- conflicts produce no selected mapping or operation candidate;
+- input order cannot change results.
 
-Wave 7: PR #84, merge `df956bbbf19af6652f8711f95fb4fecf272e9951`, CI `30918639372`, Python `657 passed, 1 xfailed`, Pester `25/25`, provider writes 0.
+## Closed Wave 8B findings
 
-### Audit A0
+The `wave-8b-v1` contract provides separate canonical evidence for identity title, display title, description, collection title, variation, HTTP URL, public URL, and exact project URL.
 
-PR #89, merge `a06a93e1ec16b4ddb0f578a92e47ce76b4ee78a5`, CI `30925523584`, Python `657 passed, 1 xfailed`, all PowerShell environments green, provider writes 0.
+Each result preserves original, canonical, ruleset, ordered transformations, and SHA-256 digest.
 
-Audit A0 repaired authoritative entry documents, added master audit/register v2, separated core Wave 8 from live Wave 9 and VK Audio incubation, and preserved PR #85 as historical evidence rather than supported code.
+Exact readback now rejects:
 
-### Wave 8A — exact-first conflict-explicit matching
+- substring matches;
+- title-prefix matches;
+- artist text embedded in a title;
+- combined visible rows instead of separate fields;
+- missing expected fields.
 
-PR #91, merge `09babd9176049d8271c50b6f5e44b7b0fd10d39f`, exact-head CI `30933582322`:
+URL identity now rejects:
 
-- reviewed one-to-one mapping runs first;
-- unique exact-normalized-title pairs run second;
-- token/trigram-indexed fuzzy fallback runs only for unresolved objects;
-- duplicate exact titles, exact-title duration mismatches, and non-unique fallback components become explicit conflicts;
-- conflicts do not create mappings, missing/upload candidates, or collection placement;
-- input order cannot change the selected result;
-- result schema advanced to `2.0`;
-- Python 3.11/3.12/3.13: `664 passed, 1 xfailed`;
-- Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux green;
-- provider writes: 0.
+- author/admin routes in public fields;
+- cross-project profiles;
+- unknown project profiles;
+- malformed HTTP(S) identities and embedded credentials.
 
-## Active work
+Comparison evidence schema is `2.1` and retains canonical title/description evidence.
 
-### Wave 8B — field-specific canonical identity
+## Active Wave 8C — catalog and album identity
 
-Owner: issue #86.
+Owner: issue #86. Provider writes: 0.
 
-Required outcomes:
+### Required contract
 
-- separate identity-title, display-title, description, public-URL, collection-title, and version/variation canonicalizers;
-- retain original value, canonical value, ruleset version, ordered transformations, and digest;
-- exact public/admin/author route classification;
-- reject cross-project and unknown URL profiles;
-- preserve semantically distinct versions and collections;
-- exact field-by-field comparison; substring, prefix, or combined-row text cannot produce `already_correct` or identity success;
-- zero provider writes.
+1. One versioned collection-mapping evidence schema.
+2. Reviewed source collection ID → exact target collection ID is the only authority for an existing album.
+3. Validate exact source and target IDs against bound source/target snapshots.
+4. Mapping is one-to-one; reused target IDs fail closed.
+5. Duplicate canonical target titles are conflicts and never overwrite each other in a dict.
+6. Renamed existing albums are not silently selected or recreated.
+7. An unmapped source collection may produce a create proposal only when creation is explicitly approved and no conflicting target candidate exists.
+8. Unresolved conflicts produce no album or placement operations.
+9. Semantic membership uses exact sets of mapped target video IDs; provider position changes are ignored.
+10. Evidence records project key, source/target snapshot IDs, title identities, exact IDs, decision, transformations, and digest.
+11. Issue #33 may later consume immutable evidence but Wave 8C performs no provider mutation.
 
-Required tests:
+### Required tests
 
-1. Unicode normalization and whitespace/punctuation evidence;
-2. `ё`/`е`, case, brand markers, and display preservation;
-3. version/variation tokens remain identity-significant where policy requires;
-4. public URL vs author/admin URL;
-5. cross-project URL rejection;
-6. unknown URL profile rejection;
-7. transformation-order and digest determinism;
-8. input-order independence;
-9. exact per-field readback regression from VK Audio history.
+- valid reviewed mapping;
+- unknown source collection ID;
+- unknown target album ID;
+- duplicate target reuse;
+- duplicate canonical target titles;
+- renamed reviewed target;
+- unreviewed existing title candidate;
+- explicitly approved create proposal;
+- create proposal blocked by candidate conflict;
+- semantic membership equality under reordered positions;
+- missing and extra membership sets;
+- stale project/snapshot/digest evidence;
+- conflict cannot create placement operation;
+- deterministic result under input permutation.
 
-Exit criteria:
+### Exit criteria
 
-- no single aggressive normalizer is reused as authority across unrelated fields;
-- every canonical identity is versioned and evidence-backed;
-- URL identities fail closed on unknown/cross-project/admin/public mismatches;
-- exact-head Python and PowerShell CI green;
-- state/register/#64/#86 synchronized;
+- no title-key authority remains in cross-platform collection gaps or VK catalog planning;
+- album create/placement planning consumes exact collection evidence;
+- catalog plan validates mapping/policy/snapshot digests;
+- exact-head CI is green on all Python and PowerShell environments;
+- living state and issues #64/#86 are synchronized;
 - provider writes 0.
 
-## Remaining Wave 8 sequence
-
-### Wave 8C — catalog and album identity
-
-- reviewed source collection ID → exact target album ID;
-- duplicate or renamed albums become conflicts;
-- no normalized-title dictionary overwrite;
-- semantic membership comparison ignores provider position churn;
-- immutable mapping evidence for issue #33.
+## Remaining Wave 8
 
 ### Wave 8D — media/cache authority
 
 - authoritative downloader final path only;
+- source ID, exact path, size, SHA-256, policy digest, structured ffprobe evidence;
+- reject missing, partial, stale, corrupt, audio-only, wrong-container/codec/stream, and unexpected multi-file candidates;
 - no successful glob fallback when the reported final path is absent;
-- source ID, exact path, size, SHA-256, downloader policy, and structured ffprobe evidence;
-- reject empty, partial, stale, corrupt, audio-only, unexpected multi-file, stream, codec, or container candidates;
-- remux is not treated as codec/profile proof.
+- remux does not count as codec proof.
 
-### Wave 8E — thumbnail identity and postcondition
+### Wave 8E — thumbnail identity
 
-- exact local image SHA/dimensions/quality policy;
-- preserve remote photo identity;
-- caller-owned delayed selected-thumbnail readback;
-- unknown consistency result enters reconciliation, not blind retry.
+- local image SHA/dimensions/quality;
+- returned remote photo identity;
+- delayed selected-thumbnail exact readback;
+- unknown consistency result enters reconciliation, not retry.
 
-### Wave 8F — integration and state sync
+### Wave 8F — integration
 
-- integrate 8A–8E into the supported planning path;
-- reject stale/pre-versioned evidence or migrate only through reviewed narrow paths;
-- exact-head CI;
-- synchronize living state and issue #64/#86;
+- integrate 8A–8E into supported operation planning;
+- reject stale/pre-versioned evidence;
+- exact-head CI and living-state sync;
 - provider writes 0.
 
-## Operation-scoped manager policy
+## Operation-scoped policy
 
-A normal operation should:
+A normal operation validates only supplied source files, takes a short exact target snapshot, creates one immutable plan, executes per-item stages, verifies only expected delta, and reports planned/uploaded/verified/duplicate/failed/requires-attention totals.
 
-1. validate only the supplied source files;
-2. take a short read-only snapshot of the exact target surface;
-3. produce one clear immutable plan;
-4. execute with per-item stages and no implicit wall publication;
-5. verify only the expected remote delta from that operation;
-6. report planned/uploaded/verified/duplicate/failed/requires-attention totals.
+Do not maintain a permanent whole-account mirror or require a global audit for every bounded task.
 
-Do not turn every bounded task into a global account audit, continuous provider mirror, whole-library visual fingerprint pass, or mandatory GitHub commit of mutable provider state.
+## Permanent operational regressions
 
-## Permanent regression themes from operational history
+- file selected ≠ upload complete ≠ remote visible ≠ workflow verified;
+- later stage failure does not authorize replay of a verified earlier mutation;
+- batch state is per item/per stage;
+- exact per-field readback replaces substring/prefix/combined-row matching;
+- UI clicks require observed state changes;
+- observer self-test does not prove correct target/frame/network attachment;
+- PowerShell boundaries test 0/1/N outputs;
+- upload ticket requires exact field plus allowlisted scheme/host/path;
+- designed, self-tested, canary-verified, and batch-verified remain distinct.
 
-- file selected ≠ upload completed ≠ remote visible ≠ complete workflow;
-- a verified early stage is not repeated because a later playlist/metadata/catalog stage failed;
-- batch results are per-item/per-stage, never one Boolean;
-- exact field readback is required; substring/prefix/combined-row matching is prohibited;
-- UI clicks require observed state transition;
-- parser/observer self-test does not prove correct browser target/frame/network attachment;
-- PowerShell must test 0/1/N outputs under strict mode;
-- upload tickets require exact field and allowlisted scheme/host/path before media transfer;
-- designed, self-tested, canary-verified, and batch-verified are separate evidence levels.
+## Later work
 
-## Later waves
-
-### Wave 9 — live project reconciliation
-
-Only after Wave 8 and fresh operation-scoped read-only evidence:
-
-- issue #31: Lord God long-form ledger/result reconciliation;
-- issues #32/#38: Legendary Poet exact Clips/Shorts/type reconciliation;
-- issue #33: catalog/publication planning after exact dependencies;
-- separate immutable manifests and canaries per project;
-- no automatic deletion of old VK Video copies.
-
-### Separate VK Audio incubation
-
-Not core Wave 8/9 Video work. Before another batch it requires its own versioned schemas, exact per-item ledger, adapter boundary, allowlisted upload-ticket contract, bounded deadline, canary, postflight, and reconciliation.
-
-### Wave 10 — retirement and governance
-
-- archive supported/compatibility/retired surfaces;
-- resolve PR #85 archive-specific CI boundary without weakening production gates;
-- formal release/runbook/rollback/reconciliation/provider-contract review rules;
-- immutable history validation and retention policy.
-
-## Independent cleanup
-
-Issue #37 owns only its exact immutable reviewed cleanup scope. This backlog authorizes no bulk deletion.
+- Wave 9: fresh operation-scoped reconciliation for issues #31, #32, #38, then issue #33 catalog/publication.
+- VK Audio: separate incubation only after versioned schemas, exact per-item ledger, upload-ticket contract, canary, postflight, and reconciliation.
+- Wave 10: resolve PR #85 archive CI boundary, retirement registry, release/runbook/rollback/governance.
+- Issue #37 alone owns exact reviewed cleanup; no bulk deletion is authorized here.
 
 ## Definition of done
 
-A wave is complete only when:
-
-- issue scope and non-goals remain exact;
-- no unrelated provider mutation is included;
-- exact-head CI is green on all supported runtimes;
-- conflicts and ambiguous outcomes remain fail closed and non-retryable;
-- per-item evidence is complete and machine-readable;
-- current state, register, roadmap, and issue state are synchronized;
-- provider writes are exactly those separately authorized, otherwise 0.
+A wave closes only after exact scope, fail-closed evidence, full exact-head CI, synchronized state/register/issues, and exactly authorized provider writes—otherwise 0.
