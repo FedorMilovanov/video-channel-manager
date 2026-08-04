@@ -135,7 +135,7 @@ Package A never infers absence from incomplete coverage. Exact reserved-ID cover
 - `automatic_execution=false`;
 - `separate_review_required=true`.
 
-A later mutation requires a different reviewed exact-ID plan under the permanent production operator contract.
+Separate review is mandatory before any later exact-ID write plan can be prepared. A later mutation requires a different reviewed exact-ID plan under the permanent production operator contract.
 
 ## Wave 10 operator board
 
