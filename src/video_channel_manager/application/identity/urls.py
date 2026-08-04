@@ -116,8 +116,7 @@ def _is_author_admin_route(canonical: str) -> bool:
     if segments & _ADMIN_PATH_SEGMENTS:
         return True
     return any(
-        key.casefold() in {"act", "action", "mode", "section", "view"}
-        and value.casefold() in _ADMIN_QUERY_VALUES
+        key.casefold() in {"act", "action", "mode", "section", "view"} and value.casefold() in _ADMIN_QUERY_VALUES
         for key, value in parse_qsl(parsed.query, keep_blank_values=True)
     )
 
