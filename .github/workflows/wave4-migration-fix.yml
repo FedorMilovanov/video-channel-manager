@@ -1,0 +1,200 @@
+name: Wave 4 one-shot migration fix
+
+on:
+  push:
+    branches:
+      - agent/wave-4-wall-safety
+    paths:
+      - .github/wave4-migration-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: agent/wave-4-wall-safety
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.11"
+      - name: Apply fail-closed migration repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          lifecycle = Path("src/video_channel_manager/platforms/vk/upload_lifecycle.py")
+          text = lifecycle.read_text(encoding="utf-8")
+          old = '''    record = dict(existing)
+              changed = False
+              raw_wall_policy = record.get("wall_policy")
+              if raw_wall_policy is None:
+                  record["wall_policy"] = wall_policy.as_dict()
+                  changed = True
+              elif not isinstance(raw_wall_policy, Mapping):
+                  raise ValueError("Upload journal wall_policy must be an object")
+              _validate_record_binding(
+                  record,
+                  source_snapshot_id=source_snapshot_id,
+                  community_id=community_id,
+                  source_video_id=source_video_id,
+                  published_title=published_title,
+                  published_description=published_description,
+                  readiness=readiness,
+                  wall_policy=wall_policy,
+              )
+              return record, changed
+          '''.replace("              ", "")
+          new = '''    record = dict(existing)
+              changed = False
+              stage = UploadStage(str(record.get("stage")))
+              raw_wall_policy = record.get("wall_policy")
+              if raw_wall_policy is None:
+                  safe_to_bind = stage in {UploadStage.PLANNED, UploadStage.MEDIA_VERIFIED} or (
+                      stage == UploadStage.RESERVATION_INTENT_COMMITTED
+                      and not record.get("reservation_dispatch_started_at")
+                  )
+                  if not safe_to_bind:
+                      raise UploadRecoveryRequired(
+                          "Historical provider-dispatched upload journal has no wall policy and cannot be migrated automatically"
+                      )
+                  policy_payload = wall_policy.as_dict()
+                  record["wall_policy"] = policy_payload
+                  operation_payload = {
+                      "source_snapshot_id": source_snapshot_id,
+                      "community_id": community_id,
+                      "source_video_id": source_video_id,
+                      "source_title": source_title,
+                      "source_duration_seconds": source_duration_seconds,
+                      "published_title": published_title,
+                      "published_description_sha256": _text_sha256(published_description),
+                      "readiness": readiness.as_dict(),
+                      "wall_policy": policy_payload,
+                  }
+                  operation_id = _canonical_sha256(operation_payload)
+                  record["operation_id"] = operation_id
+                  transitions = record.get("transitions")
+                  if isinstance(transitions, list) and transitions:
+                      initial = transitions[0]
+                      if isinstance(initial, dict) and initial.get("from") is None:
+                          evidence = initial.get("evidence")
+                          if isinstance(evidence, dict):
+                              evidence["operation_id"] = operation_id
+                  changed = True
+              elif not isinstance(raw_wall_policy, Mapping):
+                  raise ValueError("Upload journal wall_policy must be an object")
+              _validate_record_binding(
+                  record,
+                  source_snapshot_id=source_snapshot_id,
+                  community_id=community_id,
+                  source_video_id=source_video_id,
+                  source_title=source_title,
+                  source_duration_seconds=source_duration_seconds,
+                  published_title=published_title,
+                  published_description=published_description,
+                  readiness=readiness,
+                  wall_policy=wall_policy,
+              )
+              return record, changed
+          '''.replace("              ", "")
+          if text.count(old) != 1:
+              raise SystemExit("ensure_upload_record target count mismatch")
+          text = text.replace(old, new)
+
+          old_sig = '''def _validate_record_binding(
+              record: Mapping[str, Any],
+              *,
+              source_snapshot_id: str,
+              community_id: int,
+              source_video_id: str,
+              published_title: str,
+              published_description: str,
+              readiness: VkUploadReadiness,
+              wall_policy: VkUploadWallPolicy,
+          ) -> None:
+          '''.replace("              ", "")
+          new_sig = '''def _validate_record_binding(
+              record: Mapping[str, Any],
+              *,
+              source_snapshot_id: str,
+              community_id: int,
+              source_video_id: str,
+              source_title: str,
+              source_duration_seconds: int | None,
+              published_title: str,
+              published_description: str,
+              readiness: VkUploadReadiness,
+              wall_policy: VkUploadWallPolicy,
+          ) -> None:
+          '''.replace("              ", "")
+          if text.count(old_sig) != 1:
+              raise SystemExit("binding signature target count mismatch")
+          text = text.replace(old_sig, new_sig)
+
+          old_expected = '''    expected = {
+                  "source_snapshot_id": source_snapshot_id,
+                  "community_id": community_id,
+                  "source_video_id": source_video_id,
+                  "published_title": published_title,
+                  "published_description_sha256": _text_sha256(published_description),
+                  "readiness": readiness.as_dict(),
+                  "wall_policy": wall_policy.as_dict(),
+              }
+              mismatches = {
+                  key: {"expected": value, "actual": record.get(key)}
+                  for key, value in expected.items()
+                  if record.get(key) != value
+              }
+          '''.replace("              ", "")
+          new_expected = '''    expected = {
+                  "source_snapshot_id": source_snapshot_id,
+                  "community_id": community_id,
+                  "source_video_id": source_video_id,
+                  "source_title": source_title,
+                  "source_duration_seconds": source_duration_seconds,
+                  "published_title": published_title,
+                  "published_description_sha256": _text_sha256(published_description),
+                  "readiness": readiness.as_dict(),
+                  "wall_policy": wall_policy.as_dict(),
+              }
+              expected_operation_id = _canonical_sha256(expected)
+              mismatches = {
+                  key: {"expected": value, "actual": record.get(key)}
+                  for key, value in expected.items()
+                  if record.get(key) != value
+              }
+              if record.get("operation_id") != expected_operation_id:
+                  mismatches["operation_id"] = {
+                      "expected": expected_operation_id,
+                      "actual": record.get("operation_id"),
+                  }
+          '''.replace("              ", "")
+          if text.count(old_expected) != 1:
+              raise SystemExit("binding expected target count mismatch")
+          lifecycle.write_text(text.replace(old_expected, new_expected), encoding="utf-8", newline="\n")
+
+          memory = Path("tests/test_operational_memory.py")
+          memory_text = memory.read_text(encoding="utf-8")
+          old_status = "BLOCKED_PENDING_WAVE_4_AND_FRESH_READ_ONLY_WALL_AUDIT"
+          new_status = "BLOCKED_PENDING_WAVE_4_ISSUE_36_AND_FRESH_READ_ONLY_WALL_AUDIT"
+          if memory_text.count(old_status) != 1:
+              raise SystemExit("operational memory target count mismatch")
+          memory.write_text(memory_text.replace(old_status, new_status), encoding="utf-8", newline="\n")
+          PY
+          python -m pip install -e ".[dev]"
+          ruff format src/video_channel_manager/platforms/vk/upload_lifecycle.py tests/test_operational_memory.py
+          ruff check src/video_channel_manager/platforms/vk/upload_lifecycle.py tests/test_operational_memory.py
+          mypy src
+          pytest -q tests/test_vk_upload_journal_migration.py tests/test_operational_memory.py tests/test_vk_upload_lifecycle.py
+          rm -f .github/wave4-migration-trigger .github/workflows/wave4-migration-fix.yml
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Wave 4: make upload journal policy migration fail closed"
+          git push origin HEAD:agent/wave-4-wall-safety
