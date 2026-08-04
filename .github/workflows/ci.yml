@@ -32,6 +32,7 @@ jobs:
         run: |
           git fetch origin "${GITHUB_HEAD_REF}:refs/remotes/origin/${GITHUB_HEAD_REF}" --depth=1
           git checkout -B "${GITHUB_HEAD_REF}" "refs/remotes/origin/${GITHUB_HEAD_REF}"
+          python -m pip install "ruff<1,>=0.9"
           python - <<'PY'
           from pathlib import Path
 
