@@ -34,54 +34,37 @@ def test_operations_index_has_no_broken_local_markdown_links() -> None:
     assert broken == []
 
 
-def test_current_state_preserves_program_and_project_identity() -> None:
+def test_current_state_preserves_completed_wave8_and_read_only_wave9() -> None:
     text = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
     required_facts = (
-        "WAVE_8E_COMPLETED_WAVE_8F_ACTIVE",
-        "a0230ea156eeb1717e15c6523d0b6b28e90f6d8e",
-        "30947556457",
-        "722 passed, 1 xfailed",
-        "wave-8b-v1",
+        "WAVE_8_COMPLETED_WAVE_9_READ_ONLY_RECONCILIATION_ACTIVE",
+        "dc3b25fdbbdb7d87e34f0f52e29fc9e3856190ae",
+        "30950259625",
+        "744 passed, 1 xfailed",
+        "self_tested",
         "video-manager.catalog-identity-evidence",
         "wave-8c-v1",
-        "Cross-platform comparison schema is `3.0`",
-        "VK catalog plan version is 3",
-        "exact target album ID",
-        "duplicate_canonical_target_title",
-        "unreviewed_existing_candidate",
-        "Conflict decisions create no album operation",
-        "exact target video ID sets",
         "video-manager.media-artifact-evidence",
         "wave-8d-v1",
-        "vk-h264-aac-v1",
-        "exact structured-result field path",
-        "Directory glob fallback",
-        "fresh ffprobe",
-        "MP4 is only a container signal",
-        "public VK package exports the Wave 8D authority facade",
-        "included in reservation intent",
-        "journal at `RESERVED`",
-        "resume the same reservation",
         "video-manager.vk-thumbnail-evidence",
         "wave-8e-v1",
-        "upload_intent_recorded",
-        "save_intent_recorded",
-        "video.saveUploadedThumb` acceptance is not success",
-        "retry-safe `video.get` readback",
-        "non-empty exact canonical descriptor-set match",
-        "CDN query strings and fragments are volatile",
-        "unknown_requires_reconciliation",
-        "Saved or unknown operations with an exact receipt reconcile by readback only",
-        "VerifiedVkThumbnailWriter",
-        "execute_thumbnail_operation",
-        "Wave 8F — cross-wave integration proof",
+        "video-manager.operation-integration-evidence",
+        "wave-8f-v1",
+        "comparison snapshots/digest",
+        "WavePlan source/self/operation-set digests",
         "expected remote delta",
-        "media manifest digest",
-        "thumbnail operation ID",
-        "planned, uploaded, verified, duplicate, failed, and requires-attention",
+        "planned`, `uploaded`, `verified`, `duplicate`, `failed`, and `requires_attention",
+        "build_operation_integration_evidence",
+        "OperationIntegrationEvidence",
+        "provider_writes` is structurally `0",
+        "Wave 9A — Lord God reconciliation",
+        "Wave 9B — Legendary Poet reconciliation",
+        "do not create a write plan",
+        "Do not perform provider writes during Wave 9 read-only reconciliation",
         "scripts/operator/Invoke-VideoManager.ps1",
         "15 supported mutation boundaries",
         "25/25",
+        "unknown_requires_reconciliation",
         "file_selected` is not `upload_completed",
         "PowerShell boundaries explicitly test zero, one, and many",
         "a URL-shaped value is not an upload ticket",
@@ -97,7 +80,7 @@ def test_current_state_preserves_program_and_project_identity() -> None:
         "KobOzfBqzic",
         "s512Opa8Eu4",
         "-60805374_456241938",
-        "verified missing: `26`",
+        "previously verified missing: `26`",
         "b9c0268be62ea8fb9281cc9a551ebc5621dfdd4bfeb22a9d8f4b50707baa33ed",
         "data\\vk-upload\\verified-longform-26",
         "BLOCKED_PENDING_FRESH_READ_ONLY_WALL_AUDIT_AND_LOCAL_LEDGER_RECONCILIATION",
@@ -111,33 +94,38 @@ def test_current_state_preserves_program_and_project_identity() -> None:
         assert fact in text
 
 
-def test_wave_8e_supported_files_exist() -> None:
+def test_wave8_supported_contract_files_exist() -> None:
     required = (
+        ROOT / "src/video_channel_manager/application/cross_platform/models.py",
+        ROOT / "src/video_channel_manager/application/catalog_identity.py",
+        ROOT / "src/video_channel_manager/local_media/artifact.py",
+        ROOT / "src/video_channel_manager/platforms/vk/upload_media.py",
         ROOT / "src/video_channel_manager/platforms/vk/thumbnail_lifecycle.py",
-        ROOT / "src/video_channel_manager/platforms/vk/thumbnail_writer.py",
-        ROOT / "tests/test_vk_thumbnail_lifecycle.py",
-        ROOT / "tests/test_vk_thumbnail_crash_boundary.py",
-        ROOT / "tests/test_vk_thumbnail_public_boundary.py",
+        ROOT / "src/video_channel_manager/wave_engine/integration.py",
+        ROOT / "tests/test_wave8_integration_evidence.py",
+        ROOT / "tests/test_wave8_integration_public_boundary.py",
     )
     for path in required:
         assert path.is_file()
 
-    lifecycle = required[0].read_text(encoding="utf-8")
-    assert 'THUMBNAIL_EVIDENCE_SCHEMA = "video-manager.vk-thumbnail-evidence"' in lifecycle
-    assert 'THUMBNAIL_RULESET = "wave-8e-v1"' in lifecycle
-    assert 'UPLOAD_INTENT_RECORDED = "upload_intent_recorded"' in lifecycle
-    assert 'SAVE_INTENT_RECORDED = "save_intent_recorded"' in lifecycle
-    assert 'UNKNOWN_REQUIRES_RECONCILIATION = "unknown_requires_reconciliation"' in lifecycle
-    assert "readback_proves_saved_thumbnail" in lifecycle
+    integration = required[5].read_text(encoding="utf-8")
+    assert 'INTEGRATION_SCHEMA: Literal["video-manager.operation-integration-evidence"]' in integration
+    assert 'INTEGRATION_RULESET: Literal["wave-8f-v1"]' in integration
+    assert 'evidence_level: Literal["self_tested"]' in integration
+    assert "provider_writes: Literal[0]" in integration
+    assert "build_operation_integration_evidence" in integration
+    assert "calculate_integration_totals" in integration
+    assert "REQUIRES_ATTENTION" in integration
 
 
-def test_audit_register_tracks_wave_8e_and_active_integration_proof() -> None:
+def test_audit_register_tracks_completed_wave8_and_active_read_only_wave9() -> None:
     payload = json.loads((OPERATIONS_DIR / "audit-register-v2-2026-08-04.json").read_text(encoding="utf-8"))
-    assert payload["schema_version"] == "2.5"
-    assert payload["wave_8d_state_sync_head"] == "2c6e48e9af48fc17ef7a0087227627961fbfbe9c"
-    assert payload["wave_8e_code_head"] == "a0230ea156eeb1717e15c6523d0b6b28e90f6d8e"
-    assert payload["wave_8e_ci_run"] == 30947556457
-    assert payload["program_state"] == "WAVE_8E_COMPLETED_WAVE_8F_ACTIVE_NO_PROVIDER_WRITES"
+    assert payload["schema_version"] == "2.6"
+    assert payload["wave_8e_state_sync_head"] == "bc267504258e07e8bb68ca4760b0b9beb2571b6d"
+    assert payload["wave_8f_code_head"] == "dc3b25fdbbdb7d87e34f0f52e29fc9e3856190ae"
+    assert payload["wave_8f_ci_run"] == 30950259625
+    assert payload["program_state"] == "WAVE_8_COMPLETED_WAVE_9_READ_ONLY_RECONCILIATION_ACTIVE_NO_PROVIDER_WRITES"
+    assert payload["wave_8_evidence_level"] == "self_tested"
     assert payload["source_line_count"] == 7046
 
     source = next(item for item in payload["sources"] if item["name"] == "Вставленный текст(276).txt")
@@ -150,6 +138,8 @@ def test_audit_register_tracks_wave_8e_and_active_integration_proof() -> None:
     findings = {item["id"]: item for item in payload["findings"]}
     for finding_id in (
         "MATCH-001",
+        "MATCH-002",
+        "MATCH-003",
         "IDENTITY-001",
         "IDENTITY-002",
         "URL-001",
@@ -161,13 +151,13 @@ def test_audit_register_tracks_wave_8e_and_active_integration_proof() -> None:
         "MEDIA-002",
         "MEDIA-003",
         "THUMB-001",
+        "OPS-SCOPE-001",
     ):
         assert findings[finding_id]["status"] == "fixed"
-    assert findings["OPS-SCOPE-001"]["status"] == "integration_proof_active"
-    assert findings["UPLOAD-TICKET-001"]["status"] == "policy_recorded"
-    assert payload["provider_writes_during_wave_8a"] == 0
-    assert payload["provider_writes_during_wave_8b"] == 0
-    assert payload["provider_writes_during_wave_8c"] == 0
-    assert payload["provider_writes_during_wave_8d"] == 0
-    assert payload["provider_writes_during_wave_8e"] == 0
+    assert findings["STAGE-001"]["status"] == "covered_and_preserved"
+    assert findings["LIVE-LORD-001"]["status"] == "requires_reconciliation"
+    assert findings["LIVE-POET-001"]["status"] == "requires_reconciliation"
+    assert findings["AUDIO-001"]["status"] == "separate_system"
+    for wave in ("8a", "8b", "8c", "8d", "8e", "8f"):
+        assert payload[f"provider_writes_during_wave_{wave}"] == 0
     assert payload["provider_writes_during_state_sync"] == 0

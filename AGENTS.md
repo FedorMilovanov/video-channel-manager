@@ -41,32 +41,22 @@ VK intentionally uses one user token for both communities. The stored alias `leg
 
 Never copy, print, commit, log, package, or place the token value on a command line. Do not request manual token entry while the configured external source exists.
 
-## Current engineering sequence
+## Current sequence
 
-Verified code baseline: `main@a0230ea156eeb1717e15c6523d0b6b28e90f6d8e`.
+Verified code baseline: `main@dc3b25fdbbdb7d87e34f0f52e29fc9e3856190ae`.
 
 - Waves 0–7: completed;
 - Audit A0: completed;
-- Wave 8A exact-first matching: completed;
-- Wave 8B canonical text/URL identity: completed;
-- Wave 8C exact catalog/album identity: completed;
-- Wave 8D authoritative media/cache evidence: completed;
-- Wave 8E exact thumbnail postflight evidence: completed;
-- active core engineering owner: Wave 8F under issue #86;
-- provider writes during Waves 8A–8E, their CI, and state syncs: `0`.
+- Waves 8A–8F: completed;
+- Wave 8 evidence level: `self_tested`;
+- active work: Wave 9 read-only reconciliation under #31 and #32/#38;
+- provider writes during Waves 8A–8F, their CI, and state syncs: `0`.
 
-Wave 8F owns cross-wave integration proof only. Do not mix Wave 9 live reconciliation, catalog/wall publication, broad upload queues, VK Audio experiments, or provider writes into Wave 8F.
+Wave 8 is complete. It proves local contracts and mocked composition, not current live-provider completion, canary verification, or batch verification.
 
-Until Wave 8 is fully closed and synchronized:
+Wave 9 is read-only until separate reviewed evidence authorizes a later exact-ID canary. Do not upload, delete, edit metadata, create/place catalog items, save thumbnails, publish wall posts, or run any other provider mutation during Wave 9A/9B reconciliation.
 
-- do not resume broad upload queues;
-- do not retransmit accepted, processing, verified, or unknown items;
-- do not run old Legendary Poet V1/V2/V3/V4 or “48 clips” packages;
-- do not use browser/VK Audio packages as supported entrypoints;
-- do not begin combined catalog/description/wall/audio operations;
-- do not infer live completion from green CI.
-
-Issue #64 is the canonical roadmap. Wave 9 owns separate live reconciliation under #31/#32/#33/#38. Wave 10 owns retirement, release, runbook, rollback, archive, and governance.
+Issue #64 is the canonical roadmap. Wave 10 owns retirement, release, runbook, rollback, archive, and governance work.
 
 ## Completed Wave 8 contracts
 
@@ -90,126 +80,143 @@ Schema `video-manager.media-artifact-evidence`, version `1.0`, ruleset `wave-8d-
 - Directory globbing, wildcard paths, extension guessing, and first-match selection are not authority.
 - Cache reuse requires exact project/source/path/file-size/SHA-256/manifest/fresh-ffprobe agreement.
 - MP4 or remux status does not prove codec compatibility.
-- The public VK upload entrypoint is the authority facade, not the legacy path/size/SHA-only executor.
-- The manifest digest is persisted before reservation and freshly revalidated before transfer.
-- Changed bytes after reservation preserve the exact remote ID and stage `RESERVED`; recovery resumes the same reservation after restoring the authoritative file.
+- Public upload entrypoints use the Wave 8D authority facade.
+- Manifest digest is persisted before reservation and freshly revalidated before transfer.
+- Changed bytes after reservation preserve the exact remote ID and `RESERVED` stage; recovery resumes the same reservation.
 
 ### Wave 8E — thumbnail authority
 
 Schema `video-manager.vk-thumbnail-evidence`, version `1.0`, ruleset `wave-8e-v1`.
 
-- Evidence binds exact project, VK owner/video, and local image path/size/SHA-256/format/dimensions.
-- Stages are `prepared`, `upload_intent_recorded`, `save_intent_recorded`, `saved`, `verified`, and `unknown_requires_reconciliation`.
-- Upload/save intent is persisted before dispatch. Restart from an intent stage never replays the mutation.
-- Save receipt records exact photo owner/id/hash, canonical image descriptors, and response digest.
+- Evidence binds exact project, owner/video, and local image identity.
+- Upload/save intent is persisted before dispatch; restart never blindly replays mutation.
 - `video.saveUploadedThumb` acceptance is not selected-thumbnail success.
 - Verified requires retry-safe exact `video.get` readback and a non-empty exact descriptor-set match.
-- CDN query/fragment values are volatile; exact scheme/host/path/dimensions remain identity.
-- Mismatch, incomplete evidence, ambiguous mutation, interrupted dispatch, or insufficient readback becomes `unknown_requires_reconciliation`.
 - Saved/unknown operations with an exact receipt reconcile through readback only.
-- The atomic journal is digest protected and project/video/image bound.
-- Public exports use `VerifiedVkThumbnailWriter` and `execute_thumbnail_operation`; direct production imports of the low-level save-only writer are guarded.
+- Public exports use `VerifiedVkThumbnailWriter` and `execute_thumbnail_operation`.
 
-## Active Wave 8F contract
+### Wave 8F — integration proof
 
-Wave 8F must prove the completed contracts compose without weakening one another.
+Schema `video-manager.operation-integration-evidence`, version `1`, ruleset `wave-8f-v1`.
 
-Required outcomes:
+- One immutable evidence object binds exact project, comparison snapshots/digest, catalog digest, WavePlan/Result digests, bounded source set, media manifests, upload journals, thumbnail journals, expected remote delta, and exact totals.
+- Every operation carries exact normalized `source_video_id` and explicit integration stage.
+- Operations/evidence outside bounded scope fail closed.
+- Matched, missing, and conflict items form a non-overlapping partition.
+- Conflict items create zero later operations/evidence; matched items create no upload/thumbnail evidence.
+- Missing items require exactly one upload operation and authoritative media evidence.
+- Succeeded/unknown plan results must agree with durable upload/thumbnail stages.
+- A verified upload followed by a later failure or unknown remains uploaded and becomes `requires_attention`; it is never failed/replayable.
+- Totals partition items into planned, uploaded, verified, duplicate, failed, and requires-attention.
+- Public boundary is `build_operation_integration_evidence` / `OperationIntegrationEvidence`.
+- Evidence level is `self_tested`; `provider_writes` is structurally 0.
 
-- bind one bounded source set through matching, canonical identity, reviewed catalog identity, media authority, upload lifecycle, and thumbnail result evidence;
-- create one integration evidence object binding project key, exact source/target IDs, source snapshot, expected remote delta, plan digest, media manifest digest, upload journal identity, and thumbnail operation ID;
-- prove conflict or `unknown_requires_reconciliation` at any boundary creates no unauthorized later operation;
-- prove a verified or accepted early mutation is never replayed because a later catalog, metadata, thumbnail-readback, wall, or reporting stage fails;
-- preserve the distinction between designed/self-tested evidence and canary/batch provider evidence;
-- guard supported public entrypoints against legacy bypasses;
-- prove operation-scoped totals: planned, uploaded, verified, duplicate, failed, and requires-attention;
-- keep implementation and tests local/mocked; provider writes remain 0;
-- do not perform Wave 9 live reconciliation or any publication in Wave 8F.
+## Active Wave 9 read-only contract
+
+### Wave 9A — Lord God, issue #31
+
+- inventory local plans/results, upload journals, media manifests, and retained reconciliation files;
+- take fresh bounded read-only YouTube/VK snapshots for the exact supplied source set;
+- reconcile source IDs, target IDs, accepted/processing/verified/unknown stages, and expected remote delta;
+- produce duplicate, present, missing, unknown, and requires-attention totals;
+- do not create or execute a write plan.
+
+Retained facts:
+
+- `KobOzfBqzic` is already present and must not be uploaded again;
+- `s512Opa8Eu4` → `-60805374_456241938`;
+- 27 reviewed, 1 present, previously verified missing: `26`;
+- local evidence `data\vk-upload\verified-longform-26`;
+- SHA `b9c0268be62ea8fb9281cc9a551ebc5621dfdd4bfeb22a9d8f4b50707baa33ed`;
+- status `BLOCKED_PENDING_FRESH_READ_ONLY_WALL_AUDIT_AND_LOCAL_LEDGER_RECONCILIATION`.
+
+### Wave 9B — Legendary Poet, issues #32/#38
+
+- keep Shorts/Clips separate from long-form;
+- do not use retired V1/V2/V3/V4 or historical “48 clips” packages;
+- reconcile exact source/target IDs and local results against fresh bounded read-only provider snapshots;
+- do not retransmit accepted, processing, verified, or unknown items.
+
+Retained matrix:
+
+- 56 exact YouTube Shorts;
+- 41 exact pairs;
+- 15 confirmed missing;
+- 0 ambiguous;
+- `BXZeRiEOHmQ` → `-235216998_456239039`;
+- completed V3 Apply/postflight is not proven;
+- status `REVIEWED_MANIFEST_PREPARED / UPLOAD_COMPLETION_NOT_PROVEN`.
+
+### Wave 9C — later reviewed next-action gate
+
+Issue #33 owns later catalog/publication work. A canary or batch mutation requires a separate reviewed exact-ID plan after Wave 9A/9B. Green CI, old counts, visible objects, screenshots, or historical packages never authorize writes.
 
 ## Separate VK Audio boundary
 
-VK Audio browser/internal-web experiments are a separate system, not supported core YouTube→VK Video functionality. Historical scripts and ZIPs remain evidence only.
-
-Do not import them into core without a reviewed adapter defining versioned source/plan/result schemas, per-item stages, durable ledger, browser-session boundary, allowlisted upload-ticket host/path, exact field identity, bounded deadlines, partial/unknown reconciliation, canary, and exact postflight.
+VK Audio browser/internal-web experiments remain `SEPARATE_EXPERIMENTAL_SYSTEM / PARTIAL_OR_UNKNOWN_OUTCOMES / NOT_CORE_SUPPORTED`. They are not part of Wave 9 video reconciliation.
 
 ## Branch discipline
 
 - Substantial changes use one `agent/{description}` branch and one focused PR.
 - Keep at most one active working branch for the current wave.
-- Do not create status-only, duplicate, or artificial implementation branches.
 - Merge only after exact-head green CI.
-- Synchronize operational memory in a separate narrow state PR after a code-wave merge.
+- Synchronize operational memory in a separate narrow PR after a code-wave merge.
 - Do not mix live provider reconciliation into reliability refactors.
 - One issue owns each active wave; close superseded duplicates.
 
 ## Verified closed state
 
-- Waves 0–7 are completed and must not be repeated.
-- PR #66 closed Wave 1.
-- PR #68 closed Wave 2.
-- PR #70 closed Wave 3.
-- PR #71/#73 closed Wave 4.
-- PR #75/#77 closed Wave 5.
-- PR #78/#81 closed Wave 6.
-- PR #84/#87 closed Wave 7.
-- PR #91/#92 closed Wave 8A.
-- PR #93/#94 closed Wave 8B.
-- PR #95/#97 closed Wave 8C.
-- PR #98/#101 closed Wave 8D and state sync.
-- PR #102 closed Wave 8E.
+- Waves 0–8 are completed and must not be repeated.
+- PR #66 closed Wave 1; #68 Wave 2; #70 Wave 3; #71/#73 Wave 4; #75/#77 Wave 5; #78/#81 Wave 6; #84/#87 Wave 7.
+- PR #91/#92 closed Wave 8A; #93/#94 Wave 8B; #95/#97 Wave 8C; #98/#101 Wave 8D; #102/#103 Wave 8E; #104 Wave 8F.
 - Reviewed VK duplicate cleanup is complete: `403 confirmed_deleted`, `0 planned`, `0 unresolved`.
-- YouTube `KobOzfBqzic` is already present and must not be uploaded again.
-- YouTube `s512Opa8Eu4` maps to VK `-60805374_456241938`.
-- The 34-item Shorts reset completed and wall post `12400` remained present.
+- The 34-item Shorts reset completed and protected wall post `12400` remained present.
 - Theological article photo wave completed: postponed posts `12471–12480`, `10/10` verified. Do not rerun Apply.
 - Draft PR #29 is superseded and closed.
 - Duplicate Wave 7 issue #79 and PR #83 are closed.
 
-## Unresolved operational state
+## Remaining non-live work
 
-- Legendary Poet retained matrix: `56 Shorts / 41 exact pairs / 15 missing / 0 ambiguous`; completed V3 Apply is not proven.
-- Lord God local ledger/result reconciliation is required.
-- VK Audio has partial experimental evidence only.
-- PR #85 remains valuable draft history but needs an archive-specific CI boundary before merge.
+- Wave 9A/9B read-only reconciliation;
+- PR #85 archive-specific CI boundary before any merge;
+- Wave 10 governance/release/runbook work;
+- separate VK Audio adapter contract, if ever approved.
 
 Do not reactivate retracted claims, invent provider protocols, treat `guid` as complete idempotency, mandate disputed parameters without current evidence, or treat historical number `48` as a current queue contract.
 
 ## Non-negotiable safety rules
 
-1. Never use the `legendary-poet` YouTube write token for `lord-god-strength`.
-2. Never select a VK target only from the shared token alias.
-3. Never expose or request manual entry of the configured VK token.
-4. Never rerun closed deletion, reset, article-wave, or superseded executors.
-5. Never infer absence from an endpoint that does not cover the relevant surface.
-6. Use exact IDs and inventories, not screenshots or relative dates, for transfer boundaries.
-7. Never upload an ambiguous match.
-8. Never repeat an upload with an unknown outcome; reconcile first.
-9. Keep long-form and Shorts/Clips in separate manifests and ledgers.
-10. Preserve controlled local masters; screen capture is not source media.
-11. Preserve exact source artwork identity unless an exception is explicit.
-12. Video upload and wall publication are separate operations.
-13. Never commit tokens, media, local exports, ledgers, logs, backups, or generated upload packages.
-14. Every operational ZIP must pass `scripts/verify_operational_bundle.py`.
-15. Public text may use only the selected project's registered links.
-16. Unknown or unregistered links fail closed.
-17. Transport reuse must not broaden mutation retry semantics.
-18. A successful HTTP response is not a postcondition; verify the exact remote effect.
-19. Machine state belongs in journals/results, not only stdout.
-20. Live queue retransmission is never a side effect of code refactoring.
-21. Counts, ZIP names, screenshots, file extensions, containers, save responses, and CDN URLs are not immutable identity.
-22. Historical evidence code is never a supported entrypoint.
-23. Later failure must not replay an earlier verified or accepted mutation.
-24. `already_correct` requires exact per-field readback.
-25. Vertical format and duration do not prove VK Clip type.
-26. Cache reuse requires exact manifest/file/source/probe agreement.
-27. Glob-selected files are never authoritative acquisition evidence.
-28. Remux or MP4 alone never proves codec compatibility.
-29. Thumbnail success requires exact selected-thumbnail postflight.
-30. Unknown thumbnail outcome is reconciled, not blindly replayed.
+1. Never mix project identities, credentials, IDs, journals, links, or manifests.
+2. Never expose or request manual entry of the configured VK token.
+3. Never rerun closed deletion, reset, article-wave, or superseded executors.
+4. Never infer absence from an endpoint that does not cover the relevant surface.
+5. Use exact IDs and inventories, not screenshots or relative dates, for transfer boundaries.
+6. Never upload an ambiguous match.
+7. Never repeat an accepted, processing, verified, or unknown mutation; reconcile first.
+8. Keep long-form and Shorts/Clips in separate manifests and ledgers.
+9. Preserve controlled local masters; screen capture is not source media.
+10. Video upload and wall publication are separate operations.
+11. Never commit tokens, media, local exports, ledgers, logs, backups, or generated upload packages.
+12. Public text may use only the selected project's registered links.
+13. Unknown or unregistered links fail closed.
+14. Transport reuse must not broaden mutation retry semantics.
+15. A successful HTTP response is not a postcondition; verify the exact remote effect.
+16. Machine state belongs in journals/results, not only stdout.
+17. Live queue retransmission is never a side effect of code refactoring.
+18. Counts, ZIP names, screenshots, extensions, containers, save responses, and CDN URLs are not immutable identity.
+19. Historical evidence code is never a supported entrypoint.
+20. Later failure must not replay an earlier verified or accepted mutation.
+21. `already_correct` requires exact per-field readback.
+22. Cache reuse requires exact manifest/file/source/probe agreement.
+23. Glob-selected files are never authoritative acquisition evidence.
+24. Remux or MP4 alone never proves codec compatibility.
+25. Thumbnail success requires exact selected-thumbnail postflight.
+26. Unknown thumbnail outcome is reconciled, not blindly replayed.
+27. Wave 9A/9B are read-only: provider writes remain 0.
 
 ## Execution and handoff rules
 
-- Read-only inventory first; writes only from reviewed exact-ID scope.
+- Read-only inventory first; writes only from a separately reviewed exact-ID scope.
 - Persist mutation intent before dispatch and preserve unknown outcomes for reconciliation.
 - Preserve successful intermediate stages and resume from durable state.
 - Every handoff states project, exact entrypoint/command, outputs, ledger/result paths, and recovery behavior.
