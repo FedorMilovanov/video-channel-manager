@@ -88,6 +88,29 @@ function Get-VcmSha256 {
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
+function Get-VcmCanonicalTextSha256 {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        throw "Cannot hash missing text file: $Path"
+    }
+    $text = [System.IO.File]::ReadAllText($Path, [System.Text.Encoding]::UTF8)
+    $normalized = $text.Replace("`r`n", "`n").Replace("`r", "`n")
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($normalized)
+    $algorithm = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $hash = $algorithm.ComputeHash($bytes)
+    }
+    finally {
+        $algorithm.Dispose()
+    }
+    return (($hash | ForEach-Object { $_.ToString("x2") }) -join "")
+}
+
 function Get-VcmRepositoryRoot {
     [CmdletBinding()]
     param(
@@ -197,7 +220,7 @@ function Stop-VcmRetiredWrapper {
     if ([string]$entry[0].status -ne "retired") {
         throw "Retired-wrapper guard used by a non-retired entry: $relative"
     }
-    $actual = Get-VcmSha256 -Path $WrapperPath
+    $actual = Get-VcmCanonicalTextSha256 -Path $WrapperPath
     if ([string]$entry[0].sha256 -ne $actual) {
         throw "Retired wrapper digest differs from the reviewed registry: $relative"
     }
@@ -650,6 +673,7 @@ function Invoke-VcmOperatorRequest {
 }
 
 Export-ModuleMember -Function @(
+    "Get-VcmCanonicalTextSha256",
     "Get-VcmRepositoryRoot",
     "Get-VcmSha256",
     "Get-VcmWrapperRegistry",

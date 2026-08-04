@@ -143,7 +143,7 @@
       "path": "scripts/operator/Invoke-VideoManager.ps1",
       "status": "supported",
       "project_key": null,
-      "provider_write_capable": false,
+      "provider_write_capable": true,
       "sha256": "ea5eef33c3f2474c0e6b53b7560277877fd14ab9f1d1558550549b41da38ab43",
       "reason": "Single manifest-driven Wave 5 production operator entrypoint."
     },

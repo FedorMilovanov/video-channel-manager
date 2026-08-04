@@ -27,15 +27,14 @@ def _registry() -> dict[str, object]:
     return json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
 
 
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+def _canonical_text_sha256(path: Path) -> str:
+    text = path.read_text(encoding="utf-8-sig").replace("\r\n", "\n").replace("\r", "\n")
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def _code_without_comments(path: Path) -> str:
     return "\n".join(
-        line
-        for line in path.read_text(encoding="utf-8-sig").splitlines()
-        if not line.lstrip().startswith("#")
+        line for line in path.read_text(encoding="utf-8-sig").splitlines() if not line.lstrip().startswith("#")
     )
 
 
@@ -47,10 +46,7 @@ def test_every_powershell_wrapper_is_classified_exactly_once() -> None:
     wrappers = registry["wrappers"]
     assert isinstance(wrappers, list)
     registered_paths = [str(item["path"]).replace("\\", "/") for item in wrappers]
-    discovered_paths = sorted(
-        path.relative_to(ROOT).as_posix()
-        for path in (ROOT / "scripts").rglob("*.ps1")
-    )
+    discovered_paths = sorted(path.relative_to(ROOT).as_posix() for path in (ROOT / "scripts").rglob("*.ps1"))
 
     assert len(registered_paths) == len(set(registered_paths))
     assert sorted(registered_paths) == discovered_paths
@@ -62,13 +58,14 @@ def test_registry_hashes_bind_every_wrapper_to_reviewed_content() -> None:
     for item in registry["wrappers"]:
         expected = str(item["sha256"])
         assert re.fullmatch(r"[0-9a-f]{64}", expected), item["path"]
-        assert _sha256(ROOT / str(item["path"])) == expected, item["path"]
+        assert _canonical_text_sha256(ROOT / str(item["path"])) == expected, item["path"]
 
 
 def test_single_supported_wrapper_has_no_historical_operator_antipatterns() -> None:
     wrappers = _registry()["wrappers"]
     supported = [item for item in wrappers if item["status"] == "supported"]
     assert [item["path"] for item in supported] == [SUPPORTED_PATH]
+    assert supported[0]["provider_write_capable"] is True
 
     text = _code_without_comments(ROOT / SUPPORTED_PATH)
     prohibited = (

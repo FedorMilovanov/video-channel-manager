@@ -16,7 +16,7 @@ Every other tracked `.ps1` is classified in `scripts/operator/powershell-wrapper
 - `compatibility_only` — non-provider-write developer/read-only convenience;
 - `retired` — historical provider-write path that stops before credential lookup or child execution.
 
-A new unclassified `.ps1`, duplicate registry path, invalid status, or wrapper digest change fails CI.
+A new unclassified `.ps1`, duplicate registry path, invalid status, or canonical UTF-8/LF wrapper digest change fails CI. Canonical wrapper digests remain stable across Windows CRLF and Linux LF checkouts.
 
 ## Exact invocation
 

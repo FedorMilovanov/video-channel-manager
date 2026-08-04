@@ -82,6 +82,15 @@ Describe "Wave 5 PowerShell operator contract" {
         (Read-VcmJsonFile -Path $Path).message | Should -Be "Привет"
     }
 
+    It "canonicalizes text digests across LF and CRLF checkouts" {
+        $LfPath = Join-Path $TestRoot "lf.ps1"
+        $CrlfPath = Join-Path $TestRoot "crlf.ps1"
+        [System.IO.File]::WriteAllText($LfPath, "one`ntwo`n", (New-Object System.Text.UTF8Encoding($false)))
+        [System.IO.File]::WriteAllText($CrlfPath, "one`r`ntwo`r`n", (New-Object System.Text.UTF8Encoding($false)))
+
+        (Get-VcmCanonicalTextSha256 -Path $LfPath) | Should -Be (Get-VcmCanonicalTextSha256 -Path $CrlfPath)
+    }
+
     It "resolves only a supported Python interpreter" {
         $Python = Resolve-VcmPython -RepositoryRoot $RepoRoot -ProbeDirectory $TestRoot
         $Python.version | Should -BeIn @("3.11", "3.12", "3.13")
