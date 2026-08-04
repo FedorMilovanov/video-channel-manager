@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Safety-first video channel auditing, organization, synchronization, and external-AI change plans."
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{ name = "FedorMilovanov" }]
+authors = [{ name = "Fedor Milovanov" }]
 dependencies = [
   "alembic>=1.14,<2",
   "httpx>=0.28,<1",
@@ -33,6 +33,7 @@ dev = [
 
 [project.scripts]
 video-manager = "video_channel_manager.cli.app:run"
+video-manager-package-a = "video_channel_manager.wave_engine.package_a_cli:run"
 
 [tool.setuptools.packages.find]
 where = ["src"]
