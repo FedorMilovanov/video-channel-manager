@@ -5,6 +5,7 @@ from typing import Literal
 
 from pydantic import Field
 
+from video_channel_manager.application.catalog_identity import CatalogIdentityEvidence
 from video_channel_manager.application.identity import CanonicalTextEvidence
 from video_channel_manager.domain.models import RemoteRef, StrictModel
 
@@ -66,13 +67,17 @@ class CollectionGap(StrictModel):
     source_collection_id: str
     source_title: str
     source_title_identity: CanonicalTextEvidence
+    decision: Literal["mapped", "create", "conflict"]
+    conflict_reason: str | None = None
     target_collection_id: str | None = None
     target_title: str | None = None
     target_title_identity: CanonicalTextEvidence | None = None
     source_member_count: int = Field(ge=0)
     matched_source_member_count: int = Field(ge=0)
     target_member_count: int = Field(ge=0)
+    unmapped_source_video_ids: list[str] = Field(default_factory=list)
     missing_target_video_ids: list[str] = Field(default_factory=list)
+    extra_target_video_ids: list[str] = Field(default_factory=list)
 
     @property
     def missing_placement_count(self) -> int:
@@ -81,7 +86,7 @@ class CollectionGap(StrictModel):
 
 class CrossPlatformComparison(StrictModel):
     schema_name: str = "video-manager.cross-platform-comparison"
-    schema_version: str = "2.1"
+    schema_version: str = "3.0"
     generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     source_snapshot_id: str
     target_snapshot_id: str
@@ -91,6 +96,7 @@ class CrossPlatformComparison(StrictModel):
     conflicts: list[MatchConflict] = Field(default_factory=list)
     missing_on_target: list[MissingVideo] = Field(default_factory=list)
     extra_on_target: list[MissingVideo] = Field(default_factory=list)
+    catalog_identity: CatalogIdentityEvidence | None = None
     collection_gaps: list[CollectionGap] = Field(default_factory=list)
 
     @property
@@ -119,9 +125,13 @@ class CrossPlatformComparison(StrictModel):
         return sum(not item.exact_description for item in self.matches)
 
     @property
+    def collection_conflict_count(self) -> int:
+        return sum(item.decision == "conflict" for item in self.collection_gaps)
+
+    @property
     def missing_collection_count(self) -> int:
-        return sum(item.target_collection_id is None for item in self.collection_gaps)
+        return sum(item.decision == "create" for item in self.collection_gaps)
 
     @property
     def missing_placement_count(self) -> int:
-        return sum(item.missing_placement_count for item in self.collection_gaps)
+        return sum(item.missing_placement_count for item in self.collection_gaps if item.decision != "conflict")
