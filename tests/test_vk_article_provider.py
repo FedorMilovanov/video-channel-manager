@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import shutil
+from datetime import UTC, datetime as RealDateTime
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
+import video_channel_manager.wave_engine.vk_article_provider as provider_module
 from video_channel_manager.platforms.vk.wall_safety import build_wall_snapshot
 from video_channel_manager.wave_engine.engine import UnknownProviderOutcomeError
 from video_channel_manager.wave_engine.models import (
@@ -16,9 +20,11 @@ from video_channel_manager.wave_engine.models import (
 )
 from video_channel_manager.wave_engine.vk_article_provider import (
     VK_ARTICLE_ACCOUNT_ALIAS,
+    VK_ARTICLE_APPROVED_POLICY_SHA256,
     VK_ARTICLE_COMMUNITY_ID,
     VK_ARTICLE_OPERATION_KIND,
     VK_ARTICLE_OWNER_ID,
+    VK_ARTICLE_POLICY_RELATIVE_PATH,
     ArticleOperation,
     VkArticleWallError,
     VkArticleWallWriter,
@@ -28,6 +34,8 @@ from video_channel_manager.wave_engine.vk_article_provider import (
     parse_article_operation,
 )
 
+ROOT = Path(__file__).resolve().parents[1]
+POLICY = ROOT / VK_ARTICLE_POLICY_RELATIVE_PATH
 ARTICLE_URL = "https://thelegendarypoet.ru/essays/test-article"
 MESSAGE = f"Историческая заметка.\n\nЧитайте полную статью:\n{ARTICLE_URL}"
 PUBLISH_DATE = 1_800_000_000
@@ -66,7 +74,7 @@ def _operation(*, asset_path: str = "asset.jpg") -> WaveOperation:
             "asset_sha256": hashlib.sha256(_jpeg()).hexdigest(),
             "asset_width": 1200,
             "asset_height": 630,
-            "policy_sha256": "sha256:" + "a" * 64,
+            "policy_sha256": VK_ARTICLE_APPROVED_POLICY_SHA256,
             "required_canary": None,
         },
     )
@@ -97,6 +105,7 @@ def _article(*, message: str = MESSAGE, publish_date: int = PUBLISH_DATE) -> Art
         asset_sha256=hashlib.sha256(_jpeg()).hexdigest(),
         asset_width=1200,
         asset_height=630,
+        policy_sha256=VK_ARTICLE_APPROVED_POLICY_SHA256,
         required_canary=None,
     )
 
@@ -136,6 +145,59 @@ def _capture(
         postponed=tuple(postponed_items),
         snapshot=snapshot,
     )
+
+
+def _approved_operation() -> WaveOperation:
+    policy = json.loads(POLICY.read_text(encoding="utf-8"))
+    row = policy["operations"][0]
+    message_sha256 = row["message_sha256"]
+    seed = (
+        f"{VK_ARTICLE_APPROVED_POLICY_SHA256}:{row['operation_id']}:"
+        f"{row['publish_date']}:{message_sha256}"
+    )
+    guid = "vcm-art-" + hashlib.sha256(seed.encode("utf-8")).hexdigest()[:28]
+    spec = WaveOperationSpec(
+        order_key="01-approved",
+        operation_kind=VK_ARTICLE_OPERATION_KIND,
+        mutation_class=MutationClass.AMBIGUOUS_MUTATION,
+        payload={
+            "editorial_operation_id": row["operation_id"],
+            "account_alias": VK_ARTICLE_ACCOUNT_ALIAS,
+            "article_url": row["url"],
+            "image_source_url": row["image_url"],
+            "message": row["message"],
+            "message_sha256": message_sha256,
+            "publish_date": row["publish_date"],
+            "publish_at": row["publish_at"],
+            "guid": guid,
+            "asset_path": "asset.jpg",
+            "asset_sha256": hashlib.sha256(_jpeg()).hexdigest(),
+            "asset_width": 1200,
+            "asset_height": 630,
+            "policy_sha256": VK_ARTICLE_APPROVED_POLICY_SHA256,
+            "required_canary": None,
+        },
+    )
+    return WaveOperation.build(
+        sequence=0,
+        project=ProjectBinding(
+            project_key="legendary-poet",
+            community_id=VK_ARTICLE_COMMUNITY_ID,
+            owner_id=VK_ARTICLE_OWNER_ID,
+        ),
+        source_snapshot_id="c" * 64,
+        policy_version="approved-test-v1",
+        spec=spec,
+    )
+
+
+def _temporary_repository(tmp_path: Path) -> Path:
+    repository_root = tmp_path / "repository"
+    policy_target = repository_root / VK_ARTICLE_POLICY_RELATIVE_PATH
+    policy_target.parent.mkdir(parents=True)
+    shutil.copyfile(POLICY, policy_target)
+    (repository_root / "asset.jpg").write_bytes(_jpeg())
+    return repository_root
 
 
 def test_parse_article_operation_and_jpeg_dimensions() -> None:
@@ -195,39 +257,51 @@ class _FakeWriter:
 
     def schedule(self, *, article: ArticleOperation, jpeg: bytes) -> dict[str, object]:
         self.calls += 1
-        assert article.article_url == ARTICLE_URL
+        assert article.editorial_operation_id.startswith("legendary-poet-article-wave-202608-01-")
         assert jpeg_dimensions(jpeg) == (1200, 630)
         if self.unknown:
             raise UnknownProviderOutcomeError("provider response lost")
         return {"status": "scheduled", "remote_id": f"{VK_ARTICLE_OWNER_ID}_101"}
 
 
-def _adapter(tmp_path: Path, writer: _FakeWriter) -> VkPostponedArticlePhotoAdapter:
+def _adapter(repository_root: Path, writer: _FakeWriter) -> VkPostponedArticlePhotoAdapter:
     adapter = object.__new__(VkPostponedArticlePhotoAdapter)
-    adapter.repository_root = tmp_path.resolve()
+    adapter.repository_root = repository_root.resolve()
     adapter.account_alias = VK_ARTICLE_ACCOUNT_ALIAS
-    adapter.settings = SimpleNamespace(data_dir=tmp_path / "data")
+    adapter.settings = SimpleNamespace(data_dir=repository_root / "data")
     adapter.writer = writer
     return adapter
 
 
-def test_adapter_verifies_exact_asset_before_single_dispatch(tmp_path: Path) -> None:
-    asset = tmp_path / "asset.jpg"
-    asset.write_bytes(_jpeg())
-    writer = _FakeWriter()
-    adapter = _adapter(tmp_path, writer)
+class _FrozenDateTime:
+    @classmethod
+    def now(cls, tz: object = None) -> RealDateTime:
+        return RealDateTime(2026, 8, 4, 12, 0, tzinfo=UTC)
 
-    evidence = adapter.execute(_operation())
+
+def test_adapter_verifies_exact_policy_and_asset_before_single_dispatch(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository_root = _temporary_repository(tmp_path)
+    writer = _FakeWriter()
+    adapter = _adapter(repository_root, writer)
+    monkeypatch.setattr(provider_module, "datetime", _FrozenDateTime)
+
+    evidence = adapter.execute(_approved_operation())
     assert evidence["status"] == "scheduled"
     assert writer.calls == 1
 
 
-def test_adapter_preserves_unknown_outcome_and_does_not_retry(tmp_path: Path) -> None:
-    asset = tmp_path / "asset.jpg"
-    asset.write_bytes(_jpeg())
+def test_adapter_preserves_unknown_outcome_and_does_not_retry(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository_root = _temporary_repository(tmp_path)
     writer = _FakeWriter(unknown=True)
-    adapter = _adapter(tmp_path, writer)
+    adapter = _adapter(repository_root, writer)
+    monkeypatch.setattr(provider_module, "datetime", _FrozenDateTime)
 
     with pytest.raises(UnknownProviderOutcomeError):
-        adapter.execute(_operation())
+        adapter.execute(_approved_operation())
     assert writer.calls == 1
