@@ -1,0 +1,1 @@
+Temporary branch note for the reviewed Yesenin cover download correction. The one-shot workflow removes itself before the branch is merged.
