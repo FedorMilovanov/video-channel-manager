@@ -149,7 +149,7 @@ def test_begin_upload_does_not_retry_ambiguous_server_failure(tmp_path: Path) ->
     with pytest.raises(VkWriteError, match="HTTP 503") as error:
         writer.begin_upload(community_id=235216998, title="Берёза", description="Описание")
 
-    assert error.value.retryable is True
+    assert error.value.retryable is False
     assert calls == 1
 
 
@@ -280,5 +280,6 @@ def test_upload_transport_timeout_is_single_attempt_and_redacts_url(tmp_path: Pa
         writer.upload_file(ticket, media)
 
     assert captured.value.attempts == 1
+    assert captured.value.retryable is False
     assert "upload.example" not in str(captured.value)
     assert calls == 1

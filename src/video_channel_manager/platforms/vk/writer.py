@@ -172,7 +172,7 @@ class VkVideoWriter(HttpClientOwner):
             raise VkWriteError(
                 str(exc),
                 method=method,
-                retryable=True,
+                retryable=operation is HttpOperationClass.SAFE_READ,
                 kind=exc.kind,
                 attempts=exc.attempts,
             ) from exc
@@ -184,7 +184,10 @@ class VkVideoWriter(HttpClientOwner):
                 f"VK API HTTP {response.status_code} while calling {method} "
                 f"[kind={kind.value} attempts={result.attempts}]",
                 method=method,
-                retryable=kind in {HttpFailureKind.RATE_LIMIT, HttpFailureKind.TRANSIENT_HTTP},
+                retryable=(
+                    operation is HttpOperationClass.SAFE_READ
+                    and kind in {HttpFailureKind.RATE_LIMIT, HttpFailureKind.TRANSIENT_HTTP}
+                ),
                 kind=kind,
                 attempts=result.attempts,
             )
@@ -219,7 +222,7 @@ class VkVideoWriter(HttpClientOwner):
                 f"VK API {code or 'error'} in {method}: {message} [kind={kind.value} attempts={result.attempts}]",
                 method=method,
                 code=code,
-                retryable=code in _RETRYABLE_API_CODES,
+                retryable=operation is HttpOperationClass.SAFE_READ and code in _RETRYABLE_API_CODES,
                 kind=kind,
                 attempts=result.attempts,
             )
@@ -378,7 +381,7 @@ class VkVideoWriter(HttpClientOwner):
             raise VkWriteError(
                 str(exc),
                 method="video.upload",
-                retryable=True,
+                retryable=False,
                 kind=exc.kind,
                 attempts=exc.attempts,
             ) from exc
@@ -389,7 +392,7 @@ class VkVideoWriter(HttpClientOwner):
             raise VkWriteError(
                 f"VK upload server returned HTTP {response.status_code} [kind={kind.value} attempts={result.attempts}]",
                 method="video.upload",
-                retryable=kind in {HttpFailureKind.RATE_LIMIT, HttpFailureKind.TRANSIENT_HTTP},
+                retryable=False,
                 kind=kind,
                 attempts=result.attempts,
             )

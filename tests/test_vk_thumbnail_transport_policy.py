@@ -68,6 +68,7 @@ def test_thumbnail_upload_transport_is_single_attempt_and_redacted(tmp_path: Pat
 
     assert calls == 1
     assert captured.value.attempts == 1
+    assert captured.value.retryable is False
     assert captured.value.kind is HttpFailureKind.TRANSPORT
     assert "upload.example" not in str(captured.value)
     assert "private-token" not in str(captured.value)
@@ -98,6 +99,7 @@ def test_thumbnail_save_provider_transient_error_is_not_replayed(tmp_path: Path)
 
     assert calls == 1
     assert captured.value.attempts == 1
+    assert captured.value.retryable is False
     assert captured.value.kind is HttpFailureKind.PROVIDER_TRANSIENT
 
 
