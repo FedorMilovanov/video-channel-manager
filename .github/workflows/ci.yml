@@ -47,42 +47,57 @@ jobs:
           python -m pip install -e ".[dev]"
           python - <<'PY'
           from pathlib import Path
+          import re
 
           path = Path("scripts/operator/VideoManager.Operator.psm1")
           text = path.read_text(encoding="utf-8")
-          old = '''        if (-not (Test-VcmMutationCliArguments -Arguments $arguments)) {
-              throw "Provider mutation manifests may call only the supported Wave 6 `wave apply` interface."
-          }
-          if (Test-VcmCiEnvironment) {
-              throw "Provider mutations are prohibited in CI."
-          }
-          '''
-          new = '''        if (Test-VcmCiEnvironment) {
-              throw "Provider mutations are prohibited in CI."
-          }
-          if (-not (Test-VcmMutationCliArguments -Arguments $arguments)) {
-              throw "Provider mutation manifests may call only the supported Wave 6 `wave apply` interface."
-          }
-          '''
-          if old not in text:
-              raise SystemExit("Expected Wave 6 mutation-routing block was not found")
-          text = text.replace(old, new, 1)
-          export_anchor = '    "Test-VcmCiEnvironment",\n    "Test-VcmSafeCliArguments",'
-          export_replacement = '    "Test-VcmCiEnvironment",\n    "Test-VcmMutationCliArguments",\n    "Test-VcmSafeCliArguments",'
-          if export_anchor not in text:
-              raise SystemExit("Expected PowerShell export anchor was not found")
-          text = text.replace(export_anchor, export_replacement, 1)
+
+          ci_first = re.compile(
+              r'(?ms)^(?P<indent>[ \t]*)if \(Test-VcmCiEnvironment\) \{\s*'
+              r'throw "Provider mutations are prohibited in CI\."\s*\}\s*'
+              r'if \(-not \(Test-VcmMutationCliArguments -Arguments \$arguments\)\) \{\s*'
+              r'throw "Provider mutation manifests may call only the supported Wave 6 `wave apply` interface\."\s*\}'
+          )
+          mutation_first = re.compile(
+              r'(?ms)^(?P<indent>[ \t]*)if \(-not \(Test-VcmMutationCliArguments -Arguments \$arguments\)\) \{\s*'
+              r'throw "Provider mutation manifests may call only the supported Wave 6 `wave apply` interface\."\s*\}\s*'
+              r'if \(Test-VcmCiEnvironment\) \{\s*'
+              r'throw "Provider mutations are prohibited in CI\."\s*\}'
+          )
+          if not ci_first.search(text):
+              match = mutation_first.search(text)
+              if match is None:
+                  raise SystemExit("Expected Wave 6 mutation-routing blocks were not found")
+              indent = match.group("indent")
+              replacement = (
+                  f'{indent}if (Test-VcmCiEnvironment) {{\n'
+                  f'{indent}    throw "Provider mutations are prohibited in CI."\n'
+                  f'{indent}}}\n'
+                  f'{indent}if (-not (Test-VcmMutationCliArguments -Arguments $arguments)) {{\n'
+                  f'{indent}    throw "Provider mutation manifests may call only the supported Wave 6 `wave apply` interface."\n'
+                  f'{indent}}}'
+              )
+              text = mutation_first.sub(replacement, text, count=1)
+
+          export_name = '"Test-VcmMutationCliArguments"'
+          if export_name not in text:
+              export_anchor = '    "Test-VcmCiEnvironment",\n    "Test-VcmSafeCliArguments",'
+              export_replacement = (
+                  '    "Test-VcmCiEnvironment",\n'
+                  '    "Test-VcmMutationCliArguments",\n'
+                  '    "Test-VcmSafeCliArguments",'
+              )
+              if export_anchor not in text:
+                  raise SystemExit("Expected PowerShell export anchor was not found")
+              text = text.replace(export_anchor, export_replacement, 1)
+
           path.write_text(text, encoding="utf-8")
           PY
-          ruff format \
-            src/video_channel_manager/wave_engine \
-            tests/test_wave_engine_contract.py \
-            tests/test_wave_executor_inventory.py
-          ruff check tests/test_wave_engine_contract.py --fix
-          ruff format \
-            src/video_channel_manager/wave_engine \
-            tests/test_wave_engine_contract.py \
-            tests/test_wave_executor_inventory.py
+          mapfile -t changed_python < <(git ls-files --modified --others --exclude-standard -- '*.py')
+          if ((${#changed_python[@]})); then
+            ruff check --fix "${changed_python[@]}"
+            ruff format "${changed_python[@]}"
+          fi
           python - <<'PY'
           import hashlib
           import json
