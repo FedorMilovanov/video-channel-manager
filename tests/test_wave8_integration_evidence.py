@@ -270,7 +270,12 @@ def _media(source_id: str) -> MediaArtifactEvidence:
     return provisional.model_copy(update={"manifest_sha256": calculate_media_manifest_sha256(provisional)})
 
 
-def _upload_record(source_id: str, media: MediaArtifactEvidence, *, stage: UploadStage = UploadStage.VERIFIED) -> dict[str, Any]:
+def _upload_record(
+    source_id: str,
+    media: MediaArtifactEvidence,
+    *,
+    stage: UploadStage = UploadStage.VERIFIED,
+) -> dict[str, Any]:
     record = create_upload_record(
         source_snapshot_id=SOURCE_SNAPSHOT,
         community_id=PROJECT.community_id,
