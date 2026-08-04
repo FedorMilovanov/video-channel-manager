@@ -1,7 +1,7 @@
 # Operational automation backlog
 
 Updated: 2026-08-04  
-Program state: `WAVE_6_COMPLETED_WAVE_7_ACTIVE`
+Program state: `WAVE_7_COMPLETED_WAVE_8_ACTIVE`
 
 This backlog is subordinate to [`master-audit-2026-08-04.md`](master-audit-2026-08-04.md) and the machine-readable [`audit-register-2026-08-04.json`](audit-register-2026-08-04.json). It must not re-activate retracted findings, retired executors, or completed destructive operations.
 
@@ -100,40 +100,57 @@ Completed by PR #78, merge `c4c4d3233ec20b8f939343c5d667d8687d7ff040`, exact-hea
 
 Provider writes during implementation/CI: 0.
 
-## Active next work
-
 ### Wave 7 — risk-based fault injection and mutation-boundary tests
 
-Owner: issue #80.
+Completed by PR #84, merge `df956bbbf19af6652f8711f95fb4fecf272e9951`, exact-head CI run `30918639372`:
+
+- versioned inventory of all 15 supported mutation boundaries;
+- AST discovery gate for unregistered/stale provider mutation markers;
+- exact fault-proof register binding required stages to pytest node IDs and Pester `It` titles;
+- exact equality gate between boundary and proof sets;
+- 27 required cross-cutting corruption, migration, identity, bounded-read, operator, and replay scenarios;
+- dependency-injected WaveEngine crash points with durable apply/reconciliation replay barriers;
+- one-attempt ambiguous mutation proofs for VK upload/album/wall/text/thumbnail and YouTube comment/description boundaries;
+- malformed/truncated/reordered/stale/wrong-digest/cross-project/wrong-owner/wrong-snapshot/wrong-policy/duplicate/incomplete evidence rejection;
+- interrupted atomic-write and orphan-temp cleanup tests;
+- bounded PowerShell child timeout, compatible process termination, concurrent stdout/stderr draining, and structured-result validation;
+- Python: `657 passed, 1 xfailed` on 3.11/3.12/3.13;
+- Pester: `25/25` on Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux.
+
+Provider writes during implementation/CI: 0.
+
+## Active next work
+
+### Wave 8 — exact matching, catalog identity, and media correctness
+
+Owner: issue #86.
 
 Required outcomes:
 
-- inventory every supported mutation boundary and bind it to owning fault/replay tests;
-- inject deterministic failures before/after intent, dispatch, provider acceptance, response persistence, processing, postflight, result commit, and reconciliation;
-- prove ambiguous mutations are attempted at most once under every tested crash path;
-- prove safe reads retry only through the classified bounded policy;
-- reject truncated, malformed, stale, reordered, cross-project, wrong-owner, wrong-snapshot, wrong-policy, wrong-digest, duplicate, and incomplete evidence;
-- test interrupted atomic writes, orphan temporary files, existing journals, and partial historical migration;
-- expand Windows PowerShell 5.1/7 tests for child nonzero, missing/malformed result, encoding, unsupported Python, interrupted child, CI apply block, and unknown mutation result;
-- introduce a machine-readable mutation-boundary registry and risk-specific test gate;
+- deterministic exact-first source/target matching with explicit ambiguous/conflict outcomes;
+- fuzzy or weighted fallback only after exact evidence is exhausted and with retained scores/evidence;
+- field-specific canonical text, Unicode, punctuation, whitespace, and URL normalization without collapsing distinct identities;
+- exact album/catalog mapping rather than normalized-title-only selection;
+- duplicate and renamed albums become explicit conflicts;
+- semantic membership comparison ignores provider position churn;
+- authoritative downloader final-path evidence rather than glob-first cache selection;
+- cache binding to source ID, exact path, SHA-256, size, and structured media fingerprint;
+- ffprobe-equivalent validation for duration, streams, codecs/container, playability, partial/corrupt/audio-only cases;
+- exact local thumbnail identity and caller-owned selected-thumbnail postflight;
 - provider writes in development/CI: 0.
 
 Exit criteria:
 
-1. every supported mutation boundary has an owned deterministic fault test;
-2. no ambiguous provider mutation can be replayed by a tested crash path;
-3. corrupted/stale/cross-project evidence fails closed;
-4. exact-head Python and PowerShell CI green;
-5. current state, register, changelog, and issue #64 synchronized after merge.
+1. exact-first matching is deterministic and conflict-explicit;
+2. ambiguous normalized album titles cannot select a target;
+3. media/cache reuse requires authoritative path and structured integrity evidence;
+4. catalog/thumbnail postconditions are exact and machine-readable;
+5. exact-head Python and PowerShell CI green;
+6. current state, register, changelog, and issue #64 synchronized after merge.
+
+Issue #33 remains the later catalog/publication workflow and is not authorized by Wave 8. It remains blocked by issues #31 and #32.
 
 ## Later waves
-
-### Wave 8 — matching, catalog, and media correctness
-
-- scalable exact-first matching;
-- canonical text/URL normalization;
-- authoritative media/cache/ffprobe validation;
-- exact thumbnail/catalog postconditions.
 
 ### Wave 9 — finish live project queues separately
 
