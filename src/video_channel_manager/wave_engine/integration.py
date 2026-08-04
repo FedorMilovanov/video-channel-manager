@@ -318,9 +318,7 @@ def _result_bindings(*, plan: WavePlan, result: WaveResult) -> dict[str, list[Bo
     result.assert_matches(plan)
     grouped: dict[str, list[BoundResult]] = defaultdict(list)
     for operation, operation_result in zip(plan.operations, result.operations, strict=True):
-        grouped[_operation_source_id(operation)].append(
-            (operation, operation_result, _operation_stage(operation))
-        )
+        grouped[_operation_source_id(operation)].append((operation, operation_result, _operation_stage(operation)))
     return grouped
 
 
