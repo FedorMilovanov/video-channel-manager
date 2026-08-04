@@ -20,6 +20,15 @@ This is historical evidence, not an active runbook or supported entrypoint.
 
 The VK Audio workflow is a separate provider surface from VK Video/Clips. Its browser session, undocumented web endpoints, upload slots, playlist actions, and metadata contracts must not be inferred from the VK Video API implementation.
 
+## Evidence levels used here
+
+- `successful` — the transcript contains direct remote/readback evidence;
+- `partial` — one stage succeeded while later stages failed or remained unknown;
+- `safe failure` — failure occurred before any provider mutation;
+- `false positive` — the tool reported success without exact evidence;
+- `designed/self-tested only` — a fix was proposed or locally tested but no live provider result was shown;
+- `provider-contract discovery` — successful and failed runs exposed a repeatable transport distinction.
+
 ## High-level outcome
 
 The history contains both useful successes and repeated failures:
