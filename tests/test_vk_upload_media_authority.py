@@ -9,11 +9,11 @@ import pytest
 
 from video_channel_manager.domain.enums import PlatformName
 from video_channel_manager.local_media.artifact import (
+    MediaArtifactEvidence,
     MediaCompatibilityProfile,
     MediaSourceIdentity,
     build_media_artifact_evidence,
     controlled_master_acquisition,
-    journal_media_evidence as _unused_journal_media_evidence,
 )
 from video_channel_manager.local_media.quality import MediaQualityReport, sha256_file
 from video_channel_manager.platforms.vk.upload_lifecycle import (
@@ -39,7 +39,6 @@ class FakeWriter:
     def __init__(self, media_to_mutate: Path | None = None) -> None:
         self.begin_calls = 0
         self.upload_calls = 0
-        self.wait_calls = 0
         self.media_to_mutate = media_to_mutate
         self.remote_item: dict[str, Any] | None = None
 
@@ -51,9 +50,7 @@ class FakeWriter:
         description: str,
         wall_policy: VkUploadWallPolicy,
     ) -> StoredUploadTicket:
-        assert community_id == 235216998
-        assert title == "Берёза ⚡"
-        assert description == "Описание"
+        assert (community_id, title, description) == (235216998, "Берёза ⚡", "Описание")
         assert wall_policy.wall_mutation_authorized is False
         self.begin_calls += 1
         if self.media_to_mutate is not None:
@@ -71,7 +68,7 @@ class FakeWriter:
 
     def upload_file(self, ticket: StoredUploadTicket, path: Path) -> dict[str, Any]:
         self.upload_calls += 1
-        self.remote_item = ready_item(ticket.owner_id, ticket.video_id)
+        self.remote_item = _ready_item(ticket.owner_id, ticket.video_id)
         return {"video_id": str(ticket.video_id), "size": path.stat().st_size}
 
     def read_video(self, *, owner_id: int, video_id: int) -> dict[str, Any] | None:
@@ -85,7 +82,6 @@ class FakeWriter:
         timeout_seconds: int,
         on_observation: Callable[[dict[str, Any] | None, object | None], None] | None = None,
     ) -> dict[str, Any]:
-        self.wait_calls += 1
         item = self.remote_item
         if item is None:
             raise RuntimeError(f"not visible within {timeout_seconds}")
@@ -108,10 +104,10 @@ class FakeWriter:
     ) -> VkWallSnapshot:
         assert community_id == 235216998
         assert max_posts_per_surface == 10000
-        return clean_wall_snapshot()
+        return _clean_wall_snapshot()
 
 
-def clean_wall_snapshot() -> VkWallSnapshot:
+def _clean_wall_snapshot() -> VkWallSnapshot:
     return build_wall_snapshot(
         community_id=235216998,
         published_items=[],
@@ -123,7 +119,7 @@ def clean_wall_snapshot() -> VkWallSnapshot:
     )
 
 
-def ready_item(owner_id: int, video_id: int) -> dict[str, Any]:
+def _ready_item(owner_id: int, video_id: int) -> dict[str, Any]:
     return {
         "owner_id": owner_id,
         "id": video_id,
@@ -137,7 +133,7 @@ def ready_item(owner_id: int, video_id: int) -> dict[str, Any]:
     }
 
 
-def readiness() -> VkUploadReadiness:
+def _readiness() -> VkUploadReadiness:
     return VkUploadReadiness(
         expected_title="Берёза ⚡",
         minimum_duration_seconds=115,
@@ -146,7 +142,7 @@ def readiness() -> VkUploadReadiness:
     )
 
 
-def new_record() -> dict[str, Any]:
+def _record() -> dict[str, Any]:
     return create_upload_record(
         source_snapshot_id="snapshot-1",
         community_id=235216998,
@@ -155,11 +151,11 @@ def new_record() -> dict[str, Any]:
         source_duration_seconds=120,
         published_title="Берёза ⚡",
         published_description="Описание",
-        readiness=readiness(),
+        readiness=_readiness(),
     )
 
 
-def report(path: Path) -> MediaQualityReport:
+def _report(path: Path) -> MediaQualityReport:
     resolved = path.resolve()
     return MediaQualityReport(
         path=str(resolved),
@@ -178,7 +174,7 @@ def report(path: Path) -> MediaQualityReport:
     )
 
 
-def artifact(path: Path, *, profile_name: str = "vk-h264-aac-v1"):
+def _artifact(path: Path, *, profile_name: str = "vk-h264-aac-v1") -> MediaArtifactEvidence:
     return build_media_artifact_evidence(
         source=MediaSourceIdentity(
             project_key="legendary-poet",
@@ -190,22 +186,22 @@ def artifact(path: Path, *, profile_name: str = "vk-h264-aac-v1"):
         ),
         acquisition=controlled_master_acquisition(path),
         profile=MediaCompatibilityProfile(profile_name=profile_name),
-        report=report(path),
+        report=_report(path),
     )
 
 
-def execute(
+def _execute(
     record: dict[str, Any],
     writer: FakeWriter,
     media: Path | None,
-    media_artifact,
+    evidence: MediaArtifactEvidence | None,
     *,
     probe_calls: list[Path] | None = None,
 ) -> None:
     def probe(path: Path) -> MediaQualityReport:
         if probe_calls is not None:
             probe_calls.append(path)
-        return report(path)
+        return _report(path)
 
     execute_upload_operation(
         record,
@@ -214,10 +210,10 @@ def execute(
         title="Берёза ⚡",
         description="Описание",
         media_path=media,
-        media_artifact=media_artifact,
-        readiness=readiness(),
+        media_artifact=evidence,
+        readiness=_readiness(),
         processing_timeout=60,
-        wall_before_snapshot=clean_wall_snapshot(),
+        wall_before_snapshot=_clean_wall_snapshot(),
         persist=lambda: None,
         media_probe=probe,
         clock=lambda: datetime(2026, 8, 4, 18, 0, tzinfo=UTC),
@@ -227,52 +223,43 @@ def execute(
 def test_manifest_is_required_before_provider_dispatch(tmp_path: Path) -> None:
     media = tmp_path / "yt-1.mp4"
     media.write_bytes(b"video")
-    record = new_record()
+    record = _record()
     writer = FakeWriter()
 
     with pytest.raises(UploadRejected, match="artifact evidence is required"):
-        execute(record, writer, media, None)
+        _execute(record, writer, media, None)
 
     assert record["stage"] == UploadStage.PLANNED.value
-    assert writer.begin_calls == 0
-    assert writer.upload_calls == 0
+    assert writer.begin_calls == writer.upload_calls == 0
 
 
 def test_manifest_is_journaled_bound_to_intent_and_reprobed_at_dispatch(tmp_path: Path) -> None:
     media = tmp_path / "yt-1.mp4"
     media.write_bytes(b"video")
-    evidence = artifact(media)
-    record = new_record()
+    evidence = _artifact(media)
+    record = _record()
     writer = FakeWriter()
     probe_calls: list[Path] = []
 
-    execute(record, writer, media, evidence, probe_calls=probe_calls)
+    _execute(record, writer, media, evidence, probe_calls=probe_calls)
 
     assert record["stage"] == UploadStage.VERIFIED.value
     assert record["media"]["schema_version"] == 2
     assert record["media"]["manifest_sha256"] == evidence.manifest_sha256
     assert record["media"]["artifact"]["probe"]["video_codec"] == "h264"
     assert record["reservation_intent"]["media_manifest_sha256"] == evidence.manifest_sha256
-    intent_payload = {
-        key: value
-        for key, value in record["reservation_intent"].items()
-        if key not in {"committed_at", "intent_sha256"}
-    }
-    assert "media_manifest_sha256" in intent_payload
     assert len(probe_calls) >= 2
-    assert writer.begin_calls == 1
-    assert writer.upload_calls == 1
+    assert writer.begin_calls == writer.upload_calls == 1
 
 
 def test_changed_file_after_reservation_is_blocked_before_upload_dispatch(tmp_path: Path) -> None:
     media = tmp_path / "yt-1.mp4"
     media.write_bytes(b"video")
-    evidence = artifact(media)
-    record = new_record()
+    record = _record()
     writer = FakeWriter(media_to_mutate=media)
 
     with pytest.raises(UploadRejected, match="size|SHA-256|ffprobe"):
-        execute(record, writer, media, evidence)
+        _execute(record, writer, media, _artifact(media))
 
     assert writer.begin_calls == 1
     assert writer.upload_calls == 0
@@ -282,25 +269,22 @@ def test_changed_file_after_reservation_is_blocked_before_upload_dispatch(tmp_pa
 def test_manifest_cannot_change_after_media_verified(tmp_path: Path) -> None:
     media = tmp_path / "yt-1.mp4"
     media.write_bytes(b"video")
-    original = artifact(media)
-    changed = artifact(media, profile_name="different-compatible-profile")
-    record = new_record()
+    original = _artifact(media)
+    record = _record()
     record["stage"] = UploadStage.MEDIA_VERIFIED.value
     record["media"] = journal_media_evidence(original)
     writer = FakeWriter()
 
     with pytest.raises(UploadRejected, match="manifest changed"):
-        execute(record, writer, media, changed)
+        _execute(record, writer, media, _artifact(media, profile_name="other-compatible"))
 
-    assert writer.begin_calls == 0
-    assert writer.upload_calls == 0
+    assert writer.begin_calls == writer.upload_calls == 0
 
 
 def test_legacy_size_sha_journal_is_not_cache_authority(tmp_path: Path) -> None:
     media = tmp_path / "yt-1.mp4"
     media.write_bytes(b"video")
-    evidence = artifact(media)
-    record = new_record()
+    record = _record()
     record["stage"] = UploadStage.MEDIA_VERIFIED.value
     record["media"] = {
         "path": str(media),
@@ -310,7 +294,6 @@ def test_legacy_size_sha_journal_is_not_cache_authority(tmp_path: Path) -> None:
     writer = FakeWriter()
 
     with pytest.raises(UploadRejected, match="legacy media evidence"):
-        execute(record, writer, media, evidence)
+        _execute(record, writer, media, _artifact(media))
 
-    assert writer.begin_calls == 0
-    assert writer.upload_calls == 0
+    assert writer.begin_calls == writer.upload_calls == 0
