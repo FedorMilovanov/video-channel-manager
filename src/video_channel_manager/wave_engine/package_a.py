@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import html
-import json
 import os
 import sqlite3
 import tempfile
@@ -33,9 +32,7 @@ from video_channel_manager.wave_engine.reconciliation import (
 
 PACKAGE_A_REQUEST_SCHEMA: Literal["video-manager.package-a-run-request"] = "video-manager.package-a-run-request"
 PACKAGE_A_REQUEST_VERSION: Literal[1] = 1
-PACKAGE_A_RECOVERY_SCHEMA: Literal["video-manager.recovery-decision-ledger"] = (
-    "video-manager.recovery-decision-ledger"
-)
+PACKAGE_A_RECOVERY_SCHEMA: Literal["video-manager.recovery-decision-ledger"] = "video-manager.recovery-decision-ledger"
 PACKAGE_A_RECOVERY_RULESET: Literal["wave-9b-v1"] = "wave-9b-v1"
 PACKAGE_A_BOARD_SCHEMA: Literal["video-manager.operator-board"] = "video-manager.operator-board"
 PACKAGE_A_BOARD_RULESET: Literal["wave-10-v1"] = "wave-10-v1"
@@ -131,7 +128,7 @@ class SqliteLedgerContract(FrozenStrictModel):
     def validate_identifier(cls, value: str | None, info: ValidationInfo) -> str | None:
         if value is None:
             return None
-        return _normalized_identifier(value, field=info.field_name)
+        return _normalized_identifier(value, field=info.field_name or "identifier")
 
     @model_validator(mode="after")
     def validate_contract(self) -> Self:
@@ -284,13 +281,7 @@ class RecoveryDecisionTotals(FrozenStrictModel):
 
     @model_validator(mode="after")
     def validate_partition(self) -> Self:
-        if (
-            self.no_action
-            + self.reconcile_only
-            + self.blocked
-            + self.eligible_after_separate_review
-            != self.total
-        ):
+        if self.no_action + self.reconcile_only + self.blocked + self.eligible_after_separate_review != self.total:
             raise ValueError("recovery totals must partition the bounded source set")
         return self
 
@@ -481,10 +472,7 @@ def _load_sqlite_records(path: Path, contract: SqliteLedgerContract) -> tuple[Lo
     if contract.evidence_digest_column is not None:
         selected_columns.append(contract.evidence_digest_column)
     quoted_columns = ", ".join(f'"{column}"' for column in selected_columns)
-    statement = (
-        f'SELECT {quoted_columns} FROM "{contract.table_name}" '
-        f'ORDER BY "{contract.source_video_id_column}"'
-    )
+    statement = f'SELECT {quoted_columns} FROM "{contract.table_name}" ORDER BY "{contract.source_video_id_column}"'
     uri = f"{path.resolve().as_uri()}?mode=ro"
     try:
         with sqlite3.connect(uri, uri=True) as connection:
