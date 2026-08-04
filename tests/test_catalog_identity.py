@@ -242,9 +242,7 @@ def test_approved_create_is_blocked_by_existing_candidate() -> None:
 
 
 def test_reviewed_renamed_album_remains_exact_mapping_with_title_drift() -> None:
-    target = _target(
-        collections=[_collection(PlatformName.VK, "235216998", "album-1", "Есенин — архив")]
-    )
+    target = _target(collections=[_collection(PlatformName.VK, "235216998", "album-1", "Есенин — архив")])
 
     evidence = build_catalog_identity_evidence(
         _source(),
