@@ -207,106 +207,6 @@ jobs:
           $Result = Invoke-Pester -Path tests/powershell -PassThru -Output Detailed
           if ($Result.FailedCount -gt 0) { exit 1 }
 
-  wave6-source-inventory:
-    name: Wave 6 read-only source inventory
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - name: Build exact Python inventory
-        shell: bash
-        run: |
-          python - <<'PY'
-          from __future__ import annotations
-          import ast
-          import hashlib
-          import json
-          from pathlib import Path
-
-          roots = [Path("scripts"), Path("src"), Path("tests")]
-          records = []
-          for root in roots:
-              if not root.exists():
-                  continue
-              for path in sorted(root.rglob("*.py")):
-                  data = path.read_bytes()
-                  text = data.decode("utf-8")
-                  try:
-                      tree = ast.parse(text, filename=str(path))
-                  except SyntaxError as exc:
-                      records.append({
-                          "path": path.as_posix(),
-                          "sha256": hashlib.sha256(data).hexdigest(),
-                          "syntax_error": str(exc),
-                      })
-                      continue
-                  imports = []
-                  calls = []
-                  functions = []
-                  for node in ast.walk(tree):
-                      if isinstance(node, ast.Import):
-                          imports.extend(alias.name for alias in node.names)
-                      elif isinstance(node, ast.ImportFrom):
-                          module = node.module or ""
-                          imports.extend(f"{module}:{alias.name}" for alias in node.names)
-                      elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                          functions.append(node.name)
-                      elif isinstance(node, ast.Call):
-                          target = node.func
-                          if isinstance(target, ast.Name):
-                              calls.append(target.id)
-                          elif isinstance(target, ast.Attribute):
-                              parts = []
-                              current = target
-                              while isinstance(current, ast.Attribute):
-                                  parts.append(current.attr)
-                                  current = current.value
-                              if isinstance(current, ast.Name):
-                                  parts.append(current.id)
-                              calls.append(".".join(reversed(parts)))
-                  lowered = text.lower()
-                  records.append({
-                      "path": path.as_posix(),
-                      "sha256": hashlib.sha256(data).hexdigest(),
-                      "size": len(data),
-                      "imports": sorted(set(imports)),
-                      "functions": sorted(set(functions)),
-                      "calls": sorted(set(calls)),
-                      "markers": {
-                          "wave": "wave" in path.name.lower() or "wave" in lowered,
-                          "prepare": "prepare" in path.name.lower(),
-                          "apply": "apply" in path.name.lower() or "apply" in functions,
-                          "recover": "recover" in path.name.lower() or "reconcile" in lowered,
-                          "provider_write": any(token in lowered for token in (
-                              "video.save", "wall.post", "wall.edit", "wall.delete",
-                              "upload_url", "youtubecommentwriter", "vkvideo",
-                          )),
-                          "private_cross_script_import": any(
-                              item.startswith("scripts.") and ":_" in item for item in imports
-                          ),
-                      },
-                  })
-          payload = {
-              "schema_name": "video-manager.wave6-source-inventory",
-              "schema_version": 1,
-              "records": records,
-          }
-          Path("wave6-source-inventory.json").write_text(
-              json.dumps(payload, indent=2, sort_keys=True) + "\n",
-              encoding="utf-8",
-          )
-          PY
-          tar -czf wave6-python-source.tgz scripts src tests pyproject.toml wave6-source-inventory.json
-      - name: Upload exact Wave 6 source inventory
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: wave6-python-source-inventory
-          path: |
-            wave6-source-inventory.json
-            wave6-python-source.tgz
-          if-no-files-found: error
-
   wave6-apply:
     name: Wave 6 apply stable engine
     needs:
@@ -314,7 +214,9 @@ jobs:
       - powershell-windows-51
       - powershell-windows-7
       - powershell-linux-7
-    if: github.ref == 'refs/heads/agent/wave-6-stable-engine'
+    if: >-
+      github.head_ref == 'agent/wave-6-stable-engine' ||
+      github.ref == 'refs/heads/agent/wave-6-stable-engine'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
