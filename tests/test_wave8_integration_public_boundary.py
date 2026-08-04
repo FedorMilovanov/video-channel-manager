@@ -42,8 +42,6 @@ def test_production_code_cannot_import_private_integration_helpers() -> None:
 
 def test_integration_schema_has_one_production_authority() -> None:
     authorities = [
-        path.relative_to(ROOT)
-        for path in SRC.rglob("*.py")
-        if INTEGRATION_SCHEMA in path.read_text(encoding="utf-8")
+        path.relative_to(ROOT) for path in SRC.rglob("*.py") if INTEGRATION_SCHEMA in path.read_text(encoding="utf-8")
     ]
     assert authorities == [Path("src/video_channel_manager/wave_engine/integration.py")]
