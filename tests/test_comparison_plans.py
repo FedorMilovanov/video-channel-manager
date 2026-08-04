@@ -96,9 +96,18 @@ def _comparison_fixture() -> tuple[AuditPackage, AuditPackage]:
     return source, target
 
 
+def _comparison(source: AuditPackage, target: AuditPackage):
+    return compare_audit_packages(
+        source,
+        target,
+        reviewed_collection_mapping={"collection-1": "collection-1"},
+        approved_collection_creates={"collection-2"},
+    )
+
+
 def test_placement_summary_separates_existing_and_missing_collections() -> None:
     source, target = _comparison_fixture()
-    comparison = compare_audit_packages(source, target)
+    comparison = _comparison(source, target)
 
     summary = summarize_placements(comparison)
 
@@ -113,7 +122,7 @@ def test_placement_summary_separates_existing_and_missing_collections() -> None:
 
 def test_disabled_transfer_plan_contains_only_public_full_length_missing_videos() -> None:
     source, target = _comparison_fixture()
-    comparison = compare_audit_packages(source, target)
+    comparison = _comparison(source, target)
 
     plan = build_disabled_transfer_plan(source, target, comparison)
 
@@ -127,7 +136,7 @@ def test_disabled_transfer_plan_contains_only_public_full_length_missing_videos(
 
 def test_disabled_collection_plan_creates_missing_album_and_populates_both() -> None:
     source, target = _comparison_fixture()
-    comparison = compare_audit_packages(source, target)
+    comparison = _comparison(source, target)
 
     plan = build_disabled_collection_plan(target, comparison)
 
