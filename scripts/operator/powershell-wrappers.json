@@ -8,7 +8,7 @@
       "status": "retired",
       "project_key": "legendary-poet",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "692812171c912051b4aa36b701dcc5ae1b29843ac009c6c6838d75d6062cf742",
       "reason": "Legacy editorial title apply/deletion orchestrator with newest-bundle selection and nested PowerShell."
     },
     {
@@ -16,7 +16,7 @@
       "status": "retired",
       "project_key": "legendary-poet",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "18de2abf2a71f0577a6ce127829a96233e745bb6c5b44a47732757eb84c772d0",
       "reason": "Historical deferred editorial wave wrapper; superseded by manifest-driven operator."
     },
     {
@@ -24,7 +24,7 @@
       "status": "retired",
       "project_key": "legendary-poet",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "8036b6d84229ca3a7f46e1d9d39e1492af52abb00c546948df247392438bcf6b",
       "reason": "Legacy description apply/cleanup wrapper with newest-bundle discovery."
     },
     {
@@ -32,7 +32,7 @@
       "status": "retired",
       "project_key": "legendary-poet",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "259123f0d27ff1c15f0eec8f854e94eedf24f1652ff2276c84ebf0d1c18ad6b4",
       "reason": "Historical P1 megawave resume executor."
     },
     {
@@ -40,7 +40,7 @@
       "status": "retired",
       "project_key": "legendary-poet",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "5f47d4e2a07897dda1fb3d027cf06c178e1a5604e6350bedfaaf8e3f174fd13a",
       "reason": "Legacy reviewed correction provider-write apply wrapper."
     },
     {
@@ -48,7 +48,7 @@
       "status": "retired",
       "project_key": "legendary-poet",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "e7ab35f5cacb7395bc915e090b7b443fdcc86e850216378a9c482a63a17e37a1",
       "reason": "Legacy Blok correction provider-write apply wrapper."
     },
     {
@@ -56,7 +56,7 @@
       "status": "retired",
       "project_key": "legendary-poet",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "265a3c976997bb23ca35d6d5466198ebfd7ef400a63a91dc8b16c46e30414b72",
       "reason": "Legacy Blok correction wave with apply path."
     },
     {
@@ -64,7 +64,7 @@
       "status": "retired",
       "project_key": "legendary-poet",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "d82ee65de75504e01a9bf929e7ac31c626a77b57573cbba6bc81b51a42a10615",
       "reason": "Legacy Fet correction provider-write apply wrapper."
     },
     {
@@ -72,7 +72,7 @@
       "status": "retired",
       "project_key": "legendary-poet",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "1d7f9ce5eb626b2f704449bf348ebede582b4114901537cfe099c8d93177de7e",
       "reason": "Legacy Fet correction wave with apply path."
     },
     {
@@ -80,7 +80,7 @@
       "status": "retired",
       "project_key": "legendary-poet",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "2cfb267a823c4a0931fa2546f670c62d84be750ba4a3c7a401b5a9151777876a",
       "reason": "Legacy Pushkin correction provider-write apply wrapper."
     },
     {
@@ -88,7 +88,7 @@
       "status": "retired",
       "project_key": "legendary-poet",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "4a271312a7fadfbf9d45e37afceb96e8588b16e2c06fee3a28cdd8c4c3f3b30f",
       "reason": "Legacy Pushkin correction wave with apply path."
     },
     {
@@ -96,7 +96,7 @@
       "status": "retired",
       "project_key": "legendary-poet",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "8ad70e5c67509127737b4379351c26fcc75dac335fc7432da439d31d1bfb4340",
       "reason": "Legacy reviewed correction wave with apply path."
     },
     {
@@ -104,7 +104,7 @@
       "status": "retired",
       "project_key": "legendary-poet",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "a9c91abc4d51ee40f0b52314c39f08d5050f2117274c49fd23daebb6127e145b",
       "reason": "Legacy reviewed description apply wrapper with nested PowerShell."
     },
     {
@@ -112,7 +112,7 @@
       "status": "retired",
       "project_key": "legendary-poet",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "e0b8f6d529fb4c930a352d60448b4e4afda1a8bbed37839e9062e001638132ed",
       "reason": "Legacy title apply/cleanup wrapper."
     },
     {
@@ -128,7 +128,7 @@
       "status": "retired",
       "project_key": "legendary-poet",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "21d6f1239cb482de39631c52f97eea6bd566adde21d57be479d4e74669e03e1f",
       "reason": "Legacy postponed wall publication wrapper; Wave 4 requires the separate immutable wall plan/journal."
     },
     {
@@ -144,7 +144,7 @@
       "status": "supported",
       "project_key": null,
       "provider_write_capable": false,
-      "sha256": "PENDING_CURRENT_HEAD",
+      "sha256": "ea5eef33c3f2474c0e6b53b7560277877fd14ab9f1d1558550549b41da38ab43",
       "reason": "Single manifest-driven Wave 5 production operator entrypoint."
     },
     {
@@ -152,7 +152,7 @@
       "status": "retired",
       "project_key": "legendary-poet",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "b38c1230fc248e8010eafbf58781f6aaf39486a270bab8b49cc64d21392b3b77",
       "reason": "Historical YouTube comment mutation recovery wrapper."
     },
     {
@@ -160,7 +160,7 @@
       "status": "retired",
       "project_key": "lord-god-strength",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "aecec2c29877776a391a09aa0570ef5b99b826188071fd3baf85100480e1c097",
       "reason": "Completed theological article publication wave; must not be rerun."
     },
     {
@@ -168,7 +168,7 @@
       "status": "retired",
       "project_key": "lord-god-strength",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "1bee7d110af6279a90596314643bc09f66bb9c9c2984f37af44811962007ed05",
       "reason": "Historical Lord God wall-tail provider-write executor."
     },
     {
@@ -176,7 +176,7 @@
       "status": "retired",
       "project_key": "lord-god-strength",
       "provider_write_capable": true,
-      "sha256": "PENDING_WAVE5_GUARD",
+      "sha256": "f72eb0674aad8a7ff854ad8cabe7f68cef2c1a24e9a29becf516550291b6e85f",
       "reason": "Historical Shorts reset/upload wrapper with user-specific path."
     },
     {

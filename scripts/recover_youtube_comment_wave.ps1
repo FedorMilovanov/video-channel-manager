@@ -15,6 +15,11 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+# VCM-WAVE5-RETIRED-GUARD
+$VcmOperatorModule = Join-Path $PSScriptRoot "operator\VideoManager.Operator.psm1"
+Import-Module -Name $VcmOperatorModule -Force -ErrorAction Stop
+Stop-VcmRetiredWrapper -WrapperPath $PSCommandPath -RepositoryRoot (Split-Path -Parent $PSScriptRoot)
+
 
 try {
     $Repo = (Resolve-Path -LiteralPath $Repo).Path

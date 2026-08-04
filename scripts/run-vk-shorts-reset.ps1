@@ -14,6 +14,11 @@ param(
 
 $ErrorActionPreference = "Stop"
 $PSNativeCommandUseErrorActionPreference = $false
+# VCM-WAVE5-RETIRED-GUARD
+$VcmOperatorModule = Join-Path $PSScriptRoot "operator\VideoManager.Operator.psm1"
+Import-Module -Name $VcmOperatorModule -Force -ErrorAction Stop
+Stop-VcmRetiredWrapper -WrapperPath $PSCommandPath -RepositoryRoot (Split-Path -Parent $PSScriptRoot)
+
 
 $Script = Join-Path $Repo "scripts\vk_shorts_reset_current.py"
 $VenvPython = Join-Path $Repo ".venv\Scripts\python.exe"
