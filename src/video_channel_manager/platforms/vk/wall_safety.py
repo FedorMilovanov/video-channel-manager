@@ -33,6 +33,14 @@ def _require_exact_bool(value: object, *, field: str) -> bool:
     return value
 
 
+def _require_exact_int(value: object, *, field: str, minimum: int | None = None) -> int:
+    if type(value) is not int:
+        raise ValueError(f"{field} must be an exact integer")
+    if minimum is not None and value < minimum:
+        raise ValueError(f"{field} must be at least {minimum}")
+    return value
+
+
 @dataclass(frozen=True, slots=True)
 class VkUploadWallPolicy:
     """Immutable fail-closed authority for a video upload reservation.
@@ -88,18 +96,22 @@ class VkUploadWallPolicy:
             raise ValueError("Unsupported or missing VK upload wall policy schema")
         if raw.get("schema_version") != VK_UPLOAD_WALL_POLICY_VERSION:
             raise ValueError("Unsupported VK upload wall policy version")
+        wall_mutation_authorized = _require_exact_bool(
+            raw.get("wall_mutation_authorized"),
+            field="wall_mutation_authorized",
+        )
+        wallpost = _require_exact_bool(raw.get("wallpost"), field="wallpost")
+        auto_publish = _require_exact_bool(raw.get("auto_publish"), field="auto_publish")
+        repeat = _require_exact_bool(raw.get("repeat"), field="repeat")
         expected_digest = raw.get("policy_sha256")
         digest_payload = {key: value for key, value in raw.items() if key != "policy_sha256"}
         if expected_digest != _canonical_sha256(digest_payload):
             raise ValueError("VK upload wall policy self-digest does not match")
         return cls(
-            wall_mutation_authorized=_require_exact_bool(
-                raw.get("wall_mutation_authorized"),
-                field="wall_mutation_authorized",
-            ),
-            wallpost=_require_exact_bool(raw.get("wallpost"), field="wallpost"),
-            auto_publish=_require_exact_bool(raw.get("auto_publish"), field="auto_publish"),
-            repeat=_require_exact_bool(raw.get("repeat"), field="repeat"),
+            wall_mutation_authorized=wall_mutation_authorized,
+            wallpost=wallpost,
+            auto_publish=auto_publish,
+            repeat=repeat,
         )
 
 
@@ -147,7 +159,7 @@ class VkWallPostFingerprint:
         post_id = item.get("id")
         if type(owner_id) is not int or type(post_id) is not int or owner_id == 0 or post_id <= 0:
             raise ValueError("Wall item has invalid owner/post identity")
-        publish_date_raw = item.get("date") if surface is VkWallSurface.POSTPONED else item.get("date")
+        publish_date_raw = item.get("date")
         publish_date = publish_date_raw if type(publish_date_raw) is int and publish_date_raw >= 0 else None
         text = str(item.get("text") or "")
         attachments = tuple(
@@ -170,6 +182,37 @@ class VkWallPostFingerprint:
             attachments=attachments,
         )
 
+    @classmethod
+    def from_mapping(cls, raw: Mapping[str, object]) -> VkWallPostFingerprint:
+        owner_id = _require_exact_int(raw.get("owner_id"), field="owner_id")
+        post_id = _require_exact_int(raw.get("post_id"), field="post_id", minimum=1)
+        if owner_id == 0:
+            raise ValueError("owner_id cannot be zero")
+        try:
+            surface = VkWallSurface(str(raw.get("surface") or ""))
+        except ValueError as exc:
+            raise ValueError("Wall post fingerprint has an invalid surface") from exc
+        publish_date_raw = raw.get("publish_date")
+        if publish_date_raw is None:
+            publish_date = None
+        else:
+            publish_date = _require_exact_int(publish_date_raw, field="publish_date", minimum=0)
+        text_sha256 = str(raw.get("text_sha256") or "")
+        if not text_sha256.startswith("sha256:"):
+            raise ValueError("Wall post fingerprint has an invalid text digest")
+        raw_attachments = raw.get("attachments")
+        if not isinstance(raw_attachments, list) or any(not isinstance(value, str) for value in raw_attachments):
+            raise ValueError("Wall post fingerprint attachments must be a string list")
+        attachments = tuple(sorted(raw_attachments))
+        return cls(
+            owner_id=owner_id,
+            post_id=post_id,
+            surface=surface,
+            publish_date=publish_date,
+            text_sha256=text_sha256,
+            attachments=attachments,
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class VkWallSnapshot:
@@ -187,6 +230,12 @@ class VkWallSnapshot:
             raise ValueError("complete must be an exact boolean")
         if self.published_pages < 0 or self.postponed_pages < 0:
             raise ValueError("snapshot page counts cannot be negative")
+        try:
+            captured_at = datetime.fromisoformat(self.captured_at)
+        except ValueError as exc:
+            raise ValueError("captured_at must be an ISO-8601 datetime") from exc
+        if captured_at.tzinfo is None or captured_at.utcoffset() is None:
+            raise ValueError("captured_at must be timezone-aware")
         identities = [(post.surface.value, post.remote_id) for post in self.posts]
         if len(identities) != len(set(identities)):
             raise ValueError("Wall snapshot contains duplicate surface/post identities")
@@ -207,13 +256,48 @@ class VkWallSnapshot:
             "complete": self.complete,
             "published_pages": self.published_pages,
             "postponed_pages": self.postponed_pages,
-            "posts": [post.as_dict() for post in sorted(self.posts, key=lambda item: (item.surface.value, item.post_id))],
+            "posts": [
+                post.as_dict() for post in sorted(self.posts, key=lambda item: (item.surface.value, item.post_id))
+            ],
         }
 
     def as_dict(self) -> dict[str, object]:
         payload = self._payload()
         payload["snapshot_sha256"] = self.snapshot_sha256
         return payload
+
+    @classmethod
+    def from_mapping(cls, raw: Mapping[str, object]) -> VkWallSnapshot:
+        if raw.get("schema_name") != VK_WALL_SNAPSHOT_SCHEMA:
+            raise ValueError("Unsupported or missing VK wall snapshot schema")
+        if raw.get("schema_version") != VK_WALL_SNAPSHOT_VERSION:
+            raise ValueError("Unsupported VK wall snapshot version")
+        community_id = _require_exact_int(raw.get("community_id"), field="community_id", minimum=1)
+        complete = _require_exact_bool(raw.get("complete"), field="complete")
+        published_pages = _require_exact_int(raw.get("published_pages"), field="published_pages", minimum=0)
+        postponed_pages = _require_exact_int(raw.get("postponed_pages"), field="postponed_pages", minimum=0)
+        captured_at = str(raw.get("captured_at") or "")
+        raw_posts = raw.get("posts")
+        if not isinstance(raw_posts, list):
+            raise ValueError("Wall snapshot posts must be a list")
+        posts = tuple(
+            VkWallPostFingerprint.from_mapping(item)
+            for item in raw_posts
+            if isinstance(item, Mapping)
+        )
+        if len(posts) != len(raw_posts):
+            raise ValueError("Wall snapshot contains a non-object post fingerprint")
+        snapshot = cls(
+            community_id=community_id,
+            captured_at=captured_at,
+            complete=complete,
+            published_pages=published_pages,
+            postponed_pages=postponed_pages,
+            posts=posts,
+        )
+        if raw.get("snapshot_sha256") != snapshot.snapshot_sha256:
+            raise ValueError("VK wall snapshot self-digest does not match")
+        return snapshot
 
 
 class VkWallDeltaStatus(StrEnum):
@@ -265,9 +349,7 @@ def compare_wall_snapshots(before: VkWallSnapshot, after: VkWallSnapshot) -> VkW
     created_keys = sorted(set(after_posts) - set(before_posts))
     removed_keys = sorted(set(before_posts) - set(after_posts))
     changed_keys = sorted(
-        key
-        for key in set(before_posts) & set(after_posts)
-        if before_posts[key].as_dict() != after_posts[key].as_dict()
+        key for key in set(before_posts) & set(after_posts) if before_posts[key].as_dict() != after_posts[key].as_dict()
     )
 
     created = tuple(f"{surface}:{remote_id}" for surface, remote_id in created_keys)
