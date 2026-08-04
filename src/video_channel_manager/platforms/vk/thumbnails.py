@@ -128,7 +128,6 @@ class VkThumbnailWriter(HttpClientOwner):
                 retry_policy=self.retry_policy,
                 limiter=self.request_limiter,
                 response_classifier=_provider_response_kind,
-                secrets=(access_token,),
                 sleep=self._sleep,
                 jitter=self._jitter,
             )
@@ -178,8 +177,7 @@ class VkThumbnailWriter(HttpClientOwner):
             )
             kind = result.failure_kind or HttpFailureKind.PROVIDER_ERROR
             raise VkWriteError(
-                f"VK API {code or 'error'} in {method}: {message} "
-                f"[kind={kind.value} attempts={result.attempts}]",
+                f"VK API {code or 'error'} in {method}: {message} [kind={kind.value} attempts={result.attempts}]",
                 method=method,
                 code=code,
                 retryable=code in _RETRYABLE_API_CODES,
@@ -243,7 +241,6 @@ class VkThumbnailWriter(HttpClientOwner):
                     resource="video.thumbUpload",
                     retry_policy=self.retry_policy,
                     limiter=self.request_limiter,
-                    secrets=(upload_url,),
                     sleep=self._sleep,
                     jitter=self._jitter,
                 )
