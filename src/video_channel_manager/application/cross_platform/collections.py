@@ -41,9 +41,7 @@ def build_collection_gaps(
     for decision in evidence.decisions:
         source_collection = source_collections[decision.source_ref.remote_id]
         target_collection = (
-            target_collections.get(decision.target_ref.remote_id)
-            if decision.target_ref is not None
-            else None
+            target_collections.get(decision.target_ref.remote_id) if decision.target_ref is not None else None
         )
         gaps.append(
             CollectionGap(
