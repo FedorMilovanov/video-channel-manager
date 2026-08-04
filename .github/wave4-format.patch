@@ -1,0 +1,83 @@
+diff --git a/src/video_channel_manager/platforms/vk/upload_lifecycle.py b/src/video_channel_manager/platforms/vk/upload_lifecycle.py
+--- a/src/video_channel_manager/platforms/vk/upload_lifecycle.py
++++ b/src/video_channel_manager/platforms/vk/upload_lifecycle.py
+@@ -649,10 +649,8 @@ def ensure_upload_record(
+     raw_wall_policy = record.get("wall_policy")
+     raw_before = record.get("wall_before")
+     if raw_wall_policy is None:
+-        safe_to_bind = stage in {UploadStage.PLANNED, UploadStage.MEDIA_VERIFIED} or (
+-            stage == UploadStage.RESERVATION_INTENT_COMMITTED
+-            and not record.get("reservation_dispatch_started_at")
+-        )
++        safe_to_bind = stage in {UploadStage.PLANNED, UploadStage.MEDIA_VERIFIED} or (
++            stage == UploadStage.RESERVATION_INTENT_COMMITTED and not record.get("reservation_dispatch_started_at")
++        )
+         if not safe_to_bind:
+             raise UploadRecoveryRequired(
+                 "Historical provider-dispatched upload journal has no wall policy and cannot be migrated automatically"
+@@ -902,9 +900,7 @@ def execute_upload_operation(
+     stage = UploadStage(str(record.get("stage")))
+     if stage == UploadStage.VERIFIED:
+         if not _verified_wall_evidence_is_clean(record):
+-            raise UploadRecoveryRequired(
+-                "Verified upload lacks a clean wall postflight and cannot be reused"
+-            )
++            raise UploadRecoveryRequired("Verified upload lacks a clean wall postflight and cannot be reused")
+         return record
+     if stage == UploadStage.REJECTED:
+         raise UploadRejected(str(record.get("last_error") or "Upload was rejected"))
+diff --git a/src/video_channel_manager/platforms/vk/wall.py b/src/video_channel_manager/platforms/vk/wall.py
+--- a/src/video_channel_manager/platforms/vk/wall.py
++++ b/src/video_channel_manager/platforms/vk/wall.py
+@@ -292,10 +292,7 @@ def validate_vk_wall_post_plan(plan: dict[str, Any]) -> None:
+     if type(publish_date) is not int or publish_date <= 0:
+         raise ValueError("VK wall plan publish_date must be a positive exact integer")
+     if not isinstance(plan.get("guid"), str) or not plan["guid"].startswith("vcm-"):
+         raise ValueError("VK wall plan guid is invalid")
+-    guid_seed = (
+-        f"{resolved_project}:{community_id}:{owner_id}_{video_id}:"
+-        f"{publish_date}:{plan['message_sha256']}"
+-    )
++    guid_seed = f"{resolved_project}:{community_id}:{owner_id}_{video_id}:{publish_date}:{plan['message_sha256']}"
+     expected_guid = "vcm-" + hashlib.sha256(guid_seed.encode("utf-8")).hexdigest()[:28]
+     if plan.get("guid") != expected_guid:
+         raise ValueError("VK wall plan guid does not match immutable operation identity")
+@@ -449,9 +446,7 @@ class VkWallWriter(VkVideoWriter):
+         post_id: int | None,
+     ) -> list[VkWallPostFingerprint]:
+         attachment = f"video{video_owner_id}_{video_id}"
+-        message_digest = "sha256:" + hashlib.sha256(
+-            canonical_vk_text(message).encode("utf-8")
+-        ).hexdigest()
++        message_digest = "sha256:" + hashlib.sha256(canonical_vk_text(message).encode("utf-8")).hexdigest()
+         return [
+             post
+             for post in snapshot.posts
+diff --git a/src/video_channel_manager/platforms/vk/wall_safety.py b/src/video_channel_manager/platforms/vk/wall_safety.py
+--- a/src/video_channel_manager/platforms/vk/wall_safety.py
++++ b/src/video_channel_manager/platforms/vk/wall_safety.py
+@@ -279,11 +279,7 @@ class VkWallSnapshot:
+         captured_at = str(raw.get("captured_at") or "")
+         raw_posts = raw.get("posts")
+         if not isinstance(raw_posts, list):
+             raise ValueError("Wall snapshot posts must be a list")
+-        posts = tuple(
+-            VkWallPostFingerprint.from_mapping(item)
+-            for item in raw_posts
+-            if isinstance(item, Mapping)
+-        )
++        posts = tuple(VkWallPostFingerprint.from_mapping(item) for item in raw_posts if isinstance(item, Mapping))
+         if len(posts) != len(raw_posts):
+             raise ValueError("Wall snapshot contains a non-object post fingerprint")
+         snapshot = cls(
+diff --git a/tests/test_vk_upload_lifecycle.py b/tests/test_vk_upload_lifecycle.py
+--- a/tests/test_vk_upload_lifecycle.py
++++ b/tests/test_vk_upload_lifecycle.py
+@@ -113,7 +113,6 @@ class FakeWriter:
+             raise RuntimeError(f"not ready within {timeout_seconds}: {assessment.reasons}")
+         return item
+ 
+-
+     def capture_wall_snapshot(
+         self,
+         *,
