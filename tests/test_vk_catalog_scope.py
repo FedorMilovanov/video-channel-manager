@@ -51,9 +51,7 @@ def _catalog_identity() -> CatalogIdentityEvidence:
         ],
         digest="0" * 64,
     )
-    return provisional.model_copy(
-        update={"digest": calculate_catalog_identity_digest(provisional)}
-    )
+    return provisional.model_copy(update={"digest": calculate_catalog_identity_digest(provisional)})
 
 
 def _plan() -> dict[str, object]:
