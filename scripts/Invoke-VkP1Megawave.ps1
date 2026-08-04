@@ -11,6 +11,11 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 $PSNativeCommandUseErrorActionPreference = $false
+# VCM-WAVE5-RETIRED-GUARD
+$VcmOperatorModule = Join-Path $PSScriptRoot "operator\VideoManager.Operator.psm1"
+Import-Module -Name $VcmOperatorModule -Force -ErrorAction Stop
+Stop-VcmRetiredWrapper -WrapperPath $PSCommandPath -RepositoryRoot (Split-Path -Parent $PSScriptRoot)
+
 
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
