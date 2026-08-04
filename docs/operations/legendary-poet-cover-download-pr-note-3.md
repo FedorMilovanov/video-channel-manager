@@ -1,0 +1,1 @@
+No VK provider writes are performed by this hotfix branch or its CI.
