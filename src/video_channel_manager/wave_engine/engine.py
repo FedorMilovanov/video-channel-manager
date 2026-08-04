@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
+from enum import StrEnum
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -41,6 +42,36 @@ class OperationRejectedError(RuntimeError):
     """The operation was rejected before provider dispatch."""
 
 
+class WaveFaultStage(StrEnum):
+    BEFORE_PREFLIGHT_COMMIT = "before_preflight_commit"
+    AFTER_PREFLIGHT_COMMIT = "after_preflight_commit"
+    BEFORE_OPERATION_INTENT_COMMIT = "before_operation_intent_commit"
+    AFTER_OPERATION_INTENT_COMMIT = "after_operation_intent_commit"
+    AFTER_OPERATION_DISPATCH_STARTED_COMMIT = "after_operation_dispatch_started_commit"
+    AFTER_OPERATION_OUTCOME_BEFORE_RESULT_COMMIT = "after_operation_outcome_before_result_commit"
+    AFTER_OPERATION_RESULT_COMMIT = "after_operation_result_commit"
+    BEFORE_FINAL_RESULT_COMMIT = "before_final_result_commit"
+    AFTER_FINAL_RESULT_COMMIT = "after_final_result_commit"
+    BEFORE_RECONCILIATION_DISPATCH = "before_reconciliation_dispatch"
+    AFTER_RECONCILIATION_OUTCOME_BEFORE_RESULT_COMMIT = (
+        "after_reconciliation_outcome_before_result_commit"
+    )
+    BEFORE_RECONCILIATION_RESULT_COMMIT = "before_reconciliation_result_commit"
+    AFTER_RECONCILIATION_RESULT_COMMIT = "after_reconciliation_result_commit"
+
+
+WaveFaultHook = Callable[[WaveFaultStage, WaveOperation | None], None]
+
+
+def _fault(
+    fault_hook: WaveFaultHook | None,
+    stage: WaveFaultStage,
+    operation: WaveOperation | None = None,
+) -> None:
+    if fault_hook is not None:
+        fault_hook(stage, operation)
+
+
 class WaveEngine:
     def apply(
         self,
@@ -54,6 +85,7 @@ class WaveEngine:
         plan_file_path: Path,
         journal_directory: Path,
         provider_writes_enabled: bool,
+        fault_hook: WaveFaultHook | None = None,
     ) -> WaveResult:
         intent.assert_matches(plan, source)
         root = repository_root.resolve()
@@ -90,6 +122,7 @@ class WaveEngine:
         if contains_mutation and (not intent.enable_provider_writes or not provider_writes_enabled):
             raise ValueError("ambiguous mutations require two explicit provider-write confirmations")
 
+        _fault(fault_hook, WaveFaultStage.BEFORE_PREFLIGHT_COMMIT)
         journal.mkdir(parents=True, exist_ok=False)
         write_json_atomic(
             journal / "preflight-summary.json",
@@ -111,6 +144,7 @@ class WaveEngine:
                 "contains_ambiguous_mutation": contains_mutation,
             },
         )
+        _fault(fault_hook, WaveFaultStage.AFTER_PREFLIGHT_COMMIT)
 
         operation_results: list[WaveOperationResult] = []
         stop = False
@@ -140,9 +174,12 @@ class WaveEngine:
                 "apply_intent_self_digest": intent.self_digest,
                 "operation": operation.model_dump(mode="json"),
             }
+            _fault(fault_hook, WaveFaultStage.BEFORE_OPERATION_INTENT_COMMIT, operation)
             write_json_atomic(journal_path, journal_payload)
+            _fault(fault_hook, WaveFaultStage.AFTER_OPERATION_INTENT_COMMIT, operation)
             journal_payload["stage"] = "dispatch_started"
             write_json_atomic(journal_path, journal_payload)
+            _fault(fault_hook, WaveFaultStage.AFTER_OPERATION_DISPATCH_STARTED_COMMIT, operation)
 
             try:
                 evidence = dict(adapter.execute(operation))
@@ -220,6 +257,11 @@ class WaveEngine:
                     overall = WaveStatus.FAILED
                 stop = True
 
+            _fault(
+                fault_hook,
+                WaveFaultStage.AFTER_OPERATION_OUTCOME_BEFORE_RESULT_COMMIT,
+                operation,
+            )
             operation_results.append(result)
             write_json_atomic(
                 journal_path,
@@ -229,9 +271,12 @@ class WaveEngine:
                     "result": result.model_dump(mode="json"),
                 },
             )
+            _fault(fault_hook, WaveFaultStage.AFTER_OPERATION_RESULT_COMMIT, operation)
 
         wave_result = WaveResult.build(plan=plan, status=overall, operations=tuple(operation_results))
+        _fault(fault_hook, WaveFaultStage.BEFORE_FINAL_RESULT_COMMIT)
         write_json_atomic(journal / "result.json", wave_result.model_dump(mode="json"))
+        _fault(fault_hook, WaveFaultStage.AFTER_FINAL_RESULT_COMMIT)
         return wave_result
 
     def reconcile(
@@ -242,6 +287,7 @@ class WaveEngine:
         request: WaveReconciliationRequest,
         adapter: ReconciliationAdapter,
         output_path: Path,
+        fault_hook: WaveFaultHook | None = None,
     ) -> WaveReconciliationResult:
         request.assert_matches(plan, result)
         if output_path.exists():
@@ -250,7 +296,13 @@ class WaveEngine:
         reconciled: list[WaveOperationResult] = []
         for operation_id in request.operation_ids:
             operation = operation_by_id[operation_id]
+            _fault(fault_hook, WaveFaultStage.BEFORE_RECONCILIATION_DISPATCH, operation)
             evidence = dict(adapter.reconcile(operation))
+            _fault(
+                fault_hook,
+                WaveFaultStage.AFTER_RECONCILIATION_OUTCOME_BEFORE_RESULT_COMMIT,
+                operation,
+            )
             reconciled.append(
                 WaveOperationResult(
                     operation_id=operation_id,
@@ -262,5 +314,7 @@ class WaveEngine:
                 )
             )
         reconciliation = WaveReconciliationResult.build(request=request, operations=tuple(reconciled))
+        _fault(fault_hook, WaveFaultStage.BEFORE_RECONCILIATION_RESULT_COMMIT)
         write_json_atomic(output_path, reconciliation.model_dump(mode="json"))
+        _fault(fault_hook, WaveFaultStage.AFTER_RECONCILIATION_RESULT_COMMIT)
         return reconciliation
