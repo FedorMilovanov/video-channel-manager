@@ -10,7 +10,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -44,11 +44,27 @@ jobs:
             src/video_channel_manager/editorial/_content_plan_validate.py \
             src/video_channel_manager/editorial/_content_validation_identity.py \
             tests/test_sync_entrypoint_contract.py
+      - name: Commit canonical Wave 2 formatting
+        if: github.event_name == 'push' && matrix.python-version == '3.11'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            scripts/sync_youtube_to_vk.py \
+            src/video_channel_manager/editorial/_content_plan_validate.py \
+            src/video_channel_manager/editorial/_content_validation_identity.py \
+            tests/test_sync_entrypoint_contract.py
+          if git diff --cached --quiet; then
+            echo "Canonical formatting already committed."
+          else
+            git commit -m "style: apply canonical Wave 2 formatting"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
       - name: Upload formatted Wave 2 sources
         if: matrix.python-version == '3.11'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: wave2-formatted-sources
+          name: wave2-formatted-sources-${{ github.event_name }}
           path: |
             scripts/sync_youtube_to_vk.py
             src/video_channel_manager/editorial/_content_plan_validate.py
