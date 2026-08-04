@@ -19,6 +19,8 @@ This is the first state board to read before YouTube/VK work. Chat history, scre
 
 Wave 5 exact-head CI run `30900532613` passed dependency audit, compileall, Ruff, Ruff format, strict mypy, and the full suite on Python 3.11, 3.12, and 3.13: `591 passed, 1 xfailed`. Pester passed `17/17` on Windows PowerShell 5.1, PowerShell 7 on Windows, and PowerShell 7 on Linux. Development and CI performed zero VK or YouTube writes.
 
+Living-state synchronization after the Wave 5 merge is tracked by PR #77 and contains documentation/register/test changes only; it does not authorize or perform provider operations.
+
 ## Wave 5 guarantees now in `main`
 
 The PowerShell/operator surface is now explicit:
