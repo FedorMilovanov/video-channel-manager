@@ -32,7 +32,7 @@ The supported reliability surface is explicitly inventoried and proof-bound:
 - aggregate coverage is informational only; the safety gate is boundary- and scenario-specific;
 - deterministic dependency-injected WaveEngine faults cover intent, dispatch, response persistence, operation-result, final-result, and reconciliation boundaries without environment-controlled activation;
 - apply and reconciliation journals form durable replay barriers before ambiguous provider calls;
-- interrupted or lost ambiguous outcomes remain one-attempt, non-retry-safe, stop later operations, and require exact reconciliation;
+- interrupted or lost ambiguous outcomes remain one-attempt, non-retry-safe, stop later operations, enter `unknown_requires_reconciliation`, and require exact reconciliation;
 - malformed, truncated, reordered, stale, wrong-digest, cross-project, wrong-owner, wrong-snapshot, wrong-policy, duplicate, and incomplete evidence fails closed;
 - interrupted atomic replacement preserves prior evidence and removes orphan temporary files;
 - historical pre-dispatch journal migration remains narrowly allowed, while provider-dispatched incomplete historical evidence remains blocked;
