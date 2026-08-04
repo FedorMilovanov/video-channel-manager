@@ -45,15 +45,20 @@ This file records durable changes to operational memory. Add an entry whenever p
 - Preserved no-blind-retry behavior and separated live historical reconciliation from architecture work.
 - No VK or YouTube provider write occurred.
 
-### Wave 4 provider-contract correction and activation
+### Wave 4 completed — fail-closed upload/wall separation
 
-- Issue #36 is the authoritative Wave 4 contract.
-- `wallpost=0` remains the proven mandatory upload-side wall control.
-- `repeat` is not used as wall safety because it describes video playback looping in the available SDK schemas.
-- `auto_publish` is not treated as verified current primary-contract evidence and is not mandated blindly.
-- Required future safety is a versioned `wall_mutation_authorized=false` upload contract, bound published+postponed before-snapshot, mandatory postflight delta, and a separate postponed-only publication path.
-- Immediate publication requires a separate immutable reviewed exception.
-- Issue #37 remains the only owner of its exact cleanup scope; Wave 4 authorizes no live cleanup.
+- Merged PR #71 as `d85f7cf94b8ba0b30947291b3a08491239438843`.
+- Merged living-state synchronization PR #73 as `3bf01aec2f0d17133f0ec5821f88d63ec92373bb`.
+- Exact-head CI run `30895905586` passed dependency audit, compileall, Ruff, formatting, strict mypy, and full pytest on Python 3.11, 3.12, and 3.13: `586 passed, 1 xfailed`.
+- Added immutable self-digested `wall_mutation_authorized=false` upload policy.
+- Every supported `video.save` now sends `wallpost=0`, `auto_publish=0`, and `repeat=0` explicitly.
+- Missing-policy journal migration is allowed only before provider dispatch and recomputes operation identity and initial evidence.
+- Provider-dispatched historical journals without the policy fail closed and require reconciliation.
+- Upload batches bind complete published+postponed wall baseline evidence and require a clean postflight delta before `verified`.
+- Postponed publication is the only supported default wall-write path, with exact future `publish_date`, deterministic `guid`, duplicate/schedule collision checks, and one-attempt ambiguous-response reconciliation.
+- Unexpected wall objects are classified but never automatically deleted; issue #37 remains the only owner of its exact cleanup scope.
+- No VK or YouTube provider write occurred during implementation or CI.
+- Wave 4 issue #36 closed; Wave 5 operator-layer work is owned by issue #72.
 
 ### Wave 0 canonical-state consolidation
 
