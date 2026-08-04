@@ -54,7 +54,10 @@ def test_current_state_preserves_verified_operational_identity() -> None:
         "data\\vk-upload\\verified-longform-26",
         "BLOCKED_PENDING_FRESH_READ_ONLY_WALL_AUDIT_AND_LOCAL_LEDGER_RECONCILIATION",
         "d85f7cf94b8ba0b30947291b3a08491239438843",
-        "WAVE_4_COMPLETED_WAVE_5_NEXT",
+        "1a62779293a404e4654b6230644dfc78e9b20dc1",
+        "WAVE_5_COMPLETED_WAVE_6_NEXT",
+        "Wave 6 / issue #76",
+        "scripts/operator/Invoke-VideoManager.ps1",
     )
 
     for fact in required_facts:
