@@ -1,7 +1,7 @@
 {
   "schema_name": "video-manager.audit-register-v2",
-  "schema_version": "2.6",
-  "updated_at": "2026-08-04T23:35:00+03:00",
+  "schema_version": "2.7",
+  "updated_at": "2026-08-05T01:05:00+03:00",
   "repository": "FedorMilovanov/video-channel-manager",
   "audit_a0_merge_head": "a06a93e1ec16b4ddb0f578a92e47ce76b4ee78a5",
   "wave_7_code_head": "df956bbbf19af6652f8711f95fb4fecf272e9951",
@@ -16,6 +16,7 @@
   "wave_8e_code_head": "a0230ea156eeb1717e15c6523d0b6b28e90f6d8e",
   "wave_8e_state_sync_head": "bc267504258e07e8bb68ca4760b0b9beb2571b6d",
   "wave_8f_code_head": "dc3b25fdbbdb7d87e34f0f52e29fc9e3856190ae",
+  "wave_9_contract_code_head": "604b962a9936ab173e41602bd9ab10b2dfaa9e59",
   "audit_a0_ci_run": 30925523584,
   "wave_8a_ci_run": 30933582322,
   "wave_8a_state_sync_ci_run": 30934601690,
@@ -25,44 +26,251 @@
   "wave_8e_ci_run": 30947556457,
   "wave_8e_state_sync_ci_run": 30948120881,
   "wave_8f_ci_run": 30950259625,
-  "program_state": "WAVE_8_COMPLETED_WAVE_9_READ_ONLY_RECONCILIATION_ACTIVE_NO_PROVIDER_WRITES",
+  "wave_9_contract_ci_run": 30954499845,
+  "program_state": "WAVE_9_READ_ONLY_RECONCILIATION_CONTRACT_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES",
   "wave_8_evidence_level": "self_tested",
+  "wave_9_contract_evidence_level": "read_only_contract_self_tested",
+  "wave_9_live_reconciliation_status": "pending_fresh_bounded_provider_snapshots_and_local_ledgers",
+  "wave_9_contract_schema": "video-manager.read-only-reconciliation-evidence",
+  "wave_9_contract_ruleset": "wave-9-v1",
   "source_line_count": 7046,
   "sources": [
-    {"name":"Вставленный текст(275).txt","lines":474,"sha256":"a59baae832b96e4e961b88e68706fc642b51a06223c18bfd22d0a63056037cb0"},
-    {"name":"Вставленный текст (2)(10).txt","lines":1183,"sha256":"6b11c7f58f6b492febe5be28f2e1dcf6c626545ab0ed0791cf5166c1f062a752"},
-    {"name":"Вставленный текст (3)(1).txt","lines":2209,"sha256":"1f433a7f54b1f3c3f37e3861108af5b9f845635ca4aaa448132733150a4ef3de"},
-    {"name":"Вставленных __уценки (2).md","lines":245,"sha256":"4e5f5d1e547d707534c495f6fb5f0942b283c48da59fcba6e6e2808dd94b3630"},
-    {"name":"Вставленный текст (4).txt","lines":1171,"sha256":"379b624e8743fb3d940ccc939f1f650bfd8967891dbc4869c1df1c6d56b878e0"},
-    {"name":"Вставленный текст (5)(1).txt","lines":1249,"sha256":"8852e93a8d7e2e9513c1bc0271e8c32b4cd0339c18f1150a92c78456a8dc82c8"},
-    {"name":"Вставленный текст(276).txt","lines":515,"sha256":"e62d428a31e3f167cce298a37936b132c023e61b5b8edee7b4f80e26c57e434a"}
+    {
+      "name": "Вставленный текст(275).txt",
+      "lines": 474,
+      "sha256": "a59baae832b96e4e961b88e68706fc642b51a06223c18bfd22d0a63056037cb0"
+    },
+    {
+      "name": "Вставленный текст (2)(10).txt",
+      "lines": 1183,
+      "sha256": "6b11c7f58f6b492febe5be28f2e1dcf6c626545ab0ed0791cf5166c1f062a752"
+    },
+    {
+      "name": "Вставленный текст (3)(1).txt",
+      "lines": 2209,
+      "sha256": "1f433a7f54b1f3c3f37e3861108af5b9f845635ca4aaa448132733150a4ef3de"
+    },
+    {
+      "name": "Вставленных __уценки (2).md",
+      "lines": 245,
+      "sha256": "4e5f5d1e547d707534c495f6fb5f0942b283c48da59fcba6e6e2808dd94b3630"
+    },
+    {
+      "name": "Вставленный текст (4).txt",
+      "lines": 1171,
+      "sha256": "379b624e8743fb3d940ccc939f1f650bfd8967891dbc4869c1df1c6d56b878e0"
+    },
+    {
+      "name": "Вставленный текст (5)(1).txt",
+      "lines": 1249,
+      "sha256": "8852e93a8d7e2e9513c1bc0271e8c32b4cd0339c18f1150a92c78456a8dc82c8"
+    },
+    {
+      "name": "Вставленный текст(276).txt",
+      "lines": 515,
+      "sha256": "e62d428a31e3f167cce298a37936b132c023e61b5b8edee7b4f80e26c57e434a"
+    }
   ],
   "findings": [
-    {"id":"TRUTH-001","severity":"P0","status":"fixed","target_wave":"Audit-A0","title":"Authoritative entry documents disagreed with current state"},
-    {"id":"ADMIN-001","severity":"P1","status":"fixed","target_wave":"Audit-A0","title":"Duplicate Wave 7 paths remained open"},
-    {"id":"ARCHIVE-001","severity":"P1","status":"confirmed","target_wave":"Wave-10","title":"Historical literal code requires a separate archive CI boundary"},
-    {"id":"MATCH-001","severity":"P0","status":"fixed","target_wave":"Wave-8A","title":"Matching had no exact-first phase","evidence":"PR #91"},
-    {"id":"MATCH-002","severity":"P0","status":"fixed","target_wave":"Wave-8A","title":"Ambiguous pairs could create mapping","evidence":"PR #91 conflict-explicit results"},
-    {"id":"MATCH-003","severity":"P1","status":"fixed","target_wave":"Wave-8A","title":"Full O(N*M) fuzzy comparison","evidence":"PR #91 bounded token/trigram index"},
-    {"id":"IDENTITY-001","severity":"P1","status":"fixed","target_wave":"Wave-8B","title":"One aggressive normalizer was reused across distinct fields","evidence":"PR #93 wave-8b-v1 purpose-specific canonicalizers"},
-    {"id":"IDENTITY-002","severity":"P0","status":"fixed","target_wave":"Wave-8B","title":"Substring, prefix, or combined-row text could be mistaken for exact field correctness","evidence":"PR #93 exact per-field readback"},
-    {"id":"URL-001","severity":"P0","status":"fixed","target_wave":"Wave-8B","title":"Public/admin/cross-project/unknown URL profiles lacked one fail-closed identity contract","evidence":"PR #93 canonical URL evidence and project binding"},
-    {"id":"ALBUM-001","severity":"P0","status":"fixed","target_wave":"Wave-8C","title":"Duplicate canonical album names can silently overwrite or remain title authority","evidence":"PR #95 duplicate canonical target titles are explicit conflicts"},
-    {"id":"CATALOG-001","severity":"P0","status":"fixed","target_wave":"Wave-8C","title":"Album placement uses title candidate rather than reviewed exact collection identity","evidence":"PR #95 reviewed source collection ID to exact target collection ID evidence"},
-    {"id":"CATALOG-002","severity":"P0","status":"fixed","target_wave":"Wave-8C","title":"Unresolved collection identity can still create album or placement operations","evidence":"PR #95 conflict decisions create zero album and placement operations"},
-    {"id":"CATALOG-003","severity":"P1","status":"fixed","target_wave":"Wave-8C","title":"Catalog membership evidence must compare semantic ID sets independent of provider positions","evidence":"PR #95 semantic exact target video ID membership sets"},
-    {"id":"MEDIA-001","severity":"P0","status":"fixed","target_wave":"Wave-8D","title":"Cache reuse lacks authoritative path, SHA-256 and structured media evidence","evidence":"PR #98 immutable project/source/path/file/probe-bound manifest and fresh cache validation"},
-    {"id":"MEDIA-002","severity":"P0","status":"fixed","target_wave":"Wave-8D","title":"yt-dlp fallback can select a glob result instead of authoritative final path","evidence":"PR #98 exact structured-result field path; wildcard and first-match authority prohibited"},
-    {"id":"MEDIA-003","severity":"P1","status":"fixed","target_wave":"Wave-8D","title":"MP4 remux does not prove codec/profile compatibility","evidence":"PR #98 explicit container/stream/codec/dimension/audio/duration profile assessment"},
-    {"id":"THUMB-001","severity":"P1","status":"fixed","target_wave":"Wave-8E","title":"Thumbnail upload response does not prove selected-thumbnail postcondition","evidence":"PR #102 project/video/image-bound journal, pre-dispatch intent, exact save receipt, delayed video.get descriptor-set readback, and no-replay reconciliation"},
-    {"id":"OPS-SCOPE-001","severity":"P1","status":"fixed","target_wave":"Wave-8F","title":"Operations are bounded to supplied source set and expected remote delta","evidence":"PR #104 immutable integration evidence binds comparison/catalog/plan/result/media/upload/thumbnail identities and operation-scoped totals"},
-    {"id":"STAGE-001","severity":"P0","status":"covered_and_preserved","target_wave":"Permanent","title":"A verified early mutation is not replayed because a later stage failed","evidence":"PR #104 accepted upload plus later failure or unknown is requires_attention"},
-    {"id":"POWERSHELL-001","severity":"P1","status":"covered_and_preserved","target_wave":"Permanent","title":"PowerShell boundaries test zero, one and many results"},
-    {"id":"UPLOAD-TICKET-001","severity":"P0","status":"policy_recorded","target_wave":"Wave-8D/Separate-Audio","title":"URL-shaped value is not upload authority"},
-    {"id":"LIVE-POET-001","severity":"P0","status":"requires_reconciliation","target_wave":"Wave-9B","title":"Legendary Poet live queue is not proven complete"},
-    {"id":"LIVE-LORD-001","severity":"P0","status":"requires_reconciliation","target_wave":"Wave-9A","title":"Lord God queue requires local ledger reconciliation"},
-    {"id":"AUDIO-001","severity":"P1","status":"separate_system","target_wave":"Separate-Audio","title":"VK Audio is partial experimental browser/internal-web integration"},
-    {"id":"GOV-001","severity":"P2","status":"confirmed","target_wave":"Wave-10","title":"History, supported code and operational state need distinct governance"}
+    {
+      "id": "TRUTH-001",
+      "severity": "P0",
+      "status": "fixed",
+      "target_wave": "Audit-A0",
+      "title": "Authoritative entry documents disagreed with current state"
+    },
+    {
+      "id": "ADMIN-001",
+      "severity": "P1",
+      "status": "fixed",
+      "target_wave": "Audit-A0",
+      "title": "Duplicate Wave 7 paths remained open"
+    },
+    {
+      "id": "ARCHIVE-001",
+      "severity": "P1",
+      "status": "confirmed",
+      "target_wave": "Wave-10",
+      "title": "Historical literal code requires a separate archive CI boundary"
+    },
+    {
+      "id": "MATCH-001",
+      "severity": "P0",
+      "status": "fixed",
+      "target_wave": "Wave-8A",
+      "title": "Matching had no exact-first phase",
+      "evidence": "PR #91"
+    },
+    {
+      "id": "MATCH-002",
+      "severity": "P0",
+      "status": "fixed",
+      "target_wave": "Wave-8A",
+      "title": "Ambiguous pairs could create mapping",
+      "evidence": "PR #91 conflict-explicit results"
+    },
+    {
+      "id": "MATCH-003",
+      "severity": "P1",
+      "status": "fixed",
+      "target_wave": "Wave-8A",
+      "title": "Full O(N*M) fuzzy comparison",
+      "evidence": "PR #91 bounded token/trigram index"
+    },
+    {
+      "id": "IDENTITY-001",
+      "severity": "P1",
+      "status": "fixed",
+      "target_wave": "Wave-8B",
+      "title": "One aggressive normalizer was reused across distinct fields",
+      "evidence": "PR #93 wave-8b-v1 purpose-specific canonicalizers"
+    },
+    {
+      "id": "IDENTITY-002",
+      "severity": "P0",
+      "status": "fixed",
+      "target_wave": "Wave-8B",
+      "title": "Substring, prefix, or combined-row text could be mistaken for exact field correctness",
+      "evidence": "PR #93 exact per-field readback"
+    },
+    {
+      "id": "URL-001",
+      "severity": "P0",
+      "status": "fixed",
+      "target_wave": "Wave-8B",
+      "title": "Public/admin/cross-project/unknown URL profiles lacked one fail-closed identity contract",
+      "evidence": "PR #93 canonical URL evidence and project binding"
+    },
+    {
+      "id": "ALBUM-001",
+      "severity": "P0",
+      "status": "fixed",
+      "target_wave": "Wave-8C",
+      "title": "Duplicate canonical album names can silently overwrite or remain title authority",
+      "evidence": "PR #95 duplicate canonical target titles are explicit conflicts"
+    },
+    {
+      "id": "CATALOG-001",
+      "severity": "P0",
+      "status": "fixed",
+      "target_wave": "Wave-8C",
+      "title": "Album placement uses title candidate rather than reviewed exact collection identity",
+      "evidence": "PR #95 reviewed source collection ID to exact target collection ID evidence"
+    },
+    {
+      "id": "CATALOG-002",
+      "severity": "P0",
+      "status": "fixed",
+      "target_wave": "Wave-8C",
+      "title": "Unresolved collection identity can still create album or placement operations",
+      "evidence": "PR #95 conflict decisions create zero album and placement operations"
+    },
+    {
+      "id": "CATALOG-003",
+      "severity": "P1",
+      "status": "fixed",
+      "target_wave": "Wave-8C",
+      "title": "Catalog membership evidence must compare semantic ID sets independent of provider positions",
+      "evidence": "PR #95 semantic exact target video ID membership sets"
+    },
+    {
+      "id": "MEDIA-001",
+      "severity": "P0",
+      "status": "fixed",
+      "target_wave": "Wave-8D",
+      "title": "Cache reuse lacks authoritative path, SHA-256 and structured media evidence",
+      "evidence": "PR #98 immutable project/source/path/file/probe-bound manifest and fresh cache validation"
+    },
+    {
+      "id": "MEDIA-002",
+      "severity": "P0",
+      "status": "fixed",
+      "target_wave": "Wave-8D",
+      "title": "yt-dlp fallback can select a glob result instead of authoritative final path",
+      "evidence": "PR #98 exact structured-result field path; wildcard and first-match authority prohibited"
+    },
+    {
+      "id": "MEDIA-003",
+      "severity": "P1",
+      "status": "fixed",
+      "target_wave": "Wave-8D",
+      "title": "MP4 remux does not prove codec/profile compatibility",
+      "evidence": "PR #98 explicit container/stream/codec/dimension/audio/duration profile assessment"
+    },
+    {
+      "id": "THUMB-001",
+      "severity": "P1",
+      "status": "fixed",
+      "target_wave": "Wave-8E",
+      "title": "Thumbnail upload response does not prove selected-thumbnail postcondition",
+      "evidence": "PR #102 project/video/image-bound journal, pre-dispatch intent, exact save receipt, delayed video.get descriptor-set readback, and no-replay reconciliation"
+    },
+    {
+      "id": "OPS-SCOPE-001",
+      "severity": "P1",
+      "status": "fixed",
+      "target_wave": "Wave-8F",
+      "title": "Operations are bounded to supplied source set and expected remote delta",
+      "evidence": "PR #104 immutable integration evidence binds comparison/catalog/plan/result/media/upload/thumbnail identities and operation-scoped totals"
+    },
+    {
+      "id": "RECON-001",
+      "severity": "P0",
+      "status": "fixed",
+      "target_wave": "Wave-9-Contract",
+      "title": "Live queue state lacked one bounded fail-closed read-only reconciliation contract",
+      "evidence": "PR #107 video-manager.read-only-reconciliation-evidence / wave-9-v1"
+    },
+    {
+      "id": "STAGE-001",
+      "severity": "P0",
+      "status": "covered_and_preserved",
+      "target_wave": "Permanent",
+      "title": "A verified early mutation is not replayed because a later stage failed",
+      "evidence": "PR #104 accepted upload plus later failure or unknown is requires_attention; PR #107 accepted/processing/verified/unknown states cannot become safely missing"
+    },
+    {
+      "id": "POWERSHELL-001",
+      "severity": "P1",
+      "status": "covered_and_preserved",
+      "target_wave": "Permanent",
+      "title": "PowerShell boundaries test zero, one and many results"
+    },
+    {
+      "id": "UPLOAD-TICKET-001",
+      "severity": "P0",
+      "status": "policy_recorded",
+      "target_wave": "Wave-8D/Separate-Audio",
+      "title": "URL-shaped value is not upload authority"
+    },
+    {
+      "id": "LIVE-POET-001",
+      "severity": "P0",
+      "status": "requires_reconciliation",
+      "target_wave": "Wave-9B",
+      "title": "Legendary Poet live queue is not proven complete"
+    },
+    {
+      "id": "LIVE-LORD-001",
+      "severity": "P0",
+      "status": "requires_reconciliation",
+      "target_wave": "Wave-9A",
+      "title": "Lord God queue requires fresh provider snapshots and local ledger reconciliation"
+    },
+    {
+      "id": "AUDIO-001",
+      "severity": "P1",
+      "status": "separate_system",
+      "target_wave": "Separate-Audio",
+      "title": "VK Audio is partial experimental browser/internal-web integration"
+    },
+    {
+      "id": "GOV-001",
+      "severity": "P2",
+      "status": "confirmed",
+      "target_wave": "Wave-10",
+      "title": "History, supported code and operational state need distinct governance"
+    }
   ],
   "provider_writes_during_wave_8a": 0,
   "provider_writes_during_wave_8b": 0,
@@ -70,5 +278,9 @@
   "provider_writes_during_wave_8d": 0,
   "provider_writes_during_wave_8e": 0,
   "provider_writes_during_wave_8f": 0,
+  "provider_queries_during_wave_9_contract": 0,
+  "provider_writes_during_wave_9_contract": 0,
+  "write_plans_created_during_wave_9_contract": 0,
+  "provider_writes_during_wave_9_state_sync": 0,
   "provider_writes_during_state_sync": 0
 }
