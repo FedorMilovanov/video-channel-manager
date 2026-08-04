@@ -158,12 +158,10 @@ def test_result_is_independent_of_input_order() -> None:
     )
 
     forward_pairs = [
-        (item.source_ref.remote_id, item.target_ref.remote_id, item.match_method)
-        for item in forward.matches
+        (item.source_ref.remote_id, item.target_ref.remote_id, item.match_method) for item in forward.matches
     ]
     reversed_pairs = [
-        (item.source_ref.remote_id, item.target_ref.remote_id, item.match_method)
-        for item in reversed_result.matches
+        (item.source_ref.remote_id, item.target_ref.remote_id, item.match_method) for item in reversed_result.matches
     ]
     assert forward_pairs == reversed_pairs
     assert forward.conflicts == reversed_result.conflicts
