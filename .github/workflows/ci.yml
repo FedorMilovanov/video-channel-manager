@@ -30,6 +30,8 @@ jobs:
       - name: Import Wave 3 product patch
         if: github.event_name == 'pull_request' && matrix.python-version == '3.11'
         run: |
+          git fetch origin "${GITHUB_HEAD_REF}:refs/remotes/origin/${GITHUB_HEAD_REF}" --depth=1
+          git checkout -B "${GITHUB_HEAD_REF}" "refs/remotes/origin/${GITHUB_HEAD_REF}"
           cat .wave3-patch-00 .wave3-patch-01 | base64 -d > /tmp/wave3-code.patch.gz
           echo "735afde5e6df1854db40be7f5db22e79ee52b1bc4ee7bc6f40291fc25cb64bac  /tmp/wave3-code.patch.gz" | sha256sum --check --strict
           gzip -d /tmp/wave3-code.patch.gz
