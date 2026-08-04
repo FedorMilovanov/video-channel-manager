@@ -11,7 +11,10 @@ from typing import Any, Protocol, cast
 
 from video_channel_manager.platforms.vk.wall_safety import (
     DEFAULT_UPLOAD_WALL_POLICY,
+    VkWallDeltaStatus,
     VkUploadWallPolicy,
+    VkWallSnapshot,
+    compare_wall_snapshots,
 )
 
 
@@ -154,6 +157,13 @@ class UploadWriterProtocol(Protocol):
         timeout_seconds: int,
         on_observation: Callable[[dict[str, Any] | None, VkUploadReadinessAssessment | None], None] | None = None,
     ) -> dict[str, Any]: ...
+
+    def capture_wall_snapshot(
+        self,
+        *,
+        community_id: int,
+        max_posts_per_surface: int = 10000,
+    ) -> VkWallSnapshot: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -615,26 +625,126 @@ def ticket_from_record(record: Mapping[str, Any]) -> StoredUploadTicket:
     )
 
 
+def _wall_baseline_evidence(snapshot: VkWallSnapshot) -> dict[str, object]:
+    return {
+        "before_snapshot_sha256": snapshot.snapshot_sha256,
+        "before_captured_at": snapshot.captured_at,
+        "before_published_pages": snapshot.published_pages,
+        "before_postponed_pages": snapshot.postponed_pages,
+    }
+
+
+def _bind_wall_baseline(
+    record: dict[str, Any],
+    *,
+    community_id: int,
+    wall_before_snapshot: VkWallSnapshot,
+    persist: PersistCallback,
+) -> None:
+    if wall_before_snapshot.community_id != community_id:
+        raise UploadRejected("Upload wall baseline belongs to another community")
+    if not wall_before_snapshot.complete:
+        raise UploadRejected("Upload wall baseline is incomplete")
+    stage = UploadStage(str(record.get("stage")))
+    expected = _wall_baseline_evidence(wall_before_snapshot)
+    raw_wall_safety = record.get("wall_safety")
+    if raw_wall_safety is None:
+        safe_to_bind = stage in {UploadStage.PLANNED, UploadStage.MEDIA_VERIFIED} or (
+            stage == UploadStage.RESERVATION_INTENT_COMMITTED
+            and not record.get("reservation_dispatch_started_at")
+        )
+        if not safe_to_bind:
+            raise UploadRecoveryRequired(
+                "Historical upload has no pre-dispatch wall baseline; exact wall reconciliation is required"
+            )
+        record["wall_safety"] = {
+            **expected,
+            "after_snapshot_sha256": None,
+            "after_captured_at": None,
+            "delta": None,
+        }
+        persist()
+        return
+    if not isinstance(raw_wall_safety, Mapping):
+        raise UploadRecoveryRequired("Upload journal wall_safety evidence is invalid")
+    mismatches = {
+        key: {"expected": value, "actual": raw_wall_safety.get(key)}
+        for key, value in expected.items()
+        if raw_wall_safety.get(key) != value
+    }
+    if mismatches:
+        raise UploadRecoveryRequired(f"Upload wall baseline binding mismatch: {mismatches}")
+
+
+def _verified_wall_evidence_is_clean(record: Mapping[str, Any]) -> bool:
+    raw_wall_safety = record.get("wall_safety")
+    if not isinstance(raw_wall_safety, Mapping):
+        return False
+    raw_delta = raw_wall_safety.get("delta")
+    return isinstance(raw_delta, Mapping) and raw_delta.get("status") == VkWallDeltaStatus.CLEAN.value
+
+
 def _commit_verified(
     record: dict[str, Any],
     *,
+    writer: UploadWriterProtocol,
+    community_id: int,
+    wall_before_snapshot: VkWallSnapshot,
     item: Mapping[str, Any],
     assessment: VkUploadReadinessAssessment,
     persist: PersistCallback,
     fault_hook: FaultHook | None,
     clock: Clock,
 ) -> None:
+    _fault(fault_hook, "after_remote_ready_before_wall_postflight")
+    wall_after_snapshot = writer.capture_wall_snapshot(community_id=community_id)
+    wall_delta = compare_wall_snapshots(wall_before_snapshot, wall_after_snapshot)
+    raw_wall_safety = record.get("wall_safety")
+    if not isinstance(raw_wall_safety, dict):
+        raise UploadRecoveryRequired("Upload journal lost its wall baseline evidence")
+    raw_wall_safety.update(
+        {
+            "after_snapshot_sha256": wall_after_snapshot.snapshot_sha256,
+            "after_captured_at": wall_after_snapshot.captured_at,
+            "after_published_pages": wall_after_snapshot.published_pages,
+            "after_postponed_pages": wall_after_snapshot.postponed_pages,
+            "delta": wall_delta.as_dict(),
+        }
+    )
+    persist()
+    _fault(fault_hook, "after_wall_postflight_commit")
+    if wall_delta.status is not VkWallDeltaStatus.CLEAN:
+        _persist_transition(
+            record,
+            UploadStage.UNKNOWN_REQUIRES_RECONCILIATION,
+            persist=persist,
+            evidence={
+                "reason": "upload_wall_postflight_not_clean",
+                "wall_delta": wall_delta.as_dict(),
+            },
+            clock=clock,
+        )
+        raise UploadRecoveryRequired(
+            f"Upload wall postflight is {wall_delta.status.value}; wall reconciliation is required"
+        )
+
     _fault(fault_hook, "after_remote_ready_before_verified_commit")
     record["verification"] = {
         "verified_at": _iso(clock),
         "assessment": assessment.as_dict(),
         "item_sha256": _canonical_sha256(dict(item)),
+        "wall_before_snapshot_sha256": wall_before_snapshot.snapshot_sha256,
+        "wall_after_snapshot_sha256": wall_after_snapshot.snapshot_sha256,
+        "wall_delta_status": wall_delta.status.value,
     }
     _persist_transition(
         record,
         UploadStage.VERIFIED,
         persist=persist,
-        evidence={"assessment": assessment.as_dict()},
+        evidence={
+            "assessment": assessment.as_dict(),
+            "wall_delta": wall_delta.as_dict(),
+        },
         clock=clock,
     )
     _fault(fault_hook, "after_verified_commit")
@@ -644,6 +754,8 @@ def _resume_or_reconcile(
     record: dict[str, Any],
     *,
     writer: UploadWriterProtocol,
+    community_id: int,
+    wall_before_snapshot: VkWallSnapshot,
     readiness: VkUploadReadiness,
     processing_timeout: int,
     persist: PersistCallback,
@@ -687,6 +799,9 @@ def _resume_or_reconcile(
         if assessment.ready:
             _commit_verified(
                 record,
+                writer=writer,
+                community_id=community_id,
+                wall_before_snapshot=wall_before_snapshot,
                 item=item,
                 assessment=assessment,
                 persist=persist,
@@ -744,6 +859,9 @@ def _resume_or_reconcile(
         raise RuntimeError(f"Writer returned a non-ready upload: {assessment.reasons}")
     _commit_verified(
         record,
+        writer=writer,
+        community_id=community_id,
+        wall_before_snapshot=wall_before_snapshot,
         item=item,
         assessment=assessment,
         persist=persist,
@@ -763,6 +881,7 @@ def execute_upload_operation(
     media_path: Path | None,
     readiness: VkUploadReadiness,
     processing_timeout: int,
+    wall_before_snapshot: VkWallSnapshot,
     persist: PersistCallback,
     fault_hook: FaultHook | None = None,
     clock: Clock = _utc_now,
@@ -775,8 +894,19 @@ def execute_upload_operation(
     except ValueError as exc:
         raise UploadRejected(f"Upload wall policy is invalid: {exc}") from exc
 
+    _bind_wall_baseline(
+        record,
+        community_id=community_id,
+        wall_before_snapshot=wall_before_snapshot,
+        persist=persist,
+    )
+
     stage = UploadStage(str(record.get("stage")))
     if stage == UploadStage.VERIFIED:
+        if not _verified_wall_evidence_is_clean(record):
+            raise UploadRecoveryRequired(
+                "Verified upload lacks a clean wall postflight and cannot be reused"
+            )
         return record
     if stage == UploadStage.REJECTED:
         raise UploadRejected(str(record.get("last_error") or "Upload was rejected"))
@@ -784,6 +914,8 @@ def execute_upload_operation(
         return _resume_or_reconcile(
             record,
             writer=writer,
+            community_id=community_id,
+            wall_before_snapshot=wall_before_snapshot,
             readiness=readiness,
             processing_timeout=processing_timeout,
             persist=persist,
@@ -799,6 +931,8 @@ def execute_upload_operation(
         return _resume_or_reconcile(
             record,
             writer=writer,
+            community_id=community_id,
+            wall_before_snapshot=wall_before_snapshot,
             readiness=readiness,
             processing_timeout=processing_timeout,
             persist=persist,
@@ -945,6 +1079,8 @@ def execute_upload_operation(
     return _resume_or_reconcile(
         record,
         writer=writer,
+        community_id=community_id,
+        wall_before_snapshot=wall_before_snapshot,
         readiness=readiness,
         processing_timeout=processing_timeout,
         persist=persist,

@@ -35,12 +35,15 @@ from video_channel_manager.editorial._project_profiles import PROJECT_KEYS
 from video_channel_manager.exchange.audit_package import AuditPackage
 from video_channel_manager.platforms.vk import VkApiClient, VkInventoryService, VkTokenStore
 from video_channel_manager.platforms.vk.upload_lifecycle import (
+    UploadRecoveryRequired,
     UploadStage,
     VkUploadReadiness,
     ensure_upload_record,
     execute_upload_operation,
     ticket_from_record,
 )
+from video_channel_manager.platforms.vk.wall import VkWallWriter
+from video_channel_manager.platforms.vk.wall_safety import VkWallSnapshot
 from video_channel_manager.platforms.vk.writer import VkVideoWriter, VkWriteError
 
 
@@ -138,17 +141,17 @@ def _load_journal(path: Path, *, source: AuditPackage, community_id: int) -> dic
         if not isinstance(payload, dict) or payload.get("schema_name") != "video-manager.youtube-vk-sync-journal":
             raise ValueError(f"Unexpected journal schema: {path}")
         raw_version = payload.get("schema_version", 2)
-        if not isinstance(raw_version, int) or raw_version not in {2, 3}:
+        if not isinstance(raw_version, int) or raw_version not in {2, 3, 4}:
             raise ValueError(f"Unsupported journal version {raw_version!r}: {path}")
         if payload.get("source_snapshot_id") != str(source.snapshot_id):
             raise ValueError("Existing journal belongs to a different YouTube snapshot.")
         if payload.get("community_id") != community_id:
             raise ValueError("Existing journal belongs to a different VK community.")
-        payload["schema_version"] = 3
+        payload["schema_version"] = 4
         return payload
     return {
         "schema_name": "video-manager.youtube-vk-sync-journal",
-        "schema_version": 3,
+        "schema_version": 4,
         "created_at": datetime.now(UTC).isoformat(),
         "updated_at": datetime.now(UTC).isoformat(),
         "source_snapshot_id": str(source.snapshot_id),
@@ -164,6 +167,58 @@ def _load_journal(path: Path, *, source: AuditPackage, community_id: int) -> dic
 def _save_journal(path: Path, journal: dict[str, Any]) -> None:
     journal["updated_at"] = datetime.now(UTC).isoformat()
     _atomic_write(path, journal)
+
+
+def _upload_stage_has_possible_provider_dispatch(record: dict[str, Any]) -> bool:
+    try:
+        stage = UploadStage(str(record.get("stage")))
+    except ValueError:
+        return True
+    if stage in {UploadStage.PLANNED, UploadStage.MEDIA_VERIFIED}:
+        return False
+    if stage == UploadStage.RESERVATION_INTENT_COMMITTED:
+        return bool(record.get("reservation_dispatch_started_at"))
+    return True
+
+
+def _prepare_upload_wall_baseline(
+    *,
+    writer: VkWallWriter,
+    community_id: int,
+    journal: dict[str, Any],
+    journal_path: Path,
+) -> VkWallSnapshot:
+    raw_baseline = journal.get("upload_wall_baseline")
+    if raw_baseline is not None:
+        if not isinstance(raw_baseline, dict):
+            raise UploadRecoveryRequired("Sync journal upload_wall_baseline is invalid")
+        try:
+            baseline = VkWallSnapshot.from_mapping(raw_baseline)
+        except ValueError as exc:
+            raise UploadRecoveryRequired(f"Sync journal wall baseline is invalid: {exc}") from exc
+        if baseline.community_id != community_id or not baseline.complete:
+            raise UploadRecoveryRequired("Sync journal wall baseline is incomplete or belongs to another community")
+        return baseline
+
+    uploads = journal.get("uploads")
+    if isinstance(uploads, dict):
+        unsafe_source_ids = sorted(
+            source_id
+            for source_id, raw_record in uploads.items()
+            if isinstance(raw_record, dict) and _upload_stage_has_possible_provider_dispatch(raw_record)
+        )
+        if unsafe_source_ids:
+            raise UploadRecoveryRequired(
+                "Existing upload journal has provider-dispatched records but no pre-dispatch wall baseline: "
+                + ", ".join(unsafe_source_ids[:10])
+            )
+
+    baseline = writer.capture_wall_snapshot(community_id=community_id)
+    if not baseline.complete:
+        raise UploadRecoveryRequired("Fresh upload wall baseline is incomplete")
+    journal["upload_wall_baseline"] = baseline.as_dict()
+    _save_journal(journal_path, journal)
+    return baseline
 
 
 def _parse_vk_remote_id(remote_id: str) -> tuple[int, int]:
@@ -381,7 +436,8 @@ def _upload_candidates(
     source: AuditPackage,
     candidate_ids: list[str],
     community_id: int,
-    writer: VkVideoWriter,
+    writer: VkWallWriter,
+    wall_before_snapshot: VkWallSnapshot,
     album_map: dict[str, int],
     journal: dict[str, Any],
     journal_path: Path,
@@ -445,6 +501,7 @@ def _upload_candidates(
             media_path=media_path,
             readiness=readiness,
             processing_timeout=processing_timeout,
+            wall_before_snapshot=wall_before_snapshot,
             persist=lambda: _save_journal(journal_path, journal),
         )
         if UploadStage(str(record["stage"])) != UploadStage.VERIFIED:
@@ -571,13 +628,21 @@ def run(args: argparse.Namespace, *, runtime: SyncRuntime) -> int:
     if failed_confirmations:
         raise SystemExit(f"Execution confirmation mismatch: {', '.join(failed_confirmations)}")
 
-    writer = VkVideoWriter(
+    writer = VkWallWriter(
         token_store=store,
         account_alias=args.account,
         api_version=settings.vk_api_version,
     )
     journal = _load_journal(args.journal, source=source, community_id=community_id)
     album_map = _album_map_from_live(live_before)
+    wall_before_snapshot: VkWallSnapshot | None = None
+    if candidate_ids:
+        wall_before_snapshot = _prepare_upload_wall_baseline(
+            writer=writer,
+            community_id=community_id,
+            journal=journal,
+            journal_path=args.journal,
+        )
 
     if args.phase in {"albums", "all"}:
         _ensure_albums(
@@ -602,23 +667,27 @@ def run(args: argparse.Namespace, *, runtime: SyncRuntime) -> int:
 
     if args.phase in {"videos", "all"}:
         assert yt_dlp is not None
-        _upload_candidates(
-            source=source,
-            candidate_ids=candidate_ids,
-            community_id=community_id,
-            writer=writer,
-            album_map=album_map,
-            journal=journal,
-            journal_path=args.journal,
-            memberships=_source_memberships(source),
-            yt_dlp=yt_dlp,
-            cache_dir=args.cache_dir,
-            processing_timeout=args.processing_timeout,
-            place_in_albums=args.phase == "all",
-            write_delay=args.write_delay,
-            runtime=runtime,
-        )
-
+        if not candidate_ids:
+            print("No upload candidates require a wall baseline.")
+        else:
+            assert wall_before_snapshot is not None
+            _upload_candidates(
+                source=source,
+                candidate_ids=candidate_ids,
+                community_id=community_id,
+                writer=writer,
+                wall_before_snapshot=wall_before_snapshot,
+                album_map=album_map,
+                journal=journal,
+                journal_path=args.journal,
+                memberships=_source_memberships(source),
+                yt_dlp=yt_dlp,
+                cache_dir=args.cache_dir,
+                processing_timeout=args.processing_timeout,
+                place_in_albums=args.phase == "all",
+                write_delay=args.write_delay,
+                runtime=runtime,
+            )
     print("Reading final live VK inventory…")
     live_after = VkInventoryService(reader).build_audit_package(community_id)
     timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")

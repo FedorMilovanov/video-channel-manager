@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from copy import deepcopy
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,8 @@ from video_channel_manager.platforms.vk.upload_lifecycle import (
 from video_channel_manager.platforms.vk.wall_safety import (
     DEFAULT_UPLOAD_WALL_POLICY,
     VkUploadWallPolicy,
+    VkWallSnapshot,
+    build_wall_snapshot,
 )
 
 
@@ -39,6 +42,8 @@ class FakeWriter:
         self.begin_error: Exception | None = None
         self.preserve_remote_item = False
         self.observed_wall_policy: VkUploadWallPolicy | None = None
+        self.wall_snapshot = clean_wall_snapshot()
+        self.wall_snapshot_calls = 0
 
     def begin_upload(
         self,
@@ -110,8 +115,57 @@ class FakeWriter:
         return item
 
 
+    def capture_wall_snapshot(
+        self,
+        *,
+        community_id: int,
+        max_posts_per_surface: int = 10000,
+    ) -> VkWallSnapshot:
+        assert community_id == 235216998
+        assert max_posts_per_surface == 10000
+        self.wall_snapshot_calls += 1
+        return self.wall_snapshot
+
+
 class RetryableReservationError(RuntimeError):
     retryable = True
+
+
+def clean_wall_snapshot() -> VkWallSnapshot:
+    return build_wall_snapshot(
+        community_id=235216998,
+        published_items=[],
+        postponed_items=[],
+        published_pages=1,
+        postponed_pages=1,
+        complete=True,
+        captured_at=datetime(2026, 8, 4, 2, 0, tzinfo=UTC),
+    )
+
+
+def changed_wall_snapshot(*, complete: bool = True) -> VkWallSnapshot:
+    return build_wall_snapshot(
+        community_id=235216998,
+        published_items=[
+            {
+                "owner_id": -235216998,
+                "id": 77,
+                "date": 1785800000,
+                "text": "Unexpected upload wall post",
+                "attachments": [
+                    {
+                        "type": "video",
+                        "video": {"owner_id": -235216998, "id": 501},
+                    }
+                ],
+            }
+        ],
+        postponed_items=[],
+        published_pages=1,
+        postponed_pages=1,
+        complete=complete,
+        captured_at=datetime(2026, 8, 4, 2, 5, tzinfo=UTC),
+    )
 
 
 def ready_item(owner_id: int = -235216998, video_id: int = 501) -> dict[str, Any]:
@@ -156,6 +210,7 @@ def run(
     media: Path | None,
     *,
     crash_boundary: str | None = None,
+    wall_before_snapshot: VkWallSnapshot | None = None,
 ) -> int:
     persists = 0
 
@@ -176,6 +231,7 @@ def run(
         media_path=media,
         readiness=readiness(),
         processing_timeout=60,
+        wall_before_snapshot=wall_before_snapshot or clean_wall_snapshot(),
         persist=persist,
         fault_hook=fault,
     )
@@ -294,7 +350,10 @@ def test_happy_path_persists_policy_at_intent_and_reservation_boundaries(tmp_pat
     assert writer.begin_calls == 1
     assert writer.upload_calls == 1
     assert writer.wait_calls == 1
-    assert persists >= 8
+    assert writer.wall_snapshot_calls == 1
+    assert record["wall_safety"]["delta"]["status"] == "clean"
+    assert record["verification"]["wall_delta_status"] == "clean"
+    assert persists >= 10
     transitions = [item["to"] for item in record["transitions"]]
     assert transitions == [
         UploadStage.PLANNED.value,
@@ -312,6 +371,7 @@ def test_happy_path_persists_policy_at_intent_and_reservation_boundaries(tmp_pat
     assert writer.begin_calls == 1
     assert writer.upload_calls == 1
     assert writer.wait_calls == 1
+    assert writer.wall_snapshot_calls == 1
 
 
 @pytest.mark.parametrize(
@@ -465,6 +525,65 @@ def test_visible_zero_duration_object_is_not_verified(tmp_path: Path) -> None:
 
     assert record["stage"] == UploadStage.PROCESSING.value
     assert record["verification"] is None
+
+
+def test_unexpected_wall_delta_blocks_verified_and_requires_reconciliation(tmp_path: Path) -> None:
+    media = tmp_path / "yt-1.mp4"
+    media.write_bytes(b"video")
+    record = new_record()
+    writer = FakeWriter()
+    writer.wall_snapshot = changed_wall_snapshot()
+
+    with pytest.raises(UploadRecoveryRequired, match="wall postflight is changed"):
+        run(record, writer, media)
+
+    assert record["stage"] == UploadStage.UNKNOWN_REQUIRES_RECONCILIATION.value
+    assert record["wall_safety"]["delta"]["status"] == "changed"
+    assert record["verification"] is None
+    assert writer.begin_calls == 1
+    assert writer.upload_calls == 1
+
+
+def test_incomplete_wall_postflight_is_unknown(tmp_path: Path) -> None:
+    media = tmp_path / "yt-1.mp4"
+    media.write_bytes(b"video")
+    record = new_record()
+    writer = FakeWriter()
+    writer.wall_snapshot = changed_wall_snapshot(complete=False)
+
+    with pytest.raises(UploadRecoveryRequired, match="unknown_requires_reconciliation"):
+        run(record, writer, media)
+
+    assert record["stage"] == UploadStage.UNKNOWN_REQUIRES_RECONCILIATION.value
+    assert record["wall_safety"]["delta"]["status"] == "unknown_requires_reconciliation"
+
+
+def test_historical_in_progress_record_without_wall_baseline_is_blocked(tmp_path: Path) -> None:
+    media = tmp_path / "yt-1.mp4"
+    media.write_bytes(b"video")
+    record = new_record()
+    writer = FakeWriter()
+    run(record, writer, media)
+    record["stage"] = UploadStage.PROCESSING.value
+    record.pop("wall_safety")
+
+    with pytest.raises(UploadRecoveryRequired, match="no pre-dispatch wall baseline"):
+        run(record, writer, None)
+
+    assert writer.begin_calls == 1
+    assert writer.upload_calls == 1
+
+
+def test_verified_record_without_clean_wall_evidence_cannot_replay(tmp_path: Path) -> None:
+    media = tmp_path / "yt-1.mp4"
+    media.write_bytes(b"video")
+    record = new_record()
+    writer = FakeWriter()
+    run(record, writer, media)
+    record["wall_safety"]["delta"] = None
+
+    with pytest.raises(UploadRecoveryRequired, match="lacks a clean wall postflight"):
+        run(record, writer, None)
 
 
 def test_legacy_verified_record_requires_exact_reconciliation() -> None:
