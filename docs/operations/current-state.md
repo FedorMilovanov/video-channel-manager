@@ -1,12 +1,13 @@
 # Current operational state
 
 Updated: 2026-08-04  
-Verified code baseline: `main@ee7766a651cd55a0f51bd3cd5acfbe3f29bfbaed`  
+Verified code baseline: `main@b3b121f1c40b397d29c213d69a623b55641d020e`  
 Wave 7 baseline: `df956bbbf19af6652f8711f95fb4fecf272e9951`  
 Wave 8A baseline: `09babd9176049d8271c50b6f5e44b7b0fd10d39f`  
 Wave 8B baseline: `c28aee4177d6f99e8f52fd82b60f4c1d93d50c29`  
 Wave 8C baseline: `ee7766a651cd55a0f51bd3cd5acfbe3f29bfbaed`  
-Program state: `WAVE_8C_COMPLETED_WAVE_8D_ACTIVE`  
+Wave 8D baseline: `b3b121f1c40b397d29c213d69a623b55641d020e`  
+Program state: `WAVE_8D_COMPLETED_WAVE_8E_ACTIVE`  
 Canonical audit: [`master-audit-marathon-v2-2026-08-04.md`](master-audit-marathon-v2-2026-08-04.md)  
 Machine register: [`audit-register-v2-2026-08-04.json`](audit-register-v2-2026-08-04.json)
 
@@ -23,7 +24,9 @@ This file overrides old chats, screenshots, packages, remembered counts, and sup
 - Wave 8A state sync — PR #92, merge `160382e4dea51d2691081e42c86c878a58ccdd97`, CI `30934601690`, `665 passed, 1 xfailed`.
 - Wave 8B — versioned canonical text and URL identity, PR #93, merge `c28aee4177d6f99e8f52fd82b60f4c1d93d50c29`, CI `30936757433`, `680 passed, 1 xfailed` on Python 3.11/3.12/3.13; three PowerShell environments green; provider writes 0.
 - Wave 8B state sync — PR #94, merge `801cc108043cd592dc0620c9996bda16d2cf5b55`.
-- Wave 8C — exact catalog and album identity, PR #95, merge `ee7766a651cd55a0f51bd3cd5acfbe3f29bfbaed`, exact-head CI `30940734221`, `694 passed, 1 xfailed` on Python 3.11/3.12/3.13; Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux green; provider writes 0.
+- Wave 8C — exact catalog and album identity, PR #95, merge `ee7766a651cd55a0f51bd3cd5acfbe3f29bfbaed`, exact-head CI `30940734221`, `694 passed, 1 xfailed` on Python 3.11/3.12/3.13; three PowerShell environments green; provider writes 0.
+- Wave 8C state sync — PR #97, merge `654c6521faa8d20dafe37fa1aaa33326902e0d03`, CI `30941230667`.
+- Wave 8D — authoritative media/cache evidence and safe VK upload facade, PR #98, merge `b3b121f1c40b397d29c213d69a623b55641d020e`, exact-head CI `30944159147`, `713 passed, 1 xfailed` on Python 3.11/3.12/3.13; Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux green; provider writes 0.
 
 ## Wave 8A guarantees
 
@@ -33,13 +36,7 @@ The old fuzzy-first full-cartesian greedy matcher is retired. Supported order:
 2. unique exact canonical-title pairs;
 3. bounded token/trigram-indexed fuzzy fallback.
 
-Explicit conflicts:
-
-- `duplicate_exact_title`;
-- `exact_title_duration_mismatch`;
-- `non_unique_fallback`.
-
-Conflicts create no selected match, mapping, missing/upload candidate, or collection placement. Results are deterministic under input permutation.
+`duplicate_exact_title`, `exact_title_duration_mismatch`, and `non_unique_fallback` are conflicts. Conflicts create no selected match, mapping, missing/upload candidate, or collection placement. Results are deterministic under input permutation.
 
 ## Wave 8B guarantees
 
@@ -61,7 +58,7 @@ Permanent exactness rules:
 
 ## Wave 8C guarantees
 
-The catalog identity schema is `video-manager.catalog-identity-evidence` ruleset `wave-8c-v1`. Cross-platform comparison schema is `3.0`; VK catalog plan version is 3.
+The catalog identity schema is `video-manager.catalog-identity-evidence`, ruleset `wave-8c-v1`. Cross-platform comparison schema is `3.0`; VK catalog plan version is 3.
 
 - A reviewed one-to-one source collection ID → exact target album ID is the only automatic existing-album authority.
 - Reviewed source and target IDs must exist in the exact bound snapshots.
@@ -77,30 +74,68 @@ The catalog identity schema is `video-manager.catalog-identity-evidence` ruleset
 - Extra membership is evidence only; Wave 8C does not delete anything.
 - Detailed comparison rendering is attached to stable document structure, not a brittle exact wording replacement.
 
+## Wave 8D guarantees
+
+The media artifact schema is `video-manager.media-artifact-evidence`, schema version `1.0`, ruleset `wave-8d-v1`. The default compatibility profile is `vk-h264-aac-v1`.
+
+### Immutable evidence
+
+Each artifact binds:
+
+- exact project key;
+- exact source platform, channel ID, video ID, source URL/revision when available, and expected duration;
+- acquisition method and path authority;
+- requested output path and authoritative final path;
+- file size and SHA-256;
+- structured ffprobe evidence;
+- container formats, stream counts, video/audio codecs, dimensions, sample rate, audio channels, and duration tolerance;
+- deterministic manifest digest.
+
+### Authoritative acquisition and cache reuse
+
+- Downloader or transform output is accepted only from one exact structured-result field path.
+- Directory glob fallback, wildcard paths, extension guessing, and first-match selection are prohibited as authority.
+- `yt-dlp` cannot claim a controlled-master path; its final path must come from structured result evidence.
+- Cache reuse requires exact agreement among project/source identity, manifest digest, authoritative path, file existence, file size, SHA-256, and a fresh ffprobe result.
+- Missing, renamed, stale, wrong-source, wrong-project, substituted, or tampered entries fail closed.
+- MP4 is only a container signal. Remux is only container conversion. Neither proves H.264/AAC or any selected compatibility profile.
+
+### VK upload boundary
+
+- The public VK package exports the Wave 8D authority facade; production code is guarded against direct imports of the legacy executor.
+- A versioned artifact manifest is required before provider reservation or file dispatch.
+- The manifest is journaled before reservation and its digest is included in reservation intent and intent digest.
+- The file is freshly revalidated immediately before upload dispatch.
+- Legacy path/size/SHA-only media journal entries are not cache authority.
+- The manifest cannot change after `MEDIA_VERIFIED`.
+- If bytes change after reservation, no file bytes are sent, the journal remains at `RESERVED`, the exact remote ID is preserved, and recovery restores the authoritative artifact and resumes the same reservation instead of creating a second one.
+
 ## Active engineering wave
 
-Wave 8 / issue #86 remains the only active core-engineering owner. Waves 8A, 8B, and 8C are complete. **Wave 8D is active.**
+Wave 8 / issue #86 remains the only active core-engineering owner. Waves 8A–8D are complete. **Wave 8E is active.**
 
-### Wave 8D — authoritative media and cache evidence
+### Wave 8E — exact thumbnail identity and selected-thumbnail postflight
 
 Required outcomes:
 
-- define one versioned immutable media-artifact evidence schema;
-- bind exact project key, source platform/source ID/source URL, acquisition method, requested output path, authoritative final path, file size, SHA-256, and structured ffprobe evidence;
-- accept cache reuse only when the manifest, final file, digest, source identity, and probe evidence all agree;
-- reject stale, missing, renamed, glob-selected, or tampered cache entries;
-- prohibit directory glob fallback from becoming authoritative output selection;
-- capture downloader-produced final path from a structured result, not from a guessed extension;
-- distinguish container format from codec compatibility;
-- prove required video/audio codec, stream counts, dimensions, duration, and other selected profile constraints before an artifact is upload-eligible;
-- treat remux as container conversion only; MP4 alone does not prove H.264/AAC;
-- keep probing and manifest validation local/read-only; provider writes remain 0;
-- do not mix thumbnail identity or selected-thumbnail postflight into Wave 8D.
+- define a versioned immutable thumbnail source/plan/result evidence schema;
+- bind exact project key and exact target owner/video ID;
+- bind source image absolute path, size, SHA-256, format, dimensions, mode, and local quality findings from `inspect_image`;
+- persist mutation intent before thumbnail upload/save dispatch;
+- preserve exact upload response and save response without treating either as the final postcondition;
+- model stages `planned`, `source_verified`, `upload_url_acquired`, `image_uploaded`, `save_started`, `save_accepted`, `postflight_verified`, and `unknown_requires_reconciliation`;
+- perform bounded delayed readback against the exact owner/video ID;
+- when stable provider photo fields are present, compare exact photo owner/id/hash and normalized image descriptors;
+- do not treat a CDN URL or volatile URL query string as immutable thumbnail identity;
+- if provider readback lacks sufficient stable proof, record `unknown_requires_reconciliation`, preserve accepted mutation evidence, and prohibit blind replay;
+- a late readback or unrelated later-stage failure must not repeat an already accepted thumbnail mutation;
+- do not invent undocumented provider fields as guaranteed contracts;
+- implementation and tests remain local/mocked; provider writes remain 0;
+- do not mix Wave 8F integration proof or Wave 9 live reconciliation into Wave 8E.
 
-Later phases:
+Later phase:
 
-- Wave 8E — exact thumbnail identity and selected-thumbnail delayed postflight;
-- Wave 8F — integration proof and final Wave 8 state sync.
+- Wave 8F — cross-wave integration proof and final Wave 8 state sync.
 
 ## Operation-scoped manager contract
 
@@ -122,7 +157,7 @@ Do not require a whole-account rescan, full-library visual fingerprint, GitHub c
 - `file_selected` is not `upload_completed`.
 - `upload_completed` is not `remote_object_visible`.
 - `remote_object_visible` is not complete workflow verification.
-- A verified early upload is never replayed because a later playlist, metadata, catalog, or wall stage failed.
+- A verified or accepted early mutation is never replayed because a later playlist, metadata, catalog, thumbnail-readback, or wall stage failed.
 - Batch state is per item and per stage, never one Boolean.
 - A UI click requires an observed intended state transition.
 - Parser/observer self-test does not prove attachment to the correct browser target, frame, request, or network event.
@@ -130,6 +165,7 @@ Do not require a whole-account rescan, full-library visual fingerprint, GitHub c
 - A URL-shaped value is not an upload ticket; validate the exact response field and allowlisted scheme/host/path before media transfer.
 - Evidence levels remain distinct: designed, self-tested, canary-verified, and batch-verified.
 - Any accepted, processing, verified, or `unknown_requires_reconciliation` mutation is not blindly replayed.
+- A save/upload response is not a selected-thumbnail postcondition.
 
 ## Live-operation gate
 
@@ -203,18 +239,19 @@ Status: `SEPARATE_EXPERIMENTAL_SYSTEM / PARTIAL_OR_UNKNOWN_OUTCOMES / NOT_CORE_S
 - #37 exact approved cleanup only;
 - #64 master roadmap;
 - #85 draft history archive;
-- #86 active Wave 8, Wave 8D;
+- #86 active Wave 8, Wave 8E;
 - #88 completed audit;
 - #91/#92 completed Wave 8A;
 - #93/#94 completed Wave 8B;
-- #95 completed Wave 8C.
+- #95/#97 completed Wave 8C and state sync;
+- #98 completed Wave 8D.
 
 ## Global prohibitions
 
 - Never mix project identities, credentials, IDs, journals, links, or manifests.
-- Do not repeat completed Waves 0–8C through retired scripts or ZIP packages.
-- Do not infer success from green CI, stdout, a visible object, duration/orientation, stale counts, substring matching, title-only album lookup, file extension, or container name.
-- Do not blind-retry ambiguous mutations.
+- Do not repeat completed Waves 0–8D through retired scripts or ZIP packages.
+- Do not infer success from green CI, stdout, a visible object, duration/orientation, stale counts, substring matching, title-only album lookup, file extension, container name, thumbnail upload/save response, or CDN URL.
+- Do not blind-retry ambiguous or unknown mutations.
 - Do not perform bulk deletion outside issue #37.
 - Do not treat vertical format/duration as proof of VK Clip type.
 - Do not import VK Audio web/browser attempts into core without a reviewed adapter contract.

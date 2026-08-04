@@ -37,10 +37,10 @@ def test_operations_index_has_no_broken_local_markdown_links() -> None:
 def test_current_state_preserves_program_and_project_identity() -> None:
     text = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
     required_facts = (
-        "WAVE_8C_COMPLETED_WAVE_8D_ACTIVE",
-        "ee7766a651cd55a0f51bd3cd5acfbe3f29bfbaed",
-        "30940734221",
-        "694 passed, 1 xfailed",
+        "WAVE_8D_COMPLETED_WAVE_8E_ACTIVE",
+        "b3b121f1c40b397d29c213d69a623b55641d020e",
+        "30944159147",
+        "713 passed, 1 xfailed",
         "wave-8b-v1",
         "video-manager.catalog-identity-evidence",
         "wave-8c-v1",
@@ -51,15 +51,25 @@ def test_current_state_preserves_program_and_project_identity() -> None:
         "unreviewed_existing_candidate",
         "Conflict decisions create no album operation",
         "exact target video ID sets",
-        "Wave 8D — authoritative media and cache evidence",
-        "authoritative final path",
-        "structured ffprobe evidence",
-        "directory glob fallback",
-        "MP4 alone does not prove H.264/AAC",
+        "video-manager.media-artifact-evidence",
+        "wave-8d-v1",
+        "vk-h264-aac-v1",
+        "exact structured-result field path",
+        "Directory glob fallback",
+        "fresh ffprobe",
+        "MP4 is only a container signal",
+        "public VK package exports the Wave 8D authority facade",
+        "included in reservation intent",
+        "journal remains at `RESERVED`",
+        "resumes the same reservation",
+        "Wave 8E — exact thumbnail identity and selected-thumbnail postflight",
+        "source image absolute path, size, SHA-256, format, dimensions, mode",
+        "save response without treating either as the final postcondition",
+        "CDN URL",
+        "unknown_requires_reconciliation",
         "scripts/operator/Invoke-VideoManager.ps1",
         "15 supported mutation boundaries",
         "25/25",
-        "unknown_requires_reconciliation",
         "file_selected` is not `upload_completed",
         "PowerShell boundaries explicitly test zero, one, and many",
         "A URL-shaped value is not an upload ticket",
@@ -89,12 +99,13 @@ def test_current_state_preserves_program_and_project_identity() -> None:
         assert fact in text
 
 
-def test_audit_register_tracks_wave_8c_and_active_media_findings() -> None:
+def test_audit_register_tracks_wave_8d_and_active_thumbnail_finding() -> None:
     payload = json.loads((OPERATIONS_DIR / "audit-register-v2-2026-08-04.json").read_text(encoding="utf-8"))
-    assert payload["schema_version"] == "2.3"
-    assert payload["wave_8c_code_head"] == "ee7766a651cd55a0f51bd3cd5acfbe3f29bfbaed"
-    assert payload["wave_8c_ci_run"] == 30940734221
-    assert payload["program_state"] == "WAVE_8C_COMPLETED_WAVE_8D_ACTIVE_NO_PROVIDER_WRITES"
+    assert payload["schema_version"] == "2.4"
+    assert payload["wave_8c_state_sync_head"] == "654c6521faa8d20dafe37fa1aaa33326902e0d03"
+    assert payload["wave_8d_code_head"] == "b3b121f1c40b397d29c213d69a623b55641d020e"
+    assert payload["wave_8d_ci_run"] == 30944159147
+    assert payload["program_state"] == "WAVE_8D_COMPLETED_WAVE_8E_ACTIVE_NO_PROVIDER_WRITES"
     assert payload["source_line_count"] == 7046
 
     source = next(item for item in payload["sources"] if item["name"] == "Вставленный текст(276).txt")
@@ -113,12 +124,14 @@ def test_audit_register_tracks_wave_8c_and_active_media_findings() -> None:
     assert findings["CATALOG-001"]["status"] == "fixed"
     assert findings["CATALOG-002"]["status"] == "fixed"
     assert findings["CATALOG-003"]["status"] == "fixed"
-    assert findings["MEDIA-001"]["status"] == "active"
-    assert findings["MEDIA-002"]["status"] == "active"
-    assert findings["MEDIA-003"]["status"] == "active"
+    assert findings["MEDIA-001"]["status"] == "fixed"
+    assert findings["MEDIA-002"]["status"] == "fixed"
+    assert findings["MEDIA-003"]["status"] == "fixed"
+    assert findings["THUMB-001"]["status"] == "active"
     assert findings["OPS-SCOPE-001"]["status"] == "policy_recorded"
     assert findings["UPLOAD-TICKET-001"]["status"] == "policy_recorded"
     assert payload["provider_writes_during_wave_8a"] == 0
     assert payload["provider_writes_during_wave_8b"] == 0
     assert payload["provider_writes_during_wave_8c"] == 0
+    assert payload["provider_writes_during_wave_8d"] == 0
     assert payload["provider_writes_during_state_sync"] == 0
