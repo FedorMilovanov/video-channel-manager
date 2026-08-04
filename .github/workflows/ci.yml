@@ -45,6 +45,35 @@ jobs:
           set -euo pipefail
           python -m pip install --upgrade "pip>=25" "setuptools>=83,<84" wheel
           python -m pip install -e ".[dev]"
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/operator/VideoManager.Operator.psm1")
+          text = path.read_text(encoding="utf-8")
+          old = '''        if (-not (Test-VcmMutationCliArguments -Arguments $arguments)) {
+              throw "Provider mutation manifests may call only the supported Wave 6 `wave apply` interface."
+          }
+          if (Test-VcmCiEnvironment) {
+              throw "Provider mutations are prohibited in CI."
+          }
+          '''
+          new = '''        if (Test-VcmCiEnvironment) {
+              throw "Provider mutations are prohibited in CI."
+          }
+          if (-not (Test-VcmMutationCliArguments -Arguments $arguments)) {
+              throw "Provider mutation manifests may call only the supported Wave 6 `wave apply` interface."
+          }
+          '''
+          if old not in text:
+              raise SystemExit("Expected Wave 6 mutation-routing block was not found")
+          text = text.replace(old, new, 1)
+          export_anchor = '    "Test-VcmCiEnvironment",\n    "Test-VcmSafeCliArguments",'
+          export_replacement = '    "Test-VcmCiEnvironment",\n    "Test-VcmMutationCliArguments",\n    "Test-VcmSafeCliArguments",'
+          if export_anchor not in text:
+              raise SystemExit("Expected PowerShell export anchor was not found")
+          text = text.replace(export_anchor, export_replacement, 1)
+          path.write_text(text, encoding="utf-8")
+          PY
           ruff format \
             src/video_channel_manager/wave_engine \
             tests/test_wave_engine_contract.py \
