@@ -1,9 +1,10 @@
 # Current operational state
 
 Updated: 2026-08-04  
-Verified code baseline: `main@56da03247f60ec9d25f1646fb9ccdfbb651aff9c`  
+Verified code baseline: `main@19c2671bf91c8376def527a592e0bb7674841d03`  
 Wave 0 status: `completed`  
 Wave 1 status: `completed — PR #66 merged, no live provider writes`  
+Wave 2 status: `completed — PR #68 merged, no live provider writes`  
 Canonical audit: [`master-audit-2026-08-04.md`](master-audit-2026-08-04.md)  
 Machine register: [`audit-register-2026-08-04.json`](audit-register-2026-08-04.json)
 
@@ -11,9 +12,9 @@ This is the first state board to read before YouTube/VK work. Chat history, scre
 
 ## Current engineering mode
 
-`WAVE_2_FAIL_CLOSED_CONTENT_AND_PROJECT_PIPELINE_NEXT`
+`WAVE_3_TRANSPORT_RETRY_LIMITER_NEXT`
 
-Waves 0 and 1 performed no VK or YouTube writes. Broad upload continuation and retransmission remain blocked until the relevant local journals and exact live objects are reconciled. The new Wave 1 lifecycle makes future reservation/upload recovery fail closed; it does not itself prove any historical live queue complete.
+Waves 0–2 performed no VK or YouTube writes. Broad upload continuation and retransmission remain blocked until the relevant local journals and exact live objects are reconciled. Wave 1 makes reservation/upload recovery fail closed; Wave 2 makes reusable content and sync entrypoints project-bound and fail closed. Neither wave proves any historical live queue complete.
 
 ## Project boundary
 
@@ -68,22 +69,36 @@ PR #66, merge `56da03247f60ec9d25f1646fb9ccdfbb651aff9c`:
 - crash/replay matrix and full CI passed on Python 3.11, 3.12, and 3.13;
 - no live VK or YouTube write occurred.
 
+PR #68, merge `19c2671bf91c8376def527a592e0bb7674841d03`:
+
+- removed implicit `legendary-poet` fallback from reusable canonical/legacy content parsing;
+- every record must resolve to one registered project through explicit identity or registered provider identity;
+- expected project/channel mismatch and mixed-project batches fail before preview or plan rendering;
+- content plan schema v2 binds `project_key` into each operation, operation ID, operation-set digest, and plan digest;
+- target manifests require exact bidirectional record↔operation coverage;
+- `scripts/sync_youtube_to_vk.py` is internal-only and requires immutable `SyncRuntime` with exact project/source/community identity and explicit renderer/downloader dependencies;
+- supported textsafe sync uses dependency injection instead of production monkeypatching;
+- direct base execution and cross-project source/community pairing stop before provider workflow;
+- Wave 1 lifecycle, media QC, writer locking, `wallpost=0`, dry-run defaults, and no-blind-mutation-retry behavior remain intact;
+- exact-head CI run `30867659234` passed all gates on Python 3.11, 3.12, and 3.13;
+- no live VK or YouTube write occurred.
+
 ### Remaining engineering blockers
 
-Wave 2:
+Wave 3:
 
-- content preview/plan loading does not run full per-record validation;
-- reusable parsing still permits implicit project/default paths in some surfaces;
-- targets and operations need complete bidirectional coverage checks;
-- the supported textsafe wrapper still monkeypatches a directly executable Poet-hardcoded base sync;
-- the base sync must become project-aware or internal-only, with one supported public entrypoint.
+- complete HTTP ownership inventory, including `YouTubeCommentWriter` and remaining direct `httpx.Client()` sites;
+- centralize redaction-safe request/parse/provider-error taxonomy without hiding operation semantics;
+- add bounded retry/backoff only to classified safe reads;
+- preserve fail-closed behavior for ambiguous mutations;
+- cache the YouTube uploads playlist ID for the owned client lifecycle;
+- add a configurable proactive VK limiter only after current provider-policy verification.
 
 Later waves:
 
-- YouTube safe reads have no bounded transient retry;
-- provider transport/limiter, Windows runners, stable wave engine, broader risk coverage, album identity, matching, and authoritative media-cache work remain open.
+- wall safety, Windows runners, stable wave engine, broader risk coverage, album identity, matching, and authoritative media-cache work remain open.
 
-Issue #64 owns the remaining roadmap. Issue #65 is complete.
+Issue #64 owns the remaining roadmap. Issues #65 and #67 are complete.
 
 ## `lord-god-strength` operational state
 
@@ -161,16 +176,18 @@ The browser-based VK Audio workflow belongs to the adjacent `mp3telegrambot` sys
 - #38 — Shorts upload modes and final type/player behavior;
 - #64 — master reliability roadmap;
 - #65 — completed Wave 1 upload lifecycle;
-- #66 — merged Wave 1 implementation.
+- #66 — merged Wave 1 implementation;
+- #67 — completed Wave 2 fail-closed content/project pipeline;
+- #68 — merged Wave 2 implementation.
 
 ## Next allowed work
 
-1. Start Wave 2 from `main@56da03247f60ec9d25f1646fb9ccdfbb651aff9c` in one focused branch/PR.
-2. Make all load/preview/plan content paths fail closed with full per-record validation.
-3. Remove implicit project identity from reusable parsing and require complete target/operation coverage.
-4. Make the base sync project-aware or internal-only and retain one supported public entrypoint.
-5. Add direct-bypass and cross-project regression tests.
-6. Perform no live queue retransmission while implementing Wave 2.
+1. Create one focused Wave 3 issue from `main@19c2671bf91c8376def527a592e0bb7674841d03`.
+2. Create one isolated `agent/` branch from the synchronized Wave 2 baseline.
+3. Inventory every remaining HTTP client ownership and request path before refactoring.
+4. Introduce explicit safe-read versus ambiguous-mutation retry classification.
+5. Add bounded safe-read backoff, redaction-safe error taxonomy, uploads-playlist caching, and configurable limiter policy with tests.
+6. Perform no live queue retransmission or provider write while implementing Wave 3.
 7. Reconcile historical local journals separately before any future canary or resume.
 
 ## Update protocol
