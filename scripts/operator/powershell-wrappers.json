@@ -1,0 +1,191 @@
+{
+  "schema_name": "video-manager.powershell-wrapper-registry",
+  "schema_version": 1,
+  "generated_from": "wave5 inventory artifact sha256:3892cf404c02aacacaa9a050911304aface6ff0cfd5ca4e02d63c2605b5dd0e1",
+  "wrappers": [
+    {
+      "path": "scripts/Invoke-VkCosmeticTitlePatch.ps1",
+      "status": "retired",
+      "project_key": "legendary-poet",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Legacy editorial title apply/deletion orchestrator with newest-bundle selection and nested PowerShell."
+    },
+    {
+      "path": "scripts/Invoke-VkDeferredEditorialReview.ps1",
+      "status": "retired",
+      "project_key": "legendary-poet",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Historical deferred editorial wave wrapper; superseded by manifest-driven operator."
+    },
+    {
+      "path": "scripts/Invoke-VkDescriptionWave.ps1",
+      "status": "retired",
+      "project_key": "legendary-poet",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Legacy description apply/cleanup wrapper with newest-bundle discovery."
+    },
+    {
+      "path": "scripts/Invoke-VkP1Megawave.ps1",
+      "status": "retired",
+      "project_key": "legendary-poet",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Historical P1 megawave resume executor."
+    },
+    {
+      "path": "scripts/Invoke-VkReviewedCorrectionApply.ps1",
+      "status": "retired",
+      "project_key": "legendary-poet",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Legacy reviewed correction provider-write apply wrapper."
+    },
+    {
+      "path": "scripts/Invoke-VkReviewedCorrectionBlokApply.ps1",
+      "status": "retired",
+      "project_key": "legendary-poet",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Legacy Blok correction provider-write apply wrapper."
+    },
+    {
+      "path": "scripts/Invoke-VkReviewedCorrectionBlokWave.ps1",
+      "status": "retired",
+      "project_key": "legendary-poet",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Legacy Blok correction wave with apply path."
+    },
+    {
+      "path": "scripts/Invoke-VkReviewedCorrectionFetApply.ps1",
+      "status": "retired",
+      "project_key": "legendary-poet",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Legacy Fet correction provider-write apply wrapper."
+    },
+    {
+      "path": "scripts/Invoke-VkReviewedCorrectionFetWave.ps1",
+      "status": "retired",
+      "project_key": "legendary-poet",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Legacy Fet correction wave with apply path."
+    },
+    {
+      "path": "scripts/Invoke-VkReviewedCorrectionPushkinCloudApply.ps1",
+      "status": "retired",
+      "project_key": "legendary-poet",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Legacy Pushkin correction provider-write apply wrapper."
+    },
+    {
+      "path": "scripts/Invoke-VkReviewedCorrectionPushkinCloudWave.ps1",
+      "status": "retired",
+      "project_key": "legendary-poet",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Legacy Pushkin correction wave with apply path."
+    },
+    {
+      "path": "scripts/Invoke-VkReviewedCorrectionWave.ps1",
+      "status": "retired",
+      "project_key": "legendary-poet",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Legacy reviewed correction wave with apply path."
+    },
+    {
+      "path": "scripts/Invoke-VkReviewedDescriptionWave.ps1",
+      "status": "retired",
+      "project_key": "legendary-poet",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Legacy reviewed description apply wrapper with nested PowerShell."
+    },
+    {
+      "path": "scripts/Invoke-VkTitleWave.ps1",
+      "status": "retired",
+      "project_key": "legendary-poet",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Legacy title apply/cleanup wrapper."
+    },
+    {
+      "path": "scripts/Invoke-VkWallContentAudit.ps1",
+      "status": "compatibility_only",
+      "project_key": "legendary-poet",
+      "provider_write_capable": false,
+      "sha256": "bc2b59204e221cd6b69ccdd2640adb98ea4711df74db194091d50d9549744f1c",
+      "reason": "Read-only VK wall audit compatibility wrapper."
+    },
+    {
+      "path": "scripts/Invoke-VkWallWave.ps1",
+      "status": "retired",
+      "project_key": "legendary-poet",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Legacy postponed wall publication wrapper; Wave 4 requires the separate immutable wall plan/journal."
+    },
+    {
+      "path": "scripts/check.ps1",
+      "status": "compatibility_only",
+      "project_key": null,
+      "provider_write_capable": false,
+      "sha256": "f96a35cf304737c08a5a4abbcb7ea7da664190d45bc6e21d350161f25f001049",
+      "reason": "Developer quality-check compatibility wrapper."
+    },
+    {
+      "path": "scripts/operator/Invoke-VideoManager.ps1",
+      "status": "supported",
+      "project_key": null,
+      "provider_write_capable": false,
+      "sha256": "PENDING_CURRENT_HEAD",
+      "reason": "Single manifest-driven Wave 5 production operator entrypoint."
+    },
+    {
+      "path": "scripts/recover_youtube_comment_wave.ps1",
+      "status": "retired",
+      "project_key": "legendary-poet",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Historical YouTube comment mutation recovery wrapper."
+    },
+    {
+      "path": "scripts/run-lord-god-article-wave.ps1",
+      "status": "retired",
+      "project_key": "lord-god-strength",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Completed theological article publication wave; must not be rerun."
+    },
+    {
+      "path": "scripts/run-lord-god-wall-tail.ps1",
+      "status": "retired",
+      "project_key": "lord-god-strength",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Historical Lord God wall-tail provider-write executor."
+    },
+    {
+      "path": "scripts/run-vk-shorts-reset.ps1",
+      "status": "retired",
+      "project_key": "lord-god-strength",
+      "provider_write_capable": true,
+      "sha256": "PENDING_WAVE5_GUARD",
+      "reason": "Historical Shorts reset/upload wrapper with user-specific path."
+    },
+    {
+      "path": "scripts/setup.ps1",
+      "status": "compatibility_only",
+      "project_key": null,
+      "provider_write_capable": false,
+      "sha256": "a8b4ef4f343217d0b1a59132a4f4d759a631b07dc7c423cce44b204662714147",
+      "reason": "Developer environment setup compatibility wrapper."
+    }
+  ]
+}
