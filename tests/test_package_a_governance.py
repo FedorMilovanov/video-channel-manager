@@ -82,11 +82,7 @@ def test_operational_history_archive_contains_no_executable_or_package_files() -
 
 
 def test_legendary_poet_archive_manifest_is_non_executable_and_complete() -> None:
-    manifest_path = (
-        HISTORY
-        / "legendary-poet-vk-clips-2026-08-03-04"
-        / "ARTIFACT-MANIFEST.json"
-    )
+    manifest_path = HISTORY / "legendary-poet-vk-clips-2026-08-03-04" / "ARTIFACT-MANIFEST.json"
     payload = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert payload["schema_name"] == "video-channel-manager.historical-attempt-archive"
     assert payload["project_key"] == "legendary-poet"
