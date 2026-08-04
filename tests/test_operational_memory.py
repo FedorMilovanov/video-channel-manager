@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -62,7 +63,10 @@ def test_current_state_preserves_verified_operational_identity() -> None:
         "30918639372",
         "a06a93e1ec16b4ddb0f578a92e47ce76b4ee78a5",
         "30925523584",
-        "AUDIT_A0_COMPLETED_WAVE_8_ACTIVE",
+        "09babd9176049d8271c50b6f5e44b7b0fd10d39f",
+        "30933582322",
+        "664 passed, 1 xfailed",
+        "WAVE_8A_COMPLETED_WAVE_8B_ACTIVE",
         "master-audit-marathon-v2-2026-08-04.md",
         "audit-register-v2-2026-08-04.json",
         "Wave 8 / issue #86",
@@ -70,9 +74,44 @@ def test_current_state_preserves_verified_operational_identity() -> None:
         "15 supported mutation boundaries",
         "25/25",
         "unknown_requires_reconciliation",
-        "Provider writes in Wave 8 development and CI remain `0`",
+        "provider writes 0",
         "SEPARATE_EXPERIMENTAL_SYSTEM",
+        "duplicate_exact_title",
+        "exact_title_duration_mismatch",
+        "non_unique_fallback",
+        "exact field-by-field readback",
+        "file_selected` is not `upload_completed",
+        "PowerShell boundaries must explicitly test zero, one, and many",
+        "A URL-shaped value is not an upload ticket",
+        "designed, self-tested, canary-verified, and batch-verified",
     )
 
     for fact in required_facts:
         assert fact in text
+
+
+def test_audit_register_tracks_wave_8a_and_new_source() -> None:
+    payload = json.loads((OPERATIONS_DIR / "audit-register-v2-2026-08-04.json").read_text(encoding="utf-8"))
+
+    assert payload["schema_version"] == "2.1"
+    assert payload["wave_8a_code_head"] == "09babd9176049d8271c50b6f5e44b7b0fd10d39f"
+    assert payload["wave_8a_ci_run"] == 30933582322
+    assert payload["program_state"] == "WAVE_8A_COMPLETED_WAVE_8B_ACTIVE_NO_PROVIDER_WRITES"
+    assert payload["source_line_count"] == 7046
+
+    source = next(item for item in payload["sources"] if item["name"] == "Вставленный текст(276).txt")
+    assert source == {
+        "name": "Вставленный текст(276).txt",
+        "lines": 515,
+        "sha256": "e62d428a31e3f167cce298a37936b132c023e61b5b8edee7b4f80e26c57e434a",
+    }
+
+    findings = {item["id"]: item for item in payload["findings"]}
+    assert findings["MATCH-001"]["status"] == "fixed"
+    assert findings["MATCH-002"]["status"] == "fixed"
+    assert findings["MATCH-003"]["status"] == "fixed"
+    assert findings["IDENTITY-002"]["target_wave"] == "Wave-8B"
+    assert findings["OPS-SCOPE-001"]["status"] == "policy_recorded"
+    assert findings["UPLOAD-TICKET-001"]["status"] == "policy_recorded"
+    assert payload["provider_writes_during_wave_8a"] == 0
+    assert payload["provider_writes_during_state_sync"] == 0
