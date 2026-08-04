@@ -121,14 +121,8 @@ def article_prepare(
         f"[green]Prepared Legendary Poet article wave:[/green] "
         f"{summary['assets']} assets; policy={summary['policy_sha256']}"
     )
-    console.print(
-        f"Canary request: {summary['canary']['request_path']} "
-        f"sha256={summary['canary']['request_sha256']}"
-    )
-    console.print(
-        f"Batch request: {summary['batch']['request_path']} "
-        f"sha256={summary['batch']['request_sha256']}"
-    )
+    console.print(f"Canary request: {summary['canary']['request_path']} sha256={summary['canary']['request_sha256']}")
+    console.print(f"Batch request: {summary['batch']['request_path']} sha256={summary['batch']['request_sha256']}")
 
 
 @wave_app.command("preview")
@@ -216,8 +210,7 @@ def apply(
     )
     if not _article_plan(plan):
         console.print(
-            "[red]Rejected:[/red] no reviewed production provider adapter is registered "
-            "for this operation set."
+            "[red]Rejected:[/red] no reviewed production provider adapter is registered for this operation set."
         )
         raise typer.Exit(code=3)
     if journal_directory is None:
@@ -279,8 +272,7 @@ def reconcile(
         raise typer.BadParameter(str(exc), param_hint=str(request_path)) from exc
     if not _article_plan(plan):
         console.print(
-            f"[red]Rejected:[/red] no production reconciliation adapter is registered "
-            f"for {request.self_digest}."
+            f"[red]Rejected:[/red] no production reconciliation adapter is registered for {request.self_digest}."
         )
         raise typer.Exit(code=3)
     try:
@@ -298,10 +290,7 @@ def reconcile(
     except (OSError, RuntimeError, ValueError) as exc:
         console.print(f"[red]Article reconciliation failed closed:[/red] {exc}")
         raise typer.Exit(code=3) from exc
-    console.print(
-        f"[green]Article reconciliation succeeded:[/green] "
-        f"{reconciliation.self_digest} -> {output_path}"
-    )
+    console.print(f"[green]Article reconciliation succeeded:[/green] {reconciliation.self_digest} -> {output_path}")
 
 
 @result_app.command("verify")
