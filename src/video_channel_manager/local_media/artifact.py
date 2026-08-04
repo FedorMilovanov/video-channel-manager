@@ -259,7 +259,6 @@ class StructuredAcquisitionResult(FrozenEvidence):
     final_path: str
 
 
-
 def _looks_absolute_path(value: str) -> bool:
     return os.path.isabs(value) or bool(_WINDOWS_ABSOLUTE_RE.match(value)) or value.startswith("\\\\")
 
@@ -427,9 +426,7 @@ def build_media_artifact_evidence(
     )
     if not assessment.compatible:
         raise MediaArtifactError(f"media profile is incompatible: {assessment.reasons}")
-    evidence = provisional.model_copy(
-        update={"manifest_sha256": calculate_media_manifest_sha256(provisional)}
-    )
+    evidence = provisional.model_copy(update={"manifest_sha256": calculate_media_manifest_sha256(provisional)})
     validate_media_artifact_evidence(evidence)
     return evidence
 
@@ -476,7 +473,11 @@ def validate_cached_media_artifact(
     probe: MediaProbe = probe_media,
 ) -> MediaArtifactEvidence:
     try:
-        parsed = evidence if isinstance(evidence, MediaArtifactEvidence) else MediaArtifactEvidence.model_validate(evidence)
+        parsed = (
+            evidence
+            if isinstance(evidence, MediaArtifactEvidence)
+            else MediaArtifactEvidence.model_validate(evidence)
+        )
     except Exception as exc:
         raise MediaArtifactError(f"media manifest is invalid: {exc}") from exc
     validate_media_artifact_evidence(parsed)
