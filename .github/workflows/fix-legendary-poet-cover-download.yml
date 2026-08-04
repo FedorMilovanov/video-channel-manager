@@ -72,3 +72,5 @@ jobs:
           git add -A
           git commit -m "Use stable original URL for Yesenin cover download"
           git push origin HEAD:agent/fix-legendary-poet-cover-download
+
+# trigger: 2026-08-05
