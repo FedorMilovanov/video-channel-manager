@@ -151,10 +151,7 @@ def _approved_operation() -> WaveOperation:
     policy = json.loads(POLICY.read_text(encoding="utf-8"))
     row = policy["operations"][0]
     message_sha256 = row["message_sha256"]
-    seed = (
-        f"{VK_ARTICLE_APPROVED_POLICY_SHA256}:{row['operation_id']}:"
-        f"{row['publish_date']}:{message_sha256}"
-    )
+    seed = f"{VK_ARTICLE_APPROVED_POLICY_SHA256}:{row['operation_id']}:{row['publish_date']}:{message_sha256}"
     guid = "vcm-art-" + hashlib.sha256(seed.encode("utf-8")).hexdigest()[:28]
     spec = WaveOperationSpec(
         order_key="01-approved",

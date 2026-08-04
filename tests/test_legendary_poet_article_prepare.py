@@ -25,9 +25,7 @@ def test_approved_legendary_poet_article_policy_is_digest_locked() -> None:
     assert policy["vk_community_id"] == VK_ARTICLE_COMMUNITY_ID
     assert policy["vk_owner_id"] == VK_ARTICLE_OWNER_ID
     assert policy["source_repository_commit"] == "85c4303dc683abc6e201ea707a0b4d6f5f19f82c"
-    assert policy["policy_sha256"] == (
-        "sha256:af210867d2ea392394e2034cffa9d43c3e1adc632386e9ec4827b033c8fff9a0"
-    )
+    assert policy["policy_sha256"] == ("sha256:af210867d2ea392394e2034cffa9d43c3e1adc632386e9ec4827b033c8fff9a0")
     assert ARTICLE_POLICY_VERSION == "legendary-poet-article-photo-wave-202608-v1"
 
 

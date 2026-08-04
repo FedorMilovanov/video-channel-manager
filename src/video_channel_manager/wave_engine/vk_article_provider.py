@@ -41,9 +41,7 @@ VK_ARTICLE_OWNER_ID = -235216998
 VK_ARTICLE_ACCOUNT_ALIAS = "legendary-poet"
 VK_ARTICLE_SITE_HOST = "thelegendarypoet.ru"
 VK_ARTICLE_POLICY_RELATIVE_PATH = "data/editorial/legendary-poet-article-wave-202608.json"
-VK_ARTICLE_APPROVED_POLICY_SHA256 = (
-    "sha256:af210867d2ea392394e2034cffa9d43c3e1adc632386e9ec4827b033c8fff9a0"
-)
+VK_ARTICLE_APPROVED_POLICY_SHA256 = "sha256:af210867d2ea392394e2034cffa9d43c3e1adc632386e9ec4827b033c8fff9a0"
 
 
 class VkArticleWallError(RuntimeError):
@@ -261,9 +259,7 @@ def assert_approved_article_operation(
     if not isinstance(operations, list) or len(operations) != 10:
         raise VkArticleWallError("approved article policy must contain exactly ten operations")
     matches = [
-        row
-        for row in operations
-        if isinstance(row, dict) and row.get("operation_id") == article.editorial_operation_id
+        row for row in operations if isinstance(row, dict) and row.get("operation_id") == article.editorial_operation_id
     ]
     if len(matches) != 1:
         raise VkArticleWallError("article operation is absent or duplicated in the approved policy")

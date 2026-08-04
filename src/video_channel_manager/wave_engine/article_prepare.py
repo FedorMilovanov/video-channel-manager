@@ -63,9 +63,7 @@ class _ArticleHttpClient(HttpClientOwner):
             follow_redirects=True,
         )
         self._http_client.headers.update(
-            {
-                "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/148 Safari/537.36")
-            }
+            {"User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/148 Safari/537.36")}
         )
 
     def get(self, url: str) -> httpx.Response:
