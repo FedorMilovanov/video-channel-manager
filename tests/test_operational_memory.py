@@ -37,10 +37,10 @@ def test_operations_index_has_no_broken_local_markdown_links() -> None:
 def test_current_state_preserves_program_and_project_identity() -> None:
     text = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
     required_facts = (
-        "WAVE_8D_COMPLETED_WAVE_8E_ACTIVE",
-        "b3b121f1c40b397d29c213d69a623b55641d020e",
-        "30944159147",
-        "713 passed, 1 xfailed",
+        "WAVE_8E_COMPLETED_WAVE_8F_ACTIVE",
+        "a0230ea156eeb1717e15c6523d0b6b28e90f6d8e",
+        "30947556457",
+        "722 passed, 1 xfailed",
         "wave-8b-v1",
         "video-manager.catalog-identity-evidence",
         "wave-8c-v1",
@@ -60,19 +60,31 @@ def test_current_state_preserves_program_and_project_identity() -> None:
         "MP4 is only a container signal",
         "public VK package exports the Wave 8D authority facade",
         "included in reservation intent",
-        "journal remains at `RESERVED`",
-        "resumes the same reservation",
-        "Wave 8E — exact thumbnail identity and selected-thumbnail postflight",
-        "source image absolute path, size, SHA-256, format, dimensions, mode",
-        "save response without treating either as the final postcondition",
-        "CDN URL",
+        "journal at `RESERVED`",
+        "resume the same reservation",
+        "video-manager.vk-thumbnail-evidence",
+        "wave-8e-v1",
+        "upload_intent_recorded",
+        "save_intent_recorded",
+        "video.saveUploadedThumb` acceptance is not success",
+        "retry-safe `video.get` readback",
+        "non-empty exact canonical descriptor-set match",
+        "CDN query strings and fragments are volatile",
         "unknown_requires_reconciliation",
+        "Saved or unknown operations with an exact receipt reconcile by readback only",
+        "VerifiedVkThumbnailWriter",
+        "execute_thumbnail_operation",
+        "Wave 8F — cross-wave integration proof",
+        "expected remote delta",
+        "media manifest digest",
+        "thumbnail operation ID",
+        "planned, uploaded, verified, duplicate, failed, and requires-attention",
         "scripts/operator/Invoke-VideoManager.ps1",
         "15 supported mutation boundaries",
         "25/25",
         "file_selected` is not `upload_completed",
         "PowerShell boundaries explicitly test zero, one, and many",
-        "A URL-shaped value is not an upload ticket",
+        "a URL-shaped value is not an upload ticket",
         "designed, self-tested, canary-verified, and batch-verified",
         "UCeSJsC6go2c9pdJCuUI1BYA",
         "UC-78ys2S3cQ3lpqgXfo-SvQ",
@@ -99,13 +111,33 @@ def test_current_state_preserves_program_and_project_identity() -> None:
         assert fact in text
 
 
-def test_audit_register_tracks_wave_8d_and_active_thumbnail_finding() -> None:
+def test_wave_8e_supported_files_exist() -> None:
+    required = (
+        ROOT / "src/video_channel_manager/platforms/vk/thumbnail_lifecycle.py",
+        ROOT / "src/video_channel_manager/platforms/vk/thumbnail_writer.py",
+        ROOT / "tests/test_vk_thumbnail_lifecycle.py",
+        ROOT / "tests/test_vk_thumbnail_crash_boundary.py",
+        ROOT / "tests/test_vk_thumbnail_public_boundary.py",
+    )
+    for path in required:
+        assert path.is_file()
+
+    lifecycle = required[0].read_text(encoding="utf-8")
+    assert 'THUMBNAIL_EVIDENCE_SCHEMA = "video-manager.vk-thumbnail-evidence"' in lifecycle
+    assert 'THUMBNAIL_RULESET = "wave-8e-v1"' in lifecycle
+    assert 'UPLOAD_INTENT_RECORDED = "upload_intent_recorded"' in lifecycle
+    assert 'SAVE_INTENT_RECORDED = "save_intent_recorded"' in lifecycle
+    assert 'UNKNOWN_REQUIRES_RECONCILIATION = "unknown_requires_reconciliation"' in lifecycle
+    assert "readback_proves_saved_thumbnail" in lifecycle
+
+
+def test_audit_register_tracks_wave_8e_and_active_integration_proof() -> None:
     payload = json.loads((OPERATIONS_DIR / "audit-register-v2-2026-08-04.json").read_text(encoding="utf-8"))
-    assert payload["schema_version"] == "2.4"
-    assert payload["wave_8c_state_sync_head"] == "654c6521faa8d20dafe37fa1aaa33326902e0d03"
-    assert payload["wave_8d_code_head"] == "b3b121f1c40b397d29c213d69a623b55641d020e"
-    assert payload["wave_8d_ci_run"] == 30944159147
-    assert payload["program_state"] == "WAVE_8D_COMPLETED_WAVE_8E_ACTIVE_NO_PROVIDER_WRITES"
+    assert payload["schema_version"] == "2.5"
+    assert payload["wave_8d_state_sync_head"] == "2c6e48e9af48fc17ef7a0087227627961fbfbe9c"
+    assert payload["wave_8e_code_head"] == "a0230ea156eeb1717e15c6523d0b6b28e90f6d8e"
+    assert payload["wave_8e_ci_run"] == 30947556457
+    assert payload["program_state"] == "WAVE_8E_COMPLETED_WAVE_8F_ACTIVE_NO_PROVIDER_WRITES"
     assert payload["source_line_count"] == 7046
 
     source = next(item for item in payload["sources"] if item["name"] == "Вставленный текст(276).txt")
@@ -116,22 +148,26 @@ def test_audit_register_tracks_wave_8d_and_active_thumbnail_finding() -> None:
     }
 
     findings = {item["id"]: item for item in payload["findings"]}
-    assert findings["MATCH-001"]["status"] == "fixed"
-    assert findings["IDENTITY-001"]["status"] == "fixed"
-    assert findings["IDENTITY-002"]["status"] == "fixed"
-    assert findings["URL-001"]["status"] == "fixed"
-    assert findings["ALBUM-001"]["status"] == "fixed"
-    assert findings["CATALOG-001"]["status"] == "fixed"
-    assert findings["CATALOG-002"]["status"] == "fixed"
-    assert findings["CATALOG-003"]["status"] == "fixed"
-    assert findings["MEDIA-001"]["status"] == "fixed"
-    assert findings["MEDIA-002"]["status"] == "fixed"
-    assert findings["MEDIA-003"]["status"] == "fixed"
-    assert findings["THUMB-001"]["status"] == "active"
-    assert findings["OPS-SCOPE-001"]["status"] == "policy_recorded"
+    for finding_id in (
+        "MATCH-001",
+        "IDENTITY-001",
+        "IDENTITY-002",
+        "URL-001",
+        "ALBUM-001",
+        "CATALOG-001",
+        "CATALOG-002",
+        "CATALOG-003",
+        "MEDIA-001",
+        "MEDIA-002",
+        "MEDIA-003",
+        "THUMB-001",
+    ):
+        assert findings[finding_id]["status"] == "fixed"
+    assert findings["OPS-SCOPE-001"]["status"] == "integration_proof_active"
     assert findings["UPLOAD-TICKET-001"]["status"] == "policy_recorded"
     assert payload["provider_writes_during_wave_8a"] == 0
     assert payload["provider_writes_during_wave_8b"] == 0
     assert payload["provider_writes_during_wave_8c"] == 0
     assert payload["provider_writes_during_wave_8d"] == 0
+    assert payload["provider_writes_during_wave_8e"] == 0
     assert payload["provider_writes_during_state_sync"] == 0
