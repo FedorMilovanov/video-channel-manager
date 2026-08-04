@@ -9,6 +9,11 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any, Protocol, cast
 
+from video_channel_manager.platforms.vk.wall_safety import (
+    DEFAULT_UPLOAD_WALL_POLICY,
+    VkUploadWallPolicy,
+)
+
 
 class UploadStage(StrEnum):
     PLANNED = "planned"
@@ -128,7 +133,14 @@ class UploadTicketProtocol(Protocol):
 
 
 class UploadWriterProtocol(Protocol):
-    def begin_upload(self, *, community_id: int, title: str, description: str) -> UploadTicketProtocol: ...
+    def begin_upload(
+        self,
+        *,
+        community_id: int,
+        title: str,
+        description: str,
+        wall_policy: VkUploadWallPolicy,
+    ) -> UploadTicketProtocol: ...
 
     def upload_file(self, ticket: UploadTicketProtocol, path: Path) -> dict[str, Any]: ...
 
@@ -259,12 +271,15 @@ def create_upload_record(
     published_title: str,
     published_description: str,
     readiness: VkUploadReadiness,
+    wall_policy: VkUploadWallPolicy = DEFAULT_UPLOAD_WALL_POLICY,
     clock: Clock = _utc_now,
 ) -> dict[str, Any]:
     if community_id <= 0:
         raise ValueError("community_id must be positive")
     if not source_snapshot_id.strip() or not source_video_id.strip():
         raise ValueError("source_snapshot_id and source_video_id cannot be blank")
+    if not isinstance(wall_policy, VkUploadWallPolicy):
+        raise TypeError("wall_policy must be a validated VkUploadWallPolicy")
     operation_payload = {
         "source_snapshot_id": source_snapshot_id,
         "community_id": community_id,
@@ -274,6 +289,7 @@ def create_upload_record(
         "published_title": published_title,
         "published_description_sha256": _text_sha256(published_description),
         "readiness": readiness.as_dict(),
+        "wall_policy": wall_policy.as_dict(),
     }
     created_at = _iso(clock)
     return {
@@ -322,6 +338,7 @@ def migrate_legacy_upload_record(
     published_title: str,
     published_description: str,
     readiness: VkUploadReadiness,
+    wall_policy: VkUploadWallPolicy = DEFAULT_UPLOAD_WALL_POLICY,
     clock: Clock = _utc_now,
 ) -> dict[str, Any]:
     record = create_upload_record(
@@ -333,6 +350,7 @@ def migrate_legacy_upload_record(
         published_title=published_title,
         published_description=published_description,
         readiness=readiness,
+        wall_policy=wall_policy,
         clock=clock,
     )
     remote_id = legacy.get("remote_id")
@@ -411,6 +429,7 @@ def ensure_upload_record(
     published_title: str,
     published_description: str,
     readiness: VkUploadReadiness,
+    wall_policy: VkUploadWallPolicy = DEFAULT_UPLOAD_WALL_POLICY,
     clock: Clock = _utc_now,
 ) -> tuple[dict[str, Any], bool]:
     if existing is None:
@@ -424,6 +443,7 @@ def ensure_upload_record(
                 published_title=published_title,
                 published_description=published_description,
                 readiness=readiness,
+                wall_policy=wall_policy,
                 clock=clock,
             ),
             True,
@@ -440,11 +460,19 @@ def ensure_upload_record(
                 published_title=published_title,
                 published_description=published_description,
                 readiness=readiness,
+                wall_policy=wall_policy,
                 clock=clock,
             ),
             True,
         )
     record = dict(existing)
+    changed = False
+    raw_wall_policy = record.get("wall_policy")
+    if raw_wall_policy is None:
+        record["wall_policy"] = wall_policy.as_dict()
+        changed = True
+    elif not isinstance(raw_wall_policy, Mapping):
+        raise ValueError("Upload journal wall_policy must be an object")
     _validate_record_binding(
         record,
         source_snapshot_id=source_snapshot_id,
@@ -453,8 +481,9 @@ def ensure_upload_record(
         published_title=published_title,
         published_description=published_description,
         readiness=readiness,
+        wall_policy=wall_policy,
     )
-    return record, False
+    return record, changed
 
 
 def _validate_record_binding(
@@ -466,7 +495,12 @@ def _validate_record_binding(
     published_title: str,
     published_description: str,
     readiness: VkUploadReadiness,
+    wall_policy: VkUploadWallPolicy,
 ) -> None:
+    raw_policy = record.get("wall_policy")
+    if not isinstance(raw_policy, Mapping):
+        raise ValueError("Upload journal is missing its wall policy")
+    observed_policy = VkUploadWallPolicy.from_mapping(raw_policy)
     expected = {
         "source_snapshot_id": source_snapshot_id,
         "community_id": community_id,
@@ -474,12 +508,15 @@ def _validate_record_binding(
         "published_title": published_title,
         "published_description_sha256": _text_sha256(published_description),
         "readiness": readiness.as_dict(),
+        "wall_policy": wall_policy.as_dict(),
     }
     mismatches = {
         key: {"expected": value, "actual": record.get(key)}
         for key, value in expected.items()
         if record.get(key) != value
     }
+    if observed_policy != wall_policy:
+        mismatches["wall_policy_value"] = {"expected": wall_policy.as_dict(), "actual": observed_policy.as_dict()}
     if mismatches:
         raise ValueError(f"Upload journal binding mismatch: {mismatches}")
     UploadStage(str(record.get("stage")))
@@ -730,6 +767,14 @@ def execute_upload_operation(
     fault_hook: FaultHook | None = None,
     clock: Clock = _utc_now,
 ) -> dict[str, Any]:
+    raw_wall_policy = record.get("wall_policy")
+    if not isinstance(raw_wall_policy, Mapping):
+        raise UploadRejected("Upload record is missing its fail-closed wall policy")
+    try:
+        wall_policy = VkUploadWallPolicy.from_mapping(raw_wall_policy)
+    except ValueError as exc:
+        raise UploadRejected(f"Upload wall policy is invalid: {exc}") from exc
+
     stage = UploadStage(str(record.get("stage")))
     if stage == UploadStage.VERIFIED:
         return record
@@ -787,6 +832,7 @@ def execute_upload_operation(
                 "title": title,
                 "description_sha256": _text_sha256(description),
                 "media_sha256": media_evidence["sha256"],
+                "wall_policy_sha256": raw_wall_policy["policy_sha256"],
             }
             record["reservation_intent"] = {
                 **intent,
@@ -805,7 +851,12 @@ def execute_upload_operation(
         persist()
         _fault(fault_hook, "after_reservation_dispatch_started_commit")
         try:
-            ticket = writer.begin_upload(community_id=community_id, title=title, description=description)
+            ticket = writer.begin_upload(
+                community_id=community_id,
+                title=title,
+                description=description,
+                wall_policy=wall_policy,
+            )
         except Exception as exc:
             _record_error(record, exc, clock=clock)
             if bool(getattr(exc, "retryable", False)):
@@ -837,6 +888,7 @@ def execute_upload_operation(
             "upload_url_sha256": _text_sha256(ticket.upload_url),
             "reservation_response": dict(response) if response is not None else None,
             "reserved_at": _iso(clock),
+            "wall_policy_sha256": raw_wall_policy["policy_sha256"],
         }
         _persist_transition(
             record,
@@ -845,6 +897,7 @@ def execute_upload_operation(
             evidence={
                 "remote_id": ticket.remote_id,
                 "upload_url_sha256": record["reservation"]["upload_url_sha256"],
+                "wall_policy_sha256": raw_wall_policy["policy_sha256"],
             },
             clock=clock,
         )
