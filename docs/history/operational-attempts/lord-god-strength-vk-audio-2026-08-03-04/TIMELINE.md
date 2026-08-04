@@ -153,3 +153,49 @@
 **Outcome:** unnecessary uncertainty and pressure to interrupt a live operation.
 
 **Permanent rule:** emit one structured state line with current track, state, attempt, elapsed, next action, and deadline. A declared wait must show countdown progress; an undeclared silence beyond a bounded threshold is a failure.
+
+## 018. Reliable Batch v3.1 completed with only four verified remote tracks
+
+**Observed:** the final supervisor summary reported tracks 01, 02, 04, and 05 as `VERIFIED`; tracks 03, 06, 07, and 08 failed with `binary_http_413`; `remote_series_count` was `4`; `safe_to_create_playlist` was `false`; fourteen write attempts were consumed.
+
+**Outcome:** incomplete batch. The summary correctly refused playlist creation.
+
+**Permanent rule:** a playlist workflow must consume only an exact verified source set. Never create a canonical playlist from a partial inventory merely because some uploads succeeded.
+
+## 019. Workhorse v1.0 selected all eight tracks but raised an ambiguous transition failure
+
+**Observed:** the form was opened, title/description were populated, and all eight tracks were marked selected. The inner save was clicked, but the workflow reported `Audio selector did not close back to playlist form` and recorded `playlist_create_final_save: 0`.
+
+**Diagnosis:** the transition detector looked for any visible `Быстрый поиск` field on the page. A background music-page search could be mistaken for the still-open selector.
+
+**Outcome:** local control-flow failure after an ambiguous write boundary. The transcript did not yet prove whether VK had persisted the playlist.
+
+**Permanent rule:** after any ambiguous save, stop writes and reconcile remote state. A page-global DOM predicate is not provider-state evidence.
+
+## 020. Workhorse v1.1 introduced active-modal and exact no-write verification
+
+**Changes:** scope search fields and save controls to the active topmost modal; require hit visibility; confirm the playlist form becomes active; verify the title remains exact; allow one bounded fallback on the same inner-save control; dispatch the final create save at most once; verify exact playlist content remotely; detect an already complete playlist and perform zero writes.
+
+**Outcome:** design and local validation were improved. The historical package SHA-256 is `f2fa874ed92c826005057d0e6b7e65a7b0ec2e0747fcd2811fc4b5507acc962d`.
+
+**Permanent rule:** the correct retry unit is the unresolved state transition, not the whole workflow. Exact preflight and exact postflight must surround the non-idempotent final save.
+
+## 021. Exact eight-track playlist was found and verified without another write
+
+**Observed:** Workhorse v1.1 reported `PLAYLIST ALREADY COMPLETE — NO WRITE`, `status: playlist_already_complete_verified`, and `playlist_create_final_save: 0`.
+
+The remote verification reported:
+
+- title `Анатомия церкви — Джон МакАртур`;
+- playlist ID `85093900`;
+- owner `-60805374`;
+- exactly eight tracks;
+- each expected track exactly once;
+- no extra tracks;
+- exact order `01` through `08`.
+
+**Outcome:** successful remote playlist result and successful idempotent no-write rerun.
+
+**Causal limitation:** the transcript does not contain the exact final write response that created playlist `85093900`. It is plausible that the earlier attempt persisted the playlist despite the local transition exception, but exact write attribution remains unknown.
+
+**Permanent rule:** remote exact state can prove completion even when local UI control flow reported failure; however, postflight state alone must not be used to invent causal attribution.
