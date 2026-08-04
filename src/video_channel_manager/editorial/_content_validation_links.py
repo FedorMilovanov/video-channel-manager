@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from video_channel_manager.application.identity import (
+    canonicalize_project_url,
+    canonicalize_public_url,
+)
 from video_channel_manager.editorial._content_types import (
     ALLOWED_LINK_KINDS,
     ALLOWED_SURFACES,
@@ -77,15 +81,24 @@ def validate_links(payload: dict[str, Any], *, source_urls: set[str]) -> list[st
         if contains_banned_circle(label):
             errors.append("colored circle markers are not allowed")
         try:
-            canonical_url = canonicalize_url(url)
+            canonical_url = canonicalize_public_url(url).canonical
         except ValueError as exc:
             errors.append(f"{location}.url: {exc}")
             canonical_url = ""
-        if canonical_url and canonical_url in foreign_urls:
+        if canonical_url and kind in {"site", "vk"}:
+            if project_key is None:
+                errors.append(f"{location}.url is not approved for project unresolved: {canonical_url}")
+            else:
+                try:
+                    canonicalize_project_url(
+                        url,
+                        expected_project_key=project_key,
+                        project_profiles=PROJECT_LINK_PROFILES,
+                    )
+                except ValueError as exc:
+                    errors.append(f"{location}.url: {exc}")
+        elif canonical_url and canonical_url in foreign_urls:
             errors.append(f"{location}.url belongs to another project profile: {canonical_url}")
-        elif canonical_url and kind in {"site", "vk"} and canonical_url not in project_urls:
-            selected = project_key or "unresolved"
-            errors.append(f"{location}.url is not approved for project {selected}: {canonical_url}")
         elif canonical_url and canonical_url not in allowed_urls:
             errors.append(f"{location}.url is absent from sources/project link map: {canonical_url}")
         platforms_value = raw_value.get("platforms")
