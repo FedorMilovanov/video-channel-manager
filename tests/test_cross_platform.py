@@ -88,12 +88,15 @@ def test_compare_matches_by_title_and_duration_and_reports_missing() -> None:
 
     result = compare_audit_packages(source, target)
 
+    assert result.schema_version == "2.0"
     assert len(result.matches) == 1
     assert result.matches[0].source_ref.remote_id == "yt-1"
     assert result.matches[0].target_ref.remote_id == "vk-1"
+    assert result.matches[0].match_method == "exact_normalized_title"
     assert result.matches[0].duration_delta_seconds == 1
     assert [item.ref.remote_id for item in result.missing_on_target] == ["yt-2"]
     assert result.extra_on_target == []
+    assert result.conflicts == []
 
 
 def test_compare_reports_missing_collection_placement() -> None:
@@ -121,7 +124,7 @@ def test_compare_reports_missing_collection_placement() -> None:
     assert result.missing_placement_count == 1
 
 
-def test_compare_marks_duplicate_candidates_as_ambiguous() -> None:
+def test_duplicate_exact_titles_are_conflict_not_selected_pairs() -> None:
     source = _audit(
         PlatformName.YOUTUBE,
         "youtube-channel",
@@ -141,6 +144,11 @@ def test_compare_marks_duplicate_candidates_as_ambiguous() -> None:
 
     result = compare_audit_packages(source, target)
 
-    assert len(result.matches) == 2
-    assert result.ambiguous_match_count == 2
-    assert all(item.ambiguous for item in result.matches)
+    assert result.matches == []
+    assert result.conflict_count == 1
+    assert result.ambiguous_match_count == 1
+    assert result.conflicts[0].reason == "duplicate_exact_title"
+    assert [item.remote_id for item in result.conflicts[0].source_refs] == ["yt-a", "yt-b"]
+    assert [item.remote_id for item in result.conflicts[0].target_refs] == ["vk-a", "vk-b"]
+    assert result.missing_on_target == []
+    assert result.extra_on_target == []
