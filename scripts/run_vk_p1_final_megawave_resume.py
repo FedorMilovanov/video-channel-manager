@@ -9,6 +9,13 @@ from video_channel_manager.platforms.vk.editorial_final_megawave_resume import (
     rebuild_legacy_intermediate_guards,
 )
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical executor is retired by Wave 6. "
+        "Use the versioned `video-manager wave` engine through the reviewed operator contract."
+    )
+
 _original_build_final_megawave_plan = base_runner.build_final_megawave_plan
 
 

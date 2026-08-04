@@ -22,6 +22,13 @@ from video_channel_manager.platforms.youtube.models import InstalledClientConfig
 from video_channel_manager.platforms.youtube.store import TokenStore
 from video_channel_manager.platforms.youtube.write_lock import local_youtube_write_lock
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical executor is retired by Wave 6. "
+        "Use the versioned `video-manager wave` engine through the reviewed operator contract."
+    )
+
 _DEFAULT_POSTFLIGHT_DELAYS_SECONDS = (0.0, 3.0, 7.0, 15.0, 30.0)
 
 

@@ -9,6 +9,13 @@ import time
 from pathlib import Path
 from typing import Any
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical executor is retired by Wave 6. "
+        "Use the versioned `video-manager wave` engine through the reviewed operator contract."
+    )
+
 BASE_SCRIPT = Path(__file__).with_name("vk_shorts_reset.py")
 SPEC = importlib.util.spec_from_file_location("vk_shorts_reset_base", BASE_SCRIPT)
 if SPEC is None or SPEC.loader is None:
@@ -92,9 +99,7 @@ def validate_post(
     if state["type"] != "short_video":
         raise base.OperationError(f"attachment is not short_video: {state['type']}")
     if state["youtube_id"] != row["youtube_id"]:
-        raise base.OperationError(
-            f"YouTube ID mismatch: attachment={state['youtube_id']} ledger={row['youtube_id']}"
-        )
+        raise base.OperationError(f"YouTube ID mismatch: attachment={state['youtube_id']} ledger={row['youtube_id']}")
     views = state["views"]
     if not isinstance(views, int):
         raise base.OperationError("view count is unavailable")
@@ -107,9 +112,7 @@ def validate_post(
         and isinstance(expected_duration, int)
         and abs(actual_duration - expected_duration) > 2
     ):
-        raise base.OperationError(
-            f"duration mismatch: VK={actual_duration} YouTube={expected_duration}"
-        )
+        raise base.OperationError(f"duration mismatch: VK={actual_duration} YouTube={expected_duration}")
     return row, state, video
 
 
@@ -126,10 +129,7 @@ def command_prepare(args: Any) -> int:
         for row in base.load_legacy_rows(repo)
         if row.get("classification") == "confirmed_missing" and int(row.get("upload_attempted") or 0) == 1
     ]
-    row_by_remote = {
-        f"{int(row['vk_owner_id'])}_{int(row['vk_video_id'])}": row
-        for row in rows
-    }
+    row_by_remote = {f"{int(row['vk_owner_id'])}_{int(row['vk_video_id'])}": row for row in rows}
     posts = gateway.wall_posts_after(base.EXPECTED_OWNER, args.boundary_post)
 
     wall_records: list[dict[str, Any]] = []
@@ -162,9 +162,7 @@ def command_prepare(args: Any) -> int:
                 "reposts": post.get("reposts"),
                 "views": post.get("views"),
                 "attachment_state": state,
-                "attachment_sha256": hashlib.sha256(
-                    base.canonical_json(video).encode("utf-8")
-                ).hexdigest(),
+                "attachment_sha256": hashlib.sha256(base.canonical_json(video).encode("utf-8")).hexdigest(),
             }
         )
 
@@ -244,11 +242,7 @@ def command_prepare(args: Any) -> int:
         "wall_post_candidates": len(wall_records),
         "clip_replacement_candidates": len(candidates),
         "conflicts": len(conflicts),
-        "candidate_post_range": (
-            [wall_records[0]["post_id"], wall_records[-1]["post_id"]]
-            if wall_records
-            else None
-        ),
+        "candidate_post_range": ([wall_records[0]["post_id"], wall_records[-1]["post_id"]] if wall_records else None),
         "plan_path": str(plan_path),
     }
     base.write_json(summary_path, summary)
@@ -309,11 +303,7 @@ def delete_old_video_once(
     if replacement is None:
         raise base.OperationError(f"Verified replacement disappeared: {new_remote_id}")
     replacement_state = base.video_state(replacement)
-    if (
-        replacement_state["type"] != "video"
-        or replacement_state["processing"]
-        or replacement_state["converting"]
-    ):
+    if replacement_state["type"] != "video" or replacement_state["processing"] or replacement_state["converting"]:
         raise base.OperationError(f"Replacement is not final type=video: {replacement_state}")
 
     request = {
@@ -375,9 +365,7 @@ def delete_wall_post_once(
                     old_remote_id=post["remote_id"],
                 )
                 return
-            raise base.OperationError(
-                f"Previous wall.delete outcome is unresolved; refusing to resend: {post_id}"
-            )
+            raise base.OperationError(f"Previous wall.delete outcome is unresolved; refusing to resend: {post_id}")
 
     live = gateway.wall_post(base.EXPECTED_OWNER, post_id)
     if live is None:
@@ -473,9 +461,7 @@ def command_apply(args: Any) -> int:
             )
 
         candidate_post_ids = {
-            int(post_id)
-            for candidate in candidates
-            for post_id in candidate.get("wall_post_ids", [])
+            int(post_id) for candidate in candidates for post_id in candidate.get("wall_post_ids", [])
         }
         for post_id, record in sorted(wall_by_id.items()):
             if post_id not in candidate_post_ids:

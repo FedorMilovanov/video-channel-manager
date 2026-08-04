@@ -36,14 +36,18 @@ from urllib.parse import urlsplit
 
 import httpx
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical executor is retired by Wave 6. "
+        "Use the versioned `video-manager wave` engine through the reviewed operator contract."
+    )
+
 MODULE_PATH = Path(__file__).with_name("schedule_lord_god_article_wave.py")
 MODULE_NAME = "schedule_lord_god_article_wave_guarded"
 
 HERMENEUTICS_ID = "lord-god-article-wave-202608-05-hermenevtika"
-HERMENEUTICS_IMAGE = (
-    "https://gospod-bog.ru/images/"
-    "og-hermenevtika-hristotsentrichnaya-otsenka.webp"
-)
+HERMENEUTICS_IMAGE = "https://gospod-bog.ru/images/og-hermenevtika-hristotsentrichnaya-otsenka.webp"
 
 DIOTROPHES_ID = "lord-god-article-wave-202608-06-diotrefy"
 KRAJNE_OPERATION: dict[str, Any] = {
@@ -106,13 +110,9 @@ def install_reviewed_policy_corrections(module: Any) -> None:
             operation_id = str(operation.get("operation_id") or "")
 
             if operation_id == HERMENEUTICS_ID:
-                expected_old_image = (
-                    "https://gospod-bog.ru/images/hermenevtika-preview.webp"
-                )
+                expected_old_image = "https://gospod-bog.ru/images/hermenevtika-preview.webp"
                 if module.normalize_url(operation.get("og_image")) != expected_old_image:
-                    raise RuntimeError(
-                        "Hermeneutics policy no longer matches reviewed source"
-                    )
+                    raise RuntimeError("Hermeneutics policy no longer matches reviewed source")
                 operation["og_image"] = HERMENEUTICS_IMAGE
                 hermeneutics_seen = True
 
@@ -120,9 +120,7 @@ def install_reviewed_policy_corrections(module: Any) -> None:
                 if module.normalize_url(operation.get("url")) != (
                     "https://gospod-bog.ru/articles/diotrefy-nashego-vremeni/"
                 ):
-                    raise RuntimeError(
-                        "Diotrophes policy no longer matches reviewed draft"
-                    )
+                    raise RuntimeError("Diotrophes policy no longer matches reviewed draft")
                 operation = copy.deepcopy(KRAJNE_OPERATION)
                 operation["message_sha256"] = module.message_sha(operation["message"])
                 diotrophes_seen = True
@@ -130,9 +128,7 @@ def install_reviewed_policy_corrections(module: Any) -> None:
             corrected.append(operation)
 
         if not hermeneutics_seen or not diotrophes_seen:
-            raise RuntimeError(
-                "Reviewed article corrections could not be applied exactly"
-            )
+            raise RuntimeError("Reviewed article corrections could not be applied exactly")
 
         policy["operations"] = corrected
         policy["policy_sha256"] = module.canonical_sha(
@@ -153,9 +149,7 @@ def find_ffmpeg() -> str:
         raise RuntimeError(f"FFMPEG_BINARY does not exist: {candidate}")
     discovered = shutil.which("ffmpeg")
     if not discovered:
-        raise RuntimeError(
-            "ffmpeg is required to convert article WebP images to JPEG"
-        )
+        raise RuntimeError("ffmpeg is required to convert article WebP images to JPEG")
     return discovered
 
 
@@ -170,10 +164,7 @@ def convert_webp_to_jpeg(payload: bytes, *, ffmpeg: str) -> bytes:
         "-i",
         "pipe:0",
         "-vf",
-        (
-            "scale=1280:720:force_original_aspect_ratio=decrease,"
-            "pad=1280:720:(ow-iw)/2:(oh-ih)/2:color=black"
-        ),
+        ("scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2:color=black"),
         "-frames:v",
         "1",
         "-pix_fmt",
@@ -210,16 +201,9 @@ def install_explicit_photo_flow(module: Any) -> None:
         checks = original_verify_live_sources(policy)
         ffmpeg = find_ffmpeg()
         headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 Chrome/148 Safari/537.36"
-            )
+            "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/148 Safari/537.36")
         }
-        by_operation = {
-            str(item.get("operation_id") or ""): item
-            for item in checks
-            if isinstance(item, dict)
-        }
+        by_operation = {str(item.get("operation_id") or ""): item for item in checks if isinstance(item, dict)}
         with httpx.Client(
             headers=headers,
             follow_redirects=True,
@@ -233,18 +217,14 @@ def install_explicit_photo_flow(module: Any) -> None:
                 jpeg = convert_webp_to_jpeg(response.content, ffmpeg=ffmpeg)
                 check = by_operation.get(operation_id)
                 if check is None:
-                    raise RuntimeError(
-                        f"Missing source verification row: {operation_id}"
-                    )
+                    raise RuntimeError(f"Missing source verification row: {operation_id}")
                 check.update(
                     {
                         "wall_image_mode": "explicit_uploaded_photo",
                         "wall_jpeg_width": 1280,
                         "wall_jpeg_height": 720,
                         "wall_jpeg_bytes": len(jpeg),
-                        "wall_jpeg_sha256": (
-                            f"sha256:{hashlib.sha256(jpeg).hexdigest()}"
-                        ),
+                        "wall_jpeg_sha256": (f"sha256:{hashlib.sha256(jpeg).hexdigest()}"),
                         "ffmpeg_conversion_verified": True,
                     }
                 )
@@ -258,16 +238,10 @@ def install_explicit_photo_flow(module: Any) -> None:
             "photos.getWallUploadServer",
             params={"group_id": module.COMMUNITY_ID},
         )
-        upload_url = (
-            str(response.get("upload_url") or "").strip()
-            if isinstance(response, dict)
-            else ""
-        )
+        upload_url = str(response.get("upload_url") or "").strip() if isinstance(response, dict) else ""
         parsed_upload_url = urlsplit(upload_url)
         if parsed_upload_url.scheme != "https" or not parsed_upload_url.netloc:
-            raise RuntimeError(
-                "photos.getWallUploadServer returned no usable HTTPS upload URL"
-            )
+            raise RuntimeError("photos.getWallUploadServer returned no usable HTTPS upload URL")
         return [
             {
                 "operation_id": operation["operation_id"],
@@ -288,10 +262,7 @@ def install_explicit_photo_flow(module: Any) -> None:
         image_url = module.normalize_url(operation["og_image"])
         ffmpeg = find_ffmpeg()
         headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 Chrome/148 Safari/537.36"
-            )
+            "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/148 Safari/537.36")
         }
         with httpx.Client(
             headers=headers,
@@ -306,16 +277,10 @@ def install_explicit_photo_flow(module: Any) -> None:
             "photos.getWallUploadServer",
             params={"group_id": module.COMMUNITY_ID},
         )
-        upload_url = (
-            str(server_response.get("upload_url") or "").strip()
-            if isinstance(server_response, dict)
-            else ""
-        )
+        upload_url = str(server_response.get("upload_url") or "").strip() if isinstance(server_response, dict) else ""
         parsed_upload_url = urlsplit(upload_url)
         if parsed_upload_url.scheme != "https" or not parsed_upload_url.netloc:
-            raise RuntimeError(
-                "photos.getWallUploadServer returned no usable HTTPS upload URL"
-            )
+            raise RuntimeError("photos.getWallUploadServer returned no usable HTTPS upload URL")
 
         with httpx.Client(
             follow_redirects=True,
@@ -347,9 +312,7 @@ def install_explicit_photo_flow(module: Any) -> None:
             or not isinstance(server_value, (int, str))
             or not str(server_value).strip()
         ):
-            raise RuntimeError(
-                "VK photo upload server response lacks photo/server/hash"
-            )
+            raise RuntimeError("VK photo upload server response lacks photo/server/hash")
 
         saved_response = client._call(
             "photos.saveWallPhoto",
@@ -361,22 +324,16 @@ def install_explicit_photo_flow(module: Any) -> None:
             },
         )
         saved_photos = (
-            [item for item in saved_response if isinstance(item, dict)]
-            if isinstance(saved_response, list)
-            else []
+            [item for item in saved_response if isinstance(item, dict)] if isinstance(saved_response, list) else []
         )
         if len(saved_photos) != 1:
-            raise RuntimeError(
-                f"photos.saveWallPhoto returned {len(saved_photos)} photos"
-            )
+            raise RuntimeError(f"photos.saveWallPhoto returned {len(saved_photos)} photos")
         token = module.photo_token(saved_photos[0])
         if not token:
             raise RuntimeError("photos.saveWallPhoto returned no usable photo token")
         owner_id = saved_photos[0].get("owner_id")
         if owner_id != module.OWNER_ID:
-            raise RuntimeError(
-                f"Saved wall photo has unexpected owner_id: {owner_id!r}"
-            )
+            raise RuntimeError(f"Saved wall photo has unexpected owner_id: {owner_id!r}")
         return token
 
     def post_once(client: Any, operation: dict[str, Any]) -> object:

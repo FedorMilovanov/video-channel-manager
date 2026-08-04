@@ -3,6 +3,13 @@ from __future__ import annotations
 import sys
 from typing import NoReturn, TextIO
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical executor is retired by Wave 6. "
+        "Use the versioned `video-manager wave` engine through the reviewed operator contract."
+    )
+
 
 def _configure_utf8_stream(stream: TextIO) -> None:
     reconfigure = getattr(stream, "reconfigure", None)

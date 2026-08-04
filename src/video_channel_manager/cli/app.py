@@ -24,6 +24,8 @@ from video_channel_manager.domain.models import ChannelRecord, CollectionRecord,
 from video_channel_manager.exchange.audit_package import AuditFinding, AuditPackage
 from video_channel_manager.exchange.change_plan import ChangeOperation, ChangePlan
 from video_channel_manager.local_media import scan_local_media
+from video_channel_manager.wave_engine.cli import schema_documents as wave_schema_documents
+from video_channel_manager.wave_engine.cli import wave_app
 from video_channel_manager.persistence import Database
 
 app = typer.Typer(no_args_is_help=True, help="Audit, organize, and safely synchronize video channels.")
@@ -41,6 +43,7 @@ app.add_typer(compare_app, name="compare")
 app.add_typer(content_app, name="content")
 app.add_typer(youtube_app, name="youtube")
 app.add_typer(vk_app, name="vk")
+app.add_typer(wave_app, name="wave")
 console = Console()
 
 
@@ -104,6 +107,7 @@ def schema_export(
     documents = {
         "audit-package-v1.schema.json": AuditPackage.model_json_schema(),
         "change-plan-v1.schema.json": ChangePlan.model_json_schema(),
+        **wave_schema_documents(),
     }
     for filename, schema in documents.items():
         (output_dir / filename).write_text(json.dumps(schema, ensure_ascii=False, indent=2), encoding="utf-8")

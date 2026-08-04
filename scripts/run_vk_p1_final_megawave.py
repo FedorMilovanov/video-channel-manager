@@ -33,6 +33,13 @@ from verify_vk_reviewed_correction_pushkin_cloud_apply_bundle import (
     verify_bundle as verify_pushkin_cloud_apply,
 )
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical executor is retired by Wave 6. "
+        "Use the versioned `video-manager wave` engine through the reviewed operator contract."
+    )
+
 _REQUIRED_COUNTS = {
     "target_videos": 42,
     "descriptions_to_update": 42,
@@ -144,9 +151,7 @@ def _verify_review_bundle(
         raise ValueError("Source review queue is not review-only")
 
     source_videos = {
-        str(item["ref"]["remote_id"]): item
-        for item in source_snapshot.get("videos", [])
-        if isinstance(item, dict)
+        str(item["ref"]["remote_id"]): item for item in source_snapshot.get("videos", []) if isinstance(item, dict)
     }
     target_ids = {str(item["video_id"]) for item in policy.get("targets", []) if isinstance(item, dict)}
     seen: set[str] = set()
@@ -220,8 +225,7 @@ def _video_text_state(operation: dict[str, Any], video: dict[str, Any] | None) -
     final_match = title == operation["after_title"] and description == operation["after_description"]
     source_match = title == operation["before_title"] and description == operation["before_description"]
     legacy_match = (
-        title == operation["legacy_intermediate_title"]
-        and description == operation["legacy_intermediate_description"]
+        title == operation["legacy_intermediate_title"] and description == operation["legacy_intermediate_description"]
     )
     if final_match:
         return {
@@ -429,7 +433,9 @@ def _verify_final_state(source: dict[str, Any], final: dict[str, Any], plan: dic
     final_all_pairs = membership_pairs(final)
     expected_total = len(expected_managed) + sum(system_verification["counts_verified"].values())
     if len(final_all_pairs) != expected_total:
-        raise ValueError(f"Final total membership count differs: expected {expected_total}, actual {len(final_all_pairs)}")
+        raise ValueError(
+            f"Final total membership count differs: expected {expected_total}, actual {len(final_all_pairs)}"
+        )
 
     return {
         "status": "verified_completed",

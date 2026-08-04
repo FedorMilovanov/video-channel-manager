@@ -9,6 +9,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical executor is retired by Wave 6. "
+        "Use the versioned `video-manager wave` engine through the reviewed operator contract."
+    )
+
 V2_SCRIPT = Path(__file__).with_name("vk_shorts_reset_20260801.py")
 SPEC = importlib.util.spec_from_file_location("vk_shorts_reset_v2", V2_SCRIPT)
 if SPEC is None or SPEC.loader is None:
@@ -48,10 +55,7 @@ def command_prepare(args: Any) -> int:
         for row in base.load_legacy_rows(repo)
         if row.get("classification") == "confirmed_missing" and int(row.get("upload_attempted") or 0) == 1
     ]
-    row_by_remote = {
-        f"{int(row['vk_owner_id'])}_{int(row['vk_video_id'])}": row
-        for row in rows
-    }
+    row_by_remote = {f"{int(row['vk_owner_id'])}_{int(row['vk_video_id'])}": row for row in rows}
     posts = gateway.wall_posts_after(base.EXPECTED_OWNER, args.boundary_post)
 
     wall_records: list[dict[str, Any]] = []
@@ -209,7 +213,11 @@ def probe_media(path: Path, expected_duration: object) -> dict[str, Any]:
         raise base.OperationError(f"ffprobe failed for {path}: {completed.stderr[-1000:]}")
     payload = json.loads(completed.stdout)
     streams = payload.get("streams") if isinstance(payload, dict) else None
-    video_streams = [item for item in streams if isinstance(item, dict) and item.get("codec_type") == "video"] if isinstance(streams, list) else []
+    video_streams = (
+        [item for item in streams if isinstance(item, dict) and item.get("codec_type") == "video"]
+        if isinstance(streams, list)
+        else []
+    )
     if not video_streams:
         raise base.OperationError(f"Downloaded source has no video stream: {path}")
     duration_raw = payload.get("format", {}).get("duration") if isinstance(payload.get("format"), dict) else None

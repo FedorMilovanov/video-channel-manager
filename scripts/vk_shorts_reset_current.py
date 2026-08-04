@@ -7,6 +7,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical executor is retired by Wave 6. "
+        "Use the versioned `video-manager wave` engine through the reviewed operator contract."
+    )
+
 V3_SCRIPT = Path(__file__).with_name("vk_shorts_reset_20260801_v3.py")
 SPEC = importlib.util.spec_from_file_location("vk_shorts_reset_v3", V3_SCRIPT)
 if SPEC is None or SPEC.loader is None:
@@ -143,9 +150,7 @@ def tolerant_delete_wall_post_once(
                     old_remote_id=planned_remote_id,
                 )
                 return
-            raise base.OperationError(
-                f"Previous wall.delete outcome is unknown; refusing to resend: {post_id}"
-            )
+            raise base.OperationError(f"Previous wall.delete outcome is unknown; refusing to resend: {post_id}")
 
     if post_id <= int(plan["boundary_post_id"]):
         raise base.OperationError(f"Protected wall post cannot be deleted: {post_id}")
@@ -167,9 +172,7 @@ def tolerant_delete_wall_post_once(
     old_video_was_deleted = old_delete is not None and old_delete["status"] == "accepted"
 
     if not original_attachment_matches and not old_video_was_deleted:
-        raise base.OperationError(
-            f"Wall post changed before its planned video was deleted: {post_id}"
-        )
+        raise base.OperationError(f"Wall post changed before its planned video was deleted: {post_id}")
 
     request = {
         "owner_id": base.EXPECTED_OWNER,

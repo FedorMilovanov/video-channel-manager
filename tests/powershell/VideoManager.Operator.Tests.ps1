@@ -282,6 +282,7 @@ Describe "Wave 5 PowerShell operator contract" {
             -Mode "apply" `
             -ProviderMutation $true `
             -OperationClass "ambiguous_mutation" `
+            -Arguments @("wave", "apply", "--plan", "plan.json", "--intent", "intent.json") `
             -OperationCount 1
 
         {
@@ -293,6 +294,54 @@ Describe "Wave 5 PowerShell operator contract" {
                 -EnableProviderWrites
         } | Should -Throw "*prohibited in CI*"
         (Test-Path -LiteralPath (Join-Path $OutputDir "stdout.log")) | Should -BeFalse
+    }
+
+    It "requires the complete Wave 6 apply argument contract" {
+        (Test-VcmMutationCliArguments -Arguments @(
+            "wave", "apply",
+            "--source", "source.json",
+            "--plan", "plan.json",
+            "--intent", "intent.json",
+            "--repository-root", ".",
+            "--enable-provider-writes"
+        )) | Should -BeTrue
+        (Test-VcmMutationCliArguments -Arguments @("wave", "apply", "--plan", "plan.json")) | Should -BeFalse
+        (Test-VcmMutationCliArguments -Arguments @(
+            "wave", "apply",
+            "--source", "source.json",
+            "--plan", "plan.json",
+            "--intent", "intent.json",
+            "--repository-root", "."
+        )) | Should -BeFalse
+    }
+
+    It "rejects historical provider executors outside the Wave 6 apply interface" {
+        $Documents = New-TestOperatorDocuments `
+            -Directory (Join-Path $TestRoot "documents") `
+            -Mode "apply" `
+            -ProviderMutation $true `
+            -OperationClass "ambiguous_mutation" `
+            -Arguments @("apply_youtube_comment_plan.py", "--execute") `
+            -OperationCount 1
+
+        {
+            Invoke-VcmOperatorRequest `
+                -RequestPath $Documents.RequestPath `
+                -RequestSha256 $Documents.RequestSha `
+                -OutputDirectory $OutputDir `
+                -RepositoryRoot $RepoRoot `
+                -EnableProviderWrites
+        } | Should -Throw "*only the supported Wave 6*"
+        (Test-Path -LiteralPath (Join-Path $OutputDir "stdout.log")) | Should -BeFalse
+    }
+
+    It "allows Wave 6 read-only validation commands" {
+        (Test-VcmSafeCliArguments -Arguments @("wave", "source", "verify", "source.json")) | Should -BeTrue
+        (Test-VcmSafeCliArguments -Arguments @("wave", "plan", "validate", "plan.json")) | Should -BeTrue
+        (Test-VcmSafeCliArguments -Arguments @("wave", "preview", "plan.json")) | Should -BeTrue
+        (Test-VcmSafeCliArguments -Arguments @("wave", "result", "verify", "result.json")) | Should -BeTrue
+        (Test-VcmSafeCliArguments -Arguments @("wave", "result", "verify-reconciliation", "result.json")) | Should -BeTrue
+        (Test-VcmSafeCliArguments -Arguments @("wave", "reconcile", "request.json", "--plan", "plan.json", "--result", "result.json")) | Should -BeTrue
     }
 
     It "rejects safe-read manifests outside the explicit CLI allowlist" {

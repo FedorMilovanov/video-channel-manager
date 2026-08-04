@@ -30,6 +30,13 @@ from video_channel_manager.platforms.vk import VkApiClient, VkTokenStore
 from video_channel_manager.platforms.vk.thumbnails import VkThumbnailWriter
 from video_channel_manager.platforms.vk.writer import VkUploadTicket, VkVideoWriter, VkWriteError
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical executor is retired by Wave 6. "
+        "Use the versioned `video-manager wave` engine through the reviewed operator contract."
+    )
+
 PROJECT_KEY = "lord-god-strength"
 COMMUNITY_ID = 60805374
 OWNER_ID = -60805374
@@ -176,7 +183,11 @@ def source_playlist_members() -> list[str]:
         "YouTube playlist audit",
     )
     entries = value.get("entries")
-    return [str(item["id"]) for item in entries if isinstance(item, dict) and item.get("id")] if isinstance(entries, list) else []
+    return (
+        [str(item["id"]) for item in entries if isinstance(item, dict) and item.get("id")]
+        if isinstance(entries, list)
+        else []
+    )
 
 
 def download_video(row: dict[str, Any], target: Path) -> Path:
@@ -370,7 +381,9 @@ def audit(repo: Path, queue: list[dict[str, Any]], writer: VkVideoWriter, client
     }
 
 
-def update_ledger(repo: Path, row: dict[str, Any], media: Path, ticket: VkUploadTicket, response: dict[str, Any]) -> None:
+def update_ledger(
+    repo: Path, row: dict[str, Any], media: Path, ticket: VkUploadTicket, response: dict[str, Any]
+) -> None:
     timestamp = now()
     with sqlite3.connect(ledger(repo)) as db:
         db.execute(
@@ -522,9 +535,7 @@ def set_source_thumbnail(
             attempt.update({"finished_at": now(), "error": f"{type(exc).__name__}: {exc}"})
             if explicit_parameter_rejection(exc):
                 attempt["status"] = "rejected"
-                journal["thumbnails"][youtube_id].update(
-                    {"status": "retrying", "last_error": attempt["error"]}
-                )
+                journal["thumbnails"][youtube_id].update({"status": "retrying", "last_error": attempt["error"]})
                 save_state(repo, journal)
                 continue
             attempt["status"] = "unknown"
@@ -663,9 +674,7 @@ def main() -> int:
     final = audit(repo, queue, video_writer, client)
     final["completed_at"] = now()
     verified_count = sum(
-        1
-        for item in journal["thumbnails"].values()
-        if isinstance(item, dict) and item.get("status") == "verified"
+        1 for item in journal["thumbnails"].values() if isinstance(item, dict) and item.get("status") == "verified"
     )
     final["remote_writes"] = {
         "new_uploads": len(plan["safe_upload_ids"]),
@@ -675,9 +684,7 @@ def main() -> int:
     }
     final_status = (
         "completed"
-        if not final["missing_youtube_ids"]
-        and verified_count == 26
-        and not final["target_album"]["missing_series_ids"]
+        if not final["missing_youtube_ids"] and verified_count == 26 and not final["target_album"]["missing_series_ids"]
         else "partial"
     )
     final["status"] = final_status
