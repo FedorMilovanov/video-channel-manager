@@ -1,0 +1,44 @@
+name: Wave 7 exact Ruff format
+
+on:
+  push:
+    branches:
+      - agent/wave-7-fault-modeling
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wave7-exact-format
+  cancel-in-progress: false
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: agent/wave-7-fault-modeling
+          fetch-depth: 0
+      - name: Apply and verify exact Ruff format
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install 'ruff==0.16.1'
+          ruff format tests/test_mutation_boundary_register.py
+          ruff format --check tests/test_mutation_boundary_register.py
+          ruff check tests/test_mutation_boundary_register.py
+          git diff --check
+      - name: Commit formatting and self-cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/wave7-format.yml
+          git config user.name "Wave 7 Formatter"
+          git config user.email "wave7-formatter@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "style: apply exact Wave 7 Ruff format"
+          git push origin HEAD:agent/wave-7-fault-modeling
