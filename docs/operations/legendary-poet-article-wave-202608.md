@@ -21,6 +21,8 @@ sha256:af210867d2ea392394e2034cffa9d43c3e1adc632386e9ec4827b033c8fff9a0
 
 The schedule is every two days at 19:00 Europe/Moscow from 2026-08-06 through 2026-08-24.
 
+The policy stores each exact ISO timestamp, derived Unix epoch, canonical message SHA-256, and the overall canonical policy digest. Preparation fails closed if any one of these values differs.
+
 ## Supported sequence
 
 1. Run `video-manager wave article prepare` from a clean current `main` checkout.
