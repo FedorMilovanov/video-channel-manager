@@ -6,11 +6,7 @@ from video_channel_manager.application.catalog_identity import (
     build_catalog_identity_evidence,
     validate_catalog_identity_evidence,
 )
-from video_channel_manager.domain.enums import (
-    ChannelKind,
-    CollectionKind,
-    PlatformName,
-)
+from video_channel_manager.domain.enums import ChannelKind, CollectionKind, PlatformName
 from video_channel_manager.domain.models import (
     ChannelRecord,
     CollectionMembership,
@@ -46,11 +42,7 @@ def _collection(
     remote_id: str,
     title: str,
 ) -> CollectionRecord:
-    kind = (
-        CollectionKind.PLAYLIST
-        if platform == PlatformName.YOUTUBE
-        else CollectionKind.VIDEO_ALBUM
-    )
+    kind = CollectionKind.PLAYLIST if platform == PlatformName.YOUTUBE else CollectionKind.VIDEO_ALBUM
     return CollectionRecord(
         ref=_ref(platform, channel_id, remote_id),
         title=title,
@@ -68,18 +60,10 @@ def _audit(
     collections: list[CollectionRecord],
     memberships: list[tuple[str, str, int]],
 ) -> AuditPackage:
-    kind = (
-        ChannelKind.VIDEO_CHANNEL
-        if platform == PlatformName.YOUTUBE
-        else ChannelKind.COMMUNITY
-    )
+    kind = ChannelKind.VIDEO_CHANNEL if platform == PlatformName.YOUTUBE else ChannelKind.COMMUNITY
     return AuditPackage(
         snapshot_id=UUID(snapshot_id),
-        channel=ChannelRecord(
-            ref=_ref(platform, channel_id, channel_id),
-            title=channel_id,
-            kind=kind,
-        ),
+        channel=ChannelRecord(ref=_ref(platform, channel_id, channel_id), title=channel_id, kind=kind),
         videos=videos,
         collections=collections,
         memberships=[
@@ -93,10 +77,7 @@ def _audit(
     )
 
 
-def _source(
-    *,
-    memberships: list[tuple[str, str, int]] | None = None,
-) -> AuditPackage:
+def _source(*, memberships: list[tuple[str, str, int]] | None = None) -> AuditPackage:
     return _audit(
         PlatformName.YOUTUBE,
         "UC-source",
@@ -105,18 +86,9 @@ def _source(
             _video(PlatformName.YOUTUBE, "UC-source", "yt-1", "Первое"),
             _video(PlatformName.YOUTUBE, "UC-source", "yt-2", "Второе"),
         ],
-        collections=[
-            _collection(
-                PlatformName.YOUTUBE,
-                "UC-source",
-                "playlist-1",
-                "Сергей Есенин",
-            )
-        ],
+        collections=[_collection(PlatformName.YOUTUBE, "UC-source", "playlist-1", "Сергей Есенин")],
         memberships=(
-            memberships
-            if memberships is not None
-            else [("playlist-1", "yt-1", 0), ("playlist-1", "yt-2", 1)]
+            memberships if memberships is not None else [("playlist-1", "yt-1", 0), ("playlist-1", "yt-2", 1)]
         ),
     )
 
@@ -138,14 +110,7 @@ def _target(
         collections=(
             collections
             if collections is not None
-            else [
-                _collection(
-                    PlatformName.VK,
-                    "235216998",
-                    "album-1",
-                    "Сергей Есенин",
-                )
-            ]
+            else [_collection(PlatformName.VK, "235216998", "album-1", "Сергей Есенин")]
         ),
         memberships=memberships or [],
     )
@@ -213,27 +178,15 @@ def test_same_title_existing_album_is_conflict_without_reviewed_id() -> None:
     decision = evidence.decisions[0]
     assert decision.decision == "conflict"
     assert decision.conflict_reason == "unreviewed_existing_candidate"
-    assert [item.remote_id for item in decision.candidate_target_refs] == [
-        "album-1"
-    ]
+    assert [item.remote_id for item in decision.candidate_target_refs] == ["album-1"]
     assert decision.missing_target_video_ids == []
 
 
 def test_duplicate_canonical_album_titles_are_conflict() -> None:
     target = _target(
         collections=[
-            _collection(
-                PlatformName.VK,
-                "235216998",
-                "album-1",
-                "Сергей Есенин",
-            ),
-            _collection(
-                PlatformName.VK,
-                "235216998",
-                "album-2",
-                "Сергей — Есенин",
-            ),
+            _collection(PlatformName.VK, "235216998", "album-1", "Сергей Есенин"),
+            _collection(PlatformName.VK, "235216998", "album-2", "Сергей — Есенин"),
         ]
     )
 
@@ -285,22 +238,12 @@ def test_approved_create_is_blocked_by_existing_candidate() -> None:
     )
 
     assert evidence.decisions[0].decision == "conflict"
-    assert (
-        evidence.decisions[0].conflict_reason
-        == "approved_create_conflicts_with_target"
-    )
+    assert evidence.decisions[0].conflict_reason == "approved_create_conflicts_with_target"
 
 
 def test_reviewed_renamed_album_remains_exact_mapping_with_title_drift() -> None:
     target = _target(
-        collections=[
-            _collection(
-                PlatformName.VK,
-                "235216998",
-                "album-1",
-                "Есенин — архив",
-            )
-        ]
+        collections=[_collection(PlatformName.VK, "235216998", "album-1", "Есенин — архив")]
     )
 
     evidence = build_catalog_identity_evidence(
@@ -334,18 +277,8 @@ def test_unknown_and_reused_reviewed_collection_ids_fail_closed() -> None:
         snapshot_id="00000000-0000-0000-0000-000000000001",
         videos=[],
         collections=[
-            _collection(
-                PlatformName.YOUTUBE,
-                "UC-source",
-                "playlist-1",
-                "Один",
-            ),
-            _collection(
-                PlatformName.YOUTUBE,
-                "UC-source",
-                "playlist-2",
-                "Два",
-            ),
+            _collection(PlatformName.YOUTUBE, "UC-source", "playlist-1", "Один"),
+            _collection(PlatformName.YOUTUBE, "UC-source", "playlist-2", "Два"),
         ],
         memberships=[],
     )
