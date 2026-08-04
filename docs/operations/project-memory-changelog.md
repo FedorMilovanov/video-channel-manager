@@ -4,6 +4,21 @@ This file records durable changes to operational memory. Add an entry whenever p
 
 ## 2026-08-04
 
+### Wave 5 completed — reliable Windows/PowerShell operator layer
+
+- Merged PR #75 as `1a62779293a404e4654b6230644dfc78e9b20dc1`.
+- Exact-head CI run `30900532613` passed dependency audit, compileall, Ruff, formatting, strict mypy, and full pytest on Python 3.11, 3.12, and 3.13: `591 passed, 1 xfailed`.
+- Pester passed `17/17` on Windows PowerShell 5.1, PowerShell 7 on Windows, and PowerShell 7 on Linux.
+- Classified 23 production `.ps1` files as 1 supported, 3 compatibility-only, and 19 retired; the Pester test file is separately bound as test-only.
+- Added canonical UTF-8/LF wrapper digests stable across Windows CRLF and Linux LF checkouts.
+- Historical provider-write wrappers now stop before credentials, hard-coded paths, nested shells, or child execution.
+- Added one supported manifest-driven operator with exact request/manifest SHA-256, exact project/community/owner/snapshot/count confirmations, strict JSON types, output-collision rejection, and safe-read CLI allowlisting.
+- Added one Python 3.11/3.12/3.13 resolver, native exit-code evidence, UTF-8 without BOM, and atomic JSON replacement.
+- Apply remains impossible in CI and requires `ambiguous_mutation`, a positive operation count, and `-EnableProviderWrites` outside CI.
+- Nonzero ambiguous mutations remain `unknown_requires_reconciliation`, non-retry-safe, and never auto-replayed.
+- No VK or YouTube provider write occurred during implementation or CI.
+- Wave 5 issue #72 closed; Wave 6 stable engine work is owned by issue #76.
+
 ### Wave 3 completed — central HTTP ownership and safe-read reliability
 
 - Merged PR #70 as `995167bdadc90d8d53414570cc3e5010bc4a93f2`.

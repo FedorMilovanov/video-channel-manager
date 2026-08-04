@@ -1,7 +1,7 @@
 # Operational automation backlog
 
 Updated: 2026-08-04  
-Program state: `WAVE_4_COMPLETED_WAVE_5_ACTIVE`
+Program state: `WAVE_5_COMPLETED_WAVE_6_ACTIVE`
 
 This backlog is subordinate to [`master-audit-2026-08-04.md`](master-audit-2026-08-04.md) and the machine-readable [`audit-register-2026-08-04.json`](audit-register-2026-08-04.json). It must not re-activate retracted findings, retired executors, or completed destructive operations.
 
@@ -66,44 +66,56 @@ Completed by PR #71, merge `d85f7cf94b8ba0b30947291b3a08491239438843`, exact-hea
 
 Provider writes during implementation/CI: 0.
 
-## Active next work
-
 ### Wave 5 — reliable Windows/PowerShell operator layer
 
-Owner: issue #72.
+Completed by PR #75, merge `1a62779293a404e4654b6230644dfc78e9b20dc1`, exact-head CI run `30900532613`:
+
+- complete registry for 23 production PowerShell wrappers plus the Pester test file;
+- 1 supported manifest-driven operator, 3 compatibility-only non-write wrappers, and 19 fail-closed retired provider-write wrappers;
+- canonical UTF-8/LF wrapper digests stable across Windows and Linux checkouts;
+- one repository/Python/venv bootstrap for Python 3.11/3.12/3.13;
+- exact request/manifest paths, raw-file SHA-256, exact project/snapshot/count confirmation, and strict JSON types;
+- native exit-code handling and sanitized structured child evidence, never stdout-based success parsing;
+- UTF-8 without BOM and atomic JSON replacement;
+- no newest-file/`LastWriteTime`, user-home hardcode, or hidden nested PowerShell in the supported path;
+- CI-prohibited apply and explicit `-EnableProviderWrites` gate;
+- ambiguous nonzero outcomes remain `unknown_requires_reconciliation` and non-retry-safe;
+- Python: `591 passed, 1 xfailed` on 3.11/3.12/3.13;
+- Pester: `17/17` on Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux.
+
+Provider writes during implementation/CI: 0.
+
+## Active next work
+
+### Wave 6 — stable versioned wave engine
+
+Owner: issue #76.
 
 Required outcomes:
 
-- inventory every tracked `.ps1` with project ownership and provider-write capability;
-- classify every wrapper as `supported`, `compatibility_only`, or `retired`;
-- fail CI when a wrapper is unclassified;
-- one repository/Python/venv bootstrap;
-- one checked native-process helper and stable exit/result taxonomy;
-- no control flow based on human stdout;
-- deterministic UTF-8 logs and atomic `preflight-summary.json` / `result.json`;
-- exact artifact path plus SHA-256 or immutable manifest;
-- no newest-ZIP/LastWriteTime discovery;
-- no user-specific paths or hidden nested `pwsh` recursion;
-- one `plan` / `dry-run` / `apply` / `reconcile` vocabulary;
-- Pester/static tests for Windows PowerShell 5.1 and PowerShell 7;
+- inventory every tracked Python wave/prepare/apply/recover/reconcile script and all callers;
+- classify each as `supported_engine`, `compatibility_adapter`, `retired`, or `independent_tool`;
+- fail CI when a wave executor is unclassified;
+- one immutable versioned source/plan/apply/result/reconciliation contract;
+- exact project/community/owner/snapshot/operation-set/policy/digest binding;
+- deterministic operation ordering and exact bidirectional plan coverage;
+- one supported Python API and CLI for `plan`, `preview`, `apply`, `reconcile`, and `result verify`;
+- no private cross-script imports in supported paths;
+- legacy adapters remain read-only;
+- retired executors fail before credentials/provider dispatch;
+- Wave 5 operator calls only the supported engine for apply-capable work;
+- crash/replay and exact reconciliation tests;
 - provider writes in development/CI: 0.
 
 Exit criteria:
 
 1. one focused branch and PR;
-2. all active wrappers use shared operator primitives;
-3. compatibility/retired wrappers stop before credentials/provider dispatch unless exact reviewed opt-in applies;
+2. every historical generation classified and reference-scanned;
+3. supported engine contracts versioned and self-digested;
 4. exact-head Python and PowerShell CI green;
 5. current state, register, changelog, and issue #64 synchronized after merge.
 
 ## Later waves
-
-### Wave 6 — stable wave engine
-
-- versioned plan/apply/reconcile/result interface;
-- no private cross-script imports in supported paths;
-- compatibility adapters separated from production executors;
-- retire V1/V2/V3/current generations only after parity proof.
 
 ### Wave 7 — risk-based tests
 
@@ -130,7 +142,7 @@ Only after required architecture and fresh read-only reconciliation:
 ### Wave 10 — retirement and governance
 
 - archive superseded scripts/wrappers/policies after reference proof;
-- maintain supported/compatibility/retired registry;
+- maintain supported/compatibility/retired registries;
 - formal release, runbook, rollback, reconciliation, and provider-contract review rules.
 
 ## Independent cleanup track

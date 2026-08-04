@@ -1,8 +1,8 @@
 # Current operational state
 
 Updated: 2026-08-04  
-Verified code baseline: `main@d85f7cf94b8ba0b30947291b3a08491239438843`  
-Program state: `WAVE_4_COMPLETED_WAVE_5_NEXT`  
+Verified code baseline: `main@1a62779293a404e4654b6230644dfc78e9b20dc1`  
+Program state: `WAVE_5_COMPLETED_WAVE_6_NEXT`  
 Canonical audit: [`master-audit-2026-08-04.md`](master-audit-2026-08-04.md)  
 Machine register: [`audit-register-2026-08-04.json`](audit-register-2026-08-04.json)
 
@@ -14,37 +14,40 @@ This is the first state board to read before YouTube/VK work. Chat history, scre
 - Wave 1: durable journaled VK upload lifecycle and exact-ID recovery — PR #66;
 - Wave 2: fail-closed project/content identity and supported sync entrypoint — PR #68;
 - Wave 3: shared HTTP ownership, safe-read retry taxonomy, redaction, and limiter infrastructure — PR #70;
-- Wave 4: fail-closed separation of VK video upload and VK wall publication — PR #71, merge `d85f7cf94b8ba0b30947291b3a08491239438843`.
+- Wave 4: fail-closed separation of VK video upload and VK wall publication — PR #71, merge `d85f7cf94b8ba0b30947291b3a08491239438843`;
+- Wave 5: one tested fail-closed Windows/PowerShell operator layer — PR #75, merge `1a62779293a404e4654b6230644dfc78e9b20dc1`.
 
-Wave 4 exact-head CI run `30895905586` passed dependency audit, compileall, Ruff, Ruff format, strict mypy, and the full suite on Python 3.11, 3.12, and 3.13: `586 passed, 1 xfailed`. Development and CI performed zero VK or YouTube writes.
+Wave 5 exact-head CI run `30900532613` passed dependency audit, compileall, Ruff, Ruff format, strict mypy, and the full suite on Python 3.11, 3.12, and 3.13: `591 passed, 1 xfailed`. Pester passed `17/17` on Windows PowerShell 5.1, PowerShell 7 on Windows, and PowerShell 7 on Linux. Development and CI performed zero VK or YouTube writes.
 
-## Wave 4 guarantees now in `main`
+Living-state synchronization after the Wave 5 merge is tracked by PR #77 and contains documentation/register/test changes only; it does not authorize or perform provider operations.
 
-The supported VK upload path:
+## Wave 5 guarantees now in `main`
 
-- binds an immutable self-digested `wall_mutation_authorized=false` policy;
-- sends `wallpost=0`, `auto_publish=0`, and `repeat=0` explicitly on `video.save`;
-- captures complete published+postponed wall evidence before the first batch mutation;
-- binds every upload operation to that baseline;
-- requires a clean postflight wall delta before `verified`;
-- permits missing-policy migration only before provider dispatch and recomputes operation identity/evidence;
-- blocks provider-dispatched historical journals from receiving missing authority retroactively;
-- never auto-deletes an unexpected wall object.
+The PowerShell/operator surface is now explicit:
 
-The supported VK wall path:
+- 23 production `.ps1` files are classified as 1 `supported`, 3 `compatibility_only`, and 19 `retired`;
+- the Pester test `.ps1` is separately registered as test-only;
+- every wrapper is bound by a canonical UTF-8/LF SHA-256 stable across CRLF/LF checkouts;
+- all 19 historical provider-write wrappers stop before credentials, hard-coded paths, nested shells, or child execution;
+- the only supported production entrypoint is `scripts/operator/Invoke-VideoManager.ps1`.
 
-- defaults to postponed publication only;
-- requires exact project/community/owner/video/text/time binding;
-- requires a timezone-aware future `publish_date` and deterministic `guid`;
-- scans published and postponed surfaces for duplicate attachments and schedule collisions;
-- performs one ambiguous `wall.post` attempt;
-- reconciles a lost response only when exactly one expected postponed post is the sole approved wall delta.
+The supported operator requires:
 
-Issue #36 is completed. Issue #37 remains the only owner of its exact reviewed cleanup scope.
+- exact request and manifest paths plus SHA-256 confirmations;
+- exact registered project/community/owner/snapshot/count binding;
+- exact JSON field types and non-empty strings/arrays;
+- output paths that cannot overwrite request or manifest evidence;
+- one supported Python 3.11/3.12/3.13 resolver, with strict explicit-path behavior;
+- native exit codes and structured sanitized evidence, never human stdout parsing;
+- UTF-8 without BOM and atomic JSON replacement;
+- an explicit safe-read CLI allowlist;
+- non-CI environment, positive operation count, `ambiguous_mutation` classification, and `-EnableProviderWrites` for apply mode.
+
+A nonzero ambiguous mutation is classified `unknown_requires_reconciliation`, is never retry-safe, and is never replayed automatically.
 
 ## Live-operation gate
 
-Wave 4 closes the architecture gap; it does not prove the current remote wall or historical local queue state. Broad live upload/publication remains blocked until the exact project has:
+Waves 1–5 close architecture and operator gaps; they do not prove the current remote wall, video inventory, or historical local queue state. Broad live upload/publication remains blocked until the exact project has:
 
 1. a fresh read-only VK video inventory;
 2. a fresh complete published+postponed wall snapshot;
@@ -104,17 +107,17 @@ Latest retained reviewed Shorts matrix:
 
 Status: `REVIEWED_MANIFEST_PREPARED / UPLOAD_COMPLETION_NOT_PROVEN`.
 
-Do not run the old package or upload the 15 candidates until the exact V3 canary/apply state and journal are recovered and reconciled under the merged lifecycle and wall firewall.
+Do not run the old package or upload the 15 candidates until the exact V3 canary/apply state and journal are recovered and reconciled through the supported operator and merged lifecycle/wall contracts.
 
 ## Next engineering wave
 
-Wave 5 / issue #72 owns the reliable Windows/PowerShell operator layer:
+Wave 6 / issue #76 owns the stable versioned wave engine:
 
-- one repository/Python/venv bootstrap;
-- checked native exit codes, never stdout wording;
-- deterministic UTF-8 structured results;
-- exact artifact paths and SHA-256, never newest-file selection;
-- supported/compatibility/retired wrapper registry;
+- exact inventory and classification of Python wave generations;
+- one versioned plan/apply/reconcile/result contract;
+- no private cross-script imports in supported paths;
+- read-only legacy adapters and fail-closed retired executors;
+- Wave 5 operator calls only the supported engine for apply-capable work;
 - provider writes in development and CI: 0.
 
 ## Active issue graph
@@ -125,13 +128,13 @@ Wave 5 / issue #72 owns the reliable Windows/PowerShell operator layer:
 - #37 — exact approved wall-cleanup scope;
 - #38 — Shorts upload modes and final type/player behavior;
 - #64 — master reliability roadmap;
-- #72 — active Wave 5 operator layer;
-- #36/#65/#67/#69 — completed wave issues.
+- #76 — active Wave 6 stable wave engine;
+- #36/#65/#67/#69/#72 — completed wave issues.
 
 ## Global prohibitions
 
 - Do not mix `lord-god-strength` and `legendary-poet` IDs, credentials, links, journals, or manifests.
-- Do not repeat completed Waves 0–4.
+- Do not repeat completed Waves 0–5.
 - Do not blind-retry `video.save`, upload-server POST, `wall.post`, `wall.edit`, `wall.delete`, or any ambiguous mutation.
 - Do not infer live success from green CI, an old package, a duration/format heuristic, or a stale count.
 - Do not perform bulk deletion outside issue #37’s exact immutable scope.
