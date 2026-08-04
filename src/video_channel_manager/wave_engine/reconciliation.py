@@ -99,7 +99,7 @@ def _json_value(value: object) -> object:
     if isinstance(value, StrEnum):
         return value.value
     if isinstance(value, datetime):
-        return value.isoformat()
+        return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
     if isinstance(value, dict):
         return {str(key): _json_value(item) for key, item in value.items()}
     if isinstance(value, (tuple, list)):
