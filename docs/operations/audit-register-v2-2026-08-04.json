@@ -1,0 +1,38 @@
+{
+  "schema_name": "video-manager.audit-register-v2",
+  "schema_version": "2.0",
+  "created_at": "2026-08-04T18:24:00+03:00",
+  "repository": "FedorMilovanov/video-channel-manager",
+  "verified_main_head": "963955230e6fac269635337e8a2366fbfe54652d",
+  "wave_7_code_head": "df956bbbf19af6652f8711f95fb4fecf272e9951",
+  "program_state": "AUDIT_A0_ACTIVE_WAVE_8_ACTIVE_NO_PROVIDER_WRITES",
+  "source_line_count": 6531,
+  "sources": [
+    {"name":"Вставленный текст(275).txt","lines":474,"sha256":"a59baae832b96e4e961b88e68706fc642b51a06223c18bfd22d0a63056037cb0"},
+    {"name":"Вставленный текст (2)(10).txt","lines":1183,"sha256":"6b11c7f58f6b492febe5be28f2e1dcf6c626545ab0ed0791cf5166c1f062a752"},
+    {"name":"Вставленный текст (3)(1).txt","lines":2209,"sha256":"1f433a7f54b1f3c3f37e3861108af5b9f845635ca4aaa448132733150a4ef3de"},
+    {"name":"Вставленных __уценки (2).md","lines":245,"sha256":"4e5f5d1e547d707534c495f6fb5f0942b283c48da59fcba6e6e2808dd94b3630"},
+    {"name":"Вставленный текст (4).txt","lines":1171,"sha256":"379b624e8743fb3d940ccc939f1f650bfd8967891dbc4869c1df1c6d56b878e0"},
+    {"name":"Вставленный текст (5)(1).txt","lines":1249,"sha256":"8852e93a8d7e2e9513c1bc0271e8c32b4cd0339c18f1150a92c78456a8dc82c8"}
+  ],
+  "findings": [
+    {"id":"TRUTH-001","severity":"P0","status":"confirmed","owner":"issue-88","target_wave":"Audit-A0","title":"Authoritative entry documents disagree with current Wave 8 state"},
+    {"id":"ADMIN-001","severity":"P1","status":"fixed_during_audit","owner":"issue-88","target_wave":"Audit-A0","title":"Duplicate Wave 7 issue and PR remained open"},
+    {"id":"ARCHIVE-001","severity":"P1","status":"confirmed","owner":"pr-85/issue-88","target_wave":"Audit-A0","title":"Production Ruff formatting targets literal historical Python in Markdown"},
+    {"id":"MATCH-001","severity":"P0","status":"confirmed","owner":"issue-86","target_wave":"Wave-8A","title":"Matching has no exact-first phase"},
+    {"id":"MATCH-002","severity":"P0","status":"confirmed","owner":"issue-86","target_wave":"Wave-8A","title":"Ambiguous selected pair can still produce a mapping"},
+    {"id":"MATCH-003","severity":"P1","status":"confirmed","owner":"issue-86","target_wave":"Wave-8A","title":"Full O(N*M) fuzzy comparison remains expensive"},
+    {"id":"IDENTITY-001","severity":"P1","status":"confirmed","owner":"issue-86","target_wave":"Wave-8B","title":"One aggressive title normalizer is reused across distinct identity purposes"},
+    {"id":"ALBUM-001","severity":"P0","status":"confirmed","owner":"issue-86","target_wave":"Wave-8C","title":"Duplicate normalized album names silently overwrite in dictionaries"},
+    {"id":"CATALOG-001","severity":"P0","status":"confirmed","owner":"issue-86","target_wave":"Wave-8C","title":"Album placement uses normalized title rather than reviewed exact identity"},
+    {"id":"MEDIA-001","severity":"P0","status":"confirmed","owner":"issue-86","target_wave":"Wave-8D","title":"Cache reuse lacks authoritative path, SHA-256 and structured media evidence"},
+    {"id":"MEDIA-002","severity":"P0","status":"confirmed","owner":"issue-86","target_wave":"Wave-8D","title":"yt-dlp fallback can select a glob result instead of the authoritative final path"},
+    {"id":"MEDIA-003","severity":"P1","status":"confirmed","owner":"issue-86","target_wave":"Wave-8D","title":"MP4 remux does not prove codec/profile compatibility"},
+    {"id":"THUMB-001","severity":"P1","status":"confirmed","owner":"issue-86","target_wave":"Wave-8E","title":"Thumbnail save response does not prove the selected video thumbnail postcondition"},
+    {"id":"LIVE-POET-001","severity":"P0","status":"requires_reconciliation","owner":"issues-32-38","target_wave":"Wave-9B","title":"Legendary Poet Shorts/Clips live queue is not proven complete"},
+    {"id":"LIVE-LORD-001","severity":"P0","status":"requires_reconciliation","owner":"issue-31","target_wave":"Wave-9A","title":"Lord God queue requires reconciliation with local ledgers/results"},
+    {"id":"AUDIO-001","severity":"P1","status":"separate_system","owner":"future-audio-incubation","target_wave":"Wave-9D-separate","title":"VK Audio remains a partial experimental browser/internal-web integration"},
+    {"id":"GOV-001","severity":"P2","status":"confirmed","owner":"issue-88/wave-10","target_wave":"Wave-10","title":"Historical archive, supported code and operational state need distinct CI/retention rules"}
+  ],
+  "provider_writes_during_audit": 0
+}
