@@ -12,7 +12,6 @@ OPERATIONS_DIR = ROOT / "docs" / "operations"
 def test_agent_instructions_reference_existing_sources_of_truth() -> None:
     agents_path = ROOT / "AGENTS.md"
     assert agents_path.is_file()
-
     text = agents_path.read_text(encoding="utf-8")
     required_sources = (
         "docs/operations/master-audit-marathon-v2-2026-08-04.md",
@@ -21,7 +20,6 @@ def test_agent_instructions_reference_existing_sources_of_truth() -> None:
         "docs/operations/2026-07-31-youtube-vk-transfer-postmortem.md",
         "docs/operations/operational-artifact-standard.md",
     )
-
     for relative_path in required_sources:
         assert relative_path in text
         assert (ROOT / relative_path).is_file()
@@ -30,23 +28,42 @@ def test_agent_instructions_reference_existing_sources_of_truth() -> None:
 def test_operations_index_has_no_broken_local_markdown_links() -> None:
     index_path = OPERATIONS_DIR / "README.md"
     text = index_path.read_text(encoding="utf-8")
-
     local_targets = re.findall(r"\[[^]]+\]\(([^)]+\.md)\)", text)
     assert local_targets
-
     broken = [target for target in local_targets if not (index_path.parent / target).resolve().is_file()]
     assert broken == []
 
 
-def test_current_state_preserves_verified_operational_identity() -> None:
+def test_current_state_preserves_program_and_project_identity() -> None:
     text = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
-
     required_facts = (
-        "lord-god-strength",
+        "WAVE_8B_COMPLETED_WAVE_8C_ACTIVE",
+        "c28aee4177d6f99e8f52fd82b60f4c1d93d50c29",
+        "30936757433",
+        "680 passed, 1 xfailed",
+        "wave-8b-v1",
+        "Cross-platform comparison schema is `2.1`",
+        "original value",
+        "ordered transformations",
+        "exact field-by-field readback",
+        "cross-project and unknown-profile URLs fail closed",
+        "Wave 8C — exact catalog and album identity",
+        "reviewed one-to-one source collection ID",
+        "semantic membership compares sets",
+        "scripts/operator/Invoke-VideoManager.ps1",
+        "15 supported mutation boundaries",
+        "25/25",
+        "unknown_requires_reconciliation",
+        "file_selected` is not `upload_completed",
+        "PowerShell boundaries explicitly test zero, one, and many",
+        "A URL-shaped value is not an upload ticket",
+        "designed, self-tested, canary-verified, and batch-verified",
         "UCeSJsC6go2c9pdJCuUI1BYA",
         "UC-78ys2S3cQ3lpqgXfo-SvQ",
         "60805374",
         "-60805374",
+        "235216998",
+        "-235216998",
         "confirmed_deleted=403",
         "run=completed",
         "KobOzfBqzic",
@@ -56,47 +73,22 @@ def test_current_state_preserves_verified_operational_identity() -> None:
         "b9c0268be62ea8fb9281cc9a551ebc5621dfdd4bfeb22a9d8f4b50707baa33ed",
         "data\\vk-upload\\verified-longform-26",
         "BLOCKED_PENDING_FRESH_READ_ONLY_WALL_AUDIT_AND_LOCAL_LEDGER_RECONCILIATION",
-        "d85f7cf94b8ba0b30947291b3a08491239438843",
-        "1a62779293a404e4654b6230644dfc78e9b20dc1",
-        "c4c4d3233ec20b8f939343c5d667d8687d7ff040",
-        "df956bbbf19af6652f8711f95fb4fecf272e9951",
-        "30918639372",
-        "a06a93e1ec16b4ddb0f578a92e47ce76b4ee78a5",
-        "30925523584",
-        "09babd9176049d8271c50b6f5e44b7b0fd10d39f",
-        "30933582322",
-        "664 passed, 1 xfailed",
-        "WAVE_8A_COMPLETED_WAVE_8B_ACTIVE",
-        "master-audit-marathon-v2-2026-08-04.md",
-        "audit-register-v2-2026-08-04.json",
-        "Wave 8 / issue #86",
-        "scripts/operator/Invoke-VideoManager.ps1",
-        "15 supported mutation boundaries",
-        "25/25",
-        "unknown_requires_reconciliation",
-        "provider writes 0",
+        "56 exact YouTube Shorts",
+        "41 exact pairs",
+        "15 confirmed missing",
+        "REVIEWED_MANIFEST_PREPARED / UPLOAD_COMPLETION_NOT_PROVEN",
         "SEPARATE_EXPERIMENTAL_SYSTEM",
-        "duplicate_exact_title",
-        "exact_title_duration_mismatch",
-        "non_unique_fallback",
-        "exact field-by-field readback",
-        "file_selected` is not `upload_completed",
-        "PowerShell boundaries must explicitly test zero, one, and many",
-        "A URL-shaped value is not an upload ticket",
-        "designed, self-tested, canary-verified, and batch-verified",
     )
-
     for fact in required_facts:
         assert fact in text
 
 
-def test_audit_register_tracks_wave_8a_and_new_source() -> None:
+def test_audit_register_tracks_wave_8b_and_active_catalog_findings() -> None:
     payload = json.loads((OPERATIONS_DIR / "audit-register-v2-2026-08-04.json").read_text(encoding="utf-8"))
-
-    assert payload["schema_version"] == "2.1"
-    assert payload["wave_8a_code_head"] == "09babd9176049d8271c50b6f5e44b7b0fd10d39f"
-    assert payload["wave_8a_ci_run"] == 30933582322
-    assert payload["program_state"] == "WAVE_8A_COMPLETED_WAVE_8B_ACTIVE_NO_PROVIDER_WRITES"
+    assert payload["schema_version"] == "2.2"
+    assert payload["wave_8b_code_head"] == "c28aee4177d6f99e8f52fd82b60f4c1d93d50c29"
+    assert payload["wave_8b_ci_run"] == 30936757433
+    assert payload["program_state"] == "WAVE_8B_COMPLETED_WAVE_8C_ACTIVE_NO_PROVIDER_WRITES"
     assert payload["source_line_count"] == 7046
 
     source = next(item for item in payload["sources"] if item["name"] == "Вставленный текст(276).txt")
@@ -108,10 +100,15 @@ def test_audit_register_tracks_wave_8a_and_new_source() -> None:
 
     findings = {item["id"]: item for item in payload["findings"]}
     assert findings["MATCH-001"]["status"] == "fixed"
-    assert findings["MATCH-002"]["status"] == "fixed"
-    assert findings["MATCH-003"]["status"] == "fixed"
-    assert findings["IDENTITY-002"]["target_wave"] == "Wave-8B"
+    assert findings["IDENTITY-001"]["status"] == "fixed"
+    assert findings["IDENTITY-002"]["status"] == "fixed"
+    assert findings["URL-001"]["status"] == "fixed"
+    assert findings["ALBUM-001"]["status"] == "active"
+    assert findings["CATALOG-001"]["status"] == "active"
+    assert findings["CATALOG-002"]["status"] == "active"
+    assert findings["CATALOG-003"]["status"] == "active"
     assert findings["OPS-SCOPE-001"]["status"] == "policy_recorded"
     assert findings["UPLOAD-TICKET-001"]["status"] == "policy_recorded"
     assert payload["provider_writes_during_wave_8a"] == 0
+    assert payload["provider_writes_during_wave_8b"] == 0
     assert payload["provider_writes_during_state_sync"] == 0
