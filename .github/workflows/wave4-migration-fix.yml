@@ -1,11 +1,9 @@
 name: Wave 4 one-shot migration fix
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/wave-4-wall-safety
-    paths:
-      - .github/wave4-migration-trigger
+      - main
 
 permissions:
   contents: write
