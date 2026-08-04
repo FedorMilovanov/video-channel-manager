@@ -167,7 +167,7 @@ def test_save_uploaded_thumbnail_does_not_retry_ambiguous_failure(tmp_path: Path
             upload_payload={"thumb_json": '{"photo":"payload"}'},
         )
 
-    assert error.value.retryable is True
+    assert error.value.retryable is False
     assert calls == 1
 
 
