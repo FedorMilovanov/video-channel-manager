@@ -56,6 +56,7 @@ def test_current_state_preserves_verified_operational_identity() -> None:
         "d85f7cf94b8ba0b30947291b3a08491239438843",
         "1a62779293a404e4654b6230644dfc78e9b20dc1",
         "c4c4d3233ec20b8f939343c5d667d8687d7ff040",
+        "30908185487",
         "WAVE_6_COMPLETED_WAVE_7_NEXT",
         "Wave 7 / issue #80",
         "scripts/operator/Invoke-VideoManager.ps1",
