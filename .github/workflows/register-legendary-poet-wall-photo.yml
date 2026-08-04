@@ -1,0 +1,79 @@
+name: Register Legendary Poet wall-photo mutation
+
+on:
+  push:
+    branches:
+      - agent/legendary-poet-article-wave
+
+permissions:
+  contents: write
+
+jobs:
+  register:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/legendary-poet-article-wave
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Append exact mutation boundary and remove temporary workflow
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          register_path = Path("docs/operations/mutation-boundary-register.json")
+          workflow_path = Path(".github/workflows/register-legendary-poet-wall-photo.yml")
+          payload = json.loads(register_path.read_text(encoding="utf-8"))
+          boundary = {
+              "boundary_id": "vk.wall.photo.save",
+              "risk": "P0",
+              "provider": "VK",
+              "language": "python",
+              "source_file": "src/video_channel_manager/wave_engine/vk_article_provider.py",
+              "module": "video_channel_manager.wave_engine.vk_article_provider",
+              "callable": "VkArticleWallWriter._save_wall_photo",
+              "scanner_marker": "vk_api:photos.saveWallPhoto",
+              "mutation_class": "ambiguous_mutation",
+              "intent_evidence": "exact approved article operation, project binding, JPEG digest, complete wall preflight and Wave dispatch journal",
+              "dispatch_evidence": "one photos.saveWallPhoto request after one validated wall-upload POST",
+              "response_evidence": "exact saved photo owner_id and photo_id retained before wall.post",
+              "postflight_evidence": "exact postponed post with approved text, date, article URL and exactly one attached photo",
+              "reconciliation_identity": "approved editorial operation ID, exact message digest, publish_date and one postponed photo attachment",
+              "retry_policy": "never_replay",
+              "unknown_status": "unknown_requires_reconciliation",
+              "attempt_limit": 1,
+              "required_fault_stages": [
+                  "before_dispatch",
+                  "after_dispatch_before_response",
+                  "during_postflight",
+                  "before_final_commit"
+              ],
+              "owning_tests": [
+                  "tests/test_vk_article_provider.py",
+                  "tests/test_wave_engine_contract.py"
+              ]
+          }
+          boundaries = payload["boundaries"]
+          if not any(item.get("boundary_id") == boundary["boundary_id"] for item in boundaries):
+              boundaries.append(boundary)
+          register_path.write_text(
+              json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n",
+              encoding="utf-8",
+          )
+          workflow_path.unlink()
+          PY
+      - name: Commit register update
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/operations/mutation-boundary-register.json
+          git add -u .github/workflows/register-legendary-poet-wall-photo.yml
+          git commit -m "Register Legendary Poet wall-photo mutation boundary"
+          git push origin HEAD:agent/legendary-poet-article-wave
