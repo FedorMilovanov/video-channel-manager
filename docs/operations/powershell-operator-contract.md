@@ -11,6 +11,12 @@ The only supported production PowerShell entrypoint is:
 scripts/operator/Invoke-VideoManager.ps1
 ```
 
+The complete reviewed surface contains 23 `.ps1` files:
+
+- 1 `supported` manifest-driven operator;
+- 3 `compatibility_only` non-provider-write wrappers;
+- 19 `retired` historical provider-write wrappers.
+
 Every other tracked `.ps1` is classified in `scripts/operator/powershell-wrappers.json` as either:
 
 - `compatibility_only` — non-provider-write developer/read-only convenience;
