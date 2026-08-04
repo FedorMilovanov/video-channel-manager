@@ -36,6 +36,7 @@ The supported reliability surface is explicitly inventoried and proof-bound:
 - malformed, truncated, reordered, stale, wrong-digest, cross-project, wrong-owner, wrong-snapshot, wrong-policy, duplicate, and incomplete evidence fails closed;
 - interrupted atomic replacement preserves prior evidence and removes orphan temporary files;
 - historical pre-dispatch journal migration remains narrowly allowed, while provider-dispatched incomplete historical evidence remains blocked;
+- the only supported production operator remains `scripts/operator/Invoke-VideoManager.ps1`;
 - the PowerShell operator has bounded child execution, timeout exit `124`, process termination compatible with Windows PowerShell 5.1 and PowerShell 7, concurrent stdout/stderr draining, and structured-result validation independent of stdout wording;
 - missing, malformed, or internally inconsistent operator results fail closed;
 - the permanent PowerShell fault suite is canonical-SHA-bound in the wrapper registry;
