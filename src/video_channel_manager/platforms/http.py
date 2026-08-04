@@ -71,10 +71,10 @@ class RetryPolicy:
         jitter_value: float,
     ) -> float:
         if retry_after_seconds is not None:
-            return min(max(0.0, retry_after_seconds), self.max_retry_after_seconds)
+            return float(min(max(0.0, retry_after_seconds), self.max_retry_after_seconds))
         exponential = self.base_delay_seconds * (2 ** max(0, failed_attempt - 1))
         jitter = min(1.0, max(0.0, jitter_value)) * self.jitter_seconds
-        return min(exponential + jitter, self.max_delay_seconds)
+        return float(min(exponential + jitter, self.max_delay_seconds))
 
 
 class RequestRateLimiter:
