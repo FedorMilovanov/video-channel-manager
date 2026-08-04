@@ -45,11 +45,13 @@ jobs:
           set -euo pipefail
           python -m pip install --upgrade "pip>=25" "setuptools>=83,<84" wheel
           python -m pip install -e ".[dev]"
-          mapfile -t changed_python < <(git diff --name-only -- '*.py')
-          if ((${#changed_python[@]})); then
-            ruff format "${changed_python[@]}"
-          fi
+          ruff format \
+            src/video_channel_manager/wave_engine \
+            scripts/wave_engine.py \
+            tests/test_wave_engine_contract.py \
+            tests/test_wave_executor_inventory.py
           ruff check tests/test_wave_engine_contract.py --fix
+          ruff format tests/test_wave_engine_contract.py
           python - <<'PY'
           import hashlib
           import json
