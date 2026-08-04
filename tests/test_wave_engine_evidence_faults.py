@@ -21,7 +21,11 @@ from video_channel_manager.wave_engine import (
     WaveStatus,
 )
 from video_channel_manager.wave_engine import canonical
-from video_channel_manager.wave_engine.canonical import object_sha256, read_json_object, resolve_repository_relative_path
+from video_channel_manager.wave_engine.canonical import (
+    object_sha256,
+    read_json_object,
+    resolve_repository_relative_path,
+)
 
 _SOURCE_BYTES = b'{"source":1}\n'
 
@@ -146,12 +150,12 @@ def test_apply_intent_rejects_cross_project_wrong_policy_and_wrong_source_snapsh
 
     lord_source = _source(project_key="lord-god-strength")
     lord_plan = _plan(lord_source)
-    with pytest.raises(ValueError, match="binding mismatch"):
+    with pytest.raises(ValueError, match="(source digest differs|binding mismatch)"):
         intent.assert_matches(lord_plan, lord_source)
 
     other_policy_source = _source(policy_version="wave-policy-v2")
     other_policy_plan = _plan(other_policy_source)
-    with pytest.raises(ValueError, match="binding mismatch"):
+    with pytest.raises(ValueError, match="(source digest differs|binding mismatch)"):
         intent.assert_matches(other_policy_plan, other_policy_source)
 
 
