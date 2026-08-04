@@ -2,18 +2,28 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import random
 import secrets
 import threading
 import time
 import webbrowser
+from collections.abc import Callable
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Callable
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import httpx
 
-from video_channel_manager.platforms.http import HttpClientOwner
+from video_channel_manager.platforms.http import (
+    HttpClientOwner,
+    HttpFailureKind,
+    HttpOperationClass,
+    HttpTransportFailure,
+    RequestRateLimiter,
+    RetryPolicy,
+    execute_http_request,
+    redact_sensitive_text,
+)
 from video_channel_manager.platforms.youtube.models import InstalledClientConfig, OAuthToken
 
 YOUTUBE_READONLY_SCOPE = "https://www.googleapis.com/auth/youtube.readonly"
@@ -40,6 +50,10 @@ class InstalledOAuthFlow(HttpClientOwner):
         *,
         scopes: tuple[str, ...] = (YOUTUBE_READONLY_SCOPE,),
         http_client: httpx.Client | None = None,
+        retry_policy: RetryPolicy | None = None,
+        request_limiter: RequestRateLimiter | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+        jitter: Callable[[], float] = random.random,
     ) -> None:
         self.config = config
         self.scopes = scopes
@@ -48,6 +62,10 @@ class InstalledOAuthFlow(HttpClientOwner):
             timeout=30.0,
             follow_redirects=True,
         )
+        self.retry_policy = retry_policy or RetryPolicy()
+        self.request_limiter = request_limiter or RequestRateLimiter(0.0)
+        self._sleep = sleep
+        self._jitter = jitter
 
     def build_authorization_url(
         self,
@@ -72,23 +90,76 @@ class InstalledOAuthFlow(HttpClientOwner):
             params["prompt"] = "consent"
         return f"{self.config.auth_uri}?{urlencode(params)}"
 
-    def exchange_code(self, *, code: str, redirect_uri: str, code_verifier: str) -> OAuthToken:
+    def _token_payload(
+        self,
+        *,
+        resource: str,
+        data: dict[str, str],
+        secret_values: tuple[str, ...],
+    ) -> dict[str, object]:
+        """Execute one credential mutation without automatic replay.
+
+        A lost token response is ambiguous: Google may have issued or rotated a
+        credential. The caller must restart the explicit login/refresh workflow
+        instead of replaying the request inside this transport layer.
+        """
+
         try:
-            response = self._http_client.post(
-                self.config.token_uri,
-                data={
-                    "client_id": self.config.client_id,
-                    "client_secret": self.config.client_secret,
-                    "code": code,
-                    "code_verifier": code_verifier,
-                    "grant_type": "authorization_code",
-                    "redirect_uri": redirect_uri,
-                },
+            result = execute_http_request(
+                lambda: self._http_client.post(self.config.token_uri, data=data),
+                provider="Google OAuth",
+                operation=HttpOperationClass.AMBIGUOUS_MUTATION,
+                method="POST",
+                resource=resource,
+                retry_policy=self.retry_policy,
+                limiter=self.request_limiter,
+                sleep=self._sleep,
+                jitter=self._jitter,
             )
-            response.raise_for_status()
+        except HttpTransportFailure as exc:
+            raise OAuthFlowError(str(exc)) from exc
+
+        response = result.response
+        if response.status_code >= 400:
+            detail: object = "request rejected"
+            try:
+                error_payload = response.json()
+            except ValueError:
+                error_payload = None
+            if isinstance(error_payload, dict):
+                detail = error_payload.get("error_description") or error_payload.get("error") or detail
+            kind = result.failure_kind or HttpFailureKind.PERMANENT_HTTP
+            safe_detail = redact_sensitive_text(detail, secrets=secret_values)
+            raise OAuthFlowError(
+                f"Google OAuth {resource} returned HTTP {response.status_code} "
+                f"[kind={kind.value} attempts={result.attempts}]: {safe_detail}"
+            )
+
+        try:
             payload = response.json()
-        except (httpx.HTTPError, ValueError, KeyError) as exc:
-            raise OAuthFlowError(f"Google token exchange failed: {exc}") from exc
+        except ValueError as exc:
+            raise OAuthFlowError(
+                f"Google OAuth {resource} returned invalid JSON [attempts={result.attempts}]."
+            ) from exc
+        if not isinstance(payload, dict):
+            raise OAuthFlowError(
+                f"Google OAuth {resource} returned a non-object payload [attempts={result.attempts}]."
+            )
+        return payload
+
+    def exchange_code(self, *, code: str, redirect_uri: str, code_verifier: str) -> OAuthToken:
+        payload = self._token_payload(
+            resource="token.exchange",
+            data={
+                "client_id": self.config.client_id,
+                "client_secret": self.config.client_secret,
+                "code": code,
+                "code_verifier": code_verifier,
+                "grant_type": "authorization_code",
+                "redirect_uri": redirect_uri,
+            },
+            secret_values=(self.config.client_secret, code, code_verifier, redirect_uri),
+        )
         try:
             return OAuthToken.from_token_response(payload, previous_scopes=list(self.scopes))
         except (KeyError, TypeError, ValueError) as exc:
@@ -97,25 +168,24 @@ class InstalledOAuthFlow(HttpClientOwner):
     def refresh(self, token: OAuthToken) -> OAuthToken:
         if not token.refresh_token:
             raise OAuthFlowError("Stored credentials do not contain a refresh token; run youtube login again.")
+        payload = self._token_payload(
+            resource="token.refresh",
+            data={
+                "client_id": self.config.client_id,
+                "client_secret": self.config.client_secret,
+                "refresh_token": token.refresh_token,
+                "grant_type": "refresh_token",
+            },
+            secret_values=(self.config.client_secret, token.refresh_token),
+        )
         try:
-            response = self._http_client.post(
-                self.config.token_uri,
-                data={
-                    "client_id": self.config.client_id,
-                    "client_secret": self.config.client_secret,
-                    "refresh_token": token.refresh_token,
-                    "grant_type": "refresh_token",
-                },
-            )
-            response.raise_for_status()
-            payload = response.json()
             return OAuthToken.from_token_response(
                 payload,
                 previous_refresh_token=token.refresh_token,
                 previous_scopes=token.scopes,
             )
-        except (httpx.HTTPError, ValueError, KeyError) as exc:
-            raise OAuthFlowError(f"Google access-token refresh failed: {exc}") from exc
+        except (KeyError, TypeError, ValueError) as exc:
+            raise OAuthFlowError("Google token response did not contain a usable access token.") from exc
 
     def authorize(
         self,
