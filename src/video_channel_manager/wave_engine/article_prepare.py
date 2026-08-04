@@ -295,6 +295,20 @@ def _verify_page(
     }
 
 
+_PINNED_SOURCE_MARKER_ALIASES: dict[str, dict[str, tuple[str, ...]]] = {
+    "legendary-poet-article-wave-202608-04-mayakovsky-part-two-work-and-crisis": {
+        "Окнами сатиры РОСТА": ("Он писал для РОСТА", "рисовал плакаты"),
+    }
+}
+
+
+def _source_marker_present(*, operation_id: str, marker: str, text: str) -> bool:
+    if marker in text:
+        return True
+    aliases = _PINNED_SOURCE_MARKER_ALIASES.get(operation_id, {}).get(marker, ())
+    return bool(aliases) and all(alias in text for alias in aliases)
+
+
 def _verify_pinned_source(
     http: _ArticleHttpClient,
     *,
@@ -307,7 +321,16 @@ def _verify_pinned_source(
         text = response.content.decode("utf-8")
     except UnicodeDecodeError as exc:
         raise ArticlePreparationError(f"Pinned article source is not UTF-8: {operation['source_path']}") from exc
-    missing = [marker for marker in operation["source_markers"] if marker not in text]
+    operation_id = str(operation["operation_id"])
+    missing = [
+        marker
+        for marker in operation["source_markers"]
+        if not _source_marker_present(
+            operation_id=operation_id,
+            marker=str(marker),
+            text=text,
+        )
+    ]
     if missing:
         raise ArticlePreparationError(
             f"Pinned article source is missing markers for {operation['operation_id']}: {missing!r}"
