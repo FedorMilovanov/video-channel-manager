@@ -49,6 +49,7 @@ jobs:
           if ((${#changed_python[@]})); then
             ruff format "${changed_python[@]}"
           fi
+          ruff check tests/test_wave_engine_contract.py --fix
           python - <<'PY'
           import hashlib
           import json
