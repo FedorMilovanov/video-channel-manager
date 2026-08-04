@@ -13,8 +13,10 @@ This inventory is enforced by `tests/test_http_client_inventory.py`. A direct `h
 | `YouTubeApiClient` | owned or borrowed persistent client | safe reads | Uses bounded safe-read retry and caches the uploads playlist ID per client lifecycle. |
 | `YouTubeCommentWriter` | owned or borrowed persistent client | safe reads plus ambiguous mutations | Migrated from per-request construction. Reads may retry; comment create/update never replay after an ambiguous response. |
 | `YouTubeDescriptionWriter` | owned or borrowed persistent client | safe reads plus ambiguous mutations | Reads may retry; `videos.update` remains one attempt and is followed only by read verification. |
+| `InstalledOAuthFlow` | owned or borrowed persistent client | ambiguous credential mutations | Authorization-code exchange and refresh are single-attempt operations. Lost responses are not replayed; errors use safe resource names and redact credential material. |
 | `VkApiClient` | owned or borrowed persistent client | safe reads | Uses shared retry classification and an injectable limiter. |
 | `VkVideoWriter` | owned or borrowed persistent client | explicit safe-read verification plus ambiguous mutations | `retry_transient=True` is limited to read verification; reservation, upload, album, and other writes remain one attempt. |
+| `VkThumbnailWriter` | owned or borrowed persistent client | safe upload-URL reservation plus ambiguous mutations | `video.getThumbUploadUrl` may use bounded retry; upload-server POST and `video.saveUploadedThumb` are single attempt and never expose the opaque upload URL in errors. |
 
 The default limiter interval is zero. A nonzero VK interval must be explicitly configured or injected from a verified provider policy; the library does not invent a request-per-second value.
 
