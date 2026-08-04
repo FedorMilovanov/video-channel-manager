@@ -23,179 +23,123 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          cat > /tmp/wave4-migration.patch <<'PATCH'
+          --- a/src/video_channel_manager/platforms/vk/upload_lifecycle.py
+          +++ b/src/video_channel_manager/platforms/vk/upload_lifecycle.py
+          @@ -466,19 +466,51 @@
+                       True,
+                   )
+               record = dict(existing)
+               changed = False
+          +    stage = UploadStage(str(record.get("stage")))
+               raw_wall_policy = record.get("wall_policy")
+               if raw_wall_policy is None:
+          -        record["wall_policy"] = wall_policy.as_dict()
+          +        safe_to_bind = stage in {UploadStage.PLANNED, UploadStage.MEDIA_VERIFIED} or (
+          +            stage == UploadStage.RESERVATION_INTENT_COMMITTED
+          +            and not record.get("reservation_dispatch_started_at")
+          +        )
+          +        if not safe_to_bind:
+          +            raise UploadRecoveryRequired(
+          +                "Historical provider-dispatched upload journal has no wall policy and cannot be migrated automatically"
+          +            )
+          +        policy_payload = wall_policy.as_dict()
+          +        record["wall_policy"] = policy_payload
+          +        operation_payload = {
+          +            "source_snapshot_id": source_snapshot_id,
+          +            "community_id": community_id,
+          +            "source_video_id": source_video_id,
+          +            "source_title": source_title,
+          +            "source_duration_seconds": source_duration_seconds,
+          +            "published_title": published_title,
+          +            "published_description_sha256": _text_sha256(published_description),
+          +            "readiness": readiness.as_dict(),
+          +            "wall_policy": policy_payload,
+          +        }
+          +        operation_id = _canonical_sha256(operation_payload)
+          +        record["operation_id"] = operation_id
+          +        transitions = record.get("transitions")
+          +        if isinstance(transitions, list) and transitions:
+          +            initial = transitions[0]
+          +            if isinstance(initial, dict) and initial.get("from") is None:
+          +                evidence = initial.get("evidence")
+          +                if isinstance(evidence, dict):
+          +                    evidence["operation_id"] = operation_id
+                   changed = True
+               elif not isinstance(raw_wall_policy, Mapping):
+                   raise ValueError("Upload journal wall_policy must be an object")
+               _validate_record_binding(
+                   record,
+                   source_snapshot_id=source_snapshot_id,
+                   community_id=community_id,
+                   source_video_id=source_video_id,
+          +        source_title=source_title,
+          +        source_duration_seconds=source_duration_seconds,
+                   published_title=published_title,
+                   published_description=published_description,
+                   readiness=readiness,
+                   wall_policy=wall_policy,
+          @@ -491,8 +523,10 @@
+               *,
+               source_snapshot_id: str,
+               community_id: int,
+               source_video_id: str,
+          +    source_title: str,
+          +    source_duration_seconds: int | None,
+               published_title: str,
+               published_description: str,
+               readiness: VkUploadReadiness,
+               wall_policy: VkUploadWallPolicy,
+          @@ -504,24 +538,34 @@
+               expected = {
+                   "source_snapshot_id": source_snapshot_id,
+                   "community_id": community_id,
+                   "source_video_id": source_video_id,
+          +        "source_title": source_title,
+          +        "source_duration_seconds": source_duration_seconds,
+                   "published_title": published_title,
+                   "published_description_sha256": _text_sha256(published_description),
+                   "readiness": readiness.as_dict(),
+                   "wall_policy": wall_policy.as_dict(),
+               }
+          +    expected_operation_id = _canonical_sha256(expected)
+               mismatches = {
+                   key: {"expected": value, "actual": record.get(key)}
+                   for key, value in expected.items()
+                   if record.get(key) != value
+               }
+          +    if record.get("operation_id") != expected_operation_id:
+          +        mismatches["operation_id"] = {
+          +            "expected": expected_operation_id,
+          +            "actual": record.get("operation_id"),
+          +        }
+               if observed_policy != wall_policy:
+          -        mismatches["wall_policy_value"] = {"expected": wall_policy.as_dict(), "actual": observed_policy.as_dict()}
+          +        mismatches["wall_policy_value"] = {
+          +            "expected": wall_policy.as_dict(),
+          +            "actual": observed_policy.as_dict(),
+          +        }
+               if mismatches:
+                   raise ValueError(f"Upload journal binding mismatch: {mismatches}")
+               UploadStage(str(record.get("stage")))
+          -
+           
+           def _transition(
+               record: dict[str, Any],
+               target: UploadStage,
+          PATCH
+          sed -i 's/^          //' /tmp/wave4-migration.patch
+          git apply --check /tmp/wave4-migration.patch
+          git apply /tmp/wave4-migration.patch
           python - <<'PY'
           from pathlib import Path
-          import re
-
-          lifecycle = Path("src/video_channel_manager/platforms/vk/upload_lifecycle.py")
-          text = lifecycle.read_text(encoding="utf-8")
-
-          ensure_function = '''def ensure_upload_record(
-              existing: Mapping[str, Any] | None,
-              *,
-              source_snapshot_id: str,
-              community_id: int,
-              source_video_id: str,
-              source_title: str,
-              source_duration_seconds: int | None,
-              published_title: str,
-              published_description: str,
-              readiness: VkUploadReadiness,
-              wall_policy: VkUploadWallPolicy = DEFAULT_UPLOAD_WALL_POLICY,
-              clock: Clock = _utc_now,
-          ) -> tuple[dict[str, Any], bool]:
-              if existing is None:
-                  return (
-                      create_upload_record(
-                          source_snapshot_id=source_snapshot_id,
-                          community_id=community_id,
-                          source_video_id=source_video_id,
-                          source_title=source_title,
-                          source_duration_seconds=source_duration_seconds,
-                          published_title=published_title,
-                          published_description=published_description,
-                          readiness=readiness,
-                          wall_policy=wall_policy,
-                          clock=clock,
-                      ),
-                      True,
-                  )
-              if existing.get("schema_name") != "video-manager.vk-upload-operation":
-                  return (
-                      migrate_legacy_upload_record(
-                          existing,
-                          source_snapshot_id=source_snapshot_id,
-                          community_id=community_id,
-                          source_video_id=source_video_id,
-                          source_title=source_title,
-                          source_duration_seconds=source_duration_seconds,
-                          published_title=published_title,
-                          published_description=published_description,
-                          readiness=readiness,
-                          wall_policy=wall_policy,
-                          clock=clock,
-                      ),
-                      True,
-                  )
-              record = dict(existing)
-              changed = False
-              stage = UploadStage(str(record.get("stage")))
-              raw_wall_policy = record.get("wall_policy")
-              if raw_wall_policy is None:
-                  safe_to_bind = stage in {UploadStage.PLANNED, UploadStage.MEDIA_VERIFIED} or (
-                      stage == UploadStage.RESERVATION_INTENT_COMMITTED
-                      and not record.get("reservation_dispatch_started_at")
-                  )
-                  if not safe_to_bind:
-                      raise UploadRecoveryRequired(
-                          "Historical provider-dispatched upload journal has no wall policy and cannot be migrated automatically"
-                      )
-                  policy_payload = wall_policy.as_dict()
-                  record["wall_policy"] = policy_payload
-                  operation_payload = {
-                      "source_snapshot_id": source_snapshot_id,
-                      "community_id": community_id,
-                      "source_video_id": source_video_id,
-                      "source_title": source_title,
-                      "source_duration_seconds": source_duration_seconds,
-                      "published_title": published_title,
-                      "published_description_sha256": _text_sha256(published_description),
-                      "readiness": readiness.as_dict(),
-                      "wall_policy": policy_payload,
-                  }
-                  operation_id = _canonical_sha256(operation_payload)
-                  record["operation_id"] = operation_id
-                  transitions = record.get("transitions")
-                  if isinstance(transitions, list) and transitions:
-                      initial = transitions[0]
-                      if isinstance(initial, dict) and initial.get("from") is None:
-                          evidence = initial.get("evidence")
-                          if isinstance(evidence, dict):
-                              evidence["operation_id"] = operation_id
-                  changed = True
-              elif not isinstance(raw_wall_policy, Mapping):
-                  raise ValueError("Upload journal wall_policy must be an object")
-              _validate_record_binding(
-                  record,
-                  source_snapshot_id=source_snapshot_id,
-                  community_id=community_id,
-                  source_video_id=source_video_id,
-                  source_title=source_title,
-                  source_duration_seconds=source_duration_seconds,
-                  published_title=published_title,
-                  published_description=published_description,
-                  readiness=readiness,
-                  wall_policy=wall_policy,
-              )
-              return record, changed
-          '''.replace("          ", "")
-
-          validate_function = '''def _validate_record_binding(
-              record: Mapping[str, Any],
-              *,
-              source_snapshot_id: str,
-              community_id: int,
-              source_video_id: str,
-              source_title: str,
-              source_duration_seconds: int | None,
-              published_title: str,
-              published_description: str,
-              readiness: VkUploadReadiness,
-              wall_policy: VkUploadWallPolicy,
-          ) -> None:
-              raw_policy = record.get("wall_policy")
-              if not isinstance(raw_policy, Mapping):
-                  raise ValueError("Upload journal is missing its wall policy")
-              observed_policy = VkUploadWallPolicy.from_mapping(raw_policy)
-              expected = {
-                  "source_snapshot_id": source_snapshot_id,
-                  "community_id": community_id,
-                  "source_video_id": source_video_id,
-                  "source_title": source_title,
-                  "source_duration_seconds": source_duration_seconds,
-                  "published_title": published_title,
-                  "published_description_sha256": _text_sha256(published_description),
-                  "readiness": readiness.as_dict(),
-                  "wall_policy": wall_policy.as_dict(),
-              }
-              expected_operation_id = _canonical_sha256(expected)
-              mismatches = {
-                  key: {"expected": value, "actual": record.get(key)}
-                  for key, value in expected.items()
-                  if record.get(key) != value
-              }
-              if record.get("operation_id") != expected_operation_id:
-                  mismatches["operation_id"] = {
-                      "expected": expected_operation_id,
-                      "actual": record.get("operation_id"),
-                  }
-              if observed_policy != wall_policy:
-                  mismatches["wall_policy_value"] = {
-                      "expected": wall_policy.as_dict(),
-                      "actual": observed_policy.as_dict(),
-                  }
-              if mismatches:
-                  raise ValueError(f"Upload journal binding mismatch: {mismatches}")
-              UploadStage(str(record.get("stage")))
-          '''.replace("          ", "")
-
-          pattern = re.compile(
-              r"def ensure_upload_record\(.*?\n\ndef _validate_record_binding\(.*?\n\ndef _transition\(",
-              re.DOTALL,
-          )
-          replacement = ensure_function + "\n\n" + validate_function + "\n\ndef _transition("
-          text, count = pattern.subn(replacement, text)
-          if count != 1:
-              raise SystemExit(f"Expected one lifecycle function region, found {count}")
-          lifecycle.write_text(text, encoding="utf-8", newline="\n")
-
-          memory = Path("tests/test_operational_memory.py")
-          memory_text = memory.read_text(encoding="utf-8")
-          old_status = "BLOCKED_PENDING_WAVE_4_AND_FRESH_READ_ONLY_WALL_AUDIT"
-          new_status = "BLOCKED_PENDING_WAVE_4_ISSUE_36_AND_FRESH_READ_ONLY_WALL_AUDIT"
-          if memory_text.count(old_status) != 1:
+          path = Path("tests/test_operational_memory.py")
+          text = path.read_text(encoding="utf-8")
+          old = "BLOCKED_PENDING_WAVE_4_AND_FRESH_READ_ONLY_WALL_AUDIT"
+          new = "BLOCKED_PENDING_WAVE_4_ISSUE_36_AND_FRESH_READ_ONLY_WALL_AUDIT"
+          if text.count(old) != 1:
               raise SystemExit("operational memory target count mismatch")
-          memory.write_text(memory_text.replace(old_status, new_status), encoding="utf-8", newline="\n")
+          path.write_text(text.replace(old, new), encoding="utf-8", newline="\n")
           PY
           python -m pip install -e ".[dev]"
           ruff format src/video_channel_manager/platforms/vk/upload_lifecycle.py tests/test_operational_memory.py
