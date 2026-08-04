@@ -1,16 +1,16 @@
 name: Finalize Legendary Poet article policy
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/legendary-poet-article-wave
+      - main
 
 permissions:
   contents: write
 
 jobs:
   finalize:
-    if: github.actor != 'github-actions[bot]'
+    if: github.event.pull_request.head.ref == 'agent/legendary-poet-article-wave' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,6 +23,7 @@ jobs:
       - name: Repair exact policy times, digests and fault proofs
         shell: bash
         run: |
+          set -euo pipefail
           python - <<'PY'
           import hashlib
           import json
@@ -63,24 +64,24 @@ jobs:
                   {
                       "stages": ["before_dispatch"],
                       "test_id": "tests/test_vk_article_provider.py::test_exact_existing_post_is_adopted_but_schedule_collision_is_blocked",
-                      "claim": "exact duplicates and occupied postponed slots stop before photo-save dispatch"
+                      "claim": "exact duplicates and occupied postponed slots stop before photo-save dispatch",
                   },
                   {
                       "stages": ["after_dispatch_before_response"],
                       "test_id": "tests/test_vk_article_provider.py::test_adapter_preserves_unknown_outcome_and_does_not_retry",
-                      "claim": "an ambiguous provider outcome is surfaced once and never replayed"
+                      "claim": "an ambiguous provider outcome is surfaced once and never replayed",
                   },
                   {
                       "stages": ["during_postflight"],
                       "test_id": "tests/test_vk_article_provider_postflight.py::test_schedule_postflight_mismatch_is_unknown_and_never_replayed",
-                      "claim": "a non-exact postponed postflight remains unknown after one photo save and one wall post"
+                      "claim": "a non-exact postponed postflight remains unknown after one photo save and one wall post",
                   },
                   {
                       "stages": ["before_final_commit"],
                       "test_id": "tests/test_vk_article_provider_postflight.py::test_schedule_requires_exact_postflight_before_final_success",
-                      "claim": "success is returned only after exact text, date, URL, photo and one-post wall delta verification"
-                  }
-              ]
+                      "claim": "success is returned only after exact text, date, URL, photo and one-post wall delta verification",
+                  },
+              ],
           }
           boundaries = proof_register["boundaries"]
           boundaries[:] = [item for item in boundaries if item.get("boundary_id") != boundary["boundary_id"]]
@@ -90,21 +91,27 @@ jobs:
               encoding="utf-8",
           )
 
-          Path(".github/workflows/finalize-legendary-poet-article-policy.yml").unlink()
+          for temporary in (
+              Path(".github/workflows/finalize-legendary-poet-article-policy.yml"),
+              Path(".github/workflows/register-legendary-poet-wall-photo.yml"),
+              Path(".github/workflows/format-legendary-poet-article-wave.yml"),
+          ):
+              temporary.unlink(missing_ok=True)
           PY
-      - name: Format exact new fault tests
-        run: |
           python -m pip install ruff==0.16.1
           ruff format tests/test_vk_article_provider_postflight.py
+          git checkout origin/main -- .github/workflows/ci.yml
       - name: Commit final policy and proof evidence
         shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
+            .github/workflows/ci.yml \
             data/editorial/legendary-poet-article-wave-202608.json \
             docs/operations/mutation-fault-proof-register.json \
             tests/test_vk_article_provider_postflight.py
-          git add -u .github/workflows/finalize-legendary-poet-article-policy.yml
+          git add -u .github/workflows
           git commit -m "Finalize Legendary Poet article policy evidence"
           git push origin HEAD:agent/legendary-poet-article-wave
