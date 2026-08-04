@@ -1,0 +1,1 @@
+The approved content policy remains unchanged. This branch is limited to stable download resolution for the already approved Esenin 1925 cover.
