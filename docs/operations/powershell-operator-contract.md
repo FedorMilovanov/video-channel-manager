@@ -17,6 +17,8 @@ The complete reviewed surface contains 23 `.ps1` files:
 - 3 `compatibility_only` non-provider-write wrappers;
 - 19 `retired` historical provider-write wrappers.
 
+The registry also binds the single Pester `.ps1` test file, so every tracked PowerShell file is classified or explicitly test-only.
+
 Every other tracked `.ps1` is classified in `scripts/operator/powershell-wrappers.json` as either:
 
 - `compatibility_only` — non-provider-write developer/read-only convenience;
@@ -98,7 +100,7 @@ Project identities are hard-bound:
 - `legendary-poet` → community `235216998`, owner `-235216998`;
 - `lord-god-strength` → community `60805374`, owner `-60805374`.
 
-The request must repeat the exact project, community, owner, snapshot, operation count, and manifest digest.
+The request must repeat the exact project, community, owner, non-empty snapshot, operation count, and manifest digest. JSON IDs/counts must be integer values rather than numeric strings, arguments must be a non-empty string array, and output artifacts may not overwrite the request or manifest.
 
 ## Structured evidence
 
@@ -127,6 +129,8 @@ The shared module resolves only Python 3.11, 3.12, or 3.13 from:
 1. an exact explicit path;
 2. the repository virtual environment;
 3. `python3` or `python` from the executable search path.
+
+When an explicit Python path is supplied, fallback is disabled: that exact file must resolve to a supported interpreter.
 
 The old divergent `py -3.11`, PATH-installed `video-manager`, user-home hardcodes, and nested `pwsh` orchestration are not part of the supported surface.
 

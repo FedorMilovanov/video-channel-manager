@@ -187,5 +187,12 @@
       "sha256": "a8b4ef4f343217d0b1a59132a4f4d759a631b07dc7c423cce44b204662714147",
       "reason": "Developer environment setup compatibility wrapper."
     }
+  ],
+  "test_files": [
+    {
+      "path": "tests/powershell/VideoManager.Operator.Tests.ps1",
+      "sha256": "94c04d3db606a558e7f2960e7c62a94a3c4d54ac74269a7d268b6f48bac67e17",
+      "reason": "Pester contract tests for Windows PowerShell 5.1 and PowerShell 7."
+    }
   ]
 }

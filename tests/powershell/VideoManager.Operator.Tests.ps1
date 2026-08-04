@@ -80,6 +80,10 @@ Describe "Wave 5 PowerShell operator contract" {
         $Bytes.Length | Should -BeGreaterThan 3
         ($Bytes[0] -eq 0xEF -and $Bytes[1] -eq 0xBB -and $Bytes[2] -eq 0xBF) | Should -BeFalse
         (Read-VcmJsonFile -Path $Path).message | Should -Be "Привет"
+
+        Write-VcmJsonAtomic -Path $Path -Value ([ordered]@{ message = "Заменено"; value = 8 })
+        (Read-VcmJsonFile -Path $Path).message | Should -Be "Заменено"
+        @(Get-ChildItem -LiteralPath $TestRoot -Filter ".evidence.json.*" -Force).Count | Should -Be 0
     }
 
     It "canonicalizes text digests across LF and CRLF checkouts" {
@@ -95,6 +99,15 @@ Describe "Wave 5 PowerShell operator contract" {
         $Python = Resolve-VcmPython -RepositoryRoot $RepoRoot -ProbeDirectory $TestRoot
         $Python.version | Should -BeIn @("3.11", "3.12", "3.13")
         (Test-Path -LiteralPath $Python.path -PathType Leaf) | Should -BeTrue
+    }
+
+    It "does not fall back when an explicit Python path is invalid" {
+        $InvalidPython = Join-Path $TestRoot "not-python.exe"
+        Write-VcmUtf8Text -Path $InvalidPython -Text "not a Python interpreter"
+
+        {
+            Resolve-VcmPython -RepositoryRoot $RepoRoot -ExplicitPath $InvalidPython -ProbeDirectory $TestRoot
+        } | Should -Throw "*explicit Python path*"
     }
 
     It "captures a native nonzero exit code without parsing human stdout" {
@@ -146,6 +159,104 @@ Describe "Wave 5 PowerShell operator contract" {
                 -OutputDirectory $OutputDir `
                 -RepositoryRoot $RepoRoot
         } | Should -Throw "*request SHA-256 mismatch*"
+    }
+
+    It "rejects string-typed IDs instead of coercing them" {
+        $Documents = New-TestOperatorDocuments -Directory (Join-Path $TestRoot "documents")
+        $Manifest = Read-VcmJsonFile -Path $Documents.ManifestPath
+        $Manifest.community_id = "235216998"
+        Write-VcmJsonAtomic -Path $Documents.ManifestPath -Value $Manifest
+        $ManifestSha = Get-VcmSha256 -Path $Documents.ManifestPath
+        $Request = Read-VcmJsonFile -Path $Documents.RequestPath
+        $Request.manifest_sha256 = $ManifestSha
+        $Request.confirm_manifest_sha256 = $ManifestSha
+        Write-VcmJsonAtomic -Path $Documents.RequestPath -Value $Request
+
+        {
+            Invoke-VcmOperatorRequest `
+                -RequestPath $Documents.RequestPath `
+                -RequestSha256 (Get-VcmSha256 -Path $Documents.RequestPath) `
+                -OutputDirectory $OutputDir `
+                -RepositoryRoot $RepoRoot
+        } | Should -Throw "*exact integers*"
+    }
+
+    It "rejects numeric source snapshots instead of coercing them" {
+        $Documents = New-TestOperatorDocuments -Directory (Join-Path $TestRoot "documents")
+        $Manifest = Read-VcmJsonFile -Path $Documents.ManifestPath
+        $Request = Read-VcmJsonFile -Path $Documents.RequestPath
+        $Manifest.source_snapshot_id = 123
+        $Request.confirm_source_snapshot_id = 123
+        Write-VcmJsonAtomic -Path $Documents.ManifestPath -Value $Manifest
+        $ManifestSha = Get-VcmSha256 -Path $Documents.ManifestPath
+        $Request.manifest_sha256 = $ManifestSha
+        $Request.confirm_manifest_sha256 = $ManifestSha
+        Write-VcmJsonAtomic -Path $Documents.RequestPath -Value $Request
+        $RequestSha = Get-VcmSha256 -Path $Documents.RequestPath
+
+        {
+            Invoke-VcmOperatorRequest `
+                -RequestPath $Documents.RequestPath `
+                -RequestSha256 $RequestSha `
+                -OutputDirectory $OutputDir `
+                -RepositoryRoot $RepoRoot
+        } | Should -Throw "*source snapshot*string*"
+    }
+
+    It "rejects a blank source snapshot even when both files agree" {
+        $Documents = New-TestOperatorDocuments -Directory (Join-Path $TestRoot "documents")
+        $Manifest = Read-VcmJsonFile -Path $Documents.ManifestPath
+        $Manifest.source_snapshot_id = ""
+        Write-VcmJsonAtomic -Path $Documents.ManifestPath -Value $Manifest
+        $ManifestSha = Get-VcmSha256 -Path $Documents.ManifestPath
+        $Request = Read-VcmJsonFile -Path $Documents.RequestPath
+        $Request.manifest_sha256 = $ManifestSha
+        $Request.confirm_manifest_sha256 = $ManifestSha
+        $Request.confirm_source_snapshot_id = ""
+        Write-VcmJsonAtomic -Path $Documents.RequestPath -Value $Request
+
+        {
+            Invoke-VcmOperatorRequest `
+                -RequestPath $Documents.RequestPath `
+                -RequestSha256 (Get-VcmSha256 -Path $Documents.RequestPath) `
+                -OutputDirectory $OutputDir `
+                -RepositoryRoot $RepoRoot
+        } | Should -Throw "*source snapshot confirmation must be a non-empty string*"
+    }
+
+    It "rejects a scalar arguments field" {
+        $Documents = New-TestOperatorDocuments -Directory (Join-Path $TestRoot "documents")
+        $Manifest = Read-VcmJsonFile -Path $Documents.ManifestPath
+        $Manifest.arguments = "version"
+        Write-VcmJsonAtomic -Path $Documents.ManifestPath -Value $Manifest
+        $ManifestSha = Get-VcmSha256 -Path $Documents.ManifestPath
+        $Request = Read-VcmJsonFile -Path $Documents.RequestPath
+        $Request.manifest_sha256 = $ManifestSha
+        $Request.confirm_manifest_sha256 = $ManifestSha
+        Write-VcmJsonAtomic -Path $Documents.RequestPath -Value $Request
+
+        {
+            Invoke-VcmOperatorRequest `
+                -RequestPath $Documents.RequestPath `
+                -RequestSha256 (Get-VcmSha256 -Path $Documents.RequestPath) `
+                -OutputDirectory $OutputDir `
+                -RepositoryRoot $RepoRoot
+        } | Should -Throw "*JSON array*"
+    }
+
+    It "rejects output paths that would overwrite the request" {
+        $DocumentsDirectory = Join-Path $TestRoot "documents"
+        $Documents = New-TestOperatorDocuments -Directory $DocumentsDirectory
+        $CollisionRequest = Join-Path $DocumentsDirectory "result.json"
+        Copy-Item -LiteralPath $Documents.RequestPath -Destination $CollisionRequest
+
+        {
+            Invoke-VcmOperatorRequest `
+                -RequestPath $CollisionRequest `
+                -RequestSha256 (Get-VcmSha256 -Path $CollisionRequest) `
+                -OutputDirectory $DocumentsDirectory `
+                -RepositoryRoot $RepoRoot
+        } | Should -Throw "*cannot overwrite*"
     }
 
     It "rejects cross-project confirmation before child execution" {

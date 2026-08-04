@@ -42,17 +42,25 @@ function Write-VcmJsonAtomic {
     $parent = Split-Path -Parent $fullPath
     [System.IO.Directory]::CreateDirectory($parent) | Out-Null
     $temporary = Join-Path $parent (".{0}.{1}.{2}.tmp" -f ([System.IO.Path]::GetFileName($fullPath)), $PID, [guid]::NewGuid().ToString("N"))
+    $backup = $temporary + ".backup"
     $json = ($Value | ConvertTo-Json -Depth 64 -Compress) + [Environment]::NewLine
     try {
         Write-VcmUtf8Text -Path $temporary -Text $json
         if ([System.IO.File]::Exists($fullPath)) {
-            [System.IO.File]::Delete($fullPath)
+            [System.IO.File]::Replace($temporary, $fullPath, $backup, $true)
+            if ([System.IO.File]::Exists($backup)) {
+                [System.IO.File]::Delete($backup)
+            }
         }
-        [System.IO.File]::Move($temporary, $fullPath)
+        else {
+            [System.IO.File]::Move($temporary, $fullPath)
+        }
     }
     finally {
-        if ([System.IO.File]::Exists($temporary)) {
-            [System.IO.File]::Delete($temporary)
+        foreach ($candidate in @($temporary, $backup)) {
+            if ([System.IO.File]::Exists($candidate)) {
+                [System.IO.File]::Delete($candidate)
+            }
         }
     }
 }
@@ -388,16 +396,18 @@ function Resolve-VcmPython {
     if ($ExplicitPath) {
         $candidates.Add((Resolve-VcmExactPath -Path $ExplicitPath -RepositoryRoot $RepositoryRoot -RequireFile))
     }
-    foreach ($relative in @(".venv\Scripts\python.exe", ".venv/bin/python")) {
-        $candidate = Join-Path $RepositoryRoot $relative
-        if (Test-Path -LiteralPath $candidate -PathType Leaf) {
-            $candidates.Add([System.IO.Path]::GetFullPath($candidate))
+    else {
+        foreach ($relative in @(".venv\Scripts\python.exe", ".venv/bin/python")) {
+            $candidate = Join-Path $RepositoryRoot $relative
+            if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+                $candidates.Add([System.IO.Path]::GetFullPath($candidate))
+            }
         }
-    }
-    foreach ($commandName in @("python3", "python")) {
-        $command = Get-Command $commandName -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($null -ne $command -and $command.Source) {
-            $candidates.Add([string]$command.Source)
+        foreach ($commandName in @("python3", "python")) {
+            $command = Get-Command $commandName -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($null -ne $command -and $command.Source) {
+                $candidates.Add([string]$command.Source)
+            }
         }
     }
 
@@ -430,8 +440,83 @@ function Resolve-VcmPython {
         catch {
             continue
         }
+        finally {
+            Remove-Item -LiteralPath $probeOut, $probeErr -Force -ErrorAction SilentlyContinue
+        }
+    }
+    if ($ExplicitPath) {
+        throw "The explicit Python path is not a working supported Python 3.11, 3.12, or 3.13 interpreter."
     }
     throw "No supported Python 3.11, 3.12, or 3.13 interpreter was resolved."
+}
+
+function Assert-VcmRequiredJsonProperties {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$Value,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$Names,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Label
+    )
+
+    $available = @($Value.PSObject.Properties.Name)
+    foreach ($name in $Names) {
+        if ($name -notin $available) {
+            throw "$Label is missing required property '$name'."
+        }
+    }
+}
+
+function Test-VcmExactInteger {
+    [CmdletBinding()]
+    param([object]$Value)
+
+    return (
+        $Value -is [sbyte] -or
+        $Value -is [byte] -or
+        $Value -is [int16] -or
+        $Value -is [uint16] -or
+        $Value -is [int32] -or
+        $Value -is [uint32] -or
+        $Value -is [int64] -or
+        $Value -is [uint64]
+    )
+}
+
+function Test-VcmSha256Text {
+    [CmdletBinding()]
+    param([object]$Value)
+
+    return ($Value -is [string] -and $Value -match '^[0-9a-fA-F]{64}$')
+}
+
+function Get-VcmExactStringArray {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$Value,
+
+        [Parameter(Mandatory = $true)]
+        [string]$FieldName
+    )
+
+    if ($Value -is [string] -or $null -eq $Value) {
+        throw "$FieldName must be a non-empty JSON array of non-empty strings."
+    }
+    $items = @($Value)
+    if ($items.Count -eq 0) {
+        throw "$FieldName must be a non-empty JSON array of non-empty strings."
+    }
+    foreach ($item in $items) {
+        if ($item -isnot [string] -or [string]::IsNullOrWhiteSpace([string]$item)) {
+            throw "$FieldName must be a non-empty JSON array of non-empty strings."
+        }
+    }
+    return [string[]]$items
 }
 
 function Assert-VcmProjectBinding {
@@ -514,10 +599,10 @@ function Invoke-VcmOperatorRequest {
     $root = [System.IO.Path]::GetFullPath($RepositoryRoot)
     $output = Resolve-VcmExactPath -Path $OutputDirectory -RepositoryRoot $root
     [System.IO.Directory]::CreateDirectory($output) | Out-Null
-    $preflightPath = Join-Path $output "preflight-summary.json"
-    $resultPath = Join-Path $output "result.json"
-    $stdoutPath = Join-Path $output "stdout.log"
-    $stderrPath = Join-Path $output "stderr.log"
+    $preflightPath = [System.IO.Path]::GetFullPath((Join-Path $output "preflight-summary.json"))
+    $resultPath = [System.IO.Path]::GetFullPath((Join-Path $output "result.json"))
+    $stdoutPath = [System.IO.Path]::GetFullPath((Join-Path $output "stdout.log"))
+    $stderrPath = [System.IO.Path]::GetFullPath((Join-Path $output "stderr.log"))
 
     $requestFile = Resolve-VcmExactPath -Path $RequestPath -RepositoryRoot $root -RequireFile
     $actualRequestSha = Get-VcmSha256 -Path $requestFile
@@ -525,15 +610,71 @@ function Invoke-VcmOperatorRequest {
         throw "Operator request SHA-256 mismatch."
     }
     $request = Read-VcmJsonFile -Path $requestFile
-    if ($request.schema_name -ne $script:OperatorRequestSchema -or [int]$request.schema_version -ne 1) {
+    Assert-VcmRequiredJsonProperties -Value $request -Label "Operator request" -Names @(
+        "schema_name",
+        "schema_version",
+        "mode",
+        "manifest_path",
+        "manifest_sha256",
+        "confirm_manifest_sha256",
+        "confirm_project_key",
+        "confirm_community_id",
+        "confirm_owner_id",
+        "confirm_source_snapshot_id",
+        "confirm_operation_count"
+    )
+    if (
+        $request.schema_name -ne $script:OperatorRequestSchema -or
+        -not (Test-VcmExactInteger -Value $request.schema_version) -or
+        [int64]$request.schema_version -ne 1
+    ) {
         throw "Unsupported operator request schema."
+    }
+    if ($request.mode -isnot [string]) {
+        throw "Operator request mode must be a string."
     }
     $mode = ([string]$request.mode).ToLowerInvariant()
     if ($mode -notin @("plan", "dry-run", "apply", "reconcile")) {
         throw "Unsupported operator mode: $mode"
     }
+    if ($request.manifest_path -isnot [string] -or [string]::IsNullOrWhiteSpace([string]$request.manifest_path)) {
+        throw "Operator request manifest_path must be a non-empty string."
+    }
+    if ($request.confirm_project_key -isnot [string] -or [string]::IsNullOrWhiteSpace([string]$request.confirm_project_key)) {
+        throw "Operator request project confirmation must be a non-empty string."
+    }
+    if (
+        -not (Test-VcmSha256Text -Value $request.manifest_sha256) -or
+        -not (Test-VcmSha256Text -Value $request.confirm_manifest_sha256)
+    ) {
+        throw "Operator request manifest digests must be exact SHA-256 strings."
+    }
+    if (
+        -not (Test-VcmExactInteger -Value $request.confirm_community_id) -or
+        -not (Test-VcmExactInteger -Value $request.confirm_owner_id) -or
+        -not (Test-VcmExactInteger -Value $request.confirm_operation_count)
+    ) {
+        throw "Operator request ID/count confirmations must be exact integers."
+    }
+    if (
+        $request.confirm_source_snapshot_id -isnot [string] -or
+        [string]::IsNullOrWhiteSpace([string]$request.confirm_source_snapshot_id)
+    ) {
+        throw "Operator request source snapshot confirmation must be a non-empty string."
+    }
 
     $manifestFile = Resolve-VcmExactPath -Path ([string]$request.manifest_path) -RepositoryRoot $root -RequireFile
+    if ([string]::Equals($requestFile, $manifestFile, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Operator request and manifest must be distinct files."
+    }
+    foreach ($sourcePath in @($requestFile, $manifestFile)) {
+        foreach ($artifactPath in @($preflightPath, $resultPath, $stdoutPath, $stderrPath)) {
+            if ([string]::Equals($sourcePath, $artifactPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+                throw "Operator output artifacts cannot overwrite the request or manifest."
+            }
+        }
+    }
+
     $manifestSha = Get-VcmSha256 -Path $manifestFile
     if (
         $manifestSha -ne ([string]$request.manifest_sha256).ToLowerInvariant() -or
@@ -542,8 +683,41 @@ function Invoke-VcmOperatorRequest {
         throw "Operator manifest SHA-256 confirmation mismatch."
     }
     $manifest = Read-VcmJsonFile -Path $manifestFile
-    if ($manifest.schema_name -ne $script:OperatorManifestSchema -or [int]$manifest.schema_version -ne 1) {
+    Assert-VcmRequiredJsonProperties -Value $manifest -Label "Operator manifest" -Names @(
+        "schema_name",
+        "schema_version",
+        "project_key",
+        "community_id",
+        "owner_id",
+        "source_snapshot_id",
+        "operation_count",
+        "operation_class",
+        "provider_mutation",
+        "entrypoint_id",
+        "arguments"
+    )
+    if (
+        $manifest.schema_name -ne $script:OperatorManifestSchema -or
+        -not (Test-VcmExactInteger -Value $manifest.schema_version) -or
+        [int64]$manifest.schema_version -ne 1
+    ) {
         throw "Unsupported operator manifest schema."
+    }
+    if (
+        -not (Test-VcmExactInteger -Value $manifest.community_id) -or
+        -not (Test-VcmExactInteger -Value $manifest.owner_id) -or
+        -not (Test-VcmExactInteger -Value $manifest.operation_count)
+    ) {
+        throw "Operator manifest IDs and operation_count must be exact integers."
+    }
+    if ($manifest.project_key -isnot [string] -or [string]::IsNullOrWhiteSpace([string]$manifest.project_key)) {
+        throw "Operator manifest project_key must be a non-empty string."
+    }
+    if (
+        $manifest.source_snapshot_id -isnot [string] -or
+        [string]::IsNullOrWhiteSpace([string]$manifest.source_snapshot_id)
+    ) {
+        throw "Operator manifest source_snapshot_id must be a non-empty string."
     }
     Assert-VcmProjectBinding -Manifest $manifest -Request $request
     if ([string]$manifest.source_snapshot_id -ne [string]$request.confirm_source_snapshot_id) {
@@ -555,17 +729,20 @@ function Invoke-VcmOperatorRequest {
     if ([int64]$manifest.operation_count -lt 0) {
         throw "Operator manifest operation_count cannot be negative."
     }
-    if ([string]$manifest.entrypoint_id -ne "video-manager-cli") {
+    if ($manifest.entrypoint_id -isnot [string] -or [string]$manifest.entrypoint_id -ne "video-manager-cli") {
         throw "Unsupported operator entrypoint_id."
     }
     if ($manifest.provider_mutation -isnot [bool]) {
         throw "Manifest provider_mutation must be an exact boolean."
     }
+    if ($manifest.operation_class -isnot [string]) {
+        throw "Manifest operation_class must be a string."
+    }
     $operationClass = [string]$manifest.operation_class
     if ($operationClass -notin @("safe_read", "ambiguous_mutation")) {
         throw "Unsupported operation_class: $operationClass"
     }
-    $arguments = @($manifest.arguments | ForEach-Object { [string]$_ })
+    $arguments = @(Get-VcmExactStringArray -Value $manifest.arguments -FieldName "manifest.arguments")
 
     if ([bool]$manifest.provider_mutation) {
         if ($mode -ne "apply" -or $operationClass -ne "ambiguous_mutation") {

@@ -48,17 +48,25 @@ def test_every_powershell_wrapper_is_classified_exactly_once() -> None:
     registered_paths = [str(item["path"]).replace("\\", "/") for item in wrappers]
     discovered_paths = sorted(path.relative_to(ROOT).as_posix() for path in (ROOT / "scripts").rglob("*.ps1"))
 
+    test_files = registry["test_files"]
+    assert isinstance(test_files, list)
+    test_paths = [str(item["path"]).replace("\\", "/") for item in test_files]
+    discovered_all = sorted(path.relative_to(ROOT).as_posix() for path in ROOT.rglob("*.ps1"))
+
     assert len(registered_paths) == len(set(registered_paths))
+    assert len(test_paths) == len(set(test_paths))
     assert sorted(registered_paths) == discovered_paths
+    assert sorted(registered_paths + test_paths) == discovered_all
     assert {str(item["status"]) for item in wrappers} <= STATUSES
 
 
 def test_registry_hashes_bind_every_wrapper_to_reviewed_content() -> None:
     registry = _registry()
-    for item in registry["wrappers"]:
-        expected = str(item["sha256"])
-        assert re.fullmatch(r"[0-9a-f]{64}", expected), item["path"]
-        assert _canonical_text_sha256(ROOT / str(item["path"])) == expected, item["path"]
+    for section in ("wrappers", "test_files"):
+        for item in registry[section]:
+            expected = str(item["sha256"])
+            assert re.fullmatch(r"[0-9a-f]{64}", expected), item["path"]
+            assert _canonical_text_sha256(ROOT / str(item["path"])) == expected, item["path"]
 
 
 def test_single_supported_wrapper_has_no_historical_operator_antipatterns() -> None:
