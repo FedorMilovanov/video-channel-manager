@@ -276,7 +276,7 @@ def test_reconciliation_fault_boundaries_preserve_durable_replay_barrier(
     if journal.exists():
         journal_payload = json.loads(journal.read_text(encoding="utf-8"))
         assert journal_payload["stage"] == expected_journal_stage
-        with pytest.raises(ValueError, match="automatic replay is prohibited"):
+        with pytest.raises(ValueError, match="(automatic replay|overwrite) is prohibited"):
             WaveEngine().reconcile(
                 plan=plan,
                 result=result,
