@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import re
-import unicodedata
 from difflib import SequenceMatcher
 
 from video_channel_manager.application.cross_platform.models import (
@@ -9,19 +7,16 @@ from video_channel_manager.application.cross_platform.models import (
     MatchMethod,
     VideoMatch,
 )
+from video_channel_manager.application.identity import (
+    canonicalize_description,
+    canonicalize_identity_title,
+)
 from video_channel_manager.domain.models import VideoRecord
-
-_BRAND_RE = re.compile(r"@thelegendarypoet|#thelegendarypoet|#theepicpoet|#shorts", re.IGNORECASE)
-_NON_WORD_RE = re.compile(r"[^a-zа-я0-9]+", re.IGNORECASE)
-_SPACE_RE = re.compile(r"\s+")
 
 
 def normalize_title(value: str) -> str:
-    normalized = unicodedata.normalize("NFKC", value or "").casefold().replace("ё", "е")
-    normalized = _BRAND_RE.sub(" ", normalized)
-    normalized = normalized.replace("version", "версия")
-    normalized = _NON_WORD_RE.sub(" ", normalized)
-    return _SPACE_RE.sub(" ", normalized).strip()
+    """Compatibility value backed by the versioned identity-title contract."""
+    return canonicalize_identity_title(value).canonical
 
 
 def title_similarity(left: str, right: str) -> float:
@@ -81,12 +76,16 @@ def candidate_evidence(
     delta: int | None = None,
 ) -> MatchCandidateEvidence:
     computed_score, computed_delta = candidate_score(source, target)
+    source_title_identity = canonicalize_identity_title(source.title)
+    target_title_identity = canonicalize_identity_title(target.title)
     return MatchCandidateEvidence(
         source_ref=source.ref,
         target_ref=target.ref,
+        source_title_identity=source_title_identity,
+        target_title_identity=target_title_identity,
         score=round(computed_score if score is None else score, 6),
         duration_delta_seconds=computed_delta if delta is None else delta,
-        exact_normalized_title=normalize_title(source.title) == normalize_title(target.title),
+        exact_normalized_title=source_title_identity.canonical == target_title_identity.canonical,
     )
 
 
@@ -99,14 +98,22 @@ def video_match(
     delta: int | None = None,
 ) -> VideoMatch:
     computed_score, computed_delta = candidate_score(source, target)
+    source_title_identity = canonicalize_identity_title(source.title)
+    target_title_identity = canonicalize_identity_title(target.title)
+    source_description_identity = canonicalize_description(source.description)
+    target_description_identity = canonicalize_description(target.description)
     return VideoMatch(
         source_ref=source.ref,
         target_ref=target.ref,
         source_title=source.title,
         target_title=target.title,
+        source_title_identity=source_title_identity,
+        target_title_identity=target_title_identity,
+        source_description_identity=source_description_identity,
+        target_description_identity=target_description_identity,
         score=round(computed_score if score is None else score, 6),
         duration_delta_seconds=computed_delta if delta is None else delta,
-        exact_normalized_title=normalize_title(source.title) == normalize_title(target.title),
-        exact_description=source.description.strip() == target.description.strip(),
+        exact_normalized_title=source_title_identity.canonical == target_title_identity.canonical,
+        exact_description=source_description_identity.canonical == target_description_identity.canonical,
         match_method=method,
     )
