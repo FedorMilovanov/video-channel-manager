@@ -1,183 +1,178 @@
 # Operational automation backlog
 
 Updated: 2026-08-04  
-Program state: `WAVE_7_COMPLETED_WAVE_8_ACTIVE`
+Program state: `WAVE_8A_COMPLETED_WAVE_8B_ACTIVE`
 
-This backlog is subordinate to [`master-audit-2026-08-04.md`](master-audit-2026-08-04.md) and the machine-readable [`audit-register-2026-08-04.json`](audit-register-2026-08-04.json). It must not re-activate retracted findings, retired executors, or completed destructive operations.
+This backlog is subordinate to [`current-state.md`](current-state.md), [`master-audit-marathon-v2-2026-08-04.md`](master-audit-marathon-v2-2026-08-04.md), and [`audit-register-v2-2026-08-04.json`](audit-register-v2-2026-08-04.json). It must not reactivate retracted findings, retired executors, historical ZIP packages, or completed destructive work.
 
-## Completed waves
+## Completed work
 
-### Wave 0 — canonical state
+### Waves 0–7
 
-Completed with synchronized sources of truth, project boundaries, issue ownership, and retirement of superseded destructive work. Provider writes: 0.
+Completed reliability foundation:
 
-### Wave 1 — upload state machine and recovery
+- canonical project/state boundaries;
+- durable journaled upload lifecycle and exact-ID recovery;
+- fail-closed project/content identity;
+- shared HTTP ownership, bounded safe-read retry, redaction, and limiter;
+- upload/wall separation;
+- one supported PowerShell operator;
+- versioned source/plan/apply/result/reconciliation engine;
+- 15 mutation boundaries with exact fault/replay/corruption/operator proofs.
 
-Completed by PR #66, merge `56da03247f60ec9d25f1646fb9ccdfbb651aff9c`:
+Wave 7: PR #84, merge `df956bbbf19af6652f8711f95fb4fecf272e9951`, CI `30918639372`, Python `657 passed, 1 xfailed`, Pester `25/25`, provider writes 0.
 
-- reservation intent before `video.save`;
-- exact ticket persistence before media transfer;
-- explicit `unknown_requires_reconciliation`;
-- no second reservation or blind upload retransmission;
-- exact-ID recovery and crash-boundary tests.
+### Audit A0
 
-Provider writes during implementation/CI: 0.
+PR #89, merge `a06a93e1ec16b4ddb0f578a92e47ce76b4ee78a5`, CI `30925523584`, Python `657 passed, 1 xfailed`, all PowerShell environments green, provider writes 0.
 
-### Wave 2 — fail-closed project/content pipeline
+Audit A0 repaired authoritative entry documents, added master audit/register v2, separated core Wave 8 from live Wave 9 and VK Audio incubation, and preserved PR #85 as historical evidence rather than supported code.
 
-Completed by PR #68, merge `19c2671bf91c8376def527a592e0bb7674841d03`:
+### Wave 8A — exact-first conflict-explicit matching
 
-- exact registered project identity for records, plans, and runtime;
-- mixed/unknown project rejection;
-- project-bound operation identities and digests;
-- internal-only legacy base sync;
-- one supported dependency-injected entrypoint.
+PR #91, merge `09babd9176049d8271c50b6f5e44b7b0fd10d39f`, exact-head CI `30933582322`:
 
-Provider writes during implementation/CI: 0.
+- reviewed one-to-one mapping runs first;
+- unique exact-normalized-title pairs run second;
+- token/trigram-indexed fuzzy fallback runs only for unresolved objects;
+- duplicate exact titles, exact-title duration mismatches, and non-unique fallback components become explicit conflicts;
+- conflicts do not create mappings, missing/upload candidates, or collection placement;
+- input order cannot change the selected result;
+- result schema advanced to `2.0`;
+- Python 3.11/3.12/3.13: `664 passed, 1 xfailed`;
+- Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux green;
+- provider writes: 0.
 
-### Wave 3 — transport, retries, and limiter
+## Active work
 
-Completed by PR #70, merge `995167bdadc90d8d53414570cc3e5010bc4a93f2`:
-
-- explicit HTTP client ownership;
-- classified bounded retries only for safe reads;
-- redacted transport failures;
-- one-attempt ambiguous mutations;
-- injectable zero-default limiter;
-- Python 3.11/3.12/3.13 exact-head CI.
-
-Provider writes during implementation/CI: 0.
-
-### Wave 4 — upload/wall separation
-
-Completed by PR #71, merge `d85f7cf94b8ba0b30947291b3a08491239438843`, exact-head CI run `30895905586`:
-
-- immutable self-digested upload wall policy;
-- explicit `wallpost=0`, `auto_publish=0`, `repeat=0`;
-- complete published+postponed wall snapshots;
-- one batch baseline bound to every upload operation;
-- mandatory clean wall postflight before `verified`;
-- fail-closed historical journal migration;
-- postponed-only wall publication and exact ambiguous-response reconciliation;
-- `586 passed, 1 xfailed` on Python 3.11/3.12/3.13.
-
-Provider writes during implementation/CI: 0.
-
-### Wave 5 — reliable Windows/PowerShell operator layer
-
-Completed by PR #75, merge `1a62779293a404e4654b6230644dfc78e9b20dc1`, exact-head CI run `30900532613`:
-
-- 1 supported manifest-driven operator, 3 compatibility-only non-write wrappers, and 19 fail-closed retired provider-write wrappers;
-- canonical wrapper SHA-256 stable across CRLF/LF;
-- one repository/Python/venv bootstrap;
-- exact request/manifest/project/snapshot/count/type confirmation;
-- native exit codes and atomic UTF-8 structured evidence;
-- no newest-file selection, user-home hardcode, or hidden nested PowerShell in the supported path;
-- CI-prohibited apply and explicit provider-write switch;
-- Python: `591 passed, 1 xfailed` on 3.11/3.12/3.13;
-- Pester: `17/17` on Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux.
-
-Provider writes during implementation/CI: 0.
-
-### Wave 6 — stable versioned wave engine
-
-Completed by PR #78, merge `c4c4d3233ec20b8f939343c5d667d8687d7ff040`, exact-head CI run `30908185487`:
-
-- strict immutable v1 source/plan/apply/result/reconciliation schemas;
-- exact project/community/owner/source/policy/file/operation-set/self-digest binding;
-- deterministic ordered operation identities and exact result coverage;
-- atomic preflight, operation journal, result, and reconciliation evidence;
-- existing journals block automatic replay;
-- ambiguous mutations remain one-attempt, non-retry-safe, and reconciliation-required when unknown;
-- all 91 Python scripts classified and canonical-SHA-bound;
-- 26 direct provider-write executors retired before functions, credentials, paths, or dispatch;
-- historical private imports confined to compatibility adapters;
-- supported engine has no historical `scripts.*` imports;
-- Wave 5 provider mutations restricted to the complete Wave 6 `wave apply` contract;
-- no implicit production provider adapter in the CLI;
-- Python: `611 passed, 1 xfailed` on 3.11/3.12/3.13;
-- Pester: `20/20` on Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux.
-
-Provider writes during implementation/CI: 0.
-
-### Wave 7 — risk-based fault injection and mutation-boundary tests
-
-Completed by PR #84, merge `df956bbbf19af6652f8711f95fb4fecf272e9951`, exact-head CI run `30918639372`:
-
-- versioned inventory of all 15 supported mutation boundaries;
-- AST discovery gate for unregistered/stale provider mutation markers;
-- exact fault-proof register binding required stages to pytest node IDs and Pester `It` titles;
-- exact equality gate between boundary and proof sets;
-- 27 required cross-cutting corruption, migration, identity, bounded-read, operator, and replay scenarios;
-- dependency-injected WaveEngine crash points with durable apply/reconciliation replay barriers;
-- one-attempt ambiguous mutation proofs for VK upload/album/wall/text/thumbnail and YouTube comment/description boundaries;
-- malformed/truncated/reordered/stale/wrong-digest/cross-project/wrong-owner/wrong-snapshot/wrong-policy/duplicate/incomplete evidence rejection;
-- interrupted atomic-write and orphan-temp cleanup tests;
-- bounded PowerShell child timeout, compatible process termination, concurrent stdout/stderr draining, and structured-result validation;
-- Python: `657 passed, 1 xfailed` on 3.11/3.12/3.13;
-- Pester: `25/25` on Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux.
-
-Provider writes during implementation/CI: 0.
-
-## Active next work
-
-### Wave 8 — exact matching, catalog identity, and media correctness
+### Wave 8B — field-specific canonical identity
 
 Owner: issue #86.
 
 Required outcomes:
 
-- deterministic exact-first source/target matching with explicit ambiguous/conflict outcomes;
-- fuzzy or weighted fallback only after exact evidence is exhausted and with retained scores/evidence;
-- field-specific canonical text, Unicode, punctuation, whitespace, and URL normalization without collapsing distinct identities;
-- exact album/catalog mapping rather than normalized-title-only selection;
-- duplicate and renamed albums become explicit conflicts;
-- semantic membership comparison ignores provider position churn;
-- authoritative downloader final-path evidence rather than glob-first cache selection;
-- cache binding to source ID, exact path, SHA-256, size, and structured media fingerprint;
-- ffprobe-equivalent validation for duration, streams, codecs/container, playability, partial/corrupt/audio-only cases;
-- exact local thumbnail identity and caller-owned selected-thumbnail postflight;
-- provider writes in development/CI: 0.
+- separate identity-title, display-title, description, public-URL, collection-title, and version/variation canonicalizers;
+- retain original value, canonical value, ruleset version, ordered transformations, and digest;
+- exact public/admin/author route classification;
+- reject cross-project and unknown URL profiles;
+- preserve semantically distinct versions and collections;
+- exact field-by-field comparison; substring, prefix, or combined-row text cannot produce `already_correct` or identity success;
+- zero provider writes.
+
+Required tests:
+
+1. Unicode normalization and whitespace/punctuation evidence;
+2. `ё`/`е`, case, brand markers, and display preservation;
+3. version/variation tokens remain identity-significant where policy requires;
+4. public URL vs author/admin URL;
+5. cross-project URL rejection;
+6. unknown URL profile rejection;
+7. transformation-order and digest determinism;
+8. input-order independence;
+9. exact per-field readback regression from VK Audio history.
 
 Exit criteria:
 
-1. exact-first matching is deterministic and conflict-explicit;
-2. ambiguous normalized album titles cannot select a target;
-3. media/cache reuse requires authoritative path and structured integrity evidence;
-4. catalog/thumbnail postconditions are exact and machine-readable;
-5. exact-head Python and PowerShell CI green;
-6. current state, register, changelog, and issue #64 synchronized after merge.
+- no single aggressive normalizer is reused as authority across unrelated fields;
+- every canonical identity is versioned and evidence-backed;
+- URL identities fail closed on unknown/cross-project/admin/public mismatches;
+- exact-head Python and PowerShell CI green;
+- state/register/#64/#86 synchronized;
+- provider writes 0.
 
-Issue #33 remains the later catalog/publication workflow and is not authorized by Wave 8. It remains blocked by issues #31 and #32.
+## Remaining Wave 8 sequence
+
+### Wave 8C — catalog and album identity
+
+- reviewed source collection ID → exact target album ID;
+- duplicate or renamed albums become conflicts;
+- no normalized-title dictionary overwrite;
+- semantic membership comparison ignores provider position churn;
+- immutable mapping evidence for issue #33.
+
+### Wave 8D — media/cache authority
+
+- authoritative downloader final path only;
+- no successful glob fallback when the reported final path is absent;
+- source ID, exact path, size, SHA-256, downloader policy, and structured ffprobe evidence;
+- reject empty, partial, stale, corrupt, audio-only, unexpected multi-file, stream, codec, or container candidates;
+- remux is not treated as codec/profile proof.
+
+### Wave 8E — thumbnail identity and postcondition
+
+- exact local image SHA/dimensions/quality policy;
+- preserve remote photo identity;
+- caller-owned delayed selected-thumbnail readback;
+- unknown consistency result enters reconciliation, not blind retry.
+
+### Wave 8F — integration and state sync
+
+- integrate 8A–8E into the supported planning path;
+- reject stale/pre-versioned evidence or migrate only through reviewed narrow paths;
+- exact-head CI;
+- synchronize living state and issue #64/#86;
+- provider writes 0.
+
+## Operation-scoped manager policy
+
+A normal operation should:
+
+1. validate only the supplied source files;
+2. take a short read-only snapshot of the exact target surface;
+3. produce one clear immutable plan;
+4. execute with per-item stages and no implicit wall publication;
+5. verify only the expected remote delta from that operation;
+6. report planned/uploaded/verified/duplicate/failed/requires-attention totals.
+
+Do not turn every bounded task into a global account audit, continuous provider mirror, whole-library visual fingerprint pass, or mandatory GitHub commit of mutable provider state.
+
+## Permanent regression themes from operational history
+
+- file selected ≠ upload completed ≠ remote visible ≠ complete workflow;
+- a verified early stage is not repeated because a later playlist/metadata/catalog stage failed;
+- batch results are per-item/per-stage, never one Boolean;
+- exact field readback is required; substring/prefix/combined-row matching is prohibited;
+- UI clicks require observed state transition;
+- parser/observer self-test does not prove correct browser target/frame/network attachment;
+- PowerShell must test 0/1/N outputs under strict mode;
+- upload tickets require exact field and allowlisted scheme/host/path before media transfer;
+- designed, self-tested, canary-verified, and batch-verified are separate evidence levels.
 
 ## Later waves
 
-### Wave 9 — finish live project queues separately
+### Wave 9 — live project reconciliation
 
-Only after required architecture and fresh read-only reconciliation:
+Only after Wave 8 and fresh operation-scoped read-only evidence:
 
-- issue #31: long-form local result/ledger reconciliation;
-- issues #32/#38: exact Clips/Shorts/video-type reconciliation;
-- issue #33: verified catalog/publication planning;
-- separate immutable Wave 6 manifests and canaries per project.
+- issue #31: Lord God long-form ledger/result reconciliation;
+- issues #32/#38: Legendary Poet exact Clips/Shorts/type reconciliation;
+- issue #33: catalog/publication planning after exact dependencies;
+- separate immutable manifests and canaries per project;
+- no automatic deletion of old VK Video copies.
+
+### Separate VK Audio incubation
+
+Not core Wave 8/9 Video work. Before another batch it requires its own versioned schemas, exact per-item ledger, adapter boundary, allowlisted upload-ticket contract, bounded deadline, canary, postflight, and reconciliation.
 
 ### Wave 10 — retirement and governance
 
-- archive superseded scripts/wrappers/policies after reference proof;
-- maintain supported/compatibility/retired registries;
-- formal release, runbook, rollback, reconciliation, and provider-contract review rules.
+- archive supported/compatibility/retired surfaces;
+- resolve PR #85 archive-specific CI boundary without weakening production gates;
+- formal release/runbook/rollback/reconciliation/provider-contract review rules;
+- immutable history validation and retention policy.
 
-## Independent cleanup track
+## Independent cleanup
 
-Issue #37 owns only its exact reviewed cleanup scope. This backlog does not authorize bulk deletion.
+Issue #37 owns only its exact immutable reviewed cleanup scope. This backlog authorizes no bulk deletion.
 
 ## Definition of done
 
-A code wave is complete only when:
+A wave is complete only when:
 
-- exact issue scope and non-goals are preserved;
+- issue scope and non-goals remain exact;
 - no unrelated provider mutation is included;
 - exact-head CI is green on all supported runtimes;
-- every ambiguous provider outcome remains fail closed and externally non-retryable;
-- `current-state.md`, audit register, changelog, and issue state are synchronized;
-- live canary work, when separately authorized, has exact before/after evidence and a safe recovery decision.
+- conflicts and ambiguous outcomes remain fail closed and non-retryable;
+- per-item evidence is complete and machine-readable;
+- current state, register, roadmap, and issue state are synchronized;
+- provider writes are exactly those separately authorized, otherwise 0.
