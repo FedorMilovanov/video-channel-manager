@@ -211,9 +211,7 @@ def test_exact_remote_binding_mismatch_requires_attention() -> None:
         source_snapshot=_source_snapshot(source_ids=source_ids),
         target_snapshot=_target_snapshot(
             source_ids=source_ids,
-            observations=(
-                _observation(source_id="binding-source", remote_id="-60805374_456242111"),
-            ),
+            observations=(_observation(source_id="binding-source", remote_id="-60805374_456242111"),),
         ),
         local_records=(
             LocalReconciliationRecord(
@@ -245,11 +243,7 @@ def test_legendary_poet_retained_matrix_is_41_present_and_15_missing() -> None:
     local_records = tuple(
         LocalReconciliationRecord(
             source_video_id=source_id,
-            stage=(
-                LocalMutationStage.SKIPPED_ALREADY_PRESENT
-                if index < 41
-                else LocalMutationStage.NEVER_DISPATCHED
-            ),
+            stage=(LocalMutationStage.SKIPPED_ALREADY_PRESENT if index < 41 else LocalMutationStage.NEVER_DISPATCHED),
             remote_ids=((f"-235216998_{456300000 + index}",) if index < 41 else ()),
         )
         for index, source_id in enumerate(source_ids)
