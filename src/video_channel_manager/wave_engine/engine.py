@@ -55,9 +55,7 @@ class WaveFaultStage(StrEnum):
     BEFORE_RECONCILIATION_INTENT_COMMIT = "before_reconciliation_intent_commit"
     AFTER_RECONCILIATION_INTENT_COMMIT = "after_reconciliation_intent_commit"
     AFTER_RECONCILIATION_DISPATCH_STARTED_COMMIT = "after_reconciliation_dispatch_started_commit"
-    AFTER_RECONCILIATION_OUTCOME_BEFORE_RESULT_COMMIT = (
-        "after_reconciliation_outcome_before_result_commit"
-    )
+    AFTER_RECONCILIATION_OUTCOME_BEFORE_RESULT_COMMIT = "after_reconciliation_outcome_before_result_commit"
     AFTER_RECONCILIATION_OPERATION_RESULT_COMMIT = "after_reconciliation_operation_result_commit"
     BEFORE_RECONCILIATION_RESULT_COMMIT = "before_reconciliation_result_commit"
     AFTER_RECONCILIATION_RESULT_COMMIT = "after_reconciliation_result_commit"
