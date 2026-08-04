@@ -1,0 +1,29 @@
+name: Wave 5 exact source export
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: agent/wave-5-operator-layer
+      - name: Upload exact operator source
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: wave5-exact-operator-source
+          path: |
+            scripts/**/*.ps1
+            scripts/operator/VideoManager.Operator.psm1
+            scripts/operator/powershell-wrappers.json
+            tests/powershell/VideoManager.Operator.Tests.ps1
+            tests/test_powershell_operator_inventory.py
+            docs/operations/powershell-operator-contract.md
+          if-no-files-found: error
