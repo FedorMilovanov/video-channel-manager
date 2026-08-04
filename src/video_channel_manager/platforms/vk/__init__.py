@@ -24,6 +24,15 @@ from video_channel_manager.platforms.vk.text_writer import (
     canonical_vk_text,
     vk_texts_equivalent,
 )
+from video_channel_manager.platforms.vk.thumbnail_lifecycle import (
+    ThumbnailEvidenceError,
+    ThumbnailOperationRecord,
+    ThumbnailPostflightUnverified,
+    ThumbnailStatus,
+    execute_thumbnail_operation,
+    read_thumbnail_record,
+)
+from video_channel_manager.platforms.vk.thumbnail_writer import VerifiedVkThumbnailWriter
 from video_channel_manager.platforms.vk.upload_media import (
     UploadMediaAuthorityError,
     execute_upload_operation,
@@ -33,11 +42,16 @@ from video_channel_manager.platforms.vk.upload_media import (
 from video_channel_manager.platforms.vk.writer import VkUploadTicket, VkVideoWriter, VkWriteError
 
 __all__ = [
+    "ThumbnailEvidenceError",
+    "ThumbnailOperationRecord",
+    "ThumbnailPostflightUnverified",
+    "ThumbnailStatus",
     "UploadMediaAuthorityError",
     "VKCommentRenderer",
     "VKPostRenderer",
     "VKVideoDescriptionRenderer",
     "VK_VIDEO_DESCRIPTION_CAPABILITIES",
+    "VerifiedVkThumbnailWriter",
     "VkAccessToken",
     "VkAccount",
     "VkAccountNotFoundError",
@@ -57,9 +71,11 @@ __all__ = [
     "VkVideoWriter",
     "VkWriteError",
     "canonical_vk_text",
+    "execute_thumbnail_operation",
     "execute_upload_operation",
     "journal_media_evidence",
     "local_vk_write_lock",
+    "read_thumbnail_record",
     "render_vk_clip_description",
     "render_vk_video_description",
     "verify_upload_media_authority",
