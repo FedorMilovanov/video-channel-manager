@@ -453,7 +453,9 @@ class VkWallWriter(VkVideoWriter):
         post_id: int | None,
     ) -> list[VkWallPostFingerprint]:
         attachment = f"video{video_owner_id}_{video_id}"
-        message_digest = text_sha256(canonical_vk_text(message))
+        message_digest = "sha256:" + hashlib.sha256(
+            canonical_vk_text(message).encode("utf-8")
+        ).hexdigest()
         return [
             post
             for post in snapshot.posts
