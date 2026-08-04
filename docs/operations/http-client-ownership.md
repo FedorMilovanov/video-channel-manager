@@ -15,8 +15,8 @@ This inventory is enforced by `tests/test_http_client_inventory.py`. A direct `h
 | `YouTubeDescriptionWriter` | owned or borrowed persistent client | safe reads plus ambiguous mutations | Reads may retry; `videos.update` remains one attempt and is followed only by read verification. |
 | `InstalledOAuthFlow` | owned or borrowed persistent client | ambiguous credential mutations | Authorization-code exchange and refresh are single-attempt operations. Lost responses are not replayed; errors use safe resource names and redact credential material. |
 | `VkApiClient` | owned or borrowed persistent client | safe reads | Uses shared retry classification and an injectable limiter. |
-| `VkVideoWriter` | owned or borrowed persistent client | explicit safe-read verification plus ambiguous mutations | `retry_transient=True` is limited to read verification; reservation, upload, album, and other writes remain one attempt. |
-| `VkThumbnailWriter` | owned or borrowed persistent client | safe upload-URL reservation plus ambiguous mutations | `video.getThumbUploadUrl` may use bounded retry; upload-server POST and `video.saveUploadedThumb` are single attempt and never expose the opaque upload URL in errors. |
+| `VkVideoWriter` | owned or borrowed persistent client | explicit safe-read verification plus ambiguous mutations | `retry_transient=True` is limited to read verification; reservation, upload, album, and other writes remain one attempt and surface `retryable=False`. |
+| `VkThumbnailWriter` | owned or borrowed persistent client | safe upload-URL reservation plus ambiguous mutations | `video.getThumbUploadUrl` may use bounded retry; upload-server POST and `video.saveUploadedThumb` are single attempt, surface `retryable=False`, and never expose the opaque upload URL in errors. |
 
 The default limiter interval is zero. A nonzero VK interval must be explicitly configured or injected from a verified provider policy; the library does not invent a request-per-second value.
 
@@ -40,6 +40,6 @@ These scripts are historical or bounded operator entrypoints rather than reusabl
 2. Script constructor counts must exactly match this reviewed inventory; a new constructor fails CI.
 3. Owned clients close exactly once. Borrowed clients are never closed by the borrower.
 4. Retry authority is explicit through `HttpOperationClass`; HTTP method alone does not authorize replay.
-5. Safe reads use bounded attempts and bounded delay. Ambiguous mutations use one attempt.
+5. Safe reads use bounded attempts and bounded delay. Ambiguous mutations use one attempt and must surface `retryable=False`, including transport loss, HTTP 429/5xx, and provider-transient errors.
 6. Exceptions use safe provider/resource identifiers and never include tokens, authorization headers, upload URLs, or full sensitive payloads.
 7. A nonzero provider limiter requires explicit configuration; zero remains the fail-neutral default when no verified numeric provider rule is available.
