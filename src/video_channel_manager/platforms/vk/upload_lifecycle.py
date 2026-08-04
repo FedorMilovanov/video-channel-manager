@@ -477,9 +477,38 @@ def ensure_upload_record(
         )
     record = dict(existing)
     changed = False
+    stage = UploadStage(str(record.get("stage")))
     raw_wall_policy = record.get("wall_policy")
     if raw_wall_policy is None:
-        record["wall_policy"] = wall_policy.as_dict()
+        safe_to_bind = stage in {UploadStage.PLANNED, UploadStage.MEDIA_VERIFIED} or (
+            stage == UploadStage.RESERVATION_INTENT_COMMITTED and not record.get("reservation_dispatch_started_at")
+        )
+        if not safe_to_bind:
+            raise UploadRecoveryRequired(
+                "Historical provider-dispatched upload journal has no wall policy and cannot be migrated automatically"
+            )
+        policy_payload = wall_policy.as_dict()
+        record["wall_policy"] = policy_payload
+        operation_payload = {
+            "source_snapshot_id": source_snapshot_id,
+            "community_id": community_id,
+            "source_video_id": source_video_id,
+            "source_title": source_title,
+            "source_duration_seconds": source_duration_seconds,
+            "published_title": published_title,
+            "published_description_sha256": _text_sha256(published_description),
+            "readiness": readiness.as_dict(),
+            "wall_policy": policy_payload,
+        }
+        operation_id = _canonical_sha256(operation_payload)
+        record["operation_id"] = operation_id
+        transitions = record.get("transitions")
+        if isinstance(transitions, list) and transitions:
+            initial = transitions[0]
+            if isinstance(initial, dict) and initial.get("from") is None:
+                evidence = initial.get("evidence")
+                if isinstance(evidence, dict):
+                    evidence["operation_id"] = operation_id
         changed = True
     elif not isinstance(raw_wall_policy, Mapping):
         raise ValueError("Upload journal wall_policy must be an object")
@@ -488,6 +517,8 @@ def ensure_upload_record(
         source_snapshot_id=source_snapshot_id,
         community_id=community_id,
         source_video_id=source_video_id,
+        source_title=source_title,
+        source_duration_seconds=source_duration_seconds,
         published_title=published_title,
         published_description=published_description,
         readiness=readiness,
@@ -502,6 +533,8 @@ def _validate_record_binding(
     source_snapshot_id: str,
     community_id: int,
     source_video_id: str,
+    source_title: str,
+    source_duration_seconds: int | None,
     published_title: str,
     published_description: str,
     readiness: VkUploadReadiness,
@@ -515,18 +548,29 @@ def _validate_record_binding(
         "source_snapshot_id": source_snapshot_id,
         "community_id": community_id,
         "source_video_id": source_video_id,
+        "source_title": source_title,
+        "source_duration_seconds": source_duration_seconds,
         "published_title": published_title,
         "published_description_sha256": _text_sha256(published_description),
         "readiness": readiness.as_dict(),
         "wall_policy": wall_policy.as_dict(),
     }
+    expected_operation_id = _canonical_sha256(expected)
     mismatches = {
         key: {"expected": value, "actual": record.get(key)}
         for key, value in expected.items()
         if record.get(key) != value
     }
+    if record.get("operation_id") != expected_operation_id:
+        mismatches["operation_id"] = {
+            "expected": expected_operation_id,
+            "actual": record.get("operation_id"),
+        }
     if observed_policy != wall_policy:
-        mismatches["wall_policy_value"] = {"expected": wall_policy.as_dict(), "actual": observed_policy.as_dict()}
+        mismatches["wall_policy_value"] = {
+            "expected": wall_policy.as_dict(),
+            "actual": observed_policy.as_dict(),
+        }
     if mismatches:
         raise ValueError(f"Upload journal binding mismatch: {mismatches}")
     UploadStage(str(record.get("stage")))
