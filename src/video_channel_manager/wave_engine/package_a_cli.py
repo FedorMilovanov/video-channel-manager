@@ -44,9 +44,7 @@ def _parse_evaluated_at(value: str | None) -> datetime:
 def run_package_a(
     request_path: Annotated[Path, typer.Argument(help="Exact Package A request JSON")],
     input_root: Annotated[Path, typer.Option("--input-root")] = Path("."),
-    output_directory: Annotated[Path, typer.Option("--output-directory", "-o")] = Path(
-        "data/operator/package-a"
-    ),
+    output_directory: Annotated[Path, typer.Option("--output-directory", "-o")] = Path("data/operator/package-a"),
     evaluated_at: Annotated[str | None, typer.Option("--evaluated-at")] = None,
 ) -> None:
     """Build immutable reconciliation, recovery decisions, and a static read-only operator board."""
@@ -100,9 +98,7 @@ def verify_package_a(
 
 @app.command("schema")
 def export_schema(
-    output_directory: Annotated[Path, typer.Option("--output-directory", "-o")] = Path(
-        "schemas/generated/package-a"
-    ),
+    output_directory: Annotated[Path, typer.Option("--output-directory", "-o")] = Path("schemas/generated/package-a"),
 ) -> None:
     """Export the immutable Package A request, decision, board, and summary schemas."""
 
