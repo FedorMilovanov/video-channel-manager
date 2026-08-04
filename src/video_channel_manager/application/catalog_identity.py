@@ -5,9 +5,16 @@ from typing import Literal
 
 from pydantic import Field
 
-from video_channel_manager.application.identity import CanonicalTextEvidence, canonicalize_collection_title
+from video_channel_manager.application.identity import (
+    CanonicalTextEvidence,
+    canonicalize_collection_title,
+)
 from video_channel_manager.application.identity.digest import evidence_digest
-from video_channel_manager.domain.models import CollectionRecord, RemoteRef, StrictModel
+from video_channel_manager.domain.models import (
+    CollectionRecord,
+    RemoteRef,
+    StrictModel,
+)
 from video_channel_manager.exchange.audit_package import AuditPackage
 
 CollectionDecision = Literal["mapped", "create", "conflict"]
@@ -124,11 +131,17 @@ def _validated_reviewed_collection_mappings(
         source_id = str(raw_source_id).strip()
         target_id = str(raw_target_id).strip()
         if source_id not in source_ids:
-            raise ValueError(f"Reviewed collection mapping references unknown source collection: {source_id}")
+            raise ValueError(
+                f"Reviewed collection mapping references unknown source collection: {source_id}"
+            )
         if target_id not in target_ids:
-            raise ValueError(f"Reviewed collection mapping references unknown target collection: {target_id}")
+            raise ValueError(
+                f"Reviewed collection mapping references unknown target collection: {target_id}"
+            )
         if target_id in used_target_ids:
-            raise ValueError(f"Reviewed collection mappings reuse target collection: {target_id}")
+            raise ValueError(
+                f"Reviewed collection mappings reuse target collection: {target_id}"
+            )
         result[source_id] = target_id
         used_target_ids.add(target_id)
     return dict(sorted(result.items()))
@@ -138,7 +151,10 @@ def _validated_approved_creates(source: AuditPackage, approved: set[str]) -> lis
     source_ids = {item.ref.remote_id for item in source.collections}
     unknown = sorted(approved - source_ids)
     if unknown:
-        raise ValueError(f"Approved collection create references unknown source collection: {', '.join(unknown)}")
+        raise ValueError(
+            "Approved collection create references unknown source collection: "
+            f"{', '.join(unknown)}"
+        )
     return sorted(approved)
 
 
@@ -151,22 +167,38 @@ def build_catalog_identity_evidence(
     reviewed_collection_mappings: dict[str, str] | None = None,
     approved_collection_creates: set[str] | None = None,
 ) -> CatalogIdentityEvidence:
-    reviewed = _validated_reviewed_collection_mappings(source, target, reviewed_collection_mappings or {})
-    approved_creates = _validated_approved_creates(source, approved_collection_creates or set())
+    reviewed = _validated_reviewed_collection_mappings(
+        source,
+        target,
+        reviewed_collection_mappings or {},
+    )
+    approved_creates = _validated_approved_creates(
+        source,
+        approved_collection_creates or set(),
+    )
     overlap = sorted(set(reviewed) & set(approved_creates))
     if overlap:
-        raise ValueError(f"Source collections cannot be both mapped and approved for create: {', '.join(overlap)}")
+        raise ValueError(
+            "Source collections cannot be both mapped and approved for create: "
+            f"{', '.join(overlap)}"
+        )
 
     source_videos = {item.ref.remote_id for item in source.videos}
     target_videos = {item.ref.remote_id for item in target.videos}
     if set(video_mapping) - source_videos:
-        raise ValueError("Catalog identity video mapping references an unknown source video")
+        raise ValueError(
+            "Catalog identity video mapping references an unknown source video"
+        )
     if set(video_mapping.values()) - target_videos:
-        raise ValueError("Catalog identity video mapping references an unknown target video")
+        raise ValueError(
+            "Catalog identity video mapping references an unknown target video"
+        )
     if len(video_mapping.values()) != len(set(video_mapping.values())):
         raise ValueError("Catalog identity video mapping must be one-to-one")
 
-    source_collections = {item.ref.remote_id: item for item in source.collections}
+    source_collections = {
+        item.ref.remote_id: item for item in source.collections
+    }
     target_collections = {
         item.ref.remote_id: item
         for item in target.collections
@@ -174,22 +206,33 @@ def build_catalog_identity_evidence(
     }
     target_by_title: dict[str, list[CollectionRecord]] = defaultdict(list)
     for collection in target_collections.values():
-        target_by_title[canonicalize_collection_title(collection.title).canonical].append(collection)
+        canonical_title = canonicalize_collection_title(collection.title).canonical
+        target_by_title[canonical_title].append(collection)
 
     source_members: dict[str, set[str]] = defaultdict(set)
     target_members: dict[str, set[str]] = defaultdict(set)
     for membership in source.memberships:
-        source_members[membership.collection_ref.remote_id].add(membership.video_ref.remote_id)
+        source_members[membership.collection_ref.remote_id].add(
+            membership.video_ref.remote_id
+        )
     for membership in target.memberships:
-        target_members[membership.collection_ref.remote_id].add(membership.video_ref.remote_id)
+        target_members[membership.collection_ref.remote_id].add(
+            membership.video_ref.remote_id
+        )
 
     decisions: list[CollectionIdentityDecision] = []
     for source_id in sorted(source_collections):
         source_collection = source_collections[source_id]
         source_identity = canonicalize_collection_title(source_collection.title)
         source_member_ids = sorted(source_members.get(source_id, set()))
-        mapped_target_ids = sorted(video_mapping[item] for item in source_member_ids if item in video_mapping)
-        unmapped_source_ids = sorted(item for item in source_member_ids if item not in video_mapping)
+        mapped_target_ids = sorted(
+            video_mapping[item]
+            for item in source_member_ids
+            if item in video_mapping
+        )
+        unmapped_source_ids = sorted(
+            item for item in source_member_ids if item not in video_mapping
+        )
 
         target_id = reviewed.get(source_id)
         if target_id is not None:
@@ -205,7 +248,9 @@ def build_catalog_identity_evidence(
                     decision="mapped",
                     target_ref=target_collection.ref,
                     target_title_identity=target_identity,
-                    title_drift=source_identity.canonical != target_identity.canonical,
+                    title_drift=(
+                        source_identity.canonical != target_identity.canonical
+                    ),
                     source_member_video_ids=source_member_ids,
                     mapped_target_video_ids=mapped_target_ids,
                     unmapped_source_video_ids=unmapped_source_ids,
@@ -221,9 +266,13 @@ def build_catalog_identity_evidence(
             key=lambda item: item.ref.remote_id,
         )
         candidate_refs = [item.ref for item in candidates]
-        candidate_identities = [canonicalize_collection_title(item.title) for item in candidates]
+        candidate_identities = [
+            canonicalize_collection_title(item.title) for item in candidates
+        ]
         if len(candidates) > 1:
-            reason: CollectionConflictReason = "duplicate_canonical_target_title"
+            reason: CollectionConflictReason = (
+                "duplicate_canonical_target_title"
+            )
         elif len(candidates) == 1 and source_id in approved_creates:
             reason = "approved_create_conflicts_with_target"
         elif len(candidates) == 1:
@@ -268,7 +317,9 @@ def build_catalog_identity_evidence(
         decisions=decisions,
         digest="0" * 64,
     )
-    evidence = provisional.model_copy(update={"digest": calculate_catalog_identity_digest(provisional)})
+    evidence = provisional.model_copy(
+        update={"digest": calculate_catalog_identity_digest(provisional)}
+    )
     validate_catalog_identity_evidence(evidence)
     return evidence
 
