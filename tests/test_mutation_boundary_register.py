@@ -181,7 +181,5 @@ def test_ast_mutation_inventory_matches_registered_python_markers() -> None:
 
 def test_powershell_process_boundary_is_registered() -> None:
     payload = _load_register()
-    powershell_markers = {
-        item["scanner_marker"] for item in payload["boundaries"] if item["language"] == "powershell"
-    }
+    powershell_markers = {item["scanner_marker"] for item in payload["boundaries"] if item["language"] == "powershell"}
     assert powershell_markers == {"powershell:Invoke-VcmNativeProcess"}
