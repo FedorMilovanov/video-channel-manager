@@ -13,14 +13,8 @@ from video_channel_manager.application.catalog_identity import validate_catalog_
 from video_channel_manager.application.cross_platform.models import CrossPlatformComparison
 from video_channel_manager.domain.enums import PlatformName
 from video_channel_manager.editorial._project_profiles import PROJECT_CHANNEL_IDS
-from video_channel_manager.local_media.artifact import (
-    MediaArtifactEvidence,
-    validate_media_artifact_evidence,
-)
-from video_channel_manager.platforms.vk.thumbnail_lifecycle import (
-    ThumbnailOperationRecord,
-    ThumbnailStatus,
-)
+from video_channel_manager.local_media.artifact import MediaArtifactEvidence, validate_media_artifact_evidence
+from video_channel_manager.platforms.vk.thumbnail_lifecycle import ThumbnailOperationRecord, ThumbnailStatus
 from video_channel_manager.platforms.vk.upload_lifecycle import UploadStage
 from video_channel_manager.wave_engine.canonical import object_sha256
 from video_channel_manager.wave_engine.models import (
@@ -33,9 +27,11 @@ from video_channel_manager.wave_engine.models import (
     WaveResult,
 )
 
-INTEGRATION_SCHEMA = "video-manager.operation-integration-evidence"
-INTEGRATION_SCHEMA_VERSION = 1
-INTEGRATION_RULESET = "wave-8f-v1"
+INTEGRATION_SCHEMA: Literal["video-manager.operation-integration-evidence"] = (
+    "video-manager.operation-integration-evidence"
+)
+INTEGRATION_SCHEMA_VERSION: Literal[1] = 1
+INTEGRATION_RULESET: Literal["wave-8f-v1"] = "wave-8f-v1"
 
 
 class IntegrationEvidenceError(RuntimeError):
@@ -110,51 +106,39 @@ class IntegrationItemEvidence(FrozenStrictModel):
     @field_validator("source_video_id")
     @classmethod
     def normalize_source_id(cls, value: str) -> str:
-        normalized = value.strip()
-        if normalized != value or not normalized:
+        if value != value.strip() or not value:
             raise ValueError("source_video_id must be normalized and non-empty")
         return value
 
     @model_validator(mode="after")
     def validate_item_contract(self) -> Self:
+        later_values = (
+            self.target_video_id,
+            self.media_manifest_sha256,
+            self.upload_operation_id,
+            self.upload_stage,
+            self.upload_remote_id,
+            self.thumbnail_operation_id,
+            self.thumbnail_status,
+        )
         if self.comparison_state == "conflict":
-            if self.operations or any(
-                value is not None
-                for value in (
-                    self.target_video_id,
-                    self.media_manifest_sha256,
-                    self.upload_operation_id,
-                    self.upload_stage,
-                    self.upload_remote_id,
-                    self.thumbnail_operation_id,
-                    self.thumbnail_status,
-                )
-            ):
+            if self.operations or any(value is not None for value in later_values):
                 raise ValueError("conflicted source item cannot carry later operation evidence")
             if self.uploaded or self.outcome is not IntegrationOutcome.REQUIRES_ATTENTION:
                 raise ValueError("conflicted source item must require attention and cannot be uploaded")
-        if self.comparison_state == "matched":
+        elif self.comparison_state == "matched":
             if self.target_video_id is None:
                 raise ValueError("matched source item requires target_video_id")
-            if any(
-                value is not None
-                for value in (
-                    self.media_manifest_sha256,
-                    self.upload_operation_id,
-                    self.upload_stage,
-                    self.upload_remote_id,
-                    self.thumbnail_operation_id,
-                    self.thumbnail_status,
-                )
-            ):
+            upload_values = later_values[1:]
+            if any(value is not None for value in upload_values):
                 raise ValueError("matched source item cannot carry upload or thumbnail evidence")
             if self.uploaded or self.outcome is not IntegrationOutcome.DUPLICATE:
                 raise ValueError("matched source item must be classified as duplicate")
-        if self.comparison_state == "missing":
+        else:
             if not self.operations:
                 raise ValueError("missing source item requires at least one exact plan operation")
-            upload_bindings = [item for item in self.operations if item.stage_kind is IntegrationStageKind.UPLOAD]
-            if len(upload_bindings) != 1:
+            uploads = [item for item in self.operations if item.stage_kind is IntegrationStageKind.UPLOAD]
+            if len(uploads) != 1:
                 raise ValueError("missing source item requires exactly one upload operation")
             if self.media_manifest_sha256 is None:
                 raise ValueError("missing source item requires media manifest evidence")
@@ -165,9 +149,7 @@ class IntegrationItemEvidence(FrozenStrictModel):
             if self.outcome is IntegrationOutcome.VERIFIED:
                 if self.upload_stage is not UploadStage.VERIFIED or not self.uploaded or self.target_video_id is None:
                     raise ValueError("verified source item requires verified uploaded target evidence")
-                thumbnail_expected = any(
-                    item.stage_kind is IntegrationStageKind.THUMBNAIL for item in self.operations
-                )
+                thumbnail_expected = any(item.stage_kind is IntegrationStageKind.THUMBNAIL for item in self.operations)
                 if thumbnail_expected and self.thumbnail_status is not ThumbnailStatus.VERIFIED:
                     raise ValueError("verified source item requires verified thumbnail evidence")
             if self.outcome is IntegrationOutcome.FAILED and self.uploaded:
@@ -213,29 +195,52 @@ class OperationIntegrationEvidence(FrozenStrictModel):
         return object_sha256(self.model_dump(mode="json", exclude={"self_digest"}))
 
 
-def _canonical_prefixed_sha256(payload: object) -> str:
+BoundResult = tuple[WaveOperation, WaveOperationResult, IntegrationStageKind]
+
+
+def _canonical_json_sha256(payload: object, *, prefixed: bool = False) -> str:
     encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
+    digest = hashlib.sha256(encoded).hexdigest()
+    return f"sha256:{digest}" if prefixed else digest
 
 
-def _thumbnail_record_digest(record: ThumbnailOperationRecord) -> str:
+def _thumbnail_record_payload(record: ThumbnailOperationRecord) -> dict[str, object]:
     payload = record.to_dict()
     payload.pop("evidence_digest", None)
-    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
+    return payload
 
 
-def _validate_thumbnail_record(record: ThumbnailOperationRecord) -> None:
+def _validate_thumbnail_record(record: ThumbnailOperationRecord) -> ThumbnailStatus:
     if record.schema_name != "video-manager.vk-thumbnail-evidence":
         raise IntegrationEvidenceError("thumbnail record has an unexpected schema")
     if record.schema_version != "1.0" or record.ruleset != "wave-8e-v1":
         raise IntegrationEvidenceError("thumbnail record has an unsupported version or ruleset")
-    if record.evidence_digest != _thumbnail_record_digest(record):
+    if record.evidence_digest != _canonical_json_sha256(_thumbnail_record_payload(record)):
         raise IntegrationEvidenceError("thumbnail record digest does not match its contents")
+    local_sha256 = record.local_thumbnail.get("sha256")
+    if not isinstance(local_sha256, str) or not local_sha256:
+        raise IntegrationEvidenceError("thumbnail record has no local image SHA-256")
+    expected_operation_id = _canonical_json_sha256(
+        {
+            "local_sha256": local_sha256,
+            "owner_id": record.owner_id,
+            "project_key": record.project_key,
+            "video_id": record.video_id,
+        }
+    )
+    if record.operation_id != expected_operation_id:
+        raise IntegrationEvidenceError("thumbnail operation_id does not match its exact binding")
     try:
-        ThumbnailStatus(record.status)
+        status = ThumbnailStatus(record.status)
     except ValueError as exc:
         raise IntegrationEvidenceError("thumbnail record has an unknown status") from exc
+    if status is ThumbnailStatus.VERIFIED:
+        if record.saved_receipt is None or record.readback is None or record.failure is not None:
+            raise IntegrationEvidenceError("verified thumbnail record lacks terminal receipt/readback evidence")
+    if status is ThumbnailStatus.UNKNOWN_REQUIRES_RECONCILIATION:
+        if not isinstance(record.failure, str) or not record.failure.strip():
+            raise IntegrationEvidenceError("unknown thumbnail record lacks reconciliation reason")
+    return status
 
 
 def _upload_operation_payload(record: Mapping[str, Any]) -> dict[str, object]:
@@ -269,9 +274,8 @@ def _validate_upload_record(
     if record.get("source_video_id") != source_video_id:
         raise IntegrationEvidenceError("upload journal source video differs from integration item")
     operation_id = record.get("operation_id")
-    if not isinstance(operation_id, str) or operation_id != _canonical_prefixed_sha256(
-        _upload_operation_payload(record)
-    ):
+    expected_operation_id = _canonical_json_sha256(_upload_operation_payload(record), prefixed=True)
+    if not isinstance(operation_id, str) or operation_id != expected_operation_id:
         raise IntegrationEvidenceError("upload journal operation_id does not match its exact binding")
     try:
         stage = UploadStage(str(record.get("stage")))
@@ -280,8 +284,8 @@ def _validate_upload_record(
     media = record.get("media")
     if not isinstance(media, Mapping) or media.get("manifest_sha256") != media_manifest_sha256:
         raise IntegrationEvidenceError("upload journal media manifest differs from authoritative media evidence")
-    nested = media.get("artifact")
-    if not isinstance(nested, Mapping) or nested.get("manifest_sha256") != media_manifest_sha256:
+    artifact = media.get("artifact")
+    if not isinstance(artifact, Mapping) or artifact.get("manifest_sha256") != media_manifest_sha256:
         raise IntegrationEvidenceError("upload journal nested media artifact differs from manifest binding")
     reservation = record.get("reservation")
     remote_id: str | None = None
@@ -289,16 +293,14 @@ def _validate_upload_record(
         raw_remote_id = reservation.get("remote_id")
         if isinstance(raw_remote_id, str) and raw_remote_id.strip():
             remote_id = raw_remote_id.strip()
-            expected_prefix = f"{project.owner_id}_"
-            if not remote_id.startswith(expected_prefix):
+            if not remote_id.startswith(f"{project.owner_id}_"):
                 raise IntegrationEvidenceError("upload reservation remote ID differs from project owner")
     return stage, remote_id, operation_id
 
 
 def _operation_stage(operation: WaveOperation) -> IntegrationStageKind:
-    raw = operation.payload.get("integration_stage")
     try:
-        return IntegrationStageKind(str(raw))
+        return IntegrationStageKind(str(operation.payload.get("integration_stage")))
     except ValueError as exc:
         raise IntegrationEvidenceError(
             f"operation {operation.operation_id} has no supported integration_stage"
@@ -307,29 +309,22 @@ def _operation_stage(operation: WaveOperation) -> IntegrationStageKind:
 
 def _operation_source_id(operation: WaveOperation) -> str:
     raw = operation.payload.get("source_video_id")
-    if not isinstance(raw, str) or not raw.strip() or raw.strip() != raw:
-        raise IntegrationEvidenceError(
-            f"operation {operation.operation_id} has no exact normalized source_video_id"
-        )
+    if not isinstance(raw, str) or not raw or raw != raw.strip():
+        raise IntegrationEvidenceError(f"operation {operation.operation_id} has no exact normalized source_video_id")
     return raw
 
 
-def _result_bindings(
-    *,
-    plan: WavePlan,
-    result: WaveResult,
-) -> dict[str, list[tuple[WaveOperation, WaveOperationResult, IntegrationStageKind]]]:
+def _result_bindings(*, plan: WavePlan, result: WaveResult) -> dict[str, list[BoundResult]]:
     result.assert_matches(plan)
-    grouped: dict[str, list[tuple[WaveOperation, WaveOperationResult, IntegrationStageKind]]] = defaultdict(list)
+    grouped: dict[str, list[BoundResult]] = defaultdict(list)
     for operation, operation_result in zip(plan.operations, result.operations, strict=True):
-        source_id = _operation_source_id(operation)
-        grouped[source_id].append((operation, operation_result, _operation_stage(operation)))
+        grouped[_operation_source_id(operation)].append(
+            (operation, operation_result, _operation_stage(operation))
+        )
     return grouped
 
 
-def _comparison_partition(
-    comparison: CrossPlatformComparison,
-) -> tuple[dict[str, str], set[str], set[str]]:
+def _comparison_partition(comparison: CrossPlatformComparison) -> tuple[dict[str, str], set[str], set[str]]:
     matched: dict[str, str] = {}
     for item in comparison.matches:
         source_id = item.source_ref.remote_id
@@ -344,14 +339,11 @@ def _comparison_partition(
     return matched, missing, conflicts
 
 
-def _validate_comparison_project(
-    comparison: CrossPlatformComparison,
-    project: ProjectBinding,
-) -> None:
-    registered_channels = PROJECT_CHANNEL_IDS.get(project.project_key, frozenset())
+def _validate_comparison_project(comparison: CrossPlatformComparison, project: ProjectBinding) -> None:
+    registered = PROJECT_CHANNEL_IDS.get(project.project_key, frozenset())
     if comparison.source_channel.platform is not PlatformName.YOUTUBE:
         raise IntegrationEvidenceError("comparison source channel must be YouTube")
-    if comparison.source_channel.channel_id not in registered_channels:
+    if comparison.source_channel.channel_id not in registered:
         raise IntegrationEvidenceError("comparison source channel differs from project binding")
     if comparison.target_channel.platform is not PlatformName.VK:
         raise IntegrationEvidenceError("comparison target channel must be VK")
@@ -384,26 +376,20 @@ def _validate_plan_project(plan: WavePlan, result: WaveResult, project: ProjectB
     result.assert_matches(plan)
 
 
-def _expected_delta(
-    *,
-    plan: WavePlan,
-    comparison: CrossPlatformComparison,
-) -> IntegrationExpectedDelta:
+def _expected_delta(plan: WavePlan, comparison: CrossPlatformComparison) -> IntegrationExpectedDelta:
     counts = {stage: 0 for stage in IntegrationStageKind}
     for operation in plan.operations:
         counts[_operation_stage(operation)] += 1
     catalog = comparison.catalog_identity
     if catalog is None:
         raise IntegrationEvidenceError("catalog identity evidence is required")
-    expected_catalog_creates = catalog.create_count
-    expected_catalog_placements = sum(
-        len(item.missing_target_video_ids)
-        for item in catalog.decisions
-        if item.decision != "conflict"
+    expected_creates = catalog.create_count
+    expected_placements = sum(
+        len(item.missing_target_video_ids) for item in catalog.decisions if item.decision != "conflict"
     )
-    if counts[IntegrationStageKind.CATALOG_CREATE] != expected_catalog_creates:
+    if counts[IntegrationStageKind.CATALOG_CREATE] != expected_creates:
         raise IntegrationEvidenceError("plan catalog-create count differs from reviewed catalog evidence")
-    if counts[IntegrationStageKind.CATALOG_PLACEMENT] != expected_catalog_placements:
+    if counts[IntegrationStageKind.CATALOG_PLACEMENT] != expected_placements:
         raise IntegrationEvidenceError("plan catalog-placement count differs from reviewed catalog evidence")
     return IntegrationExpectedDelta(
         uploads=counts[IntegrationStageKind.UPLOAD],
@@ -411,13 +397,10 @@ def _expected_delta(
         catalog_creates=counts[IntegrationStageKind.CATALOG_CREATE],
         catalog_placements=counts[IntegrationStageKind.CATALOG_PLACEMENT],
         thumbnail_updates=counts[IntegrationStageKind.THUMBNAIL],
-        wall_posts=0,
     )
 
 
-def _operation_bindings(
-    values: list[tuple[WaveOperation, WaveOperationResult, IntegrationStageKind]],
-) -> tuple[IntegrationOperationBinding, ...]:
+def _operation_bindings(values: list[BoundResult]) -> tuple[IntegrationOperationBinding, ...]:
     return tuple(
         IntegrationOperationBinding(
             operation_id=operation.operation_id,
@@ -431,33 +414,17 @@ def _operation_bindings(
     )
 
 
-def _has_status(
-    values: list[tuple[WaveOperation, WaveOperationResult, IntegrationStageKind]],
-    status: OperationStatus,
-) -> bool:
+def _has_status(values: list[BoundResult], status: OperationStatus) -> bool:
     return any(result.status is status for _, result, _ in values)
 
 
-def _upload_binding(
-    values: list[tuple[WaveOperation, WaveOperationResult, IntegrationStageKind]],
+def _single_stage(
+    values: list[BoundResult], stage_kind: IntegrationStageKind
 ) -> tuple[WaveOperation, WaveOperationResult] | None:
-    found = [(operation, result) for operation, result, stage in values if stage is IntegrationStageKind.UPLOAD]
-    if not found:
-        return None
-    if len(found) != 1:
-        raise IntegrationEvidenceError("source item has more than one upload operation")
-    return found[0]
-
-
-def _thumbnail_binding(
-    values: list[tuple[WaveOperation, WaveOperationResult, IntegrationStageKind]],
-) -> tuple[WaveOperation, WaveOperationResult] | None:
-    found = [(operation, result) for operation, result, stage in values if stage is IntegrationStageKind.THUMBNAIL]
-    if not found:
-        return None
-    if len(found) != 1:
-        raise IntegrationEvidenceError("source item has more than one thumbnail operation")
-    return found[0]
+    found = [(operation, result) for operation, result, stage in values if stage is stage_kind]
+    if len(found) > 1:
+        raise IntegrationEvidenceError(f"source item has more than one {stage_kind.value} operation")
+    return found[0] if found else None
 
 
 def _remote_video_id(remote_id: str | None) -> str | None:
@@ -469,17 +436,39 @@ def _remote_video_id(remote_id: str | None) -> str | None:
     return video_id
 
 
+def _build_matched_item(source_id: str, target_id: str, values: list[BoundResult]) -> IntegrationItemEvidence:
+    if any(stage in {IntegrationStageKind.UPLOAD, IntegrationStageKind.THUMBNAIL} for _, _, stage in values):
+        raise IntegrationEvidenceError("matched source item cannot schedule upload or thumbnail operations")
+    if any(
+        _has_status(values, status)
+        for status in (
+            OperationStatus.UNKNOWN_REQUIRES_RECONCILIATION,
+            OperationStatus.NOT_ATTEMPTED,
+            OperationStatus.FAILED,
+        )
+    ):
+        raise IntegrationEvidenceError("matched item later operation is unresolved or failed")
+    return IntegrationItemEvidence(
+        source_video_id=source_id,
+        comparison_state="matched",
+        target_video_id=target_id,
+        operations=_operation_bindings(values),
+        uploaded=False,
+        outcome=IntegrationOutcome.DUPLICATE,
+    )
+
+
 def _build_missing_item(
     *,
     source_id: str,
-    values: list[tuple[WaveOperation, WaveOperationResult, IntegrationStageKind]],
+    values: list[BoundResult],
     media: MediaArtifactEvidence | None,
     upload_record: Mapping[str, Any] | None,
     thumbnail_record: ThumbnailOperationRecord | None,
     project: ProjectBinding,
     comparison_source_snapshot_id: str,
 ) -> IntegrationItemEvidence:
-    upload = _upload_binding(values)
+    upload = _single_stage(values, IntegrationStageKind.UPLOAD)
     if upload is None:
         raise IntegrationEvidenceError(f"missing source {source_id} has no upload operation")
     if media is None:
@@ -490,8 +479,7 @@ def _build_missing_item(
         raise IntegrationEvidenceError(f"media artifact for {source_id} is invalid: {exc}") from exc
     if media.source.project_key != project.project_key or media.source.source_id != source_id:
         raise IntegrationEvidenceError("media source identity differs from integration item")
-    registered_channels = PROJECT_CHANNEL_IDS.get(project.project_key, frozenset())
-    if media.source.source_channel_id not in registered_channels:
+    if media.source.source_channel_id not in PROJECT_CHANNEL_IDS.get(project.project_key, frozenset()):
         raise IntegrationEvidenceError("media source channel differs from project binding")
 
     upload_stage: UploadStage | None = None
@@ -506,21 +494,21 @@ def _build_missing_item(
             media_manifest_sha256=media.manifest_sha256,
         )
 
-    upload_operation, upload_result = upload
+    _, upload_result = upload
     if upload_result.status is OperationStatus.SUCCEEDED:
         if upload_stage is not UploadStage.VERIFIED or upload_remote_id is None:
             raise IntegrationEvidenceError("succeeded upload result lacks verified upload journal evidence")
-    if upload_result.status is OperationStatus.UNKNOWN_REQUIRES_RECONCILIATION:
+    elif upload_result.status is OperationStatus.UNKNOWN_REQUIRES_RECONCILIATION:
         if upload_stage is not UploadStage.UNKNOWN_REQUIRES_RECONCILIATION:
             raise IntegrationEvidenceError("unknown upload result lacks unknown upload journal evidence")
-    if upload_result.status is OperationStatus.NOT_ATTEMPTED and upload_record is not None:
+    elif upload_result.status is OperationStatus.NOT_ATTEMPTED and upload_record is not None:
         raise IntegrationEvidenceError("not-attempted upload cannot have a dispatched upload journal")
 
+    thumbnail = _single_stage(values, IntegrationStageKind.THUMBNAIL)
     thumbnail_operation_id: str | None = None
     thumbnail_status: ThumbnailStatus | None = None
-    thumbnail = _thumbnail_binding(values)
     if thumbnail_record is not None:
-        _validate_thumbnail_record(thumbnail_record)
+        thumbnail_status = _validate_thumbnail_record(thumbnail_record)
         if thumbnail is None:
             raise IntegrationEvidenceError("thumbnail journal exists without a thumbnail plan operation")
         target_video_id = _remote_video_id(upload_remote_id)
@@ -533,25 +521,24 @@ def _build_missing_item(
         ):
             raise IntegrationEvidenceError("thumbnail journal identity differs from uploaded target")
         thumbnail_operation_id = thumbnail_record.operation_id
-        thumbnail_status = ThumbnailStatus(thumbnail_record.status)
 
     if thumbnail is not None:
         _, thumbnail_result = thumbnail
         if thumbnail_result.status is OperationStatus.SUCCEEDED:
             if thumbnail_status is not ThumbnailStatus.VERIFIED:
                 raise IntegrationEvidenceError("succeeded thumbnail result lacks verified thumbnail evidence")
-        if thumbnail_result.status is OperationStatus.UNKNOWN_REQUIRES_RECONCILIATION:
+        elif thumbnail_result.status is OperationStatus.UNKNOWN_REQUIRES_RECONCILIATION:
             if thumbnail_status is not ThumbnailStatus.UNKNOWN_REQUIRES_RECONCILIATION:
                 raise IntegrationEvidenceError("unknown thumbnail result lacks unknown thumbnail evidence")
-        if thumbnail_result.status is OperationStatus.NOT_ATTEMPTED and thumbnail_record is not None:
+        elif thumbnail_result.status is OperationStatus.NOT_ATTEMPTED and thumbnail_record is not None:
             raise IntegrationEvidenceError("not-attempted thumbnail cannot have a thumbnail journal")
 
     uploaded = upload_stage is UploadStage.VERIFIED
-    target_video_id = _remote_video_id(upload_remote_id)
     failed = _has_status(values, OperationStatus.FAILED)
-    unknown = _has_status(values, OperationStatus.UNKNOWN_REQUIRES_RECONCILIATION)
-    not_attempted = _has_status(values, OperationStatus.NOT_ATTEMPTED)
-    if unknown or not_attempted or (failed and uploaded):
+    unresolved = _has_status(values, OperationStatus.UNKNOWN_REQUIRES_RECONCILIATION) or _has_status(
+        values, OperationStatus.NOT_ATTEMPTED
+    )
+    if unresolved or (failed and uploaded):
         outcome = IntegrationOutcome.REQUIRES_ATTENTION
     elif failed:
         outcome = IntegrationOutcome.FAILED
@@ -565,7 +552,7 @@ def _build_missing_item(
     return IntegrationItemEvidence(
         source_video_id=source_id,
         comparison_state="missing",
-        target_video_id=target_video_id,
+        target_video_id=_remote_video_id(upload_remote_id),
         operations=_operation_bindings(values),
         media_manifest_sha256=media.manifest_sha256,
         upload_operation_id=upload_operation_id,
@@ -578,33 +565,7 @@ def _build_missing_item(
     )
 
 
-def _build_matched_item(
-    *,
-    source_id: str,
-    target_id: str,
-    values: list[tuple[WaveOperation, WaveOperationResult, IntegrationStageKind]],
-) -> IntegrationItemEvidence:
-    if any(stage in {IntegrationStageKind.UPLOAD, IntegrationStageKind.THUMBNAIL} for _, _, stage in values):
-        raise IntegrationEvidenceError("matched source item cannot schedule upload or thumbnail operations")
-    if _has_status(values, OperationStatus.UNKNOWN_REQUIRES_RECONCILIATION) or _has_status(
-        values, OperationStatus.NOT_ATTEMPTED
-    ):
-        raise IntegrationEvidenceError("matched item later operation is unresolved")
-    if _has_status(values, OperationStatus.FAILED):
-        raise IntegrationEvidenceError("matched item later operation failed; evidence cannot classify it as duplicate")
-    return IntegrationItemEvidence(
-        source_video_id=source_id,
-        comparison_state="matched",
-        target_video_id=target_id,
-        operations=_operation_bindings(values),
-        uploaded=False,
-        outcome=IntegrationOutcome.DUPLICATE,
-    )
-
-
-def calculate_integration_totals(
-    items: tuple[IntegrationItemEvidence, ...],
-) -> IntegrationTotals:
+def calculate_integration_totals(items: tuple[IntegrationItemEvidence, ...]) -> IntegrationTotals:
     return IntegrationTotals(
         planned=len(items),
         uploaded=sum(item.uploaded for item in items),
@@ -635,24 +596,21 @@ def build_operation_integration_evidence(
     catalog_digest = _validate_catalog(comparison, project)
     _validate_plan_project(plan, result, project)
     grouped = _result_bindings(plan=plan, result=result)
-    unknown_operation_sources = sorted(set(grouped) - set(normalized))
-    if unknown_operation_sources:
-        raise IntegrationEvidenceError(
-            f"plan contains operations outside bounded source set: {unknown_operation_sources}"
-        )
+    outside_scope = sorted(set(grouped) - set(normalized))
+    if outside_scope:
+        raise IntegrationEvidenceError(f"plan contains operations outside bounded source set: {outside_scope}")
 
     matched, missing, conflicts = _comparison_partition(comparison)
-    known = set(matched) | missing | conflicts
-    absent = sorted(set(normalized) - known)
+    absent = sorted(set(normalized) - (set(matched) | missing | conflicts))
     if absent:
         raise IntegrationEvidenceError(f"bounded source IDs are absent from comparison: {absent}")
 
     media_map = dict(media_artifacts or {})
     upload_map = dict(upload_records or {})
     thumbnail_map = dict(thumbnail_records or {})
-    unexpected_evidence = sorted((set(media_map) | set(upload_map) | set(thumbnail_map)) - set(normalized))
-    if unexpected_evidence:
-        raise IntegrationEvidenceError(f"stage evidence exists outside bounded source set: {unexpected_evidence}")
+    unexpected = sorted((set(media_map) | set(upload_map) | set(thumbnail_map)) - set(normalized))
+    if unexpected:
+        raise IntegrationEvidenceError(f"stage evidence exists outside bounded source set: {unexpected}")
 
     items: list[IntegrationItemEvidence] = []
     for source_id in normalized:
@@ -671,8 +629,8 @@ def build_operation_integration_evidence(
         elif source_id in matched:
             if source_id in media_map or source_id in upload_map or source_id in thumbnail_map:
                 raise IntegrationEvidenceError("matched source item created unauthorized upload evidence")
-            items.append(_build_matched_item(source_id=source_id, target_id=matched[source_id], values=values))
-        elif source_id in missing:
+            items.append(_build_matched_item(source_id, matched[source_id], values))
+        else:
             items.append(
                 _build_missing_item(
                     source_id=source_id,
@@ -686,7 +644,8 @@ def build_operation_integration_evidence(
             )
 
     ordered = tuple(sorted(items, key=lambda item: item.source_video_id))
-    expected_delta = _expected_delta(plan=plan, comparison=comparison)
+    expected_delta = _expected_delta(plan, comparison)
+    totals = calculate_integration_totals(ordered)
     comparison_digest = object_sha256(comparison.model_dump(mode="json"))
     payload = {
         "schema_name": INTEGRATION_SCHEMA,
@@ -706,7 +665,7 @@ def build_operation_integration_evidence(
         "bounded_source_video_ids": list(normalized),
         "expected_delta": expected_delta.model_dump(mode="json"),
         "items": [item.model_dump(mode="json") for item in ordered],
-        "totals": calculate_integration_totals(ordered).model_dump(mode="json"),
+        "totals": totals.model_dump(mode="json"),
     }
     return OperationIntegrationEvidence(
         project=project,
@@ -721,7 +680,7 @@ def build_operation_integration_evidence(
         bounded_source_video_ids=normalized,
         expected_delta=expected_delta,
         items=ordered,
-        totals=calculate_integration_totals(ordered),
+        totals=totals,
         self_digest=object_sha256(payload),
     )
 
