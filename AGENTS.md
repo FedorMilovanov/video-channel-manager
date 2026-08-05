@@ -5,19 +5,21 @@ Before work on Fedor Milovanov's YouTube/VK workflow, read in order:
 1. `docs/operations/project-identity-registry.md`
 2. `docs/operations/master-audit-marathon-v2-2026-08-04.md`
 3. `docs/operations/current-state.md`
-4. `docs/operations/audit-register-v6-2026-08-05.json`
-5. `docs/operations/audit-register-v5-2026-08-05.json`
-6. `docs/operations/audit-register-v4-2026-08-05.json`
-7. `docs/operations/audit-register-v3-2026-08-05.json`
-8. `docs/operations/audit-register-v2-2026-08-04.json`
-9. `docs/operations/automation-backlog.md`
-10. `.github/copilot-instructions.md`
-11. `docs/operations/local-credential-sources.md`
-12. `docs/operations/operational-artifact-standard.md`
-13. `docs/operations/operational-package-acceptance.md`
-14. `docs/operations/retirement-registry-v1.json`
+4. `docs/operations/audit-register-v7-2026-08-05.json`
+5. `docs/operations/audit-register-v6-2026-08-05.json`
+6. `docs/operations/audit-register-v5-2026-08-05.json`
+7. `docs/operations/audit-register-v4-2026-08-05.json`
+8. `docs/operations/audit-register-v3-2026-08-05.json`
+9. `docs/operations/audit-register-v2-2026-08-04.json`
+10. `docs/operations/automation-backlog.md`
+11. `docs/operations/repository-integrity-audit-2026-08-05.md`
+12. `.github/copilot-instructions.md`
+13. `docs/operations/local-credential-sources.md`
+14. `docs/operations/operational-artifact-standard.md`
+15. `docs/operations/operational-package-acceptance.md`
+16. `docs/operations/retirement-registry-v1.json`
 
-The v6 machine-state overlay, its immutable v5/v4/v3/v2 predecessors, and `current-state.md` override old chats, screenshots, ZIPs, remembered counts, stale issue wording, and superseded audits. Historical material teaches; it never authorizes execution.
+The v7 machine-state overlay, its immutable v6/v5/v4/v3/v2 predecessors, and `current-state.md` override old chats, screenshots, ZIPs, remembered counts, stale issue wording, and superseded audits. Historical material teaches; it never authorizes execution.
 
 ## Exact project and credential boundary
 
@@ -39,7 +41,7 @@ The strings `fedor-milovanov` and `legendary-poet` in YouTube operations are cha
 
 ## Current verified sequence
 
-Current Wave 13 closure code baseline: `main@8d6a5ba243788e7b95b0e8a57eb02fb10eaf12ba`.
+Current Wave 14 repository-polish code baseline: `main@626f83c6e5c068d7faa8b6d14163b42916faa769`.
 
 - Waves 0–8F: completed;
 - Wave 9 read-only evidence contract: completed;
@@ -50,8 +52,10 @@ Current Wave 13 closure code baseline: `main@8d6a5ba243788e7b95b0e8a57eb02fb10ea
 - Wave 12B shared credential/stale issue graph: completed;
 - Wave 12C issue-contract convergence: completed;
 - Wave 13 final evidence-backed operational closure: PR #128, exact head `731cc247a0c757c7103cd1ce5336adaf125d04d0`, merge `8d6a5ba243788e7b95b0e8a57eb02fb10eaf12ba`, CI `30992600857`, `792 passed, 1 xfailed`, Ruff and strict mypy green, all three PowerShell environments green;
-- provider queries, provider writes, and write plans during Wave 13: `0/0/0`;
-- active operational issues after completed-state merge: `0`.
+- Wave 13 completed-state sync: PR #129, exact head `44a1590fac0e8fe8b563d35cfd68f2bed4727743`, merge `07388521e8d3a2c5d501382227c35bdce6e6470e`, CI `30994245235`, `796 passed, 1 xfailed`;
+- Wave 14 repository-wide documentation and integrity polish: PR #131, exact head `80f701b6926a5a9c788b99c69634b54d63ed1862`, merge `626f83c6e5c068d7faa8b6d14163b42916faa769`, CI `31000834701`, `801 passed, 1 xfailed`, coverage `78%` across `14,306` statements, Ruff `451 files already formatted`, strict mypy `145 source files`, dependency audit clean, all three PowerShell environments green;
+- provider queries, provider writes, write plans, and historical executor runs during Wave 14: `0/0/0/0`;
+- active operational issues after the Wave 14 state-sync merge: `0`.
 
 Green CI proves contracts and regression fixtures, not authorization to mutate VK or YouTube.
 
@@ -70,7 +74,7 @@ Retired/not planned:
 - #99 — unproved Legendary Poet article-wall launcher continuation;
 - #123 — deferred YouTube playlist mutation scope.
 
-Roadmap #64 and Wave 13 #127 close through the final completed-state merge. Closed issues are not future execution owners.
+Roadmap #64, Wave 13 #127, and Wave 14 #130 are closed program/governance records, not future execution owners.
 
 Do not group #32/#38 as Legendary Poet. Historical ownership was #32 Lord God, #38 shared, and #119 Legendary Poet. All are now closed.
 
@@ -86,9 +90,17 @@ Geometry, duration, title, player appearance, temporary type, preview, save resp
 
 Package A output never authorizes a provider mutation by itself. It creates immutable reconciliation evidence, a no-blind-replay recovery ledger, and a read-only operator board.
 
-Every package declares exactly one evidence level: `editorial_prepared`, `preview_validated`, `self_tested`, `canary_verified`, or `batch_verified`. Repository acceptance fixes `provider_writes_authorized=false` and `automatic_execution=false`. A filename, ZIP, preview, green CI, issue body, dashboard, confirmation prompt, or stdout line cannot promote evidence or authorize execution.
+Every package declares exactly one evidence level: `editorial_prepared`, `preview_validated`, `self_tested`, `canary_verified`, or `batch_verified`. Repository acceptance fixes `provider_writes_authorized=false` and `automatic_execution=false`. A filename, ZIP, preview, green CI, issue body, dashboard, confirmation prompt, stdout line, README command, or roadmap entry cannot promote evidence or authorize execution.
 
 PowerShell orchestrates one repository-owned implementation. It does not become a second provider client. Generated external provider executors are unsupported.
+
+## Repository integrity contract
+
+- Every tracked JSON file must parse as UTF-8 or UTF-8-BOM JSON.
+- Local Markdown links must resolve after fenced and inline code, anchors, external URLs, and explicit placeholders are excluded.
+- README and security documentation must distinguish implemented capability from current authorization.
+- Initial-roadmap wording, stale CI counts, and retired playlist scope must not reappear as current work.
+- Tests that depend on scheduled timestamps must freeze their test clock rather than drift with wall time.
 
 ## Deterministic Windows handoffs
 
@@ -98,7 +110,7 @@ PowerShell orchestrates one repository-owned implementation. It does not become 
 
 Managed-community enumeration uses `groups.get(filter=moder, extended=1)` with bounded pagination. `filter=admin` is not equivalent and must not replace it.
 
-VK Audio browser/internal-web work remains `SEPARATE_EXPERIMENTAL_SYSTEM / PARTIAL_OR_UNKNOWN_OUTCOMES / NOT_CORE_SUPPORTED`. It is not Package A, the core YouTube→VK Video engine, or an active Wave 13 scope.
+VK Audio browser/internal-web work remains `SEPARATE_EXPERIMENTAL_SYSTEM / PARTIAL_OR_UNKNOWN_OUTCOMES / NOT_CORE_SUPPORTED`. It is not Package A, the core YouTube→VK Video engine, or an active Wave 14 scope.
 
 ## Branch and merge discipline
 
