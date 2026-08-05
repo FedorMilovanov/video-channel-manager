@@ -90,5 +90,5 @@ def test_operational_documentation_indexes_wave11_contract_and_incident() -> Non
 
     assert "operational-package-acceptance.md" in operations_index
     assert "lord-god-sermon-month-2026-08-05/" in history_index
-    assert "--require-acceptance" in standard
+    assert "video_channel_manager.tools.operational_package_acceptance" in standard
     assert "provider_writes_authorized=false" in standard
