@@ -31,3 +31,4 @@ Do not commit secrets, tokens, cookies, browser profiles, media files, private l
 
 - [`legendary-poet-vk-clips-2026-08-03-04/`](legendary-poet-vk-clips-2026-08-03-04/) — progression from automated Shorts sync through native VK Clips upload and successive checkers.
 - [`lord-god-strength-vk-audio-2026-08-03-04/`](lord-god-strength-vk-audio-2026-08-03-04/) — progression from one-file VK Audio canaries through playlist/metadata automation, read-only network probes, and reliable batch upload experiments.
+- [`lord-god-sermon-month-2026-08-05/`](lord-god-sermon-month-2026-08-05/) — editorial-to-operational package mismatch, external v2/v3 publisher churn, VK `filter=admin` false rejection, `filter=moder` correction, and transcript-reported 30/30 outcome.
