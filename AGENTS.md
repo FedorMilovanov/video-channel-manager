@@ -9,19 +9,20 @@ Before work on Fedor Milovanov's YouTube/VK workflow, read in order:
 5. `docs/operations/mp3-batch-processing-contract.md`
 6. `docs/operations/vk-audio-browser-experiment-retrospective.md`
 7. `docs/operations/wave15-transcript-and-agent-audit-2026-08-05.md`
-8. `docs/operations/audit-register-v7-2026-08-05.json`
-9. `docs/operations/audit-register-v6-2026-08-05.json`
-10. `docs/operations/audit-register-v5-2026-08-05.json`
-11. `docs/operations/audit-register-v4-2026-08-05.json`
-12. `docs/operations/audit-register-v3-2026-08-05.json`
-13. `docs/operations/audit-register-v2-2026-08-04.json`
-14. `docs/operations/automation-backlog.md`
-15. `docs/operations/repository-integrity-audit-2026-08-05.md`
-16. `.github/copilot-instructions.md`
-17. `docs/operations/local-credential-sources.md`
-18. `docs/operations/operational-artifact-standard.md`
-19. `docs/operations/operational-package-acceptance.md`
-20. `docs/operations/retirement-registry-v1.json`
+8. `docs/operations/audit-register-v8-2026-08-05.json`
+9. `docs/operations/audit-register-v7-2026-08-05.json`
+10. `docs/operations/audit-register-v6-2026-08-05.json`
+11. `docs/operations/audit-register-v5-2026-08-05.json`
+12. `docs/operations/audit-register-v4-2026-08-05.json`
+13. `docs/operations/audit-register-v3-2026-08-05.json`
+14. `docs/operations/audit-register-v2-2026-08-04.json`
+15. `docs/operations/automation-backlog.md`
+16. `docs/operations/repository-integrity-audit-2026-08-05.md`
+17. `.github/copilot-instructions.md`
+18. `docs/operations/local-credential-sources.md`
+19. `docs/operations/operational-artifact-standard.md`
+20. `docs/operations/operational-package-acceptance.md`
+21. `docs/operations/retirement-registry-v1.json`
 
 The current machine-state overlay, immutable predecessors, and `current-state.md` override old chats, screenshots, ZIPs, remembered counts, stale issue wording, and superseded audits. Historical material teaches; it never authorizes execution. The Wave 15 transcript audit extracts reusable invariants from the supplied histories but does not make any historical package supported.
 
@@ -45,7 +46,7 @@ The strings `fedor-milovanov` and `legendary-poet` in YouTube operations are cha
 
 ## Current verified sequence
 
-Current Wave 14 repository-polish code baseline: `main@626f83c6e5c068d7faa8b6d14163b42916faa769`.
+Current Wave 15 code baseline: `main@eb58c1ad238fde01d66c6630b16e244b1c6c2992`.
 
 - Waves 0–8F: completed;
 - Wave 9 read-only evidence contract: completed;
@@ -58,10 +59,11 @@ Current Wave 14 repository-polish code baseline: `main@626f83c6e5c068d7faa8b6d14
 - Wave 13 final evidence-backed operational closure: PR #128, exact head `731cc247a0c757c7103cd1ce5336adaf125d04d0`, merge `8d6a5ba243788e7b95b0e8a57eb02fb10eaf12ba`, CI `30992600857`, `792 passed, 1 xfailed`, Ruff and strict mypy green, all three PowerShell environments green;
 - Wave 13 completed-state sync: PR #129, exact head `44a1590fac0e8fe8b563d35cfd68f2bed4727743`, merge `07388521e8d3a2c5d501382227c35bdce6e6470e`, CI `30994245235`, `796 passed, 1 xfailed`;
 - Wave 14 repository-wide documentation and integrity polish: PR #131, exact head `80f701b6926a5a9c788b99c69634b54d63ed1862`, merge `626f83c6e5c068d7faa8b6d14163b42916faa769`, CI `31000834701`, `801 passed, 1 xfailed`, coverage `78%` across `14,306` statements, Ruff `451 files already formatted`, strict mypy `145 source files`, dependency audit clean, all three PowerShell environments green;
-- provider queries, provider writes, write plans, and historical executor runs during Wave 14: `0/0/0/0`;
-- active operational issues after the Wave 14 state-sync merge: `0`.
+- Wave 15 adaptive reasoning and local-only MP3 foundation: PR #134, exact head `48baa13b0d08e27e5a1dfc8b30901524d3207148`, merge `eb58c1ad238fde01d66c6630b16e244b1c6c2992`, CI `31006136529`, `833 passed, 1 xfailed`, coverage `79%` across `14,643` statements, Ruff `461 files already formatted`, strict mypy `147 source files`, dependency audit clean, all three PowerShell environments green;
+- provider queries, provider writes, write plans, and historical executor runs during Wave 15: `0/0/0/0`;
+- active operational issues after the Wave 15 state-sync merge: `0`.
 
-At the completed Wave 14 baseline, **No operational continuation is pending**. Wave 15 / #133 is a new explicit repository/local-only engineering request. It does not reopen any provider operation or authorize a write.
+At the completed Wave 15 baseline, **No operational continuation is pending**. Issue #135 owns only the immutable v8 state synchronization and closes with that merge; it owns no provider work and creates no write authorization.
 
 Green CI proves contracts and regression fixtures, not authorization to mutate VK or YouTube.
 
@@ -118,7 +120,9 @@ Completed:
 
 - #31 — exact Lord God 26-item long-form reconciliation;
 - #119 — Legendary Poet Shorts/Clips reconciliation with unsupported long scope preserved as non-replayable;
-- #38 — shared VK native Clip/ordinary-video final-type contract.
+- #38 — shared VK native Clip/ordinary-video final-type contract;
+- #130 — repository-wide documentation and integrity polish;
+- #133 — adaptive reasoning and local-only MP3 foundation.
 
 Retired/not planned:
 
@@ -127,7 +131,7 @@ Retired/not planned:
 - #99 — unproved Legendary Poet article-wall launcher continuation;
 - #123 — deferred YouTube playlist mutation scope.
 
-Roadmap #64, Wave 13 #127, and Wave 14 #130 are closed program/governance records, not future execution owners. Wave 15 #133 owns only the adaptive reasoning and local-only MP3 foundation defined in its issue.
+Roadmap #64, Wave 13 #127, Wave 14 #130, and Wave 15 #133 are closed program/governance records, not future execution owners. Wave 15 state-sync #135 owns no provider operation and closes with the v8 merge.
 
 Do not group #32/#38 as Legendary Poet. Historical ownership was #32 Lord God, #38 shared, and #119 Legendary Poet. All are now closed.
 
@@ -149,7 +153,7 @@ PowerShell orchestrates one repository-owned implementation. It does not become 
 
 ## Local MP3 foundation
 
-Wave 15 supports only local MP3 intake and deterministic planning:
+Wave 15 completed only local MP3 intake and deterministic planning. Its support level is `local_only_read_only_intake_and_manifest`:
 
 - read-only ffprobe inspection;
 - exact size, SHA-256, duration, codec, rate, channel, cover-art, and embedded-tag evidence;
