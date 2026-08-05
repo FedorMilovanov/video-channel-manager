@@ -15,6 +15,7 @@ Operational documents are living sources of truth. They take priority over chat 
 - [`project-memory-changelog.md`](project-memory-changelog.md) — dated changes to durable operational memory.
 - [`2026-07-31-youtube-vk-transfer-postmortem.md`](2026-07-31-youtube-vk-transfer-postmortem.md) — what succeeded, what failed, root causes, and permanent lessons.
 - [`operational-artifact-standard.md`](operational-artifact-standard.md) — required structure and verification for ZIP packages, manifests, launchers, ledgers, retries, and handoffs.
+- [`operational-package-acceptance.md`](operational-package-acceptance.md) — machine-checkable truth levels, supported-entrypoint and adapter-readiness requirements, and the prohibition on treating structural verification as write authorization.
 
 Historical baselines retained for evidence:
 
@@ -89,17 +90,16 @@ Historical runbooks and executors are not automatically active. `current-state.m
 Validate every user-facing operational ZIP before handoff:
 
 ```powershell
-python .\scripts\verify_operational_bundle.py `
+python -m video_channel_manager.tools.operational_package_acceptance `
   .\path\package.zip `
   --entrypoint run-operation.ps1 `
-  --require executor.py `
   --require manifest.json `
   --require README.txt `
   --require SHA256SUMS.txt `
   --require-flat
 ```
 
-The verifier checks archive structure, exact entrypoints, required files, path traversal, nested roots, PowerShell self-location, secret-like filenames and manifest fields, CRC, and listed SHA-256 values.
+The acceptance verifier first runs the stable digest-bound structural verifier, then checks truth level, exact project binding, supported entrypoint, adapter readiness, canary dependency, per-operation results, and unknown-outcome reconciliation. A passing result never authorizes provider writes.
 
 ## After every wave or run
 

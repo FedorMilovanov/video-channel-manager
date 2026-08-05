@@ -1,7 +1,7 @@
 {
   "schema_name": "video-manager.retirement-registry",
   "schema_version": 1,
-  "updated_at": "2026-08-05T01:00:00+03:00",
+  "updated_at": "2026-08-05T04:20:00+03:00",
   "repository": "FedorMilovanov/video-channel-manager",
   "execution_authority": false,
   "provider_writes_authorized": false,
@@ -26,7 +26,10 @@
     {
       "id": "legendary-poet-shorts-sync-v1-v4",
       "kind": "operational_package_family",
-      "issues": [32, 38],
+      "issues": [
+        32,
+        38
+      ],
       "status": "retired_non_executable",
       "execution_prohibited": true,
       "replacement": "video-manager-package-a",
@@ -35,7 +38,10 @@
     {
       "id": "legendary-poet-48-clips",
       "kind": "historical_queue_and_browser_workflow",
-      "issues": [32, 38],
+      "issues": [
+        32,
+        38
+      ],
       "status": "retired_non_executable",
       "execution_prohibited": true,
       "replacement": "fresh bounded evidence under issues #32 and #38",
@@ -44,7 +50,9 @@
     {
       "id": "lord-god-longform-old-launchers",
       "kind": "operational_launcher_family",
-      "issues": [31],
+      "issues": [
+        31
+      ],
       "status": "retired_non_executable",
       "execution_prohibited": true,
       "replacement": "video-manager-package-a for reconciliation; separately reviewed production operator for later writes",
@@ -62,11 +70,25 @@
     {
       "id": "direct-write-python-powershell-wrappers",
       "kind": "repository_executor_family",
-      "issues": [64],
+      "issues": [
+        64
+      ],
       "status": "retired_non_executable",
       "execution_prohibited": true,
       "replacement": "scripts/operator/Invoke-VideoManager.ps1",
       "reason": "Wave 6 retired direct provider-write wrappers in favor of the guarded versioned operator."
+    },
+    {
+      "id": "lord-god-sermon-month-v1-v3",
+      "kind": "external_operational_package_family",
+      "issues": [
+        31,
+        112
+      ],
+      "status": "retired_non_executable",
+      "execution_prohibited": true,
+      "replacement": "scripts/operator/Invoke-VideoManager.ps1 under a separately reviewed exact-ID plan",
+      "reason": "Editorial readiness was confused with operational readiness; v2 duplicated provider logic and used groups.get(filter=admin), causing a false permission rejection; v3 is retained only as an operator-transcript-reported historical outcome and must not be rerun."
     }
   ],
   "history_archives": [
@@ -87,6 +109,16 @@
       "current_main_import_commit": "86a3a0f9cf45fe674eb28602d1d86cb8bc2f079c",
       "status": "documentation_only_non_executable",
       "execution_prohibited": true
+    },
+    {
+      "id": "lord-god-sermon-month-2026-08-05",
+      "path": "docs/history/operational-attempts/lord-god-sermon-month-2026-08-05",
+      "source_pr": null,
+      "source_file": "Вставленный текст(290).txt",
+      "source_sha256": "2fd8cbd46e5b39b2baa0b4adcebba3cbfc6e57e445cddd5a8d16dbb5795bfb1d",
+      "evidence_level": "operator_transcript_reported",
+      "status": "documentation_only_non_executable",
+      "execution_prohibited": true
     }
   ],
   "permanent_rules": [
@@ -94,6 +126,9 @@
     "Accepted, processing, verified or unknown mutations are reconciled and never blindly replayed.",
     "A proven missing item requires a separate reviewed exact-ID write plan.",
     "Lord God and Legendary Poet identities, ledgers and snapshots remain separate.",
-    "Long-form and Shorts/Clips remain separate manifests and evidence objects."
+    "Long-form and Shorts/Clips remain separate manifests and evidence objects.",
+    "Editorial, preview, self-tested, canary-verified and batch-verified evidence levels are never collapsed.",
+    "PowerShell orchestrates one repository-owned provider implementation and does not duplicate provider rules.",
+    "VK managed-community discovery uses groups.get(filter=moder, extended=1); exact project identity is verified separately."
   ]
 }

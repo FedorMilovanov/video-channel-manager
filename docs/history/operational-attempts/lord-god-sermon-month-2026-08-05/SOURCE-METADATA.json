@@ -1,0 +1,53 @@
+{
+  "schema_name": "video-manager.historical-incident-source",
+  "schema_version": 1,
+  "archive_id": "lord-god-sermon-month-2026-08-05",
+  "source": {
+    "filename": "Вставленный текст(290).txt",
+    "sha256": "2fd8cbd46e5b39b2baa0b4adcebba3cbfc6e57e445cddd5a8d16dbb5795bfb1d",
+    "bytes": 16765,
+    "splitlines_count": 366,
+    "file_service_line_count": 367,
+    "kind": "operator_chat_transcript"
+  },
+  "projects_referenced": [
+    {
+      "project_key": "legendary-poet",
+      "community_id": 235216998,
+      "owner_id": -235216998
+    },
+    {
+      "project_key": "lord-god-strength",
+      "community_id": 60805374,
+      "owner_id": -60805374
+    }
+  ],
+  "evidence": {
+    "v2_preflight_outcome": "operator_transcript_reports_false_rejection_and_zero_new_posts",
+    "v3_batch_outcome": "operator_transcript_reported",
+    "independently_verified_provider_state": false,
+    "original_v3_archive_available": false,
+    "original_v3_result_directory_available": false,
+    "exact_per_operation_results_available": false
+  },
+  "reported_v3_outcome": {
+    "scheduled_operations": 30,
+    "first_post_id": "-60805374_12482",
+    "last_post_id": "-60805374_12511",
+    "first_publish_date": "2026-08-06",
+    "last_publish_date": "2026-09-04",
+    "publish_time_moscow": "20:00",
+    "final_status": "FINAL_OK — 30/30",
+    "rerun_prohibited": true
+  },
+  "source_line_ranges": {
+    "editorial_package_and_preview": "5-119",
+    "handoff_failure_and_v2_generation": "135-220",
+    "v2_false_permission_rejection": "251-275",
+    "v3_correction": "277-331",
+    "reported_batch_outcome": "339-360"
+  },
+  "execution_authority": false,
+  "provider_writes_authorized": false,
+  "status": "documentation_only_non_executable"
+}

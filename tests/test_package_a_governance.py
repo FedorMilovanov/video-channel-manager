@@ -54,6 +54,7 @@ def test_retirement_registry_is_machine_readable_and_fail_closed() -> None:
         "lord-god-longform-old-launchers",
         "vk-audio-browser-internal-web",
         "direct-write-python-powershell-wrappers",
+        "lord-god-sermon-month-v1-v3",
     }
     assert required <= retired.keys()
     for item in retired.values():
@@ -61,8 +62,16 @@ def test_retirement_registry_is_machine_readable_and_fail_closed() -> None:
         assert item["status"] in {"retired_non_executable", "archived_not_core_supported"}
 
     for archive in payload["history_archives"]:
-        assert archive["source_pr"] == 85
-        assert archive["source_head"] == "84761c0eca19483e9c64044fd03c1d769aeb199e"
+        source_pr = archive.get("source_pr")
+        if source_pr is not None:
+            assert source_pr == 85
+            assert archive["source_head"] == "84761c0eca19483e9c64044fd03c1d769aeb199e"
+        else:
+            assert isinstance(archive.get("source_file"), str)
+            source_sha256 = archive.get("source_sha256")
+            assert isinstance(source_sha256, str)
+            assert len(source_sha256) == 64
+            assert set(source_sha256) <= set("0123456789abcdef")
         assert archive["status"] == "documentation_only_non_executable"
         assert archive["execution_prohibited"] is True
         assert (ROOT / archive["path"]).is_dir()

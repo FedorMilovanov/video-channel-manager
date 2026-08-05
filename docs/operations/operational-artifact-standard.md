@@ -1,6 +1,6 @@
 # Operational artifact and handoff standard
 
-This standard applies to every ZIP, PowerShell launcher, manifest, or executor handed to an operator.
+This standard applies to every ZIP, PowerShell launcher, manifest, or executor handed to an operator. It is supplemented by [`operational-package-acceptance.md`](operational-package-acceptance.md), which defines truth levels and provider-readiness claims.
 
 ## Goals
 
@@ -16,16 +16,17 @@ An operational artifact must be:
 
 ## Required package structure
 
-Preferred flat ZIP:
+Preferred provider-write handoff ZIP:
 
 ```text
 package.zip
 ├── run-operation.ps1
-├── executor.py
 ├── manifest.json
 ├── README.txt
 └── SHA256SUMS.txt
 ```
+
+The PowerShell launcher invokes the installed repository-owned implementation. A generated standalone `executor.py` beside the ZIP is not part of the supported provider-write structure.
 
 A nested root is allowed only when the documented launch command includes it exactly. Flat ZIPs are the default for user handoffs.
 
@@ -156,15 +157,16 @@ Every execution must write:
 Before handoff, run:
 
 ```powershell
-python .\scripts\verify_operational_bundle.py `
+python -m video_channel_manager.tools.operational_package_acceptance `
   .\path\package.zip `
   --entrypoint run-operation.ps1 `
-  --require executor.py `
   --require manifest.json `
   --require README.txt `
   --require SHA256SUMS.txt `
   --require-flat
 ```
+
+The repository-owned acceptance verifier first runs the stable digest-bound structural verifier, then validates manifest truth level, package kind, exact project binding, supported entrypoint, adapter readiness, canary dependency, per-operation results, and unknown-outcome reconciliation. A passing result always reports `provider_writes_authorized=false`; structural acceptance is not a write authorization.
 
 The verifier must pass before sharing the archive and launch command.
 
@@ -189,6 +191,10 @@ Resume behavior:
 Unknown-outcome behavior:
 Expected final line:
 ```
+
+## Evidence wording
+
+Use `editorial_prepared`, `preview_validated`, `self_tested`, `canary_verified`, or `batch_verified` exactly. Do not call a package operational, automatic, or complete at a stronger level than retained evidence proves. A standalone generated Python executor is not a connected production adapter.
 
 ## Completion definition
 
