@@ -41,7 +41,7 @@ A `provider_write_bundle` is structurally acceptable only when all of the follow
 - `unknown_outcome_requires_reconciliation=true`;
 - `blind_retry_prohibited=true`;
 - `separate_review_required=true`;
-- the package is verified by `scripts/verify_operational_bundle.py --require-acceptance`.
+- the package is verified by `python -m video_channel_manager.tools.operational_package_acceptance`.
 
 Passing structural acceptance does not authorize a provider write. A separate reviewed immutable plan and operator confirmation remain mandatory.
 
