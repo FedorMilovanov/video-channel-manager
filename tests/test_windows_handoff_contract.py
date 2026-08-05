@@ -57,7 +57,7 @@ def test_operations_index_records_post_wave11_sequence() -> None:
         "#31",
         "#32/#38",
         "#33",
-        "provider writes remain unauthorized",
+        "Provider writes remain unauthorized",
     )
     for fact in required:
         assert fact in text
