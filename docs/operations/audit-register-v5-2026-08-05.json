@@ -1,0 +1,125 @@
+{
+  "schema_name": "video-manager.audit-register-v5",
+  "schema_version": "5.0",
+  "updated_at": "2026-08-05T12:15:00+03:00",
+  "repository": "FedorMilovanov/video-channel-manager",
+  "predecessor_register": {
+    "path": "docs/operations/audit-register-v4-2026-08-05.json",
+    "blob_sha": "f0ccb59ab8d64a7cc85a413f216e9fb611c20ed0",
+    "schema_version": "4.1",
+    "role": "Wave 12B completed credential and issue-graph state"
+  },
+  "verified_main_before_wave_13": "1ee5de009cc573015d64fd92d0ab3f435304fb82",
+  "wave_13_issue": 127,
+  "wave_13_status": "closure_contract_pending_exact_head_ci_and_administrative_close",
+  "program_state": "WAVE_13_FINAL_EVIDENCE_DISPOSITIONS_PENDING_ADMINISTRATIVE_CLOSE_NO_PROVIDER_WRITES",
+  "credential_model": {
+    "vk": "one_shared_user_access_token",
+    "vk_project_selector": false,
+    "youtube_oauth_aliases_are_channel_specific": true
+  },
+  "dispositions": [
+    {
+      "issue": 31,
+      "planned_state_reason": "completed",
+      "disposition": "completed_exact_longform_reconciliation",
+      "evidence": {
+        "project_key": "lord-god-strength",
+        "queue_sha256": "b9c0268be62ea8fb9281cc9a551ebc5621dfdd4bfeb22a9d8f4b50707baa33ed",
+        "queue_rows": 26,
+        "live_count": 26,
+        "missing_youtube_ids": [],
+        "thumbnail_repairs_verified": 26,
+        "thumbnail_failures": [],
+        "target_album_id": 55985784,
+        "target_album_missing": [],
+        "preserved_result_status": "completed",
+        "preserved_result_completed_at": "2026-08-02T12:12:15.366270+03:00"
+      },
+      "additional_provider_write_authorized": false
+    },
+    {
+      "issue": 119,
+      "planned_state_reason": "completed",
+      "disposition": "completed_reconciliation_with_unsupported_long_clip_scope",
+      "evidence": {
+        "project_key": "legendary-poet",
+        "bounded_source_count": 56,
+        "reviewed_existing_pairs_before_transfer": 41,
+        "reviewed_missing_before_transfer": 15,
+        "ambiguous": 0,
+        "verified_short_video_from_missing_set": 8,
+        "accepted_long_canary_requires_attention": 1,
+        "accepted_long_canary_source_id": "M5hNecL_MsQ",
+        "accepted_long_canary_vk_id": "-235216998_456239160",
+        "accepted_long_canary_observed_type": "video",
+        "accepted_long_canary_observed_is_draft": 1,
+        "undispatched_blocked_long_items": 6,
+        "all_56_proven_native_clips": false
+      },
+      "no_blind_replay": true,
+      "old_ordinary_vk_videos_untouched": true
+    },
+    {
+      "issue": 38,
+      "planned_state_reason": "completed",
+      "disposition": "completed_fail_closed_native_clip_contract",
+      "contract": {
+        "native_clip_success_requires": [
+          "exact final type short_video",
+          "processing complete",
+          "is_draft absent or zero",
+          "exact public visibility proof"
+        ],
+        "ordinary_video_is_native_clip_success": false,
+        "geometry_or_duration_proves_native_clip": false,
+        "automatic_over_60_second_native_clip_route_supported": false,
+        "unknown_outcome_requires_reconciliation": true
+      }
+    },
+    {
+      "issue": 32,
+      "planned_state_reason": "not_planned",
+      "disposition": "retired_non_authoritative_108_item_auto_upload_scope",
+      "evidence": {
+        "bounded_source_count": 108,
+        "authoritative_clip_inventory_proven": false,
+        "failed_inventory_attempt_provider_writes": 0,
+        "historical_34_item_wall_reset_completed_under_issue_37": true,
+        "protected_post_12400_preserved": true
+      },
+      "replay_authorized": false
+    },
+    {
+      "issue": 33,
+      "planned_state_reason": "not_planned",
+      "disposition": "retired_broad_catalog_and_publication_continuation",
+      "existing_remote_objects_untouched": true,
+      "provider_write_authorized": false
+    },
+    {
+      "issue": 99,
+      "planned_state_reason": "not_planned",
+      "disposition": "cancelled_unproved_article_wall_continuation",
+      "evidence": {
+        "launcher_packages_present": true,
+        "durable_runtime_results_present_in_supplied_archives": false,
+        "provider_postflight_present_in_supplied_archives": false
+      },
+      "existing_remote_objects_untouched": true,
+      "package_replay_authorized": false
+    },
+    {
+      "issue": 123,
+      "planned_state_reason": "not_planned",
+      "disposition": "retired_deferred_youtube_playlist_mutation_scope",
+      "provider_write_authorized": false
+    }
+  ],
+  "administrative_close_order": [31, 119, 38, 32, 33, 99, 123, 64, 127],
+  "provider_queries_during_wave_13": 0,
+  "provider_writes_during_wave_13": 0,
+  "write_plans_created_during_wave_13": 0,
+  "mutation_authorized": false,
+  "automatic_execution": false
+}
