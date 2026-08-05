@@ -1,6 +1,6 @@
 # Operational artifact and handoff standard
 
-This standard applies to every ZIP, PowerShell launcher, manifest, or executor handed to an operator.
+This standard applies to every ZIP, PowerShell launcher, manifest, or executor handed to an operator. It is supplemented by [`operational-package-acceptance.md`](operational-package-acceptance.md), which defines truth levels and provider-readiness claims.
 
 ## Goals
 
@@ -163,8 +163,11 @@ python .\scripts\verify_operational_bundle.py `
   --require manifest.json `
   --require README.txt `
   --require SHA256SUMS.txt `
-  --require-flat
+  --require-flat `
+  --require-acceptance
 ```
+
+`--require-acceptance` validates the manifest truth level, package kind, exact project binding, supported entrypoint, adapter readiness, canary dependency, per-operation results, and unknown-outcome reconciliation. A passing verifier result always reports `provider_writes_authorized=false`; structural acceptance is not a write authorization.
 
 The verifier must pass before sharing the archive and launch command.
 
@@ -189,6 +192,10 @@ Resume behavior:
 Unknown-outcome behavior:
 Expected final line:
 ```
+
+## Evidence wording
+
+Use `editorial_prepared`, `preview_validated`, `self_tested`, `canary_verified`, or `batch_verified` exactly. Do not call a package operational, automatic, or complete at a stronger level than retained evidence proves. A standalone generated Python executor is not a connected production adapter.
 
 ## Completion definition
 
