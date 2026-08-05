@@ -13,6 +13,7 @@ def test_agent_instructions_reference_existing_sources_of_truth() -> None:
     text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
     required_sources = (
         "docs/operations/master-audit-marathon-v2-2026-08-04.md",
+        "docs/operations/audit-register-v7-2026-08-05.json",
         "docs/operations/audit-register-v6-2026-08-05.json",
         "docs/operations/audit-register-v5-2026-08-05.json",
         "docs/operations/audit-register-v4-2026-08-05.json",
@@ -20,6 +21,7 @@ def test_agent_instructions_reference_existing_sources_of_truth() -> None:
         "docs/operations/audit-register-v2-2026-08-04.json",
         "docs/operations/current-state.md",
         "docs/operations/automation-backlog.md",
+        "docs/operations/repository-integrity-audit-2026-08-05.md",
         ".github/copilot-instructions.md",
         "docs/operations/operational-artifact-standard.md",
         "docs/operations/operational-package-acceptance.md",
@@ -35,20 +37,26 @@ def test_operations_index_has_no_broken_local_markdown_links() -> None:
     text = index_path.read_text(encoding="utf-8")
     local_targets = re.findall(r"\[[^]]+\]\(([^)]+\.md)\)", text)
     assert local_targets
-    broken = [target for target in local_targets if not (index_path.parent / target).resolve().is_file()]
+    broken = [
+        target
+        for target in local_targets
+        if not (index_path.parent / target).resolve().is_file()
+    ]
     assert broken == []
 
 
-def test_current_state_records_completed_wave13_and_zero_active_graph() -> None:
+def test_current_state_records_completed_wave14_and_zero_active_graph() -> None:
     text = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
     required = (
-        "WAVES_0_13_COMPLETED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES",
-        "main@8d6a5ba243788e7b95b0e8a57eb02fb10eaf12ba",
-        "731cc247a0c757c7103cd1ce5336adaf125d04d0",
-        "30992600857",
-        "792 passed, 1 xfailed",
+        "WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES",
+        "main@626f83c6e5c068d7faa8b6d14163b42916faa769",
+        "PR #131",
+        "80f701b6926a5a9c788b99c69634b54d63ed1862",
+        "31000834701",
+        "801 passed, 1 xfailed",
+        "451 files already formatted",
+        "audit-register-v7-2026-08-05.json",
         "audit-register-v6-2026-08-05.json",
-        "audit-register-v5-2026-08-05.json",
         "No operational continuation is pending",
         "one shared **user access token**",
         "is not a project selector",
@@ -62,6 +70,7 @@ def test_current_state_records_completed_wave13_and_zero_active_graph() -> None:
         "#33 — broad Lord God catalog/editorial/postponed-wall continuation",
         "#99 — unproved Legendary Poet article-wall launcher continuation",
         "#123 — deferred YouTube playlist mutation scope",
+        "repository-wide JSON/Markdown integrity regressions",
         "SEPARATE_EXPERIMENTAL_SYSTEM",
         "Provider writes remain unauthorized",
     )
@@ -74,6 +83,8 @@ def test_current_state_records_completed_wave13_and_zero_active_graph() -> None:
         "Correct active operational graph",
         "All 56 are native Clips.",
         "#37 is an active operational owner",
+        "safe playlist operations",
+        "editorial CI run #669",
     ):
         assert claim not in text
 
@@ -81,10 +92,10 @@ def test_current_state_records_completed_wave13_and_zero_active_graph() -> None:
 def test_agent_instructions_preserve_final_project_and_credential_boundaries() -> None:
     text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
     required = (
-        "main@8d6a5ba243788e7b95b0e8a57eb02fb10eaf12ba",
-        "PR #128",
-        "30992600857",
-        "792 passed, 1 xfailed",
+        "main@626f83c6e5c068d7faa8b6d14163b42916faa769",
+        "PR #131",
+        "31000834701",
+        "801 passed, 1 xfailed",
         "one shared user access token",
         "it is not a project selector",
         "They do not imply separate VK tokens",
@@ -96,6 +107,9 @@ def test_agent_instructions_preserve_final_project_and_credential_boundaries() -
         "#38 — shared VK native Clip/ordinary-video final-type contract",
         "Do not group #32/#38 as Legendary Poet",
         "#123 — deferred YouTube playlist mutation scope",
+        "Every tracked JSON file must parse",
+        "Local Markdown links must resolve",
+        "freeze their test clock",
         "VK Audio browser/internal-web work remains",
         "filter=moder",
         "filter=admin",
@@ -108,7 +122,7 @@ def test_agent_instructions_preserve_final_project_and_credential_boundaries() -
 
     for claim in (
         "#37 — independent exact reviewed cleanup",
-        "active operational issues after completed-state merge: `1`",
+        "active operational issues after the Wave 14 state-sync merge: `1`",
         "automatic over-60-second native Clip publication is supported",
     ):
         assert claim not in text
@@ -166,12 +180,15 @@ def test_operational_contract_and_memory_sources_exist() -> None:
         ROOT / "src/video_channel_manager/tools/operational_package_acceptance.py",
         OPERATIONS_DIR / "operational-package-acceptance.md",
         OPERATIONS_DIR / "retirement-registry-v1.json",
-        ROOT / "docs/history/operational-attempts/lord-god-sermon-month-2026-08-05/SOURCE-METADATA.json",
+        ROOT
+        / "docs/history/operational-attempts/lord-god-sermon-month-2026-08-05/SOURCE-METADATA.json",
         ROOT / ".github/copilot-instructions.md",
         OPERATIONS_DIR / "project-memory-changelog.d/2026-08-05-wave-12a.md",
         OPERATIONS_DIR / "project-memory-changelog.d/2026-08-05-wave-12b.md",
         OPERATIONS_DIR / "milestone-and-credential-reconciliation-2026-08-05.md",
         OPERATIONS_DIR / "final-operational-disposition-2026-08-05.md",
+        OPERATIONS_DIR / "repository-integrity-audit-2026-08-05.md",
+        OPERATIONS_DIR / "audit-register-v7-2026-08-05.json",
         OPERATIONS_DIR / "audit-register-v6-2026-08-05.json",
     )
     for path in required:
