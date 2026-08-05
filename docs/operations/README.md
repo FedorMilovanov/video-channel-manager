@@ -15,6 +15,7 @@ Operational documents are living sources of truth. They take priority over chat 
 - [`project-memory-changelog.md`](project-memory-changelog.md) — dated changes to durable operational memory.
 - [`2026-07-31-youtube-vk-transfer-postmortem.md`](2026-07-31-youtube-vk-transfer-postmortem.md) — what succeeded, what failed, root causes, and permanent lessons.
 - [`operational-artifact-standard.md`](operational-artifact-standard.md) — required structure and verification for ZIP packages, manifests, launchers, ledgers, retries, and handoffs.
+- [`operational-package-acceptance.md`](operational-package-acceptance.md) — machine-checkable truth levels, supported-entrypoint and adapter-readiness requirements, and the prohibition on treating structural verification as write authorization.
 
 Historical baselines retained for evidence:
 
@@ -96,7 +97,8 @@ python .\scripts\verify_operational_bundle.py `
   --require manifest.json `
   --require README.txt `
   --require SHA256SUMS.txt `
-  --require-flat
+  --require-flat `
+  --require-acceptance
 ```
 
 The verifier checks archive structure, exact entrypoints, required files, path traversal, nested roots, PowerShell self-location, secret-like filenames and manifest fields, CRC, and listed SHA-256 values.
