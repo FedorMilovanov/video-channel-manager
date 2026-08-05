@@ -26,8 +26,7 @@ def test_v9_is_wave16_fail_closed_overlay() -> None:
         "role": "immutable Wave 15 adaptive-agent and local-only MP3 foundation contract",
     }
     assert data["program_state"] == (
-        "WAVES_0_16_COMPLETED_CI_RUNTIME_SQLITE_MP3_IDENTITY_HARDENED_"
-        "OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES"
+        "WAVES_0_16_COMPLETED_CI_RUNTIME_SQLITE_MP3_IDENTITY_HARDENED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES"
     )
     assert data["operational_dispositions_inherited_unchanged_from_v8"] is True
     assert data["active_operational_issues"] == []
@@ -148,8 +147,7 @@ def test_v8_remains_immutable_wave15_contract() -> None:
     assert data["schema_name"] == "video-manager.audit-register-v8"
     assert data["schema_version"] == "8.0"
     assert data["program_state"] == (
-        "WAVES_0_15_COMPLETED_ADAPTIVE_AGENT_REASONING_LOCAL_MP3_FOUNDATION_"
-        "OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES"
+        "WAVES_0_15_COMPLETED_ADAPTIVE_AGENT_REASONING_LOCAL_MP3_FOUNDATION_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES"
     )
     assert data["provider_queries_during_wave_15"] == 0
     assert data["provider_writes_during_wave_15"] == 0
