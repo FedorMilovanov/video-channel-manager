@@ -41,6 +41,18 @@ Wave 15 added:
 - repository-owned transport-aware next-action model;
 - read-only ffprobe MP3 probe, explicit metadata policy, duplicate detection, deterministic operation IDs/manifests, and one-at-a-time default chunking.
 
+## Immutable Wave 13 completed-state proof
+
+Wave 13 remains historical evidence, not active work:
+
+- PR #129;
+- exact head `44a1590fac0e8fe8b563d35cfd68f2bed4727743`;
+- merge `07388521e8d3a2c5d501382227c35bdce6e6470e`;
+- CI `30994245235`;
+- `796 passed, 1 xfailed`;
+- Ruff formatting `449 files already formatted`;
+- provider queries/writes/write plans: `0/0/0`.
+
 ## Immutable Wave 14 predecessor proof
 
 Wave 14 remains a completed immutable predecessor, not the current state:

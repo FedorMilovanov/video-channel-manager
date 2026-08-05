@@ -43,6 +43,37 @@ Wave 15 proof:
 - all three PowerShell environments green;
 - provider queries/writes/write plans/historical executor runs `0/0/0/0`.
 
+## Immutable Waves 0–14 compatibility ledger
+
+This ledger preserves exact historical regression anchors. It is not an active backlog and does not authorize execution.
+
+- Waves 0–7 — completed.
+- Waves 8A–8F — completed.
+- Wave 9 read-only contract — completed.
+- Package A / Waves 9A–10 — completed.
+- Wave 11 — completed.
+- Wave 12 — completed.
+- Wave 12A / #118 — completed.
+- Wave 12B / #122 — completed.
+- Wave 12C / #126 — completed.
+- Wave 13 / #127 — completed.
+- Wave 14 / #130 — completed.
+- Wave 14 proof: PR #131, CI `31000834701`, `801 passed, 1 xfailed`, Ruff `451 files already formatted`.
+
+The credential invariant is one shared user access token. Its alias never selects a project. YouTube remains channel-specific through OAuth alias `fedor-milovanov` and OAuth alias `legendary-poet`.
+
+Historical issue ownership remains:
+
+- #31 — long-form reconciliation;
+- #32 — Shorts/Clips reconciliation;
+- #119 — Shorts/Clips reconciliation;
+- #38 — shared VK native Clip/ordinary-video provider-mode;
+- #123 — YouTube playlist mutation design.
+
+Do not group #32/#38 as Legendary Poet.
+
+Wave 14 integrity anchors remain: Every tracked JSON file must parse. Local Markdown links must resolve. Provider writes remain unauthorized. Closed issues and historical packages must not be reopened as execution authority.
+
 ## Agent reasoning boundary
 
 Agents define outcome before mechanism, declare transport per phase, separate current phase from provider-effect state, preserve partial success, and use one falsifiable hypothesis plus one bounded probe. Browser UI work binds the active root and verifies a state/content transition. Unknown remote effects are reconciled, never blindly retried.

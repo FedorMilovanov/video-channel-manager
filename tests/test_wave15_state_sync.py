@@ -26,8 +26,7 @@ def test_v8_is_wave15_fail_closed_overlay() -> None:
         "role": "immutable Wave 14 completed repository-polish contract",
     }
     assert data["program_state"] == (
-        "WAVES_0_15_COMPLETED_ADAPTIVE_AGENT_REASONING_"
-        "LOCAL_MP3_FOUNDATION_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES"
+        "WAVES_0_15_COMPLETED_ADAPTIVE_AGENT_REASONING_LOCAL_MP3_FOUNDATION_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES"
     )
     assert data["operational_dispositions_inherited_unchanged_from_v7"] is True
     assert data["active_operational_issues"] == []
