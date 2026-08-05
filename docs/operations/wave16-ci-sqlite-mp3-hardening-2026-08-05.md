@@ -63,6 +63,18 @@ The regression suite constructs 1,000 unique local MP3 candidates and proves:
 
 This proves local planning scale only. It does not prove or authorize provider throughput, browser concurrency, upload capacity, or playlist mutation.
 
+## First exact-head CI finding
+
+CI `31022115047` on head `832cdfb8fd12eae5b34291a88d19367738f4752a` proved the intended runtime fixes:
+
+- no `Node.js 20 is deprecated` text;
+- no `ResourceWarning: unclosed database` text;
+- strict mypy passed 147 source files;
+- dependency audit found no known vulnerabilities;
+- 844 tests passed and one expected xfail remained.
+
+The run failed only because one new test line needed exact Ruff quote formatting and the revised contract omitted the historical sentence `Wave 15 implements only steps 1–4`. Both compatibility findings were corrected without changing runtime behavior or expanding the nine-file scope.
+
 ## Non-events
 
 During Wave 16 implementation:
