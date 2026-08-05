@@ -30,7 +30,7 @@ Canonical identities:
 - `lord-god-strength`: YouTube `UCeSJsC6go2c9pdJCuUI1BYA`, OAuth alias `fedor-milovanov`, VK community `60805374`, VK owner `-60805374`;
 - `legendary-poet`: YouTube `UC-78ys2S3cQ3lpqgXfo-SvQ`, OAuth alias `legendary-poet`, VK community `235216998`, VK owner `-235216998`.
 
-Never mix channels, OAuth aliases, communities, owners, tokens, links, manifests, ledgers, results, comments, descriptions, or footers. The shared VK token source is a credential boundary, not a project selector.
+Never mix channels, OAuth aliases, communities, owners, credentials, links, manifests, ledgers, results, comments, descriptions, or footers. The shared VK token source is a credential boundary, not a project selector.
 
 ## Credential boundary
 
@@ -43,20 +43,21 @@ Never copy, print, commit, package, log, or place the token value on a command l
 
 ## Current verified sequence
 
-Verified `main`: `8536811779806967f14ce3b957c63b55e2ba4496`.
+Verified Wave 12A code baseline: `main@30c1ec11040034f6d3ed2492afe1bc7c029db1d0`.
 
 - Waves 0–8F: completed;
 - Wave 9 read-only evidence contract: completed;
-- Package A — Wave 9A + Wave 9B + Wave 10 tooling/governance: completed at `read_only_package_self_tested`;
-- Package A PR #110 merged as `8f8b224f0386cf9f1ed89e0983e8af440e96cdd4`;
-- Package A state sync PR #111 merged as `024a978f7c57a52f03e4cae8e6cb8175d8e96976`;
+- Package A / Waves 9A–9B–10 tooling: completed at `read_only_package_self_tested`;
+- Package A PR #110: `8f8b224f0386cf9f1ed89e0983e8af440e96cdd4`;
+- Package A state sync PR #111: `024a978f7c57a52f03e4cae8e6cb8175d8e96976`;
 - Wave 11 operational-package truth: PR #113 `eeab53b779e5ea4af5d3dcc08d79e41812739e04`, state sync PR #114 `557ec79ce5233bd76c13c3a373738ab80a0708f8`;
 - Wave 12 deterministic Windows handoffs: PR #116 `4cecaef81cb151cd8c5c019ffe5d8289aefaeee0`, state sync PR #117 `8536811779806967f14ce3b957c63b55e2ba4496`;
-- Wave 12 code CI `30969551134`: `784 passed, 1 xfailed` on Python 3.11/3.12/3.13;
-- Wave 12 state-sync CI `30970123683`: `785 passed, 1 xfailed` on Python 3.11/3.12/3.13;
+- Wave 12A project-bound ownership correction: PR #120 `30c1ec11040034f6d3ed2492afe1bc7c029db1d0`;
+- Wave 12A exact head `98b4f3df7dd25918398d3544ee81d2b04a0aa21b`;
+- Wave 12A exact-head CI `30971070928`: `785 passed, 1 xfailed` on Python 3.11/3.12/3.13;
 - dependency audit, Ruff across 441 files, strict mypy across 145 source files, Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux were green;
-- provider queries/writes and write plans during Wave 12: `0`;
-- Wave 12A / issue #118 is a narrow ownership correction discovered after reading the actual issue bodies;
+- Wave 12A evidence level: `self_tested_project_bound_governance`;
+- provider queries, provider writes, and write plans during Wave 12A: `0`;
 - fresh live provider reconciliation remains pending exact local ledgers/results and fresh bounded read-only snapshots.
 
 Green CI proves contracts and regression fixtures, not current YouTube/VK state.
@@ -70,7 +71,7 @@ video-manager-package-a reconcile --manifest <package-a-manifest.json>
 video-manager-package-a verify-output --output <package-a-output-directory>
 ```
 
-Package A creates immutable reconciliation evidence, a no-blind-replay recovery ledger, and a read-only operator board. Package A output never authorizes a provider mutation by itself.
+Package A output never authorizes a provider mutation by itself. It creates immutable reconciliation evidence, a no-blind-replay recovery ledger, and a read-only operator board.
 
 ## Operational-package truth
 
@@ -82,23 +83,23 @@ Every package declares exactly one evidence level:
 4. `canary_verified`;
 5. `batch_verified`.
 
-Use the repository-owned verifier:
+Use:
 
 ```text
 python -m video_channel_manager.tools.operational_package_acceptance <archive.zip> ...
 ```
 
-A passing result fixes `provider_writes_authorized=false` and `automatic_execution=false`. A filename, ZIP, preview, confirmation prompt, final stdout line, green CI, or dashboard cannot promote evidence or authorize execution.
+A passing result fixes `provider_writes_authorized=false` and `automatic_execution=false`. A filename, ZIP, preview, confirmation prompt, final stdout line, green CI, issue body, or dashboard cannot promote evidence or authorize execution.
 
 PowerShell orchestrates one repository-owned implementation. It does not duplicate provider permission, retry, pagination, postflight, or state-classification logic. A generated Downloads-only `executor.py` is not a supported provider adapter.
 
 ## Deterministic Windows handoffs
 
-`.github/copilot-instructions.md` is the canonical user-facing Windows handoff contract. Every copy-paste PowerShell block must:
+`.github/copilot-instructions.md` is the canonical Windows handoff contract. Every copy-paste PowerShell block must:
 
 - work from an arbitrary current directory;
 - define every variable in the same block;
-- use exact absolute paths, `-LiteralPath`, `Test-Path`, explicit ZIP extraction, and full-path invocation;
+- use exact absolute paths, `-LiteralPath`, `Test-Path`, explicit ZIP extraction, and exact full-path invocation;
 - use `$PSScriptRoot` for sibling files;
 - require exactly one artifact when discovery is unavoidable;
 - reject `LastWriteTime`, “newest ZIP”, broad generation wildcards, and inherited variables;
@@ -110,11 +111,11 @@ PowerShell orchestrates one repository-owned implementation. It does not duplica
 
 Managed-community enumeration uses exactly `groups.get(filter=moder, extended=1)` with bounded pagination. `filter=admin` is not an equivalent capability check. The returned list is normalized, then exact project/community/owner identity is verified separately.
 
-## Sermon-month incident boundary
+## Historical sermon-month incident
 
 `LordGod-VK-SERMON-MONTH` v1/v2/v3 is retired. Do not rerun it.
 
-The supplied transcript reports `FINAL_OK — 30/30`, first post `-60805374_12482`, and last post `-60805374_12511`. The original per-operation results and exact provider postflight were not supplied, so the outcome remains `operator_transcript_reported`, not independently `batch_verified`.
+The transcript reports `FINAL_OK — 30/30`, first post `-60805374_12482`, and last post `-60805374_12511`. Original per-operation results and exact provider postflight were not supplied, so the outcome remains `operator_transcript_reported`, not independently `batch_verified`.
 
 ## Correct live ownership graph
 
@@ -124,22 +125,22 @@ Issue bodies and project identity must agree exactly:
 - #32 — `lord-god-strength` Shorts/Clips reconciliation; OAuth alias `fedor-milovanov`;
 - #119 — `legendary-poet` Shorts/Clips reconciliation; OAuth alias `legendary-poet`;
 - #38 — shared VK native Clip/ordinary-video provider-mode and final-type contract; it owns no project queue;
-- #33 — later Lord God catalog/publication gate blocked by #31 and #32;
+- #33 — later Lord God video catalog/publication gate blocked by #31 and #32;
 - #99 — separate Legendary Poet article-wall workflow;
 - #37 — independent exact reviewed cleanup only;
 - #64 — canonical roadmap;
-- #118 — Wave 12A ownership correction.
+- #118 — completed Wave 12A ownership correction.
 
-Do not group #32/#38 as Legendary Poet ownership. That stale mapping is a confirmed source-of-truth defect.
+Do not group #32/#38 as Legendary Poet ownership. #32 is Lord God, #38 is shared, and #119 is the dedicated Legendary Poet queue owner.
 
 Retained Lord God facts are inputs, not fresh conclusions:
 
-- long-form queue count 26;
+- long-form count 26;
 - `KobOzfBqzic` already present;
 - `s512Opa8Eu4` → `-60805374_456241938`;
 - local evidence directory `data\vk-upload\verified-longform-26`;
 - manifest SHA `b9c0268be62ea8fb9281cc9a551ebc5621dfdd4bfeb22a9d8f4b50707baa33ed`;
-- Shorts source count 108 and old 65/108 missing outputs are historical/non-authoritative.
+- Shorts source count 108 and old provisional 65/108 missing outputs are historical/non-authoritative.
 
 Retained Legendary Poet facts are inputs, not fresh conclusions:
 
@@ -153,13 +154,13 @@ Do not use retired V1/V2/V3/V4, the historical “48 clips” package, or sermon
 
 ## Shared Clip-mode boundary
 
-Issue #38 must not freeze a duration limit or upload endpoint from memory. Historical materials conflict between 60 and 180 seconds and between multiple dispatch surfaces. Current primary-source evidence, exact adapter request, one processed canary, and final surface/type readback are required before a provider-mode contract can be considered current.
+Issue #38 must not freeze a duration limit or upload endpoint from memory. Historical materials conflict between 60 and 180 seconds and between dispatch surfaces. Current primary-source evidence, exact adapter request, one processed canary, and final surface/type readback are required before a provider-mode contract is current.
 
 Geometry, duration, title, player appearance, temporary processing type, or ordinary `video.get` absence never proves native Clip identity.
 
 ## Separate VK Audio boundary
 
-VK Audio browser/internal-web work remains `SEPARATE_EXPERIMENTAL_SYSTEM / PARTIAL_OR_UNKNOWN_OUTCOMES / NOT_CORE_SUPPORTED`. It is not part of Package A, Wave 11, Wave 12, or Wave 12A.
+VK Audio browser/internal-web work remains `SEPARATE_EXPERIMENTAL_SYSTEM / PARTIAL_OR_UNKNOWN_OUTCOMES / NOT_CORE_SUPPORTED`. It is not part of Package A, Waves 11–12A, #33, or the core YouTube→VK Video engine.
 
 ## Branch and merge discipline
 
@@ -180,7 +181,7 @@ VK Audio browser/internal-web work remains `SEPARATE_EXPERIMENTAL_SYSTEM / PARTI
 6. Never upload an ambiguous match.
 7. Never repeat an intent-persisted, accepted, processing, verified, or unknown mutation; reconcile first.
 8. Keep long-form and Shorts/Clips in separate manifests and ledgers.
-9. Keep Lord God and Legendary Poet manifests, ledgers, snapshots, and issues separate.
+9. Keep Lord God and Legendary Poet manifests, ledgers, snapshots, OAuth aliases, and issues separate.
 10. Video upload and wall publication are separate operations.
 11. Never commit tokens, media, local exports, ledgers, logs, backups, or generated upload packages.
 12. Public text may use only the selected project's registered links; unknown links fail closed.
