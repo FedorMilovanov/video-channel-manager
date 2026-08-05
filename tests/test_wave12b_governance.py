@@ -9,9 +9,7 @@ OPERATIONS = ROOT / "docs" / "operations"
 
 
 def test_wave12b_credential_model_separates_vk_token_from_project_identity() -> None:
-    payload = json.loads(
-        (OPERATIONS / "audit-register-v4-2026-08-05.json").read_text(encoding="utf-8")
-    )
+    payload = json.loads((OPERATIONS / "audit-register-v4-2026-08-05.json").read_text(encoding="utf-8"))
     assert payload["schema_name"] == "video-manager.audit-register-v4"
     assert payload["schema_version"] == "4.0"
     assert payload["predecessor_register"] == {
@@ -43,16 +41,12 @@ def test_wave12b_credential_model_separates_vk_token_from_project_identity() -> 
 
 
 def test_wave12b_removes_completed_cleanup_from_active_graph_without_losing_scope() -> None:
-    payload = json.loads(
-        (OPERATIONS / "audit-register-v4-2026-08-05.json").read_text(encoding="utf-8")
-    )
+    payload = json.loads((OPERATIONS / "audit-register-v4-2026-08-05.json").read_text(encoding="utf-8"))
     assert payload["active_operational_issues"] == [31, 32, 33, 38, 99, 119]
     assert 37 not in payload["active_operational_issues"]
     assert payload["deferred_product_issues"] == [123]
 
-    dispositions = {
-        item["issue"]: item for item in payload["stale_issue_dispositions"]
-    }
+    dispositions = {item["issue"]: item for item in payload["stale_issue_dispositions"]}
     assert set(dispositions) == {2, 3, 4, 5, 37}
     assert dispositions[4]["disposition"] == "superseded_playlist_remainder_issue_123"
     assert all(item["close_after_merge"] is True for item in dispositions.values())
@@ -68,9 +62,7 @@ def test_wave12b_removes_completed_cleanup_from_active_graph_without_losing_scop
 
 
 def test_wave12b_reconciliation_document_is_explicit_and_fail_closed() -> None:
-    text = (
-        OPERATIONS / "milestone-and-credential-reconciliation-2026-08-05.md"
-    ).read_text(encoding="utf-8")
+    text = (OPERATIONS / "milestone-and-credential-reconciliation-2026-08-05.md").read_text(encoding="utf-8")
     required = (
         "one **user access token source**",
         "It is not a project selector",
@@ -91,7 +83,7 @@ def test_wave12b_reconciliation_document_is_explicit_and_fail_closed() -> None:
         assert fact in text
 
     prohibited = (
-        "each community requires a separate token",
+        "The VK alias selects the project",
         "Issue #37 is an active operational owner",
         "provider writes authorized",
     )
@@ -100,9 +92,7 @@ def test_wave12b_reconciliation_document_is_explicit_and_fail_closed() -> None:
 
 
 def test_wave12b_never_promotes_live_state_or_write_authorization() -> None:
-    payload = json.loads(
-        (OPERATIONS / "audit-register-v4-2026-08-05.json").read_text(encoding="utf-8")
-    )
+    payload = json.loads((OPERATIONS / "audit-register-v4-2026-08-05.json").read_text(encoding="utf-8"))
     assert payload["wave_12b_status"] == "in_progress"
     assert payload["provider_queries_during_wave_12b"] == 0
     assert payload["provider_writes_during_wave_12b"] == 0
