@@ -15,7 +15,9 @@
 - локальный media/image QC и SHA-256 fingerprints;
 - SQLAlchemy/Alembic foundation для будущего operation ledger.
 
-> **Статус:** YouTube и VK read-only inventory работают. Для одобренных сценариев реализованы узкие guarded writers, self-validating планы, recovery scripts и полная postflight-проверка. Единое editorial-ядро валидирует, рендерит и планирует контент для YouTube/VK, но не выполняет unattended remote writes. Удаления, playlist mutations и unattended remote writes остаются выключенными до появления собственных policy gates и rollback paths.
+> **Текущий операционный статус:** Waves 0–13 закрыты; активного backlog нет. Provider writes, replay, deletion и mutation plans сейчас **не авторизованы**. Канонический статус: [`docs/operations/current-state.md`](docs/operations/current-state.md) и [`docs/operations/audit-register-v6-2026-08-05.json`](docs/operations/audit-register-v6-2026-08-05.json).
+>
+> Приведённые ниже write/dry-run/execute-команды документируют возможности и safety protocol кода, но сами по себе не разрешают запуск. Любая будущая provider mutation требует нового явного запроса пользователя, нового точного project-bound issue, свежего bounded preflight, reviewed immutable exact-ID plan и отдельной авторизации.
 
 ## Основные инварианты
 
