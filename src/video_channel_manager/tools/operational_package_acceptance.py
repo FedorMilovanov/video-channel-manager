@@ -96,16 +96,11 @@ def _load_manifest(archive_path: Path) -> tuple[dict[str, Any] | None, set[str],
     errors: list[str] = []
     with zipfile.ZipFile(archive_path) as archive:
         names = {
-            PurePosixPath(info.filename.rstrip("/")).as_posix()
-            for info in archive.infolist()
-            if not info.is_dir()
+            PurePosixPath(info.filename.rstrip("/")).as_posix() for info in archive.infolist() if not info.is_dir()
         }
         manifests = sorted(name for name in names if PurePosixPath(name).name.casefold() == "manifest.json")
         if len(manifests) != 1:
-            return None, names, [
-                "acceptance verification requires exactly one manifest.json "
-                f"(found {len(manifests)})"
-            ]
+            return None, names, [f"acceptance verification requires exactly one manifest.json (found {len(manifests)})"]
         manifest_name = manifests[0]
         try:
             payload = json.loads(archive.read(manifest_name).decode("utf-8-sig"))
@@ -128,13 +123,9 @@ def _validate_acceptance(
         return
 
     if acceptance.get("schema_name") != _ACCEPTANCE_SCHEMA:
-        result.acceptance_errors.append(
-            f"operational acceptance schema_name must be {_ACCEPTANCE_SCHEMA}"
-        )
+        result.acceptance_errors.append(f"operational acceptance schema_name must be {_ACCEPTANCE_SCHEMA}")
     if acceptance.get("schema_version") != _ACCEPTANCE_VERSION:
-        result.acceptance_errors.append(
-            f"operational acceptance schema_version must be {_ACCEPTANCE_VERSION}"
-        )
+        result.acceptance_errors.append(f"operational acceptance schema_version must be {_ACCEPTANCE_VERSION}")
 
     package_kind = acceptance.get("package_kind")
     evidence_level = acceptance.get("evidence_level")
@@ -162,17 +153,13 @@ def _validate_acceptance(
         )
 
     forbidden_executables = sorted(
-        name
-        for name in names
-        if PurePosixPath(name).suffix.casefold() in {".py", ".pyw", ".bat", ".cmd", ".exe"}
+        name for name in names if PurePosixPath(name).suffix.casefold() in {".py", ".pyw", ".bat", ".cmd", ".exe"}
     )
     for name in forbidden_executables:
         result.acceptance_errors.append(
             f"provider_write_bundle contains a standalone executable outside the registered operator: {name}"
         )
-    powershell_launchers = sorted(
-        name for name in names if PurePosixPath(name).suffix.casefold() == ".ps1"
-    )
+    powershell_launchers = sorted(name for name in names if PurePosixPath(name).suffix.casefold() == ".ps1")
     if len(powershell_launchers) > 1:
         result.acceptance_errors.append(
             "provider_write_bundle may contain at most one PowerShell orchestration launcher "
@@ -189,9 +176,7 @@ def _validate_acceptance(
         expected_community, expected_owner = PROJECT_IDENTITIES[project_key]
         observed = (target_identity.get("community_id"), target_identity.get("owner_id"))
         if observed != (expected_community, expected_owner):
-            result.acceptance_errors.append(
-                "provider_write_bundle project/community/owner identity is inconsistent"
-            )
+            result.acceptance_errors.append("provider_write_bundle project/community/owner identity is inconsistent")
 
     try:
         production_entrypoint = _supported_production_entrypoint()
@@ -249,9 +234,7 @@ def verify_operational_package(
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="Verify operational ZIP structure and fail-closed readiness claims."
-    )
+    parser = argparse.ArgumentParser(description="Verify operational ZIP structure and fail-closed readiness claims.")
     parser.add_argument("archive", type=Path)
     parser.add_argument("--entrypoint")
     parser.add_argument("--require", action="append", default=[])
