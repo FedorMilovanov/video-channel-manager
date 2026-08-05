@@ -1,7 +1,7 @@
 {
   "schema_name": "video-manager.audit-register-v2",
-  "schema_version": "2.7",
-  "updated_at": "2026-08-05T01:05:00+03:00",
+  "schema_version": "2.8",
+  "updated_at": "2026-08-05T01:14:00+03:00",
   "repository": "FedorMilovanov/video-channel-manager",
   "audit_a0_merge_head": "a06a93e1ec16b4ddb0f578a92e47ce76b4ee78a5",
   "wave_7_code_head": "df956bbbf19af6652f8711f95fb4fecf272e9951",
@@ -16,7 +16,10 @@
   "wave_8e_code_head": "a0230ea156eeb1717e15c6523d0b6b28e90f6d8e",
   "wave_8e_state_sync_head": "bc267504258e07e8bb68ca4760b0b9beb2571b6d",
   "wave_8f_code_head": "dc3b25fdbbdb7d87e34f0f52e29fc9e3856190ae",
-  "wave_9_contract_code_head": "604b962a9936ab173e41602bd9ab10b2dfaa9e59",
+  "wave_8_final_state_sync_head": "b08164fe535b0a704b2fd86cd717e5081c5e27a6",
+  "wave_9_contract_head": "604b962a9936ab173e41602bd9ab10b2dfaa9e59",
+  "wave_9_state_sync_head": "2ccf25c704d0e2676782f92c0538a412358527bd",
+  "package_a_code_head": "8f8b224f0386cf9f1ed89e0983e8af440e96cdd4",
   "audit_a0_ci_run": 30925523584,
   "wave_8a_ci_run": 30933582322,
   "wave_8a_state_sync_ci_run": 30934601690,
@@ -26,13 +29,15 @@
   "wave_8e_ci_run": 30947556457,
   "wave_8e_state_sync_ci_run": 30948120881,
   "wave_8f_ci_run": 30950259625,
+  "wave_8_final_state_sync_ci_run": 30951755305,
   "wave_9_contract_ci_run": 30954499845,
-  "program_state": "WAVE_9_READ_ONLY_RECONCILIATION_CONTRACT_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES",
+  "wave_9_state_sync_ci_run": 30955073835,
+  "package_a_ci_run": 30958445398,
+  "program_state": "PACKAGE_A_WAVE_9A_9B_WAVE_10_TOOLING_AND_GOVERNANCE_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES",
   "wave_8_evidence_level": "self_tested",
   "wave_9_contract_evidence_level": "read_only_contract_self_tested",
-  "wave_9_live_reconciliation_status": "pending_fresh_bounded_provider_snapshots_and_local_ledgers",
-  "wave_9_contract_schema": "video-manager.read-only-reconciliation-evidence",
-  "wave_9_contract_ruleset": "wave-9-v1",
+  "package_a_evidence_level": "read_only_package_self_tested",
+  "live_wave_9a_9b_reconciliation": "pending_exact_local_ledgers_and_fresh_bounded_provider_snapshots",
   "source_line_count": 7046,
   "sources": [
     {
@@ -89,9 +94,10 @@
     {
       "id": "ARCHIVE-001",
       "severity": "P1",
-      "status": "confirmed",
-      "target_wave": "Wave-10",
-      "title": "Historical literal code requires a separate archive CI boundary"
+      "status": "fixed",
+      "target_wave": "Package-A/Wave-10",
+      "title": "Historical literal code requires a separate archive CI boundary",
+      "evidence": "PR #109 archive/runtime governance and supported-entrypoint guards"
     },
     {
       "id": "MATCH-001",
@@ -123,7 +129,7 @@
       "status": "fixed",
       "target_wave": "Wave-8B",
       "title": "One aggressive normalizer was reused across distinct fields",
-      "evidence": "PR #93 wave-8b-v1 purpose-specific canonicalizers"
+      "evidence": "PR #93 purpose-specific canonicalizers"
     },
     {
       "id": "IDENTITY-002",
@@ -179,7 +185,7 @@
       "status": "fixed",
       "target_wave": "Wave-8D",
       "title": "Cache reuse lacks authoritative path, SHA-256 and structured media evidence",
-      "evidence": "PR #98 immutable project/source/path/file/probe-bound manifest and fresh cache validation"
+      "evidence": "PR #98 immutable project/source/path/file/probe-bound manifest"
     },
     {
       "id": "MEDIA-002",
@@ -187,7 +193,7 @@
       "status": "fixed",
       "target_wave": "Wave-8D",
       "title": "yt-dlp fallback can select a glob result instead of authoritative final path",
-      "evidence": "PR #98 exact structured-result field path; wildcard and first-match authority prohibited"
+      "evidence": "PR #98 exact structured-result field path"
     },
     {
       "id": "MEDIA-003",
@@ -195,7 +201,7 @@
       "status": "fixed",
       "target_wave": "Wave-8D",
       "title": "MP4 remux does not prove codec/profile compatibility",
-      "evidence": "PR #98 explicit container/stream/codec/dimension/audio/duration profile assessment"
+      "evidence": "PR #98 explicit compatibility profile assessment"
     },
     {
       "id": "THUMB-001",
@@ -203,7 +209,7 @@
       "status": "fixed",
       "target_wave": "Wave-8E",
       "title": "Thumbnail upload response does not prove selected-thumbnail postcondition",
-      "evidence": "PR #102 project/video/image-bound journal, pre-dispatch intent, exact save receipt, delayed video.get descriptor-set readback, and no-replay reconciliation"
+      "evidence": "PR #102 exact delayed selected-thumbnail readback"
     },
     {
       "id": "OPS-SCOPE-001",
@@ -211,15 +217,7 @@
       "status": "fixed",
       "target_wave": "Wave-8F",
       "title": "Operations are bounded to supplied source set and expected remote delta",
-      "evidence": "PR #104 immutable integration evidence binds comparison/catalog/plan/result/media/upload/thumbnail identities and operation-scoped totals"
-    },
-    {
-      "id": "RECON-001",
-      "severity": "P0",
-      "status": "fixed",
-      "target_wave": "Wave-9-Contract",
-      "title": "Live queue state lacked one bounded fail-closed read-only reconciliation contract",
-      "evidence": "PR #107 video-manager.read-only-reconciliation-evidence / wave-9-v1"
+      "evidence": "PR #104 immutable cross-wave integration evidence"
     },
     {
       "id": "STAGE-001",
@@ -227,7 +225,7 @@
       "status": "covered_and_preserved",
       "target_wave": "Permanent",
       "title": "A verified early mutation is not replayed because a later stage failed",
-      "evidence": "PR #104 accepted upload plus later failure or unknown is requires_attention; PR #107 accepted/processing/verified/unknown states cannot become safely missing"
+      "evidence": "PR #104 accepted upload plus later failure or unknown is requires_attention"
     },
     {
       "id": "POWERSHELL-001",
@@ -244,18 +242,42 @@
       "title": "URL-shaped value is not upload authority"
     },
     {
+      "id": "RECON-001",
+      "severity": "P0",
+      "status": "fixed",
+      "target_wave": "Wave-9/Package-A-Wave-9A",
+      "title": "Read-only reconciliation lacked one immutable exact-ID evidence contract",
+      "evidence": "PR #107 contract and PR #109 packaged runner"
+    },
+    {
+      "id": "RECOVERY-001",
+      "severity": "P0",
+      "status": "fixed",
+      "target_wave": "Package-A/Wave-9B",
+      "title": "Reconciliation outcomes lacked a deterministic no-blind-replay recovery ledger",
+      "evidence": "PR #109 recovery-decision ledger wave-9b-v1"
+    },
+    {
+      "id": "CONTROL-001",
+      "severity": "P1",
+      "status": "fixed",
+      "target_wave": "Package-A/Wave-10",
+      "title": "Operators lacked a read-only project-bound status and safe-next-action board",
+      "evidence": "PR #109 operator-board wave-10-v1"
+    },
+    {
       "id": "LIVE-POET-001",
       "severity": "P0",
       "status": "requires_reconciliation",
-      "target_wave": "Wave-9B",
+      "target_wave": "Live-Wave-9B",
       "title": "Legendary Poet live queue is not proven complete"
     },
     {
       "id": "LIVE-LORD-001",
       "severity": "P0",
       "status": "requires_reconciliation",
-      "target_wave": "Wave-9A",
-      "title": "Lord God queue requires fresh provider snapshots and local ledger reconciliation"
+      "target_wave": "Live-Wave-9A",
+      "title": "Lord God queue requires local ledger and fresh provider reconciliation"
     },
     {
       "id": "AUDIO-001",
@@ -267,20 +289,17 @@
     {
       "id": "GOV-001",
       "severity": "P2",
-      "status": "confirmed",
-      "target_wave": "Wave-10",
-      "title": "History, supported code and operational state need distinct governance"
+      "status": "fixed",
+      "target_wave": "Package-A/Wave-10",
+      "title": "History, supported code and operational state need distinct governance",
+      "evidence": "PR #109 supported-runtime/archive/runbook/release/rollback boundaries"
     }
   ],
-  "provider_writes_during_wave_8a": 0,
-  "provider_writes_during_wave_8b": 0,
-  "provider_writes_during_wave_8c": 0,
-  "provider_writes_during_wave_8d": 0,
-  "provider_writes_during_wave_8e": 0,
-  "provider_writes_during_wave_8f": 0,
   "provider_queries_during_wave_9_contract": 0,
   "provider_writes_during_wave_9_contract": 0,
   "write_plans_created_during_wave_9_contract": 0,
-  "provider_writes_during_wave_9_state_sync": 0,
+  "provider_queries_during_package_a": 0,
+  "provider_writes_during_package_a": 0,
+  "write_plans_created_during_package_a": 0,
   "provider_writes_during_state_sync": 0
 }
