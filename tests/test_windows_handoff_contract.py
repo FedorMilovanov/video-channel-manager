@@ -44,7 +44,7 @@ def test_windows_handoff_contract_is_fail_closed() -> None:
         assert claim not in text
 
 
-def test_operations_index_records_completed_wave13_and_closed_graph() -> None:
+def test_operations_index_records_completed_wave14_and_closed_graph() -> None:
     text = OPERATIONS_INDEX.read_text(encoding="utf-8")
     required = (
         "Waves 0–7 — completed",
@@ -57,6 +57,11 @@ def test_operations_index_records_completed_wave13_and_closed_graph() -> None:
         "Wave 12B / #122 — completed",
         "Wave 12C / #126 — completed",
         "Wave 13 / #127 — completed",
+        "Wave 14 / #130 — completed",
+        "PR #131",
+        "31000834701",
+        "801 passed, 1 xfailed",
+        "451 files already formatted",
         "one shared user access token",
         "never selects a project",
         "OAuth alias `fedor-milovanov`",
@@ -67,6 +72,8 @@ def test_operations_index_records_completed_wave13_and_closed_graph() -> None:
         "#38 — shared VK native Clip/ordinary-video provider-mode",
         "#123 — YouTube playlist mutation design",
         "Do not group #32/#38 as Legendary Poet",
+        "Every tracked JSON file must parse",
+        "Local Markdown links must resolve",
         "Provider writes remain unauthorized",
         "Closed issues and historical packages must not be reopened as execution authority",
     )
@@ -84,5 +91,7 @@ def test_operations_index_records_completed_wave13_and_closed_graph() -> None:
         "Actual fresh live provider reconciliation: pending",
         "status: `requires_reconciliation`",
         "#123 — deferred YouTube playlist mutation contract",
+        "safe playlist operations",
+        "editorial CI run #669",
     ):
         assert claim not in text
