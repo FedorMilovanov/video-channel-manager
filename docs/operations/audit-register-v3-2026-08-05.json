@@ -1,7 +1,7 @@
 {
   "schema_name": "video-manager.audit-register-v3",
-  "schema_version": "3.0",
-  "updated_at": "2026-08-05T05:45:00+03:00",
+  "schema_version": "3.1",
+  "updated_at": "2026-08-05T06:00:00+03:00",
   "repository": "FedorMilovanov/video-channel-manager",
   "predecessor_register": {
     "path": "docs/operations/audit-register-v2-2026-08-04.json",
@@ -9,13 +9,18 @@
     "schema_version": "2.9",
     "role": "complete historical finding and source ledger"
   },
-  "verified_main": "4cecaef81cb151cd8c5c019ffe5d8289aefaeee0",
+  "verified_main": "8536811779806967f14ce3b957c63b55e2ba4496",
   "wave_11_state_sync_head": "557ec79ce5233bd76c13c3a373738ab80a0708f8",
   "wave_12_code_head": "4cecaef81cb151cd8c5c019ffe5d8289aefaeee0",
   "wave_12_exact_head": "78c4e374a8a3e5977417e24806db0144564088ec",
   "wave_12_ci_run": 30969551134,
+  "wave_12_state_sync_head": "8536811779806967f14ce3b957c63b55e2ba4496",
+  "wave_12_state_sync_exact_head": "40c680f33aacb33c33b09659d81e37e4f14d47b8",
+  "wave_12_state_sync_ci_run": 30970123683,
   "wave_12_evidence_level": "self_tested_repository_governance",
-  "program_state": "WAVES_0_12_ENGINEERING_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES",
+  "wave_12a_issue": 118,
+  "wave_12a_status": "ownership_correction_active",
+  "program_state": "WAVES_0_12_COMPLETED_WAVE_12A_OWNERSHIP_CORRECTION_ACTIVE_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES",
   "completed_scopes": [
     "audit-a0",
     "waves-0-8f",
@@ -24,23 +29,70 @@
     "wave-11-operational-package-truth",
     "wave-12-roadmap-and-windows-handoff-governance"
   ],
+  "corrected_source_of_truth_findings": [
+    {
+      "id": "OWNER-ISSUE-001",
+      "status": "corrected_in_issues_pending_repository_merge",
+      "finding": "Issues 31 and 32 are lord-god-strength scopes and use OAuth alias fedor-milovanov, not legendary-poet."
+    },
+    {
+      "id": "OWNER-ISSUE-002",
+      "status": "corrected_in_issues_pending_repository_merge",
+      "finding": "Issue 38 owns the shared provider-mode/final-type contract and is not a project queue owner."
+    },
+    {
+      "id": "OWNER-ISSUE-003",
+      "status": "corrected_in_issues_pending_repository_merge",
+      "finding": "Issue 119 is the dedicated legendary-poet Shorts/Clips reconciliation owner."
+    }
+  ],
   "active_operational_graph": [
     {
       "issue": 31,
       "project_key": "lord-god-strength",
+      "oauth_alias": "fedor-milovanov",
+      "youtube_channel_id": "UCeSJsC6go2c9pdJCuUI1BYA",
+      "vk_community_id": 60805374,
+      "vk_owner_id": -60805374,
       "scope": "fresh bounded read-only long-form reconciliation",
       "status": "requires_reconciliation"
     },
     {
-      "issues": [32, 38],
-      "project_key": "legendary-poet",
-      "scope": "fresh bounded Shorts/Clips reconciliation",
+      "issue": 32,
+      "project_key": "lord-god-strength",
+      "oauth_alias": "fedor-milovanov",
+      "youtube_channel_id": "UCeSJsC6go2c9pdJCuUI1BYA",
+      "vk_community_id": 60805374,
+      "vk_owner_id": -60805374,
+      "scope": "fresh bounded Lord God Shorts/Clips reconciliation",
       "status": "requires_reconciliation"
     },
     {
+      "issue": 119,
+      "project_key": "legendary-poet",
+      "oauth_alias": "legendary-poet",
+      "youtube_channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+      "vk_community_id": 235216998,
+      "vk_owner_id": -235216998,
+      "scope": "fresh bounded Legendary Poet Shorts/Clips reconciliation",
+      "status": "requires_reconciliation"
+    },
+    {
+      "issue": 38,
+      "scope": "shared VK native Clip/ordinary-video provider-mode and final-type proof",
+      "status": "primary_source_and_canary_contract_required"
+    },
+    {
       "issue": 33,
-      "scope": "later separately reviewed exact-ID mutation gate",
-      "status": "blocked_by_reconciliation"
+      "project_key": "lord-god-strength",
+      "scope": "later separately reviewed Lord God catalog/publication mutation gate",
+      "status": "blocked_by_issues_31_and_32"
+    },
+    {
+      "issue": 99,
+      "project_key": "legendary-poet",
+      "scope": "separate approved article-wall scheduling workflow",
+      "status": "open_requires_supported_adapter_preflight_and_durable_results"
     },
     {
       "issue": 37,
@@ -70,8 +122,9 @@
     "exact_project_community_owner_binding_required": true
   },
   "quality_evidence": {
-    "python_versions": ["3.11", "3.12", "3.13"],
-    "pytest": "784 passed, 1 xfailed",
+    "wave_12_python_versions": ["3.11", "3.12", "3.13"],
+    "wave_12_pytest": "784 passed, 1 xfailed",
+    "wave_12_state_sync_pytest": "785 passed, 1 xfailed",
     "ruff": "green; 441 files formatted",
     "mypy": "green; 145 source files",
     "dependency_audit": "no known vulnerabilities",
@@ -84,7 +137,9 @@
   "provider_queries_during_wave_12": 0,
   "provider_writes_during_wave_12": 0,
   "write_plans_created_during_wave_12": 0,
-  "provider_writes_during_state_sync": 0,
+  "provider_queries_during_wave_12a": 0,
+  "provider_writes_during_wave_12a": 0,
+  "write_plans_created_during_wave_12a": 0,
   "live_counts_are_fresh": false,
   "mutation_authorized": false,
   "automatic_execution": false

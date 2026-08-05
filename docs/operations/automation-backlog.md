@@ -1,7 +1,7 @@
 # Operational automation backlog
 
 Updated: 2026-08-05  
-Program state: `WAVES_0_12_ENGINEERING_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES`
+Program state: `WAVES_0_12_COMPLETED_WAVE_12A_OWNERSHIP_CORRECTION_ACTIVE_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES`
 
 This backlog is subordinate to [`current-state.md`](current-state.md), the canonical audit, the v3 machine-state overlay, and its immutable v2 predecessor register.
 
@@ -12,48 +12,101 @@ This backlog is subordinate to [`current-state.md`](current-state.md), the canon
 - Waves 8A–8F: exact-first matching, canonical identity, exact catalog identity, media authority, thumbnail postcondition, and cross-wave integration evidence.
 - Wave 9 contract: immutable bounded read-only reconciliation.
 - Package A / Waves 9A–9B–10 tooling: SHA-bound local ingest, recovery decisions, read-only operator board, runbook, rollback, retirement registry, and archive boundary.
-- Wave 11: operational-package truth levels, repository-owned acceptance verifier, literal VK `filter=moder` regression, source-bound sermon-month incident archive, and retirement of v1/v2/v3.
-- Wave 12: deterministic Windows handoff contract, exact absolute path and artifact-selection rules, post-Wave-11 operations-index convergence, and regression protection against stale roadmap entrypoints.
+- Wave 11: operational-package truth levels, acceptance verifier, literal VK `filter=moder` regression, source-bound incident archive, and retired v1/v2/v3 package family.
+- Wave 12: deterministic Windows handoff contract, exact artifact/path rules, and post-Wave-11 roadmap convergence.
 
-## Active operational work
+## Active Wave 12A correction
 
-### Live Wave 9A — Lord God reconciliation
+Owner: #118. Provider queries/writes/write plans: 0.
 
-Owner: #31. Provider writes: 0.
+Confirmed defects:
+
+- #31 and #32 are Lord God scopes but previously named OAuth alias `legendary-poet`;
+- #32/#38 were incorrectly grouped as the Legendary Poet queue owner;
+- #38 is a shared provider-mode/final-type contract, not a project queue owner;
+- dedicated Legendary Poet reconciliation now belongs to #119.
+
+Exit requires exact-head six-job green CI and a separate completed-state sync.
+
+## Active read-only operational work
+
+### #31 — Lord God long-form reconciliation
+
+Exact binding:
+
+- `project_key`: `lord-god-strength`;
+- OAuth alias: `fedor-milovanov`;
+- YouTube: `UCeSJsC6go2c9pdJCuUI1BYA`;
+- VK community/owner: `60805374` / `-60805374`.
 
 Required:
 
-1. exact local `upload-result.json`, `upload-ledger.db`, latest run log, and bounded source manifest;
-2. fresh bounded read-only YouTube and VK snapshots covering the declared surfaces;
-3. Package A reconciliation evidence;
-4. recovery ledger and operator board;
-5. issue update with exact totals and unresolved identities.
+1. exact local `upload-result.json`, `upload-ledger.db`, latest exact log, and bounded source manifest;
+2. fresh bounded read-only YouTube/VK snapshots;
+3. Package A evidence, recovery ledger, and operator board;
+4. exact per-item states and no blind replay.
 
 Do not rerun the old 26-item launcher or sermon-month v1/v2/v3.
 
-### Live Wave 9B — Legendary Poet reconciliation
+### #32 — Lord God Shorts/Clips reconciliation
 
-Owners: #32/#38. Provider writes: 0.
+Exact binding is also `lord-god-strength` / `fedor-milovanov` / `60805374` / `-60805374`.
 
 Required:
 
-1. exact local V3 plan/result/journal evidence;
-2. fresh bounded Shorts/Clips snapshots;
+1. exact bounded Lord God Shorts source set;
+2. all local Shorts plan/result/journal/SQLite evidence;
+3. fresh read-only ordinary-video and Clip-surface snapshots;
+4. reconciliation of accepted/processing/unknown stages;
+5. exact-first mapping and Package A output.
+
+Retained 108-source and 65/108-missing outputs are historical/non-authoritative. V1/V2/V3/V4 are retired.
+
+### #119 — Legendary Poet Shorts/Clips reconciliation
+
+Exact binding:
+
+- `project_key`: `legendary-poet`;
+- OAuth alias: `legendary-poet`;
+- YouTube: `UC-78ys2S3cQ3lpqgXfo-SvQ`;
+- VK community/owner: `235216998` / `-235216998`.
+
+Required:
+
+1. exact local V3/V4 plan/result/journal/ledger evidence;
+2. fresh bounded YouTube Shorts and VK ordinary/Clip snapshots;
 3. Package A evidence for the exact supplied source set;
-4. separate long-form and Shorts/Clips manifests;
-5. no use of V1/V2/V3/V4 or the historical “48 clips” package.
+4. classification of native Clip, ordinary video copy, duplicate, missing, unknown, and repair-only;
+5. old ordinary VK Videos remain untouched.
 
-### Later reviewed action gate
+Retained `56 / 41 / 15 / 0`, `BXZeRiEOHmQ → -235216998_456239039`, and the historical “48 clips” wording are inputs, not fresh truth.
 
-Owner: #33.
+### #38 — shared provider-mode and final-type contract
 
-A write-capable canary or batch may be designed only after fresh reconciliation and requires one immutable exact-ID plan, explicit expected delta, supported operator, per-operation results, unknown-outcome reconciliation, and exact postflight.
+This is project-neutral research/adapter evidence, not a queue owner.
 
-### Independent exact cleanup
+Required:
 
-Owner: #37.
+- dated current primary VK/VK Video sources;
+- versioned `external_embed`, `native_video`, `native_clip` modes;
+- exact adapter request evidence;
+- one canary after provider/policy changes;
+- processing-complete final surface/type readback;
+- unknown-outcome reconciliation and no replay.
 
-This issue owns only its explicitly reviewed object set. It does not authorize broader deletion or cleanup inferred from titles, age, low views, or historical package membership.
+Conflicting historical duration claims are not a contract. Duration, geometry, title, player appearance, or ordinary `video.get` absence never proves native Clip identity.
+
+### #33 — later Lord God catalog/publication gate
+
+Blocked by #31 and #32. A mutation can be designed only after fresh exact Lord God reconciliation and requires one immutable exact-ID plan, expected delta, supported operator, durable per-operation results, unknown reconciliation, and exact postflight.
+
+### #99 — separate Legendary Poet article-wall workflow
+
+Bound to `legendary-poet`, community `235216998`. It is separate from #119 and requires supported adapter readiness, published+postponed wall preflight, exact assets/text/schedule, one canary, durable results, and postflight. Approval of editorial text is not provider-write authorization.
+
+### #37 — independent exact cleanup
+
+Owns only its explicitly reviewed object set. It authorizes no inferred bulk deletion.
 
 ## Permanent package acceptance work
 
@@ -61,35 +114,24 @@ Every new handoff must:
 
 - declare `editorial_prepared`, `preview_validated`, `self_tested`, `canary_verified`, or `batch_verified`;
 - run `python -m video_channel_manager.tools.operational_package_acceptance`;
-- bind the exact project/community/owner and registered production entrypoint;
-- keep `provider_writes_authorized=false` and `automatic_execution=false` in acceptance evidence;
-- use one PowerShell orchestration boundary and repository-owned Python/provider logic;
-- produce per-operation durable results;
-- stop and reconcile unknown outcomes;
-- avoid a standalone generated `executor.py` provider implementation.
+- bind exact project, OAuth alias, community, owner, and registered entrypoint;
+- keep `provider_writes_authorized=false` and `automatic_execution=false`;
+- use one PowerShell orchestration boundary and repository-owned provider logic;
+- produce durable per-operation results;
+- stop/reconcile unknown outcomes;
+- avoid external generated provider implementations.
 
 ## Permanent Windows handoff work
 
-Every Windows handoff must:
-
-- follow `.github/copilot-instructions.md`;
-- use one self-contained PowerShell block;
-- define exact repository, Downloads, artifact, extraction, entrypoint, and result paths;
-- use `-LiteralPath`, `Test-Path`, explicit ZIP extraction, and full-path invocation;
-- use `$PSScriptRoot` inside delivered scripts;
-- fail on zero or multiple artifact matches;
-- reject `LastWriteTime`, newest-ZIP selection, broad wildcard generations, undefined variables, and inherited shell state;
-- declare truth level, capability, exact project/community/owner, canary behavior, and recovery behavior;
-- preserve UTF-8/BOM requirements for Russian `.ps1` and human-readable `.txt` files;
-- never turn a command handoff into provider-write authorization.
+Every Windows handoff follows `.github/copilot-instructions.md`: self-contained PowerShell, exact absolute paths, `-LiteralPath`, `Test-Path`, explicit extraction, full-path invocation, `$PSScriptRoot`, exact-one artifact, no `LastWriteTime`/newest ZIP/undefined variables, declared truth/capability/project binding, UTF-8/BOM for Russian `.ps1`/`.txt`, and no mutation authorization by command text.
 
 ## Historical-learning maintenance
 
-- Preserve only Markdown/JSON source-bound archives.
-- Record source SHA-256, line counts, evidence level, unavailable evidence, and rerun prohibition.
-- Representative PowerShell/Python snippets remain incomplete and non-executable.
-- A transcript-reported or stdout-reported batch is not independently `batch_verified` without retained per-operation results and exact postflight.
-- Keep `audit-register-v2-2026-08-04.json` immutable as the full historical ledger; add current compact state through versioned overlays rather than destructive rewrites.
+- Preserve source-bound Markdown/JSON archives.
+- Record SHA-256, line counts, evidence level, unavailable evidence, and rerun prohibition.
+- Representative code remains non-executable.
+- Transcript/stdout success is not independently `batch_verified` without per-operation results and exact postflight.
+- Keep v2 immutable; use versioned current-state overlays.
 
 ## Separate VK Audio incubation
 
@@ -97,4 +139,4 @@ VK Audio remains separate and unsupported until a reviewed adapter owns versione
 
 ## Definition of done
 
-A wave closes only after focused scope, fail-closed evidence, exact-head six-job green CI, separate state sync, issue/roadmap updates, and exactly authorized provider writes—otherwise `0`.
+A wave closes only after focused scope, fail-closed evidence, exact-head six-job green CI, completed state sync, issue/roadmap updates, and exactly authorized provider writes—otherwise `0`.
