@@ -1,0 +1,95 @@
+{
+  "schema_name": "video-manager.audit-register-v6",
+  "schema_version": "6.0",
+  "updated_at": "2026-08-05T12:25:00+03:00",
+  "repository": "FedorMilovanov/video-channel-manager",
+  "predecessor_register": {
+    "path": "docs/operations/audit-register-v5-2026-08-05.json",
+    "blob_sha": "dba0ab70288c045610313aa54c21ed16877e987b",
+    "schema_version": "5.0",
+    "role": "Wave 13 immutable evidence-backed disposition contract"
+  },
+  "verified_closure_code_baseline": "8d6a5ba243788e7b95b0e8a57eb02fb10eaf12ba",
+  "wave_13_disposition_pr": {
+    "number": 128,
+    "exact_head": "731cc247a0c757c7103cd1ce5336adaf125d04d0",
+    "merge": "8d6a5ba243788e7b95b0e8a57eb02fb10eaf12ba",
+    "ci_run": 30992600857,
+    "pytest": "792 passed, 1 xfailed",
+    "coverage": "78% across 14306 statements",
+    "ruff": "green",
+    "mypy": "145 source files",
+    "powershell_environments_green": 3
+  },
+  "program_state": "WAVES_0_13_COMPLETED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES",
+  "credential_model": {
+    "vk": "one_shared_user_access_token",
+    "vk_project_selector": false,
+    "youtube_oauth_aliases_are_channel_specific": true
+  },
+  "closed_operational_issues": [
+    {
+      "issue": 31,
+      "state_reason": "completed",
+      "disposition": "completed_exact_longform_reconciliation"
+    },
+    {
+      "issue": 119,
+      "state_reason": "completed",
+      "disposition": "completed_reconciliation_with_unsupported_long_clip_scope",
+      "all_56_proven_native_clips": false,
+      "no_blind_replay": true
+    },
+    {
+      "issue": 38,
+      "state_reason": "completed",
+      "disposition": "completed_fail_closed_native_clip_contract"
+    },
+    {
+      "issue": 32,
+      "state_reason": "not_planned",
+      "disposition": "retired_non_authoritative_108_item_auto_upload_scope"
+    },
+    {
+      "issue": 33,
+      "state_reason": "not_planned",
+      "disposition": "retired_broad_catalog_and_publication_continuation"
+    },
+    {
+      "issue": 99,
+      "state_reason": "not_planned",
+      "disposition": "cancelled_unproved_article_wall_continuation"
+    },
+    {
+      "issue": 123,
+      "state_reason": "not_planned",
+      "disposition": "retired_deferred_youtube_playlist_mutation_scope"
+    }
+  ],
+  "active_operational_issues": [],
+  "open_issues_after_completed_state_merge": [],
+  "open_pull_requests_after_completed_state_merge": [],
+  "permanent_unknowns": [
+    {
+      "source_id": "M5hNecL_MsQ",
+      "target_id": "-235216998_456239160",
+      "observed_type": "video",
+      "observed_is_draft": 1,
+      "classification": "requires_attention_non_replayable_not_native_clip_success"
+    }
+  ],
+  "retired_undispatched_scope": {
+    "legendary_poet_long_items": 6,
+    "lord_god_non_authoritative_shorts_auto_upload": true,
+    "article_wall_launcher_generations": true,
+    "youtube_playlist_mutation_scope": true
+  },
+  "existing_remote_objects_untouched": true,
+  "provider_queries_during_wave_13": 0,
+  "provider_writes_during_wave_13": 0,
+  "write_plans_created_during_wave_13": 0,
+  "mutation_authorized": false,
+  "automatic_execution": false,
+  "replay_authorized": false,
+  "future_work_requires_new_user_request_and_new_exact_issue": true
+}

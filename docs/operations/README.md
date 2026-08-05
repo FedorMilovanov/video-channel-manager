@@ -5,104 +5,111 @@ Operational documents are living sources of truth. They override chat history, s
 ## Start here
 
 - [`project-identity-registry.md`](project-identity-registry.md) — exact projects, one shared VK credential, channel-specific YouTube aliases, numeric identities, routes, and no-mixing rules.
-- [`master-audit-marathon-v2-2026-08-04.md`](master-audit-marathon-v2-2026-08-04.md) — canonical audit baseline and permanent finding history.
-- [`audit-register-v4-2026-08-05.json`](audit-register-v4-2026-08-05.json) — current Wave 12B machine state, credential model, active/deferred issue graph, and write prohibition.
-- [`audit-register-v3-2026-08-05.json`](audit-register-v3-2026-08-05.json) — immutable Wave 12A predecessor overlay.
+- [`current-state.md`](current-state.md) — final Waves 0–13 state and permanent safety boundaries.
+- [`audit-register-v6-2026-08-05.json`](audit-register-v6-2026-08-05.json) — current final machine state with zero active operational issues.
+- [`audit-register-v5-2026-08-05.json`](audit-register-v5-2026-08-05.json) — immutable Wave 13 disposition contract.
+- [`audit-register-v4-2026-08-05.json`](audit-register-v4-2026-08-05.json) — immutable Wave 12B predecessor.
+- [`audit-register-v3-2026-08-05.json`](audit-register-v3-2026-08-05.json) — immutable Wave 12A predecessor.
 - [`audit-register-v2-2026-08-04.json`](audit-register-v2-2026-08-04.json) — immutable complete historical source/finding ledger.
-- [`current-state.md`](current-state.md) — completed Waves 0–12B, exact blockers, and next allowed work.
-- [`automation-backlog.md`](automation-backlog.md) — active reconciliation, later gates, and deferred product scope.
-- [`milestone-and-credential-reconciliation-2026-08-05.md`](milestone-and-credential-reconciliation-2026-08-05.md) — Wave 12B evidence for shared VK credential semantics and stale issue dispositions.
+- [`automation-backlog.md`](automation-backlog.md) — closed backlog and future-work rule.
+- [`final-operational-disposition-2026-08-05.md`](final-operational-disposition-2026-08-05.md) — human-readable final dispositions.
+- [`master-audit-marathon-v2-2026-08-04.md`](master-audit-marathon-v2-2026-08-04.md) — canonical audit baseline and permanent finding history.
 - [`../../.github/copilot-instructions.md`](../../.github/copilot-instructions.md) — deterministic Windows handoff contract.
-- [`http-client-ownership.md`](http-client-ownership.md) — reusable-client ownership, retry authority, redaction, and limiter rules.
-- [`lord-god-strength-description-profile.md`](lord-god-strength-description-profile.md) — exact Lord God identities and links.
-- [`legendary-poet-description-profile.md`](legendary-poet-description-profile.md) — exact Legendary Poet identities and links.
-- [`project-memory-changelog.md`](project-memory-changelog.md) — durable operational-memory changes.
-- [`2026-07-31-youtube-vk-transfer-postmortem.md`](2026-07-31-youtube-vk-transfer-postmortem.md) — transfer lessons and root causes.
 - [`operational-artifact-standard.md`](operational-artifact-standard.md) — package/manifest/launcher/ledger requirements.
 - [`operational-package-acceptance.md`](operational-package-acceptance.md) — truth levels and fail-closed acceptance.
 - [`retirement-registry-v1.json`](retirement-registry-v1.json) — supported/compatibility/retired/historical execution boundaries.
+- [`project-memory-changelog.md`](project-memory-changelog.md) — durable historical memory.
 
-Historical baselines retained for evidence:
+## Engineering and governance sequence
 
-- [`master-audit-2026-08-04.md`](master-audit-2026-08-04.md);
-- [`audit-register-2026-08-04.json`](audit-register-2026-08-04.json).
+1. Waves 0–7 — completed.
+2. Waves 8A–8F — completed.
+3. Wave 9 read-only contract — completed.
+4. Package A / Waves 9A–10 — completed.
+5. Wave 11 — completed.
+6. Wave 12 — completed.
+7. Wave 12A / #118 — completed at `self_tested_project_bound_governance`.
+8. Wave 12B / #122 — completed one-shared-VK-token semantics and stale issue reconciliation.
+9. Wave 12C / #126 — completed issue-contract convergence.
+10. Wave 13 / #127 — completed final evidence-backed operational closure.
 
-## Engineering sequence
+Wave 13 proof:
 
-1. Waves 0–7, Audit A0, and Waves 8A–8F — completed.
-2. Wave 9 and Package A / Waves 9A–10 — completed read-only reconciliation foundation.
-3. Wave 11 — completed package truth, acceptance, permission, archive, and retirement governance.
-4. Wave 12 — completed deterministic Windows handoffs and roadmap convergence.
-5. Wave 12A / #118 — completed project-bound ownership correction.
-6. Wave 12B / #122 — completed one-shared-VK-token semantics and stale issue graph reconciliation. PR #124 merged as `38296d07f8b6e948a6c5c4846bb66bf116bcfb72`; exact head `ffd275e9173db5a46bdde85f318dfa08ca83adb3`; CI `30988821430`; `789 passed, 1 xfailed`; provider queries/writes/plans `0/0/0`.
+- PR #128;
+- exact head `731cc247a0c757c7103cd1ce5336adaf125d04d0`;
+- merge/code baseline `8d6a5ba243788e7b95b0e8a57eb02fb10eaf12ba`;
+- CI `30992600857`;
+- `792 passed, 1 xfailed`;
+- coverage `78%` across `14,306` statements;
+- Ruff correctness and formatting green;
+- strict mypy `145 source files`;
+- all three PowerShell environments green;
+- provider queries/writes/write plans `0/0/0`.
 
 ## Credential model
 
-VK uses one shared user access token for both managed communities. The local alias `legendary-poet` is a stored credential name and never selects a project. Exact `project_key`, community ID, owner ID, manifests, plans, journals, results, and link profiles select and isolate the target.
+VK uses one shared user access token for both managed communities. The local VK alias `legendary-poet` is a stored credential name and never selects a project. Exact `project_key`, community ID, owner ID, manifests, plans, journals, results, and link profiles select and isolate the target.
 
-YouTube OAuth aliases remain channel-specific:
+YouTube aliases are channel-specific:
 
-- `fedor-milovanov` → Lord God channel `UCeSJsC6go2c9pdJCuUI1BYA`;
-- `legendary-poet` → Legendary Poet channel `UC-78ys2S3cQ3lpqgXfo-SvQ`.
+- OAuth alias `fedor-milovanov` → Lord God channel `UCeSJsC6go2c9pdJCuUI1BYA`;
+- OAuth alias `legendary-poet` → Legendary Poet channel `UC-78ys2S3cQ3lpqgXfo-SvQ`.
 
-## Correct operational ownership
+## Final operational ownership and disposition
 
 ### Lord God / `lord-god-strength`
 
-- #31 — long-form reconciliation;
-- #32 — Shorts/Clips reconciliation;
-- #33 — later catalog/publication gate blocked by #31/#32.
+- #31 — long-form reconciliation: completed, exact queue `26/26`.
+- #32 — Shorts/Clips reconciliation: retired/not planned; non-authoritative 108-item auto-upload scope remains non-replayable.
+- #33 — catalog/publication continuation: retired/not planned.
 
 Exact VK community/owner: `60805374` / `-60805374`.
 
 ### Legendary Poet / `legendary-poet`
 
-- #119 — Shorts/Clips reconciliation;
-- #99 — separate article-wall workflow.
+- #119 — Shorts/Clips reconciliation: completed with documented unsupported long scope; not all 56 are proven native Clips.
+- #99 — article-wall launcher continuation: cancelled/not planned.
 
 Exact VK community/owner: `235216998` / `-235216998`.
 
-### Shared and deferred
+### Shared and retired product scope
 
-- #38 — shared VK native Clip/ordinary-video provider-mode and final-type contract; no queue ownership;
-- #123 — deferred YouTube playlist mutation contract; no authorization;
-- #64 — canonical roadmap;
+- #38 — shared VK native Clip/ordinary-video provider-mode: completed fail-closed contract; no project queue.
+- #123 — YouTube playlist mutation design: retired/not planned.
+- #64 — canonical roadmap closed by the completed-state merge.
 - VK Audio — separate experimental system, not core-supported.
 
-Closed #2–#5 and #37 are not active owners. #37 completed a bounded 34-item cleanup while preserving post `12400`; its historical executor is retired and grants no future bulk-cleanup authority.
+Do not group #32/#38 as Legendary Poet. Historical ownership was #32 Lord God, #38 shared, and #119 Legendary Poet. All are now closed.
 
-Do not group #32/#38 as Legendary Poet. #32 is Lord God, #38 is shared, and #119 is the dedicated Legendary Poet owner.
+Closed #2–#5, #37, #118, #122, and #126 remain historical and provide no execution authority. #37 completed a bounded 34-item cleanup while preserving post `12400`; its executor is retired.
 
-## Evidence boundaries
+## Final native Clip contract
 
-Retained Lord God counts 26, 108, and provisional 65/108 are historical inputs. Retained Legendary Poet `56 / 41 / 15 / 0`, “48 clips”, and old ZIP labels are historical inputs. They are not fresh provider truth or final native-Clip proof.
+Native Clip success requires:
 
-Issue #38 requires current primary-source evidence, exact adapter request, a processed canary, and final type readback. Geometry, duration, title, player appearance, temporary type, or absence from ordinary `video.get` never proves native Clip identity.
+1. exact final `type=short_video`;
+2. processing complete;
+3. `is_draft` absent or zero;
+4. exact public visibility proof.
 
-Green CI proves contracts and fixtures, not current provider state. Package A, acceptance, handoff governance, issue wording, dashboards, previews, retained counts, or transcript-reported outcomes never authorize writes.
+Ordinary `video`, duration, geometry, title, preview, player appearance, temporary processing state, or absence from ordinary `video.get` never proves native Clip identity. `M5hNecL_MsQ → -235216998_456239160` remains ordinary-video/draft evidence and is non-replayable. Automatic over-60-second native Clip publication is unsupported.
 
-## Existing runbooks and templates
+## Package and provider boundary
 
-- [`unified-editorial-runbook.md`](unified-editorial-runbook.md)
-- [`youtube-comment-publishing-runbook.md`](youtube-comment-publishing-runbook.md)
-- [`vk-description-cleanup-runbook.md`](vk-description-cleanup-runbook.md)
-- [`vk-catalog-wall-and-article-runbook.md`](vk-catalog-wall-and-article-runbook.md)
-- [`run-report-template.md`](run-report-template.md)
-- [`incident-report-template.md`](incident-report-template.md)
-- [`decision-log-template.md`](decision-log-template.md)
+Provider writes remain unauthorized. Green CI proves contracts and fixtures, not permission to mutate a provider. Package A, acceptance reports, dashboards, previews, issue bodies, retained counts, ZIP names, transcript output, save responses, or visible objects never authorize writes.
 
-Historical runbooks and executors are not automatically active. Current v4/v3/v2 state, retirement registry, roadmap #64, and the exact owning issue decide whether an entrypoint may be used.
+Never rerun retired V1/V2/V3/V4, reset, recovery, cleanup, article-wave, transfer, or playlist executors. Never blind-retry accepted, processing, verified, or unknown operations. Existing remote objects remain untouched by the closure.
 
-## Before any provider write
+## Before any future provider write
 
-1. Read `../../AGENTS.md`, `../../.github/copilot-instructions.md`, v4/v3/v2 state, and the exact owner issue.
-2. Select exactly one project and bind exact YouTube channel/OAuth alias and VK community/owner.
-3. Confirm required surface coverage, immutable manifest and SHA-256, local ledger/result paths, and unknown-outcome reconciliation.
-4. Run bounded read-only preflight and repository acceptance; acceptance remains non-authorizing.
-5. Use only a separately reviewed immutable exact-ID mutation plan with explicit expected remote delta.
-6. Persist intent before dispatch; retain durable per-operation results; verify exact postflight.
-7. Keep upload, native Clip publication, catalog, metadata, thumbnail, and wall publication separately authorized.
+A future operation requires all of:
 
-## After every wave or run
+1. a new explicit user request;
+2. a new exact project-bound owning issue;
+3. exact YouTube channel/OAuth alias and VK community/owner binding;
+4. fresh bounded read-only preflight and reconciled unknown outcomes;
+5. a reviewed immutable exact-ID plan with expected remote delta;
+6. persisted intent, durable per-operation results, and exact postflight;
+7. separate authorization for upload, Clip publication, catalog, metadata, thumbnail, or wall publication.
 
-Update current state, the current versioned machine overlay without destroying predecessors, backlog, changelog, roadmap #64, exact owning issues, and regression coverage.
+Closed issues and historical packages must not be reopened as execution authority.

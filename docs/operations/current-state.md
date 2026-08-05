@@ -1,132 +1,80 @@
 # Current operational state
 
 Updated: 2026-08-05  
-Verified Wave 12B code baseline: `main@38296d07f8b6e948a6c5c4846bb66bf116bcfb72`  
-Program state: `WAVES_0_12B_ENGINEERING_GOVERNANCE_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES`  
-Canonical audit: [`master-audit-marathon-v2-2026-08-04.md`](master-audit-marathon-v2-2026-08-04.md)  
-Current machine state: [`audit-register-v4-2026-08-05.json`](audit-register-v4-2026-08-05.json)  
-Wave 12A predecessor overlay: [`audit-register-v3-2026-08-05.json`](audit-register-v3-2026-08-05.json)  
-Complete historical ledger: [`audit-register-v2-2026-08-04.json`](audit-register-v2-2026-08-04.json)
+Verified Wave 13 closure code baseline: `main@8d6a5ba243788e7b95b0e8a57eb02fb10eaf12ba`  
+Program state: `WAVES_0_13_COMPLETED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`  
+Current machine state: [`audit-register-v6-2026-08-05.json`](audit-register-v6-2026-08-05.json)  
+Final disposition predecessor: [`audit-register-v5-2026-08-05.json`](audit-register-v5-2026-08-05.json)  
+Immutable predecessors: [`audit-register-v4-2026-08-05.json`](audit-register-v4-2026-08-05.json), [`audit-register-v3-2026-08-05.json`](audit-register-v3-2026-08-05.json), [`audit-register-v2-2026-08-04.json`](audit-register-v2-2026-08-04.json)
 
-This file and the v4 machine state override old chats, screenshots, ZIP names, remembered counts, stale issue wording, and superseded audits.
+This file and the v6 machine-state overlay override old chats, screenshots, ZIP names, remembered counts, stale issue wording, and superseded audits.
 
-## Completed engineering/governance program
+## Final status
 
-- Audit A0 and Waves 0–8F: completed.
-- Wave 9 read-only evidence contract: completed at `read_only_contract_self_tested`.
-- Package A / Waves 9A–9B–10 tooling: completed at `read_only_package_self_tested`.
-- Wave 11 package truth: completed at `self_tested_source_bound_governance`.
-- Wave 12 Windows handoff/roadmap governance: completed at `self_tested_repository_governance`.
-- Wave 12A project-bound ownership correction: completed at `self_tested_project_bound_governance`.
-- Wave 12B shared VK credential and stale issue-graph reconciliation: completed at `self_tested_credential_and_issue_graph_governance`.
+Waves 0–13 are complete. There is no active operational issue, provider mutation plan, approved replay, or pending repository PR after this completed-state merge.
 
-Wave 12A retained proof remains:
+Wave 13 disposition proof:
 
-- `main@30c1ec11040034f6d3ed2492afe1bc7c029db1d0`;
-- PR #120, exact head `98b4f3df7dd25918398d3544ee81d2b04a0aa21b`;
-- CI `30971070928`;
-- `785 passed, 1 xfailed`;
-- evidence level `self_tested_project_bound_governance`.
-
-Wave 12B proof:
-
-- issue #122 and PR #124;
-- merge/current code baseline `38296d07f8b6e948a6c5c4846bb66bf116bcfb72`;
-- exact head `ffd275e9173db5a46bdde85f318dfa08ca83adb3`;
-- exact-head CI `30988821430`;
-- Python 3.11/3.12/3.13: `789 passed, 1 xfailed`;
+- PR #128;
+- exact head `731cc247a0c757c7103cd1ce5336adaf125d04d0`;
+- merge/code baseline `8d6a5ba243788e7b95b0e8a57eb02fb10eaf12ba`;
+- CI `30992600857`;
+- Python 3.11/3.12/3.13: `792 passed, 1 xfailed`;
 - coverage: `78%` across `14,306` statements;
-- Ruff correctness green; `445 files already formatted`;
+- Ruff correctness and formatting: green;
 - strict mypy: `145 source files`;
 - dependency audit: no known vulnerabilities;
-- Windows PowerShell 5.1, PowerShell 7 Windows, PowerShell 7 Linux: green;
-- provider queries/writes/write plans: `0/0/0`.
+- Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux: green;
+- provider queries/writes/write plans during Wave 13: `0/0/0`.
 
-Green CI proves contracts and fixtures. It does not prove current provider state, live queue completion, or authorization to mutate VK/YouTube.
+Green CI proves repository contracts and fixtures. It does not authorize a future provider mutation.
 
 ## Credential model
 
-VK uses one shared **user access token** from external `VK_API_TOKEN`. The local stored alias `legendary-poet` names that credential; it is not a project selector. The same token may enumerate both managed communities.
+VK uses one shared **user access token** from external `VK_API_TOKEN`. The local VK alias `legendary-poet` names the stored credential and is not a project selector.
 
-Project selection requires exact:
+Project isolation still requires exact `project_key`, community/owner IDs, manifests, plans, journals, results, and link profiles.
 
-- `project_key`;
-- VK `community_id` and `owner_id`;
-- manifest, plan, journal, result, and link profile.
+YouTube OAuth aliases remain channel-specific:
 
-YouTube uses channel-specific OAuth aliases:
+- OAuth alias `fedor-milovanov` → Lord God channel `UCeSJsC6go2c9pdJCuUI1BYA`;
+- OAuth alias `legendary-poet` → Legendary Poet channel `UC-78ys2S3cQ3lpqgXfo-SvQ`.
 
-- Lord God: OAuth alias `fedor-milovanov` → `UCeSJsC6go2c9pdJCuUI1BYA`;
-- Legendary Poet: OAuth alias `legendary-poet` → `UC-78ys2S3cQ3lpqgXfo-SvQ`.
+## Closed operational graph
 
-Therefore #31/#32 correctly use `fedor-milovanov`; this does not imply a second VK token.
+### Completed
 
-## Closed stale issue graph
+- #31 — Lord God long-form reconciliation: exact queue `26/26`, missing `0`, thumbnail repairs `26/26`, album postflight complete.
+- #119 — Legendary Poet Shorts/Clips reconciliation: bounded source `56`; 41 reviewed prior pairs; 8 verified new `short_video` outcomes; one accepted long ordinary-video/draft canary remains non-replayable; six long items were never dispatched. This does not claim all 56 are native Clips.
+- #38 — shared VK native Clip/ordinary-video provider-mode and final-type contract: native Clip success requires final `type=short_video`, processing complete, non-draft state, and exact public visibility.
 
-After PR #124:
+### Retired / not planned
 
-- #2 — closed `completed`; current architecture supplies YouTube OAuth and immutable read-only inventory/export.
-- #3 — closed `not_planned`; superseded by specialized deterministic audit/editorial contracts.
-- #4 — closed `not_planned`; guarded description/comment writers exist, while playlist mutation scope moved to deferred #123.
-- #5 — closed `completed`; VK organizer/transfer foundation is implemented and remaining live truth is project-bound.
-- #37 — closed `completed`; 34 reviewed Shorts were replaced, generated wall posts removed, protected post `12400` remained, and the historical executor is retired.
+- #32 — non-authoritative Lord God 108-item Shorts auto-upload scope retired; old provisional 65/108 and 108/108 outputs remain `DO_NOT_UPLOAD`; completed #37 reset evidence and protected post `12400` are preserved.
+- #33 — broad Lord God catalog/editorial/postponed-wall continuation retired without new writes.
+- #99 — unproved Legendary Poet article-wall launcher continuation cancelled; existing remote objects remain untouched.
+- #123 — deferred YouTube playlist mutation scope retired; no playlist write is authorized.
 
-#37 is not an active operational owner. Future cleanup requires a new exact reviewed object set and separate authorization.
+Closed historical issues #2–#5, #37, #118, #122, and #126 remain closed and provide no parallel execution authority.
 
-## Correct active operational graph
+Do not group #32/#38 as Legendary Poet. Historical ownership was: #32 Lord God, #38 shared, #119 Legendary Poet. All three are now closed with the exact dispositions above.
 
-### #31 — Lord God long-form reconciliation
+## Permanent unknown and replay boundary
 
-- `project_key`: `lord-god-strength`;
-- OAuth alias `fedor-milovanov`;
-- YouTube `UCeSJsC6go2c9pdJCuUI1BYA`;
-- VK community/owner `60805374` / `-60805374`;
-- status: `requires_reconciliation`.
+`M5hNecL_MsQ → -235216998_456239160` was observed as ordinary `video` with `is_draft=1`. It is not native Clip success and must not be retransmitted.
 
-Required: exact `upload-result.json`, `upload-ledger.db`, exact run log, bounded source manifest, fresh bounded YouTube/VK snapshots, and Package A output. Retained count 26, `KobOzfBqzic`, `s512Opa8Eu4 → -60805374_456241938`, and the old manifest SHA are inputs, not fresh conclusions.
+The six undispatched Legendary Poet long items, Lord God provisional Shorts queues, article-wall launcher generations, retired cleanup/reset packages, and deferred playlist mutation design are not active work and must not be executed.
 
-### #32 — Lord God Shorts/Clips reconciliation
+## Permanent safety rules
 
-- `project_key`: `lord-god-strength`;
-- OAuth alias `fedor-milovanov`;
-- YouTube `UCeSJsC6go2c9pdJCuUI1BYA`;
-- VK community/owner `60805374` / `-60805374`;
-- status: `requires_reconciliation`.
+- Provider writes remain unauthorized.
+- Never rerun retired V1/V2/V3/V4, reset, recovery, article-wave, transfer, cleanup, or playlist executors.
+- Never blind-retry intent-persisted, accepted, processing, verified, or unknown operations.
+- Existing VK and YouTube objects remain untouched by Wave 13 closure.
+- Package A, green CI, dashboards, previews, issue bodies, counts, ZIP names, save responses, or visible objects never authorize writes.
+- Every future provider write requires a new user request, a new exact project-bound owning issue, a reviewed immutable exact-ID plan, expected remote delta, durable per-operation results, and exact postflight.
+- VK Audio remains `SEPARATE_EXPERIMENTAL_SYSTEM / PARTIAL_OR_UNKNOWN_OUTCOMES / NOT_CORE_SUPPORTED`.
 
-Retained source count 108 and provisional 65/108 outputs are historical. Fresh reconciliation must cover ordinary-video and actual Clip surfaces and every accepted, processing, or unknown local state. Issue #32 is not a Legendary Poet owner.
+## Next allowed action
 
-### #119 — Legendary Poet Shorts/Clips reconciliation
-
-- `project_key`: `legendary-poet`;
-- OAuth alias `legendary-poet`;
-- YouTube `UC-78ys2S3cQ3lpqgXfo-SvQ`;
-- VK community/owner `235216998` / `-235216998`;
-- status: `requires_reconciliation`.
-
-Retained `56 / 41 / 15 / 0` and `BXZeRiEOHmQ → -235216998_456239039` are historical inputs. Supplied archives contain no durable apply results/ledger/final-type postflight, and saved VK records do not prove native Clip type.
-
-### #38 — shared provider-mode/final-type contract
-
-Project-neutral and owns no queue. Current primary-source evidence, exact adapter request, processed canary, and final surface/type readback are required. Historical 60/180-second claims, geometry, duration, title, player appearance, temporary type, or ordinary `video.get` absence never proves native Clip identity.
-
-### #33 — Lord God video catalog/publication gate
-
-Blocked by #31 and #32. It owns only Lord God video catalog, album/membership, metadata repair, and separately authorized wall publication. VK Audio/MP3 and Legendary Poet are excluded.
-
-### #99 — Legendary Poet article-wall workflow
-
-Separate from #119. It requires supported adapter readiness, published+postponed wall preflight, exact assets/text/schedule, one canary, durable per-operation results, and exact postflight.
-
-### #123 — deferred YouTube playlist mutation contract
-
-Not part of the live reconciliation graph and not authorized. It preserves playlist create/update and membership add/remove/reorder plus a generic guarded approval/execution lifecycle.
-
-## Package, handoff, and safety boundaries
-
-Package A output never authorizes a provider mutation by itself. PowerShell orchestrates one repository-owned implementation; it does not become a second provider client. Managed-community discovery uses `filter=moder`; `filter=admin` is not equivalent. Windows handoffs use exact paths, `-LiteralPath`, `Test-Path`, `$PSScriptRoot`, exact-one artifact selection, and never `LastWriteTime` or newest-ZIP discovery.
-
-VK Audio remains `SEPARATE_EXPERIMENTAL_SYSTEM / PARTIAL_OR_UNKNOWN_OUTCOMES / NOT_CORE_SUPPORTED`.
-
-Never blind-retry accepted, processing, verified, or unknown operations. Never infer live success from CI, stdout, screenshots, titles, retained counts, ZIP names, extensions, save responses, or CDN URLs. Every provider write requires a separately reviewed exact-ID plan, durable per-operation results, and exact postflight.
-
-Actual fresh live provider reconciliation: pending.
+No operational continuation is pending. Future work begins only from a new explicit user request and a new exact issue; closed issues and historical packages must not be reopened as execution authority.
