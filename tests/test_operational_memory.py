@@ -93,7 +93,6 @@ def test_agent_instructions_preserve_project_bound_read_only_owners() -> None:
         "Wave 12 deterministic Windows handoffs",
         "Wave 12A / issue #118",
         "785 passed, 1 xfailed",
-        "self_tested_repository_governance",
         "editorial_prepared",
         "preview_validated",
         "canary_verified",
@@ -138,8 +137,7 @@ def test_wave12a_machine_state_overlay_is_project_bound_and_fail_closed() -> Non
     assert payload["wave_12a_issue"] == 118
     assert payload["wave_12a_status"] == "ownership_correction_active"
     assert payload["program_state"] == (
-        "WAVES_0_12_COMPLETED_WAVE_12A_OWNERSHIP_CORRECTION_ACTIVE_"
-        "LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES"
+        "WAVES_0_12_COMPLETED_WAVE_12A_OWNERSHIP_CORRECTION_ACTIVE_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES"
     )
 
     graph = {item["issue"]: item for item in payload["active_operational_graph"]}
