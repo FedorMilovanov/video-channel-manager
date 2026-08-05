@@ -1,128 +1,181 @@
 # Repository agent instructions
 
-Before work on Fedor Milovanov's YouTube/VK workflow, read in order:
+Read these sources before work on Fedor Milovanov's YouTube/VK workflow:
 
 1. `docs/operations/project-identity-registry.md`
-2. `docs/operations/master-audit-marathon-v2-2026-08-04.md`
-3. `docs/operations/current-state.md`
-4. `docs/operations/agent-reasoning-playbook.md`
-5. `docs/operations/mp3-batch-processing-contract.md`
-6. `docs/operations/vk-audio-browser-experiment-retrospective.md`
-7. `docs/operations/wave15-transcript-and-agent-audit-2026-08-05.md`
-8. `docs/operations/audit-register-v8-2026-08-05.json`
-9. `docs/operations/audit-register-v7-2026-08-05.json`
-10. `docs/operations/audit-register-v6-2026-08-05.json`
-11. `docs/operations/audit-register-v5-2026-08-05.json`
-12. `docs/operations/audit-register-v4-2026-08-05.json`
-13. `docs/operations/audit-register-v3-2026-08-05.json`
-14. `docs/operations/audit-register-v2-2026-08-04.json`
-15. `docs/operations/automation-backlog.md`
-16. `docs/operations/repository-integrity-audit-2026-08-05.md`
-17. `.github/copilot-instructions.md`
-18. `docs/operations/local-credential-sources.md`
-19. `docs/operations/operational-artifact-standard.md`
-20. `docs/operations/operational-package-acceptance.md`
-21. `docs/operations/retirement-registry-v1.json`
+2. `docs/operations/current-state.md`
+3. `docs/operations/audit-register-v9-2026-08-05.json`
+4. `docs/operations/audit-register-v8-2026-08-05.json`
+5. `docs/operations/master-audit-marathon-v2-2026-08-04.md`
+6. `docs/operations/agent-reasoning-playbook.md`
+7. `docs/operations/mp3-batch-processing-contract.md`
+8. `docs/operations/wave16-ci-sqlite-mp3-hardening-2026-08-05.md`
+9. `docs/operations/vk-audio-browser-experiment-retrospective.md`
+10. `docs/operations/wave15-transcript-and-agent-audit-2026-08-05.md`
+11. `docs/operations/audit-register-v7-2026-08-05.json`
+12. `docs/operations/audit-register-v6-2026-08-05.json`
+13. `docs/operations/audit-register-v5-2026-08-05.json`
+14. `docs/operations/audit-register-v4-2026-08-05.json`
+15. `docs/operations/audit-register-v3-2026-08-05.json`
+16. `docs/operations/audit-register-v2-2026-08-04.json`
+17. `docs/operations/automation-backlog.md`
+18. `docs/operations/repository-integrity-audit-2026-08-05.md`
+19. `.github/copilot-instructions.md`
+20. `docs/operations/local-credential-sources.md`
+21. `docs/operations/operational-artifact-standard.md`
+22. `docs/operations/operational-package-acceptance.md`
+23. `docs/operations/retirement-registry-v1.json`
 
-The current machine-state overlay, immutable predecessors, and `current-state.md` override old chats, screenshots, ZIPs, remembered counts, stale issue wording, and superseded audits. Historical material teaches; it never authorizes execution. The Wave 15 transcript audit extracts reusable invariants from the supplied histories but does not make any historical package supported.
+Current machine state and `current-state.md` override old chats, screenshots, ZIP names, remembered counts, stale issue wording, historical packages, and superseded audits. Historical material teaches; it never authorizes execution.
+
+## Current verified baseline
+
+Current code baseline: `main@22ed56256df3388c23c9f785f1e02cca71fd8524`.
+
+Current program state: `WAVES_0_16_COMPLETED_CI_RUNTIME_SQLITE_MP3_IDENTITY_HARDENED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`.
+
+Wave 16 proof:
+
+- issue #137 and PR #138;
+- exact head `c495308430bce6e1b86343b6cd4e6ae3a302734b`;
+- merge `22ed56256df3388c23c9f785f1e02cca71fd8524`;
+- CI `31022560789`;
+- Python 3.11/3.12/3.13: `845 passed, 1 xfailed`;
+- coverage `79%` across `14,675` statements;
+- Ruff `464 files already formatted`;
+- strict mypy `147 source files`;
+- dependency audit clean;
+- all three PowerShell environments green;
+- no Node 20 action warning;
+- no unclosed SQLite database warning;
+- provider queries/writes/write plans/historical executor runs `0/0/0/0`.
+
+No operational continuation is pending. Provider writes remain unauthorized. Issue #139 is state synchronization only and owns no provider operation.
 
 ## Exact project and credential boundary
 
 This repository manages two separate projects:
 
-- `lord-god-strength` — **Господь Бог — Сила Моя**;
-- `legendary-poet` — **The Legendary Poet — Легендарный Поэт**.
+- `lord-god-strength` — Господь Бог — Сила Моя;
+- `legendary-poet` — The Legendary Poet — Легендарный Поэт.
 
 Canonical identities:
 
-- `lord-god-strength`: YouTube `UCeSJsC6go2c9pdJCuUI1BYA`, OAuth alias `fedor-milovanov`, VK community `60805374`, VK owner `-60805374`;
-- `legendary-poet`: YouTube `UC-78ys2S3cQ3lpqgXfo-SvQ`, OAuth alias `legendary-poet`, VK community `235216998`, VK owner `-235216998`.
+- Lord God: YouTube `UCeSJsC6go2c9pdJCuUI1BYA`, OAuth alias `fedor-milovanov`, VK community `60805374`, VK owner `-60805374`;
+- Legendary Poet: YouTube `UC-78ys2S3cQ3lpqgXfo-SvQ`, OAuth alias `legendary-poet`, VK community `235216998`, VK owner `-235216998`.
 
-VK uses one shared user access token from the external `VK_API_TOKEN` source. The local VK alias `legendary-poet` names the stored credential; it is not a project selector. Exact `project_key`, community/owner IDs, manifests, plans, journals, results, and link profiles provide isolation.
+VK uses one shared user access token from external `VK_API_TOKEN`. The local VK alias `legendary-poet` names the stored credential; it is not a project selector. Exact project key, community/owner IDs, manifests, journals, results, and links select the target.
 
-The configured VK token remains outside this repository at `C:\Users\Fedor\Projects\mp3telegrambot\.env`. Never copy, print, commit, package, log, request manual entry of, or place its value on a command line.
+YouTube aliases are channel-specific. They do not imply separate VK tokens.
 
-The strings `fedor-milovanov` and `legendary-poet` in YouTube operations are channel-specific OAuth aliases. They do not imply separate VK tokens.
-
-## Current verified sequence
-
-Current Wave 15 code baseline: `main@eb58c1ad238fde01d66c6630b16e244b1c6c2992`.
-
-- Waves 0–8F: completed;
-- Wave 9 read-only evidence contract: completed;
-- Package A / Waves 9A–10 tooling: completed;
-- Wave 11 operational-package truth: completed;
-- Wave 12 deterministic Windows handoffs: completed;
-- Wave 12A project-bound ownership correction: completed at `self_tested_project_bound_governance`;
-- Wave 12B shared credential/stale issue graph: completed;
-- Wave 12C issue-contract convergence: completed;
-- Wave 13 final evidence-backed operational closure: PR #128, exact head `731cc247a0c757c7103cd1ce5336adaf125d04d0`, merge `8d6a5ba243788e7b95b0e8a57eb02fb10eaf12ba`, CI `30992600857`, `792 passed, 1 xfailed`, Ruff and strict mypy green, all three PowerShell environments green;
-- Wave 13 completed-state sync: PR #129, exact head `44a1590fac0e8fe8b563d35cfd68f2bed4727743`, merge `07388521e8d3a2c5d501382227c35bdce6e6470e`, CI `30994245235`, `796 passed, 1 xfailed`;
-- Wave 14 repository-wide documentation and integrity polish: historical code baseline `main@626f83c6e5c068d7faa8b6d14163b42916faa769`, PR #131, exact head `80f701b6926a5a9c788b99c69634b54d63ed1862`, merge `626f83c6e5c068d7faa8b6d14163b42916faa769`, CI `31000834701`, `801 passed, 1 xfailed`, coverage `78%` across `14,306` statements, Ruff `451 files already formatted`, strict mypy `145 source files`, dependency audit clean, all three PowerShell environments green;
-- Wave 15 adaptive reasoning and local-only MP3 foundation: PR #134, exact head `48baa13b0d08e27e5a1dfc8b30901524d3207148`, merge `eb58c1ad238fde01d66c6630b16e244b1c6c2992`, CI `31006136529`, `833 passed, 1 xfailed`, coverage `79%` across `14,643` statements, Ruff `461 files already formatted`, strict mypy `147 source files`, dependency audit clean, all three PowerShell environments green;
-- provider queries, provider writes, write plans, and historical executor runs during Wave 15: `0/0/0/0`;
-- active operational issues after the Wave 15 state-sync merge: `0`.
-
-At the completed Wave 15 baseline, **No operational continuation is pending**. Issue #135 owns only the immutable v8 state synchronization and closes with that merge; it owns no provider work and creates no write authorization.
-
-Green CI proves contracts and regression fixtures, not authorization to mutate VK or YouTube.
+Never print, copy, package, commit, log, request manual entry of, or put the configured VK token on a command line.
 
 ## Adaptive reasoning contract
 
-Agents must reason from invariants and observable transitions rather than copy one exact historical pattern.
+Agents reason from invariants and observable state transitions rather than copying one exact historical script.
 
 Before implementation or handoff, state:
 
 - requested outcome independently of the old mechanism;
 - exact project, surface, and object type;
-- transport for each phase: `local_only`, `official_api_read`, `official_api_write`, `internal_web_read`, `browser_ui_read`, or `browser_ui_write`;
+- one transport per phase: `local_only`, `official_api_read`, `official_api_write`, `internal_web_read`, `browser_ui_read`, or `browser_ui_write`;
 - allowed and forbidden side effects;
-- current operation phase;
-- whether a provider effect is impossible, not dispatched, confirmed absent, may exist, or verified;
+- operation phase;
+- whether the provider effect is impossible, not dispatched, confirmed absent, may exist, or verified;
 - exact completion postcondition;
 - one falsifiable hypothesis, one minimal bounded probe, and a stop condition.
 
-Use `video_channel_manager.application.operation_reasoning` for the core transport-aware next-action decision. An exit code, timeout, HTTP success, selector match, modal closure, visible title, playback state, screenshot, or stdout line cannot replace the provider-effect and postcondition evidence.
+A timeout, exit code, selector match, click, HTTP success, modal closure, visible title, screenshot, playback state, or stdout line is not a provider postcondition.
 
-When the exact historical pattern is unavailable, use this fallback order:
+Preserve partial success. Upload, processing visibility, metadata edit, playlist creation, membership change, final save, and wall publication are separate child operations. Resume from the first unverified child phase. Never rerun a verified parent phase.
 
-1. current repository-owned adapter and regressions;
-2. exact operation contract/state machine;
-3. transport invariants;
-4. one bounded read-only probe;
-5. retained manual observation.
+Unknown or possibly completed remote effects require read-only reconciliation. Never repeat an intent-persisted, accepted, processing, verified, or unknown mutation.
 
-Do not generate a new full ZIP/executor version merely because a selector changed. First identify the failed invariant, patch permanent repository code, and add a fixture. Maximum one unobserved selector revision is allowed; a second failure requires a new DOM/state observation and revised hypothesis.
-
-Provider snapshots are temporary task inputs. Scan only the exact project/surface needed for duplicate prevention or postflight. Do not turn a bounded task into a global platform audit.
-
-Preserve partial success. Upload, visibility, metadata edit, playlist creation, track membership, final playlist save, and wall publication are separate operations. Resume from the first unverified child phase; never rerun a verified parent phase.
+After the first diagnostic selector revision, patch repository-owned code and fixtures. Stop the ZIP/version treadmill. A second failure requires a fresh DOM/state observation and revised hypothesis.
 
 ## Browser UI state contract
+
+Bind the active browser surface before action.
 
 Before every browser action:
 
 1. bind the topmost active page or modal root;
 2. prove visibility and hit-testability;
-3. prove the target control belongs to that root;
-4. record the expected state transition;
+3. prove the control belongs to that root;
+4. record expected state transition;
 5. capture before-state evidence;
 6. perform one action;
-7. verify content/state and exact remote postcondition rather than relying only on window closure.
+7. verify exact content/state and remote postcondition.
 
-A background quick-search input is not an audio selector. Clicking a row and starting playback is not selecting the track. Artist text inside a title is not proof that the separate artist field is exact. `already_correct` requires exact per-field readback.
+A background search input is not an audio selector. Playback is not selection. Artist text inside a title is not proof of an exact separate artist field. `already_correct` requires exact per-field readback.
 
-One authenticated browser profile is a single-writer resource. Own one exact profile directory, refuse concurrent writers, and terminate the root process tree once rather than iterating over already-killed child PIDs.
+One authenticated browser profile is a single-writer resource. Own one exact profile directory, refuse concurrent writers, and terminate its root process tree once.
+
+## Local MP3 contract
+
+Supported capability is exactly `local_only_read_only_intake_and_manifest`.
+
+Current manifest schema is `1.1`. Local code may inspect MP3 bytes and ffprobe properties, retain exact tags/SHA/path/size/duration, apply explicit or declared metadata policy, detect exact-byte duplicates, and build deterministic manifests and chunks.
+
+Canonical duplicate selection is evidence-ranked:
+
+1. explicit exact artist/title;
+2. declared-policy ready metadata;
+3. unresolved metadata;
+4. path only as a deterministic tie-breaker.
+
+One source ID mapped to multiple hashes is `source_id_sha256_conflict`. Identical bytes claimed by multiple exact source IDs is `sha256_multiple_source_ids`. Every such item remains `requires_review`; no conflict becomes upload-ready automatically.
+
+Wave 16 proves deterministic local planning for 1,000 ready tracks, 1,000 unique operation IDs, and 40 chunks of 25. This is not provider throughput evidence or permission.
+
+The default metadata policy is `explicit_only`. Never infer a filename convention unless the manifest declares it.
+
+Not implemented or authorized: ID3 rewrite, rename, transcode, browser launch/control, VK Audio upload, remote metadata edit, playlist creation/membership mutation, or wall publication.
+
+VK Audio browser/internal-web work remains `SEPARATE_EXPERIMENTAL_SYSTEM / PARTIAL_OR_UNKNOWN_OUTCOMES / NOT_CORE_SUPPORTED`. BrowserCanary, PlaylistOnly, Metadata Manager, Rename AUTO, reliable-batch, calibrator, Playlist Workhorse, and related ZIPs are evidence only.
+
+## SQLite and CI lifetime contract
+
+`sqlite3.Connection.__exit__` does not close a connection. Repository code and fixtures use `contextlib.closing`; tests treat `ResourceWarning: unclosed database` as an error.
+
+CI actions are pinned by immutable SHA to Node 24-generation releases. Do not downgrade them to old Node 20-generation pins. A version comment is descriptive; the immutable SHA is authoritative.
+
+## Package and operational truth
+
+Package A output never authorizes a provider mutation by itself. It creates read-only evidence and no-blind-replay decisions.
+
+PowerShell orchestrates one repository-owned implementation. It does not become a second provider client. Generated external provider executors are unsupported.
+
+Green CI, a filename, ZIP, preview, issue body, confirmation prompt, stdout line, dashboard, README command, visible UI object, or roadmap entry never authorizes execution.
+
+## Historical compatibility ledger
+
+Wave 15 predecessor:
+
+- `WAVES_0_15_COMPLETED_ADAPTIVE_AGENT_REASONING_LOCAL_MP3_FOUNDATION_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`;
+- `main@eb58c1ad238fde01d66c6630b16e244b1c6c2992`;
+- PR #134, CI `31006136529`, `833 passed, 1 xfailed`, Ruff `461 files already formatted`;
+- machine state `docs/operations/audit-register-v8-2026-08-05.json`.
+
+Wave 14 predecessor compatibility anchors:
+
+- `WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`;
+- historical `main@626f83c6e5c068d7faa8b6d14163b42916faa769`;
+- PR #131, CI `31000834701`, `801 passed, 1 xfailed`;
+- repository-wide JSON/Markdown integrity regressions.
+
+These are historical proofs, not current work.
 
 ## Final issue graph
 
 Completed:
 
 - #31 — exact Lord God 26-item long-form reconciliation;
-- #119 — Legendary Poet Shorts/Clips reconciliation with unsupported long scope preserved as non-replayable;
+- #119 — Legendary Poet Shorts/Clips reconciliation;
 - #38 — shared VK native Clip/ordinary-video final-type contract;
 - #130 — repository-wide documentation and integrity polish;
-- #133 — adaptive reasoning and local-only MP3 foundation.
+- #133 — adaptive reasoning and local-only MP3 foundation;
+- #137 — CI runtime, SQLite lifetime, and MP3 identity hardening.
 
 Retired/not planned:
 
@@ -131,92 +184,28 @@ Retired/not planned:
 - #99 — unproved Legendary Poet article-wall launcher continuation;
 - #123 — deferred YouTube playlist mutation scope.
 
-Roadmap #64, Wave 13 #127, Wave 14 #130, and Wave 15 #133 are closed program/governance records, not future execution owners. Wave 15 state-sync #135 owns no provider operation and closes with the v8 merge.
+Do not group #32/#38 as Legendary Poet. Historically #32 belonged to Lord God, #38 was shared, and #119 belonged to Legendary Poet.
 
-Do not group #32/#38 as Legendary Poet. Historical ownership was #32 Lord God, #38 shared, and #119 Legendary Poet. All are now closed.
+`M5hNecL_MsQ → -235216998_456239160` remains ordinary `video` with `is_draft=1`, is not native Clip success, and must not be retransmitted.
 
-## Native Clip and unknown-outcome contract
+## Repository integrity and Windows handoff rules
 
-Native Clip success requires exact final `type=short_video`, processing complete, `is_draft` absent or zero, and exact public visibility proof.
-
-`M5hNecL_MsQ → -235216998_456239160` was observed as ordinary `video` with `is_draft=1`. It is not native Clip success and must not be retransmitted. The six undispatched long Legendary Poet items remain intentionally unexecuted. Automatic over-60-second native Clip publication is unsupported.
-
-Geometry, duration, title, player appearance, temporary type, preview, save response, or ordinary `video.get` absence never proves native Clip identity.
-
-## Package and operational truth
-
-Package A output never authorizes a provider mutation by itself. It creates immutable reconciliation evidence, a no-blind-replay recovery ledger, and a read-only operator board.
-
-Every package declares exactly one evidence level: `editorial_prepared`, `preview_validated`, `self_tested`, `canary_verified`, or `batch_verified`. Repository acceptance fixes `provider_writes_authorized=false` and `automatic_execution=false`. A filename, ZIP, preview, green CI, issue body, dashboard, confirmation prompt, stdout line, README command, or roadmap entry cannot promote evidence or authorize execution.
-
-PowerShell orchestrates one repository-owned implementation. It does not become a second provider client. Generated external provider executors are unsupported.
-
-## Local MP3 foundation
-
-Wave 15 completed only local MP3 intake and deterministic planning. Its support level is `local_only_read_only_intake_and_manifest`:
-
-- read-only ffprobe inspection;
-- exact size, SHA-256, duration, codec, rate, channel, cover-art, and embedded-tag evidence;
-- explicit or policy-declared artist/title derivation;
-- duplicate SHA and duplicate source-ID detection;
-- deterministic per-track operation IDs and manifest digest;
-- one-at-a-time ready-item chunking by default.
-
-The default metadata policy is `explicit_only`; an undeclared filename convention remains `requires_review`. Local code must not rewrite ID3 tags, transcode, rename, upload, open a browser, edit VK metadata, or create a playlist.
-
-VK Audio browser/internal-web work remains `SEPARATE_EXPERIMENTAL_SYSTEM / PARTIAL_OR_UNKNOWN_OUTCOMES / NOT_CORE_SUPPORTED`. The local MP3 foundation does not promote undocumented endpoints or historical BrowserCanary, PlaylistOnly, Metadata Manager, calibrator, reliable-batch, or Playlist Workhorse packages to supported provider entrypoints.
-
-## Repository integrity contract
-
-- Every tracked JSON file must parse as UTF-8 or UTF-8-BOM JSON.
-- Local Markdown links must resolve after fenced and inline code, anchors, external URLs, and explicit placeholders are excluded.
-- README and security documentation must distinguish implemented capability from current authorization.
-- Initial-roadmap wording, stale CI counts, and retired playlist scope must not reappear as current work.
-- Tests that depend on scheduled timestamps must freeze their test clock rather than drift with wall time.
-- Agent guidance must distinguish outcome, transport, operation phase, provider-effect state, and postcondition.
-
-## Deterministic Windows handoffs
-
-`.github/copilot-instructions.md` remains canonical. Every copy-paste PowerShell block defines all variables, works from any current directory, uses exact absolute paths, `-LiteralPath`, `Test-Path`, explicit extraction, exact invocation, and `$PSScriptRoot`; requires exactly one artifact; rejects `LastWriteTime`, newest-ZIP selection, broad wildcards, undefined/inherited variables, retired packages, and external provider executors; and declares evidence level, capability, exact community ID and owner ID, output/result paths, canary, and recovery behavior.
-
-## VK permission and separate-system rules
-
-Managed-community enumeration uses `groups.get(filter=moder, extended=1)` with bounded pagination. `filter=admin` is not equivalent and must not replace it.
-
-VK Audio browser/internal-web work remains separate from Package A and the core YouTube→VK Video engine. `internal_web_read` evidence can inform a bounded diagnosis but cannot authorize or define a stable provider writer.
+- Every tracked JSON file must parse.
+- Local Markdown links must resolve.
+- Tests depending on time must freeze their test clock.
+- Managed-community enumeration uses `filter=moder`; `filter=admin` is not equivalent.
+- Copy-paste PowerShell defines every variable and uses exact paths, `-LiteralPath`, `Test-Path`, `$PSScriptRoot`, and explicit output/result locations.
+- Never select packages by `LastWriteTime`, newest ZIP, broad wildcard, or undefined inherited variable.
+- Never mix project identities, OAuth aliases, credentials, manifests, journals, snapshots, or results.
+- Never infer absence from an endpoint that does not cover the relevant surface.
+- Never upload an ambiguous match.
+- Keep video, Clip, catalog, metadata, thumbnail, wall, audio, and playlist operations separate.
+- Machine state belongs in durable journals/results, not only stdout.
 
 ## Branch and merge discipline
 
-Substantial work uses one `agent/{description}` branch and one focused PR. Merge only after exact-head six-job green CI, unchanged expected head, reviewed scope, and clean review threads. Synchronize operational memory separately after code/runtime or governance baselines change.
+Substantial work uses one `agent/{description}` branch and one focused PR. Merge only after exact-head six-job green CI, unchanged expected head, reviewed scope, and clean review threads. Synchronize operational memory separately after a code/runtime baseline changes.
 
-## Non-negotiable safety rules
+Content in quotation marks must map to a contiguous source passage unless explicitly labeled synthesis.
 
-1. Never mix project identities, OAuth aliases, credentials, IDs, journals, links, or manifests.
-2. Never expose or request manual entry of the configured VK token.
-3. Never rerun completed, retired, deletion, reset, recovery, article-wave, cleanup, transfer, or playlist executors.
-4. Never infer absence from an endpoint that does not cover the relevant surface.
-5. Use exact IDs and bounded inventories, not screenshots, titles, relative dates, or retained counts.
-6. Never upload an ambiguous match.
-7. Never repeat an intent-persisted, accepted, processing, verified, or unknown mutation; reconcile first.
-8. Keep long-form and Shorts/Clips in separate manifests and ledgers.
-9. Keep Lord God and Legendary Poet manifests, ledgers, snapshots, OAuth aliases, and issues separate.
-10. Video upload, Clip publication, catalog, metadata, thumbnail, wall publication, audio upload, audio metadata, and playlist membership are separate operations.
-11. Never commit tokens, media, local exports, ledgers, logs, backups, or generated upload packages.
-12. A successful HTTP response is not a postcondition; verify the exact remote effect.
-13. Machine state belongs in journals/results, not only stdout.
-14. Historical code is never a supported entrypoint.
-15. `already_correct` requires exact per-field readback.
-16. Cache reuse requires exact manifest/file/source/probe agreement.
-17. Unknown outcomes stop automatic execution and require reconciliation.
-18. Every batch operation requires its own durable result; one final console line is supplementary only.
-19. A shared provider-mode issue never substitutes for a project-bound queue owner.
-20. Provider writes remain unauthorized unless a new explicit user request creates a new exact owning issue, a reviewed immutable exact-ID plan, expected remote delta, durable per-operation results, and exact postflight.
-21. Declare transport per phase; never merge official API, internal web, browser UI, and local-only evidence.
-22. Bind the active browser surface before action; global selectors and arbitrary coordinates are prohibited.
-23. Preserve verified parent phases and retry only a confirmed-absent failed child operation.
-24. Do not infer metadata from filename structure unless the manifest declares the parser policy.
-25. Stop the ZIP/version treadmill: patch permanent code and tests after the first diagnostic experiment.
-26. Keep hypotheses bounded: one explanation, one minimal probe, one recorded outcome.
-27. Content in quotation marks must map to a contiguous source passage or be explicitly labeled synthesis.
-
-No provider operational continuation is pending. Future provider work begins only from a new explicit user request and a new exact issue; closed issues and historical packages never authorize execution.
+No operational continuation is pending. Future provider work begins only from a new explicit user request and a new exact issue with a reviewed immutable exact-ID plan, expected remote delta, durable per-operation results, and exact postflight.
