@@ -23,7 +23,7 @@
   "wave_12a_exact_head": "98b4f3df7dd25918398d3544ee81d2b04a0aa21b",
   "wave_12a_ci_run": 30971070928,
   "wave_12a_evidence_level": "self_tested_project_bound_governance",
-  "wave_12a_status": "completed_pending_state_sync_merge",
+  "wave_12a_status": "completed",
   "program_state": "WAVES_0_12A_ENGINEERING_GOVERNANCE_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES",
   "completed_scopes": [
     "audit-a0",
