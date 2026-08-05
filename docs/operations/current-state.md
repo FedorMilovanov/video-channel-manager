@@ -17,7 +17,7 @@ This file overrides old chats, screenshots, packages, remembered counts, and sup
 - Waves 0–8F: completed at evidence level `self_tested`.
 - Wave 9 read-only evidence contract: completed at evidence level `read_only_contract_self_tested`.
 - Package A — Wave 9A + Wave 9B + Wave 10 tooling/governance: completed at evidence level `read_only_package_self_tested`.
-- Package A PR #109 merged as `8f8b224f0386cf9f1ed89e0983e8af440e96cdd4`.
+- Package A PR #110 merged as `8f8b224f0386cf9f1ed89e0983e8af440e96cdd4`.
 - Exact-head CI `30958445398`: Python 3.11/3.12/3.13 each passed with `773 passed, 1 xfailed`; Ruff correctness, Ruff formatting, strict mypy, dependency audit, Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux were green.
 - Provider queries during Package A implementation and CI: `0`.
 - Provider writes during Package A implementation and CI: `0`.
@@ -193,7 +193,7 @@ VK Audio browser/internal-web attempts remain `SEPARATE_EXPERIMENTAL_SYSTEM / PA
 - #85 — historical archive boundary, not supported runtime;
 - #86 — completed Wave 8;
 - #107/#108 — completed Wave 9 contract and state sync;
-- #109 — completed Package A implementation.
+- #110 — completed Package A implementation.
 
 ## Permanent prohibitions
 
