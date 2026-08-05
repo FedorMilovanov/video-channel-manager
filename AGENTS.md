@@ -76,14 +76,14 @@ Agents reason from invariants and observable state transitions rather than copyi
 
 Before implementation or handoff, state:
 
-- requested outcome independently of mechanism;
+- requested outcome independently of the old mechanism;
 - exact project, surface, and object type;
-- one transport per phase: local only, official API read/write, internal web read, or browser UI read/write;
+- one transport per phase: `local_only`, `official_api_read`, `official_api_write`, `internal_web_read`, `browser_ui_read`, or `browser_ui_write`;
 - allowed and forbidden side effects;
 - operation phase;
-- provider-effect state: impossible, not dispatched, confirmed absent, may exist, or verified;
+- whether the provider effect is impossible, not dispatched, confirmed absent, may exist, or verified;
 - exact completion postcondition;
-- one falsifiable hypothesis, one minimal bounded probe, and one stop condition.
+- one falsifiable hypothesis, one minimal bounded probe, and a stop condition.
 
 A timeout, exit code, selector match, click, HTTP success, modal closure, visible title, screenshot, playback state, or stdout line is not a provider postcondition.
 
@@ -94,6 +94,8 @@ Unknown or possibly completed remote effects require read-only reconciliation. N
 After the first diagnostic selector revision, patch repository-owned code and fixtures. Stop the ZIP/version treadmill. A second failure requires a fresh DOM/state observation and revised hypothesis.
 
 ## Browser UI state contract
+
+Bind the active browser surface before action.
 
 Before every browser action:
 
@@ -203,5 +205,7 @@ Do not group #32/#38 as Legendary Poet. Historically #32 belonged to Lord God, #
 ## Branch and merge discipline
 
 Substantial work uses one `agent/{description}` branch and one focused PR. Merge only after exact-head six-job green CI, unchanged expected head, reviewed scope, and clean review threads. Synchronize operational memory separately after a code/runtime baseline changes.
+
+Content in quotation marks must map to a contiguous source passage unless explicitly labeled synthesis.
 
 No operational continuation is pending. Future provider work begins only from a new explicit user request and a new exact issue with a reviewed immutable exact-ID plan, expected remote delta, durable per-operation results, and exact postflight.
