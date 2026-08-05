@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import json
 import sqlite3
+from contextlib import closing
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -252,21 +253,26 @@ def _sqlite_request(root: Path, ledger_path: Path, source_ids: tuple[str, ...]) 
     )
 
 
-def test_sqlite_ingest_uses_reviewed_contract_and_read_only_current_rows(tmp_path: Path) -> None:
-    ledger_path = tmp_path / "inputs" / "upload-ledger.db"
-    ledger_path.parent.mkdir(parents=True)
-    with sqlite3.connect(ledger_path) as connection:
+def _create_sqlite_ledger(path: Path, rows: tuple[tuple[object, ...], ...]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with closing(sqlite3.connect(path)) as connection:
         connection.execute(
             "CREATE TABLE current_state (source_id TEXT, stage TEXT, owner_id INTEGER, "
             "object_id INTEGER, evidence_digest TEXT)"
         )
-        connection.executemany(
-            "INSERT INTO current_state VALUES (?, ?, ?, ?, ?)",
-            (
-                ("failed-source", "failed", None, None, "a" * 64),
-                ("planned-source", "planned", None, None, None),
-            ),
-        )
+        connection.executemany("INSERT INTO current_state VALUES (?, ?, ?, ?, ?)", rows)
+        connection.commit()
+
+
+def test_sqlite_ingest_uses_reviewed_contract_and_read_only_current_rows(tmp_path: Path) -> None:
+    ledger_path = tmp_path / "inputs" / "upload-ledger.db"
+    _create_sqlite_ledger(
+        ledger_path,
+        (
+            ("failed-source", "failed", None, None, "a" * 64),
+            ("planned-source", "planned", None, None, None),
+        ),
+    )
     source_ids = ("failed-source", "planned-source")
     request = _sqlite_request(tmp_path, ledger_path, source_ids)
 
@@ -289,23 +295,54 @@ def test_sqlite_ingest_uses_reviewed_contract_and_read_only_current_rows(tmp_pat
 
 def test_sqlite_ingest_rejects_unmapped_stage_and_duplicate_source_rows(tmp_path: Path) -> None:
     ledger_path = tmp_path / "inputs" / "upload-ledger.db"
-    ledger_path.parent.mkdir(parents=True)
-    with sqlite3.connect(ledger_path) as connection:
-        connection.execute(
-            "CREATE TABLE current_state (source_id TEXT, stage TEXT, owner_id INTEGER, "
-            "object_id INTEGER, evidence_digest TEXT)"
-        )
-        connection.executemany(
-            "INSERT INTO current_state VALUES (?, ?, ?, ?, ?)",
-            (
-                ("duplicate-source", "planned", None, None, None),
-                ("duplicate-source", "mystery", None, None, None),
-            ),
-        )
+    _create_sqlite_ledger(
+        ledger_path,
+        (
+            ("duplicate-source", "planned", None, None, None),
+            ("duplicate-source", "mystery", None, None, None),
+        ),
+    )
     request = _sqlite_request(tmp_path, ledger_path, ("duplicate-source",))
 
     with pytest.raises(PackageAError, match="duplicate source row|not mapped"):
         load_local_records(request, input_root=tmp_path)
+
+
+def test_sqlite_reader_closes_connection_after_success(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ledger_path = tmp_path / "inputs" / "upload-ledger.db"
+    _create_sqlite_ledger(
+        ledger_path,
+        (("planned-source", "planned", None, None, None),),
+    )
+    request = _sqlite_request(tmp_path, ledger_path, ("planned-source",))
+    real_connect = sqlite3.connect
+    closed: list[bool] = []
+
+    class ConnectionProxy:
+        def __init__(self, connection: sqlite3.Connection) -> None:
+            self.connection = connection
+            self.was_closed = False
+
+        def execute(self, *args: object, **kwargs: object) -> sqlite3.Cursor:
+            return self.connection.execute(*args, **kwargs)
+
+        def close(self) -> None:
+            self.connection.close()
+            self.was_closed = True
+            closed.append(True)
+
+    def tracked_connect(*args: object, **kwargs: object) -> ConnectionProxy:
+        return ConnectionProxy(real_connect(*args, **kwargs))
+
+    monkeypatch.setattr("video_channel_manager.wave_engine.package_a.sqlite3.connect", tracked_connect)
+
+    records = load_local_records(request, input_root=tmp_path)
+
+    assert len(records) == 1
+    assert closed == [True]
 
 
 def test_sqlite_contract_rejects_identifier_injection() -> None:
