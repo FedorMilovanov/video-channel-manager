@@ -1,0 +1,91 @@
+{
+  "schema_name": "video-manager.audit-register-v3",
+  "schema_version": "3.0",
+  "updated_at": "2026-08-05T05:45:00+03:00",
+  "repository": "FedorMilovanov/video-channel-manager",
+  "predecessor_register": {
+    "path": "docs/operations/audit-register-v2-2026-08-04.json",
+    "blob_sha": "739146b63cfb3207a6b8d2d7a12698b3e54c28dd",
+    "schema_version": "2.9",
+    "role": "complete historical finding and source ledger"
+  },
+  "verified_main": "4cecaef81cb151cd8c5c019ffe5d8289aefaeee0",
+  "wave_11_state_sync_head": "557ec79ce5233bd76c13c3a373738ab80a0708f8",
+  "wave_12_code_head": "4cecaef81cb151cd8c5c019ffe5d8289aefaeee0",
+  "wave_12_exact_head": "78c4e374a8a3e5977417e24806db0144564088ec",
+  "wave_12_ci_run": 30969551134,
+  "wave_12_evidence_level": "self_tested_repository_governance",
+  "program_state": "WAVES_0_12_ENGINEERING_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES",
+  "completed_scopes": [
+    "audit-a0",
+    "waves-0-8f",
+    "wave-9-read-only-contract",
+    "package-a-wave-9a-9b-10-tooling",
+    "wave-11-operational-package-truth",
+    "wave-12-roadmap-and-windows-handoff-governance"
+  ],
+  "active_operational_graph": [
+    {
+      "issue": 31,
+      "project_key": "lord-god-strength",
+      "scope": "fresh bounded read-only long-form reconciliation",
+      "status": "requires_reconciliation"
+    },
+    {
+      "issues": [32, 38],
+      "project_key": "legendary-poet",
+      "scope": "fresh bounded Shorts/Clips reconciliation",
+      "status": "requires_reconciliation"
+    },
+    {
+      "issue": 33,
+      "scope": "later separately reviewed exact-ID mutation gate",
+      "status": "blocked_by_reconciliation"
+    },
+    {
+      "issue": 37,
+      "scope": "independent exact reviewed cleanup only",
+      "status": "separate_scope"
+    }
+  ],
+  "separate_systems": [
+    {
+      "id": "AUDIO-001",
+      "scope": "VK Audio browser/internal-web experiments",
+      "status": "separate_experimental_system_partial_or_unknown_not_core_supported"
+    }
+  ],
+  "wave_12_controls": {
+    "canonical_windows_handoff": ".github/copilot-instructions.md",
+    "self_contained_powershell_required": true,
+    "exact_absolute_paths_required": true,
+    "literal_path_required": true,
+    "exact_one_artifact_selection_required": true,
+    "newest_zip_selection_prohibited": true,
+    "undefined_variables_prohibited": true,
+    "external_generated_provider_executor_prohibited": true,
+    "retired_executor_rerun_prohibited": true,
+    "unknown_outcome_blind_retry_prohibited": true,
+    "truth_level_declaration_required": true,
+    "exact_project_community_owner_binding_required": true
+  },
+  "quality_evidence": {
+    "python_versions": ["3.11", "3.12", "3.13"],
+    "pytest": "784 passed, 1 xfailed",
+    "ruff": "green; 441 files formatted",
+    "mypy": "green; 145 source files",
+    "dependency_audit": "no known vulnerabilities",
+    "powershell_environments": [
+      "Windows PowerShell 5.1",
+      "PowerShell 7 Windows",
+      "PowerShell 7 Linux"
+    ]
+  },
+  "provider_queries_during_wave_12": 0,
+  "provider_writes_during_wave_12": 0,
+  "write_plans_created_during_wave_12": 0,
+  "provider_writes_during_state_sync": 0,
+  "live_counts_are_fresh": false,
+  "mutation_authorized": false,
+  "automatic_execution": false
+}
