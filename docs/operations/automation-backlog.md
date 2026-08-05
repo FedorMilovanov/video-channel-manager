@@ -1,9 +1,9 @@
 # Operational automation backlog
 
 Updated: 2026-08-05  
-Program state: `WAVE_11_OPERATIONAL_PACKAGE_TRUTH_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES`
+Program state: `WAVES_0_12_ENGINEERING_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES`
 
-This backlog is subordinate to [`current-state.md`](current-state.md), the canonical audit, and the machine register.
+This backlog is subordinate to [`current-state.md`](current-state.md), the canonical audit, the v3 machine-state overlay, and its immutable v2 predecessor register.
 
 ## Completed program foundation
 
@@ -13,6 +13,7 @@ This backlog is subordinate to [`current-state.md`](current-state.md), the canon
 - Wave 9 contract: immutable bounded read-only reconciliation.
 - Package A / Waves 9A–9B–10 tooling: SHA-bound local ingest, recovery decisions, read-only operator board, runbook, rollback, retirement registry, and archive boundary.
 - Wave 11: operational-package truth levels, repository-owned acceptance verifier, literal VK `filter=moder` regression, source-bound sermon-month incident archive, and retirement of v1/v2/v3.
+- Wave 12: deterministic Windows handoff contract, exact absolute path and artifact-selection rules, post-Wave-11 operations-index convergence, and regression protection against stale roadmap entrypoints.
 
 ## Active operational work
 
@@ -48,6 +49,12 @@ Owner: #33.
 
 A write-capable canary or batch may be designed only after fresh reconciliation and requires one immutable exact-ID plan, explicit expected delta, supported operator, per-operation results, unknown-outcome reconciliation, and exact postflight.
 
+### Independent exact cleanup
+
+Owner: #37.
+
+This issue owns only its explicitly reviewed object set. It does not authorize broader deletion or cleanup inferred from titles, age, low views, or historical package membership.
+
 ## Permanent package acceptance work
 
 Every new handoff must:
@@ -61,12 +68,28 @@ Every new handoff must:
 - stop and reconcile unknown outcomes;
 - avoid a standalone generated `executor.py` provider implementation.
 
+## Permanent Windows handoff work
+
+Every Windows handoff must:
+
+- follow `.github/copilot-instructions.md`;
+- use one self-contained PowerShell block;
+- define exact repository, Downloads, artifact, extraction, entrypoint, and result paths;
+- use `-LiteralPath`, `Test-Path`, explicit ZIP extraction, and full-path invocation;
+- use `$PSScriptRoot` inside delivered scripts;
+- fail on zero or multiple artifact matches;
+- reject `LastWriteTime`, newest-ZIP selection, broad wildcard generations, undefined variables, and inherited shell state;
+- declare truth level, capability, exact project/community/owner, canary behavior, and recovery behavior;
+- preserve UTF-8/BOM requirements for Russian `.ps1` and human-readable `.txt` files;
+- never turn a command handoff into provider-write authorization.
+
 ## Historical-learning maintenance
 
 - Preserve only Markdown/JSON source-bound archives.
 - Record source SHA-256, line counts, evidence level, unavailable evidence, and rerun prohibition.
 - Representative PowerShell/Python snippets remain incomplete and non-executable.
 - A transcript-reported or stdout-reported batch is not independently `batch_verified` without retained per-operation results and exact postflight.
+- Keep `audit-register-v2-2026-08-04.json` immutable as the full historical ledger; add current compact state through versioned overlays rather than destructive rewrites.
 
 ## Separate VK Audio incubation
 

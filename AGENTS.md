@@ -4,17 +4,19 @@ Before work on Fedor Milovanov's YouTube/VK workflow, read in order:
 
 1. `docs/operations/project-identity-registry.md`
 2. `docs/operations/master-audit-marathon-v2-2026-08-04.md`
-3. `docs/operations/audit-register-v2-2026-08-04.json`
-4. `docs/operations/current-state.md`
-5. `docs/operations/automation-backlog.md`
-6. GitHub issue #64 and the issue owning the exact operation
-7. `docs/operations/local-credential-sources.md`
-8. `docs/operations/2026-07-31-youtube-vk-transfer-postmortem.md`
-9. `docs/operations/operational-artifact-standard.md`
-10. `docs/operations/operational-package-acceptance.md`
-11. `docs/operations/retirement-registry-v1.json`
+3. `docs/operations/audit-register-v3-2026-08-05.json`
+4. `docs/operations/audit-register-v2-2026-08-04.json`
+5. `docs/operations/current-state.md`
+6. `docs/operations/automation-backlog.md`
+7. `.github/copilot-instructions.md`
+8. GitHub issue #64 and the issue owning the exact operation
+9. `docs/operations/local-credential-sources.md`
+10. `docs/operations/2026-07-31-youtube-vk-transfer-postmortem.md`
+11. `docs/operations/operational-artifact-standard.md`
+12. `docs/operations/operational-package-acceptance.md`
+13. `docs/operations/retirement-registry-v1.json`
 
-The audit register and `current-state.md` override old chats, screenshots, ZIPs, remembered counts, and superseded audits. Historical material teaches; it never authorizes execution.
+The v3 machine-state overlay, its immutable v2 predecessor register, and `current-state.md` override old chats, screenshots, ZIPs, remembered counts, and superseded audits. Historical material teaches; it never authorizes execution.
 
 ## Exact project boundary
 
@@ -41,7 +43,7 @@ Never copy, print, commit, package, log, or place the token value on a command l
 
 ## Current verified sequence
 
-Verified code baseline: `main@eeab53b779e5ea4af5d3dcc08d79e41812739e04`.
+Verified code baseline: `main@4cecaef81cb151cd8c5c019ffe5d8289aefaeee0`.
 
 - Waves 0–8F: completed;
 - Wave 9 read-only evidence contract: completed;
@@ -50,10 +52,13 @@ Verified code baseline: `main@eeab53b779e5ea4af5d3dcc08d79e41812739e04`.
 - Package A state sync PR #111 merged as `024a978f7c57a52f03e4cae8e6cb8175d8e96976`;
 - Wave 11 operational-package truth and managed-community preflight: completed at `self_tested_source_bound_governance`;
 - Wave 11 PR #113 merged as `eeab53b779e5ea4af5d3dcc08d79e41812739e04`;
-- Wave 11 exact-head CI `30967195938`: `782 passed, 1 xfailed` on Python 3.11/3.12/3.13; all three PowerShell environments green;
-- provider queries during Wave 11 implementation/CI: `0`;
-- provider writes during Wave 11 implementation/CI: `0`;
-- write plans created during Wave 11 implementation/CI: `0`;
+- Wave 11 state sync PR #114 merged as `557ec79ce5233bd76c13c3a373738ab80a0708f8`;
+- Wave 12 roadmap convergence and deterministic Windows handoffs: completed at `self_tested_repository_governance`;
+- Wave 12 PR #116 merged as `4cecaef81cb151cd8c5c019ffe5d8289aefaeee0`;
+- Wave 12 exact-head CI `30969551134`: `784 passed, 1 xfailed` on Python 3.11/3.12/3.13; dependency audit, Ruff, strict mypy across 145 source files, Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux were green;
+- provider queries during Wave 12 implementation/CI: `0`;
+- provider writes during Wave 12 implementation/CI: `0`;
+- write plans created during Wave 12 implementation/CI: `0`;
 - fresh live Wave 9A/9B reconciliation remains pending exact local ledgers/results and fresh bounded provider snapshots.
 
 Green CI proves contracts and regression fixtures, not current YouTube/VK state.
@@ -89,6 +94,22 @@ A passing result fixes `provider_writes_authorized=false` and `automatic_executi
 
 PowerShell orchestrates one repository-owned implementation. It does not duplicate provider permission, retry, pagination, postflight, or state-classification logic. A generated Downloads-only `executor.py` is not a supported provider adapter.
 
+## Wave 12 deterministic Windows handoffs
+
+`.github/copilot-instructions.md` is the canonical user-facing Windows handoff contract. It never authorizes provider writes and remains subordinate to this file and current operational state.
+
+Every copy-paste PowerShell handoff must:
+
+- be self-contained and work from an arbitrary current directory;
+- define every variable in the same block;
+- use exact absolute paths, `-LiteralPath`, explicit `Test-Path`, exact ZIP extraction, and full-path invocation;
+- use `$PSScriptRoot` for sibling files inside delivered scripts;
+- require exactly one artifact when discovery is unavoidable;
+- reject `LastWriteTime`, “newest ZIP”, broad wildcard generation selection, and inherited shell variables;
+- declare evidence level, read/write capability, exact project/community/owner, expected result paths, canary behavior, and unknown-outcome recovery;
+- preserve UTF-8/BOM rules for Russian Windows `.ps1` and human-readable `.txt` artifacts;
+- never introduce an external generated provider executor or revive a retired package family.
+
 ## VK managed-community permission rule
 
 Managed-community enumeration uses exactly `groups.get(filter=moder, extended=1)` with bounded pagination. `filter=admin` is not an equivalent capability check and produced a documented false rejection. The returned managed list is normalized, then the exact registered community and owner are verified separately.
@@ -106,6 +127,7 @@ Representative PowerShell and Python fragments may exist only inside the Markdow
 - #31 — Lord God long-form reconciliation;
 - #32/#38 — Legendary Poet Shorts/Clips reconciliation;
 - #33 — later reviewed catalog/publication gate;
+- #37 — independent exact reviewed cleanup only;
 - #64 — canonical roadmap.
 
 Retained Lord God facts are inputs, not fresh conclusions:
@@ -127,7 +149,7 @@ Do not use retired V1/V2/V3/V4, the historical “48 clips” package, or sermon
 
 ## Separate VK Audio boundary
 
-VK Audio browser/internal-web work remains `SEPARATE_EXPERIMENTAL_SYSTEM / PARTIAL_OR_UNKNOWN_OUTCOMES / NOT_CORE_SUPPORTED`. It is not part of Package A or Wave 11.
+VK Audio browser/internal-web work remains `SEPARATE_EXPERIMENTAL_SYSTEM / PARTIAL_OR_UNKNOWN_OUTCOMES / NOT_CORE_SUPPORTED`. It is not part of Package A, Wave 11, or Wave 12.
 
 ## Branch and merge discipline
 
@@ -165,6 +187,7 @@ VK Audio browser/internal-web work remains `SEPARATE_EXPERIMENTAL_SYSTEM / PARTI
 23. VK managed-community discovery uses `filter=moder`; exact project identity is a separate gate.
 24. Unknown outcomes stop automatic execution and require reconciliation.
 25. Every batch operation requires its own durable result; one `FINAL_OK` line is supplementary only.
+26. Windows handoffs never depend on current directory, undefined variables, newest-file selection, or inherited shell state.
 
 ## Execution and handoff rules
 
