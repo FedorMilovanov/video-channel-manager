@@ -1,75 +1,49 @@
 # Operational automation backlog
 
 Updated: 2026-08-05  
-Program state: `WAVES_0_12B_ENGINEERING_GOVERNANCE_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES`
+Program state: `WAVES_0_13_COMPLETED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`
 
-This backlog is subordinate to [`current-state.md`](current-state.md), the canonical audit, the v4 machine-state overlay, and immutable v3/v2 predecessors.
+This backlog is subordinate to [`current-state.md`](current-state.md), the current v6 machine-state overlay, and immutable v5/v4/v3/v2 predecessors.
 
 ## Completed program foundation
 
 - Waves 0–7: exact identity, durable mutation journals, upload/wall separation, guarded operator, versioned Wave Engine, and fault/corruption/replay proofs.
-- Audit A0 and Waves 8A–8F: authoritative ownership, exact matching, catalog/media/thumbnail correctness, and integration evidence.
-- Wave 9 and Package A / Waves 9A–10: immutable bounded reconciliation, recovery ledger, read-only operator board, runbook, rollback, and retirement.
-- Wave 11: operational-package truth, repository acceptance, `filter=moder`, source-bound incident archive, and retired package governance.
-- Wave 12: deterministic Windows handoffs and roadmap convergence.
-- Wave 12A: project-bound issue ownership correction.
-- Wave 12B / #122: one shared VK credential versus channel-specific YouTube OAuth aliases; stale #2–#5 and completed #37 reconciled; PR #124 merged as `38296d07f8b6e948a6c5c4846bb66bf116bcfb72`, exact head `ffd275e9173db5a46bdde85f318dfa08ca83adb3`, CI `30988821430`, `789 passed, 1 xfailed`, provider queries/writes/plans `0/0/0`.
+- Waves 8A–8F — completed exact matching, catalog/media/thumbnail correctness, and integration evidence.
+- Wave 9 read-only contract — completed.
+- Package A / Waves 9A–10 — completed immutable bounded reconciliation, recovery ledger, read-only operator board, runbook, rollback, and retirement.
+- Wave 11 — completed package truth, repository acceptance, `filter=moder`, source-bound archive, and retired-package governance.
+- Wave 12 — completed deterministic Windows handoffs and roadmap convergence.
+- Wave 12A / #118 — completed project-bound ownership correction at `self_tested_project_bound_governance`.
+- Wave 12B / #122 — completed one shared VK credential versus channel-specific YouTube OAuth aliases and stale issue reconciliation.
+- Wave 12C / #126 — completed issue-contract convergence.
+- Wave 13 / #127 — completed final evidence-backed operational closure through PR #128, merge `8d6a5ba243788e7b95b0e8a57eb02fb10eaf12ba`, exact head `731cc247a0c757c7103cd1ce5336adaf125d04d0`, CI `30992600857`, `792 passed, 1 xfailed`, provider queries/writes/plans `0/0/0`.
 
-## Active read-only operational work
+## Active backlog
 
-### #31 — Lord God long-form reconciliation
+None.
 
-Binding: `lord-god-strength`, YouTube alias `fedor-milovanov`, channel `UCeSJsC6go2c9pdJCuUI1BYA`, VK community/owner `60805374` / `-60805374`.
+There is no active reconciliation, transfer queue, catalog wave, article-wall wave, playlist mutation design, cleanup, reset, recovery, or provider-mode research issue after the completed-state merge.
 
-Required: exact result JSON, SQLite ledger, exact run log, bounded source manifest, fresh YouTube/VK snapshots, Package A output, and no-blind-replay classification.
+## Final issue dispositions
 
-### #32 — Lord God Shorts/Clips reconciliation
+- #31 — long-form reconciliation: completed; exact Lord God queue `26/26`, missing `0`, thumbnails `26/26`.
+- #119 — Shorts/Clips reconciliation: completed with a documented unsupported long scope; this does not claim all 56 are native Clips.
+- #38 — shared VK native Clip/ordinary-video provider-mode: completed fail-closed contract.
+- #32 — Shorts/Clips reconciliation: retired/not planned; non-authoritative Lord God 108-item auto-upload scope must not be replayed.
+- #33 — catalog/publication continuation: retired/not planned.
+- #99 — Legendary Poet article-wall launcher continuation: cancelled/not planned.
+- #123 — YouTube playlist mutations: retired/not planned.
 
-Same project binding as #31. Required: exact source set; plan/result/journal/SQLite evidence; fresh ordinary-video and actual Clip snapshots; reconciliation of accepted/processing/unknown stages. Retained 108 and provisional 65/108 are historical. V1/V2/V3/V4 are retired.
+Do not group #32/#38 as Legendary Poet. Historically #32 belonged to Lord God, #38 was shared, and #119 belonged to Legendary Poet. Their closure reasons are preserved in v6.
 
-### #119 — Legendary Poet Shorts/Clips reconciliation
+## Credential and package boundary
 
-Binding: `legendary-poet`, YouTube alias `legendary-poet`, channel `UC-78ys2S3cQ3lpqgXfo-SvQ`, VK community/owner `235216998` / `-235216998`.
+VK has one shared user access token. Exact project/community/owner IDs select the target. YouTube OAuth alias `fedor-milovanov` belongs to Lord God and OAuth alias `legendary-poet` belongs to Legendary Poet.
 
-Required: exact local runtime results/journals/ledgers, fresh YouTube Shorts plus VK ordinary/Clip snapshots, Package A evidence, and final native-Clip type proof. Retained `56 / 41 / 15 / 0`, “48 clips”, and old ZIPs are historical inputs only.
+Provider writes remain unauthorized. Every package remains non-authorizing unless a new explicit user request creates a new exact issue and separately reviewed immutable plan.
 
-### #38 — shared provider-mode/final-type contract
+Never select artifacts by `LastWriteTime`, newest ZIP, broad wildcard, or remembered count. Never rerun retired launchers. Unknown outcomes remain non-replayable.
 
-Project-neutral and owns no queue. Requires current primary sources, versioned `external_embed` / `native_video` / `native_clip` modes, exact adapter evidence, one processed canary, final type readback, and unknown-outcome reconciliation.
+## Future work rule
 
-## Later separately reviewed gates
-
-### #33 — Lord God video catalog/publication
-
-Blocked by #31/#32. Any future plan must be exact-ID, project-bound, separately authorized, and postflight-verifiable. VK Audio/MP3 and Legendary Poet are excluded.
-
-### #99 — Legendary Poet article-wall
-
-Separate from #119. Requires supported adapter readiness, published+postponed wall preflight, exact assets/text/schedule, one canary, durable results, and exact postflight.
-
-## Deferred product scope
-
-### #123 — YouTube playlist mutation contract
-
-Deferred and unauthorized. Preserves playlist create/update, membership add/remove/reorder, and a generic guarded plan approval/execution lifecycle that was not implemented under superseded #4.
-
-## Closed issue graph
-
-- #2 and #5: completed;
-- #3 and #4: superseded/not planned;
-- #37: completed historical 34-item cleanup, protected post `12400` preserved, executor retired;
-- #118: completed Wave 12A correction.
-
-Closed issues do not authorize parallel execution or future broad cleanup.
-
-## Permanent package and handoff rules
-
-VK has one shared user token; exact project/community/owner selects the target. YouTube aliases remain channel-specific. Every package binds exact project/OAuth/community/owner/entrypoint, declares one evidence level, keeps `provider_writes_authorized=false` and `automatic_execution=false`, records durable per-operation results, and stops on unknown outcomes.
-
-Every Windows handoff follows `.github/copilot-instructions.md`: self-contained PowerShell, exact paths, `-LiteralPath`, `Test-Path`, explicit extraction, full-path invocation, `$PSScriptRoot`, exact-one artifact, no `LastWriteTime`, newest ZIP, undefined variables, retired executor, or external provider client.
-
-VK Audio remains separate and unsupported. Transcript/stdout success is not independently `batch_verified` without durable per-operation results and exact postflight.
-
-## Definition of done
-
-A wave closes only after focused scope, fail-closed evidence, exact-head six-job green CI, completed state sync, issue/roadmap updates, and preserved provider safety boundaries.
+This backlog is closed, not waiting. A future task starts as a new user-requested scope with a new project-bound issue; it must not reactivate a closed issue or historical executor.
