@@ -65,9 +65,7 @@ def _bundle_files(
     checksum_lines = [f"{hashlib.sha256(manifest_text.encode()).hexdigest()}  manifest.json"]
     if standalone_executor:
         files["executor.py"] = "print('historical external executor')\n"
-        checksum_lines.append(
-            f"{hashlib.sha256(files['executor.py'].encode()).hexdigest()}  executor.py"
-        )
+        checksum_lines.append(f"{hashlib.sha256(files['executor.py'].encode()).hexdigest()}  executor.py")
     files["SHA256SUMS.txt"] = "\n".join(checksum_lines) + "\n"
     return files
 
@@ -124,10 +122,7 @@ def test_acceptance_gate_rejects_automatic_execution_and_missing_reconciliation(
 
     assert not result.ok
     assert any("automatic_execution must be false" in error for error in result.acceptance_errors)
-    assert any(
-        "unknown_outcome_requires_reconciliation must be true" in error
-        for error in result.acceptance_errors
-    )
+    assert any("unknown_outcome_requires_reconciliation must be true" in error for error in result.acceptance_errors)
 
 
 def test_vk_managed_community_preflight_uses_moder_extended_and_bounded_page(
