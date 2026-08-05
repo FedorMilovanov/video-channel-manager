@@ -59,7 +59,7 @@ def test_actual_child_issue_dispositions_are_complete() -> None:
     assert dispositions[119]["no_blind_replay"] is True
 
 
-def test_human_entrypoints_report_no_active_backlog() -> None:
+def test_human_entrypoints_report_wave14_and_no_active_backlog() -> None:
     texts = {
         "current_state": CURRENT_STATE.read_text(encoding="utf-8"),
         "backlog": BACKLOG.read_text(encoding="utf-8"),
@@ -68,7 +68,8 @@ def test_human_entrypoints_report_no_active_backlog() -> None:
     }
 
     required = (
-        "WAVES_0_13_COMPLETED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES",
+        "WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES",
+        "audit-register-v7-2026-08-05.json",
         "Provider writes remain unauthorized",
         "No operational continuation is pending",
         "one shared user access token",
