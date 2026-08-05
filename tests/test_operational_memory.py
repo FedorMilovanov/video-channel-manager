@@ -36,13 +36,15 @@ def test_operations_index_has_no_broken_local_markdown_links() -> None:
     assert broken == []
 
 
-def test_current_state_records_wave12_without_claiming_live_or_batch_completion() -> None:
+def test_current_state_records_wave12a_without_claiming_live_completion() -> None:
     text = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
     required = (
-        "WAVES_0_12_ENGINEERING_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES",
-        "4cecaef81cb151cd8c5c019ffe5d8289aefaeee0",
+        "WAVES_0_12_COMPLETED_WAVE_12A_OWNERSHIP_CORRECTION_ACTIVE",
+        "8536811779806967f14ce3b957c63b55e2ba4496",
         "30969551134",
+        "30970123683",
         "784 passed, 1 xfailed",
+        "785 passed, 1 xfailed",
         "self_tested_repository_governance",
         "audit-register-v3-2026-08-05.json",
         "739146b63cfb3207a6b8d2d7a12698b3e54c28dd",
@@ -60,9 +62,8 @@ def test_current_state_records_wave12_without_claiming_live_or_batch_completion(
         "FINAL_OK — 30/30",
         "-60805374_12482",
         "-60805374_12511",
-        "Вставленный текст(290).txt",
         "2fd8cbd46e5b39b2baa0b4adcebba3cbfc6e57e445cddd5a8d16dbb5795bfb1d",
-        "Actual fresh Wave 9A/9B live provider reconciliation: pending",
+        "Actual fresh live provider reconciliation: pending",
         "BLOCKED_PENDING_FRESH_READ_ONLY_WALL_AUDIT_AND_LOCAL_LEDGER_RECONCILIATION",
         "REVIEWED_MANIFEST_PREPARED / UPLOAD_COMPLETION_NOT_PROVEN",
         "KobOzfBqzic",
@@ -70,23 +71,28 @@ def test_current_state_records_wave12_without_claiming_live_or_batch_completion(
         "SEPARATE_EXPERIMENTAL_SYSTEM",
         "LastWriteTime",
         "$PSScriptRoot",
+        "#31 — Lord God long-form reconciliation",
+        "#32 — Lord God Shorts/Clips reconciliation",
+        "#119 — Legendary Poet Shorts/Clips reconciliation",
+        "#38 — shared provider-mode/final-type contract",
+        "Issue #32 is not a Legendary Poet owner",
     )
     for fact in required:
         assert fact in text
     assert "independently `batch_verified`" in text
-    assert "Actual fresh Wave 9A/9B live provider reconciliation: completed" not in text
+    assert "Actual fresh live provider reconciliation: completed" not in text
+    assert "Owner issues: #32 and #38" not in text
 
 
-def test_agent_instructions_preserve_wave12_and_read_only_boundaries() -> None:
+def test_agent_instructions_preserve_project_bound_read_only_owners() -> None:
     text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
     required = (
-        "main@4cecaef81cb151cd8c5c019ffe5d8289aefaeee0",
+        "main`: `8536811779806967f14ce3b957c63b55e2ba4496",
         "Package A PR #110",
-        "Package A state sync PR #111",
-        "Wave 11 PR #113",
-        "Wave 11 state sync PR #114",
-        "Wave 12 PR #116",
-        "784 passed, 1 xfailed",
+        "Wave 11 operational-package truth",
+        "Wave 12 deterministic Windows handoffs",
+        "Wave 12A / issue #118",
+        "785 passed, 1 xfailed",
         "self_tested_repository_governance",
         "editorial_prepared",
         "preview_validated",
@@ -94,24 +100,30 @@ def test_agent_instructions_preserve_wave12_and_read_only_boundaries() -> None:
         "batch_verified",
         "filter=moder",
         "filter=admin",
-        "Do not rerun it",
         "operator_transcript_reported",
         "Package A output never authorizes a provider mutation by itself",
-        "PowerShell must not become a second provider implementation",
+        "PowerShell orchestrates one repository-owned implementation",
         "LastWriteTime",
         "newest ZIP",
         "exact absolute paths",
         "$PSScriptRoot",
+        "#31 — `lord-god-strength` long-form reconciliation",
+        "#32 — `lord-god-strength` Shorts/Clips reconciliation",
+        "#119 — `legendary-poet` Shorts/Clips reconciliation",
+        "#38 — shared VK native Clip/ordinary-video provider-mode",
+        "Do not group #32/#38 as Legendary Poet ownership",
+        "OAuth alias `fedor-milovanov`",
+        "OAuth alias `legendary-poet`",
     )
     for fact in required:
         assert fact in text
 
 
-def test_wave12_machine_state_overlay_is_valid_and_fail_closed() -> None:
+def test_wave12a_machine_state_overlay_is_project_bound_and_fail_closed() -> None:
     overlay_path = OPERATIONS_DIR / "audit-register-v3-2026-08-05.json"
     payload = json.loads(overlay_path.read_text(encoding="utf-8"))
     assert payload["schema_name"] == "video-manager.audit-register-v3"
-    assert payload["schema_version"] == "3.0"
+    assert payload["schema_version"] == "3.1"
     assert payload["predecessor_register"] == {
         "path": "docs/operations/audit-register-v2-2026-08-04.json",
         "blob_sha": "739146b63cfb3207a6b8d2d7a12698b3e54c28dd",
@@ -119,28 +131,49 @@ def test_wave12_machine_state_overlay_is_valid_and_fail_closed() -> None:
         "role": "complete historical finding and source ledger",
     }
     assert (ROOT / payload["predecessor_register"]["path"]).is_file()
-    assert payload["verified_main"] == "4cecaef81cb151cd8c5c019ffe5d8289aefaeee0"
-    assert payload["wave_12_code_head"] == "4cecaef81cb151cd8c5c019ffe5d8289aefaeee0"
-    assert payload["wave_12_exact_head"] == "78c4e374a8a3e5977417e24806db0144564088ec"
-    assert payload["wave_12_ci_run"] == 30969551134
-    assert payload["wave_12_evidence_level"] == "self_tested_repository_governance"
+    assert payload["verified_main"] == "8536811779806967f14ce3b957c63b55e2ba4496"
+    assert payload["wave_12_state_sync_head"] == "8536811779806967f14ce3b957c63b55e2ba4496"
+    assert payload["wave_12_state_sync_exact_head"] == "40c680f33aacb33c33b09659d81e37e4f14d47b8"
+    assert payload["wave_12_state_sync_ci_run"] == 30970123683
+    assert payload["wave_12a_issue"] == 118
+    assert payload["wave_12a_status"] == "ownership_correction_active"
     assert payload["program_state"] == (
-        "WAVES_0_12_ENGINEERING_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES"
+        "WAVES_0_12_COMPLETED_WAVE_12A_OWNERSHIP_CORRECTION_ACTIVE_"
+        "LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES"
     )
-    graph = payload["active_operational_graph"]
-    assert any(item.get("issue") == 31 and item["status"] == "requires_reconciliation" for item in graph)
-    assert any(item.get("issues") == [32, 38] and item["status"] == "requires_reconciliation" for item in graph)
-    assert any(item.get("issue") == 33 and item["status"] == "blocked_by_reconciliation" for item in graph)
+
+    graph = {item["issue"]: item for item in payload["active_operational_graph"]}
+    assert graph[31] == {
+        "issue": 31,
+        "project_key": "lord-god-strength",
+        "oauth_alias": "fedor-milovanov",
+        "youtube_channel_id": "UCeSJsC6go2c9pdJCuUI1BYA",
+        "vk_community_id": 60805374,
+        "vk_owner_id": -60805374,
+        "scope": "fresh bounded read-only long-form reconciliation",
+        "status": "requires_reconciliation",
+    }
+    assert graph[32]["project_key"] == "lord-god-strength"
+    assert graph[32]["oauth_alias"] == "fedor-milovanov"
+    assert graph[32]["vk_owner_id"] == -60805374
+    assert graph[119]["project_key"] == "legendary-poet"
+    assert graph[119]["oauth_alias"] == "legendary-poet"
+    assert graph[119]["vk_owner_id"] == -235216998
+    assert "project_key" not in graph[38]
+    assert graph[38]["status"] == "primary_source_and_canary_contract_required"
+    assert graph[33]["project_key"] == "lord-god-strength"
+    assert graph[33]["status"] == "blocked_by_issues_31_and_32"
+    assert graph[99]["project_key"] == "legendary-poet"
+
     controls = payload["wave_12_controls"]
     assert controls["self_contained_powershell_required"] is True
     assert controls["exact_absolute_paths_required"] is True
     assert controls["newest_zip_selection_prohibited"] is True
     assert controls["external_generated_provider_executor_prohibited"] is True
     assert controls["unknown_outcome_blind_retry_prohibited"] is True
-    assert payload["provider_queries_during_wave_12"] == 0
-    assert payload["provider_writes_during_wave_12"] == 0
-    assert payload["write_plans_created_during_wave_12"] == 0
-    assert payload["provider_writes_during_state_sync"] == 0
+    assert payload["provider_queries_during_wave_12a"] == 0
+    assert payload["provider_writes_during_wave_12a"] == 0
+    assert payload["write_plans_created_during_wave_12a"] == 0
     assert payload["live_counts_are_fresh"] is False
     assert payload["mutation_authorized"] is False
     assert payload["automatic_execution"] is False
