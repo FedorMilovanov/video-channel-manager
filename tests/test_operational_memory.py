@@ -13,6 +13,8 @@ def test_agent_instructions_reference_existing_sources_of_truth() -> None:
     text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
     required_sources = (
         "docs/operations/master-audit-marathon-v2-2026-08-04.md",
+        "docs/operations/audit-register-v6-2026-08-05.json",
+        "docs/operations/audit-register-v5-2026-08-05.json",
         "docs/operations/audit-register-v4-2026-08-05.json",
         "docs/operations/audit-register-v3-2026-08-05.json",
         "docs/operations/audit-register-v2-2026-08-04.json",
@@ -37,72 +39,79 @@ def test_operations_index_has_no_broken_local_markdown_links() -> None:
     assert broken == []
 
 
-def test_current_state_records_completed_wave12b_without_live_completion() -> None:
+def test_current_state_records_completed_wave13_and_zero_active_graph() -> None:
     text = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
     required = (
-        "WAVES_0_12B_ENGINEERING_GOVERNANCE_COMPLETED",
-        "main@38296d07f8b6e948a6c5c4846bb66bf116bcfb72",
-        "ffd275e9173db5a46bdde85f318dfa08ca83adb3",
-        "30988821430",
-        "789 passed, 1 xfailed",
-        "self_tested_credential_and_issue_graph_governance",
-        "audit-register-v4-2026-08-05.json",
-        "audit-register-v3-2026-08-05.json",
-        "Actual fresh live provider reconciliation: pending",
+        "WAVES_0_13_COMPLETED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES",
+        "main@8d6a5ba243788e7b95b0e8a57eb02fb10eaf12ba",
+        "731cc247a0c757c7103cd1ce5336adaf125d04d0",
+        "30992600857",
+        "792 passed, 1 xfailed",
+        "audit-register-v6-2026-08-05.json",
+        "audit-register-v5-2026-08-05.json",
+        "No operational continuation is pending",
         "one shared **user access token**",
-        "it is not a project selector",
+        "is not a project selector",
         "#31 — Lord God long-form reconciliation",
-        "#32 — Lord God Shorts/Clips reconciliation",
+        "#32 — non-authoritative Lord God 108-item Shorts auto-upload scope",
         "#119 — Legendary Poet Shorts/Clips reconciliation",
-        "#38 — shared provider-mode/final-type contract",
+        "#38 — shared VK native Clip/ordinary-video provider-mode",
         "OAuth alias `fedor-milovanov`",
         "OAuth alias `legendary-poet`",
-        "Issue #32 is not a Legendary Poet owner",
-        "#33 — Lord God video catalog/publication gate",
-        "VK Audio/MP3 and Legendary Poet are excluded",
-        "#123 — deferred YouTube playlist mutation contract",
+        "Do not group #32/#38 as Legendary Poet",
+        "#33 — broad Lord God catalog/editorial/postponed-wall continuation",
+        "#99 — unproved Legendary Poet article-wall launcher continuation",
+        "#123 — deferred YouTube playlist mutation scope",
         "SEPARATE_EXPERIMENTAL_SYSTEM",
+        "Provider writes remain unauthorized",
     )
     for fact in required:
         assert fact in text
 
     for claim in (
-        "Actual fresh live provider reconciliation: completed",
-        "Owner issues: #32 and #38",
-        "#32/#38 — pending fresh Legendary Poet reconciliation",
+        "Actual fresh live provider reconciliation: pending",
+        "status: `requires_reconciliation`",
+        "Correct active operational graph",
+        "all 56 are native Clips",
         "#37 is an active operational owner",
     ):
         assert claim not in text
 
 
-def test_agent_instructions_preserve_wave12b_project_and_credential_boundaries() -> None:
+def test_agent_instructions_preserve_final_project_and_credential_boundaries() -> None:
     text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
     required = (
-        "main@38296d07f8b6e948a6c5c4846bb66bf116bcfb72",
-        "PR #124",
-        "30988821430",
-        "789 passed, 1 xfailed",
+        "main@8d6a5ba243788e7b95b0e8a57eb02fb10eaf12ba",
+        "PR #128",
+        "30992600857",
+        "792 passed, 1 xfailed",
         "one shared user access token",
         "it is not a project selector",
-        "Using `fedor-milovanov` for #31/#32 does not imply a second VK token",
+        "They do not imply separate VK tokens",
         "Package A output never authorizes a provider mutation by itself",
         "PowerShell orchestrates one repository-owned implementation",
-        "#31 — `lord-god-strength` long-form reconciliation",
-        "#32 — `lord-god-strength` Shorts/Clips reconciliation",
-        "#119 — `legendary-poet` Shorts/Clips reconciliation",
-        "#38 — shared VK native Clip/ordinary-video provider-mode",
-        "Do not group #32/#38 as Legendary Poet ownership",
-        "#123 — deferred YouTube playlist-mutation contract",
+        "#31 — exact Lord God 26-item long-form reconciliation",
+        "#32 — Lord God non-authoritative 108-item Shorts auto-upload scope",
+        "#119 — Legendary Poet Shorts/Clips reconciliation",
+        "#38 — shared VK native Clip/ordinary-video final-type contract",
+        "Do not group #32/#38 as Legendary Poet",
+        "#123 — deferred YouTube playlist mutation scope",
         "VK Audio browser/internal-web work remains",
         "filter=moder",
         "filter=admin",
         "LastWriteTime",
         "$PSScriptRoot",
+        "No operational continuation is pending",
     )
     for fact in required:
         assert fact in text
 
-    assert "#37 — independent exact reviewed cleanup" not in text
+    for claim in (
+        "#37 — independent exact reviewed cleanup",
+        "active operational issues after completed-state merge: `1`",
+        "automatic over-60-second native Clip publication is supported",
+    ):
+        assert claim not in text
 
 
 def test_wave12a_predecessor_overlay_remains_valid_and_fail_closed() -> None:
@@ -162,6 +171,8 @@ def test_operational_contract_and_memory_sources_exist() -> None:
         OPERATIONS_DIR / "project-memory-changelog.d/2026-08-05-wave-12a.md",
         OPERATIONS_DIR / "project-memory-changelog.d/2026-08-05-wave-12b.md",
         OPERATIONS_DIR / "milestone-and-credential-reconciliation-2026-08-05.md",
+        OPERATIONS_DIR / "final-operational-disposition-2026-08-05.md",
+        OPERATIONS_DIR / "audit-register-v6-2026-08-05.json",
     )
     for path in required:
         assert path.is_file()
