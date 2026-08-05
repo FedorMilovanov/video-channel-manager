@@ -41,6 +41,30 @@ Wave 15 added:
 - repository-owned transport-aware next-action model;
 - read-only ffprobe MP3 probe, explicit metadata policy, duplicate detection, deterministic operation IDs/manifests, and one-at-a-time default chunking.
 
+## Immutable Wave 14 predecessor proof
+
+Wave 14 remains a completed immutable predecessor, not the current state:
+
+- predecessor program state: `WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`;
+- code baseline: `main@626f83c6e5c068d7faa8b6d14163b42916faa769`;
+- PR #131, exact head `80f701b6926a5a9c788b99c69634b54d63ed1862`, CI `31000834701`;
+- Python 3.11/3.12/3.13: `801 passed, 1 xfailed`;
+- Ruff formatting: `451 files already formatted`;
+- machine state: `audit-register-v7-2026-08-05.json` with predecessor `audit-register-v6-2026-08-05.json`;
+- Wave 14 added repository-wide JSON/Markdown integrity regressions without changing production provider behavior.
+
+The exact inherited operational dispositions remain:
+
+- #31 — Lord God long-form reconciliation;
+- #32 — non-authoritative Lord God 108-item Shorts auto-upload scope;
+- #119 — Legendary Poet Shorts/Clips reconciliation;
+- #38 — shared VK native Clip/ordinary-video provider-mode and final-type contract;
+- #33 — broad Lord God catalog/editorial/postponed-wall continuation;
+- #99 — unproved Legendary Poet article-wall launcher continuation;
+- #123 — deferred YouTube playlist mutation scope.
+
+Do not group #32/#38 as Legendary Poet. Historical ownership was #32 Lord God, #38 shared, and #119 Legendary Poet.
+
 ## Adaptive agent boundary
 
 Agents must define the requested outcome independently of an old script, declare one transport per phase, state the operation phase and provider-effect state, preserve verified partial success, and use one falsifiable hypothesis, one minimal bounded probe, and a stop condition.
