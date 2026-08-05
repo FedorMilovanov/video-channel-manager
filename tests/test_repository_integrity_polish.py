@@ -74,8 +74,18 @@ def test_public_entrypoints_state_the_current_authorization_boundary() -> None:
         "Provider writes, replay, deletion и mutation plans сейчас **не авторизованы**",
         "docs/operations/current-state.md",
         "сами по себе не разрешают запуск",
+        "Completed-state CI `30994245235`",
+        "Активного roadmap или backlog нет",
     ):
         assert statement in readme
+
+    for stale in (
+        "editorial CI run #669",
+        "197 тестов",
+        "## Следом",
+        "safe playlist operations",
+    ):
+        assert stale not in readme
 
     for statement in (
         "Provider writes, replay, deletion, and mutation plans are currently unauthorized",
