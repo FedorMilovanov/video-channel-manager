@@ -1,13 +1,16 @@
 # Current operational state
 
 Updated: 2026-08-05  
-Verified code baseline: `main@eeab53b779e5ea4af5d3dcc08d79e41812739e04`  
+Verified code baseline: `main@4cecaef81cb151cd8c5c019ffe5d8289aefaeee0`  
 Package A baseline: `8f8b224f0386cf9f1ed89e0983e8af440e96cdd4`  
 Package A state-sync baseline: `024a978f7c57a52f03e4cae8e6cb8175d8e96976`  
 Wave 11 baseline: `eeab53b779e5ea4af5d3dcc08d79e41812739e04`  
-Program state: `WAVE_11_OPERATIONAL_PACKAGE_TRUTH_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES`  
+Wave 11 state-sync baseline: `557ec79ce5233bd76c13c3a373738ab80a0708f8`  
+Wave 12 baseline: `4cecaef81cb151cd8c5c019ffe5d8289aefaeee0`  
+Program state: `WAVES_0_12_ENGINEERING_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES`  
 Canonical audit: [`master-audit-marathon-v2-2026-08-04.md`](master-audit-marathon-v2-2026-08-04.md)  
-Machine register: [`audit-register-v2-2026-08-04.json`](audit-register-v2-2026-08-04.json)
+Current machine state: [`audit-register-v3-2026-08-05.json`](audit-register-v3-2026-08-05.json)  
+Complete predecessor finding ledger: [`audit-register-v2-2026-08-04.json`](audit-register-v2-2026-08-04.json)
 
 This file overrides old chats, screenshots, ZIPs, remembered counts, and superseded audits.
 
@@ -18,14 +21,22 @@ This file overrides old chats, screenshots, ZIPs, remembered counts, and superse
 - Package A — Wave 9A + Wave 9B + Wave 10 tooling/governance: completed at `read_only_package_self_tested`.
 - Package A PR #110 merged as `8f8b224f0386cf9f1ed89e0983e8af440e96cdd4`; state sync PR #111 merged as `024a978f7c57a52f03e4cae8e6cb8175d8e96976`.
 - Wave 11 operational-package truth and managed-community preflight: completed at `self_tested_source_bound_governance`.
-- Wave 11 PR #113 merged as `eeab53b779e5ea4af5d3dcc08d79e41812739e04`.
-- Exact-head CI `30967195938`: Python 3.11/3.12/3.13 each passed with `782 passed, 1 xfailed`; dependency audit, Ruff, strict mypy across 145 source files, Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux were green.
-- Provider queries during Wave 11 implementation and CI: `0`.
-- Provider writes during Wave 11 implementation and CI: `0`.
-- Write plans created during Wave 11 implementation and CI: `0`.
+- Wave 11 PR #113 merged as `eeab53b779e5ea4af5d3dcc08d79e41812739e04`; state sync PR #114 merged as `557ec79ce5233bd76c13c3a373738ab80a0708f8`.
+- Wave 12 roadmap convergence and deterministic Windows handoffs: completed at `self_tested_repository_governance`.
+- Wave 12 PR #116 merged as `4cecaef81cb151cd8c5c019ffe5d8289aefaeee0`.
+- Exact-head CI `30969551134`: Python 3.11/3.12/3.13 each passed with `784 passed, 1 xfailed`; dependency audit, Ruff across 441 files, strict mypy across 145 source files, Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux were green.
+- Provider queries during Wave 12 implementation and CI: `0`.
+- Provider writes during Wave 12 implementation and CI: `0`.
+- Write plans created during Wave 12 implementation and CI: `0`.
 - Actual fresh Wave 9A/9B live provider reconciliation: pending.
 
-Wave 11 proves package-claim validation, regression contracts, and a source-bound historical archive. It does not prove current provider state or independently verify the transcript-reported sermon-month batch.
+Waves 0–12 prove architecture, evidence, package truth, operator governance, and deterministic handoff contracts. They do not prove current provider state or independently verify transcript-reported provider outcomes.
+
+## Current machine-state model
+
+`audit-register-v3-2026-08-05.json` is the current compact machine-state overlay. It binds its immutable predecessor `audit-register-v2-2026-08-04.json` by exact Git blob SHA `739146b63cfb3207a6b8d2d7a12698b3e54c28dd`.
+
+The v2 register remains the complete historical source/finding ledger. The v3 overlay records current program state, Wave 12 controls, quality evidence, active operational owners, and the continued prohibition on provider writes. Do not flatten or discard the predecessor register.
 
 ## Package A read-only architecture
 
@@ -58,19 +69,26 @@ Five evidence levels are distinct:
 4. `canary_verified`;
 5. `batch_verified`.
 
-The verifier first executes the unchanged digest-bound structural verifier and then checks:
-
-- exactly one manifest;
-- declared package kind and evidence level;
-- exact registered project/community/owner identity;
-- current supported production entrypoint;
-- repository-owned provider implementation;
-- read-only preflight and canary dependency;
-- per-operation durable results;
-- unknown-outcome reconciliation and blind-retry prohibition;
-- separate review requirement.
-
 Every passing acceptance result fixes `provider_writes_authorized=false` and `automatic_execution=false`. Structural acceptance never authorizes a provider write.
+
+## Wave 12 Windows handoff contract
+
+Canonical contract: [`../../.github/copilot-instructions.md`](../../.github/copilot-instructions.md).
+
+Every Windows copy-paste handoff must be deterministic and independent of the operator's current directory or previous shell state. It must define exact paths and every variable, use `-LiteralPath`, validate inputs with `Test-Path`, explicitly extract ZIPs, invoke the exact full entrypoint, use `$PSScriptRoot` for sibling files, and fail on zero or multiple artifact matches.
+
+The following are prohibited:
+
+- selection by `LastWriteTime` or “newest ZIP”;
+- broad wildcard generation selection;
+- undefined or inherited variables;
+- assuming a download is already in the repository;
+- generated external provider implementations;
+- reviving retired package families;
+- treating a preview, CI result, self-test, or command block as mutation authorization;
+- blind retry after an unknown provider outcome.
+
+Every handoff declares evidence level, read/write capability, exact project/community/owner, entrypoint, result paths, canary behavior, and safe recovery behavior. Russian `.ps1` and human-readable `.txt` artifacts use UTF-8 with BOM; JSON remains valid UTF-8.
 
 ## VK managed-community permission contract
 
@@ -171,7 +189,8 @@ VK Audio browser/internal-web attempts remain `SEPARATE_EXPERIMENTAL_SYSTEM / PA
 - #33 — later reviewed exact-ID catalog/publication gate;
 - #37 — exact approved cleanup only;
 - #64 — canonical roadmap;
-- #112/#113 — completed Wave 11 issue/code PR;
+- #115/#116 — Wave 12 issue/code PR, completed after state sync;
+- #112/#113/#114 — completed Wave 11 issue/code/state sync;
 - #110/#111 — completed Package A code/state sync.
 
 ## Permanent prohibitions
@@ -179,8 +198,9 @@ VK Audio browser/internal-web attempts remain `SEPARATE_EXPERIMENTAL_SYSTEM / PA
 - Never mix project identities, credentials, IDs, journals, links, or manifests.
 - Never infer live success from CI, stdout, screenshots, visible objects, stale counts, titles, ZIP names, file extensions, containers, save responses, or CDN URLs.
 - Never blind-retry accepted, processing, verified, or unknown mutations.
-- Never use Package A or Wave 11 acceptance output as mutation authorization.
+- Never use Package A, Wave 11 acceptance, or Wave 12 handoff output as mutation authorization.
 - Never rerun sermon-month v1/v2/v3 or other historical executors.
 - Never collapse editorial, preview, self-tested, canary-verified, and batch-verified evidence.
 - Never allow PowerShell to become a parallel provider implementation.
 - Never treat `filter=admin` as equivalent to the supported managed-community `filter=moder` preflight.
+- Never hand off Windows commands that depend on current directory, inherited variables, broad wildcard selection, or newest-file ordering.
