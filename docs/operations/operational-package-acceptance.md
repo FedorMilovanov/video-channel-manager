@@ -88,3 +88,5 @@ Never say “ready to run”, “fully automatic”, “all posts scheduled”, 
 The Lord God sermon-month v1/v2/v3 packages described in the 2026-08-05 operator transcript are historical evidence only. The transcript records an editorial-to-operational handoff failure, a false permission rejection caused by `filter=admin`, a correction to `filter=moder`, and a reported later `30/30` outcome. The original v3 result directory and exact provider readbacks were not supplied to this repository, so the batch outcome is classified as `operator_transcript_reported`, not independently re-verified.
 
 Do not rerun v1, v2, or v3. Any future scheduled-wall workflow must be rebuilt under the supported repository contract and a separately reviewed exact-ID plan.
+
+The registered production write entrypoint is `scripts/operator/Invoke-VideoManager.ps1`; this contract does not create another supported write entrypoint.
