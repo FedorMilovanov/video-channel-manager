@@ -8,10 +8,12 @@ from urllib.parse import parse_qs
 
 import httpx
 
-from scripts.verify_operational_bundle import verify_bundle
 from video_channel_manager.platforms.vk.client import VkApiClient
 from video_channel_manager.platforms.vk.models import VkAccessToken
 from video_channel_manager.platforms.vk.store import VkTokenStore
+from video_channel_manager.tools.operational_package_acceptance import (
+    verify_operational_package,
+)
 
 
 def _write_zip(path: Path, files: dict[str, str]) -> None:
@@ -74,10 +76,10 @@ def test_acceptance_gate_never_authorizes_writes(tmp_path: Path) -> None:
     archive = tmp_path / "bundle.zip"
     _write_zip(archive, _bundle_files(_manifest()))
 
-    result = verify_bundle(archive, require_acceptance=True)
+    result = verify_operational_package(archive)
 
     assert result.ok
-    assert result.acceptance_checked is True
+    assert result.structural_ok is True
     assert result.package_kind == "provider_write_bundle"
     assert result.evidence_level == "self_tested"
     assert result.provider_writes_authorized is False
@@ -95,13 +97,13 @@ def test_acceptance_gate_rejects_external_executor_false_binding_and_preview_cla
     )
     _write_zip(archive, _bundle_files(manifest, standalone_executor=True))
 
-    result = verify_bundle(archive, require_acceptance=True)
+    result = verify_operational_package(archive)
 
     assert not result.ok
-    assert any("registered production operator" in error for error in result.errors)
-    assert any("standalone executable" in error for error in result.errors)
-    assert any("identity is inconsistent" in error for error in result.errors)
-    assert any("evidence_level must be self_tested" in error for error in result.errors)
+    assert any("registered production operator" in error for error in result.acceptance_errors)
+    assert any("standalone executable" in error for error in result.acceptance_errors)
+    assert any("identity is inconsistent" in error for error in result.acceptance_errors)
+    assert any("evidence_level must be self_tested" in error for error in result.acceptance_errors)
 
 
 def test_acceptance_gate_rejects_automatic_execution_and_missing_reconciliation(
@@ -118,13 +120,13 @@ def test_acceptance_gate_rejects_automatic_execution_and_missing_reconciliation(
         ),
     )
 
-    result = verify_bundle(archive, require_acceptance=True)
+    result = verify_operational_package(archive)
 
     assert not result.ok
-    assert any("automatic_execution must be false" in error for error in result.errors)
+    assert any("automatic_execution must be false" in error for error in result.acceptance_errors)
     assert any(
         "unknown_outcome_requires_reconciliation must be true" in error
-        for error in result.errors
+        for error in result.acceptance_errors
     )
 
 
