@@ -104,8 +104,7 @@ def test_wave12b_completed_proof_never_promotes_live_state_or_write_authorizatio
     assert payload["wave_12b_evidence_level"] == "self_tested_credential_and_issue_graph_governance"
     assert payload["wave_12b_status"] == "completed"
     assert payload["program_state"] == (
-        "WAVES_0_12B_ENGINEERING_GOVERNANCE_COMPLETED_"
-        "LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES"
+        "WAVES_0_12B_ENGINEERING_GOVERNANCE_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES"
     )
     assert payload["quality_evidence"]["pytest"] == "789 passed, 1 xfailed"
     assert payload["provider_queries_during_wave_12b"] == 0
