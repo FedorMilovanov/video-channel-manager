@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
+from lord_god_article_wave_v3 import wall as wall_module  # noqa: E402
 from lord_god_article_wave_v3.common import OWNER_ID  # noqa: E402
 from lord_god_article_wave_v3.photo_wave_v5 import (  # noqa: E402
     build_photo_policy,
@@ -16,6 +21,21 @@ from lord_god_article_wave_v3.photo_wave_v5 import (  # noqa: E402
     reference_matches_group_rehost,
 )
 from lord_god_article_wave_v3.wall import post_reference  # noqa: E402
+
+
+def freeze_preflight_clock(
+    monkeypatch: pytest.MonkeyPatch,
+    policy: dict[str, Any],
+) -> None:
+    first_publish = int(policy["operations"][0]["publish_date"])
+    fixed = datetime.fromtimestamp(first_publish - 1, tz=UTC)
+
+    class FrozenDateTime:
+        @staticmethod
+        def now(tz: Any = None) -> datetime:
+            return fixed if tz is None else fixed.astimezone(tz)
+
+    monkeypatch.setattr(wall_module, "datetime", FrozenDateTime)
 
 
 def raw_post(operation: dict[str, object], *, photo_owner_id: int, photo_id: int) -> dict[str, object]:
@@ -58,8 +78,11 @@ def test_reference_matches_exact_post_with_vk_group_rehost() -> None:
     assert reference_matches_group_rehost(operation, reference) is True
 
 
-def test_preflight_uses_posted_group_identity_after_rehost() -> None:
+def test_preflight_uses_posted_group_identity_after_rehost(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     policy = build_photo_policy(ROOT)
+    freeze_preflight_clock(monkeypatch, policy)
     operation = policy["operations"][0]
     posted_identity = f"photo{OWNER_ID}_457246560"
     postponed = [
@@ -89,8 +112,11 @@ def test_preflight_uses_posted_group_identity_after_rehost() -> None:
     assert report["conflicts"] == 0
 
 
-def test_preflight_rejects_unreconciled_user_photo_identity() -> None:
+def test_preflight_rejects_unreconciled_user_photo_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     policy = build_photo_policy(ROOT)
+    freeze_preflight_clock(monkeypatch, policy)
     operation = policy["operations"][0]
     postponed = [
         raw_post(operation, photo_owner_id=OWNER_ID, photo_id=457246560),

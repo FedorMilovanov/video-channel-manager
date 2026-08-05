@@ -2,6 +2,7 @@
 
 Updated: 2026-08-05  
 Verified Wave 13 closure code baseline: `main@8d6a5ba243788e7b95b0e8a57eb02fb10eaf12ba`  
+Completed-state merge: `07388521e8d3a2c5d501382227c35bdce6e6470e`  
 Program state: `WAVES_0_13_COMPLETED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`  
 Current machine state: [`audit-register-v6-2026-08-05.json`](audit-register-v6-2026-08-05.json)  
 Final disposition predecessor: [`audit-register-v5-2026-08-05.json`](audit-register-v5-2026-08-05.json)  
@@ -11,7 +12,7 @@ This file and the v6 machine-state overlay override old chats, screenshots, ZIP 
 
 ## Final status
 
-Waves 0–13 are complete. There is no active operational issue, provider mutation plan, approved replay, or pending repository PR after this completed-state merge.
+Waves 0–13 are complete. There is no active operational issue, provider mutation plan, approved replay, or pending repository PR after the completed-state merge.
 
 Wave 13 disposition proof:
 
@@ -26,6 +27,21 @@ Wave 13 disposition proof:
 - dependency audit: no known vulnerabilities;
 - Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux: green;
 - provider queries/writes/write plans during Wave 13: `0/0/0`.
+
+Completed-state sync proof:
+
+- PR #129;
+- exact head `44a1590fac0e8fe8b563d35cfd68f2bed4727743`;
+- merge `07388521e8d3a2c5d501382227c35bdce6e6470e`;
+- CI `30994245235`;
+- Python 3.11/3.12/3.13: `796 passed, 1 xfailed`;
+- coverage: `78%` across `14,306` statements;
+- Ruff correctness: green;
+- Ruff formatting: `449 files already formatted`;
+- strict mypy: `145 source files`;
+- dependency audit: no known vulnerabilities;
+- Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux: green;
+- provider queries/writes/write plans: `0/0/0`.
 
 Green CI proves repository contracts and fixtures. It does not authorize a future provider mutation.
 

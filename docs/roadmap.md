@@ -1,59 +1,57 @@
 # Roadmap
 
-## Foundation — completed in this PR
+## Current program state
+
+The repository engineering and operational-governance program through Wave 13 is complete. The canonical status is maintained in:
+
+- [`operations/current-state.md`](operations/current-state.md);
+- [`operations/audit-register-v6-2026-08-05.json`](operations/audit-register-v6-2026-08-05.json);
+- [`operations/automation-backlog.md`](operations/automation-backlog.md).
+
+Program state: `WAVES_0_13_COMPLETED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`.
+
+There is no active provider-mutation roadmap, transfer queue, cleanup wave, playlist mutation, article-wall continuation, or automatic upload scope. Historical milestones and packages do not authorize execution.
+
+## Completed capability foundation
 
 - modular Python package and PowerShell-friendly CLI;
-- typed configuration and safe defaults;
-- platform-neutral domain records;
-- strict AuditPackage and ChangePlan 1.0 contracts;
-- policy validation and plan preview;
-- SQLAlchemy schema and Alembic baseline;
-- local read-only media inventory;
-- YouTube/VK adapter boundaries;
-- tests, linting, typing, CI, and architecture documentation.
+- typed configuration and strict exchange schemas;
+- platform-neutral domain and canonical editorial records;
+- complete paginated YouTube/VK read-only inventories;
+- exact identity and project/community/channel binding;
+- deterministic renderers and self-validating plans;
+- dry-run, exact confirmations, locks, immutable snapshots, journals, postflight, and guarded rollback contracts;
+- cross-platform exact/probabilistic comparison;
+- local media and image quality inspection with SHA-256 fingerprints;
+- durable operation/reconciliation ledgers and no-blind-replay barriers;
+- Package A bounded reconciliation and read-only operator board;
+- deterministic Windows handoff and retired-executor governance;
+- project-bound operational closure for Lord God and Legendary Poet.
 
-## Milestone 1 — YouTube read-only organizer
+## Final dispositions
 
-- Google OAuth desktop flow with refresh-token storage;
-- channel discovery for accounts with multiple channels;
-- complete paginated inventory of videos and playlists;
-- normalized revisions and immutable snapshots;
-- first deterministic rules: missing playlists, empty descriptions, stale links;
-- export compact AI-specific packages.
+Completed:
 
-## Milestone 2 — safe YouTube mutations
+- #31 — Lord God 26-item long-form reconciliation;
+- #119 — Legendary Poet Shorts/Clips reconciliation with unsupported long scope preserved as non-replayable;
+- #38 — shared fail-closed VK native Clip/ordinary-video final-type contract.
 
-- playlist creation and membership changes;
-- precondition re-read and revision checks;
-- idempotency and retries;
-- operation executor and verification;
-- snapshots before/after and rollback for metadata.
+Retired or not planned:
 
-## Milestone 3 — VK organizer
+- #32 — non-authoritative Lord God 108-item Shorts auto-upload scope;
+- #33 — broad Lord God catalog/publication continuation;
+- #99 — unproved Legendary Poet article-wall launcher continuation;
+- #123 — deferred YouTube playlist mutations.
 
-- administrator OAuth/token flow;
-- community video and album inventory;
-- safe metadata and album operations;
-- VK-specific capability and limit checks.
+## Future work rule
 
-## Milestone 4 — cross-platform comparison and transfer
+Future work is not a continuation of the closed roadmap. It begins only after a new explicit user request and a new exact project-bound issue. A future provider write additionally requires:
 
-- confirmed and probabilistic publication matching;
-- YouTube/VK difference reports;
-- yt-dlp cache for missing local sources;
-- resumable VK upload queue;
-- thumbnail and platform-specific description templates.
+1. exact YouTube channel/OAuth alias and VK community/owner binding;
+2. fresh bounded read-only preflight;
+3. reconciliation of accepted, processing, verified, and unknown outcomes;
+4. a reviewed immutable exact-ID plan with expected remote delta;
+5. persisted intent, durable per-operation results, and exact postflight;
+6. separate authorization for each operation class.
 
-## Milestone 5 — local media intelligence
-
-- ffprobe metadata;
-- duplicate hashing;
-- duration/title/frame/audio matching;
-- immutable links between publications and confirmed local sources;
-- no automatic deletion.
-
-## Milestone 6 — interfaces
-
-- local web dashboard;
-- optional Telegram client for status and approvals;
-- scheduled audits and notifications.
+Provider writes, replay, deletion, and unattended execution remain unauthorized by this roadmap.
