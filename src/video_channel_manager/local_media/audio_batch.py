@@ -139,6 +139,16 @@ class AudioBatchPlan:
         }
 
 
+@dataclass(frozen=True, slots=True)
+class _PreparedAudioCandidate:
+    ordinal: int
+    path_key: str
+    report: AudioProbeReport
+    metadata: AudioMetadataDecision
+    source_id: str | None
+    operation_id: str
+
+
 ProbeAudio = Callable[[Path], AudioProbeReport]
 
 
@@ -403,8 +413,31 @@ def _canonical_json(payload: object) -> bytes:
 
 def _operation_id(project_key: str, source_id: str | None, report: AudioProbeReport) -> str:
     identity = source_id or report.sha256
-    digest = hashlib.sha256(f"{project_key}\0{identity}\0{report.sha256}".encode()).hexdigest()
+    digest = hashlib.sha256(f"{project_key}\0{identity}\0{report.sha256}\0{report.path}".encode()).hexdigest()
     return f"audio-{digest[:20]}"
+
+
+def _metadata_preference(prepared: _PreparedAudioCandidate) -> tuple[int, str]:
+    if prepared.metadata.reason == "explicit_exact_fields":
+        return 0, prepared.path_key
+    if prepared.metadata.status == "ready":
+        return 1, prepared.path_key
+    return 2, prepared.path_key
+
+
+def _conflicting_sources_by_sha(
+    prepared: tuple[_PreparedAudioCandidate, ...],
+) -> tuple[set[str], set[str]]:
+    sha_by_source: dict[str, set[str]] = {}
+    sources_by_sha: dict[str, set[str]] = {}
+    for item in prepared:
+        if item.source_id is None:
+            continue
+        sha_by_source.setdefault(item.source_id, set()).add(item.report.sha256)
+        sources_by_sha.setdefault(item.report.sha256, set()).add(item.source_id)
+    source_conflicts = {source_id for source_id, hashes in sha_by_source.items() if len(hashes) > 1}
+    sha_conflicts = {sha256 for sha256, source_ids in sources_by_sha.items() if len(source_ids) > 1}
+    return source_conflicts, sha_conflicts
 
 
 def build_audio_batch_plan(
@@ -414,7 +447,7 @@ def build_audio_batch_plan(
     metadata_policy: AudioMetadataPolicy | None = None,
     probe: ProbeAudio = probe_audio_file,
 ) -> AudioBatchPlan:
-    """Build a deterministic, local-only MP3 plan with exact duplicate and review states."""
+    """Build a deterministic, local-only MP3 plan with exact duplicate and conflict states."""
 
     normalized_project_key = _clean_text(project_key)
     if normalized_project_key is None:
@@ -424,9 +457,7 @@ def build_audio_batch_plan(
     if not ordered_candidates:
         raise ValueError("at least one audio candidate is required")
 
-    seen_sha: dict[str, str] = {}
-    seen_source: dict[str, str] = {}
-    items: list[AudioBatchItem] = []
+    prepared_items: list[_PreparedAudioCandidate] = []
     for ordinal, candidate in enumerate(ordered_candidates, start=1):
         report = probe(candidate.path)
         raw_title = candidate.raw_title or candidate.path.stem
@@ -437,47 +468,73 @@ def build_audio_batch_plan(
             policy=policy,
         )
         source_id = _clean_text(candidate.source_id) or metadata.source_id_hint
-        operation_id = _operation_id(normalized_project_key, source_id, report)
-
-        duplicate_of = seen_sha.get(report.sha256)
-        duplicate_reason = "duplicate_sha256" if duplicate_of is not None else None
-        if source_id is not None and source_id in seen_source:
-            duplicate_of = seen_source[source_id]
-            duplicate_reason = "duplicate_source_id"
-
-        if duplicate_of is not None:
-            status: AudioItemStatus = "duplicate_input"
-            reason = duplicate_reason or "duplicate_input"
-        elif metadata.status == "requires_review":
-            status = "requires_review"
-            reason = metadata.reason
-        else:
-            status = "ready"
-            reason = metadata.reason
-
-        item = AudioBatchItem(
-            operation_id=operation_id,
-            ordinal=ordinal,
-            path=report.path,
-            source_id=source_id,
-            artist=metadata.artist,
-            title=metadata.title,
-            size_bytes=report.size_bytes,
-            sha256=report.sha256,
-            duration_seconds=report.duration_seconds,
-            status=status,
-            reason=reason,
-            duplicate_of=duplicate_of,
+        prepared_items.append(
+            _PreparedAudioCandidate(
+                ordinal=ordinal,
+                path_key=report.path.casefold(),
+                report=report,
+                metadata=metadata,
+                source_id=source_id,
+                operation_id=_operation_id(normalized_project_key, source_id, report),
+            )
         )
-        items.append(item)
-        if duplicate_of is None:
-            seen_sha[report.sha256] = operation_id
-            if source_id is not None:
-                seen_source[source_id] = operation_id
+
+    prepared = tuple(prepared_items)
+    source_conflicts, sha_conflicts = _conflicting_sources_by_sha(prepared)
+    canonical_by_sha: dict[str, _PreparedAudioCandidate] = {}
+    for sha256 in sorted({item.report.sha256 for item in prepared}):
+        members = [
+            item
+            for item in prepared
+            if item.report.sha256 == sha256
+            and (item.source_id is None or item.source_id not in source_conflicts)
+            and sha256 not in sha_conflicts
+        ]
+        if members:
+            canonical_by_sha[sha256] = min(members, key=_metadata_preference)
+
+    items: list[AudioBatchItem] = []
+    for item in prepared:
+        duplicate_of: str | None = None
+        if item.source_id is not None and item.source_id in source_conflicts:
+            status: AudioItemStatus = "requires_review"
+            reason = "source_id_sha256_conflict"
+        elif item.report.sha256 in sha_conflicts:
+            status = "requires_review"
+            reason = "sha256_multiple_source_ids"
+        else:
+            canonical = canonical_by_sha[item.report.sha256]
+            if item.operation_id != canonical.operation_id:
+                status = "duplicate_input"
+                reason = "duplicate_sha256"
+                duplicate_of = canonical.operation_id
+            elif item.metadata.status == "requires_review":
+                status = "requires_review"
+                reason = item.metadata.reason
+            else:
+                status = "ready"
+                reason = item.metadata.reason
+
+        items.append(
+            AudioBatchItem(
+                operation_id=item.operation_id,
+                ordinal=item.ordinal,
+                path=item.report.path,
+                source_id=item.source_id,
+                artist=item.metadata.artist,
+                title=item.metadata.title,
+                size_bytes=item.report.size_bytes,
+                sha256=item.report.sha256,
+                duration_seconds=item.report.duration_seconds,
+                status=status,
+                reason=reason,
+                duplicate_of=duplicate_of,
+            )
+        )
 
     body = {
         "schema_name": "video-manager.audio-batch-plan",
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "project_key": normalized_project_key,
         "transport": "local_only",
         "items": [item.to_dict() for item in items],
@@ -485,7 +542,7 @@ def build_audio_batch_plan(
     manifest_sha256 = f"sha256:{hashlib.sha256(_canonical_json(body)).hexdigest()}"
     return AudioBatchPlan(
         schema_name="video-manager.audio-batch-plan",
-        schema_version="1.0",
+        schema_version="1.1",
         project_key=normalized_project_key,
         transport="local_only",
         items=tuple(items),
