@@ -26,8 +26,7 @@ def test_v7_is_wave14_fail_closed_overlay() -> None:
         "role": "immutable Wave 13 completed operational-graph contract",
     }
     assert data["program_state"] == (
-        "WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_"
-        "OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES"
+        "WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES"
     )
     assert data["operational_dispositions_inherited_unchanged_from_v6"] is True
     assert data["active_operational_issues"] == []
@@ -88,9 +87,7 @@ def test_v6_remains_immutable_wave13_contract() -> None:
 
     assert data["schema_name"] == "video-manager.audit-register-v6"
     assert data["schema_version"] == "6.0"
-    assert data["program_state"] == (
-        "WAVES_0_13_COMPLETED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES"
-    )
+    assert data["program_state"] == ("WAVES_0_13_COMPLETED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES")
     assert data["provider_queries_during_wave_13"] == 0
     assert data["provider_writes_during_wave_13"] == 0
     assert data["write_plans_created_during_wave_13"] == 0
