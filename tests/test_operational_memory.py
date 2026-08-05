@@ -95,9 +95,7 @@ def test_agent_instructions_preserve_wave11_and_read_only_boundaries() -> None:
 
 
 def test_wave11_machine_register_is_valid_and_fail_closed() -> None:
-    payload = json.loads(
-        (OPERATIONS_DIR / "audit-register-v2-2026-08-04.json").read_text(encoding="utf-8")
-    )
+    payload = json.loads((OPERATIONS_DIR / "audit-register-v2-2026-08-04.json").read_text(encoding="utf-8"))
     assert payload["schema_name"] == "video-manager.audit-register-v2"
     assert payload["schema_version"] == "2.9"
     assert payload["wave_11_code_head"] == "eeab53b779e5ea4af5d3dcc08d79e41812739e04"
@@ -143,8 +141,7 @@ def test_wave11_contract_and_history_sources_exist() -> None:
         ROOT / "src/video_channel_manager/tools/operational_package_acceptance.py",
         OPERATIONS_DIR / "operational-package-acceptance.md",
         OPERATIONS_DIR / "retirement-registry-v1.json",
-        ROOT
-        / "docs/history/operational-attempts/lord-god-sermon-month-2026-08-05/SOURCE-METADATA.json",
+        ROOT / "docs/history/operational-attempts/lord-god-sermon-month-2026-08-05/SOURCE-METADATA.json",
     )
     for path in required:
         assert path.is_file()
