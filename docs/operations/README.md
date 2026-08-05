@@ -29,12 +29,12 @@ Historical baselines retained for evidence:
 
 1. **Waves 0–7 — completed.** Identity, lifecycle, HTTP, upload/wall separation, operator, Wave Engine, and fault/replay proofs.
 2. **Audit A0 — completed.** Authoritative audit/register ownership synchronized.
-3. **Waves 8A–8F — completed.** Exact matching, canonical/catalog/media/thumbnail correctness and integration proof.
+3. **Waves 8A–8F — completed.** Exact matching, canonical/catalog/media/thumbnail correctness, and integration proof.
 4. **Wave 9 read-only contract — completed.** Bounded immutable reconciliation input and classifications.
 5. **Package A — completed at `read_only_package_self_tested`.** Reconciliation runner, recovery ledger, operator board, runbook/rollback/governance.
 6. **Wave 11 — completed at `self_tested_source_bound_governance`.** Package truth, acceptance, permission regression, incident archive, retirement.
 7. **Wave 12 — completed at `self_tested_repository_governance`.** Deterministic Windows handoffs and roadmap convergence.
-8. **Wave 12A / #118 — active correction.** Repair stale issue ownership discovered by reading actual issue bodies; provider queries/writes/plans remain zero.
+8. **Wave 12A / #118 — completed at `self_tested_project_bound_governance`.** Corrected project-bound issue ownership; PR #120 merged as `30c1ec11040034f6d3ed2492afe1bc7c029db1d0`, exact-head CI `30971070928`, provider queries/writes/plans `0`.
 
 ## Correct operational ownership
 
@@ -42,7 +42,7 @@ Historical baselines retained for evidence:
 
 - #31 — long-form reconciliation;
 - #32 — Shorts/Clips reconciliation;
-- #33 — later catalog/publication gate blocked by #31 and #32.
+- #33 — later video catalog/publication gate blocked by #31 and #32.
 
 Exact identity:
 
@@ -70,17 +70,17 @@ Exact identity:
 - #64 — canonical roadmap;
 - VK Audio — separate experimental system, not core-supported.
 
-Do not group #32/#38 as Legendary Poet. #32 is Lord God; #38 is shared; #119 is the dedicated Legendary Poet queue owner.
+Do not group #32/#38 as Legendary Poet. #32 is Lord God, #38 is shared, and #119 is the dedicated Legendary Poet queue owner.
 
 Green CI proves contracts and fixtures, not current provider state. Provider writes remain unauthorized by Package A, acceptance, handoff governance, issue wording, dashboards, previews, retained counts, or transcript-reported outcomes.
 
 ## Retained inputs are not fresh truth
 
-Lord God retained inputs include long-form count 26 and Shorts source count 108. Legendary Poet retained inputs include `56 / 41 / 15 / 0` and `BXZeRiEOHmQ → -235216998_456239039`. Historical “48 clips”, Lord God provisional 65/108 missing lists, and all old package counts require fresh reconciliation.
+Lord God retained inputs include long-form count 26 and Shorts source count 108. Legendary Poet retained inputs include `56 / 41 / 15 / 0` and `BXZeRiEOHmQ → -235216998_456239039`. Historical “48 clips”, Lord God provisional 65/108 missing lists, and old package counts require fresh reconciliation.
 
 ## Shared Clip-mode evidence
 
-Issue #38 must retain current primary-source evidence and exact canary/final-type proof. Historical duration claims conflict between 60 and 180 seconds and do not form a stable contract. Geometry, duration, player appearance, title, temporary processing type, or absence from ordinary `video.get` never proves native Clip identity.
+Issue #38 must retain dated current primary-source evidence and exact canary/final-type proof. Historical duration claims conflict between 60 and 180 seconds and do not form a stable contract. Geometry, duration, player appearance, title, temporary processing type, or absence from ordinary `video.get` never proves native Clip identity.
 
 ## Separate VK Audio boundary
 
@@ -137,7 +137,7 @@ A passing result never authorizes provider writes.
 
 ## After every wave or run
 
-1. Write a run/incident/decision report.
+1. Write a run, incident, or decision report.
 2. Update current state with exact project, provider IDs, timestamp, manifest digest, state counts, evidence paths, and safe-resume status.
 3. Update the v3 overlay without destroying the v2 ledger.
 4. Append project-memory changelog.
