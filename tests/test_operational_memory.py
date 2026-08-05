@@ -32,11 +32,7 @@ def test_operations_index_has_no_broken_local_markdown_links() -> None:
     text = index_path.read_text(encoding="utf-8")
     local_targets = re.findall(r"\[[^]]+\]\(([^)]+\.md)\)", text)
     assert local_targets
-    broken = [
-        target
-        for target in local_targets
-        if not (index_path.parent / target).resolve().is_file()
-    ]
+    broken = [target for target in local_targets if not (index_path.parent / target).resolve().is_file()]
     assert broken == []
 
 
@@ -114,20 +110,13 @@ def test_wave12a_machine_state_is_project_bound_and_fail_closed() -> None:
     }
     assert (ROOT / payload["predecessor_register"]["path"]).is_file()
     assert payload["verified_main"] == "30c1ec11040034f6d3ed2492afe1bc7c029db1d0"
-    assert payload["wave_12a_code_head"] == (
-        "30c1ec11040034f6d3ed2492afe1bc7c029db1d0"
-    )
-    assert payload["wave_12a_exact_head"] == (
-        "98b4f3df7dd25918398d3544ee81d2b04a0aa21b"
-    )
+    assert payload["wave_12a_code_head"] == ("30c1ec11040034f6d3ed2492afe1bc7c029db1d0")
+    assert payload["wave_12a_exact_head"] == ("98b4f3df7dd25918398d3544ee81d2b04a0aa21b")
     assert payload["wave_12a_ci_run"] == 30971070928
-    assert payload["wave_12a_evidence_level"] == (
-        "self_tested_project_bound_governance"
-    )
+    assert payload["wave_12a_evidence_level"] == ("self_tested_project_bound_governance")
     assert payload["wave_12a_status"] == "completed"
     assert payload["program_state"] == (
-        "WAVES_0_12A_ENGINEERING_GOVERNANCE_COMPLETED_"
-        "LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES"
+        "WAVES_0_12A_ENGINEERING_GOVERNANCE_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES"
     )
 
     graph = {item["issue"]: item for item in payload["active_operational_graph"]}
@@ -153,9 +142,7 @@ def test_wave12a_machine_state_is_project_bound_and_fail_closed() -> None:
     assert graph[33]["status"] == "blocked_by_issues_31_and_32"
     assert graph[99]["project_key"] == "legendary-poet"
 
-    findings = {
-        item["id"]: item for item in payload["corrected_source_of_truth_findings"]
-    }
+    findings = {item["id"]: item for item in payload["corrected_source_of_truth_findings"]}
     assert set(findings) == {
         "OWNER-ISSUE-001",
         "OWNER-ISSUE-002",
@@ -178,13 +165,9 @@ def test_wave11_predecessor_register_remains_valid_and_fail_closed() -> None:
     payload = json.loads(register_path.read_text(encoding="utf-8"))
     assert payload["schema_name"] == "video-manager.audit-register-v2"
     assert payload["schema_version"] == "2.9"
-    assert payload["wave_11_code_head"] == (
-        "eeab53b779e5ea4af5d3dcc08d79e41812739e04"
-    )
+    assert payload["wave_11_code_head"] == ("eeab53b779e5ea4af5d3dcc08d79e41812739e04")
     assert payload["wave_11_ci_run"] == 30967195938
-    assert payload["wave_11_evidence_level"] == (
-        "self_tested_source_bound_governance"
-    )
+    assert payload["wave_11_evidence_level"] == ("self_tested_source_bound_governance")
     assert payload["source_line_count"] == 7413
     assert len(payload["sources"]) == 8
     findings = {item["id"]: item for item in payload["findings"]}
@@ -208,12 +191,9 @@ def test_wave11_contract_and_history_sources_exist() -> None:
         ROOT / "src/video_channel_manager/tools/operational_package_acceptance.py",
         OPERATIONS_DIR / "operational-package-acceptance.md",
         OPERATIONS_DIR / "retirement-registry-v1.json",
-        ROOT
-        / "docs/history/operational-attempts/"
-        "lord-god-sermon-month-2026-08-05/SOURCE-METADATA.json",
+        ROOT / "docs/history/operational-attempts/lord-god-sermon-month-2026-08-05/SOURCE-METADATA.json",
         ROOT / ".github/copilot-instructions.md",
-        OPERATIONS_DIR
-        / "project-memory-changelog.d/2026-08-05-wave-12a.md",
+        OPERATIONS_DIR / "project-memory-changelog.d/2026-08-05-wave-12a.md",
     )
     for path in required:
         assert path.is_file()
