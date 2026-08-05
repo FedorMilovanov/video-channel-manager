@@ -93,7 +93,6 @@ Validate every user-facing operational ZIP before handoff:
 python -m video_channel_manager.tools.operational_package_acceptance `
   .\path\package.zip `
   --entrypoint run-operation.ps1 `
-  --require executor.py `
   --require manifest.json `
   --require README.txt `
   --require SHA256SUMS.txt `
