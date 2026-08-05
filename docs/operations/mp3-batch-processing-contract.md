@@ -24,7 +24,7 @@ The system treats these as separate operations:
 11. verify exact playlist title and membership;
 12. optionally publish elsewhere under a separate authorization.
 
-Waves 15–16 implement only steps 1–4. They never write ID3 tags, rename files, transcode audio, open a browser, call VK, or create a provider plan.
+Wave 15 implements only steps 1–4. Wave 16 hardens those same local-only steps; it does not add a fifth step or any provider capability. Neither wave writes ID3 tags, renames files, transcodes audio, opens a browser, calls VK, or creates a provider plan.
 
 Upload, upload visibility, metadata edit, playlist creation, track membership, final save, and wall publication remain independent future operations.
 
