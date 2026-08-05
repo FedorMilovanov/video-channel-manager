@@ -83,9 +83,7 @@ def test_incident_lessons_prohibit_parallel_publishers_and_stdout_only_success()
 
 def test_operational_documentation_indexes_wave11_contract_and_incident() -> None:
     operations_index = (OPERATIONS / "README.md").read_text(encoding="utf-8")
-    history_index = (ROOT / "docs" / "history" / "operational-attempts" / "README.md").read_text(
-        encoding="utf-8"
-    )
+    history_index = (ROOT / "docs" / "history" / "operational-attempts" / "README.md").read_text(encoding="utf-8")
     standard = (OPERATIONS / "operational-artifact-standard.md").read_text(encoding="utf-8")
 
     assert "operational-package-acceptance.md" in operations_index
