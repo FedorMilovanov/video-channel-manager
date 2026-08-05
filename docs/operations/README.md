@@ -5,11 +5,13 @@ Operational documents are living sources of truth. They override chat history, s
 ## Start here
 
 - [`project-identity-registry.md`](project-identity-registry.md) — exact projects, one shared VK credential, channel-specific YouTube aliases, IDs, routes, and no-mixing rules.
-- [`current-state.md`](current-state.md) — final Waves 0–15 state and permanent safety boundaries.
-- [`audit-register-v8-2026-08-05.json`](audit-register-v8-2026-08-05.json) — current adaptive-agent/local-MP3 machine state.
+- [`current-state.md`](current-state.md) — final Waves 0–16 state and permanent safety boundaries.
+- [`audit-register-v9-2026-08-05.json`](audit-register-v9-2026-08-05.json) — current CI/SQLite/MP3-identity machine state.
+- [`audit-register-v8-2026-08-05.json`](audit-register-v8-2026-08-05.json) — immutable Wave 15 predecessor.
 - [`audit-register-v7-2026-08-05.json`](audit-register-v7-2026-08-05.json) — immutable Wave 14 predecessor.
 - [`agent-reasoning-playbook.md`](agent-reasoning-playbook.md) — general method for unfamiliar API/browser/local states without brittle pattern copying.
 - [`wave15-transcript-and-agent-audit-2026-08-05.md`](wave15-transcript-and-agent-audit-2026-08-05.md) — transcript/script/agent failure taxonomy and retained invariants.
+- [`wave16-ci-sqlite-mp3-hardening-2026-08-05.md`](wave16-ci-sqlite-mp3-hardening-2026-08-05.md) — Node 24, SQLite lifetime, and MP3 identity findings.
 - [`vk-audio-browser-experiment-retrospective.md`](vk-audio-browser-experiment-retrospective.md) — BrowserCanary/PlaylistOnly/Metadata Manager/Workhorse evidence and retirement boundary.
 - [`mp3-batch-processing-contract.md`](mp3-batch-processing-contract.md) — supported local-only MP3 intake and future provider phase contract.
 - [`automation-backlog.md`](automation-backlog.md) — closed backlog and future-work rule.
@@ -27,21 +29,34 @@ Operational documents are living sources of truth. They override chat history, s
 2. Wave 13 — completed evidence-backed operational closure.
 3. Wave 14 — completed repository-wide documentation/integrity polish.
 4. Wave 15 — completed adaptive-agent reasoning and local-only MP3 foundation.
+5. Wave 16 — completed CI runtime, SQLite lifetime, and MP3 identity hardening.
 
-Wave 15 proof:
+Wave 16 proof:
 
-- issue #133;
-- PR #134;
-- exact head `48baa13b0d08e27e5a1dfc8b30901524d3207148`;
-- merge `eb58c1ad238fde01d66c6630b16e244b1c6c2992`;
-- CI `31006136529`;
-- `833 passed, 1 xfailed` on Python 3.11/3.12/3.13;
-- coverage `79%` across `14,643` statements;
-- Ruff correctness green and `461 files already formatted`;
+- issue #137;
+- PR #138;
+- exact head `c495308430bce6e1b86343b6cd4e6ae3a302734b`;
+- merge `22ed56256df3388c23c9f785f1e02cca71fd8524`;
+- CI `31022560789`;
+- `845 passed, 1 xfailed` on Python 3.11/3.12/3.13;
+- coverage `79%` across `14,675` statements;
+- Ruff correctness green and `464 files already formatted`;
 - strict mypy `147 source files`;
 - dependency audit clean;
 - all three PowerShell environments green;
+- Node 20 action warning absent;
+- unclosed SQLite database warning absent;
 - provider queries/writes/write plans/historical executor runs `0/0/0/0`.
+
+## Immutable Wave 15 compatibility ledger
+
+Wave 15 remains completed predecessor evidence:
+
+- program state `WAVES_0_15_COMPLETED_ADAPTIVE_AGENT_REASONING_LOCAL_MP3_FOUNDATION_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`;
+- `main@eb58c1ad238fde01d66c6630b16e244b1c6c2992`;
+- PR #134, CI `31006136529`, `833 passed, 1 xfailed`;
+- Ruff `461 files already formatted`;
+- machine state `audit-register-v8-2026-08-05.json`.
 
 ## Immutable Waves 0–14 compatibility ledger
 
@@ -82,7 +97,9 @@ Provider snapshots are task-scoped temporary inputs. One failed selector does no
 
 ## MP3 boundary
 
-Supported now: local read-only MP3 probe, exact properties/tags/SHA, explicit metadata policy, duplicate detection, deterministic manifest and ready-item chunking.
+Supported now: local read-only MP3 probe, exact properties/tags/SHA, explicit metadata policy, metadata-ranked duplicate selection, fail-closed source-ID/SHA conflicts, deterministic schema 1.1 manifest, and ready-item chunking.
+
+One source ID mapped to multiple hashes is `source_id_sha256_conflict`. Identical bytes claimed by multiple source IDs is `sha256_multiple_source_ids`. Both require review and never become provider-ready automatically.
 
 Not supported or authorized: ID3 writes, rename/transcode, browser control, VK Audio upload, remote metadata edit, playlist mutation, or wall publication.
 
@@ -92,7 +109,7 @@ VK Audio remains `SEPARATE_EXPERIMENTAL_SYSTEM / PARTIAL_OR_UNKNOWN_OUTCOMES / N
 
 VK uses one shared user access token. Exact project/community/owner IDs select and isolate the target. YouTube OAuth aliases remain channel-specific.
 
-Completed: #31, #119, #38, #130, #133. Retired/not planned: #32, #33, #99, #123. Do not group #32/#38 as Legendary Poet.
+Completed: #31, #119, #38, #130, #133, #137. Retired/not planned: #32, #33, #99, #123. Do not group #32/#38 as Legendary Poet.
 
 Native Clip success still requires exact final `type=short_video`, processing complete, non-draft state, and exact public visibility. `M5hNecL_MsQ → -235216998_456239160` remains ordinary-video/draft evidence and is non-replayable.
 
