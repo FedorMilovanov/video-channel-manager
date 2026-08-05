@@ -175,7 +175,7 @@ def test_batch_plan_is_deterministic_and_marks_duplicate_sha(tmp_path: Path) -> 
     unique.write_bytes(b"unique")
     candidates = [
         AudioBatchCandidate(first, source_id="source-b", explicit_artist="B", explicit_title="Title B"),
-        AudioBatchCandidate(duplicate, source_id="source-c", explicit_artist="C", explicit_title="Title C"),
+        AudioBatchCandidate(duplicate, source_id="source-b", explicit_artist="B", explicit_title="Title B"),
         AudioBatchCandidate(unique, source_id="source-a", explicit_artist="A", explicit_title="Title A"),
     ]
 
@@ -183,16 +183,41 @@ def test_batch_plan_is_deterministic_and_marks_duplicate_sha(tmp_path: Path) -> 
     reversed_plan = build_audio_batch_plan(reversed(candidates), project_key="lord-god-strength", probe=_probe)
 
     assert plan.to_dict() == reversed_plan.to_dict()
+    assert plan.schema_version == "1.1"
     assert plan.ready_count == 2
     assert plan.duplicate_count == 1
     assert plan.review_count == 0
+    assert len({item.operation_id for item in plan.items}) == len(plan.items)
     duplicate_item = next(item for item in plan.items if item.status == "duplicate_input")
     assert duplicate_item.reason == "duplicate_sha256"
     assert duplicate_item.duplicate_of is not None
     assert plan.manifest_sha256.startswith("sha256:")
 
 
-def test_batch_plan_marks_duplicate_source_even_when_bytes_differ(tmp_path: Path) -> None:
+def test_exact_metadata_candidate_becomes_canonical_even_when_path_sorts_later(tmp_path: Path) -> None:
+    ambiguous = tmp_path / "a-ambiguous.mp3"
+    exact = tmp_path / "z-exact.mp3"
+    ambiguous.write_bytes(b"same")
+    exact.write_bytes(b"same")
+
+    plan = build_audio_batch_plan(
+        [
+            AudioBatchCandidate(ambiguous, source_id="same-id", raw_title="Непонятное название"),
+            AudioBatchCandidate(exact, source_id="same-id", explicit_artist="Artist", explicit_title="Track"),
+        ],
+        project_key="legendary-poet",
+        probe=_probe,
+    )
+
+    canonical = next(item for item in plan.items if item.status == "ready")
+    duplicate = next(item for item in plan.items if item.status == "duplicate_input")
+    assert canonical.path == str(exact.resolve())
+    assert canonical.reason == "explicit_exact_fields"
+    assert duplicate.path == str(ambiguous.resolve())
+    assert duplicate.duplicate_of == canonical.operation_id
+
+
+def test_batch_plan_blocks_same_source_id_with_different_bytes(tmp_path: Path) -> None:
     first = tmp_path / "a.mp3"
     second = tmp_path / "b.mp3"
     first.write_bytes(b"one")
@@ -207,9 +232,32 @@ def test_batch_plan_marks_duplicate_source_even_when_bytes_differ(tmp_path: Path
         probe=_probe,
     )
 
-    assert plan.ready_count == 1
-    assert plan.duplicate_count == 1
-    assert plan.items[1].reason == "duplicate_source_id"
+    assert plan.ready_count == 0
+    assert plan.duplicate_count == 0
+    assert plan.review_count == 2
+    assert {item.reason for item in plan.items} == {"source_id_sha256_conflict"}
+    assert all(item.duplicate_of is None for item in plan.items)
+
+
+def test_batch_plan_blocks_same_bytes_claimed_by_multiple_source_ids(tmp_path: Path) -> None:
+    first = tmp_path / "a.mp3"
+    second = tmp_path / "b.mp3"
+    first.write_bytes(b"same")
+    second.write_bytes(b"same")
+
+    plan = build_audio_batch_plan(
+        [
+            AudioBatchCandidate(first, source_id="source-a", explicit_artist="A", explicit_title="One"),
+            AudioBatchCandidate(second, source_id="source-b", explicit_artist="A", explicit_title="One"),
+        ],
+        project_key="legendary-poet",
+        probe=_probe,
+    )
+
+    assert plan.ready_count == 0
+    assert plan.duplicate_count == 0
+    assert plan.review_count == 2
+    assert {item.reason for item in plan.items} == {"sha256_multiple_source_ids"}
 
 
 def test_batch_plan_keeps_ambiguous_metadata_out_of_ready_set(tmp_path: Path) -> None:
@@ -259,3 +307,30 @@ def test_chunking_rejects_item_above_byte_budget(tmp_path: Path) -> None:
 
     with pytest.raises(AudioBatchError, match="exceeds max_total_bytes"):
         chunk_ready_audio_items(plan, max_total_bytes=2)
+
+
+def test_large_batch_is_deterministic_unique_and_chunkable(tmp_path: Path) -> None:
+    candidates: list[AudioBatchCandidate] = []
+    for index in range(1000):
+        path = tmp_path / f"{index:04d}.mp3"
+        path.write_bytes(f"audio-{index}".encode())
+        candidates.append(
+            AudioBatchCandidate(
+                path,
+                source_id=f"source-{index:04d}",
+                explicit_artist="Artist",
+                explicit_title=f"Track {index:04d}",
+            )
+        )
+
+    plan = build_audio_batch_plan(candidates, project_key="lord-god-strength", probe=_probe)
+    reversed_plan = build_audio_batch_plan(reversed(candidates), project_key="lord-god-strength", probe=_probe)
+    chunks = chunk_ready_audio_items(plan, max_items=25)
+
+    assert plan.to_dict() == reversed_plan.to_dict()
+    assert plan.ready_count == 1000
+    assert plan.review_count == 0
+    assert plan.duplicate_count == 0
+    assert len({item.operation_id for item in plan.items}) == 1000
+    assert len(chunks) == 40
+    assert all(len(chunk) == 25 for chunk in chunks)
