@@ -156,18 +156,17 @@ Every execution must write:
 Before handoff, run:
 
 ```powershell
-python .\scripts\verify_operational_bundle.py `
+python -m video_channel_manager.tools.operational_package_acceptance `
   .\path\package.zip `
   --entrypoint run-operation.ps1 `
   --require executor.py `
   --require manifest.json `
   --require README.txt `
   --require SHA256SUMS.txt `
-  --require-flat `
-  --require-acceptance
+  --require-flat
 ```
 
-`--require-acceptance` validates the manifest truth level, package kind, exact project binding, supported entrypoint, adapter readiness, canary dependency, per-operation results, and unknown-outcome reconciliation. A passing verifier result always reports `provider_writes_authorized=false`; structural acceptance is not a write authorization.
+The repository-owned acceptance verifier first runs the stable digest-bound structural verifier, then validates manifest truth level, package kind, exact project binding, supported entrypoint, adapter readiness, canary dependency, per-operation results, and unknown-outcome reconciliation. A passing result always reports `provider_writes_authorized=false`; structural acceptance is not a write authorization.
 
 The verifier must pass before sharing the archive and launch command.
 
