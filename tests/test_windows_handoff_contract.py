@@ -44,27 +44,31 @@ def test_windows_handoff_contract_is_fail_closed() -> None:
         assert claim not in text
 
 
-def test_operations_index_records_completed_wave12b_and_project_bound_graph() -> None:
+def test_operations_index_records_completed_wave13_and_closed_graph() -> None:
     text = OPERATIONS_INDEX.read_text(encoding="utf-8")
     required = (
-        "Waves 0–7, Audit A0, and Waves 8A–8F — completed",
-        "Wave 9 and Package A / Waves 9A–10 — completed",
+        "Waves 0–7 — completed",
+        "Waves 8A–8F — completed",
+        "Wave 9 read-only contract — completed",
+        "Package A / Waves 9A–10 — completed",
         "Wave 11 — completed",
         "Wave 12 — completed",
         "Wave 12A / #118 — completed",
         "Wave 12B / #122 — completed",
+        "Wave 12C / #126 — completed",
+        "Wave 13 / #127 — completed",
         "one shared user access token",
         "never selects a project",
-        "`fedor-milovanov` → Lord God channel",
-        "`legendary-poet` → Legendary Poet channel",
+        "OAuth alias `fedor-milovanov`",
+        "OAuth alias `legendary-poet`",
         "#31 — long-form reconciliation",
         "#32 — Shorts/Clips reconciliation",
         "#119 — Shorts/Clips reconciliation",
         "#38 — shared VK native Clip/ordinary-video provider-mode",
-        "#123 — deferred YouTube playlist mutation contract",
-        "Closed #2–#5 and #37 are not active owners",
+        "#123 — YouTube playlist mutation design",
         "Do not group #32/#38 as Legendary Poet",
-        "never authorize writes",
+        "Provider writes remain unauthorized",
+        "Closed issues and historical packages must not be reopened as execution authority",
     )
     for fact in required:
         assert fact in text
@@ -77,5 +81,8 @@ def test_operations_index_records_completed_wave12b_and_project_bound_graph() ->
         "issues #32/#38 own the Shorts/Clips surface",
         "#32/#38 — pending fresh Legendary Poet reconciliation",
         "#37 — independent exact reviewed cleanup only",
+        "Actual fresh live provider reconciliation: pending",
+        "status: `requires_reconciliation`",
+        "#123 — deferred YouTube playlist mutation contract",
     ):
         assert claim not in text
