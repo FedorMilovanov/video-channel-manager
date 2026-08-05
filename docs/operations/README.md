@@ -1,15 +1,17 @@
 # Operational documentation
 
-Operational documents are living sources of truth. They take priority over chat history, screenshots, remembered counts, retired ZIP packages, stale issue wording, and older audits.
+Operational documents are living sources of truth. They override chat history, screenshots, remembered counts, retired ZIP packages, stale issue wording, and older audits.
 
 ## Start here
 
-- [`project-identity-registry.md`](project-identity-registry.md) — two separate projects, OAuth aliases, exact numeric identities, routes, and no-mixing rules.
+- [`project-identity-registry.md`](project-identity-registry.md) — exact projects, one shared VK credential, channel-specific YouTube aliases, numeric identities, routes, and no-mixing rules.
 - [`master-audit-marathon-v2-2026-08-04.md`](master-audit-marathon-v2-2026-08-04.md) — canonical audit baseline and permanent finding history.
-- [`audit-register-v3-2026-08-05.json`](audit-register-v3-2026-08-05.json) — compact current machine state and exact operational ownership.
-- [`audit-register-v2-2026-08-04.json`](audit-register-v2-2026-08-04.json) — immutable complete predecessor source/finding ledger.
-- [`current-state.md`](current-state.md) — exact current identities, completed work, blockers, and next allowed work.
-- [`automation-backlog.md`](automation-backlog.md) — current operational owners and dependencies.
+- [`audit-register-v4-2026-08-05.json`](audit-register-v4-2026-08-05.json) — current Wave 12B machine state, credential model, active/deferred issue graph, and write prohibition.
+- [`audit-register-v3-2026-08-05.json`](audit-register-v3-2026-08-05.json) — immutable Wave 12A predecessor overlay.
+- [`audit-register-v2-2026-08-04.json`](audit-register-v2-2026-08-04.json) — immutable complete historical source/finding ledger.
+- [`current-state.md`](current-state.md) — completed Waves 0–12B, exact blockers, and next allowed work.
+- [`automation-backlog.md`](automation-backlog.md) — active reconciliation, later gates, and deferred product scope.
+- [`milestone-and-credential-reconciliation-2026-08-05.md`](milestone-and-credential-reconciliation-2026-08-05.md) — Wave 12B evidence for shared VK credential semantics and stale issue dispositions.
 - [`../../.github/copilot-instructions.md`](../../.github/copilot-instructions.md) — deterministic Windows handoff contract.
 - [`http-client-ownership.md`](http-client-ownership.md) — reusable-client ownership, retry authority, redaction, and limiter rules.
 - [`lord-god-strength-description-profile.md`](lord-god-strength-description-profile.md) — exact Lord God identities and links.
@@ -27,14 +29,21 @@ Historical baselines retained for evidence:
 
 ## Engineering sequence
 
-1. **Waves 0–7 — completed.** Identity, lifecycle, HTTP, upload/wall separation, operator, Wave Engine, and fault/replay proofs.
-2. **Audit A0 — completed.** Authoritative audit/register ownership synchronized.
-3. **Waves 8A–8F — completed.** Exact matching, canonical/catalog/media/thumbnail correctness, and integration proof.
-4. **Wave 9 read-only contract — completed.** Bounded immutable reconciliation input and classifications.
-5. **Package A — completed at `read_only_package_self_tested`.** Reconciliation runner, recovery ledger, operator board, runbook/rollback/governance.
-6. **Wave 11 — completed at `self_tested_source_bound_governance`.** Package truth, acceptance, permission regression, incident archive, retirement.
-7. **Wave 12 — completed at `self_tested_repository_governance`.** Deterministic Windows handoffs and roadmap convergence.
-8. **Wave 12A / #118 — completed at `self_tested_project_bound_governance`.** Corrected project-bound issue ownership; PR #120 merged as `30c1ec11040034f6d3ed2492afe1bc7c029db1d0`, exact-head CI `30971070928`, provider queries/writes/plans `0`.
+1. Waves 0–7, Audit A0, and Waves 8A–8F — completed.
+2. Wave 9 and Package A / Waves 9A–10 — completed read-only reconciliation foundation.
+3. Wave 11 — completed package truth, acceptance, permission, archive, and retirement governance.
+4. Wave 12 — completed deterministic Windows handoffs and roadmap convergence.
+5. Wave 12A / #118 — completed project-bound ownership correction.
+6. Wave 12B / #122 — completed one-shared-VK-token semantics and stale issue graph reconciliation. PR #124 merged as `38296d07f8b6e948a6c5c4846bb66bf116bcfb72`; exact head `ffd275e9173db5a46bdde85f318dfa08ca83adb3`; CI `30988821430`; `789 passed, 1 xfailed`; provider queries/writes/plans `0/0/0`.
+
+## Credential model
+
+VK uses one shared user access token for both managed communities. The local alias `legendary-poet` is a stored credential name and never selects a project. Exact `project_key`, community ID, owner ID, manifests, plans, journals, results, and link profiles select and isolate the target.
+
+YouTube OAuth aliases remain channel-specific:
+
+- `fedor-milovanov` → Lord God channel `UCeSJsC6go2c9pdJCuUI1BYA`;
+- `legendary-poet` → Legendary Poet channel `UC-78ys2S3cQ3lpqgXfo-SvQ`.
 
 ## Correct operational ownership
 
@@ -42,104 +51,58 @@ Historical baselines retained for evidence:
 
 - #31 — long-form reconciliation;
 - #32 — Shorts/Clips reconciliation;
-- #33 — later video catalog/publication gate blocked by #31 and #32.
+- #33 — later catalog/publication gate blocked by #31/#32.
 
-Exact identity:
-
-- YouTube `UCeSJsC6go2c9pdJCuUI1BYA`;
-- OAuth alias `fedor-milovanov`;
-- VK community `60805374`;
-- VK owner `-60805374`.
+Exact VK community/owner: `60805374` / `-60805374`.
 
 ### Legendary Poet / `legendary-poet`
 
 - #119 — Shorts/Clips reconciliation;
-- #99 — separate article-wall scheduling workflow.
+- #99 — separate article-wall workflow.
 
-Exact identity:
+Exact VK community/owner: `235216998` / `-235216998`.
 
-- YouTube `UC-78ys2S3cQ3lpqgXfo-SvQ`;
-- OAuth alias `legendary-poet`;
-- VK community `235216998`;
-- VK owner `-235216998`.
+### Shared and deferred
 
-### Shared/separate owners
-
-- #38 — shared VK native Clip/ordinary-video provider-mode and final-type contract; no project queue ownership;
-- #37 — independent exact reviewed cleanup only;
+- #38 — shared VK native Clip/ordinary-video provider-mode and final-type contract; no queue ownership;
+- #123 — deferred YouTube playlist mutation contract; no authorization;
 - #64 — canonical roadmap;
 - VK Audio — separate experimental system, not core-supported.
 
-Do not group #32/#38 as Legendary Poet. #32 is Lord God, #38 is shared, and #119 is the dedicated Legendary Poet queue owner.
+Closed #2–#5 and #37 are not active owners. #37 completed a bounded 34-item cleanup while preserving post `12400`; its historical executor is retired and grants no future bulk-cleanup authority.
 
-Green CI proves contracts and fixtures, not current provider state. Provider writes remain unauthorized by Package A, acceptance, handoff governance, issue wording, dashboards, previews, retained counts, or transcript-reported outcomes.
+Do not group #32/#38 as Legendary Poet. #32 is Lord God, #38 is shared, and #119 is the dedicated Legendary Poet owner.
 
-## Retained inputs are not fresh truth
+## Evidence boundaries
 
-Lord God retained inputs include long-form count 26 and Shorts source count 108. Legendary Poet retained inputs include `56 / 41 / 15 / 0` and `BXZeRiEOHmQ → -235216998_456239039`. Historical “48 clips”, Lord God provisional 65/108 missing lists, and old package counts require fresh reconciliation.
+Retained Lord God counts 26, 108, and provisional 65/108 are historical inputs. Retained Legendary Poet `56 / 41 / 15 / 0`, “48 clips”, and old ZIP labels are historical inputs. They are not fresh provider truth or final native-Clip proof.
 
-## Shared Clip-mode evidence
+Issue #38 requires current primary-source evidence, exact adapter request, a processed canary, and final type readback. Geometry, duration, title, player appearance, temporary type, or absence from ordinary `video.get` never proves native Clip identity.
 
-Issue #38 must retain dated current primary-source evidence and exact canary/final-type proof. Historical duration claims conflict between 60 and 180 seconds and do not form a stable contract. Geometry, duration, player appearance, title, temporary processing type, or absence from ordinary `video.get` never proves native Clip identity.
+Green CI proves contracts and fixtures, not current provider state. Package A, acceptance, handoff governance, issue wording, dashboards, previews, retained counts, or transcript-reported outcomes never authorize writes.
 
-## Separate VK Audio boundary
-
-Browser/internal-web VK Audio experiments are not a supported part of the core YouTube→VK Video engine. Do not continue them as production automation until a reviewed adapter defines versioned schemas, exact per-item ledger, session boundary, upload-ticket validation, identity, deadlines, reconciliation, canary, and postflight.
-
-## Link and identity audits
-
-- [`project-link-audit-20260801.md`](project-link-audit-20260801.md) — public/compatibility/admin routes and remaining synchronization.
-
-## Templates
-
-- [`run-report-template.md`](run-report-template.md)
-- [`incident-report-template.md`](incident-report-template.md)
-- [`decision-log-template.md`](decision-log-template.md)
-
-## Existing runbooks
+## Existing runbooks and templates
 
 - [`unified-editorial-runbook.md`](unified-editorial-runbook.md)
 - [`youtube-comment-publishing-runbook.md`](youtube-comment-publishing-runbook.md)
 - [`vk-description-cleanup-runbook.md`](vk-description-cleanup-runbook.md)
 - [`vk-catalog-wall-and-article-runbook.md`](vk-catalog-wall-and-article-runbook.md)
+- [`run-report-template.md`](run-report-template.md)
+- [`incident-report-template.md`](incident-report-template.md)
+- [`decision-log-template.md`](decision-log-template.md)
 
-Historical runbooks and executors are not automatically active. Current state, v3/v2 registers, retirement registry, roadmap #64, and the exact project-bound issue decide whether an entrypoint may be used.
+Historical runbooks and executors are not automatically active. Current v4/v3/v2 state, retirement registry, roadmap #64, and the exact owning issue decide whether an entrypoint may be used.
 
 ## Before any provider write
 
-1. Read `../../AGENTS.md` and `../../.github/copilot-instructions.md`.
-2. Read the audit, current v3 overlay, immutable v2 register, and current state.
-3. Select exactly one project and exact owning issue.
-4. Confirm YouTube channel, OAuth alias, VK community, and owner all belong to that project.
-5. Confirm inventory coverage for the required provider surface.
-6. Validate immutable manifest and SHA-256.
-7. Run operational-package acceptance and confirm `provider_writes_authorized=false` / `automatic_execution=false`.
-8. Run bounded read-only preflight.
-9. Confirm ledger, per-operation result paths, and unknown-outcome reconciliation.
-10. Confirm no intent-persisted, accepted, processing, verified, or unknown mutation is being retransmitted.
-11. Use a separately reviewed exact-ID mutation plan and expected remote delta.
-12. Keep video upload, Clip publication, catalog, metadata, thumbnail, and wall operations separately authorized and evidenced.
-13. Execute only through the registered repository-owned operator/adapter.
-
-Validate each user-facing ZIP with the exact reviewed filename:
-
-```powershell
-python -m video_channel_manager.tools.operational_package_acceptance `
-  C:\Users\Fedor\Downloads\EXACT-PACKAGE.zip `
-  --entrypoint run-operation.ps1 `
-  --require manifest.json `
-  --require README.txt `
-  --require SHA256SUMS.txt `
-  --require-flat
-```
-
-A passing result never authorizes provider writes.
+1. Read `../../AGENTS.md`, `../../.github/copilot-instructions.md`, v4/v3/v2 state, and the exact owner issue.
+2. Select exactly one project and bind exact YouTube channel/OAuth alias and VK community/owner.
+3. Confirm required surface coverage, immutable manifest and SHA-256, local ledger/result paths, and unknown-outcome reconciliation.
+4. Run bounded read-only preflight and repository acceptance; acceptance remains non-authorizing.
+5. Use only a separately reviewed immutable exact-ID mutation plan with explicit expected remote delta.
+6. Persist intent before dispatch; retain durable per-operation results; verify exact postflight.
+7. Keep upload, native Clip publication, catalog, metadata, thumbnail, and wall publication separately authorized.
 
 ## After every wave or run
 
-1. Write a run, incident, or decision report.
-2. Update current state with exact project, provider IDs, timestamp, manifest digest, state counts, evidence paths, and safe-resume status.
-3. Update the v3 overlay without destroying the v2 ledger.
-4. Append project-memory changelog.
-5. Update #64, the exact owning issue, and the PR.
-6. Add regression coverage for every identity, provider, packaging, state, archive, governance, or handoff defect.
+Update current state, the current versioned machine overlay without destroying predecessors, backlog, changelog, roadmap #64, exact owning issues, and regression coverage.

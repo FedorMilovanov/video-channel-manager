@@ -1,7 +1,7 @@
 {
   "schema_name": "video-manager.audit-register-v4",
-  "schema_version": "4.0",
-  "updated_at": "2026-08-05T11:20:00+03:00",
+  "schema_version": "4.1",
+  "updated_at": "2026-08-05T11:35:00+03:00",
   "repository": "FedorMilovanov/video-channel-manager",
   "predecessor_register": {
     "path": "docs/operations/audit-register-v3-2026-08-05.json",
@@ -9,11 +9,15 @@
     "schema_version": "3.2",
     "role": "Wave 12A completed project-bound machine state"
   },
-  "verified_main": "0552b026256fd80cb5fa2857ef3bfb3d2f9bffa1",
+  "verified_main": "38296d07f8b6e948a6c5c4846bb66bf116bcfb72",
   "wave_12b_issue": 122,
   "wave_12b_baseline": "0552b026256fd80cb5fa2857ef3bfb3d2f9bffa1",
-  "wave_12b_status": "in_progress",
-  "program_state": "WAVES_0_12A_COMPLETED_WAVE_12B_GOVERNANCE_IN_PROGRESS_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES",
+  "wave_12b_code_head": "38296d07f8b6e948a6c5c4846bb66bf116bcfb72",
+  "wave_12b_exact_head": "ffd275e9173db5a46bdde85f318dfa08ca83adb3",
+  "wave_12b_ci_run": 30988821430,
+  "wave_12b_evidence_level": "self_tested_credential_and_issue_graph_governance",
+  "wave_12b_status": "completed",
+  "program_state": "WAVES_0_12B_ENGINEERING_GOVERNANCE_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES",
   "credential_model": {
     "vk": {
       "credential_kind": "one_shared_user_access_token",
@@ -33,12 +37,12 @@
   },
   "active_operational_issues": [31, 32, 33, 38, 99, 119],
   "deferred_product_issues": [123],
-  "stale_issue_dispositions": [
-    {"issue": 2, "disposition": "completed_current_architecture", "close_after_merge": true},
-    {"issue": 3, "disposition": "superseded_specialized_audits", "close_after_merge": true},
-    {"issue": 4, "disposition": "superseded_playlist_remainder_issue_123", "close_after_merge": true},
-    {"issue": 5, "disposition": "completed_superseded_project_bound_graph", "close_after_merge": true},
-    {"issue": 37, "disposition": "completed_historical_cleanup", "close_after_merge": true}
+  "closed_issue_dispositions": [
+    {"issue": 2, "disposition": "completed_current_architecture", "state_reason": "completed"},
+    {"issue": 3, "disposition": "superseded_specialized_audits", "state_reason": "not_planned"},
+    {"issue": 4, "disposition": "superseded_playlist_remainder_issue_123", "state_reason": "not_planned"},
+    {"issue": 5, "disposition": "completed_superseded_project_bound_graph", "state_reason": "completed"},
+    {"issue": 37, "disposition": "completed_historical_cleanup", "state_reason": "completed"}
   ],
   "issue_37_completion_evidence": {
     "replaced_short_items": 34,
@@ -46,6 +50,20 @@
     "protected_wall_post_remained_present": true,
     "historical_executor_retired": true,
     "broad_cleanup_authorized": false
+  },
+  "quality_evidence": {
+    "python_versions": ["3.11", "3.12", "3.13"],
+    "pytest": "789 passed, 1 xfailed",
+    "coverage": "78% across 14306 statements",
+    "ruff_correctness": "green",
+    "ruff_format": "445 files already formatted",
+    "mypy": "green; 145 source files",
+    "dependency_audit": "no known vulnerabilities",
+    "powershell_environments": [
+      "Windows PowerShell 5.1",
+      "PowerShell 7 Windows",
+      "PowerShell 7 Linux"
+    ]
   },
   "provider_queries_during_wave_12b": 0,
   "provider_writes_during_wave_12b": 0,
