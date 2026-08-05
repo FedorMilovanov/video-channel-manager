@@ -90,18 +90,17 @@ Historical runbooks and executors are not automatically active. `current-state.m
 Validate every user-facing operational ZIP before handoff:
 
 ```powershell
-python .\scripts\verify_operational_bundle.py `
+python -m video_channel_manager.tools.operational_package_acceptance `
   .\path\package.zip `
   --entrypoint run-operation.ps1 `
   --require executor.py `
   --require manifest.json `
   --require README.txt `
   --require SHA256SUMS.txt `
-  --require-flat `
-  --require-acceptance
+  --require-flat
 ```
 
-The verifier checks archive structure, exact entrypoints, required files, path traversal, nested roots, PowerShell self-location, secret-like filenames and manifest fields, CRC, and listed SHA-256 values.
+The acceptance verifier first runs the stable digest-bound structural verifier, then checks truth level, exact project binding, supported entrypoint, adapter readiness, canary dependency, per-operation results, and unknown-outcome reconciliation. A passing result never authorizes provider writes.
 
 ## After every wave or run
 
