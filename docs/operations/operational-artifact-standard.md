@@ -16,16 +16,17 @@ An operational artifact must be:
 
 ## Required package structure
 
-Preferred flat ZIP:
+Preferred provider-write handoff ZIP:
 
 ```text
 package.zip
 ├── run-operation.ps1
-├── executor.py
 ├── manifest.json
 ├── README.txt
 └── SHA256SUMS.txt
 ```
+
+The PowerShell launcher invokes the installed repository-owned implementation. A generated standalone `executor.py` beside the ZIP is not part of the supported provider-write structure.
 
 A nested root is allowed only when the documented launch command includes it exactly. Flat ZIPs are the default for user handoffs.
 
@@ -159,7 +160,6 @@ Before handoff, run:
 python -m video_channel_manager.tools.operational_package_acceptance `
   .\path\package.zip `
   --entrypoint run-operation.ps1 `
-  --require executor.py `
   --require manifest.json `
   --require README.txt `
   --require SHA256SUMS.txt `
