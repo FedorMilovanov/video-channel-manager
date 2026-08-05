@@ -45,14 +45,15 @@ def test_windows_handoff_contract_is_fail_closed() -> None:
         assert claim not in text
 
 
-def test_operations_index_records_post_wave11_sequence() -> None:
+def test_operations_index_records_post_wave12_sequence() -> None:
     text = OPERATIONS_INDEX.read_text(encoding="utf-8")
     required = (
         "Waves 8A–8F — completed",
         "Wave 9 read-only evidence contract — completed",
         "Package A",
         "Wave 11 — completed",
-        "Wave 12 / issue #115",
+        "Wave 12 — completed",
+        "self_tested_repository_governance",
         "Live reconciliation — pending",
         "#31",
         "#32/#38",
@@ -65,6 +66,7 @@ def test_operations_index_records_post_wave11_sequence() -> None:
     stale_claims = (
         "Wave 8 / issue #86 — active core engineering",
         "Wave 10 — retirement and production governance",
+        "Wave 12 / issue #115 — active repository governance",
     )
     for claim in stale_claims:
         assert claim not in text
