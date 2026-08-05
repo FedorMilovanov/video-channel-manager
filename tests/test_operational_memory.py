@@ -37,11 +37,7 @@ def test_operations_index_has_no_broken_local_markdown_links() -> None:
     text = index_path.read_text(encoding="utf-8")
     local_targets = re.findall(r"\[[^]]+\]\(([^)]+\.md)\)", text)
     assert local_targets
-    broken = [
-        target
-        for target in local_targets
-        if not (index_path.parent / target).resolve().is_file()
-    ]
+    broken = [target for target in local_targets if not (index_path.parent / target).resolve().is_file()]
     assert broken == []
 
 
@@ -180,8 +176,7 @@ def test_operational_contract_and_memory_sources_exist() -> None:
         ROOT / "src/video_channel_manager/tools/operational_package_acceptance.py",
         OPERATIONS_DIR / "operational-package-acceptance.md",
         OPERATIONS_DIR / "retirement-registry-v1.json",
-        ROOT
-        / "docs/history/operational-attempts/lord-god-sermon-month-2026-08-05/SOURCE-METADATA.json",
+        ROOT / "docs/history/operational-attempts/lord-god-sermon-month-2026-08-05/SOURCE-METADATA.json",
         ROOT / ".github/copilot-instructions.md",
         OPERATIONS_DIR / "project-memory-changelog.d/2026-08-05-wave-12a.md",
         OPERATIONS_DIR / "project-memory-changelog.d/2026-08-05-wave-12b.md",
