@@ -54,7 +54,7 @@ def test_current_state_records_completed_package_a_without_claiming_live_complet
         "Provider writes during Package A implementation and CI: `0`",
         "Write plans created during Package A implementation and CI: `0`",
         "Actual fresh Wave 9A/9B live provider reconciliation: pending",
-        "Package A output never authorize writes",
+        "The output directory is evidence, not mutation authority",
         "BLOCKED_PENDING_FRESH_READ_ONLY_WALL_AUDIT_AND_LOCAL_LEDGER_RECONCILIATION",
         "REVIEWED_MANIFEST_PREPARED / UPLOAD_COMPLETION_NOT_PROVEN",
         "KobOzfBqzic",
@@ -108,8 +108,7 @@ def test_package_a_machine_register_is_valid_and_fail_closed() -> None:
     assert payload["package_a_code_head"] == "8f8b224f0386cf9f1ed89e0983e8af440e96cdd4"
     assert payload["package_a_ci_run"] == 30958445398
     assert payload["program_state"] == (
-        "PACKAGE_A_WAVE_9A_9B_WAVE_10_TOOLING_AND_GOVERNANCE_COMPLETED_"
-        "LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES"
+        "PACKAGE_A_WAVE_9A_9B_WAVE_10_TOOLING_AND_GOVERNANCE_COMPLETED_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES"
     )
     assert payload["package_a_evidence_level"] == "read_only_package_self_tested"
     assert payload["live_wave_9a_9b_reconciliation"] == (
