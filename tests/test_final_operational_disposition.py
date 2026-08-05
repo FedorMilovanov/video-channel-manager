@@ -86,8 +86,9 @@ def test_human_disposition_never_claims_false_completion() -> None:
         assert statement in text
 
     prohibited = (
-        "all 56 targets are native Clips",
+        "All 56 targets are native Clips.",
         "rerun the historical launcher",
+        "all_56_proven_native_clips\": true",
         "provider_writes_during_wave_13\": 1",
         "mutation_authorized\": true",
     )
