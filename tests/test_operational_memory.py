@@ -72,7 +72,7 @@ def test_current_state_records_completed_wave13_and_zero_active_graph() -> None:
         "Actual fresh live provider reconciliation: pending",
         "status: `requires_reconciliation`",
         "Correct active operational graph",
-        "all 56 are native Clips",
+        "All 56 are native Clips.",
         "#37 is an active operational owner",
     ):
         assert claim not in text
