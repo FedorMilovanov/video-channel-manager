@@ -4,6 +4,7 @@ import html
 import os
 import sqlite3
 import tempfile
+from contextlib import closing
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
@@ -475,7 +476,7 @@ def _load_sqlite_records(path: Path, contract: SqliteLedgerContract) -> tuple[Lo
     statement = f'SELECT {quoted_columns} FROM "{contract.table_name}" ORDER BY "{contract.source_video_id_column}"'
     uri = f"{path.resolve().as_uri()}?mode=ro"
     try:
-        with sqlite3.connect(uri, uri=True) as connection:
+        with closing(sqlite3.connect(uri, uri=True)) as connection:
             connection.execute("PRAGMA query_only = ON")
             rows = tuple(connection.execute(statement).fetchall())
     except sqlite3.Error as exc:
