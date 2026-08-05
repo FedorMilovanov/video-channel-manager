@@ -15,9 +15,7 @@ AUDIT = ROOT / "docs" / "operations" / "repository-integrity-audit-2026-08-05.md
 
 _FENCED_CODE = re.compile(r"(^|\n)(?:```|~~~).*?(?:\n```|\n~~~)(?=\n|$)", re.DOTALL)
 _INLINE_CODE = re.compile(r"`[^`\n]*`")
-_MARKDOWN_LINK = re.compile(
-    r"(?<!!)\[[^\]]+\]\(([^)\s]+)(?:\s+[\"'][^\"']*[\"'])?\)"
-)
+_MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)\s]+)(?:\s+[\"'][^\"']*[\"'])?\)")
 _EXTERNAL_SCHEMES = ("http://", "https://", "mailto:", "tel:", "data:")
 _PLACEHOLDERS = {"URL", "EXACT_URL", "EXAMPLE_URL", "PATH", "EXACT_PATH"}
 
@@ -50,21 +48,13 @@ def test_local_markdown_links_resolve() -> None:
         text = _markdown_without_code(document.read_text(encoding="utf-8-sig"))
         for raw_target in _MARKDOWN_LINK.findall(text):
             target = unquote(raw_target.strip().strip("<>"))
-            if (
-                not target
-                or target.startswith("#")
-                or target.startswith(_EXTERNAL_SCHEMES)
-            ):
+            if not target or target.startswith("#") or target.startswith(_EXTERNAL_SCHEMES):
                 continue
             target = target.split("#", 1)[0].split("?", 1)[0]
             if not target or target in _PLACEHOLDERS:
                 continue
 
-            resolved = (
-                (ROOT / target.lstrip("/"))
-                if target.startswith("/")
-                else (document.parent / target)
-            )
+            resolved = (ROOT / target.lstrip("/")) if target.startswith("/") else (document.parent / target)
             resolved = resolved.resolve()
             try:
                 resolved.relative_to(root)
