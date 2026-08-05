@@ -3,18 +3,19 @@
 Before work on Fedor Milovanov's YouTube/VK workflow, read in order:
 
 1. `docs/operations/project-identity-registry.md`
-2. `docs/operations/current-state.md`
-3. `docs/operations/audit-register-v6-2026-08-05.json`
-4. `docs/operations/audit-register-v5-2026-08-05.json`
-5. `docs/operations/audit-register-v4-2026-08-05.json`
-6. `docs/operations/audit-register-v3-2026-08-05.json`
-7. `docs/operations/audit-register-v2-2026-08-04.json`
-8. `docs/operations/automation-backlog.md`
-9. `.github/copilot-instructions.md`
-10. `docs/operations/local-credential-sources.md`
-11. `docs/operations/operational-artifact-standard.md`
-12. `docs/operations/operational-package-acceptance.md`
-13. `docs/operations/retirement-registry-v1.json`
+2. `docs/operations/master-audit-marathon-v2-2026-08-04.md`
+3. `docs/operations/current-state.md`
+4. `docs/operations/audit-register-v6-2026-08-05.json`
+5. `docs/operations/audit-register-v5-2026-08-05.json`
+6. `docs/operations/audit-register-v4-2026-08-05.json`
+7. `docs/operations/audit-register-v3-2026-08-05.json`
+8. `docs/operations/audit-register-v2-2026-08-04.json`
+9. `docs/operations/automation-backlog.md`
+10. `.github/copilot-instructions.md`
+11. `docs/operations/local-credential-sources.md`
+12. `docs/operations/operational-artifact-standard.md`
+13. `docs/operations/operational-package-acceptance.md`
+14. `docs/operations/retirement-registry-v1.json`
 
 The v6 machine-state overlay, its immutable v5/v4/v3/v2 predecessors, and `current-state.md` override old chats, screenshots, ZIPs, remembered counts, stale issue wording, and superseded audits. Historical material teaches; it never authorizes execution.
 
@@ -92,6 +93,12 @@ PowerShell orchestrates one repository-owned implementation. It does not become 
 ## Deterministic Windows handoffs
 
 `.github/copilot-instructions.md` remains canonical. Every copy-paste PowerShell block defines all variables, works from any current directory, uses exact absolute paths, `-LiteralPath`, `Test-Path`, explicit extraction, exact invocation, and `$PSScriptRoot`; requires exactly one artifact; rejects `LastWriteTime`, newest-ZIP selection, broad wildcards, undefined/inherited variables, retired packages, and external provider executors; and declares evidence level, capability, exact community ID and owner ID, output/result paths, canary, and recovery behavior.
+
+## VK permission and separate-system rules
+
+Managed-community enumeration uses `groups.get(filter=moder, extended=1)` with bounded pagination. `filter=admin` is not equivalent and must not replace it.
+
+VK Audio browser/internal-web work remains `SEPARATE_EXPERIMENTAL_SYSTEM / PARTIAL_OR_UNKNOWN_OUTCOMES / NOT_CORE_SUPPORTED`. It is not Package A, the core YouTube→VK Video engine, or an active Wave 13 scope.
 
 ## Branch and merge discipline
 
