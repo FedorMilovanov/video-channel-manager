@@ -6,9 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTER = ROOT / "docs" / "operations" / "audit-register-v5-2026-08-05.json"
-DISPOSITION = (
-    ROOT / "docs" / "operations" / "final-operational-disposition-2026-08-05.md"
-)
+DISPOSITION = ROOT / "docs" / "operations" / "final-operational-disposition-2026-08-05.md"
 
 
 def _register() -> dict[str, object]:
@@ -19,9 +17,7 @@ def test_final_register_is_fail_closed_and_credential_correct() -> None:
     data = _register()
 
     assert data["schema_name"] == "video-manager.audit-register-v5"
-    assert data["verified_main_before_wave_13"] == (
-        "1ee5de009cc573015d64fd92d0ab3f435304fb82"
-    )
+    assert data["verified_main_before_wave_13"] == ("1ee5de009cc573015d64fd92d0ab3f435304fb82")
     assert data["credential_model"] == {
         "vk": "one_shared_user_access_token",
         "vk_project_selector": False,
@@ -37,7 +33,8 @@ def test_final_register_is_fail_closed_and_credential_correct() -> None:
 def test_final_issue_dispositions_are_exact() -> None:
     data = _register()
     dispositions = {
-        item["issue"]: item for item in data["dispositions"]  # type: ignore[index]
+        item["issue"]: item
+        for item in data["dispositions"]  # type: ignore[index]
     }
 
     assert set(dispositions) == {31, 32, 33, 38, 99, 119, 123}
@@ -88,9 +85,9 @@ def test_human_disposition_never_claims_false_completion() -> None:
     prohibited = (
         "All 56 targets are native Clips.",
         "rerun the historical launcher",
-        "all_56_proven_native_clips\": true",
-        "provider_writes_during_wave_13\": 1",
-        "mutation_authorized\": true",
+        'all_56_proven_native_clips": true',
+        'provider_writes_during_wave_13": 1',
+        'mutation_authorized": true',
     )
     for statement in prohibited:
         assert statement not in text
