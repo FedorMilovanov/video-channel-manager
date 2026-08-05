@@ -27,9 +27,7 @@ def test_v6_is_final_fail_closed_machine_state() -> None:
         "schema_version": "5.0",
         "role": "Wave 13 immutable evidence-backed disposition contract",
     }
-    assert data["program_state"] == (
-        "WAVES_0_13_COMPLETED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES"
-    )
+    assert data["program_state"] == ("WAVES_0_13_COMPLETED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES")
     assert data["active_operational_issues"] == []
     assert data["open_issues_after_completed_state_merge"] == []
     assert data["open_pull_requests_after_completed_state_merge"] == []
