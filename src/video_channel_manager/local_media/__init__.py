@@ -1,3 +1,16 @@
+from video_channel_manager.local_media.audio_batch import (
+    AudioBatchCandidate,
+    AudioBatchError,
+    AudioBatchItem,
+    AudioBatchPlan,
+    AudioMetadataDecision,
+    AudioMetadataPolicy,
+    AudioProbeReport,
+    build_audio_batch_plan,
+    chunk_ready_audio_items,
+    derive_audio_metadata,
+    probe_audio_file,
+)
 from video_channel_manager.local_media.artifact import (
     MediaAcquisitionEvidence,
     MediaArtifactError,
@@ -32,6 +45,13 @@ from video_channel_manager.local_media.quality import (
 from video_channel_manager.local_media.scanner import LocalMediaRecord, scan_local_media
 
 __all__ = [
+    "AudioBatchCandidate",
+    "AudioBatchError",
+    "AudioBatchItem",
+    "AudioBatchPlan",
+    "AudioMetadataDecision",
+    "AudioMetadataPolicy",
+    "AudioProbeReport",
     "ImageQualityError",
     "ImageQualityReport",
     "LocalMediaRecord",
@@ -47,11 +67,15 @@ __all__ = [
     "StructuredAcquisitionResult",
     "acquisition_from_structured_result",
     "assess_media_profile",
+    "build_audio_batch_plan",
     "build_media_artifact_evidence",
     "calculate_media_manifest_sha256",
+    "chunk_ready_audio_items",
     "controlled_master_acquisition",
+    "derive_audio_metadata",
     "inspect_image",
     "load_media_artifact_manifest",
+    "probe_audio_file",
     "probe_media",
     "probe_media_artifact",
     "scan_local_media",
