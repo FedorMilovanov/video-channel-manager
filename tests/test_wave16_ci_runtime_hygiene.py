@@ -38,7 +38,7 @@ def test_mp3_contract_records_fail_closed_identity_rules() -> None:
     text = MP3_CONTRACT.read_text(encoding="utf-8")
 
     for phrase in (
-        'schema_version`: `1.1`',
+        "schema_version`: `1.1`",
         "source_id_sha256_conflict",
         "sha256_multiple_source_ids",
         "explicit exact metadata wins canonical selection",
