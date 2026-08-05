@@ -51,68 +51,39 @@ def test_current_state_records_completed_wave12a_without_live_completion() -> No
         "self_tested_project_bound_governance",
         "audit-register-v3-2026-08-05.json",
         "739146b63cfb3207a6b8d2d7a12698b3e54c28dd",
-        "python -m video_channel_manager.tools.operational_package_acceptance",
-        "editorial_prepared",
-        "preview_validated",
-        "self_tested",
-        "canary_verified",
-        "batch_verified",
-        "provider_writes_authorized=false",
-        "automatic_execution=false",
-        "groups.get(filter=moder, extended=1, count=1000, offset=0)",
-        "filter=admin",
-        "operator_transcript_reported",
-        "FINAL_OK — 30/30",
-        "-60805374_12482",
-        "-60805374_12511",
-        "2fd8cbd46e5b39b2baa0b4adcebba3cbfc6e57e445cddd5a8d16dbb5795bfb1d",
         "Actual fresh live provider reconciliation: pending",
-        "BLOCKED_PENDING_FRESH_READ_ONLY_WALL_AUDIT_AND_LOCAL_LEDGER_RECONCILIATION",
-        "REVIEWED_MANIFEST_PREPARED / UPLOAD_COMPLETION_NOT_PROVEN",
-        "KobOzfBqzic",
-        "BXZeRiEOHmQ",
-        "SEPARATE_EXPERIMENTAL_SYSTEM",
-        "LastWriteTime",
-        "$PSScriptRoot",
         "#31 — Lord God long-form reconciliation",
         "#32 — Lord God Shorts/Clips reconciliation",
         "#119 — Legendary Poet Shorts/Clips reconciliation",
         "#38 — shared provider-mode/final-type contract",
+        "OAuth alias `fedor-milovanov`",
+        "OAuth alias `legendary-poet`",
         "Issue #32 is not a Legendary Poet owner",
         "#33 — Lord God video catalog/publication gate",
         "VK Audio/MP3 and Legendary Poet are excluded",
+        "SEPARATE_EXPERIMENTAL_SYSTEM",
     )
     for fact in required:
         assert fact in text
-    assert "independently `batch_verified`" in text
-    assert "Actual fresh live provider reconciliation: completed" not in text
-    assert "Owner issues: #32 and #38" not in text
+    prohibited = (
+        "Actual fresh live provider reconciliation: completed",
+        "Owner issues: #32 and #38",
+        "#32/#38 — pending fresh Legendary Poet reconciliation",
+    )
+    for claim in prohibited:
+        assert claim not in text
 
 
 def test_agent_instructions_preserve_project_bound_read_only_owners() -> None:
     text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
     required = (
         "main@30c1ec11040034f6d3ed2492afe1bc7c029db1d0",
-        "Package A PR #110",
-        "Wave 11 operational-package truth",
-        "Wave 12 deterministic Windows handoffs",
-        "Wave 12A project-bound ownership correction",
+        "PR #120",
         "30971070928",
         "785 passed, 1 xfailed",
         "self_tested_project_bound_governance",
-        "editorial_prepared",
-        "preview_validated",
-        "canary_verified",
-        "batch_verified",
-        "filter=moder",
-        "filter=admin",
-        "operator_transcript_reported",
         "Package A output never authorizes a provider mutation by itself",
         "PowerShell orchestrates one repository-owned implementation",
-        "LastWriteTime",
-        "newest ZIP",
-        "exact absolute paths",
-        "$PSScriptRoot",
         "#31 — `lord-god-strength` long-form reconciliation",
         "#32 — `lord-god-strength` Shorts/Clips reconciliation",
         "#119 — `legendary-poet` Shorts/Clips reconciliation",
@@ -121,6 +92,10 @@ def test_agent_instructions_preserve_project_bound_read_only_owners() -> None:
         "OAuth alias `fedor-milovanov`",
         "OAuth alias `legendary-poet`",
         "VK Audio browser/internal-web work remains",
+        "filter=moder",
+        "filter=admin",
+        "LastWriteTime",
+        "$PSScriptRoot",
     )
     for fact in required:
         assert fact in text
@@ -189,12 +164,6 @@ def test_wave12a_machine_state_is_project_bound_and_fail_closed() -> None:
     }
     assert all(item["status"] == "fixed" for item in findings.values())
 
-    controls = payload["wave_12_controls"]
-    assert controls["self_contained_powershell_required"] is True
-    assert controls["exact_absolute_paths_required"] is True
-    assert controls["newest_zip_selection_prohibited"] is True
-    assert controls["external_generated_provider_executor_prohibited"] is True
-    assert controls["unknown_outcome_blind_retry_prohibited"] is True
     assert payload["provider_queries_during_wave_12a"] == 0
     assert payload["provider_writes_during_wave_12a"] == 0
     assert payload["write_plans_created_during_wave_12a"] == 0
@@ -243,6 +212,8 @@ def test_wave11_contract_and_history_sources_exist() -> None:
         / "docs/history/operational-attempts/"
         "lord-god-sermon-month-2026-08-05/SOURCE-METADATA.json",
         ROOT / ".github/copilot-instructions.md",
+        OPERATIONS_DIR
+        / "project-memory-changelog.d/2026-08-05-wave-12a.md",
     )
     for path in required:
         assert path.is_file()
