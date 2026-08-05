@@ -7,7 +7,7 @@ import subprocess
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 
 from video_channel_manager.local_media.quality import sha256_file
 
@@ -510,7 +510,9 @@ def chunk_ready_audio_items(
     current: list[AudioBatchItem] = []
     current_bytes = 0
     for item in (candidate for candidate in plan.items if candidate.status == "ready"):
-        size_would_exceed = max_total_bytes is not None and current and current_bytes + item.size_bytes > max_total_bytes
+        size_would_exceed = (
+            max_total_bytes is not None and current and current_bytes + item.size_bytes > max_total_bytes
+        )
         if len(current) >= max_items or size_would_exceed:
             chunks.append(tuple(current))
             current = []
