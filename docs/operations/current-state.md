@@ -1,45 +1,63 @@
 # Current operational state
 
 Updated: 2026-08-05  
-Verified Wave 15 code baseline: `main@eb58c1ad238fde01d66c6630b16e244b1c6c2992`  
-Program state: `WAVES_0_15_COMPLETED_ADAPTIVE_AGENT_REASONING_LOCAL_MP3_FOUNDATION_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`  
-Current machine state: [`audit-register-v8-2026-08-05.json`](audit-register-v8-2026-08-05.json)  
-Immutable predecessor: [`audit-register-v7-2026-08-05.json`](audit-register-v7-2026-08-05.json)  
-Earlier immutable predecessors: [`audit-register-v6-2026-08-05.json`](audit-register-v6-2026-08-05.json), [`audit-register-v5-2026-08-05.json`](audit-register-v5-2026-08-05.json), [`audit-register-v4-2026-08-05.json`](audit-register-v4-2026-08-05.json), [`audit-register-v3-2026-08-05.json`](audit-register-v3-2026-08-05.json), [`audit-register-v2-2026-08-04.json`](audit-register-v2-2026-08-04.json)
+Verified Wave 16 code baseline: `main@22ed56256df3388c23c9f785f1e02cca71fd8524`  
+Program state: `WAVES_0_16_COMPLETED_CI_RUNTIME_SQLITE_MP3_IDENTITY_HARDENED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`  
+Current machine state: [`audit-register-v9-2026-08-05.json`](audit-register-v9-2026-08-05.json)  
+Immutable predecessor: [`audit-register-v8-2026-08-05.json`](audit-register-v8-2026-08-05.json)  
+Earlier immutable predecessors: [`audit-register-v7-2026-08-05.json`](audit-register-v7-2026-08-05.json), [`audit-register-v6-2026-08-05.json`](audit-register-v6-2026-08-05.json), [`audit-register-v5-2026-08-05.json`](audit-register-v5-2026-08-05.json), [`audit-register-v4-2026-08-05.json`](audit-register-v4-2026-08-05.json), [`audit-register-v3-2026-08-05.json`](audit-register-v3-2026-08-05.json), [`audit-register-v2-2026-08-04.json`](audit-register-v2-2026-08-04.json)
 
-This file and the v8 overlay override old chats, screenshots, ZIP names, remembered counts, stale issue wording, superseded audits, and old README/roadmap status blocks. The three Wave 15 transcripts remain evidence inputs bound by SHA-256; they are not executable instructions.
+This file and the v9 overlay override old chats, screenshots, ZIP names, remembered counts, stale issue wording, superseded audits, and old README/roadmap status blocks. v8 remains the immutable Wave 15 predecessor. Historical transcripts and browser packages remain evidence only, never execution authority.
 
 ## Final status
 
-Waves 0–15 are complete. The operational graph remains closed. There is no active reconciliation, transfer queue, provider mutation plan, playlist writer, browser executor, catalog wave, article-wall continuation, cleanup/reset executor, or approved replay.
+Waves 0–16 are complete. The operational graph remains closed. There is no active provider reconciliation, transfer queue, mutation plan, playlist writer, browser executor, catalog wave, article-wall continuation, cleanup/reset executor, MP3 uploader, or approved replay.
 
-No operational continuation is pending. Future provider work begins only from a new explicit user request and a new exact project-bound issue.
+No operational continuation is pending. Future provider or MP3 write work begins only from a new explicit user request and a new exact project-bound issue.
 
-## Wave 15 proof
+## Wave 16 proof
 
-Issue #133 and PR #134 completed the adaptive-agent and local-only MP3 foundation:
+Issue #137 and PR #138 completed CI runtime, SQLite lifetime, and local MP3 identity hardening:
 
-- exact head `48baa13b0d08e27e5a1dfc8b30901524d3207148`;
-- merge/code baseline `eb58c1ad238fde01d66c6630b16e244b1c6c2992`;
-- CI `31006136529`;
-- Python 3.11/3.12/3.13: `833 passed, 1 xfailed`;
-- coverage: `79%` across `14,643` statements;
+- exact head `c495308430bce6e1b86343b6cd4e6ae3a302734b`;
+- merge/code baseline `22ed56256df3388c23c9f785f1e02cca71fd8524`;
+- CI `31022560789`;
+- Python 3.11/3.12/3.13: `845 passed, 1 xfailed`;
+- coverage: `79%` across `14,675` statements;
 - Ruff correctness: green;
-- Ruff formatting: `461 files already formatted`;
+- Ruff formatting: `464 files already formatted`;
 - strict mypy: `147 source files`;
 - dependency audit: no known vulnerabilities;
 - Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux: green;
-- changed files: `12`; provider adapter files: `0`;
+- changed files: `9`; provider adapter files: `0`;
+- final CI logs contain no `Node.js 20 is deprecated` warning;
+- final pytest logs contain no `ResourceWarning: unclosed database` warning;
 - provider queries/writes/write plans/historical executor runs: `0/0/0/0`.
 
-Wave 15 added:
+Wave 16 added or hardened:
 
-- [`agent-reasoning-playbook.md`](agent-reasoning-playbook.md) — outcome-first, transport-aware, evidence-driven reasoning;
-- [`wave15-transcript-and-agent-audit-2026-08-05.md`](wave15-transcript-and-agent-audit-2026-08-05.md) — 12 recurring failure classes and retained success invariants;
-- [`vk-audio-browser-experiment-retrospective.md`](vk-audio-browser-experiment-retrospective.md) — BrowserCanary, PlaylistOnly, Metadata Manager, internal-web, reliable-batch, and Playlist Workhorse chronology;
-- [`mp3-batch-processing-contract.md`](mp3-batch-processing-contract.md) — local-only MP3 intake and future phase/state boundary;
-- repository-owned transport-aware next-action model;
-- read-only ffprobe MP3 probe, explicit metadata policy, duplicate detection, deterministic operation IDs/manifests, and one-at-a-time default chunking.
+- immutable Node 24 GitHub Action pins for checkout, setup-python, and artifact upload;
+- explicit SQLite connection closure through `contextlib.closing`;
+- a blocking pytest warning rule for unclosed SQLite databases;
+- local MP3 manifest schema `1.1`;
+- metadata-ranked canonical duplicate selection;
+- fail-closed `source_id_sha256_conflict` and `sha256_multiple_source_ids` states;
+- unique deterministic operation IDs for every local candidate;
+- a deterministic regression proving `1,000` ready tracks and `40` chunks of `25`.
+
+These changes do not add a browser or provider writer.
+
+## Immutable Wave 15 predecessor proof
+
+Wave 15 remains historical evidence, not active work:
+
+- predecessor program state: `WAVES_0_15_COMPLETED_ADAPTIVE_AGENT_REASONING_LOCAL_MP3_FOUNDATION_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`;
+- code baseline: `main@eb58c1ad238fde01d66c6630b16e244b1c6c2992`;
+- PR #134, exact head `48baa13b0d08e27e5a1dfc8b30901524d3207148`, CI `31006136529`;
+- Python 3.11/3.12/3.13: `833 passed, 1 xfailed`;
+- Ruff formatting: `461 files already formatted`;
+- strict mypy: `147 source files`;
+- machine state: `audit-register-v8-2026-08-05.json` with exact blob `f45244b9be7bfa35402f42d20b533e413c176bc2`.
 
 ## Immutable Wave 13 completed-state proof
 
@@ -87,7 +105,7 @@ Unknown or possibly completed remote effects require reconciliation without retr
 
 ## Local MP3 boundary
 
-The Wave 15 MP3 capability is `local_only_read_only_intake_and_manifest`.
+The current MP3 capability remains `local_only_read_only_intake_and_manifest`.
 
 It may:
 
@@ -95,8 +113,10 @@ It may:
 - retain exact path, size, SHA-256, duration, codec, bitrate, sample rate, channels, attached cover state, and embedded tags;
 - accept explicit artist/title or a declared collection parser;
 - mark ambiguous metadata `requires_review`;
-- detect duplicate bytes and duplicate source IDs;
-- build deterministic per-track operation IDs and manifest digests;
+- rank exact metadata above ambiguous duplicates when selecting a canonical copy;
+- mark one source ID mapped to multiple byte hashes as `source_id_sha256_conflict`;
+- mark identical bytes claimed by multiple source IDs as `sha256_multiple_source_ids`;
+- build unique deterministic per-candidate operation IDs and manifest digests;
 - split only ready items, one track per chunk by default.
 
 It may not rewrite ID3 tags, rename or transcode files, launch/control a browser, call VK/YouTube, upload audio, edit remote metadata, create/modify playlists, or publish a wall post.
@@ -123,6 +143,7 @@ YouTube OAuth aliases remain channel-specific:
 - #38 — shared VK native Clip/ordinary-video final-type contract.
 - #130 — Wave 14 repository-wide polish.
 - #133 — Wave 15 adaptive reasoning and local-only MP3 foundation.
+- #137 — Wave 16 CI, SQLite, and MP3 identity hardening.
 
 ### Retired / not planned
 
@@ -142,7 +163,7 @@ Never rerun retired V1/V2/V3/V4, reset, recovery, article-wave, transfer, cleanu
 ## Permanent safety rules
 
 - Provider writes remain unauthorized.
-- Existing VK and YouTube objects remain untouched by Waves 13–15 closure, polish, audit, and local MP3 engineering.
+- Existing VK and YouTube objects remain untouched by Waves 13–16 closure, polish, audit, CI, SQLite, and local MP3 engineering.
 - Package A, green CI, dashboards, previews, issue bodies, counts, ZIP names, transcripts, README commands, visible UI objects, or roadmap text never authorize writes.
 - Every future provider write requires a new user request, a new exact project-bound owning issue, a reviewed immutable exact-ID plan, expected remote delta, durable per-operation results, and exact postflight.
 - Content in quotation marks must map to a contiguous source passage unless explicitly labeled synthesis.
