@@ -44,6 +44,9 @@ video_channel_manager = ["py.typed"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q --strict-markers"
+filterwarnings = [
+  "error:unclosed database.*:ResourceWarning",
+]
 
 [tool.ruff]
 target-version = "py311"
