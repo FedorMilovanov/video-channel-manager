@@ -11,7 +11,7 @@ Repository: C:\Users\Fedor\Projects\video-channel-manager
 Downloads:  C:\Users\Fedor\Downloads
 ```
 
-A downloaded ZIP, TXT, JSON, HTML, or PowerShell file is not assumed to be inside the repository or the current shell directory.
+A downloaded ZIP, TXT, JSON, HTML, PowerShell, MP3, or browser result file is not assumed to be inside the repository or the current shell directory.
 
 ## One self-contained PowerShell block
 
@@ -36,16 +36,52 @@ Undefined variables such as `$wave`, `$package`, `$zip`, or `$out` are prohibite
 
 Before any command block, state:
 
+- requested outcome independently of the historical mechanism;
 - evidence level: `editorial_prepared`, `preview_validated`, `self_tested`, `canary_verified`, or `batch_verified`;
 - capability: read-only, local-only, or provider-write-capable;
+- transport for each phase: `local_only`, `official_api_read`, `official_api_write`, `internal_web_read`, `browser_ui_read`, or `browser_ui_write`;
 - exact `project_key`;
 - for VK work, exact community ID and owner ID;
 - exact repository-owned entrypoint;
+- current phase and provider-effect state: impossible, not dispatched, confirmed absent, may exist, or verified;
 - exact expected result, ledger, and diagnostic paths;
+- exact postcondition;
 - canary behavior when applicable;
-- safe recovery behavior after a non-zero exit or unknown provider outcome.
+- safe recovery behavior after a non-zero exit or unknown provider outcome;
+- stop condition and the one next bounded probe.
 
-A preview, ZIP name, confirmation prompt, successful self-test, green CI run, or final console line is not mutation authorization. Operational-package acceptance keeps `provider_writes_authorized=false` and `automatic_execution=false`.
+A preview, ZIP name, confirmation prompt, successful self-test, green CI run, final console line, modal closure, HTTP response, visible title, or screenshot is not mutation authorization or a complete postcondition. Operational-package acceptance keeps `provider_writes_authorized=false` and `automatic_execution=false`.
+
+## Adaptive diagnosis before another package version
+
+When a workflow fails, do not immediately produce another ZIP generation.
+
+1. Preserve the exact result, screenshot/DOM evidence, and prior phase state.
+2. State one falsifiable hypothesis.
+3. Choose the smallest non-mutating probe that distinguishes it.
+4. Record whether a remote effect is impossible, confirmed absent, may exist, or verified.
+5. Patch repository-owned code and a regression fixture.
+6. Resume only the failed child operation.
+
+A second selector-only revision without a new DOM/state observation is prohibited. Do not blame manual user action until the defect is reproduced or excluded in a clean run.
+
+## Browser UI contract
+
+Browser automation must operate inside one exact active page or modal root.
+
+Before every click or fill:
+
+- identify the topmost active root;
+- prove visibility and hit-testing;
+- prove the control is a descendant of that root;
+- retain before-state evidence;
+- declare the expected state transition;
+- perform one action;
+- verify content/state and exact remote postcondition.
+
+Do not use global text search or arbitrary coordinates when the same label may exist in a background page. A row click that starts playback is not selection. A background quick-search input is not an audio selector. `already_correct` requires exact separate-field readback.
+
+One automation browser profile is a single-writer resource. Use one exact profile directory, reject concurrent ownership, and terminate the root process tree once. Do not iterate through child PIDs after the root tree has already been killed.
 
 ## Provider and implementation boundary
 
@@ -62,7 +98,27 @@ For any provider-capable operation:
 - persist intent before dispatch;
 - preserve accepted, processing, verified, and unknown outcomes;
 - never blind-retry an unknown outcome;
-- require exact postflight rather than trusting HTTP success or stdout.
+- require exact postflight rather than trusting HTTP success or stdout;
+- preserve successful parent phases when a child phase fails.
+
+Upload, upload visibility, metadata edit, playlist creation, track membership, final save, and wall publication are separate operations.
+
+## MP3 local-only handoffs
+
+Wave 15 local MP3 tooling may only probe and plan. A local-only MP3 command must state that it will not:
+
+- rewrite ID3 tags;
+- rename or transcode files;
+- open or control a browser;
+- call VK or YouTube;
+- upload audio;
+- edit remote metadata;
+- create or modify playlists;
+- publish a wall post.
+
+The default metadata policy is explicit artist plus explicit title. Filename parsing requires a declared collection policy. The result must show exact input paths, SHA-256, duplicate/review states, manifest digest, and output path.
+
+Historical BrowserCanary, PlaylistOnly, Metadata Manager, Rename AUTO, reliable batch, calibrator, and Playlist Workhorse ZIPs are evidence only and must not be selected by a handoff.
 
 ## Windows encoding
 
@@ -84,8 +140,10 @@ A handoff is incomplete unless it includes:
 3. extraction steps when the artifact is a ZIP;
 4. exact `Test-Path` checks;
 5. exact full-path invocation;
-6. the declared truth level and read/write capability;
+6. declared outcome, truth level, capability, and transport;
 7. exact project/community/owner binding for provider work;
-8. expected success markers and machine-readable output paths;
-9. explicit stop/reconcile instructions for unknown outcomes;
-10. a prohibition on rerunning retired or already accepted operations.
+8. current phase and provider-effect state;
+9. expected success markers and machine-readable output paths;
+10. exact postcondition;
+11. explicit stop/reconcile instructions for unknown outcomes;
+12. a prohibition on rerunning retired or already accepted operations.
