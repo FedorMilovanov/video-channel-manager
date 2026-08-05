@@ -32,20 +32,23 @@ def test_operations_index_has_no_broken_local_markdown_links() -> None:
     text = index_path.read_text(encoding="utf-8")
     local_targets = re.findall(r"\[[^]]+\]\(([^)]+\.md)\)", text)
     assert local_targets
-    broken = [target for target in local_targets if not (index_path.parent / target).resolve().is_file()]
+    broken = [
+        target
+        for target in local_targets
+        if not (index_path.parent / target).resolve().is_file()
+    ]
     assert broken == []
 
 
-def test_current_state_records_wave12a_without_claiming_live_completion() -> None:
+def test_current_state_records_completed_wave12a_without_live_completion() -> None:
     text = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
     required = (
-        "WAVES_0_12_COMPLETED_WAVE_12A_OWNERSHIP_CORRECTION_ACTIVE",
-        "8536811779806967f14ce3b957c63b55e2ba4496",
-        "30969551134",
-        "30970123683",
-        "784 passed, 1 xfailed",
+        "WAVES_0_12A_ENGINEERING_GOVERNANCE_COMPLETED",
+        "main@30c1ec11040034f6d3ed2492afe1bc7c029db1d0",
+        "98b4f3df7dd25918398d3544ee81d2b04a0aa21b",
+        "30971070928",
         "785 passed, 1 xfailed",
-        "self_tested_repository_governance",
+        "self_tested_project_bound_governance",
         "audit-register-v3-2026-08-05.json",
         "739146b63cfb3207a6b8d2d7a12698b3e54c28dd",
         "python -m video_channel_manager.tools.operational_package_acceptance",
@@ -76,6 +79,8 @@ def test_current_state_records_wave12a_without_claiming_live_completion() -> Non
         "#119 — Legendary Poet Shorts/Clips reconciliation",
         "#38 — shared provider-mode/final-type contract",
         "Issue #32 is not a Legendary Poet owner",
+        "#33 — Lord God video catalog/publication gate",
+        "VK Audio/MP3 and Legendary Poet are excluded",
     )
     for fact in required:
         assert fact in text
@@ -87,12 +92,14 @@ def test_current_state_records_wave12a_without_claiming_live_completion() -> Non
 def test_agent_instructions_preserve_project_bound_read_only_owners() -> None:
     text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
     required = (
-        "main`: `8536811779806967f14ce3b957c63b55e2ba4496",
+        "main@30c1ec11040034f6d3ed2492afe1bc7c029db1d0",
         "Package A PR #110",
         "Wave 11 operational-package truth",
         "Wave 12 deterministic Windows handoffs",
-        "Wave 12A / issue #118",
+        "Wave 12A project-bound ownership correction",
+        "30971070928",
         "785 passed, 1 xfailed",
+        "self_tested_project_bound_governance",
         "editorial_prepared",
         "preview_validated",
         "canary_verified",
@@ -113,16 +120,17 @@ def test_agent_instructions_preserve_project_bound_read_only_owners() -> None:
         "Do not group #32/#38 as Legendary Poet ownership",
         "OAuth alias `fedor-milovanov`",
         "OAuth alias `legendary-poet`",
+        "VK Audio browser/internal-web work remains",
     )
     for fact in required:
         assert fact in text
 
 
-def test_wave12a_machine_state_overlay_is_project_bound_and_fail_closed() -> None:
+def test_wave12a_machine_state_is_project_bound_and_fail_closed() -> None:
     overlay_path = OPERATIONS_DIR / "audit-register-v3-2026-08-05.json"
     payload = json.loads(overlay_path.read_text(encoding="utf-8"))
     assert payload["schema_name"] == "video-manager.audit-register-v3"
-    assert payload["schema_version"] == "3.1"
+    assert payload["schema_version"] == "3.2"
     assert payload["predecessor_register"] == {
         "path": "docs/operations/audit-register-v2-2026-08-04.json",
         "blob_sha": "739146b63cfb3207a6b8d2d7a12698b3e54c28dd",
@@ -130,14 +138,21 @@ def test_wave12a_machine_state_overlay_is_project_bound_and_fail_closed() -> Non
         "role": "complete historical finding and source ledger",
     }
     assert (ROOT / payload["predecessor_register"]["path"]).is_file()
-    assert payload["verified_main"] == "8536811779806967f14ce3b957c63b55e2ba4496"
-    assert payload["wave_12_state_sync_head"] == "8536811779806967f14ce3b957c63b55e2ba4496"
-    assert payload["wave_12_state_sync_exact_head"] == "40c680f33aacb33c33b09659d81e37e4f14d47b8"
-    assert payload["wave_12_state_sync_ci_run"] == 30970123683
-    assert payload["wave_12a_issue"] == 118
-    assert payload["wave_12a_status"] == "ownership_correction_active"
+    assert payload["verified_main"] == "30c1ec11040034f6d3ed2492afe1bc7c029db1d0"
+    assert payload["wave_12a_code_head"] == (
+        "30c1ec11040034f6d3ed2492afe1bc7c029db1d0"
+    )
+    assert payload["wave_12a_exact_head"] == (
+        "98b4f3df7dd25918398d3544ee81d2b04a0aa21b"
+    )
+    assert payload["wave_12a_ci_run"] == 30971070928
+    assert payload["wave_12a_evidence_level"] == (
+        "self_tested_project_bound_governance"
+    )
+    assert payload["wave_12a_status"] == "completed"
     assert payload["program_state"] == (
-        "WAVES_0_12_COMPLETED_WAVE_12A_OWNERSHIP_CORRECTION_ACTIVE_LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES"
+        "WAVES_0_12A_ENGINEERING_GOVERNANCE_COMPLETED_"
+        "LIVE_RECONCILIATION_PENDING_NO_PROVIDER_WRITES"
     )
 
     graph = {item["issue"]: item for item in payload["active_operational_graph"]}
@@ -163,6 +178,17 @@ def test_wave12a_machine_state_overlay_is_project_bound_and_fail_closed() -> Non
     assert graph[33]["status"] == "blocked_by_issues_31_and_32"
     assert graph[99]["project_key"] == "legendary-poet"
 
+    findings = {
+        item["id"]: item for item in payload["corrected_source_of_truth_findings"]
+    }
+    assert set(findings) == {
+        "OWNER-ISSUE-001",
+        "OWNER-ISSUE-002",
+        "OWNER-ISSUE-003",
+        "OWNER-ISSUE-004",
+    }
+    assert all(item["status"] == "fixed" for item in findings.values())
+
     controls = payload["wave_12_controls"]
     assert controls["self_contained_powershell_required"] is True
     assert controls["exact_absolute_paths_required"] is True
@@ -172,18 +198,24 @@ def test_wave12a_machine_state_overlay_is_project_bound_and_fail_closed() -> Non
     assert payload["provider_queries_during_wave_12a"] == 0
     assert payload["provider_writes_during_wave_12a"] == 0
     assert payload["write_plans_created_during_wave_12a"] == 0
+    assert payload["provider_writes_during_wave_12a_state_sync"] == 0
     assert payload["live_counts_are_fresh"] is False
     assert payload["mutation_authorized"] is False
     assert payload["automatic_execution"] is False
 
 
 def test_wave11_predecessor_register_remains_valid_and_fail_closed() -> None:
-    payload = json.loads((OPERATIONS_DIR / "audit-register-v2-2026-08-04.json").read_text(encoding="utf-8"))
+    register_path = OPERATIONS_DIR / "audit-register-v2-2026-08-04.json"
+    payload = json.loads(register_path.read_text(encoding="utf-8"))
     assert payload["schema_name"] == "video-manager.audit-register-v2"
     assert payload["schema_version"] == "2.9"
-    assert payload["wave_11_code_head"] == "eeab53b779e5ea4af5d3dcc08d79e41812739e04"
+    assert payload["wave_11_code_head"] == (
+        "eeab53b779e5ea4af5d3dcc08d79e41812739e04"
+    )
     assert payload["wave_11_ci_run"] == 30967195938
-    assert payload["wave_11_evidence_level"] == "self_tested_source_bound_governance"
+    assert payload["wave_11_evidence_level"] == (
+        "self_tested_source_bound_governance"
+    )
     assert payload["source_line_count"] == 7413
     assert len(payload["sources"]) == 8
     findings = {item["id"]: item for item in payload["findings"]}
@@ -207,7 +239,9 @@ def test_wave11_contract_and_history_sources_exist() -> None:
         ROOT / "src/video_channel_manager/tools/operational_package_acceptance.py",
         OPERATIONS_DIR / "operational-package-acceptance.md",
         OPERATIONS_DIR / "retirement-registry-v1.json",
-        ROOT / "docs/history/operational-attempts/lord-god-sermon-month-2026-08-05/SOURCE-METADATA.json",
+        ROOT
+        / "docs/history/operational-attempts/"
+        "lord-god-sermon-month-2026-08-05/SOURCE-METADATA.json",
         ROOT / ".github/copilot-instructions.md",
     )
     for path in required:
