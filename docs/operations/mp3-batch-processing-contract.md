@@ -2,7 +2,8 @@
 
 Status: local-only foundation  
 Provider mutation support: none  
-Default transport: `local_only`
+Default transport: `local_only`  
+Current local manifest `schema_version`: `1.1`
 
 This contract prepares the repository for future large MP3 collections without promoting the historical browser experiments to a supported writer.
 
@@ -13,7 +14,7 @@ The system treats these as separate operations:
 1. discover local MP3 files;
 2. probe file integrity and audio properties;
 3. derive or review exact artist/title metadata;
-4. build a deterministic manifest and duplicate report;
+4. build a deterministic manifest, duplicate report, and identity-conflict report;
 5. optionally prepare local metadata changes in a future reviewed module;
 6. upload one track in a future provider adapter;
 7. verify upload visibility;
@@ -23,7 +24,7 @@ The system treats these as separate operations:
 11. verify exact playlist title and membership;
 12. optionally publish elsewhere under a separate authorization.
 
-Wave 15 implements only steps 1–4. It never writes ID3 tags, renames files, transcodes audio, opens a browser, calls VK, or creates a provider plan.
+Waves 15–16 implement only steps 1–4. They never write ID3 tags, rename files, transcode audio, open a browser, call VK, or create a provider plan.
 
 Upload, upload visibility, metadata edit, playlist creation, track membership, final save, and wall publication remain independent future operations.
 
@@ -39,11 +40,20 @@ Each candidate retains:
 - embedded tags;
 - optional exact source ID;
 - metadata-decision status;
-- deterministic operation ID.
+- deterministic per-candidate operation ID.
 
-SHA-256 detects byte duplicates. Source ID detects semantically duplicated downloads with different bytes. Neither filename nor title is sufficient identity.
+SHA-256 identifies exact bytes. Source ID identifies the intended source object. Filename and title are presentation fields, not identity.
 
-## 3. Metadata derivation is policy-driven
+The mappings are fail-closed:
+
+- one source ID mapped to multiple SHA-256 values is `source_id_sha256_conflict`;
+- one SHA-256 claimed by multiple exact source IDs is `sha256_multiple_source_ids`;
+- every candidate in either conflict remains `requires_review`;
+- a conflict never becomes `ready` or `duplicate_input` automatically;
+- identical bytes with the same source ID may form one duplicate group;
+- operation IDs include project, exact identity, SHA-256, and resolved path so every local candidate remains individually addressable.
+
+## 3. Metadata derivation and canonical selection
 
 The default policy is `explicit_only`. An agent must supply both artist and title, or the item remains `requires_review`.
 
@@ -58,6 +68,16 @@ Rules:
 - the preacher/artist name is not repeated in the title unless the user explicitly wants it;
 - no model guess becomes `ready` without a declared policy;
 - `already_correct` in any future metadata writer requires exact post-write readback of both fields.
+
+Canonical duplicate selection is deterministic and evidence-ranked:
+
+1. explicit exact metadata wins canonical selection;
+2. declared-policy ready metadata ranks after explicit exact metadata;
+3. unresolved metadata ranks last;
+4. path is only the deterministic tie-breaker inside the same evidence rank;
+5. identity conflicts bypass canonical selection entirely and require review.
+
+This prevents an alphabetically earlier ambiguous copy from suppressing a later exact copy.
 
 ## 4. Probe contract
 
@@ -75,11 +95,19 @@ A future local tag writer must be a different module with backup, atomic replace
 
 ## 5. Batch states
 
-Wave 15 local plan states:
+Wave 16 local plan states:
 
-- `ready` — exact metadata and unique identity;
-- `requires_review` — metadata policy is missing or ambiguous;
-- `duplicate_input` — exact SHA or source ID repeats an earlier candidate.
+- `ready` — exact or declared-policy metadata plus non-conflicting identity;
+- `requires_review` — metadata policy is missing/ambiguous or identity mappings conflict;
+- `duplicate_input` — exact duplicate bytes remain after one metadata-ranked canonical item is selected.
+
+Important reasons include:
+
+- `explicit_exact_fields`;
+- `filename_convention_not_declared`;
+- `duplicate_sha256`;
+- `source_id_sha256_conflict`;
+- `sha256_multiple_source_ids`.
 
 Future provider states must extend, not replace, these states:
 
@@ -95,11 +123,13 @@ Future provider states must extend, not replace, these states:
 
 Each track has its own result. A batch-level final line is supplementary.
 
-## 6. Chunking and concurrency
+## 6. Chunking, scale, and concurrency
 
 Default chunk size is one ready item. This matches a single authenticated browser profile and makes unknown outcomes bounded.
 
-A larger chunk requires evidence for:
+A larger local chunk may be prepared with an exact item and byte budget, but it is not provider authorization. Wave 16 regression proves that 1,000 ready tracks produce a deterministic manifest, 1,000 unique operation IDs, and 40 deterministic chunks of 25 independent items.
+
+A future provider chunk larger than one requires evidence for:
 
 - transport capacity;
 - total byte budget;
@@ -129,12 +159,12 @@ A future browser adapter must:
 
 Internal-web requests discovered through a browser may support diagnostics, but remain `internal_web_read` until a separately reviewed contract exists.
 
-## 8. Future manifest shape
+## 8. Manifest shape
 
 ```json
 {
   "schema_name": "video-manager.audio-batch-plan",
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "project_key": "lord-god-strength",
   "transport": "local_only",
   "items": [
@@ -163,11 +193,11 @@ Internal-web requests discovered through a browser may support diagnostics, but 
 }
 ```
 
-The manifest SHA is derived from canonical content without its own digest field.
+The manifest SHA is derived from canonical content without its own digest field. Reversing input order must not change the manifest.
 
 ## 9. Completion levels
 
-- `local_inventory_verified` — bytes, probe, identity, and metadata decisions recorded;
+- `local_inventory_verified` — bytes, probe, identity, conflicts, and metadata decisions recorded;
 - `local_metadata_verified` — future exact local tag readback completed;
 - `upload_verified` — future exact remote audio object verified;
 - `playlist_verified` — future exact playlist and membership verified;
@@ -179,11 +209,12 @@ Do not call a local manifest “uploaded”, “operational”, or “ready to p
 
 A future resume begins from durable per-track state:
 
-- `ready` may begin a new authorized upload;
+- `ready` may begin a new separately authorized upload;
 - `upload_verified` skips upload and may enter an authorized metadata/playlist child operation;
 - `accepted`/`processing` waits and postflights;
 - `unknown_requires_reconciliation` performs read-only reconciliation and never resubmits;
 - `playlist_verified` is complete and no-write;
-- `duplicate_input` never enters provider execution automatically.
+- `duplicate_input` never enters provider execution automatically;
+- `source_id_sha256_conflict` and `sha256_multiple_source_ids` require explicit local identity resolution before any provider plan can exist.
 
 Historical ZIP names or console prompts are not resume tokens.
