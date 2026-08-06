@@ -1,240 +1,227 @@
-# VK postponed-text editor: second-pass audit of chat, operation, and repository
+# VK postponed-text editor: second-pass audit and hardening record
 
-Date: 2026-08-06  
-Owning follow-up: issue #152  
-Historical operation: Lord God postponed quote cleanup  
-Repository baseline reviewed: `main@c0b8a303598788b2870862042d2e2868a97b3005`
+Date: 2026-08-06–07  
+Owning issue: #152  
+Owning delivery: PR #153  
+Baseline reviewed: `main@c0b8a303598788b2870862042d2e2868a97b3005`  
+Initial capability merge: `c04f0a4f948174ced6287e4bae87e4bf1be2be52`  
+Hardening implementation commit: `f7e0a7dc0a6ad965045783638c25384d69fe6b08`
 
-## Executive conclusion
+## Executive verdict
 
-The completed VK cleanup itself is supported by exact final evidence:
+Two conclusions must remain separate.
+
+### Historical operation
+
+The 2026-08-06 Lord God cleanup is verified:
 
 - project `lord-god-strength`;
 - community `60805374`, owner `-60805374`;
-- target postponed IDs `12513` through `12541`;
-- `29/29` targets exact after-state;
-- `0` pending targets;
-- postponed count `66` before and after;
-- `37` non-target postponed rows unchanged;
+- attachment-free target postponed IDs `12513..12541`;
+- `29/29` exact after-state;
+- `0` pending;
+- postponed count `66/66`;
+- 37 non-target postponed rows unchanged;
+- first published quote post untouched;
 - final status `succeeded`.
 
-That successful no-attachment operation does **not** prove that every advertised property of the reusable repository implementation is correct. A second-pass comparison of the chat, issue #147, PRs #150/#151, tests, and current source found material gaps. Therefore the correct status is:
+No replay is needed or authorized.
 
-`HISTORICAL_OPERATION_VERIFIED / REUSABLE_CAPABILITY_MERGED_BUT_HARDENING_REQUIRED / NO_ACTIVE_PROVIDER_MUTATION`
+### Reusable capability
 
-No completed VK edit must be replayed. This audit authorizes repository-only work.
+The initial PR #150 implementation contained strong safety controls but overstated several generic guarantees. Issue #152 and PR #153 harden those gaps. Correct pre-merge status:
+
+`HISTORICAL_OPERATION_VERIFIED / HARDENING_IMPLEMENTED / EXACT_HEAD_CI_REQUIRED / NO_ACTIVE_PROVIDER_MUTATION`
 
 ## Sources reviewed
 
-- the complete 2026-08-06 conversation and pasted PowerShell/VK outputs;
-- issue #147 and its required safety/deliverable list;
-- PR #150 exact head `0bfb1260c37411e8df686f26120ceea85e2f8116`;
-- code merge `c04f0a4f948174ced6287e4bae87e4bf1be2be52`;
-- state-sync PR #151 and repository head `c0b8a303598788b2870862042d2e2868a97b3005`;
-- `postponed_text_edit.py`, CLI, tests, lock helper, wall snapshot implementation, runbook, `AGENTS.md`, `current-state.md`, and audit register v10;
-- GitHub Actions run/cancellation evidence for #3208 and #3209.
+- full conversation and pasted PowerShell/VK outputs;
+- issue #147 and PRs #150/#151;
+- issue #152 and PR #153;
+- production module, CLI, lock helper, wall snapshots, tests, wrapper, runbook, `AGENTS.md`, current state, and audit registers;
+- GitHub Actions queue/cancellation evidence for #3208/#3209.
 
-## Positive controls that are correctly implemented
+## Positive controls retained
 
-The following properties are present and materially useful:
+The implementation continues to provide:
 
-1. Exact project/community/owner validation.
-2. Sorted unique explicit target post IDs.
-3. Immutable request and plan self-digests.
-4. Exact before and after text with SHA-256 evidence.
-5. Complete postponed/published preflight requirement.
-6. Exact `before`, `after`, and `conflict` reconciliation states.
-7. Existing exact-after targets are skipped during resume.
-8. Intent is persisted before `wall.edit` dispatch.
-9. `owner_id`, `post_id`, `message`, `publish_date`, and attachment parameter are sent explicitly.
-10. HTTP success alone is not accepted as completion; exact live readback is required.
-11. HTTP 429/transient retry is permitted only after readback confirms exact before-state and after a delayed second read.
-12. CAPTCHA/error 14 stops without OCR or bypass.
-13. Unknown postflight state stops for reconciliation.
-14. Final target exact-after proof and non-target fingerprint comparison exist.
-15. The conservative default inter-operation delay is 25 seconds.
-16. Historical failure modes and the final 29/29 operation are documented.
+1. exact project/community/owner validation;
+2. sorted unique explicit post IDs;
+3. immutable request and plan digests;
+4. exact before/after text and SHA-256 evidence;
+5. complete published/postponed preflight;
+6. exact `before`, `after`, and `conflict` states;
+7. resume by skipping exact-after operations;
+8. intent-before-dispatch;
+9. explicit owner, post, message, and original publication date;
+10. exact live readback rather than HTTP-success trust;
+11. transient retry only after confirmed no effect and delayed re-read;
+12. CAPTCHA stop without OCR or bypass;
+13. unknown-outcome stop;
+14. final target and non-target postconditions;
+15. conservative 25-second default cadence;
+16. durable operation history.
 
-These controls explain why the exact historical operation was safely resumable after partial success.
+These controls explain why the historical partial runs were safely resumable.
 
-## Confirmed high-priority implementation gaps
+## Findings and remediation
 
-### A1. The community write lock is not actually global
+### A1 — lock depended on output directory
 
-`local_vk_write_lock()` states that it prevents two local processes from mutating the same VK community. The postponed editor calls it with:
+**Original defect:** two runs with different result folders used different lock files for the same VK community.
 
-```python
-output_dir / "vk-postponed-text-edit.lock"
+**Remediation:** PR #153 derives one lock from configured data directory, account alias, and community ID:
+
+```text
+data/locks/vk/<account-alias>-<community-id>.lock
 ```
 
-Two executions using different output directories therefore use different lock files and can both run against the same account/community.
+The lock is acquired before live preflight and held through final postconditions.
 
-**Risk:** concurrent exact plans can interleave reads and writes, creating conflicts or ambiguous evidence.
+**Regression:** a held lock blocks execution from a second output directory before any `wall.edit`.
 
-**Required correction:** derive one stable lock path from the configured data directory, account alias, and community ID. `output_dir` may contain run journals, but it must not define writer exclusivity.
+### A2 — publication safety checked only once
 
-### A2. Publication-distance safety is checked only once
+**Original defect:** a long batch could cross `minimum_future_seconds` before a later dispatch.
 
-The code calculates the current epoch and checks all pending publication dates before entering the batch loop. It does not repeat that check immediately before each later dispatch or controlled retry.
+**Remediation:** timezone-aware publication distance is checked during initial readiness, immediately before each dispatch, and immediately before every controlled retry.
 
-**Risk:** a long batch can begin safely and later cross `minimum_future_seconds` before a subsequent `wall.edit`.
+**Regressions:** later-operation threshold crossing and retry-time threshold crossing stop with zero additional mutations.
 
-**Required correction:** validate timezone-aware current time and the exact operation's `publish_date` immediately before every dispatch and before every retry.
+### A3 — delayed reconciliation journal could remain stale
 
-### A3. Delayed reconciliation can contradict its journal
+**Original defect:** aggregate result could say `verified_after_delayed_reconciliation` while the attempt journal still said `transient_confirmed_absent_waiting_retry`.
 
-After a transient failure, the journal is written as:
+**Remediation:** the same journal is rewritten terminally with `provider_effect=verified`, reconciliation time, and finish time before aggregate success is recorded.
 
-`transient_confirmed_absent_waiting_retry`
+**Regression:** durable journal and result are asserted equal in meaning.
 
-If the delayed read then discovers exact after-state, the aggregate result records:
+### A4 — attachment preservation was overstated
 
-`verified_after_delayed_reconciliation`
+**Original defect:** target attachment tokens were sorted; snapshot fingerprints omitted unsupported attachment forms. The no-attachment historical run did not prove generic attachment preservation.
 
-but the journal file is not rewritten to a terminal verified state.
+**Remediation:** schema v1 now rejects `allow_attachments=true` and every target with any attachment. Target `wall.edit` always carries an explicit empty attachment parameter.
 
-**Risk:** durable child evidence and the final aggregate disagree about provider effect.
+Non-target postconditions hash the ordered raw attachment payload, including access-key-bearing data and unsupported attachment shapes, instead of relying only on sorted canonical tokens.
 
-**Required correction:** update the same attempt journal with terminal state, verified provider effect, reconciliation timestamp, and finished time before adding the aggregate result.
+**Regressions:** attached targets fail closed and non-target attachment-order changes fail final postcondition.
 
-### A4. Attachment preservation claims exceed the implementation
+### A5 — output evidence could be overwritten or mixed
 
-The target attachment helper sorts canonical tokens before putting them in the plan and before sending them to `wall.edit`. The wall snapshot fingerprint also sorts attachments and silently drops attachments that cannot be represented as `type<owner>_<id>`.
+**Remediation:** an existing `result.json` must match the same plan digest. Journal filenames are never overwritten; repeated use gets a new durable suffix.
 
-Consequences:
+### D1/D2 — missing PowerShell wrapper and Pester coverage
 
-- original attachment order is not preserved;
-- access-key-dependent attachment identity is not preserved;
-- unsupported attachment forms can be invisible in non-target comparison;
-- a no-attachment historical success cannot prove arbitrary attachment safety.
+**Remediation:** `scripts/Invoke-VkPostponedTextEdit.ps1` now:
 
-**Required correction:** for schema v1, fail closed on every target attachment and narrow documentation accordingly, or introduce a new reviewed schema that preserves exact ordered API tokens including access keys. Non-target reads must fail closed when attachment identity cannot be represented rather than silently omitting it.
+- uses strict/fail-fast behavior;
+- resolves input with `-LiteralPath`;
+- validates read-only versus apply parameters;
+- requires a full lowercase `sha256:<64 hex>` confirmation and explicit write switch;
+- forwards safety timing controls;
+- checks native exit code;
+- invokes only `video_channel_manager.cli.vk_postponed_text`;
+- contains no token or direct provider transport.
 
-## Required deliverables that were declared complete but are absent
+`tests/powershell/VkPostponedTextEdit.Tests.ps1` covers read-only argument construction, apply refusal, guarded apply forwarding, native exit propagation, and absence of token/provider code.
 
-### D1. Repository-owned PowerShell wrapper
+### D3/D4 — missing edge regressions
 
-Issue #147 explicitly required a PowerShell wrapper. PR #150 contains a Python CLI and documentation snippets, but no repository-owned wrapper file dedicated to this capability.
+Python tests now cover:
 
-**Required correction:** add a strict fail-fast wrapper that invokes only the package CLI, defines every path/variable, checks native exit codes, and never handles a token.
+- ambiguous post-dispatch read failure → `unknown_requires_reconciliation` with no retry;
+- same community lock across different output directories;
+- publication threshold crossing before dispatch;
+- threshold crossing before a retry;
+- delayed journal terminal consistency;
+- attachment authority rejection;
+- attached-target rejection;
+- non-target raw attachment-order mutation;
+- existing 429, CAPTCHA, partial resume, conflict, and non-target text mutation cases.
 
-### D2. Pester coverage for the wrapper
+### S1/S2 — stale entry and conflated baselines
 
-No capability-specific Pester tests were added.
+**Remediation:** `AGENTS.md` is now a compact current entry contract. `current-state.md` explicitly distinguishes:
 
-**Required correction:** test path validation, argument forwarding, refusal without confirmation/write flag, preservation of nonzero native exit codes, and absence of provider logic in PowerShell.
+- repository baseline entering hardening `c0b8a303...`;
+- initial capability merge `c04f0a4...`;
+- hardening implementation commit `f7e0a7dc...`;
+- active repository-only issue #152 / PR #153.
 
-### D3. Ambiguous postflight regression
-
-The Python tests cover plan creation, before/after/conflict, successful resume, HTTP 429, CAPTCHA, and non-target mutation. They do not simulate post-dispatch read failure/incomplete read and assert `unknown_requires_reconciliation` with no retry.
-
-**Required correction:** add the missing regression plus exact journal assertions.
-
-### D4. Concurrency, threshold-crossing, and journal-consistency regressions
-
-No tests prove:
-
-- two output directories still contend on one community lock;
-- a later operation crossing the future threshold stops before dispatch;
-- a controlled retry rechecks the threshold;
-- delayed reconciliation rewrites the journal terminally.
-
-## Documentation and state inconsistencies
-
-### S1. `AGENTS.md` is stale
-
-The entry document still lists the Wave 16 baseline and six-job-green merge rule, while `current-state.md` says it overrides the stale paragraph. Entry-point guidance should not require a reader to discover that its own baseline is superseded.
-
-**Required correction:** add audit register v10 and this audit to the mandatory reading order; distinguish current repository head from production-code head; record issue #152 as active repository hardening only.
-
-### S2. Production-code baseline and repository head are conflated
-
-`current-state.md` calls `c04f0a4...` the current code baseline, but the actual repository head after state sync is `c0b8a303...`.
-
-**Required correction:** record both explicitly:
-
-- production capability merge: `c04f0a4...`;
-- current repository head before hardening: `c0b8a303...`.
-
-### S3. “Fully complete” was claimed too early
-
-Issue #147 was closed and the user was told the work was complete before verifying every deliverable and edge-case claim against the issue.
-
-**Required correction:** issue #152 remains open until all remediation and quality proof are complete.
+The runbook now states attachment-free schema v1 and documents the global lock, per-dispatch time check, terminal journals, wrapper, and raw non-target fingerprints.
 
 ## CI and merge-process audit
 
-The repository's own `AGENTS.md` says substantial work merges only after exact-head six-job green CI. PRs #150 and #151 were merged without that proof because GitHub Actions runs #3208/#3209 remained queued and both normal cancellation and force-cancel returned HTTP 502.
+PRs #150/#151 were merged without the repository-required green CI because Actions runs #3208/#3209 never started and normal/force cancellation returned HTTP 502.
 
-The exception was honestly documented and no known failing test was hidden. Nevertheless, this is a process deviation, not a green result.
+Accurate interpretation:
 
-Correct status:
+- known failing test: none observed;
+- green proof: not obtained;
+- manual source review: performed;
+- infrastructure exception: real;
+- policy compliance: incomplete.
 
-- CI service outcome: unavailable/queued;
-- failing test observed: no;
-- green proof obtained: no;
-- manual source review performed: yes;
-- post-merge verification still required: yes.
-
-Issue #152 must not close without an actual quality proof covering compile, dependency graph, Ruff, format, mypy, pytest, and PowerShell tests, or the repository's normal six-job CI.
+PR #153 must not merge until its exact final head receives all six green CI jobs. The infrastructure exception is historical context, not a waiver.
 
 ## Chat-level negative examples
 
-These examples are preserved because they teach response discipline as well as code discipline.
+### N1 — incomplete endpoint scope presented as complete inventory
 
-### N1. Incomplete tool scope was presented as complete inventory
+A connector query returned one PR-associated run, while a later direct Actions query found both #3208 and #3209.
 
-The connector query showed one queued PR-associated run, and the assistant said only one active run remained. A later direct Actions API query found two: #3208 and #3209.
+**Rule:** state endpoint/filter limitations and confirm a complete inventory through the authoritative workflow-run surface.
 
-**Lesson:** state the endpoint/filter scope before claiming a complete inventory. Cross-check workflow runs by exact head through the authoritative Actions endpoint.
+### N2 — expected cancellation stated as guaranteed
 
-### N2. Expected cancellation was stated as guaranteed
+The assistant predicted force-cancel would close the runs. GitHub returned HTTP 502 and readback showed both still queued.
 
-The assistant said force-cancel would leave no active CI. Both normal cancel and force-cancel returned HTTP 502, and both runs remained queued.
+**Rule:** no mutation, cancellation, or merge is complete until exact readback confirms it.
 
-**Lesson:** mutation/cancellation completion is established only by readback. Use conditional language before confirmation.
+### N3 — completion announced before deliverable-by-deliverable audit
 
-### N3. Completion was announced before line-by-line deliverable review
+The work was called fully complete before checking the missing wrapper, Pester coverage, ambiguous-outcome test, stale `AGENTS.md`, and generic edge guarantees.
 
-The assistant said everything requested was finished. The second pass found the missing PowerShell wrapper, missing regressions, stale `AGENTS.md`, and generic safety gaps.
+**Rule:** compare every owning-issue requirement against actual files and tests before closure.
 
-**Lesson:** compare implementation against every owning-issue requirement before closing or announcing completion.
+### N4 — historical success generalized beyond exercised conditions
 
-### N4. Historical success was over-generalized
+The successful operation had no target attachments and did not exercise concurrent writers or publication-threshold crossing.
 
-The final VK operation contained no target attachments and did not exercise concurrent writers or publication-threshold crossing. Documentation nevertheless described general attachment preservation and a fully supported capability.
+**Rule:** exercised evidence supports only the exercised branch. Unsupported branches remain unproved.
 
-**Lesson:** distinguish exercised evidence from inferred capability. Unsupported branches remain unproved even when one exact operation succeeds.
+### N5 — infrastructure exception substituted for verification
 
-### N5. Infrastructure exception became a substitute for verification
+Manual review was useful but was treated as sufficient to merge.
 
-Manual review was appropriate as an emergency diagnostic, but it was used to merge instead of deferring until a quality proof existed.
+**Rule:** infrastructure failure can explain missing CI but cannot become green CI.
 
-**Lesson:** an infrastructure incident can explain missing CI; it does not transform manual review into green CI.
+### N6 — confidence language exceeded readback
 
-## Historical operation verdict
+Several responses said a command “will” cancel or that repository work was “fully done” before verification.
 
-The completed 29-post cleanup remains valid. The findings above do not imply that those posts were changed incorrectly:
+**Rule:** use conditional language until postcondition readback exists, then report the exact observed state.
 
-- target IDs were exact and attachment-free;
-- final readback showed every target exact after-state;
-- queue count remained 66;
-- all 37 non-target postponed rows remained unchanged;
-- no replay is needed or authorized.
+## Provider boundary
 
-The audit changes only the confidence level assigned to the reusable code and documentation.
+Hardening work is `local_only` plus GitHub repository writes. It performs:
 
-## Closure criteria for issue #152
+- VK provider reads: `0`;
+- VK provider writes: `0`;
+- historical executor runs: `0`;
+- CAPTCHA handling: `0`.
 
-Issue #152 can close only when all of the following are true:
+The credential token is never printed, copied, packaged, committed, or requested.
 
-1. Stable account/community lock independent of output directory.
-2. Per-dispatch and per-retry publication-distance checks.
-3. Terminally consistent delayed-reconciliation journal.
-4. Attachment support either made exact and ordered or explicitly rejected in schema v1.
-5. Repository-owned PowerShell wrapper and Pester tests.
-6. Ambiguous readback, concurrency, threshold, and journal regressions.
-7. `AGENTS.md`, `current-state.md`, and machine state synchronized.
-8. Actual green six-job CI or equivalent recorded local quality proof.
-9. PR review confirms no VK provider calls or writes occurred during hardening.
-10. No historical plan or executor is replayed.
+## Closure gates
+
+Issue #152 may close only after:
+
+1. exact final PR head is known;
+2. all six CI jobs are green on that head;
+3. changed scope is reviewed;
+4. review threads are empty/resolved;
+5. newest machine-state overlay records exact quality proof and merge;
+6. provider activity remains `0/0`;
+7. no historical plan is replayed;
+8. PR #153 is merged into `main` with the expected head unchanged.
