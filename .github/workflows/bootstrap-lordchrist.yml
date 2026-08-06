@@ -6,6 +6,12 @@ on:
       - agent/lordchrist-verified-telegram-poster
     paths:
       - .bootstrap/ready
+  pull_request:
+    branches:
+      - main
+    types:
+      - synchronize
+      - reopened
 
 permissions:
   contents: write
@@ -16,6 +22,7 @@ concurrency:
 
 jobs:
   bootstrap:
+    if: github.event_name == 'push' || github.head_ref == 'agent/lordchrist-verified-telegram-poster'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -36,7 +43,7 @@ jobs:
           from pathlib import Path
 
           encoded = "".join(
-              path.read_text(encoding="ascii").strip()
+              "".join(path.read_text(encoding="ascii").split())
               for path in sorted(Path(".bootstrap").glob("payload.*"))
           )
           data = json.loads(zlib.decompress(base64.b64decode(encoded)).decode("utf-8"))
