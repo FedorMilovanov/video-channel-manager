@@ -43,8 +43,9 @@ jobs:
           from pathlib import Path
 
           expected_digest = '047cb8482912e00185cf4b619f4cdd80750e4cb78eef8b8e52cdd7f817a160d2'
-          parts = sorted(Path('.bootstrap-clean').glob('payload.*'))
-          if [path.name for path in parts] != [f'payload.{index:03d}' for index in range(1, 7)]:
+          parts = sorted(Path('.bootstrap-final').glob('payload.*'))
+          expected_parts = [f'payload.{index:03d}' for index in range(1, 7)]
+          if [path.name for path in parts] != expected_parts:
               raise SystemExit(f'Unexpected bootstrap part set: {[path.name for path in parts]}')
           encoded = ''.join(path.read_text(encoding='ascii') for path in parts)
           actual_digest = hashlib.sha256(encoded.encode('ascii')).hexdigest()
@@ -65,10 +66,10 @@ jobs:
           files = data.get('files', {})
           if set(files) != required:
               raise SystemExit(f'Unexpected payload file set: {sorted(files)}')
-          for relative, content in files.items():
+          for relative, file_content in files.items():
               path = Path(relative)
               path.parent.mkdir(parents=True, exist_ok=True)
-              path.write_text(content, encoding='utf-8', newline='\n')
+              path.write_text(file_content, encoding='utf-8', newline='\n')
 
           Path('/tmp/lordchrist-ledger.json').write_text(
               data['state_content'], encoding='utf-8', newline='\n'
@@ -94,11 +95,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf .bootstrap-clean .github/workflows/bootstrap-lordchrist-clean.yml
+          rm -rf .bootstrap-clean .bootstrap-final .github/workflows/bootstrap-lordchrist-clean.yml
           git config user.name 'lordchrist-bootstrap[bot]'
           git config user.email 'lordchrist-bootstrap@users.noreply.github.com'
           git add -A -- \
-            .bootstrap-clean .github/workflows/bootstrap-lordchrist-clean.yml \
+            .bootstrap-clean .bootstrap-final .github/workflows/bootstrap-lordchrist-clean.yml \
             .github/workflows/lordchrist-telegram-poster.yml \
             content/telegram/lordchrist/quote-library-107.md \
             content/telegram/lordchrist/verified-30-posts.json \
