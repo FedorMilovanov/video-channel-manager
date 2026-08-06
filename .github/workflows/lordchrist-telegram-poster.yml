@@ -1,0 +1,266 @@
+name: Lordchrist Telegram quote publisher
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Preview the next post or publish one guarded canary/post
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - publish
+      confirm:
+        description: Type PUBLISH_NEXT_LORDCHRIST_POST for a live manual publication
+        required: false
+        type: string
+  schedule:
+    - cron: "17 9 * * *"
+      timezone: Europe/Moscow
+    - cron: "17 21 * * *"
+      timezone: Europe/Moscow
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lordchrist-telegram-publisher
+  cancel-in-progress: false
+  queue: max
+
+env:
+  QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
+  STATE_BRANCH: state/lordchrist-telegram
+  STATE_DIR: .state/lordchrist
+  LEDGER_RELATIVE_PATH: content/telegram/lordchrist/publication-ledger.json
+  LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json
+  DISPATCH_PATH: .runtime/lordchrist-dispatch.json
+  TARGET_PROOF_PATH: .runtime/lordchrist-target-proof.json
+  LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+  LORDCHRIST_TELEGRAM_CHAT_ID: ${{ vars.LORDCHRIST_TELEGRAM_CHAT_ID }}
+  LORDCHRIST_TELEGRAM_BOT_USERNAME: ${{ vars.LORDCHRIST_TELEGRAM_BOT_USERNAME }}
+  LORDCHRIST_APPROVED_QUEUE_DIGEST: ${{ vars.LORDCHRIST_APPROVED_QUEUE_DIGEST }}
+  LORDCHRIST_POSTING_ENABLED: ${{ vars.LORDCHRIST_POSTING_ENABLED }}
+  LORDCHRIST_SCHEDULE_ENABLED: ${{ vars.LORDCHRIST_SCHEDULE_ENABLED }}
+
+jobs:
+  publish-next:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out immutable code and queue
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install repository
+        shell: bash
+        run: python -m pip install -e .
+
+      - name: Check out isolated publication ledger
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: state/lordchrist-telegram
+          path: .state/lordchrist
+          fetch-depth: 0
+
+      - name: Determine guarded execution mode
+        id: intent
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REQUESTED_ACTION: ${{ inputs.action }}
+          CONFIRMATION: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          mode=manual
+          execute=false
+          reason=manual_preview
+
+          if [[ "$EVENT_NAME" == "schedule" ]]; then
+            mode=scheduled
+            reason=scheduled_disabled
+            if [[ "${LORDCHRIST_SCHEDULE_ENABLED,,}" == "true" ]]; then
+              execute=true
+              reason=scheduled_execution
+            fi
+          elif [[ "$REQUESTED_ACTION" == "publish" ]]; then
+            if [[ "$CONFIRMATION" != "PUBLISH_NEXT_LORDCHRIST_POST" ]]; then
+              echo "Live publication requires the exact confirmation phrase." >&2
+              exit 2
+            fi
+            execute=true
+            reason=manual_execution
+          fi
+
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "execute=$execute" >> "$GITHUB_OUTPUT"
+          echo "reason=$reason" >> "$GITHUB_OUTPUT"
+
+      - name: Validate immutable queue and ledger
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/telegram/post_next.py \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            validate
+
+      - name: Preview next publication
+        if: steps.intent.outputs.execute != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Execution skipped: ${{ steps.intent.outputs.reason }}"
+          python scripts/telegram/post_next.py \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            preview \
+            --mode "${{ steps.intent.outputs.mode }}"
+
+      - name: Enforce repository execution gates
+        if: steps.intent.outputs.execute == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${LORDCHRIST_POSTING_ENABLED,,}" == "true" ]] || {
+            echo "LORDCHRIST_POSTING_ENABLED is not true." >&2
+            exit 2
+          }
+          if [[ "${{ steps.intent.outputs.mode }}" == "scheduled" ]]; then
+            [[ "${LORDCHRIST_SCHEDULE_ENABLED,,}" == "true" ]] || {
+              echo "LORDCHRIST_SCHEDULE_ENABLED is not true." >&2
+              exit 2
+            }
+          fi
+          [[ -n "$LORDCHRIST_TELEGRAM_BOT_TOKEN" ]] || {
+            echo "Missing LORDCHRIST_TELEGRAM_BOT_TOKEN secret." >&2
+            exit 2
+          }
+          [[ "$LORDCHRIST_TELEGRAM_CHAT_ID" =~ ^-100[0-9]+$ ]] || {
+            echo "LORDCHRIST_TELEGRAM_CHAT_ID must be the exact negative channel ID." >&2
+            exit 2
+          }
+          [[ "$LORDCHRIST_TELEGRAM_BOT_USERNAME" =~ ^[A-Za-z0-9_]+$ ]] || {
+            echo "LORDCHRIST_TELEGRAM_BOT_USERNAME is invalid." >&2
+            exit 2
+          }
+
+      - name: Read-only bot and channel preflight
+        if: steps.intent.outputs.execute == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python scripts/telegram/post_next.py \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            preflight \
+            --mode "${{ steps.intent.outputs.mode }}" \
+            --expected-chat-id "$LORDCHRIST_TELEGRAM_CHAT_ID" \
+            --expected-bot-username "$LORDCHRIST_TELEGRAM_BOT_USERNAME" \
+            --output "$TARGET_PROOF_PATH"
+
+      - name: Prepare one strict-order dispatch
+        id: prepare
+        if: steps.intent.outputs.execute == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          python scripts/telegram/post_next.py \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            prepare \
+            --mode "${{ steps.intent.outputs.mode }}" \
+            --run-id "$GITHUB_RUN_ID" \
+            --target-proof "$TARGET_PROOF_PATH" \
+            --dispatch "$DISPATCH_PATH"
+          status=$?
+          set -e
+
+          if [[ "$status" -eq 3 ]]; then
+            echo "prepared=false" >> "$GITHUB_OUTPUT"
+            echo "No eligible next publication; queue may already be complete."
+            exit 0
+          fi
+          [[ "$status" -eq 0 ]] || exit "$status"
+          echo "prepared=true" >> "$GITHUB_OUTPUT"
+
+      - name: Persist intent before sendMessage
+        if: steps.prepare.outputs.prepared == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C "$STATE_DIR" config user.name "lordchrist-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "lordchrist-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo "Prepared dispatch did not change the ledger." >&2
+            exit 3
+          }
+          git -C "$STATE_DIR" commit -m "Record Lordchrist dispatch intent for run $GITHUB_RUN_ID [skip ci]"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "Remote state branch does not contain the exact intent commit." >&2
+            exit 3
+          }
+
+          git -C "$STATE_DIR" fetch --no-tags origin "$STATE_BRANCH"
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$LEDGER_RELATIVE_PATH" > .runtime/remote-ledger.json
+          python scripts/telegram/post_next.py \
+            --queue "$QUEUE_PATH" \
+            --ledger .runtime/remote-ledger.json \
+            verify-intent \
+            --dispatch "$DISPATCH_PATH"
+
+      - name: Send exactly one prepared message
+        id: send
+        if: steps.prepare.outputs.prepared == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          python scripts/telegram/post_next.py \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            send \
+            --dispatch "$DISPATCH_PATH"
+          status=$?
+          set -e
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+
+      - name: Persist exact Telegram result
+        if: steps.prepare.outputs.prepared == 'true' && always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH"
+          if git -C "$STATE_DIR" diff --cached --quiet; then
+            echo "No post-send result was saved. The durable intent remains blocking; blind retry is forbidden." >&2
+            exit 4
+          fi
+          git -C "$STATE_DIR" commit -m "Record Lordchrist Telegram result for run $GITHUB_RUN_ID [skip ci]"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "Remote result commit verification failed." >&2
+            exit 4
+          }
+
+          if [[ "${{ steps.send.outputs.exit_code }}" != "0" ]]; then
+            echo "Telegram did not return a fully verified success. Review the state ledger before any retry." >&2
+            exit 4
+          fi
