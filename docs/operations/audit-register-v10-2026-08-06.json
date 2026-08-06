@@ -1,0 +1,96 @@
+{
+  "schema_name": "video-manager.audit-register-v10",
+  "schema_version": "10.0",
+  "updated_at": "2026-08-06T23:45:00+03:00",
+  "repository": "FedorMilovanov/video-channel-manager",
+  "predecessor_register": {
+    "path": "docs/operations/audit-register-v9-2026-08-05.json",
+    "blob_sha": "b30c405d96c7469c79a7fddac51d463b4141ec75",
+    "schema_version": "9.0",
+    "role": "immutable Wave 16 CI, SQLite, and local MP3 identity baseline"
+  },
+  "program_state": "WAVES_0_16_COMPLETED_VK_POSTPONED_TEXT_EDIT_SUPPORTED_OPERATIONAL_GRAPH_CLOSED_NO_ACTIVE_PROVIDER_MUTATION",
+  "current_code_baseline": "c04f0a4f948174ced6287e4bae87e4bf1be2be52",
+  "vk_postponed_text_edit_capability": {
+    "issue": 147,
+    "pull_request": 150,
+    "exact_head": "0bfb1260c37411e8df686f26120ceea85e2f8116",
+    "merge": "c04f0a4f948174ced6287e4bae87e4bf1be2be52",
+    "supported_cli": "video-manager-vk-postponed-text",
+    "supported_commands": [
+      "plan",
+      "reconcile",
+      "apply"
+    ],
+    "surface": "existing postponed VK wall posts only",
+    "exact_id_required": true,
+    "immutable_plan_digest_required": true,
+    "publish_date_preserved": true,
+    "canonical_attachments_preserved": true,
+    "intent_journal_before_dispatch": true,
+    "exact_postflight_required": true,
+    "blind_mutation_retry_forbidden": true,
+    "transient_retry_requires_confirmed_absent": true,
+    "captcha_stops_without_bypass": true,
+    "unknown_outcome_requires_reconciliation": true,
+    "default_inter_operation_delay_seconds": 25,
+    "final_non_target_wall_postcondition": true,
+    "runbook": "docs/operations/vk-postponed-text-edit-runbook-2026-08-06.md"
+  },
+  "lord_god_cleanup_2026_08_06": {
+    "project_key": "lord-god-strength",
+    "community_id": 60805374,
+    "owner_id": -60805374,
+    "credential_alias": "legendary-poet",
+    "target_post_id_first": 12513,
+    "target_post_id_last": 12541,
+    "target_count": 29,
+    "postponed_count_before": 66,
+    "postponed_count_after": 66,
+    "non_target_postponed_unchanged": 37,
+    "total_verified": 29,
+    "still_pending": 0,
+    "final_status": "succeeded",
+    "approved_plan_sha256": "sha256:8dcbe984cb24e003770fa3897ff3b7da351a34d92d4931ac3cb9a5707d2c1cbb",
+    "published_posts_touched": 0,
+    "telegram_objects_touched": 0,
+    "repository_files_touched_by_provider_operation": 0
+  },
+  "incident_lessons": {
+    "raw_postponed_row_count_is_authoritative": true,
+    "full_before_after_preview_required": true,
+    "strict_powershell_fail_fast_required": true,
+    "http_429_requires_readback_before_retry": true,
+    "confirmed_absent_is_not_unknown": true,
+    "partial_success_is_preserved": true,
+    "captcha_image_reconstruction_is_unsupported": true,
+    "external_zip_version_treadmill_retired": true,
+    "repository_owned_module_is_authoritative": true,
+    "conservative_provider_pacing_is_operational_control": true
+  },
+  "ci_infrastructure_exception": {
+    "affected_runs": [
+      31125025717,
+      31125540845
+    ],
+    "run_numbers": [
+      3208,
+      3209
+    ],
+    "status_at_merge": "queued",
+    "normal_cancel_http_status": 502,
+    "force_cancel_http_status": 502,
+    "failing_check_bypassed": false,
+    "reason": "GitHub Actions service did not start the jobs and cancellation endpoints repeatedly returned server errors",
+    "manual_exact_head_review_recorded": true,
+    "provider_calls_during_repository_implementation": 0,
+    "provider_writes_during_repository_implementation": 0
+  },
+  "active_operational_issues": [],
+  "active_provider_mutations": [],
+  "automatic_execution": false,
+  "replay_authorized": false,
+  "historical_local_cleanup_packages_are_execution_authority": false,
+  "future_provider_work_requires_new_user_request_and_new_exact_issue": true,
+  "future_vk_postponed_text_edit_requires_new_reviewed_request_and_plan": true
+}
