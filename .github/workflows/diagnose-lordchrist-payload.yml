@@ -1,0 +1,45 @@
+name: Diagnose Lordchrist payload
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    if: github.head_ref == 'agent/lordchrist-telegram-publisher-clean'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          ref: agent/lordchrist-telegram-publisher-clean
+          fetch-depth: 0
+      - name: Record exact part hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PYCODE'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          report = {}
+          for path in sorted(Path('.bootstrap-clean').glob('payload.*')):
+              raw = path.read_bytes()
+              report[path.name] = {
+                  'bytes': len(raw),
+                  'sha256': hashlib.sha256(raw).hexdigest(),
+              }
+          Path('.bootstrap-clean/diagnostic.json').write_text(
+              json.dumps(report, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          PYCODE
+          git config user.name 'lordchrist-diagnostic[bot]'
+          git config user.email 'lordchrist-diagnostic@users.noreply.github.com'
+          git add .bootstrap-clean/diagnostic.json
+          git commit -m 'Record Lordchrist payload diagnostics [skip ci]'
+          git push origin HEAD:agent/lordchrist-telegram-publisher-clean
