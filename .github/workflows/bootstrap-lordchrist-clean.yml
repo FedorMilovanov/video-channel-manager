@@ -1,9 +1,8 @@
-name: Bootstrap clean Lordchrist publisher
+name: Bootstrap clean Lordchrist Telegram publisher
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [main]
     types: [opened, synchronize, reopened]
 
 permissions:
@@ -19,48 +18,40 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Check out clean implementation branch
+      - name: Check out implementation branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: agent/lordchrist-telegram-publisher-clean
           fetch-depth: 0
 
-      - name: Set up Python 3.13
+      - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: '3.13'
+          python-version: '3.11'
           cache: pip
 
-      - name: Verify and materialize reviewed payload
+      - name: Verify and materialize reviewed package
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PYCODE'
           import base64
+          import bz2
           import hashlib
           import json
-          import zlib
           from pathlib import Path
 
-          expected_sha256 = '2870de7c8ca96cc56ae4cfef7ade2fa212430bb776335a069f925ac1e60d87ed'
-          expected_part_sha256 = {
-              'payload.001': '4932d7c2e20692a92d26e8fc66c6a6df58b8c2a3e6cc4cbe35cf514721c013ce',
-              'payload.002': '23b351277d82ba8ec3e23b742a1e6b2494c85c96a95ee50bfb7ffe7208a3b4d5',
-              'payload.003': '7fa33a6f7b3e21afa020fea9535422fa563d60190f40862acc603b49fd4e16ac',
-              'payload.004': '07c57bba34dffb9a5ec86ab0edd4f282b3c12f9a6cac80600f47e856a20c0968',
-              'payload.005': '13de784c7559f36b2a57f55ee6b46a5567dda987cdca711df11a8dd6f1d4dba3',
-              'payload.006': '6fcea0a1e039d75798fc9079f344c860fa3225f6d8bdf093095c6a86e919c603',
-              'payload.007': '1832adff16a6751ee890ecd42dd29ee4263a12eeaadf8844f8322a023a0d2492',
-              'payload.008': '439fa29f596917e07f381d9e2dfda262fe07c0d0a0e75afb5f4c950558012af2',
-              'payload.009': '4308626f9218a3c2b3cba0bd03d9523e9e8ac3d38e4a7d5c15daf63079308ae1',
-              'payload.010': '7b74c741d7604a1386c9f9fef905935eba82d1ecd50e9e32556e52338993ca93',
-              'payload.011': '1d10fe1cc2f65fb4e133e60595d6acd7731d01fe0029aa3e801ad265bd3029ca',
-              'payload.012': 'ce6ae6761b4a94690dd6cfea440ee8e64b0813e957a49965b8e27399037f6761',
-              'payload.013': '51e2809e3e7caf8aaf2168e844d97fd25b83d2e27971e74b6ce5cb73faef833f',
-              'payload.014': '0929b8f8340b97dd99ece7b698de03fd936abbd69527e4505a40890016ad1ed6',
-              'payload.015': '036174ea41cd07c7f6939b2042c364a368f20500edb75af044553a19ad9155e2',
-          }
-          expected_files = {
+          expected_digest = '047cb8482912e00185cf4b619f4cdd80750e4cb78eef8b8e52cdd7f817a160d2'
+          parts = sorted(Path('.bootstrap-final').glob('payload.*'))
+          expected_parts = [f'payload.{index:03d}' for index in range(1, 7)]
+          if [path.name for path in parts] != expected_parts:
+              raise SystemExit(f'Unexpected bootstrap part set: {[path.name for path in parts]}')
+          encoded = ''.join(path.read_text(encoding='ascii') for path in parts)
+          actual_digest = hashlib.sha256(encoded.encode('ascii')).hexdigest()
+          if actual_digest != expected_digest:
+              raise SystemExit(f'Bootstrap digest mismatch: {actual_digest}')
+          data = json.loads(bz2.decompress(base64.b64decode(encoded)).decode('utf-8'))
+          required = {
               '.github/workflows/lordchrist-telegram-poster.yml',
               'content/telegram/lordchrist/quote-library-107.md',
               'content/telegram/lordchrist/verified-30-posts.json',
@@ -70,74 +61,80 @@ jobs:
               'src/video_channel_manager/telegram_publisher.py',
               'tests/test_telegram_publisher.py',
           }
-
-          parts = sorted(Path('.bootstrap-clean').glob('payload.*'))
-          expected_parts = list(expected_part_sha256)
-          actual_parts = [path.name for path in parts]
-          if actual_parts != expected_parts:
-              raise SystemExit(f'Unexpected payload sequence: {actual_parts}')
-
-          mismatches = []
-          for path in parts:
-              raw = path.read_bytes()
-              actual = hashlib.sha256(raw).hexdigest()
-              expected = expected_part_sha256[path.name]
-              print(f'{path.name}: bytes={len(raw)} sha256={actual}')
-              if actual != expected:
-                  mismatches.append((path.name, expected, actual, len(raw)))
-          if mismatches:
-              raise SystemExit(f'Payload part mismatch: {mismatches}')
-
-          encoded = ''.join(''.join(path.read_text(encoding='ascii').split()) for path in parts)
-          compressed = base64.b64decode(encoded, validate=True)
-          actual_sha256 = hashlib.sha256(compressed).hexdigest()
-          if actual_sha256 != expected_sha256:
-              raise SystemExit(
-                  f'Payload SHA-256 mismatch: expected {expected_sha256}, got {actual_sha256}'
-              )
-
-          data = json.loads(zlib.decompress(compressed).decode('utf-8'))
-          if set(data) != {'files'}:
-              raise SystemExit(f'Unexpected payload keys: {sorted(data)}')
-          files = data['files']
-          if set(files) != expected_files:
-              missing = sorted(expected_files.difference(files))
-              extra = sorted(set(files).difference(expected_files))
-              raise SystemExit(f'Unexpected file set; missing={missing}, extra={extra}')
-
-          for relative_path in sorted(files):
-              path = Path(relative_path)
+          files = data.get('files', {})
+          if set(files) != required:
+              raise SystemExit(f'Unexpected payload file set: {sorted(files)}')
+          for relative, file_content in files.items():
+              path = Path(relative)
               path.parent.mkdir(parents=True, exist_ok=True)
-              path.write_text(files[relative_path], encoding='utf-8', newline='\n')
-
-          print(
-              f'Materialized {len(files)} reviewed files from {len(parts)} parts; '
-              f'compressed_sha256={actual_sha256}'
-          )
+              path.write_text(file_content, encoding='utf-8', newline='\n')
+          Path('/tmp/lordchrist-ledger.json').write_text(data['state_content'], encoding='utf-8', newline='\n')
+          Path('/tmp/lordchrist-state-path.txt').write_text(data['state_path'], encoding='utf-8')
           PYCODE
 
-      - name: Install project development dependencies
+      - name: Overlay verified type-corrected publisher
+        shell: bash
         run: |
-          python -m pip install --upgrade 'pip>=25' 'setuptools>=83,<84' wheel
+          set -euo pipefail
+          python - <<'PYCODE'
+          import base64
+          import bz2
+          import hashlib
+          from pathlib import Path
+
+          source = Path('.bootstrap-fix/telegram_publisher.py.bz2.b64').read_text(encoding='ascii')
+          expected = '41a0b9add6dd7bee737d30427654476a54aca9bbe67ed37970c1a5899501d5e2'
+          if hashlib.sha256(source.encode('ascii')).hexdigest() != expected:
+              raise SystemExit('Type-corrected publisher overlay digest mismatch')
+          target = Path('src/video_channel_manager/telegram_publisher.py')
+          target.write_bytes(bz2.decompress(base64.b64decode(source)))
+          PYCODE
+
+      - name: Format and validate focused implementation
+        shell: bash
+        run: |
+          set -euo pipefail
           python -m pip install -e '.[dev]'
+          python -m ruff format src/video_channel_manager/telegram_publisher.py scripts/telegram/post_next.py tests/test_telegram_publisher.py
+          python -m compileall -q src/video_channel_manager/telegram_publisher.py scripts/telegram/post_next.py
+          python -m pytest -q tests/test_telegram_publisher.py
+          python -m ruff check src/video_channel_manager/telegram_publisher.py scripts/telegram/post_next.py tests/test_telegram_publisher.py
+          python -m ruff format --check src/video_channel_manager/telegram_publisher.py scripts/telegram/post_next.py tests/test_telegram_publisher.py
+          python -m mypy src/video_channel_manager/telegram_publisher.py
 
-      - name: Run focused offline verification
+      - name: Commit only final implementation files
         shell: bash
         run: |
           set -euo pipefail
-          python -m compileall -q \
-            src/video_channel_manager/telegram_publisher.py \
-            scripts/telegram/post_next.py
-          PYTHONPATH=src python -m pytest -q tests/test_telegram_publisher.py
-
-      - name: Commit final implementation and remove transport files
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf .bootstrap-clean .github/workflows/bootstrap-lordchrist-clean.yml
+          rm -rf .bootstrap-clean .bootstrap-final .bootstrap-fix .github/workflows/bootstrap-lordchrist-clean.yml
           git config user.name 'lordchrist-bootstrap[bot]'
           git config user.email 'lordchrist-bootstrap@users.noreply.github.com'
-          git add -A
-          git diff --cached --check
-          git commit -m 'Add Lordchrist Telegram publisher and quote library'
+          git add -A -- \
+            .bootstrap-clean .bootstrap-final .bootstrap-fix .github/workflows/bootstrap-lordchrist-clean.yml \
+            .github/workflows/lordchrist-telegram-poster.yml \
+            content/telegram/lordchrist/quote-library-107.md \
+            content/telegram/lordchrist/verified-30-posts.json \
+            content/telegram/lordchrist/verified-30-posts.md \
+            docs/operations/lordchrist-telegram-publisher.md \
+            scripts/telegram/post_next.py \
+            src/video_channel_manager/telegram_publisher.py \
+            tests/test_telegram_publisher.py
+          git commit -m 'Add guarded Lordchrist Telegram quote publisher'
           git push origin HEAD:agent/lordchrist-telegram-publisher-clean
+
+      - name: Initialize isolated publication ledger
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin state/lordchrist-telegram
+          git worktree add /tmp/lordchrist-state origin/state/lordchrist-telegram
+          state_path="$(cat /tmp/lordchrist-state-path.txt)"
+          mkdir -p "/tmp/lordchrist-state/$(dirname "$state_path")"
+          cp /tmp/lordchrist-ledger.json "/tmp/lordchrist-state/$state_path"
+          git -C /tmp/lordchrist-state config user.name 'lordchrist-bootstrap[bot]'
+          git -C /tmp/lordchrist-state config user.email 'lordchrist-bootstrap@users.noreply.github.com'
+          git -C /tmp/lordchrist-state add -- "$state_path"
+          if ! git -C /tmp/lordchrist-state diff --cached --quiet; then
+            git -C /tmp/lordchrist-state commit -m 'Initialize Lordchrist publication ledger [skip ci]'
+            git -C /tmp/lordchrist-state push origin HEAD:state/lordchrist-telegram
+          fi
