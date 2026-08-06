@@ -1,0 +1,25 @@
+{
+  "schema_name": "video-manager.vk-postponed-text-edit-request",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "community_id": 60805374,
+  "owner_id": -60805374,
+  "expected_postponed_count": 66,
+  "target_post_ids": [
+    12513,
+    12514
+  ],
+  "rules": [
+    {
+      "match": "exact",
+      "value": "Авторский литературно-буквальный перевод с английского.",
+      "expected_per_post": 1
+    },
+    {
+      "match": "prefix",
+      "value": "Источник: https://",
+      "expected_per_post": 1
+    }
+  ],
+  "allow_attachments": false
+}
