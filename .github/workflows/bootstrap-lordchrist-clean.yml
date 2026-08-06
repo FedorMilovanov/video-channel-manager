@@ -109,16 +109,7 @@ jobs:
           rm -rf .bootstrap-clean .bootstrap-final .bootstrap-fix .github/workflows/bootstrap-lordchrist-clean.yml
           git config user.name 'lordchrist-bootstrap[bot]'
           git config user.email 'lordchrist-bootstrap@users.noreply.github.com'
-          git add -A -- \
-            .bootstrap-clean .bootstrap-final .bootstrap-fix .github/workflows/bootstrap-lordchrist-clean.yml \
-            .github/workflows/lordchrist-telegram-poster.yml \
-            content/telegram/lordchrist/quote-library-107.md \
-            content/telegram/lordchrist/verified-30-posts.json \
-            content/telegram/lordchrist/verified-30-posts.md \
-            docs/operations/lordchrist-telegram-publisher.md \
-            scripts/telegram/post_next.py \
-            src/video_channel_manager/telegram_publisher.py \
-            tests/test_telegram_publisher.py
+          git add -A
           git commit -m 'Add guarded Lordchrist Telegram quote publisher'
           git push origin HEAD:agent/lordchrist-telegram-publisher-clean
 
