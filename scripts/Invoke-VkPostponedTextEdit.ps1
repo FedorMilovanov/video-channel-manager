@@ -90,7 +90,7 @@ function New-VkPostponedTextCliArguments {
             throw "Provider-write confirmation parameters are valid only for apply."
         }
         $Arguments += @("--output", [IO.Path]::GetFullPath($OutputPath))
-        return ,$Arguments
+        return $Arguments
     }
 
     if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
@@ -99,8 +99,8 @@ function New-VkPostponedTextCliArguments {
     if (-not [string]::IsNullOrWhiteSpace($OutputPath)) {
         throw "OutputPath is valid only for plan or reconcile."
     }
-    if ([string]::IsNullOrWhiteSpace($ConfirmPlanSha256) -or -not $ConfirmPlanSha256.StartsWith("sha256:")) {
-        throw "Apply requires an exact sha256: plan confirmation."
+    if ($ConfirmPlanSha256 -notmatch "^sha256:[0-9a-f]{64}$") {
+        throw "Apply requires an exact lowercase sha256: plan confirmation."
     }
     if (-not $EnableProviderWrites) {
         throw "Apply requires -EnableProviderWrites."
@@ -133,7 +133,7 @@ function New-VkPostponedTextCliArguments {
         "--max-transient-retries",
         [string]$MaxTransientRetries
     )
-    return ,$Arguments
+    return $Arguments
 }
 
 function Invoke-VcmNativeCommand {
