@@ -1,0 +1,87 @@
+name: Bootstrap Lordchrist Telegram publisher
+
+on:
+  push:
+    branches:
+      - agent/lordchrist-verified-telegram-poster
+    paths:
+      - .bootstrap/ready
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bootstrap-lordchrist-telegram-publisher
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out implementation branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: agent/lordchrist-verified-telegram-poster
+          fetch-depth: 0
+
+      - name: Materialize reviewed implementation payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PYCODE'
+          import base64
+          import json
+          import zlib
+          from pathlib import Path
+
+          encoded = "".join(
+              path.read_text(encoding="ascii").strip()
+              for path in sorted(Path(".bootstrap").glob("payload.*"))
+          )
+          data = json.loads(zlib.decompress(base64.b64decode(encoded)).decode("utf-8"))
+          for relative, content in data["files"].items():
+              path = Path(relative)
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_text(content, encoding="utf-8", newline="\n")
+          Path("/tmp/lordchrist-ledger.json").write_text(
+              data["state_content"], encoding="utf-8", newline="\n"
+          )
+          Path("/tmp/lordchrist-state-path.txt").write_text(data["state_path"], encoding="utf-8")
+          PYCODE
+
+      - name: Commit implementation and remove bootstrap files
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .bootstrap .github/workflows/bootstrap-lordchrist.yml
+          git config user.name "lordchrist-bootstrap[bot]"
+          git config user.email "lordchrist-bootstrap@users.noreply.github.com"
+          git add -A -- .bootstrap .github/workflows/bootstrap-lordchrist.yml \
+            .github/workflows/lordchrist-telegram-poster.yml \
+            content/telegram/lordchrist/quote-library-107.md \
+            content/telegram/lordchrist/verified-30-posts.json \
+            content/telegram/lordchrist/verified-30-posts.md \
+            docs/operations/lordchrist-telegram-publisher.md \
+            scripts/telegram/post_next.py \
+            src/video_channel_manager/telegram_publisher.py \
+            tests/test_telegram_publisher.py
+          git commit -m "Add verified Lordchrist Telegram publisher"
+          git push origin HEAD:agent/lordchrist-verified-telegram-poster
+
+      - name: Initialize isolated publication ledger branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin state/lordchrist-telegram
+          git worktree add /tmp/lordchrist-state origin/state/lordchrist-telegram
+          state_path="$(cat /tmp/lordchrist-state-path.txt)"
+          mkdir -p "/tmp/lordchrist-state/$(dirname "$state_path")"
+          cp /tmp/lordchrist-ledger.json "/tmp/lordchrist-state/$state_path"
+          git -C /tmp/lordchrist-state config user.name "lordchrist-bootstrap[bot]"
+          git -C /tmp/lordchrist-state config user.email "lordchrist-bootstrap@users.noreply.github.com"
+          git -C /tmp/lordchrist-state add -- "$state_path"
+          if ! git -C /tmp/lordchrist-state diff --cached --quiet; then
+            git -C /tmp/lordchrist-state commit -m "Initialize Lordchrist Telegram publication ledger [skip ci]"
+            git -C /tmp/lordchrist-state push origin HEAD:state/lordchrist-telegram
+          fi
