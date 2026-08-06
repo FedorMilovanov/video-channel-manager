@@ -1,22 +1,51 @@
 # Current operational state
 
-Updated: 2026-08-06  
-Current code baseline: `main@c04f0a4f948174ced6287e4bae87e4bf1be2be52`  
-Program state: `WAVES_0_16_COMPLETED_VK_POSTPONED_TEXT_EDIT_SUPPORTED_OPERATIONAL_GRAPH_CLOSED_NO_ACTIVE_PROVIDER_MUTATION`  
-Current machine state: [`audit-register-v10-2026-08-06.json`](audit-register-v10-2026-08-06.json)  
-Immutable predecessor: [`audit-register-v9-2026-08-05.json`](audit-register-v9-2026-08-05.json)
+Updated: 2026-08-07  
+Repository baseline entering hardening: `main@c0b8a303598788b2870862042d2e2868a97b3005`  
+Initial postponed-text capability merge: `c04f0a4f948174ced6287e4bae87e4bf1be2be52`  
+Hardening implementation commit: `f7e0a7dc0a6ad965045783638c25384d69fe6b08`  
+Owning hardening: issue #152 / PR #153  
+Current machine state before final quality proof: [`audit-register-v10-2026-08-06.json`](audit-register-v10-2026-08-06.json)  
+Second-pass audit: [`vk-postponed-text-second-pass-audit-2026-08-06.md`](vk-postponed-text-second-pass-audit-2026-08-06.md)
 
-This file and the v10 overlay override stale baseline text elsewhere in the repository, including the older Wave 16 baseline paragraph in `AGENTS.md`, old chats, screenshots, ZIP names, remembered counts, superseded audits, and earlier local executors. Historical material teaches; it never authorizes execution.
+The newest audit-register overlay, this file, and the exact `main` Git ref override old chats, screenshots, ZIP names, remembered counts, stale issue wording, and superseded executors. Historical evidence never authorizes execution.
 
-## Current status
+## Executive state
 
-The repository now contains a supported, repository-owned capability for exact text editing of existing postponed VK wall posts. Issue #147 was completed by PR #150 and merge `c04f0a4f948174ced6287e4bae87e4bf1be2be52`.
+The 2026-08-06 Lord God cleanup is complete and verified. No continuation or replay is pending.
 
-There is no active provider mutation, no queued cleanup continuation, and no authorized replay. The 2026-08-06 Lord God cleanup is complete. Future provider work requires a new explicit user request, a new exact project-bound issue, a reviewed immutable request and plan, durable journals, and exact postflight.
+The reusable VK postponed-text capability has been hardened in PR #153. Its supported v1 boundary is existing **attachment-free postponed posts only**. PR #153 is repository-only and performs no VK reads or writes.
 
-## Supported VK postponed-text capability
+Issue #152 remains open until the exact final PR head receives all six green CI jobs, scope review is complete, and PR #153 is merged. Until then, no new provider execution is authorized from this hardening work.
 
-Canonical CLI:
+## Historical operation proof
+
+Exact operation identity:
+
+- project `lord-god-strength`;
+- VK community `60805374`, owner `-60805374`;
+- local credential alias `legendary-poet` — credential name only, not project selector;
+- attachment-free target postponed IDs `12513..12541`;
+- target count `29`;
+- postponed baseline `66`;
+- non-target postponed rows `37`;
+- approved plan SHA `sha256:8dcbe984cb24e003770fa3897ff3b7da351a34d92d4931ac3cb9a5707d2c1cbb`.
+
+Final verified result:
+
+- `29/29` exact after-state;
+- `0` pending;
+- postponed count `66/66`;
+- 37 non-target postponed rows unchanged;
+- published first quote post untouched;
+- no Telegram objects touched;
+- final status `succeeded`.
+
+These facts prove the completed operation only. They do not authorize another request or prove unsupported attachment behavior.
+
+## Supported postponed-text capability
+
+Canonical Python CLI:
 
 ```powershell
 video-manager-vk-postponed-text plan REQUEST.json --output PLAN.json --account legendary-poet
@@ -28,146 +57,130 @@ video-manager-vk-postponed-text apply PLAN.json `
   --enable-provider-writes
 ```
 
-The supported implementation is `video_channel_manager.platforms.vk.postponed_text_edit`. PowerShell may invoke the package-owned CLI but must not become a second provider client.
+Canonical PowerShell wrapper:
 
-The capability is limited to existing postponed VK wall posts and requires:
+```powershell
+& .\scripts\Invoke-VkPostponedTextEdit.ps1 `
+  -Command plan `
+  -InputPath .\request.json `
+  -OutputPath .\plan.json `
+  -AccountAlias legendary-poet
+```
 
-- exact project key, community ID, owner ID, and sorted unique post IDs;
-- expected full postponed-row count;
-- exact line-removal rules and exact expected match counts;
+PowerShell invokes only the package CLI. It has no token handling and no direct VK API transport.
+
+Schema v1 requires:
+
+- exact project/community/owner/post identity;
+- sorted unique target IDs;
+- complete published and postponed preflight;
+- expected postponed count;
+- exact line-removal match counts;
 - immutable request and plan digests;
-- complete published and postponed wall snapshots;
-- exact preservation of `publish_date` and canonical attachment identities;
-- an intent journal before every `wall.edit` dispatch;
-- exact live readback after every dispatch;
-- final proof that every target is exact after-state and every non-target wall object is unchanged.
+- exact before/after text and original `publish_date`;
+- `allow_attachments: false` and no target attachments;
+- one stable account/community lock independent of output directory;
+- time-to-publication verification before every dispatch and retry;
+- intent-before-dispatch and exact postflight;
+- no blind retry;
+- terminal child journals consistent with aggregate result;
+- final target, count, and raw non-target fingerprint proof.
 
-It does not select targets from text similarity, edit published posts, create posts, move posts between surfaces, reconstruct missing posts, automate CAPTCHA solving, or authorize broad wall cleanup.
+Full contract: [`vk-postponed-text-edit-runbook-2026-08-06.md`](vk-postponed-text-edit-runbook-2026-08-06.md).
 
-Full operating contract and incident history: [`vk-postponed-text-edit-runbook-2026-08-06.md`](vk-postponed-text-edit-runbook-2026-08-06.md).
+## Hardening delivered by PR #153
+
+The second-pass audit found and PR #153 corrects:
+
+1. output-directory-scoped lock replaced by a stable data-directory account/community lock;
+2. one-time publication-distance check supplemented by checks immediately before every dispatch and controlled retry;
+3. delayed reconciliation journal rewritten to terminal verified state;
+4. broad attachment claims narrowed to attachment-free schema v1;
+5. non-target comparison hardened with ordered raw attachment-payload digests;
+6. output directories protected from cross-plan reuse and journal overwrite;
+7. repository-owned strict PowerShell wrapper added;
+8. Pester coverage added for read-only/apply arguments, explicit authority, native exit propagation, and absence of token/provider code;
+9. Python regressions added for ambiguous postflight, shared lock, threshold crossing, retry threshold, delayed journal consistency, attachment rejection, and non-target attachment-order mutation;
+10. stale `AGENTS.md` and runbook claims corrected.
+
+No provider call or write is part of this hardening.
 
 ## Retry and stop contract
 
-There is no blind mutation retry.
-
-A transient error such as HTTP 429 may be retried only after exact postflight proves the previous mutation had no effect and the post still matches the immutable before-state. The supported default cadence is 25 seconds between mutation attempts.
+A retry is allowed only after exact readback proves the previous dispatch had no effect. Before retry, the workflow waits, reads again, and rechecks publication distance.
 
 Stop without another mutation when:
 
-- the complete wall snapshot cannot be read;
-- postponed count differs from the plan;
-- a target is absent from postponed;
-- owner, ID, date, attachments, or text differs from exact before/after state;
+- any full read is incomplete;
+- postponed count differs;
+- target identity/date/text differs;
+- a target has any attachment;
+- publication is too close;
 - provider effect is unknown;
 - CAPTCHA is required;
-- a non-target wall object changes;
-- a post is too close to scheduled publication;
-- the confirmed plan digest differs.
+- a non-target raw fingerprint changes;
+- plan digest differs;
+- output directory belongs to another plan;
+- another local writer holds the account/community lock.
 
-`confirmed_absent`, `captcha_required_confirmed_absent`, and `unknown_requires_reconciliation` are separate states and must never be merged into one counter.
+`confirmed_absent`, `captcha_required_confirmed_absent`, and `unknown_requires_reconciliation` remain distinct states.
 
-## Completed Lord God cleanup: 2026-08-06
+## CI process record
 
-Exact identity:
+PR #150 exact head `0bfb1260c37411e8df686f26120ceea85e2f8116` was merged as `c04f0a4f948174ced6287e4bae87e4bf1be2be52` after manual review because Actions runs #3208/#3209 remained queued and both cancellation endpoints returned HTTP 502.
 
-- project: `lord-god-strength`;
-- community: `60805374`;
-- owner: `-60805374`;
-- local VK credential alias: `legendary-poet`;
-- target postponed posts: `12513` through `12541`;
-- target count: `29`;
-- full postponed count: `66`;
-- non-target postponed count: `37`;
-- approved plan SHA-256: `sha256:8dcbe984cb24e003770fa3897ff3b7da351a34d92d4931ac3cb9a5707d2c1cbb`.
-
-Requested change:
-
-- remove the standalone translation/editorial line;
-- remove the standalone visible `Источник: https://...` line;
-- preserve the quotation, attribution, sermon metadata, Scripture reference, post identity, and scheduled publication date.
-
-Final verified result:
-
-- total verified targets: `29`;
-- pending targets: `0`;
-- postponed before/after: `66/66`;
-- non-target postponed objects unchanged: `37`;
-- published posts touched: `0`;
-- Telegram objects touched: `0`;
-- final status: `succeeded`.
-
-The first published quote post was outside the target set and was not edited.
-
-## Incident lessons now encoded in code and tests
-
-1. Raw wall-surface row count is authoritative; content-audit summary categories are not substitutes.
-2. Full exact before/after preview is mandatory before apply.
-3. PowerShell orchestration must use strict mode, fail-fast behavior, exact paths, and native exit-code checks.
-4. HTTP 429 requires exact readback before any controlled retry.
-5. Confirmed absence is not an unknown provider effect.
-6. Verified partial success is preserved; resume begins at the first exact before-state operation.
-7. CAPTCHA stops the core workflow. OCR, challenge reconstruction, and bypass are unsupported.
-8. External ZIP/version executors are retired as an implementation strategy.
-9. Repository-owned code, tests, schemas, and journals are authoritative.
-10. Conservative pacing is an operational safety control, not merely a performance setting.
-
-## PR #150 and CI infrastructure exception
-
-PR #150 exact head: `0bfb1260c37411e8df686f26120ceea85e2f8116`.  
-Merge: `c04f0a4f948174ced6287e4bae87e4bf1be2be52`.
-
-GitHub Actions runs `#3208` (`31125025717`) and `#3209` (`31125540845`) remained queued without starting. Both normal cancellation and `force-cancel` repeatedly returned HTTP 502. This was an infrastructure failure, not a failing test result.
-
-Before merge, all seven changed files were manually reviewed against the exact safety contract: identity binding, plan digest, schedule and attachment preservation, intent-before-dispatch, exact reconciliation, 429 handling, CAPTCHA stop, unknown-outcome stop, conservative pacing, CLI registration, regression tests, and final full-wall non-target postconditions.
-
-Repository implementation work for PR #150 performed `0` VK provider calls and `0` VK writes. The historical user-approved cleanup occurred before the repository integration and is recorded as evidence, not replay authority.
+That incident was honestly recorded but was not green CI. Issue #152 and PR #153 exist partly to obtain the missing real quality proof. An infrastructure exception must not be treated as successful tests.
 
 ## Project and credential boundary
 
-This repository manages two distinct projects:
+Two projects remain distinct:
 
 - `lord-god-strength` — VK community `60805374`, owner `-60805374`;
 - `legendary-poet` — VK community `235216998`, owner `-235216998`.
 
-The local VK alias `legendary-poet` names the shared stored user credential. It is not a project selector. Project identity is selected by exact project key, community/owner IDs, plan, journal, and result.
+The local VK alias `legendary-poet` names a stored shared user credential. Exact project key and community/owner IDs select the project.
 
-Never print, package, commit, log, request manual entry of, or place the VK token on a command line.
+Never print, package, commit, log, request manual entry of, or put the VK token on a command line.
 
-## Inherited Wave 16 baseline
+## Inherited capabilities and exclusions
 
-The immutable predecessor remains v9 and `main@22ed56256df3388c23c9f785f1e02cca71fd8524`. It records the completed CI runtime, SQLite lifetime, and local MP3 identity hardening baseline:
+Wave 16 predecessor `main@22ed56256df3388c23c9f785f1e02cca71fd8524` remains immutable evidence for:
 
-- Node 24-generation immutable action pins;
-- explicit SQLite connection closure;
-- local MP3 manifest schema `1.1`;
-- metadata-ranked duplicate selection;
-- fail-closed source-ID/hash conflicts;
-- deterministic 1,000-track planning regression;
-- local MP3 support remains read-only intake and manifest generation.
+- Node 24-generation immutable Action pins;
+- explicit SQLite closure;
+- local MP3 manifest schema 1.1;
+- fail-closed MP3 identity conflicts;
+- deterministic 1,000-track local planning.
 
-The v10 overlay changes the current baseline only by adding the supported VK postponed-text editor and its completed incident record. It does not authorize VK Audio upload, browser automation, playlist mutation, article-wall replay, broad catalog continuation, ID3 rewriting, rename, transcode, or any other provider operation.
+Local MP3 remains read-only intake/manifest work. VK Audio upload, browser automation, playlist mutation, article-wall replay, broad catalog continuation, ID3 rewrite, rename, and transcode are not authorized by postponed-text hardening.
 
-## Closed operational graph
+Historical cleanup ZIPs, browser packages, transfer/reset/recovery executors, and article-wave scripts are evidence only and must not be rerun.
 
-Completed repository work now includes:
+## Operational graph
+
+Completed historical scopes:
 
 - #31 — Lord God long-form reconciliation;
 - #119 — Legendary Poet Shorts/Clips reconciliation;
 - #38 — shared VK final-type contract;
-- #130 — repository documentation and integrity polish;
+- #130 — repository integrity polish;
 - #133 — adaptive reasoning and local-only MP3 foundation;
 - #137 — CI, SQLite, and MP3 identity hardening;
-- #147 / PR #150 — guarded VK postponed-text editing capability and 2026-08-06 retrospective.
+- #147 — initial postponed-text capability and retrospective.
 
-Retired or not planned remains unchanged:
+Active repository-only scope:
 
-- #32 — non-authoritative Lord God Shorts auto-upload scope;
+- #152 / PR #153 — second-pass audit, hardening, tests, wrapper, state correction, and real quality proof.
+
+Retired or not planned:
+
+- #32 — non-authoritative Lord God Shorts auto-upload;
 - #33 — broad Lord God catalog/publication continuation;
-- #99 — unproved Legendary Poet article-wall launcher continuation;
-- #123 — deferred YouTube playlist mutation scope.
-
-Historical local cleanup packages, browser packages, article executors, transfer executors, reset/recovery executors, and old ZIP versions are evidence only and must not be rerun.
+- #99 — unproved Legendary Poet article-wall continuation;
+- #123 — deferred YouTube playlist mutation.
 
 ## Next allowed action
 
-No operational continuation is pending. Future VK postponed-text editing starts from a new reviewed request JSON and a newly generated immutable plan. Future provider work of any other kind starts from a new explicit user request and a new exact owning issue.
+Finish exact-head six-job CI and review for PR #153. After green merge, close issue #152 and record the merge/CI proof in the newest machine-state overlay.
+
+No VK operation is pending. Any future provider work starts from a new explicit user request, exact owning issue, newly generated reviewed plan, and exact postflight.
