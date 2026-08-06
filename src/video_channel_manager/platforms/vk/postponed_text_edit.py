@@ -19,7 +19,6 @@ from video_channel_manager.platforms.vk.wall_safety import (
     VkWallSnapshot,
     VkWallSurface,
     build_wall_snapshot,
-    canonical_wall_attachment,
 )
 from video_channel_manager.platforms.vk.writer import VkWriteError
 
@@ -143,6 +142,8 @@ def validate_vk_postponed_text_edit_request(request: Mapping[str, Any]) -> dict[
     allow_attachments = request.get("allow_attachments", False)
     if type(allow_attachments) is not bool:
         raise ValueError("allow_attachments must be an exact boolean")
+    if allow_attachments:
+        raise ValueError("schema v1 supports attachment-free target posts only")
     normalized: dict[str, Any] = {
         "schema_name": VK_POSTPONED_TEXT_EDIT_REQUEST_SCHEMA,
         "schema_version": VK_POSTPONED_TEXT_EDIT_REQUEST_VERSION,
@@ -152,27 +153,30 @@ def validate_vk_postponed_text_edit_request(request: Mapping[str, Any]) -> dict[
         "expected_postponed_count": expected_count,
         "target_post_ids": target_ids,
         "rules": rules,
-        "allow_attachments": allow_attachments,
+        "allow_attachments": False,
     }
     normalized["request_sha256"] = canonical_sha256(normalized)
     return normalized
 
 
-def _canonical_attachments(post: Mapping[str, Any]) -> tuple[str, ...]:
+def _require_attachment_list(post: Mapping[str, Any], *, context: str) -> list[Mapping[str, Any]]:
     raw = post.get("attachments") or []
     if not isinstance(raw, list):
-        raise VkPostponedTextEditError("post attachments must be a list")
-    tokens: list[str] = []
+        raise VkPostponedTextEditError(f"{context} attachments must be a list")
+    attachments: list[Mapping[str, Any]] = []
     for index, attachment in enumerate(raw):
         if not isinstance(attachment, Mapping):
-            raise VkPostponedTextEditError(f"attachment #{index} is not an object")
-        token = canonical_wall_attachment(attachment)
-        if token is None:
-            raise VkPostponedTextEditError(
-                f"attachment #{index} cannot be preserved through canonical wall.edit identity"
-            )
-        tokens.append(token)
-    return tuple(sorted(tokens))
+            raise VkPostponedTextEditError(f"{context} attachment #{index} is not an object")
+        attachments.append(attachment)
+    return attachments
+
+
+def _assert_target_has_no_attachments(post: Mapping[str, Any], *, post_id: int) -> None:
+    attachments = _require_attachment_list(post, context=f"target post {post_id}")
+    if attachments:
+        raise VkPostponedTextEditError(
+            f"target post {post_id} has attachments; schema v1 edits attachment-free targets only"
+        )
 
 
 def _read_complete_wall(
@@ -294,7 +298,6 @@ def build_vk_postponed_text_edit_plan(
         )
     by_id = _postponed_by_id(postponed, owner_id=owner_id)
     rules = cast(list[dict[str, Any]], normalized["rules"])
-    allow_attachments = bool(normalized["allow_attachments"])
     operations: list[dict[str, Any]] = []
     for post_id in cast(list[int], normalized["target_post_ids"]):
         post = by_id.get(post_id)
@@ -303,12 +306,8 @@ def build_vk_postponed_text_edit_plan(
         publish_date = post.get("date")
         if type(publish_date) is not int or publish_date <= 0:
             raise VkPostponedTextEditError(f"target post {post_id} has no exact publish_date")
+        _assert_target_has_no_attachments(post, post_id=post_id)
         before_text = _normalize_newlines(str(post.get("text") or ""))
-        attachments = _canonical_attachments(post)
-        if attachments and not allow_attachments:
-            raise VkPostponedTextEditError(
-                f"target post {post_id} has attachments but allow_attachments is false"
-            )
         after_text, removed_lines = _apply_rules(before_text, rules)
         operation_seed = {
             "project_key": normalized["project_key"],
@@ -317,7 +316,7 @@ def build_vk_postponed_text_edit_plan(
             "publish_date": publish_date,
             "before_text_sha256": _text_sha256(before_text),
             "after_text_sha256": _text_sha256(after_text),
-            "attachments": list(attachments),
+            "attachments": [],
         }
         operations.append(
             {
@@ -332,7 +331,7 @@ def build_vk_postponed_text_edit_plan(
                 "before_text_sha256": operation_seed["before_text_sha256"],
                 "after_text": after_text,
                 "after_text_sha256": operation_seed["after_text_sha256"],
-                "attachments": list(attachments),
+                "attachments": [],
                 "removed_lines": removed_lines,
             }
         )
@@ -348,7 +347,7 @@ def build_vk_postponed_text_edit_plan(
         "owner_id": owner_id,
         "expected_postponed_count": expected_count,
         "target_post_ids": normalized["target_post_ids"],
-        "allow_attachments": allow_attachments,
+        "allow_attachments": False,
         "rules": rules,
         "request_sha256": normalized["request_sha256"],
         "source_snapshot": snapshot.as_dict(),
@@ -390,6 +389,8 @@ def validate_vk_postponed_text_edit_plan(plan: Mapping[str, Any]) -> dict[str, A
     allow_attachments = plan.get("allow_attachments")
     if type(allow_attachments) is not bool:
         raise ValueError("allow_attachments must be an exact boolean")
+    if allow_attachments:
+        raise ValueError("schema v1 supports attachment-free target posts only")
     snapshot_raw = plan.get("source_snapshot")
     if not isinstance(snapshot_raw, Mapping):
         raise ValueError("source_snapshot must be an object")
@@ -413,7 +414,7 @@ def validate_vk_postponed_text_edit_plan(plan: Mapping[str, Any]) -> dict[str, A
         "expected_postponed_count": expected_count,
         "target_post_ids": target_ids,
         "rules": rules,
-        "allow_attachments": allow_attachments,
+        "allow_attachments": False,
     }
     if plan.get("request_sha256") != canonical_sha256(request_payload):
         raise ValueError("request_sha256 does not match the plan request fields")
@@ -443,15 +444,8 @@ def validate_vk_postponed_text_edit_plan(plan: Mapping[str, Any]) -> dict[str, A
         if operation.get("after_text_sha256") != _text_sha256(after_text):
             raise ValueError(f"operations[{index}] after_text hash mismatch")
         attachments = operation.get("attachments")
-        if (
-            not isinstance(attachments, list)
-            or any(not isinstance(item, str) for item in attachments)
-            or attachments != sorted(attachments)
-            or len(attachments) != len(set(attachments))
-        ):
-            raise ValueError(f"operations[{index}] attachments must be sorted unique strings")
-        if attachments and not allow_attachments:
-            raise ValueError(f"operations[{index}] has attachments while allow_attachments is false")
+        if attachments != []:
+            raise ValueError(f"operations[{index}] attachments must be an empty list in schema v1")
         source = postponed_fingerprints.get(post_id)
         if source is None:
             raise ValueError(f"operations[{index}] target is absent from source_snapshot")
@@ -459,9 +453,9 @@ def validate_vk_postponed_text_edit_plan(plan: Mapping[str, Any]) -> dict[str, A
             source.owner_id != owner_id
             or source.publish_date != publish_date
             or source.text_sha256 != operation.get("before_text_sha256")
-            or list(source.attachments) != attachments
+            or source.attachments
         ):
-            raise ValueError(f"operations[{index}] before-state differs from source_snapshot")
+            raise ValueError(f"operations[{index}] before-state differs from attachment-free source_snapshot")
         expected_after, expected_removed = _apply_rules(before_text, rules)
         if operation.get("after_text") != expected_after or operation.get("removed_lines") != expected_removed:
             raise ValueError(f"operations[{index}] does not match the declared removal rules")
@@ -472,7 +466,7 @@ def validate_vk_postponed_text_edit_plan(plan: Mapping[str, Any]) -> dict[str, A
             "publish_date": publish_date,
             "before_text_sha256": operation["before_text_sha256"],
             "after_text_sha256": operation["after_text_sha256"],
-            "attachments": attachments,
+            "attachments": [],
         }
         expected_id = "vk-postponed-text-edit-" + canonical_sha256(seed).removeprefix("sha256:")[:32]
         operation_id = operation.get("operation_id")
@@ -509,11 +503,11 @@ def _classify(
     if post.get("date") != operation["publish_date"]:
         return VkPostponedTextState.CONFLICT, "publish_date_changed"
     try:
-        attachments = list(_canonical_attachments(post))
+        attachments = _require_attachment_list(post, context=f"post {operation['post_id']}")
     except VkPostponedTextEditError:
-        return VkPostponedTextState.CONFLICT, "attachments_not_canonical"
-    if attachments != operation["attachments"]:
-        return VkPostponedTextState.CONFLICT, "attachments_changed"
+        return VkPostponedTextState.CONFLICT, "attachments_invalid"
+    if attachments:
+        return VkPostponedTextState.CONFLICT, "attachments_present_on_attachment_free_target"
     text = _normalize_newlines(str(post.get("text") or ""))
     digest = _text_sha256(text)
     if text == operation["after_text"] and digest == operation["after_text_sha256"]:
@@ -578,18 +572,49 @@ def reconcile_vk_postponed_text_edit_plan(
     }
 
 
-def _non_target_fingerprints(
-    snapshot: VkWallSnapshot, *, owner_id: int, target_ids: set[int]
-) -> dict[tuple[str, str], dict[str, object]]:
-    return {
-        (post.surface.value, post.remote_id): post.as_dict()
-        for post in snapshot.posts
-        if not (
-            post.surface is VkWallSurface.POSTPONED
-            and post.owner_id == owner_id
-            and post.post_id in target_ids
-        )
+def _raw_post_fingerprint(
+    post: Mapping[str, Any], *, surface: VkWallSurface
+) -> tuple[tuple[str, int, int], dict[str, object]]:
+    owner_id = post.get("owner_id")
+    post_id = post.get("id")
+    publish_date = post.get("date")
+    if type(owner_id) is not int or owner_id == 0 or type(post_id) is not int or post_id <= 0:
+        raise VkPostponedTextEditError("wall surface contains an invalid non-target identity")
+    if type(publish_date) is not int or publish_date < 0:
+        raise VkPostponedTextEditError(f"wall post {owner_id}_{post_id} has an invalid date")
+    attachments = _require_attachment_list(post, context=f"wall post {owner_id}_{post_id}")
+    fingerprint: dict[str, object] = {
+        "surface": surface.value,
+        "owner_id": owner_id,
+        "post_id": post_id,
+        "publish_date": publish_date,
+        "text_sha256": _text_sha256(str(post.get("text") or "")),
+        "attachments_sha256": canonical_sha256(attachments),
     }
+    return (surface.value, owner_id, post_id), fingerprint
+
+
+def _raw_non_target_fingerprints(
+    *,
+    published: list[dict[str, Any]],
+    postponed: list[dict[str, Any]],
+    owner_id: int,
+    target_ids: set[int],
+) -> dict[tuple[str, int, int], dict[str, object]]:
+    result: dict[tuple[str, int, int], dict[str, object]] = {}
+    for surface, posts in (
+        (VkWallSurface.PUBLISHED, published),
+        (VkWallSurface.POSTPONED, postponed),
+    ):
+        for post in posts:
+            post_id = post.get("id")
+            if surface is VkWallSurface.POSTPONED and post.get("owner_id") == owner_id and post_id in target_ids:
+                continue
+            key, fingerprint = _raw_post_fingerprint(post, surface=surface)
+            if key in result:
+                raise VkPostponedTextEditError(f"wall snapshot duplicated non-target identity {key}")
+            result[key] = fingerprint
+    return result
 
 
 def _failure_is_transient(exc: Exception | None) -> bool:
@@ -619,6 +644,25 @@ def _save_result(output_dir: Path, result: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def _journal_path(
+    output_dir: Path,
+    *,
+    ordinal: int,
+    operation: Mapping[str, Any],
+    attempt: int,
+) -> Path:
+    stem = f"{ordinal:04d}-{operation['post_id']}-attempt-{attempt}"
+    path = output_dir / "journal" / f"{stem}.json"
+    if not path.exists():
+        return path
+    suffix = 2
+    while True:
+        candidate = output_dir / "journal" / f"{stem}-run-{suffix}.json"
+        if not candidate.exists():
+            return candidate
+        suffix += 1
+
+
 def _persist_intent(
     output_dir: Path,
     *,
@@ -626,7 +670,7 @@ def _persist_intent(
     operation: Mapping[str, Any],
     attempt: int,
 ) -> tuple[Path, dict[str, Any]]:
-    path = output_dir / "journal" / f"{ordinal:04d}-{operation['post_id']}-attempt-{attempt}.json"
+    path = _journal_path(output_dir, ordinal=ordinal, operation=operation, attempt=attempt)
     journal: dict[str, Any] = {
         "schema_name": "video-manager.vk-postponed-text-edit-operation-result",
         "schema_version": 1,
@@ -636,7 +680,7 @@ def _persist_intent(
         "publish_date": operation["publish_date"],
         "before_text_sha256": operation["before_text_sha256"],
         "after_text_sha256": operation["after_text_sha256"],
-        "attachments": operation["attachments"],
+        "attachments": [],
         "attempt": attempt,
         "state": "intent_persisted",
         "provider_effect": "not_dispatched",
@@ -646,6 +690,47 @@ def _persist_intent(
     }
     _write_json_atomic(path, journal)
     return path, journal
+
+
+def _aware_now(now: Callable[[], datetime]) -> datetime:
+    value = now()
+    if value.tzinfo is None or value.utcoffset() is None:
+        raise ValueError("now() must return a timezone-aware datetime")
+    return value.astimezone(UTC)
+
+
+def _assert_safely_before_publication(
+    operation: Mapping[str, Any],
+    *,
+    minimum_future_seconds: int,
+    now: Callable[[], datetime],
+) -> None:
+    current_epoch = int(_aware_now(now).timestamp())
+    if int(operation["publish_date"]) <= current_epoch + minimum_future_seconds:
+        raise VkPostponedTextEditError(
+            f"post {operation['post_id']} is too close to scheduled publication for wall.edit"
+        )
+
+
+def _community_lock_path(writer: VkWallWriter, *, community_id: int) -> Path:
+    token_store = getattr(writer, "token_store", None)
+    data_dir = getattr(token_store, "data_dir", None)
+    account_alias = str(getattr(writer, "account_alias", "")).strip()
+    if not isinstance(data_dir, Path) or not account_alias:
+        raise VkPostponedTextEditError("writer does not expose an exact token-store data directory and account alias")
+    return data_dir / "locks" / "vk" / f"{account_alias}-{community_id}.lock"
+
+
+def _validate_existing_result(output_dir: Path, *, plan_sha256: str) -> None:
+    result_path = output_dir / "result.json"
+    if not result_path.exists():
+        return
+    try:
+        existing = _read_json_object(result_path)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        raise VkPostponedTextEditError(f"existing result.json is unreadable: {exc}") from exc
+    if existing.get("plan_sha256") != plan_sha256:
+        raise VkPostponedTextEditError("output directory already belongs to another plan")
 
 
 def execute_vk_postponed_text_edit_plan(
@@ -680,58 +765,70 @@ def execute_vk_postponed_text_edit_plan(
         raise ValueError("operation delays cannot be negative")
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    initial_snapshot, _published, initial_postponed = _read_complete_wall(
-        writer,
-        community_id=validated["community_id"],
-        max_posts_per_surface=max_posts_per_surface,
-    )
-    if len(initial_postponed) != validated["expected_postponed_count"]:
-        raise VkPostponedTextEditError("live postponed count differs from immutable plan")
+    _validate_existing_result(output_dir, plan_sha256=str(validated["plan_sha256"]))
     operations = cast(list[dict[str, Any]], validated["operations"])
-    initial_states = _classify_operations(
-        operations,
-        _postponed_by_id(initial_postponed, owner_id=validated["owner_id"]),
-    )
-    if any(row["state"] == VkPostponedTextState.CONFLICT.value for row in initial_states):
-        result = _base_result(validated, "blocked_conflict", results=[])
-        result["initial_states"] = initial_states
-        return _save_result(output_dir, result)
-
-    current_epoch = int(now().astimezone(UTC).timestamp())
-    pending_ids = {
-        row["post_id"] for row in initial_states if row["state"] == VkPostponedTextState.BEFORE.value
-    }
-    too_close = [
-        operation["post_id"]
-        for operation in operations
-        if operation["post_id"] in pending_ids
-        and operation["publish_date"] <= current_epoch + minimum_future_seconds
-    ]
-    if too_close:
-        raise VkPostponedTextEditError(
-            "pending post(s) are too close to publication: " + ", ".join(map(str, too_close))
-        )
-
-    _write_json_atomic(output_dir / "live-before.json", initial_snapshot.as_dict())
-    results: list[dict[str, Any]] = [
-        {
-            "operation_id": row["operation_id"],
-            "post_id": row["post_id"],
-            "state": "already_after",
-            "provider_effect": "verified",
-            "attempts": 0,
-        }
-        for row in initial_states
-        if row["state"] == VkPostponedTextState.AFTER.value
-    ]
-    verified_ids = {result["post_id"] for result in results}
+    target_ids = set(cast(list[int], validated["target_post_ids"]))
+    lock_path = _community_lock_path(writer, community_id=int(validated["community_id"]))
 
     with local_vk_write_lock(
-        output_dir / "vk-postponed-text-edit.lock",
+        lock_path,
         account=writer.account_alias,
         community_id=validated["community_id"],
         operation="vk-postponed-text-edit",
     ):
+        initial_snapshot, initial_published, initial_postponed = _read_complete_wall(
+            writer,
+            community_id=validated["community_id"],
+            max_posts_per_surface=max_posts_per_surface,
+        )
+        if len(initial_postponed) != validated["expected_postponed_count"]:
+            raise VkPostponedTextEditError("live postponed count differs from immutable plan")
+        initial_non_targets = _raw_non_target_fingerprints(
+            published=initial_published,
+            postponed=initial_postponed,
+            owner_id=validated["owner_id"],
+            target_ids=target_ids,
+        )
+        initial_states = _classify_operations(
+            operations,
+            _postponed_by_id(initial_postponed, owner_id=validated["owner_id"]),
+        )
+        if any(row["state"] == VkPostponedTextState.CONFLICT.value for row in initial_states):
+            result = _base_result(validated, "blocked_conflict", results=[])
+            result["initial_states"] = initial_states
+            return _save_result(output_dir, result)
+
+        pending_operations = [
+            operation
+            for operation, state in zip(operations, initial_states, strict=True)
+            if state["state"] == VkPostponedTextState.BEFORE.value
+        ]
+        try:
+            for operation in pending_operations:
+                _assert_safely_before_publication(
+                    operation,
+                    minimum_future_seconds=minimum_future_seconds,
+                    now=now,
+                )
+        except VkPostponedTextEditError as exc:
+            result = _base_result(validated, "stopped_too_close_to_publication", results=[])
+            result.update({"stop_reason": str(exc), "initial_states": initial_states})
+            return _save_result(output_dir, result)
+
+        _write_json_atomic(output_dir / "live-before.json", initial_snapshot.as_dict())
+        results: list[dict[str, Any]] = [
+            {
+                "operation_id": row["operation_id"],
+                "post_id": row["post_id"],
+                "state": "already_after",
+                "provider_effect": "verified",
+                "attempts": 0,
+            }
+            for row in initial_states
+            if row["state"] == VkPostponedTextState.AFTER.value
+        ]
+        verified_ids = {result["post_id"] for result in results}
+
         for ordinal, operation in enumerate(operations, start=1):
             post_id = operation["post_id"]
             if post_id in verified_ids:
@@ -765,6 +862,23 @@ def execute_vk_postponed_text_edit_plan(
 
             attempt = 0
             while True:
+                try:
+                    _assert_safely_before_publication(
+                        operation,
+                        minimum_future_seconds=minimum_future_seconds,
+                        now=now,
+                    )
+                except VkPostponedTextEditError as exc:
+                    result = _base_result(validated, "stopped_too_close_to_publication", results=results)
+                    result.update(
+                        {
+                            "stopped_post_id": post_id,
+                            "stop_reason": str(exc),
+                            "initial_states": initial_states,
+                        }
+                    )
+                    return _save_result(output_dir, result)
+
                 attempt += 1
                 journal_path, journal = _persist_intent(
                     output_dir,
@@ -781,7 +895,7 @@ def execute_vk_postponed_text_edit_plan(
                             "post_id": post_id,
                             "message": operation["after_text"],
                             "publish_date": operation["publish_date"],
-                            "attachments": ",".join(operation["attachments"]),
+                            "attachments": "",
                         },
                         retry_transient=False,
                     )
@@ -873,15 +987,41 @@ def execute_vk_postponed_text_edit_plan(
                     _write_json_atomic(journal_path, journal)
                     if transient_retry_delay_seconds:
                         sleep(transient_retry_delay_seconds)
-                    _retry_posts, retry_by_id = _read_postponed(
-                        writer,
-                        community_id=validated["community_id"],
-                        owner_id=validated["owner_id"],
-                        expected_count=validated["expected_postponed_count"],
-                        max_posts_per_surface=max_posts_per_surface,
-                    )
-                    retry_state, retry_reason = _classify(operation, retry_by_id.get(post_id))
+                    try:
+                        _retry_posts, retry_by_id = _read_postponed(
+                            writer,
+                            community_id=validated["community_id"],
+                            owner_id=validated["owner_id"],
+                            expected_count=validated["expected_postponed_count"],
+                            max_posts_per_surface=max_posts_per_surface,
+                        )
+                        retry_state, retry_reason = _classify(operation, retry_by_id.get(post_id))
+                    except Exception as exc:
+                        journal.update(
+                            {
+                                "state": "unknown_requires_reconciliation",
+                                "provider_effect": "may_exist",
+                                "reconciliation_error": f"{type(exc).__name__}: {exc}",
+                                "finished_at": datetime.now(UTC).isoformat(),
+                            }
+                        )
+                        _write_json_atomic(journal_path, journal)
+                        result = _base_result(
+                            validated, "unknown_requires_reconciliation", results=results + [journal]
+                        )
+                        result.update({"stopped_post_id": post_id, "initial_states": initial_states})
+                        return _save_result(output_dir, result)
                     if retry_state is VkPostponedTextState.AFTER:
+                        journal.update(
+                            {
+                                "state": "verified_after_delayed_reconciliation",
+                                "provider_effect": "verified",
+                                "error": None,
+                                "reconciled_at": datetime.now(UTC).isoformat(),
+                                "finished_at": datetime.now(UTC).isoformat(),
+                            }
+                        )
+                        _write_json_atomic(journal_path, journal)
                         results.append(
                             {
                                 "operation_id": operation["operation_id"],
@@ -894,6 +1034,15 @@ def execute_vk_postponed_text_edit_plan(
                         verified_ids.add(post_id)
                         break
                     if retry_state is VkPostponedTextState.CONFLICT:
+                        journal.update(
+                            {
+                                "state": "unknown_requires_reconciliation",
+                                "provider_effect": "may_exist",
+                                "stop_reason": retry_reason,
+                                "finished_at": datetime.now(UTC).isoformat(),
+                            }
+                        )
+                        _write_json_atomic(journal_path, journal)
                         result = _base_result(
                             validated, "unknown_requires_reconciliation", results=results + [journal]
                         )
@@ -912,56 +1061,64 @@ def execute_vk_postponed_text_edit_plan(
                 result.update({"stopped_post_id": post_id, "initial_states": initial_states})
                 return _save_result(output_dir, result)
 
-    final_snapshot, _final_published, final_postponed = _read_complete_wall(
-        writer,
-        community_id=validated["community_id"],
-        max_posts_per_surface=max_posts_per_surface,
-    )
-    final_states = _classify_operations(
-        operations,
-        _postponed_by_id(final_postponed, owner_id=validated["owner_id"]),
-    )
-    if any(row["state"] != VkPostponedTextState.AFTER.value for row in final_states):
-        result = _base_result(validated, "final_postcondition_failed", results=results)
-        result.update({"initial_states": initial_states, "final_states": final_states})
-        return _save_result(output_dir, result)
-    target_ids = set(cast(list[int], validated["target_post_ids"]))
-    if _non_target_fingerprints(
-        initial_snapshot, owner_id=validated["owner_id"], target_ids=target_ids
-    ) != _non_target_fingerprints(
-        final_snapshot, owner_id=validated["owner_id"], target_ids=target_ids
-    ):
-        result = _base_result(validated, "non_target_postcondition_failed", results=results)
-        result.update({"initial_states": initial_states, "final_states": final_states})
-        return _save_result(output_dir, result)
+        final_snapshot, final_published, final_postponed = _read_complete_wall(
+            writer,
+            community_id=validated["community_id"],
+            max_posts_per_surface=max_posts_per_surface,
+        )
+        if len(final_postponed) != validated["expected_postponed_count"]:
+            result = _base_result(validated, "final_postcondition_failed", results=results)
+            result.update(
+                {
+                    "initial_states": initial_states,
+                    "stop_reason": "postponed_count_changed",
+                    "observed_postponed_count": len(final_postponed),
+                }
+            )
+            return _save_result(output_dir, result)
+        final_states = _classify_operations(
+            operations,
+            _postponed_by_id(final_postponed, owner_id=validated["owner_id"]),
+        )
+        if any(row["state"] != VkPostponedTextState.AFTER.value for row in final_states):
+            result = _base_result(validated, "final_postcondition_failed", results=results)
+            result.update({"initial_states": initial_states, "final_states": final_states})
+            return _save_result(output_dir, result)
+        final_non_targets = _raw_non_target_fingerprints(
+            published=final_published,
+            postponed=final_postponed,
+            owner_id=validated["owner_id"],
+            target_ids=target_ids,
+        )
+        if initial_non_targets != final_non_targets:
+            result = _base_result(validated, "non_target_postcondition_failed", results=results)
+            result.update({"initial_states": initial_states, "final_states": final_states})
+            return _save_result(output_dir, result)
 
-    result = _base_result(validated, "succeeded", results=results)
-    result.update(
-        {
-            "postponed_count_before": len(initial_postponed),
-            "postponed_count_after": len(final_postponed),
-            "already_after_before_apply": sum(
-                row["state"] == VkPostponedTextState.AFTER.value for row in initial_states
-            ),
-            "newly_verified": sum(
-                row.get("provider_effect") == "verified" and int(row.get("attempts", 0)) > 0
-                for row in results
-            ),
-            "total_verified": len(final_states),
-            "non_target_wall_objects_unchanged": len(
-                _non_target_fingerprints(
-                    final_snapshot, owner_id=validated["owner_id"], target_ids=target_ids
-                )
-            ),
-            "non_target_postponed_unchanged": len(final_postponed) - validated["operation_count"],
-            "initial_states": initial_states,
-            "final_states": final_states,
-            "live_before_snapshot_sha256": initial_snapshot.snapshot_sha256,
-            "live_after_snapshot_sha256": final_snapshot.snapshot_sha256,
-        }
-    )
-    _write_json_atomic(output_dir / "live-after.json", final_snapshot.as_dict())
-    return _save_result(output_dir, result)
+        result = _base_result(validated, "succeeded", results=results)
+        result.update(
+            {
+                "postponed_count_before": len(initial_postponed),
+                "postponed_count_after": len(final_postponed),
+                "already_after_before_apply": sum(
+                    row["state"] == VkPostponedTextState.AFTER.value for row in initial_states
+                ),
+                "newly_verified": sum(
+                    row.get("provider_effect") == "verified" and int(row.get("attempts", 0)) > 0
+                    for row in results
+                ),
+                "total_verified": len(final_states),
+                "non_target_wall_objects_unchanged": len(final_non_targets),
+                "non_target_postponed_unchanged": len(final_postponed) - validated["operation_count"],
+                "initial_states": initial_states,
+                "final_states": final_states,
+                "live_before_snapshot_sha256": initial_snapshot.snapshot_sha256,
+                "live_after_snapshot_sha256": final_snapshot.snapshot_sha256,
+                "community_lock_path": str(lock_path),
+            }
+        )
+        _write_json_atomic(output_dir / "live-after.json", final_snapshot.as_dict())
+        return _save_result(output_dir, result)
 
 
 __all__ = [
