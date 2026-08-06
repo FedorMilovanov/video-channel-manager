@@ -102,11 +102,16 @@ jobs:
           python -m ruff format --check src/video_channel_manager/telegram_publisher.py scripts/telegram/post_next.py tests/test_telegram_publisher.py
           python -m mypy src/video_channel_manager/telegram_publisher.py
 
-      - name: Commit only final implementation files
+      - name: Commit final code and content files
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf .bootstrap-clean .bootstrap-final .bootstrap-fix .github/workflows/bootstrap-lordchrist-clean.yml
+          rm -rf \
+            .bootstrap-clean \
+            .bootstrap-final \
+            .bootstrap-fix \
+            .github/workflows/bootstrap-lordchrist-clean.yml \
+            .github/workflows/lordchrist-telegram-poster.yml
           git config user.name 'lordchrist-bootstrap[bot]'
           git config user.email 'lordchrist-bootstrap@users.noreply.github.com'
           git add -A
