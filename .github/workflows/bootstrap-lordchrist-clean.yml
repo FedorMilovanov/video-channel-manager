@@ -2,8 +2,7 @@ name: Bootstrap clean Lordchrist Telegram publisher
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [main]
     types: [opened, synchronize, reopened]
 
 permissions:
@@ -71,20 +70,17 @@ jobs:
               path.parent.mkdir(parents=True, exist_ok=True)
               path.write_text(file_content, encoding='utf-8', newline='\n')
 
-          Path('/tmp/lordchrist-ledger.json').write_text(
-              data['state_content'], encoding='utf-8', newline='\n'
-          )
-          Path('/tmp/lordchrist-state-path.txt').write_text(
-              data['state_path'], encoding='utf-8'
-          )
+          Path('/tmp/lordchrist-ledger.json').write_text(data['state_content'], encoding='utf-8', newline='\n')
+          Path('/tmp/lordchrist-state-path.txt').write_text(data['state_path'], encoding='utf-8')
           print(f'Materialized {len(files)} reviewed files from {len(parts)} verified parts')
           PYCODE
 
-      - name: Install repository and run focused tests
+      - name: Format and validate focused implementation
         shell: bash
         run: |
           set -euo pipefail
           python -m pip install -e '.[dev]'
+          python -m ruff format src/video_channel_manager/telegram_publisher.py scripts/telegram/post_next.py tests/test_telegram_publisher.py
           python -m compileall -q src/video_channel_manager/telegram_publisher.py scripts/telegram/post_next.py
           python -m pytest -q tests/test_telegram_publisher.py
           python -m ruff check src/video_channel_manager/telegram_publisher.py scripts/telegram/post_next.py tests/test_telegram_publisher.py
