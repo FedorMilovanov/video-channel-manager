@@ -1,0 +1,31 @@
+{
+  "attempted_at_utc": "2026-08-07T17:43:31.659114Z",
+  "github_sha": "9f7f85abfa1be9ac01c1ec530e1bb9984281b938",
+  "intent_id": "c9dfe2f411aea649f702924ac1e85e99",
+  "last_error": null,
+  "message_id": null,
+  "message_url": null,
+  "provider_effect": "may_exist",
+  "provider_payload_sha256": "sha256:1bf3611b3cdf3fbc1c604fac33430e54dd5c5bff397c653a15eea928c30cf3d3",
+  "publication_id": "lordchrist-owen-first-actings-test",
+  "published_at_utc": null,
+  "schema_name": "video-channel-manager.telegram-one-off-state",
+  "schema_version": 1,
+  "source_file_sha256": "sha256:84982b3d538685a2723e73524efbb33eb24d964a6670a999c2aae310e6556410",
+  "state": "dispatching",
+  "target": {
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "can_post_messages": true,
+    "chat_id": -1001295216957,
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "chat_username": "lordchrist",
+    "checked_at_utc": "2026-08-07T17:43:29.875383Z",
+    "member_status": "administrator",
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2
+  },
+  "workflow_run_attempt": "1",
+  "workflow_run_id": "31203264313"
+}
