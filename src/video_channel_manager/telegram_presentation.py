@@ -157,9 +157,7 @@ def load_presentation_policy(path: Path = CANONICAL_PRESENTATION_POLICY_PATH) ->
         raise ValueError(f"invalid Telegram presentation policy {path}: {exc}") from exc
 
     if policy.digest != DEFAULT_PRESENTATION_POLICY.digest:
-        raise ValueError(
-            "presentation policy artifact differs from the code-reviewed lordchrist-editorial-v1 contract"
-        )
+        raise ValueError("presentation policy artifact differs from the code-reviewed lordchrist-editorial-v1 contract")
     return policy
 
 
