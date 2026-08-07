@@ -18,10 +18,15 @@ def test_ci_exercises_isolated_minimal_telegram_runtime_without_provider_access(
     assert "LORDCHRIST_TELEGRAM_BOT_TOKEN" not in workflow
 
 
-def test_publisher_runs_only_from_main_and_code_checkout_has_no_write_credentials() -> None:
+def test_publisher_runs_only_from_main_and_minimizes_git_write_credentials() -> None:
     workflow = PUBLISHER_WORKFLOW_PATH.read_text(encoding="utf-8")
     assert "github.ref == 'refs/heads/main'" in workflow
+    assert "Scheduled workflow re-runs are forbidden" in workflow
 
-    code_checkout, state_checkout = workflow.split("- name: Check out isolated publication ledger", maxsplit=1)
+    code_checkout, after_code = workflow.split("- name: Determine guarded execution mode", maxsplit=1)
+    read_only_checkout, writer_checkout = after_code.split("- name: Enable publication ledger writer", maxsplit=1)
     assert "persist-credentials: false" in code_checkout
-    assert "persist-credentials: true" in state_checkout
+    assert "- name: Check out publication ledger read-only" in read_only_checkout
+    assert "persist-credentials: false" in read_only_checkout
+    assert "if: steps.intent.outputs.do_publish == 'true'" in writer_checkout
+    assert "persist-credentials: true" in writer_checkout
