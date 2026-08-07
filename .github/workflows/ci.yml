@@ -60,20 +60,24 @@ jobs:
           validation="$RUNNER_TEMP/lordchrist-smoke-validation.json"
           preview="$RUNNER_TEMP/lordchrist-smoke-preview.json"
           queue="content/telegram/lordchrist/verified-30-posts.json"
+          policy="content/telegram/lordchrist/presentation-policy.json"
 
           rm -f "$ledger"
           PYTHONPATH=src "$smoke_python" -m video_channel_manager.telegram_cli \
             --queue "$queue" \
             --ledger "$ledger" \
+            --presentation-policy "$policy" \
             initialize-ledger \
             --confirm INITIALIZE_NEW_LORDCHRIST_LEDGER
           PYTHONPATH=src "$smoke_python" -m video_channel_manager.telegram_cli \
             --queue "$queue" \
             --ledger "$ledger" \
+            --presentation-policy "$policy" \
             validate > "$validation"
           PYTHONPATH=src "$smoke_python" -m video_channel_manager.telegram_cli \
             --queue "$queue" \
             --ledger "$ledger" \
+            --presentation-policy "$policy" \
             preview > "$preview"
 
           "$smoke_python" - "$validation" "$preview" <<'PY'
@@ -86,8 +90,16 @@ jobs:
           assert validation["valid"] is True
           assert validation["count"] == 30
           assert validation["ledger_entries"] == 30
+          assert validation["presentation_policy_id"] == "lordchrist-editorial-v1"
+          assert validation["presentation_policy_sha256"].startswith("sha256:")
           assert preview["post"]["sequence"] == 1
-          assert preview["post"]["publication_id"].startswith("lordchrist-")
+          assert preview["post"]["publication_id"] == "lordchrist-bunyan-cross-burden"
+          assert preview["post"]["parse_mode"] == "HTML"
+          assert preview["post"]["provider_payload_sha256"].startswith("sha256:")
+          assert "© " not in preview["post"]["text"]
+          assert "\n\n\n#ДжонБеньян" in preview["post"]["text"]
+          assert "<b>«Он дал мне покой Своей скорбью и жизнь Своей смертью»</b>" in preview["post"]["html_text"]
+          assert "<b>Джон Беньян</b>, <i>«Путешествие Пилигрима»</i>" in preview["post"]["html_text"]
           PY
       - name: Audit pinned Telegram runtime dependencies
         if: matrix.python-version == '3.11'
