@@ -35,7 +35,9 @@ from video_channel_manager.album import (
 from video_channel_manager.config import get_settings
 
 console = Console()
-album_app = typer.Typer(no_args_is_help=True, help="Build deterministic local audio/video albums without provider writes.")
+album_app = typer.Typer(
+    no_args_is_help=True, help="Build deterministic local audio/video albums without provider writes."
+)
 
 
 def _paths(album: str) -> tuple[Path, Path]:
@@ -74,7 +76,7 @@ def init_album(
     project: Annotated[str, typer.Option("--project", help="Exact registered project_key")],
     album: Annotated[str, typer.Option("--album", help="Stable album key, e.g. black-man")],
     tracks: Annotated[int, typer.Option("--tracks", min=1, max=99)],
-    title: Annotated[str | None, typer.Option("--title", help="Viewer-facing album title")]=None,
+    title: Annotated[str | None, typer.Option("--title", help="Viewer-facing album title")] = None,
 ) -> None:
     """Create a new local-only album manifest."""
 
@@ -107,7 +109,7 @@ def add_youtube(
     album: Annotated[str, typer.Option("--album")],
     track: Annotated[int, typer.Option("--track", min=1)],
     video_id: Annotated[str, typer.Option("--video-id", help="Exact 11-character YouTube video ID")],
-    title: Annotated[str | None, typer.Option("--title", help="Exact viewer-facing track title")]=None,
+    title: Annotated[str | None, typer.Option("--title", help="Exact viewer-facing track title")] = None,
 ) -> None:
     """Bind one album track to one exact YouTube source ID; no network call is made."""
 
@@ -128,7 +130,7 @@ def add_local(
     album: Annotated[str, typer.Option("--album")],
     track: Annotated[int, typer.Option("--track", min=1)],
     path: Annotated[Path, typer.Option("--path", help="Explicit local master path")],
-    title: Annotated[str | None, typer.Option("--title", help="Exact viewer-facing track title")]=None,
+    title: Annotated[str | None, typer.Option("--title", help="Exact viewer-facing track title")] = None,
 ) -> None:
     """Bind one track to a local controlled master, including a not-yet-created pending path."""
 
@@ -141,7 +143,9 @@ def add_local(
         console.print(f"[red]Cannot configure local track:[/red] {exc}")
         raise typer.Exit(code=2) from exc
     status = configured.status
-    console.print(f"[green]Track {track:02d} configured as local master.[/green] status={status}\n{configured.local_path}")
+    console.print(
+        f"[green]Track {track:02d} configured as local master.[/green] status={status}\n{configured.local_path}"
+    )
     if status == "pending_local_master":
         console.print("[yellow]The file does not exist yet; this is valid for a planned bonus track.[/yellow]")
 
@@ -179,6 +183,8 @@ def status(album: Annotated[str, typer.Option("--album")]) -> None:
             identity,
         )
     console.print(table)
+    pending = [item.ordinal for item in manifest.tracks if item.status == "pending_local_master"]
+    console.print(f"pending_local_master: {pending}")
     console.print(f"Manifest: {path}")
     console.print(f"Album root: {root}")
     console.print(f"SHA-256: {manifest.manifest_sha256}")
@@ -187,8 +193,10 @@ def status(album: Annotated[str, typer.Option("--album")]) -> None:
 @album_app.command("acquire")
 def acquire(
     album: Annotated[str, typer.Option("--album")],
-    track: Annotated[int | None, typer.Option("--track", min=1, help="Acquire only one configured YouTube track")]=None,
-    yt_dlp: Annotated[str, typer.Option("--yt-dlp", help="yt-dlp executable")]= "yt-dlp",
+    track: Annotated[
+        int | None, typer.Option("--track", min=1, help="Acquire only one configured YouTube track")
+    ] = None,
+    yt_dlp: Annotated[str, typer.Option("--yt-dlp", help="yt-dlp executable")] = "yt-dlp",
 ) -> None:
     """Download exact configured YouTube audio sources into the controlled album cache."""
 
@@ -206,8 +214,8 @@ def acquire(
 @album_app.command("probe")
 def probe(
     album: Annotated[str, typer.Option("--album")],
-    track: Annotated[int | None, typer.Option("--track", min=1, help="Probe only one track")]=None,
-    ffprobe: Annotated[str, typer.Option("--ffprobe", help="ffprobe executable")]= "ffprobe",
+    track: Annotated[int | None, typer.Option("--track", min=1, help="Probe only one track")] = None,
+    ffprobe: Annotated[str, typer.Option("--ffprobe", help="ffprobe executable")] = "ffprobe",
 ) -> None:
     """Hash and ffprobe every available album audio master without modifying it."""
 
@@ -226,11 +234,11 @@ def probe(
 @album_app.command("timing")
 def timing(
     album: Annotated[str, typer.Option("--album")],
-    grid: Annotated[int, typer.Option("--grid", min=1, max=60, help="Align next track to this many seconds")]=5,
+    grid: Annotated[int, typer.Option("--grid", min=1, max=60, help="Align next track to this many seconds")] = 5,
     minimum_gap: Annotated[
         float,
         typer.Option("--minimum-gap", min=0.0, help="Minimum neutral transition gap before advancing the grid"),
-    ]=1.0,
+    ] = 1.0,
 ) -> None:
     """Create exact cumulative chapters from probed durations; requires all final masters."""
 
@@ -263,8 +271,8 @@ def timing(
 @album_app.command("artwork-plan")
 def artwork_plan(
     album: Annotated[str, typer.Option("--album")],
-    width: Annotated[int, typer.Option("--width", min=16)]=1920,
-    height: Annotated[int, typer.Option("--height", min=16)]=1080,
+    width: Annotated[int, typer.Option("--width", min=16)] = 1920,
+    height: Annotated[int, typer.Option("--height", min=16)] = 1080,
 ) -> None:
     """Reserve one neutral cover plus one exact active-track artwork state per track."""
 
@@ -279,15 +287,15 @@ def artwork_plan(
         console.print(f"[red]Cannot build artwork plan:[/red] {exc}")
         raise typer.Exit(code=2) from exc
     console.print(
-        f"[green]Artwork plan written.[/green] states={len(payload['states'])} ({manifest.total_tracks} active + neutral)\n"
-        f"{path}\nPlace exact PNG assets in: {artwork_dir}"
+        f"[green]Artwork plan written.[/green] states={len(payload['states'])} "
+        f"({manifest.total_tracks} active + neutral)\n{path}\nPlace exact PNG assets in: {artwork_dir}"
     )
 
 
 @album_app.command("render")
 def render(
     album: Annotated[str, typer.Option("--album")],
-    ffmpeg: Annotated[str, typer.Option("--ffmpeg", help="ffmpeg executable")]= "ffmpeg",
+    ffmpeg: Annotated[str, typer.Option("--ffmpeg", help="ffmpeg executable")] = "ffmpeg",
 ) -> None:
     """Render a local 16:9 album MP4 from frozen timing, audio masters and artwork states."""
 
@@ -305,8 +313,8 @@ def render(
 @album_app.command("verify")
 def verify(
     album: Annotated[str, typer.Option("--album")],
-    ffprobe: Annotated[str, typer.Option("--ffprobe", help="ffprobe executable")]= "ffprobe",
-    tolerance: Annotated[float, typer.Option("--tolerance", min=0.0)]=2.0,
+    ffprobe: Annotated[str, typer.Option("--ffprobe", help="ffprobe executable")] = "ffprobe",
+    tolerance: Annotated[float, typer.Option("--tolerance", min=0.0)] = 2.0,
 ) -> None:
     """Verify final A/V streams, SHA-256 and duration against the timing manifest."""
 
