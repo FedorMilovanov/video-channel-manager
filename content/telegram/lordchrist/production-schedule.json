@@ -1,0 +1,14 @@
+{
+  "schema_name": "video-channel-manager.telegram-production-schedule",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "enabled": true,
+  "not_before_moscow_date": "2026-08-08",
+  "timezone": "Europe/Moscow",
+  "primary_time": "09:17",
+  "catchup_time": "21:17",
+  "daily_verified_limit": 1,
+  "queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
+  "activation_note": "Autonomous production enabled after verified manual canary 1470 and verified GitHub-hosted presentation test 1471."
+}
