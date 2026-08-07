@@ -312,7 +312,9 @@ def build_vk_postponed_text_edit_plan(
         }
         operations.append(
             {
-                "operation_id": ("vk-postponed-text-edit-" + canonical_sha256(operation_seed).removeprefix("sha256:")[:32]),
+                "operation_id": (
+                    "vk-postponed-text-edit-" + canonical_sha256(operation_seed).removeprefix("sha256:")[:32]
+                ),
                 "owner_id": owner_id,
                 "post_id": post_id,
                 "publish_date": publish_date,
