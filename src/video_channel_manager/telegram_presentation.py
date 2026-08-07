@@ -24,7 +24,7 @@ FormattingType = Literal["bold", "italic"]
 class BodyQuoteEmphasisPolicy(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    first_direct_quote: Literal["bold"] = "bold"
+    bold_selection: Literal["longest_direct_quote"] = "longest_direct_quote"
     remaining_direct_quotes: Literal["italic"] = "italic"
     no_direct_quote: Literal["plain"] = "plain"
 
@@ -49,8 +49,8 @@ class PresentationPolicy(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_name: Literal["video-channel-manager.telegram-presentation-policy"]
-    schema_version: Literal[1]
-    policy_id: Literal["lordchrist-editorial-v1"]
+    schema_version: Literal[2]
+    policy_id: Literal["lordchrist-editorial-v2"]
     parse_mode: Literal["HTML"]
     body_quote_emphasis: BodyQuoteEmphasisPolicy
     attribution: AttributionPolicy
@@ -74,10 +74,10 @@ class RenderedTelegramPost(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_name: Literal["video-channel-manager.telegram-rendered-post"]
-    schema_version: Literal[1]
+    schema_version: Literal[2]
     publication_id: str = Field(pattern=r"^lordchrist-[a-z0-9][a-z0-9-]{4,80}$")
     source_payload_sha256: str = Field(pattern=SHA256_PATTERN)
-    presentation_policy_id: Literal["lordchrist-editorial-v1"]
+    presentation_policy_id: Literal["lordchrist-editorial-v2"]
     presentation_policy_sha256: str = Field(pattern=SHA256_PATTERN)
     provider_payload_sha256: str = Field(pattern=SHA256_PATTERN)
     parse_mode: Literal["HTML"]
@@ -101,8 +101,8 @@ class RenderedTelegramPost(BaseModel):
 
 DEFAULT_PRESENTATION_POLICY = PresentationPolicy(
     schema_name="video-channel-manager.telegram-presentation-policy",
-    schema_version=1,
-    policy_id="lordchrist-editorial-v1",
+    schema_version=2,
+    policy_id="lordchrist-editorial-v2",
     parse_mode="HTML",
     body_quote_emphasis=BodyQuoteEmphasisPolicy(),
     attribution=AttributionPolicy(),
@@ -157,7 +157,7 @@ def load_presentation_policy(path: Path = CANONICAL_PRESENTATION_POLICY_PATH) ->
         raise ValueError(f"invalid Telegram presentation policy {path}: {exc}") from exc
 
     if policy.digest != DEFAULT_PRESENTATION_POLICY.digest:
-        raise ValueError("presentation policy artifact differs from the code-reviewed lordchrist-editorial-v1 contract")
+        raise ValueError("presentation policy artifact differs from the code-reviewed lordchrist-editorial-v2 contract")
     return policy
 
 
@@ -173,17 +173,27 @@ def _render_quote_paragraph(
     paragraph: str,
     *,
     direct_quote_index: int,
+    bold_quote_index: int | None,
 ) -> int:
     cursor = 0
     quote_index = direct_quote_index
     for match in DIRECT_QUOTE_RE.finditer(paragraph):
         builder.append(paragraph[cursor : match.start()])
-        style: FormattingType = "bold" if quote_index == 0 else "italic"
+        style: FormattingType = "bold" if quote_index == bold_quote_index else "italic"
         builder.append_styled(match.group(0), style)
         quote_index += 1
         cursor = match.end()
     builder.append(paragraph[cursor:])
     return quote_index
+
+
+def _select_bold_quote_index(quote_blocks: list[str], policy: PresentationPolicy) -> int | None:
+    if policy.body_quote_emphasis.bold_selection != "longest_direct_quote":
+        raise ValueError("unsupported direct-quote emphasis selector")
+    quotes = [match.group(0) for block in quote_blocks for match in DIRECT_QUOTE_RE.finditer(block)]
+    if not quotes:
+        return None
+    return max(range(len(quotes)), key=lambda index: (len(quotes[index]), -index))
 
 
 def render_post(
@@ -196,6 +206,7 @@ def render_post(
     blocks = [block.strip() for block in post.text.split("\n\n") if block.strip()]
     quote_blocks = blocks[:-2]
     hashtags = blocks[-1]
+    bold_quote_index = _select_bold_quote_index(quote_blocks, policy)
 
     builder = _RenderBuilder()
     direct_quote_index = 0
@@ -204,6 +215,7 @@ def render_post(
             builder,
             paragraph,
             direct_quote_index=direct_quote_index,
+            bold_quote_index=bold_quote_index,
         )
         if index != len(quote_blocks) - 1:
             builder.append(policy.spacing.quote_paragraph_separator)
@@ -242,7 +254,7 @@ def render_post(
 
     return RenderedTelegramPost(
         schema_name="video-channel-manager.telegram-rendered-post",
-        schema_version=1,
+        schema_version=2,
         publication_id=post.publication_id,
         source_payload_sha256=post.payload_sha256,
         presentation_policy_id=policy.policy_id,
