@@ -4,12 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: Preview locally or run exact read-only Telegram preflight
+        description: Preview, discover exact target, or run pinned read-only Telegram preflight
         required: true
         default: preview
         type: choice
         options:
           - preview
+          - discover
           - preflight
       sequence:
         description: Svodka draft sequence to preview
@@ -35,8 +36,8 @@ jobs:
       QUEUE_PATH: content/telegram/svodka/draft-14-posts-2026-08.json
       CANDIDATE_PATH: .runtime/svodka-release-candidate.json
       SVODKA_TELEGRAM_CHAT_ID: ${{ vars.SVODKA_TELEGRAM_CHAT_ID }}
-      SVODKA_TELEGRAM_BOT_ID: ${{ vars.SVODKA_TELEGRAM_BOT_ID }}
-      SVODKA_TELEGRAM_BOT_USERNAME: ${{ vars.SVODKA_TELEGRAM_BOT_USERNAME }}
+      SVODKA_TELEGRAM_BOT_ID: ${{ vars.SVODKA_TELEGRAM_BOT_ID || vars.LORDCHRIST_TELEGRAM_BOT_ID }}
+      SVODKA_TELEGRAM_BOT_USERNAME: ${{ vars.SVODKA_TELEGRAM_BOT_USERNAME || vars.LORDCHRIST_TELEGRAM_BOT_USERNAME }}
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -82,7 +83,43 @@ jobs:
             --queue "$QUEUE_PATH" \
             --sequence "$PREVIEW_SEQUENCE"
 
-      - name: Validate exact preflight variables
+      - name: Validate shared bot identity inputs
+        if: inputs.action == 'discover' || inputs.action == 'preflight'
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SVODKA_TELEGRAM_BOT_ID" =~ ^[1-9][0-9]*$ ]] || {
+            echo "SVODKA_TELEGRAM_BOT_ID/LORDCHRIST_TELEGRAM_BOT_ID must resolve to an exact positive integer" >&2
+            exit 2
+          }
+          [[ "$SVODKA_TELEGRAM_BOT_USERNAME" =~ ^[A-Za-z0-9_]+$ ]] || {
+            echo "SVODKA_TELEGRAM_BOT_USERNAME/LORDCHRIST_TELEGRAM_BOT_USERNAME is invalid" >&2
+            exit 2
+          }
+
+      - name: Discover exact Svodka target read-only
+        if: inputs.action == 'discover'
+        env:
+          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.SVODKA_TELEGRAM_BOT_TOKEN || secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.telegram_channel_cli discover-target \
+            --profile "$PROFILE_PATH" \
+            --expected-bot-id "$SVODKA_TELEGRAM_BOT_ID" \
+            --expected-bot-username "$SVODKA_TELEGRAM_BOT_USERNAME" \
+            --output .runtime/svodka-target-discovery.json
+          echo "Read-only Svodka discovery passed. No Telegram provider mutation was attempted."
+
+      - name: Upload discovered target proof
+        if: inputs.action == 'discover'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: svodka-target-discovery
+          path: .runtime/svodka-target-discovery.json
+          if-no-files-found: error
+
+      - name: Validate exact pinned preflight variables
         if: inputs.action == 'preflight'
         shell: bash
         run: |
@@ -95,19 +132,11 @@ jobs:
             echo "SVODKA_TELEGRAM_CHAT_ID must be negative" >&2
             exit 2
           }
-          [[ "$SVODKA_TELEGRAM_BOT_ID" =~ ^[1-9][0-9]*$ ]] || {
-            echo "SVODKA_TELEGRAM_BOT_ID must be an exact positive integer" >&2
-            exit 2
-          }
-          [[ "$SVODKA_TELEGRAM_BOT_USERNAME" =~ ^[A-Za-z0-9_]+$ ]] || {
-            echo "SVODKA_TELEGRAM_BOT_USERNAME is invalid" >&2
-            exit 2
-          }
 
-      - name: Run read-only Telegram target preflight
+      - name: Run pinned read-only Telegram target preflight
         if: inputs.action == 'preflight'
         env:
-          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.SVODKA_TELEGRAM_BOT_TOKEN }}
+          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.SVODKA_TELEGRAM_BOT_TOKEN || secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
         run: |
           set -euo pipefail
           mkdir -p .runtime
@@ -117,4 +146,12 @@ jobs:
             --expected-bot-id "$SVODKA_TELEGRAM_BOT_ID" \
             --expected-bot-username "$SVODKA_TELEGRAM_BOT_USERNAME" \
             --output .runtime/svodka-target-proof.json
-          echo "Read-only Svodka preflight passed. No Telegram provider mutation was attempted."
+          echo "Pinned read-only Svodka preflight passed. No Telegram provider mutation was attempted."
+
+      - name: Upload pinned target proof
+        if: inputs.action == 'preflight'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: svodka-target-proof
+          path: .runtime/svodka-target-proof.json
+          if-no-files-found: error
