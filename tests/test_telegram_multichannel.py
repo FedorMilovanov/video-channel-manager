@@ -82,6 +82,7 @@ def test_generic_preflight_resolves_svodka_exactly_without_lordchrist_hardcoding
                 "type": "channel",
             }
         elif method == "getChatAdministrators":
+            assert payload == {"chat_id": -1001234567890, "return_bots": True}
             result = [
                 {
                     "status": "administrator",
@@ -137,7 +138,7 @@ def test_disabled_profile_blocks_poll_write_before_transport() -> None:
         question="Тестовый вопрос?",
         options=("Да", "Нет"),
         poll_type="quiz",
-        correct_option_id=0,
+        correct_option_ids=(0,),
         explanation="Тестовая проверка safety gate.",
     )
 
@@ -171,7 +172,7 @@ def test_generic_transport_can_render_and_verify_quiz_poll_without_live_network(
         question="Что горячее поверхности Солнца?",
         options=("Канал молнии", "Лава", "Кипящая вода"),
         poll_type="quiz",
-        correct_option_id=0,
+        correct_option_ids=(0,),
         explanation="NOAA: канал молнии может быть значительно горячее поверхности Солнца.",
     )
 
@@ -181,7 +182,8 @@ def test_generic_transport_can_render_and_verify_quiz_poll_without_live_network(
         body = json.loads(request.content.decode("utf-8"))
         assert body["chat_id"] == target.chat_id
         assert body["type"] == "quiz"
-        assert body["correct_option_id"] == 0
+        assert body["correct_option_ids"] == [0]
+        assert "correct_option_id" not in body
         result = {
             "message_id": 777,
             "chat": {"id": target.chat_id, "username": target.chat_username, "type": "channel"},
@@ -194,7 +196,7 @@ def test_generic_transport_can_render_and_verify_quiz_poll_without_live_network(
                 "is_anonymous": True,
                 "type": "quiz",
                 "allows_multiple_answers": False,
-                "correct_option_id": 0,
+                "correct_option_ids": [0],
             },
         }
         return httpx.Response(200, json={"ok": True, "result": result})
