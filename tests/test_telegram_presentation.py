@@ -7,7 +7,6 @@ from pathlib import Path
 from video_channel_manager.telegram_presentation import (
     CANONICAL_PRESENTATION_POLICY_PATH,
     DEFAULT_PRESENTATION_POLICY,
-    TelegramTextEntity,
     formatting_entities_match,
     load_presentation_policy,
     render_post,
@@ -51,19 +50,15 @@ def test_first_canary_renders_exactly_like_approved_editorial_style() -> None:
     rendered = render_post(post)
     blocks = [block.strip() for block in post.text.split("\n\n") if block.strip()]
     expected_plain = (
-        "\n\n".join(blocks[:-2])
-        + "\n\n"
-        + f"{post.source.author}, «{post.source.work}»"
-        + "\n\n\n"
-        + blocks[-1]
+        "\n\n".join(blocks[:-2]) + "\n\n" + f"{post.source.author}, «{post.source.work}»" + "\n\n\n" + blocks[-1]
     )
 
     assert rendered.text == expected_plain
     assert "© " not in rendered.text
-    assert '<b>«Он дал мне покой Своей скорбью и жизнь Своей смертью»</b>' in rendered.html_text
-    assert '<i>«Мир тебе»</i>' in rendered.html_text
-    assert '<i>«Прощаются тебе грехи твои»</i>' in rendered.html_text
-    assert '<b>Джон Беньян</b>, <i>«Путешествие Пилигрима»</i>' in rendered.html_text
+    assert "<b>«Он дал мне покой Своей скорбью и жизнь Своей смертью»</b>" in rendered.html_text
+    assert "<i>«Мир тебе»</i>" in rendered.html_text
+    assert "<i>«Прощаются тебе грехи твои»</i>" in rendered.html_text
+    assert "<b>Джон Беньян</b>, <i>«Путешествие Пилигрима»</i>" in rendered.html_text
     assert "Путешествие Пилигрима»\n\n\n#ДжонБеньян" in rendered.text
 
 
