@@ -3,6 +3,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CI_PATH = ROOT / ".github/workflows/ci.yml"
+PUBLISHER_WORKFLOW_PATH = ROOT / ".github/workflows/lordchrist-telegram-poster.yml"
 
 
 def test_ci_exercises_isolated_minimal_telegram_runtime_without_provider_access() -> None:
@@ -15,3 +16,12 @@ def test_ci_exercises_isolated_minimal_telegram_runtime_without_provider_access(
     assert 'ledger_entries"] == 30' in workflow
     assert 'preview["post"]["sequence"] == 1' in workflow
     assert "LORDCHRIST_TELEGRAM_BOT_TOKEN" not in workflow
+
+
+def test_publisher_runs_only_from_main_and_code_checkout_has_no_write_credentials() -> None:
+    workflow = PUBLISHER_WORKFLOW_PATH.read_text(encoding="utf-8")
+    assert "github.ref == 'refs/heads/main'" in workflow
+
+    code_checkout, state_checkout = workflow.split("- name: Check out isolated publication ledger", maxsplit=1)
+    assert "persist-credentials: false" in code_checkout
+    assert "persist-credentials: true" in state_checkout
