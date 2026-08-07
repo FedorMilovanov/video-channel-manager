@@ -1,0 +1,75 @@
+name: Lordchrist research v2 validation
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/lordchrist-research-v2-validate.yml"
+      - "src/video_channel_manager/telegram_research.py"
+      - "tests/test_telegram_research.py"
+      - "content/telegram/lordchrist/research-queues/**"
+      - "content/telegram/lordchrist/research-posts/**"
+      - "docs/lordchrist/research-post-v2.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lordchrist-research-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+
+      - name: Install read-only validation dependencies
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt \
+            "pytest>=8.3,<10"
+
+      - name: Compile research validator
+        shell: bash
+        run: python -m compileall -q src/video_channel_manager/telegram_research.py
+
+      - name: Validate staged research queue
+        shell: bash
+        run: |
+          PYTHONPATH=src python -m video_channel_manager.telegram_research \
+            --queue content/telegram/lordchrist/research-queues/calvin-spurgeon-macarthur-v2.json \
+            validate
+
+      - name: Run research-v2 regression tests
+        shell: bash
+        run: PYTHONPATH=src python -m pytest -q tests/test_telegram_research.py
+
+      - name: Prove pull-request queue cannot publish
+        shell: bash
+        run: |
+          PYTHONPATH=src python -m video_channel_manager.telegram_research \
+            --queue content/telegram/lordchrist/research-queues/calvin-spurgeon-macarthur-v2.json \
+            preview > /tmp/research-preview.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          preview = json.loads(Path("/tmp/research-preview.json").read_text(encoding="utf-8"))
+          if preview.get("live_eligible") is not False:
+              raise SystemExit("research queue unexpectedly became live-eligible")
+          if preview.get("schedule_state") != "staged":
+              raise SystemExit("research queue must remain staged in this PR")
+          print("research-v2 is valid, staged, and provider-inert")
+          PY
