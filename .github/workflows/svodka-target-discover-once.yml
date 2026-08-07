@@ -1,0 +1,108 @@
+name: Svodka one-time target discovery
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/svodka-target-discover-once.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: svodka-target-discover-once
+  cancel-in-progress: false
+
+jobs:
+  discover-and-pin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      PROFILE_PATH: content/telegram/channels/svodka.json
+      DISCOVERY_PATH: .runtime/svodka-target-discovery.json
+      BINDING_PATH: content/telegram/channels/svodka-target-binding.json
+      SVODKA_TELEGRAM_BOT_ID: ${{ vars.SVODKA_TELEGRAM_BOT_ID || vars.LORDCHRIST_TELEGRAM_BOT_ID }}
+      SVODKA_TELEGRAM_BOT_USERNAME: ${{ vars.SVODKA_TELEGRAM_BOT_USERNAME || vars.LORDCHRIST_TELEGRAM_BOT_USERNAME }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        run: python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Validate shared bot identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SVODKA_TELEGRAM_BOT_ID" =~ ^[1-9][0-9]*$ ]] || {
+            echo "shared Telegram bot id is not configured" >&2
+            exit 2
+          }
+          [[ "$SVODKA_TELEGRAM_BOT_USERNAME" =~ ^[A-Za-z0-9_]+$ ]] || {
+            echo "shared Telegram bot username is not configured" >&2
+            exit 2
+          }
+
+      - name: Discover channel and administrator proof read-only
+        env:
+          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.SVODKA_TELEGRAM_BOT_TOKEN || secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.telegram_channel_cli discover-target \
+            --profile "$PROFILE_PATH" \
+            --expected-bot-id "$SVODKA_TELEGRAM_BOT_ID" \
+            --expected-bot-username "$SVODKA_TELEGRAM_BOT_USERNAME" \
+            --output "$DISCOVERY_PATH"
+
+      - name: Freeze exact non-secret target binding
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          source = json.loads(Path(os.environ["DISCOVERY_PATH"]).read_text(encoding="utf-8"))
+          binding = {
+              "schema_name": "video-channel-manager.telegram-target-binding",
+              "schema_version": 1,
+              "project_key": source["project_key"],
+              "channel_username": source["channel_username"],
+              "profile_sha256": source["profile_sha256"],
+              "chat_id": source["chat_id"],
+              "chat_username": source["chat_username"],
+              "bot_id": source["bot_id"],
+              "bot_username": source["bot_username"],
+              "can_post_messages": source["can_post_messages"],
+              "discovered_at_utc": source["checked_at_utc"],
+              "discovery_method": "getMe + getChat(@username) + getChat(numeric id) + getChatAdministrators",
+              "provider_write_performed": False,
+          }
+          output = Path(os.environ["BINDING_PATH"])
+          output.parent.mkdir(parents=True, exist_ok=True)
+          output.write_text(json.dumps(binding, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          PY
+
+      - name: Commit binding and remove one-time workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$BINDING_PATH"
+          git rm .github/workflows/svodka-target-discover-once.yml
+          git commit -m "Pin read-only discovered Svodka Telegram target"
+          git push origin HEAD:main
