@@ -150,7 +150,9 @@ def _validate_channel_record(chat: dict[str, Any], *, expected_chat_id: int) -> 
     actual_username = str(chat.get("username") or "")
     actual_type = str(chat.get("type") or "")
     if actual_chat_id != expected_chat_id:
-        raise TelegramApiError("resolved Telegram channel id does not match configured target", provider_effect="not_dispatched")
+        raise TelegramApiError(
+            "resolved Telegram channel id does not match configured target", provider_effect="not_dispatched"
+        )
     if actual_username.casefold() != CHANNEL_USERNAME.removeprefix("@").casefold():
         raise TelegramApiError(
             "resolved Telegram channel username does not match configured target",
@@ -193,7 +195,9 @@ def preflight_target(
         if bot_id != expected_bot_id:
             raise TelegramApiError("resolved bot id does not match configured bot", provider_effect="not_dispatched")
         if bot_username.casefold() != expected_bot_username.removeprefix("@").casefold():
-            raise TelegramApiError("resolved bot username does not match configured bot", provider_effect="not_dispatched")
+            raise TelegramApiError(
+                "resolved bot username does not match configured bot", provider_effect="not_dispatched"
+            )
 
         numeric_chat = _result_dict(
             _api_call(
@@ -254,7 +258,9 @@ def preflight_target(
                 break
 
         if matching_member is None:
-            raise TelegramApiError("posting bot is absent from the channel administrator list", provider_effect="not_dispatched")
+            raise TelegramApiError(
+                "posting bot is absent from the channel administrator list", provider_effect="not_dispatched"
+            )
         status = str(matching_member.get("status") or "")
         if status not in {"administrator", "creator"}:
             raise TelegramApiError("posting bot is not a channel administrator", provider_effect="not_dispatched")
