@@ -4,15 +4,20 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: Preview the next post or publish one guarded canary/post
+        description: Preview, run read-only Telegram preflight, or publish one exact guarded post
         required: true
         default: preview
         type: choice
         options:
           - preview
+          - preflight
           - publish
+      publication_id:
+        description: Exact publication_id required for manual publish
+        required: false
+        type: string
       confirm:
-        description: Type PUBLISH_NEXT_LORDCHRIST_POST for a live manual publication
+        description: For publish type PUBLISH:<publication_id>
         required: false
         type: string
   schedule:
@@ -27,9 +32,10 @@ permissions:
 concurrency:
   group: lordchrist-telegram-publisher
   cancel-in-progress: false
-  queue: max
+  queue: single
 
 env:
+  PYTHONPATH: src
   QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
   STATE_BRANCH: state/lordchrist-telegram
   STATE_DIR: .state/lordchrist
@@ -37,8 +43,8 @@ env:
   LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json
   DISPATCH_PATH: .runtime/lordchrist-dispatch.json
   TARGET_PROOF_PATH: .runtime/lordchrist-target-proof.json
-  LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
   LORDCHRIST_TELEGRAM_CHAT_ID: ${{ vars.LORDCHRIST_TELEGRAM_CHAT_ID }}
+  LORDCHRIST_TELEGRAM_BOT_ID: ${{ vars.LORDCHRIST_TELEGRAM_BOT_ID }}
   LORDCHRIST_TELEGRAM_BOT_USERNAME: ${{ vars.LORDCHRIST_TELEGRAM_BOT_USERNAME }}
   LORDCHRIST_APPROVED_QUEUE_DIGEST: ${{ vars.LORDCHRIST_APPROVED_QUEUE_DIGEST }}
   LORDCHRIST_POSTING_ENABLED: ${{ vars.LORDCHRIST_POSTING_ENABLED }}
@@ -46,6 +52,7 @@ env:
 
 jobs:
   publish-next:
+    if: github.event_name != 'schedule' || vars.LORDCHRIST_SCHEDULE_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -58,11 +65,11 @@ jobs:
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.11"
-          cache: pip
 
-      - name: Install repository
+      - name: Install minimal Telegram runtime
         shell: bash
-        run: python -m pip install -e .
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
 
       - name: Check out isolated publication ledger
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -77,34 +84,47 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           REQUESTED_ACTION: ${{ inputs.action }}
+          REQUESTED_PUBLICATION_ID: ${{ inputs.publication_id }}
           CONFIRMATION: ${{ inputs.confirm }}
         run: |
           set -euo pipefail
           mode=manual
-          execute=false
+          do_preflight=false
+          do_publish=false
           reason=manual_preview
+          publication_id=""
 
           if [[ "$EVENT_NAME" == "schedule" ]]; then
             mode=scheduled
-            reason=scheduled_disabled
-            if [[ "${LORDCHRIST_SCHEDULE_ENABLED,,}" == "true" ]]; then
-              execute=true
-              reason=scheduled_execution
-            fi
+            do_preflight=true
+            do_publish=true
+            reason=scheduled_execution
+          elif [[ "$REQUESTED_ACTION" == "preflight" ]]; then
+            do_preflight=true
+            reason=manual_read_only_preflight
           elif [[ "$REQUESTED_ACTION" == "publish" ]]; then
-            if [[ "$CONFIRMATION" != "PUBLISH_NEXT_LORDCHRIST_POST" ]]; then
-              echo "Live publication requires the exact confirmation phrase." >&2
+            [[ "$REQUESTED_PUBLICATION_ID" =~ ^lordchrist-[a-z0-9][a-z0-9-]{4,80}$ ]] || {
+              echo "Manual publication requires an exact valid publication_id." >&2
+              exit 2
+            }
+            expected_confirmation="PUBLISH:$REQUESTED_PUBLICATION_ID"
+            if [[ "$CONFIRMATION" != "$expected_confirmation" ]]; then
+              echo "Live publication requires the exact confirmation: $expected_confirmation" >&2
               exit 2
             fi
-            execute=true
+            do_preflight=true
+            do_publish=true
             reason=manual_execution
+            publication_id="$REQUESTED_PUBLICATION_ID"
           fi
 
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
-          echo "execute=$execute" >> "$GITHUB_OUTPUT"
+          echo "do_preflight=$do_preflight" >> "$GITHUB_OUTPUT"
+          echo "do_publish=$do_publish" >> "$GITHUB_OUTPUT"
           echo "reason=$reason" >> "$GITHUB_OUTPUT"
+          echo "publication_id=$publication_id" >> "$GITHUB_OUTPUT"
 
-      - name: Validate immutable queue and ledger
+      - name: Validate immutable queue and strict ledger
         shell: bash
         run: |
           set -euo pipefail
@@ -114,7 +134,7 @@ jobs:
             validate
 
       - name: Preview next publication
-        if: steps.intent.outputs.execute != 'true'
+        if: steps.intent.outputs.do_preflight != 'true' && steps.intent.outputs.do_publish != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -122,11 +142,59 @@ jobs:
           python -m video_channel_manager.telegram_cli \
             --queue "$QUEUE_PATH" \
             --ledger "$LEDGER_PATH" \
-            preview \
-            --mode "${{ steps.intent.outputs.mode }}"
+            preview
 
-      - name: Enforce repository execution gates
-        if: steps.intent.outputs.execute == 'true'
+      - name: Validate read-only target configuration
+        if: steps.intent.outputs.do_preflight == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$LORDCHRIST_TELEGRAM_CHAT_ID" =~ ^-?[0-9]+$ ]] || {
+            echo "LORDCHRIST_TELEGRAM_CHAT_ID must be an exact signed integer." >&2
+            exit 2
+          }
+          (( LORDCHRIST_TELEGRAM_CHAT_ID < 0 )) || {
+            echo "LORDCHRIST_TELEGRAM_CHAT_ID must be negative." >&2
+            exit 2
+          }
+          [[ "$LORDCHRIST_TELEGRAM_BOT_ID" =~ ^[1-9][0-9]*$ ]] || {
+            echo "LORDCHRIST_TELEGRAM_BOT_ID must be an exact positive integer." >&2
+            exit 2
+          }
+          [[ "$LORDCHRIST_TELEGRAM_BOT_USERNAME" =~ ^[A-Za-z0-9_]+$ ]] || {
+            echo "LORDCHRIST_TELEGRAM_BOT_USERNAME is invalid." >&2
+            exit 2
+          }
+          [[ -n "$LORDCHRIST_APPROVED_QUEUE_DIGEST" ]] || {
+            echo "Missing LORDCHRIST_APPROVED_QUEUE_DIGEST." >&2
+            exit 2
+          }
+
+      - name: Read-only bot and channel preflight
+        if: steps.intent.outputs.do_preflight == 'true'
+        shell: bash
+        env:
+          LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.telegram_cli \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            preflight \
+            --mode "${{ steps.intent.outputs.mode }}" \
+            --expected-chat-id "$LORDCHRIST_TELEGRAM_CHAT_ID" \
+            --expected-bot-id "$LORDCHRIST_TELEGRAM_BOT_ID" \
+            --expected-bot-username "$LORDCHRIST_TELEGRAM_BOT_USERNAME" \
+            --output "$TARGET_PROOF_PATH"
+
+      - name: Stop after read-only preflight
+        if: steps.intent.outputs.do_preflight == 'true' && steps.intent.outputs.do_publish != 'true'
+        shell: bash
+        run: echo "Read-only Telegram preflight passed. No provider mutation was attempted."
+
+      - name: Enforce publication gates
+        if: steps.intent.outputs.do_publish == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -140,55 +208,37 @@ jobs:
               exit 2
             }
           fi
-          [[ -n "$LORDCHRIST_TELEGRAM_BOT_TOKEN" ]] || {
-            echo "Missing LORDCHRIST_TELEGRAM_BOT_TOKEN secret." >&2
-            exit 2
-          }
-          [[ "$LORDCHRIST_TELEGRAM_CHAT_ID" =~ ^-100[0-9]+$ ]] || {
-            echo "LORDCHRIST_TELEGRAM_CHAT_ID must be the exact negative channel ID." >&2
-            exit 2
-          }
-          [[ "$LORDCHRIST_TELEGRAM_BOT_USERNAME" =~ ^[A-Za-z0-9_]+$ ]] || {
-            echo "LORDCHRIST_TELEGRAM_BOT_USERNAME is invalid." >&2
-            exit 2
-          }
 
-      - name: Read-only bot and channel preflight
-        if: steps.intent.outputs.execute == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p .runtime
-          python -m video_channel_manager.telegram_cli \
-            --queue "$QUEUE_PATH" \
-            --ledger "$LEDGER_PATH" \
-            preflight \
-            --mode "${{ steps.intent.outputs.mode }}" \
-            --expected-chat-id "$LORDCHRIST_TELEGRAM_CHAT_ID" \
-            --expected-bot-username "$LORDCHRIST_TELEGRAM_BOT_USERNAME" \
-            --output "$TARGET_PROOF_PATH"
-
-      - name: Prepare one strict-order dispatch
+      - name: Prepare one exact strict-order dispatch
         id: prepare
-        if: steps.intent.outputs.execute == 'true'
+        if: steps.intent.outputs.do_publish == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          set +e
-          python -m video_channel_manager.telegram_cli \
-            --queue "$QUEUE_PATH" \
-            --ledger "$LEDGER_PATH" \
-            prepare \
-            --mode "${{ steps.intent.outputs.mode }}" \
-            --run-id "$GITHUB_RUN_ID" \
-            --target-proof "$TARGET_PROOF_PATH" \
+          args=(
+            --queue "$QUEUE_PATH"
+            --ledger "$LEDGER_PATH"
+            prepare
+            --mode "${{ steps.intent.outputs.mode }}"
+            --run-id "$GITHUB_RUN_ID"
+            --run-attempt "$GITHUB_RUN_ATTEMPT"
+            --github-sha "$GITHUB_SHA"
+            --github-workflow-sha "${{ github.workflow_sha }}"
+            --target-proof "$TARGET_PROOF_PATH"
             --dispatch "$DISPATCH_PATH"
+          )
+          if [[ "${{ steps.intent.outputs.mode }}" == "manual" ]]; then
+            args+=(--expected-publication-id "${{ steps.intent.outputs.publication_id }}")
+          fi
+
+          set +e
+          python -m video_channel_manager.telegram_cli "${args[@]}"
           status=$?
           set -e
 
           if [[ "$status" -eq 3 ]]; then
             echo "prepared=false" >> "$GITHUB_OUTPUT"
-            echo "No eligible next publication; queue may already be complete."
+            echo "No eligible next publication; queue may already be complete or today's quota is used."
             exit 0
           fi
           [[ "$status" -eq 0 ]] || exit "$status"
@@ -199,6 +249,32 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
+          push_exact_state() {
+            local parent_sha="$1"
+            local local_sha="$2"
+            local remote_sha=""
+            local attempt
+
+            for attempt in 1 2 3; do
+              if git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"; then
+                return 0
+              fi
+
+              remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" 2>/dev/null | cut -f1 || true)"
+              if [[ "$remote_sha" == "$local_sha" ]]; then
+                echo "State commit reached remote despite a failed push response."
+                return 0
+              fi
+              if [[ -n "$remote_sha" && "$remote_sha" != "$parent_sha" ]]; then
+                echo "State branch moved unexpectedly from $parent_sha to $remote_sha; refusing to overwrite it." >&2
+                return 3
+              fi
+              sleep $((attempt * 2))
+            done
+            return 3
+          }
+
           git -C "$STATE_DIR" config user.name "lordchrist-publisher[bot]"
           git -C "$STATE_DIR" config user.email "lordchrist-publisher@users.noreply.github.com"
           git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH"
@@ -206,10 +282,11 @@ jobs:
             echo "Prepared dispatch did not change the ledger." >&2
             exit 3
           }
-          git -C "$STATE_DIR" commit -m "Record Lordchrist dispatch intent for run $GITHUB_RUN_ID [skip ci]"
-          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
-
+          parent_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" commit -m "Record Lordchrist dispatch intent for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
           local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          push_exact_state "$parent_sha" "$local_sha" || exit 3
+
           remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
           [[ "$local_sha" == "$remote_sha" ]] || {
             echo "Remote state branch does not contain the exact intent commit." >&2
@@ -228,6 +305,8 @@ jobs:
         id: send
         if: steps.prepare.outputs.prepared == 'true'
         shell: bash
+        env:
+          LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
         run: |
           set -euo pipefail
           set +e
@@ -245,15 +324,42 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
+          push_exact_state() {
+            local parent_sha="$1"
+            local local_sha="$2"
+            local remote_sha=""
+            local attempt
+
+            for attempt in 1 2 3; do
+              if git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"; then
+                return 0
+              fi
+
+              remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" 2>/dev/null | cut -f1 || true)"
+              if [[ "$remote_sha" == "$local_sha" ]]; then
+                echo "Result state reached remote despite a failed push response."
+                return 0
+              fi
+              if [[ -n "$remote_sha" && "$remote_sha" != "$parent_sha" ]]; then
+                echo "State branch moved unexpectedly from $parent_sha to $remote_sha; refusing to overwrite it." >&2
+                return 4
+              fi
+              sleep $((attempt * 2))
+            done
+            return 4
+          }
+
           git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH"
           if git -C "$STATE_DIR" diff --cached --quiet; then
             echo "No post-send result was saved. The durable intent remains blocking; blind retry is forbidden." >&2
             exit 4
           fi
-          git -C "$STATE_DIR" commit -m "Record Lordchrist Telegram result for run $GITHUB_RUN_ID [skip ci]"
-          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
-
+          parent_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" commit -m "Record Lordchrist Telegram result for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
           local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          push_exact_state "$parent_sha" "$local_sha" || exit 4
+
           remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
           [[ "$local_sha" == "$remote_sha" ]] || {
             echo "Remote result commit verification failed." >&2
@@ -261,6 +367,6 @@ jobs:
           }
 
           if [[ "${{ steps.send.outputs.exit_code }}" != "0" ]]; then
-            echo "Telegram did not return a fully verified success. Review the state ledger before any retry." >&2
+            echo "Telegram did not return a fully verified success. Review the state ledger before any ambiguous retry." >&2
             exit 4
           fi
