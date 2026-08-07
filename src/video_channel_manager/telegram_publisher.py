@@ -1,7 +1,8 @@
 """Guarded @lordchrist Telegram publication facade.
 
 The public API stays in one repository-owned module while the implementation is
-split into immutable models, strict state transitions, and provider transport.
+split into immutable models, deterministic presentation, strict state transitions,
+and provider transport.
 """
 
 from __future__ import annotations
@@ -30,6 +31,18 @@ from video_channel_manager.telegram_models import (
     TelegramLedger,
     TelegramPost,
     TelegramQueue,
+)
+from video_channel_manager.telegram_presentation import (
+    CANONICAL_PRESENTATION_POLICY_PATH,
+    DEFAULT_PRESENTATION_POLICY,
+    PresentationPolicy,
+    RenderedTelegramPost,
+    TelegramTextEntity,
+    formatting_entities_match,
+    load_presentation_policy,
+    load_rendered_post,
+    render_post,
+    verify_rendered_post,
 )
 from video_channel_manager.telegram_state import (
     initialize_ledger,
@@ -119,8 +132,10 @@ def save_ledger(path: Path, ledger: TelegramLedger) -> None:
 
 
 __all__ = [
+    "CANONICAL_PRESENTATION_POLICY_PATH",
     "CHANNEL_USERNAME",
     "DEFAULT_API_BASE",
+    "DEFAULT_PRESENTATION_POLICY",
     "MAX_TELEGRAM_TEXT_LENGTH",
     "PRIMARY_SOURCE_HOSTS",
     "PROJECT_KEY",
@@ -129,7 +144,9 @@ __all__ = [
     "DispatchMode",
     "LedgerEntry",
     "PreparedDispatch",
+    "PresentationPolicy",
     "ProviderEffect",
+    "RenderedTelegramPost",
     "SourceProof",
     "StateName",
     "TargetProof",
@@ -137,18 +154,23 @@ __all__ = [
     "TelegramLedger",
     "TelegramPost",
     "TelegramQueue",
+    "TelegramTextEntity",
     "dispatch_prepared",
+    "formatting_entities_match",
     "initialize_ledger",
     "initialize_ledger_file",
     "load_dispatch",
     "load_ledger",
     "load_or_initialize_ledger",
+    "load_presentation_policy",
     "load_queue",
+    "load_rendered_post",
     "load_target_proof",
     "preflight_target",
     "prepare_next",
     "preview_next",
     "publication_local_date",
+    "render_post",
     "require_execution_enabled",
     "require_preflight_config",
     "resolve_entry",
@@ -158,4 +180,5 @@ __all__ = [
     "utc_now",
     "verify_dispatch_against_queue",
     "verify_persisted_intent",
+    "verify_rendered_post",
 ]
