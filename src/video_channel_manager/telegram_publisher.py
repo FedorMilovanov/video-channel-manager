@@ -63,6 +63,11 @@ def _precheck_ledger_identity(path: Path, queue: TelegramQueue) -> None:
         return
     if not isinstance(payload, dict):
         return
+
+    recorded_digest = payload.get("queue_digest")
+    if isinstance(recorded_digest, str) and recorded_digest != queue.digest:
+        raise ValueError("queue digest differs from the immutable digest recorded in the ledger")
+
     entries = payload.get("entries")
     if not isinstance(entries, dict):
         return
