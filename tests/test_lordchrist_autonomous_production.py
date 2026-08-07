@@ -64,3 +64,18 @@ def test_scheduled_gate_does_not_require_manual_posting_toggle() -> None:
     scheduled_branch, manual_branch = gate.split("          else\n", 1)
     assert "LORDCHRIST_POSTING_ENABLED" not in scheduled_branch
     assert "LORDCHRIST_POSTING_ENABLED" in manual_branch
+
+
+def test_send_step_bridges_only_a_valid_schedule_event_into_legacy_internal_gate() -> None:
+    workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+    send_start = workflow.index("      - name: Send exactly one prepared message")
+    send_end = workflow.index("      - name: Persist exact Telegram result")
+    send_step = workflow[send_start:send_end]
+
+    assert (
+        "LORDCHRIST_POSTING_ENABLED: ${{ github.event_name == 'schedule' && 'true' || vars.LORDCHRIST_POSTING_ENABLED }}"
+        in send_step
+    )
+    assert "LORDCHRIST_SCHEDULE_ENABLED: ${{ github.event_name == 'schedule' && 'true' || 'false' }}" in send_step
+    assert workflow.count("LORDCHRIST_SCHEDULE_ENABLED: ${{ github.event_name == 'schedule'") == 1
+    assert "if: steps.persist_intent.outputs.persisted == 'true'" in send_step
