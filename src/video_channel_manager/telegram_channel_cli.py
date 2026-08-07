@@ -7,6 +7,7 @@ from pathlib import Path
 
 from video_channel_manager.svodka_queue import SvodkaDraftPost, load_svodka_draft
 from video_channel_manager.svodka_release import build_poll_description, build_svodka_release_candidate
+from video_channel_manager.telegram_channel_discovery import discover_channel_target
 from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_multichannel_release import save_release
 from video_channel_manager.telegram_multichannel_transport import (
@@ -38,6 +39,12 @@ def parser() -> argparse.ArgumentParser:
     build_candidate.add_argument("--release-id", required=True)
     build_candidate.add_argument("--output", type=Path, required=True)
 
+    discover = sub.add_parser("discover-target")
+    discover.add_argument("--profile", type=Path, required=True)
+    discover.add_argument("--expected-bot-id", type=int, required=True)
+    discover.add_argument("--expected-bot-username", required=True)
+    discover.add_argument("--output", type=Path, required=True)
+
     preflight = sub.add_parser("preflight")
     preflight.add_argument("--profile", type=Path, required=True)
     preflight.add_argument("--expected-chat-id", type=int, required=True)
@@ -56,6 +63,25 @@ def _token(env_name: str) -> str:
 
 def _svodka_poll_description(post: SvodkaDraftPost, tagline: str) -> str:
     return build_poll_description(post, tagline)
+
+
+def _write_proof(path: Path, proof: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(proof.model_dump_json(indent=2) + "\n", encoding="utf-8")  # type: ignore[attr-defined]
+
+
+def _proof_summary(proof: object, *, key: str) -> dict[str, object]:
+    return {
+        key: True,
+        "project_key": proof.project_key,  # type: ignore[attr-defined]
+        "channel_username": proof.channel_username,  # type: ignore[attr-defined]
+        "chat_id": proof.chat_id,  # type: ignore[attr-defined]
+        "chat_username": proof.chat_username,  # type: ignore[attr-defined]
+        "bot_id": proof.bot_id,  # type: ignore[attr-defined]
+        "bot_username": proof.bot_username,  # type: ignore[attr-defined]
+        "can_post_messages": proof.can_post_messages,  # type: ignore[attr-defined]
+        "profile_sha256": proof.profile_sha256,  # type: ignore[attr-defined]
+    }
 
 
 def main() -> int:
@@ -193,6 +219,17 @@ def main() -> int:
         )
         return 0
 
+    if args.command == "discover-target":
+        proof = discover_channel_target(
+            profile,
+            token=_token(profile.bot_token_env),
+            expected_bot_id=args.expected_bot_id,
+            expected_bot_username=args.expected_bot_username,
+        )
+        _write_proof(args.output, proof)
+        print(json.dumps(_proof_summary(proof, key="discovered"), ensure_ascii=False))
+        return 0
+
     if args.command == "preflight":
         proof = preflight_channel(
             profile,
@@ -201,24 +238,8 @@ def main() -> int:
             expected_bot_id=args.expected_bot_id,
             expected_bot_username=args.expected_bot_username,
         )
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(proof.model_dump_json(indent=2) + "\n", encoding="utf-8")
-        print(
-            json.dumps(
-                {
-                    "preflight": True,
-                    "project_key": proof.project_key,
-                    "channel_username": proof.channel_username,
-                    "chat_id": proof.chat_id,
-                    "chat_username": proof.chat_username,
-                    "bot_id": proof.bot_id,
-                    "bot_username": proof.bot_username,
-                    "can_post_messages": proof.can_post_messages,
-                    "profile_sha256": proof.profile_sha256,
-                },
-                ensure_ascii=False,
-            )
-        )
+        _write_proof(args.output, proof)
+        print(json.dumps(_proof_summary(proof, key="preflight"), ensure_ascii=False))
         return 0
 
     raise AssertionError(f"unhandled command: {args.command}")
