@@ -38,6 +38,7 @@ env:
   PYTHONPATH: src
   QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
   PRESENTATION_POLICY_PATH: content/telegram/lordchrist/presentation-policy.json
+  PRODUCTION_CONFIG_PATH: content/telegram/lordchrist/production-schedule.json
   STATE_BRANCH: state/lordchrist-telegram
   STATE_DIR: .state/lordchrist
   LEDGER_RELATIVE_PATH: content/telegram/lordchrist/publication-ledger.json
@@ -50,13 +51,10 @@ env:
   LORDCHRIST_TELEGRAM_BOT_USERNAME: ${{ vars.LORDCHRIST_TELEGRAM_BOT_USERNAME }}
   LORDCHRIST_APPROVED_QUEUE_DIGEST: ${{ vars.LORDCHRIST_APPROVED_QUEUE_DIGEST }}
   LORDCHRIST_POSTING_ENABLED: ${{ vars.LORDCHRIST_POSTING_ENABLED }}
-  LORDCHRIST_SCHEDULE_ENABLED: ${{ vars.LORDCHRIST_SCHEDULE_ENABLED }}
 
 jobs:
   publish-next:
-    if: >-
-      github.ref == 'refs/heads/main' &&
-      (github.event_name != 'schedule' || vars.LORDCHRIST_SCHEDULE_ENABLED == 'true')
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -99,9 +97,44 @@ jobs:
               exit 5
             fi
             mode=scheduled
-            do_preflight=true
-            do_publish=true
-            reason=scheduled_execution
+            schedule_state="$(python - <<'PY'
+          import json
+          import os
+          from datetime import date, datetime
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+
+          path = Path(os.environ["PRODUCTION_CONFIG_PATH"])
+          config = json.loads(path.read_text(encoding="utf-8"))
+          expected = {
+              "schema_name": "video-channel-manager.telegram-production-schedule",
+              "schema_version": 1,
+              "project_key": "lord-god-strength",
+              "channel_username": "@lordchrist",
+              "timezone": "Europe/Moscow",
+              "primary_time": "09:17",
+              "catchup_time": "21:17",
+              "daily_verified_limit": 1,
+          }
+          for key, value in expected.items():
+              if config.get(key) != value:
+                  raise SystemExit(f"invalid production schedule field {key}: {config.get(key)!r}")
+          if config.get("queue_digest") != os.environ["LORDCHRIST_APPROVED_QUEUE_DIGEST"]:
+              raise SystemExit("production schedule queue digest does not match approved queue digest")
+          not_before = date.fromisoformat(str(config["not_before_moscow_date"]))
+          today = datetime.now(ZoneInfo("Europe/Moscow")).date()
+          print("active" if config.get("enabled") is True and today >= not_before else "inactive")
+          PY
+            )"
+            if [[ "$schedule_state" == "active" ]]; then
+              do_preflight=true
+              do_publish=true
+              reason=scheduled_execution
+            else
+              do_preflight=false
+              do_publish=false
+              reason=scheduled_not_active_yet
+            fi
           elif [[ "$REQUESTED_ACTION" == "preflight" ]]; then
             do_preflight=true
             reason=manual_read_only_preflight
@@ -212,13 +245,29 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          [[ "${LORDCHRIST_POSTING_ENABLED,,}" == "true" ]] || {
-            echo "LORDCHRIST_POSTING_ENABLED is not true." >&2
-            exit 2
-          }
           if [[ "${{ steps.intent.outputs.mode }}" == "scheduled" ]]; then
-            [[ "${LORDCHRIST_SCHEDULE_ENABLED,,}" == "true" ]] || {
-              echo "LORDCHRIST_SCHEDULE_ENABLED is not true." >&2
+            python - <<'PY'
+          import json
+          import os
+          from datetime import date, datetime
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+
+          config = json.loads(Path(os.environ["PRODUCTION_CONFIG_PATH"]).read_text(encoding="utf-8"))
+          if config.get("enabled") is not True:
+              raise SystemExit("Scheduled production config is not active.")
+          if config.get("queue_digest") != os.environ["LORDCHRIST_APPROVED_QUEUE_DIGEST"]:
+              raise SystemExit("Scheduled production config queue digest mismatch.")
+          not_before = date.fromisoformat(str(config["not_before_moscow_date"]))
+          if datetime.now(ZoneInfo("Europe/Moscow")).date() < not_before:
+              raise SystemExit("Scheduled production config is not active yet.")
+          if config.get("daily_verified_limit") != 1:
+              raise SystemExit("Scheduled production config must preserve one verified publication per day.")
+          print("Scheduled production config is active.")
+          PY
+          else
+            [[ "${LORDCHRIST_POSTING_ENABLED,,}" == "true" ]] || {
+              echo "LORDCHRIST_POSTING_ENABLED is not true." >&2
               exit 2
             }
           fi
