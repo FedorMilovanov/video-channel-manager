@@ -1,0 +1,22 @@
+{
+  "schema_name": "video-channel-manager.telegram-presentation-policy",
+  "schema_version": 1,
+  "policy_id": "lordchrist-editorial-v1",
+  "parse_mode": "HTML",
+  "body_quote_emphasis": {
+    "first_direct_quote": "bold",
+    "remaining_direct_quotes": "italic",
+    "no_direct_quote": "plain"
+  },
+  "attribution": {
+    "copyright_prefix": false,
+    "author_style": "bold",
+    "work_style": "italic"
+  },
+  "spacing": {
+    "quote_paragraph_separator": "\n\n",
+    "body_to_attribution": "\n\n",
+    "attribution_to_hashtags": "\n\n\n"
+  },
+  "link_preview_disabled": true
+}

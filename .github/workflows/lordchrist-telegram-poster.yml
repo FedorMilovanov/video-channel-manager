@@ -37,11 +37,13 @@ concurrency:
 env:
   PYTHONPATH: src
   QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
+  PRESENTATION_POLICY_PATH: content/telegram/lordchrist/presentation-policy.json
   STATE_BRANCH: state/lordchrist-telegram
   STATE_DIR: .state/lordchrist
   LEDGER_RELATIVE_PATH: content/telegram/lordchrist/publication-ledger.json
   LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json
   DISPATCH_PATH: .runtime/lordchrist-dispatch.json
+  RENDERED_PATH: .runtime/lordchrist-rendered.json
   TARGET_PROOF_PATH: .runtime/lordchrist-target-proof.json
   LORDCHRIST_TELEGRAM_CHAT_ID: ${{ vars.LORDCHRIST_TELEGRAM_CHAT_ID }}
   LORDCHRIST_TELEGRAM_BOT_ID: ${{ vars.LORDCHRIST_TELEGRAM_BOT_ID }}
@@ -140,6 +142,7 @@ jobs:
           python -m video_channel_manager.telegram_cli \
             --queue "$QUEUE_PATH" \
             --ledger "$LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
             validate
 
       - name: Preview next publication
@@ -151,6 +154,7 @@ jobs:
           python -m video_channel_manager.telegram_cli \
             --queue "$QUEUE_PATH" \
             --ledger "$LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
             preview
 
       - name: Validate read-only target configuration
@@ -190,6 +194,7 @@ jobs:
           python -m video_channel_manager.telegram_cli \
             --queue "$QUEUE_PATH" \
             --ledger "$LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
             preflight \
             --mode "${{ steps.intent.outputs.mode }}" \
             --expected-chat-id "$LORDCHRIST_TELEGRAM_CHAT_ID" \
@@ -236,6 +241,7 @@ jobs:
           args=(
             --queue "$QUEUE_PATH"
             --ledger "$LEDGER_PATH"
+            --presentation-policy "$PRESENTATION_POLICY_PATH"
             prepare
             --mode "${{ steps.intent.outputs.mode }}"
             --run-id "$GITHUB_RUN_ID"
@@ -262,7 +268,21 @@ jobs:
           [[ "$status" -eq 0 ]] || exit "$status"
           echo "prepared=true" >> "$GITHUB_OUTPUT"
 
-      - name: Persist intent before sendMessage
+      - name: Render exact Telegram provider payload
+        if: steps.prepare.outputs.prepared == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_cli \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            render-dispatch \
+            --dispatch "$DISPATCH_PATH" \
+            --output "$RENDERED_PATH"
+
+      - name: Persist intent and rendered payload before sendMessage
+        id: persist_intent
         if: steps.prepare.outputs.prepared == 'true'
         shell: bash
         run: |
@@ -293,11 +313,22 @@ jobs:
             return 3
           }
 
+          git -C "$STATE_DIR" diff --quiet -- "$LEDGER_RELATIVE_PATH" && {
+            echo "Prepared dispatch did not change the ledger." >&2
+            exit 3
+          }
+
+          evidence_rel_dir="content/telegram/lordchrist/dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          evidence_abs_dir="$STATE_DIR/$evidence_rel_dir"
+          mkdir -p "$evidence_abs_dir"
+          cp -- "$DISPATCH_PATH" "$evidence_abs_dir/dispatch.json"
+          cp -- "$RENDERED_PATH" "$evidence_abs_dir/rendered.json"
+
           git -C "$STATE_DIR" config user.name "lordchrist-publisher[bot]"
           git -C "$STATE_DIR" config user.email "lordchrist-publisher@users.noreply.github.com"
-          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel_dir"
           git -C "$STATE_DIR" diff --cached --quiet && {
-            echo "Prepared dispatch did not change the ledger." >&2
+            echo "Prepared dispatch produced no durable state delta." >&2
             exit 3
           }
           parent_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
@@ -313,15 +344,38 @@ jobs:
 
           git -C "$STATE_DIR" fetch --no-tags origin "$STATE_BRANCH"
           git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$LEDGER_RELATIVE_PATH" > .runtime/remote-ledger.json
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$evidence_rel_dir/dispatch.json" > .runtime/remote-dispatch.json
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$evidence_rel_dir/rendered.json" > .runtime/remote-rendered.json
+
+          cmp -s "$DISPATCH_PATH" .runtime/remote-dispatch.json || {
+            echo "Remote dispatch evidence differs from the exact prepared dispatch." >&2
+            exit 3
+          }
+          cmp -s "$RENDERED_PATH" .runtime/remote-rendered.json || {
+            echo "Remote rendered evidence differs from the exact provider payload." >&2
+            exit 3
+          }
+
           python -m video_channel_manager.telegram_cli \
             --queue "$QUEUE_PATH" \
             --ledger .runtime/remote-ledger.json \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
             verify-intent \
-            --dispatch "$DISPATCH_PATH"
+            --dispatch .runtime/remote-dispatch.json
+
+          python -m video_channel_manager.telegram_cli \
+            --queue "$QUEUE_PATH" \
+            --ledger .runtime/remote-ledger.json \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            verify-rendered \
+            --dispatch .runtime/remote-dispatch.json \
+            --rendered .runtime/remote-rendered.json
+
+          echo "persisted=true" >> "$GITHUB_OUTPUT"
 
       - name: Send exactly one prepared message
         id: send
-        if: steps.prepare.outputs.prepared == 'true'
+        if: steps.persist_intent.outputs.persisted == 'true'
         shell: bash
         env:
           LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
@@ -331,14 +385,16 @@ jobs:
           python -m video_channel_manager.telegram_cli \
             --queue "$QUEUE_PATH" \
             --ledger "$LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
             send \
-            --dispatch "$DISPATCH_PATH"
+            --dispatch "$DISPATCH_PATH" \
+            --rendered "$RENDERED_PATH"
           status=$?
           set -e
           echo "exit_code=$status" >> "$GITHUB_OUTPUT"
 
       - name: Persist exact Telegram result
-        if: steps.prepare.outputs.prepared == 'true' && always()
+        if: steps.persist_intent.outputs.persisted == 'true' && always()
         shell: bash
         run: |
           set -euo pipefail

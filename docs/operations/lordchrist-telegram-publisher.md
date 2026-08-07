@@ -1,49 +1,181 @@
 # GitHub-публикатор цитат для @lordchrist
 
-Дата hardening: 2026-08-07  
+Дата актуализации: 2026-08-07  
 Проект: `lord-god-strength`  
 Канал: `@lordchrist`  
-Owning hardening issue: `#155`
+Hardening: issue `#155`, PR `#160`  
+Presentation v1: issue `#163`
 
-## Статус безопасности
+## Текущее production-состояние
 
-Этот publisher должен оставаться **без live-записей в Telegram** до отдельного явно подтверждённого canary после merge hardening-PR.
+Первый exact-bound canary уже выполнен и подтверждён:
 
-До canary рекомендуется держать:
+```text
+publication_id: lordchrist-bunyan-cross-burden
+workflow run:   31177350161
+message_id:     1470
+message_url:    https://t.me/lordchrist/1470
+state:          published
+provider_effect: verified
+```
+
+Canary был отправлен прежним plain-text payload, после чего его оформление было вручную отредактировано в Telegram. Durable ledger сохраняет историческую правду именно о первоначальном bot-send; ручная редакционная правка не переписывает provenance уже состоявшейся отправки.
+
+До отдельного решения о запуске расписания держать:
 
 ```text
 LORDCHRIST_POSTING_ENABLED=false
 LORDCHRIST_SCHEDULE_ENABLED=false
 ```
 
-`preview` и live read-only `preflight` не должны требовать включения posting gate. `sendMessage` разрешается только отдельным manual `publish` или последующим scheduled run после подтверждённого manual canary.
+Merge, green CI или preview сами по себе не включают публикацию.
 
 ## Архитектура
 
-- `content/telegram/lordchrist/verified-30-posts.json` — immutable очередь из 30 публикаций;
-- `src/video_channel_manager/telegram_models.py` — queue/state/dispatch schemas;
-- `src/video_channel_manager/telegram_state.py` — fail-closed ledger и deterministic state transitions;
+- `content/telegram/lordchrist/verified-30-posts.json` — immutable source queue из 30 проверенных публикаций;
+- `content/telegram/lordchrist/presentation-policy.json` — canonical presentation policy `lordchrist-editorial-v1`;
+- `src/video_channel_manager/telegram_models.py` — source queue/state/dispatch schemas;
+- `src/video_channel_manager/telegram_presentation.py` — deterministic Telegram presentation renderer;
+- `src/video_channel_manager/telegram_state.py` — fail-closed ledger и state transitions;
 - `src/video_channel_manager/telegram_transport.py` — единственный Telegram Bot API transport;
-- `src/video_channel_manager/telegram_publisher.py` — узкий публичный facade;
+- `src/video_channel_manager/telegram_publisher.py` — публичный facade;
 - `src/video_channel_manager/telegram_cli.py` — package-owned CLI;
 - `.github/workflows/lordchrist-telegram-poster.yml` — production workflow;
-- `state/lordchrist-telegram` — отдельная durable state-ветка;
+- `state/lordchrist-telegram` — durable state branch;
 - `requirements/telegram-publisher.txt` — минимальный exact-version runtime.
 
 Домашний компьютер для текстовых публикаций не требуется.
 
-## Production bot
+## Два независимых слоя: источник и оформление
 
-Для production-публикатора предпочтителен **отдельный cloud-only Telegram bot**, не используемый домашним MP3-процессом или локальным Bot API server.
+### Source queue
 
-Причины:
+`verified-30-posts.json` остаётся неизменной после первого canary. Её digest:
 
-- отдельный blast radius токена;
-- отсутствие shared Local/Cloud Bot API lifecycle;
-- независимые rate limits и operational ownership;
-- publisher получает только минимально необходимое право публикации.
+```text
+sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20
+```
 
-Если существующий bot временно используется для canary, identity всё равно должна быть привязана одновременно к exact numeric `bot_id` и username. До live canary следует отдельно решить, остаётся ли он production publisher или создаётся выделенный bot.
+Source queue содержит проверенный перевод, attribution в историческом source-card формате и доказательство первичного источника. Изменение source text меняет payload SHA и queue digest и поэтому блокируется existing ledger.
+
+### Presentation v1
+
+Публикуемый Telegram payload строится детерминированно поверх source card. Presentation policy не изменяет цитату и не меняет source queue digest.
+
+Canonical правила `lordchrist-editorial-v1`:
+
+1. абзацы самой цитаты сохраняются дословно;
+2. первый прямой фрагмент `«…»` в теле — **bold**;
+3. все последующие прямые фрагменты `«…»` в теле — *italic*;
+4. если прямых фрагментов в теле нет, искусственное выделение в теле не добавляется;
+5. attribution: **Автор**, *«Название труда»*;
+6. видимый `©` из publication rendering удаляется;
+7. hashtags сохраняются без изменения;
+8. после attribution перед hashtags используется дополнительный пустой ENTER: `\n\n\n`;
+9. Telegram transport использует `parse_mode=HTML`;
+10. link preview отключён.
+
+HTML используется только как provider encoding. Renderer экранирует пользовательский/source текст (`&`, `<`, `>`), поэтому исходный текст не может превратиться в произвольную Telegram HTML-разметку.
+
+## Canonical пример
+
+Человек видит:
+
+```text
+И увидел я во сне: едва Христианин подошёл ко кресту, как бремя сорвалось с его плеч, упало со спины и покатилось вниз, пока не достигло входа в гробницу; там оно исчезло, и больше я его не видел.
+
+Тогда Христианин возрадовался и почувствовал облегчение. С весёлым сердцем он сказал: «Он дал мне покой Своей скорбью и жизнь Своей смертью». Христианин остановился, чтобы смотреть и дивиться: ему казалось поразительным, что один вид креста освободил его от бремени. Он смотрел снова и снова, пока слёзы не потекли по его щекам. И когда он стоял, глядя и плача, к нему подошли трое Сияющих и приветствовали его словами: «Мир тебе». Первый сказал: «Прощаются тебе грехи твои»; второй снял с него лохмотья и облек в перемену одежд; третий поставил знак на его челе и дал ему запечатанный свиток — читать его в пути и предъявить у Небесных ворот.
+
+Джон Беньян, «Путешествие Пилигрима»
+
+
+#ДжонБеньян #Крест #Прощение #Спасение
+```
+
+Formatting entities поверх этого plain text:
+
+- **«Он дал мне покой Своей скорбью и жизнь Своей смертью»**;
+- *«Мир тебе»*;
+- *«Прощаются тебе грехи твои»*;
+- **Джон Беньян**;
+- *«Путешествие Пилигрима»*.
+
+Полный human-readable образец находится в `docs/operations/lordchrist-telegram-presentation-v1.md`.
+
+## Presentation evidence до sendMessage
+
+Новый production dispatch создаёт два независимых immutable proofs:
+
+1. source `dispatch.json`;
+2. exact `rendered.json`.
+
+Они сохраняются до Telegram mutation по пути:
+
+```text
+state/lordchrist-telegram:
+content/telegram/lordchrist/dispatches/<GITHUB_RUN_ID>-<GITHUB_RUN_ATTEMPT>/
+  dispatch.json
+  rendered.json
+```
+
+`rendered.json` содержит:
+
+- exact `publication_id`;
+- source payload SHA;
+- presentation policy ID;
+- presentation policy SHA;
+- exact provider payload SHA;
+- plain text;
+- exact HTML text;
+- ожидаемые `bold` / `italic` Telegram entities;
+- link-preview policy.
+
+Workflow сначала push'ит ledger intent + оба evidence files в state branch, затем читает их обратно с remote, byte-сравнивает и выполняет `verify-intent` + `verify-rendered`. Только после этого `sendMessage` становится достижим.
+
+## Telegram postflight presentation proof
+
+HTTP 200 недостаточен.
+
+`published / verified` допускается только когда Telegram вернул одновременно:
+
+- exact `chat.id`;
+- exact channel username;
+- `chat.type=channel`;
+- exact rendered **plain text**;
+- exact ожидаемые `bold`/`italic` entities с Telegram UTF-16 offsets;
+- positive `message_id`.
+
+Telegram может дополнительно вернуть свои entities, например `hashtag`; они разрешены. Но набор `bold`/`italic` обязан точно совпасть с reviewed renderer.
+
+Если Telegram вернул сообщение, но plain text или formatting entities отличаются, outcome считается:
+
+```text
+state=unknown
+provider_effect=may_exist
+```
+
+Blind retry в таком состоянии запрещён.
+
+## Production bot identity
+
+Текущий проверенный bot:
+
+```text
+bot username: preaching_mp3_bot
+bot id:       8716602202
+```
+
+Target:
+
+```text
+channel: @lordchrist
+chat id: -1001295216957
+type: channel
+```
+
+Read-only preflight требует exact ID + username для bot и channel, `getChatAdministrators(..., return_bots=true)`, administrator/creator status и `can_post_messages=true`.
+
+Для долгосрочной production-изоляции отдельный cloud-only publisher bot остаётся предпочтительной архитектурой, но смена bot identity требует отдельной reviewed configuration transition и нового preflight; существующий verified canary нельзя автоматически переносить на другой bot ID.
 
 ## GitHub configuration
 
@@ -53,7 +185,7 @@ LORDCHRIST_SCHEDULE_ENABLED=false
 LORDCHRIST_TELEGRAM_BOT_TOKEN
 ```
 
-BotFather token не должен находиться в workflow-level `env`. Workflow передаёт его только двум provider-facing шагам: read-only preflight и exact send.
+Secret не находится в workflow-level env. Он передаётся только provider-facing read-only preflight и send step.
 
 ### Repository variables
 
@@ -68,13 +200,11 @@ LORDCHRIST_SCHEDULE_ENABLED
 
 `LORDCHRIST_TELEGRAM_BOT_USERNAME` указывается без `@`.
 
-`LORDCHRIST_TELEGRAM_CHAT_ID` — exact numeric ID целевого канала. Код не считает строковый префикс `-100` доказательством типа объекта: фактический `getChat.type` обязан быть `channel`.
-
-`LORDCHRIST_TELEGRAM_BOT_ID` — exact positive numeric ID того же bot, который возвращает `getMe`.
-
 ## Три режима workflow
 
-### 1. `preview` — полностью offline
+### `preview`
+
+Полностью offline:
 
 ```text
 action: preview
@@ -82,11 +212,20 @@ publication_id: пусто
 confirm: пусто
 ```
 
-Проверяются immutable queue и exact durable ledger, после чего показывается strict next post.
+Показывает strict-next source item и одновременно его exact presentation-v1 view:
+
+- source payload SHA;
+- presentation policy SHA;
+- provider payload SHA;
+- rendered plain text;
+- HTML provider text;
+- expected formatting entities.
 
 Telegram calls: `0`.
 
-### 2. `preflight` — live, но строго read-only
+### `preflight`
+
+Live, но read-only:
 
 ```text
 action: preflight
@@ -94,73 +233,38 @@ publication_id: пусто
 confirm: пусто
 ```
 
-Этот режим должен работать при:
+Работает при обоих write-gate `false`. Последовательно доказывает bot/channel/admin identity. `sendMessage` недостижим.
 
-```text
-LORDCHRIST_POSTING_ENABLED=false
-LORDCHRIST_SCHEDULE_ENABLED=false
-```
+### `publish`
 
-Последовательность proof:
-
-1. `getMe`;
-2. exact `bot_id`;
-3. exact bot username;
-4. `is_bot=true`;
-5. `getChat(exact numeric chat_id)`;
-6. exact channel username `lordchrist`;
-7. `type=channel`;
-8. `getChat(@lordchrist)` обязан разрешиться в тот же numeric ID;
-9. `getChatAdministrators(exact_chat_id, return_bots=true)`;
-10. exact bot ID обязан присутствовать среди administrators;
-11. `status=administrator|creator`;
-12. `can_post_messages=true` для administrator.
-
-Production preflight **не использует `getChatMember`**, чтобы не возвращаться к уже наблюдавшемуся инциденту `Bad Request: member list is inaccessible`.
-
-`sendMessage` в этом режиме недостижим.
-
-### 3. `publish` — один exact-bound manual canary/post
-
-Сначала выполнить `preview` и взять показанный exact `publication_id`.
-
-Пример:
+Один exact-bound manual post:
 
 ```text
 action: publish
-publication_id: lordchrist-bunyan-cross-burden
-confirm: PUBLISH:lordchrist-bunyan-cross-burden
+publication_id: <strict-next exact ID>
+confirm: PUBLISH:<strict-next exact ID>
 ```
 
-Workflow дополнительно требует:
+Требует:
 
 ```text
 LORDCHRIST_POSTING_ENABLED=true
 ```
 
-Manual confirmation привязано к immutable `publication_id`. Если strict next item изменился, stale/re-run workflow не может молча перейти к следующей публикации: выполнение останавливается на `manual publication_id mismatch`.
+Stale manual run не может перейти к следующему post: exact requested publication ID обязан совпадать со strict-next item.
 
 ## Глобальное ограничение на сутки
 
-Независимо от режима:
+Для manual и scheduled одинаково:
 
 ```text
-manual OR scheduled
-+
-already verified publication on current Europe/Moscow date
-=
-NO DISPATCH
+verified publication on current Europe/Moscow date
+=> no second dispatch that date
 ```
 
-Таким образом повторный manual click после успешного поста не может отправить №2 в тот же московский календарный день.
+Первый canary уже опубликован 2026-08-07, поэтому следующий item не должен публиковаться в тот же московский день.
 
 ## Scheduled mode
-
-После отдельного успешного manual canary можно установить:
-
-```text
-LORDCHRIST_SCHEDULE_ENABLED=true
-```
 
 Окна:
 
@@ -169,253 +273,136 @@ LORDCHRIST_SCHEDULE_ENABLED=true
 21:17 Europe/Moscow
 ```
 
-Второе окно — catch-up. Daily guard не позволяет ему создать второй verified post за тот же день.
+Второе окно — catch-up; daily guard не позволяет получить второй verified post за день.
 
-Scheduled execution дополнительно требует хотя бы один verified manual publication с **тем же exact bot ID и exact chat ID**.
+Schedule разрешается только при:
 
-**Scheduled workflow re-run запрещён.** `GITHUB_RUN_ATTEMPT > 1` не имеет exact human-bound `publication_id`, поэтому state machine останавливает такой run до создания intent. После инфраструктурной ошибки scheduled run не надо вручную re-run'ить: безопасный путь — следующий нормальный cron-run либо отдельный exact-bound manual publish.
+```text
+LORDCHRIST_SCHEDULE_ENABLED=true
+LORDCHRIST_POSTING_ENABLED=true
+```
 
-Concurrency настроена как:
+и наличии verified manual canary с тем же exact bot ID и chat ID.
+
+Scheduled workflow re-run (`GITHUB_RUN_ATTEMPT > 1`) запрещён. После инфраструктурной ошибки ждать следующего normal cron-run либо использовать отдельный exact-bound manual operation после проверки state.
+
+Concurrency:
 
 ```text
 queue: single
 cancel-in-progress: false
 ```
 
-Текущая потенциально выполняющаяся отправка никогда не отменяется ради более нового run, но после outage не накапливается длинная FIFO-очередь старых publisher runs.
-
 ## Fail-closed ledger
 
-Production больше никогда не создаёт отсутствующий state автоматически.
+Production не создаёт потерянный state автоматически.
 
 `load_ledger()` останавливает workflow, если:
 
-- ledger file отсутствует;
+- ledger отсутствует;
 - JSON/schema невалидны;
 - queue digest отличается;
-- отсутствует хотя бы один из 30 `publication_id`;
-- присутствует extra ID;
-- payload SHA записи не совпадает с immutable queue.
+- coverage publication IDs отличается от source queue;
+- payload SHA entry отличается от immutable source card.
 
-Это устраняет опасный сценарий, когда потерянный/частичный state мог бы восстановить уже опубликованную запись как `pending`.
-
-### Exact evidence invariants
-
-Published state принимается только при полном согласованном наборе evidence:
-
-- durable `intent_id`;
-- exact workflow run ID + run attempt;
-- exact code SHA + workflow SHA;
-- dispatch mode + timezone-aware attempt timestamp;
-- exact negative channel ID + canonical `lordchrist` username;
-- exact positive bot ID + bot username;
-- positive `message_id`;
-- canonical `https://t.me/lordchrist/<message_id>`;
-- timezone-aware publication timestamp не раньше dispatch attempt.
-
-`pending`, `failed` и `skipped` не могут сохранять live intent или verified message identity. `dispatching/unknown` обязаны сохранять `may_exist` и полный durable dispatch provenance.
-
-### Explicit initialization
-
-Только для **новой кампании**, до её первого provider call, существует отдельная административная команда:
-
-```text
-python -m video_channel_manager.telegram_cli \
-  --queue PATH_TO_NEW_QUEUE \
-  --ledger PATH_TO_NEW_LEDGER \
-  initialize-ledger \
-  --confirm INITIALIZE_NEW_LORDCHRIST_LEDGER
-```
-
-Она отказывается перезаписывать существующий ledger.
-
-**Текущий `state/lordchrist-telegram` уже существует и не должен переинициализироваться.**
+Published entries требуют complete durable provenance, exact target identity, positive message ID, canonical public URL и timezone-aware timestamps.
 
 ## Durable intent before provider mutation
 
-Для `publish` порядок фиксирован:
+Порядок future publish:
 
 ```text
-strict queue validation
-→ live target preflight
-→ global Moscow daily guard
-→ exact manual publication_id guard / scheduled canary guard
-→ create dispatch envelope
-→ save dispatching/may_exist intent locally
-→ commit intent to state branch
-→ verify exact intent commit on remote
-→ verify exact persisted intent payload
-→ only then sendMessage
+source queue + ledger validation
+→ presentation policy validation
+→ target preflight
+→ daily guard
+→ exact publication-id guard
+→ create source dispatch
+→ render exact provider payload
+→ save ledger dispatching/may_exist
+→ persist ledger + dispatch.json + rendered.json to remote state
+→ read remote evidence back
+→ byte-compare exact evidence
+→ verify-intent
+→ verify-rendered
+→ sendMessage exactly once
+→ verify Telegram chat + plain text + formatting entities + message_id
+→ persist exact result
 ```
 
-Dispatch intent сохраняет:
-
-- `intent_id`;
-- `publication_id`;
-- payload SHA;
-- `GITHUB_RUN_ID`;
-- `GITHUB_RUN_ATTEMPT`;
-- code `GITHUB_SHA`;
-- workflow SHA;
-- exact bot ID/username;
-- exact chat ID/username;
-- dispatch mode.
-
-## State push reconciliation
-
-GitHub API/transport ошибки state push и Telegram ambiguity — разные классы событий.
-
-State commit можно безопасно повторно push'ить, поэтому workflow:
-
-1. делает bounded push retry;
-2. после ошибочного push response проверяет `ls-remote`;
-3. если exact local SHA уже оказался remote — продолжает;
-4. если remote branch неожиданно ушла от ожидаемого parent — fail closed и не force-push'ит.
-
-Это применяется и к intent commit, и к result commit.
-
-Ни один такой retry не является повтором `sendMessage`.
+Ни один state-push retry не повторяет `sendMessage`.
 
 ## Telegram outcome classification
 
-Read-only transport и mutation transport имеют разные retry policy:
+Transport policies:
 
 ```text
-preflight HTTP connect retries: 2
-sendMessage HTTP transport retries: 0
+preflight connect retries: 2
+sendMessage transport retries: 0
 ```
 
-Это значит, что безопасные provider reads могут пережить краткий connect flap, а mutation не получает скрытый transport-level replay.
+- `published / verified` — exact provider result доказан;
+- `pending / not_dispatched` — connect failure до provider connection;
+- `pending / confirmed_absent` — явный retryable provider reject, например 429;
+- `failed / confirmed_absent` — terminal 4xx;
+- `unknown / may_exist` — timeout/5xx/malformed response или любое несовпадение postflight после возможной отправки.
 
-### `published / verified`
+`unknown / may_exist` никогда не retried вслепую.
 
-Только когда Telegram вернул одновременно:
+## Minimal runtime и CI
 
-- exact `chat.id`;
-- exact channel username;
-- `chat.type=channel`;
-- exact immutable text;
-- positive `message_id`.
-
-Ledger сохраняет также:
-
-```text
-https://t.me/lordchrist/<message_id>
-```
-
-### `pending / not_dispatched`
-
-Connect failure до установления provider connection может быть доказан как отсутствие dispatch effect. Следующий guarded run может повторить эту же публикацию.
-
-### `pending / confirmed_absent`
-
-Явный Telegram `429` означает, что запрос отвергнут и post не создан. Это безопасно для будущего bounded retry той же публикации.
-
-### `failed / confirmed_absent`
-
-Явный terminal 4xx, например invalid request/permissions, блокирует strict queue до исправления причины и reconciliation.
-
-### `unknown / may_exist`
-
-Любой исход, при котором `sendMessage` мог быть принят, но exact response потерян или не доказан:
-
-- read/write timeout после начала mutation;
-- remote protocol ambiguity;
-- HTTP/Telegram 5xx после mutation request;
-- malformed/non-JSON response после mutation;
-- returned message identity mismatch.
-
-В этом состоянии **blind retry запрещён**.
-
-## Manual reconciliation
-
-CLI допускает:
-
-```text
-confirmed_published
-confirmed_absent
-skip
-```
-
-Evidence transitions монотонны и не могут стирать неопределённый provider effect:
-
-- `confirmed_published` разрешён **только** из `dispatching|unknown + may_exist`; требует concrete evidence note, exact negative chat ID и positive `message_id`, а durable dispatch bot/provenance уже должны существовать;
-- `confirmed_absent` разрешён для unresolved `dispatching|unknown` после конкретного доказательства отсутствия сообщения, а также для `failed` no-effect state; только он возвращает unresolved publication в `pending`;
-- `skip` разрешён только для `pending|failed`, где provider effect уже `impossible|not_dispatched|confirmed_absent`;
-- `unknown/may_exist → skipped/impossible` запрещён: ambiguity нельзя уничтожить административной меткой.
-
-## State branch protection
-
-Для `state/lordchrist-telegram` рекомендуется включить GitHub ruleset:
-
-- block branch deletion;
-- block force pushes;
-- разрешить workflow fast-forward writes;
-- не требовать обычный PR для каждого machine-state commit, иначе publisher не сможет durable-persist intent/result.
-
-Это defense-in-depth поверх exact parent/SHA проверки workflow.
-
-## Minimal runtime
-
-Production workflow не устанавливает весь `video-channel-manager` со всеми VK/YouTube/SQL dependencies.
-
-Он использует:
+Production использует:
 
 ```text
 PYTHONPATH=src
 requirements/telegram-publisher.txt
 ```
 
-с exact package versions и `--only-binary=:all:`.
+CI Python 3.11 создаёт отдельный чистый venv без Telegram token и проверяет:
 
-CI на Python 3.11 дополнительно создаёт **отдельный чистый venv**, ставит только `requirements/telegram-publisher.txt`, выполняет `pip check`, explicit ledger initialization во временный файл, `validate`, offline `preview` и проверяет первый exact queue item. Этот smoke не получает Telegram token и не вызывает provider API.
+- dependency graph;
+- temporary ledger initialization;
+- queue validation;
+- presentation policy validation;
+- offline rendered preview;
+- отсутствие `©` в rendered text;
+- дополнительный ENTER перед hashtags;
+- canonical bold/italic HTML example.
 
-Pinned Telegram runtime отдельно проходит `pip-audit -r requirements/telegram-publisher.txt`; общий full-repository dependency audit остаётся отдельным gate.
+Отдельные tests проверяют все 30 source cards, HTML escaping, Telegram UTF-16 entity offsets, exact postflight entities и fail-closed mismatch behavior.
 
-## CI pressure hardening
-
-Полный CI должен запускаться:
-
-- на `pull_request` для рабочих веток;
-- на `push` только для `main`.
-
-Это устраняет двойные полные matrices `branch push + pull_request synchronize`, которые раньше могли создавать десятки лишних hosted-runner jobs.
-
-Рабочая hardening-ветка может делать несколько repository commits без CI; один полный CI начинается после открытия PR. Последующий push в открытый PR отменяет superseded CI через существующий `cancel-in-progress: true`.
+Полный CI запускается на PR и на push только в `main`, чтобы не создавать двойные branch-push + PR matrices.
 
 ## Campaign rollover после 30/30
 
-Нельзя просто заменить JSON новой месячной очередью при старом ledger.
+Нельзя заменить source JSON при старом ledger.
 
-Правильный rollover:
+Для следующей кампании:
 
-1. доказать текущие `30/30` или явно reconciled final state;
-2. сохранить старую queue + ledger как immutable campaign evidence;
-3. создать новую reviewed 30-post queue;
-4. получить новый queue digest;
-5. создать **новый** ledger explicit initialization;
-6. отдельно утвердить новый digest в repository variables;
-7. выполнить read-only preflight;
-8. новый campaign снова проходит manual canary перед scheduled execution.
+1. закрыть текущие 30 items verified/skipped/reconciled;
+2. сохранить queue + ledger + dispatch evidence как immutable history;
+3. подготовить новую reviewed queue;
+4. получить новый source digest;
+5. создать новый ledger explicit initialization;
+6. утвердить новый digest в repository variables;
+7. выполнить offline presentation preview;
+8. выполнить read-only target preflight;
+9. выполнить новый exact-bound canary перед schedule.
 
-Отсутствие automatic rollover — сознательная safety boundary.
+Presentation policy может переиспользоваться только если её exact digest остаётся тем же. Любая смена оформления — новая reviewed policy version.
 
-## Перед первым live canary после hardening
+## Источник истины
 
-Обязательная последовательность:
+Зелёный workflow сам по себе не доказывает remote publication.
 
-1. hardening PR merged после полного green CI;
-2. подтвердить, что state ledger всё ещё `30 pending`, provider effect не возникал во время hardening;
-3. решить production bot ownership; предпочтительно dedicated cloud-only bot;
-4. добавить/проверить exact `LORDCHRIST_TELEGRAM_BOT_ID`;
-5. `LORDCHRIST_POSTING_ENABLED=false`;
-6. `LORDCHRIST_SCHEDULE_ENABLED=false`;
-7. выполнить `preview`;
-8. выполнить live read-only `preflight`;
-9. сверить exact bot/channel proof;
-10. только после отдельного человеческого решения временно включить posting gate;
-11. запустить один exact-bound manual canary;
-12. проверить Telegram визуально и сверить state branch `published/verified/message_id/message_url`;
-13. только затем принимать отдельное решение о scheduled mode.
+Для будущего formatted post завершение означает одновременно:
 
-Зелёный workflow сам по себе не является доказательством публикации. Источник истины — exact Telegram response + durable verified ledger + при canary визуальная сверка публичного сообщения.
+```text
+exact Telegram response
++ exact formatting entities
++ durable published/verified ledger
++ durable source dispatch evidence
++ durable rendered provider evidence
+```
+
+Для первого visual rollout после presentation-v1 дополнительно требуется визуально проверить сообщение в `@lordchrist` перед включением scheduled mode.
