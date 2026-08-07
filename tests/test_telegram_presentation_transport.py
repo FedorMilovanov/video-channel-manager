@@ -203,7 +203,7 @@ def test_production_workflow_persists_rendered_evidence_before_send() -> None:
     assert "content/telegram/lordchrist/dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" in workflow
     assert 'cp -- "$DISPATCH_PATH" "$evidence_abs_dir/dispatch.json"' in workflow
     assert 'cp -- "$RENDERED_PATH" "$evidence_abs_dir/rendered.json"' in workflow
-    assert "cmp -s \"$RENDERED_PATH\" .runtime/remote-rendered.json" in workflow
+    assert 'cmp -s "$RENDERED_PATH" .runtime/remote-rendered.json' in workflow
     assert "verify-rendered" in workflow
-    assert "--rendered \"$RENDERED_PATH\"" in workflow
+    assert '--rendered "$RENDERED_PATH"' in workflow
     assert "if: steps.persist_intent.outputs.persisted == 'true'" in workflow
