@@ -3,19 +3,25 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from datetime import datetime
 from pathlib import Path
 
 from video_channel_manager.svodka_queue import SvodkaDraftPost, load_svodka_draft
-from video_channel_manager.svodka_release import build_poll_description, build_svodka_release_candidate
+from video_channel_manager.svodka_release import (
+    authorize_svodka_release,
+    build_poll_description,
+    build_svodka_release_candidate,
+)
 from video_channel_manager.telegram_channel_discovery import discover_channel_target
 from video_channel_manager.telegram_channel_profile import load_channel_profile
-from video_channel_manager.telegram_multichannel_release import save_release
+from video_channel_manager.telegram_multichannel_release import load_release, save_release
 from video_channel_manager.telegram_multichannel_transport import (
     GenericTargetProof,
     preflight_channel,
     render_message_payload,
     render_poll_payload,
 )
+from video_channel_manager.telegram_target_binding import load_target_binding
 
 
 def parser() -> argparse.ArgumentParser:
@@ -37,8 +43,16 @@ def parser() -> argparse.ArgumentParser:
     build_candidate = sub.add_parser("build-svodka-candidate")
     build_candidate.add_argument("--profile", type=Path, required=True)
     build_candidate.add_argument("--queue", type=Path, required=True)
+    build_candidate.add_argument("--binding", type=Path)
     build_candidate.add_argument("--release-id", required=True)
     build_candidate.add_argument("--output", type=Path, required=True)
+
+    authorize_release = sub.add_parser("authorize-svodka-release")
+    authorize_release.add_argument("--profile", type=Path, required=True)
+    authorize_release.add_argument("--candidate", type=Path, required=True)
+    authorize_release.add_argument("--reviewed-by", required=True)
+    authorize_release.add_argument("--reviewed-at", required=True)
+    authorize_release.add_argument("--output", type=Path, required=True)
 
     discover = sub.add_parser("discover-target")
     discover.add_argument("--profile", type=Path, required=True)
@@ -83,6 +97,21 @@ def _proof_summary(proof: GenericTargetProof, *, key: str) -> dict[str, object]:
         "can_post_messages": proof.can_post_messages,
         "profile_sha256": proof.profile_sha256,
     }
+
+
+def _review_timestamp(value: str) -> datetime:
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        raise ValueError("reviewed-at must include an explicit timezone")
+    return parsed
+
+
+def _release_matches_profile(profile_sha256: str, project_key: str, channel_username: str, profile: object) -> bool:
+    return (
+        profile_sha256 == profile.digest
+        and project_key == profile.project_key
+        and channel_username.casefold() == profile.channel_username.casefold()
+    )
 
 
 def main() -> int:
@@ -202,7 +231,13 @@ def main() -> int:
 
     if args.command == "build-svodka-candidate":
         queue = load_svodka_draft(args.queue, profile)
-        release = build_svodka_release_candidate(profile, queue, release_id=args.release_id)
+        binding = load_target_binding(args.binding, profile) if args.binding is not None else None
+        release = build_svodka_release_candidate(
+            profile,
+            queue,
+            release_id=args.release_id,
+            binding=binding,
+        )
         save_release(args.output, release)
         print(
             json.dumps(
@@ -211,8 +246,47 @@ def main() -> int:
                     "release_id": release.release_id,
                     "release_digest": release.digest,
                     "profile_sha256": release.profile_sha256,
+                    "target_binding_sha256": release.target_binding_sha256,
+                    "chat_id": release.chat_id,
+                    "bot_id": release.bot_id,
+                    "bot_username": release.bot_username,
                     "count": len(release.items),
                     "release_authorized": release.release_authorized,
+                    "output": str(args.output),
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    if args.command == "authorize-svodka-release":
+        candidate = load_release(args.candidate)
+        if not _release_matches_profile(
+            candidate.profile_sha256,
+            candidate.project_key,
+            candidate.channel_username,
+            profile,
+        ):
+            raise ValueError("Svodka release candidate differs from selected channel profile")
+        release = authorize_svodka_release(
+            candidate,
+            reviewed_by=args.reviewed_by,
+            reviewed_at=_review_timestamp(args.reviewed_at),
+        )
+        save_release(args.output, release)
+        print(
+            json.dumps(
+                {
+                    "authorized": True,
+                    "release_id": release.release_id,
+                    "release_digest": release.digest,
+                    "target_binding_sha256": release.target_binding_sha256,
+                    "chat_id": release.chat_id,
+                    "bot_id": release.bot_id,
+                    "bot_username": release.bot_username,
+                    "count": len(release.items),
+                    "reviewed_by": release.reviewed_by,
+                    "reviewed_at": release.reviewed_at.isoformat() if release.reviewed_at else None,
                     "output": str(args.output),
                 },
                 ensure_ascii=False,
