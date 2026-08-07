@@ -2,13 +2,16 @@
 
 These instructions supplement the repository-root `AGENTS.md`. `AGENTS.md`, `docs/operations/current-state.md`, the machine audit register, the retirement registry, and the exact owning issue remain authoritative. This file never authorizes provider writes.
 
+For user-facing output placement, also follow [`docs/operations/operator-output-handoff-rule.md`](../docs/operations/operator-output-handoff-rule.md). Repeated manual searching for generated artifacts is treated as a workflow defect.
+
 ## Fixed local paths
 
 Unless Fedor explicitly supplies another location, user-facing Windows commands use:
 
 ```text
-Repository: C:\Users\Fedor\Projects\video-channel-manager
-Downloads:  C:\Users\Fedor\Downloads
+Repository:      C:\Users\Fedor\Projects\video-channel-manager
+Downloads:       C:\Users\Fedor\Downloads
+Operator output: C:\Users\Fedor\Projects\video-channel-manager\operator-output
 ```
 
 A downloaded ZIP, TXT, JSON, HTML, PowerShell, MP3, or browser result file is not assumed to be inside the repository or the current shell directory.
@@ -20,7 +23,7 @@ Every copy-paste PowerShell block must work from an arbitrary current directory 
 Required construction rules:
 
 1. Set `$ErrorActionPreference = "Stop"`.
-2. Define `$Repo`, `$Downloads`, the exact artifact path, extraction root, and exact entrypoint path.
+2. Define `$Repo`, `$Downloads`, `$OperatorOutput`, the exact artifact path, extraction root, and exact entrypoint path.
 3. Use absolute paths or paths derived from those variables.
 4. Use `-LiteralPath` for known paths.
 5. Validate required files with `Test-Path -LiteralPath ... -PathType Leaf` before reading or invoking them.
@@ -29,8 +32,42 @@ Required construction rules:
 8. For ZIP handoffs, show extraction, the exact inner package root, and the exact resulting entrypoint.
 9. Use the exact known filename. When discovery is unavoidable, require exactly one match and fail on zero or multiple matches.
 10. Never choose an artifact by `LastWriteTime`, “newest ZIP”, or a broad wildcard that can silently select the wrong generation.
+11. If a generated file is meant for the operator to inspect, upload, or send back, write it directly into `$OperatorOutput` unless Fedor explicitly selected another destination.
+12. After successful creation, verify the exact file, print its absolute path, and select it in Explorer when the next human action is to inspect or send that file.
 
 Undefined variables such as `$wave`, `$package`, `$zip`, or `$out` are prohibited. A command must not depend on variables from an earlier message or terminal session.
+
+## Canonical operator outbox
+
+The default interactive handoff destination is:
+
+```text
+C:\Users\Fedor\Projects\video-channel-manager\operator-output
+```
+
+Prefer flat, descriptive filenames at the outbox root. Examples:
+
+```text
+legendary-poet-black-man-source-scan.json
+black-man-album-status.json
+black-man-chapters.txt
+black-man-artwork-plan.json
+black-man-final.mp4
+```
+
+Do not tell Fedor to search `data\`, `logs\`, timestamp subtrees, build directories, or Downloads for a file that the producing command can name exactly. Internal durable state may remain in its contract-defined location, but the operator-facing result or immutable export must be placed in the outbox when it is the next handoff artifact.
+
+For a single file that Fedor is expected to inspect or attach, the successful PowerShell handoff should end with the equivalent of:
+
+```powershell
+if (-not (Test-Path -LiteralPath $Result -PathType Leaf)) {
+    throw "Expected output was not created: $Result"
+}
+Write-Host "OPEN/SEND THIS FILE: $Result"
+Start-Process explorer.exe -ArgumentList "/select,`"$Result`""
+```
+
+Do not open Explorer after a failed command, and do not select a stale file from an earlier run. For multiple required artifacts, open the outbox folder once and print every exact filename.
 
 ## Mandatory handoff declaration
 
@@ -44,7 +81,7 @@ Before any command block, state:
 - for VK work, exact community ID and owner ID;
 - exact repository-owned entrypoint;
 - current phase and provider-effect state: impossible, not dispatched, confirmed absent, may exist, or verified;
-- exact expected result, ledger, and diagnostic paths;
+- exact expected result, ledger, diagnostic, and operator-facing output paths;
 - exact postcondition;
 - canary behavior when applicable;
 - safe recovery behavior after a non-zero exit or unknown provider outcome;
@@ -144,6 +181,7 @@ A handoff is incomplete unless it includes:
 7. exact project/community/owner binding for provider work;
 8. current phase and provider-effect state;
 9. expected success markers and machine-readable output paths;
-10. exact postcondition;
-11. explicit stop/reconcile instructions for unknown outcomes;
-12. a prohibition on rerunning retired or already accepted operations.
+10. the exact operator-facing file in `operator-output` when human inspection or return is required;
+11. exact postcondition;
+12. explicit stop/reconcile instructions for unknown outcomes;
+13. a prohibition on rerunning retired or already accepted operations.
