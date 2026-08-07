@@ -1,0 +1,139 @@
+name: Svodka one-time editorial source hardening
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/svodka-editorial-source-hardening-once.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: svodka-editorial-source-hardening-once
+  cancel-in-progress: false
+
+jobs:
+  harden-validate-remove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      PROFILE_PATH: content/telegram/channels/svodka.json
+      QUEUE_PATH: content/telegram/svodka/draft-14-posts-2026-08.json
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Apply reviewed source and wording improvements
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["QUEUE_PATH"])
+          queue = json.loads(path.read_text(encoding="utf-8"))
+          posts = {post["publication_id"]: post for post in queue["posts"]}
+
+          goldfish = posts["svodka-goldfish-three-second-memory-myth"]
+          goldfish["html_text"] = goldfish["html_text"].replace(
+              "В другом эксперименте рыб обучали сложным задачам различения десятки дней — их результат устойчиво рос значительно выше случайного угадывания.",
+              "В другом эксперименте золотые рыбки освоили условные задачи различения, где правильный выбор зависел от показанного образца. Это демонстрирует реальное обучение, а не трёхсекундный «сброс» памяти.",
+          )
+
+          eclipse = posts["svodka-2026-august-total-solar-eclipse"]
+          eclipse["html_text"] = eclipse["html_text"].replace(
+              "Уже в среду полоса полной фазы пройдёт через <b>Гренландию, Исландию и Испанию</b>.",
+              "Уже в среду полоса полной фазы пройдёт через <b>север России, Гренландию, Исландию, Испанию и небольшой участок Португалии</b>. Во многих других районах Европы будет видна частичная фаза.",
+          )
+          eclipse["sources"][0]["evidence"] = (
+              "NASA's 2026 eclipse material places totality across Russia, Greenland, Iceland, Spain and Portugal and describes NASA-funded jet and balloon science during the eclipse."
+          )
+
+          crow = posts["svodka-crows-remember-human-faces"]
+          crow["title"] = "Американские вороны помнят опасное лицо годами"
+          crow["html_text"] = (
+              "- Сводка -\n\n"
+              "🧠🐦 <b>АМЕРИКАНСКИЕ ВОРОНЫ ПОМНЯТ ОПАСНОЕ ЧЕЛОВЕЧЕСКОЕ ЛИЦО — ГОДАМИ</b>\n\n"
+              "В полевом эксперименте исследователи надевали одну и ту же необычную маску, когда ловили и кольцевали диких американских ворон в нескольких точках возле Сиэтла.\n\n"
+              "После этого птицы значительно чаще ругали и атаковали людей именно в «опасной» маске. Узнавание сохранялось <b>как минимум 2,7 года</b>, несмотря на различия в росте, возрасте, поле и походке людей под маской.\n\n"
+              "Это не означает, что каждая ворона хранит любое человеческое лицо навсегда. Но эксперимент показывает долговременное распознавание конкретного угрожающего визуального сигнала в дикой природе.\n\n"
+              "📎 <a href=\"https://www.sciencedirect.com/science/article/pii/S0003347209005806\">Animal Behaviour, 2010 — оригинальное исследование</a>\n\n"
+              "#Сводка #Вороны #Птицы #Память #Поведение #Наука"
+          )
+          crow["sources"] = [
+              {
+                  "url": "https://www.sciencedirect.com/science/article/pii/S0003347209005806",
+                  "label": "Animal Behaviour, 2010 — original study",
+                  "verified_on": "2026-08-08",
+                  "evidence": "Field experiment showed wild American crows learned a threatening mask and continued to recognize and scold it for at least 2.7 years; wording is limited to the tested threatening-face paradigm.",
+              }
+          ]
+
+          banana = posts["svodka-quiz-banana-botanical-berry"]
+          banana["html_text"] = banana["html_text"].replace(
+              "https://powo.science.kew.org/taxon/urn:lsid:ipni.org:names:584951-1/general-information",
+              "https://www.kew.org/plants/cavendish-banana",
+          ).replace(
+              "Kew Plants of the World Online — Musa",
+              "Kew Gardens — Cavendish banana",
+          )
+          banana["sources"] = [
+              {
+                  "url": "https://www.kew.org/plants/cavendish-banana",
+                  "label": "Kew Gardens — Cavendish banana",
+                  "verified_on": "2026-08-08",
+                  "evidence": "Kew explicitly states that Cavendish banana fruits are botanically classified as berries and explains the single-flower/single-ovary berry criterion.",
+              }
+          ]
+
+          path.write_text(json.dumps(queue, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          PY
+
+      - name: Validate exact 14-post draft after editorial hardening
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_channel_cli validate-profile --profile "$PROFILE_PATH"
+          python -m video_channel_manager.telegram_channel_cli validate-svodka \
+            --profile "$PROFILE_PATH" \
+            --queue "$QUEUE_PATH"
+          python -m video_channel_manager.telegram_channel_cli preview-svodka \
+            --profile "$PROFILE_PATH" \
+            --queue "$QUEUE_PATH" \
+            --sequence 6
+          python -m video_channel_manager.telegram_channel_cli preview-svodka \
+            --profile "$PROFILE_PATH" \
+            --queue "$QUEUE_PATH" \
+            --sequence 8
+          python -m video_channel_manager.telegram_channel_cli preview-svodka \
+            --profile "$PROFILE_PATH" \
+            --queue "$QUEUE_PATH" \
+            --sequence 13
+
+      - name: Commit hardened draft and remove one-time workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$QUEUE_PATH"
+          git rm .github/workflows/svodka-editorial-source-hardening-once.yml
+          git commit -m "Harden Svodka pilot wording against primary sources"
+          git push origin HEAD:main
