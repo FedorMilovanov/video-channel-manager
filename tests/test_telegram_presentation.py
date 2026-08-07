@@ -135,7 +135,9 @@ def test_longest_direct_quote_is_selected_deterministically() -> None:
     post = TelegramQueue.model_validate(payload).posts[0]
 
     rendered = render_post(post)
-    assert "<b>«эта реплика заметно длиннее остальных и поэтому должна стать главным акцентом»</b>" in rendered.html_text
+    assert (
+        "<b>«эта реплика заметно длиннее остальных и поэтому должна стать главным акцентом»</b>" in rendered.html_text
+    )
     assert rendered.html_text.count("<i>«коротко»</i>") == 2
     assert "<b>«коротко»</b>" not in rendered.html_text
 
