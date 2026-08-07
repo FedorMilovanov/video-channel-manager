@@ -1,6 +1,7 @@
 name: Svodka one-time target discovery
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
