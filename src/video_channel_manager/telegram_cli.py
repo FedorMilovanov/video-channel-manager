@@ -118,6 +118,7 @@ def main() -> int:
 
     if args.command == "preview":
         prepared = preview_next(queue, ledger)
+        post = prepared.post
         print(
             json.dumps(
                 {
@@ -125,12 +126,12 @@ def main() -> int:
                     "reason": prepared.reason,
                     "post": (
                         {
-                            "publication_id": prepared.envelope.publication_id,
-                            "sequence": prepared.envelope.sequence,
-                            "payload_sha256": prepared.envelope.payload_sha256,
-                            "text": prepared.envelope.text,
+                            "publication_id": post.publication_id,
+                            "sequence": post.sequence,
+                            "payload_sha256": post.payload_sha256,
+                            "text": post.text,
                         }
-                        if prepared.envelope
+                        if post is not None
                         else None
                     ),
                 },
