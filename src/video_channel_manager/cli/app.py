@@ -14,6 +14,7 @@ from rich.table import Table
 from video_channel_manager import __version__
 from video_channel_manager.application.plan_guard import PlanGuard
 from video_channel_manager.application.plan_preview import build_plan_preview
+from video_channel_manager.cli.album import album_app
 from video_channel_manager.cli.compare import compare_app
 from video_channel_manager.cli.content import content_app
 from video_channel_manager.cli.vk import vk_app
@@ -39,6 +40,7 @@ app.add_typer(schema_app, name="schema")
 app.add_typer(plan_app, name="plan")
 app.add_typer(local_app, name="local")
 app.add_typer(example_app, name="example")
+app.add_typer(album_app, name="album")
 app.add_typer(compare_app, name="compare")
 app.add_typer(content_app, name="content")
 app.add_typer(youtube_app, name="youtube")
