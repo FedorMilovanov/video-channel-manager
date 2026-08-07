@@ -4,7 +4,6 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from video_channel_manager.telegram_models import ProviderEffect
 from video_channel_manager.telegram_multichannel_state import (
     GenericDispatchEnvelope,
     GenericLedgerEntry,
@@ -14,6 +13,8 @@ from video_channel_manager.telegram_multichannel_state import (
 )
 from video_channel_manager.telegram_multichannel_transport import GenericSendReceipt
 
+GenericSendProviderEffect = Literal["not_dispatched", "confirmed_absent", "may_exist", "verified"]
+
 
 class GenericProviderOutcome(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -22,7 +23,7 @@ class GenericProviderOutcome(BaseModel):
     schema_version: Literal[1]
     publication_id: str = Field(min_length=5, max_length=96)
     provider_payload_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
-    provider_effect: ProviderEffect
+    provider_effect: GenericSendProviderEffect
     retryable: bool = False
     error: str | None = Field(default=None, max_length=1000)
     receipt: GenericSendReceipt | None = None
@@ -94,3 +95,6 @@ def apply_provider_outcome(
     if outcome.provider_effect == "may_exist":
         return mark_unknown(ledger, envelope, error=outcome.error or "ambiguous provider outcome")
     return _mark_proven_no_effect(ledger, envelope, outcome)
+
+
+__all__ = ["GenericProviderOutcome", "GenericSendProviderEffect", "apply_provider_outcome"]
