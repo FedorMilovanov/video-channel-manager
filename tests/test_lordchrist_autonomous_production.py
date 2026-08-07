@@ -76,8 +76,6 @@ def test_send_step_bridges_only_a_valid_schedule_event_into_legacy_internal_gate
         "LORDCHRIST_POSTING_ENABLED: ${{ github.event_name == 'schedule' && 'true' || vars.LORDCHRIST_POSTING_ENABLED }}"
         in send_step
     )
-    assert (
-        "LORDCHRIST_SCHEDULE_ENABLED: ${{ github.event_name == 'schedule' && 'true' || 'false' }}" in send_step
-    )
+    assert "LORDCHRIST_SCHEDULE_ENABLED: ${{ github.event_name == 'schedule' && 'true' || 'false' }}" in send_step
     assert workflow.count("LORDCHRIST_SCHEDULE_ENABLED: ${{ github.event_name == 'schedule'") == 1
     assert "if: steps.persist_intent.outputs.persisted == 'true'" in send_step
