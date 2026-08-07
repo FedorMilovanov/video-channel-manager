@@ -4,35 +4,65 @@ Read these sources before work on Fedor Milovanov's YouTube/VK workflow:
 
 1. `docs/operations/project-identity-registry.md`
 2. `docs/operations/current-state.md`
-3. `docs/operations/audit-register-v9-2026-08-05.json`
-4. `docs/operations/audit-register-v8-2026-08-05.json`
-5. `docs/operations/master-audit-marathon-v2-2026-08-04.md`
-6. `docs/operations/agent-reasoning-playbook.md`
-7. `docs/operations/mp3-batch-processing-contract.md`
-8. `docs/operations/wave16-ci-sqlite-mp3-hardening-2026-08-05.md`
-9. `docs/operations/vk-audio-browser-experiment-retrospective.md`
-10. `docs/operations/wave15-transcript-and-agent-audit-2026-08-05.md`
-11. `docs/operations/audit-register-v7-2026-08-05.json`
-12. `docs/operations/audit-register-v6-2026-08-05.json`
-13. `docs/operations/audit-register-v5-2026-08-05.json`
-14. `docs/operations/audit-register-v4-2026-08-05.json`
-15. `docs/operations/audit-register-v3-2026-08-05.json`
-16. `docs/operations/audit-register-v2-2026-08-04.json`
-17. `docs/operations/automation-backlog.md`
-18. `docs/operations/repository-integrity-audit-2026-08-05.md`
-19. `.github/copilot-instructions.md`
-20. `docs/operations/local-credential-sources.md`
-21. `docs/operations/operational-artifact-standard.md`
-22. `docs/operations/operational-package-acceptance.md`
-23. `docs/operations/retirement-registry-v1.json`
+3. `docs/operations/audit-register-v10-2026-08-06.json`
+4. `docs/operations/vk-postponed-text-second-pass-audit-2026-08-06.md`
+5. `docs/operations/vk-postponed-text-edit-runbook-2026-08-06.md`
+6. `docs/operations/audit-register-v9-2026-08-05.json`
+7. `docs/operations/audit-register-v8-2026-08-05.json`
+8. `docs/operations/master-audit-marathon-v2-2026-08-04.md`
+9. `docs/operations/agent-reasoning-playbook.md`
+10. `docs/operations/mp3-batch-processing-contract.md`
+11. `docs/operations/wave16-ci-sqlite-mp3-hardening-2026-08-05.md`
+12. `docs/operations/vk-audio-browser-experiment-retrospective.md`
+13. `docs/operations/wave15-transcript-and-agent-audit-2026-08-05.md`
+14. `docs/operations/audit-register-v7-2026-08-05.json`
+15. `docs/operations/audit-register-v6-2026-08-05.json`
+16. `docs/operations/audit-register-v5-2026-08-05.json`
+17. `docs/operations/audit-register-v4-2026-08-05.json`
+18. `docs/operations/audit-register-v3-2026-08-05.json`
+19. `docs/operations/audit-register-v2-2026-08-04.json`
+20. `docs/operations/automation-backlog.md`
+21. `docs/operations/repository-integrity-audit-2026-08-05.md`
+22. `.github/copilot-instructions.md`
+23. `docs/operations/local-credential-sources.md`
+24. `docs/operations/operational-artifact-standard.md`
+25. `docs/operations/operational-package-acceptance.md`
+26. `docs/operations/retirement-registry-v1.json`
 
-Current machine state and `current-state.md` override old chats, screenshots, ZIP names, remembered counts, stale issue wording, historical packages, and superseded audits. Historical material teaches; it never authorizes execution.
+Current machine state and `current-state.md` override old chats, screenshots, ZIP names, remembered counts, stale issue wording, historical packages, and superseded audits. Historical material teaches; it never authorizes execution. The Wave 14–16 compatibility ledgers below are intentionally retained as immutable operational memory even when a newer overlay is current.
+
+## Current VK postponed-text hardening overlay
+
+Repository baseline entering hardening: `main@c0b8a303598788b2870862042d2e2868a97b3005`.
+
+Production capability predecessor:
+
+- issue #147;
+- PR #150 exact head `0bfb1260c37411e8df686f26120ceea85e2f8116`;
+- merge `c04f0a4f948174ced6287e4bae87e4bf1be2be52`.
+
+Second-pass hardening authority:
+
+- issue #152;
+- PR #153;
+- branch `agent/vk-postponed-text-audit-hardening`;
+- repository-only work; no VK reads, writes, or replay are authorized by the hardening itself.
+
+The completed 2026-08-06 Lord God cleanup remains verified evidence only: attachment-free postponed IDs `12513..12541`, `29/29` exact after-state, `0` pending, postponed count `66/66`, 37 non-target postponed rows unchanged, and the first published quote post untouched.
+
+The supported reusable v1 surface is existing **attachment-free postponed VK wall posts only**. It requires exact project/community/owner/post binding, sorted unique IDs, complete published/postponed preflight, immutable request and plan digests, exact before/after text and `publish_date`, a stable account/community single-writer lock independent of output directory, a publication-distance check immediately before every dispatch and controlled retry, intent-before-dispatch journaling, exact postflight, no blind replay, CAPTCHA stop without OCR/bypass, terminal journal/result consistency, and final queue/non-target fingerprint proof.
+
+Schema v1 rejects target attachments and rejects `allow_attachments=true`. Attachment support requires a future reviewed schema.
+
+`scripts/Invoke-VkPostponedTextEdit.ps1` is a `delegating_supported` wrapper: it may invoke only the package-owned postponed-text CLI. It is not a second provider client and must not contain token handling or direct VK HTTP/API transport.
 
 ## Current verified baseline
 
-Current code baseline: `main@22ed56256df3388c23c9f785f1e02cca71fd8524`.
+The following Wave 16 baseline is retained as immutable compatibility proof. `current-state.md` and the newest overlay define the live repository baseline.
 
-Current program state: `WAVES_0_16_COMPLETED_CI_RUNTIME_SQLITE_MP3_IDENTITY_HARDENED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`.
+Historical Wave 16 code baseline: `main@22ed56256df3388c23c9f785f1e02cca71fd8524`.
+
+Historical program state: `WAVES_0_16_COMPLETED_CI_RUNTIME_SQLITE_MP3_IDENTITY_HARDENED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`.
 
 Wave 16 proof:
 
@@ -161,7 +191,8 @@ Wave 14 predecessor compatibility anchors:
 
 - `WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`;
 - historical `main@626f83c6e5c068d7faa8b6d14163b42916faa769`;
-- PR #131, CI `31000834701`, `801 passed, 1 xfailed`;
+- PR #131, exact head `80f701b6926a5a9c788b99c69634b54d63ed1862`, CI `31000834701`, `801 passed, 1 xfailed`;
+- Ruff `451 files already formatted`;
 - repository-wide JSON/Markdown integrity regressions.
 
 These are historical proofs, not current work.
@@ -175,7 +206,8 @@ Completed:
 - #38 — shared VK native Clip/ordinary-video final-type contract;
 - #130 — repository-wide documentation and integrity polish;
 - #133 — adaptive reasoning and local-only MP3 foundation;
-- #137 — CI runtime, SQLite lifetime, and MP3 identity hardening.
+- #137 — CI runtime, SQLite lifetime, and MP3 identity hardening;
+- #147 — guarded postponed-text capability and completed 2026-08-06 retrospective.
 
 Retired/not planned:
 
@@ -205,6 +237,8 @@ Do not group #32/#38 as Legendary Poet. Historically #32 belonged to Lord God, #
 ## Branch and merge discipline
 
 Substantial work uses one `agent/{description}` branch and one focused PR. Merge only after exact-head six-job green CI, unchanged expected head, reviewed scope, and clean review threads. Synchronize operational memory separately after a code/runtime baseline changes.
+
+An infrastructure incident explains missing CI; it never equals green CI.
 
 Content in quotation marks must map to a contiguous source passage unless explicitly labeled synthesis.
 
