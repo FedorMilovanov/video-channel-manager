@@ -1,0 +1,297 @@
+{
+  "schema_name": "video-channel-manager.telegram-editorial-draft-queue",
+  "schema_version": 1,
+  "project_key": "svodka",
+  "channel_username": "@deep_info_life",
+  "channel_title": "СВОДКА",
+  "timezone": "Europe/Moscow",
+  "review_state": "draft_review_required",
+  "provider_writes_authorized": false,
+  "pilot": {
+    "start_date": "2026-08-09",
+    "end_date": "2026-08-15",
+    "daily_slots": [
+      "10:30",
+      "19:30"
+    ],
+    "max_posts_per_day": 2,
+    "notes": "Pilot schedule only. Not connected to an enabled provider workflow until exact target/bot preflight, manual canary, and explicit activation."
+  },
+  "editorial_policy": {
+    "tagline": "Сводка — сводим факты, а не мнения 😎",
+    "source_priority": [
+      "primary scientific paper",
+      "official science agency",
+      "university/research institution",
+      "official institutional source"
+    ],
+    "fact_interpretation_boundary": "Do not turn hypotheses, interpretation, or folklore claims into established facts.",
+    "dynamic_web_autopublish": false
+  },
+  "posts": [
+    {
+      "sequence": 1,
+      "publication_id": "svodka-venus-day-longer-than-year",
+      "scheduled_at": "2026-08-09T10:30:00+03:00",
+      "format": "quick_fact",
+      "title": "На Венере день длиннее года",
+      "html_text": "- Сводка -\n\n🪐 <b>НА ВЕНЕРЕ ДЕНЬ ДЛИННЕЕ ГОДА</b>\n\nОдин оборот Венеры вокруг своей оси занимает примерно <b>243 земных суток</b>, а один оборот вокруг Солнца — около <b>225 суток</b>.\n\nНо есть важная деталь: это именно сидерический день — полный оборот планеты относительно звёзд. От одного восхода Солнца до следующего на Венере проходит около 117 земных суток.\n\nИ ещё страннее: Венера вращается в обратную сторону по сравнению с Землёй, поэтому Солнце там восходило бы на западе и садилось на востоке.\n\n📎 <a href=\"https://science.nasa.gov/venus/venus-facts/\">NASA Science — Venus: Facts</a>\n\n<i>Сводка — сводим факты, а не мнения 😎</i>\n\n#Сводка #Космос #Венера #NASA #Факты",
+      "sources": [
+        {
+          "url": "https://science.nasa.gov/venus/venus-facts/",
+          "label": "NASA Science — Venus: Facts",
+          "verified_on": "2026-08-08",
+          "evidence": "NASA gives rotation about 243 Earth days, orbital period about 225 days, solar day about 117 days, and retrograde rotation."
+        }
+      ]
+    },
+    {
+      "sequence": 2,
+      "publication_id": "svodka-goldfish-three-second-memory-myth",
+      "scheduled_at": "2026-08-09T19:30:00+03:00",
+      "format": "myth_fact",
+      "title": "Миф о трёхсекундной памяти золотой рыбки",
+      "html_text": "- Сводка -\n\n🐠 <b>«У ЗОЛОТОЙ РЫБКИ ПАМЯТЬ 3 СЕКУНДЫ» — МИФ</b>\n\nЛабораторные исследования показывали, что золотые рыбки способны обучаться задачам на выбор и сохранять результат достаточно долго, чтобы демонстрировать «экономию» при повторном обучении на следующий день.\n\nВ другом эксперименте рыб обучали сложным задачам различения десятки дней — их результат устойчиво рос значительно выше случайного угадывания.\n\nТо есть красивая фраза про «3 секунды» к реальной экспериментальной памяти рыб отношения не имеет.\n\n📎 <a href=\"https://pubmed.ncbi.nlm.nih.gov/935220/\">Pharmacology Biochemistry and Behavior, 1976</a>\n📎 <a href=\"https://onlinelibrary.wiley.com/doi/10.1901/jeab.1979.31-259\">Journal of the Experimental Analysis of Behavior, 1979</a>\n\n<b>Миф рушится. Рыбка помнит.</b> 🐟\n\n#Сводка #Мифы #Животные #Память #Наука",
+      "sources": [
+        {
+          "url": "https://pubmed.ncbi.nlm.nih.gov/935220/",
+          "label": "Pharmacology Biochemistry and Behavior, 1976",
+          "verified_on": "2026-08-08",
+          "evidence": "Goldfish were trained over two consecutive days; savings in relearning on day 2 was used as a measure of long-term memory strength."
+        },
+        {
+          "url": "https://onlinelibrary.wiley.com/doi/10.1901/jeab.1979.31-259",
+          "label": "JEAB, 1979",
+          "verified_on": "2026-08-08",
+          "evidence": "Goldfish acquired matching/oddity tasks over prolonged training, reaching performance substantially above chance."
+        }
+      ]
+    },
+    {
+      "sequence": 3,
+      "publication_id": "svodka-wombat-cubic-poop",
+      "scheduled_at": "2026-08-10T10:30:00+03:00",
+      "format": "quick_fact",
+      "title": "Почему вомбаты делают кубики",
+      "html_text": "- Сводка -\n\n🧊🐾 <b>ВОМБАТЫ ДЕЙСТВИТЕЛЬНО ДЕЛАЮТ КУБИЧЕСКИЙ ПОМЁТ</b>\n\nИ это не шутка природы ради красивого заголовка.\n\nИсследователи показали, что «кубики» формируются в последних примерно <b>17% кишечника</b>. Участки кишечной стенки отличаются по толщине и жёсткости, а неравномерные сокращения постепенно создают плоские грани и углы.\n\nТо есть форма появляется не «на выходе» и не потому, что у вомбата квадратное отверстие. Геометрию создаёт механика кишечника.\n\n📎 <a href=\"https://pubs.rsc.org/en/content/articlelanding/2021/sm/d0sm01230k\">Soft Matter, 2021</a>\n\n#Сводка #Животные #Вомбат #Биология #Факты",
+      "sources": [
+        {
+          "url": "https://pubs.rsc.org/en/content/articlelanding/2021/sm/d0sm01230k",
+          "label": "Soft Matter, 2021",
+          "verified_on": "2026-08-08",
+          "evidence": "Study reports cubes form within last 17% of the intestine and links corner formation to regions of differing thickness/stiffness and contractions."
+        }
+      ]
+    },
+    {
+      "sequence": 4,
+      "publication_id": "svodka-moon-recedes-38-mm-year",
+      "scheduled_at": "2026-08-10T19:30:00+03:00",
+      "format": "quick_fact",
+      "title": "Луна удаляется от Земли",
+      "html_text": "- Сводка -\n\n🌕↗️ <b>ЛУНА КАЖДЫЙ ГОД СТАНОВИТСЯ ЧУТЬ ДАЛЬШЕ</b>\n\nЛазерные измерения показывают: среднее расстояние между Землёй и Луной увеличивается примерно на <b>3,8 сантиметра в год</b>.\n\nКак это измеряют? На Луне со времён программы Apollo стоят ретрорефлекторы. С Земли в них посылают лазерный импульс и по времени возвращения света очень точно определяют расстояние.\n\nПричина медленного «разбегания» — приливное взаимодействие Земли и Луны: вращение Земли понемногу тормозится, а Луна получает орбитальный импульс и уходит на более далёкую орбиту.\n\n📎 <a href=\"https://www.nasa.gov/missions/laser-beams-reflected-between-earth-and-moon-boost-science/\">NASA — Lunar Laser Ranging</a>\n\n#Сводка #Луна #Космос #NASA #Физика",
+      "sources": [
+        {
+          "url": "https://www.nasa.gov/missions/laser-beams-reflected-between-earth-and-moon-boost-science/",
+          "label": "NASA — Lunar Laser Ranging",
+          "verified_on": "2026-08-08",
+          "evidence": "NASA states Earth and Moon drift apart about 1.5 inches / 3.8 cm per year, measured with lunar retroreflectors."
+        }
+      ]
+    },
+    {
+      "sequence": 5,
+      "publication_id": "svodka-octopus-three-hearts-blue-blood",
+      "scheduled_at": "2026-08-11T10:30:00+03:00",
+      "format": "mini_digest",
+      "title": "Три странности осьминога",
+      "html_text": "- Сводка -\n\n🐙 <b>ТРИ ФАКТА ОБ ОСЬМИНОГАХ, КОТОРЫЕ ЗВУЧАТ КАК ВЫДУМКА</b>\n\n1️⃣ <b>У головоногих три сердца.</b> Два жаберных сердца гонят кровь через жабры, а системное сердце отправляет насыщенную кислородом кровь по телу.\n\n2️⃣ <b>Кровь действительно голубая.</b> Кислород переносит не железосодержащий гемоглобин, как у нас, а медьсодержащий гемоцианин.\n\n3️⃣ <b>Они могут менять цвет за мгновения.</b> В коже работают тысячи хроматофоров — клеток с пигментом, которыми животное управляет нервной системой.\n\n📎 <a href=\"https://ocean.si.edu/ocean-life/invertebrates/octopuses-squids-and-relatives\">Smithsonian Ocean — Cephalopods</a>\n📎 <a href=\"https://ocean.si.edu/ocean-life/invertebrates/how-octopuses-and-squids-change-color\">Smithsonian Ocean — How Cephalopods Change Color</a>\n\nКакой из трёх фактов звучит самым невероятным? 👇\n\n#Сводка #Осьминог #Океан #Животные #Наука",
+      "sources": [
+        {
+          "url": "https://ocean.si.edu/ocean-life/invertebrates/octopuses-squids-and-relatives",
+          "label": "Smithsonian Ocean — Cephalopods",
+          "verified_on": "2026-08-08",
+          "evidence": "Smithsonian explains three-heart circulatory system and blue blood based on copper-containing hemocyanin."
+        },
+        {
+          "url": "https://ocean.si.edu/ocean-life/invertebrates/how-octopuses-and-squids-change-color",
+          "label": "Smithsonian Ocean — Color change",
+          "verified_on": "2026-08-08",
+          "evidence": "Smithsonian describes chromatophores and rapid skin color change in cephalopods."
+        }
+      ]
+    },
+    {
+      "sequence": 6,
+      "publication_id": "svodka-2026-august-total-solar-eclipse",
+      "scheduled_at": "2026-08-11T19:30:00+03:00",
+      "format": "fresh_science",
+      "title": "12 августа — полное солнечное затмение",
+      "html_text": "- Сводка -\n\n🌑☀️ <b>12 АВГУСТА — ПОЛНОЕ СОЛНЕЧНОЕ ЗАТМЕНИЕ</b>\n\nУже в среду полоса полной фазы пройдёт через <b>Гренландию, Исландию и Испанию</b>.\n\nДля науки это не просто красивое небо. NASA сообщает, что исследовательские группы будут наблюдать затмение с высотного самолёта и научных аэростатов: во время полной фазы яркий диск Солнца закрыт, и можно лучше изучать слабую внешнюю атмосферу — корону.\n\nЗатмение также используют как естественный эксперимент, чтобы посмотреть, как резкое кратковременное падение солнечного света влияет на атмосферу Земли.\n\n📎 <a href=\"https://science.nasa.gov/science-research/heliophysics/nasa-science-soars-during-august-total-solar-eclipse/\">NASA Science, 27 июля 2026</a>\n\n#Сводка #Затмение #Космос #Солнце #NASA #2026",
+      "sources": [
+        {
+          "url": "https://science.nasa.gov/science-research/heliophysics/nasa-science-soars-during-august-total-solar-eclipse/",
+          "label": "NASA Science, 2026-07-27",
+          "verified_on": "2026-08-08",
+          "evidence": "NASA says the Aug 12 total solar eclipse sweeps Greenland, Iceland and Spain; NASA-funded teams will use a high-altitude jet and balloons to study the Sun and atmospheric effects."
+        }
+      ]
+    },
+    {
+      "sequence": 7,
+      "publication_id": "svodka-quiz-lightning-vs-sun",
+      "scheduled_at": "2026-08-12T10:30:00+03:00",
+      "format": "quiz",
+      "title": "Что горячее: молния или поверхность Солнца?",
+      "quiz": {
+        "question": "Что может быть горячее поверхности Солнца?",
+        "options": [
+          "Канал молнии",
+          "Лава вулкана",
+          "Кипящая вода",
+          "Ничего из перечисленного"
+        ],
+        "correct_option_index": 0,
+        "explanation": "NOAA указывает, что воздух в канале молнии может нагреваться примерно до 30 000 °C — примерно в пять раз горячее поверхности Солнца."
+      },
+      "html_text": "- Сводка -\n\n⚡️🧠 <b>ТЕСТ: ЧТО МОЖЕТ БЫТЬ ГОРЯЧЕЕ ПОВЕРХНОСТИ СОЛНЦА?</b>\n\nВыбери вариант в опросе — ответ покажем сразу после голосования.\n\n🔘 Канал молнии\n🔘 Лава вулкана\n🔘 Кипящая вода\n🔘 Ничего из перечисленного\n\n<b>Правильный ответ: канал молнии.</b>\n\nNOAA указывает, что воздух вокруг молнии за долю секунды может нагреться примерно до <b>30 000 °C</b> — примерно в пять раз горячее поверхности Солнца.\n\n📎 <a href=\"https://www.nesdis.noaa.gov/about/k-12-education/severe-weather/what-causes-lightning-and-thunder\">NOAA — What Causes Lightning and Thunder?</a>\n\n#Сводка #Тест #Молния #Физика #Наука",
+      "sources": [
+        {
+          "url": "https://www.nesdis.noaa.gov/about/k-12-education/severe-weather/what-causes-lightning-and-thunder",
+          "label": "NOAA — Lightning and Thunder",
+          "verified_on": "2026-08-08",
+          "evidence": "NOAA gives lightning-heated air as hot as 54,000°F / 30,000°C and says that is about five times hotter than the surface of the Sun."
+        }
+      ]
+    },
+    {
+      "sequence": 8,
+      "publication_id": "svodka-crows-remember-human-faces",
+      "scheduled_at": "2026-08-12T19:30:00+03:00",
+      "format": "quick_fact",
+      "title": "Вороны запоминают опасные человеческие лица",
+      "html_text": "- Сводка -\n\n🐦‍⬛🧠 <b>ВОРОНЫ МОГУТ ЗАПОМНИТЬ «ОПАСНОЕ» ЧЕЛОВЕЧЕСКОЕ ЛИЦО НА ГОДЫ</b>\n\nИсследователи из University of Washington использовали маски во время отлова ворон, а позже снова появлялись в тех же масках на территории кампуса.\n\nПтицы реагировали именно на «опасный» образ: ругались, преследовали и поднимали тревогу. По описанию исследовательской программы, реакция сохранялась много лет, а знания о конкретной угрозе распространялись и среди других ворон.\n\nЭто хороший пример того, что городская птица различает не просто «человек / не человек», а способна связывать конкретный зрительный образ с прошлым опытом.\n\n📎 <a href=\"https://sefs.uw.edu/2019/06/john-marzluff-talks-crows-with-the-new-york-times-magazine/\">University of Washington — исследования Джона Марзлуффа</a>\n\n#Сводка #Вороны #Животные #Память #Поведение",
+      "sources": [
+        {
+          "url": "https://sefs.uw.edu/2019/06/john-marzluff-talks-crows-with-the-new-york-times-magazine/",
+          "label": "University of Washington — John Marzluff on crows",
+          "verified_on": "2026-08-08",
+          "evidence": "UW describes mask experiments showing crows recognize and remember threatening human faces over years."
+        }
+      ]
+    },
+    {
+      "sequence": 9,
+      "publication_id": "svodka-sunflower-tracking-myth",
+      "scheduled_at": "2026-08-13T10:30:00+03:00",
+      "format": "myth_fact",
+      "title": "Не все подсолнухи весь день следят за Солнцем",
+      "html_text": "- Сводка -\n\n🌻 <b>МИФ: «ПОДСОЛНУХ ВСЮ ЖИЗНЬ ПОВОРАЧИВАЕТСЯ ЗА СОЛНЦЕМ»</b>\n\nПравда интереснее.\n\n<b>Растущие</b> подсолнухи действительно двигаются с востока на запад в течение дня, а ночью возвращаются на восток. Это связано с внутренними циркадными часами и неравномерным ростом стебля.\n\nНо когда растение созревает и рост замедляется, суточное «слежение» прекращается. Зрелые корзинки обычно остаются обращёнными <b>на восток</b>.\n\nИсследователи UC Davis показали, что утреннее нагревание восточно ориентированных цветков также помогает привлекать опылителей.\n\n📎 <a href=\"https://www.ucdavis.edu/news/sunflowers-move-clock\">UC Davis / Science, 2016</a>\n\n#Сводка #Мифы #Подсолнух #Растения #Биология",
+      "sources": [
+        {
+          "url": "https://www.ucdavis.edu/news/sunflowers-move-clock",
+          "label": "UC Davis / Science, 2016",
+          "verified_on": "2026-08-08",
+          "evidence": "Growing sunflowers use circadian clock to track the Sun; mature flowers face east, which warms them in morning and attracts pollinators."
+        }
+      ]
+    },
+    {
+      "sequence": 10,
+      "publication_id": "svodka-sharks-over-400-million-years",
+      "scheduled_at": "2026-08-13T19:30:00+03:00",
+      "format": "quick_fact",
+      "title": "Акулы старше динозавров",
+      "html_text": "- Сводка -\n\n🦈⏳ <b>АКУЛЫ СУЩЕСТВОВАЛИ ЗАДОЛГО ДО ДИНОЗАВРОВ</b>\n\nПо данным Smithsonian, самые ранние следы акул уходят более чем на <b>400 миллионов лет</b> назад. Подтверждённые древние чешуи относятся примерно к 420 млн лет назад.\n\nДля сравнения: первые динозавры появились лишь примерно 230 млн лет назад.\n\nНо важная оговорка: это не значит, что современная белая акула «не менялась 400 млн лет». Речь о древней истории всей линии акул; за это время возникали и исчезали тысячи форм.\n\n📎 <a href=\"https://ocean.si.edu/ocean-life/sharks-rays/sharks\">Smithsonian Ocean — Sharks</a>\n\n#Сводка #Акулы #Палеонтология #Океан #Факты",
+      "sources": [
+        {
+          "url": "https://ocean.si.edu/ocean-life/sharks-rays/sharks",
+          "label": "Smithsonian Ocean — Sharks",
+          "verified_on": "2026-08-08",
+          "evidence": "Smithsonian states first sharks evolved more than 400 million years ago; oldest confirmed shark scales about 420 million years old."
+        }
+      ]
+    },
+    {
+      "sequence": 11,
+      "publication_id": "svodka-tardigrades-survived-space-exposure",
+      "scheduled_at": "2026-08-14T10:30:00+03:00",
+      "format": "quick_fact",
+      "title": "Тихоходки пережили открытый космос",
+      "html_text": "- Сводка -\n\n🔬🚀 <b>ТИХОХОДКИ ПЕРЕЖИЛИ ПРЯМОЕ ВОЗДЕЙСТВИЕ КОСМОСА</b>\n\nВ эксперименте ESA TARDIS около 3000 тихоходок провели <b>12 дней</b> на орбите в условиях вакуума и космического излучения. После возвращения часть животных выжила.\n\nКлючевой нюанс: это не значит, что тихоходки «живут в космосе как дома». Они переживают экстремальные условия, входя в состояние почти полного обезвоживания и резко сниженной активности.\n\nЛюбопытно, что ESA в 2026 году опубликовало архивный набор данных по этому эксперименту отдельным научным датасетом.\n\n📎 <a href=\"https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Research/Tiny_animals_survive_exposure_to_space\">ESA — Tiny animals survive exposure to space</a>\n📎 <a href=\"https://esdcdoi.esac.esa.int/doi/html/data/hre/hreda/ea4ded24-c367-4245-96dd-e1eedb98cf81.html\">ESA HREDA — TARDIS dataset, 2026</a>\n\n#Сводка #Тихоходки #Космос #ESA #Биология",
+      "sources": [
+        {
+          "url": "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Research/Tiny_animals_survive_exposure_to_space",
+          "label": "ESA — Tiny animals survive exposure to space",
+          "verified_on": "2026-08-08",
+          "evidence": "ESA reports roughly 3000 tardigrades were exposed during Foton-M3 for 12 days and survived vacuum/space conditions."
+        },
+        {
+          "url": "https://esdcdoi.esac.esa.int/doi/html/data/hre/hreda/ea4ded24-c367-4245-96dd-e1eedb98cf81.html",
+          "label": "ESA HREDA — TARDIS dataset",
+          "verified_on": "2026-08-08",
+          "evidence": "ESA dataset page published May 22, 2026 and updated July 9, 2026 links the TARDIS experiment and 2008 Current Biology publication."
+        }
+      ]
+    },
+    {
+      "sequence": 12,
+      "publication_id": "svodka-eiffel-15cm-growth-myth",
+      "scheduled_at": "2026-08-14T19:30:00+03:00",
+      "format": "myth_fact",
+      "title": "Эйфелева башня не становится на 15 см выше летом",
+      "html_text": "- Сводка -\n\n🗼☀️ <b>МИФ: «ЛЕТОМ ЭЙФЕЛЕВА БАШНЯ ВЫРАСТАЕТ НА 15 СМ»</b>\n\nТепловое расширение действительно меняет размеры металлической башни — но официальный сайт Эйфелевой башни говорит лишь о <b>нескольких миллиметрах</b> прибавки по высоте.\n\nОткуда тогда взялись 15 сантиметров?\n\nСолнце нагревает стороны башни неравномерно. Из-за этого верхушка слегка отклоняется от Солнца и за ясный день может описывать почти круговую траекторию диаметром около <b>15 см</b>.\n\nТо есть 15 см — это движение верхушки в плане, а не «рост» башни вверх.\n\n📎 <a href=\"https://www.toureiffel.paris/en/news/history-and-culture/why-does-eiffel-tower-change-size\">Официальный сайт Eiffel Tower</a>\n\n#Сводка #Мифы #Париж #ЭйфелеваБашня #Физика",
+      "sources": [
+        {
+          "url": "https://www.toureiffel.paris/en/news/history-and-culture/why-does-eiffel-tower-change-size",
+          "label": "Official Eiffel Tower site",
+          "verified_on": "2026-08-08",
+          "evidence": "Official site says thermal expansion makes tower a few millimeters taller, while the top can trace a curve about 15 cm in diameter due to uneven solar heating."
+        }
+      ]
+    },
+    {
+      "sequence": 13,
+      "publication_id": "svodka-quiz-banana-is-berry",
+      "scheduled_at": "2026-08-15T10:30:00+03:00",
+      "format": "quiz",
+      "title": "Что из этого ботанически ягода?",
+      "quiz": {
+        "question": "Что из этого с точки зрения ботаники является ягодой?",
+        "options": [
+          "Банан",
+          "Клубника",
+          "Малина",
+          "Вишня"
+        ],
+        "correct_option_index": 0,
+        "explanation": "Kew Science прямо описывает плод банана как berry — ягоду в ботаническом смысле."
+      },
+      "html_text": "- Сводка -\n\n🍌🧠 <b>ТЕСТ: ЧТО ИЗ ЭТОГО БОТАНИЧЕСКИ ЯГОДА?</b>\n\n🔘 Банан\n🔘 Клубника\n🔘 Малина\n🔘 Вишня\n\n<b>Ответ: банан.</b>\n\nВ быту «ягода» — это маленький сочный плод. В ботанике определение другое: учитывается то, как плод развивается из завязи цветка и как устроены его стенки.\n\nKew Science прямо описывает плод банана как <b>berry</b> — ягоду в ботаническом смысле.\n\n📎 <a href=\"https://powo.science.kew.org/taxon/urn%3Alsid%3Aipni.org%3Anames%3A584951-1/general-information\">Kew Science — Musa</a>\n\n#Сводка #Тест #Ботаника #Банан #Факты",
+      "sources": [
+        {
+          "url": "https://powo.science.kew.org/taxon/urn%3Alsid%3Aipni.org%3Anames%3A584951-1/general-information",
+          "label": "Kew Science — Musa itinerans",
+          "verified_on": "2026-08-08",
+          "evidence": "Kew Plants of the World Online explicitly says, using botanical terminology, the banana fruit is a berry."
+        }
+      ]
+    },
+    {
+      "sequence": 14,
+      "publication_id": "svodka-dolphins-social-memory-whistles",
+      "scheduled_at": "2026-08-15T19:30:00+03:00",
+      "format": "quick_fact",
+      "title": "Дельфины узнают старых знакомых по свисту спустя десятилетия",
+      "html_text": "- Сводка -\n\n🐬🎧 <b>ДЕЛЬФИНЫ МОГУТ УЗНАВАТЬ СТАРЫХ ЗНАКОМЫХ ПО «ГОЛОСУ» СПУСТЯ БОЛЕЕ 20 ЛЕТ</b>\n\nУ афалин есть индивидуальные «сигнатурные свисты» — устойчивые звуковые сигналы, связанные с конкретной особью.\n\nВ исследовании, опубликованном Proceedings of the Royal Society B, дельфинам проигрывали записи животных, с которыми они когда-то жили. На знакомые свисты они реагировали заметно сильнее, даже когда были разлучены <b>больше двух десятилетий</b>.\n\nИсследователи назвали это самым длительным социальным воспоминанием, зарегистрированным у нечеловеческого вида на момент публикации работы.\n\n📎 <a href=\"https://royalsociety.org/news/2013/dophins-social-memory/\">Royal Society / Proceedings B, 2013</a>\n\n<i>Кто сказал, что «слоновья память» — единственный чемпион? 😎</i>\n\n#Сводка #Дельфины #Память #Животные #Наука",
+      "sources": [
+        {
+          "url": "https://royalsociety.org/news/2013/dophins-social-memory/",
+          "label": "Royal Society / Proceedings B, 2013",
+          "verified_on": "2026-08-08",
+          "evidence": "Royal Society reports dolphins recognized signature whistles of former companions after separations exceeding 20 years."
+        }
+      ]
+    }
+  ]
+}
