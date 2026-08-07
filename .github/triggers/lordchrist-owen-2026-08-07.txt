@@ -1,0 +1,3 @@
+Trigger the exact one-off John Owen Telegram autonomous test for @lordchrist on 2026-08-07.
+This file is intentionally unique and exists only to generate one GitHub-hosted push event.
+Durable one-off state remains the duplicate-prevention authority.
