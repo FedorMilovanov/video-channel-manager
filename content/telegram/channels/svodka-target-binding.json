@@ -1,0 +1,15 @@
+{
+  "schema_name": "video-channel-manager.telegram-target-binding",
+  "schema_version": 1,
+  "project_key": "svodka",
+  "channel_username": "@deep_info_life",
+  "profile_sha256": "sha256:f3b6662fcd395324991809214e7268e9c3a4d4a4d810ed3f4d819594997c1f7e",
+  "chat_id": -1003527567039,
+  "chat_username": "deep_info_life",
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "can_post_messages": true,
+  "discovered_at_utc": "2026-08-07T22:42:00.262349Z",
+  "discovery_method": "getMe + getChat(@username) + getChat(numeric id) + getChatAdministrators",
+  "provider_write_performed": false
+}
