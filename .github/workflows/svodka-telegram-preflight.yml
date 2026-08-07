@@ -4,13 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: Preview, discover exact target, or run pinned read-only Telegram preflight
+        description: Preview or run pinned read-only Telegram preflight
         required: true
         default: preview
         type: choice
         options:
           - preview
-          - discover
           - preflight
       sequence:
         description: Svodka draft sequence to preview
@@ -33,11 +32,9 @@ jobs:
     env:
       PYTHONPATH: src
       PROFILE_PATH: content/telegram/channels/svodka.json
+      BINDING_PATH: content/telegram/channels/svodka-target-binding.json
       QUEUE_PATH: content/telegram/svodka/draft-14-posts-2026-08.json
       CANDIDATE_PATH: .runtime/svodka-release-candidate.json
-      SVODKA_TELEGRAM_CHAT_ID: ${{ vars.SVODKA_TELEGRAM_CHAT_ID }}
-      SVODKA_TELEGRAM_BOT_ID: ${{ vars.SVODKA_TELEGRAM_BOT_ID || vars.LORDCHRIST_TELEGRAM_BOT_ID }}
-      SVODKA_TELEGRAM_BOT_USERNAME: ${{ vars.SVODKA_TELEGRAM_BOT_USERNAME || vars.LORDCHRIST_TELEGRAM_BOT_USERNAME }}
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -54,8 +51,26 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
 
-      - name: Validate channel profile
-        run: python -m video_channel_manager.telegram_channel_cli validate-profile --profile "$PROFILE_PATH"
+      - name: Validate channel profile and pinned target binding
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          from video_channel_manager.telegram_channel_profile import load_channel_profile
+          from video_channel_manager.telegram_target_binding import load_target_binding
+
+          profile = load_channel_profile(Path(os.environ["PROFILE_PATH"]))
+          binding = load_target_binding(Path(os.environ["BINDING_PATH"]), profile)
+          print(f"profile={profile.project_key} {profile.channel_username} {profile.digest}")
+          print(f"binding=chat:{binding.chat_id} bot:{binding.bot_id} @{binding.bot_username}")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
+              handle.write(f"SVODKA_TELEGRAM_CHAT_ID={binding.chat_id}\n")
+              handle.write(f"SVODKA_TELEGRAM_BOT_ID={binding.bot_id}\n")
+              handle.write(f"SVODKA_TELEGRAM_BOT_USERNAME={binding.bot_username}\n")
+          PY
 
       - name: Validate immutable draft inputs
         run: python -m video_channel_manager.telegram_channel_cli validate-svodka --profile "$PROFILE_PATH" --queue "$QUEUE_PATH"
@@ -84,60 +99,10 @@ jobs:
             --queue "$QUEUE_PATH" \
             --sequence "$PREVIEW_SEQUENCE"
 
-      - name: Validate shared bot identity inputs
-        if: inputs.action == 'discover' || inputs.action == 'preflight'
-        shell: bash
-        run: |
-          set -euo pipefail
-          [[ "$SVODKA_TELEGRAM_BOT_ID" =~ ^[1-9][0-9]*$ ]] || {
-            echo "SVODKA_TELEGRAM_BOT_ID/LORDCHRIST_TELEGRAM_BOT_ID must resolve to an exact positive integer" >&2
-            exit 2
-          }
-          [[ "$SVODKA_TELEGRAM_BOT_USERNAME" =~ ^[A-Za-z0-9_]+$ ]] || {
-            echo "SVODKA_TELEGRAM_BOT_USERNAME/LORDCHRIST_TELEGRAM_BOT_USERNAME is invalid" >&2
-            exit 2
-          }
-
-      - name: Discover exact Svodka target read-only
-        if: inputs.action == 'discover'
-        env:
-          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.SVODKA_TELEGRAM_BOT_TOKEN || secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
-        run: |
-          set -euo pipefail
-          mkdir -p .runtime
-          python -m video_channel_manager.telegram_channel_cli discover-target \
-            --profile "$PROFILE_PATH" \
-            --expected-bot-id "$SVODKA_TELEGRAM_BOT_ID" \
-            --expected-bot-username "$SVODKA_TELEGRAM_BOT_USERNAME" \
-            --output .runtime/svodka-target-discovery.json
-          echo "Read-only Svodka discovery passed. No Telegram provider mutation was attempted."
-
-      - name: Upload discovered target proof
-        if: inputs.action == 'discover'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: svodka-target-discovery
-          path: .runtime/svodka-target-discovery.json
-          if-no-files-found: error
-
-      - name: Validate exact pinned preflight variables
-        if: inputs.action == 'preflight'
-        shell: bash
-        run: |
-          set -euo pipefail
-          [[ "$SVODKA_TELEGRAM_CHAT_ID" =~ ^-?[0-9]+$ ]] || {
-            echo "SVODKA_TELEGRAM_CHAT_ID must be an exact signed integer" >&2
-            exit 2
-          }
-          (( SVODKA_TELEGRAM_CHAT_ID < 0 )) || {
-            echo "SVODKA_TELEGRAM_CHAT_ID must be negative" >&2
-            exit 2
-          }
-
       - name: Run pinned read-only Telegram target preflight
         if: inputs.action == 'preflight'
         env:
-          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.SVODKA_TELEGRAM_BOT_TOKEN || secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
         run: |
           set -euo pipefail
           mkdir -p .runtime
