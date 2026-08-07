@@ -1,0 +1,17 @@
+{
+  "schema_name": "video-channel-manager.telegram-channel-profile",
+  "schema_version": 1,
+  "project_key": "svodka",
+  "channel_username": "@deep_info_life",
+  "channel_title": "СВОДКА",
+  "publication_id_prefix": "svodka-",
+  "timezone": "Europe/Moscow",
+  "daily_verified_limit": 2,
+  "state_branch": "state/svodka-telegram",
+  "concurrency_group": "svodka-telegram-publisher",
+  "bot_token_env": "SVODKA_TELEGRAM_BOT_TOKEN",
+  "target_chat_id_env": "SVODKA_TELEGRAM_CHAT_ID",
+  "target_bot_id_env": "SVODKA_TELEGRAM_BOT_ID",
+  "target_bot_username_env": "SVODKA_TELEGRAM_BOT_USERNAME",
+  "provider_writes_authorized": false
+}
