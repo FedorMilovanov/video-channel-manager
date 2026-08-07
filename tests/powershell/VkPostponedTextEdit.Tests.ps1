@@ -4,18 +4,18 @@ BeforeAll {
     . $WrapperPath
 }
 
-BeforeEach {
-    $TestRoot = Join-Path ([IO.Path]::GetTempPath()) ("vcm-vk-postponed-" + [Guid]::NewGuid().ToString("N"))
-    New-Item -ItemType Directory -Path $TestRoot -Force | Out-Null
-    $InputPath = Join-Path $TestRoot "input.json"
-    Set-Content -LiteralPath $InputPath -Value "{}" -Encoding UTF8
-}
-
-AfterEach {
-    Remove-Item -LiteralPath $TestRoot -Recurse -Force -ErrorAction SilentlyContinue
-}
-
 Describe "Invoke-VkPostponedTextEdit wrapper" {
+    BeforeEach {
+        $TestRoot = Join-Path ([IO.Path]::GetTempPath()) ("vcm-vk-postponed-" + [Guid]::NewGuid().ToString("N"))
+        New-Item -ItemType Directory -Path $TestRoot -Force | Out-Null
+        $InputPath = Join-Path $TestRoot "input.json"
+        Set-Content -LiteralPath $InputPath -Value "{}" -Encoding UTF8
+    }
+
+    AfterEach {
+        Remove-Item -LiteralPath $TestRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
     It "builds an exact read-only plan command" {
         $OutputPath = Join-Path $TestRoot "plan.json"
 
