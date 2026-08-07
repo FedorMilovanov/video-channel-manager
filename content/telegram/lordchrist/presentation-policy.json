@@ -1,10 +1,10 @@
 {
   "schema_name": "video-channel-manager.telegram-presentation-policy",
-  "schema_version": 1,
-  "policy_id": "lordchrist-editorial-v1",
+  "schema_version": 2,
+  "policy_id": "lordchrist-editorial-v2",
   "parse_mode": "HTML",
   "body_quote_emphasis": {
-    "first_direct_quote": "bold",
+    "bold_selection": "longest_direct_quote",
     "remaining_direct_quotes": "italic",
     "no_direct_quote": "plain"
   },
