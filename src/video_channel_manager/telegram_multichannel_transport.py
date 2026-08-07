@@ -62,7 +62,7 @@ class GenericPollPayload(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_name: Literal["video-channel-manager.telegram-generic-poll-payload"]
-    schema_version: Literal[2]
+    schema_version: Literal[3]
     project_key: str
     channel_username: str
     publication_id: str
@@ -73,6 +73,7 @@ class GenericPollPayload(BaseModel):
     poll_type: Literal["regular", "quiz"]
     correct_option_ids: tuple[int, ...] | None = None
     explanation: str | None = Field(default=None, max_length=200)
+    description: str | None = Field(default=None, max_length=1024)
     is_anonymous: bool = True
 
     @model_validator(mode="after")
@@ -183,6 +184,7 @@ def render_poll_payload(
     poll_type: Literal["regular", "quiz"],
     correct_option_ids: tuple[int, ...] | None = None,
     explanation: str | None = None,
+    description: str | None = None,
     is_anonymous: bool = True,
 ) -> GenericPollPayload:
     _validate_publication_id(profile, publication_id)
@@ -197,11 +199,12 @@ def render_poll_payload(
         "poll_type": poll_type,
         "correct_option_ids": list(correct_option_ids) if correct_option_ids is not None else None,
         "explanation": explanation,
+        "description": description,
         "is_anonymous": is_anonymous,
     }
     return GenericPollPayload(
         schema_name="video-channel-manager.telegram-generic-poll-payload",
-        schema_version=2,
+        schema_version=3,
         project_key=profile.project_key,
         channel_username=profile.channel_username,
         publication_id=publication_id,
@@ -212,6 +215,7 @@ def render_poll_payload(
         poll_type=poll_type,
         correct_option_ids=correct_option_ids,
         explanation=explanation,
+        description=description,
         is_anonymous=is_anonymous,
     )
 
@@ -515,6 +519,8 @@ def send_poll_once(
         "type": payload.poll_type,
         "is_anonymous": payload.is_anonymous,
     }
+    if payload.description:
+        provider_payload["description"] = payload.description
     if payload.poll_type == "quiz":
         provider_payload["correct_option_ids"] = list(payload.correct_option_ids or ())
         if payload.explanation:
@@ -551,6 +557,8 @@ def send_poll_once(
         returned_options = tuple(str(option.get("text") or "") for option in raw_options if isinstance(option, dict))
         if returned_options != payload.options:
             raise TelegramApiError("Telegram returned poll options that differ from payload", provider_effect="may_exist")
+        if payload.description is not None and str(poll.get("description") or "") != payload.description:
+            raise TelegramApiError("Telegram returned poll description that differs from payload", provider_effect="may_exist")
         if payload.poll_type == "quiz":
             raw_correct = poll.get("correct_option_ids")
             if not isinstance(raw_correct, list):
