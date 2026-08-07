@@ -1,6 +1,6 @@
 # Operational artifact and handoff standard
 
-This standard applies to every ZIP, PowerShell launcher, manifest, or executor handed to an operator. It is supplemented by [`operational-package-acceptance.md`](operational-package-acceptance.md), which defines truth levels and provider-readiness claims.
+This standard applies to every ZIP, PowerShell launcher, manifest, or executor handed to an operator. It is supplemented by [`operational-package-acceptance.md`](operational-package-acceptance.md), which defines truth levels and provider-readiness claims, and by [`operator-output-handoff-rule.md`](operator-output-handoff-rule.md), which defines the canonical user-facing Windows outbox.
 
 ## Goals
 
@@ -13,6 +13,20 @@ An operational artifact must be:
 - safe against duplicate writes;
 - explicit about covered and uncovered provider surfaces;
 - executable from the documented path without guessing.
+
+## Operator-facing output location
+
+For Fedor's interactive Windows handoffs, files that the operator is expected to open, inspect, upload manually, attach to chat, or use as the next handoff input must be written directly to the canonical outbox:
+
+```text
+C:\Users\Fedor\Projects\video-channel-manager\operator-output
+```
+
+Use flat, descriptive filenames such as `legendary-poet-black-man-source-scan.json` or `black-man-chapters.txt`. Do not tell the operator to search under `data/`, `logs/`, timestamp trees, or build directories when the producing command can name the exact result itself.
+
+Internal authoritative journals, caches, databases, and runtime state may remain in their contract-defined locations. Do not create a second mutable authority merely for convenience; export the operator-facing result or immutable summary to the outbox instead.
+
+Every interactive handoff that creates a user-facing file must print its absolute path after success, verify it with `Test-Path -LiteralPath`, and select the exact file in Explorer when the next requested action is to inspect or send that file, unless non-interactive behavior was requested. See `operator-output-handoff-rule.md` for the full contract.
 
 ## Required package structure
 
@@ -55,7 +69,10 @@ The PowerShell entrypoint must:
 9. preserve successful intermediate artifacts;
 10. stop on an unknown write outcome and explain reconciliation;
 11. return a non-zero exit code on failure;
-12. print a final machine-readable summary path.
+12. print a final machine-readable summary path;
+13. place operator-facing handoff files in the canonical `operator-output` outbox unless the operator explicitly selected another destination;
+14. print the absolute operator-facing path in a final unmistakable line;
+15. avoid requiring the operator to discover a generated filename manually.
 
 ## Required manifest fields
 
@@ -152,6 +169,8 @@ Every execution must write:
 - exact verified target IDs;
 - resume command or explicit statement that resume is unsafe.
 
+When any of those outputs is the file the operator is expected to inspect or return, write the user-facing result or immutable export to `operator-output` and print its absolute path. Do not require the operator to search internal runtime directories.
+
 ## Bundle verification
 
 Before handoff, run:
@@ -184,6 +203,8 @@ Target identity:
 Covered surfaces:
 Excluded surfaces:
 Exact command:
+Operator outbox:
+Operator-facing file:
 Ledger path:
 Result path:
 Canary behavior:
