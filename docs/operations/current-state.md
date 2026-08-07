@@ -1,186 +1,210 @@
 # Current operational state
 
 Updated: 2026-08-07  
-Repository baseline entering hardening: `main@c0b8a303598788b2870862042d2e2868a97b3005`  
-Initial postponed-text capability merge: `c04f0a4f948174ced6287e4bae87e4bf1be2be52`  
-Hardening implementation commit: `f7e0a7dc0a6ad965045783638c25384d69fe6b08`  
+Repository baseline entering VK hardening: `main@c0b8a303598788b2870862042d2e2868a97b3005`  
+Initial postponed-text code merge: `c04f0a4f948174ced6287e4bae87e4bf1be2be52`  
 Owning hardening: issue #152 / PR #153  
-Current machine state before final quality proof: [`audit-register-v10-2026-08-06.json`](audit-register-v10-2026-08-06.json)  
+Current machine-state overlay before final quality proof: [`audit-register-v10-2026-08-06.json`](audit-register-v10-2026-08-06.json)  
 Second-pass audit: [`vk-postponed-text-second-pass-audit-2026-08-06.md`](vk-postponed-text-second-pass-audit-2026-08-06.md)
 
-The newest audit-register overlay, this file, and the exact `main` Git ref override old chats, screenshots, ZIP names, remembered counts, stale issue wording, and superseded executors. Historical evidence never authorizes execution.
+The current overlay and newest machine state override stale execution claims while the immutable Wave 13–16 proofs below remain preserved operational memory. Historical packages, old chats, screenshots, ZIP names, remembered counts, and superseded executors are evidence only and never authorize execution.
 
-## Executive state
+## Current VK postponed-text hardening state
 
-The 2026-08-06 Lord God cleanup is complete and verified. No continuation or replay is pending.
-
-The reusable VK postponed-text capability has been hardened in PR #153. Its supported v1 boundary is existing **attachment-free postponed posts only**. PR #153 is repository-only and performs no VK reads or writes.
-
-Issue #152 remains open until the exact final PR head receives all six green CI jobs, scope review is complete, and PR #153 is merged. Until then, no new provider execution is authorized from this hardening work.
-
-## Historical operation proof
-
-Exact operation identity:
+The completed 2026-08-06 Lord God cleanup remains verified evidence only:
 
 - project `lord-god-strength`;
 - VK community `60805374`, owner `-60805374`;
-- local credential alias `legendary-poet` — credential name only, not project selector;
+- local credential alias `legendary-poet` is a credential name only and is not a project selector;
 - attachment-free target postponed IDs `12513..12541`;
-- target count `29`;
-- postponed baseline `66`;
-- non-target postponed rows `37`;
-- approved plan SHA `sha256:8dcbe984cb24e003770fa3897ff3b7da351a34d92d4931ac3cb9a5707d2c1cbb`.
-
-Final verified result:
-
 - `29/29` exact after-state;
 - `0` pending;
 - postponed count `66/66`;
 - 37 non-target postponed rows unchanged;
-- published first quote post untouched;
-- no Telegram objects touched;
-- final status `succeeded`.
+- first published quote post untouched;
+- approved plan SHA `sha256:8dcbe984cb24e003770fa3897ff3b7da351a34d92d4931ac3cb9a5707d2c1cbb`.
 
-These facts prove the completed operation only. They do not authorize another request or prove unsupported attachment behavior.
+PR #153 hardens the reusable capability without replaying that operation. Repository hardening itself performs no VK reads or writes.
 
-## Supported postponed-text capability
+Supported schema v1 is existing **attachment-free postponed VK wall posts only**. It requires exact project/community/owner/post binding, immutable request and plan SHA, complete published/postponed preflight, exact before/after text and original `publish_date`, stable account/community locking independent of output directory, publication-distance verification immediately before every dispatch and controlled retry, durable intent-before-dispatch, exact readback, no blind replay, CAPTCHA stop without OCR/bypass, terminal journal consistency, and final queue plus non-target fingerprint proof.
 
-Canonical Python CLI:
+Schema v1 rejects `allow_attachments=true` and rejects every target attachment. Future attachment support requires a separately reviewed schema.
 
-```powershell
-video-manager-vk-postponed-text plan REQUEST.json --output PLAN.json --account legendary-poet
-video-manager-vk-postponed-text reconcile PLAN.json --output RECONCILE.json --account legendary-poet
-video-manager-vk-postponed-text apply PLAN.json `
-  --output-dir data/operator/EXACT-RUN `
-  --account legendary-poet `
-  --confirm-plan-sha256 sha256:... `
-  --enable-provider-writes
-```
+`scripts/Invoke-VkPostponedTextEdit.ps1` is a repository-owned `delegating_supported` wrapper around `video_channel_manager.cli.vk_postponed_text`; it is not a second provider client and contains no direct VK transport or token handling.
 
-Canonical PowerShell wrapper:
+Issue #152 remains repository-only until PR #153 has exact-head six-job green CI, reviewed scope, clean review threads, and merge proof. No provider continuation or replay is pending.
 
-```powershell
-& .\scripts\Invoke-VkPostponedTextEdit.ps1 `
-  -Command plan `
-  -InputPath .\request.json `
-  -OutputPath .\plan.json `
-  -AccountAlias legendary-poet
-```
+## Preserved Wave 16 baseline
 
-PowerShell invokes only the package CLI. It has no token handling and no direct VK API transport.
+Verified Wave 16 code baseline: `main@22ed56256df3388c23c9f785f1e02cca71fd8524`  
+Program state: `WAVES_0_16_COMPLETED_CI_RUNTIME_SQLITE_MP3_IDENTITY_HARDENED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`  
+Wave 16 machine state: [`audit-register-v9-2026-08-05.json`](audit-register-v9-2026-08-05.json)  
+Immutable predecessor: [`audit-register-v8-2026-08-05.json`](audit-register-v8-2026-08-05.json)  
+Earlier immutable predecessors: [`audit-register-v7-2026-08-05.json`](audit-register-v7-2026-08-05.json), [`audit-register-v6-2026-08-05.json`](audit-register-v6-2026-08-05.json), [`audit-register-v5-2026-08-05.json`](audit-register-v5-2026-08-05.json), [`audit-register-v4-2026-08-05.json`](audit-register-v4-2026-08-05.json), [`audit-register-v3-2026-08-05.json`](audit-register-v3-2026-08-05.json), [`audit-register-v2-2026-08-04.json`](audit-register-v2-2026-08-04.json)
 
-Schema v1 requires:
+Waves 0–16 are complete as historical operational proofs. The provider operational graph remains closed. There is no active provider reconciliation, transfer queue, mutation plan, playlist writer, browser executor, catalog wave, article-wall continuation, cleanup/reset executor, MP3 uploader, or approved replay.
 
-- exact project/community/owner/post identity;
-- sorted unique target IDs;
-- complete published and postponed preflight;
-- expected postponed count;
-- exact line-removal match counts;
-- immutable request and plan digests;
-- exact before/after text and original `publish_date`;
-- `allow_attachments: false` and no target attachments;
-- one stable account/community lock independent of output directory;
-- time-to-publication verification before every dispatch and retry;
-- intent-before-dispatch and exact postflight;
-- no blind retry;
-- terminal child journals consistent with aggregate result;
-- final target, count, and raw non-target fingerprint proof.
+No operational continuation is pending. Future provider or MP3 write work begins only from a new explicit user request and a new exact project-bound issue.
 
-Full contract: [`vk-postponed-text-edit-runbook-2026-08-06.md`](vk-postponed-text-edit-runbook-2026-08-06.md).
+## Wave 16 proof
 
-## Hardening delivered by PR #153
+Issue #137 and PR #138 completed CI runtime, SQLite lifetime, and local MP3 identity hardening:
 
-The second-pass audit found and PR #153 corrects:
+- exact head `c495308430bce6e1b86343b6cd4e6ae3a302734b`;
+- merge/code baseline `22ed56256df3388c23c9f785f1e02cca71fd8524`;
+- CI `31022560789`;
+- Python 3.11/3.12/3.13: `845 passed, 1 xfailed`;
+- coverage: `79%` across `14,675` statements;
+- Ruff correctness: green;
+- Ruff formatting: `464 files already formatted`;
+- strict mypy: `147 source files`;
+- dependency audit: no known vulnerabilities;
+- Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux: green;
+- changed files: `9`; provider adapter files: `0`;
+- final CI logs contain no `Node.js 20 is deprecated` warning;
+- final pytest logs contain no `ResourceWarning: unclosed database` warning;
+- provider queries/writes/write plans/historical executor runs: `0/0/0/0`.
 
-1. output-directory-scoped lock replaced by a stable data-directory account/community lock;
-2. one-time publication-distance check supplemented by checks immediately before every dispatch and controlled retry;
-3. delayed reconciliation journal rewritten to terminal verified state;
-4. broad attachment claims narrowed to attachment-free schema v1;
-5. non-target comparison hardened with ordered raw attachment-payload digests;
-6. output directories protected from cross-plan reuse and journal overwrite;
-7. repository-owned strict PowerShell wrapper added;
-8. Pester coverage added for read-only/apply arguments, explicit authority, native exit propagation, and absence of token/provider code;
-9. Python regressions added for ambiguous postflight, shared lock, threshold crossing, retry threshold, delayed journal consistency, attachment rejection, and non-target attachment-order mutation;
-10. stale `AGENTS.md` and runbook claims corrected.
+Wave 16 added or hardened:
 
-No provider call or write is part of this hardening.
+- immutable Node 24 GitHub Action pins for checkout, setup-python, and artifact upload;
+- explicit SQLite connection closure through `contextlib.closing`;
+- a blocking pytest warning rule for unclosed SQLite databases;
+- local MP3 manifest schema `1.1`;
+- metadata-ranked canonical duplicate selection;
+- fail-closed `source_id_sha256_conflict` and `sha256_multiple_source_ids` states;
+- unique deterministic operation IDs for every local candidate;
+- a deterministic regression proving `1,000` ready tracks and `40` chunks of `25`.
 
-## Retry and stop contract
+These changes do not add a browser or provider writer.
 
-A retry is allowed only after exact readback proves the previous dispatch had no effect. Before retry, the workflow waits, reads again, and rechecks publication distance.
+## Immutable Wave 15 predecessor proof
 
-Stop without another mutation when:
+Wave 15 remains historical evidence, not active work:
 
-- any full read is incomplete;
-- postponed count differs;
-- target identity/date/text differs;
-- a target has any attachment;
-- publication is too close;
-- provider effect is unknown;
-- CAPTCHA is required;
-- a non-target raw fingerprint changes;
-- plan digest differs;
-- output directory belongs to another plan;
-- another local writer holds the account/community lock.
+- predecessor program state: `WAVES_0_15_COMPLETED_ADAPTIVE_AGENT_REASONING_LOCAL_MP3_FOUNDATION_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`;
+- code baseline: `main@eb58c1ad238fde01d66c6630b16e244b1c6c2992`;
+- PR #134, exact head `48baa13b0d08e27e5a1dfc8b30901524d3207148`, CI `31006136529`;
+- Python 3.11/3.12/3.13: `833 passed, 1 xfailed`;
+- Ruff formatting: `461 files already formatted`;
+- strict mypy: `147 source files`;
+- machine state: `audit-register-v8-2026-08-05.json` with exact blob `f45244b9be7bfa35402f42d20b533e413c176bc2`;
+- supported local capability: `local_only_read_only_intake_and_manifest`.
 
-`confirmed_absent`, `captcha_required_confirmed_absent`, and `unknown_requires_reconciliation` remain distinct states.
+## Immutable Wave 13 completed-state proof
 
-## CI process record
+Wave 13 remains historical evidence, not active work:
 
-PR #150 exact head `0bfb1260c37411e8df686f26120ceea85e2f8116` was merged as `c04f0a4f948174ced6287e4bae87e4bf1be2be52` after manual review because Actions runs #3208/#3209 remained queued and both cancellation endpoints returned HTTP 502.
+- PR #129;
+- exact head `44a1590fac0e8fe8b563d35cfd68f2bed4727743`;
+- merge `07388521e8d3a2c5d501382227c35bdce6e6470e`;
+- CI `30994245235`;
+- `796 passed, 1 xfailed`;
+- Ruff formatting `449 files already formatted`;
+- provider queries/writes/write plans: `0/0/0`.
 
-That incident was honestly recorded but was not green CI. Issue #152 and PR #153 exist partly to obtain the missing real quality proof. An infrastructure exception must not be treated as successful tests.
+## Immutable Wave 14 predecessor proof
 
-## Project and credential boundary
+Wave 14 remains a completed immutable predecessor, not the current state:
 
-Two projects remain distinct:
+- predecessor program state: `WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`;
+- code baseline: `main@626f83c6e5c068d7faa8b6d14163b42916faa769`;
+- PR #131, exact head `80f701b6926a5a9c788b99c69634b54d63ed1862`, CI `31000834701`;
+- Python 3.11/3.12/3.13: `801 passed, 1 xfailed`;
+- Ruff formatting: `451 files already formatted`;
+- machine state: `audit-register-v7-2026-08-05.json` with predecessor `audit-register-v6-2026-08-05.json`;
+- Wave 14 added repository-wide JSON/Markdown integrity regressions without changing production provider behavior.
 
-- `lord-god-strength` — VK community `60805374`, owner `-60805374`;
-- `legendary-poet` — VK community `235216998`, owner `-235216998`.
-
-The local VK alias `legendary-poet` names a stored shared user credential. Exact project key and community/owner IDs select the project.
-
-Never print, package, commit, log, request manual entry of, or put the VK token on a command line.
-
-## Inherited capabilities and exclusions
-
-Wave 16 predecessor `main@22ed56256df3388c23c9f785f1e02cca71fd8524` remains immutable evidence for:
-
-- Node 24-generation immutable Action pins;
-- explicit SQLite closure;
-- local MP3 manifest schema 1.1;
-- fail-closed MP3 identity conflicts;
-- deterministic 1,000-track local planning.
-
-Local MP3 remains read-only intake/manifest work. VK Audio upload, browser automation, playlist mutation, article-wall replay, broad catalog continuation, ID3 rewrite, rename, and transcode are not authorized by postponed-text hardening.
-
-Historical cleanup ZIPs, browser packages, transfer/reset/recovery executors, and article-wave scripts are evidence only and must not be rerun.
-
-## Operational graph
-
-Completed historical scopes:
+The exact inherited operational dispositions remain:
 
 - #31 — Lord God long-form reconciliation;
+- #32 — non-authoritative Lord God 108-item Shorts auto-upload scope;
 - #119 — Legendary Poet Shorts/Clips reconciliation;
-- #38 — shared VK final-type contract;
-- #130 — repository integrity polish;
-- #133 — adaptive reasoning and local-only MP3 foundation;
-- #137 — CI, SQLite, and MP3 identity hardening;
-- #147 — initial postponed-text capability and retrospective.
+- #38 — shared VK native Clip/ordinary-video provider-mode and final-type contract;
+- #33 — broad Lord God catalog/editorial/postponed-wall continuation;
+- #99 — unproved Legendary Poet article-wall launcher continuation;
+- #123 — deferred YouTube playlist mutation scope.
 
-Active repository-only scope:
+Do not group #32/#38 as Legendary Poet. Historical ownership was #32 Lord God, #38 shared, and #119 Legendary Poet.
 
-- #152 / PR #153 — second-pass audit, hardening, tests, wrapper, state correction, and real quality proof.
+## Adaptive agent boundary
 
-Retired or not planned:
+Agents must define the requested outcome independently of an old script, declare one transport per phase, state the operation phase and provider-effect state, preserve verified partial success, and use one falsifiable hypothesis, one minimal bounded probe, and a stop condition.
 
-- #32 — non-authoritative Lord God Shorts auto-upload;
-- #33 — broad Lord God catalog/publication continuation;
-- #99 — unproved Legendary Poet article-wall continuation;
-- #123 — deferred YouTube playlist mutation.
+A selector, title match, coordinate, modal closure, HTTP response, exit code, screenshot, stdout line, or visible object is not an exact postcondition. Browser actions require binding the topmost active root, proving visibility/hit-testing/control ownership, and verifying the expected content/state transition.
+
+Unknown or possibly completed remote effects require reconciliation without retry. Only a local/pre-dispatch failure or exact provider postflight proving absence permits a corrected child-operation retry.
+
+## Local MP3 boundary
+
+The current MP3 capability remains `local_only_read_only_intake_and_manifest`.
+
+It may:
+
+- inspect `.mp3` with ffprobe without changing bytes;
+- retain exact path, size, SHA-256, duration, codec, bitrate, sample rate, channels, attached cover state, and embedded tags;
+- accept explicit artist/title or a declared collection parser;
+- mark ambiguous metadata `requires_review`;
+- rank exact metadata above ambiguous duplicates when selecting a canonical copy;
+- mark one source ID mapped to multiple byte hashes as `source_id_sha256_conflict`;
+- mark identical bytes claimed by multiple source IDs as `sha256_multiple_source_ids`;
+- build unique deterministic per-candidate operation IDs and manifest digests;
+- split only ready items, one track per chunk by default.
+
+It may not rewrite ID3 tags, rename or transcode files, launch/control a browser, call VK/YouTube, upload audio, edit remote metadata, create/modify playlists, or publish a wall post.
+
+VK Audio remains `SEPARATE_EXPERIMENTAL_SYSTEM / PARTIAL_OR_UNKNOWN_OUTCOMES / NOT_CORE_SUPPORTED`. Historical BrowserCanary, PlaylistOnly, Metadata Manager, Rename AUTO, reliable-batch, calibrator, and Playlist Workhorse ZIPs are evidence only and must not be rerun.
+
+## Credential model
+
+VK uses one shared **user access token** from external `VK_API_TOKEN`. The local VK alias `legendary-poet` names the stored credential and is not a project selector.
+
+Project isolation requires exact `project_key`, community/owner IDs, manifests, plans, journals, results, and link profiles.
+
+YouTube OAuth aliases remain channel-specific:
+
+- OAuth alias `fedor-milovanov` → Lord God channel `UCeSJsC6go2c9pdJCuUI1BYA`;
+- OAuth alias `legendary-poet` → Legendary Poet channel `UC-78ys2S3cQ3lpqgXfo-SvQ`.
+
+## Closed operational graph
+
+### Completed
+
+- #31 — Lord God long-form reconciliation: exact queue `26/26`, missing `0`, thumbnail repairs `26/26`.
+- #119 — Legendary Poet Shorts/Clips reconciliation: bounded source `56`; this does not claim all 56 are native Clips.
+- #38 — shared VK native Clip/ordinary-video final-type contract.
+- #130 — Wave 14 repository-wide polish.
+- #133 — Wave 15 adaptive reasoning and local-only MP3 foundation.
+- #137 — Wave 16 CI, SQLite, and MP3 identity hardening.
+- #147 — guarded postponed-text capability and completed Lord God cleanup retrospective.
+
+### Active repository-only hardening
+
+- #152 / PR #153 — postponed-text audit hardening and exact-head quality proof. This scope owns no provider replay.
+
+### Retired / not planned
+
+- #32 — non-authoritative Lord God 108-item Shorts auto-upload scope.
+- #33 — broad Lord God catalog/publication continuation.
+- #99 — unproved Legendary Poet article-wall launcher continuation.
+- #123 — YouTube playlist mutation scope.
+
+Do not group #32/#38 as Legendary Poet. Historical ownership was #32 Lord God, #38 shared, and #119 Legendary Poet.
+
+## Permanent unknown and replay boundary
+
+`M5hNecL_MsQ → -235216998_456239160` remains ordinary `video` with `is_draft=1`, not native Clip success, and must not be retransmitted.
+
+Never rerun retired V1/V2/V3/V4, reset, recovery, article-wave, transfer, cleanup, playlist, or historical MP3/browser executors. Never blind-retry intent-persisted, accepted, processing, verified, or unknown operations.
+
+## Permanent safety rules
+
+- Provider writes remain unauthorized outside a new explicit user-approved operation and its exact reviewed plan.
+- Existing VK and YouTube objects remain untouched by repository-only closure, polish, audit, CI, SQLite, local MP3 engineering, and PR #153 hardening.
+- Package A, green CI, dashboards, previews, issue bodies, counts, ZIP names, transcripts, README commands, visible UI objects, or roadmap text never authorize writes.
+- Every future provider write requires a new user request, a new exact project-bound owning issue, a reviewed immutable exact-ID plan, expected remote delta, durable per-operation results, and exact postflight.
+- Content in quotation marks must map to a contiguous source passage unless explicitly labeled synthesis.
 
 ## Next allowed action
 
-Finish exact-head six-job CI and review for PR #153. After green merge, close issue #152 and record the merge/CI proof in the newest machine-state overlay.
-
-No VK operation is pending. Any future provider work starts from a new explicit user request, exact owning issue, newly generated reviewed plan, and exact postflight.
+Finish PR #153 through exact-head six-job green CI and review. No operational continuation is pending. After merge, record the exact merge/CI proof in the newest machine-state overlay. Any future provider operation must start from a new explicit user request and newly reviewed scope; historical cleanup packages and plans remain evidence only.
