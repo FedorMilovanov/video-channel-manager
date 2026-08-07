@@ -6,7 +6,9 @@ import os
 from pathlib import Path
 
 from video_channel_manager.svodka_queue import SvodkaDraftPost, load_svodka_draft
+from video_channel_manager.svodka_release import build_poll_description, build_svodka_release_candidate
 from video_channel_manager.telegram_channel_profile import load_channel_profile
+from video_channel_manager.telegram_multichannel_release import save_release
 from video_channel_manager.telegram_multichannel_transport import (
     preflight_channel,
     render_message_payload,
@@ -30,6 +32,12 @@ def parser() -> argparse.ArgumentParser:
     preview_svodka.add_argument("--queue", type=Path, required=True)
     preview_svodka.add_argument("--sequence", type=int, default=1)
 
+    build_candidate = sub.add_parser("build-svodka-candidate")
+    build_candidate.add_argument("--profile", type=Path, required=True)
+    build_candidate.add_argument("--queue", type=Path, required=True)
+    build_candidate.add_argument("--release-id", required=True)
+    build_candidate.add_argument("--output", type=Path, required=True)
+
     preflight = sub.add_parser("preflight")
     preflight.add_argument("--profile", type=Path, required=True)
     preflight.add_argument("--expected-chat-id", type=int, required=True)
@@ -47,11 +55,7 @@ def _token(env_name: str) -> str:
 
 
 def _svodka_poll_description(post: SvodkaDraftPost, tagline: str) -> str:
-    source_lines = [f"📎 {source.label}: {source.url}" for source in post.sources]
-    description = "- Сводка -\n\n" + "\n".join(source_lines) + f"\n\n{tagline}\n\n#Сводка #Тест"
-    if len(description) > 1024:
-        raise ValueError(f"Svodka poll description exceeds Telegram limit: {post.publication_id}")
-    return description
+    return build_poll_description(post, tagline)
 
 
 def main() -> int:
@@ -167,6 +171,26 @@ def main() -> int:
             }
 
         print(json.dumps(output, ensure_ascii=False, indent=2))
+        return 0
+
+    if args.command == "build-svodka-candidate":
+        queue = load_svodka_draft(args.queue, profile)
+        release = build_svodka_release_candidate(profile, queue, release_id=args.release_id)
+        save_release(args.output, release)
+        print(
+            json.dumps(
+                {
+                    "built": True,
+                    "release_id": release.release_id,
+                    "release_digest": release.digest,
+                    "profile_sha256": release.profile_sha256,
+                    "count": len(release.items),
+                    "release_authorized": release.release_authorized,
+                    "output": str(args.output),
+                },
+                ensure_ascii=False,
+            )
+        )
         return 0
 
     if args.command == "preflight":
