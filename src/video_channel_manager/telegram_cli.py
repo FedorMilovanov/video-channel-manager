@@ -8,18 +8,23 @@ from pathlib import Path
 from video_channel_manager.telegram_publisher import (
     TelegramApiError,
     dispatch_prepared,
+    initialize_ledger_file,
     load_dispatch,
-    load_or_initialize_ledger,
+    load_ledger,
     load_queue,
     load_target_proof,
     preflight_target,
     prepare_next,
+    preview_next,
     require_execution_enabled,
+    require_preflight_config,
     resolve_entry,
     save_ledger,
     save_model,
     verify_persisted_intent,
 )
+
+INITIALIZE_CONFIRMATION = "INITIALIZE_NEW_LORDCHRIST_LEDGER"
 
 
 def parser() -> argparse.ArgumentParser:
@@ -30,15 +35,23 @@ def parser() -> argparse.ArgumentParser:
 
     sub.add_parser("validate")
 
+    initialize = sub.add_parser("initialize-ledger")
+    initialize.add_argument("--confirm", required=True)
+
     preflight = sub.add_parser("preflight")
     preflight.add_argument("--mode", choices=("manual", "scheduled"), required=True)
     preflight.add_argument("--expected-chat-id", type=int, required=True)
+    preflight.add_argument("--expected-bot-id", type=int, required=True)
     preflight.add_argument("--expected-bot-username", required=True)
     preflight.add_argument("--output", type=Path, required=True)
 
     prepare = sub.add_parser("prepare")
     prepare.add_argument("--mode", choices=("manual", "scheduled"), required=True)
     prepare.add_argument("--run-id", required=True)
+    prepare.add_argument("--run-attempt", required=True)
+    prepare.add_argument("--github-sha", required=True)
+    prepare.add_argument("--github-workflow-sha", required=True)
+    prepare.add_argument("--expected-publication-id")
     prepare.add_argument("--target-proof", type=Path, required=True)
     prepare.add_argument("--dispatch", type=Path, required=True)
 
@@ -48,8 +61,7 @@ def parser() -> argparse.ArgumentParser:
     send = sub.add_parser("send")
     send.add_argument("--dispatch", type=Path, required=True)
 
-    preview = sub.add_parser("preview")
-    preview.add_argument("--mode", choices=("manual", "scheduled"), default="manual")
+    sub.add_parser("preview")
 
     resolve = sub.add_parser("resolve")
     resolve.add_argument("--publication-id", required=True)
@@ -71,7 +83,24 @@ def _token() -> str:
 def main() -> int:
     args = parser().parse_args()
     queue = load_queue(args.queue)
-    ledger = load_or_initialize_ledger(args.ledger, queue)
+
+    if args.command == "initialize-ledger":
+        if args.confirm != INITIALIZE_CONFIRMATION:
+            raise RuntimeError(f"ledger initialization requires exact confirmation {INITIALIZE_CONFIRMATION}")
+        ledger = initialize_ledger_file(args.ledger, queue)
+        print(
+            json.dumps(
+                {
+                    "initialized": True,
+                    "queue_digest": ledger.queue_digest,
+                    "ledger_entries": len(ledger.entries),
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    ledger = load_ledger(args.ledger, queue)
 
     if args.command == "validate":
         print(
@@ -88,35 +117,23 @@ def main() -> int:
         return 0
 
     if args.command == "preview":
-        # Preview is local-only. The deep copy prevents mutation of the state
-        # branch ledger while still exercising exact strict-order selection.
-        from video_channel_manager.telegram_publisher import TargetProof, utc_now
-
-        synthetic = TargetProof(
-            schema_name="video-channel-manager.telegram-target-proof",
-            schema_version=1,
-            bot_id=1,
-            bot_username="preview_bot",
-            chat_id=-1000000000000,
-            chat_username="lordchrist",
-            chat_title="preview",
-            member_status="administrator",
-            can_post_messages=True,
-            checked_at_utc=utc_now(),
-        )
-        prepared = prepare_next(
-            queue,
-            ledger.model_copy(deep=True),
-            run_id="preview",
-            mode=args.mode,
-            target=synthetic,
-        )
+        prepared = preview_next(queue, ledger)
+        post = prepared.post
         print(
             json.dumps(
                 {
                     "queue_digest": queue.digest,
                     "reason": prepared.reason,
-                    "post": prepared.envelope.model_dump(mode="json") if prepared.envelope else None,
+                    "post": (
+                        {
+                            "publication_id": post.publication_id,
+                            "sequence": post.sequence,
+                            "payload_sha256": post.payload_sha256,
+                            "text": post.text,
+                        }
+                        if post is not None
+                        else None
+                    ),
                 },
                 ensure_ascii=False,
                 indent=2,
@@ -125,15 +142,26 @@ def main() -> int:
         return 0
 
     if args.command == "preflight":
-        require_execution_enabled(queue_digest=queue.digest, mode=args.mode)
+        require_preflight_config(queue_digest=queue.digest)
         try:
             proof = preflight_target(
                 token=_token(),
                 expected_chat_id=args.expected_chat_id,
+                expected_bot_id=args.expected_bot_id,
                 expected_bot_username=args.expected_bot_username,
             )
         except TelegramApiError as exc:
-            print(json.dumps({"preflight": False, "error": str(exc)}, ensure_ascii=False))
+            print(
+                json.dumps(
+                    {
+                        "preflight": False,
+                        "error": str(exc),
+                        "retryable": exc.retryable,
+                        "retry_after_seconds": exc.retry_after_seconds,
+                    },
+                    ensure_ascii=False,
+                )
+            )
             return 4
         save_model(args.output, proof)
         print(
@@ -144,6 +172,8 @@ def main() -> int:
                     "bot_username": proof.bot_username,
                     "chat_id": proof.chat_id,
                     "chat_username": proof.chat_username,
+                    "chat_type": proof.chat_type,
+                    "can_post_messages": proof.can_post_messages,
                 },
                 ensure_ascii=False,
             )
@@ -152,10 +182,26 @@ def main() -> int:
 
     if args.command == "prepare":
         target = load_target_proof(args.target_proof)
-        prepared = prepare_next(queue, ledger, run_id=args.run_id, mode=args.mode, target=target)
+        prepared = prepare_next(
+            queue,
+            ledger,
+            run_id=args.run_id,
+            run_attempt=args.run_attempt,
+            github_sha=args.github_sha,
+            github_workflow_sha=args.github_workflow_sha,
+            mode=args.mode,
+            target=target,
+            expected_publication_id=args.expected_publication_id,
+        )
         if prepared.envelope is None:
             print(json.dumps({"prepared": False, "reason": prepared.reason}, ensure_ascii=False))
-            if prepared.reason.startswith("strict queue blocked") or "manual canary" in prepared.reason:
+            blocking_markers = (
+                "strict queue blocked",
+                "manual canary",
+                "manual publication_id mismatch",
+                "manual execution requires",
+            )
+            if any(marker in prepared.reason for marker in blocking_markers):
                 return 5
             return 3
         save_model(args.dispatch, prepared.envelope)
@@ -167,6 +213,9 @@ def main() -> int:
                     "publication_id": prepared.envelope.publication_id,
                     "sequence": prepared.envelope.sequence,
                     "intent_id": prepared.envelope.intent_id,
+                    "workflow_run_id": prepared.envelope.workflow_run_id,
+                    "workflow_run_attempt": prepared.envelope.workflow_run_attempt,
+                    "github_sha": prepared.envelope.github_sha,
                 },
                 ensure_ascii=False,
             )
@@ -184,6 +233,9 @@ def main() -> int:
                     "intent_id": entry.intent_id,
                     "state": entry.state,
                     "provider_effect": entry.provider_effect,
+                    "workflow_run_id": entry.workflow_run_id,
+                    "workflow_run_attempt": entry.workflow_run_attempt,
+                    "github_sha": entry.github_sha,
                 },
                 ensure_ascii=False,
             )
@@ -202,6 +254,7 @@ def main() -> int:
                     "state": entry.state,
                     "provider_effect": entry.provider_effect,
                     "message_id": entry.message_id,
+                    "message_url": entry.message_url,
                     "error": entry.last_error,
                 },
                 ensure_ascii=False,
@@ -226,6 +279,8 @@ def main() -> int:
                     "publication_id": entry.publication_id,
                     "state": entry.state,
                     "provider_effect": entry.provider_effect,
+                    "message_id": entry.message_id,
+                    "message_url": entry.message_url,
                 },
                 ensure_ascii=False,
             )
