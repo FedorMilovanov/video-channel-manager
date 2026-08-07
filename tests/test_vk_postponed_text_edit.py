@@ -247,7 +247,6 @@ def test_reconcile_reports_exact_before_after_and_conflict() -> None:
     assert ready["after"] == 1
     assert ready["before"] == 1
     assert ready["conflict"] == 0
-
     writer.postponed[1]["text"] = "manual conflicting text"
     blocked = reconcile_vk_postponed_text_edit_plan(writer, plan)  # type: ignore[arg-type]
     assert blocked["status"] == "blocked"
@@ -342,9 +341,7 @@ def test_rate_limit_retries_only_after_exact_before_readback(tmp_path: Path) -> 
 def test_retry_rechecks_publication_distance_before_second_dispatch(tmp_path: Path) -> None:
     writer = FakeWriter(postponed=[_post(12513, quote="A")])
     plan = _build_plan(writer, [12513])
-    writer.failures[12513] = [
-        VkWriteError("rate limit", method="wall.edit", kind=HttpFailureKind.RATE_LIMIT)
-    ]
+    writer.failures[12513] = [VkWriteError("rate limit", method="wall.edit", kind=HttpFailureKind.RATE_LIMIT)]
     observations = iter([NOW, NOW, NOW + timedelta(days=20)])
 
     result = _execute(writer, plan, output_dir=tmp_path / "run", now=lambda: next(observations))
@@ -356,9 +353,7 @@ def test_retry_rechecks_publication_distance_before_second_dispatch(tmp_path: Pa
 def test_delayed_reconciliation_rewrites_attempt_journal_to_verified(tmp_path: Path) -> None:
     writer = FakeWriter(postponed=[_post(12513, quote="A")])
     plan = _build_plan(writer, [12513])
-    writer.failures[12513] = [
-        VkWriteError("rate limit", method="wall.edit", kind=HttpFailureKind.RATE_LIMIT)
-    ]
+    writer.failures[12513] = [VkWriteError("rate limit", method="wall.edit", kind=HttpFailureKind.RATE_LIMIT)]
     writer.defer_after_failure_reads[12513] = 1
 
     result = _execute(writer, plan, output_dir=tmp_path / "run")
@@ -376,9 +371,7 @@ def test_delayed_reconciliation_rewrites_attempt_journal_to_verified(tmp_path: P
 def test_post_dispatch_read_failure_stops_unknown_without_retry(tmp_path: Path) -> None:
     writer = FakeWriter(postponed=[_post(12513, quote="A")])
     plan = _build_plan(writer, [12513])
-    writer.failures[12513] = [
-        VkWriteError("transport lost", method="wall.edit", kind=HttpFailureKind.TRANSPORT)
-    ]
+    writer.failures[12513] = [VkWriteError("transport lost", method="wall.edit", kind=HttpFailureKind.TRANSPORT)]
     writer.fail_postflight_after_dispatch = True
 
     result = _execute(writer, plan, output_dir=tmp_path / "run")
