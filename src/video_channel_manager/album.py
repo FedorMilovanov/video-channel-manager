@@ -452,7 +452,9 @@ def build_album_timing(
         raise AlbumError("grid_seconds must be between 1 and 60")
     if minimum_gap_seconds < 0 or minimum_gap_seconds >= grid_seconds:
         raise AlbumError("minimum_gap_seconds must be >= 0 and smaller than grid_seconds")
-    incomplete = [track.ordinal for track in manifest.tracks if track.duration_seconds is None or track.status != "probed"]
+    incomplete = [
+        track.ordinal for track in manifest.tracks if track.duration_seconds is None or track.status != "probed"
+    ]
     if incomplete:
         joined = ", ".join(str(item) for item in incomplete)
         raise AlbumError(f"Cannot build final timing until every track is probed; incomplete: {joined}")
