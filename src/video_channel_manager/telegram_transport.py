@@ -17,6 +17,9 @@ from video_channel_manager.telegram_models import (
 )
 from video_channel_manager.telegram_state import utc_now, verify_persisted_intent
 
+READ_ONLY_TRANSPORT_RETRIES = 2
+MUTATION_TRANSPORT_RETRIES = 0
+
 
 class TelegramApiError(RuntimeError):
     def __init__(
@@ -176,7 +179,7 @@ def preflight_target(
     own_client = client is None
     http_client = client or httpx.Client(
         timeout=httpx.Timeout(connect=15, read=30, write=30, pool=15),
-        transport=httpx.HTTPTransport(retries=2),
+        transport=httpx.HTTPTransport(retries=READ_ONLY_TRANSPORT_RETRIES),
         trust_env=False,
     )
     try:
@@ -307,7 +310,7 @@ def dispatch_prepared(
     own_client = client is None
     http_client = client or httpx.Client(
         timeout=httpx.Timeout(connect=15, read=45, write=30, pool=15),
-        transport=httpx.HTTPTransport(retries=2),
+        transport=httpx.HTTPTransport(retries=MUTATION_TRANSPORT_RETRIES),
         trust_env=False,
     )
     try:
