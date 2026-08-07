@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
+import pytest
 
 from video_channel_manager.svodka_queue import load_svodka_draft
 from video_channel_manager.telegram_channel_profile import load_channel_profile
@@ -111,8 +112,42 @@ def test_generic_preflight_resolves_svodka_exactly_without_lordchrist_hardcoding
     assert calls == ["getMe", "getChat", "getChat", "getChatAdministrators"]
 
 
-def test_generic_transport_can_render_and_verify_quiz_poll_without_live_network() -> None:
+def test_disabled_profile_blocks_poll_write_before_transport() -> None:
     profile = load_channel_profile(PROFILE_PATH)
+    now = datetime(2026, 8, 8, 0, 0, tzinfo=UTC)
+    target = GenericTargetProof(
+        schema_name="video-channel-manager.telegram-generic-target-proof",
+        schema_version=1,
+        project_key=profile.project_key,
+        channel_username=profile.channel_username,
+        profile_sha256=profile.digest,
+        bot_id=42,
+        bot_username="svodka_test_bot",
+        chat_id=-1001234567890,
+        chat_username="deep_info_life",
+        chat_title="СВОДКА",
+        chat_type="channel",
+        member_status="administrator",
+        can_post_messages=True,
+        checked_at_utc=now,
+    )
+    payload = render_poll_payload(
+        profile,
+        publication_id="svodka-quiz-disabled-write",
+        question="Тестовый вопрос?",
+        options=("Да", "Нет"),
+        poll_type="quiz",
+        correct_option_id=0,
+        explanation="Тестовая проверка safety gate.",
+    )
+
+    with pytest.raises(ValueError, match="provider writes are not authorized"):
+        send_poll_once(profile, target, payload, token="must-not-be-used", now=now)
+
+
+def test_generic_transport_can_render_and_verify_quiz_poll_without_live_network() -> None:
+    base_profile = load_channel_profile(PROFILE_PATH)
+    profile = base_profile.model_copy(update={"provider_writes_authorized": True})
     now = datetime(2026, 8, 8, 0, 0, tzinfo=UTC)
     target = GenericTargetProof(
         schema_name="video-channel-manager.telegram-generic-target-proof",
