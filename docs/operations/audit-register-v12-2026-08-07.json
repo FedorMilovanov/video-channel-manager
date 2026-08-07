@@ -1,0 +1,127 @@
+{
+  "schema_name": "video-manager.audit-register-v12",
+  "schema_version": "12.0",
+  "updated_at": "2026-08-07T12:29:00+03:00",
+  "repository": "FedorMilovanov/video-channel-manager",
+  "predecessor_register": {
+    "path": "docs/operations/audit-register-v11-2026-08-07.json",
+    "blob_sha": "c4db65d837cc5c39c086627678bcb974171923c5",
+    "schema_version": "11.0",
+    "role": "immutable VK postponed-text hardening and prior closed provider-state record"
+  },
+  "program_state": "WAVES_0_16_COMPLETED_VK_POSTPONED_TEXT_EDIT_HARDENED_LOCAL_ALBUM_PIPELINE_ACTIVE_NO_PROVIDER_MUTATION",
+  "production_code_baseline": "7a142dac360f682a3700f8106e336e69bd0e6533",
+  "album_pipeline": {
+    "issue": 154,
+    "pull_request": 157,
+    "branch": "agent/black-man-album-pipeline",
+    "exact_tested_head": "dec83f8f594b2a3fdf048e45fba6989c33905520",
+    "merge_method": "squash",
+    "merge": "7a142dac360f682a3700f8106e336e69bd0e6533",
+    "project_key": "legendary-poet",
+    "youtube_oauth_alias": "legendary-poet",
+    "youtube_channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+    "album_key": "black-man",
+    "intended_track_count": 7,
+    "source_model": {
+      "existing_youtube_tracks": 6,
+      "youtube_source_kind": "youtube_exact_source",
+      "bonus_tracks": 1,
+      "bonus_source_kind": "local_controlled_master",
+      "bonus_pending_state": "pending_local_master",
+      "remote_id_required_for_bonus": false
+    },
+    "artwork_state_count": 8,
+    "artwork_states": "one neutral cover plus seven active-track states",
+    "supported_commands": [
+      "album init",
+      "album add-youtube",
+      "album add-local",
+      "album status",
+      "album acquire",
+      "album probe",
+      "album timing",
+      "album artwork-plan",
+      "album render",
+      "album verify",
+      "album package"
+    ],
+    "youtube_acquisition_contract": {
+      "tool": "yt-dlp",
+      "metadata_preflight": true,
+      "exact_video_id_required": true,
+      "exact_channel_id_required": true,
+      "authoritative_final_path": "after_move:filepath",
+      "controlled_cache": true
+    },
+    "local_media_contract": {
+      "sha256": true,
+      "ffprobe": true,
+      "source_bytes_modified": false,
+      "deterministic_grid_timing": true,
+      "same_timing_manifest_drives_chapters_and_render": true,
+      "ffmpeg_local_render": true,
+      "final_render_verification": true
+    },
+    "provider_upload_implemented": false,
+    "playlist_writer_implemented": false,
+    "provider_write_authorized": false,
+    "provider_reads_during_implementation": 0,
+    "provider_writes_during_implementation": 0
+  },
+  "quality_proof": {
+    "workflow": "CI",
+    "workflow_id": 319810504,
+    "run_id": 31167299479,
+    "run_number": 3264,
+    "exact_head": "dec83f8f594b2a3fdf048e45fba6989c33905520",
+    "conclusion": "success",
+    "required_job_count": 6,
+    "green_job_count": 6,
+    "jobs": [
+      "quality (3.11)",
+      "quality (3.12)",
+      "quality (3.13)",
+      "PowerShell Windows 5.1",
+      "PowerShell Windows 7",
+      "PowerShell Linux 7"
+    ],
+    "python_test_proof": "897 passed, 1 xfailed",
+    "coverage": "77% across 16487 statements",
+    "ruff_correctness": "green",
+    "ruff_format": "480 files already formatted",
+    "mypy": "green; 153 source files",
+    "dependency_audit": "no known vulnerabilities",
+    "powershell_pester": "green on Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux",
+    "review_thread_count": 0
+  },
+  "active_operational_issues": [
+    {
+      "issue": 154,
+      "project_key": "legendary-poet",
+      "surface": "local mixed-source audio/video album pipeline",
+      "phase": "local_pipeline_implemented_pending_exact_source_reconciliation_and_bonus_master",
+      "provider_effect": "impossible_until_separately_authorized_future_write_phase"
+    }
+  ],
+  "active_provider_mutations": [],
+  "automatic_execution": false,
+  "replay_authorized": false,
+  "next_allowed_actions": [
+    "update the local checkout/install to main at or after production_code_baseline",
+    "run exact Legendary Poet read-only YouTube scan",
+    "reconcile the six existing Black Man source video IDs",
+    "configure the seven-track local album manifest",
+    "acquire and probe exact YouTube audio masters locally",
+    "keep track 7 pending until the user freezes the bonus local master",
+    "prepare artwork states and local render after all seven masters are ready"
+  ],
+  "forbidden_without_new_reviewed_provider_plan": [
+    "upload YouTube video",
+    "modify existing YouTube metadata or thumbnail",
+    "create or update YouTube playlist",
+    "add or remove playlist membership",
+    "delete or replace any remote object",
+    "blind retry an unknown provider mutation"
+  ]
+}
