@@ -1,0 +1,130 @@
+from __future__ import annotations
+
+import hashlib
+import json
+from datetime import date, datetime
+from pathlib import Path
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, ValidationError, field_validator, model_validator
+
+from video_channel_manager.telegram_channel_profile import TelegramChannelProfile
+
+SvodkaFormat = Literal["quick_fact", "myth_fact", "mini_digest", "fresh_science", "quiz", "poll"]
+
+
+class SvodkaSource(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    url: HttpUrl
+    label: str = Field(min_length=3, max_length=240)
+    verified_on: date
+    evidence: str = Field(min_length=20, max_length=1000)
+
+
+class SvodkaPilot(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    start_date: date
+    end_date: date
+    daily_slots: tuple[str, ...] = Field(min_length=1, max_length=8)
+    max_posts_per_day: int = Field(ge=1, le=20)
+    notes: str = Field(min_length=20, max_length=1000)
+
+    @model_validator(mode="after")
+    def dates_are_ordered(self) -> "SvodkaPilot":
+        if self.end_date < self.start_date:
+            raise ValueError("pilot end_date cannot precede start_date")
+        return self
+
+
+class SvodkaEditorialPolicy(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    tagline: str = Field(min_length=5, max_length=200)
+    source_priority: tuple[str, ...] = Field(min_length=1, max_length=12)
+    fact_interpretation_boundary: str = Field(min_length=20, max_length=1000)
+    dynamic_web_autopublish: Literal[False]
+
+
+class SvodkaDraftPost(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    sequence: int = Field(ge=1)
+    publication_id: str = Field(pattern=r"^svodka-[a-z0-9][a-z0-9-]{4,90}$")
+    scheduled_at: datetime
+    format: SvodkaFormat
+    title: str = Field(min_length=3, max_length=180)
+    html_text: str = Field(min_length=100, max_length=8192)
+    sources: tuple[SvodkaSource, ...] = Field(min_length=1, max_length=12)
+
+    @field_validator("scheduled_at")
+    @classmethod
+    def scheduled_at_is_aware(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            raise ValueError("scheduled_at must be timezone-aware")
+        return value
+
+    @field_validator("html_text")
+    @classmethod
+    def style_contract(cls, value: str) -> str:
+        if not value.startswith("- Сводка -\n\n"):
+            raise ValueError("Svodka post must start with the canonical '- Сводка -' header")
+        if "#Сводка" not in value:
+            raise ValueError("Svodka post must include #Сводка")
+        if "📎" not in value:
+            raise ValueError("Svodka factual post must expose at least one visible source line")
+        return value
+
+
+class SvodkaDraftQueue(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.telegram-editorial-draft-queue"]
+    schema_version: Literal[1]
+    project_key: Literal["svodka"]
+    channel_username: Literal["@deep_info_life"]
+    channel_title: Literal["СВОДКА"]
+    timezone: Literal["Europe/Moscow"]
+    review_state: Literal["draft_review_required"]
+    provider_writes_authorized: Literal[False]
+    pilot: SvodkaPilot
+    editorial_policy: SvodkaEditorialPolicy
+    posts: tuple[SvodkaDraftPost, ...] = Field(min_length=1, max_length=100)
+
+    @model_validator(mode="after")
+    def queue_contract(self) -> "SvodkaDraftQueue":
+        sequences = [post.sequence for post in self.posts]
+        if sequences != list(range(1, len(self.posts) + 1)):
+            raise ValueError("Svodka draft sequences must be consecutive starting at 1")
+        publication_ids = [post.publication_id for post in self.posts]
+        if len(publication_ids) != len(set(publication_ids)):
+            raise ValueError("Svodka publication_id values must be unique")
+        if self.pilot.max_posts_per_day > 2:
+            raise ValueError("current Svodka pilot is capped at two posts per day")
+        for post in self.posts:
+            local_date = post.scheduled_at.date()
+            if not self.pilot.start_date <= local_date <= self.pilot.end_date:
+                raise ValueError(f"post {post.publication_id} falls outside the pilot date range")
+        return self
+
+    @property
+    def digest(self) -> str:
+        payload = json.dumps(self.model_dump(mode="json"), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        return "sha256:" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def load_svodka_draft(path: Path, profile: TelegramChannelProfile | None = None) -> SvodkaDraftQueue:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        queue = SvodkaDraftQueue.model_validate(payload)
+    except (OSError, json.JSONDecodeError, ValidationError) as exc:
+        raise ValueError(f"invalid Svodka draft queue {path}: {exc}") from exc
+    if profile is not None:
+        if profile.project_key != queue.project_key or profile.channel_username != queue.channel_username:
+            raise ValueError("Svodka queue identity differs from selected Telegram channel profile")
+        if profile.timezone != queue.timezone or profile.daily_verified_limit != queue.pilot.max_posts_per_day:
+            raise ValueError("Svodka queue schedule contract differs from selected Telegram channel profile")
+        if any(not post.publication_id.startswith(profile.publication_id_prefix) for post in queue.posts):
+            raise ValueError("Svodka publication IDs do not match the selected profile prefix")
+    return queue
