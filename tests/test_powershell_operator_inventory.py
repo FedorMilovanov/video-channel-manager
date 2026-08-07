@@ -9,7 +9,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = ROOT / "scripts" / "operator" / "powershell-wrappers.json"
 SUPPORTED_PATH = "scripts/operator/Invoke-VideoManager.ps1"
-STATUSES = {"supported", "compatibility_only", "retired"}
+DELEGATING_SUPPORTED_PATH = "scripts/Invoke-VkPostponedTextEdit.ps1"
+STATUSES = {"supported", "delegating_supported", "compatibility_only", "retired"}
 RETIRED_GUARD = "Stop-VcmRetiredWrapper"
 RISK_MARKERS = (
     "apply_vk_editorial_cleanup_plan.py",
@@ -90,6 +91,20 @@ def test_single_supported_wrapper_has_no_historical_operator_antipatterns() -> N
         assert marker not in text
     assert "RequestSha256" in text
     assert "Invoke-VcmOperatorRequest" in text
+
+
+def test_delegating_supported_wrapper_is_not_a_second_provider_client() -> None:
+    wrappers = _registry()["wrappers"]
+    delegating = [item for item in wrappers if item["status"] == "delegating_supported"]
+    assert [item["path"] for item in delegating] == [DELEGATING_SUPPORTED_PATH]
+    assert delegating[0]["provider_write_capable"] is True
+
+    text = _code_without_comments(ROOT / DELEGATING_SUPPORTED_PATH)
+    for marker in ("VK_API_TOKEN", "access_token", "Invoke-RestMethod", "api.vk.com"):
+        assert marker not in text
+    assert "video_channel_manager.cli.vk_postponed_text" in text
+    assert "--enable-provider-writes" in text
+    assert "--confirm-plan-sha256" in text
 
 
 def test_retired_provider_write_wrappers_stop_before_historical_executor_markers() -> None:
