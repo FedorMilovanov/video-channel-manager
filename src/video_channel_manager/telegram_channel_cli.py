@@ -13,7 +13,7 @@ from video_channel_manager.svodka_release import (
     build_svodka_release_candidate,
 )
 from video_channel_manager.telegram_channel_discovery import discover_channel_target
-from video_channel_manager.telegram_channel_profile import load_channel_profile
+from video_channel_manager.telegram_channel_profile import TelegramChannelProfile, load_channel_profile
 from video_channel_manager.telegram_multichannel_release import load_release, save_release
 from video_channel_manager.telegram_multichannel_transport import (
     GenericTargetProof,
@@ -106,7 +106,12 @@ def _review_timestamp(value: str) -> datetime:
     return parsed
 
 
-def _release_matches_profile(profile_sha256: str, project_key: str, channel_username: str, profile: object) -> bool:
+def _release_matches_profile(
+    profile_sha256: str,
+    project_key: str,
+    channel_username: str,
+    profile: TelegramChannelProfile,
+) -> bool:
     return (
         profile_sha256 == profile.digest
         and project_key == profile.project_key
