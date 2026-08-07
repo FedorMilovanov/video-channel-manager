@@ -90,8 +90,8 @@ jobs:
           assert validation["valid"] is True
           assert validation["count"] == 30
           assert validation["ledger_entries"] == 30
-          assert validation["presentation_policy_id"] == "lordchrist-editorial-v1"
-          assert validation["presentation_policy_sha256"].startswith("sha256:")
+          assert validation["presentation_policy_id"] == "lordchrist-editorial-v2"
+          assert validation["presentation_policy_sha256"] == "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8"
           assert preview["post"]["sequence"] == 1
           assert preview["post"]["publication_id"] == "lordchrist-bunyan-cross-burden"
           assert preview["post"]["parse_mode"] == "HTML"
