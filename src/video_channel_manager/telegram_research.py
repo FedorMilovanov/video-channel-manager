@@ -225,7 +225,10 @@ class ResearchQueueV2(BaseModel):
         calvin, spurgeon, macarthur = one("4–5 тысяч"), one("3 563"), one("3 600")
         if (calvin.certainty, calvin.measurement_scope) != ("estimate", "оценка общего числа произнесённых проповедей"):
             raise ValueError("Calvin 4–5k must remain an estimate of sermons preached")
-        if (spurgeon.certainty, spurgeon.measurement_scope) != ("exact", "опубликованные проповеди в 63-томном корпусе"):
+        if (spurgeon.certainty, spurgeon.measurement_scope) != (
+            "exact",
+            "опубликованные проповеди в 63-томном корпусе",
+        ):
             raise ValueError("Spurgeon 3,563 must remain an exact published-corpus count")
         if (macarthur.certainty, macarthur.measurement_scope) != (
             "lower_bound",
