@@ -12,6 +12,6 @@ def test_ci_exercises_isolated_minimal_telegram_runtime_without_provider_access(
     assert "requirements/telegram-publisher.txt" in workflow
     assert "INITIALIZE_NEW_LORDCHRIST_LEDGER" in workflow
     assert "lordchrist-smoke-ledger.json" in workflow
-    assert "ledger_entries\"] == 30" in workflow
-    assert "preview[\"post\"][\"sequence\"] == 1" in workflow
+    assert 'ledger_entries"] == 30' in workflow
+    assert 'preview["post"]["sequence"] == 1' in workflow
     assert "LORDCHRIST_TELEGRAM_BOT_TOKEN" not in workflow
