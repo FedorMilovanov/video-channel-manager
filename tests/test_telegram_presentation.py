@@ -34,17 +34,19 @@ def _utf16_length(value: str) -> int:
     return len(value.encode("utf-16-le")) // 2
 
 
-def test_repository_presentation_policy_is_exact_reviewed_v1() -> None:
+def test_repository_presentation_policy_is_exact_reviewed_v2() -> None:
     policy = load_presentation_policy(POLICY_PATH)
     assert policy == DEFAULT_PRESENTATION_POLICY
-    assert policy.policy_id == "lordchrist-editorial-v1"
+    assert policy.policy_id == "lordchrist-editorial-v2"
+    assert policy.schema_version == 2
+    assert policy.body_quote_emphasis.bold_selection == "longest_direct_quote"
     assert policy.parse_mode == "HTML"
     assert policy.spacing.attribution_to_hashtags == "\n\n\n"
     assert policy.attribution.copyright_prefix is False
     assert policy.link_preview_disabled is True
 
 
-def test_first_canary_renders_exactly_like_approved_editorial_style() -> None:
+def test_first_canary_still_renders_like_approved_editorial_style() -> None:
     queue = load_queue(QUEUE_PATH)
     post = queue.posts[0]
     rendered = render_post(post)
@@ -62,6 +64,21 @@ def test_first_canary_renders_exactly_like_approved_editorial_style() -> None:
     assert "Путешествие Пилигрима»\n\n\n#ДжонБеньян" in rendered.text
 
 
+def test_second_autonomous_post_bolds_the_substantive_christ_answer_not_the_prompt() -> None:
+    queue = load_queue(QUEUE_PATH)
+    post = queue.posts[1]
+    assert post.publication_id == "lordchrist-bunyan-fire-grace"
+
+    rendered = render_post(post)
+    assert "<i>«Что это значит?»</i>" in rendered.html_text
+    assert rendered.html_text.count("<i>«Что это значит?»</i>") == 2
+    assert (
+        "<b>«Это Христос, Который маслом Своей благодати непрестанно поддерживает уже начатое в сердце дело."
+        in rendered.html_text
+    )
+    assert "<b>«Что это значит?»</b>" not in rendered.html_text
+
+
 def test_all_thirty_posts_render_without_changing_source_queue_digest() -> None:
     queue = load_queue(QUEUE_PATH)
     assert queue.digest == EXPECTED_QUEUE_DIGEST
@@ -77,7 +94,7 @@ def test_all_thirty_posts_render_without_changing_source_queue_digest() -> None:
         expected_attribution = f"{post.source.author}, «{post.source.work}»"
 
         assert rendered.source_payload_sha256 == post.payload_sha256
-        assert rendered.presentation_policy_id == "lordchrist-editorial-v1"
+        assert rendered.presentation_policy_id == "lordchrist-editorial-v2"
         assert rendered.presentation_policy_sha256 == DEFAULT_PRESENTATION_POLICY.digest
         assert rendered.parse_mode == "HTML"
         assert rendered.link_preview_disabled is True
@@ -98,6 +115,21 @@ def test_all_thirty_posts_render_without_changing_source_queue_digest() -> None:
         assert len(italic_entities) == 1 + max(body_quotes - 1, 0), post.publication_id
 
     assert len(provider_hashes) == 30
+
+
+def test_longest_direct_quote_is_selected_deterministically_with_earliest_tie() -> None:
+    payload = _queue_payload()
+    first = payload["posts"][0]  # type: ignore[index]
+    text = str(first["text"])  # type: ignore[index]
+    blocks = text.split("\n\n")
+    body = "Начало: «коротко». Затем: «эта реплика заметно длиннее остальных». И снова: «коротко»."
+    first["text"] = body + "\n\n" + blocks[-2] + "\n\n" + blocks[-1]  # type: ignore[index]
+    post = TelegramQueue.model_validate(payload).posts[0]
+
+    rendered = render_post(post)
+    assert "<b>«эта реплика заметно длиннее остальных»</b>" in rendered.html_text
+    assert "<i>«коротко»</i>" in rendered.html_text
+    assert "<b>«коротко»</b>" not in rendered.html_text
 
 
 def test_no_direct_quote_body_does_not_invent_emphasis() -> None:
@@ -140,11 +172,11 @@ def test_renderer_uses_telegram_utf16_entity_offsets() -> None:
     post = TelegramQueue.model_validate(payload).posts[0]
 
     rendered = render_post(post)
-    first_bold = next(entity for entity in rendered.expected_entities if entity.type == "bold")
+    body_bold = [entity for entity in rendered.expected_entities if entity.type == "bold"][0]
     plain_before = rendered.text.split(emoji_quote, 1)[0]
-    assert first_bold.offset == _utf16_length(plain_before)
-    assert first_bold.length == _utf16_length(emoji_quote)
-    assert first_bold.length == len(emoji_quote) + 1  # astral emoji occupies two UTF-16 code units
+    assert body_bold.offset == _utf16_length(plain_before)
+    assert body_bold.length == _utf16_length(emoji_quote)
+    assert body_bold.length == len(emoji_quote) + 1  # astral emoji occupies two UTF-16 code units
 
 
 def test_formatting_postflight_requires_exact_bold_and_italic_entities_but_allows_hashtags() -> None:
