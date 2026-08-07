@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main
-      - "feature/**"
-      - "agent/**"
-      - "integration/**"
   pull_request:
 
 permissions:
