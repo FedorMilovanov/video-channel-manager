@@ -134,6 +134,27 @@ def test_published_state_rejects_noncanonical_message_url() -> None:
         TelegramLedger.model_validate(ledger.model_dump(mode="json"))
 
 
+def test_scheduled_rerun_cannot_select_or_advance_the_queue() -> None:
+    queue = load_queue(QUEUE_PATH)
+    ledger = initialize_ledger(queue)
+    blocked = prepare_next(
+        queue,
+        ledger,
+        run_id="scheduled-run",
+        run_attempt="2",
+        github_sha="a" * 40,
+        github_workflow_sha="b" * 40,
+        mode="scheduled",
+        target=target(),
+        now=NOW,
+    )
+
+    assert blocked.envelope is None
+    assert "scheduled workflow re-runs are forbidden" in blocked.reason
+    assert all(entry.state == "pending" for entry in ledger.entries.values())
+    assert all(entry.intent_id is None for entry in ledger.entries.values())
+
+
 def test_transport_retry_policy_is_read_only_only() -> None:
     assert READ_ONLY_TRANSPORT_RETRIES == 2
     assert MUTATION_TRANSPORT_RETRIES == 0
