@@ -27,6 +27,7 @@ data/
 downloads/
 cache/
 logs/
+operator-output/
 *.db
 *.db-shm
 *.db-wal
