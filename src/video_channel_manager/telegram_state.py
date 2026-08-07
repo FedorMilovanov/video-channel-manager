@@ -337,18 +337,21 @@ def resolve_entry(
     now: datetime | None = None,
 ) -> LedgerEntry:
     note = " ".join(evidence_note.split())
+    resolver = " ".join(resolved_by.split())
     if len(note) < 20:
         raise ValueError("reconciliation requires a concrete evidence note of at least 20 characters")
+    if len(resolver) < 2:
+        raise ValueError("reconciliation requires a concrete resolver identity")
     entry = ledger.entries.get(publication_id)
     if entry is None:
         raise ValueError(f"unknown publication_id: {publication_id}")
-    if entry.state not in {"dispatching", "unknown", "failed", "pending"}:
-        raise ValueError("only pending, unresolved, or failed entries can be reconciled")
     resolved_at = now or utc_now()
     if resolved_at.tzinfo is None:
         raise ValueError("reconciliation timestamp must be timezone-aware")
 
     if resolution == "confirmed_published":
+        if entry.state not in {"dispatching", "unknown"} or entry.provider_effect != "may_exist":
+            raise ValueError("confirmed_published is valid only for an unresolved may_exist dispatch")
         if message_id is None or message_id <= 0 or expected_chat_id is None or expected_chat_id >= 0:
             raise ValueError("confirmed_published requires message_id and an exact negative expected_chat_id")
         if entry.actual_chat_id is not None and entry.actual_chat_id != expected_chat_id:
@@ -364,6 +367,12 @@ def resolve_entry(
         entry.published_at_utc = resolved_at
         entry.last_error = "manually reconciled as published"
     elif resolution == "confirmed_absent":
+        if entry.state not in {"dispatching", "unknown", "failed"}:
+            raise ValueError("confirmed_absent is valid only for an unresolved or failed dispatch")
+        if entry.state in {"dispatching", "unknown"} and entry.provider_effect != "may_exist":
+            raise ValueError("unresolved confirmed_absent reconciliation requires provider_effect=may_exist")
+        if entry.state == "failed" and entry.provider_effect not in {"not_dispatched", "confirmed_absent"}:
+            raise ValueError("failed confirmed_absent reconciliation requires no possible provider effect")
         entry.state = "pending"
         entry.provider_effect = "confirmed_absent"
         entry.intent_id = None
@@ -372,6 +381,10 @@ def resolve_entry(
         entry.published_at_utc = None
         entry.last_error = "manually reconciled as confirmed absent"
     else:
+        if entry.state not in {"pending", "failed"}:
+            raise ValueError("skip is forbidden while a provider effect is unresolved")
+        if entry.provider_effect not in {"impossible", "not_dispatched", "confirmed_absent"}:
+            raise ValueError("skip requires proof that no provider message can exist")
         entry.state = "skipped"
         entry.provider_effect = "impossible"
         entry.intent_id = None
@@ -380,7 +393,7 @@ def resolve_entry(
         entry.published_at_utc = None
         entry.last_error = "manually skipped"
     entry.resolved_at_utc = resolved_at
-    entry.resolved_by = resolved_by
+    entry.resolved_by = resolver
     entry.reconciliation_note = note
     return entry
 
