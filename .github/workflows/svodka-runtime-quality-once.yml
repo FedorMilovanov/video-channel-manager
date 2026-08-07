@@ -1,0 +1,91 @@
+name: Svodka one-time generic runtime quality
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/svodka-runtime-quality-once.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: svodka-runtime-quality-once
+  cancel-in-progress: false
+
+jobs:
+  validate-format-remove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+
+      - name: Install repository dev runtime
+        run: |
+          python -m pip install --disable-pip-version-check -e ".[dev]"
+
+      - name: Format additive multi-channel runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruff format \
+            src/video_channel_manager/telegram_multichannel_outcome.py \
+            src/video_channel_manager/telegram_multichannel_cli.py \
+            tests/test_telegram_multichannel_outcome.py \
+            tests/test_telegram_multichannel_state.py \
+            tests/test_svodka_release_review.py
+
+      - name: Ruff correctness
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruff check \
+            src/video_channel_manager/telegram_multichannel_outcome.py \
+            src/video_channel_manager/telegram_multichannel_cli.py \
+            src/video_channel_manager/telegram_multichannel_release.py \
+            src/video_channel_manager/telegram_multichannel_state.py \
+            src/video_channel_manager/svodka_release.py \
+            tests/test_telegram_multichannel_outcome.py \
+            tests/test_telegram_multichannel_state.py \
+            tests/test_svodka_release_review.py
+
+      - name: Static typing for generic runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mypy \
+            src/video_channel_manager/telegram_multichannel_outcome.py \
+            src/video_channel_manager/telegram_multichannel_cli.py \
+            --show-error-codes
+
+      - name: Focused multi-channel regression suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q \
+            tests/test_telegram_multichannel_outcome.py \
+            tests/test_telegram_multichannel_state.py \
+            tests/test_svodka_release_review.py \
+            tests/test_telegram_channel_cli.py \
+            tests/test_svodka_preflight_workflow.py
+
+      - name: Commit formatter output and remove one-time workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/svodka-runtime-quality-once.yml
+          git add src/video_channel_manager tests
+          git commit -m "Validate and format generic Telegram runtime"
+          git push origin HEAD:main
