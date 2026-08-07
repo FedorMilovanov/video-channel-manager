@@ -1,15 +1,18 @@
 # Current operational state
 
 Updated: 2026-08-07  
-Repository baseline entering VK hardening: `main@c0b8a303598788b2870862042d2e2868a97b3005`  
+Current production code baseline: `main@ffb9c0b5c2fe2852ec61d675ae8eb8f97bd0fdcd`  
 Initial postponed-text code merge: `c04f0a4f948174ced6287e4bae87e4bf1be2be52`  
-Owning hardening: issue #152 / PR #153  
-Current machine-state overlay before final quality proof: [`audit-register-v10-2026-08-06.json`](audit-register-v10-2026-08-06.json)  
+Completed hardening: issue #152 / PR #153  
+Current machine-state overlay: [`audit-register-v11-2026-08-07.json`](audit-register-v11-2026-08-07.json)  
+Immutable predecessor: [`audit-register-v10-2026-08-06.json`](audit-register-v10-2026-08-06.json)  
 Second-pass audit: [`vk-postponed-text-second-pass-audit-2026-08-06.md`](vk-postponed-text-second-pass-audit-2026-08-06.md)
 
 The current overlay and newest machine state override stale execution claims while the immutable Wave 13–16 proofs below remain preserved operational memory. Historical packages, old chats, screenshots, ZIP names, remembered counts, and superseded executors are evidence only and never authorize execution.
 
 ## Current VK postponed-text hardening state
+
+PR #153 was squash-merged as `ffb9c0b5c2fe2852ec61d675ae8eb8f97bd0fdcd` after exact tested head `ff85c27c5b20bca66e8badad3ef468ef93b614b7` passed CI run `31158907708` / #3242 with all six required jobs green. Review threads were `0`; reviewed scope was 12 expected integration files. Repository hardening performed VK provider reads/writes `0/0` and replayed no historical operation.
 
 The completed 2026-08-06 Lord God cleanup remains verified evidence only:
 
@@ -24,15 +27,13 @@ The completed 2026-08-06 Lord God cleanup remains verified evidence only:
 - first published quote post untouched;
 - approved plan SHA `sha256:8dcbe984cb24e003770fa3897ff3b7da351a34d92d4931ac3cb9a5707d2c1cbb`.
 
-PR #153 hardens the reusable capability without replaying that operation. Repository hardening itself performs no VK reads or writes.
-
 Supported schema v1 is existing **attachment-free postponed VK wall posts only**. It requires exact project/community/owner/post binding, immutable request and plan SHA, complete published/postponed preflight, exact before/after text and original `publish_date`, stable account/community locking independent of output directory, publication-distance verification immediately before every dispatch and controlled retry, durable intent-before-dispatch, exact readback, no blind replay, CAPTCHA stop without OCR/bypass, terminal journal consistency, and final queue plus non-target fingerprint proof.
 
 Schema v1 rejects `allow_attachments=true` and rejects every target attachment. Future attachment support requires a separately reviewed schema.
 
 `scripts/Invoke-VkPostponedTextEdit.ps1` is a repository-owned `delegating_supported` wrapper around `video_channel_manager.cli.vk_postponed_text`; it is not a second provider client and contains no direct VK transport or token handling.
 
-Issue #152 remains repository-only until PR #153 has exact-head six-job green CI, reviewed scope, clean review threads, and merge proof. No provider continuation or replay is pending.
+Issue #152 owns no remaining provider continuation or replay. Its closure proof is the v11 machine state plus the merged PR #153 and exact-head CI #3242.
 
 ## Preserved Wave 16 baseline
 
@@ -177,10 +178,7 @@ YouTube OAuth aliases remain channel-specific:
 - #133 — Wave 15 adaptive reasoning and local-only MP3 foundation.
 - #137 — Wave 16 CI, SQLite, and MP3 identity hardening.
 - #147 — guarded postponed-text capability and completed Lord God cleanup retrospective.
-
-### Active repository-only hardening
-
-- #152 / PR #153 — postponed-text audit hardening and exact-head quality proof. This scope owns no provider replay.
+- #152 / PR #153 — postponed-text audit hardening, exact-head six-job quality proof, and v11 state closure.
 
 ### Retired / not planned
 
@@ -207,4 +205,4 @@ Never rerun retired V1/V2/V3/V4, reset, recovery, article-wave, transfer, cleanu
 
 ## Next allowed action
 
-Finish PR #153 through exact-head six-job green CI and review. No operational continuation is pending. After merge, record the exact merge/CI proof in the newest machine-state overlay. Any future provider operation must start from a new explicit user request and newly reviewed scope; historical cleanup packages and plans remain evidence only.
+No operational continuation is pending. PR #153 is merged and its exact merge/CI proof is recorded in v11. Any future provider operation must start from a new explicit user request and newly reviewed scope; historical cleanup packages and plans remain evidence only.
