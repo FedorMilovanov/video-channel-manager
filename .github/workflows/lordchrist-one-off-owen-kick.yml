@@ -1,0 +1,30 @@
+name: Lordchrist one-off Owen cloud kick
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/triggers/lordchrist-owen-2026-08-07.txt
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  dispatch-one-off:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Dispatch exact one-off workflow from GitHub cloud
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh workflow run lordchrist-one-off-owen-test.yml \
+            --repo "$REPOSITORY" \
+            --ref main
+          echo "Exact one-off workflow_dispatch accepted by GitHub."
