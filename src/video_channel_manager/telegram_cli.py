@@ -5,6 +5,13 @@ import json
 import os
 from pathlib import Path
 
+from video_channel_manager.telegram_presentation import (
+    CANONICAL_PRESENTATION_POLICY_PATH,
+    load_presentation_policy,
+    load_rendered_post,
+    render_post,
+    verify_rendered_post,
+)
 from video_channel_manager.telegram_publisher import (
     TelegramApiError,
     dispatch_prepared,
@@ -21,6 +28,7 @@ from video_channel_manager.telegram_publisher import (
     resolve_entry,
     save_ledger,
     save_model,
+    verify_dispatch_against_queue,
     verify_persisted_intent,
 )
 
@@ -31,6 +39,11 @@ def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description="Guarded @lordchrist Telegram queue runner")
     root.add_argument("--queue", type=Path, required=True)
     root.add_argument("--ledger", type=Path, required=True)
+    root.add_argument(
+        "--presentation-policy",
+        type=Path,
+        default=CANONICAL_PRESENTATION_POLICY_PATH,
+    )
     sub = root.add_subparsers(dest="command", required=True)
 
     sub.add_parser("validate")
@@ -55,11 +68,20 @@ def parser() -> argparse.ArgumentParser:
     prepare.add_argument("--target-proof", type=Path, required=True)
     prepare.add_argument("--dispatch", type=Path, required=True)
 
+    render_dispatch = sub.add_parser("render-dispatch")
+    render_dispatch.add_argument("--dispatch", type=Path, required=True)
+    render_dispatch.add_argument("--output", type=Path, required=True)
+
     verify = sub.add_parser("verify-intent")
     verify.add_argument("--dispatch", type=Path, required=True)
 
+    verify_rendered = sub.add_parser("verify-rendered")
+    verify_rendered.add_argument("--dispatch", type=Path, required=True)
+    verify_rendered.add_argument("--rendered", type=Path, required=True)
+
     send = sub.add_parser("send")
     send.add_argument("--dispatch", type=Path, required=True)
+    send.add_argument("--rendered", type=Path, required=True)
 
     sub.add_parser("preview")
 
@@ -83,6 +105,7 @@ def _token() -> str:
 def main() -> int:
     args = parser().parse_args()
     queue = load_queue(args.queue)
+    presentation_policy = load_presentation_policy(args.presentation_policy)
 
     if args.command == "initialize-ledger":
         if args.confirm != INITIALIZE_CONFIRMATION:
@@ -93,6 +116,8 @@ def main() -> int:
                 {
                     "initialized": True,
                     "queue_digest": ledger.queue_digest,
+                    "presentation_policy_id": presentation_policy.policy_id,
+                    "presentation_policy_sha256": presentation_policy.digest,
                     "ledger_entries": len(ledger.entries),
                 },
                 ensure_ascii=False,
@@ -109,6 +134,8 @@ def main() -> int:
                     "valid": True,
                     "count": len(queue.posts),
                     "queue_digest": queue.digest,
+                    "presentation_policy_id": presentation_policy.policy_id,
+                    "presentation_policy_sha256": presentation_policy.digest,
                     "ledger_entries": len(ledger.entries),
                 },
                 ensure_ascii=False,
@@ -119,19 +146,29 @@ def main() -> int:
     if args.command == "preview":
         prepared = preview_next(queue, ledger)
         post = prepared.post
+        rendered = render_post(post, presentation_policy) if post is not None else None
         print(
             json.dumps(
                 {
                     "queue_digest": queue.digest,
+                    "presentation_policy_id": presentation_policy.policy_id,
+                    "presentation_policy_sha256": presentation_policy.digest,
                     "reason": prepared.reason,
                     "post": (
                         {
                             "publication_id": post.publication_id,
                             "sequence": post.sequence,
-                            "payload_sha256": post.payload_sha256,
-                            "text": post.text,
+                            "source_payload_sha256": post.payload_sha256,
+                            "source_text": post.text,
+                            "provider_payload_sha256": rendered.provider_payload_sha256,
+                            "parse_mode": rendered.parse_mode,
+                            "text": rendered.text,
+                            "html_text": rendered.html_text,
+                            "expected_entities": [
+                                entity.model_dump(mode="json") for entity in rendered.expected_entities
+                            ],
                         }
-                        if post is not None
+                        if post is not None and rendered is not None
                         else None
                     ),
                 },
@@ -222,6 +259,27 @@ def main() -> int:
         )
         return 0
 
+    if args.command == "render-dispatch":
+        envelope = load_dispatch(args.dispatch)
+        post = verify_dispatch_against_queue(queue, envelope)
+        rendered = render_post(post, presentation_policy)
+        save_model(args.output, rendered)
+        print(
+            json.dumps(
+                {
+                    "rendered": True,
+                    "publication_id": rendered.publication_id,
+                    "source_payload_sha256": rendered.source_payload_sha256,
+                    "presentation_policy_id": rendered.presentation_policy_id,
+                    "presentation_policy_sha256": rendered.presentation_policy_sha256,
+                    "provider_payload_sha256": rendered.provider_payload_sha256,
+                    "parse_mode": rendered.parse_mode,
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
     if args.command == "verify-intent":
         envelope = load_dispatch(args.dispatch)
         entry = verify_persisted_intent(queue, ledger, envelope)
@@ -242,10 +300,38 @@ def main() -> int:
         )
         return 0
 
+    if args.command == "verify-rendered":
+        envelope = load_dispatch(args.dispatch)
+        post = verify_dispatch_against_queue(queue, envelope)
+        rendered = load_rendered_post(args.rendered)
+        verify_rendered_post(post, presentation_policy, rendered)
+        if rendered.source_payload_sha256 != envelope.payload_sha256:
+            raise ValueError("rendered provider payload is not bound to the dispatch source payload")
+        print(
+            json.dumps(
+                {
+                    "verified": True,
+                    "publication_id": rendered.publication_id,
+                    "presentation_policy_sha256": rendered.presentation_policy_sha256,
+                    "provider_payload_sha256": rendered.provider_payload_sha256,
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
     if args.command == "send":
         envelope = load_dispatch(args.dispatch)
+        rendered = load_rendered_post(args.rendered)
         require_execution_enabled(queue_digest=queue.digest, mode=envelope.dispatch_mode)
-        entry = dispatch_prepared(queue, envelope, ledger, token=_token())
+        entry = dispatch_prepared(
+            queue,
+            envelope,
+            ledger,
+            token=_token(),
+            rendered=rendered,
+            presentation_policy=presentation_policy,
+        )
         save_ledger(args.ledger, ledger)
         print(
             json.dumps(
@@ -255,6 +341,8 @@ def main() -> int:
                     "provider_effect": entry.provider_effect,
                     "message_id": entry.message_id,
                     "message_url": entry.message_url,
+                    "presentation_policy_sha256": rendered.presentation_policy_sha256,
+                    "provider_payload_sha256": rendered.provider_payload_sha256,
                     "error": entry.last_error,
                 },
                 ensure_ascii=False,
