@@ -262,13 +262,26 @@ def _require_release_and_profile(profile: TelegramChannelProfile, release: Gener
         raise ValueError("release contract differs from selected Telegram channel profile")
 
 
-def _require_target(profile: TelegramChannelProfile, target: GenericTargetProof, now: datetime) -> None:
+def _require_target(
+    profile: TelegramChannelProfile,
+    release: GenericReleaseQueue,
+    target: GenericTargetProof,
+    now: datetime,
+) -> None:
     if target.project_key != profile.project_key or target.profile_sha256 != profile.digest:
         raise ValueError("target proof differs from selected Telegram channel profile")
     if target.channel_username.casefold() != profile.channel_username.casefold():
         raise ValueError("target proof channel differs from selected Telegram channel profile")
     if target.chat_username.casefold() != profile.bare_username.casefold() or target.chat_type != "channel":
         raise ValueError("target proof does not resolve the selected Telegram channel")
+    if release.chat_id is None or release.bot_id is None or release.bot_username is None:
+        raise ValueError("authorized release is missing exact Telegram target identity")
+    if (
+        target.chat_id != release.chat_id
+        or target.bot_id != release.bot_id
+        or target.bot_username.casefold() != release.bot_username.casefold()
+    ):
+        raise ValueError("target proof differs from release-bound Telegram target")
     age = now - target.checked_at_utc.astimezone(UTC)
     if age < -timedelta(minutes=1) or age > timedelta(minutes=15):
         raise ValueError("target proof is stale or has an invalid future timestamp")
@@ -300,7 +313,7 @@ def prepare_next(
         raise ValueError("prepare timestamp must be timezone-aware")
     _require_release_and_profile(profile, release)
     verify_ledger_against_release(ledger, release)
-    _require_target(profile, target, prepared_at)
+    _require_target(profile, release, target, prepared_at)
     _require_provenance(
         run_id=run_id,
         run_attempt=run_attempt,
