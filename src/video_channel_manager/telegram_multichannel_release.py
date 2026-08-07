@@ -43,6 +43,15 @@ class GenericReleaseQueue(BaseModel):
     profile_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     timezone: str = Field(min_length=3, max_length=80)
     daily_verified_limit: int = Field(ge=1, le=20)
+    target_binding_sha256: str | None = Field(default=None, pattern=r"^sha256:[0-9a-f]{64}$")
+    chat_id: int | None = Field(default=None, lt=0)
+    bot_id: int | None = Field(default=None, gt=0)
+    bot_username: str | None = Field(
+        default=None,
+        min_length=2,
+        max_length=64,
+        pattern=r"^[A-Za-z0-9_]+$",
+    )
     release_authorized: bool = False
     reviewed_by: str | None = Field(default=None, max_length=200)
     reviewed_at: datetime | None = None
@@ -79,7 +88,20 @@ class GenericReleaseQueue(BaseModel):
         if any(count > self.daily_verified_limit for count in per_day.values()):
             raise ValueError("release exceeds the configured daily publication limit")
 
+        target_values = (
+            self.target_binding_sha256,
+            self.chat_id,
+            self.bot_id,
+            self.bot_username,
+        )
+        target_is_unset = all(value is None for value in target_values)
+        target_is_complete = all(value is not None for value in target_values)
+        if not target_is_unset and not target_is_complete:
+            raise ValueError("Telegram release target binding must be either complete or entirely unset")
+
         if self.release_authorized:
+            if not target_is_complete:
+                raise ValueError("authorized release requires exact target binding and bot/channel identity")
             if not self.reviewed_by or self.reviewed_at is None:
                 raise ValueError("authorized release requires reviewed_by and reviewed_at")
             if self.reviewed_at.tzinfo is None:
