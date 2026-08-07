@@ -4,11 +4,16 @@ import argparse
 import json
 import os
 from pathlib import Path
+from typing import TypeVar, cast
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile, load_channel_profile
-from video_channel_manager.telegram_multichannel_outcome import GenericProviderOutcome, apply_provider_outcome
+from video_channel_manager.telegram_multichannel_outcome import (
+    GenericProviderOutcome,
+    GenericSendProviderEffect,
+    apply_provider_outcome,
+)
 from video_channel_manager.telegram_multichannel_release import GenericReleaseQueue, load_release
 from video_channel_manager.telegram_multichannel_state import (
     GenericDispatchEnvelope,
@@ -28,6 +33,8 @@ from video_channel_manager.telegram_multichannel_transport import (
     send_message_once,
     send_poll_once,
 )
+
+ModelT = TypeVar("ModelT", bound=BaseModel)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -76,16 +83,16 @@ def parser() -> argparse.ArgumentParser:
     return root
 
 
-def _load_model(path: Path, model: type[GenericTargetProof] | type[GenericDispatchEnvelope] | type[GenericProviderOutcome]):
+def _load_model(path: Path, model: type[ModelT]) -> ModelT:
     try:
         return model.model_validate_json(path.read_text(encoding="utf-8"))
     except (OSError, ValidationError) as exc:
         raise ValueError(f"invalid runtime artifact {path}: {exc}") from exc
 
 
-def _write_model(path: Path, value: object) -> None:
+def _write_model(path: Path, value: BaseModel) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(value.model_dump_json(indent=2) + "\n", encoding="utf-8")  # type: ignore[attr-defined]
+    path.write_text(value.model_dump_json(indent=2) + "\n", encoding="utf-8")
 
 
 def _require_runtime_profile(profile: TelegramChannelProfile, release: GenericReleaseQueue) -> None:
@@ -121,17 +128,22 @@ def _token(profile: TelegramChannelProfile) -> str:
 
 
 def _safe_error(exc: Exception) -> str:
-    if isinstance(exc, TelegramApiError):
-        return " ".join(str(exc).split())[:1000]
-    if isinstance(exc, ValueError):
+    if isinstance(exc, (TelegramApiError, ValueError)):
         return " ".join(str(exc).split())[:1000]
     return f"unexpected provider runtime error: {type(exc).__name__}"
+
+
+def _provider_effect(exc: TelegramApiError) -> GenericSendProviderEffect:
+    effect = exc.provider_effect
+    if effect in {"not_dispatched", "confirmed_absent", "may_exist", "verified"}:
+        return cast(GenericSendProviderEffect, effect)
+    return "may_exist"
 
 
 def _failure_outcome(
     envelope: GenericDispatchEnvelope,
     *,
-    effect: str,
+    effect: GenericSendProviderEffect,
     retryable: bool,
     error: str,
 ) -> GenericProviderOutcome:
@@ -167,10 +179,12 @@ def _send_exact_payload(
         else:
             raise ValueError("unsupported generic Telegram provider payload")
     except TelegramApiError as exc:
+        effect = _provider_effect(exc)
+        retryable = exc.retryable if effect in {"not_dispatched", "confirmed_absent"} else False
         return _failure_outcome(
             envelope,
-            effect=exc.provider_effect,
-            retryable=exc.retryable,
+            effect=effect,
+            retryable=retryable,
             error=_safe_error(exc),
         )
     except ValueError as exc:
@@ -240,8 +254,6 @@ def main() -> int:
         release = load_release(args.release)
         ledger = load_ledger(args.ledger, release)
         target = _load_model(args.target_proof, GenericTargetProof)
-        if not isinstance(target, GenericTargetProof):
-            raise AssertionError("target proof parser returned unexpected model")
         prepared = prepare_next(
             profile,
             release,
@@ -277,8 +289,6 @@ def main() -> int:
         release = load_release(args.release)
         ledger = load_ledger(args.ledger, release)
         envelope = _load_model(args.envelope, GenericDispatchEnvelope)
-        if not isinstance(envelope, GenericDispatchEnvelope):
-            raise AssertionError("dispatch parser returned unexpected model")
         entry = verify_persisted_intent(release, ledger, envelope)
         print(
             json.dumps(
@@ -299,8 +309,6 @@ def main() -> int:
         release = load_release(args.release)
         ledger = load_ledger(args.ledger, release)
         envelope = _load_model(args.envelope, GenericDispatchEnvelope)
-        if not isinstance(envelope, GenericDispatchEnvelope):
-            raise AssertionError("dispatch parser returned unexpected model")
         outcome = _send_exact_payload(profile, release, ledger, envelope)
         _write_model(args.outcome_output, outcome)
         print(
@@ -322,8 +330,6 @@ def main() -> int:
         ledger = load_ledger(args.ledger, release)
         envelope = _load_model(args.envelope, GenericDispatchEnvelope)
         outcome = _load_model(args.outcome, GenericProviderOutcome)
-        if not isinstance(envelope, GenericDispatchEnvelope) or not isinstance(outcome, GenericProviderOutcome):
-            raise AssertionError("runtime artifact parser returned unexpected model")
         entry = apply_provider_outcome(ledger, envelope, outcome)
         save_ledger(args.ledger, ledger)
         print(
