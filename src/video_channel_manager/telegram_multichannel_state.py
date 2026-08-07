@@ -320,7 +320,9 @@ def prepare_next(
         and publication_local_date(entry.published_at_utc, release.timezone) == today
     )
     if verified_today >= release.daily_verified_limit:
-        return PreparedGenericDispatch(envelope=None, reason=f"daily verified limit already used for {today.isoformat()}")
+        return PreparedGenericDispatch(
+            envelope=None, reason=f"daily verified limit already used for {today.isoformat()}"
+        )
 
     if mode == "scheduled":
         manual_canary = any(
@@ -332,7 +334,9 @@ def prepare_next(
             for entry in ledger.entries.values()
         )
         if not manual_canary:
-            return PreparedGenericDispatch(envelope=None, reason="scheduled execution requires a verified manual canary")
+            return PreparedGenericDispatch(
+                envelope=None, reason="scheduled execution requires a verified manual canary"
+            )
 
     item, reason = strict_next_item(release, ledger)
     if item is None:
@@ -340,7 +344,9 @@ def prepare_next(
 
     if mode == "manual":
         if expected_publication_id is None:
-            return PreparedGenericDispatch(envelope=None, reason="manual execution requires an exact publication_id", item=item)
+            return PreparedGenericDispatch(
+                envelope=None, reason="manual execution requires an exact publication_id", item=item
+            )
         if expected_publication_id != item.publication_id:
             return PreparedGenericDispatch(
                 envelope=None,

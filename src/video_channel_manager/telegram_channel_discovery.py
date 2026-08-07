@@ -71,7 +71,9 @@ def discover_channel_target(
         try:
             chat_id = int(alias_chat["id"])
         except (KeyError, TypeError, ValueError) as exc:
-            raise TelegramApiError("resolved Telegram channel has no valid numeric id", provider_effect="not_dispatched") from exc
+            raise TelegramApiError(
+                "resolved Telegram channel has no valid numeric id", provider_effect="not_dispatched"
+            ) from exc
         chat_username = str(alias_chat.get("username") or "")
         chat_type = str(alias_chat.get("type") or "")
         if chat_id >= 0:

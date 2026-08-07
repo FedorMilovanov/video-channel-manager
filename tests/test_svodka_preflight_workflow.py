@@ -29,9 +29,9 @@ def test_svodka_preflight_uses_pinned_binding_and_shared_bot_secret_without_muta
     assert "BINDING_PATH: content/telegram/channels/svodka-target-binding.json" in workflow
     assert "load_target_binding" in workflow
     assert "secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN" in workflow
-    assert "--expected-chat-id \"$SVODKA_TELEGRAM_CHAT_ID\"" in workflow
-    assert "--expected-bot-id \"$SVODKA_TELEGRAM_BOT_ID\"" in workflow
-    assert "--expected-bot-username \"$SVODKA_TELEGRAM_BOT_USERNAME\"" in workflow
+    assert '--expected-chat-id "$SVODKA_TELEGRAM_CHAT_ID"' in workflow
+    assert '--expected-bot-id "$SVODKA_TELEGRAM_BOT_ID"' in workflow
+    assert '--expected-bot-username "$SVODKA_TELEGRAM_BOT_USERNAME"' in workflow
     assert "sendMessage" not in workflow
     assert "sendPoll" not in workflow
     assert "schedule:" not in workflow

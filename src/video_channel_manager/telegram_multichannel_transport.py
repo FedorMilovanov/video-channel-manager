@@ -550,15 +550,21 @@ def send_poll_once(
         if not isinstance(poll, dict):
             raise TelegramApiError("Telegram returned a message without poll data", provider_effect="may_exist")
         if str(poll.get("question") or "") != payload.question or str(poll.get("type") or "") != payload.poll_type:
-            raise TelegramApiError("Telegram returned poll metadata that differs from payload", provider_effect="may_exist")
+            raise TelegramApiError(
+                "Telegram returned poll metadata that differs from payload", provider_effect="may_exist"
+            )
         raw_options = poll.get("options")
         if not isinstance(raw_options, list):
             raise TelegramApiError("Telegram returned invalid poll options", provider_effect="may_exist")
         returned_options = tuple(str(option.get("text") or "") for option in raw_options if isinstance(option, dict))
         if returned_options != payload.options:
-            raise TelegramApiError("Telegram returned poll options that differ from payload", provider_effect="may_exist")
+            raise TelegramApiError(
+                "Telegram returned poll options that differ from payload", provider_effect="may_exist"
+            )
         if payload.description is not None and str(poll.get("description") or "") != payload.description:
-            raise TelegramApiError("Telegram returned poll description that differs from payload", provider_effect="may_exist")
+            raise TelegramApiError(
+                "Telegram returned poll description that differs from payload", provider_effect="may_exist"
+            )
         if payload.poll_type == "quiz":
             raw_correct = poll.get("correct_option_ids")
             if not isinstance(raw_correct, list):
