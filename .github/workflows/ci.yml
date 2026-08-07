@@ -37,6 +37,58 @@ jobs:
         run: pip check
       - name: Compile Python sources and operational scripts
         run: python -m compileall -q src scripts tests
+      - name: Build isolated minimal Telegram runtime
+        if: matrix.python-version == '3.11'
+        shell: bash
+        run: |
+          set -euo pipefail
+          runtime="$RUNNER_TEMP/lordchrist-runtime-smoke"
+          python -m venv "$runtime"
+          "$runtime/bin/python" -m pip install \
+            --disable-pip-version-check \
+            --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+          "$runtime/bin/python" -m pip check
+      - name: Smoke test guarded Telegram CLI without provider access
+        if: matrix.python-version == '3.11'
+        shell: bash
+        run: |
+          set -euo pipefail
+          runtime="$RUNNER_TEMP/lordchrist-runtime-smoke"
+          smoke_python="$runtime/bin/python"
+          ledger="$RUNNER_TEMP/lordchrist-smoke-ledger.json"
+          validation="$RUNNER_TEMP/lordchrist-smoke-validation.json"
+          preview="$RUNNER_TEMP/lordchrist-smoke-preview.json"
+          queue="content/telegram/lordchrist/verified-30-posts.json"
+
+          rm -f "$ledger"
+          PYTHONPATH=src "$smoke_python" -m video_channel_manager.telegram_cli \
+            --queue "$queue" \
+            --ledger "$ledger" \
+            initialize-ledger \
+            --confirm INITIALIZE_NEW_LORDCHRIST_LEDGER
+          PYTHONPATH=src "$smoke_python" -m video_channel_manager.telegram_cli \
+            --queue "$queue" \
+            --ledger "$ledger" \
+            validate > "$validation"
+          PYTHONPATH=src "$smoke_python" -m video_channel_manager.telegram_cli \
+            --queue "$queue" \
+            --ledger "$ledger" \
+            preview > "$preview"
+
+          "$smoke_python" - "$validation" "$preview" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          validation = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          preview = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
+          assert validation["valid"] is True
+          assert validation["count"] == 30
+          assert validation["ledger_entries"] == 30
+          assert preview["post"]["sequence"] == 1
+          assert preview["post"]["publication_id"].startswith("lordchrist-")
+          PY
       - name: Dependency vulnerability gate
         id: pip_audit
         continue-on-error: true
