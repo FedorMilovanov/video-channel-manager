@@ -1,0 +1,109 @@
+name: Svodka Telegram preview and preflight
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Preview locally or run exact read-only Telegram preflight
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - preflight
+      sequence:
+        description: Svodka draft sequence to preview
+        required: true
+        default: "1"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: svodka-telegram-preflight
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      PROFILE_PATH: content/telegram/channels/svodka.json
+      QUEUE_PATH: content/telegram/svodka/draft-14-posts-2026-08.json
+      SVODKA_TELEGRAM_CHAT_ID: ${{ vars.SVODKA_TELEGRAM_CHAT_ID }}
+      SVODKA_TELEGRAM_BOT_ID: ${{ vars.SVODKA_TELEGRAM_BOT_ID }}
+      SVODKA_TELEGRAM_BOT_USERNAME: ${{ vars.SVODKA_TELEGRAM_BOT_USERNAME }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        run: python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Validate channel profile
+        run: python -m video_channel_manager.telegram_channel_cli validate-profile --profile "$PROFILE_PATH"
+
+      - name: Validate immutable draft inputs
+        run: python -m video_channel_manager.telegram_channel_cli validate-svodka --profile "$PROFILE_PATH" --queue "$QUEUE_PATH"
+
+      - name: Preview exact deterministic payload
+        env:
+          PREVIEW_SEQUENCE: ${{ inputs.sequence }}
+        run: |
+          set -euo pipefail
+          [[ "$PREVIEW_SEQUENCE" =~ ^[1-9][0-9]*$ ]] || {
+            echo "sequence must be a positive integer" >&2
+            exit 2
+          }
+          python -m video_channel_manager.telegram_channel_cli preview-svodka \
+            --profile "$PROFILE_PATH" \
+            --queue "$QUEUE_PATH" \
+            --sequence "$PREVIEW_SEQUENCE"
+
+      - name: Validate exact preflight variables
+        if: inputs.action == 'preflight'
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SVODKA_TELEGRAM_CHAT_ID" =~ ^-?[0-9]+$ ]] || {
+            echo "SVODKA_TELEGRAM_CHAT_ID must be an exact signed integer" >&2
+            exit 2
+          }
+          (( SVODKA_TELEGRAM_CHAT_ID < 0 )) || {
+            echo "SVODKA_TELEGRAM_CHAT_ID must be negative" >&2
+            exit 2
+          }
+          [[ "$SVODKA_TELEGRAM_BOT_ID" =~ ^[1-9][0-9]*$ ]] || {
+            echo "SVODKA_TELEGRAM_BOT_ID must be an exact positive integer" >&2
+            exit 2
+          }
+          [[ "$SVODKA_TELEGRAM_BOT_USERNAME" =~ ^[A-Za-z0-9_]+$ ]] || {
+            echo "SVODKA_TELEGRAM_BOT_USERNAME is invalid" >&2
+            exit 2
+          }
+
+      - name: Run read-only Telegram target preflight
+        if: inputs.action == 'preflight'
+        env:
+          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.SVODKA_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.telegram_channel_cli preflight \
+            --profile "$PROFILE_PATH" \
+            --expected-chat-id "$SVODKA_TELEGRAM_CHAT_ID" \
+            --expected-bot-id "$SVODKA_TELEGRAM_BOT_ID" \
+            --expected-bot-username "$SVODKA_TELEGRAM_BOT_USERNAME" \
+            --output .runtime/svodka-target-proof.json
+          echo "Read-only Svodka preflight passed. No Telegram provider mutation was attempted."
