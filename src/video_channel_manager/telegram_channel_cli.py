@@ -11,6 +11,7 @@ from video_channel_manager.telegram_channel_discovery import discover_channel_ta
 from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_multichannel_release import save_release
 from video_channel_manager.telegram_multichannel_transport import (
+    GenericTargetProof,
     preflight_channel,
     render_message_payload,
     render_poll_payload,
@@ -65,22 +66,22 @@ def _svodka_poll_description(post: SvodkaDraftPost, tagline: str) -> str:
     return build_poll_description(post, tagline)
 
 
-def _write_proof(path: Path, proof: object) -> None:
+def _write_proof(path: Path, proof: GenericTargetProof) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(proof.model_dump_json(indent=2) + "\n", encoding="utf-8")  # type: ignore[attr-defined]
+    path.write_text(proof.model_dump_json(indent=2) + "\n", encoding="utf-8")
 
 
-def _proof_summary(proof: object, *, key: str) -> dict[str, object]:
+def _proof_summary(proof: GenericTargetProof, *, key: str) -> dict[str, object]:
     return {
         key: True,
-        "project_key": proof.project_key,  # type: ignore[attr-defined]
-        "channel_username": proof.channel_username,  # type: ignore[attr-defined]
-        "chat_id": proof.chat_id,  # type: ignore[attr-defined]
-        "chat_username": proof.chat_username,  # type: ignore[attr-defined]
-        "bot_id": proof.bot_id,  # type: ignore[attr-defined]
-        "bot_username": proof.bot_username,  # type: ignore[attr-defined]
-        "can_post_messages": proof.can_post_messages,  # type: ignore[attr-defined]
-        "profile_sha256": proof.profile_sha256,  # type: ignore[attr-defined]
+        "project_key": proof.project_key,
+        "channel_username": proof.channel_username,
+        "chat_id": proof.chat_id,
+        "chat_username": proof.chat_username,
+        "bot_id": proof.bot_id,
+        "bot_username": proof.bot_username,
+        "can_post_messages": proof.can_post_messages,
+        "profile_sha256": proof.profile_sha256,
     }
 
 
