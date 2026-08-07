@@ -4,7 +4,7 @@ import hashlib
 import json
 from datetime import UTC, datetime, timedelta
 from html.parser import HTMLParser
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -131,6 +131,11 @@ def _validate_publication_id(profile: TelegramChannelProfile, publication_id: st
         raise ValueError("publication_id is too long")
 
 
+def _require_provider_write_authorized(profile: TelegramChannelProfile) -> None:
+    if not profile.provider_writes_authorized:
+        raise ValueError("provider writes are not authorized by the selected Telegram channel profile")
+
+
 def render_message_payload(
     profile: TelegramChannelProfile,
     *,
@@ -212,7 +217,7 @@ def _validate_channel_record(
     *,
     profile: TelegramChannelProfile,
     expected_chat_id: int,
-) -> tuple[int, str, str]:
+) -> tuple[int, str, Literal["channel"]]:
     try:
         actual_chat_id = int(chat["id"])
     except (KeyError, TypeError, ValueError) as exc:
@@ -229,7 +234,7 @@ def _validate_channel_record(
         )
     if actual_type != "channel":
         raise TelegramApiError("resolved Telegram target is not a channel", provider_effect="not_dispatched")
-    return actual_chat_id, actual_username, actual_type
+    return actual_chat_id, actual_username, "channel"
 
 
 def preflight_channel(
@@ -335,6 +340,7 @@ def preflight_channel(
         can_post = status == "creator" or matching_member.get("can_post_messages") is True
         if not can_post:
             raise TelegramApiError("posting bot lacks can_post_messages", provider_effect="not_dispatched")
+        member_status = cast(Literal["administrator", "creator"], status)
 
         return GenericTargetProof(
             schema_name="video-channel-manager.telegram-generic-target-proof",
@@ -348,7 +354,7 @@ def preflight_channel(
             chat_username=actual_username,
             chat_title=str(numeric_chat.get("title") or profile.channel_title),
             chat_type=actual_type,
-            member_status=status,
+            member_status=member_status,
             can_post_messages=True,
             checked_at_utc=now or datetime.now(tz=UTC),
         )
@@ -428,6 +434,7 @@ def send_message_once(
     client: httpx.Client | None = None,
     now: datetime | None = None,
 ) -> GenericSendReceipt:
+    _require_provider_write_authorized(profile)
     effective_now = now or datetime.now(tz=UTC)
     _verified_target(profile, target, effective_now)
     if payload.project_key != profile.project_key or payload.profile_sha256 != profile.digest:
@@ -489,6 +496,7 @@ def send_poll_once(
     client: httpx.Client | None = None,
     now: datetime | None = None,
 ) -> GenericSendReceipt:
+    _require_provider_write_authorized(profile)
     effective_now = now or datetime.now(tz=UTC)
     _verified_target(profile, target, effective_now)
     if payload.project_key != profile.project_key or payload.profile_sha256 != profile.digest:
