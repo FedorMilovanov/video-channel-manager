@@ -563,6 +563,10 @@ def _ffmpeg_run(command: list[str]) -> None:
     _run(command, timeout_seconds=3600.0)
 
 
+def _ffconcat_escape(path: Path) -> str:
+    return path.resolve().as_posix().replace("'", "'\\''")
+
+
 def render_album(
     manifest: AlbumManifest,
     timing: AlbumTimingManifest,
@@ -681,7 +685,7 @@ def render_album(
     concat_file = build_dir / "concat.txt"
     concat_file.parent.mkdir(parents=True, exist_ok=True)
     concat_file.write_text(
-        "".join(f"file '{str(path.resolve()).replace(chr(39), chr(39) + '\\\\' + chr(39))}'\n" for path in concat_entries),
+        "".join(f"file '{_ffconcat_escape(path)}'\n" for path in concat_entries),
         encoding="utf-8",
     )
     final_path = render_path(root.parent.parent, manifest.album_key)
