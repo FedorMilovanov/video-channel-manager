@@ -62,16 +62,16 @@ class GenericPollPayload(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_name: Literal["video-channel-manager.telegram-generic-poll-payload"]
-    schema_version: Literal[1]
+    schema_version: Literal[2]
     project_key: str
     channel_username: str
     publication_id: str
     profile_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     provider_payload_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     question: str = Field(min_length=1, max_length=300)
-    options: tuple[str, ...] = Field(min_length=2, max_length=10)
+    options: tuple[str, ...] = Field(min_length=2, max_length=12)
     poll_type: Literal["regular", "quiz"]
-    correct_option_id: int | None = Field(default=None, ge=0, le=9)
+    correct_option_ids: tuple[int, ...] | None = None
     explanation: str | None = Field(default=None, max_length=200)
     is_anonymous: bool = True
 
@@ -80,9 +80,13 @@ class GenericPollPayload(BaseModel):
         if any(not option.strip() or len(option) > 100 for option in self.options):
             raise ValueError("poll options must contain 1..100 visible characters")
         if self.poll_type == "quiz":
-            if self.correct_option_id is None or self.correct_option_id >= len(self.options):
-                raise ValueError("quiz requires a valid correct_option_id")
-        elif self.correct_option_id is not None or self.explanation is not None:
+            if not self.correct_option_ids:
+                raise ValueError("quiz requires at least one correct option id")
+            if tuple(sorted(set(self.correct_option_ids))) != self.correct_option_ids:
+                raise ValueError("quiz correct_option_ids must be unique and monotonically increasing")
+            if any(index < 0 or index >= len(self.options) for index in self.correct_option_ids):
+                raise ValueError("quiz correct option id is outside the options list")
+        elif self.correct_option_ids is not None or self.explanation is not None:
             raise ValueError("regular poll must not include quiz-only fields")
         return self
 
@@ -177,7 +181,7 @@ def render_poll_payload(
     question: str,
     options: tuple[str, ...],
     poll_type: Literal["regular", "quiz"],
-    correct_option_id: int | None = None,
+    correct_option_ids: tuple[int, ...] | None = None,
     explanation: str | None = None,
     is_anonymous: bool = True,
 ) -> GenericPollPayload:
@@ -191,13 +195,13 @@ def render_poll_payload(
         "question": question,
         "options": list(options),
         "poll_type": poll_type,
-        "correct_option_id": correct_option_id,
+        "correct_option_ids": list(correct_option_ids) if correct_option_ids is not None else None,
         "explanation": explanation,
         "is_anonymous": is_anonymous,
     }
     return GenericPollPayload(
         schema_name="video-channel-manager.telegram-generic-poll-payload",
-        schema_version=1,
+        schema_version=2,
         project_key=profile.project_key,
         channel_username=profile.channel_username,
         publication_id=publication_id,
@@ -206,7 +210,7 @@ def render_poll_payload(
         question=question,
         options=options,
         poll_type=poll_type,
-        correct_option_id=correct_option_id,
+        correct_option_ids=correct_option_ids,
         explanation=explanation,
         is_anonymous=is_anonymous,
     )
@@ -311,7 +315,7 @@ def preflight_channel(
                 api_base=api_base,
                 token=token,
                 method="getChatAdministrators",
-                payload={"chat_id": actual_chat_id},
+                payload={"chat_id": actual_chat_id, "return_bots": True},
                 mutation=False,
             ),
             method="getChatAdministrators",
@@ -512,7 +516,7 @@ def send_poll_once(
         "is_anonymous": payload.is_anonymous,
     }
     if payload.poll_type == "quiz":
-        provider_payload["correct_option_id"] = payload.correct_option_id
+        provider_payload["correct_option_ids"] = list(payload.correct_option_ids or ())
         if payload.explanation:
             provider_payload["explanation"] = payload.explanation
 
@@ -547,8 +551,20 @@ def send_poll_once(
         returned_options = tuple(str(option.get("text") or "") for option in raw_options if isinstance(option, dict))
         if returned_options != payload.options:
             raise TelegramApiError("Telegram returned poll options that differ from payload", provider_effect="may_exist")
-        if payload.poll_type == "quiz" and poll.get("correct_option_id") not in {None, payload.correct_option_id}:
-            raise TelegramApiError("Telegram returned an unexpected quiz answer index", provider_effect="may_exist")
+        if payload.poll_type == "quiz":
+            raw_correct = poll.get("correct_option_ids")
+            if not isinstance(raw_correct, list):
+                raise TelegramApiError("Telegram returned quiz without correct_option_ids", provider_effect="may_exist")
+            try:
+                returned_correct = tuple(int(index) for index in raw_correct)
+            except (TypeError, ValueError) as exc:
+                raise TelegramApiError(
+                    "Telegram returned invalid quiz correct_option_ids", provider_effect="may_exist"
+                ) from exc
+            if returned_correct != payload.correct_option_ids:
+                raise TelegramApiError(
+                    "Telegram returned quiz answer ids that differ from payload", provider_effect="may_exist"
+                )
         message_id = _message_id(message)
         return _receipt(
             profile,
