@@ -1,8 +1,9 @@
 name: Lordchrist one-off Owen autonomous test
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: "30 19 7 8 *"
+    - cron: "15,20,25,30,35,40,45,50,55 20 7 8 *"
       timezone: Europe/Moscow
 
 permissions:
