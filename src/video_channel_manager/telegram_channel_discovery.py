@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Literal, cast
 
 import httpx
 
@@ -145,6 +145,7 @@ def discover_channel_target(
         can_post = status == "creator" or matching_member.get("can_post_messages") is True
         if not can_post:
             raise TelegramApiError("posting bot lacks can_post_messages", provider_effect="not_dispatched")
+        member_status = cast(Literal["administrator", "creator"], status)
 
         return GenericTargetProof(
             schema_name="video-channel-manager.telegram-generic-target-proof",
@@ -158,7 +159,7 @@ def discover_channel_target(
             chat_username=chat_username,
             chat_title=str(alias_chat.get("title") or profile.channel_title),
             chat_type="channel",
-            member_status=status,
+            member_status=member_status,
             can_post_messages=True,
             checked_at_utc=now or datetime.now(tz=UTC),
         )
