@@ -43,9 +43,22 @@ class TelegramChannelProfile(BaseModel):
     def bare_username(self) -> str:
         return self.channel_username.removeprefix("@")
 
+    def contract_payload(self) -> dict[str, object]:
+        """Return the stable channel contract used for immutable binding digests.
+
+        The provider-write gate is intentionally excluded. Enabling or disabling
+        live writes must not silently change the identity of the channel, payloads,
+        reviewed release, or read-only target proof. The gate is still enforced at
+        execution time by the transport/runtime.
+        """
+
+        payload = self.model_dump(mode="json")
+        payload.pop("provider_writes_authorized", None)
+        return payload
+
     @property
     def digest(self) -> str:
-        payload = json.dumps(self.model_dump(mode="json"), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        payload = json.dumps(self.contract_payload(), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         return "sha256:" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
