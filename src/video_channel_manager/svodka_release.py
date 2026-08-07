@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import datetime
 
 from video_channel_manager.svodka_queue import SvodkaDraftPost, SvodkaDraftQueue
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile
@@ -12,6 +13,7 @@ from video_channel_manager.telegram_multichannel_transport import (
     render_message_payload,
     render_poll_payload,
 )
+from video_channel_manager.telegram_target_binding import TelegramTargetBinding
 
 
 def source_post_sha256(post: SvodkaDraftPost) -> str:
@@ -27,11 +29,38 @@ def build_poll_description(post: SvodkaDraftPost, tagline: str) -> str:
     return description
 
 
+def _target_fields(
+    profile: TelegramChannelProfile,
+    binding: TelegramTargetBinding | None,
+) -> dict[str, object | None]:
+    if binding is None:
+        return {
+            "target_binding_sha256": None,
+            "chat_id": None,
+            "bot_id": None,
+            "bot_username": None,
+        }
+    if (
+        binding.project_key != profile.project_key
+        or binding.channel_username.casefold() != profile.channel_username.casefold()
+        or binding.profile_sha256 != profile.digest
+        or binding.chat_username.casefold() != profile.bare_username.casefold()
+    ):
+        raise ValueError("Svodka target binding differs from selected Telegram channel profile")
+    return {
+        "target_binding_sha256": binding.digest,
+        "chat_id": binding.chat_id,
+        "bot_id": binding.bot_id,
+        "bot_username": binding.bot_username,
+    }
+
+
 def build_svodka_release_candidate(
     profile: TelegramChannelProfile,
     draft: SvodkaDraftQueue,
     *,
     release_id: str,
+    binding: TelegramTargetBinding | None = None,
 ) -> GenericReleaseQueue:
     if profile.project_key != draft.project_key or profile.channel_username != draft.channel_username:
         raise ValueError("Svodka draft identity differs from selected Telegram channel profile")
@@ -92,8 +121,32 @@ def build_svodka_release_candidate(
         profile_sha256=profile.digest,
         timezone=profile.timezone,
         daily_verified_limit=profile.daily_verified_limit,
+        **_target_fields(profile, binding),
         release_authorized=False,
         reviewed_by=None,
         reviewed_at=None,
         items=tuple(items),
     )
+
+
+def authorize_svodka_release(
+    candidate: GenericReleaseQueue,
+    *,
+    reviewed_by: str,
+    reviewed_at: datetime,
+) -> GenericReleaseQueue:
+    if candidate.release_authorized:
+        raise ValueError("Svodka release is already authorized")
+    if candidate.target_binding_sha256 is None:
+        raise ValueError("Svodka release must be exact-target-bound before authorization")
+    reviewer = reviewed_by.strip()
+    if not reviewer:
+        raise ValueError("Svodka release reviewer must be non-empty")
+    if reviewed_at.tzinfo is None:
+        raise ValueError("Svodka release review timestamp must be timezone-aware")
+
+    payload = candidate.model_dump(mode="json")
+    payload["release_authorized"] = True
+    payload["reviewed_by"] = reviewer
+    payload["reviewed_at"] = reviewed_at.isoformat()
+    return GenericReleaseQueue.model_validate(payload)
