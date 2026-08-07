@@ -89,6 +89,9 @@ jobs:
           assert preview["post"]["sequence"] == 1
           assert preview["post"]["publication_id"].startswith("lordchrist-")
           PY
+      - name: Audit pinned Telegram runtime dependencies
+        if: matrix.python-version == '3.11'
+        run: pip-audit -r requirements/telegram-publisher.txt --desc on
       - name: Dependency vulnerability gate
         id: pip_audit
         continue-on-error: true
