@@ -236,6 +236,8 @@ def prepare_next(
         github_sha=github_sha,
         github_workflow_sha=github_workflow_sha,
     )
+    if mode == "scheduled" and run_attempt != "1":
+        return PreparedDispatch(None, "strict queue blocked: scheduled workflow re-runs are forbidden")
 
     proof_age = now - target.checked_at_utc.astimezone(UTC)
     if proof_age < -timedelta(minutes=1) or proof_age > timedelta(minutes=15):
