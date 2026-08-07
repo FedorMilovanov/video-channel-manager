@@ -15,7 +15,15 @@ from video_channel_manager.telegram_models import (
     TelegramLedger,
     TelegramQueue,
 )
-from video_channel_manager.telegram_state import utc_now, verify_persisted_intent
+from video_channel_manager.telegram_presentation import (
+    DEFAULT_PRESENTATION_POLICY,
+    PresentationPolicy,
+    RenderedTelegramPost,
+    formatting_entities_match,
+    render_post,
+    verify_rendered_post,
+)
+from video_channel_manager.telegram_state import utc_now, verify_dispatch_against_queue, verify_persisted_intent
 
 READ_ONLY_TRANSPORT_RETRIES = 2
 MUTATION_TRANSPORT_RETRIES = 0
@@ -295,6 +303,8 @@ def dispatch_prepared(
     ledger: TelegramLedger,
     *,
     token: str,
+    rendered: RenderedTelegramPost | None = None,
+    presentation_policy: PresentationPolicy = DEFAULT_PRESENTATION_POLICY,
     api_base: str = DEFAULT_API_BASE,
     client: httpx.Client | None = None,
     now: datetime | None = None,
@@ -305,7 +315,13 @@ def dispatch_prepared(
     dispatch_age = effective_now - envelope.prepared_at_utc.astimezone(UTC)
     if dispatch_age < -timedelta(minutes=1) or dispatch_age > timedelta(minutes=15):
         raise ValueError("prepared dispatch expired or has an invalid future timestamp")
+
+    post = verify_dispatch_against_queue(queue, envelope)
     entry = verify_persisted_intent(queue, ledger, envelope)
+    effective_rendered = rendered or render_post(post, presentation_policy)
+    verify_rendered_post(post, presentation_policy, effective_rendered)
+    if effective_rendered.source_payload_sha256 != envelope.payload_sha256:
+        raise ValueError("rendered provider payload is not bound to the prepared source payload")
 
     own_client = client is None
     http_client = client or httpx.Client(
@@ -323,8 +339,9 @@ def dispatch_prepared(
                 mutation=True,
                 payload={
                     "chat_id": envelope.target.chat_id,
-                    "text": envelope.text,
-                    "link_preview_options": {"is_disabled": True},
+                    "text": effective_rendered.html_text,
+                    "parse_mode": effective_rendered.parse_mode,
+                    "link_preview_options": {"is_disabled": effective_rendered.link_preview_disabled},
                 },
             ),
             method="sendMessage",
@@ -345,9 +362,14 @@ def dispatch_prepared(
             or returned_type != "channel"
         ):
             raise TelegramApiError("Telegram returned a message for an unexpected chat", provider_effect="may_exist")
-        if str(message.get("text") or "") != envelope.text:
+        if str(message.get("text") or "") != effective_rendered.text:
             raise TelegramApiError(
-                "Telegram returned text that differs from the immutable payload",
+                "Telegram returned plain text that differs from the rendered provider payload",
+                provider_effect="may_exist",
+            )
+        if not formatting_entities_match(effective_rendered.expected_entities, message.get("entities")):
+            raise TelegramApiError(
+                "Telegram returned formatting entities that differ from the rendered provider payload",
                 provider_effect="may_exist",
             )
         try:
