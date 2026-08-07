@@ -22,6 +22,36 @@ class SvodkaSource(BaseModel):
     evidence: str = Field(min_length=20, max_length=1000)
 
 
+class SvodkaQuiz(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    question: str = Field(min_length=3, max_length=300)
+    options: tuple[str, ...] = Field(min_length=2, max_length=10)
+    correct_option_index: int = Field(ge=0, le=9)
+    explanation: str = Field(min_length=10, max_length=200)
+
+    @model_validator(mode="after")
+    def answer_is_in_range(self) -> "SvodkaQuiz":
+        if self.correct_option_index >= len(self.options):
+            raise ValueError("quiz correct_option_index is outside the options list")
+        if any(not option.strip() or len(option) > 100 for option in self.options):
+            raise ValueError("quiz options must contain 1..100 visible characters")
+        return self
+
+
+class SvodkaPoll(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    question: str = Field(min_length=3, max_length=300)
+    options: tuple[str, ...] = Field(min_length=2, max_length=10)
+
+    @model_validator(mode="after")
+    def options_are_valid(self) -> "SvodkaPoll":
+        if any(not option.strip() or len(option) > 100 for option in self.options):
+            raise ValueError("poll options must contain 1..100 visible characters")
+        return self
+
+
 class SvodkaPilot(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -55,6 +85,8 @@ class SvodkaDraftPost(BaseModel):
     scheduled_at: datetime
     format: SvodkaFormat
     title: str = Field(min_length=3, max_length=180)
+    quiz: SvodkaQuiz | None = None
+    poll: SvodkaPoll | None = None
     html_text: str = Field(min_length=100, max_length=8192)
     sources: tuple[SvodkaSource, ...] = Field(min_length=1, max_length=12)
 
@@ -75,6 +107,18 @@ class SvodkaDraftPost(BaseModel):
         if "📎" not in value:
             raise ValueError("Svodka factual post must expose at least one visible source line")
         return value
+
+    @model_validator(mode="after")
+    def interactive_contract(self) -> "SvodkaDraftPost":
+        if self.format == "quiz":
+            if self.quiz is None or self.poll is not None:
+                raise ValueError("quiz posts require quiz metadata and no regular poll metadata")
+        elif self.format == "poll":
+            if self.poll is None or self.quiz is not None:
+                raise ValueError("poll posts require poll metadata and no quiz metadata")
+        elif self.quiz is not None or self.poll is not None:
+            raise ValueError("non-interactive posts must not contain quiz or poll metadata")
+        return self
 
 
 class SvodkaDraftQueue(BaseModel):
