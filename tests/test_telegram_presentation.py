@@ -117,18 +117,29 @@ def test_all_thirty_posts_render_without_changing_source_queue_digest() -> None:
     assert len(provider_hashes) == 30
 
 
-def test_longest_direct_quote_is_selected_deterministically_with_earliest_tie() -> None:
+def test_longest_direct_quote_is_selected_deterministically() -> None:
     payload = _queue_payload()
     first = payload["posts"][0]  # type: ignore[index]
     text = str(first["text"])  # type: ignore[index]
     blocks = text.split("\n\n")
-    body = "Начало: «коротко». Затем: «эта реплика заметно длиннее остальных». И снова: «коротко»."
-    first["text"] = body + "\n\n" + blocks[-2] + "\n\n" + blocks[-1]  # type: ignore[index]
+    body_one = (
+        "Первый плотный абзац сохраняет валидную структуру карточки: «коротко». "
+        "Затем здесь появляется «эта реплика заметно длиннее остальных и поэтому должна стать главным акцентом», "
+        "после чего повествование спокойно продолжается без изменения исходного принципа оформления."
+    )
+    body_two = (
+        "Второй плотный абзац нужен не ради оформления, а чтобы fixture соответствовал production schema. "
+        "В нём остаётся ещё одна «коротко» реплика, но она не должна конкурировать с содержательной длинной цитатой первого абзаца."
+    )
+    first["text"] = body_one + "\n\n" + body_two + "\n\n" + blocks[-2] + "\n\n" + blocks[-1]  # type: ignore[index]
     post = TelegramQueue.model_validate(payload).posts[0]
 
     rendered = render_post(post)
-    assert "<b>«эта реплика заметно длиннее остальных»</b>" in rendered.html_text
-    assert "<i>«коротко»</i>" in rendered.html_text
+    assert (
+        "<b>«эта реплика заметно длиннее остальных и поэтому должна стать главным акцентом»</b>"
+        in rendered.html_text
+    )
+    assert rendered.html_text.count("<i>«коротко»</i>") == 2
     assert "<b>«коротко»</b>" not in rendered.html_text
 
 
