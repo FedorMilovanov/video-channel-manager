@@ -1,0 +1,146 @@
+name: Svodka one-time stable-profile rebind
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/svodka-rebind-stable-profile-once.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: svodka-stable-profile-rebind-once
+  cancel-in-progress: false
+
+jobs:
+  rebind-and-remove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      PROFILE_PATH: content/telegram/channels/svodka.json
+      BINDING_PATH: content/telegram/channels/svodka-target-binding.json
+      PROOF_PATH: .runtime/svodka-stable-profile-target-proof.json
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Load previous exact identity without accepting stale profile digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          raw = json.loads(Path(os.environ["BINDING_PATH"]).read_text(encoding="utf-8"))
+          if raw.get("channel_username") != "@deep_info_life":
+              raise SystemExit("previous binding channel username changed unexpectedly")
+          if raw.get("chat_id") != -1003527567039:
+              raise SystemExit("previous binding numeric chat id changed unexpectedly")
+          if raw.get("bot_id") != 8716602202 or raw.get("bot_username") != "preaching_mp3_bot":
+              raise SystemExit("previous binding bot identity changed unexpectedly")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
+              handle.write(f"EXPECTED_CHAT_ID={raw['chat_id']}\n")
+              handle.write(f"EXPECTED_BOT_ID={raw['bot_id']}\n")
+              handle.write(f"EXPECTED_BOT_USERNAME={raw['bot_username']}\n")
+          PY
+
+      - name: Re-discover exact channel and admin rights read-only
+        env:
+          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.telegram_channel_cli discover-target \
+            --profile "$PROFILE_PATH" \
+            --expected-bot-id "$EXPECTED_BOT_ID" \
+            --expected-bot-username "$EXPECTED_BOT_USERNAME" \
+            --output "$PROOF_PATH"
+
+      - name: Require exact identity continuity and rewrite non-secret binding
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          proof = json.loads(Path(os.environ["PROOF_PATH"]).read_text(encoding="utf-8"))
+          if proof["chat_id"] != int(os.environ["EXPECTED_CHAT_ID"]):
+              raise SystemExit("read-only rediscovery returned a different numeric chat id")
+          if proof["bot_id"] != int(os.environ["EXPECTED_BOT_ID"]):
+              raise SystemExit("read-only rediscovery returned a different bot id")
+          if proof["bot_username"].casefold() != os.environ["EXPECTED_BOT_USERNAME"].casefold():
+              raise SystemExit("read-only rediscovery returned a different bot username")
+          if proof["chat_username"].casefold() != "deep_info_life":
+              raise SystemExit("read-only rediscovery returned a different channel username")
+          if proof["can_post_messages"] is not True:
+              raise SystemExit("posting bot no longer has can_post_messages")
+
+          binding = {
+              "schema_name": "video-channel-manager.telegram-target-binding",
+              "schema_version": 1,
+              "project_key": proof["project_key"],
+              "channel_username": proof["channel_username"],
+              "profile_sha256": proof["profile_sha256"],
+              "chat_id": proof["chat_id"],
+              "chat_username": proof["chat_username"],
+              "bot_id": proof["bot_id"],
+              "bot_username": proof["bot_username"],
+              "can_post_messages": True,
+              "discovered_at_utc": proof["checked_at_utc"],
+              "discovery_method": "getMe + getChat(@username) + getChat(numeric id) + getChatAdministrators",
+              "provider_write_performed": False,
+          }
+          Path(os.environ["BINDING_PATH"]).write_text(
+              json.dumps(binding, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Validate migrated binding against stable profile digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          from video_channel_manager.telegram_channel_profile import load_channel_profile
+          from video_channel_manager.telegram_target_binding import load_target_binding
+
+          profile = load_channel_profile(Path(os.environ["PROFILE_PATH"]))
+          binding = load_target_binding(Path(os.environ["BINDING_PATH"]), profile)
+          if profile.digest != "sha256:bbfd1a0b354a3ba874595a6397477498ba28f5dd5bdc2de298b1ef23649575d9":
+              raise SystemExit(f"unexpected stable profile digest: {profile.digest}")
+          print(f"stable profile {profile.digest} -> chat {binding.chat_id} bot {binding.bot_id}")
+          PY
+
+      - name: Commit exact read-only rebind and remove one-time workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$BINDING_PATH"
+          git rm .github/workflows/svodka-rebind-stable-profile-once.yml
+          git commit -m "Rebind Svodka target to stable channel profile contract"
+          git push origin HEAD:main
