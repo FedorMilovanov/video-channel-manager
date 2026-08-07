@@ -29,7 +29,7 @@ def test_svodka_quiz_preview_uses_sendpoll_bot_api_10_2(monkeypatch, capsys) -> 
     assert telegram_channel_cli.main() == 0
     output = json.loads(capsys.readouterr().out)
     assert output["provider_method"] == "sendPoll"
-    assert output["publication_id"] == "svodka-quiz-lightning-hotter-than-sun"
+    assert output["publication_id"] == "svodka-quiz-lightning-vs-sun"
     assert output["correct_option_ids"] == [0]
     assert output["description"].startswith("- Сводка -\n\n📎")
     assert "NOAA" in output["description"]
