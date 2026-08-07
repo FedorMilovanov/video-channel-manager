@@ -452,6 +452,7 @@ def test_preflight_rejects_bot_id_username_channel_type_and_permissions() -> Non
     )
 
     for me_result, expected_error in scenarios:
+
         def handler(request: httpx.Request, result: dict[str, object] = me_result) -> httpx.Response:
             method = request.url.path.rsplit("/", 1)[-1]
             if method == "getMe":
@@ -926,12 +927,12 @@ def test_workflow_exposes_read_only_preflight_exact_manual_binding_and_single_qu
     assert "state/lordchrist-telegram" in workflow
     assert "getChatMember" not in workflow
     assert "LORDCHRIST_TELEGRAM_BOT_TOKEN" not in header
-    assert workflow.count("LORDCHRIST_TELEGRAM_BOT_TOKEN") == 2
+    assert workflow.count("${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}") == 2
 
 
 def test_ci_runs_branch_work_only_via_pull_request_to_avoid_duplicate_matrices() -> None:
     workflow = CI_PATH.read_text(encoding="utf-8")
-    assert '      - main\n' in workflow
+    assert "      - main\n" in workflow
     assert '"agent/**"' not in workflow
     assert '"feature/**"' not in workflow
     assert '"integration/**"' not in workflow
