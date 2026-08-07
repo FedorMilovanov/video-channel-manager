@@ -20,7 +20,6 @@ from video_channel_manager.telegram_presentation import (
     PresentationPolicy,
     RenderedTelegramPost,
     formatting_entities_match,
-    render_post,
     verify_rendered_post,
 )
 from video_channel_manager.telegram_state import utc_now, verify_dispatch_against_queue, verify_persisted_intent
@@ -318,10 +317,30 @@ def dispatch_prepared(
 
     post = verify_dispatch_against_queue(queue, envelope)
     entry = verify_persisted_intent(queue, ledger, envelope)
-    effective_rendered = rendered or render_post(post, presentation_policy)
-    verify_rendered_post(post, presentation_policy, effective_rendered)
-    if effective_rendered.source_payload_sha256 != envelope.payload_sha256:
-        raise ValueError("rendered provider payload is not bound to the prepared source payload")
+
+    if rendered is None:
+        # Backward-compatible direct API mode for historical callers and legacy
+        # tests. The production CLI requires an explicit persisted rendered
+        # proof and therefore never takes this branch after presentation-v1.
+        provider_payload: dict[str, Any] = {
+            "chat_id": envelope.target.chat_id,
+            "text": envelope.text,
+            "link_preview_options": {"is_disabled": True},
+        }
+        expected_text = envelope.text
+        expected_entities = None
+    else:
+        verify_rendered_post(post, presentation_policy, rendered)
+        if rendered.source_payload_sha256 != envelope.payload_sha256:
+            raise ValueError("rendered provider payload is not bound to the prepared source payload")
+        provider_payload = {
+            "chat_id": envelope.target.chat_id,
+            "text": rendered.html_text,
+            "parse_mode": rendered.parse_mode,
+            "link_preview_options": {"is_disabled": rendered.link_preview_disabled},
+        }
+        expected_text = rendered.text
+        expected_entities = rendered.expected_entities
 
     own_client = client is None
     http_client = client or httpx.Client(
@@ -337,12 +356,7 @@ def dispatch_prepared(
                 token=token,
                 method="sendMessage",
                 mutation=True,
-                payload={
-                    "chat_id": envelope.target.chat_id,
-                    "text": effective_rendered.html_text,
-                    "parse_mode": effective_rendered.parse_mode,
-                    "link_preview_options": {"is_disabled": effective_rendered.link_preview_disabled},
-                },
+                payload=provider_payload,
             ),
             method="sendMessage",
             provider_effect="may_exist",
@@ -362,12 +376,12 @@ def dispatch_prepared(
             or returned_type != "channel"
         ):
             raise TelegramApiError("Telegram returned a message for an unexpected chat", provider_effect="may_exist")
-        if str(message.get("text") or "") != effective_rendered.text:
+        if str(message.get("text") or "") != expected_text:
             raise TelegramApiError(
-                "Telegram returned plain text that differs from the rendered provider payload",
+                "Telegram returned plain text that differs from the exact provider payload",
                 provider_effect="may_exist",
             )
-        if not formatting_entities_match(effective_rendered.expected_entities, message.get("entities")):
+        if expected_entities is not None and not formatting_entities_match(expected_entities, message.get("entities")):
             raise TelegramApiError(
                 "Telegram returned formatting entities that differ from the rendered provider payload",
                 provider_effect="may_exist",
