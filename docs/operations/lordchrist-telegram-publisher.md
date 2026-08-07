@@ -173,6 +173,8 @@ LORDCHRIST_SCHEDULE_ENABLED=true
 
 Scheduled execution дополнительно требует хотя бы один verified manual publication с **тем же exact bot ID и exact chat ID**.
 
+**Scheduled workflow re-run запрещён.** `GITHUB_RUN_ATTEMPT > 1` не имеет exact human-bound `publication_id`, поэтому state machine останавливает такой run до создания intent. После инфраструктурной ошибки scheduled run не надо вручную re-run'ить: безопасный путь — следующий нормальный cron-run либо отдельный exact-bound manual publish.
+
 Concurrency настроена как:
 
 ```text
@@ -196,6 +198,22 @@ Production больше никогда не создаёт отсутствую�
 - payload SHA записи не совпадает с immutable queue.
 
 Это устраняет опасный сценарий, когда потерянный/частичный state мог бы восстановить уже опубликованную запись как `pending`.
+
+### Exact evidence invariants
+
+Published state принимается только при полном согласованном наборе evidence:
+
+- durable `intent_id`;
+- exact workflow run ID + run attempt;
+- exact code SHA + workflow SHA;
+- dispatch mode + timezone-aware attempt timestamp;
+- exact negative channel ID + canonical `lordchrist` username;
+- exact positive bot ID + bot username;
+- positive `message_id`;
+- canonical `https://t.me/lordchrist/<message_id>`;
+- timezone-aware publication timestamp не раньше dispatch attempt.
+
+`pending`, `failed` и `skipped` не могут сохранять live intent или verified message identity. `dispatching/unknown` обязаны сохранять `may_exist` и полный durable dispatch provenance.
 
 ### Explicit initialization
 
@@ -260,6 +278,15 @@ State commit можно безопасно повторно push'ить, поэ�
 
 ## Telegram outcome classification
 
+Read-only transport и mutation transport имеют разные retry policy:
+
+```text
+preflight HTTP connect retries: 2
+sendMessage HTTP transport retries: 0
+```
+
+Это значит, что безопасные provider reads могут пережить краткий connect flap, а mutation не получает скрытый transport-level replay.
+
 ### `published / verified`
 
 Только когда Telegram вернул одновременно:
@@ -310,9 +337,12 @@ confirmed_absent
 skip
 ```
 
-`confirmed_published` требует concrete evidence note, exact negative chat ID и positive `message_id`; durable dispatch bot identity должна уже присутствовать в ledger.
+Evidence transitions монотонны и не могут стирать неопределённый provider effect:
 
-`confirmed_absent` — единственный reconciliation, который возвращает unresolved publication в `pending`.
+- `confirmed_published` разрешён **только** из `dispatching|unknown + may_exist`; требует concrete evidence note, exact negative chat ID и positive `message_id`, а durable dispatch bot/provenance уже должны существовать;
+- `confirmed_absent` разрешён для unresolved `dispatching|unknown` после конкретного доказательства отсутствия сообщения, а также для `failed` no-effect state; только он возвращает unresolved publication в `pending`;
+- `skip` разрешён только для `pending|failed`, где provider effect уже `impossible|not_dispatched|confirmed_absent`;
+- `unknown/may_exist → skipped/impossible` запрещён: ambiguity нельзя уничтожить административной меткой.
 
 ## State branch protection
 
@@ -338,7 +368,9 @@ requirements/telegram-publisher.txt
 
 с exact package versions и `--only-binary=:all:`.
 
-Full repository CI по-прежнему устанавливает весь проект и выполняет dependency audit, Ruff, formatting, mypy, pytest и PowerShell matrices.
+CI на Python 3.11 дополнительно создаёт **отдельный чистый venv**, ставит только `requirements/telegram-publisher.txt`, выполняет `pip check`, explicit ledger initialization во временный файл, `validate`, offline `preview` и проверяет первый exact queue item. Этот smoke не получает Telegram token и не вызывает provider API.
+
+Pinned Telegram runtime отдельно проходит `pip-audit -r requirements/telegram-publisher.txt`; общий full-repository dependency audit остаётся отдельным gate.
 
 ## CI pressure hardening
 
