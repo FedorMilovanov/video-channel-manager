@@ -76,9 +76,7 @@ def load_ledger(path: Path, queue: TelegramQueue) -> TelegramLedger:
     """Load production state strictly; missing or partial state is never regenerated."""
 
     if not path.is_file():
-        raise ValueError(
-            f"Telegram ledger is missing: {path}; production state must never be auto-initialized"
-        )
+        raise ValueError(f"Telegram ledger is missing: {path}; production state must never be auto-initialized")
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
         ledger = TelegramLedger.model_validate(payload)
@@ -95,8 +93,7 @@ def load_ledger(path: Path, queue: TelegramQueue) -> TelegramLedger:
     extra_ids = sorted(ledger_ids - queue_ids)
     if missing_ids or extra_ids:
         raise ValueError(
-            "ledger publication coverage differs from immutable queue; "
-            f"missing={missing_ids}, extra={extra_ids}"
+            f"ledger publication coverage differs from immutable queue; missing={missing_ids}, extra={extra_ids}"
         )
 
     for publication_id, post in queue_by_id.items():
