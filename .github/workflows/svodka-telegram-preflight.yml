@@ -33,6 +33,7 @@ jobs:
       PYTHONPATH: src
       PROFILE_PATH: content/telegram/channels/svodka.json
       QUEUE_PATH: content/telegram/svodka/draft-14-posts-2026-08.json
+      CANDIDATE_PATH: .runtime/svodka-release-candidate.json
       SVODKA_TELEGRAM_CHAT_ID: ${{ vars.SVODKA_TELEGRAM_CHAT_ID }}
       SVODKA_TELEGRAM_BOT_ID: ${{ vars.SVODKA_TELEGRAM_BOT_ID }}
       SVODKA_TELEGRAM_BOT_USERNAME: ${{ vars.SVODKA_TELEGRAM_BOT_USERNAME }}
@@ -56,6 +57,16 @@ jobs:
 
       - name: Validate immutable draft inputs
         run: python -m video_channel_manager.telegram_channel_cli validate-svodka --profile "$PROFILE_PATH" --queue "$QUEUE_PATH"
+
+      - name: Build exact write-disabled release candidate
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.telegram_channel_cli build-svodka-candidate \
+            --profile "$PROFILE_PATH" \
+            --queue "$QUEUE_PATH" \
+            --release-id svodka-pilot-2026-08-candidate \
+            --output "$CANDIDATE_PATH"
 
       - name: Preview exact deterministic payload
         env:
