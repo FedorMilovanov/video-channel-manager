@@ -51,7 +51,8 @@ jobs:
           python-version: "3.11"
 
       - name: Install minimal Telegram runtime
-        run: python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
 
       - name: Validate channel profile
         run: python -m video_channel_manager.telegram_channel_cli validate-profile --profile "$PROFILE_PATH"
