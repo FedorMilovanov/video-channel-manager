@@ -4,36 +4,37 @@ Read these sources before work on Fedor Milovanov's YouTube/VK workflow:
 
 1. `docs/operations/project-identity-registry.md`
 2. `docs/operations/current-state.md`
-3. `docs/operations/audit-register-v10-2026-08-06.json`
-4. `docs/operations/vk-postponed-text-second-pass-audit-2026-08-06.md`
-5. `docs/operations/vk-postponed-text-edit-runbook-2026-08-06.md`
-6. `docs/operations/audit-register-v9-2026-08-05.json`
-7. `docs/operations/audit-register-v8-2026-08-05.json`
-8. `docs/operations/master-audit-marathon-v2-2026-08-04.md`
-9. `docs/operations/agent-reasoning-playbook.md`
-10. `docs/operations/mp3-batch-processing-contract.md`
-11. `docs/operations/wave16-ci-sqlite-mp3-hardening-2026-08-05.md`
-12. `docs/operations/vk-audio-browser-experiment-retrospective.md`
-13. `docs/operations/wave15-transcript-and-agent-audit-2026-08-05.md`
-14. `docs/operations/audit-register-v7-2026-08-05.json`
-15. `docs/operations/audit-register-v6-2026-08-05.json`
-16. `docs/operations/audit-register-v5-2026-08-05.json`
-17. `docs/operations/audit-register-v4-2026-08-05.json`
-18. `docs/operations/audit-register-v3-2026-08-05.json`
-19. `docs/operations/audit-register-v2-2026-08-04.json`
-20. `docs/operations/automation-backlog.md`
-21. `docs/operations/repository-integrity-audit-2026-08-05.md`
-22. `.github/copilot-instructions.md`
-23. `docs/operations/local-credential-sources.md`
-24. `docs/operations/operational-artifact-standard.md`
-25. `docs/operations/operational-package-acceptance.md`
-26. `docs/operations/retirement-registry-v1.json`
+3. `docs/operations/audit-register-v11-2026-08-07.json`
+4. `docs/operations/audit-register-v10-2026-08-06.json`
+5. `docs/operations/vk-postponed-text-second-pass-audit-2026-08-06.md`
+6. `docs/operations/vk-postponed-text-edit-runbook-2026-08-06.md`
+7. `docs/operations/audit-register-v9-2026-08-05.json`
+8. `docs/operations/audit-register-v8-2026-08-05.json`
+9. `docs/operations/master-audit-marathon-v2-2026-08-04.md`
+10. `docs/operations/agent-reasoning-playbook.md`
+11. `docs/operations/mp3-batch-processing-contract.md`
+12. `docs/operations/wave16-ci-sqlite-mp3-hardening-2026-08-05.md`
+13. `docs/operations/vk-audio-browser-experiment-retrospective.md`
+14. `docs/operations/wave15-transcript-and-agent-audit-2026-08-05.md`
+15. `docs/operations/audit-register-v7-2026-08-05.json`
+16. `docs/operations/audit-register-v6-2026-08-05.json`
+17. `docs/operations/audit-register-v5-2026-08-05.json`
+18. `docs/operations/audit-register-v4-2026-08-05.json`
+19. `docs/operations/audit-register-v3-2026-08-05.json`
+20. `docs/operations/audit-register-v2-2026-08-04.json`
+21. `docs/operations/automation-backlog.md`
+22. `docs/operations/repository-integrity-audit-2026-08-05.md`
+23. `.github/copilot-instructions.md`
+24. `docs/operations/local-credential-sources.md`
+25. `docs/operations/operational-artifact-standard.md`
+26. `docs/operations/operational-package-acceptance.md`
+27. `docs/operations/retirement-registry-v1.json`
 
 Current machine state and `current-state.md` override old chats, screenshots, ZIP names, remembered counts, stale issue wording, historical packages, and superseded audits. Historical material teaches; it never authorizes execution. The Wave 14–16 compatibility ledgers below are intentionally retained as immutable operational memory even when a newer overlay is current.
 
 ## Current VK postponed-text hardening overlay
 
-Repository baseline entering hardening: `main@c0b8a303598788b2870862042d2e2868a97b3005`.
+Current production code baseline: `main@ffb9c0b5c2fe2852ec61d675ae8eb8f97bd0fdcd`.
 
 Production capability predecessor:
 
@@ -41,12 +42,15 @@ Production capability predecessor:
 - PR #150 exact head `0bfb1260c37411e8df686f26120ceea85e2f8116`;
 - merge `c04f0a4f948174ced6287e4bae87e4bf1be2be52`.
 
-Second-pass hardening authority:
+Second-pass hardening is completed:
 
 - issue #152;
-- PR #153;
-- branch `agent/vk-postponed-text-audit-hardening`;
-- repository-only work; no VK reads, writes, or replay are authorized by the hardening itself.
+- PR #153 exact tested head `ff85c27c5b20bca66e8badad3ef468ef93b614b7`;
+- CI run `31158907708` / #3242: six of six required jobs green;
+- squash merge `ffb9c0b5c2fe2852ec61d675ae8eb8f97bd0fdcd`;
+- machine-state proof `docs/operations/audit-register-v11-2026-08-07.json`;
+- repository hardening VK provider reads/writes `0/0`;
+- historical cleanup replayed: no.
 
 The completed 2026-08-06 Lord God cleanup remains verified evidence only: attachment-free postponed IDs `12513..12541`, `29/29` exact after-state, `0` pending, postponed count `66/66`, 37 non-target postponed rows unchanged, and the first published quote post untouched.
 
@@ -207,7 +211,8 @@ Completed:
 - #130 — repository-wide documentation and integrity polish;
 - #133 — adaptive reasoning and local-only MP3 foundation;
 - #137 — CI runtime, SQLite lifetime, and MP3 identity hardening;
-- #147 — guarded postponed-text capability and completed 2026-08-06 retrospective.
+- #147 — guarded postponed-text capability and completed 2026-08-06 retrospective;
+- #152 — postponed-text audit hardening, exact-head six-job quality proof, squash merge, and v11 state closure.
 
 Retired/not planned:
 
