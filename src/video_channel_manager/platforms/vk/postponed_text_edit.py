@@ -80,9 +80,7 @@ def calculate_vk_postponed_text_plan_sha256(plan: Mapping[str, Any]) -> str:
     return canonical_sha256({key: value for key, value in plan.items() if key != "plan_sha256"})
 
 
-def _validate_project_identity(
-    *, project_key: object, community_id: object, owner_id: object
-) -> tuple[str, int, int]:
+def _validate_project_identity(*, project_key: object, community_id: object, owner_id: object) -> tuple[str, int, int]:
     if type(community_id) is not int or community_id <= 0:
         raise ValueError("community_id must be a positive exact integer")
     if type(owner_id) is not int or owner_id != -community_id:
@@ -253,9 +251,7 @@ def _apply_rules(text: str, rules: list[dict[str, Any]]) -> tuple[str, list[dict
     for line_number, line in enumerate(_normalize_newlines(text).split("\n"), start=1):
         matches = [index for index, rule in enumerate(rules) if _line_matches_rule(line, rule)]
         if len(matches) > 1:
-            raise VkPostponedTextEditError(
-                f"line {line_number} matches multiple removal rules: {line.strip()}"
-            )
+            raise VkPostponedTextEditError(f"line {line_number} matches multiple removal rules: {line.strip()}")
         if not matches:
             kept.append(line)
             continue
@@ -265,9 +261,7 @@ def _apply_rules(text: str, rules: list[dict[str, Any]]) -> tuple[str, list[dict
     for index, rule in enumerate(rules):
         expected = int(rule["expected_per_post"])
         if counts[index] != expected:
-            raise VkPostponedTextEditError(
-                f"rule {index} expected {expected} match(es), observed {counts[index]}"
-            )
+            raise VkPostponedTextEditError(f"rule {index} expected {expected} match(es), observed {counts[index]}")
     after = "\n".join(kept).strip("\n")
     if not after.strip():
         raise VkPostponedTextEditError("text cleanup would produce an empty post")
@@ -293,9 +287,7 @@ def build_vk_postponed_text_edit_plan(
     )
     expected_count = int(normalized["expected_postponed_count"])
     if len(postponed) != expected_count:
-        raise VkPostponedTextEditError(
-            f"postponed count changed: expected {expected_count}, observed {len(postponed)}"
-        )
+        raise VkPostponedTextEditError(f"postponed count changed: expected {expected_count}, observed {len(postponed)}")
     by_id = _postponed_by_id(postponed, owner_id=owner_id)
     rules = cast(list[dict[str, Any]], normalized["rules"])
     operations: list[dict[str, Any]] = []
@@ -320,10 +312,7 @@ def build_vk_postponed_text_edit_plan(
         }
         operations.append(
             {
-                "operation_id": (
-                    "vk-postponed-text-edit-"
-                    + canonical_sha256(operation_seed).removeprefix("sha256:")[:32]
-                ),
+                "operation_id": ("vk-postponed-text-edit-" + canonical_sha256(operation_seed).removeprefix("sha256:")[:32]),
                 "owner_id": owner_id,
                 "post_id": post_id,
                 "publish_date": publish_date,
@@ -397,9 +386,7 @@ def validate_vk_postponed_text_edit_plan(plan: Mapping[str, Any]) -> dict[str, A
     snapshot = VkWallSnapshot.from_mapping(snapshot_raw)
     if snapshot.community_id != community_id or not snapshot.complete:
         raise ValueError("source_snapshot is incomplete or belongs to another community")
-    postponed_fingerprints = {
-        post.post_id: post for post in snapshot.posts if post.surface is VkWallSurface.POSTPONED
-    }
+    postponed_fingerprints = {post.post_id: post for post in snapshot.posts if post.surface is VkWallSurface.POSTPONED}
     if len(postponed_fingerprints) != expected_count:
         raise ValueError("source_snapshot postponed count differs from plan baseline")
     generated_at = datetime.fromisoformat(str(plan.get("generated_at") or ""))
@@ -493,9 +480,7 @@ def write_vk_postponed_text_document(path: Path, payload: object) -> None:
     _write_json_atomic(path, payload)
 
 
-def _classify(
-    operation: Mapping[str, Any], post: Mapping[str, Any] | None
-) -> tuple[VkPostponedTextState, str | None]:
+def _classify(operation: Mapping[str, Any], post: Mapping[str, Any] | None) -> tuple[VkPostponedTextState, str | None]:
     if post is None:
         return VkPostponedTextState.CONFLICT, "post_absent_from_postponed_surface"
     if post.get("owner_id") != operation["owner_id"] or post.get("id") != operation["post_id"]:
@@ -517,9 +502,7 @@ def _classify(
     return VkPostponedTextState.CONFLICT, "text_matches_neither_before_nor_after"
 
 
-def _classify_operations(
-    operations: list[dict[str, Any]], by_id: Mapping[int, dict[str, Any]]
-) -> list[dict[str, Any]]:
+def _classify_operations(operations: list[dict[str, Any]], by_id: Mapping[int, dict[str, Any]]) -> list[dict[str, Any]]:
     states: list[dict[str, Any]] = []
     for operation in operations:
         state, reason = _classify(operation, by_id.get(operation["post_id"]))
@@ -618,9 +601,8 @@ def _raw_non_target_fingerprints(
 
 
 def _failure_is_transient(exc: Exception | None) -> bool:
-    return (
-        isinstance(exc, VkWriteError)
-        and (exc.kind in _TRANSIENT_FAILURE_KINDS or exc.code in _TRANSIENT_PROVIDER_CODES)
+    return isinstance(exc, VkWriteError) and (
+        exc.kind in _TRANSIENT_FAILURE_KINDS or exc.code in _TRANSIENT_PROVIDER_CODES
     )
 
 
@@ -931,9 +913,7 @@ def execute_vk_postponed_text_edit_plan(
                         }
                     )
                     _write_json_atomic(journal_path, journal)
-                    result = _base_result(
-                        validated, "unknown_requires_reconciliation", results=results + [journal]
-                    )
+                    result = _base_result(validated, "unknown_requires_reconciliation", results=results + [journal])
                     result.update({"stopped_post_id": post_id, "initial_states": initial_states})
                     return _save_result(output_dir, result)
 
@@ -968,9 +948,7 @@ def execute_vk_postponed_text_edit_plan(
                         }
                     )
                     _write_json_atomic(journal_path, journal)
-                    result = _base_result(
-                        validated, "unknown_requires_reconciliation", results=results + [journal]
-                    )
+                    result = _base_result(validated, "unknown_requires_reconciliation", results=results + [journal])
                     result.update({"stopped_post_id": post_id, "initial_states": initial_states})
                     return _save_result(output_dir, result)
 
@@ -1006,9 +984,7 @@ def execute_vk_postponed_text_edit_plan(
                             }
                         )
                         _write_json_atomic(journal_path, journal)
-                        result = _base_result(
-                            validated, "unknown_requires_reconciliation", results=results + [journal]
-                        )
+                        result = _base_result(validated, "unknown_requires_reconciliation", results=results + [journal])
                         result.update({"stopped_post_id": post_id, "initial_states": initial_states})
                         return _save_result(output_dir, result)
                     if retry_state is VkPostponedTextState.AFTER:
@@ -1043,9 +1019,7 @@ def execute_vk_postponed_text_edit_plan(
                             }
                         )
                         _write_json_atomic(journal_path, journal)
-                        result = _base_result(
-                            validated, "unknown_requires_reconciliation", results=results + [journal]
-                        )
+                        result = _base_result(validated, "unknown_requires_reconciliation", results=results + [journal])
                         result.update(
                             {
                                 "stopped_post_id": post_id,
@@ -1104,8 +1078,7 @@ def execute_vk_postponed_text_edit_plan(
                     row["state"] == VkPostponedTextState.AFTER.value for row in initial_states
                 ),
                 "newly_verified": sum(
-                    row.get("provider_effect") == "verified" and int(row.get("attempts", 0)) > 0
-                    for row in results
+                    row.get("provider_effect") == "verified" and int(row.get("attempts", 0)) > 0 for row in results
                 ),
                 "total_verified": len(final_states),
                 "non_target_wall_objects_unchanged": len(final_non_targets),
