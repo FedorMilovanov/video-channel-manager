@@ -24,8 +24,8 @@ jobs:
       PROFILE_PATH: content/telegram/channels/svodka.json
       DISCOVERY_PATH: .runtime/svodka-target-discovery.json
       BINDING_PATH: content/telegram/channels/svodka-target-binding.json
-      SVODKA_TELEGRAM_BOT_ID: ${{ vars.SVODKA_TELEGRAM_BOT_ID || vars.LORDCHRIST_TELEGRAM_BOT_ID }}
-      SVODKA_TELEGRAM_BOT_USERNAME: ${{ vars.SVODKA_TELEGRAM_BOT_USERNAME || vars.LORDCHRIST_TELEGRAM_BOT_USERNAME }}
+      EXPECTED_BOT_ID: "8716602202"
+      EXPECTED_BOT_USERNAME: preaching_mp3_bot
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -41,30 +41,17 @@ jobs:
       - name: Install minimal Telegram runtime
         run: python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
 
-      - name: Validate shared bot identity
-        shell: bash
-        run: |
-          set -euo pipefail
-          [[ "$SVODKA_TELEGRAM_BOT_ID" =~ ^[1-9][0-9]*$ ]] || {
-            echo "shared Telegram bot id is not configured" >&2
-            exit 2
-          }
-          [[ "$SVODKA_TELEGRAM_BOT_USERNAME" =~ ^[A-Za-z0-9_]+$ ]] || {
-            echo "shared Telegram bot username is not configured" >&2
-            exit 2
-          }
-
       - name: Discover channel and administrator proof read-only
         env:
-          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.SVODKA_TELEGRAM_BOT_TOKEN || secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p .runtime
           python -m video_channel_manager.telegram_channel_cli discover-target \
             --profile "$PROFILE_PATH" \
-            --expected-bot-id "$SVODKA_TELEGRAM_BOT_ID" \
-            --expected-bot-username "$SVODKA_TELEGRAM_BOT_USERNAME" \
+            --expected-bot-id "$EXPECTED_BOT_ID" \
+            --expected-bot-username "$EXPECTED_BOT_USERNAME" \
             --output "$DISCOVERY_PATH"
 
       - name: Freeze exact non-secret target binding
@@ -97,13 +84,16 @@ jobs:
           output.write_text(json.dumps(binding, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
           PY
 
-      - name: Commit binding and remove one-time workflow
+      - name: Commit exact target binding
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "$BINDING_PATH"
-          git rm .github/workflows/svodka-target-discover-once.yml
+          if git diff --cached --quiet; then
+            echo "Target binding is already pinned."
+            exit 0
+          fi
           git commit -m "Pin read-only discovered Svodka Telegram target"
           git push origin HEAD:main
