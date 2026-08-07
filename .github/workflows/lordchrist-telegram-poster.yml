@@ -74,19 +74,12 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
 
-      - name: Check out isolated publication ledger
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: state/lordchrist-telegram
-          path: .state/lordchrist
-          fetch-depth: 0
-          persist-credentials: true
-
       - name: Determine guarded execution mode
         id: intent
         shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
           REQUESTED_ACTION: ${{ inputs.action }}
           REQUESTED_PUBLICATION_ID: ${{ inputs.publication_id }}
           CONFIRMATION: ${{ inputs.confirm }}
@@ -99,6 +92,10 @@ jobs:
           publication_id=""
 
           if [[ "$EVENT_NAME" == "schedule" ]]; then
+            if [[ "$RUN_ATTEMPT" != "1" ]]; then
+              echo "Scheduled workflow re-runs are forbidden; wait for the next normal schedule or use an exact-bound manual publish." >&2
+              exit 5
+            fi
             mode=scheduled
             do_preflight=true
             do_publish=true
@@ -127,6 +124,14 @@ jobs:
           echo "do_publish=$do_publish" >> "$GITHUB_OUTPUT"
           echo "reason=$reason" >> "$GITHUB_OUTPUT"
           echo "publication_id=$publication_id" >> "$GITHUB_OUTPUT"
+
+      - name: Check out publication ledger read-only
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: state/lordchrist-telegram
+          path: .state/lordchrist
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Validate immutable queue and strict ledger
         shell: bash
@@ -212,6 +217,15 @@ jobs:
               exit 2
             }
           fi
+
+      - name: Enable publication ledger writer
+        if: steps.intent.outputs.do_publish == 'true'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: state/lordchrist-telegram
+          path: .state/lordchrist
+          fetch-depth: 0
+          persist-credentials: true
 
       - name: Prepare one exact strict-order dispatch
         id: prepare
