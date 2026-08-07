@@ -6,7 +6,12 @@ import json
 from video_channel_manager.svodka_queue import SvodkaDraftPost, SvodkaDraftQueue
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile
 from video_channel_manager.telegram_multichannel_release import GenericReleaseItem, GenericReleaseQueue
-from video_channel_manager.telegram_multichannel_transport import render_message_payload, render_poll_payload
+from video_channel_manager.telegram_multichannel_transport import (
+    GenericMessagePayload,
+    GenericPollPayload,
+    render_message_payload,
+    render_poll_payload,
+)
 
 
 def source_post_sha256(post: SvodkaDraftPost) -> str:
@@ -37,6 +42,7 @@ def build_svodka_release_candidate(
 
     items: list[GenericReleaseItem] = []
     for post in draft.posts:
+        payload: GenericMessagePayload | GenericPollPayload
         if post.format == "quiz":
             if post.quiz is None:
                 raise ValueError(f"quiz metadata missing: {post.publication_id}")
