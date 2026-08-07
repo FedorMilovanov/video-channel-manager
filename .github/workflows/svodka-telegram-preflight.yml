@@ -75,15 +75,23 @@ jobs:
       - name: Validate immutable draft inputs
         run: python -m video_channel_manager.telegram_channel_cli validate-svodka --profile "$PROFILE_PATH" --queue "$QUEUE_PATH"
 
-      - name: Build exact write-disabled release candidate
+      - name: Build exact target-bound write-disabled release candidate
         run: |
           set -euo pipefail
           mkdir -p .runtime
           python -m video_channel_manager.telegram_channel_cli build-svodka-candidate \
             --profile "$PROFILE_PATH" \
             --queue "$QUEUE_PATH" \
+            --binding "$BINDING_PATH" \
             --release-id svodka-pilot-2026-08-candidate \
             --output "$CANDIDATE_PATH"
+
+      - name: Upload exact release candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: svodka-release-candidate
+          path: .runtime/svodka-release-candidate.json
+          if-no-files-found: error
 
       - name: Preview exact deterministic payload
         env:
