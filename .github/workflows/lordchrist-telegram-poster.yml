@@ -451,6 +451,8 @@ jobs:
         shell: bash
         env:
           LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+          LORDCHRIST_POSTING_ENABLED: ${{ github.event_name == 'schedule' && 'true' || vars.LORDCHRIST_POSTING_ENABLED }}
+          LORDCHRIST_SCHEDULE_ENABLED: ${{ github.event_name == 'schedule' && 'true' || 'false' }}
         run: |
           set -euo pipefail
           set +e
