@@ -3,16 +3,15 @@ from __future__ import annotations
 import html
 import json
 import re
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from video_channel_manager.telegram_models import (
     MAX_TELEGRAM_TEXT_LENGTH,
+    SHA256_PATTERN,
     TelegramPost,
-    TelegramTextEntity,
     canonical_json,
     sha256_text,
 )
@@ -63,6 +62,43 @@ class PresentationPolicy(BaseModel):
         return sha256_text(canonical_json(self.model_dump(mode="json")))
 
 
+class TelegramTextEntity(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    type: FormattingType
+    offset: int = Field(ge=0)
+    length: int = Field(gt=0)
+
+
+class RenderedTelegramPost(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.telegram-rendered-post"]
+    schema_version: Literal[1]
+    publication_id: str = Field(pattern=r"^lordchrist-[a-z0-9][a-z0-9-]{4,80}$")
+    source_payload_sha256: str = Field(pattern=SHA256_PATTERN)
+    presentation_policy_id: Literal["lordchrist-editorial-v1"]
+    presentation_policy_sha256: str = Field(pattern=SHA256_PATTERN)
+    provider_payload_sha256: str = Field(pattern=SHA256_PATTERN)
+    parse_mode: Literal["HTML"]
+    text: str = Field(min_length=100, max_length=MAX_TELEGRAM_TEXT_LENGTH)
+    html_text: str = Field(min_length=100)
+    expected_entities: tuple[TelegramTextEntity, ...]
+    link_preview_disabled: Literal[True] = True
+
+    @model_validator(mode="after")
+    def validate_rendered_contract(self) -> "RenderedTelegramPost":
+        if "© " in self.text:
+            raise ValueError("rendered Telegram publication must not contain the legacy copyright prefix")
+        if "\n\n\n#" not in self.text:
+            raise ValueError("rendered Telegram publication must contain the approved extra spacing before hashtags")
+        if not any(entity.type == "bold" for entity in self.expected_entities):
+            raise ValueError("rendered Telegram publication must contain at least one bold entity")
+        if not any(entity.type == "italic" for entity in self.expected_entities):
+            raise ValueError("rendered Telegram publication must contain at least one italic entity")
+        return self
+
+
 DEFAULT_PRESENTATION_POLICY = PresentationPolicy(
     schema_name="video-channel-manager.telegram-presentation-policy",
     schema_version=1,
@@ -73,34 +109,6 @@ DEFAULT_PRESENTATION_POLICY = PresentationPolicy(
     spacing=SpacingPolicy(),
     link_preview_disabled=True,
 )
-
-
-@dataclass(frozen=True)
-class RenderedTelegramPost:
-    publication_id: str
-    source_payload_sha256: str
-    presentation_policy_id: str
-    presentation_policy_sha256: str
-    provider_payload_sha256: str
-    parse_mode: Literal["HTML"]
-    text: str
-    html_text: str
-    expected_entities: tuple[TelegramTextEntity, ...]
-    link_preview_disabled: bool
-
-    def as_dict(self) -> dict[str, Any]:
-        return {
-            "publication_id": self.publication_id,
-            "source_payload_sha256": self.source_payload_sha256,
-            "presentation_policy_id": self.presentation_policy_id,
-            "presentation_policy_sha256": self.presentation_policy_sha256,
-            "provider_payload_sha256": self.provider_payload_sha256,
-            "parse_mode": self.parse_mode,
-            "text": self.text,
-            "html_text": self.html_text,
-            "expected_entities": [entity.model_dump(mode="json") for entity in self.expected_entities],
-            "link_preview_disabled": self.link_preview_disabled,
-        }
 
 
 class _RenderBuilder:
@@ -153,6 +161,13 @@ def load_presentation_policy(path: Path = CANONICAL_PRESENTATION_POLICY_PATH) ->
             "presentation policy artifact differs from the code-reviewed lordchrist-editorial-v1 contract"
         )
     return policy
+
+
+def load_rendered_post(path: Path) -> RenderedTelegramPost:
+    try:
+        return RenderedTelegramPost.model_validate_json(path.read_text(encoding="utf-8"))
+    except (OSError, ValidationError) as exc:
+        raise ValueError(f"invalid rendered Telegram post {path}: {exc}") from exc
 
 
 def _render_quote_paragraph(
@@ -228,6 +243,8 @@ def render_post(
     provider_payload_sha256 = sha256_text(canonical_json(provider_payload))
 
     return RenderedTelegramPost(
+        schema_name="video-channel-manager.telegram-rendered-post",
+        schema_version=1,
         publication_id=post.publication_id,
         source_payload_sha256=post.payload_sha256,
         presentation_policy_id=policy.policy_id,
@@ -239,6 +256,16 @@ def render_post(
         expected_entities=builder.entities,
         link_preview_disabled=policy.link_preview_disabled,
     )
+
+
+def verify_rendered_post(
+    post: TelegramPost,
+    policy: PresentationPolicy,
+    rendered: RenderedTelegramPost,
+) -> None:
+    expected = render_post(post, policy)
+    if rendered.model_dump(mode="json") != expected.model_dump(mode="json"):
+        raise ValueError("rendered Telegram provider payload differs from the reviewed presentation policy")
 
 
 def formatting_entities_match(
