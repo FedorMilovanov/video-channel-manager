@@ -23,12 +23,25 @@ def test_svodka_profile_digest_is_stable_channel_contract_not_write_gate() -> No
     assert "provider_writes_authorized" not in profile.contract_payload()
 
 
-def test_identity_or_schedule_change_still_changes_profile_digest() -> None:
+def test_every_identity_or_schedule_field_change_still_changes_profile_digest() -> None:
     profile = load_channel_profile(SVODKA_PROFILE_PATH)
+    changed_values = {
+        "project_key": "svodka-other",
+        "channel_username": "@another_channel",
+        "channel_title": "ДРУГАЯ СВОДКА",
+        "publication_id_prefix": "other-",
+        "timezone": "UTC",
+        "daily_verified_limit": 3,
+        "state_branch": "state/another-channel",
+        "concurrency_group": "another-telegram-publisher",
+        "bot_token_env": "OTHER_TELEGRAM_BOT_TOKEN",
+        "target_chat_id_env": "OTHER_TELEGRAM_CHAT_ID",
+        "target_bot_id_env": "OTHER_TELEGRAM_BOT_ID",
+        "target_bot_username_env": "OTHER_TELEGRAM_BOT_USERNAME",
+    }
 
-    assert profile.model_copy(update={"channel_username": "@another_channel"}).digest != profile.digest
-    assert profile.model_copy(update={"daily_verified_limit": 3}).digest != profile.digest
-    assert profile.model_copy(update={"state_branch": "state/another-channel"}).digest != profile.digest
+    for field_name, value in changed_values.items():
+        assert profile.model_copy(update={field_name: value}).digest != profile.digest, field_name
 
 
 def test_generic_profile_model_represents_multiple_channels_without_core_constants() -> None:
