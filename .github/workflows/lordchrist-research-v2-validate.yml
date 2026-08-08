@@ -35,6 +35,8 @@ jobs:
   validate:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    env:
+      EXPECTED_CANDIDATE_SHA256: sha256:dbd4bc71e7a2a4e1320beb51843f0553f853dab34f2bd04d1800b787c2433653
     steps:
       - name: Check out exact revision
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -101,7 +103,7 @@ jobs:
           print("research-v2 is valid, staged, and provider-inert")
           PY
 
-      - name: Build exact bound unauthorized research release candidate
+      - name: Build exact evidence-bound unauthorized release candidate
         shell: bash
         run: |
           set -euo pipefail
@@ -116,6 +118,7 @@ jobs:
             > /tmp/research-release-summary.json
           python - <<'PY'
           import json
+          import os
           from pathlib import Path
 
           summary = json.loads(Path('/tmp/research-release-summary.json').read_text(encoding='utf-8'))
@@ -125,6 +128,8 @@ jobs:
               raise SystemExit('research release candidate must be bound to exact production-proven target identity')
           if summary.get('release_authorized') is not False:
               raise SystemExit('read-only research CI must never authorize provider writes')
+          if summary.get('candidate_sha256') != os.environ['EXPECTED_CANDIDATE_SHA256']:
+              raise SystemExit('research candidate digest differs from exact reviewed evidence-bound contract')
           print(json.dumps(summary, ensure_ascii=False))
           PY
 
@@ -136,19 +141,22 @@ jobs:
             --profile content/telegram/channels/lordchrist.json \
             --binding content/telegram/channels/lordchrist-target-binding.json \
             --candidate .runtime/lordchrist-research-release-candidate.json \
-            --expected-candidate-sha256 sha256:0f25f23fc87665b03df0b8486d6f336e8e405b6213457772ead6ce2a363cd07d \
+            --expected-candidate-sha256 "$EXPECTED_CANDIDATE_SHA256" \
             --reviewed-by ci-regression \
             --reviewed-at 2026-08-08T12:30:00+03:00 \
             --output .runtime/lordchrist-research-release-approved-test.json \
             > /tmp/research-review-summary.json
           python - <<'PY'
           import json
+          import os
           from pathlib import Path
 
           profile = json.loads(Path('content/telegram/channels/lordchrist.json').read_text(encoding='utf-8'))
           summary = json.loads(Path('/tmp/research-review-summary.json').read_text(encoding='utf-8'))
           if summary.get('authorized') is not True:
               raise SystemExit('exact candidate review regression did not produce an approved release')
+          if summary.get('reviewed_candidate_sha256') != os.environ['EXPECTED_CANDIDATE_SHA256']:
+              raise SystemExit('review output is not bound to the exact evidence-bound candidate')
           if profile.get('provider_writes_authorized') is not False:
               raise SystemExit('review validation must not enable provider writes')
           print('exact candidate review is bound and provider-inert')
