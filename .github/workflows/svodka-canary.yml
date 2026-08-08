@@ -44,6 +44,7 @@ jobs:
       EXPECTED_CHAT_ID: -1003527567039
       EXPECTED_BOT_ID: 8716602202
       EXPECTED_BOT_USERNAME: preaching_mp3_bot
+      MAX_PUBLICATION_LAG_MINUTES: 120
     steps:
       - name: Check out immutable release and runtime
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -142,6 +143,16 @@ jobs:
           python -m video_channel_manager.telegram_multichannel_cli validate-ledger \
             --release "$RELEASE_PATH" \
             --ledger "$LEDGER_PATH"
+
+      - name: Require fresh canary publication window
+        env:
+          REQUESTED_PUBLICATION_ID: ${{ inputs.publication_id }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_publication_freshness item \
+            --release "$RELEASE_PATH" \
+            --publication-id "$REQUESTED_PUBLICATION_ID" \
+            --max-lag-minutes "$MAX_PUBLICATION_LAG_MINUTES"
 
       - name: Fresh read-only target preflight
         env:
