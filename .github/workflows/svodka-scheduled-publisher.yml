@@ -148,8 +148,39 @@ jobs:
         if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready != 'true'
         run: echo "Svodka scheduler cannot dispatch — ${{ steps.ledger.outputs.reason }}. No Telegram read or write was attempted."
 
-      - name: Skip expired windows before any provider operation
+      - name: Require verified manual canary before scheduler activity
         if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true'
+        id: canary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          from video_channel_manager.telegram_multichannel_release import load_release
+          from video_channel_manager.telegram_multichannel_state import load_ledger
+
+          release = load_release(Path(os.environ["RELEASE_PATH"]))
+          ledger = load_ledger(Path(os.environ["LEDGER_PATH"]), release)
+          verified_manual_canary = any(
+              entry.state == "published"
+              and entry.provider_effect == "verified"
+              and entry.dispatch_mode == "manual"
+              and entry.actual_chat_id == release.chat_id
+              and entry.bot_id == release.bot_id
+              for entry in ledger.entries.values()
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"ready={'true' if verified_manual_canary else 'false'}\n")
+          PY
+
+      - name: Report scheduler waiting for verified manual canary
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.canary.outputs.ready != 'true'
+        run: echo "Svodka scheduler is waiting for a verified manual canary. No state mutation or Telegram access was attempted."
+
+      - name: Skip expired windows before any provider operation
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.canary.outputs.ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -175,7 +206,7 @@ jobs:
           }
 
       - name: Check strict-next publication freshness
-        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true'
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.canary.outputs.ready == 'true'
         id: freshness
         shell: bash
         run: |
@@ -195,11 +226,11 @@ jobs:
           echo "fresh=true" >> "$GITHUB_OUTPUT"
 
       - name: Report non-fresh scheduled slot
-        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.freshness.outputs.fresh != 'true'
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.canary.outputs.ready == 'true' && steps.freshness.outputs.fresh != 'true'
         run: echo "Svodka scheduler skipped provider access because the strict-next slot is not fresh enough."
 
       - name: Fresh read-only target preflight
-        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.freshness.outputs.fresh == 'true'
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.canary.outputs.ready == 'true' && steps.freshness.outputs.fresh == 'true'
         env:
           SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
         run: |
@@ -227,7 +258,7 @@ jobs:
             --output "$TARGET_PROOF_PATH"
 
       - name: Prepare strict next scheduled dispatch
-        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.freshness.outputs.fresh == 'true'
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.canary.outputs.ready == 'true' && steps.freshness.outputs.fresh == 'true'
         id: prepare
         shell: bash
         run: |
