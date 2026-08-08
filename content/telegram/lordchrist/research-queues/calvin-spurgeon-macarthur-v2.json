@@ -7,7 +7,7 @@
   "purpose": "evidence_backed_historical_edification",
   "verification": {
     "reviewed_pages": 76,
-    "checked_on": "2026-08-07",
+    "checked_on": "2026-08-08",
     "method": "primary_direct_institutional_scholarly_crosscheck",
     "editorial_language": "ru",
     "anti_ranking": true
@@ -22,7 +22,7 @@
     "canary_message_id": null
   },
   "source_registry_path": "content/telegram/lordchrist/research-queues/historical-preaching-sources-v1.json",
-  "source_registry_sha256": "sha256:77564dbf05808e0955cdcdba9dbb7ea67af37da2127e8f5bc7ccb3fe896d8b0c",
+  "source_registry_sha256": "sha256:5873c269cb749d972e8edca981336ac058f228298f9332f8c33f410c0d960665",
   "posts": [
     {
       "sequence": 1,
@@ -82,7 +82,7 @@
           "claim_text": "Grace to You описывает современный архив Джона МакАртура как содержащий более 3 600 записанных проповедей.",
           "claim_kind": "numeric",
           "certainty": "lower_bound",
-          "source_ids": ["src-gty-about", "src-macarthur-about"],
+          "source_ids": ["src-gty-sermon-archive-3600"],
           "measurement_scope": "записанные проповеди в современном архиве Grace to You"
         },
         {
@@ -240,10 +240,10 @@
         },
         {
           "claim_id": "claim-macarthur-2011-completion",
-          "claim_text": "5 июня 2011 года МакАртур завершил многолетнее прохождение Нового Завета, проповедуя заключительный отрывок Евангелия от Марка; Grace to You описывает этот путь как сорок два года.",
+          "claim_text": "Первая пасторская проповедь МакАртура в Grace датирована 9 февраля 1969 года; 5 июня 2011 года он завершил многолетнее прохождение Нового Завета материалами по заключению Евангелия от Марка. Между этими датами прошло чуть более 42 лет.",
           "claim_kind": "historical",
           "certainty": "exact",
-          "source_ids": ["src-gty-fitting-end", "src-macarthur-about"]
+          "source_ids": ["src-gty-how-play-church", "src-gty-fitting-end", "src-gcc-history"]
         },
         {
           "claim_id": "claim-macarthur-spurgeon-method",

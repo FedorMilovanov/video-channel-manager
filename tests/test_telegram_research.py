@@ -11,6 +11,7 @@ from video_channel_manager.telegram_research import ResearchQueueV2, load_resear
 
 ROOT = Path(__file__).parents[1]
 FIXTURE = ROOT / "content/telegram/lordchrist/research-queues/calvin-spurgeon-macarthur-v2.json"
+REGISTRY = ROOT / "content/telegram/lordchrist/research-queues/historical-preaching-sources-v1.json"
 
 
 def payload() -> dict[str, object]:
@@ -73,6 +74,40 @@ def test_macarthur_3600_cannot_become_exact_lifetime_total() -> None:
     raw["posts"][0]["claims"][5]["certainty"] = "exact"
     with pytest.raises(ValidationError, match=r"MacArthur 3,600\+ must remain a lower-bound archive count"):
         ResearchQueueV2.model_validate(raw)
+
+
+def test_macarthur_3600_uses_exact_current_gty_archive_source() -> None:
+    raw = payload()
+    claim = raw["posts"][0]["claims"][5]
+    assert claim["claim_id"] == "claim-macarthur-3600"
+    assert claim["source_ids"] == ["src-gty-sermon-archive-3600"]
+
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    source = next(item for item in registry["sources"] if item["source_id"] == "src-gty-sermon-archive-3600")
+    assert source["publisher"] == "Grace to You"
+    assert source["url"] == "https://www.gty.org/sermons/series/355/john-macarthurs-most-memorable-sermon"
+    assert source["checked_on"] == "2026-08-08"
+
+
+def test_macarthur_completion_claim_uses_exact_first_final_and_church_history_sources() -> None:
+    raw = payload()
+    claim = next(
+        claim
+        for post in raw["posts"]
+        for claim in post["claims"]
+        if claim["claim_id"] == "claim-macarthur-2011-completion"
+    )
+    assert claim["source_ids"] == ["src-gty-how-play-church", "src-gty-fitting-end", "src-gcc-history"]
+    assert "9 февраля 1969" in claim["claim_text"]
+    assert "5 июня 2011" in claim["claim_text"]
+    assert "чуть более 42 лет" in claim["claim_text"]
+    assert "Grace to You описывает этот путь как сорок два года" not in claim["claim_text"]
+
+
+def test_fact_check_date_covers_bound_source_registry_check() -> None:
+    raw = payload()
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    assert raw["verification"]["checked_on"] >= registry["checked_on"]
 
 
 def test_staged_queue_cannot_claim_canary_evidence() -> None:

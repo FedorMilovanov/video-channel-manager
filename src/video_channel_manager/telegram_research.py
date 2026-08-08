@@ -235,25 +235,52 @@ class ResearchQueueV2(BaseModel):
             "записанные проповеди в современном архиве Grace to You",
         ):
             raise ValueError("MacArthur 3,600+ must remain a lower-bound archive count")
+        if macarthur.source_ids != ("src-gty-sermon-archive-3600",):
+            raise ValueError("MacArthur 3,600+ must remain bound to the exact checked Grace to You archive source")
+
+    def _post_digest_records(self) -> list[dict[str, object]]:
+        return [
+            {
+                "sequence": post.sequence,
+                "publication_id": post.publication_id,
+                "release_offset_days": post.release_offset_days,
+                "payload_sha256": post.payload_sha256,
+            }
+            for post in self.posts
+        ]
 
     @property
-    def digest(self) -> str:
+    def evidence_digest(self) -> str:
+        """Digest immutable editorial/fact-check evidence, excluding activation state."""
+
         return sha256_json(
             {
                 "schema_version": self.schema_version,
+                "project_key": self.project_key,
+                "channel_username": self.channel_username,
                 "series_id": self.series_id,
+                "purpose": self.purpose,
+                "verification": self.verification.model_dump(mode="json"),
+                "source_registry_sha256": self.source_registry_sha256,
+                "posts": self._post_digest_records(),
+            }
+        )
+
+    @property
+    def digest(self) -> str:
+        """Digest the complete queue including mutable activation/canary state."""
+
+        return sha256_json(
+            {
+                "schema_version": self.schema_version,
+                "project_key": self.project_key,
+                "channel_username": self.channel_username,
+                "series_id": self.series_id,
+                "purpose": self.purpose,
                 "verification": self.verification.model_dump(mode="json"),
                 "schedule": self.schedule.model_dump(mode="json"),
                 "source_registry_sha256": self.source_registry_sha256,
-                "posts": [
-                    {
-                        "sequence": post.sequence,
-                        "publication_id": post.publication_id,
-                        "release_offset_days": post.release_offset_days,
-                        "payload_sha256": post.payload_sha256,
-                    }
-                    for post in self.posts
-                ],
+                "posts": self._post_digest_records(),
             }
         )
 
@@ -271,6 +298,8 @@ def load_research_queue(path: Path) -> ResearchQueueV2:
     registry = SourceRegistry.model_validate(_read_json(Path(queue.source_registry_path)))
     if registry.digest != queue.source_registry_sha256:
         raise ValueError("source registry digest mismatch")
+    if queue.verification.checked_on < registry.checked_on:
+        raise ValueError("research verification checked_on cannot predate the bound source registry")
     known = {source.source_id for source in registry.sources}
     if queue.verification.reviewed_pages < len(registry.sources):
         raise ValueError("reviewed_pages cannot be smaller than the bound source registry")
@@ -291,6 +320,7 @@ def preview_research_queue(queue: ResearchQueueV2) -> dict[str, object]:
         "live_eligible": queue.live_eligible,
         "schedule_state": queue.schedule.state,
         "queue_digest": queue.digest,
+        "evidence_digest": queue.evidence_digest,
         "posts": [
             {
                 "sequence": post.sequence,
@@ -325,6 +355,7 @@ def main() -> int:
             "count": len(queue.posts),
             "reviewed_pages": queue.verification.reviewed_pages,
             "queue_digest": queue.digest,
+            "evidence_digest": queue.evidence_digest,
         }
     elif args.command == "preview":
         output = preview_research_queue(queue)
