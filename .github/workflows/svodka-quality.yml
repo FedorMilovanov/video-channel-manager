@@ -64,6 +64,7 @@ jobs:
           src/video_channel_manager/telegram_channel_discovery.py
           src/video_channel_manager/telegram_channel_cli.py
           src/video_channel_manager/telegram_github_quality_gate.py
+          src/video_channel_manager/telegram_github_outcome_artifact.py
           src/video_channel_manager/telegram_release_review.py
           src/video_channel_manager/telegram_html_entities.py
           src/video_channel_manager/telegram_publication_freshness.py
@@ -78,6 +79,7 @@ jobs:
           tests/test_telegram_channel_profile_contract.py
           tests/test_telegram_channel_cli.py
           tests/test_telegram_github_quality_gate.py
+          tests/test_telegram_github_outcome_artifact.py
           tests/test_telegram_html_entities.py
           tests/test_telegram_publication_freshness.py
           tests/test_telegram_target_binding.py
@@ -91,6 +93,7 @@ jobs:
           tests/test_svodka_preflight_workflow.py
           tests/test_svodka_deployment_workflows.py
           tests/test_svodka_reconciliation_workflow.py
+          tests/test_svodka_outcome_recovery_workflow.py
 
       - name: Ruff formatting
         run: >-
@@ -101,6 +104,7 @@ jobs:
           src/video_channel_manager/telegram_channel_discovery.py
           src/video_channel_manager/telegram_channel_cli.py
           src/video_channel_manager/telegram_github_quality_gate.py
+          src/video_channel_manager/telegram_github_outcome_artifact.py
           src/video_channel_manager/telegram_release_review.py
           src/video_channel_manager/telegram_html_entities.py
           src/video_channel_manager/telegram_publication_freshness.py
@@ -115,6 +119,7 @@ jobs:
           tests/test_telegram_channel_profile_contract.py
           tests/test_telegram_channel_cli.py
           tests/test_telegram_github_quality_gate.py
+          tests/test_telegram_github_outcome_artifact.py
           tests/test_telegram_html_entities.py
           tests/test_telegram_publication_freshness.py
           tests/test_telegram_target_binding.py
@@ -128,6 +133,7 @@ jobs:
           tests/test_svodka_preflight_workflow.py
           tests/test_svodka_deployment_workflows.py
           tests/test_svodka_reconciliation_workflow.py
+          tests/test_svodka_outcome_recovery_workflow.py
 
       - name: Static typing
         run: >-
@@ -138,6 +144,7 @@ jobs:
           src/video_channel_manager/telegram_channel_discovery.py
           src/video_channel_manager/telegram_channel_cli.py
           src/video_channel_manager/telegram_github_quality_gate.py
+          src/video_channel_manager/telegram_github_outcome_artifact.py
           src/video_channel_manager/telegram_release_review.py
           src/video_channel_manager/telegram_html_entities.py
           src/video_channel_manager/telegram_publication_freshness.py
@@ -157,6 +164,7 @@ jobs:
           tests/test_telegram_channel_profile_contract.py
           tests/test_telegram_channel_cli.py
           tests/test_telegram_github_quality_gate.py
+          tests/test_telegram_github_outcome_artifact.py
           tests/test_telegram_html_entities.py
           tests/test_telegram_publication_freshness.py
           tests/test_telegram_target_binding.py
@@ -170,6 +178,7 @@ jobs:
           tests/test_svodka_preflight_workflow.py
           tests/test_svodka_deployment_workflows.py
           tests/test_svodka_reconciliation_workflow.py
+          tests/test_svodka_outcome_recovery_workflow.py
 
       - name: Validate canonical Svodka inputs
         shell: bash
