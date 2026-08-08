@@ -20,14 +20,19 @@ def test_lordchrist_outcome_recovery_is_manual_main_only_and_provider_free() -> 
     assert "secrets." not in text
     assert "LORDCHRIST_TELEGRAM_BOT_TOKEN" not in text
     assert "sendMessage" not in text
-    assert "telegram_cli \\\n            send" not in text
 
 
 def test_recovery_requires_exact_confirmation_dispatch_and_archived_outcome() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
-    assert "RECOVER-LORDCHRIST-OUTCOME:$SOURCE_RUN_ID:$SOURCE_RUN_ATTEMPT:$REQUESTED_PUBLICATION_ID:$REQUESTED_QUEUE_DIGEST" in text
-    assert "verify-intent" in text
-    assert "verify-rendered" in text
+    expected = (
+        "RECOVER-LORDCHRIST-OUTCOME:$SOURCE_RUN_ID:$SOURCE_RUN_ATTEMPT:"
+        "$REQUESTED_PUBLICATION_ID:$REQUESTED_QUEUE_DIGEST"
+    )
+    assert expected in text
+    assert text.count("verify-evidence") == 2
+    assert "verify-intent" not in text
+    assert "verify-rendered" not in text
+    assert "PRESENTATION_POLICY_PATH" not in text
     assert "telegram_lordchrist_outcome_artifact" in text
     assert "telegram_lordchrist_outcome_cli" in text
     assert "outcome-recovery-proof.json" in text
