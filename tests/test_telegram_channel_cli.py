@@ -83,7 +83,9 @@ def _write_candidate(path: Path, *, tamper_binding_digest: bool = False) -> str:
     return candidate.digest
 
 
-def test_authorize_release_requires_current_binding_and_records_candidate_digest(monkeypatch, capsys, tmp_path: Path) -> None:
+def test_authorize_release_requires_current_binding_and_records_candidate_digest(
+    monkeypatch, capsys, tmp_path: Path
+) -> None:
     candidate_path = tmp_path / "candidate.json"
     release_path = tmp_path / "approved.json"
     candidate_digest = _write_candidate(candidate_path)
