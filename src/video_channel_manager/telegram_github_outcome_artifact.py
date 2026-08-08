@@ -6,6 +6,7 @@ import io
 import json
 import os
 import re
+import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
@@ -21,6 +22,8 @@ from video_channel_manager.telegram_multichannel_state import GenericDispatchEnv
 ARTIFACT_NAME_PREFIX = "svodka-provider-outcome-"
 MAX_OUTCOME_ARCHIVE_BYTES = 1_000_000
 MAX_OUTCOME_JSON_BYTES = 256_000
+USER_AGENT = "video-channel-manager-svodka-outcome-reconciler"
+REDIRECT_CODES = {301, 302, 303, 307, 308}
 
 
 class ProviderWorkflowContract(BaseModel):
@@ -75,12 +78,25 @@ class ProviderOutcomeArtifactProof(BaseModel):
     checked_at_utc: datetime
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(
+        self,
+        req: urllib.request.Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+        newurl: str,
+    ) -> None:
+        return None
+
+
 def _github_headers(token: str) -> dict[str, str]:
     return {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": "video-channel-manager-svodka-outcome-reconciler",
+        "User-Agent": USER_AGENT,
     }
 
 
@@ -96,16 +112,40 @@ def _safe_github_json(url: str, *, token: str) -> dict[str, Any]:
     return cast(dict[str, Any], payload)
 
 
-def _safe_github_bytes(url: str, *, token: str, max_bytes: int) -> bytes:
-    request = urllib.request.Request(url, headers=_github_headers(token))
-    try:
-        with urllib.request.urlopen(request, timeout=30) as response:
-            payload = response.read(max_bytes + 1)
-    except Exception as exc:
-        raise RuntimeError(f"GitHub provider-outcome artifact unavailable: {type(exc).__name__}") from exc
+def _bounded_read(response: Any, *, max_bytes: int) -> bytes:
+    payload = response.read(max_bytes + 1)
     if len(payload) > max_bytes:
         raise ValueError("downloaded provider-outcome artifact exceeds the allowed size")
-    return payload
+    return cast(bytes, payload)
+
+
+def _safe_github_bytes(url: str, *, token: str, max_bytes: int) -> bytes:
+    request = urllib.request.Request(url, headers=_github_headers(token))
+    opener = urllib.request.build_opener(_NoRedirect())
+    try:
+        with opener.open(request, timeout=30) as response:
+            return _bounded_read(response, max_bytes=max_bytes)
+    except urllib.error.HTTPError as exc:
+        if exc.code not in REDIRECT_CODES:
+            raise RuntimeError(f"GitHub provider-outcome artifact unavailable: HTTP {exc.code}") from exc
+        location = exc.headers.get("Location")
+        exc.close()
+        if not location:
+            raise RuntimeError("GitHub provider-outcome artifact redirect has no location") from exc
+    except Exception as exc:
+        raise RuntimeError(f"GitHub provider-outcome artifact unavailable: {type(exc).__name__}") from exc
+
+    redirect_url = urllib.parse.urljoin(url, location)
+    parsed = urllib.parse.urlsplit(redirect_url)
+    if parsed.scheme != "https" or not parsed.hostname or parsed.username is not None or parsed.password is not None:
+        raise ValueError("GitHub provider-outcome artifact redirect is not a safe HTTPS URL")
+
+    storage_request = urllib.request.Request(redirect_url, headers={"User-Agent": USER_AGENT})
+    try:
+        with urllib.request.urlopen(storage_request, timeout=30) as response:
+            return _bounded_read(response, max_bytes=max_bytes)
+    except Exception as exc:
+        raise RuntimeError(f"GitHub provider-outcome artifact unavailable: {type(exc).__name__}") from exc
 
 
 def _positive_integer(value: str, *, field_name: str) -> int:
