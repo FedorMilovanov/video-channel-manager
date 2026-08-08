@@ -91,6 +91,21 @@ jobs:
             --queue content/telegram/lordchrist/research-queues/calvin-spurgeon-macarthur-v2.json \
             validate
 
+      - name: Build and report exact evidence-bound candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          PYTHONPATH=src python -m video_channel_manager.telegram_research_release_cli \
+            --profile content/telegram/channels/lordchrist.json \
+            --queue content/telegram/lordchrist/research-queues/calvin-spurgeon-macarthur-v2.json \
+            --release-id lordchrist-research-calvin-spurgeon-macarthur-v1 \
+            --start-at 2026-08-10T19:17:00+03:00 \
+            --binding content/telegram/channels/lordchrist-target-binding.json \
+            --output .runtime/lordchrist-research-release-candidate.json \
+            > /tmp/research-release-summary.json
+          cat /tmp/research-release-summary.json
+
       - name: Run research-v2, release-review, and target-binding regression tests
         shell: bash
         run: |
@@ -119,19 +134,9 @@ jobs:
           print("research-v2 is valid, staged, and provider-inert")
           PY
 
-      - name: Build exact evidence-bound unauthorized release candidate
+      - name: Lock exact evidence-bound candidate digest
         shell: bash
         run: |
-          set -euo pipefail
-          mkdir -p .runtime
-          PYTHONPATH=src python -m video_channel_manager.telegram_research_release_cli \
-            --profile content/telegram/channels/lordchrist.json \
-            --queue content/telegram/lordchrist/research-queues/calvin-spurgeon-macarthur-v2.json \
-            --release-id lordchrist-research-calvin-spurgeon-macarthur-v1 \
-            --start-at 2026-08-10T19:17:00+03:00 \
-            --binding content/telegram/channels/lordchrist-target-binding.json \
-            --output .runtime/lordchrist-research-release-candidate.json \
-            > /tmp/research-release-summary.json
           python - <<'PY'
           import json
           import os
@@ -144,9 +149,12 @@ jobs:
               raise SystemExit('research release candidate must be bound to exact production-proven target identity')
           if summary.get('release_authorized') is not False:
               raise SystemExit('read-only research CI must never authorize provider writes')
-          if summary.get('candidate_sha256') != os.environ['EXPECTED_CANDIDATE_SHA256']:
+          actual = summary.get('candidate_sha256')
+          expected = os.environ['EXPECTED_CANDIDATE_SHA256']
+          print(f'candidate_sha256={actual}')
+          print(f'expected_candidate_sha256={expected}')
+          if actual != expected:
               raise SystemExit('research candidate digest differs from exact reviewed evidence-bound contract')
-          print(json.dumps(summary, ensure_ascii=False))
           PY
 
       - name: Prove exact candidate review remains provider-inert
