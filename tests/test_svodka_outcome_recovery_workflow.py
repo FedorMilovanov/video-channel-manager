@@ -75,9 +75,12 @@ def test_archived_outcome_recovery_persists_only_after_provenance_without_curren
     validate_index = workflow.index("Validate recovered outcome against persisted dispatch")
     apply_index = workflow.index("Apply archived outcome without provider access")
     persist_index = workflow.index("Persist recovered provider outcome state")
+    current_main_index = workflow.index('git -C "$STATE_DIR" ls-remote origin refs/heads/main')
     commit_index = workflow.index("Recover archived Svodka provider outcome for run")
 
-    assert prove_index < download_index < validate_index < apply_index < persist_index < commit_index
+    assert prove_index < download_index < validate_index < apply_index < persist_index < current_main_index < commit_index
+    assert '[[ "$current_main_sha" == "$GITHUB_SHA" ]]' in workflow
+    assert "recovery runtime SHA is no longer current main" in workflow
     assert "telegram_github_quality_gate" not in workflow
     assert "apply-outcome" in workflow
     assert "validate-ledger" in workflow
