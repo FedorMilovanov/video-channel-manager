@@ -9,6 +9,8 @@ import pytest
 
 from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_multichannel_transport import (
+    MUTATION_TRANSPORT_RETRIES,
+    READ_ONLY_TRANSPORT_RETRIES,
     GenericTargetProof,
     TelegramApiError,
     render_message_payload,
@@ -146,6 +148,11 @@ def _client(body: dict[str, Any], captured: dict[str, Any] | None = None) -> htt
         return httpx.Response(200, json=body, request=request)
 
     return httpx.Client(transport=httpx.MockTransport(handler))
+
+
+def test_mutating_transport_never_retries_while_read_only_preflight_may_retry() -> None:
+    assert MUTATION_TRANSPORT_RETRIES == 0
+    assert READ_ONLY_TRANSPORT_RETRIES > 0
 
 
 def test_send_message_once_verifies_exact_formatting_and_source_link_entities() -> None:
