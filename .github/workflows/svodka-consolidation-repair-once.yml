@@ -1,3 +1,4 @@
+# retry-anchor: after-heartbeat-cleanup
 name: Svodka one-time consolidation repair
 
 on:
