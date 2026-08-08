@@ -59,11 +59,20 @@ def next_publication_freshness(
     ledger: GenericPublicationLedger,
     *,
     now: datetime,
+    expected_publication_id: str | None = None,
     max_lag_minutes: int = DEFAULT_MAX_LAG_MINUTES,
 ) -> FreshnessDecision:
     item, reason = strict_next_item(release, ledger)
     if item is None:
         return FreshnessDecision(False, reason, None, None, None)
+    if expected_publication_id is not None and item.publication_id != expected_publication_id:
+        return FreshnessDecision(
+            False,
+            "requested_publication_is_not_strict_next",
+            item.publication_id,
+            item.scheduled_at.astimezone(UTC),
+            None,
+        )
     return publication_freshness(
         release,
         item.publication_id,
@@ -97,6 +106,7 @@ def parser() -> argparse.ArgumentParser:
     next_item = sub.add_parser("next")
     next_item.add_argument("--release", type=Path, required=True)
     next_item.add_argument("--ledger", type=Path, required=True)
+    next_item.add_argument("--publication-id")
     next_item.add_argument("--max-lag-minutes", type=int, default=DEFAULT_MAX_LAG_MINUTES)
     return root
 
@@ -119,6 +129,7 @@ def main() -> int:
             release,
             ledger,
             now=now,
+            expected_publication_id=args.publication_id,
             max_lag_minutes=args.max_lag_minutes,
         )
     else:
