@@ -60,12 +60,31 @@ The previous freeze condition is satisfied. On 2026-08-08 the existing Lordchris
 
 The immutable proof is `docs/lordchrist/proofs/2026-08-08-first-scheduled-proof.md`.
 
+## Target identity is already production-proven
+
+The same scheduled run performed the full legacy read-only target preflight before the provider mutation: `getMe`, `getChat` by numeric id, `getChat` by public username, and `getChatAdministrators`. The durable dispatch envelope preserves the resulting exact `TargetProof`.
+
+Research-v2 accepts that verified legacy dispatch as target-binding evidence instead of requiring a redundant second network discovery. The canonical binding is:
+
+- path: `content/telegram/channels/lordchrist-target-binding.json`;
+- profile digest: `sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6`;
+- binding digest: `sha256:4d4bd46405080512aaf31b4ee4bbeeca22eb1703642b585efc656b8f95e15bcd`;
+- chat id: `-1001295216957`;
+- bot id: `8716602202`;
+- bot username: `preaching_mp3_bot`;
+- evidence time: `2026-08-08T07:13:09.125496Z`;
+- `provider_write_performed=false` for the target-proof operation.
+
+The manual generic discovery workflow remains available as a future revalidation/rotation tool; it is no longer a prerequisite for this already-proven target.
+
+The channel-profile identity digest deliberately excludes `provider_writes_authorized`. Therefore switching the execution gate later does not silently invalidate a previously verified channel/bot identity; the provider mutation path still checks the write gate independently at execution time.
+
 ## Generic provider boundary
 
 Current `main` contains a stronger generic multichannel Telegram runtime:
 
 - `telegram_channel_profile.py` — channel identity and policy;
-- `telegram_target_binding.py` — read-only discovered exact bot/chat binding;
+- `telegram_target_binding.py` — exact bot/chat binding from read-only evidence;
 - `telegram_multichannel_release.py` — reviewed immutable release and exact scheduled items;
 - `telegram_multichannel_state.py` / CLI — durable strict-order ledger and intent;
 - `telegram_multichannel_transport.py` — provider call, zero mutation retries, exact receipt/entity/link verification.
@@ -74,13 +93,12 @@ Research-v2 must feed this runtime. It must **not** reimplement intent persisten
 
 ## Remaining activation sequence
 
-1. Port the research evidence contract onto current `main` and keep it read-only.
-2. Obtain a fresh provider-free generic Lordchrist target binding (`getMe + getChat + getChatAdministrators`).
-3. Convert the five validated research posts into a generic immutable release candidate with absolute Moscow-time windows.
-4. Review/authorize the exact candidate and initialize its isolated durable ledger.
-5. Run one exact manual research canary inside the first immutable publication window.
-6. Require a verified Telegram receipt and durable outcome; no blind retry on `may_exist`.
-7. Let the generic scheduler publish the strict-next remaining items only when their windows become eligible.
+1. Merge the provider-inert research evidence/release adapter and production-proven target binding.
+2. Convert the five validated research posts into a generic immutable release candidate with absolute Moscow-time windows.
+3. Review/authorize the exact candidate and initialize its isolated durable ledger.
+4. Run one exact research canary inside the first immutable publication window.
+5. Require a verified Telegram receipt and durable outcome; no blind retry on `may_exist`.
+6. Let the generic scheduler publish the strict-next remaining items only when their windows become eligible.
 
 ## CI boundary
 
@@ -89,9 +107,9 @@ Research-v2 must feed this runtime. It must **not** reimplement intent persisten
 - `permissions: contents: read`;
 - no Telegram secret;
 - no provider mutation command;
-- validator compilation;
-- manifest/source/body integrity checks;
+- validator/tooling compilation;
+- manifest/source/body/profile/binding integrity checks;
 - regression tests;
 - explicit proof that the research evidence queue remains `staged` and `live_eligible=false`.
 
-Provider activation belongs in a separate reviewed release/canary change after exact target binding. This keeps content research and provider authority independently auditable.
+Provider activation belongs in a separate reviewed release/canary change. This keeps content research and provider authority independently auditable.
