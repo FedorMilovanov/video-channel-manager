@@ -17,6 +17,7 @@ on:
         type: string
 
 permissions:
+  actions: read
   contents: write
 
 concurrency:
@@ -59,6 +60,15 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Require exact-SHA Svodka quality proof
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow svodka-quality.yml \
+            --sha "$GITHUB_SHA"
 
       - name: Validate exact live gates and explicit confirmation
         env:
