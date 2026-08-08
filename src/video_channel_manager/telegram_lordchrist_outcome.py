@@ -11,7 +11,11 @@ from video_channel_manager.telegram_models import (
     TelegramLedger,
     TelegramQueue,
 )
-from video_channel_manager.telegram_presentation import RenderedTelegramPost
+from video_channel_manager.telegram_presentation import (
+    PresentationPolicy,
+    RenderedTelegramPost,
+    verify_rendered_post,
+)
 from video_channel_manager.telegram_state import verify_dispatch_against_queue, verify_persisted_intent
 
 SHA256_PATTERN = r"^sha256:[0-9a-f]{64}$"
@@ -101,11 +105,11 @@ def capture_lordchrist_provider_outcome(
     queue: TelegramQueue,
     envelope: DispatchEnvelope,
     rendered: RenderedTelegramPost,
+    presentation_policy: PresentationPolicy,
     entry: LedgerEntry,
 ) -> LordchristProviderOutcome:
-    verify_dispatch_against_queue(queue, envelope)
-    if rendered.publication_id != envelope.publication_id:
-        raise ValueError("persisted rendered publication differs from durable dispatch")
+    post = verify_dispatch_against_queue(queue, envelope)
+    verify_rendered_post(post, presentation_policy, rendered)
     if rendered.source_payload_sha256 != envelope.payload_sha256:
         raise ValueError("persisted rendered source payload differs from durable dispatch")
 
@@ -134,9 +138,14 @@ def apply_lordchrist_provider_outcome(
     ledger: TelegramLedger,
     envelope: DispatchEnvelope,
     rendered: RenderedTelegramPost,
+    presentation_policy: PresentationPolicy,
     outcome: LordchristProviderOutcome,
 ) -> LedgerEntry:
+    post = verify_dispatch_against_queue(queue, envelope)
     verify_persisted_intent(queue, ledger, envelope)
+    verify_rendered_post(post, presentation_policy, rendered)
+    if rendered.source_payload_sha256 != envelope.payload_sha256:
+        raise ValueError("persisted rendered source payload differs from durable dispatch")
     _require_outcome_matches_dispatch(outcome, envelope, rendered)
 
     recovered = outcome.entry.model_copy(deep=True)
