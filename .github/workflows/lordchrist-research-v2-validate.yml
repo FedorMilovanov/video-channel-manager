@@ -50,12 +50,19 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install read-only validation dependencies
+      - name: Install hash-locked Telegram runtime
         shell: bash
         run: |
+          set -euo pipefail
           python -m pip install --disable-pip-version-check --only-binary=:all: \
-            -r requirements/telegram-publisher.txt \
-            "pytest>=8.3,<10"
+            -r requirements/telegram-publisher.txt
+
+      - name: Install read-only research test harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: "pytest>=8.3,<10"
+          python -m pip check
 
       - name: Compile research, review, and binding tooling
         shell: bash
