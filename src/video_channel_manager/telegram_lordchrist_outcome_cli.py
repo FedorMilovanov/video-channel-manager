@@ -23,10 +23,10 @@ def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description="Provider-free Lordchrist exact outcome tooling")
     root.add_argument("--queue", type=Path, required=True)
     root.add_argument("--ledger", type=Path, required=True)
+    root.add_argument("--presentation-policy", type=Path)
     sub = root.add_subparsers(dest="command", required=True)
 
     capture = sub.add_parser("capture")
-    capture.add_argument("--presentation-policy", type=Path, required=True)
     capture.add_argument("--dispatch", type=Path, required=True)
     capture.add_argument("--rendered", type=Path, required=True)
     capture.add_argument("--output", type=Path, required=True)
@@ -46,6 +46,8 @@ def main() -> int:
     rendered = load_rendered_post(args.rendered)
 
     if args.command == "capture":
+        if args.presentation_policy is None:
+            raise ValueError("Lordchrist outcome capture requires the exact presentation policy")
         policy = load_presentation_policy(args.presentation_policy)
         entry = ledger.entries.get(envelope.publication_id)
         if entry is None:
