@@ -221,6 +221,8 @@ def skip_expired_pending(
 
 
 def initialize_ledger(release: GenericReleaseQueue) -> GenericPublicationLedger:
+    if not release.release_authorized:
+        raise ValueError("publication ledger initialization requires an authorized immutable release")
     return GenericPublicationLedger(
         schema_name="video-channel-manager.telegram-generic-publication-ledger",
         schema_version=1,

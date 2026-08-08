@@ -211,3 +211,10 @@ def test_initialize_ledger_rejects_unauthorized_candidate(monkeypatch, tmp_path:
     with pytest.raises(ValueError, match="authorized immutable release"):
         main()
     assert not ledger_path.exists()
+
+
+def test_low_level_initialize_ledger_rejects_unauthorized_candidate() -> None:
+    candidate = _candidate_release()
+
+    with pytest.raises(ValueError, match="authorized immutable release"):
+        initialize_ledger(candidate)
