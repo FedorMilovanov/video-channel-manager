@@ -100,6 +100,16 @@ def test_read_only_target_proof_can_be_frozen_as_lordchrist_binding() -> None:
     assert binding.digest.startswith("sha256:")
 
 
+def test_target_binding_identity_digest_survives_write_gate_change() -> None:
+    profile = load_channel_profile(LORDCHRIST_PROFILE_PATH)
+    enabled = profile.model_copy(update={"provider_writes_authorized": True})
+
+    assert profile.provider_writes_authorized is False
+    assert enabled.provider_writes_authorized is True
+    assert enabled.digest == profile.digest
+    assert enabled.contract_payload() == profile.contract_payload()
+
+
 def test_target_proof_cannot_be_bound_to_different_profile() -> None:
     lordchrist = load_channel_profile(LORDCHRIST_PROFILE_PATH)
     svodka = load_channel_profile(PROFILE_PATH)
