@@ -491,6 +491,12 @@ def send_message_once(
                 "Telegram returned formatting or source-link entities that differ from the exact provider payload",
                 provider_effect="may_exist",
             )
+        returned_preview = message.get("link_preview_options")
+        if not isinstance(returned_preview, dict) or returned_preview.get("is_disabled") is not True:
+            raise TelegramApiError(
+                "Telegram returned link-preview semantics that differ from the exact provider payload",
+                provider_effect="may_exist",
+            )
         message_id = _message_id(message)
         return _receipt(
             profile,
