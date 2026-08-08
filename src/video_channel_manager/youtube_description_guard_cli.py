@@ -152,7 +152,9 @@ def execute(args: argparse.Namespace) -> int:
             print(f"Video: {video}")
             return 0
         if not descriptions_equivalent(current.description, before):
-            raise ValueError("Live description matches neither immutable before-state nor after-state; refusing overwrite.")
+            raise ValueError(
+                "Live description matches neither immutable before-state nor after-state; refusing overwrite."
+            )
 
         verified = writer.replace_description(
             video_id=video,
