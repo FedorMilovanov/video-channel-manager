@@ -15,6 +15,7 @@ APPROVED_RELEASE = REPOSITORY_ROOT / "content/telegram/svodka/approved-release-2
 
 
 def test_ledger_initialization_is_manual_exact_and_provider_free() -> None:
+    profile = load_channel_profile(PROFILE_PATH)
     workflow = LEDGER_WORKFLOW.read_text(encoding="utf-8")
 
     assert "workflow_dispatch:" in workflow
@@ -23,6 +24,7 @@ def test_ledger_initialization_is_manual_exact_and_provider_free() -> None:
     assert "approved-release-2026-08.json" in workflow
     assert "release.release_authorized" in workflow
     assert "state/svodka-telegram" in workflow
+    assert f"group: {profile.concurrency_group}" in workflow
     assert "initialize-ledger" in workflow
     assert "sendMessage" not in workflow
     assert "sendPoll" not in workflow
@@ -31,6 +33,7 @@ def test_ledger_initialization_is_manual_exact_and_provider_free() -> None:
 
 
 def test_canary_is_one_exact_manual_dispatch_with_durable_intent_first() -> None:
+    profile = load_channel_profile(PROFILE_PATH)
     workflow = CANARY_WORKFLOW.read_text(encoding="utf-8")
 
     assert "workflow_dispatch:" in workflow
@@ -48,6 +51,17 @@ def test_canary_is_one_exact_manual_dispatch_with_durable_intent_first() -> None
     assert "!cancelled()" in workflow
     assert "initialize-ledger" not in workflow
     assert "state/svodka-telegram" in workflow
+    assert f"group: {profile.concurrency_group}" in workflow
+
+
+def test_all_svodka_state_writers_share_profile_concurrency_group() -> None:
+    profile = load_channel_profile(PROFILE_PATH)
+    expected = f"group: {profile.concurrency_group}"
+
+    for workflow_path in (LEDGER_WORKFLOW, CANARY_WORKFLOW):
+        workflow = workflow_path.read_text(encoding="utf-8")
+        assert expected in workflow, workflow_path.name
+        assert "cancel-in-progress: false" in workflow, workflow_path.name
 
 
 def test_committed_live_release_if_present_is_exact_and_authorized() -> None:
