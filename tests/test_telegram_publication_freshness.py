@@ -94,3 +94,19 @@ def test_next_freshness_uses_strict_next_pending_item() -> None:
 
     assert decision.eligible is True
     assert decision.publication_id == release.items[1].publication_id
+
+
+def test_next_freshness_rejects_requested_item_that_is_not_strict_next() -> None:
+    release = _release()
+    ledger = initialize_ledger(release)
+
+    decision = next_publication_freshness(
+        release,
+        ledger,
+        now=datetime(2026, 8, 9, 16, 30, tzinfo=UTC),
+        expected_publication_id=release.items[1].publication_id,
+    )
+
+    assert decision.eligible is False
+    assert decision.reason == "requested_publication_is_not_strict_next"
+    assert decision.publication_id == release.items[0].publication_id
