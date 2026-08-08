@@ -57,7 +57,9 @@ def test_canary_is_one_exact_fresh_manual_dispatch_with_durable_intent_first() -
     assert workflow.index("Require current-main exact-SHA Svodka quality proof") < workflow.index(
         "Fresh read-only target preflight"
     )
-    assert workflow.index("Require fresh strict-next canary window") < workflow.index("Fresh read-only target preflight")
+    assert workflow.index("Require fresh strict-next canary window") < workflow.index(
+        "Fresh read-only target preflight"
+    )
     assert "Persist intent before Telegram mutation" in workflow
     assert "Re-prove current-main quality immediately before Telegram mutation" in workflow
     assert "send-once" in workflow
