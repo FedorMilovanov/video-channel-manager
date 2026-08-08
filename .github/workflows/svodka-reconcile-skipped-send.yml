@@ -296,6 +296,7 @@ jobs:
 
       - name: Resolve only the proven no-effect intent
         env:
+          GH_TOKEN: ${{ github.token }}
           SOURCE_RUN_ID: ${{ inputs.source_run_id }}
           SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
         shell: bash
@@ -352,6 +353,11 @@ jobs:
             echo "reconciliation produced no durable state delta" >&2
             exit 3
           }
+
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow svodka-quality.yml \
+            --sha "$GITHUB_SHA"
+
           git -C "$STATE_DIR" commit -m "Reconcile skipped Svodka provider send for run $SOURCE_RUN_ID/$SOURCE_RUN_ATTEMPT [skip ci]"
           local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
