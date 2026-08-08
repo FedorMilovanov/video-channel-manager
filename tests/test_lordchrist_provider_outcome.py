@@ -11,8 +11,8 @@ from video_channel_manager.telegram_lordchrist_outcome import (
 )
 from video_channel_manager.telegram_models import TargetProof
 from video_channel_manager.telegram_presentation import load_presentation_policy, render_post
-from video_channel_manager.telegram_state import initialize_ledger, prepare_next
 from video_channel_manager.telegram_publisher import load_queue
+from video_channel_manager.telegram_state import initialize_ledger, prepare_next
 
 ROOT = Path(__file__).resolve().parents[1]
 QUEUE = ROOT / "content/telegram/lordchrist/verified-30-posts.json"
@@ -57,11 +57,11 @@ def _prepared_fixture():
     assert prepared.envelope is not None
     assert prepared.post is not None
     rendered = render_post(prepared.post, policy)
-    return queue, ledger, prepared.envelope, rendered, now
+    return queue, policy, ledger, prepared.envelope, rendered, now
 
 
 def test_verified_provider_outcome_round_trips_into_the_exact_durable_intent() -> None:
-    queue, live_ledger, envelope, rendered, now = _prepared_fixture()
+    queue, policy, live_ledger, envelope, rendered, now = _prepared_fixture()
     persisted_intent = live_ledger.model_copy(deep=True)
 
     entry = live_ledger.entries[envelope.publication_id]
@@ -72,8 +72,15 @@ def test_verified_provider_outcome_round_trips_into_the_exact_durable_intent() -
     entry.published_at_utc = now + timedelta(seconds=3)
     entry.last_error = None
 
-    outcome = capture_lordchrist_provider_outcome(queue, envelope, rendered, entry)
-    recovered = apply_lordchrist_provider_outcome(queue, persisted_intent, envelope, rendered, outcome)
+    outcome = capture_lordchrist_provider_outcome(queue, envelope, rendered, policy, entry)
+    recovered = apply_lordchrist_provider_outcome(
+        queue,
+        persisted_intent,
+        envelope,
+        rendered,
+        policy,
+        outcome,
+    )
 
     assert recovered.state == "published"
     assert recovered.provider_effect == "verified"
@@ -84,7 +91,7 @@ def test_verified_provider_outcome_round_trips_into_the_exact_durable_intent() -
 
 
 def test_proven_no_effect_outcome_can_restore_pending_without_losing_exact_binding() -> None:
-    queue, live_ledger, envelope, rendered, _ = _prepared_fixture()
+    queue, policy, live_ledger, envelope, rendered, _ = _prepared_fixture()
     persisted_intent = live_ledger.model_copy(deep=True)
 
     entry = live_ledger.entries[envelope.publication_id]
@@ -93,8 +100,15 @@ def test_proven_no_effect_outcome_can_restore_pending_without_losing_exact_bindi
     entry.intent_id = None
     entry.last_error = "Telegram connection failure: ConnectError"
 
-    outcome = capture_lordchrist_provider_outcome(queue, envelope, rendered, entry)
-    recovered = apply_lordchrist_provider_outcome(queue, persisted_intent, envelope, rendered, outcome)
+    outcome = capture_lordchrist_provider_outcome(queue, envelope, rendered, policy, entry)
+    recovered = apply_lordchrist_provider_outcome(
+        queue,
+        persisted_intent,
+        envelope,
+        rendered,
+        policy,
+        outcome,
+    )
 
     assert recovered.state == "pending"
     assert recovered.provider_effect == "not_dispatched"
@@ -104,7 +118,7 @@ def test_proven_no_effect_outcome_can_restore_pending_without_losing_exact_bindi
 
 
 def test_outcome_from_another_intent_is_rejected_before_state_replacement() -> None:
-    queue, live_ledger, envelope, rendered, now = _prepared_fixture()
+    queue, policy, live_ledger, envelope, rendered, now = _prepared_fixture()
     persisted_intent = live_ledger.model_copy(deep=True)
 
     entry = live_ledger.entries[envelope.publication_id]
@@ -113,11 +127,18 @@ def test_outcome_from_another_intent_is_rejected_before_state_replacement() -> N
     entry.message_id = 1556
     entry.message_url = "https://t.me/lordchrist/1556"
     entry.published_at_utc = now + timedelta(seconds=2)
-    outcome = capture_lordchrist_provider_outcome(queue, envelope, rendered, entry)
+    outcome = capture_lordchrist_provider_outcome(queue, envelope, rendered, policy, entry)
     wrong = outcome.model_copy(update={"dispatch_intent_id": "f" * 32})
 
     with pytest.raises(ValueError, match="intent differs"):
-        apply_lordchrist_provider_outcome(queue, persisted_intent, envelope, rendered, wrong)
+        apply_lordchrist_provider_outcome(
+            queue,
+            persisted_intent,
+            envelope,
+            rendered,
+            policy,
+            wrong,
+        )
 
     blocked = persisted_intent.entries[envelope.publication_id]
     assert blocked.state == "dispatching"
