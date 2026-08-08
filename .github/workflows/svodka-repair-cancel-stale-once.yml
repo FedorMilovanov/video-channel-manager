@@ -1,0 +1,49 @@
+name: Svodka supersede stale repair run
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/svodka-repair-cancel-stale-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  supersede:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Make the latest repair run cancel stale in-progress attempts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('.github/workflows/svodka-consolidation-repair-once.yml')
+          text = path.read_text(encoding='utf-8')
+          old = '  cancel-in-progress: false\n'
+          new = '  cancel-in-progress: true\n'
+          if old not in text:
+              raise SystemExit('repair workflow concurrency flag is not the expected false value')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Commit superseding repair trigger and remove helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/svodka-consolidation-repair-once.yml
+          git rm .github/workflows/svodka-repair-cancel-stale-once.yml
+          git commit -m "Supersede stale Svodka repair attempts"
+          git push origin HEAD:main
