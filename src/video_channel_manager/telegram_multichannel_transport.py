@@ -449,8 +449,8 @@ def send_message_once(
     now: datetime | None = None,
 ) -> GenericSendReceipt:
     _require_provider_write_authorized(profile)
-    effective_now = now or datetime.now(tz=UTC)
-    _verified_target(profile, target, effective_now)
+    target_check_now = now or datetime.now(tz=UTC)
+    _verified_target(profile, target, target_check_now)
     if payload.project_key != profile.project_key or payload.profile_sha256 != profile.digest:
         raise ValueError("message payload is not bound to the selected channel profile")
     if payload.channel_username.casefold() != profile.channel_username.casefold():
@@ -504,7 +504,7 @@ def send_message_once(
             payload_sha256=payload.provider_payload_sha256,
             target=target,
             message_id=message_id,
-            now=effective_now,
+            now=now or datetime.now(tz=UTC),
         )
     finally:
         if own_client:
@@ -522,8 +522,8 @@ def send_poll_once(
     now: datetime | None = None,
 ) -> GenericSendReceipt:
     _require_provider_write_authorized(profile)
-    effective_now = now or datetime.now(tz=UTC)
-    _verified_target(profile, target, effective_now)
+    target_check_now = now or datetime.now(tz=UTC)
+    _verified_target(profile, target, target_check_now)
     if payload.project_key != profile.project_key or payload.profile_sha256 != profile.digest:
         raise ValueError("poll payload is not bound to the selected channel profile")
     if payload.channel_username.casefold() != profile.channel_username.casefold():
@@ -626,7 +626,7 @@ def send_poll_once(
             payload_sha256=payload.provider_payload_sha256,
             target=target,
             message_id=message_id,
-            now=effective_now,
+            now=now or datetime.now(tz=UTC),
         )
     finally:
         if own_client:
