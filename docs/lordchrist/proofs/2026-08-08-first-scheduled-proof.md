@@ -41,3 +41,7 @@ The ledger after the run contains `published / verified` for this publication. T
 ## Operational conclusion
 
 The pre-proof freeze condition defined in issue #168 is satisfied. Post-proof hardening and research-post v2 integration may proceed, subject to normal reviewed/green changes and an independent research-post canary before any staged research queue is armed.
+
+## Repository follow-up
+
+The original research-post v2 draft PR #169 was intentionally cut before this proof from merge base `9a79e04819072aa492cb3c98016d42284a714c57`. By the time this proof completed, that branch had diverged materially from current `main`; migrate/rebase the research-v2 changes onto a fresh current-main branch rather than merging the stale branch blindly.
