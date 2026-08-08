@@ -44,6 +44,33 @@ def test_duplicate_daily_slots_are_rejected() -> None:
         SvodkaDraftQueue.model_validate(payload)
 
 
+def test_two_posts_cannot_share_the_same_publication_timestamp() -> None:
+    payload = _payload()
+    posts = payload["posts"]  # type: ignore[index]
+    posts[1]["scheduled_at"] = posts[0]["scheduled_at"]  # type: ignore[index]
+
+    with pytest.raises(ValueError, match="strictly ordered by scheduled_at"):
+        SvodkaDraftQueue.model_validate(payload)
+
+
+def test_publication_timestamp_must_use_exact_minute_boundary() -> None:
+    payload = _payload()
+    first = payload["posts"][0]  # type: ignore[index]
+    first["scheduled_at"] = "2026-08-09T10:30:01+03:00"  # type: ignore[index]
+
+    with pytest.raises(ValueError, match="exact minute boundary"):
+        SvodkaDraftQueue.model_validate(payload)
+
+
+def test_quiz_options_are_unique_after_case_and_whitespace_normalization() -> None:
+    payload = _payload()
+    quiz_post = payload["posts"][6]  # type: ignore[index]
+    quiz_post["quiz"]["options"] = ["Канал молнии", " канал МОЛНИИ ", "Кипящая вода"]  # type: ignore[index]
+
+    with pytest.raises(ValueError, match="quiz options must be unique"):
+        SvodkaDraftQueue.model_validate(payload)
+
+
 def test_structured_source_must_match_visible_source_url() -> None:
     payload = deepcopy(_payload())
     first = payload["posts"][0]  # type: ignore[index]
@@ -58,5 +85,5 @@ def test_posts_must_remain_in_schedule_order() -> None:
     posts = payload["posts"]  # type: ignore[index]
     posts[0]["scheduled_at"], posts[1]["scheduled_at"] = posts[1]["scheduled_at"], posts[0]["scheduled_at"]  # type: ignore[index]
 
-    with pytest.raises(ValueError, match="ordered by scheduled_at"):
+    with pytest.raises(ValueError, match="strictly ordered by scheduled_at"):
         SvodkaDraftQueue.model_validate(payload)
