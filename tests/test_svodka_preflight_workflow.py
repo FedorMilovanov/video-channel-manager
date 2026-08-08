@@ -78,6 +78,7 @@ def test_svodka_quality_workflow_is_full_read_only_verification() -> None:
     assert "--no-deps" in workflow
     assert "src/video_channel_manager/telegram_models.py" in workflow
     assert "src/video_channel_manager/telegram_transport.py" in workflow
+    assert "src/video_channel_manager/telegram_release_review.py" in workflow
     assert "tests/test_svodka_reconciliation_workflow.py" in workflow
     assert "tests/test_telegram_github_quality_gate.py" in workflow
     assert "tests/test_telegram_publication_freshness.py" in workflow
