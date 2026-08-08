@@ -206,141 +206,13 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p .runtime
-          python - <<'PY'
-          import json
-          import os
-          import urllib.parse
-          import urllib.request
-          from datetime import UTC, datetime
-          from pathlib import Path
-
-          api = os.environ["GITHUB_API_URL"].rstrip("/")
-          repo = os.environ["GITHUB_REPOSITORY"]
-          token = os.environ["GH_TOKEN"]
-          run_id = os.environ["SOURCE_RUN_ID"]
-          attempt = int(os.environ["SOURCE_RUN_ATTEMPT"])
-          artifact_name = f"svodka-provider-outcome-{run_id}-{attempt}"
-
-          def github_json(url: str) -> dict:
-              request = urllib.request.Request(
-                  url,
-                  headers={
-                      "Authorization": f"Bearer {token}",
-                      "Accept": "application/vnd.github+json",
-                      "X-GitHub-Api-Version": "2022-11-28",
-                      "User-Agent": "video-channel-manager-svodka-outcome-reconciler",
-                  },
-              )
-              with urllib.request.urlopen(request, timeout=30) as response:
-                  return json.load(response)
-
-          run = github_json(f"{api}/repos/{repo}/actions/runs/{run_id}")
-          if int(run.get("run_attempt", 0)) != attempt:
-              raise SystemExit("GitHub run attempt differs from archived-outcome recovery request")
-          if run.get("head_branch") != "main":
-              raise SystemExit("source provider run was not executed from main")
-          if run.get("status") != "completed":
-              raise SystemExit("source provider run is not completed")
-
-          workflow_path = str(run.get("path") or "").split("@", 1)[0]
-          allowed = {
-              ".github/workflows/svodka-canary.yml": (
-                  "workflow_dispatch",
-                  "Persist intent before Telegram mutation",
-                  "Send exactly one canary payload",
-                  "Archive exact provider outcome before state mutation",
-                  "Apply and persist exact provider outcome",
-              ),
-              ".github/workflows/svodka-scheduled-publisher.yml": (
-                  "schedule",
-                  "Persist scheduled intent before Telegram mutation",
-                  "Send exactly one scheduled payload",
-                  "Archive exact provider outcome before state mutation",
-                  "Apply and persist exact scheduled provider outcome",
-              ),
-          }
-          if workflow_path not in allowed:
-              raise SystemExit(f"source run is not a recognized Svodka provider workflow: {workflow_path}")
-          expected_event, persist_name, send_name, archive_name, final_name = allowed[workflow_path]
-          if run.get("event") != expected_event:
-              raise SystemExit("source provider run event does not match workflow contract")
-
-          dispatch_path = (
-              Path(os.environ["STATE_DIR"])
-              / "content/telegram/svodka/dispatches"
-              / f"{run_id}-{attempt}"
-              / "dispatch.json"
-          )
-          dispatch = json.loads(dispatch_path.read_text(encoding="utf-8"))
-          if str(run.get("head_sha") or "") != dispatch["github_sha"]:
-              raise SystemExit("source run head SHA differs from persisted dispatch provenance")
-
-          jobs = github_json(f"{api}/repos/{repo}/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100")
-          named_steps: dict[str, list[dict]] = {
-              persist_name: [],
-              send_name: [],
-              archive_name: [],
-              final_name: [],
-          }
-          for job in jobs.get("jobs", []):
-              for step in job.get("steps") or []:
-                  name = step.get("name")
-                  if name in named_steps:
-                      named_steps[name].append(step)
-
-          for name in (persist_name, send_name, archive_name, final_name):
-              if len(named_steps[name]) != 1:
-                  raise SystemExit(f"cannot prove unique source step: {name}")
-          if named_steps[persist_name][0].get("conclusion") != "success":
-              raise SystemExit("source durable intent step was not successful")
-          if named_steps[send_name][0].get("conclusion") != "success":
-              raise SystemExit("source provider send step was not executed to completion")
-          if named_steps[archive_name][0].get("conclusion") != "success":
-              raise SystemExit("source provider outcome artifact was not archived successfully")
-          if named_steps[final_name][0].get("conclusion") == "success":
-              raise SystemExit("source final state-persistence step already succeeded; recovery is inconsistent")
-
-          query = urllib.parse.urlencode({"name": artifact_name, "per_page": "100"})
-          artifacts = github_json(f"{api}/repos/{repo}/actions/runs/{run_id}/artifacts?{query}").get("artifacts")
-          if not isinstance(artifacts, list) or len(artifacts) != 1:
-              raise SystemExit("expected exactly one archived provider outcome artifact for source run")
-          artifact = artifacts[0]
-          if artifact.get("name") != artifact_name or artifact.get("expired") is True:
-              raise SystemExit("archived provider outcome artifact is missing, expired, or misnamed")
-          artifact_run = artifact.get("workflow_run") or {}
-          if str(artifact_run.get("id") or "") != run_id:
-              raise SystemExit("artifact workflow run id differs from source provider run")
-          artifact_head_sha = str(artifact_run.get("head_sha") or "")
-          if artifact_head_sha and artifact_head_sha != dispatch["github_sha"]:
-              raise SystemExit("artifact head SHA differs from persisted dispatch provenance")
-
-          proof = {
-              "schema_name": "video-channel-manager.telegram-provider-outcome-artifact-proof",
-              "schema_version": 1,
-              "source_run_id": run_id,
-              "source_run_attempt": str(attempt),
-              "workflow_path": workflow_path,
-              "event": run.get("event"),
-              "run_status": run.get("status"),
-              "run_conclusion": run.get("conclusion"),
-              "head_sha": run.get("head_sha"),
-              "publication_id": os.environ["REQUESTED_PUBLICATION_ID"],
-              "artifact_id": artifact.get("id"),
-              "artifact_name": artifact_name,
-              "artifact_digest": artifact.get("digest"),
-              "artifact_size_in_bytes": artifact.get("size_in_bytes"),
-              "persist_step_conclusion": named_steps[persist_name][0].get("conclusion"),
-              "send_step_conclusion": named_steps[send_name][0].get("conclusion"),
-              "archive_step_conclusion": named_steps[archive_name][0].get("conclusion"),
-              "final_state_step_conclusion": named_steps[final_name][0].get("conclusion"),
-              "checked_at_utc": datetime.now(tz=UTC).isoformat(),
-          }
-          Path(os.environ["PROOF_PATH"]).write_text(
-              json.dumps(proof, ensure_ascii=False, indent=2) + "\n",
-              encoding="utf-8",
-          )
-          print(json.dumps(proof, ensure_ascii=False))
-          PY
+          dispatch_path="$STATE_DIR/content/telegram/svodka/dispatches/$SOURCE_RUN_ID-$SOURCE_RUN_ATTEMPT/dispatch.json"
+          python -m video_channel_manager.telegram_github_outcome_artifact prove \
+            --dispatch "$dispatch_path" \
+            --source-run-id "$SOURCE_RUN_ID" \
+            --source-run-attempt "$SOURCE_RUN_ATTEMPT" \
+            --publication-id "$REQUESTED_PUBLICATION_ID" \
+            --proof-output "$PROOF_PATH"
 
       - name: Download exact archived provider outcome
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -367,34 +239,11 @@ jobs:
             echo "provider outcome artifact must contain exactly one file" >&2
             exit 2
           }
-          evidence_rel_dir="content/telegram/svodka/dispatches/$SOURCE_RUN_ID-$SOURCE_RUN_ATTEMPT"
-          dispatch_path="$STATE_DIR/$evidence_rel_dir/dispatch.json"
-          python - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          from video_channel_manager.telegram_multichannel_outcome import GenericProviderOutcome
-          from video_channel_manager.telegram_multichannel_state import GenericDispatchEnvelope
-
-          dispatch_path = (
-              Path(os.environ["STATE_DIR"])
-              / "content/telegram/svodka/dispatches"
-              / f"{os.environ['SOURCE_RUN_ID']}-{os.environ['SOURCE_RUN_ATTEMPT']}"
-              / "dispatch.json"
-          )
-          dispatch = GenericDispatchEnvelope.model_validate_json(dispatch_path.read_text(encoding="utf-8"))
-          outcome = GenericProviderOutcome.model_validate_json(
-              Path(os.environ["RECOVERED_OUTCOME_PATH"]).read_text(encoding="utf-8")
-          )
-          if outcome.publication_id != dispatch.publication_id:
-              raise SystemExit("archived provider outcome publication differs from persisted dispatch")
-          if outcome.provider_payload_sha256 != dispatch.provider_payload_sha256:
-              raise SystemExit("archived provider outcome payload digest differs from persisted dispatch")
-          if outcome.publication_id != os.environ["REQUESTED_PUBLICATION_ID"]:
-              raise SystemExit("archived provider outcome publication differs from recovery request")
-          print(json.dumps({"provider_effect": outcome.provider_effect, "retryable": outcome.retryable}))
-          PY
+          dispatch_path="$STATE_DIR/content/telegram/svodka/dispatches/$SOURCE_RUN_ID-$SOURCE_RUN_ATTEMPT/dispatch.json"
+          python -m video_channel_manager.telegram_github_outcome_artifact validate \
+            --dispatch "$dispatch_path" \
+            --outcome "$RECOVERED_OUTCOME_PATH" \
+            --publication-id "$REQUESTED_PUBLICATION_ID"
 
       - name: Apply archived outcome without provider access
         env:
