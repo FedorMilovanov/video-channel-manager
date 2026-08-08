@@ -22,6 +22,7 @@ on:
       - "content/telegram/lordchrist/research-queues/**"
       - "content/telegram/lordchrist/research-posts/**"
       - "docs/lordchrist/research-post-v2.md"
+      - "docs/lordchrist/audits/**"
   workflow_dispatch:
 
 permissions:
@@ -36,7 +37,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
-      EXPECTED_CANDIDATE_SHA256: sha256:dbd4bc71e7a2a4e1320beb51843f0553f853dab34f2bd04d1800b787c2433653
+      EXPECTED_CANDIDATE_SHA256: sha256:b87b69332a05fbf968e1d04b4f24543d89e7619113a8d076e8f81d20d7f69515
     steps:
       - name: Check out exact revision
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
