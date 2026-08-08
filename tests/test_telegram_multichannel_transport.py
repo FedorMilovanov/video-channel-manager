@@ -110,7 +110,12 @@ def _telegram_result(
     }
 
 
-def _message_result(payload, *, source_url: str | None = None) -> dict[str, Any]:
+def _message_result(
+    payload,
+    *,
+    source_url: str | None = None,
+    link_preview_disabled: bool = True,
+) -> dict[str, Any]:
     entities = [entity.model_dump(mode="json", exclude_none=True) for entity in payload.expected_entities]
     if source_url is not None:
         for entity in entities:
@@ -128,6 +133,7 @@ def _message_result(payload, *, source_url: str | None = None) -> dict[str, Any]
             },
             "text": payload.expected_plain_text,
             "entities": entities,
+            "link_preview_options": {"is_disabled": link_preview_disabled},
         },
     }
 
@@ -166,6 +172,18 @@ def test_send_message_once_rejects_returned_source_link_drift() -> None:
 
     with _client(_message_result(payload, source_url="https://example.test/wrong")) as client:
         with pytest.raises(TelegramApiError, match="formatting or source-link") as exc_info:
+            send_message_once(profile, target, payload, token="test-token", client=client, now=NOW)
+
+    assert exc_info.value.provider_effect == "may_exist"
+
+
+def test_send_message_once_rejects_returned_link_preview_drift() -> None:
+    profile = _profile()
+    target = _target(profile)
+    payload = _message_payload(profile)
+
+    with _client(_message_result(payload, link_preview_disabled=False)) as client:
+        with pytest.raises(TelegramApiError, match="link-preview semantics") as exc_info:
             send_message_once(profile, target, payload, token="test-token", client=client, now=NOW)
 
     assert exc_info.value.provider_effect == "may_exist"
