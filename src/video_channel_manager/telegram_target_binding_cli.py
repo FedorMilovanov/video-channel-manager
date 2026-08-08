@@ -10,7 +10,9 @@ from video_channel_manager.telegram_target_binding import target_binding_from_pr
 
 
 def parser() -> argparse.ArgumentParser:
-    root = argparse.ArgumentParser(description="Convert a verified read-only Telegram target proof into an immutable binding")
+    root = argparse.ArgumentParser(
+        description="Convert a verified read-only Telegram target proof into an immutable binding"
+    )
     root.add_argument("--profile", type=Path, required=True)
     root.add_argument("--proof", type=Path, required=True)
     root.add_argument("--output", type=Path, required=True)
