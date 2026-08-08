@@ -66,19 +66,17 @@ def test_provider_workflow_step_contract_matches_recovery_verifier() -> None:
         assert contract.final_state_step in workflow
 
 
-def test_archived_outcome_recovery_applies_only_after_provenance_and_reproves_before_state_push() -> None:
+def test_archived_outcome_recovery_persists_only_after_provenance_without_current_quality_dependency() -> None:
     workflow = WORKFLOW.read_text(encoding="utf-8")
 
     prove_index = workflow.index("Prove source run and archived outcome provenance")
     download_index = workflow.index("Download exact archived provider outcome")
     validate_index = workflow.index("Validate recovered outcome against persisted dispatch")
     apply_index = workflow.index("Apply archived outcome without provider access")
-    reproof_index = workflow.index("Re-prove current main and persist recovered state")
-    quality_gate_index = workflow.index("telegram_github_quality_gate", reproof_index)
+    persist_index = workflow.index("Persist recovered provider outcome state")
     commit_index = workflow.index("Recover archived Svodka provider outcome for run")
 
-    assert (
-        prove_index < download_index < validate_index < apply_index < reproof_index < quality_gate_index < commit_index
-    )
+    assert prove_index < download_index < validate_index < apply_index < persist_index < commit_index
+    assert "telegram_github_quality_gate" not in workflow
     assert "apply-outcome" in workflow
     assert "validate-ledger" in workflow
