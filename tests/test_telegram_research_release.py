@@ -70,7 +70,7 @@ def test_release_source_binding_changes_when_evidence_registry_changes(monkeypat
     assert rebuilt.candidate_digest() != original.candidate_digest()
 
 
-def test_release_source_binding_changes_when_queue_contract_changes(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_release_source_binding_changes_when_evidence_contract_changes(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(ROOT)
     research = load_research_queue(QUEUE_PATH)
     post = research.posts[0]
@@ -82,8 +82,28 @@ def test_release_source_binding_changes_when_queue_contract_changes(monkeypatch:
     changed = research.model_copy(update={"verification": changed_verification})
     assert changed.posts[0].payload_sha256 == post.payload_sha256
     assert changed.source_registry_sha256 == research.source_registry_sha256
-    assert changed.digest != research.digest
+    assert changed.evidence_digest != research.evidence_digest
     assert research_evidence_sha256(changed, changed.posts[0]) != original
+
+
+def test_activation_state_changes_queue_digest_but_not_evidence_identity(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(ROOT)
+    research = load_research_queue(QUEUE_PATH)
+    post = research.posts[0]
+    original_source = research_evidence_sha256(research, post)
+    armed_schedule = research.schedule.model_copy(
+        update={
+            "state": "armed",
+            "activation_at_utc": datetime(2026, 8, 10, 16, 20, tzinfo=UTC),
+            "canary_publication_id": post.publication_id,
+            "canary_message_id": 1500,
+        }
+    )
+    armed = research.model_copy(update={"schedule": armed_schedule})
+
+    assert armed.digest != research.digest
+    assert armed.evidence_digest == research.evidence_digest
+    assert research_evidence_sha256(armed, armed.posts[0]) == original_source
 
 
 def test_research_adapter_preserves_canonical_reader_text_and_only_bolds_heading(
