@@ -123,6 +123,7 @@ def build_svodka_release_candidate(
         daily_verified_limit=profile.daily_verified_limit,
         **_target_fields(profile, binding),
         release_authorized=False,
+        reviewed_candidate_sha256=None,
         reviewed_by=None,
         reviewed_at=None,
         items=tuple(items),
@@ -145,8 +146,10 @@ def authorize_svodka_release(
     if reviewed_at.tzinfo is None:
         raise ValueError("Svodka release review timestamp must be timezone-aware")
 
+    candidate_digest = candidate.digest
     payload = candidate.model_dump(mode="json")
     payload["release_authorized"] = True
+    payload["reviewed_candidate_sha256"] = candidate_digest
     payload["reviewed_by"] = reviewer
     payload["reviewed_at"] = reviewed_at.isoformat()
     return GenericReleaseQueue.model_validate(payload)
