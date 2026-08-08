@@ -221,19 +221,29 @@ jobs:
               raise SystemExit("GitHub run attempt differs from requested reconciliation")
           if run.get("head_branch") != "main":
               raise SystemExit("source run was not executed from main")
+          if run.get("status") != "completed":
+              raise SystemExit("source GitHub run is not completed; reconciliation is forbidden")
+
           workflow_path = str(run.get("path") or "")
+          workflow_path = workflow_path.split("@", 1)[0]
           allowed = {
               ".github/workflows/svodka-canary.yml": (
+                  "workflow_dispatch",
                   "Persist intent before Telegram mutation",
                   "Send exactly one canary payload",
               ),
               ".github/workflows/svodka-scheduled-publisher.yml": (
+                  "schedule",
                   "Persist scheduled intent before Telegram mutation",
                   "Send exactly one scheduled payload",
               ),
           }
           if workflow_path not in allowed:
               raise SystemExit(f"source run is not a recognized Svodka provider workflow: {workflow_path}")
+
+          expected_event, persist_name, send_name = allowed[workflow_path]
+          if run.get("event") != expected_event:
+              raise SystemExit("source run event does not match the provider workflow contract")
 
           evidence_rel = (
               Path(os.environ["STATE_DIR"])
@@ -246,7 +256,6 @@ jobs:
               raise SystemExit("source run head SHA differs from persisted dispatch provenance")
 
           jobs = github_json(f"{api}/repos/{repo}/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100")
-          persist_name, send_name = allowed[workflow_path]
           persist_steps = []
           send_steps = []
           for job in jobs.get("jobs", []):
@@ -267,6 +276,9 @@ jobs:
               "source_run_id": run_id,
               "source_run_attempt": str(attempt),
               "workflow_path": workflow_path,
+              "event": run.get("event"),
+              "run_status": run.get("status"),
+              "run_conclusion": run.get("conclusion"),
               "head_sha": run.get("head_sha"),
               "publication_id": os.environ["REQUESTED_PUBLICATION_ID"],
               "persist_step_name": persist_name,
@@ -293,7 +305,6 @@ jobs:
           evidence_abs_dir="$STATE_DIR/$evidence_rel_dir"
           dispatch_path="$evidence_abs_dir/dispatch.json"
           python - <<'PY'
-          import json
           import os
           from pathlib import Path
 
