@@ -912,10 +912,10 @@ def test_save_ledger_refuses_internally_inconsistent_published_state(tmp_path: P
         save_ledger(tmp_path / "ledger.json", ledger)
 
 
-def test_workflow_exposes_read_only_preflight_exact_manual_binding_and_single_queue() -> None:
+def test_workflow_exposes_read_only_preflight_exact_manual_binding_and_max_queue() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
     header = workflow.split("jobs:", maxsplit=1)[0]
-    assert "queue: single" in workflow
+    assert "queue: max" in workflow
     assert "- preflight" in workflow
     assert "LORDCHRIST_TELEGRAM_BOT_ID" in workflow
     assert 'expected_confirmation="PUBLISH:$REQUESTED_PUBLICATION_ID"' in workflow
