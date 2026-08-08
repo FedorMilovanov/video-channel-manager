@@ -1,0 +1,258 @@
+name: Svodka exact manual canary
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_digest:
+        description: Exact sha256 digest of the approved Svodka release
+        required: true
+        type: string
+      publication_id:
+        description: Exact next Svodka publication_id to publish once
+        required: true
+        type: string
+      confirm:
+        description: Type CANARY:<publication_id>:<release_digest>
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: svodka-telegram-state
+  cancel-in-progress: false
+
+jobs:
+  canary:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: src
+      PROFILE_PATH: content/telegram/channels/svodka.json
+      BINDING_PATH: content/telegram/channels/svodka-target-binding.json
+      RELEASE_PATH: content/telegram/svodka/approved-release-2026-08.json
+      STATE_BRANCH: state/svodka-telegram
+      STATE_DIR: .state/svodka
+      LEDGER_RELATIVE_PATH: content/telegram/svodka/publication-ledger.json
+      LEDGER_PATH: .state/svodka/content/telegram/svodka/publication-ledger.json
+      TARGET_PROOF_PATH: .runtime/svodka-target-proof.json
+      ENVELOPE_PATH: .runtime/svodka-dispatch.json
+      OUTCOME_PATH: .runtime/svodka-outcome.json
+      EXPECTED_CHAT_ID: -1003527567039
+      EXPECTED_BOT_ID: 8716602202
+      EXPECTED_BOT_USERNAME: preaching_mp3_bot
+    steps:
+      - name: Check out immutable release and runtime
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Validate exact live gates and explicit confirmation
+        env:
+          REQUESTED_DIGEST: ${{ inputs.release_digest }}
+          REQUESTED_PUBLICATION_ID: ${{ inputs.publication_id }}
+          CONFIRMATION: ${{ inputs.confirm }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$REQUESTED_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || {
+            echo "release_digest must be an exact sha256 digest" >&2
+            exit 2
+          }
+          [[ "$REQUESTED_PUBLICATION_ID" =~ ^svodka-[a-z0-9][a-z0-9-]{4,90}$ ]] || {
+            echo "publication_id is invalid" >&2
+            exit 2
+          }
+          [[ "$CONFIRMATION" == "CANARY:$REQUESTED_PUBLICATION_ID:$REQUESTED_DIGEST" ]] || {
+            echo "confirmation does not match exact release and publication" >&2
+            exit 2
+          }
+          [[ -f "$RELEASE_PATH" ]] || {
+            echo "approved release is not committed yet" >&2
+            exit 2
+          }
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          from video_channel_manager.telegram_channel_profile import load_channel_profile
+          from video_channel_manager.telegram_multichannel_release import load_release
+          from video_channel_manager.telegram_target_binding import load_target_binding
+
+          profile = load_channel_profile(Path(os.environ["PROFILE_PATH"]))
+          binding = load_target_binding(Path(os.environ["BINDING_PATH"]), profile)
+          release = load_release(Path(os.environ["RELEASE_PATH"]))
+          requested_digest = os.environ["REQUESTED_DIGEST"]
+          requested_publication_id = os.environ["REQUESTED_PUBLICATION_ID"]
+
+          if not profile.provider_writes_authorized:
+              raise SystemExit("Svodka profile is still write-disabled")
+          if not release.release_authorized or release.digest != requested_digest:
+              raise SystemExit("approved release authorization or digest mismatch")
+          if release.profile_sha256 != profile.digest or release.target_binding_sha256 != binding.digest:
+              raise SystemExit("approved release differs from profile or pinned binding")
+          if (release.chat_id, release.bot_id, release.bot_username) != (
+              binding.chat_id,
+              binding.bot_id,
+              binding.bot_username,
+          ):
+              raise SystemExit("approved release exact Telegram target mismatch")
+          if requested_publication_id not in {item.publication_id for item in release.items}:
+              raise SystemExit("publication_id is absent from approved release")
+          PY
+
+      - name: Check out isolated durable state branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: state/svodka-telegram
+          path: .state/svodka
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Validate initialized immutable ledger
+        run: |
+          set -euo pipefail
+          [[ -f "$LEDGER_PATH" ]] || {
+            echo "Svodka ledger is missing; initialize it explicitly before canary" >&2
+            exit 2
+          }
+          python -m video_channel_manager.telegram_multichannel_cli validate-ledger \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH"
+
+      - name: Fresh read-only target preflight
+        env:
+          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.telegram_channel_cli preflight \
+            --profile "$PROFILE_PATH" \
+            --expected-chat-id "$EXPECTED_CHAT_ID" \
+            --expected-bot-id "$EXPECTED_BOT_ID" \
+            --expected-bot-username "$EXPECTED_BOT_USERNAME" \
+            --output "$TARGET_PROOF_PATH"
+
+      - name: Prepare exactly one manual dispatch
+        env:
+          REQUESTED_PUBLICATION_ID: ${{ inputs.publication_id }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_multichannel_cli prepare \
+            --profile "$PROFILE_PATH" \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --target-proof "$TARGET_PROOF_PATH" \
+            --mode manual \
+            --publication-id "$REQUESTED_PUBLICATION_ID" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --github-sha "$GITHUB_SHA" \
+            --github-workflow-sha "${{ github.workflow_sha }}" \
+            --envelope-output "$ENVELOPE_PATH"
+
+      - name: Persist intent before Telegram mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_rel_dir="content/telegram/svodka/dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          evidence_abs_dir="$STATE_DIR/$evidence_rel_dir"
+          mkdir -p "$evidence_abs_dir"
+          cp -- "$ENVELOPE_PATH" "$evidence_abs_dir/dispatch.json"
+          cp -- "$TARGET_PROOF_PATH" "$evidence_abs_dir/target-proof.json"
+
+          git -C "$STATE_DIR" config user.name "svodka-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "svodka-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel_dir"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo "prepared canary produced no durable state delta" >&2
+            exit 3
+          }
+          parent_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" commit -m "Record Svodka canary intent for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "remote state branch does not contain exact persisted intent" >&2
+            exit 3
+          }
+          git -C "$STATE_DIR" fetch --no-tags origin "$STATE_BRANCH"
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$LEDGER_RELATIVE_PATH" > .runtime/remote-ledger.json
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$evidence_rel_dir/dispatch.json" > .runtime/remote-dispatch.json
+          python -m video_channel_manager.telegram_multichannel_cli verify-intent \
+            --release "$RELEASE_PATH" \
+            --ledger .runtime/remote-ledger.json \
+            --envelope .runtime/remote-dispatch.json
+
+      - name: Send exactly one canary payload
+        id: send
+        env:
+          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        shell: bash
+        run: |
+          set +e
+          python -m video_channel_manager.telegram_multichannel_cli send-once \
+            --profile "$PROFILE_PATH" \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --envelope "$ENVELOPE_PATH" \
+            --outcome-output "$OUTCOME_PATH"
+          status=$?
+          set -e
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Apply and persist exact provider outcome
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -f "$OUTCOME_PATH" ]] || {
+            echo "No provider outcome exists. Durable dispatch intent remains blocking; blind retry is forbidden." >&2
+            exit 4
+          }
+          python -m video_channel_manager.telegram_multichannel_cli apply-outcome \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --envelope "$ENVELOPE_PATH" \
+            --outcome "$OUTCOME_PATH"
+
+          evidence_rel_dir="content/telegram/svodka/dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          evidence_abs_dir="$STATE_DIR/$evidence_rel_dir"
+          cp -- "$OUTCOME_PATH" "$evidence_abs_dir/outcome.json"
+
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel_dir/outcome.json"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo "provider outcome produced no durable state delta" >&2
+            exit 4
+          }
+          git -C "$STATE_DIR" commit -m "Record Svodka canary result for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "remote state branch does not contain exact canary outcome" >&2
+            exit 4
+          }
+
+          if [[ "${{ steps.send.outputs.exit_code }}" != "0" ]]; then
+            echo "Canary was not fully verified. Review durable outcome before any further attempt." >&2
+            exit 4
+          fi
+          python -m video_channel_manager.telegram_multichannel_cli validate-ledger \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH"
