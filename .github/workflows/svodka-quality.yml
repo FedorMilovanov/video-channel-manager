@@ -46,6 +46,13 @@ jobs:
       - name: Dependency consistency
         run: python -m pip check
 
+      - name: Audit exact production Telegram dependency lock
+        run: >-
+          python -m pip_audit
+          --no-deps
+          --progress-spinner off
+          -r requirements/telegram-publisher.txt
+
       - name: Ruff correctness
         run: >-
           ruff check
