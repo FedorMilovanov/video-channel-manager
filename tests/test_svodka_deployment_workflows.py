@@ -34,7 +34,7 @@ def test_ledger_initialization_is_manual_exact_and_provider_free() -> None:
     assert "secrets." not in workflow
 
 
-def test_canary_is_one_exact_manual_dispatch_with_durable_intent_first() -> None:
+def test_canary_is_one_exact_fresh_manual_dispatch_with_durable_intent_first() -> None:
     profile = load_channel_profile(PROFILE_PATH)
     workflow = CANARY_WORKFLOW.read_text(encoding="utf-8")
 
@@ -45,11 +45,15 @@ def test_canary_is_one_exact_manual_dispatch_with_durable_intent_first() -> None
     assert "Require exact-SHA Svodka quality proof" in workflow
     assert "telegram_github_quality_gate" in workflow
     assert '--sha "$GITHUB_SHA"' in workflow
+    assert "MAX_PUBLICATION_LAG_MINUTES: 120" in workflow
+    assert "Require fresh canary publication window" in workflow
+    assert "telegram_publication_freshness item" in workflow
     assert "profile.provider_writes_authorized" in workflow
     assert "release.release_authorized" in workflow
     assert "approved-release-2026-08.json" in workflow
     assert "Fresh read-only target preflight" in workflow
     assert workflow.index("Require exact-SHA Svodka quality proof") < workflow.index("Fresh read-only target preflight")
+    assert workflow.index("Require fresh canary publication window") < workflow.index("Fresh read-only target preflight")
     assert "Persist intent before Telegram mutation" in workflow
     assert "send-once" in workflow
     assert workflow.index("Persist intent before Telegram mutation") < workflow.index("send-once")
@@ -78,7 +82,7 @@ def test_stale_slot_recovery_is_manual_state_only_and_provider_free() -> None:
     assert "secrets." not in workflow
 
 
-def test_scheduler_mutation_is_cron_only_and_quality_proven() -> None:
+def test_scheduler_mutation_is_cron_only_quality_proven_and_freshness_bounded() -> None:
     profile = load_channel_profile(PROFILE_PATH)
     workflow = SCHEDULED_WORKFLOW.read_text(encoding="utf-8")
 
@@ -89,7 +93,12 @@ def test_scheduler_mutation_is_cron_only_and_quality_proven() -> None:
     assert "Require exact-SHA Svodka quality proof" in workflow
     assert "telegram_github_quality_gate" in workflow
     assert '--sha "$GITHUB_SHA"' in workflow
+    assert "MAX_PUBLICATION_LAG_MINUTES: 120" in workflow
+    assert "Check strict-next publication freshness" in workflow
+    assert "telegram_publication_freshness next" in workflow
+    assert "steps.freshness.outputs.fresh == 'true'" in workflow
     assert workflow.index("Require exact-SHA Svodka quality proof") < workflow.index("Fresh read-only target preflight")
+    assert workflow.index("Check strict-next publication freshness") < workflow.index("Fresh read-only target preflight")
     assert f"group: {profile.concurrency_group}" in workflow
     assert "cancel-in-progress: false" in workflow
     assert "send-once" in workflow
