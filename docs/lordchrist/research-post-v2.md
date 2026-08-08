@@ -81,7 +81,7 @@ The canonical binding is:
 
 - path: `content/telegram/channels/lordchrist-target-binding.json`;
 - profile digest: `sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6`;
-- binding digest: `sha256:4d4bd46405080512aaf31b4ee4bbeeca22eb1703642b585efc656b8f95e15bcd`;
+- binding digest: `sha256:4d4bd46405080512aaf31b4eeeca22eb1703642b585efc656b8f95e15bcd`;
 - chat id: `-1001295216957`;
 - bot id: `8716602202`;
 - bot username: `preaching_mp3_bot`;
@@ -98,7 +98,7 @@ Research-v2 feeds the generic multichannel runtime:
 - `telegram_target_binding.py` — exact bot/chat binding;
 - `telegram_multichannel_release.py` — reviewed immutable release and exact scheduled items;
 - `telegram_multichannel_state.py` / CLI — durable strict-order ledger and intent;
-- `telegram_multichannel_transport.py` — provider call, zero mutation retries, exact receipt/entity/link verification.
+- `telegram_multichannel_transport.py` — provider call, zero mutation retries, exact receipt/entity/link verification, with verified receipt time captured only after the checked provider response.
 
 Research-v2 must not reimplement intent persistence, provider mutation, retry semantics, or reconciliation.
 
