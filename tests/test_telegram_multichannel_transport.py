@@ -9,9 +9,9 @@ import pytest
 
 from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_multichannel_transport import (
+    GenericTargetProof,
     MUTATION_TRANSPORT_RETRIES,
     READ_ONLY_TRANSPORT_RETRIES,
-    GenericTargetProof,
     TelegramApiError,
     render_message_payload,
     render_poll_payload,
