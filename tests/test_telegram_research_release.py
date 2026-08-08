@@ -34,8 +34,7 @@ def test_research_adapter_builds_exact_relative_generic_release(monkeypatch: pyt
     assert release.project_key == research.project_key == profile.project_key
     assert release.channel_username == research.channel_username == profile.channel_username
     assert [item.scheduled_at for item in release.items] == [
-        datetime(2026, 8, day, 19, 17, tzinfo=ZoneInfo("Europe/Moscow"))
-        for day in (10, 12, 14, 16, 18)
+        datetime(2026, 8, day, 19, 17, tzinfo=ZoneInfo("Europe/Moscow")) for day in (10, 12, 14, 16, 18)
     ]
     assert [item.source_sha256 for item in release.items] == [post.payload_sha256 for post in research.posts]
 
