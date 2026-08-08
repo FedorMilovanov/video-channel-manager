@@ -62,7 +62,7 @@ jobs:
           set -euo pipefail
           python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
 
-      - name: Require exact-SHA Svodka quality proof
+      - name: Require current-main exact-SHA Svodka quality proof
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -218,6 +218,15 @@ jobs:
             --release "$RELEASE_PATH" \
             --ledger .runtime/remote-ledger.json \
             --envelope .runtime/remote-dispatch.json
+
+      - name: Re-prove current-main quality immediately before Telegram mutation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow svodka-quality.yml \
+            --sha "$GITHUB_SHA"
 
       - name: Send exactly one canary payload
         id: send
