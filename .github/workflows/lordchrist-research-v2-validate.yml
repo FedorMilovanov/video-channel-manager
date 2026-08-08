@@ -5,7 +5,9 @@ on:
     paths:
       - ".github/workflows/lordchrist-research-v2-validate.yml"
       - "src/video_channel_manager/telegram_research.py"
+      - "src/video_channel_manager/telegram_research_release.py"
       - "tests/test_telegram_research.py"
+      - "tests/test_telegram_research_release.py"
       - "content/telegram/lordchrist/research-queues/**"
       - "content/telegram/lordchrist/research-posts/**"
       - "docs/lordchrist/research-post-v2.md"
@@ -41,9 +43,12 @@ jobs:
             -r requirements/telegram-publisher.txt \
             "pytest>=8.3,<10"
 
-      - name: Compile research validator
+      - name: Compile research validator and release adapter
         shell: bash
-        run: python -m compileall -q src/video_channel_manager/telegram_research.py
+        run: |
+          python -m compileall -q \
+            src/video_channel_manager/telegram_research.py \
+            src/video_channel_manager/telegram_research_release.py
 
       - name: Validate staged research queue
         shell: bash
@@ -54,7 +59,10 @@ jobs:
 
       - name: Run research-v2 regression tests
         shell: bash
-        run: PYTHONPATH=src python -m pytest -q tests/test_telegram_research.py
+        run: |
+          PYTHONPATH=src python -m pytest -q \
+            tests/test_telegram_research.py \
+            tests/test_telegram_research_release.py
 
       - name: Prove pull-request queue cannot publish
         shell: bash
