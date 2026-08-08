@@ -22,7 +22,7 @@
     "canary_message_id": null
   },
   "source_registry_path": "content/telegram/lordchrist/research-queues/historical-preaching-sources-v1.json",
-  "source_registry_sha256": "sha256:23f4521f1406dfcd775533bc435a8ba913d7e41405c8df8bbe23ea7d431f3ec8",
+  "source_registry_sha256": "sha256:5873c269cb749d972e8edca981336ac058f228298f9332f8c33f410c0d960665",
   "posts": [
     {
       "sequence": 1,
@@ -240,10 +240,10 @@
         },
         {
           "claim_id": "claim-macarthur-2011-completion",
-          "claim_text": "5 июня 2011 года МакАртур завершил многолетнее прохождение Нового Завета, проповедуя заключительный отрывок Евангелия от Марка; Grace to You описывает этот путь как сорок два года.",
+          "claim_text": "Первая пасторская проповедь МакАртура в Grace датирована 9 февраля 1969 года; 5 июня 2011 года он завершил многолетнее прохождение Нового Завета материалами по заключению Евангелия от Марка. Между этими датами прошло чуть более 42 лет.",
           "claim_kind": "historical",
           "certainty": "exact",
-          "source_ids": ["src-gty-fitting-end", "src-macarthur-about"]
+          "source_ids": ["src-gty-how-play-church", "src-gty-fitting-end", "src-gcc-history"]
         },
         {
           "claim_id": "claim-macarthur-spurgeon-method",
