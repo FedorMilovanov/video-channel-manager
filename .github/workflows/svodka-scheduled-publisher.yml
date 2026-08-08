@@ -31,6 +31,7 @@ jobs:
       TARGET_PROOF_PATH: .runtime/svodka-target-proof.json
       ENVELOPE_PATH: .runtime/svodka-dispatch.json
       OUTCOME_PATH: .runtime/svodka-outcome.json
+      MAX_PUBLICATION_LAG_MINUTES: 120
     steps:
       - name: Check out immutable release and runtime
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -173,8 +174,32 @@ jobs:
             exit 3
           }
 
-      - name: Fresh read-only target preflight
+      - name: Check strict-next publication freshness
         if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true'
+        id: freshness
+        shell: bash
+        run: |
+          set +e
+          python -m video_channel_manager.telegram_publication_freshness next \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --max-lag-minutes "$MAX_PUBLICATION_LAG_MINUTES"
+          status=$?
+          set -e
+          if [[ "$status" == "3" ]]; then
+            echo "fresh=false" >> "$GITHUB_OUTPUT"
+            echo "Strict-next Svodka item is not inside the bounded publication freshness window."
+            exit 0
+          fi
+          [[ "$status" == "0" ]] || exit "$status"
+          echo "fresh=true" >> "$GITHUB_OUTPUT"
+
+      - name: Report non-fresh scheduled slot
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.freshness.outputs.fresh != 'true'
+        run: echo "Svodka scheduler skipped provider access because the strict-next slot is not fresh enough."
+
+      - name: Fresh read-only target preflight
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.freshness.outputs.fresh == 'true'
         env:
           SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
         run: |
@@ -202,7 +227,7 @@ jobs:
             --output "$TARGET_PROOF_PATH"
 
       - name: Prepare strict next scheduled dispatch
-        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true'
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.freshness.outputs.fresh == 'true'
         id: prepare
         shell: bash
         run: |
