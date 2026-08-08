@@ -78,7 +78,6 @@ def test_verified_provider_outcome_round_trips_into_the_exact_durable_intent() -
         persisted_intent,
         envelope,
         rendered,
-        policy,
         outcome,
     )
 
@@ -106,7 +105,6 @@ def test_proven_no_effect_outcome_can_restore_pending_without_losing_exact_bindi
         persisted_intent,
         envelope,
         rendered,
-        policy,
         outcome,
     )
 
@@ -136,7 +134,6 @@ def test_outcome_from_another_intent_is_rejected_before_state_replacement() -> N
             persisted_intent,
             envelope,
             rendered,
-            policy,
             wrong,
         )
 
