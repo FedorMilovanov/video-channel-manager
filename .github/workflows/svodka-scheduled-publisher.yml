@@ -108,7 +108,7 @@ jobs:
         if: steps.activation.outputs.active != 'true'
         run: echo "Svodka scheduler is inactive — ${{ steps.activation.outputs.reason }}. No Telegram read or write was attempted."
 
-      - name: Require exact-SHA Svodka quality proof
+      - name: Require current-main exact-SHA Svodka quality proof
         if: steps.activation.outputs.active == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -286,6 +286,16 @@ jobs:
             --release "$RELEASE_PATH" \
             --ledger .runtime/remote-ledger.json \
             --envelope .runtime/remote-dispatch.json
+
+      - name: Re-prove current-main quality immediately before Telegram mutation
+        if: steps.prepare.outputs.prepared == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow svodka-quality.yml \
+            --sha "$GITHUB_SHA"
 
       - name: Send exactly one scheduled payload
         if: steps.prepare.outputs.prepared == 'true'
