@@ -13,6 +13,9 @@ from video_channel_manager.telegram_multichannel_state import (
     initialize_ledger,
     mark_published,
     prepare_next,
+    publication_window,
+    skip_expired_pending,
+    strict_next_item,
     verify_persisted_intent,
 )
 from video_channel_manager.telegram_multichannel_transport import GenericSendReceipt, GenericTargetProof
@@ -126,6 +129,69 @@ def test_release_bound_state_rejects_wrong_numeric_channel_or_bot() -> None:
             expected_publication_id=release.items[0].publication_id,
             now=now,
         )
+
+
+def test_manual_canary_cannot_publish_before_or_after_exact_release_window() -> None:
+    profile, binding, release = _authorized_release()
+    first_id = release.items[0].publication_id
+    window_start, window_end = publication_window(release, first_id)
+    assert window_start == datetime(2026, 8, 9, 7, 30, tzinfo=UTC)
+    assert window_end == datetime(2026, 8, 9, 16, 30, tzinfo=UTC)
+
+    before = datetime(2026, 8, 9, 7, 0, tzinfo=UTC)
+    too_early = prepare_next(
+        profile,
+        release,
+        initialize_ledger(release),
+        run_id="105",
+        run_attempt="1",
+        github_sha=GITHUB_SHA,
+        github_workflow_sha=WORKFLOW_SHA,
+        mode="manual",
+        target=_target(profile, binding, before),
+        expected_publication_id=first_id,
+        now=before,
+    )
+    assert too_early.envelope is None
+    assert "does not open until" in too_early.reason
+
+    expired = datetime(2026, 8, 9, 16, 30, tzinfo=UTC)
+    too_late = prepare_next(
+        profile,
+        release,
+        initialize_ledger(release),
+        run_id="106",
+        run_attempt="1",
+        github_sha=GITHUB_SHA,
+        github_workflow_sha=WORKFLOW_SHA,
+        mode="manual",
+        target=_target(profile, binding, expired),
+        expected_publication_id=first_id,
+        now=expired,
+    )
+    assert too_late.envelope is None
+    assert "publication window expired" in too_late.reason
+
+
+def test_stale_pending_items_can_be_skipped_without_provider_effect() -> None:
+    _, _, release = _authorized_release()
+    ledger = initialize_ledger(release)
+    now = datetime(2026, 8, 10, 8, 0, tzinfo=UTC)
+
+    skipped = skip_expired_pending(release, ledger, now=now)
+
+    assert skipped == (release.items[0].publication_id, release.items[1].publication_id)
+    for publication_id in skipped:
+        entry = ledger.entries[publication_id]
+        assert entry.state == "skipped"
+        assert entry.provider_effect == "impossible"
+        assert entry.intent_id is None
+        assert "publication window expired" in (entry.last_error or "")
+
+    next_item, reason = strict_next_item(release, ledger)
+    assert next_item is not None
+    assert next_item.publication_id == release.items[2].publication_id
+    assert reason == "next pending publication"
 
 
 def test_manual_canary_unlocks_due_scheduled_item_without_blind_state_reset() -> None:
