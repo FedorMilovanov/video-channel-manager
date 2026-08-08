@@ -94,7 +94,9 @@ def test_all_svodka_workflow_jobs_pin_ubuntu_2404() -> None:
     assert workflows
 
     for workflow_path in workflows:
-        runs_on = [line.strip() for line in workflow_path.read_text(encoding="utf-8").splitlines() if "runs-on:" in line]
+        runs_on = [
+            line.strip() for line in workflow_path.read_text(encoding="utf-8").splitlines() if "runs-on:" in line
+        ]
         assert runs_on, workflow_path.name
         assert set(runs_on) == {"runs-on: ubuntu-24.04"}, workflow_path.name
 
