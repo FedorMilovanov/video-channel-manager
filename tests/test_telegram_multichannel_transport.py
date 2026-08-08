@@ -11,7 +11,9 @@ from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_multichannel_transport import (
     GenericTargetProof,
     TelegramApiError,
+    render_message_payload,
     render_poll_payload,
+    send_message_once,
     send_poll_once,
 )
 
@@ -60,6 +62,20 @@ def _payload(profile):
     )
 
 
+def _message_payload(profile):
+    return render_message_payload(
+        profile,
+        publication_id="svodka-message-format-contract-test",
+        html_text=(
+            "- Сводка -\n\n"
+            "⚡ <b>ТОЧНЫЙ ФАКТ</b>\n\n"
+            "<i>Короткое пояснение.</i>\n\n"
+            '📎 <a href="https://example.test/source">Первоисточник</a>\n\n'
+            "#Сводка #Наука"
+        ),
+    )
+
+
 def _telegram_result(
     payload,
     *,
@@ -94,6 +110,28 @@ def _telegram_result(
     }
 
 
+def _message_result(payload, *, source_url: str | None = None) -> dict[str, Any]:
+    entities = [entity.model_dump(mode="json", exclude_none=True) for entity in payload.expected_entities]
+    if source_url is not None:
+        for entity in entities:
+            if entity["type"] == "text_link":
+                entity["url"] = source_url
+    entities.append({"type": "hashtag", "offset": 66, "length": 7})
+    return {
+        "ok": True,
+        "result": {
+            "message_id": 78,
+            "chat": {
+                "id": CHAT_ID,
+                "username": "deep_info_life",
+                "type": "channel",
+            },
+            "text": payload.expected_plain_text,
+            "entities": entities,
+        },
+    }
+
+
 def _client(body: dict[str, Any], captured: dict[str, Any] | None = None) -> httpx.Client:
     def handler(request: httpx.Request) -> httpx.Response:
         if captured is not None:
@@ -102,6 +140,35 @@ def _client(body: dict[str, Any], captured: dict[str, Any] | None = None) -> htt
         return httpx.Response(200, json=body, request=request)
 
     return httpx.Client(transport=httpx.MockTransport(handler))
+
+
+def test_send_message_once_verifies_exact_formatting_and_source_link_entities() -> None:
+    profile = _profile()
+    target = _target(profile)
+    payload = _message_payload(profile)
+    captured: dict[str, Any] = {}
+
+    with _client(_message_result(payload), captured) as client:
+        receipt = send_message_once(profile, target, payload, token="test-token", client=client, now=NOW)
+
+    assert receipt.message_id == 78
+    assert payload.schema_version == 2
+    assert {entity.type for entity in payload.expected_entities} == {"bold", "italic", "text_link"}
+    assert captured["json"]["text"] == payload.html_text
+    assert captured["json"]["parse_mode"] == "HTML"
+    assert captured["json"]["link_preview_options"] == {"is_disabled": True}
+
+
+def test_send_message_once_rejects_returned_source_link_drift() -> None:
+    profile = _profile()
+    target = _target(profile)
+    payload = _message_payload(profile)
+
+    with _client(_message_result(payload, source_url="https://example.test/wrong")) as client:
+        with pytest.raises(TelegramApiError, match="formatting or source-link") as exc_info:
+            send_message_once(profile, target, payload, token="test-token", client=client, now=NOW)
+
+    assert exc_info.value.provider_effect == "may_exist"
 
 
 def test_send_poll_once_accepts_exact_quiz_and_uses_current_bot_api_fields() -> None:
