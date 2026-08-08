@@ -39,8 +39,11 @@ def test_svodka_quiz_preview_uses_sendpoll_bot_api_10_2(monkeypatch, capsys) -> 
     assert output["provider_method"] == "sendPoll"
     assert output["publication_id"] == "svodka-quiz-lightning-vs-sun"
     assert output["correct_option_ids"] == [0]
-    assert output["description"].startswith("- Сводка -\n\n📎")
+    assert output["description"].startswith("- Сводка -\n\n🧠 Что горячее: молния или поверхность Солнца?")
+    assert "Ответ и объяснение — после голосования." in output["description"]
     assert "NOAA" in output["description"]
+    assert "#Сводка #Тест #Молния #Физика #Наука" in output["description"]
+    assert "Правильный ответ" not in output["description"]
     assert output["provider_payload_sha256"].startswith("sha256:")
 
 
