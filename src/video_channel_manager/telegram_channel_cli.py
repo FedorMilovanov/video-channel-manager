@@ -7,11 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 from video_channel_manager.svodka_queue import SvodkaDraftPost, load_svodka_draft
-from video_channel_manager.svodka_release import (
-    authorize_svodka_release,
-    build_poll_description,
-    build_svodka_release_candidate,
-)
+from video_channel_manager.svodka_release import build_poll_description, build_svodka_release_candidate
 from video_channel_manager.telegram_channel_discovery import discover_channel_target
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile, load_channel_profile
 from video_channel_manager.telegram_multichannel_release import GenericReleaseQueue, load_release, save_release
@@ -21,6 +17,7 @@ from video_channel_manager.telegram_multichannel_transport import (
     render_message_payload,
     render_poll_payload,
 )
+from video_channel_manager.telegram_release_review import authorize_release_candidate
 from video_channel_manager.telegram_target_binding import TelegramTargetBinding, load_target_binding
 
 
@@ -51,6 +48,7 @@ def parser() -> argparse.ArgumentParser:
     authorize_release.add_argument("--profile", type=Path, required=True)
     authorize_release.add_argument("--binding", type=Path, required=True)
     authorize_release.add_argument("--candidate", type=Path, required=True)
+    authorize_release.add_argument("--expected-candidate-sha256", required=True)
     authorize_release.add_argument("--reviewed-by", required=True)
     authorize_release.add_argument("--reviewed-at", required=True)
     authorize_release.add_argument("--output", type=Path, required=True)
@@ -286,8 +284,9 @@ def main() -> int:
             raise ValueError("Svodka release candidate differs from selected channel profile")
         if not _release_matches_binding(candidate, binding):
             raise ValueError("Svodka release candidate differs from current pinned target binding")
-        release = authorize_svodka_release(
+        release = authorize_release_candidate(
             candidate,
+            expected_candidate_sha256=args.expected_candidate_sha256,
             reviewed_by=args.reviewed_by,
             reviewed_at=_review_timestamp(args.reviewed_at),
         )
