@@ -3,13 +3,19 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import urllib.error
+import urllib.request
 import zipfile
 from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
 
 import pytest
 
+import video_channel_manager.telegram_github_outcome_artifact as outcome_artifact
 from video_channel_manager.telegram_github_outcome_artifact import (
     ProviderOutcomeArtifactProof,
+    download_verified_provider_outcome,
     verify_provider_outcome_archive,
 )
 
@@ -64,6 +70,30 @@ def proof_for(archive: bytes) -> ProviderOutcomeArtifactProof:
     )
 
 
+class BytesResponse:
+    def __init__(self, payload: bytes) -> None:
+        self.payload = payload
+
+    def __enter__(self) -> BytesResponse:
+        return self
+
+    def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
+        return None
+
+    def read(self, size: int = -1) -> bytes:
+        return self.payload if size < 0 else self.payload[:size]
+
+
+def redirect_error(request: urllib.request.Request, location: str) -> urllib.error.HTTPError:
+    return urllib.error.HTTPError(
+        request.full_url,
+        302,
+        "Found",
+        {"Location": location},
+        io.BytesIO(),
+    )
+
+
 def test_verified_archive_returns_exact_valid_outcome_bytes() -> None:
     archive = archive_bytes()
     assert verify_provider_outcome_archive(archive, proof_for(archive)) == outcome_bytes()
@@ -99,3 +129,74 @@ def test_archive_rejects_invalid_outcome_json() -> None:
     archive = archive_bytes(payload=b"{}")
     with pytest.raises(ValueError, match="valid outcome JSON"):
         verify_provider_outcome_archive(archive, proof_for(archive))
+
+
+def test_artifact_redirect_sends_token_only_to_github_api(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    archive = archive_bytes()
+    proof = proof_for(archive)
+    storage_url = "https://artifact-storage.example.test/signed/outcome.zip"
+    initial_requests: list[urllib.request.Request] = []
+    storage_requests: list[urllib.request.Request] = []
+
+    class RedirectingOpener:
+        def open(self, request: urllib.request.Request, timeout: int) -> BytesResponse:
+            assert timeout == 30
+            initial_requests.append(request)
+            assert request.full_url.endswith(f"/actions/artifacts/{proof.artifact_id}/zip")
+            assert request.get_header("Authorization") == "Bearer top-secret"
+            raise redirect_error(request, storage_url)
+
+    def fake_build_opener(*handlers: object) -> RedirectingOpener:
+        assert len(handlers) == 1
+        assert handlers[0].__class__.__name__ == "_NoRedirect"
+        return RedirectingOpener()
+
+    def fake_urlopen(request: urllib.request.Request, timeout: int) -> BytesResponse:
+        assert timeout == 30
+        storage_requests.append(request)
+        assert request.full_url == storage_url
+        assert request.get_header("Authorization") is None
+        return BytesResponse(archive)
+
+    monkeypatch.setattr(outcome_artifact.urllib.request, "build_opener", fake_build_opener)
+    monkeypatch.setattr(outcome_artifact.urllib.request, "urlopen", fake_urlopen)
+
+    output = tmp_path / "svodka-outcome.json"
+    download_verified_provider_outcome(
+        api_url="https://api.github.test",
+        repository="owner/repository",
+        token="top-secret",
+        proof=proof,
+        output=output,
+    )
+
+    assert len(initial_requests) == 1
+    assert len(storage_requests) == 1
+    assert output.read_bytes() == outcome_bytes()
+
+
+def test_artifact_redirect_rejects_non_https_storage_url(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    archive = archive_bytes()
+    proof = proof_for(archive)
+
+    class RedirectingOpener:
+        def open(self, request: urllib.request.Request, timeout: int) -> BytesResponse:
+            assert request.get_header("Authorization") == "Bearer top-secret"
+            raise redirect_error(request, "http://artifact-storage.example.test/outcome.zip")
+
+    monkeypatch.setattr(outcome_artifact.urllib.request, "build_opener", lambda *handlers: RedirectingOpener())
+
+    with pytest.raises(ValueError, match="safe HTTPS URL"):
+        download_verified_provider_outcome(
+            api_url="https://api.github.test",
+            repository="owner/repository",
+            token="top-secret",
+            proof=proof,
+            output=tmp_path / "svodka-outcome.json",
+        )
