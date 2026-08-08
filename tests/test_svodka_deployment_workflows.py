@@ -73,7 +73,7 @@ def test_canary_is_one_exact_fresh_manual_dispatch_with_durable_intent_first() -
     assert f"group: {profile.concurrency_group}" in workflow
 
 
-def test_stale_slot_recovery_is_manual_state_only_and_provider_free() -> None:
+def test_stale_slot_recovery_is_manual_state_only_and_current_main_proven() -> None:
     profile = load_channel_profile(PROFILE_PATH)
     workflow = SKIP_EXPIRED_WORKFLOW.read_text(encoding="utf-8")
 
@@ -81,6 +81,12 @@ def test_stale_slot_recovery_is_manual_state_only_and_provider_free() -> None:
     assert "schedule:" not in workflow
     assert "SKIP-EXPIRED:$REQUESTED_DIGEST" in workflow
     assert "skip-expired" in workflow
+    assert "actions: read" in workflow
+    assert "telegram_github_quality_gate" in workflow
+    assert '--sha "$GITHUB_SHA"' in workflow
+    assert workflow.index("telegram_github_quality_gate") < workflow.index(
+        'git -C "$STATE_DIR" commit -m "Skip expired Svodka publication windows [skip ci]"'
+    )
     assert "state/svodka-telegram" in workflow
     assert f"group: {profile.concurrency_group}" in workflow
     assert "cancel-in-progress: false" in workflow
