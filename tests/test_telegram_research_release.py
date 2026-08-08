@@ -8,7 +8,10 @@ import pytest
 
 from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_research import load_research_queue, validate_public_copy
-from video_channel_manager.telegram_research_release import build_research_release_candidate
+from video_channel_manager.telegram_research_release import (
+    build_research_release_candidate,
+    research_evidence_sha256,
+)
 from video_channel_manager.telegram_target_binding import TelegramTargetBinding
 
 ROOT = Path(__file__).parents[1]
@@ -36,7 +39,50 @@ def test_research_adapter_builds_exact_relative_generic_release(monkeypatch: pyt
     assert [item.scheduled_at for item in release.items] == [
         datetime(2026, 8, day, 19, 17, tzinfo=ZoneInfo("Europe/Moscow")) for day in (10, 12, 14, 16, 18)
     ]
-    assert [item.source_sha256 for item in release.items] == [post.payload_sha256 for post in research.posts]
+    assert [item.source_sha256 for item in release.items] == [
+        research_evidence_sha256(research, post) for post in research.posts
+    ]
+    assert [item.source_sha256 for item in release.items] != [post.payload_sha256 for post in research.posts]
+
+
+def test_release_source_binding_changes_when_evidence_registry_changes(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(ROOT)
+    profile = load_channel_profile(PROFILE_PATH)
+    research = load_research_queue(QUEUE_PATH)
+    start = datetime(2026, 8, 10, 19, 17, tzinfo=ZoneInfo("Europe/Moscow"))
+    original = build_research_release_candidate(
+        profile,
+        research,
+        release_id="lordchrist-research-calvin-spurgeon-macarthur-v1",
+        start_at=start,
+    )
+
+    changed = research.model_copy(update={"source_registry_sha256": "sha256:" + "0" * 64})
+    rebuilt = build_research_release_candidate(
+        profile,
+        changed,
+        release_id="lordchrist-research-calvin-spurgeon-macarthur-v1",
+        start_at=start,
+    )
+
+    assert [item.payload for item in rebuilt.items] == [item.payload for item in original.items]
+    assert [item.source_sha256 for item in rebuilt.items] != [item.source_sha256 for item in original.items]
+    assert rebuilt.candidate_digest() != original.candidate_digest()
+
+
+def test_release_source_binding_changes_when_queue_contract_changes(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(ROOT)
+    profile = load_channel_profile(PROFILE_PATH)
+    research = load_research_queue(QUEUE_PATH)
+    post = research.posts[0]
+    original = research_evidence_sha256(research, post)
+
+    changed_verification = research.verification.model_copy(update={"reviewed_pages": research.verification.reviewed_pages + 1})
+    changed = research.model_copy(update={"verification": changed_verification})
+    assert changed.posts[0].payload_sha256 == post.payload_sha256
+    assert changed.source_registry_sha256 == research.source_registry_sha256
+    assert changed.digest != research.digest
+    assert research_evidence_sha256(changed, changed.posts[0]) != original
 
 
 def test_research_adapter_preserves_canonical_reader_text_and_only_bolds_heading(
