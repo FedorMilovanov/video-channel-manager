@@ -207,6 +207,17 @@ def test_no_push_triggered_write_capable_svodka_migration_workflows_remain() -> 
             assert "contents: write" not in workflow, workflow_path.name
 
 
+def test_all_svodka_workflows_pin_the_supported_runner_image() -> None:
+    workflows_dir = REPOSITORY_ROOT / ".github/workflows"
+
+    for workflow_path in workflows_dir.glob("svodka-*.yml"):
+        workflow = workflow_path.read_text(encoding="utf-8")
+        runs_on = [line.strip() for line in workflow.splitlines() if line.lstrip().startswith("runs-on:")]
+        assert runs_on, workflow_path.name
+        assert set(runs_on) == {"runs-on: ubuntu-24.04"}, workflow_path.name
+        assert "ubuntu-latest" not in workflow, workflow_path.name
+
+
 def test_committed_live_release_if_present_is_exact_and_authorized() -> None:
     if not APPROVED_RELEASE.exists():
         return
