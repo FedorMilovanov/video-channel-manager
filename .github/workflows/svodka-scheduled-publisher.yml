@@ -1,0 +1,311 @@
+name: Svodka scheduled publisher
+
+on:
+  schedule:
+    - cron: "30 7 9-15 8 *"
+    - cron: "30 16 9-15 8 *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: svodka-telegram-publisher
+  cancel-in-progress: false
+
+jobs:
+  publish-next:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: src
+      PROFILE_PATH: content/telegram/channels/svodka.json
+      BINDING_PATH: content/telegram/channels/svodka-target-binding.json
+      RELEASE_PATH: content/telegram/svodka/approved-release-2026-08.json
+      STATE_BRANCH: state/svodka-telegram
+      STATE_DIR: .state/svodka
+      LEDGER_RELATIVE_PATH: content/telegram/svodka/publication-ledger.json
+      LEDGER_PATH: .state/svodka/content/telegram/svodka/publication-ledger.json
+      TARGET_PROOF_PATH: .runtime/svodka-target-proof.json
+      ENVELOPE_PATH: .runtime/svodka-dispatch.json
+      OUTCOME_PATH: .runtime/svodka-outcome.json
+    steps:
+      - name: Check out immutable release and runtime
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Resolve activation gate
+        id: activation
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f "$RELEASE_PATH" ]]; then
+            echo "active=false" >> "$GITHUB_OUTPUT"
+            echo "reason=approved_release_missing" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python - <<'PY'
+          import os
+          from datetime import UTC, datetime
+          from pathlib import Path
+
+          from video_channel_manager.telegram_channel_profile import load_channel_profile
+          from video_channel_manager.telegram_multichannel_release import load_release
+          from video_channel_manager.telegram_multichannel_state import publication_window
+          from video_channel_manager.telegram_target_binding import load_target_binding
+
+          profile = load_channel_profile(Path(os.environ["PROFILE_PATH"]))
+          binding = load_target_binding(Path(os.environ["BINDING_PATH"]), profile)
+          release = load_release(Path(os.environ["RELEASE_PATH"]))
+
+          if not release.release_authorized:
+              raise SystemExit("committed Svodka release is not authorized")
+          if release.reviewed_candidate_sha256 is None:
+              raise SystemExit("committed Svodka release lacks reviewed candidate provenance")
+          if (
+              release.project_key != profile.project_key
+              or release.profile_sha256 != profile.digest
+              or release.target_binding_sha256 != binding.digest
+              or release.chat_id != binding.chat_id
+              or release.bot_id != binding.bot_id
+              or (release.bot_username or "").casefold() != binding.bot_username.casefold()
+          ):
+              raise SystemExit("committed Svodka release differs from current profile or pinned target binding")
+
+          active = profile.provider_writes_authorized
+          first_start, _ = publication_window(release, release.items[0].publication_id)
+          _, final_end = publication_window(release, release.items[-1].publication_id)
+          now = datetime.now(tz=UTC)
+          inside_pilot = first_start <= now < final_end
+          active = active and inside_pilot
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"active={'true' if active else 'false'}\n")
+              if not profile.provider_writes_authorized:
+                  handle.write("reason=profile_write_gate_disabled\n")
+              elif not inside_pilot:
+                  handle.write("reason=outside_release_publication_windows\n")
+              else:
+                  handle.write("reason=activated\n")
+          PY
+
+      - name: Report inactive scheduler
+        if: steps.activation.outputs.active != 'true'
+        run: echo "Svodka scheduler is inactive — ${{ steps.activation.outputs.reason }}. No Telegram read or write was attempted."
+
+      - name: Check out isolated durable state branch
+        if: steps.activation.outputs.active == 'true'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: state/svodka-telegram
+          path: .state/svodka
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Resolve ledger gate
+        if: steps.activation.outputs.active == 'true'
+        id: ledger
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f "$LEDGER_PATH" ]]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "reason=ledger_missing" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python -m video_channel_manager.telegram_multichannel_cli validate-ledger \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "reason=ledger_valid" >> "$GITHUB_OUTPUT"
+
+      - name: Report missing ledger
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready != 'true'
+        run: echo "Svodka scheduler cannot dispatch — ${{ steps.ledger.outputs.reason }}. No Telegram read or write was attempted."
+
+      - name: Skip expired windows before any provider operation
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_multichannel_cli skip-expired \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH"
+
+          if git -C "$STATE_DIR" diff --quiet -- "$LEDGER_RELATIVE_PATH"; then
+            echo "No expired pending windows required state recovery."
+            exit 0
+          fi
+
+          git -C "$STATE_DIR" config user.name "svodka-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "svodka-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH"
+          git -C "$STATE_DIR" commit -m "Skip expired Svodka windows before scheduled dispatch [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "remote state branch does not contain exact stale-window recovery" >&2
+            exit 3
+          }
+
+      - name: Fresh read-only target preflight
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true'
+        env:
+          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          from video_channel_manager.telegram_channel_profile import load_channel_profile
+          from video_channel_manager.telegram_target_binding import load_target_binding
+
+          profile = load_channel_profile(Path(os.environ["PROFILE_PATH"]))
+          binding = load_target_binding(Path(os.environ["BINDING_PATH"]), profile)
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
+              handle.write(f"SVODKA_TELEGRAM_CHAT_ID={binding.chat_id}\n")
+              handle.write(f"SVODKA_TELEGRAM_BOT_ID={binding.bot_id}\n")
+              handle.write(f"SVODKA_TELEGRAM_BOT_USERNAME={binding.bot_username}\n")
+          PY
+          python -m video_channel_manager.telegram_channel_cli preflight \
+            --profile "$PROFILE_PATH" \
+            --expected-chat-id "$SVODKA_TELEGRAM_CHAT_ID" \
+            --expected-bot-id "$SVODKA_TELEGRAM_BOT_ID" \
+            --expected-bot-username "$SVODKA_TELEGRAM_BOT_USERNAME" \
+            --output "$TARGET_PROOF_PATH"
+
+      - name: Prepare strict next scheduled dispatch
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true'
+        id: prepare
+        shell: bash
+        run: |
+          set +e
+          python -m video_channel_manager.telegram_multichannel_cli prepare \
+            --profile "$PROFILE_PATH" \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --target-proof "$TARGET_PROOF_PATH" \
+            --mode scheduled \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --github-sha "$GITHUB_SHA" \
+            --github-workflow-sha "${{ github.workflow_sha }}" \
+            --envelope-output "$ENVELOPE_PATH"
+          status=$?
+          set -e
+          if [[ "$status" == "3" ]]; then
+            echo "prepared=false" >> "$GITHUB_OUTPUT"
+            echo "No scheduled provider dispatch is eligible in this run."
+            exit 0
+          fi
+          [[ "$status" == "0" ]] || exit "$status"
+          echo "prepared=true" >> "$GITHUB_OUTPUT"
+
+      - name: Persist scheduled intent before Telegram mutation
+        if: steps.prepare.outputs.prepared == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_rel_dir="content/telegram/svodka/dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          evidence_abs_dir="$STATE_DIR/$evidence_rel_dir"
+          mkdir -p "$evidence_abs_dir"
+          cp -- "$ENVELOPE_PATH" "$evidence_abs_dir/dispatch.json"
+          cp -- "$TARGET_PROOF_PATH" "$evidence_abs_dir/target-proof.json"
+
+          git -C "$STATE_DIR" config user.name "svodka-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "svodka-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel_dir"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo "prepared scheduled publication produced no durable state delta" >&2
+            exit 3
+          }
+          git -C "$STATE_DIR" commit -m "Record Svodka scheduled intent for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "remote state branch does not contain exact scheduled intent" >&2
+            exit 3
+          }
+          git -C "$STATE_DIR" fetch --no-tags origin "$STATE_BRANCH"
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$LEDGER_RELATIVE_PATH" > .runtime/remote-ledger.json
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$evidence_rel_dir/dispatch.json" > .runtime/remote-dispatch.json
+          python -m video_channel_manager.telegram_multichannel_cli verify-intent \
+            --release "$RELEASE_PATH" \
+            --ledger .runtime/remote-ledger.json \
+            --envelope .runtime/remote-dispatch.json
+
+      - name: Send exactly one scheduled payload
+        if: steps.prepare.outputs.prepared == 'true'
+        id: send
+        env:
+          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        shell: bash
+        run: |
+          set +e
+          python -m video_channel_manager.telegram_multichannel_cli send-once \
+            --profile "$PROFILE_PATH" \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --envelope "$ENVELOPE_PATH" \
+            --outcome-output "$OUTCOME_PATH"
+          status=$?
+          set -e
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Apply and persist exact scheduled provider outcome
+        if: ${{ !cancelled() && steps.prepare.outputs.prepared == 'true' && steps.send.outcome != 'skipped' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -f "$OUTCOME_PATH" ]] || {
+            echo "No provider outcome exists. Durable scheduled intent remains blocking; blind retry is forbidden." >&2
+            exit 4
+          }
+          python -m video_channel_manager.telegram_multichannel_cli apply-outcome \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --envelope "$ENVELOPE_PATH" \
+            --outcome "$OUTCOME_PATH"
+
+          evidence_rel_dir="content/telegram/svodka/dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          evidence_abs_dir="$STATE_DIR/$evidence_rel_dir"
+          cp -- "$OUTCOME_PATH" "$evidence_abs_dir/outcome.json"
+
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel_dir/outcome.json"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo "scheduled provider outcome produced no durable state delta" >&2
+            exit 4
+          }
+          git -C "$STATE_DIR" commit -m "Record Svodka scheduled result for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "remote state branch does not contain exact scheduled outcome" >&2
+            exit 4
+          }
+
+          if [[ "${{ steps.send.outputs.exit_code }}" != "0" ]]; then
+            echo "Scheduled publication was not fully verified. Review durable outcome before any further attempt." >&2
+            exit 4
+          fi
+          python -m video_channel_manager.telegram_multichannel_cli validate-ledger \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH"
