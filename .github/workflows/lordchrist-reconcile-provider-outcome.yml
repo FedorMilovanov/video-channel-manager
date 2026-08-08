@@ -1,0 +1,288 @@
+name: Lordchrist reconcile archived provider outcome
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: Exact failed/cancelled Lordchrist provider workflow run id
+        required: true
+        type: string
+      source_run_attempt:
+        description: Exact source workflow run attempt
+        required: true
+        default: "1"
+        type: string
+      publication_id:
+        description: Exact unresolved Lordchrist publication_id
+        required: true
+        type: string
+      queue_digest:
+        description: Exact approved immutable Lordchrist queue digest
+        required: true
+        type: string
+      confirm:
+        description: RECOVER-LORDCHRIST-OUTCOME:<run_id>:<attempt>:<publication_id>:<queue_digest>
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: lordchrist-telegram-publisher
+  cancel-in-progress: false
+  queue: max
+
+env:
+  PYTHONPATH: src
+  QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
+  PRESENTATION_POLICY_PATH: content/telegram/lordchrist/presentation-policy.json
+  STATE_BRANCH: state/lordchrist-telegram
+  STATE_DIR: .state/lordchrist
+  LEDGER_RELATIVE_PATH: content/telegram/lordchrist/publication-ledger.json
+  LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json
+  RECOVERED_OUTCOME_PATH: .runtime/lordchrist-recovered-outcome.json
+  RECOVERY_PROOF_PATH: .runtime/lordchrist-outcome-recovery-proof.json
+  LORDCHRIST_APPROVED_QUEUE_DIGEST: ${{ vars.LORDCHRIST_APPROVED_QUEUE_DIGEST }}
+
+jobs:
+  reconcile:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact recovery runtime
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Validate exact recovery request
+        env:
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+          REQUESTED_PUBLICATION_ID: ${{ inputs.publication_id }}
+          REQUESTED_QUEUE_DIGEST: ${{ inputs.queue_digest }}
+          CONFIRMATION: ${{ inputs.confirm }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_RUN_ID" =~ ^[1-9][0-9]*$ ]] || { echo "source_run_id must be a positive integer" >&2; exit 2; }
+          [[ "$SOURCE_RUN_ATTEMPT" =~ ^[1-9][0-9]*$ ]] || { echo "source_run_attempt must be a positive integer" >&2; exit 2; }
+          [[ "$REQUESTED_PUBLICATION_ID" =~ ^lordchrist-[a-z0-9][a-z0-9-]{4,80}$ ]] || {
+            echo "publication_id is invalid" >&2
+            exit 2
+          }
+          [[ "$REQUESTED_QUEUE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "queue_digest is invalid" >&2; exit 2; }
+          [[ "$REQUESTED_QUEUE_DIGEST" == "$LORDCHRIST_APPROVED_QUEUE_DIGEST" ]] || {
+            echo "requested queue digest differs from the approved Lordchrist queue digest" >&2
+            exit 2
+          }
+          expected="RECOVER-LORDCHRIST-OUTCOME:$SOURCE_RUN_ID:$SOURCE_RUN_ATTEMPT:$REQUESTED_PUBLICATION_ID:$REQUESTED_QUEUE_DIGEST"
+          [[ "$CONFIRMATION" == "$expected" ]] || {
+            echo "recovery requires exact confirmation: $expected" >&2
+            exit 2
+          }
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from video_channel_manager.telegram_publisher import load_queue
+
+          queue = load_queue(Path(os.environ["QUEUE_PATH"]))
+          if queue.digest != os.environ["LORDCHRIST_APPROVED_QUEUE_DIGEST"]:
+              raise SystemExit("canonical Lordchrist queue digest differs from the approved digest")
+          PY
+
+      - name: Check out durable Lordchrist state read-only
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: state/lordchrist-telegram
+          path: .state/lordchrist
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify exact unresolved persisted dispatch evidence
+        env:
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+          REQUESTED_PUBLICATION_ID: ${{ inputs.publication_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_dir="$STATE_DIR/content/telegram/lordchrist/dispatches/$SOURCE_RUN_ID-$SOURCE_RUN_ATTEMPT"
+          dispatch="$evidence_dir/dispatch.json"
+          rendered="$evidence_dir/rendered.json"
+          [[ -f "$dispatch" && -f "$rendered" ]] || {
+            echo "exact durable dispatch/rendered evidence is missing" >&2
+            exit 3
+          }
+          python -m video_channel_manager.telegram_cli \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            validate
+          python -m video_channel_manager.telegram_cli \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            verify-intent \
+            --dispatch "$dispatch"
+          python -m video_channel_manager.telegram_cli \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            verify-rendered \
+            --dispatch "$dispatch" \
+            --rendered "$rendered"
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from video_channel_manager.telegram_state import load_dispatch
+
+          path = Path(os.environ["STATE_DIR"]) / "content/telegram/lordchrist/dispatches" / (
+              f"{os.environ['SOURCE_RUN_ID']}-{os.environ['SOURCE_RUN_ATTEMPT']}"
+          ) / "dispatch.json"
+          dispatch = load_dispatch(path)
+          if dispatch.workflow_run_id != os.environ["SOURCE_RUN_ID"]:
+              raise SystemExit("durable dispatch run id differs from recovery request")
+          if dispatch.workflow_run_attempt != os.environ["SOURCE_RUN_ATTEMPT"]:
+              raise SystemExit("durable dispatch attempt differs from recovery request")
+          if dispatch.publication_id != os.environ["REQUESTED_PUBLICATION_ID"]:
+              raise SystemExit("durable dispatch publication differs from recovery request")
+          PY
+
+      - name: Prove and download exact archived provider outcome
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+          REQUESTED_PUBLICATION_ID: ${{ inputs.publication_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_dir="$STATE_DIR/content/telegram/lordchrist/dispatches/$SOURCE_RUN_ID-$SOURCE_RUN_ATTEMPT"
+          python -m video_channel_manager.telegram_lordchrist_outcome_artifact \
+            --dispatch "$evidence_dir/dispatch.json" \
+            --source-run-id "$SOURCE_RUN_ID" \
+            --source-run-attempt "$SOURCE_RUN_ATTEMPT" \
+            --publication-id "$REQUESTED_PUBLICATION_ID" \
+            --proof-output "$RECOVERY_PROOF_PATH" \
+            --outcome-output "$RECOVERED_OUTCOME_PATH"
+
+      - name: Enable exact Lordchrist state writer
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: state/lordchrist-telegram
+          path: .state/lordchrist
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Re-verify durable intent after writer checkout
+        env:
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_dir="$STATE_DIR/content/telegram/lordchrist/dispatches/$SOURCE_RUN_ID-$SOURCE_RUN_ATTEMPT"
+          python -m video_channel_manager.telegram_cli \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            verify-intent \
+            --dispatch "$evidence_dir/dispatch.json"
+          python -m video_channel_manager.telegram_cli \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            verify-rendered \
+            --dispatch "$evidence_dir/dispatch.json" \
+            --rendered "$evidence_dir/rendered.json"
+
+      - name: Apply archived outcome without provider access
+        env:
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_dir="$STATE_DIR/content/telegram/lordchrist/dispatches/$SOURCE_RUN_ID-$SOURCE_RUN_ATTEMPT"
+          python -m video_channel_manager.telegram_lordchrist_outcome_cli \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            apply \
+            --dispatch "$evidence_dir/dispatch.json" \
+            --rendered "$evidence_dir/rendered.json" \
+            --outcome "$RECOVERED_OUTCOME_PATH"
+          python -m video_channel_manager.telegram_cli \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            validate
+
+      - name: Persist exact recovered state and evidence
+        env:
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          recovery_rel_dir="content/telegram/lordchrist/recoveries/$SOURCE_RUN_ID-$SOURCE_RUN_ATTEMPT"
+          recovery_abs_dir="$STATE_DIR/$recovery_rel_dir"
+          mkdir -p "$recovery_abs_dir"
+          cp -- "$RECOVERY_PROOF_PATH" "$recovery_abs_dir/outcome-recovery-proof.json"
+          cp -- "$RECOVERED_OUTCOME_PATH" "$recovery_abs_dir/provider-outcome.json"
+
+          current_main_sha="$(git ls-remote origin refs/heads/main | cut -f1)"
+          [[ "$current_main_sha" == "$GITHUB_SHA" ]] || {
+            echo "recovery runtime SHA is no longer current main; refusing durable state mutation" >&2
+            exit 4
+          }
+
+          git -C "$STATE_DIR" config user.name "lordchrist-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "lordchrist-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$recovery_rel_dir"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo "recovery produced no durable state/evidence delta" >&2
+            exit 4
+          }
+          parent_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" commit -m "Recover Lordchrist provider outcome for run $SOURCE_RUN_ID/$SOURCE_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+
+          for attempt in 1 2 3; do
+            if git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"; then
+              break
+            fi
+            remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" 2>/dev/null | cut -f1 || true)"
+            if [[ "$remote_sha" == "$local_sha" ]]; then
+              echo "Recovered state reached remote despite a failed push response."
+              break
+            fi
+            if [[ -n "$remote_sha" && "$remote_sha" != "$parent_sha" ]]; then
+              echo "State branch moved unexpectedly from $parent_sha to $remote_sha; refusing overwrite." >&2
+              exit 4
+            fi
+            if [[ "$attempt" == "3" ]]; then
+              exit 4
+            fi
+            sleep $((attempt * 2))
+          done
+
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$remote_sha" == "$local_sha" ]] || {
+            echo "remote recovered state commit verification failed" >&2
+            exit 4
+          }
