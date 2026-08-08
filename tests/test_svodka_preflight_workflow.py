@@ -57,9 +57,11 @@ def test_svodka_preflight_keeps_colon_bearing_pip_command_in_block_scalar() -> N
     assert "run: |\n          python -m pip install --disable-pip-version-check --only-binary=:all:" in workflow
 
 
-def test_svodka_quality_workflow_is_stable_read_only_verification() -> None:
+def test_svodka_quality_workflow_is_full_read_only_verification() -> None:
     workflow = QUALITY_WORKFLOW_PATH.read_text(encoding="utf-8")
 
+    assert "push:\n    branches: [main]" in workflow
+    assert "paths:" not in workflow
     assert "permissions:\n  contents: read" in workflow
     assert "persist-credentials: false" in workflow
     assert "provider_writes_authorized" not in workflow
@@ -69,6 +71,15 @@ def test_svodka_quality_workflow_is_stable_read_only_verification() -> None:
     assert "git push" not in workflow
     assert "git commit" not in workflow
     assert "delete" not in workflow.casefold()
+    assert "requirements/telegram-publisher.txt" in workflow
+    assert "python -m pip check" in workflow
+    assert "python -m pip_audit" in workflow
+    assert "--no-deps" in workflow
+    assert "src/video_channel_manager/telegram_models.py" in workflow
+    assert "src/video_channel_manager/telegram_transport.py" in workflow
+    assert "tests/test_svodka_reconciliation_workflow.py" in workflow
+    assert "tests/test_telegram_github_quality_gate.py" in workflow
+    assert "tests/test_telegram_publication_freshness.py" in workflow
     assert "for sequence in $(seq 1 14)" in workflow
     assert "svodka-review-candidate" in workflow
 
