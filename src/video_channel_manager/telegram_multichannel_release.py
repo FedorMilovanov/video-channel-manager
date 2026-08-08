@@ -58,6 +58,15 @@ class GenericReleaseQueue(BaseModel):
     reviewed_at: datetime | None = None
     items: tuple[GenericReleaseItem, ...] = Field(min_length=1, max_length=500)
 
+    def candidate_digest(self) -> str:
+        payload = self.model_dump(mode="json")
+        payload["release_authorized"] = False
+        payload["reviewed_candidate_sha256"] = None
+        payload["reviewed_by"] = None
+        payload["reviewed_at"] = None
+        canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        return "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
     @model_validator(mode="after")
     def validate_release(self) -> "GenericReleaseQueue":
         try:
@@ -105,6 +114,8 @@ class GenericReleaseQueue(BaseModel):
                 raise ValueError("authorized release requires exact target binding and bot/channel identity")
             if self.reviewed_candidate_sha256 is None:
                 raise ValueError("authorized release requires exact reviewed candidate provenance")
+            if self.reviewed_candidate_sha256 != self.candidate_digest():
+                raise ValueError("authorized release reviewed candidate digest does not match its immutable candidate")
             if not self.reviewed_by or self.reviewed_at is None:
                 raise ValueError("authorized release requires reviewed_by and reviewed_at")
             if self.reviewed_at.tzinfo is None:
