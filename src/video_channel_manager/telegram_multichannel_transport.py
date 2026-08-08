@@ -62,7 +62,7 @@ class GenericPollPayload(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_name: Literal["video-channel-manager.telegram-generic-poll-payload"]
-    schema_version: Literal[3]
+    schema_version: Literal[4]
     project_key: str
     channel_username: str
     publication_id: str
@@ -76,6 +76,8 @@ class GenericPollPayload(BaseModel):
     description: str | None = Field(default=None, max_length=1024)
     is_anonymous: bool = True
     allows_multiple_answers: bool = False
+    allows_revoting: bool
+    members_only: bool
 
     @model_validator(mode="after")
     def validate_quiz_fields(self) -> "GenericPollPayload":
@@ -190,8 +192,11 @@ def render_poll_payload(
     description: str | None = None,
     is_anonymous: bool = True,
     allows_multiple_answers: bool = False,
+    allows_revoting: bool | None = None,
+    members_only: bool = False,
 ) -> GenericPollPayload:
     _validate_publication_id(profile, publication_id)
+    effective_allows_revoting = poll_type == "regular" if allows_revoting is None else allows_revoting
     digest_input: dict[str, Any] = {
         "kind": "poll",
         "project_key": profile.project_key,
@@ -206,10 +211,12 @@ def render_poll_payload(
         "description": description,
         "is_anonymous": is_anonymous,
         "allows_multiple_answers": allows_multiple_answers,
+        "allows_revoting": effective_allows_revoting,
+        "members_only": members_only,
     }
     return GenericPollPayload(
         schema_name="video-channel-manager.telegram-generic-poll-payload",
-        schema_version=3,
+        schema_version=4,
         project_key=profile.project_key,
         channel_username=profile.channel_username,
         publication_id=publication_id,
@@ -223,6 +230,8 @@ def render_poll_payload(
         description=description,
         is_anonymous=is_anonymous,
         allows_multiple_answers=allows_multiple_answers,
+        allows_revoting=effective_allows_revoting,
+        members_only=members_only,
     )
 
 
@@ -525,6 +534,8 @@ def send_poll_once(
         "type": payload.poll_type,
         "is_anonymous": payload.is_anonymous,
         "allows_multiple_answers": payload.allows_multiple_answers,
+        "allows_revoting": payload.allows_revoting,
+        "members_only": payload.members_only,
     }
     if payload.description:
         provider_payload["description"] = payload.description
@@ -575,6 +586,14 @@ def send_poll_once(
         if poll.get("allows_multiple_answers") is not payload.allows_multiple_answers:
             raise TelegramApiError(
                 "Telegram returned poll multiple-answer semantics that differ from payload", provider_effect="may_exist"
+            )
+        if poll.get("allows_revoting") is not payload.allows_revoting:
+            raise TelegramApiError(
+                "Telegram returned poll revoting semantics that differ from payload", provider_effect="may_exist"
+            )
+        if poll.get("members_only") is not payload.members_only:
+            raise TelegramApiError(
+                "Telegram returned poll membership semantics that differ from payload", provider_effect="may_exist"
             )
         if str(poll.get("description") or "") != (payload.description or ""):
             raise TelegramApiError(
