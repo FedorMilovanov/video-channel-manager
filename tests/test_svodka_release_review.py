@@ -88,6 +88,17 @@ def test_unauthorized_release_cannot_claim_reviewed_candidate_digest() -> None:
         GenericReleaseQueue.model_validate(payload)
 
 
+def test_authorized_generic_release_requires_reviewed_candidate_provenance() -> None:
+    candidate = _candidate(with_binding=True)
+    payload = candidate.model_dump(mode="json")
+    payload["release_authorized"] = True
+    payload["reviewed_by"] = "operator"
+    payload["reviewed_at"] = "2026-08-08T01:30:00+00:00"
+
+    with pytest.raises(ValueError, match="reviewed candidate provenance"):
+        GenericReleaseQueue.model_validate(payload)
+
+
 def test_authorized_generic_release_cannot_omit_exact_target_identity() -> None:
     candidate = _candidate(with_binding=False)
     payload = candidate.model_dump(mode="json")
