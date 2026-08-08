@@ -18,24 +18,32 @@ Every public post is original Russian editorial copy. Every factual statement th
 - one or more evidence source IDs;
 - explicit measurement scope for every numeric claim.
 
-The machine-bound source registry contains primary/direct testimony, institutional archive material, and scholarly cross-checks. The wider editorial research record preserves the 76-page verification pass; the machine manifest binds the 28 sources actually supporting current public claims.
+The machine-bound source registry contains primary/direct testimony, institutional archive material, and scholarly cross-checks. The wider editorial research record preserves the 76-page verification pass; the machine manifest currently binds 29 sources supporting the public claims.
 
 ## Immutable bindings
 
 - every public `.txt` body has a SHA-256 digest;
 - the source registry has its own canonical SHA-256 digest;
 - every post payload digest binds publication identity, title, body digest, release offset, and claims;
-- the research queue digest binds verification metadata, schedule state, source registry, and all five post payloads.
+- the research queue digest binds verification metadata, schedule state, source registry, and all five post payloads;
+- every generic release item additionally binds the exact research queue digest, source-registry digest, and post payload digest in its `source_sha256` evidence capsule.
 
-Current staged research digest: `sha256:7478aa03b3862f80d8f92702b3a968255c81f9edadcdfbe399370efc53d773df`.
+Current audited evidence identity:
+
+- source registry: `sha256:23f4521f1406dfcd775533bc435a8ba913d7e41405c8df8bbe23ea7d431f3ec8`;
+- staged research queue: `sha256:1b934d6acd95c42457dd3bee60fb6958291722e491979cd682324af3d4bd1271`;
+- exact target-bound candidate for the current five windows: `sha256:b87b69332a05fbf968e1d04b4f24543d89e7619113a8d076e8f81d20d7f69515`.
+
+Changing evidence metadata or source mapping therefore invalidates the generic candidate even if the public Telegram text itself did not change.
 
 ## Locked measurement boundaries
 
-The validator fails closed if:
+The validator/tests fail closed if:
 
 - Calvin `4–5 thousand` stops being an **estimate of sermons preached**;
 - Spurgeon `3,563` stops being the **exact published-corpus count** and is misrepresented as all sermons preached;
-- MacArthur `3,600+` stops being a **lower-bound recorded-archive count** and is misrepresented as an exact lifetime total.
+- MacArthur `3,600+` stops being a **lower-bound recorded-archive count** and is misrepresented as an exact lifetime total;
+- the MacArthur `3,600+` claim stops being tied to the exact checked Grace to You archive source.
 
 ## Relative editorial schedule
 
@@ -93,9 +101,9 @@ Research-v2 must feed this runtime. It must **not** reimplement intent persisten
 
 ## Remaining activation sequence
 
-1. Merge the provider-inert research evidence/release adapter and production-proven target binding.
-2. Convert the five validated research posts into a generic immutable release candidate with absolute Moscow-time windows.
-3. Review/authorize the exact candidate and initialize its isolated durable ledger.
+1. Merge the final evidence-bound research adapter and fact-check corrections.
+2. Review/authorize exactly `sha256:b87b69332a05fbf968e1d04b4f24543d89e7619113a8d076e8f81d20d7f69515` only after exact-head CI.
+3. Initialize its isolated durable ledger.
 4. Run one exact research canary inside the first immutable publication window.
 5. Require a verified Telegram receipt and durable outcome; no blind retry on `may_exist`.
 6. Let the generic scheduler publish the strict-next remaining items only when their windows become eligible.
@@ -109,7 +117,8 @@ Research-v2 must feed this runtime. It must **not** reimplement intent persisten
 - no provider mutation command;
 - validator/tooling compilation;
 - manifest/source/body/profile/binding integrity checks;
-- regression tests;
+- exact candidate digest reproduction;
+- provider-inert review regression;
 - explicit proof that the research evidence queue remains `staged` and `live_eligible=false`.
 
 Provider activation belongs in a separate reviewed release/canary change. This keeps content research and provider authority independently auditable.
