@@ -18,6 +18,7 @@ on:
       - ".github/workflows/svodka-quality.yml"
       - ".github/workflows/svodka-telegram-preflight.yml"
       - ".github/workflows/svodka-ledger-init.yml"
+      - ".github/workflows/svodka-skip-expired.yml"
       - ".github/workflows/svodka-canary.yml"
   workflow_dispatch:
 
