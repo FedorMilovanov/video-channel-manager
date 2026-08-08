@@ -141,8 +141,8 @@ def main() -> int:
     if args.command == "validate-svodka":
         queue = load_svodka_draft(args.queue, profile)
         counts: dict[str, int] = {}
-        for post in queue.posts:
-            counts[post.format] = counts.get(post.format, 0) + 1
+        for queue_post in queue.posts:
+            counts[queue_post.format] = counts.get(queue_post.format, 0) + 1
         print(
             json.dumps(
                 {
