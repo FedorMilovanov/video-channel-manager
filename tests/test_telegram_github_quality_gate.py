@@ -41,6 +41,14 @@ def test_quality_gate_accepts_only_completed_success_for_exact_main_sha() -> Non
     assert selected["id"] == 101
 
 
+def test_quality_gate_normalizes_workflow_path_ref_suffix() -> None:
+    payload = {"workflow_runs": [_run(id=101, path=".github/workflows/svodka-quality.yml@refs/heads/main")]}
+
+    selected = select_successful_quality_run(payload, workflow_file=WORKFLOW, head_sha=SHA)
+
+    assert selected["id"] == 101
+
+
 def test_quality_gate_accepts_plain_workflow_path_fallback() -> None:
     payload = {"workflow_runs": [_run(id=101, path=".github/workflows/svodka-quality.yml")]}
 
