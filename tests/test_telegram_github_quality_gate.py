@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from video_channel_manager.telegram_github_quality_gate import select_successful_quality_run
+from video_channel_manager.telegram_github_quality_gate import (
+    require_current_main_ref,
+    select_successful_quality_run,
+)
 
 SHA = "1" * 40
 WORKFLOW = "svodka-quality.yml"
@@ -21,6 +24,33 @@ def _run(**overrides):
     }
     value.update(overrides)
     return value
+
+
+def _main_ref(sha: str = SHA) -> dict[str, object]:
+    return {
+        "ref": "refs/heads/main",
+        "object": {
+            "type": "commit",
+            "sha": sha,
+        },
+    }
+
+
+def test_current_main_ref_accepts_exact_writer_sha() -> None:
+    require_current_main_ref(_main_ref(), head_sha=SHA)
+
+
+def test_current_main_ref_rejects_writer_sha_after_main_advances() -> None:
+    with pytest.raises(ValueError, match="no longer the current main commit"):
+        require_current_main_ref(_main_ref("2" * 40), head_sha=SHA)
+
+
+def test_current_main_ref_rejects_wrong_reference() -> None:
+    payload = _main_ref()
+    payload["ref"] = "refs/heads/other"
+
+    with pytest.raises(ValueError, match="wrong ref"):
+        require_current_main_ref(payload, head_sha=SHA)
 
 
 def test_quality_gate_accepts_only_completed_success_for_exact_main_sha() -> None:
