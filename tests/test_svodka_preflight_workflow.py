@@ -89,14 +89,14 @@ def test_svodka_quality_workflow_is_full_read_only_verification() -> None:
     assert "svodka-review-candidate" in workflow
 
 
-def test_all_svodka_workflows_pin_ubuntu_2404() -> None:
+def test_all_svodka_workflow_jobs_pin_ubuntu_2404() -> None:
     workflows = sorted((REPOSITORY_ROOT / ".github/workflows").glob("svodka-*.yml"))
     assert workflows
 
     for workflow_path in workflows:
-        workflow = workflow_path.read_text(encoding="utf-8")
-        assert "runs-on: ubuntu-24.04" in workflow, workflow_path.name
-        assert "runs-on: ubuntu-latest" not in workflow, workflow_path.name
+        runs_on = [line.strip() for line in workflow_path.read_text(encoding="utf-8").splitlines() if "runs-on:" in line]
+        assert runs_on, workflow_path.name
+        assert set(runs_on) == {"runs-on: ubuntu-24.04"}, workflow_path.name
 
 
 def test_svodka_quality_rejects_committed_release_from_stale_candidate() -> None:
