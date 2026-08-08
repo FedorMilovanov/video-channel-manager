@@ -10,6 +10,7 @@ from video_channel_manager.svodka_queue import load_svodka_draft
 from video_channel_manager.svodka_release import authorize_svodka_release, build_svodka_release_candidate
 from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_multichannel_cli import _send_exact_payload, main
+from video_channel_manager.telegram_multichannel_outcome import apply_provider_outcome
 from video_channel_manager.telegram_multichannel_release import GenericReleaseQueue, save_release
 from video_channel_manager.telegram_multichannel_state import initialize_ledger, load_ledger, prepare_next
 from video_channel_manager.telegram_multichannel_transport import GenericTargetProof
@@ -96,26 +97,31 @@ def _prepared_runtime():
     return profile, release, ledger, prepared.envelope
 
 
-def test_missing_token_becomes_explicit_not_dispatched_outcome(monkeypatch) -> None:
+def test_missing_token_becomes_retryable_not_dispatched_outcome(monkeypatch) -> None:
     profile, release, ledger, envelope = _prepared_runtime()
 
     monkeypatch.delenv(profile.bot_token_env, raising=False)
     outcome = _send_exact_payload(profile, release, ledger, envelope)
 
     assert outcome.provider_effect == "not_dispatched"
-    assert outcome.retryable is False
+    assert outcome.retryable is True
     assert outcome.receipt is None
     assert outcome.error == f"missing Telegram token in {profile.bot_token_env}"
 
+    entry = apply_provider_outcome(ledger, envelope, outcome)
+    assert entry.state == "pending"
+    assert entry.provider_effect == "not_dispatched"
+    assert entry.intent_id is None
 
-def test_pre_provider_intent_mismatch_becomes_explicit_not_dispatched_outcome() -> None:
+
+def test_pre_provider_intent_mismatch_becomes_retryable_not_dispatched_outcome() -> None:
     profile, release, ledger, envelope = _prepared_runtime()
     ledger.entries[envelope.publication_id].intent_id = "different-persisted-intent"
 
     outcome = _send_exact_payload(profile, release, ledger, envelope)
 
     assert outcome.provider_effect == "not_dispatched"
-    assert outcome.retryable is False
+    assert outcome.retryable is True
     assert outcome.receipt is None
     assert "persisted ledger intent differs" in (outcome.error or "")
 
