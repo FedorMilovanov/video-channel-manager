@@ -120,8 +120,11 @@ Canonical draft validation now also requires strict chronological timestamps, ex
 
 Native quiz rendering preserves the Svodka header, title, vote prompt, visible sources, tagline and full topical hashtag line without revealing the correct answer before voting.
 
-Research/audit records:
+Research/audit records used by the current activation decision:
 
 - `docs/research/2026-08-08-svodka-technical-verification-ledger.md`
 - `docs/research/2026-08-08-svodka-second-pass-audit.md`
-- add the newest full restart audit record before activation; it must include the exact current SHA, unresolved CI observability limitation and fresh primary-source revalidation.
+- `docs/research/2026-08-08-svodka-full-restart-audit.md` — immutable earlier full-restart record;
+- `docs/research/2026-08-08-svodka-current-main-continuation-audit.md` — current-main overlay with the later review/ledger/catch-up CI proofs and fresh primary-source revalidation.
+
+Before activation, use the newest continuation record together with an actual successful `Svodka quality` for the exact activation `main` SHA. Historical audit files never substitute for that exact runtime quality proof.
