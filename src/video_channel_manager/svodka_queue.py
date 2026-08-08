@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from datetime import date, datetime
 from pathlib import Path
 from typing import Literal
+from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, ValidationError, field_validator, model_validator
 
@@ -61,10 +63,22 @@ class SvodkaPilot(BaseModel):
     max_posts_per_day: int = Field(ge=1, le=20)
     notes: str = Field(min_length=20, max_length=1000)
 
+    @field_validator("daily_slots")
+    @classmethod
+    def slots_are_canonical_and_unique(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        if len(value) != len(set(value)):
+            raise ValueError("Svodka pilot daily_slots must be unique")
+        for slot in value:
+            if re.fullmatch(r"(?:[01][0-9]|2[0-3]):[0-5][0-9]", slot) is None:
+                raise ValueError("Svodka pilot daily_slots must use canonical HH:MM 24-hour time")
+        return value
+
     @model_validator(mode="after")
     def dates_are_ordered(self) -> "SvodkaPilot":
         if self.end_date < self.start_date:
             raise ValueError("pilot end_date cannot precede start_date")
+        if self.max_posts_per_day > len(self.daily_slots):
+            raise ValueError("pilot max_posts_per_day cannot exceed the number of configured daily slots")
         return self
 
 
@@ -109,7 +123,7 @@ class SvodkaDraftPost(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def interactive_contract(self) -> "SvodkaDraftPost":
+    def interactive_and_source_contract(self) -> "SvodkaDraftPost":
         if self.format == "quiz":
             if self.quiz is None or self.poll is not None:
                 raise ValueError("quiz posts require quiz metadata and no regular poll metadata")
@@ -118,6 +132,12 @@ class SvodkaDraftPost(BaseModel):
                 raise ValueError("poll posts require poll metadata and no quiz metadata")
         elif self.quiz is not None or self.poll is not None:
             raise ValueError("non-interactive posts must not contain quiz or poll metadata")
+
+        if self.html_text.count("📎") < len(self.sources):
+            raise ValueError("Svodka post must expose every structured source as a visible source line")
+        for source in self.sources:
+            if str(source.url) not in self.html_text:
+                raise ValueError(f"visible source URL differs from structured source: {source.url}")
         return self
 
 
@@ -146,10 +166,26 @@ class SvodkaDraftQueue(BaseModel):
             raise ValueError("Svodka publication_id values must be unique")
         if self.pilot.max_posts_per_day > 2:
             raise ValueError("current Svodka pilot is capped at two posts per day")
+
+        scheduled = [post.scheduled_at for post in self.posts]
+        if any(scheduled[index] > scheduled[index + 1] for index in range(len(scheduled) - 1)):
+            raise ValueError("Svodka draft posts must be ordered by scheduled_at")
+
+        zone = ZoneInfo(self.timezone)
+        per_day: dict[date, int] = {}
         for post in self.posts:
-            local_date = post.scheduled_at.date()
+            local = post.scheduled_at.astimezone(zone)
+            local_date = local.date()
             if not self.pilot.start_date <= local_date <= self.pilot.end_date:
                 raise ValueError(f"post {post.publication_id} falls outside the pilot date range")
+            local_slot = local.strftime("%H:%M")
+            if local_slot not in self.pilot.daily_slots:
+                raise ValueError(
+                    f"post {post.publication_id} uses {local_slot}, outside configured pilot daily_slots"
+                )
+            per_day[local_date] = per_day.get(local_date, 0) + 1
+        if any(count > self.pilot.max_posts_per_day for count in per_day.values()):
+            raise ValueError("Svodka draft exceeds the configured daily post limit")
         return self
 
     @property
