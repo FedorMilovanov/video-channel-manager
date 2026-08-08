@@ -37,8 +37,7 @@ def _runtime() -> tuple[
 ]:
     base_profile = load_channel_profile(PROFILE_PATH)
     profile = base_profile.model_copy(update={"provider_writes_authorized": True})
-    stored_binding = load_target_binding(BINDING_PATH, base_profile)
-    binding = stored_binding.model_copy(update={"profile_sha256": profile.digest})
+    binding = load_target_binding(BINDING_PATH, base_profile).model_copy(update={"profile_sha256": profile.digest})
     draft = load_svodka_draft(QUEUE_PATH, profile)
     candidate = build_svodka_release_candidate(
         profile,
@@ -48,6 +47,9 @@ def _runtime() -> tuple[
     )
     release = authorize_svodka_release(
         candidate,
+        profile=profile,
+        binding=binding,
+        expected_candidate_sha256=candidate.candidate_digest(),
         reviewed_by="test-reviewer",
         reviewed_at=datetime(2026, 8, 8, tzinfo=UTC),
     )
