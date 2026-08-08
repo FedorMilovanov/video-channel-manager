@@ -16,7 +16,7 @@ BINDING_PATH = REPOSITORY_ROOT / "content/telegram/channels/svodka-target-bindin
 APPROVED_RELEASE = REPOSITORY_ROOT / "content/telegram/svodka/approved-release-2026-08.json"
 
 
-def test_ledger_initialization_is_manual_exact_and_provider_free() -> None:
+def test_ledger_initialization_is_manual_exact_provider_free_and_current_main_proven() -> None:
     profile = load_channel_profile(PROFILE_PATH)
     workflow = LEDGER_WORKFLOW.read_text(encoding="utf-8")
 
@@ -27,7 +27,14 @@ def test_ledger_initialization_is_manual_exact_and_provider_free() -> None:
     assert "release.release_authorized" in workflow
     assert "state/svodka-telegram" in workflow
     assert f"group: {profile.concurrency_group}" in workflow
+    assert "actions: read" in workflow
     assert "initialize-ledger" in workflow
+    assert "telegram_github_quality_gate" in workflow
+    assert '--sha "$GITHUB_SHA"' in workflow
+    initialize_index = workflow.index("initialize-ledger")
+    reproof_index = workflow.index("telegram_github_quality_gate", initialize_index)
+    commit_index = workflow.index('git -C "$STATE_DIR" commit -m "Initialize Svodka publication ledger [skip ci]"')
+    assert initialize_index < reproof_index < commit_index
     assert "sendMessage" not in workflow
     assert "sendPoll" not in workflow
     assert "send-once" not in workflow

@@ -86,7 +86,7 @@ def _write_candidate(path: Path, *, tamper_binding_digest: bool = False) -> str:
     return candidate.digest
 
 
-def test_authorize_release_requires_current_binding_and_records_candidate_digest(
+def test_authorize_release_requires_current_binding_and_exact_reviewed_digest(
     monkeypatch, capsys, tmp_path: Path
 ) -> None:
     candidate_path = tmp_path / "candidate.json"
@@ -104,6 +104,8 @@ def test_authorize_release_requires_current_binding_and_records_candidate_digest
             str(BINDING_PATH),
             "--candidate",
             str(candidate_path),
+            "--expected-candidate-sha256",
+            candidate_digest,
             "--reviewed-by",
             "test-reviewer",
             "--reviewed-at",
@@ -121,10 +123,10 @@ def test_authorize_release_requires_current_binding_and_records_candidate_digest
     assert release.release_authorized is True
 
 
-def test_authorize_release_rejects_candidate_with_stale_binding(monkeypatch, tmp_path: Path) -> None:
+def test_authorize_release_rejects_reviewed_digest_mismatch(monkeypatch, tmp_path: Path) -> None:
     candidate_path = tmp_path / "candidate.json"
     release_path = tmp_path / "approved.json"
-    _write_candidate(candidate_path, tamper_binding_digest=True)
+    _write_candidate(candidate_path)
     monkeypatch.setattr(
         sys,
         "argv",
@@ -137,6 +139,40 @@ def test_authorize_release_rejects_candidate_with_stale_binding(monkeypatch, tmp
             str(BINDING_PATH),
             "--candidate",
             str(candidate_path),
+            "--expected-candidate-sha256",
+            "sha256:" + "0" * 64,
+            "--reviewed-by",
+            "test-reviewer",
+            "--reviewed-at",
+            "2026-08-08T03:00:00+00:00",
+            "--output",
+            str(release_path),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="differs from the reviewed digest"):
+        telegram_channel_cli.main()
+    assert not release_path.exists()
+
+
+def test_authorize_release_rejects_candidate_with_stale_binding(monkeypatch, tmp_path: Path) -> None:
+    candidate_path = tmp_path / "candidate.json"
+    release_path = tmp_path / "approved.json"
+    candidate_digest = _write_candidate(candidate_path, tamper_binding_digest=True)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "telegram-channel-cli",
+            "authorize-svodka-release",
+            "--profile",
+            str(PROFILE_PATH),
+            "--binding",
+            str(BINDING_PATH),
+            "--candidate",
+            str(candidate_path),
+            "--expected-candidate-sha256",
+            candidate_digest,
             "--reviewed-by",
             "test-reviewer",
             "--reviewed-at",
