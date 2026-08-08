@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from datetime import datetime
 from pathlib import Path
 
 from video_channel_manager.telegram_presentation import (
@@ -33,6 +34,16 @@ from video_channel_manager.telegram_publisher import (
 )
 
 INITIALIZE_CONFIRMATION = "INITIALIZE_NEW_LORDCHRIST_LEDGER"
+
+
+def _aware_datetime(value: str) -> datetime:
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("timestamp must be valid ISO 8601") from exc
+    if parsed.tzinfo is None:
+        raise argparse.ArgumentTypeError("timestamp must include an explicit timezone offset")
+    return parsed
 
 
 def parser() -> argparse.ArgumentParser:
@@ -92,6 +103,7 @@ def parser() -> argparse.ArgumentParser:
     resolve.add_argument("--resolved-by", required=True)
     resolve.add_argument("--message-id", type=int)
     resolve.add_argument("--expected-chat-id", type=int)
+    resolve.add_argument("--published-at-utc", type=_aware_datetime)
     return root
 
 
@@ -351,6 +363,10 @@ def main() -> int:
         return 0 if entry.state == "published" else 4
 
     if args.command == "resolve":
+        if args.resolution == "confirmed_published" and args.published_at_utc is None:
+            raise RuntimeError("confirmed_published reconciliation requires exact --published-at-utc provider evidence")
+        if args.resolution != "confirmed_published" and args.published_at_utc is not None:
+            raise RuntimeError("--published-at-utc is valid only with confirmed_published reconciliation")
         entry = resolve_entry(
             ledger,
             args.publication_id,
@@ -359,6 +375,7 @@ def main() -> int:
             resolved_by=args.resolved_by,
             message_id=args.message_id,
             expected_chat_id=args.expected_chat_id,
+            published_at_utc=args.published_at_utc,
         )
         save_ledger(args.ledger, ledger)
         print(
@@ -369,6 +386,8 @@ def main() -> int:
                     "provider_effect": entry.provider_effect,
                     "message_id": entry.message_id,
                     "message_url": entry.message_url,
+                    "published_at_utc": entry.published_at_utc.isoformat() if entry.published_at_utc else None,
+                    "resolved_at_utc": entry.resolved_at_utc.isoformat() if entry.resolved_at_utc else None,
                 },
                 ensure_ascii=False,
             )
