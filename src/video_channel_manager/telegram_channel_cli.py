@@ -286,6 +286,8 @@ def main() -> int:
             raise ValueError("Svodka release candidate differs from current pinned target binding")
         release = authorize_release_candidate(
             candidate,
+            profile=profile,
+            binding=binding,
             expected_candidate_sha256=args.expected_candidate_sha256,
             reviewed_by=args.reviewed_by,
             reviewed_at=_review_timestamp(args.reviewed_at),
