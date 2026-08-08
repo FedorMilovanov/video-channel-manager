@@ -6,6 +6,6 @@ httpcore==1.0.9
 httpx==0.28.1
 idna==3.17
 pydantic==2.13.4
-pydantic-core==2.46.4
+pydantic-core==2.47.0
 typing-extensions==4.15.0
 typing-inspection==0.4.2
