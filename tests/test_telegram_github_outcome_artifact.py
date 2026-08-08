@@ -5,9 +5,11 @@ from typing import Any
 
 import pytest
 
+import video_channel_manager.telegram_github_outcome_artifact as outcome_artifact
 from video_channel_manager.telegram_github_outcome_artifact import (
     PROVIDER_WORKFLOWS,
     artifact_name,
+    fetch_provider_outcome_artifact_proof,
     prove_provider_outcome_artifact,
     validate_recovered_outcome,
 )
@@ -66,13 +68,19 @@ def _dispatch(*, mode: str = "manual") -> GenericDispatchEnvelope:
     )
 
 
-def _run(path: str, event: str, *, head_sha: str = HEAD_SHA) -> dict[str, Any]:
+def _run(
+    path: str,
+    event: str,
+    *,
+    head_sha: str = HEAD_SHA,
+    conclusion: str = "failure",
+) -> dict[str, Any]:
     return {
         "run_attempt": 1,
         "head_branch": "main",
         "head_sha": head_sha,
         "status": "completed",
-        "conclusion": "failure",
+        "conclusion": conclusion,
         "path": f"{path}@main",
         "event": event,
     }
@@ -139,12 +147,58 @@ def test_provider_outcome_artifact_proof_accepts_exact_svodka_source_run(
     assert proof.final_state_step_conclusion == "failure"
 
 
+def test_fetch_proof_uses_exact_attempt_run_metadata_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
+    path = ".github/workflows/svodka-canary.yml"
+    seen_urls: list[str] = []
+
+    def fake_github_json(url: str, *, token: str) -> dict[str, Any]:
+        assert token == "test-token"
+        seen_urls.append(url)
+        if url.endswith(f"/actions/runs/{RUN_ID}/attempts/{ATTEMPT}"):
+            return _run(path, "workflow_dispatch")
+        if url.endswith(f"/actions/runs/{RUN_ID}/attempts/{ATTEMPT}/jobs?per_page=100"):
+            return _jobs(path)
+        if f"/actions/runs/{RUN_ID}/artifacts?" in url:
+            return _artifacts()
+        raise AssertionError(f"unexpected GitHub URL: {url}")
+
+    monkeypatch.setattr(outcome_artifact, "_safe_github_json", fake_github_json)
+    proof = fetch_provider_outcome_artifact_proof(
+        api_url="https://api.github.test",
+        repository="owner/repository",
+        token="test-token",
+        dispatch=_dispatch(),
+        source_run_id=RUN_ID,
+        source_run_attempt=ATTEMPT,
+        requested_publication_id=PUBLICATION_ID,
+    )
+
+    assert proof.source_run_attempt == ATTEMPT
+    assert seen_urls[0].endswith(f"/actions/runs/{RUN_ID}/attempts/{ATTEMPT}")
+    assert not any(url.endswith(f"/actions/runs/{RUN_ID}") for url in seen_urls)
+
+
 def test_provider_outcome_artifact_proof_rejects_already_successful_state_persistence() -> None:
     path = ".github/workflows/svodka-canary.yml"
     with pytest.raises(ValueError, match="already succeeded"):
         prove_provider_outcome_artifact(
             run_payload=_run(path, "workflow_dispatch"),
             jobs_payload=_jobs(path, final_conclusion="success"),
+            artifacts_payload=_artifacts(),
+            dispatch=_dispatch(),
+            source_run_id=RUN_ID,
+            source_run_attempt=ATTEMPT,
+            requested_publication_id=PUBLICATION_ID,
+            now=NOW,
+        )
+
+
+def test_provider_outcome_artifact_proof_rejects_successful_source_run() -> None:
+    path = ".github/workflows/svodka-canary.yml"
+    with pytest.raises(ValueError, match="run already succeeded"):
+        prove_provider_outcome_artifact(
+            run_payload=_run(path, "workflow_dispatch", conclusion="success"),
+            jobs_payload=_jobs(path),
             artifacts_payload=_artifacts(),
             dispatch=_dispatch(),
             source_run_id=RUN_ID,
