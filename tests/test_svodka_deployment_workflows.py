@@ -2,9 +2,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from video_channel_manager.telegram_channel_profile import load_channel_profile
+from video_channel_manager.telegram_multichannel_release import load_release
+from video_channel_manager.telegram_target_binding import load_target_binding
+
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 LEDGER_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-ledger-init.yml"
 CANARY_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-canary.yml"
+PROFILE_PATH = REPOSITORY_ROOT / "content/telegram/channels/svodka.json"
+BINDING_PATH = REPOSITORY_ROOT / "content/telegram/channels/svodka-target-binding.json"
 APPROVED_RELEASE = REPOSITORY_ROOT / "content/telegram/svodka/approved-release-2026-08.json"
 
 
@@ -44,5 +50,19 @@ def test_canary_is_one_exact_manual_dispatch_with_durable_intent_first() -> None
     assert "state/svodka-telegram" in workflow
 
 
-def test_live_release_is_not_committed_before_explicit_review() -> None:
-    assert not APPROVED_RELEASE.exists()
+def test_committed_live_release_if_present_is_exact_and_authorized() -> None:
+    if not APPROVED_RELEASE.exists():
+        return
+
+    profile = load_channel_profile(PROFILE_PATH)
+    binding = load_target_binding(BINDING_PATH, profile)
+    release = load_release(APPROVED_RELEASE)
+
+    assert release.release_authorized is True
+    assert release.project_key == profile.project_key
+    assert release.channel_username == profile.channel_username
+    assert release.profile_sha256 == profile.digest
+    assert release.target_binding_sha256 == binding.digest
+    assert release.chat_id == binding.chat_id
+    assert release.bot_id == binding.bot_id
+    assert release.bot_username == binding.bot_username
