@@ -27,6 +27,7 @@ on:
       timezone: Europe/Moscow
 
 permissions:
+  actions: read
   contents: write
 
 concurrency:
@@ -45,6 +46,7 @@ env:
   LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json
   DISPATCH_PATH: .runtime/lordchrist-dispatch.json
   RENDERED_PATH: .runtime/lordchrist-rendered.json
+  OUTCOME_PATH: .runtime/lordchrist-outcome.json
   TARGET_PROOF_PATH: .runtime/lordchrist-target-proof.json
   LORDCHRIST_TELEGRAM_CHAT_ID: ${{ vars.LORDCHRIST_TELEGRAM_CHAT_ID }}
   LORDCHRIST_TELEGRAM_BOT_ID: ${{ vars.LORDCHRIST_TELEGRAM_BOT_ID }}
@@ -201,6 +203,16 @@ jobs:
             --ledger "$LEDGER_PATH" \
             --presentation-policy "$PRESENTATION_POLICY_PATH" \
             preview
+
+      - name: Require current-main exact-SHA repository CI proof
+        if: steps.intent.outputs.do_preflight == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow ci.yml \
+            --sha "$GITHUB_SHA"
 
       - name: Validate read-only target configuration
         if: steps.intent.outputs.do_preflight == 'true'
@@ -445,9 +457,42 @@ jobs:
 
           echo "persisted=true" >> "$GITHUB_OUTPUT"
 
+      - name: Re-prove current-main CI immediately before Telegram mutation
+        id: pre_send_quality
+        if: steps.persist_intent.outputs.persisted == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow ci.yml \
+            --sha "$GITHUB_SHA"
+
+      - name: Resolve blocked pre-send intent as confirmed absent
+        if: steps.persist_intent.outputs.persisted == 'true' && steps.pre_send_quality.outcome != 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          publication_id="$(python - <<'PY'
+          from pathlib import Path
+          from video_channel_manager.telegram_state import load_dispatch
+          print(load_dispatch(Path(".runtime/lordchrist-dispatch.json")).publication_id)
+          PY
+          )"
+          python -m video_channel_manager.telegram_cli \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            resolve \
+            --publication-id "$publication_id" \
+            --resolution confirmed_absent \
+            --evidence-note "Exact current-main repository CI reproof failed before the Telegram send step, so this workflow did not dispatch a provider mutation." \
+            --resolved-by "github-actions:$GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT"
+
       - name: Send exactly one prepared message
         id: send
-        if: steps.persist_intent.outputs.persisted == 'true'
+        if: steps.persist_intent.outputs.persisted == 'true' && steps.pre_send_quality.outcome == 'success'
         shell: bash
         env:
           LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
@@ -466,6 +511,31 @@ jobs:
           status=$?
           set -e
           echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+
+      - name: Capture exact Lordchrist provider outcome
+        id: capture_outcome
+        if: steps.persist_intent.outputs.persisted == 'true' && steps.pre_send_quality.outcome == 'success' && steps.send.outcome == 'success' && !cancelled()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_lordchrist_outcome_cli \
+            --queue "$QUEUE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            capture \
+            --dispatch "$DISPATCH_PATH" \
+            --rendered "$RENDERED_PATH" \
+            --output "$OUTCOME_PATH"
+
+      - name: Archive exact Lordchrist provider outcome before state mutation
+        if: steps.capture_outcome.outcome == 'success' && !cancelled()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lordchrist-provider-outcome-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .runtime/lordchrist-outcome.json
+          if-no-files-found: error
+          retention-days: 30
+          include-hidden-files: true
 
       - name: Persist exact Telegram result
         if: steps.persist_intent.outputs.persisted == 'true' && always()
@@ -514,6 +584,10 @@ jobs:
             exit 4
           }
 
+          if [[ "${{ steps.pre_send_quality.outcome }}" != "success" ]]; then
+            echo "Provider mutation was blocked by the final current-main CI reproof; confirmed-absent state was persisted." >&2
+            exit 4
+          fi
           if [[ "${{ steps.send.outputs.exit_code }}" != "0" ]]; then
             echo "Telegram did not return a fully verified success. Review the state ledger before any ambiguous retry." >&2
             exit 4
