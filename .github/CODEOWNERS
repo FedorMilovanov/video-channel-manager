@@ -1,0 +1,11 @@
+# Critical automation and security policy
+/.github/ @FedorMilovanov
+
+# Telegram production runtime, release contracts, and content
+/requirements/telegram-publisher.txt @FedorMilovanov
+/src/video_channel_manager/telegram_*.py @FedorMilovanov
+/content/telegram/ @FedorMilovanov
+
+# Operational proof and audit records
+/docs/lordchrist/ @FedorMilovanov
+/docs/research/ @FedorMilovanov

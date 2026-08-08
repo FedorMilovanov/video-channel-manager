@@ -1,0 +1,181 @@
+{
+  "schema_name": "video-channel-manager.telegram-defect-register",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "as_of_date": "2026-08-08",
+  "production_proof": {
+    "publication_id": "lordchrist-bunyan-fire-grace",
+    "workflow_run_id": "31245659459",
+    "workflow_run_attempt": "1",
+    "github_sha": "29c764095cc4153e610b7f1a399d07ced2785578",
+    "message_id": 1472,
+    "provider_effect": "verified",
+    "state": "published"
+  },
+  "defects": [
+    {
+      "defect_id": "LCT-AUTH-001",
+      "discovered_at": "2026-08-07",
+      "introduced_by": null,
+      "fixed_by": "9a79e04819072aa492cb3c98016d42284a714c57",
+      "severity": "P0",
+      "escaped_checks": [
+        "workflow-level schedule authorization review did not trace the provider-facing Python authorization path"
+      ],
+      "root_cause_class": "split_authorization_contract",
+      "provider_effect_possible": false,
+      "durable_state_effect_possible": true,
+      "regression_test": "scheduled execution must reach the provider authorization path without legacy repository toggles",
+      "architectural_invariant": "one auditable authorization contract must hold from workflow event through the provider-facing mutation call",
+      "status": "fixed",
+      "evidence": [
+        "PR #167 / commit 9a79e04819072aa492cb3c98016d42284a714c57",
+        "first autonomous scheduled proof run 31245659459/1"
+      ]
+    },
+    {
+      "defect_id": "LCT-PRESENTATION-002",
+      "discovered_at": "2026-08-07",
+      "introduced_by": "lordchrist-editorial-v1",
+      "fixed_by": "lordchrist-editorial-v2",
+      "severity": "P2",
+      "escaped_checks": [
+        "syntactic renderer tests allowed mechanically valid but editorially weak emphasis"
+      ],
+      "root_cause_class": "semantic_fixture_gap",
+      "provider_effect_possible": true,
+      "durable_state_effect_possible": false,
+      "regression_test": "presentation fixtures must assert meaningful emphasis rather than only valid HTML structure",
+      "architectural_invariant": "provider-visible formatting policy is a versioned, digest-bound release artifact with semantic fixtures",
+      "status": "fixed",
+      "evidence": [
+        "presentation policy lordchrist-editorial-v2",
+        "presentation digest sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8"
+      ]
+    },
+    {
+      "defect_id": "LCT-CRON-003",
+      "discovered_at": "2026-08-08",
+      "introduced_by": null,
+      "fixed_by": "operational design",
+      "severity": "P2",
+      "escaped_checks": [
+        "exact wall-clock punctuality cannot be proven by workflow tests because GitHub schedule is best-effort"
+      ],
+      "root_cause_class": "external_scheduler_delay",
+      "provider_effect_possible": true,
+      "durable_state_effect_possible": false,
+      "regression_test": "daily quota and strict ledger must make delayed primary/catch-up triggers semantically safe",
+      "architectural_invariant": "correctness must depend on durable eligibility and quota, never on an exact cron minute",
+      "status": "mitigated",
+      "evidence": [
+        "configured primary window 09:17 Europe/Moscow",
+        "verified publication occurred at 10:13:13 Europe/Moscow in run 31245659459/1"
+      ]
+    },
+    {
+      "defect_id": "LCT-CONCURRENCY-004",
+      "discovered_at": "2026-08-07",
+      "introduced_by": null,
+      "fixed_by": null,
+      "severity": "P1",
+      "escaped_checks": [
+        "queue: single was valid syntax but its pending-run replacement semantics were not initially modeled"
+      ],
+      "root_cause_class": "scheduler_concurrency_semantics",
+      "provider_effect_possible": true,
+      "durable_state_effect_possible": false,
+      "regression_test": "legacy publisher workflow should explicitly preserve pending runs while ledger quota neutralizes redundant triggers",
+      "architectural_invariant": "concurrency control may serialize runs but must not silently discard an older eligible scheduled opportunity",
+      "status": "open",
+      "evidence": [
+        ".github/workflows/lordchrist-telegram-poster.yml currently uses queue: single",
+        "GitHub Actions concurrency documentation reviewed 2026-08-08"
+      ]
+    },
+    {
+      "defect_id": "REPO-CI-005",
+      "discovered_at": "2026-08-08",
+      "introduced_by": "parallel generic Telegram/Svodka changes before audit",
+      "fixed_by": "74a301b88dda4ecdef35f8f5075402e564453a78",
+      "severity": "P1",
+      "escaped_checks": [
+        "generic runtime changes landed faster than dependent inventory/fixture/format contracts were synchronized"
+      ],
+      "root_cause_class": "parallel_change_regression_drift",
+      "provider_effect_possible": false,
+      "durable_state_effect_possible": false,
+      "regression_test": "full repository CI must remain green across Python 3.11/3.12/3.13 and PowerShell operator matrices before follow-on hardening is evaluated",
+      "architectural_invariant": "new safety work must be based on a green exact main SHA rather than masking pre-existing baseline failures",
+      "status": "fixed",
+      "evidence": [
+        "red baseline: 1032 passed, 1 xfailed, 3 failed plus three Ruff-format drifts",
+        "repair PR #181",
+        "repair exact-head CI #3586 success",
+        "main repair commit 74a301b88dda4ecdef35f8f5075402e564453a78"
+      ]
+    },
+    {
+      "defect_id": "RESEARCH-STATE-006",
+      "discovered_at": "2026-08-08",
+      "introduced_by": "initial research-v2 design",
+      "fixed_by": "PR #183 architecture",
+      "severity": "P1",
+      "escaped_checks": [
+        "a separate research sender would have duplicated intent/send/outcome/reconciliation semantics already implemented by the generic multichannel runtime"
+      ],
+      "root_cause_class": "duplicate_state_machine_risk",
+      "provider_effect_possible": true,
+      "durable_state_effect_possible": true,
+      "regression_test": "research-v2 must remain provider-inert and adapt validated content into GenericReleaseQueue rather than expose a send command",
+      "architectural_invariant": "content evidence semantics may differ by content class; provider mutation and durable-state semantics are shared",
+      "status": "prevented_pending_merge",
+      "evidence": [
+        "PR #183",
+        "dedicated research-v2 CI proves staged/live_eligible=false"
+      ]
+    },
+    {
+      "defect_id": "SUPPLY-DEPGRAPH-007",
+      "discovered_at": "2026-08-08",
+      "introduced_by": null,
+      "fixed_by": null,
+      "severity": "P2",
+      "escaped_checks": [
+        "Dependency Review was proposed before repository Dependency Graph availability was verified"
+      ],
+      "root_cause_class": "platform_prerequisite_unverified",
+      "provider_effect_possible": false,
+      "durable_state_effect_possible": false,
+      "regression_test": "enable and verify Dependency Graph before adding Dependency Review as a required PR gate",
+      "architectural_invariant": "a security control is not considered installed until its platform prerequisites and actual CI execution are verified",
+      "status": "open_prerequisite",
+      "evidence": [
+        "official actions/dependency-review-action test failed because Dependency Graph is disabled",
+        "existing pip-audit remains active"
+      ]
+    },
+    {
+      "defect_id": "SUPPLY-HASHES-008",
+      "discovered_at": "2026-08-08",
+      "introduced_by": null,
+      "fixed_by": null,
+      "severity": "P2",
+      "escaped_checks": [
+        "exact version pins and binary-only installation do not cryptographically bind downloaded wheel files"
+      ],
+      "root_cause_class": "dependency_artifact_integrity_gap",
+      "provider_effect_possible": false,
+      "durable_state_effect_possible": false,
+      "regression_test": "future minimal Telegram runtime installation must succeed with --require-hashes and a complete generated lock",
+      "architectural_invariant": "never enable pip hash-checking mode with a partial hand-written hash set; the complete allowed dependency graph must be hash-bound",
+      "status": "open",
+      "evidence": [
+        "requirements/telegram-publisher.txt uses exact versions",
+        "production install already uses --only-binary=:all:",
+        "pip secure-install documentation reviewed 2026-08-08"
+      ]
+    }
+  ]
+}
