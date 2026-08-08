@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import io
 import json
 import os
 import re
 import urllib.parse
 import urllib.request
+import zipfile
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -16,6 +19,8 @@ from video_channel_manager.telegram_multichannel_outcome import GenericProviderO
 from video_channel_manager.telegram_multichannel_state import GenericDispatchEnvelope
 
 ARTIFACT_NAME_PREFIX = "svodka-provider-outcome-"
+MAX_OUTCOME_ARCHIVE_BYTES = 1_000_000
+MAX_OUTCOME_JSON_BYTES = 256_000
 
 
 class ProviderWorkflowContract(BaseModel):
@@ -70,16 +75,17 @@ class ProviderOutcomeArtifactProof(BaseModel):
     checked_at_utc: datetime
 
 
+def _github_headers(token: str) -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "video-channel-manager-svodka-outcome-reconciler",
+    }
+
+
 def _safe_github_json(url: str, *, token: str) -> dict[str, Any]:
-    request = urllib.request.Request(
-        url,
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Accept": "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28",
-            "User-Agent": "video-channel-manager-svodka-outcome-reconciler",
-        },
-    )
+    request = urllib.request.Request(url, headers=_github_headers(token))
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
             payload = json.load(response)
@@ -88,6 +94,18 @@ def _safe_github_json(url: str, *, token: str) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise RuntimeError("GitHub provider-outcome proof returned a non-object response")
     return cast(dict[str, Any], payload)
+
+
+def _safe_github_bytes(url: str, *, token: str, max_bytes: int) -> bytes:
+    request = urllib.request.Request(url, headers=_github_headers(token))
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            payload = response.read(max_bytes + 1)
+    except Exception as exc:
+        raise RuntimeError(f"GitHub provider-outcome artifact unavailable: {type(exc).__name__}") from exc
+    if len(payload) > max_bytes:
+        raise ValueError("downloaded provider-outcome artifact exceeds the allowed size")
+    return payload
 
 
 def _positive_integer(value: str, *, field_name: str) -> int:
@@ -199,6 +217,8 @@ def prove_provider_outcome_artifact(
         raise ValueError("archived provider outcome artifact metadata is invalid") from exc
     if artifact_id <= 0 or artifact_size <= 0:
         raise ValueError("archived provider outcome artifact metadata is invalid")
+    if artifact_size > MAX_OUTCOME_ARCHIVE_BYTES:
+        raise ValueError("archived provider outcome artifact is unexpectedly large")
     artifact_digest = str(artifact.get("digest") or "")
     if re.fullmatch(r"sha256:[0-9a-f]{64}", artifact_digest) is None:
         raise ValueError("archived provider outcome artifact has no exact sha256 digest")
@@ -277,6 +297,66 @@ def fetch_provider_outcome_artifact_proof(
     )
 
 
+def verify_provider_outcome_archive(
+    archive_bytes: bytes,
+    proof: ProviderOutcomeArtifactProof,
+) -> bytes:
+    if len(archive_bytes) != proof.artifact_size_in_bytes:
+        raise ValueError("downloaded provider-outcome artifact size differs from proved GitHub metadata")
+    actual_digest = "sha256:" + hashlib.sha256(archive_bytes).hexdigest()
+    if actual_digest != proof.artifact_digest:
+        raise ValueError("downloaded provider-outcome artifact digest differs from proved GitHub metadata")
+
+    try:
+        archive = zipfile.ZipFile(io.BytesIO(archive_bytes))
+    except zipfile.BadZipFile as exc:
+        raise ValueError("downloaded provider-outcome artifact is not a valid ZIP archive") from exc
+    with archive:
+        files = [member for member in archive.infolist() if not member.is_dir()]
+        if len(files) != 1:
+            raise ValueError("provider-outcome artifact must contain exactly one file")
+        member = files[0]
+        path = PurePosixPath(member.filename)
+        if path.is_absolute() or ".." in path.parts or path.name != "svodka-outcome.json":
+            raise ValueError("provider-outcome artifact contains an unexpected file path")
+        if member.file_size <= 0 or member.file_size > MAX_OUTCOME_JSON_BYTES:
+            raise ValueError("provider-outcome JSON has an invalid size")
+        outcome_bytes = archive.read(member)
+
+    if len(outcome_bytes) != member.file_size:
+        raise ValueError("provider-outcome JSON size differs from ZIP metadata")
+    try:
+        GenericProviderOutcome.model_validate_json(outcome_bytes.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError) as exc:
+        raise ValueError("provider-outcome artifact does not contain a valid outcome JSON") from exc
+    return outcome_bytes
+
+
+def download_verified_provider_outcome(
+    *,
+    api_url: str,
+    repository: str,
+    token: str,
+    proof: ProviderOutcomeArtifactProof,
+    output: Path,
+) -> None:
+    if re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository) is None:
+        raise ValueError("outcome recovery requires an exact owner/repository name")
+    if not token.strip():
+        raise ValueError("outcome recovery requires GitHub Actions read credentials")
+    if proof.artifact_size_in_bytes > MAX_OUTCOME_ARCHIVE_BYTES:
+        raise ValueError("proved provider-outcome artifact is unexpectedly large")
+    archive_url = f"{api_url.rstrip('/')}/repos/{repository}/actions/artifacts/{proof.artifact_id}/zip"
+    archive_bytes = _safe_github_bytes(
+        archive_url,
+        token=token,
+        max_bytes=MAX_OUTCOME_ARCHIVE_BYTES,
+    )
+    outcome_bytes = verify_provider_outcome_archive(archive_bytes, proof)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_bytes(outcome_bytes)
+
+
 def validate_recovered_outcome(
     dispatch: GenericDispatchEnvelope,
     outcome: GenericProviderOutcome,
@@ -302,6 +382,10 @@ def parser() -> argparse.ArgumentParser:
     prove.add_argument("--publication-id", required=True)
     prove.add_argument("--proof-output", type=Path, required=True)
 
+    fetch = sub.add_parser("fetch")
+    fetch.add_argument("--proof", type=Path, required=True)
+    fetch.add_argument("--outcome-output", type=Path, required=True)
+
     validate = sub.add_parser("validate")
     validate.add_argument("--dispatch", type=Path, required=True)
     validate.add_argument("--outcome", type=Path, required=True)
@@ -311,6 +395,28 @@ def parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = parser().parse_args()
+    if args.command == "fetch":
+        proof = ProviderOutcomeArtifactProof.model_validate_json(args.proof.read_text(encoding="utf-8"))
+        download_verified_provider_outcome(
+            api_url=os.environ.get("GITHUB_API_URL", "https://api.github.com"),
+            repository=os.environ.get("GITHUB_REPOSITORY", ""),
+            token=os.environ.get("GH_TOKEN", ""),
+            proof=proof,
+            output=args.outcome_output,
+        )
+        print(
+            json.dumps(
+                {
+                    "downloaded": True,
+                    "artifact_id": proof.artifact_id,
+                    "artifact_digest": proof.artifact_digest,
+                    "outcome": str(args.outcome_output),
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
     dispatch = GenericDispatchEnvelope.model_validate_json(args.dispatch.read_text(encoding="utf-8"))
     if args.command == "prove":
         proof = fetch_provider_outcome_artifact_proof(
