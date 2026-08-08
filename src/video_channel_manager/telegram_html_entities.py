@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from html.parser import HTMLParser
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -90,7 +90,12 @@ def parse_telegram_html(value: str) -> tuple[str, tuple[GenericMessageEntity, ..
     parser = _TelegramHtmlEntityParser()
     parser.feed(value)
     parser.close()
-    entities = tuple(sorted(parser.entities, key=lambda entity: (entity.offset, entity.length, entity.type, entity.url or "")))
+    entities = tuple(
+        sorted(
+            parser.entities,
+            key=lambda entity: (entity.offset, entity.length, entity.type, entity.url or ""),
+        )
+    )
     return "".join(parser.parts), entities
 
 
@@ -106,6 +111,7 @@ def message_entities_match(expected: tuple[GenericMessageEntity, ...], actual: A
         entity_type = str(entity.get("type") or "")
         if entity_type not in relevant_types:
             continue
+        typed_entity_type = cast(GenericMessageEntityType, entity_type)
         try:
             offset = int(entity["offset"])
             length = int(entity["length"])
@@ -115,7 +121,7 @@ def message_entities_match(expected: tuple[GenericMessageEntity, ...], actual: A
         try:
             normalized.append(
                 GenericMessageEntity(
-                    type=entity_type,
+                    type=typed_entity_type,
                     offset=offset,
                     length=length,
                     url=url,
@@ -124,8 +130,14 @@ def message_entities_match(expected: tuple[GenericMessageEntity, ...], actual: A
         except ValueError:
             return False
 
-    expected_sorted = sorted(expected, key=lambda item: (item.offset, item.length, item.type, item.url or ""))
-    actual_sorted = sorted(normalized, key=lambda item: (item.offset, item.length, item.type, item.url or ""))
+    expected_sorted = sorted(
+        expected,
+        key=lambda item: (item.offset, item.length, item.type, item.url or ""),
+    )
+    actual_sorted = sorted(
+        normalized,
+        key=lambda item: (item.offset, item.length, item.type, item.url or ""),
+    )
     return actual_sorted == expected_sorted
 
 
