@@ -5,6 +5,7 @@ Audited runtime baseline: `main@aea3aa343d5bb42297c4ee25665ecf1058690a23`
 Control audit: [`../lordchrist/audits/2026-08-09-telegram-control-audit.md`](../lordchrist/audits/2026-08-09-telegram-control-audit.md)  
 Defect continuation: [`../lordchrist/audits/2026-08-09-defect-register-continuation.json`](../lordchrist/audits/2026-08-09-defect-register-continuation.json)  
 Svodka runbook: [`svodka-readiness.md`](svodka-readiness.md)  
+Black Man album historical state: [`audit-register-v12-2026-08-07.json`](audit-register-v12-2026-08-07.json)  
 VK postponed-text state: [`audit-register-v11-2026-08-07.json`](audit-register-v11-2026-08-07.json)
 
 This file is the current operational truth. Older chats, screenshots, ZIP names, issue wording and audit snapshots remain evidence only and never authorize execution.
@@ -66,9 +67,10 @@ Effective branch protection/rulesets and the current Dependency Graph setting ar
 
 ## YouTube / Black Man album
 
+- `audit-register-v12-2026-08-07.json` is preserved as the immutable historical proof of the local seven-track album pipeline introduced by PR #157; its old `next_allowed_actions` describe that 2026-08-07 snapshot and do not override this file;
 - PR #197 is open non-provider-write YouTube copy/handoff/editorial work and requires current-main revalidation before merge;
 - PR #171 remains a draft guarded private-upload implementation and is not execution authorization;
-- PR #158 is a stale draft state-sync from an older baseline and is superseded by this file.
+- PR #158 is a stale draft state-sync from an older baseline and is superseded by this file; its unique v12 evidence has been preserved separately.
 
 An upload plan, private video ID, rendered description, thumbnail or playlist target is not permission for a new YouTube write.
 
@@ -96,6 +98,7 @@ A timeout, exception, screenshot, process exit, CI result, preview, issue body o
 
 Immutable historical anchors remain under:
 
+- `docs/operations/audit-register-v12-2026-08-07.json` (preserved former PR #158 evidence only);
 - `docs/operations/audit-register-v11-2026-08-07.json` and predecessors;
 - `docs/lordchrist/audits/2026-08-08-*`;
 - `docs/research/2026-08-08-svodka-*`;
