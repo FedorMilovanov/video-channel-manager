@@ -34,7 +34,8 @@ jobs:
       PROFILE_PATH: content/telegram/channels/svodka.json
       BINDING_PATH: content/telegram/channels/svodka-target-binding.json
       QUEUE_PATH: content/telegram/svodka/draft-14-posts-2026-08.json
-      CANDIDATE_PATH: .runtime/svodka-release-candidate.json
+      CANDIDATE_PATH: .runtime/svodka-review-candidate.json
+      RELEASE_ID: svodka-pilot-2026-08
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -75,7 +76,7 @@ jobs:
       - name: Validate immutable draft inputs
         run: python -m video_channel_manager.telegram_channel_cli validate-svodka --profile "$PROFILE_PATH" --queue "$QUEUE_PATH"
 
-      - name: Build exact target-bound write-disabled release candidate
+      - name: Build exact target-bound write-disabled review candidate
         run: |
           set -euo pipefail
           mkdir -p .runtime
@@ -83,14 +84,25 @@ jobs:
             --profile "$PROFILE_PATH" \
             --queue "$QUEUE_PATH" \
             --binding "$BINDING_PATH" \
-            --release-id svodka-pilot-2026-08-candidate \
+            --release-id "$RELEASE_ID" \
             --output "$CANDIDATE_PATH"
+          python - <<'PY'
+          import os
+          from pathlib import Path
 
-      - name: Upload exact release candidate
+          from video_channel_manager.telegram_multichannel_release import load_release
+
+          candidate = load_release(Path(os.environ["CANDIDATE_PATH"]))
+          assert candidate.release_authorized is False
+          assert candidate.release_id == os.environ["RELEASE_ID"]
+          print(f"review_candidate_digest={candidate.digest}")
+          PY
+
+      - name: Upload exact review candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: svodka-release-candidate
-          path: .runtime/svodka-release-candidate.json
+          name: svodka-review-candidate
+          path: .runtime/svodka-review-candidate.json
           if-no-files-found: error
 
       - name: Preview exact deterministic payload
