@@ -72,12 +72,13 @@ def test_release_source_binding_changes_when_evidence_registry_changes(monkeypat
 
 def test_release_source_binding_changes_when_queue_contract_changes(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(ROOT)
-    profile = load_channel_profile(PROFILE_PATH)
     research = load_research_queue(QUEUE_PATH)
     post = research.posts[0]
     original = research_evidence_sha256(research, post)
 
-    changed_verification = research.verification.model_copy(update={"reviewed_pages": research.verification.reviewed_pages + 1})
+    changed_verification = research.verification.model_copy(
+        update={"reviewed_pages": research.verification.reviewed_pages + 1}
+    )
     changed = research.model_copy(update={"verification": changed_verification})
     assert changed.posts[0].payload_sha256 == post.payload_sha256
     assert changed.source_registry_sha256 == research.source_registry_sha256
