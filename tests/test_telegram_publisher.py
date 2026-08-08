@@ -939,10 +939,22 @@ def test_ci_runs_branch_work_only_via_pull_request_to_avoid_duplicate_matrices()
     assert "pull_request:" in workflow
 
 
-def test_minimal_telegram_runtime_is_exactly_pinned() -> None:
-    requirements = RUNTIME_REQUIREMENTS.read_text(encoding="utf-8").splitlines()
-    assert requirements
-    assert all("==" in line for line in requirements if line.strip())
-    assert "httpx==0.28.1" in requirements
-    assert any(line.startswith("pydantic==") for line in requirements)
-    assert all(not line.startswith(("sqlalchemy", "alembic", "typer", "rich")) for line in requirements)
+def test_minimal_telegram_runtime_is_exactly_pinned_under_hash_mode() -> None:
+    lines = RUNTIME_REQUIREMENTS.read_text(encoding="utf-8").splitlines()
+    assert lines
+    assert "--require-hashes" in {line.strip() for line in lines}
+
+    package_lines: list[str] = []
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line or line.startswith(("#", "--require-hashes", "--hash=")):
+            continue
+        if raw_line[:1].isspace():
+            continue
+        package_lines.append(line.rstrip("\\").strip())
+
+    assert package_lines
+    assert all("==" in line for line in package_lines)
+    assert "httpx==0.28.1" in package_lines
+    assert any(line.startswith("pydantic==") for line in package_lines)
+    assert all(not line.startswith(("sqlalchemy", "alembic", "typer", "rich")) for line in package_lines)
