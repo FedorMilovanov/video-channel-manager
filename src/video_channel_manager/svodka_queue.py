@@ -180,9 +180,7 @@ class SvodkaDraftQueue(BaseModel):
                 raise ValueError(f"post {post.publication_id} falls outside the pilot date range")
             local_slot = local.strftime("%H:%M")
             if local_slot not in self.pilot.daily_slots:
-                raise ValueError(
-                    f"post {post.publication_id} uses {local_slot}, outside configured pilot daily_slots"
-                )
+                raise ValueError(f"post {post.publication_id} uses {local_slot}, outside configured pilot daily_slots")
             per_day[local_date] = per_day.get(local_date, 0) + 1
         if any(count > self.pilot.max_posts_per_day for count in per_day.values()):
             raise ValueError("Svodka draft exceeds the configured daily post limit")
