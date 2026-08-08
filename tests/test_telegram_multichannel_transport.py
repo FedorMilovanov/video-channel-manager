@@ -76,7 +76,7 @@ def _telegram_result(payload, *, is_anonymous: bool = True, explanation: str | N
                 "options": [{"text": option, "voter_count": 0} for option in payload.options],
                 "type": payload.poll_type,
                 "is_anonymous": is_anonymous,
-                "allows_multiple_answers": False,
+                "allows_multiple_answers": payload.allows_multiple_answers,
                 "correct_option_ids": list(payload.correct_option_ids or ()),
                 "explanation": payload.explanation if explanation is None else explanation,
                 "description": payload.description,
@@ -108,8 +108,34 @@ def test_send_poll_once_accepts_exact_quiz_and_uses_current_bot_api_fields() -> 
     assert receipt.chat_id == CHAT_ID
     assert captured["json"]["correct_option_ids"] == [0]
     assert captured["json"]["is_anonymous"] is True
+    assert captured["json"]["allows_multiple_answers"] is False
     assert captured["json"]["explanation"] == payload.explanation
     assert captured["json"]["description"] == payload.description
+
+
+def test_multiple_correct_quiz_requires_multiple_answer_semantics() -> None:
+    profile = _profile()
+
+    with pytest.raises(ValueError, match="must allow multiple answers"):
+        render_poll_payload(
+            profile,
+            publication_id="svodka-multi-answer-contract-test",
+            question="Выберите правильные варианты",
+            options=("Первый", "Второй", "Третий"),
+            poll_type="quiz",
+            correct_option_ids=(0, 1),
+        )
+
+    payload = render_poll_payload(
+        profile,
+        publication_id="svodka-multi-answer-contract-test",
+        question="Выберите правильные варианты",
+        options=("Первый", "Второй", "Третий"),
+        poll_type="quiz",
+        correct_option_ids=(0, 1),
+        allows_multiple_answers=True,
+    )
+    assert payload.allows_multiple_answers is True
 
 
 def test_send_poll_once_rejects_returned_anonymity_drift() -> None:
