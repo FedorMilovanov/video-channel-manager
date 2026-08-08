@@ -114,7 +114,11 @@ def test_scheduler_mutation_is_cron_only_quality_proven_canary_gated_and_freshne
     canary_index = workflow.index("Require verified manual canary before scheduler activity")
     skip_index = workflow.index("Skip expired windows before any provider operation")
     preflight_index = workflow.index("Fresh read-only target preflight")
-    assert canary_index < skip_index < preflight_index
+    skip_reproof_index = workflow.index("telegram_github_quality_gate", skip_index)
+    skip_commit_index = workflow.index(
+        'git -C "$STATE_DIR" commit -m "Skip expired Svodka windows before scheduled dispatch [skip ci]"'
+    )
+    assert canary_index < skip_index < skip_reproof_index < skip_commit_index < preflight_index
     assert "MAX_PUBLICATION_LAG_MINUTES: 120" in workflow
     assert "Check strict-next publication freshness" in workflow
     assert "telegram_publication_freshness next" in workflow
