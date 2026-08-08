@@ -4,10 +4,14 @@ on:
   pull_request:
     paths:
       - ".github/workflows/lordchrist-research-v2-validate.yml"
+      - ".github/workflows/lordchrist-generic-target-discovery.yml"
       - "src/video_channel_manager/telegram_research.py"
       - "src/video_channel_manager/telegram_research_release.py"
+      - "src/video_channel_manager/telegram_target_binding.py"
+      - "src/video_channel_manager/telegram_target_binding_cli.py"
       - "tests/test_telegram_research.py"
       - "tests/test_telegram_research_release.py"
+      - "tests/test_telegram_target_binding.py"
       - "content/telegram/lordchrist/research-queues/**"
       - "content/telegram/lordchrist/research-posts/**"
       - "docs/lordchrist/research-post-v2.md"
@@ -43,12 +47,14 @@ jobs:
             -r requirements/telegram-publisher.txt \
             "pytest>=8.3,<10"
 
-      - name: Compile research validator and release adapter
+      - name: Compile research and binding tooling
         shell: bash
         run: |
           python -m compileall -q \
             src/video_channel_manager/telegram_research.py \
-            src/video_channel_manager/telegram_research_release.py
+            src/video_channel_manager/telegram_research_release.py \
+            src/video_channel_manager/telegram_target_binding.py \
+            src/video_channel_manager/telegram_target_binding_cli.py
 
       - name: Validate staged research queue
         shell: bash
@@ -57,12 +63,13 @@ jobs:
             --queue content/telegram/lordchrist/research-queues/calvin-spurgeon-macarthur-v2.json \
             validate
 
-      - name: Run research-v2 regression tests
+      - name: Run research-v2 and target-binding regression tests
         shell: bash
         run: |
           PYTHONPATH=src python -m pytest -q \
             tests/test_telegram_research.py \
-            tests/test_telegram_research_release.py
+            tests/test_telegram_research_release.py \
+            tests/test_telegram_target_binding.py
 
       - name: Prove pull-request queue cannot publish
         shell: bash
