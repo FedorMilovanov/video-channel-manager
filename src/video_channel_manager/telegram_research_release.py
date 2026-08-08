@@ -45,11 +45,11 @@ def _target_fields(
 
 
 def research_evidence_sha256(research: ResearchQueueV2, post: PostSpec) -> str:
-    """Bind one release item to the exact fact-check/evidence contract that produced it."""
+    """Bind one release item to immutable editorial evidence, not activation state."""
 
     return sha256_json(
         {
-            "research_queue_sha256": research.digest,
+            "research_evidence_sha256": research.evidence_digest,
             "source_registry_sha256": research.source_registry_sha256,
             "post_payload_sha256": post.payload_sha256,
         }
