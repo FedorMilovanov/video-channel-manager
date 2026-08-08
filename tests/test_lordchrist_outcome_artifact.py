@@ -5,7 +5,7 @@ import io
 import urllib.error
 import urllib.request
 import zipfile
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -119,6 +119,25 @@ def source_dispatch():
         can_post_messages=True,
         checked_at_utc=now,
     )
+
+    canary = ledger.entries[queue.posts[0].publication_id]
+    canary.state = "published"
+    canary.provider_effect = "verified"
+    canary.intent_id = "canary-verified-intent"
+    canary.dispatch_mode = "manual"
+    canary.workflow_run_id = "9999"
+    canary.workflow_run_attempt = "1"
+    canary.github_sha = "9" * 40
+    canary.github_workflow_sha = "8" * 40
+    canary.attempted_at_utc = now - timedelta(days=1, seconds=5)
+    canary.published_at_utc = now - timedelta(days=1)
+    canary.message_id = 1470
+    canary.message_url = "https://t.me/lordchrist/1470"
+    canary.actual_chat_id = target.chat_id
+    canary.actual_chat_username = target.chat_username
+    canary.bot_id = target.bot_id
+    canary.bot_username = target.bot_username
+
     prepared = prepare_next(
         queue,
         ledger,
