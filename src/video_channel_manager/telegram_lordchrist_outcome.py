@@ -79,6 +79,10 @@ def _require_outcome_matches_dispatch(
         raise ValueError("provider outcome GitHub provenance differs from durable dispatch")
     if outcome.source_payload_sha256 != envelope.payload_sha256:
         raise ValueError("provider outcome source payload differs from durable dispatch")
+    if rendered.publication_id != envelope.publication_id:
+        raise ValueError("persisted rendered publication differs from durable dispatch")
+    if rendered.source_payload_sha256 != envelope.payload_sha256:
+        raise ValueError("persisted rendered source payload differs from durable dispatch")
     if outcome.provider_payload_sha256 != rendered.provider_payload_sha256:
         raise ValueError("provider outcome provider payload differs from persisted rendered payload")
     if outcome.presentation_policy_id != rendered.presentation_policy_id:
@@ -138,14 +142,14 @@ def apply_lordchrist_provider_outcome(
     ledger: TelegramLedger,
     envelope: DispatchEnvelope,
     rendered: RenderedTelegramPost,
-    presentation_policy: PresentationPolicy,
     outcome: LordchristProviderOutcome,
 ) -> LedgerEntry:
-    post = verify_dispatch_against_queue(queue, envelope)
+    # Post-effect recovery must not depend on a later presentation-policy revision.
+    # The source run already validated and durably persisted the rendered payload
+    # before provider mutation. Recovery binds that exact persisted payload to the
+    # exact dispatch and archived outcome instead of reinterpreting it under a new policy.
+    verify_dispatch_against_queue(queue, envelope)
     verify_persisted_intent(queue, ledger, envelope)
-    verify_rendered_post(post, presentation_policy, rendered)
-    if rendered.source_payload_sha256 != envelope.payload_sha256:
-        raise ValueError("persisted rendered source payload differs from durable dispatch")
     _require_outcome_matches_dispatch(outcome, envelope, rendered)
 
     recovered = outcome.entry.model_copy(deep=True)
