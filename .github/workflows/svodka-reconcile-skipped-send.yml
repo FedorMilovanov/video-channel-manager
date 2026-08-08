@@ -1,0 +1,354 @@
+name: Svodka reconcile skipped provider send
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_digest:
+        description: Exact sha256 digest of the approved Svodka release
+        required: true
+        type: string
+      source_run_id:
+        description: Original canary or scheduled GitHub Actions run id
+        required: true
+        type: string
+      source_run_attempt:
+        description: Original GitHub Actions run attempt
+        required: true
+        default: "1"
+        type: string
+      publication_id:
+        description: Exact publication_id held by the abandoned durable intent
+        required: true
+        type: string
+      confirm:
+        description: Type RECONCILE-SKIPPED:<run_id>:<attempt>:<publication_id>:<release_digest>
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: svodka-telegram-publisher
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      PROFILE_PATH: content/telegram/channels/svodka.json
+      BINDING_PATH: content/telegram/channels/svodka-target-binding.json
+      RELEASE_PATH: content/telegram/svodka/approved-release-2026-08.json
+      STATE_BRANCH: state/svodka-telegram
+      STATE_DIR: .state/svodka
+      LEDGER_RELATIVE_PATH: content/telegram/svodka/publication-ledger.json
+      LEDGER_PATH: .state/svodka/content/telegram/svodka/publication-ledger.json
+      OUTCOME_PATH: .runtime/svodka-reconciliation-outcome.json
+      PROOF_PATH: .runtime/svodka-reconciliation-proof.json
+    steps:
+      - name: Check out immutable release and runtime
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Verify exact reconciliation request
+        env:
+          REQUESTED_DIGEST: ${{ inputs.release_digest }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+          REQUESTED_PUBLICATION_ID: ${{ inputs.publication_id }}
+          CONFIRMATION: ${{ inputs.confirm }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$REQUESTED_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || {
+            echo "release_digest must be an exact sha256 digest" >&2
+            exit 2
+          }
+          [[ "$SOURCE_RUN_ID" =~ ^[1-9][0-9]*$ ]] || {
+            echo "source_run_id must be a positive integer" >&2
+            exit 2
+          }
+          [[ "$SOURCE_RUN_ATTEMPT" =~ ^[1-9][0-9]*$ ]] || {
+            echo "source_run_attempt must be a positive integer" >&2
+            exit 2
+          }
+          [[ "$REQUESTED_PUBLICATION_ID" =~ ^svodka-[a-z0-9][a-z0-9-]{4,90}$ ]] || {
+            echo "publication_id is invalid" >&2
+            exit 2
+          }
+          expected="RECONCILE-SKIPPED:$SOURCE_RUN_ID:$SOURCE_RUN_ATTEMPT:$REQUESTED_PUBLICATION_ID:$REQUESTED_DIGEST"
+          [[ "$CONFIRMATION" == "$expected" ]] || {
+            echo "confirmation does not match the exact reconciliation request" >&2
+            exit 2
+          }
+          [[ -f "$RELEASE_PATH" ]] || {
+            echo "approved release is not committed" >&2
+            exit 2
+          }
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          from video_channel_manager.telegram_channel_profile import load_channel_profile
+          from video_channel_manager.telegram_multichannel_release import load_release
+          from video_channel_manager.telegram_target_binding import load_target_binding
+
+          profile = load_channel_profile(Path(os.environ["PROFILE_PATH"]))
+          binding = load_target_binding(Path(os.environ["BINDING_PATH"]), profile)
+          release = load_release(Path(os.environ["RELEASE_PATH"]))
+          if not release.release_authorized:
+              raise SystemExit("committed release is not authorized")
+          if release.digest != os.environ["REQUESTED_DIGEST"]:
+              raise SystemExit("requested release digest differs from committed release")
+          if release.profile_sha256 != profile.digest or release.target_binding_sha256 != binding.digest:
+              raise SystemExit("committed release differs from current profile or target binding")
+          if os.environ["REQUESTED_PUBLICATION_ID"] not in {item.publication_id for item in release.items}:
+              raise SystemExit("publication_id is absent from committed release")
+          PY
+
+      - name: Check out isolated durable state branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: state/svodka-telegram
+          path: .state/svodka
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Verify persisted abandoned intent
+        env:
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+          REQUESTED_PUBLICATION_ID: ${{ inputs.publication_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_rel_dir="content/telegram/svodka/dispatches/$SOURCE_RUN_ID-$SOURCE_RUN_ATTEMPT"
+          evidence_abs_dir="$STATE_DIR/$evidence_rel_dir"
+          dispatch_path="$evidence_abs_dir/dispatch.json"
+          [[ -f "$LEDGER_PATH" ]] || {
+            echo "Svodka ledger is missing" >&2
+            exit 2
+          }
+          [[ -f "$dispatch_path" ]] || {
+            echo "persisted dispatch evidence is missing: $dispatch_path" >&2
+            exit 2
+          }
+          [[ ! -f "$evidence_abs_dir/outcome.json" ]] || {
+            echo "provider outcome already exists; skipped-send reconciliation is forbidden" >&2
+            exit 2
+          }
+          python -m video_channel_manager.telegram_multichannel_cli validate-ledger \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH"
+          python -m video_channel_manager.telegram_multichannel_cli verify-intent \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --envelope "$dispatch_path"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          dispatch_path = (
+              Path(os.environ["STATE_DIR"])
+              / "content/telegram/svodka/dispatches"
+              / f"{os.environ['SOURCE_RUN_ID']}-{os.environ['SOURCE_RUN_ATTEMPT']}"
+              / "dispatch.json"
+          )
+          dispatch = json.loads(dispatch_path.read_text(encoding="utf-8"))
+          if dispatch["publication_id"] != os.environ["REQUESTED_PUBLICATION_ID"]:
+              raise SystemExit("persisted dispatch publication differs from requested reconciliation")
+          if dispatch["workflow_run_id"] != os.environ["SOURCE_RUN_ID"]:
+              raise SystemExit("persisted dispatch run id differs from requested reconciliation")
+          if dispatch["workflow_run_attempt"] != os.environ["SOURCE_RUN_ATTEMPT"]:
+              raise SystemExit("persisted dispatch run attempt differs from requested reconciliation")
+          PY
+
+      - name: Prove original provider send step never ran
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+          REQUESTED_PUBLICATION_ID: ${{ inputs.publication_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+          from datetime import UTC, datetime
+          from pathlib import Path
+
+          api = os.environ["GITHUB_API_URL"].rstrip("/")
+          repo = os.environ["GITHUB_REPOSITORY"]
+          token = os.environ["GH_TOKEN"]
+          run_id = os.environ["SOURCE_RUN_ID"]
+          attempt = int(os.environ["SOURCE_RUN_ATTEMPT"])
+
+          def github_json(url: str) -> dict:
+              request = urllib.request.Request(
+                  url,
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Accept": "application/vnd.github+json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                      "User-Agent": "video-channel-manager-svodka-reconciler",
+                  },
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return json.load(response)
+
+          run = github_json(f"{api}/repos/{repo}/actions/runs/{run_id}")
+          if int(run.get("run_attempt", 0)) != attempt:
+              raise SystemExit("GitHub run attempt differs from requested reconciliation")
+          if run.get("head_branch") != "main":
+              raise SystemExit("source run was not executed from main")
+          workflow_path = str(run.get("path") or "")
+          allowed = {
+              ".github/workflows/svodka-canary.yml": (
+                  "Persist intent before Telegram mutation",
+                  "Send exactly one canary payload",
+              ),
+              ".github/workflows/svodka-scheduled-publisher.yml": (
+                  "Persist scheduled intent before Telegram mutation",
+                  "Send exactly one scheduled payload",
+              ),
+          }
+          if workflow_path not in allowed:
+              raise SystemExit(f"source run is not a recognized Svodka provider workflow: {workflow_path}")
+
+          evidence_rel = (
+              Path(os.environ["STATE_DIR"])
+              / "content/telegram/svodka/dispatches"
+              / f"{run_id}-{attempt}"
+              / "dispatch.json"
+          )
+          dispatch = json.loads(evidence_rel.read_text(encoding="utf-8"))
+          if str(run.get("head_sha") or "") != dispatch["github_sha"]:
+              raise SystemExit("source run head SHA differs from persisted dispatch provenance")
+
+          jobs = github_json(f"{api}/repos/{repo}/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100")
+          persist_name, send_name = allowed[workflow_path]
+          persist_steps = []
+          send_steps = []
+          for job in jobs.get("jobs", []):
+              for step in job.get("steps") or []:
+                  if step.get("name") == persist_name:
+                      persist_steps.append(step)
+                  if step.get("name") == send_name:
+                      send_steps.append(step)
+
+          if len(persist_steps) != 1 or persist_steps[0].get("conclusion") != "success":
+              raise SystemExit("cannot prove the durable intent step completed successfully")
+          if len(send_steps) != 1 or send_steps[0].get("conclusion") != "skipped":
+              raise SystemExit("provider send step is not proven skipped; reconciliation is forbidden")
+
+          proof = {
+              "schema_name": "video-channel-manager.telegram-skipped-send-proof",
+              "schema_version": 1,
+              "source_run_id": run_id,
+              "source_run_attempt": str(attempt),
+              "workflow_path": workflow_path,
+              "head_sha": run.get("head_sha"),
+              "publication_id": os.environ["REQUESTED_PUBLICATION_ID"],
+              "persist_step_name": persist_name,
+              "persist_step_conclusion": persist_steps[0].get("conclusion"),
+              "send_step_name": send_name,
+              "send_step_conclusion": send_steps[0].get("conclusion"),
+              "checked_at_utc": datetime.now(tz=UTC).isoformat(),
+          }
+          Path(os.environ["PROOF_PATH"]).write_text(
+              json.dumps(proof, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(proof, ensure_ascii=False))
+          PY
+
+      - name: Resolve only the proven no-effect intent
+        env:
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_rel_dir="content/telegram/svodka/dispatches/$SOURCE_RUN_ID-$SOURCE_RUN_ATTEMPT"
+          evidence_abs_dir="$STATE_DIR/$evidence_rel_dir"
+          dispatch_path="$evidence_abs_dir/dispatch.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from video_channel_manager.telegram_multichannel_outcome import GenericProviderOutcome
+          from video_channel_manager.telegram_multichannel_state import GenericDispatchEnvelope
+
+          evidence_dir = (
+              Path(os.environ["STATE_DIR"])
+              / "content/telegram/svodka/dispatches"
+              / f"{os.environ['SOURCE_RUN_ID']}-{os.environ['SOURCE_RUN_ATTEMPT']}"
+          )
+          envelope = GenericDispatchEnvelope.model_validate_json(
+              (evidence_dir / "dispatch.json").read_text(encoding="utf-8")
+          )
+          outcome = GenericProviderOutcome(
+              schema_name="video-channel-manager.telegram-generic-provider-outcome",
+              schema_version=1,
+              publication_id=envelope.publication_id,
+              provider_payload_sha256=envelope.provider_payload_sha256,
+              provider_effect="confirmed_absent",
+              retryable=True,
+              error=(
+                  f"GitHub Actions run {envelope.workflow_run_id}/{envelope.workflow_run_attempt} "
+                  "proves the provider send step was skipped after durable intent persistence"
+              ),
+              receipt=None,
+          )
+          Path(os.environ["OUTCOME_PATH"]).write_text(
+              outcome.model_dump_json(indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          python -m video_channel_manager.telegram_multichannel_cli apply-outcome \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --envelope "$dispatch_path" \
+            --outcome "$OUTCOME_PATH"
+          cp -- "$OUTCOME_PATH" "$evidence_abs_dir/outcome.json"
+          cp -- "$PROOF_PATH" "$evidence_abs_dir/reconciliation-proof.json"
+
+          git -C "$STATE_DIR" config user.name "svodka-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "svodka-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel_dir/outcome.json" "$evidence_rel_dir/reconciliation-proof.json"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo "reconciliation produced no durable state delta" >&2
+            exit 3
+          }
+          git -C "$STATE_DIR" commit -m "Reconcile skipped Svodka provider send for run $SOURCE_RUN_ID/$SOURCE_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "remote state branch does not contain exact reconciliation" >&2
+            exit 3
+          }
+          python -m video_channel_manager.telegram_multichannel_cli validate-ledger \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH"
