@@ -1,0 +1,310 @@
+{
+  "schema_name": "video-channel-manager.telegram-research-queue",
+  "schema_version": 2,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "series_id": "series-calvin-spurgeon-macarthur-v1",
+  "purpose": "evidence_backed_historical_edification",
+  "verification": {
+    "reviewed_pages": 76,
+    "checked_on": "2026-08-07",
+    "method": "primary_direct_institutional_scholarly_crosscheck",
+    "editorial_language": "ru",
+    "anti_ranking": true
+  },
+  "schedule": {
+    "state": "staged",
+    "activation_policy": "manual_after_verified_research_canary",
+    "timezone": "Europe/Moscow",
+    "cadence_days": 2,
+    "activation_at_utc": null,
+    "canary_publication_id": null,
+    "canary_message_id": null
+  },
+  "source_registry_path": "content/telegram/lordchrist/research-queues/historical-preaching-sources-v1.json",
+  "source_registry_sha256": "sha256:77564dbf05808e0955cdcdba9dbb7ea67af37da2127e8f5bc7ccb3fe896d8b0c",
+  "posts": [
+    {
+      "sequence": 1,
+      "publication_id": "lordchrist-research-three-preachers-numbers",
+      "content_kind": "comparison",
+      "title": "Не рекорд, а мера труда",
+      "body_path": "content/telegram/lordchrist/research-posts/three-preachers-numbers.txt",
+      "body_sha256": "sha256:81d247dd2eb1694337e4c909a3fdb263e130f7ce41d31e97c3261996ec8d2fdb",
+      "release_offset_days": 0,
+      "as_of_date": "2026-08-07",
+      "freshness_class": "historical",
+      "editorial_status": "ready",
+      "fact_check_status": "accepted",
+      "rights_status": "original_editorial_no_long_quotes",
+      "claims": [
+        {
+          "claim_id": "claim-calvin-4-5k",
+          "claim_text": "Женевский исследовательский проект оценивает общий проповеднический труд Кальвина примерно в 4–5 тысяч проповедей за двадцать пять лет.",
+          "claim_kind": "numeric",
+          "certainty": "estimate",
+          "source_ids": ["src-unige-sermons", "src-unige-project"],
+          "measurement_scope": "оценка общего числа произнесённых проповедей"
+        },
+        {
+          "claim_id": "claim-calvin-survival",
+          "claim_text": "Рагенье записал более 2 100 проповедей, Пари Проста около 200; около 2 300 записей дошли до начала XIX века, сегодня сохраняется примерно 1 500.",
+          "claim_kind": "historical",
+          "certainty": "estimate",
+          "source_ids": ["src-unige-sermons", "src-unige-inventory"]
+        },
+        {
+          "claim_id": "claim-calvin-cycles",
+          "claim_text": "Известны циклы Кальвина из 159 проповедей на Иова и 343 проповедей на Исаию.",
+          "claim_kind": "numeric",
+          "certainty": "exact",
+          "source_ids": ["src-cambridge-job", "src-unige-isaiah"],
+          "measurement_scope": "число проповедей в конкретных сохранившихся/документированных циклах"
+        },
+        {
+          "claim_id": "claim-spurgeon-3563",
+          "claim_text": "В 63-томном корпусе Сперджена опубликовано 3 563 проповеди; это не число всех произнесённых им проповедей.",
+          "claim_kind": "numeric",
+          "certainty": "exact",
+          "source_ids": ["src-spurgeon-home", "src-spurgeon-volume63", "src-spurgeon-publication"],
+          "measurement_scope": "опубликованные проповеди в 63-томном корпусе"
+        },
+        {
+          "claim_id": "claim-spurgeon-week-load",
+          "claim_text": "В отдельные недели расписание Сперджена включало от четырёх до десяти проповеднических выступлений.",
+          "claim_kind": "numeric",
+          "certainty": "estimate",
+          "source_ids": ["src-spurgeon-schedule", "src-spurgeon-autobiography"],
+          "measurement_scope": "реконструкция нагрузки в отдельных неделях, не среднее за жизнь"
+        },
+        {
+          "claim_id": "claim-macarthur-3600",
+          "claim_text": "Grace to You описывает современный архив Джона МакАртура как содержащий более 3 600 записанных проповедей.",
+          "claim_kind": "numeric",
+          "certainty": "lower_bound",
+          "source_ids": ["src-gty-about", "src-macarthur-about"],
+          "measurement_scope": "записанные проповеди в современном архиве Grace to You"
+        },
+        {
+          "claim_id": "claim-macarthur-pre1969",
+          "claim_text": "До 1969 года МакАртур уже проповедовал сотни раз, но этот ранний период в значительной мере не был записан.",
+          "claim_kind": "historical",
+          "certainty": "estimate",
+          "source_ids": ["src-macarthur-about", "src-gty-life"]
+        }
+      ]
+    },
+    {
+      "sequence": 2,
+      "publication_id": "lordchrist-research-sermons-survive-century",
+      "content_kind": "historical_analysis",
+      "title": "Перо, стенографист и магнитная лента",
+      "body_path": "content/telegram/lordchrist/research-posts/sermons-survive-century.txt",
+      "body_sha256": "sha256:dceadef7fbd03c37f74b3a14703aa58255234aa83a74d6e917808db763db5e4c",
+      "release_offset_days": 2,
+      "as_of_date": "2026-08-07",
+      "freshness_class": "historical",
+      "editorial_status": "ready",
+      "fact_check_status": "accepted",
+      "rights_status": "original_editorial_no_long_quotes",
+      "claims": [
+        {
+          "claim_id": "claim-raguenier-1549",
+          "claim_text": "С 1549 года Дени Рагенье систематически стенографировал проповеди Кальвина и за одиннадцать лет записал более 2 100.",
+          "claim_kind": "historical",
+          "certainty": "lower_bound",
+          "source_ids": ["src-unige-sermons", "src-unige-project"]
+        },
+        {
+          "claim_id": "claim-calvin-1805-sale",
+          "claim_text": "В 1805 году 38 оставшихся рукописных томов проповедей Кальвина были проданы по цене бумаги, один том оставили как образец; восемь томов обнаружили в 1823 году.",
+          "claim_kind": "historical",
+          "certainty": "exact",
+          "source_ids": ["src-unige-sermons", "src-unige-project"]
+        },
+        {
+          "claim_id": "claim-spurgeon-weekly-print",
+          "claim_text": "С 1855 года одна проповедь Сперджена готовилась к еженедельной печати, а годовые выпуски собирались в тома.",
+          "claim_kind": "historical",
+          "certainty": "exact",
+          "source_ids": ["src-spurgeon-publication", "src-spurgeon-schedule"]
+        },
+        {
+          "claim_id": "claim-spurgeon-after-death",
+          "claim_text": "Публикация проповедей Сперджена продолжалась двадцать пять лет после его смерти и завершилась в 1917 году.",
+          "claim_kind": "historical",
+          "certainty": "exact",
+          "source_ids": ["src-spurgeon-publication", "src-spurgeon-volume63"]
+        },
+        {
+          "claim_id": "claim-gty-media-history",
+          "claim_text": "История Grace to You прошла от катушечных записей к кассетам, радио и цифровому архиву; радиослужение началось в 1977 году.",
+          "claim_kind": "historical",
+          "certainty": "exact",
+          "source_ids": ["src-gty-about", "src-macarthur-about"]
+        }
+      ]
+    },
+    {
+      "sequence": 3,
+      "publication_id": "lordchrist-research-learning-across-generations",
+      "content_kind": "historical_analysis",
+      "title": "Учиться у тех, кто жил до нас",
+      "body_path": "content/telegram/lordchrist/research-posts/learning-across-generations.txt",
+      "body_sha256": "sha256:a8afc2dfbf1152acb270c15a94ae9f908148443f176b336f169a5f38059a87ef",
+      "release_offset_days": 4,
+      "as_of_date": "2026-08-07",
+      "freshness_class": "historical",
+      "editorial_status": "ready",
+      "fact_check_status": "accepted",
+      "rights_status": "original_editorial_no_long_quotes",
+      "claims": [
+        {
+          "claim_id": "claim-spurgeon-admired-calvin",
+          "claim_text": "Сперджен прямо свидетельствовал о глубоком уважении к памяти и учению Кальвина.",
+          "claim_kind": "influence",
+          "certainty": "interpretation",
+          "source_ids": ["src-spurgeon-place-word", "src-spurgeon-sovereign-grace"]
+        },
+        {
+          "claim_id": "claim-spurgeon-calvin-boundary",
+          "claim_text": "Сперджен одновременно отказывался делать Кальвина окончательным стандартом и подчёркивал верховенство Христа и Писания.",
+          "claim_kind": "historical",
+          "certainty": "exact",
+          "source_ids": ["src-spurgeon-sovereign-grace", "src-spurgeon-place-word"]
+        },
+        {
+          "claim_id": "claim-spurgeon-calvin-medal",
+          "claim_text": "После проповеди в Женеве Сперджен получил памятную медаль Кальвина и позднее связывал её девиз с собственной молитвой о верности в служении.",
+          "claim_kind": "influence",
+          "certainty": "interpretation",
+          "source_ids": ["src-spurgeon-straightway"]
+        },
+        {
+          "claim_id": "claim-macarthur-spurgeon-encouragement",
+          "claim_text": "МакАртур прямо говорил, что пример Сперджена в Down-Grade Controversy ободрял его во время работы над Ashamed of the Gospel.",
+          "claim_kind": "influence",
+          "certainty": "interpretation",
+          "source_ids": ["src-gty-fifty"]
+        },
+        {
+          "claim_id": "claim-macarthur-broader-influences",
+          "claim_text": "Нет основания сводить формирование метода МакАртура к Сперджену: он говорил о влиянии отца и называл широкий круг важных для него авторов и книг.",
+          "claim_kind": "historical",
+          "certainty": "exact",
+          "source_ids": ["src-gty-life", "src-gty-qa84"]
+        }
+      ]
+    },
+    {
+      "sequence": 4,
+      "publication_id": "lordchrist-research-three-expository-patterns",
+      "content_kind": "comparison",
+      "title": "Один текст — три манеры проповедовать",
+      "body_path": "content/telegram/lordchrist/research-posts/three-expository-patterns.txt",
+      "body_sha256": "sha256:8e129215532fafea193ca560af43b506dfd2b5188226ad4b5c6971f45d7a3a97",
+      "release_offset_days": 6,
+      "as_of_date": "2026-08-07",
+      "freshness_class": "historical",
+      "editorial_status": "ready",
+      "fact_check_status": "accepted",
+      "rights_status": "original_editorial_no_long_quotes",
+      "claims": [
+        {
+          "claim_id": "claim-calvin-lectio-continua",
+          "claim_text": "Обычная женевская практика Кальвина была последовательной: книги проходились от начала к концу; по будням преимущественно Ветхий Завет, по воскресеньям Новый Завет и Псалмы.",
+          "claim_kind": "method",
+          "certainty": "interpretation",
+          "source_ids": ["src-unige-sermons", "src-unige-inventory"]
+        },
+        {
+          "claim_id": "claim-calvin-application",
+          "claim_text": "В проповедях Кальвина толкование текста тесно связывалось с усвоением истины и её применением к жизни слушателей.",
+          "claim_kind": "method",
+          "certainty": "interpretation",
+          "source_ids": ["src-cambridge-ephesians"]
+        },
+        {
+          "claim_id": "claim-spurgeon-selected-text",
+          "claim_text": "Сперджен обычно строил опубликованные проповеди вокруг выбранного текста и не считал последовательное прохождение книги единственной формой экспозиции.",
+          "claim_kind": "method",
+          "certainty": "interpretation",
+          "source_ids": ["src-spurgeon-exposition", "src-spurgeon-prep", "src-spurgeon-lectures"]
+        },
+        {
+          "claim_id": "claim-macarthur-1969-start",
+          "claim_text": "Первая пасторская проповедь МакАртура в Grace Community Church датирована 9 февраля 1969 года.",
+          "claim_kind": "historical",
+          "certainty": "exact",
+          "source_ids": ["src-gty-how-play-church", "src-macarthur-about"]
+        },
+        {
+          "claim_id": "claim-macarthur-2011-completion",
+          "claim_text": "5 июня 2011 года МакАртур завершил многолетнее прохождение Нового Завета, проповедуя заключительный отрывок Евангелия от Марка; Grace to You описывает этот путь как сорок два года.",
+          "claim_kind": "historical",
+          "certainty": "exact",
+          "source_ids": ["src-gty-fitting-end", "src-macarthur-about"]
+        },
+        {
+          "claim_id": "claim-macarthur-spurgeon-method",
+          "claim_text": "МакАртур высоко оценивал творческое мастерство Сперджена, но прямо объяснял, почему сам предпочитал последовательную проповедь стих за стихом.",
+          "claim_kind": "method",
+          "certainty": "interpretation",
+          "source_ids": ["src-gty-qa83", "src-macarthur-expository"]
+        }
+      ]
+    },
+    {
+      "sequence": 5,
+      "publication_id": "lordchrist-research-hidden-discipline",
+      "content_kind": "historical_analysis",
+      "title": "Невидимая дисциплина",
+      "body_path": "content/telegram/lordchrist/research-posts/hidden-discipline.txt",
+      "body_sha256": "sha256:f42715ae7af2178b204b9e912dc051d5ced81ab77f60c0613f0b1404109468ca",
+      "release_offset_days": 8,
+      "as_of_date": "2026-08-07",
+      "freshness_class": "historical",
+      "editorial_status": "ready",
+      "fact_check_status": "accepted",
+      "rights_status": "original_editorial_no_long_quotes",
+      "claims": [
+        {
+          "claim_id": "claim-calvin-cadence",
+          "claim_text": "С 1549 года Кальвин проповедовал дважды по воскресеньям и через неделю с понедельника по субботу, параллельно ведя разные библейские циклы.",
+          "claim_kind": "historical",
+          "certainty": "exact",
+          "source_ids": ["src-unige-sermons", "src-unige-project"]
+        },
+        {
+          "claim_id": "claim-spurgeon-weekly-workflow",
+          "claim_text": "Расписание Сперджена включало редактуру стенограммы, повторную корректуру и множество пасторских и церковных обязанностей; формальная сборка воскресной проповеди часто приходилась на субботний вечер.",
+          "claim_kind": "historical",
+          "certainty": "estimate",
+          "source_ids": ["src-spurgeon-schedule", "src-spurgeon-autobiography"]
+        },
+        {
+          "claim_id": "claim-spurgeon-prep-not-improv",
+          "claim_text": "Субботнюю подготовку Сперджена нельзя считать подготовкой с нуля: источники описывают чтение, размышление и собирание материала на протяжении недели.",
+          "claim_kind": "method",
+          "certainty": "interpretation",
+          "source_ids": ["src-spurgeon-prep", "src-spurgeon-lectures"]
+        },
+        {
+          "claim_id": "claim-macarthur-30-hours",
+          "claim_text": "В интервью 1979 года МакАртур вспоминал, что при начале служения в Grace просил сохранить для него не менее 30 часов в неделю на исследование и подготовку.",
+          "claim_kind": "numeric",
+          "certainty": "exact",
+          "source_ids": ["src-gty-1979"],
+          "measurement_scope": "запрошенное МакАртуром еженедельное время на исследование и подготовку"
+        },
+        {
+          "claim_id": "claim-macarthur-father-advice",
+          "claim_text": "МакАртур связывал своё отношение к подготовке с наставлением отца не выходить к кафедре неподготовленным и тщательно проверять утверждение «Библия говорит».",
+          "claim_kind": "historical",
+          "certainty": "exact",
+          "source_ids": ["src-macarthur-seven-bes"]
+        }
+      ]
+    }
+  ]
+}
