@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
-      EXPECTED_CANDIDATE_SHA256: sha256:b87b69332a05fbf968e1d04b4f24543d89e7619113a8d076e8f81d20d7f69515
+      EXPECTED_CANDIDATE_SHA256: sha256:779fd3bd41633b2f9ffe0052723d50fdb0593b27dff71bbed56ca7119c6acc13
     steps:
       - name: Check out exact revision
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
