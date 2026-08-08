@@ -15,6 +15,8 @@ on:
       - "tests/test_telegram_multichannel*.py"
       - ".github/workflows/svodka-quality.yml"
       - ".github/workflows/svodka-telegram-preflight.yml"
+      - ".github/workflows/svodka-ledger-init.yml"
+      - ".github/workflows/svodka-canary.yml"
   workflow_dispatch:
 
 permissions:
@@ -77,6 +79,7 @@ jobs:
           tests/test_svodka_queue_contract.py
           tests/test_svodka_release_review.py
           tests/test_svodka_preflight_workflow.py
+          tests/test_svodka_deployment_workflows.py
 
       - name: Ruff formatting
         run: >-
@@ -103,6 +106,7 @@ jobs:
           tests/test_svodka_queue_contract.py
           tests/test_svodka_release_review.py
           tests/test_svodka_preflight_workflow.py
+          tests/test_svodka_deployment_workflows.py
 
       - name: Static typing
         run: >-
@@ -134,6 +138,7 @@ jobs:
           tests/test_svodka_queue_contract.py
           tests/test_svodka_release_review.py
           tests/test_svodka_preflight_workflow.py
+          tests/test_svodka_deployment_workflows.py
 
       - name: Validate canonical Svodka inputs
         shell: bash
