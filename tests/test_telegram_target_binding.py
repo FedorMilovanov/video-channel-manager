@@ -8,10 +8,12 @@ from pathlib import Path
 import pytest
 
 from video_channel_manager.telegram_channel_profile import load_channel_profile
+from video_channel_manager.telegram_models import DispatchEnvelope
 from video_channel_manager.telegram_multichannel_transport import GenericTargetProof
 from video_channel_manager.telegram_target_binding import (
     TelegramTargetBinding,
     load_target_binding,
+    target_binding_from_legacy_dispatch,
     target_binding_from_proof,
 )
 
@@ -98,6 +100,50 @@ def test_read_only_target_proof_can_be_frozen_as_lordchrist_binding() -> None:
     assert binding.provider_write_performed is False
     assert binding.discovered_at_utc == proof.checked_at_utc
     assert binding.digest.startswith("sha256:")
+
+
+def test_verified_legacy_dispatch_can_be_reused_as_lordchrist_binding_evidence() -> None:
+    profile = load_channel_profile(LORDCHRIST_PROFILE_PATH)
+    dispatch = DispatchEnvelope.model_validate(
+        {
+            "schema_name": "video-channel-manager.telegram-dispatch",
+            "schema_version": 4,
+            "project_key": "lord-god-strength",
+            "channel_username": "@lordchrist",
+            "queue_digest": "sha256:" + "1" * 64,
+            "publication_id": "lordchrist-binding-regression",
+            "sequence": 2,
+            "intent_id": "binding-regression-intent",
+            "workflow_run_id": "31245659459",
+            "workflow_run_attempt": "1",
+            "github_sha": "2" * 40,
+            "github_workflow_sha": "2" * 40,
+            "payload_sha256": "sha256:" + "3" * 64,
+            "text": "Проверочный текст durable dispatch для теста target binding. " * 3,
+            "dispatch_mode": "scheduled",
+            "target": {
+                "schema_name": "video-channel-manager.telegram-target-proof",
+                "schema_version": 2,
+                "bot_id": 8716602202,
+                "bot_username": "preaching_mp3_bot",
+                "chat_id": -1001295216957,
+                "chat_username": "lordchrist",
+                "chat_title": "† Господь Бог - Сила Моя †",
+                "chat_type": "channel",
+                "member_status": "administrator",
+                "can_post_messages": True,
+                "checked_at_utc": "2026-08-08T07:13:09.125496Z",
+            },
+            "prepared_at_utc": "2026-08-08T07:13:10.387473Z",
+        }
+    )
+
+    binding = target_binding_from_legacy_dispatch(profile, dispatch)
+    assert binding.chat_id == -1001295216957
+    assert binding.bot_id == 8716602202
+    assert binding.discovered_at_utc == dispatch.target.checked_at_utc
+    assert binding.discovery_method == "getMe + getChat(numeric id) + getChat(@username) + getChatAdministrators"
+    assert binding.provider_write_performed is False
 
 
 def test_target_binding_identity_digest_survives_write_gate_change() -> None:
