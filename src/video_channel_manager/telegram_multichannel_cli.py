@@ -169,9 +169,9 @@ def _send_exact_payload(
     _require_release_target(release, envelope.target)
     item = verify_dispatch_against_release(release, envelope)
     verify_persisted_intent(release, ledger, envelope)
-    token = _token(profile)
 
     try:
+        token = _token(profile)
         if isinstance(item.payload, GenericMessagePayload):
             receipt = send_message_once(profile, envelope.target, item.payload, token=token)
         elif isinstance(item.payload, GenericPollPayload):
