@@ -22,6 +22,7 @@ from video_channel_manager.telegram_multichannel_state import (
     load_ledger,
     prepare_next,
     save_ledger,
+    skip_expired_pending,
     verify_dispatch_against_release,
     verify_persisted_intent,
 )
@@ -45,6 +46,10 @@ def parser() -> argparse.ArgumentParser:
     initialize.add_argument("--release", type=Path, required=True)
     initialize.add_argument("--output", type=Path, required=True)
     initialize.add_argument("--confirm", required=True)
+
+    skip_expired = sub.add_parser("skip-expired")
+    skip_expired.add_argument("--release", type=Path, required=True)
+    skip_expired.add_argument("--ledger", type=Path, required=True)
 
     prepare = sub.add_parser("prepare")
     prepare.add_argument("--profile", type=Path, required=True)
@@ -235,6 +240,27 @@ def main() -> int:
                     "release_digest": release.digest,
                     "entries": len(ledger.entries),
                     "output": str(args.output),
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    if args.command == "skip-expired":
+        release = load_release(args.release)
+        if not release.release_authorized:
+            raise ValueError("stale-publication skipping requires an authorized immutable release")
+        ledger = load_ledger(args.ledger, release)
+        skipped = skip_expired_pending(release, ledger)
+        if skipped:
+            save_ledger(args.ledger, ledger)
+        print(
+            json.dumps(
+                {
+                    "skipped": list(skipped),
+                    "count": len(skipped),
+                    "release_digest": release.digest,
+                    "ledger_changed": bool(skipped),
                 },
                 ensure_ascii=False,
             )
