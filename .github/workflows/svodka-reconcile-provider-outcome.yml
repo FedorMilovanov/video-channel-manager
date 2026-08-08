@@ -206,12 +206,14 @@ jobs:
             --proof-output "$PROOF_PATH"
 
       - name: Download exact archived provider outcome
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: svodka-provider-outcome-${{ inputs.source_run_id }}-${{ inputs.source_run_attempt }}
-          path: .runtime/recovered-provider-outcome
-          run-id: ${{ inputs.source_run_id }}
-          github-token: ${{ github.token }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_outcome_artifact fetch \
+            --proof "$PROOF_PATH" \
+            --outcome-output "$RECOVERED_OUTCOME_PATH"
 
       - name: Validate recovered outcome against persisted dispatch
         env:
