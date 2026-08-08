@@ -21,9 +21,25 @@ def source_post_sha256(post: SvodkaDraftPost) -> str:
     return "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
+def _post_hashtags(post: SvodkaDraftPost) -> str:
+    for line in reversed(post.html_text.splitlines()):
+        candidate = line.strip()
+        if candidate.startswith("#Сводка"):
+            return candidate
+    return "#Сводка #Тест"
+
+
 def build_poll_description(post: SvodkaDraftPost, tagline: str) -> str:
     source_lines = [f"📎 {source.label}: {source.url}" for source in post.sources]
-    description = "- Сводка -\n\n" + "\n".join(source_lines) + f"\n\n{tagline}\n\n#Сводка #Тест"
+    parts = [
+        "- Сводка -",
+        f"🧠 {post.title}",
+        "Ответ и объяснение — после голосования.",
+        "\n".join(source_lines),
+        tagline,
+        _post_hashtags(post),
+    ]
+    description = "\n\n".join(parts)
     if len(description) > 1024:
         raise ValueError(f"Svodka poll description exceeds Telegram limit: {post.publication_id}")
     return description
