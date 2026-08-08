@@ -6,7 +6,10 @@ on:
     paths:
       - "content/telegram/channels/svodka*.json"
       - "content/telegram/svodka/**"
+      - "requirements/telegram-publisher.txt"
       - "src/video_channel_manager/svodka_*.py"
+      - "src/video_channel_manager/telegram_models.py"
+      - "src/video_channel_manager/telegram_transport.py"
       - "src/video_channel_manager/telegram_channel_*.py"
       - "src/video_channel_manager/telegram_html_entities.py"
       - "src/video_channel_manager/telegram_multichannel_*.py"
@@ -57,12 +60,19 @@ jobs:
       - name: Install project
         run: python -m pip install --disable-pip-version-check -e ".[dev]"
 
+      - name: Apply exact production Telegram dependency lock
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
       - name: Dependency consistency
         run: python -m pip check
 
       - name: Ruff correctness
         run: >-
           ruff check
+          src/video_channel_manager/telegram_models.py
+          src/video_channel_manager/telegram_transport.py
           src/video_channel_manager/telegram_channel_profile.py
           src/video_channel_manager/telegram_channel_discovery.py
           src/video_channel_manager/telegram_channel_cli.py
@@ -93,6 +103,8 @@ jobs:
       - name: Ruff formatting
         run: >-
           ruff format --check
+          src/video_channel_manager/telegram_models.py
+          src/video_channel_manager/telegram_transport.py
           src/video_channel_manager/telegram_channel_profile.py
           src/video_channel_manager/telegram_channel_discovery.py
           src/video_channel_manager/telegram_channel_cli.py
@@ -123,6 +135,8 @@ jobs:
       - name: Static typing
         run: >-
           mypy
+          src/video_channel_manager/telegram_models.py
+          src/video_channel_manager/telegram_transport.py
           src/video_channel_manager/telegram_channel_profile.py
           src/video_channel_manager/telegram_channel_discovery.py
           src/video_channel_manager/telegram_channel_cli.py
