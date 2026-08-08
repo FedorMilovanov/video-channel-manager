@@ -53,6 +53,7 @@ class GenericReleaseQueue(BaseModel):
         pattern=r"^[A-Za-z0-9_]+$",
     )
     release_authorized: bool = False
+    reviewed_candidate_sha256: str | None = Field(default=None, pattern=r"^sha256:[0-9a-f]{64}$")
     reviewed_by: str | None = Field(default=None, max_length=200)
     reviewed_at: datetime | None = None
     items: tuple[GenericReleaseItem, ...] = Field(min_length=1, max_length=500)
@@ -106,7 +107,11 @@ class GenericReleaseQueue(BaseModel):
                 raise ValueError("authorized release requires reviewed_by and reviewed_at")
             if self.reviewed_at.tzinfo is None:
                 raise ValueError("authorized release reviewed_at must be timezone-aware")
-        elif self.reviewed_by is not None or self.reviewed_at is not None:
+        elif (
+            self.reviewed_candidate_sha256 is not None
+            or self.reviewed_by is not None
+            or self.reviewed_at is not None
+        ):
             raise ValueError("unauthorized release must not claim completed review metadata")
         return self
 
