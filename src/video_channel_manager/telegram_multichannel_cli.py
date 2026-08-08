@@ -165,12 +165,11 @@ def _send_exact_payload(
     ledger: GenericPublicationLedger,
     envelope: GenericDispatchEnvelope,
 ) -> GenericProviderOutcome:
-    _require_runtime_profile(profile, release)
-    _require_release_target(release, envelope.target)
-    item = verify_dispatch_against_release(release, envelope)
-    verify_persisted_intent(release, ledger, envelope)
-
     try:
+        _require_runtime_profile(profile, release)
+        _require_release_target(release, envelope.target)
+        item = verify_dispatch_against_release(release, envelope)
+        verify_persisted_intent(release, ledger, envelope)
         token = _token(profile)
         if isinstance(item.payload, GenericMessagePayload):
             receipt = send_message_once(profile, envelope.target, item.payload, token=token)
@@ -222,6 +221,8 @@ def main() -> int:
         expected = f"INITIALIZE:{release.digest}"
         if args.confirm != expected:
             raise ValueError("ledger initialization confirmation does not match exact release digest")
+        if not release.release_authorized:
+            raise ValueError("publication ledger requires an authorized immutable release")
         if args.output.exists():
             raise ValueError(f"refusing to overwrite existing Telegram ledger: {args.output}")
         ledger = initialize_ledger(release)
