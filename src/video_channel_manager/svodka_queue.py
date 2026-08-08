@@ -15,6 +15,10 @@ from video_channel_manager.telegram_channel_profile import TelegramChannelProfil
 SvodkaFormat = Literal["quick_fact", "myth_fact", "mini_digest", "fresh_science", "quiz", "poll"]
 
 
+def _normalized_options(options: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(option.strip().casefold() for option in options)
+
+
 class SvodkaSource(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -38,6 +42,8 @@ class SvodkaQuiz(BaseModel):
             raise ValueError("quiz correct_option_index is outside the options list")
         if any(not option.strip() or len(option) > 100 for option in self.options):
             raise ValueError("quiz options must contain 1..100 visible characters")
+        if len(_normalized_options(self.options)) != len(set(_normalized_options(self.options))):
+            raise ValueError("quiz options must be unique after whitespace/case normalization")
         return self
 
 
@@ -51,6 +57,8 @@ class SvodkaPoll(BaseModel):
     def options_are_valid(self) -> "SvodkaPoll":
         if any(not option.strip() or len(option) > 100 for option in self.options):
             raise ValueError("poll options must contain 1..100 visible characters")
+        if len(_normalized_options(self.options)) != len(set(_normalized_options(self.options))):
+            raise ValueError("poll options must be unique after whitespace/case normalization")
         return self
 
 
@@ -168,19 +176,26 @@ class SvodkaDraftQueue(BaseModel):
             raise ValueError("current Svodka pilot is capped at two posts per day")
 
         scheduled = [post.scheduled_at for post in self.posts]
-        if any(scheduled[index] > scheduled[index + 1] for index in range(len(scheduled) - 1)):
-            raise ValueError("Svodka draft posts must be ordered by scheduled_at")
+        if any(scheduled[index] >= scheduled[index + 1] for index in range(len(scheduled) - 1)):
+            raise ValueError("Svodka draft posts must be strictly ordered by scheduled_at")
 
         zone = ZoneInfo(self.timezone)
         per_day: dict[date, int] = {}
+        used_slots: set[tuple[date, str]] = set()
         for post in self.posts:
             local = post.scheduled_at.astimezone(zone)
             local_date = local.date()
             if not self.pilot.start_date <= local_date <= self.pilot.end_date:
                 raise ValueError(f"post {post.publication_id} falls outside the pilot date range")
+            if local.second != 0 or local.microsecond != 0:
+                raise ValueError(f"post {post.publication_id} must use an exact minute boundary")
             local_slot = local.strftime("%H:%M")
             if local_slot not in self.pilot.daily_slots:
                 raise ValueError(f"post {post.publication_id} uses {local_slot}, outside configured pilot daily_slots")
+            slot_key = (local_date, local_slot)
+            if slot_key in used_slots:
+                raise ValueError(f"post {post.publication_id} duplicates configured slot {local_date} {local_slot}")
+            used_slots.add(slot_key)
             per_day[local_date] = per_day.get(local_date, 0) + 1
         if any(count > self.pilot.max_posts_per_day for count in per_day.values()):
             raise ValueError("Svodka draft exceeds the configured daily post limit")
