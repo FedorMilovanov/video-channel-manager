@@ -31,6 +31,14 @@ def _safe_github_json(url: str, *, token: str) -> dict[str, Any]:
     return cast(dict[str, Any], payload)
 
 
+def require_current_main_ref(payload: dict[str, Any], *, head_sha: str) -> None:
+    if payload.get("ref") != "refs/heads/main":
+        raise ValueError("GitHub main reference proof returned the wrong ref")
+    target = payload.get("object")
+    if not isinstance(target, dict) or target.get("type") != "commit" or target.get("sha") != head_sha:
+        raise ValueError("writer SHA is no longer the current main commit")
+
+
 def select_successful_quality_run(
     payload: dict[str, Any],
     *,
@@ -86,6 +94,10 @@ def require_successful_quality_run(
     if not token.strip():
         raise ValueError("quality gate requires GitHub Actions read credentials")
 
+    main_ref_url = f"{api_url.rstrip('/')}/repos/{repository}/git/ref/heads/main"
+    main_ref = _safe_github_json(main_ref_url, token=token)
+    require_current_main_ref(main_ref, head_sha=head_sha)
+
     encoded_workflow = urllib.parse.quote(workflow_file, safe="")
     query = urllib.parse.urlencode(
         {
@@ -94,16 +106,18 @@ def require_successful_quality_run(
             "per_page": "100",
         }
     )
-    url = (
+    runs_url = (
         f"{api_url.rstrip('/')}/repos/{repository}/actions/workflows/"
         f"{encoded_workflow}/runs?{query}"
     )
-    payload = _safe_github_json(url, token=token)
+    payload = _safe_github_json(runs_url, token=token)
     return select_successful_quality_run(payload, workflow_file=workflow_file, head_sha=head_sha)
 
 
 def parser() -> argparse.ArgumentParser:
-    root = argparse.ArgumentParser(description="Require an exact-SHA successful GitHub Actions quality proof")
+    root = argparse.ArgumentParser(
+        description="Require the current main SHA and its successful GitHub Actions quality proof"
+    )
     root.add_argument("--workflow", required=True)
     root.add_argument("--sha", required=True)
     return root
@@ -122,6 +136,7 @@ def main() -> int:
         json.dumps(
             {
                 "quality_proven": True,
+                "current_main_proven": True,
                 "workflow": args.workflow,
                 "head_sha": args.sha,
                 "run_id": run.get("id"),
