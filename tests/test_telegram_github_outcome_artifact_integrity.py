@@ -39,7 +39,9 @@ def outcome_bytes() -> bytes:
     ).encode("utf-8")
 
 
-def archive_bytes(*, filename: str = "svodka-outcome.json", extra_file: bool = False, payload: bytes | None = None) -> bytes:
+def archive_bytes(
+    *, filename: str = "svodka-outcome.json", extra_file: bool = False, payload: bytes | None = None
+) -> bytes:
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr(filename, payload if payload is not None else outcome_bytes())
