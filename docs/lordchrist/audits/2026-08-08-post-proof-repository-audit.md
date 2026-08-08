@@ -2,109 +2,116 @@
 
 Статус: **технический аудит после первого подтверждённого автономного scheduled-поста**.
 
-Базовый SHA аудита: `57080b097809af4227fc80db02f152918a07d50d`.
+Исходный SHA аудита: `57080b097809af4227fc80db02f152918a07d50d`. Во время проверки `main` продолжал активно двигаться, поэтому все изменения разделены на независимые PR и должны приниматься только по exact-head CI.
 
-Первый scheduled-proof уже сохранён отдельно в `docs/lordchrist/proofs/2026-08-08-first-scheduled-proof.md`: Telegram подтвердил `lordchrist-bunyan-fire-grace` как `published / verified`, `message_id=1472`, run `31245659459/1`.
+Первый scheduled-proof сохранён в `docs/lordchrist/proofs/2026-08-08-first-scheduled-proof.md`: `lordchrist-bunyan-fire-grace`, Telegram `message_id=1472`, run `31245659459/1`, итог `published / verified`.
 
-## Краткий вывод
+## Главный архитектурный вывод
 
-Репозиторий за последние часы существенно вырос и теперь содержит два поколения Telegram-инфраструктуры:
+В репозитории теперь два поколения Telegram-инфраструктуры:
 
-1. проверенный в production специализированный Lordchrist quote publisher;
-2. более новый generic multichannel runtime, разработанный на Svodka и уже содержащий более сильные release/state/provider-инварианты.
+1. специализированный Lordchrist quote publisher, уже доказавший работу в production;
+2. более новый generic multichannel runtime, созданный для Svodka и содержащий более сильные release/state/provider-инварианты.
 
-Поэтому правильное дальнейшее направление — **не писать третий publisher для research-post v2**, а оставить evidence/fact-check слой research-v2 отдельным и передавать одобренные материалы в generic multichannel release/state/transport слой.
+Research-post v2 не должен создавать третью реализацию отправки. Его evidence/fact-check слой остаётся отдельным, а provider delivery, durable intent, outcome и reconciliation должны использовать generic multichannel runtime.
 
-Живой quote publisher не следует переписывать одновременно с этой миграцией: он уже доказал работу в production и должен получать только небольшие, отдельно проверяемые hardening-изменения.
+Живой quote publisher при этом не переписывается вместе с research-миграцией: его hardening делается маленькими самостоятельными изменениями.
 
 ## Что уже хорошо защищено
 
-- Telegram mutation transport retries зафиксированы как `0`; read-only preflight может повторять безопасные запросы.
-- provider intent сохраняется до `sendMessage`; неоднозначный provider outcome не допускает blind retry.
-- текущая quote-очередь и presentation policy привязаны digest-ами.
-- GitHub Actions в критических workflow уже используют full-length SHA для `actions/checkout` и `actions/setup-python`.
-- CI проверяет Python 3.11/3.12/3.13, Ruff, Ruff format, mypy, pytest, dependency audit, compileall и отдельный minimal Telegram runtime smoke.
-- Dependabot уже следит за `pip` и `github-actions` еженедельно.
-- generic multichannel runtime умеет фиксировать точный provider payload, HTML entities/source links, target binding, reviewed release provenance и deterministic publication windows.
-- Svodka-контур уже показывает полезный шаблон exact-SHA quality re-proof, stale-window recovery только без provider effect и verified-manual-canary gate.
+- mutation transport retries для Telegram равны `0`; read-only preflight может повторять безопасные запросы;
+- provider intent сохраняется до `sendMessage`; неоднозначный provider outcome блокирует blind retry;
+- quote-очередь и presentation policy привязаны digest-ами;
+- критические Actions используют full commit SHA;
+- основной CI проверяет Python 3.11/3.12/3.13, Ruff, Ruff format, mypy, pytest, dependency audit, compileall и minimal Telegram runtime;
+- Dependabot уже следит за `pip` и `github-actions`;
+- generic multichannel runtime фиксирует provider payload, target binding, reviewed release provenance, publication windows и Telegram receipt semantics;
+- Svodka уже даёт рабочие шаблоны exact-SHA quality proof, verified manual canary и recovery только при доказанном отсутствии provider effect.
 
-## Найденные / оставшиеся риски
+## Существенные находки
 
-### P1 — старый research PR нельзя мерджить как есть
+### P0/P1 — во время аудита текущий `main` оказался красным
 
-PR #169 был создан до большого массива изменений `main` и сильно разошёлся с текущей базой. Его содержимое нужно перенести на свежую ветку от current main. Сам PR использовать как provenance/editorial archive, но не как merge vehicle.
+Общий CI на merge-base показал `1032 passed, 1 xfailed, 3 failed`; Ruff correctness, mypy и pip-audit были чистыми, но Ruff format видел три файла.
 
-### P1 — Lordchrist research-v2 не должен дублировать durable state machine
+Причина — не Lordchrist hardening, а несинхронизированные regression fixtures после параллельного развития generic Telegram/Svodka runtime:
 
-Первоначальный research-v2 валидатор полезен как evidence contract (`claim -> source -> certainty -> measurement_scope`), но provider-доставка должна использовать generic multichannel runtime. Иначе появятся две реализации intent/send/outcome/reconciliation с разными дефектами.
+- HTTP-client ownership inventory не учитывал новые generic discovery/transport clients;
+- Svodka release test ожидал poll schema v3 при текущей v4;
+- offline Telegram poll mock не возвращал новые поля, которые текущий transport уже строго проверяет;
+- три файла имели format drift.
+
+Исправление вынесено в отдельный минимальный repair PR. Это важный урок: новые safety-проверки нельзя оценивать поверх уже красной базы.
+
+### P1 — stale research PR #169 нельзя мерджить как есть
+
+Он был создан до большого массива изменений `main`. Его evidence/content переносится на свежую current-main ветку; старый PR остаётся provenance, но не merge vehicle.
+
+### P1 — research-v2 не должен дублировать durable state machine
+
+`claim -> source -> certainty -> measurement_scope` — полезный отдельный контракт. Но Telegram intent/send/outcome/reconciliation должен быть общим generic слоем, иначе две state machine неизбежно начнут расходиться.
 
 ### P1 — legacy Lordchrist concurrency всё ещё `queue: single`
 
-GitHub теперь документирует `queue: max`: до 100 pending runs могут ожидать в одном concurrency group. При `single` новый pending заменяет предыдущий. Для production publisher после успешного proof предпочтительно перейти на `queue: max`, сохранив `cancel-in-progress: false` и ledger quota как главный semantic guard.
-
-Изменение должно быть отдельным маленьким PR и regression-tested, а не смешиваться с research migration.
+GitHub документирует `queue: max`: в одной concurrency group может ожидать до 100 pending runs; при `single` новый pending заменяет предыдущий. После успешного production proof предпочтителен отдельный tiny PR `single -> max`, при сохранении `cancel-in-progress: false` и ledger quota как semantic guard.
 
 ### P1 — branch/ruleset enforcement не подтверждён
 
-В доступном GitHub connector нет чтения rulesets/branch protection, поэтому нельзя утверждать, что `main` и `state/lordchrist-telegram` сейчас защищены от force-push/delete.
+Доступный connector не читает repository rulesets/branch protection. Нельзя утверждать, что force-push/delete уже запрещены.
 
 Нужны разные политики:
 
-- `main`: block force push/delete; PR + required green checks для критических изменений;
-- `state/lordchrist-telegram`: block force push/delete, но сохранить normal fast-forward writes publisher-а.
+- `main`: block force-push/delete, reviewed green PR для критических путей;
+- `state/lordchrist-telegram`: block force-push/delete, но разрешить обычные fast-forward writes publisher-а.
 
-### P2 — нет CODEOWNERS
+### P2 — CODEOWNERS отсутствовал
 
-Добавляется в этом hardening PR как ownership map. На персональном репозитории это прежде всего документация и automatic review routing; реальная обязательность зависит от ruleset/branch protection и не должна считаться включённой без проверки GitHub Settings.
+В этом hardening PR добавлена карта владения критическими workflow, Telegram runtime/content и audit paths. Сама по себе CODEOWNERS не доказывает обязательный review — enforcement зависит от ruleset/branch protection.
 
-### P2 — dependency review отсутствует
+### P2 — Dependency Review полезен, но сейчас технически недоступен
 
-Текущий `pip-audit` хорошо ловит известные уязвимости установленного графа, но отдельный Dependency Review полезен именно на PR-diff: он блокирует внесение новой уязвимой зависимости до merge. В этом PR добавляется официальный `actions/dependency-review-action` v5 по full SHA, с `contents: read` и `fail-on-severity: moderate`.
+Официальный `actions/dependency-review-action` был реально испытан в этом PR. Workflow завершился ошибкой: GitHub сообщил, что Dependency Review не поддерживается, пока в репозитории отключён Dependency Graph.
 
-### P2 — runtime exact-pinned, но не hash-verified
+Поэтому красный workflow удалён вместо оставления фиктивного gate. Текущий `pip-audit` продолжает работать. Dependency Review следует включить только после включения Dependency Graph в GitHub Settings, затем вернуть официальный full-SHA pinned action отдельным PR.
 
-`requirements/telegram-publisher.txt` использует `==` и production install уже запрещает source distributions через `--only-binary=:all:`, но локальных wheel hashes пока нет.
+### P2 — runtime exact-pinned, но ещё не hash-verified
 
-Следующий supply-chain шаг: отдельный generated hash lock + `--require-hashes`. Не следует добавлять неполный/ручной набор hashes: pip hash-checking mode является all-or-nothing и требует hashes для всех транзитивных зависимостей.
+`requirements/telegram-publisher.txt` использует `==`, а production install — `--only-binary=:all:`. Следующий supply-chain шаг — generated hash lock + `--require-hashes`. Неполный ручной набор hashes запрещён: pip hash-checking mode требует полного набора для всего разрешаемого dependency graph.
 
-### P2 — `ubuntu-latest` остаётся в ряде production/CI workflow
+### P2 — `ubuntu-latest` остаётся в legacy Lordchrist workflow
 
-Первый Lordchrist scheduled proof фактически прошёл на Ubuntu 24.04, но явный `ubuntu-24.04` уменьшит будущий runtime drift. Менять это нужно отдельным небольшим PR после CI-проверки, не вместе с research content.
+Первый proof фактически работал на Ubuntu 24.04. Явный `ubuntu-24.04` уменьшит runtime drift, но это отдельный tiny PR после восстановления зелёного main.
 
-### P2 — job-level `contents: write` шире фактического окна записи
+### P2 — job-level `contents: write` шире окна реальной записи
 
-Legacy publisher получает write-capable `GITHUB_TOKEN` на весь job, хотя запись нужна только state-операциям. GitHub рекомендует minimum permissions. Сужение требует аккуратного разделения job/credentials так, чтобы не разрушить durable intent-before-send; это полезно, но не должно делаться косметически.
+Legacy publisher имеет write-capable token на весь job. Сужение желательно, но только после проектирования job boundary, которое не разрушит intent-before-send. Это не косметическая правка.
 
-### P2 — нет independently verified generic target binding для Lordchrist
+### P2 — generic Lordchrist target binding ещё не закреплён
 
-`content/telegram/channels/lordchrist.json` уже существует, но `content/telegram/channels/lordchrist-target-binding.json` отсутствует. Перед generic research canary нужно получить свежий read-only `getMe + getChat + getChatAdministrators` proof и зафиксировать exact binding без provider write.
+Профиль `content/telegram/channels/lordchrist.json` существует, binding-файл отсутствует. Research migration добавляет read-only discovery → immutable binding candidate без provider write. Только после exact binding можно строить live generic research release.
 
-### P3 — CodeQL / artifact attestations не являются текущим blocking item
+### P3 — CodeQL / artifact attestations не blocking item
 
-Для публичного репозитория GitHub предоставляет code scanning и artifact provenance возможности. Они полезны как дальнейшее repo-wide усиление, но не решают специфические Telegram exactly-once / state / evidence риски. Их не следует ставить впереди research migration, target binding, release provenance, dependency hashes и branch rules.
+Они полезны репозиторию в целом, но сейчас не решают наиболее важные Telegram-риски: target identity, state monotonicity, provider ambiguity, release provenance и evidence integrity. Их не ставим впереди этих задач.
 
-## Архитектура research-post v2 после аудита
+## Research-post v2 после аудита
 
-Рекомендуемые слои:
+Целевая цепочка:
 
-`research source registry`
+`source registry`
 → `claim/evidence/certainty validator`
-→ `canonical Russian post body`
+→ `canonical Russian text`
 → `content/source hashes`
-→ `generic Telegram message payload`
-→ `reviewed immutable release candidate`
+→ `generic Telegram payload`
+→ `reviewed immutable release`
 → `exact target binding`
 → `generic durable ledger`
-→ `manual canary inside immutable publication window`
+→ `one manual canary`
 → `verified Telegram receipt`
-→ `scheduled strict-next dispatch`
+→ `scheduled strict-next`
 → `durable outcome / may_exist stop`.
 
-Research evidence semantics остаются отдельными от quote semantics. Provider transport/state semantics, наоборот, должны быть общими.
-
-## Пять research-постов
-
-Сохраняется уже проверенная серия:
+Пять материалов сохраняют editorial offsets:
 
 1. `T+0` — 📖 «Не рекорд, а мера труда»;
 2. `T+2` — 🖋️ «Перо, стенографист и магнитная лента»;
@@ -112,24 +119,23 @@ Research evidence semantics остаются отдельными от quote sem
 4. `T+6` — 📚 «Один текст — три манеры проповедовать»;
 5. `T+8` — ⏳ «Невидимая дисциплина».
 
-До canary это relative editorial schedule. Generic release получает абсолютные timezone-aware `scheduled_at` только после выбора реального окна запуска. Первый элемент публикуется ровно один раз как canary; остальные четыре после verified receipt могут обслуживаться scheduler-ом.
+Абсолютные `scheduled_at` появляются только при создании конкретного generic release.
 
-## Что делаем сейчас
+## Порядок работ
 
-1. Переносим research-v2 с PR #169 на свежую ветку от audited `main`.
-2. Не переносим research-specific provider mutation code — используем generic multichannel runtime.
-3. Создаём provider-free Lordchrist generic preflight/binding path.
-4. Создаём immutable research release candidate и preview.
-5. Только после review — отдельный exact canary.
-6. После verified canary — scheduled strict-next для оставшихся четырёх.
-7. Отдельно минимально harden-им legacy quote workflow (`queue:max`, explicit runner и далее credential scope), не смешивая это с research migration.
-8. Включаем dependency review и фиксируем CODEOWNERS.
-9. Генерируем hash-verified Telegram runtime отдельной supply-chain волной.
-10. Проверяем GitHub Settings вручную/API когда доступно: rulesets, required checks, SHA-pinning policy, secret scanning/push protection.
+1. Восстановить зелёный current `main` отдельным repair PR.
+2. Перенести research-v2 с #169 на свежую базу и оставить evidence validator provider-inert.
+3. Добавить adapter research → generic release, а не новый sender.
+4. Получить provider-free Lordchrist target proof/binding.
+5. Создать и review-нуть immutable research release candidate.
+6. Сделать ровно один exact canary.
+7. После `verified` запустить generic scheduler для оставшихся четырёх.
+8. Отдельно harden legacy quote workflow (`queue:max`, explicit runner, затем credential scope).
+9. После включения GitHub Dependency Graph вернуть Dependency Review.
+10. Отдельно сгенерировать complete hash-verified Telegram runtime.
+11. Проверить в GitHub Settings rulesets, required checks, SHA-pinning policy, secret scanning/push protection.
 
-## Технический verification pass — 30+ primary/official pages
-
-Ниже — первичные технические страницы, использованные для решений этого аудита. Они не заменяют тесты репозитория; их задача — проверить семантику внешних платформ и не строить защиту на устаревших предположениях.
+## Технический verification pass — 33 primary/official pages
 
 ### GitHub Actions / deployment / concurrency
 
@@ -178,11 +184,12 @@ Research evidence semantics остаются отдельными от quote sem
 
 ## Не делать
 
-- не считать `sendMessage` exactly-once API: provider idempotency key отсутствует;
-- не retry-ить mutating transport при read/write ambiguity;
-- не смешивать 3 563 опубликованных проповеди Сперджена и historical estimate Кальвина в одинаковый metric;
-- не разрешать research renderer/publisher обходить evidence validator;
-- не сливать stale PR #169 поверх current main;
-- не включать generic Lordchrist writes до exact target binding + reviewed release + independent canary;
-- не добавлять неполные hashes только ради галочки;
-- не считать CODEOWNERS/rulesets реально enforced, пока GitHub Settings это не подтверждают.
+- не считать Telegram mutation exactly-once API;
+- не retry-ить provider mutation при сетевой неоднозначности;
+- не смешивать разные исторические denominators в research-цифрах;
+- не разрешать research release обходить evidence validator;
+- не сливать stale #169;
+- не включать generic Lordchrist writes до exact binding + reviewed release + canary;
+- не добавлять неполные dependency hashes;
+- не считать CODEOWNERS/rulesets enforced без проверки Settings;
+- не оставлять permanently-red security workflow, если его platform prerequisite отключён.
