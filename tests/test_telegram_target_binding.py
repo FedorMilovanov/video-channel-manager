@@ -20,6 +20,7 @@ from video_channel_manager.telegram_target_binding import (
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PROFILE_PATH = REPOSITORY_ROOT / "content/telegram/channels/svodka.json"
 LORDCHRIST_PROFILE_PATH = REPOSITORY_ROOT / "content/telegram/channels/lordchrist.json"
+LORDCHRIST_BINDING_PATH = REPOSITORY_ROOT / "content/telegram/channels/lordchrist-target-binding.json"
 
 
 def binding_payload(profile_sha256: str) -> dict[str, object]:
@@ -143,6 +144,20 @@ def test_verified_legacy_dispatch_can_be_reused_as_lordchrist_binding_evidence()
     assert binding.bot_id == 8716602202
     assert binding.discovered_at_utc == dispatch.target.checked_at_utc
     assert binding.discovery_method == "getMe + getChat(numeric id) + getChat(@username) + getChatAdministrators"
+    assert binding.provider_write_performed is False
+
+
+def test_committed_lordchrist_binding_matches_production_proven_identity() -> None:
+    profile = load_channel_profile(LORDCHRIST_PROFILE_PATH)
+    binding = load_target_binding(LORDCHRIST_BINDING_PATH, profile)
+
+    assert binding.profile_sha256 == "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6"
+    assert binding.chat_id == -1001295216957
+    assert binding.chat_username == "lordchrist"
+    assert binding.bot_id == 8716602202
+    assert binding.bot_username == "preaching_mp3_bot"
+    assert binding.discovered_at_utc == datetime(2026, 8, 8, 7, 13, 9, 125496, tzinfo=UTC)
+    assert binding.digest == "sha256:4d4bd46405080512aaf31b4ee4bbeeca22eb1703642b585efc656b8f95e15bcd"
     assert binding.provider_write_performed is False
 
 
