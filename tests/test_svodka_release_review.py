@@ -39,6 +39,7 @@ def test_target_bound_candidate_freezes_exact_chat_bot_and_binding_digest() -> N
     assert candidate.chat_id == -1003527567039
     assert candidate.bot_id == 8716602202
     assert candidate.bot_username == "preaching_mp3_bot"
+    assert candidate.reviewed_candidate_sha256 is None
     assert candidate.reviewed_by is None
     assert candidate.reviewed_at is None
 
@@ -54,8 +55,9 @@ def test_authorization_requires_exact_target_binding() -> None:
         )
 
 
-def test_reviewed_release_preserves_payloads_and_adds_only_review_authority() -> None:
+def test_reviewed_release_preserves_payloads_and_records_exact_candidate_digest() -> None:
     candidate = _candidate(with_binding=True)
+    candidate_digest = candidate.digest
     reviewed_at = datetime(2026, 8, 8, 1, 30, tzinfo=UTC)
     release = authorize_svodka_release(
         candidate,
@@ -64,6 +66,7 @@ def test_reviewed_release_preserves_payloads_and_adds_only_review_authority() ->
     )
 
     assert release.release_authorized is True
+    assert release.reviewed_candidate_sha256 == candidate_digest
     assert release.reviewed_by == "operator"
     assert release.reviewed_at == reviewed_at
     assert release.target_binding_sha256 == candidate.target_binding_sha256
@@ -76,10 +79,20 @@ def test_reviewed_release_preserves_payloads_and_adds_only_review_authority() ->
     ]
 
 
+def test_unauthorized_release_cannot_claim_reviewed_candidate_digest() -> None:
+    candidate = _candidate(with_binding=True)
+    payload = candidate.model_dump(mode="json")
+    payload["reviewed_candidate_sha256"] = "sha256:" + "0" * 64
+
+    with pytest.raises(ValueError, match="completed review metadata"):
+        GenericReleaseQueue.model_validate(payload)
+
+
 def test_authorized_generic_release_cannot_omit_exact_target_identity() -> None:
     candidate = _candidate(with_binding=False)
     payload = candidate.model_dump(mode="json")
     payload["release_authorized"] = True
+    payload["reviewed_candidate_sha256"] = candidate.digest
     payload["reviewed_by"] = "operator"
     payload["reviewed_at"] = "2026-08-08T01:30:00+00:00"
 
