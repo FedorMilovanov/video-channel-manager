@@ -1,0 +1,139 @@
+name: Svodka initialize publication ledger
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_digest:
+        description: Exact sha256 digest of the approved Svodka release
+        required: true
+        type: string
+      confirm:
+        description: Type INITIALIZE:<release_digest>
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: svodka-telegram-state
+  cancel-in-progress: false
+
+jobs:
+  initialize:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      PROFILE_PATH: content/telegram/channels/svodka.json
+      RELEASE_PATH: content/telegram/svodka/approved-release-2026-08.json
+      STATE_BRANCH: state/svodka-telegram
+      STATE_DIR: .state/svodka
+      LEDGER_RELATIVE_PATH: content/telegram/svodka/publication-ledger.json
+      LEDGER_PATH: .state/svodka/content/telegram/svodka/publication-ledger.json
+    steps:
+      - name: Check out immutable release source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Verify exact approved release and confirmation
+        env:
+          REQUESTED_DIGEST: ${{ inputs.release_digest }}
+          CONFIRMATION: ${{ inputs.confirm }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$REQUESTED_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || {
+            echo "release_digest must be an exact sha256 digest" >&2
+            exit 2
+          }
+          [[ "$CONFIRMATION" == "INITIALIZE:$REQUESTED_DIGEST" ]] || {
+            echo "confirmation must be exactly INITIALIZE:$REQUESTED_DIGEST" >&2
+            exit 2
+          }
+          [[ -f "$RELEASE_PATH" ]] || {
+            echo "approved release is not committed yet: $RELEASE_PATH" >&2
+            exit 2
+          }
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          from video_channel_manager.telegram_channel_profile import load_channel_profile
+          from video_channel_manager.telegram_multichannel_release import load_release
+
+          profile = load_channel_profile(Path(os.environ["PROFILE_PATH"]))
+          release = load_release(Path(os.environ["RELEASE_PATH"]))
+          requested = os.environ["REQUESTED_DIGEST"]
+          if release.digest != requested:
+              raise SystemExit("requested release digest differs from committed release")
+          if not release.release_authorized:
+              raise SystemExit("committed release is not authorized")
+          if release.project_key != profile.project_key or release.profile_sha256 != profile.digest:
+              raise SystemExit("approved release differs from the selected Svodka profile")
+          if (release.chat_id, release.bot_id, release.bot_username) != (-1003527567039, 8716602202, "preaching_mp3_bot"):
+              raise SystemExit("approved release differs from the pinned Telegram target")
+          print(f"release={release.release_id} digest={release.digest}")
+          PY
+
+      - name: Check out isolated Svodka state branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: state/svodka-telegram
+          path: .state/svodka
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Initialize ledger exactly once
+        env:
+          REQUESTED_DIGEST: ${{ inputs.release_digest }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f "$LEDGER_PATH" ]]; then
+            python -m video_channel_manager.telegram_multichannel_cli validate-ledger \
+              --release "$RELEASE_PATH" \
+              --ledger "$LEDGER_PATH"
+            echo "Matching ledger already exists; refusing to overwrite it."
+            exit 0
+          fi
+
+          mkdir -p "$(dirname "$LEDGER_PATH")"
+          python -m video_channel_manager.telegram_multichannel_cli initialize-ledger \
+            --release "$RELEASE_PATH" \
+            --output "$LEDGER_PATH" \
+            --confirm "INITIALIZE:$(python - <<'PY'
+          from pathlib import Path
+          from video_channel_manager.telegram_multichannel_release import load_release
+          print(load_release(Path('content/telegram/svodka/approved-release-2026-08.json')).digest)
+          PY
+          )"
+
+          git -C "$STATE_DIR" config user.name "svodka-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "svodka-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo "ledger initialization produced no durable state" >&2
+            exit 3
+          }
+          git -C "$STATE_DIR" commit -m "Initialize Svodka publication ledger [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "remote state branch does not contain the exact ledger commit" >&2
+            exit 3
+          }
