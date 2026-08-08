@@ -64,6 +64,7 @@ jobs:
           src/video_channel_manager/telegram_channel_discovery.py
           src/video_channel_manager/telegram_channel_cli.py
           src/video_channel_manager/telegram_github_quality_gate.py
+          src/video_channel_manager/telegram_release_review.py
           src/video_channel_manager/telegram_html_entities.py
           src/video_channel_manager/telegram_publication_freshness.py
           src/video_channel_manager/telegram_target_binding.py
@@ -100,6 +101,7 @@ jobs:
           src/video_channel_manager/telegram_channel_discovery.py
           src/video_channel_manager/telegram_channel_cli.py
           src/video_channel_manager/telegram_github_quality_gate.py
+          src/video_channel_manager/telegram_release_review.py
           src/video_channel_manager/telegram_html_entities.py
           src/video_channel_manager/telegram_publication_freshness.py
           src/video_channel_manager/telegram_target_binding.py
@@ -136,6 +138,7 @@ jobs:
           src/video_channel_manager/telegram_channel_discovery.py
           src/video_channel_manager/telegram_channel_cli.py
           src/video_channel_manager/telegram_github_quality_gate.py
+          src/video_channel_manager/telegram_release_review.py
           src/video_channel_manager/telegram_html_entities.py
           src/video_channel_manager/telegram_publication_freshness.py
           src/video_channel_manager/telegram_target_binding.py
