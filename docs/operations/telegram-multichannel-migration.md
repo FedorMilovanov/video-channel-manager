@@ -15,6 +15,22 @@ The generic layer is config-driven through `TelegramChannelProfile` and currentl
 
 Generic provider code does not select either channel by a module constant. The selected profile supplies project key, channel username, publication prefix, timezone, daily verified limit, state branch, concurrency group and environment-variable names for bot/target identity.
 
+## Shared Telegram bot invariant
+
+The current Telegram architecture intentionally uses **one shared posting bot** (`@preaching_mp3_bot`, bot id `8716602202`) to administer and publish to multiple project channels, including `@lordchrist` and `@deep_info_life` / `СВОДКА`.
+
+This is deliberate and must not be treated by future agents as accidental cross-channel credential coupling:
+
+- one bot credential may be shared by several channel profiles;
+- a shared bot token does **not** select the destination channel;
+- exact channel isolation is provided by the channel profile, pinned numeric `chat_id`, target binding, immutable release identity, per-channel state branch, per-channel concurrency group, publication prefix and daily limit;
+- read-only preflight must prove both the exact shared bot identity and the exact selected channel before any mutation;
+- the same bot being an administrator of more than one channel is expected;
+- do not create a second Telegram bot, duplicate a token, or rename/rotate credentials merely to make them channel-specific unless an explicit migration/security decision requires it;
+- a legacy secret name such as `LORDCHRIST_TELEGRAM_BOT_TOKEN` may still refer to this shared bot credential. The name is cosmetic migration debt, not evidence that the credential is restricted to `@lordchrist`.
+
+The security boundary is therefore **shared credential, isolated targets and durable state**, not one credential per channel.
+
 ## Compatibility boundary
 
 The existing production `@lordchrist` publisher predates the generic layer and still uses its legacy editorial/runtime adapter (`telegram_models.py`, `telegram_cli.py`, `telegram_presentation.py`). It remains untouched for now because it already has a hardened live state/ledger and changing the active publisher before the generic path has a verified canary would create unnecessary migration risk.
@@ -35,6 +51,7 @@ This staged boundary is intentional:
 - one state branch per channel;
 - one concurrency group per mutating publisher;
 - one exact target binding per profile digest;
+- one shared bot may serve multiple profiles, but each mutation must prove the exact bot **and** exact channel target;
 - no token or chat id hardcoded in transport code;
 - read-only preflight before provider mutation;
 - immutable provider payload digest;
