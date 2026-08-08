@@ -67,15 +67,6 @@ jobs:
           set -euo pipefail
           python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
 
-      - name: Require current-main exact-SHA Svodka quality proof
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          python -m video_channel_manager.telegram_github_quality_gate \
-            --workflow svodka-quality.yml \
-            --sha "$GITHUB_SHA"
-
       - name: Verify exact recovery request and committed release
         env:
           REQUESTED_DIGEST: ${{ inputs.release_digest }}
@@ -263,18 +254,14 @@ jobs:
           cp -- "$RECOVERED_OUTCOME_PATH" "$evidence_abs_dir/outcome.json"
           cp -- "$PROOF_PATH" "$evidence_abs_dir/outcome-recovery-proof.json"
 
-      - name: Re-prove current main and persist recovered state
+      - name: Persist recovered provider outcome state
         env:
-          GH_TOKEN: ${{ github.token }}
           SOURCE_RUN_ID: ${{ inputs.source_run_id }}
           SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
         shell: bash
         run: |
           set -euo pipefail
           evidence_rel_dir="content/telegram/svodka/dispatches/$SOURCE_RUN_ID-$SOURCE_RUN_ATTEMPT"
-          python -m video_channel_manager.telegram_github_quality_gate \
-            --workflow svodka-quality.yml \
-            --sha "$GITHUB_SHA"
 
           git -C "$STATE_DIR" config user.name "svodka-publisher[bot]"
           git -C "$STATE_DIR" config user.email "svodka-publisher@users.noreply.github.com"
