@@ -60,7 +60,14 @@ def _payload(profile):
     )
 
 
-def _telegram_result(payload, *, is_anonymous: bool = True, explanation: str | None = None) -> dict[str, Any]:
+def _telegram_result(
+    payload,
+    *,
+    is_anonymous: bool = True,
+    explanation: str | None = None,
+    allows_revoting: bool | None = None,
+    members_only: bool | None = None,
+) -> dict[str, Any]:
     return {
         "ok": True,
         "result": {
@@ -77,6 +84,8 @@ def _telegram_result(payload, *, is_anonymous: bool = True, explanation: str | N
                 "type": payload.poll_type,
                 "is_anonymous": is_anonymous,
                 "allows_multiple_answers": payload.allows_multiple_answers,
+                "allows_revoting": payload.allows_revoting if allows_revoting is None else allows_revoting,
+                "members_only": payload.members_only if members_only is None else members_only,
                 "correct_option_ids": list(payload.correct_option_ids or ()),
                 "explanation": payload.explanation if explanation is None else explanation,
                 "description": payload.description,
@@ -106,11 +115,28 @@ def test_send_poll_once_accepts_exact_quiz_and_uses_current_bot_api_fields() -> 
 
     assert receipt.message_id == 77
     assert receipt.chat_id == CHAT_ID
+    assert payload.schema_version == 4
     assert captured["json"]["correct_option_ids"] == [0]
     assert captured["json"]["is_anonymous"] is True
     assert captured["json"]["allows_multiple_answers"] is False
+    assert captured["json"]["allows_revoting"] is False
+    assert captured["json"]["members_only"] is False
     assert captured["json"]["explanation"] == payload.explanation
     assert captured["json"]["description"] == payload.description
+
+
+def test_regular_poll_freezes_current_revoting_default_explicitly() -> None:
+    profile = _profile()
+    payload = render_poll_payload(
+        profile,
+        publication_id="svodka-regular-poll-contract-test",
+        question="Какой вариант выбрать?",
+        options=("Первый", "Второй"),
+        poll_type="regular",
+    )
+
+    assert payload.allows_revoting is True
+    assert payload.members_only is False
 
 
 def test_multiple_correct_quiz_requires_multiple_answer_semantics() -> None:
@@ -145,6 +171,30 @@ def test_send_poll_once_rejects_returned_anonymity_drift() -> None:
 
     with _client(_telegram_result(payload, is_anonymous=False)) as client:
         with pytest.raises(TelegramApiError, match="anonymity") as exc_info:
+            send_poll_once(profile, target, payload, token="test-token", client=client, now=NOW)
+
+    assert exc_info.value.provider_effect == "may_exist"
+
+
+def test_send_poll_once_rejects_returned_revoting_drift() -> None:
+    profile = _profile()
+    target = _target(profile)
+    payload = _payload(profile)
+
+    with _client(_telegram_result(payload, allows_revoting=True)) as client:
+        with pytest.raises(TelegramApiError, match="revoting") as exc_info:
+            send_poll_once(profile, target, payload, token="test-token", client=client, now=NOW)
+
+    assert exc_info.value.provider_effect == "may_exist"
+
+
+def test_send_poll_once_rejects_returned_membership_drift() -> None:
+    profile = _profile()
+    target = _target(profile)
+    payload = _payload(profile)
+
+    with _client(_telegram_result(payload, members_only=True)) as client:
+        with pytest.raises(TelegramApiError, match="membership") as exc_info:
             send_poll_once(profile, target, payload, token="test-token", client=client, now=NOW)
 
     assert exc_info.value.provider_effect == "may_exist"
