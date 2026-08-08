@@ -24,11 +24,11 @@ The exact current `Svodka quality` result is not inferred from source fixes. Pro
 
 1. `Svodka quality` — read-only CI. It runs on every push to `main` rather than using path filtering, because large audit diffs can exceed GitHub's path-filter evaluation boundary. It installs the development project and then the exact production Telegram dependency lock, checks shared Telegram runtime dependencies, validates the canonical queue, renders all 14 provider payloads and uploads the target-bound write-disabled `svodka-review-candidate` using canonical release id `svodka-pilot-2026-08`. It has no Telegram secret, repo mutation or provider mutation.
 2. `Svodka Telegram preview and preflight` — manual preview / fresh read-only Telegram identity proof. It reproduces the same canonical review candidate identity before optional provider reads.
-3. Release authorization — local/repository promotion only. `authorize-svodka-release` requires the exact review candidate, the current pinned binding, reviewer identity and timezone-aware review timestamp. The resulting release records and self-validates `reviewed_candidate_sha256`.
-4. `Svodka initialize publication ledger` — manual state-only operation. It requires an exact committed authorized release digest and creates the ledger once on `state/svodka-telegram`. It has no Telegram secret and cannot send.
+3. Release authorization — local/repository promotion only. `authorize-svodka-release` requires the exact review candidate, exact `--expected-candidate-sha256` value copied from the reviewed candidate, the current selected profile and pinned target binding, reviewer identity and timezone-aware review timestamp. The shared generic review helper independently re-proves profile/binding identity and the resulting release records and self-validates `reviewed_candidate_sha256`.
+4. `Svodka initialize publication ledger` — manual state-only operation. It requires an exact committed authorized release digest and creates the ledger once on `state/svodka-telegram`. It has no Telegram secret and cannot send. It re-proves exact-current-main `Svodka quality` immediately before the durable state commit/push.
 5. `Svodka skip expired publication windows` — manual state-only recovery. It may mark only already expired consecutive pending items as `skipped/impossible`; it has no Telegram secret and cannot send.
 6. `Svodka exact manual canary` — manual one-publication provider mutation. Before any Telegram read it requires a completed successful `Svodka quality` for its exact current SHA, an authorized exact release, enabled profile, matching initialized ledger, an exact confirmation, the requested publication to be the strict next ledger item, and that item to be no more than 120 minutes late. Only then does it perform fresh read-only preflight, persist intent, and allow one `send-once`.
-7. `Svodka scheduled publisher` — installed for `10:30` and `19:30` Europe/Moscow on 9–15 August. The mutating job runs only for the `schedule` event on `main`; pressing Run workflow manually cannot publish. It requires the same exact-SHA quality proof, release/profile/ledger gates and verified manual canary. It automatically refuses Telegram access when the strict-next item is more than 120 minutes late.
+7. `Svodka scheduled publisher` — primary runs are installed for `10:30` and `19:30` Europe/Moscow on 9–15 August, with bounded catch-up runs at `11:17` and `20:17`. All four schedule events use the same single-writer runtime; catch-up is not a second sender. The mutating job runs only for the `schedule` event on `main`; pressing Run workflow manually cannot publish. It requires the same exact-SHA quality proof, release/profile/ledger gates and verified manual canary. It automatically refuses Telegram access when the strict-next item is early or more than 120 minutes late.
 8. `Svodka reconcile skipped provider send` — manual provider-free recovery for an abandoned durable intent. It requires a completed original GitHub run, the exact run attempt/head SHA, the correct workflow/event pairing, a successful persisted-intent step and a provider send step proven `skipped`. Only then may it record `confirmed_absent` and return the item to a safe retryable pending state.
 
 All Svodka state/provider-mutating workflows use the same single-writer concurrency group declared by the profile: `svodka-telegram-publisher`, with cancellation disabled.
@@ -47,10 +47,13 @@ Svodka production adds a stricter freshness gate on top of that generic state mo
 - provider eligibility ends at the earlier of the structural end or `scheduled_at + 120 minutes`;
 - canary must be the strict next item before Telegram preflight;
 - scheduled execution checks strict-next freshness before Telegram preflight;
+- primary cron runs at the exact 10:30/19:30 Moscow slots and a same-runtime catch-up rechecks eligibility 47 minutes later;
+- if the primary run already verified the slot, the catch-up sees the next future item as not due and remains provider-ineligible;
+- if a prior run persisted an unresolved/ambiguous dispatch intent, the catch-up cannot bypass the blocking state or blindly retry it;
 - an over-late item is not backfilled automatically merely because its structural state window has not reached the next slot yet;
 - at the next structural window boundary, stale pending items can become `skipped/impossible` through state-only recovery.
 
-This bounded lag tolerates ordinary GitHub Actions scheduling delay without allowing a morning Svodka post to appear near the evening slot.
+This bounded lag tolerates ordinary GitHub Actions scheduling delay or a primary pre-intent failure without allowing a morning Svodka post to appear near the evening slot.
 
 ## Exact provider postflight
 
@@ -72,7 +75,7 @@ The next production activation must happen in this order:
 2. Run manual read-only preflight against chat `-1003527567039`, shared bot `8716602202`, `@preaching_mp3_bot`.
 3. Confirm that quality and preflight produced the same canonical `svodka-review-candidate` digest for release id `svodka-pilot-2026-08`.
 4. Review that exact 14-item candidate.
-5. Authorize it with the current pinned binding. The approved release must contain `reviewed_candidate_sha256` equal to its exact reconstructed candidate digest; never rebuild from changed draft data during deployment.
+5. Authorize that exact candidate with the current profile and pinned binding and pass its exact reviewed digest via `--expected-candidate-sha256`. The approved release must contain `reviewed_candidate_sha256` equal to its exact reconstructed candidate digest; never rebuild from changed draft data during deployment.
 6. Commit the authorized immutable release at `content/telegram/svodka/approved-release-2026-08.json`.
 7. Change only the profile write gate to `true`. The profile stable digest intentionally ignores the write-enable bit, so binding identity remains unchanged.
 8. Obtain a successful `Svodka quality` run for the new exact activation SHA. Canary and scheduler will independently enforce this through the GitHub Actions REST API.
@@ -80,7 +83,7 @@ The next production activation must happen in this order:
 10. If an earlier structural publication window has expired before canary, record it as `skipped/impossible`; never send it late.
 11. Run one exact manual canary for the strict next item between its scheduled time and its 120-minute freshness deadline using `CANARY:<publication_id>:<release_digest>`.
 12. Verify durable ledger state `published`, `provider_effect=verified`, exact message id/url, chat id, bot id and manual dispatch provenance.
-13. No separate scheduler deployment is needed. The installed cron becomes eligible only when all exact-SHA quality, release, profile, ledger, canary, freshness and target-preflight gates succeed.
+13. No separate scheduler deployment is needed. The installed primary/catch-up cron events become eligible only when all exact-SHA quality, release, profile, ledger, canary, freshness and target-preflight gates succeed.
 
 ## Blocking conditions
 
