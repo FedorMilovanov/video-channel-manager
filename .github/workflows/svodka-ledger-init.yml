@@ -109,6 +109,7 @@ jobs:
 
       - name: Initialize ledger exactly once
         env:
+          GH_TOKEN: ${{ github.token }}
           REQUESTED_DIGEST: ${{ inputs.release_digest }}
         shell: bash
         run: |
@@ -134,6 +135,11 @@ jobs:
             echo "ledger initialization produced no durable state" >&2
             exit 3
           }
+
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow svodka-quality.yml \
+            --sha "$GITHUB_SHA"
+
           git -C "$STATE_DIR" commit -m "Initialize Svodka publication ledger [skip ci]"
           local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
