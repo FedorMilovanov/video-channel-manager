@@ -46,14 +46,16 @@ def test_canary_is_one_exact_fresh_manual_dispatch_with_durable_intent_first() -
     assert "telegram_github_quality_gate" in workflow
     assert '--sha "$GITHUB_SHA"' in workflow
     assert "MAX_PUBLICATION_LAG_MINUTES: 120" in workflow
-    assert "Require fresh canary publication window" in workflow
-    assert "telegram_publication_freshness item" in workflow
+    assert "Require fresh strict-next canary window" in workflow
+    assert "telegram_publication_freshness next" in workflow
+    assert '--ledger "$LEDGER_PATH"' in workflow
+    assert '--publication-id "$REQUESTED_PUBLICATION_ID"' in workflow
     assert "profile.provider_writes_authorized" in workflow
     assert "release.release_authorized" in workflow
     assert "approved-release-2026-08.json" in workflow
     assert "Fresh read-only target preflight" in workflow
     assert workflow.index("Require exact-SHA Svodka quality proof") < workflow.index("Fresh read-only target preflight")
-    assert workflow.index("Require fresh canary publication window") < workflow.index("Fresh read-only target preflight")
+    assert workflow.index("Require fresh strict-next canary window") < workflow.index("Fresh read-only target preflight")
     assert "Persist intent before Telegram mutation" in workflow
     assert "send-once" in workflow
     assert workflow.index("Persist intent before Telegram mutation") < workflow.index("send-once")
