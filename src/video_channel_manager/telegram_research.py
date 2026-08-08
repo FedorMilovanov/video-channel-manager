@@ -235,6 +235,8 @@ class ResearchQueueV2(BaseModel):
             "записанные проповеди в современном архиве Grace to You",
         ):
             raise ValueError("MacArthur 3,600+ must remain a lower-bound archive count")
+        if macarthur.source_ids != ("src-gty-sermon-archive-3600",):
+            raise ValueError("MacArthur 3,600+ must remain bound to the exact checked Grace to You archive source")
 
     @property
     def digest(self) -> str:
@@ -271,6 +273,8 @@ def load_research_queue(path: Path) -> ResearchQueueV2:
     registry = SourceRegistry.model_validate(_read_json(Path(queue.source_registry_path)))
     if registry.digest != queue.source_registry_sha256:
         raise ValueError("source registry digest mismatch")
+    if queue.verification.checked_on < registry.checked_on:
+        raise ValueError("research verification checked_on cannot predate the bound source registry")
     known = {source.source_id for source in registry.sources}
     if queue.verification.reviewed_pages < len(registry.sources):
         raise ValueError("reviewed_pages cannot be smaller than the bound source registry")
