@@ -26,14 +26,15 @@ def test_reconciliation_is_manual_main_only_and_provider_free() -> None:
     assert "send-once" not in workflow
 
 
-def test_reconciliation_requires_completed_matching_github_run_and_exact_provenance() -> None:
+def test_reconciliation_requires_completed_matching_exact_github_attempt_and_provenance() -> None:
     workflow = WORKFLOW.read_text(encoding="utf-8")
 
     assert "source_run_id" in workflow
     assert "source_run_attempt" in workflow
     assert "RECONCILE-SKIPPED:" in workflow
     assert "verify-intent" in workflow
-    assert "/actions/runs/{run_id}" in workflow
+    assert 'run = github_json(f"{api}/repos/{repo}/actions/runs/{run_id}/attempts/{attempt}")' in workflow
+    assert 'run = github_json(f"{api}/repos/{repo}/actions/runs/{run_id}")' not in workflow
     assert "/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100" in workflow
     assert 'run.get("status") != "completed"' in workflow
     assert 'workflow_path = workflow_path.split("@", 1)[0]' in workflow
