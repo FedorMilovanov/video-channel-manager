@@ -14,14 +14,14 @@ from video_channel_manager.svodka_release import (
 )
 from video_channel_manager.telegram_channel_discovery import discover_channel_target
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile, load_channel_profile
-from video_channel_manager.telegram_multichannel_release import load_release, save_release
+from video_channel_manager.telegram_multichannel_release import GenericReleaseQueue, load_release, save_release
 from video_channel_manager.telegram_multichannel_transport import (
     GenericTargetProof,
     preflight_channel,
     render_message_payload,
     render_poll_payload,
 )
-from video_channel_manager.telegram_target_binding import load_target_binding
+from video_channel_manager.telegram_target_binding import TelegramTargetBinding, load_target_binding
 
 
 def parser() -> argparse.ArgumentParser:
@@ -49,6 +49,7 @@ def parser() -> argparse.ArgumentParser:
 
     authorize_release = sub.add_parser("authorize-svodka-release")
     authorize_release.add_argument("--profile", type=Path, required=True)
+    authorize_release.add_argument("--binding", type=Path, required=True)
     authorize_release.add_argument("--candidate", type=Path, required=True)
     authorize_release.add_argument("--reviewed-by", required=True)
     authorize_release.add_argument("--reviewed-at", required=True)
@@ -116,6 +117,15 @@ def _release_matches_profile(
         profile_sha256 == profile.digest
         and project_key == profile.project_key
         and channel_username.casefold() == profile.channel_username.casefold()
+    )
+
+
+def _release_matches_binding(candidate: GenericReleaseQueue, binding: TelegramTargetBinding) -> bool:
+    return (
+        candidate.target_binding_sha256 == binding.digest
+        and candidate.chat_id == binding.chat_id
+        and candidate.bot_id == binding.bot_id
+        and (candidate.bot_username or "").casefold() == binding.bot_username.casefold()
     )
 
 
@@ -266,6 +276,7 @@ def main() -> int:
 
     if args.command == "authorize-svodka-release":
         candidate = load_release(args.candidate)
+        binding = load_target_binding(args.binding, profile)
         if not _release_matches_profile(
             candidate.profile_sha256,
             candidate.project_key,
@@ -273,6 +284,8 @@ def main() -> int:
             profile,
         ):
             raise ValueError("Svodka release candidate differs from selected channel profile")
+        if not _release_matches_binding(candidate, binding):
+            raise ValueError("Svodka release candidate differs from current pinned target binding")
         release = authorize_svodka_release(
             candidate,
             reviewed_by=args.reviewed_by,
@@ -285,6 +298,7 @@ def main() -> int:
                     "authorized": True,
                     "release_id": release.release_id,
                     "release_digest": release.digest,
+                    "reviewed_candidate_sha256": release.reviewed_candidate_sha256,
                     "target_binding_sha256": release.target_binding_sha256,
                     "chat_id": release.chat_id,
                     "bot_id": release.bot_id,
