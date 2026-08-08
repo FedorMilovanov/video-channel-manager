@@ -10,9 +10,9 @@ def test_parse_telegram_html_uses_utf16_offsets_and_preserves_text_links() -> No
 
     assert plain == "⚡ Жирный и курсив — источник"
     assert [(entity.type, entity.offset, entity.length, entity.url) for entity in entities] == [
-        ("bold", 3, 6, None),
-        ("italic", 12, 6, None),
-        ("text_link", 21, 8, "https://example.test/source"),
+        ("bold", 2, 6, None),
+        ("italic", 11, 6, None),
+        ("text_link", 20, 8, "https://example.test/source"),
     ]
 
 
