@@ -190,7 +190,7 @@ def _send_exact_payload(
         return _failure_outcome(
             envelope,
             effect="not_dispatched",
-            retryable=False,
+            retryable=True,
             error=_safe_error(exc),
         )
     except Exception as exc:
