@@ -41,10 +41,15 @@ def test_canary_is_one_exact_manual_dispatch_with_durable_intent_first() -> None
     assert "workflow_dispatch:" in workflow
     assert "schedule:" not in workflow
     assert "CANARY:$REQUESTED_PUBLICATION_ID:$REQUESTED_DIGEST" in workflow
+    assert "actions: read" in workflow
+    assert "Require exact-SHA Svodka quality proof" in workflow
+    assert "telegram_github_quality_gate" in workflow
+    assert '--sha "$GITHUB_SHA"' in workflow
     assert "profile.provider_writes_authorized" in workflow
     assert "release.release_authorized" in workflow
     assert "approved-release-2026-08.json" in workflow
     assert "Fresh read-only target preflight" in workflow
+    assert workflow.index("Require exact-SHA Svodka quality proof") < workflow.index("Fresh read-only target preflight")
     assert "Persist intent before Telegram mutation" in workflow
     assert "send-once" in workflow
     assert workflow.index("Persist intent before Telegram mutation") < workflow.index("send-once")
@@ -73,13 +78,18 @@ def test_stale_slot_recovery_is_manual_state_only_and_provider_free() -> None:
     assert "secrets." not in workflow
 
 
-def test_scheduler_mutation_is_cron_only_even_when_manual_dispatch_is_visible() -> None:
+def test_scheduler_mutation_is_cron_only_and_quality_proven() -> None:
     profile = load_channel_profile(PROFILE_PATH)
     workflow = SCHEDULED_WORKFLOW.read_text(encoding="utf-8")
 
     assert "schedule:" in workflow
     assert "workflow_dispatch:" in workflow
     assert "if: github.event_name == 'schedule' && github.ref == 'refs/heads/main'" in workflow
+    assert "actions: read" in workflow
+    assert "Require exact-SHA Svodka quality proof" in workflow
+    assert "telegram_github_quality_gate" in workflow
+    assert '--sha "$GITHUB_SHA"' in workflow
+    assert workflow.index("Require exact-SHA Svodka quality proof") < workflow.index("Fresh read-only target preflight")
     assert f"group: {profile.concurrency_group}" in workflow
     assert "cancel-in-progress: false" in workflow
     assert "send-once" in workflow
