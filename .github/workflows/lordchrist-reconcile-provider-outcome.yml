@@ -37,7 +37,6 @@ concurrency:
 env:
   PYTHONPATH: src
   QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
-  PRESENTATION_POLICY_PATH: content/telegram/lordchrist/presentation-policy.json
   STATE_BRANCH: state/lordchrist-telegram
   STATE_DIR: .state/lordchrist
   LEDGER_RELATIVE_PATH: content/telegram/lordchrist/publication-ledger.json
@@ -127,22 +126,10 @@ jobs:
             echo "exact durable dispatch/rendered evidence is missing" >&2
             exit 3
           }
-          python -m video_channel_manager.telegram_cli \
+          python -m video_channel_manager.telegram_lordchrist_outcome_cli \
             --queue "$QUEUE_PATH" \
             --ledger "$LEDGER_PATH" \
-            --presentation-policy "$PRESENTATION_POLICY_PATH" \
-            validate
-          python -m video_channel_manager.telegram_cli \
-            --queue "$QUEUE_PATH" \
-            --ledger "$LEDGER_PATH" \
-            --presentation-policy "$PRESENTATION_POLICY_PATH" \
-            verify-intent \
-            --dispatch "$dispatch"
-          python -m video_channel_manager.telegram_cli \
-            --queue "$QUEUE_PATH" \
-            --ledger "$LEDGER_PATH" \
-            --presentation-policy "$PRESENTATION_POLICY_PATH" \
-            verify-rendered \
+            verify-evidence \
             --dispatch "$dispatch" \
             --rendered "$rendered"
           python - <<'PY'
@@ -196,17 +183,10 @@ jobs:
         run: |
           set -euo pipefail
           evidence_dir="$STATE_DIR/content/telegram/lordchrist/dispatches/$SOURCE_RUN_ID-$SOURCE_RUN_ATTEMPT"
-          python -m video_channel_manager.telegram_cli \
+          python -m video_channel_manager.telegram_lordchrist_outcome_cli \
             --queue "$QUEUE_PATH" \
             --ledger "$LEDGER_PATH" \
-            --presentation-policy "$PRESENTATION_POLICY_PATH" \
-            verify-intent \
-            --dispatch "$evidence_dir/dispatch.json"
-          python -m video_channel_manager.telegram_cli \
-            --queue "$QUEUE_PATH" \
-            --ledger "$LEDGER_PATH" \
-            --presentation-policy "$PRESENTATION_POLICY_PATH" \
-            verify-rendered \
+            verify-evidence \
             --dispatch "$evidence_dir/dispatch.json" \
             --rendered "$evidence_dir/rendered.json"
 
@@ -221,16 +201,10 @@ jobs:
           python -m video_channel_manager.telegram_lordchrist_outcome_cli \
             --queue "$QUEUE_PATH" \
             --ledger "$LEDGER_PATH" \
-            --presentation-policy "$PRESENTATION_POLICY_PATH" \
             apply \
             --dispatch "$evidence_dir/dispatch.json" \
             --rendered "$evidence_dir/rendered.json" \
             --outcome "$RECOVERED_OUTCOME_PATH"
-          python -m video_channel_manager.telegram_cli \
-            --queue "$QUEUE_PATH" \
-            --ledger "$LEDGER_PATH" \
-            --presentation-policy "$PRESENTATION_POLICY_PATH" \
-            validate
 
       - name: Persist exact recovered state and evidence
         env:
