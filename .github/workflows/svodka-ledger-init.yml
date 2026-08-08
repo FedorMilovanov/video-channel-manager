@@ -115,12 +115,7 @@ jobs:
           python -m video_channel_manager.telegram_multichannel_cli initialize-ledger \
             --release "$RELEASE_PATH" \
             --output "$LEDGER_PATH" \
-            --confirm "INITIALIZE:$(python - <<'PY'
-          from pathlib import Path
-          from video_channel_manager.telegram_multichannel_release import load_release
-          print(load_release(Path('content/telegram/svodka/approved-release-2026-08.json')).digest)
-          PY
-          )"
+            --confirm "INITIALIZE:$REQUESTED_DIGEST"
 
           git -C "$STATE_DIR" config user.name "svodka-publisher[bot]"
           git -C "$STATE_DIR" config user.email "svodka-publisher@users.noreply.github.com"
