@@ -19,7 +19,9 @@ on:
       - ".github/workflows/svodka-telegram-preflight.yml"
       - ".github/workflows/svodka-ledger-init.yml"
       - ".github/workflows/svodka-skip-expired.yml"
+      - ".github/workflows/svodka-reconcile-skipped-send.yml"
       - ".github/workflows/svodka-canary.yml"
+      - ".github/workflows/svodka-scheduled-publisher.yml"
   workflow_dispatch:
 
 permissions:
@@ -86,6 +88,7 @@ jobs:
           tests/test_svodka_release_review.py
           tests/test_svodka_preflight_workflow.py
           tests/test_svodka_deployment_workflows.py
+          tests/test_svodka_reconciliation_workflow.py
 
       - name: Ruff formatting
         run: >-
@@ -115,6 +118,7 @@ jobs:
           tests/test_svodka_release_review.py
           tests/test_svodka_preflight_workflow.py
           tests/test_svodka_deployment_workflows.py
+          tests/test_svodka_reconciliation_workflow.py
 
       - name: Static typing
         run: >-
@@ -149,6 +153,7 @@ jobs:
           tests/test_svodka_release_review.py
           tests/test_svodka_preflight_workflow.py
           tests/test_svodka_deployment_workflows.py
+          tests/test_svodka_reconciliation_workflow.py
 
       - name: Validate canonical Svodka inputs
         shell: bash
