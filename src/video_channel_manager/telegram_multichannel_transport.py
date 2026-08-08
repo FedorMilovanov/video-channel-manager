@@ -3,13 +3,17 @@ from __future__ import annotations
 import hashlib
 import json
 from datetime import UTC, datetime, timedelta
-from html.parser import HTMLParser
 from typing import Any, Literal, cast
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile
+from video_channel_manager.telegram_html_entities import (
+    GenericMessageEntity,
+    message_entities_match,
+    parse_telegram_html,
+)
 from video_channel_manager.telegram_models import DEFAULT_API_BASE, ProviderEffect
 from video_channel_manager.telegram_transport import TelegramApiError, _api_call, _result_dict, _result_list
 
@@ -46,7 +50,7 @@ class GenericMessagePayload(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_name: Literal["video-channel-manager.telegram-generic-message-payload"]
-    schema_version: Literal[1]
+    schema_version: Literal[2]
     project_key: str
     channel_username: str
     publication_id: str
@@ -54,6 +58,7 @@ class GenericMessagePayload(BaseModel):
     provider_payload_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     html_text: str = Field(min_length=1, max_length=8192)
     expected_plain_text: str = Field(min_length=1, max_length=4096)
+    expected_entities: tuple[GenericMessageEntity, ...]
     parse_mode: Literal["HTML"] = "HTML"
     link_preview_disabled: Literal[True] = True
 
@@ -113,22 +118,6 @@ class GenericSendReceipt(BaseModel):
     provider_effect: Literal["verified"] = "verified"
 
 
-class _PlainTextParser(HTMLParser):
-    def __init__(self) -> None:
-        super().__init__(convert_charrefs=True)
-        self.parts: list[str] = []
-
-    def handle_data(self, data: str) -> None:
-        self.parts.append(data)
-
-
-def _html_to_plain(value: str) -> str:
-    parser = _PlainTextParser()
-    parser.feed(value)
-    parser.close()
-    return "".join(parser.parts)
-
-
 def _sha256_payload(value: dict[str, Any]) -> str:
     canonical = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
@@ -153,7 +142,7 @@ def render_message_payload(
     html_text: str,
 ) -> GenericMessagePayload:
     _validate_publication_id(profile, publication_id)
-    expected_plain_text = _html_to_plain(html_text)
+    expected_plain_text, expected_entities = parse_telegram_html(html_text)
     if len(expected_plain_text) > 4096:
         raise ValueError("Telegram message exceeds 4096 plain-text characters")
     digest_input: dict[str, Any] = {
@@ -164,12 +153,13 @@ def render_message_payload(
         "profile_sha256": profile.digest,
         "html_text": html_text,
         "expected_plain_text": expected_plain_text,
+        "expected_entities": [entity.model_dump(mode="json") for entity in expected_entities],
         "parse_mode": "HTML",
         "link_preview_disabled": True,
     }
     return GenericMessagePayload(
         schema_name="video-channel-manager.telegram-generic-message-payload",
-        schema_version=1,
+        schema_version=2,
         project_key=profile.project_key,
         channel_username=profile.channel_username,
         publication_id=publication_id,
@@ -177,6 +167,7 @@ def render_message_payload(
         provider_payload_sha256=_sha256_payload(digest_input),
         html_text=html_text,
         expected_plain_text=expected_plain_text,
+        expected_entities=expected_entities,
     )
 
 
@@ -493,6 +484,11 @@ def send_message_once(
         if str(message.get("text") or "") != payload.expected_plain_text:
             raise TelegramApiError(
                 "Telegram returned plain text that differs from the exact provider payload",
+                provider_effect="may_exist",
+            )
+        if not message_entities_match(payload.expected_entities, message.get("entities")):
+            raise TelegramApiError(
+                "Telegram returned formatting or source-link entities that differ from the exact provider payload",
                 provider_effect="may_exist",
             )
         message_id = _message_id(message)
