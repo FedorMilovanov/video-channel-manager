@@ -89,6 +89,21 @@ def test_macarthur_3600_uses_exact_current_gty_archive_source() -> None:
     assert source["checked_on"] == "2026-08-08"
 
 
+def test_macarthur_completion_claim_uses_exact_first_final_and_church_history_sources() -> None:
+    raw = payload()
+    claim = next(
+        claim
+        for post in raw["posts"]
+        for claim in post["claims"]
+        if claim["claim_id"] == "claim-macarthur-2011-completion"
+    )
+    assert claim["source_ids"] == ["src-gty-how-play-church", "src-gty-fitting-end", "src-gcc-history"]
+    assert "9 февраля 1969" in claim["claim_text"]
+    assert "5 июня 2011" in claim["claim_text"]
+    assert "чуть более 42 лет" in claim["claim_text"]
+    assert "Grace to You описывает этот путь как сорок два года" not in claim["claim_text"]
+
+
 def test_fact_check_date_covers_bound_source_registry_check() -> None:
     raw = payload()
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
