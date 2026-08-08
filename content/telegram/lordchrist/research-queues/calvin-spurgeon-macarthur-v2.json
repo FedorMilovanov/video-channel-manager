@@ -7,7 +7,7 @@
   "purpose": "evidence_backed_historical_edification",
   "verification": {
     "reviewed_pages": 76,
-    "checked_on": "2026-08-07",
+    "checked_on": "2026-08-08",
     "method": "primary_direct_institutional_scholarly_crosscheck",
     "editorial_language": "ru",
     "anti_ranking": true
@@ -22,7 +22,7 @@
     "canary_message_id": null
   },
   "source_registry_path": "content/telegram/lordchrist/research-queues/historical-preaching-sources-v1.json",
-  "source_registry_sha256": "sha256:77564dbf05808e0955cdcdba9dbb7ea67af37da2127e8f5bc7ccb3fe896d8b0c",
+  "source_registry_sha256": "sha256:23f4521f1406dfcd775533bc435a8ba913d7e41405c8df8bbe23ea7d431f3ec8",
   "posts": [
     {
       "sequence": 1,
@@ -82,7 +82,7 @@
           "claim_text": "Grace to You описывает современный архив Джона МакАртура как содержащий более 3 600 записанных проповедей.",
           "claim_kind": "numeric",
           "certainty": "lower_bound",
-          "source_ids": ["src-gty-about", "src-macarthur-about"],
+          "source_ids": ["src-gty-sermon-archive-3600"],
           "measurement_scope": "записанные проповеди в современном архиве Grace to You"
         },
         {
