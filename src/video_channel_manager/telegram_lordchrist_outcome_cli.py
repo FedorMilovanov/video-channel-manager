@@ -51,15 +51,15 @@ def main() -> int:
     rendered = load_rendered_post(args.rendered)
 
     if args.command == "verify-evidence":
-        entry = verify_lordchrist_persisted_evidence(queue, ledger, envelope, rendered)
+        verified_entry = verify_lordchrist_persisted_evidence(queue, ledger, envelope, rendered)
         print(
             json.dumps(
                 {
                     "verified": True,
-                    "publication_id": entry.publication_id,
-                    "state": entry.state,
-                    "provider_effect": entry.provider_effect,
-                    "intent_id": entry.intent_id,
+                    "publication_id": verified_entry.publication_id,
+                    "state": verified_entry.state,
+                    "provider_effect": verified_entry.provider_effect,
+                    "intent_id": verified_entry.intent_id,
                 },
                 ensure_ascii=False,
             )
@@ -70,10 +70,10 @@ def main() -> int:
         if args.presentation_policy is None:
             raise ValueError("Lordchrist outcome capture requires the exact presentation policy")
         policy = load_presentation_policy(args.presentation_policy)
-        entry = ledger.entries.get(envelope.publication_id)
-        if entry is None:
+        captured_entry = ledger.entries.get(envelope.publication_id)
+        if captured_entry is None:
             raise ValueError("post-send ledger does not contain the durable dispatch publication")
-        outcome = capture_lordchrist_provider_outcome(queue, envelope, rendered, policy, entry)
+        outcome = capture_lordchrist_provider_outcome(queue, envelope, rendered, policy, captured_entry)
         save_model(args.output, outcome)
         print(
             json.dumps(
@@ -94,18 +94,20 @@ def main() -> int:
         return 0
 
     outcome = load_lordchrist_provider_outcome(args.outcome)
-    entry = apply_lordchrist_provider_outcome(queue, ledger, envelope, rendered, outcome)
+    applied_entry = apply_lordchrist_provider_outcome(queue, ledger, envelope, rendered, outcome)
     save_ledger(args.ledger, ledger)
     print(
         json.dumps(
             {
                 "applied": True,
-                "publication_id": entry.publication_id,
-                "provider_effect": entry.provider_effect,
-                "state": entry.state,
-                "message_id": entry.message_id,
-                "message_url": entry.message_url,
-                "published_at_utc": entry.published_at_utc.isoformat() if entry.published_at_utc else None,
+                "publication_id": applied_entry.publication_id,
+                "provider_effect": applied_entry.provider_effect,
+                "state": applied_entry.state,
+                "message_id": applied_entry.message_id,
+                "message_url": applied_entry.message_url,
+                "published_at_utc": (
+                    applied_entry.published_at_utc.isoformat() if applied_entry.published_at_utc else None
+                ),
             },
             ensure_ascii=False,
         )
