@@ -146,6 +146,8 @@ def prove_provider_outcome_artifact(
         raise ValueError("source provider run was not executed from main")
     if run_payload.get("status") != "completed":
         raise ValueError("source provider run is not completed")
+    if run_payload.get("conclusion") == "success":
+        raise ValueError("source provider run already succeeded; archived-outcome recovery is inconsistent")
 
     workflow_path = str(run_payload.get("path") or "").split("@", 1)[0]
     contract = PROVIDER_WORKFLOWS.get(workflow_path)
@@ -251,7 +253,10 @@ def fetch_provider_outcome_artifact_proof(
     attempt = _positive_integer(source_run_attempt, field_name="source_run_attempt")
     _positive_integer(source_run_id, field_name="source_run_id")
     base = api_url.rstrip("/")
-    run_payload = _safe_github_json(f"{base}/repos/{repository}/actions/runs/{source_run_id}", token=token)
+    run_payload = _safe_github_json(
+        f"{base}/repos/{repository}/actions/runs/{source_run_id}/attempts/{attempt}",
+        token=token,
+    )
     jobs_payload = _safe_github_json(
         f"{base}/repos/{repository}/actions/runs/{source_run_id}/attempts/{attempt}/jobs?per_page=100",
         token=token,
