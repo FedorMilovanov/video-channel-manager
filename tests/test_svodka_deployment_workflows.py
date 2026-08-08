@@ -73,7 +73,13 @@ def test_canary_is_one_exact_fresh_manual_dispatch_with_durable_intent_first() -
     persist_index = workflow.index("Persist intent before Telegram mutation")
     reproof_index = workflow.index("Re-prove current-main quality immediately before Telegram mutation")
     send_index = workflow.index("Send exactly one canary payload")
-    assert persist_index < reproof_index < send_index
+    archive_index = workflow.index("Archive exact provider outcome before state mutation")
+    apply_index = workflow.index("Apply and persist exact provider outcome")
+    assert persist_index < reproof_index < send_index < archive_index < apply_index
+    assert "svodka-provider-outcome-${{ github.run_id }}-${{ github.run_attempt }}" in workflow
+    assert "if-no-files-found: error" in workflow
+    assert "retention-days: 30" in workflow
+    assert "include-hidden-files: true" in workflow
     assert "apply-outcome" in workflow
     assert "if: always()" not in workflow
     assert "!cancelled()" in workflow
@@ -144,7 +150,13 @@ def test_scheduler_mutation_is_cron_only_quality_proven_canary_gated_and_freshne
     persist_index = workflow.index("Persist scheduled intent before Telegram mutation")
     reproof_index = workflow.index("Re-prove current-main quality immediately before Telegram mutation")
     send_index = workflow.index("Send exactly one scheduled payload")
-    assert persist_index < reproof_index < send_index
+    archive_index = workflow.index("Archive exact provider outcome before state mutation")
+    apply_index = workflow.index("Apply and persist exact scheduled provider outcome")
+    assert persist_index < reproof_index < send_index < archive_index < apply_index
+    assert "svodka-provider-outcome-${{ github.run_id }}-${{ github.run_attempt }}" in workflow
+    assert "if-no-files-found: error" in workflow
+    assert "retention-days: 30" in workflow
+    assert "include-hidden-files: true" in workflow
     assert f"group: {profile.concurrency_group}" in workflow
     assert "cancel-in-progress: false" in workflow
     assert "send-once" in workflow
