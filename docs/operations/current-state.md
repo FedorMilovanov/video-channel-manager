@@ -1,208 +1,155 @@
 # Current operational state
 
 Updated: 2026-08-07  
-Current production code baseline: `main@ffb9c0b5c2fe2852ec61d675ae8eb8f97bd0fdcd`  
-Initial postponed-text code merge: `c04f0a4f948174ced6287e4bae87e4bf1be2be52`  
-Completed hardening: issue #152 / PR #153  
-Current machine-state overlay: [`audit-register-v11-2026-08-07.json`](audit-register-v11-2026-08-07.json)  
-Immutable predecessor: [`audit-register-v10-2026-08-06.json`](audit-register-v10-2026-08-06.json)  
-Second-pass audit: [`vk-postponed-text-second-pass-audit-2026-08-06.md`](vk-postponed-text-second-pass-audit-2026-08-06.md)
+Current production code baseline: `main@7a142dac360f682a3700f8106e336e69bd0e6533`  
+Current machine-state overlay: [`audit-register-v12-2026-08-07.json`](audit-register-v12-2026-08-07.json)  
+Immutable predecessor: [`audit-register-v11-2026-08-07.json`](audit-register-v11-2026-08-07.json)  
+Earlier postponed-text predecessor: [`audit-register-v10-2026-08-06.json`](audit-register-v10-2026-08-06.json)
 
-The current overlay and newest machine state override stale execution claims while the immutable Wave 13–16 proofs below remain preserved operational memory. Historical packages, old chats, screenshots, ZIP names, remembered counts, and superseded executors are evidence only and never authorize execution.
+The newest machine-state overlay and this file override stale execution claims in older chats, screenshots, ZIP names, remembered counts, historical issue wording, and superseded executors. Historical Wave 13–16 and VK postponed-text proofs remain preserved in their immutable audit registers and runbooks; they are evidence only and never authorize replay.
 
-## Current VK postponed-text hardening state
+## Active local album scope — Legendary Poet / «Чёрный человек»
 
-PR #153 was squash-merged as `ffb9c0b5c2fe2852ec61d675ae8eb8f97bd0fdcd` after exact tested head `ff85c27c5b20bca66e8badad3ef468ef93b614b7` passed CI run `31158907708` / #3242 with all six required jobs green. Review threads were `0`; reviewed scope was 12 expected integration files. Repository hardening performed VK provider reads/writes `0/0` and replayed no historical operation.
+Issue #154 is the single current project-bound owner for the new album workflow. PR #157 was squash-merged as `7a142dac360f682a3700f8106e336e69bd0e6533` after exact tested head `dec83f8f594b2a3fdf048e45fba6989c33905520` passed CI run `31167299479` / #3264 with all six required jobs green. The implementation performed provider reads/writes `0/0`.
 
-The completed 2026-08-06 Lord God cleanup remains verified evidence only:
+Exact project identity:
 
-- project `lord-god-strength`;
-- VK community `60805374`, owner `-60805374`;
-- local credential alias `legendary-poet` is a credential name only and is not a project selector;
-- attachment-free target postponed IDs `12513..12541`;
-- `29/29` exact after-state;
-- `0` pending;
-- postponed count `66/66`;
-- 37 non-target postponed rows unchanged;
-- first published quote post untouched;
-- approved plan SHA `sha256:8dcbe984cb24e003770fa3897ff3b7da351a34d92d4931ac3cb9a5707d2c1cbb`.
+- project key `legendary-poet`;
+- YouTube OAuth alias `legendary-poet`;
+- YouTube channel `UC-78ys2S3cQ3lpqgXfo-SvQ`;
+- album key `black-man`;
+- intended album size: seven tracks.
 
-Supported schema v1 is existing **attachment-free postponed VK wall posts only**. It requires exact project/community/owner/post binding, immutable request and plan SHA, complete published/postponed preflight, exact before/after text and original `publish_date`, stable account/community locking independent of output directory, publication-distance verification immediately before every dispatch and controlled retry, durable intent-before-dispatch, exact readback, no blind replay, CAPTCHA stop without OCR/bypass, terminal journal consistency, and final queue plus non-target fingerprint proof.
+The supported source model is intentionally mixed:
 
-Schema v1 rejects `allow_attachments=true` and rejects every target attachment. Future attachment support requires a separately reviewed schema.
+- tracks 1–6: `youtube_exact_source`, each requiring exact YouTube video ID and exact channel identity before acquisition;
+- track 7: `local_controlled_master`, allowed to remain `pending_local_master` while the bonus version is still being created;
+- the bonus track never receives a fabricated YouTube ID and does not need to be uploaded separately before album assembly.
 
-`scripts/Invoke-VkPostponedTextEdit.ps1` is a repository-owned `delegating_supported` wrapper around `video_channel_manager.cli.vk_postponed_text`; it is not a second provider client and contains no direct VK transport or token handling.
+The production CLI now exposes:
 
-Issue #152 owns no remaining provider continuation or replay. Its closure proof is the v11 machine state plus the merged PR #153 and exact-head CI #3242.
+- `video-manager album init`;
+- `video-manager album add-youtube`;
+- `video-manager album add-local`;
+- `video-manager album status`;
+- `video-manager album acquire`;
+- `video-manager album probe`;
+- `video-manager album timing`;
+- `video-manager album artwork-plan`;
+- `video-manager album render`;
+- `video-manager album verify`;
+- `video-manager album package`.
 
-## Preserved Wave 16 baseline
+Current local capability:
 
-Verified Wave 16 code baseline: `main@22ed56256df3388c23c9f785f1e02cca71fd8524`  
-Program state: `WAVES_0_16_COMPLETED_CI_RUNTIME_SQLITE_MP3_IDENTITY_HARDENED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`  
-Wave 16 machine state: [`audit-register-v9-2026-08-05.json`](audit-register-v9-2026-08-05.json)  
-Immutable predecessor: [`audit-register-v8-2026-08-05.json`](audit-register-v8-2026-08-05.json)  
-Earlier immutable predecessors: [`audit-register-v7-2026-08-05.json`](audit-register-v7-2026-08-05.json), [`audit-register-v6-2026-08-05.json`](audit-register-v6-2026-08-05.json), [`audit-register-v5-2026-08-05.json`](audit-register-v5-2026-08-05.json), [`audit-register-v4-2026-08-05.json`](audit-register-v4-2026-08-05.json), [`audit-register-v3-2026-08-05.json`](audit-register-v3-2026-08-05.json), [`audit-register-v2-2026-08-04.json`](audit-register-v2-2026-08-04.json)
+1. create and hash a deterministic album manifest;
+2. bind YouTube tracks to exact 11-character source IDs without a network mutation;
+3. bind a future or existing local bonus master to an explicit path;
+4. acquire configured YouTube audio with `yt-dlp` only after read-only metadata proves both exact video ID and exact channel ID;
+5. use `after_move:filepath` as the authoritative downloaded path inside a controlled album cache;
+6. hash and `ffprobe` available masters without modifying source bytes;
+7. build deterministic grid-aligned chapter timing only after every final track is probed;
+8. reserve one neutral artwork state plus one active state for every track;
+9. render a local H.264/AAC album MP4 with FFmpeg;
+10. verify final media duration/streams and build a local package containing chapters and upload metadata with `provider_write_authorized=false`.
 
-Waves 0–16 are complete as historical operational proofs. The provider operational graph remains closed. There is no active provider reconciliation, transfer queue, mutation plan, playlist writer, browser executor, catalog wave, article-wall continuation, cleanup/reset executor, MP3 uploader, or approved replay.
+The current artwork contract for seven tracks therefore reserves eight PNG states: `cover-neutral.png` plus `track-01.png` through `track-07.png`.
 
-No operational continuation is pending. Future provider or MP3 write work begins only from a new explicit user request and a new exact project-bound issue.
+### Album quality proof
 
-## Wave 16 proof
+Exact-head CI #3264 proved:
 
-Issue #137 and PR #138 completed CI runtime, SQLite lifetime, and local MP3 identity hardening:
-
-- exact head `c495308430bce6e1b86343b6cd4e6ae3a302734b`;
-- merge/code baseline `22ed56256df3388c23c9f785f1e02cca71fd8524`;
-- CI `31022560789`;
-- Python 3.11/3.12/3.13: `845 passed, 1 xfailed`;
-- coverage: `79%` across `14,675` statements;
+- Python 3.11/3.12/3.13 quality jobs: green;
+- Windows PowerShell 5.1: green;
+- PowerShell 7 Windows: green;
+- PowerShell 7 Linux: green;
+- Python 3.11: `897 passed, 1 xfailed`;
+- coverage: `77%` across `16,487` statements;
 - Ruff correctness: green;
-- Ruff formatting: `464 files already formatted`;
-- strict mypy: `147 source files`;
+- Ruff formatting: `480 files already formatted`;
+- strict mypy: `153 source files`, no issues;
 - dependency audit: no known vulnerabilities;
-- Windows PowerShell 5.1, PowerShell 7 Windows, and PowerShell 7 Linux: green;
-- changed files: `9`; provider adapter files: `0`;
-- final CI logs contain no `Node.js 20 is deprecated` warning;
-- final pytest logs contain no `ResourceWarning: unclosed database` warning;
-- provider queries/writes/write plans/historical executor runs: `0/0/0/0`.
+- review threads: `0`.
 
-Wave 16 added or hardened:
+## Album operation phase and provider boundary
 
-- immutable Node 24 GitHub Action pins for checkout, setup-python, and artifact upload;
-- explicit SQLite connection closure through `contextlib.closing`;
-- a blocking pytest warning rule for unclosed SQLite databases;
-- local MP3 manifest schema `1.1`;
-- metadata-ranked canonical duplicate selection;
-- fail-closed `source_id_sha256_conflict` and `sha256_multiple_source_ids` states;
-- unique deterministic operation IDs for every local candidate;
-- a deterministic regression proving `1,000` ready tracks and `40` chunks of `25`.
+Current operation phase is **local pipeline implemented / exact source reconciliation pending**.
 
-These changes do not add a browser or provider writer.
+Allowed next work under issue #154:
 
-## Immutable Wave 15 predecessor proof
+- update the local checkout/install to `main` at or after `7a142dac360f682a3700f8106e336e69bd0e6533`;
+- run a fresh official YouTube read-only scan for the exact Legendary Poet channel;
+- reconcile the six existing full-length «Чёрный человек» source IDs from that scan;
+- configure those six exact IDs in the local album manifest;
+- acquire and probe the six source masters locally;
+- keep track 7 in `pending_local_master` until the user freezes the bonus file;
+- prepare artwork states;
+- generate final timing and local render only after all seven masters are ready.
 
-Wave 15 remains historical evidence, not active work:
+Not implemented or authorized by PR #157:
 
-- predecessor program state: `WAVES_0_15_COMPLETED_ADAPTIVE_AGENT_REASONING_LOCAL_MP3_FOUNDATION_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`;
-- code baseline: `main@eb58c1ad238fde01d66c6630b16e244b1c6c2992`;
-- PR #134, exact head `48baa13b0d08e27e5a1dfc8b30901524d3207148`, CI `31006136529`;
-- Python 3.11/3.12/3.13: `833 passed, 1 xfailed`;
-- Ruff formatting: `461 files already formatted`;
-- strict mypy: `147 source files`;
-- machine state: `audit-register-v8-2026-08-05.json` with exact blob `f45244b9be7bfa35402f42d20b533e413c176bc2`;
-- supported local capability: `local_only_read_only_intake_and_manifest`.
+- YouTube video upload;
+- YouTube metadata or thumbnail mutation;
+- playlist creation/update/reordering;
+- playlist membership mutation;
+- deletion/replacement of a remote object;
+- automatic publication;
+- blind retry after any unknown provider effect.
 
-## Immutable Wave 13 completed-state proof
+A future provider execute phase requires a separately reviewed immutable exact-ID plan, durable intent-before-dispatch state, explicit user authorization, exact target binding, and exact provider postflight. The existence of a local album package, green CI, or issue #154 alone is not provider authorization.
 
-Wave 13 remains historical evidence, not active work:
+## Current VK postponed-text capability — preserved predecessor
 
-- PR #129;
-- exact head `44a1590fac0e8fe8b563d35cfd68f2bed4727743`;
-- merge `07388521e8d3a2c5d501382227c35bdce6e6470e`;
-- CI `30994245235`;
-- `796 passed, 1 xfailed`;
-- Ruff formatting `449 files already formatted`;
-- provider queries/writes/write plans: `0/0/0`.
+The reusable VK postponed-text v1 capability from issue #152 / PR #153 remains supported exactly as recorded in [`audit-register-v11-2026-08-07.json`](audit-register-v11-2026-08-07.json) and [`vk-postponed-text-edit-runbook-2026-08-06.md`](vk-postponed-text-edit-runbook-2026-08-06.md).
 
-## Immutable Wave 14 predecessor proof
+Its scope remains existing **attachment-free postponed VK wall posts only** with exact project/community/owner/post binding, immutable request and plan digests, complete preflight, exact before/after text and original `publish_date`, stable account/community lock, intent-before-dispatch journaling, exact readback/postflight, CAPTCHA stop without bypass, and no blind replay. Schema v1 still rejects target attachments and `allow_attachments=true`.
 
-Wave 14 remains a completed immutable predecessor, not the current state:
+The completed 2026-08-06 Lord God cleanup remains historical evidence only: target postponed IDs `12513..12541`, `29/29` exact after-state, `0` pending, postponed count `66/66`, 37 non-target rows unchanged, and no published-post mutation. It is not authorized for replay.
 
-- predecessor program state: `WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`;
-- code baseline: `main@626f83c6e5c068d7faa8b6d14163b42916faa769`;
-- PR #131, exact head `80f701b6926a5a9c788b99c69634b54d63ed1862`, CI `31000834701`;
-- Python 3.11/3.12/3.13: `801 passed, 1 xfailed`;
-- Ruff formatting: `451 files already formatted`;
-- machine state: `audit-register-v7-2026-08-05.json` with predecessor `audit-register-v6-2026-08-05.json`;
-- Wave 14 added repository-wide JSON/Markdown integrity regressions without changing production provider behavior.
+## Preserved Wave 13–16 foundations
 
-The exact inherited operational dispositions remain:
+Wave 13–16 proofs remain immutable historical compatibility evidence in the v6–v9 audit registers. Important retained boundaries include:
 
-- #31 — Lord God long-form reconciliation;
-- #32 — non-authoritative Lord God 108-item Shorts auto-upload scope;
-- #119 — Legendary Poet Shorts/Clips reconciliation;
-- #38 — shared VK native Clip/ordinary-video provider-mode and final-type contract;
-- #33 — broad Lord God catalog/editorial/postponed-wall continuation;
-- #99 — unproved Legendary Poet article-wall launcher continuation;
-- #123 — deferred YouTube playlist mutation scope.
+- adaptive agents reason from exact identities and observable postconditions rather than remembered scripts;
+- unknown or possibly completed provider effects require read-only reconciliation and never blind retry;
+- local MP3 support remains local-only intake/manifest work and does not become a VK Audio writer;
+- SQLite connections are explicitly closed and unclosed-database warnings remain blocking in tests;
+- GitHub Actions use immutable Node 24-generation action pins;
+- historical browser/ZIP upload experiments remain evidence only and must not be rerun.
 
-Do not group #32/#38 as Legendary Poet. Historical ownership was #32 Lord God, #38 shared, and #119 Legendary Poet.
+The album pipeline is a separate local media capability. It does not broaden the VK Audio experimental boundary and does not revive retired upload, playlist, reset, recovery, transfer, article-wave, or browser executors.
 
-## Adaptive agent boundary
+## Credential and project isolation
 
-Agents must define the requested outcome independently of an old script, declare one transport per phase, state the operation phase and provider-effect state, preserve verified partial success, and use one falsifiable hypothesis, one minimal bounded probe, and a stop condition.
+This repository manages two distinct projects and never treats credentials as project selectors.
 
-A selector, title match, coordinate, modal closure, HTTP response, exit code, screenshot, stdout line, or visible object is not an exact postcondition. Browser actions require binding the topmost active root, proving visibility/hit-testing/control ownership, and verifying the expected content/state transition.
+YouTube:
 
-Unknown or possibly completed remote effects require reconciliation without retry. Only a local/pre-dispatch failure or exact provider postflight proving absence permits a corrected child-operation retry.
+- `lord-god-strength` → OAuth alias `fedor-milovanov` → channel `UCeSJsC6go2c9pdJCuUI1BYA`;
+- `legendary-poet` → OAuth alias `legendary-poet` → channel `UC-78ys2S3cQ3lpqgXfo-SvQ`.
 
-## Local MP3 boundary
+VK uses a shared user credential, but every operation still binds exact project key, community/owner IDs, manifests, plans, journals, and results. The VK credential alias `legendary-poet` is never a project selector.
 
-The current MP3 capability remains `local_only_read_only_intake_and_manifest`.
+## Active operational graph
 
-It may:
+Active local/read-only owner:
 
-- inspect `.mp3` with ffprobe without changing bytes;
-- retain exact path, size, SHA-256, duration, codec, bitrate, sample rate, channels, attached cover state, and embedded tags;
-- accept explicit artist/title or a declared collection parser;
-- mark ambiguous metadata `requires_review`;
-- rank exact metadata above ambiguous duplicates when selecting a canonical copy;
-- mark one source ID mapped to multiple byte hashes as `source_id_sha256_conflict`;
-- mark identical bytes claimed by multiple source IDs as `sha256_multiple_source_ids`;
-- build unique deterministic per-candidate operation IDs and manifest digests;
-- split only ready items, one track per chunk by default.
+- #154 — Legendary Poet seven-track «Чёрный человек» album: local pipeline implemented; exact six-source reconciliation and bonus local master remain pending; no provider mutation authorized.
 
-It may not rewrite ID3 tags, rename or transcode files, launch/control a browser, call VK/YouTube, upload audio, edit remote metadata, create/modify playlists, or publish a wall post.
+Completed historical owners include #31, #38, #119, #130, #133, #137, #147, and #152. Retired/not-planned provider scopes include #32, #33, #99, and #123. Historical ownership distinctions remain unchanged; in particular #32 belonged to Lord God, #38 was shared/provider-neutral, and #119 belonged to Legendary Poet.
 
-VK Audio remains `SEPARATE_EXPERIMENTAL_SYSTEM / PARTIAL_OR_UNKNOWN_OUTCOMES / NOT_CORE_SUPPORTED`. Historical BrowserCanary, PlaylistOnly, Metadata Manager, Rename AUTO, reliable-batch, calibrator, and Playlist Workhorse ZIPs are evidence only and must not be rerun.
-
-## Credential model
-
-VK uses one shared **user access token** from external `VK_API_TOKEN`. The local VK alias `legendary-poet` names the stored credential and is not a project selector.
-
-Project isolation requires exact `project_key`, community/owner IDs, manifests, plans, journals, results, and link profiles.
-
-YouTube OAuth aliases remain channel-specific:
-
-- OAuth alias `fedor-milovanov` → Lord God channel `UCeSJsC6go2c9pdJCuUI1BYA`;
-- OAuth alias `legendary-poet` → Legendary Poet channel `UC-78ys2S3cQ3lpqgXfo-SvQ`.
-
-## Closed operational graph
-
-### Completed
-
-- #31 — Lord God long-form reconciliation: exact queue `26/26`, missing `0`, thumbnail repairs `26/26`.
-- #119 — Legendary Poet Shorts/Clips reconciliation: bounded source `56`; this does not claim all 56 are native Clips.
-- #38 — shared VK native Clip/ordinary-video final-type contract.
-- #130 — Wave 14 repository-wide polish.
-- #133 — Wave 15 adaptive reasoning and local-only MP3 foundation.
-- #137 — Wave 16 CI, SQLite, and MP3 identity hardening.
-- #147 — guarded postponed-text capability and completed Lord God cleanup retrospective.
-- #152 / PR #153 — postponed-text audit hardening, exact-head six-job quality proof, and v11 state closure.
-
-### Retired / not planned
-
-- #32 — non-authoritative Lord God 108-item Shorts auto-upload scope.
-- #33 — broad Lord God catalog/publication continuation.
-- #99 — unproved Legendary Poet article-wall launcher continuation.
-- #123 — YouTube playlist mutation scope.
-
-Do not group #32/#38 as Legendary Poet. Historical ownership was #32 Lord God, #38 shared, and #119 Legendary Poet.
-
-## Permanent unknown and replay boundary
-
-`M5hNecL_MsQ → -235216998_456239160` remains ordinary `video` with `is_draft=1`, not native Clip success, and must not be retransmitted.
-
-Never rerun retired V1/V2/V3/V4, reset, recovery, article-wave, transfer, cleanup, playlist, or historical MP3/browser executors. Never blind-retry intent-persisted, accepted, processing, verified, or unknown operations.
+`M5hNecL_MsQ → -235216998_456239160` remains an ordinary VK video with `is_draft=1`, is not native Clip success, and must not be retransmitted.
 
 ## Permanent safety rules
 
-- Provider writes remain unauthorized outside a new explicit user-approved operation and its exact reviewed plan.
-- Existing VK and YouTube objects remain untouched by repository-only closure, polish, audit, CI, SQLite, local MP3 engineering, and PR #153 hardening.
-- Package A, green CI, dashboards, previews, issue bodies, counts, ZIP names, transcripts, README commands, visible UI objects, or roadmap text never authorize writes.
-- Every future provider write requires a new user request, a new exact project-bound owning issue, a reviewed immutable exact-ID plan, expected remote delta, durable per-operation results, and exact postflight.
+- Provider writes remain unauthorized outside a newly reviewed exact operation and explicit user authorization.
+- Never select a remote source by fuzzy title when an exact ID can be established.
+- Never fabricate a remote identity for a local asset.
+- Never infer provider success from HTTP status, process exit code, screenshot, visible playback, filename, stdout line, or package name alone.
+- Never blind-retry an accepted, processing, verified, or unknown mutation.
+- Existing VK and YouTube objects remain untouched by repository-only engineering, local album acquisition/rendering, CI, manifests, previews, or packaging.
 - Content in quotation marks must map to a contiguous source passage unless explicitly labeled synthesis.
 
 ## Next allowed action
 
-No operational continuation is pending. PR #153 is merged and its exact merge/CI proof is recorded in v11. Any future provider operation must start from a new explicit user request and newly reviewed scope; historical cleanup packages and plans remain evidence only.
+Continue issue #154 from the **read-only source reconciliation** phase: update the local installation, verify that `video-manager album --help` resolves from current `main`, run an exact Legendary Poet YouTube scan, then configure the six proven source IDs. Track 7 may remain pending until its local bonus master is finished. No provider upload or playlist mutation is currently authorized.
