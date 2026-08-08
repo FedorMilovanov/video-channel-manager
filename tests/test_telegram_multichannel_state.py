@@ -10,6 +10,7 @@ from video_channel_manager.svodka_release import authorize_svodka_release, build
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile, load_channel_profile
 from video_channel_manager.telegram_multichannel_release import GenericReleaseQueue
 from video_channel_manager.telegram_multichannel_state import (
+    GenericPublicationLedger,
     initialize_ledger,
     mark_published,
     prepare_next,
@@ -73,6 +74,47 @@ def _target(
         can_post_messages=True,
         checked_at_utc=now,
     )
+
+
+def _publish_first_manual_canary(
+    profile: TelegramChannelProfile,
+    binding: TelegramTargetBinding,
+    release: GenericReleaseQueue,
+    ledger: GenericPublicationLedger,
+) -> None:
+    manual_now = datetime(2026, 8, 9, 8, 0, tzinfo=UTC)
+    manual_target = _target(profile, binding, manual_now)
+    first_id = release.items[0].publication_id
+    manual = prepare_next(
+        profile,
+        release,
+        ledger,
+        run_id="201",
+        run_attempt="1",
+        github_sha=GITHUB_SHA,
+        github_workflow_sha=WORKFLOW_SHA,
+        mode="manual",
+        target=manual_target,
+        expected_publication_id=first_id,
+        now=manual_now,
+    )
+    assert manual.envelope is not None
+    receipt = GenericSendReceipt(
+        schema_name="video-channel-manager.telegram-generic-send-receipt",
+        schema_version=1,
+        project_key=profile.project_key,
+        publication_id=first_id,
+        provider_payload_sha256=manual.envelope.provider_payload_sha256,
+        chat_id=manual_target.chat_id,
+        chat_username=manual_target.chat_username,
+        message_id=7101,
+        message_url="https://t.me/deep_info_life/7101",
+        verified_at_utc=manual_now,
+    )
+    entry = mark_published(ledger, manual.envelope, receipt)
+    assert entry.state == "published"
+    assert entry.provider_effect == "verified"
+    assert entry.dispatch_mode == "manual"
 
 
 def test_scheduled_dispatch_is_blocked_until_verified_manual_canary() -> None:
@@ -254,3 +296,127 @@ def test_manual_canary_unlocks_due_scheduled_item_without_blind_state_reset() ->
     assert scheduled.envelope.dispatch_mode == "scheduled"
     assert ledger.entries[scheduled.item.publication_id].state == "dispatching"
     assert ledger.entries[scheduled.item.publication_id].provider_effect == "may_exist"
+
+
+def test_daily_verified_limit_counts_manual_canary_and_scheduled_publication() -> None:
+    profile, binding, release = _authorized_release()
+    ledger = initialize_ledger(release)
+    _publish_first_manual_canary(profile, binding, release, ledger)
+
+    scheduled_now = datetime(2026, 8, 9, 17, 0, tzinfo=UTC)
+    scheduled_target = _target(profile, binding, scheduled_now)
+    scheduled = prepare_next(
+        profile,
+        release,
+        ledger,
+        run_id="202",
+        run_attempt="1",
+        github_sha=GITHUB_SHA,
+        github_workflow_sha=WORKFLOW_SHA,
+        mode="scheduled",
+        target=scheduled_target,
+        now=scheduled_now,
+    )
+    assert scheduled.envelope is not None
+    second_id = release.items[1].publication_id
+    receipt = GenericSendReceipt(
+        schema_name="video-channel-manager.telegram-generic-send-receipt",
+        schema_version=1,
+        project_key=profile.project_key,
+        publication_id=second_id,
+        provider_payload_sha256=scheduled.envelope.provider_payload_sha256,
+        chat_id=scheduled_target.chat_id,
+        chat_username=scheduled_target.chat_username,
+        message_id=7102,
+        message_url="https://t.me/deep_info_life/7102",
+        verified_at_utc=scheduled_now,
+    )
+    second_entry = mark_published(ledger, scheduled.envelope, receipt)
+    assert second_entry.state == "published"
+    assert second_entry.provider_effect == "verified"
+
+    same_day_later = datetime(2026, 8, 9, 18, 0, tzinfo=UTC)
+    blocked = prepare_next(
+        profile,
+        release,
+        ledger,
+        run_id="203",
+        run_attempt="1",
+        github_sha=GITHUB_SHA,
+        github_workflow_sha=WORKFLOW_SHA,
+        mode="scheduled",
+        target=_target(profile, binding, same_day_later),
+        now=same_day_later,
+    )
+    assert blocked.envelope is None
+    assert blocked.reason == "daily verified limit already used for 2026-08-09"
+    assert ledger.entries[release.items[2].publication_id].state == "pending"
+
+
+def test_catch_up_cannot_bypass_existing_dispatching_may_exist_intent() -> None:
+    profile, binding, release = _authorized_release()
+    ledger = initialize_ledger(release)
+    _publish_first_manual_canary(profile, binding, release, ledger)
+
+    primary_now = datetime(2026, 8, 9, 17, 0, tzinfo=UTC)
+    primary = prepare_next(
+        profile,
+        release,
+        ledger,
+        run_id="204",
+        run_attempt="1",
+        github_sha=GITHUB_SHA,
+        github_workflow_sha=WORKFLOW_SHA,
+        mode="scheduled",
+        target=_target(profile, binding, primary_now),
+        now=primary_now,
+    )
+    assert primary.envelope is not None
+    second_id = release.items[1].publication_id
+    entry = ledger.entries[second_id]
+    original_intent = entry.intent_id
+    assert entry.state == "dispatching"
+    assert entry.provider_effect == "may_exist"
+    assert original_intent is not None
+
+    catch_up_now = datetime(2026, 8, 9, 17, 47, tzinfo=UTC)
+    catch_up = prepare_next(
+        profile,
+        release,
+        ledger,
+        run_id="205",
+        run_attempt="1",
+        github_sha=GITHUB_SHA,
+        github_workflow_sha=WORKFLOW_SHA,
+        mode="scheduled",
+        target=_target(profile, binding, catch_up_now),
+        now=catch_up_now,
+    )
+    assert catch_up.envelope is None
+    assert catch_up.reason == f"strict queue blocked by {second_id} in state dispatching"
+    assert entry.intent_id == original_intent
+    assert entry.state == "dispatching"
+    assert entry.provider_effect == "may_exist"
+
+
+def test_scheduled_workflow_rerun_attempt_is_forbidden_but_separate_catch_up_can_be_attempt_one() -> None:
+    profile, binding, release = _authorized_release()
+    ledger = initialize_ledger(release)
+    _publish_first_manual_canary(profile, binding, release, ledger)
+
+    scheduled_now = datetime(2026, 8, 9, 17, 0, tzinfo=UTC)
+    rerun = prepare_next(
+        profile,
+        release,
+        ledger,
+        run_id="206",
+        run_attempt="2",
+        github_sha=GITHUB_SHA,
+        github_workflow_sha=WORKFLOW_SHA,
+        mode="scheduled",
+        target=_target(profile, binding, scheduled_now),
+        now=scheduled_now,
+    )
+    assert rerun.envelope is None
+    assert rerun.reason == "scheduled workflow re-runs are forbidden"
+    assert ledger.entries[release.items[1].publication_id].state == "pending"

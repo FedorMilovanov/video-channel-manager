@@ -9,6 +9,7 @@ from video_channel_manager.svodka_queue import load_svodka_draft
 from video_channel_manager.svodka_release import authorize_svodka_release, build_svodka_release_candidate
 from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_multichannel_release import GenericReleaseQueue
+from video_channel_manager.telegram_release_review import authorize_release_candidate
 from video_channel_manager.telegram_target_binding import load_target_binding
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -77,6 +78,105 @@ def test_reviewed_release_preserves_payloads_and_records_exact_candidate_digest(
     assert [item.payload.provider_payload_sha256 for item in release.items] == [
         item.payload.provider_payload_sha256 for item in candidate.items
     ]
+
+
+def test_generic_review_accepts_exact_svodka_profile_binding_and_digest() -> None:
+    profile = load_channel_profile(PROFILE_PATH)
+    binding = load_target_binding(BINDING_PATH, profile)
+    candidate = _candidate(with_binding=True)
+    reviewed_at = datetime(2026, 8, 8, 10, 0, tzinfo=UTC)
+
+    release = authorize_release_candidate(
+        candidate,
+        profile=profile,
+        binding=binding,
+        expected_candidate_sha256=candidate.candidate_digest(),
+        reviewed_by="operator",
+        reviewed_at=reviewed_at,
+    )
+
+    assert release.release_authorized is True
+    assert release.reviewed_candidate_sha256 == candidate.candidate_digest()
+    assert release.reviewed_by == "operator"
+    assert release.reviewed_at == reviewed_at
+    assert release.profile_sha256 == profile.digest
+    assert release.target_binding_sha256 == binding.digest
+
+
+def test_generic_review_rejects_current_svodka_profile_drift() -> None:
+    profile = load_channel_profile(PROFILE_PATH)
+    binding = load_target_binding(BINDING_PATH, profile)
+    candidate = _candidate(with_binding=True)
+    changed_profile = profile.model_copy(update={"channel_title": profile.channel_title + " changed"})
+    assert changed_profile.digest != profile.digest
+
+    with pytest.raises(ValueError, match="differs from selected Telegram channel profile"):
+        authorize_release_candidate(
+            candidate,
+            profile=changed_profile,
+            binding=binding,
+            expected_candidate_sha256=candidate.candidate_digest(),
+            reviewed_by="operator",
+            reviewed_at=datetime(2026, 8, 8, 10, 0, tzinfo=UTC),
+        )
+
+
+def test_generic_review_rejects_current_svodka_binding_drift() -> None:
+    profile = load_channel_profile(PROFILE_PATH)
+    binding = load_target_binding(BINDING_PATH, profile)
+    candidate = _candidate(with_binding=True)
+    changed_binding = binding.model_copy(update={"chat_id": binding.chat_id - 1})
+    assert changed_binding.digest != binding.digest
+
+    with pytest.raises(ValueError, match="differs from exact reviewed Telegram target binding"):
+        authorize_release_candidate(
+            candidate,
+            profile=profile,
+            binding=changed_binding,
+            expected_candidate_sha256=candidate.candidate_digest(),
+            reviewed_by="operator",
+            reviewed_at=datetime(2026, 8, 8, 10, 0, tzinfo=UTC),
+        )
+
+
+def test_generic_review_rejects_unbound_svodka_candidate() -> None:
+    profile = load_channel_profile(PROFILE_PATH)
+    binding = load_target_binding(BINDING_PATH, profile)
+    candidate = _candidate(with_binding=False)
+
+    with pytest.raises(ValueError, match="differs from exact reviewed Telegram target binding"):
+        authorize_release_candidate(
+            candidate,
+            profile=profile,
+            binding=binding,
+            expected_candidate_sha256=candidate.candidate_digest(),
+            reviewed_by="operator",
+            reviewed_at=datetime(2026, 8, 8, 10, 0, tzinfo=UTC),
+        )
+
+
+def test_generic_review_rejects_double_svodka_authorization() -> None:
+    profile = load_channel_profile(PROFILE_PATH)
+    binding = load_target_binding(BINDING_PATH, profile)
+    candidate = _candidate(with_binding=True)
+    release = authorize_release_candidate(
+        candidate,
+        profile=profile,
+        binding=binding,
+        expected_candidate_sha256=candidate.candidate_digest(),
+        reviewed_by="operator",
+        reviewed_at=datetime(2026, 8, 8, 10, 0, tzinfo=UTC),
+    )
+
+    with pytest.raises(ValueError, match="already authorized"):
+        authorize_release_candidate(
+            release,
+            profile=profile,
+            binding=binding,
+            expected_candidate_sha256=candidate.candidate_digest(),
+            reviewed_by="operator",
+            reviewed_at=datetime(2026, 8, 8, 10, 1, tzinfo=UTC),
+        )
 
 
 def test_unauthorized_release_cannot_claim_reviewed_candidate_digest() -> None:
