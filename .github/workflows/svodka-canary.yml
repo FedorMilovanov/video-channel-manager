@@ -181,7 +181,6 @@ jobs:
             echo "prepared canary produced no durable state delta" >&2
             exit 3
           }
-          parent_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
           git -C "$STATE_DIR" commit -m "Record Svodka canary intent for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
           local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
@@ -217,7 +216,7 @@ jobs:
           exit 0
 
       - name: Apply and persist exact provider outcome
-        if: always()
+        if: ${{ !cancelled() && steps.send.outcome != 'skipped' }}
         shell: bash
         run: |
           set -euo pipefail
