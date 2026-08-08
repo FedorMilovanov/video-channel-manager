@@ -196,6 +196,17 @@ def test_complete_svodka_state_writer_surface_uses_lossless_serialization_contra
         assert "runs-on: ubuntu-24.04" in workflow, workflow_path.name
 
 
+def test_no_push_triggered_write_capable_svodka_migration_workflows_remain() -> None:
+    workflows_dir = REPOSITORY_ROOT / ".github/workflows"
+    one_time = sorted(path.name for path in workflows_dir.glob("svodka-*-once.yml"))
+    assert one_time == []
+
+    for workflow_path in workflows_dir.glob("svodka-*.yml"):
+        workflow = workflow_path.read_text(encoding="utf-8")
+        if "push:" in workflow:
+            assert "contents: write" not in workflow, workflow_path.name
+
+
 def test_committed_live_release_if_present_is_exact_and_authorized() -> None:
     if not APPROVED_RELEASE.exists():
         return
