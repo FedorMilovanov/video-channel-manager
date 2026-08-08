@@ -31,6 +31,9 @@ def _release():
     )
     return authorize_svodka_release(
         candidate,
+        profile=profile,
+        binding=binding,
+        expected_candidate_sha256=candidate.candidate_digest(),
         reviewed_by="freshness-test",
         reviewed_at=datetime(2026, 8, 8, tzinfo=UTC),
     )

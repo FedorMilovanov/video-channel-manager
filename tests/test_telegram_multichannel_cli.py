@@ -37,9 +37,14 @@ def _candidate_release() -> GenericReleaseQueue:
 
 
 def _authorized_release() -> GenericReleaseQueue:
+    profile = load_channel_profile(PROFILE_PATH)
+    binding = load_target_binding(BINDING_PATH, profile)
     candidate = _candidate_release()
     return authorize_svodka_release(
         candidate,
+        profile=profile,
+        binding=binding,
+        expected_candidate_sha256=candidate.candidate_digest(),
         reviewed_by="runtime-test",
         reviewed_at=datetime(2026, 8, 8, 0, 0, tzinfo=UTC),
     )
@@ -49,7 +54,7 @@ def _prepared_runtime():
     base_profile = load_channel_profile(PROFILE_PATH)
     profile = base_profile.model_copy(update={"provider_writes_authorized": True})
     draft = load_svodka_draft(QUEUE_PATH, profile)
-    binding = load_target_binding(BINDING_PATH, profile)
+    binding = load_target_binding(BINDING_PATH, base_profile).model_copy(update={"profile_sha256": profile.digest})
     candidate = build_svodka_release_candidate(
         profile,
         draft,
@@ -58,6 +63,9 @@ def _prepared_runtime():
     )
     release = authorize_svodka_release(
         candidate,
+        profile=profile,
+        binding=binding,
+        expected_candidate_sha256=candidate.candidate_digest(),
         reviewed_by="runtime-test",
         reviewed_at=datetime(2026, 8, 8, 0, 0, tzinfo=UTC),
     )

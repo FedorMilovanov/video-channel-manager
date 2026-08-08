@@ -13,6 +13,7 @@ from video_channel_manager.telegram_multichannel_transport import (
     render_message_payload,
     render_poll_payload,
 )
+from video_channel_manager.telegram_release_review import authorize_release_candidate
 from video_channel_manager.telegram_target_binding import TelegramTargetBinding
 
 
@@ -149,23 +150,17 @@ def build_svodka_release_candidate(
 def authorize_svodka_release(
     candidate: GenericReleaseQueue,
     *,
+    profile: TelegramChannelProfile,
+    binding: TelegramTargetBinding,
+    expected_candidate_sha256: str,
     reviewed_by: str,
     reviewed_at: datetime,
 ) -> GenericReleaseQueue:
-    if candidate.release_authorized:
-        raise ValueError("Svodka release is already authorized")
-    if candidate.target_binding_sha256 is None:
-        raise ValueError("Svodka release must be exact-target-bound before authorization")
-    reviewer = reviewed_by.strip()
-    if not reviewer:
-        raise ValueError("Svodka release reviewer must be non-empty")
-    if reviewed_at.tzinfo is None:
-        raise ValueError("Svodka release review timestamp must be timezone-aware")
-
-    candidate_digest = candidate.digest
-    payload = candidate.model_dump(mode="json")
-    payload["release_authorized"] = True
-    payload["reviewed_candidate_sha256"] = candidate_digest
-    payload["reviewed_by"] = reviewer
-    payload["reviewed_at"] = reviewed_at.isoformat()
-    return GenericReleaseQueue.model_validate(payload)
+    return authorize_release_candidate(
+        candidate,
+        profile=profile,
+        binding=binding,
+        expected_candidate_sha256=expected_candidate_sha256,
+        reviewed_by=reviewed_by,
+        reviewed_at=reviewed_at,
+    )

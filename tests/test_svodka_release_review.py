@@ -30,6 +30,19 @@ def _candidate(*, with_binding: bool) -> GenericReleaseQueue:
     )
 
 
+def _authorize(candidate: GenericReleaseQueue, *, expected_candidate_sha256: str | None = None) -> GenericReleaseQueue:
+    profile = load_channel_profile(PROFILE_PATH)
+    binding = load_target_binding(BINDING_PATH, profile)
+    return authorize_svodka_release(
+        candidate,
+        profile=profile,
+        binding=binding,
+        expected_candidate_sha256=expected_candidate_sha256 or candidate.candidate_digest(),
+        reviewed_by="operator",
+        reviewed_at=datetime(2026, 8, 8, 1, 30, tzinfo=UTC),
+    )
+
+
 def test_target_bound_candidate_freezes_exact_chat_bot_and_binding_digest() -> None:
     profile = load_channel_profile(PROFILE_PATH)
     binding = load_target_binding(BINDING_PATH, profile)
@@ -45,31 +58,29 @@ def test_target_bound_candidate_freezes_exact_chat_bot_and_binding_digest() -> N
     assert candidate.reviewed_at is None
 
 
-def test_authorization_requires_exact_target_binding() -> None:
+def test_svodka_authorization_wrapper_requires_exact_target_binding() -> None:
     candidate = _candidate(with_binding=False)
 
-    with pytest.raises(ValueError, match="exact-target-bound"):
-        authorize_svodka_release(
-            candidate,
-            reviewed_by="operator",
-            reviewed_at=datetime(2026, 8, 8, tzinfo=UTC),
-        )
+    with pytest.raises(ValueError, match="differs from exact reviewed Telegram target binding"):
+        _authorize(candidate)
+
+
+def test_svodka_authorization_wrapper_requires_exact_reviewed_candidate_digest() -> None:
+    candidate = _candidate(with_binding=True)
+
+    with pytest.raises(ValueError, match="release candidate digest differs from the reviewed digest"):
+        _authorize(candidate, expected_candidate_sha256="sha256:" + "0" * 64)
 
 
 def test_reviewed_release_preserves_payloads_and_records_exact_candidate_digest() -> None:
     candidate = _candidate(with_binding=True)
-    candidate_digest = candidate.digest
-    reviewed_at = datetime(2026, 8, 8, 1, 30, tzinfo=UTC)
-    release = authorize_svodka_release(
-        candidate,
-        reviewed_by="operator",
-        reviewed_at=reviewed_at,
-    )
+    candidate_digest = candidate.candidate_digest()
+    release = _authorize(candidate)
 
     assert release.release_authorized is True
     assert release.reviewed_candidate_sha256 == candidate_digest
     assert release.reviewed_by == "operator"
-    assert release.reviewed_at == reviewed_at
+    assert release.reviewed_at == datetime(2026, 8, 8, 1, 30, tzinfo=UTC)
     assert release.target_binding_sha256 == candidate.target_binding_sha256
     assert release.chat_id == candidate.chat_id
     assert release.bot_id == candidate.bot_id
@@ -201,11 +212,7 @@ def test_authorized_generic_release_requires_reviewed_candidate_provenance() -> 
 
 def test_authorized_release_rejects_tampered_reviewed_candidate_digest() -> None:
     candidate = _candidate(with_binding=True)
-    release = authorize_svodka_release(
-        candidate,
-        reviewed_by="operator",
-        reviewed_at=datetime(2026, 8, 8, 1, 30, tzinfo=UTC),
-    )
+    release = _authorize(candidate)
     payload = release.model_dump(mode="json")
     payload["reviewed_candidate_sha256"] = "sha256:" + "0" * 64
 
@@ -215,11 +222,7 @@ def test_authorized_release_rejects_tampered_reviewed_candidate_digest() -> None
 
 def test_authorized_release_rejects_schedule_change_after_review() -> None:
     candidate = _candidate(with_binding=True)
-    release = authorize_svodka_release(
-        candidate,
-        reviewed_by="operator",
-        reviewed_at=datetime(2026, 8, 8, 1, 30, tzinfo=UTC),
-    )
+    release = _authorize(candidate)
     payload = release.model_dump(mode="json")
     original = release.items[0].scheduled_at
     payload["items"][0]["scheduled_at"] = (original + timedelta(minutes=1)).isoformat()
