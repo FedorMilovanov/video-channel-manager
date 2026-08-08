@@ -23,17 +23,20 @@ GITHUB_SHA = "1" * 40
 WORKFLOW_SHA = "2" * 40
 
 
-def _authorized_release() -> GenericReleaseQueue:
-    base_profile = load_channel_profile(PROFILE_PATH)
-    profile = base_profile.model_copy(update={"provider_writes_authorized": True})
+def _candidate_release() -> GenericReleaseQueue:
+    profile = load_channel_profile(PROFILE_PATH)
     draft = load_svodka_draft(QUEUE_PATH, profile)
     binding = load_target_binding(BINDING_PATH, profile)
-    candidate = build_svodka_release_candidate(
+    return build_svodka_release_candidate(
         profile,
         draft,
         release_id="svodka-pilot-2026-08-cli-test",
         binding=binding,
     )
+
+
+def _authorized_release() -> GenericReleaseQueue:
+    candidate = _candidate_release()
     return authorize_svodka_release(
         candidate,
         reviewed_by="runtime-test",
@@ -41,7 +44,7 @@ def _authorized_release() -> GenericReleaseQueue:
     )
 
 
-def test_missing_token_becomes_explicit_not_dispatched_outcome(monkeypatch) -> None:
+def _prepared_runtime():
     base_profile = load_channel_profile(PROFILE_PATH)
     profile = base_profile.model_copy(update={"provider_writes_authorized": True})
     draft = load_svodka_draft(QUEUE_PATH, profile)
@@ -49,7 +52,7 @@ def test_missing_token_becomes_explicit_not_dispatched_outcome(monkeypatch) -> N
     candidate = build_svodka_release_candidate(
         profile,
         draft,
-        release_id="svodka-pilot-2026-08-missing-token-test",
+        release_id="svodka-pilot-2026-08-send-test",
         binding=binding,
     )
     release = authorize_svodka_release(
@@ -90,14 +93,31 @@ def test_missing_token_becomes_explicit_not_dispatched_outcome(monkeypatch) -> N
         now=now,
     )
     assert prepared.envelope is not None
+    return profile, release, ledger, prepared.envelope
+
+
+def test_missing_token_becomes_explicit_not_dispatched_outcome(monkeypatch) -> None:
+    profile, release, ledger, envelope = _prepared_runtime()
 
     monkeypatch.delenv(profile.bot_token_env, raising=False)
-    outcome = _send_exact_payload(profile, release, ledger, prepared.envelope)
+    outcome = _send_exact_payload(profile, release, ledger, envelope)
 
     assert outcome.provider_effect == "not_dispatched"
     assert outcome.retryable is False
     assert outcome.receipt is None
     assert outcome.error == f"missing Telegram token in {profile.bot_token_env}"
+
+
+def test_pre_provider_intent_mismatch_becomes_explicit_not_dispatched_outcome() -> None:
+    profile, release, ledger, envelope = _prepared_runtime()
+    ledger.entries[envelope.publication_id].intent_id = "different-persisted-intent"
+
+    outcome = _send_exact_payload(profile, release, ledger, envelope)
+
+    assert outcome.provider_effect == "not_dispatched"
+    assert outcome.retryable is False
+    assert outcome.receipt is None
+    assert "persisted ledger intent differs" in (outcome.error or "")
 
 
 def test_initialize_ledger_confirmation_is_exact_release_digest(monkeypatch, tmp_path: Path) -> None:
@@ -149,5 +169,31 @@ def test_initialize_ledger_rejects_legacy_or_wrong_confirmation(monkeypatch, tmp
     )
 
     with pytest.raises(ValueError, match="exact release digest"):
+        main()
+    assert not ledger_path.exists()
+
+
+def test_initialize_ledger_rejects_unauthorized_candidate(monkeypatch, tmp_path: Path) -> None:
+    candidate = _candidate_release()
+    release_path = tmp_path / "candidate.json"
+    ledger_path = tmp_path / "ledger.json"
+    save_release(release_path, candidate)
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "telegram_multichannel_cli",
+            "initialize-ledger",
+            "--release",
+            str(release_path),
+            "--output",
+            str(ledger_path),
+            "--confirm",
+            f"INITIALIZE:{candidate.digest}",
+        ],
+    )
+
+    with pytest.raises(ValueError, match="authorized immutable release"):
         main()
     assert not ledger_path.exists()
