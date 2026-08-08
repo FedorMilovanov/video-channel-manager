@@ -73,6 +73,7 @@ def test_committed_live_release_if_present_is_exact_and_authorized() -> None:
     release = load_release(APPROVED_RELEASE)
 
     assert release.release_authorized is True
+    assert release.reviewed_candidate_sha256 is not None
     assert release.project_key == profile.project_key
     assert release.channel_username == profile.channel_username
     assert release.profile_sha256 == profile.digest
