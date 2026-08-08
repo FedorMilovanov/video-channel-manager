@@ -101,6 +101,12 @@ def test_all_svodka_workflow_jobs_pin_ubuntu_2404() -> None:
         assert set(runs_on) == {"runs-on: ubuntu-24.04"}, workflow_path.name
 
 
+def test_self_mutating_svodka_one_time_workflows_are_gone() -> None:
+    workflow_root = REPOSITORY_ROOT / ".github/workflows"
+    assert list(workflow_root.glob("svodka-*-once.yml")) == []
+    assert not (workflow_root / "svodka-consolidation-repair-once.yml").exists()
+
+
 def test_svodka_quality_rejects_committed_release_from_stale_candidate() -> None:
     workflow = QUALITY_WORKFLOW_PATH.read_text(encoding="utf-8")
 
@@ -109,7 +115,3 @@ def test_svodka_quality_rejects_committed_release_from_stale_candidate() -> None
     assert "release.reviewed_candidate_sha256 != candidate.digest" in workflow
     assert "release.candidate_digest() != candidate.digest" in workflow
     assert "committed Svodka release was reviewed from a stale candidate" in workflow
-
-
-def test_self_mutating_svodka_repair_workflow_is_gone() -> None:
-    assert not (REPOSITORY_ROOT / ".github/workflows/svodka-consolidation-repair-once.yml").exists()
