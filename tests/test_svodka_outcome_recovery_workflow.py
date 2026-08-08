@@ -33,7 +33,9 @@ def test_archived_outcome_recovery_is_manual_main_only_and_provider_free() -> No
 def test_archived_outcome_recovery_requires_exact_source_run_artifact_and_dispatch() -> None:
     workflow = WORKFLOW.read_text(encoding="utf-8")
 
-    assert "RECONCILE-OUTCOME:$SOURCE_RUN_ID:$SOURCE_RUN_ATTEMPT:$REQUESTED_PUBLICATION_ID:$REQUESTED_DIGEST" in workflow
+    assert (
+        "RECONCILE-OUTCOME:$SOURCE_RUN_ID:$SOURCE_RUN_ATTEMPT:$REQUESTED_PUBLICATION_ID:$REQUESTED_DIGEST" in workflow
+    )
     assert "durable provider outcome already exists; archived-outcome recovery is forbidden" in workflow
     assert "verify-intent" in workflow
     assert "telegram_github_outcome_artifact prove" in workflow
@@ -75,6 +77,8 @@ def test_archived_outcome_recovery_applies_only_after_provenance_and_reproves_be
     quality_gate_index = workflow.index("telegram_github_quality_gate", reproof_index)
     commit_index = workflow.index("Recover archived Svodka provider outcome for run")
 
-    assert prove_index < download_index < validate_index < apply_index < reproof_index < quality_gate_index < commit_index
+    assert (
+        prove_index < download_index < validate_index < apply_index < reproof_index < quality_gate_index < commit_index
+    )
     assert "apply-outcome" in workflow
     assert "validate-ledger" in workflow
