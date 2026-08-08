@@ -16,7 +16,7 @@ def _run(**overrides):
         "status": "completed",
         "conclusion": "success",
         "event": "push",
-        "path": ".github/workflows/svodka-quality.yml",
+        "path": ".github/workflows/svodka-quality.yml@main",
         "run_attempt": 1,
     }
     value.update(overrides)
@@ -31,10 +31,18 @@ def test_quality_gate_accepts_only_completed_success_for_exact_main_sha() -> Non
             _run(id=92, status="in_progress", conclusion=None),
             _run(id=93, head_branch="other"),
             _run(id=94, event="pull_request"),
-            _run(id=95, path=".github/workflows/ci.yml"),
+            _run(id=95, path=".github/workflows/ci.yml@main"),
             _run(id=101),
         ]
     }
+
+    selected = select_successful_quality_run(payload, workflow_file=WORKFLOW, head_sha=SHA)
+
+    assert selected["id"] == 101
+
+
+def test_quality_gate_accepts_plain_workflow_path_fallback() -> None:
+    payload = {"workflow_runs": [_run(id=101, path=".github/workflows/svodka-quality.yml")]}
 
     selected = select_successful_quality_run(payload, workflow_file=WORKFLOW, head_sha=SHA)
 
