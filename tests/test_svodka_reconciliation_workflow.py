@@ -54,7 +54,13 @@ def test_reconciliation_writes_confirmed_absent_outcome_only_after_proof() -> No
 
     proof_index = workflow.index("Prove original provider send step never ran")
     resolution_index = workflow.index("Resolve only the proven no-effect intent")
-    assert proof_index < resolution_index
+    quality_index = workflow.index("telegram_github_quality_gate", resolution_index)
+    commit_index = workflow.index(
+        'git -C "$STATE_DIR" commit -m "Reconcile skipped Svodka provider send',
+        resolution_index,
+    )
+    assert proof_index < resolution_index < quality_index < commit_index
+    assert '--sha "$GITHUB_SHA"' in workflow
     assert 'provider_effect="confirmed_absent"' in workflow
     assert "retryable=True" in workflow
     assert "apply-outcome" in workflow
