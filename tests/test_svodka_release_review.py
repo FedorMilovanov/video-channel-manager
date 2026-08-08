@@ -68,7 +68,7 @@ def test_svodka_authorization_wrapper_requires_exact_target_binding() -> None:
 def test_svodka_authorization_wrapper_requires_exact_reviewed_candidate_digest() -> None:
     candidate = _candidate(with_binding=True)
 
-    with pytest.raises(ValueError, match="reviewed candidate digest"):
+    with pytest.raises(ValueError, match="release candidate digest differs from the reviewed digest"):
         _authorize(candidate, expected_candidate_sha256="sha256:" + "0" * 64)
 
 
