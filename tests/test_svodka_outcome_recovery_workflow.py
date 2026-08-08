@@ -39,11 +39,12 @@ def test_archived_outcome_recovery_requires_exact_source_run_artifact_and_dispat
     assert "durable provider outcome already exists; archived-outcome recovery is forbidden" in workflow
     assert "verify-intent" in workflow
     assert "telegram_github_outcome_artifact prove" in workflow
+    assert "telegram_github_outcome_artifact fetch" in workflow
     assert "telegram_github_outcome_artifact validate" in workflow
-    assert "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c" in workflow
-    assert "svodka-provider-outcome-${{ inputs.source_run_id }}-${{ inputs.source_run_attempt }}" in workflow
-    assert "run-id: ${{ inputs.source_run_id }}" in workflow
-    assert "github-token: ${{ github.token }}" in workflow
+    assert "actions/download-artifact@" not in workflow
+    assert '--proof "$PROOF_PATH"' in workflow
+    assert '--outcome-output "$RECOVERED_OUTCOME_PATH"' in workflow
+    assert "GH_TOKEN: ${{ github.token }}" in workflow
     assert "provider outcome artifact must contain exactly one file" in workflow
     assert "outcome-recovery-proof.json" in workflow
 
