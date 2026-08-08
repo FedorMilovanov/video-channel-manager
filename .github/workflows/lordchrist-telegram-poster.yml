@@ -32,7 +32,7 @@ permissions:
 concurrency:
   group: lordchrist-telegram-publisher
   cancel-in-progress: false
-  queue: single
+  queue: max
 
 env:
   PYTHONPATH: src
@@ -55,7 +55,7 @@ env:
 jobs:
   publish-next:
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Check out immutable code and queue
