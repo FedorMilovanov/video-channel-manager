@@ -8,13 +8,13 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from video_channel_manager.telegram_channel_profile import load_channel_profile
-from video_channel_manager.telegram_multichannel_release import load_release, save_release
+from video_channel_manager.telegram_channel_profile import TelegramChannelProfile, load_channel_profile
+from video_channel_manager.telegram_multichannel_release import GenericReleaseQueue, load_release, save_release
 from video_channel_manager.telegram_release_review import authorize_release_candidate
 from video_channel_manager.telegram_release_review_cli import main
 from video_channel_manager.telegram_research import load_research_queue
 from video_channel_manager.telegram_research_release import build_research_release_candidate
-from video_channel_manager.telegram_target_binding import load_target_binding
+from video_channel_manager.telegram_target_binding import TelegramTargetBinding, load_target_binding
 
 ROOT = Path(__file__).parents[1]
 PROFILE_PATH = ROOT / "content/telegram/channels/lordchrist.json"
@@ -23,7 +23,7 @@ QUEUE_PATH = ROOT / "content/telegram/lordchrist/research-queues/calvin-spurgeon
 EXPECTED_CANDIDATE = "sha256:0f25f23fc87665b03df0b8486d6f336e8e405b6213457772ead6ce2a363cd07d"
 
 
-def research_candidate():
+def research_contract() -> tuple[TelegramChannelProfile, TelegramTargetBinding, GenericReleaseQueue]:
     profile = load_channel_profile(PROFILE_PATH)
     binding = load_target_binding(BINDING_PATH, profile)
     research = load_research_queue(QUEUE_PATH)
@@ -35,38 +35,82 @@ def research_candidate():
         binding=binding,
     )
     assert candidate.candidate_digest() == EXPECTED_CANDIDATE
-    return candidate
+    return profile, binding, candidate
 
 
 def test_exact_research_candidate_can_be_authorized_without_provider_effect(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(ROOT)
-    candidate = research_candidate()
+    profile, binding, candidate = research_contract()
     approved = authorize_release_candidate(
         candidate,
+        profile=profile,
+        binding=binding,
         expected_candidate_sha256=EXPECTED_CANDIDATE,
         reviewed_by="FedorMilovanov",
         reviewed_at=datetime(2026, 8, 8, 9, 30, tzinfo=UTC),
     )
 
+    assert profile.provider_writes_authorized is False
     assert approved.release_authorized is True
     assert approved.reviewed_candidate_sha256 == EXPECTED_CANDIDATE
     assert approved.reviewed_by == "FedorMilovanov"
-    assert approved.target_binding_sha256 == candidate.target_binding_sha256
+    assert approved.profile_sha256 == profile.digest
+    assert approved.target_binding_sha256 == binding.digest
     assert approved.items == candidate.items
     assert approved.digest != candidate.digest
 
 
-def test_review_rejects_candidate_drift_and_missing_target(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_review_rejects_candidate_digest_drift(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(ROOT)
-    candidate = research_candidate()
+    profile, binding, candidate = research_contract()
     with pytest.raises(ValueError, match="differs from the reviewed digest"):
         authorize_release_candidate(
             candidate,
+            profile=profile,
+            binding=binding,
             expected_candidate_sha256="sha256:" + "0" * 64,
             reviewed_by="FedorMilovanov",
             reviewed_at=datetime(2026, 8, 8, 9, 30, tzinfo=UTC),
         )
 
+
+def test_review_rejects_current_profile_drift(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(ROOT)
+    profile, binding, candidate = research_contract()
+    changed_profile = profile.model_copy(update={"channel_title": profile.channel_title + " changed"})
+    assert changed_profile.digest != profile.digest
+
+    with pytest.raises(ValueError, match="differs from selected Telegram channel profile"):
+        authorize_release_candidate(
+            candidate,
+            profile=changed_profile,
+            binding=binding,
+            expected_candidate_sha256=EXPECTED_CANDIDATE,
+            reviewed_by="FedorMilovanov",
+            reviewed_at=datetime(2026, 8, 8, 9, 30, tzinfo=UTC),
+        )
+
+
+def test_review_rejects_target_binding_drift(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(ROOT)
+    profile, binding, candidate = research_contract()
+    changed_binding = binding.model_copy(update={"chat_id": binding.chat_id - 1})
+    assert changed_binding.digest != binding.digest
+
+    with pytest.raises(ValueError, match="differs from exact reviewed Telegram target binding"):
+        authorize_release_candidate(
+            candidate,
+            profile=profile,
+            binding=changed_binding,
+            expected_candidate_sha256=EXPECTED_CANDIDATE,
+            reviewed_by="FedorMilovanov",
+            reviewed_at=datetime(2026, 8, 8, 9, 30, tzinfo=UTC),
+        )
+
+
+def test_review_rejects_unbound_candidate(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(ROOT)
+    profile, binding, candidate = research_contract()
     unbound = candidate.model_copy(
         update={
             "target_binding_sha256": None,
@@ -75,9 +119,11 @@ def test_review_rejects_candidate_drift_and_missing_target(monkeypatch: pytest.M
             "bot_username": None,
         }
     )
-    with pytest.raises(ValueError, match="complete exact target binding"):
+    with pytest.raises(ValueError, match="differs from exact reviewed Telegram target binding"):
         authorize_release_candidate(
             unbound,
+            profile=profile,
+            binding=binding,
             expected_candidate_sha256=unbound.candidate_digest(),
             reviewed_by="FedorMilovanov",
             reviewed_at=datetime(2026, 8, 8, 9, 30, tzinfo=UTC),
@@ -88,10 +134,12 @@ def test_review_rejects_naive_time_blank_reviewer_and_double_authorization(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.chdir(ROOT)
-    candidate = research_candidate()
+    profile, binding, candidate = research_contract()
     with pytest.raises(ValueError, match="non-empty reviewer"):
         authorize_release_candidate(
             candidate,
+            profile=profile,
+            binding=binding,
             expected_candidate_sha256=EXPECTED_CANDIDATE,
             reviewed_by="   ",
             reviewed_at=datetime(2026, 8, 8, 9, 30, tzinfo=UTC),
@@ -99,6 +147,8 @@ def test_review_rejects_naive_time_blank_reviewer_and_double_authorization(
     with pytest.raises(ValueError, match="timezone-aware"):
         authorize_release_candidate(
             candidate,
+            profile=profile,
+            binding=binding,
             expected_candidate_sha256=EXPECTED_CANDIDATE,
             reviewed_by="FedorMilovanov",
             reviewed_at=datetime(2026, 8, 8, 9, 30),
@@ -106,6 +156,8 @@ def test_review_rejects_naive_time_blank_reviewer_and_double_authorization(
 
     approved = authorize_release_candidate(
         candidate,
+        profile=profile,
+        binding=binding,
         expected_candidate_sha256=EXPECTED_CANDIDATE,
         reviewed_by="FedorMilovanov",
         reviewed_at=datetime(2026, 8, 8, 9, 30, tzinfo=UTC),
@@ -113,6 +165,8 @@ def test_review_rejects_naive_time_blank_reviewer_and_double_authorization(
     with pytest.raises(ValueError, match="already authorized"):
         authorize_release_candidate(
             approved,
+            profile=profile,
+            binding=binding,
             expected_candidate_sha256=EXPECTED_CANDIDATE,
             reviewed_by="FedorMilovanov",
             reviewed_at=datetime(2026, 8, 8, 9, 31, tzinfo=UTC),
@@ -125,14 +179,19 @@ def test_review_cli_writes_exact_approved_release(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     monkeypatch.chdir(ROOT)
+    profile, binding, candidate = research_contract()
     candidate_path = tmp_path / "candidate.json"
     approved_path = tmp_path / "approved.json"
-    save_release(candidate_path, research_candidate())
+    save_release(candidate_path, candidate)
     monkeypatch.setattr(
         sys,
         "argv",
         [
             "telegram_release_review_cli",
+            "--profile",
+            str(PROFILE_PATH),
+            "--binding",
+            str(BINDING_PATH),
             "--candidate",
             str(candidate_path),
             "--expected-candidate-sha256",
@@ -150,6 +209,8 @@ def test_review_cli_writes_exact_approved_release(
     summary = json.loads(capsys.readouterr().out)
     approved = load_release(approved_path)
     assert summary["authorized"] is True
+    assert summary["profile_sha256"] == profile.digest
+    assert summary["target_binding_sha256"] == binding.digest
     assert summary["reviewed_candidate_sha256"] == EXPECTED_CANDIDATE
     assert summary["approved_release_sha256"] == approved.digest
     assert approved.reviewed_at == datetime(2026, 8, 8, 9, 30, tzinfo=UTC)
