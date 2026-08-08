@@ -336,6 +336,7 @@ def resolve_entry(
     resolved_by: str,
     message_id: int | None = None,
     expected_chat_id: int | None = None,
+    published_at_utc: datetime | None = None,
     now: datetime | None = None,
 ) -> LedgerEntry:
     note = " ".join(evidence_note.split())
@@ -350,6 +351,7 @@ def resolve_entry(
     resolved_at = now or utc_now()
     if resolved_at.tzinfo is None:
         raise ValueError("reconciliation timestamp must be timezone-aware")
+    resolved_at = resolved_at.astimezone(UTC)
 
     if resolution == "confirmed_published":
         if entry.state not in {"dispatching", "unknown"} or entry.provider_effect != "may_exist":
@@ -360,15 +362,35 @@ def resolve_entry(
             raise ValueError("reconciliation chat id differs from the durable dispatch target")
         if entry.bot_id is None or entry.bot_id <= 0 or not entry.bot_username:
             raise ValueError("confirmed_published requires the durable dispatch bot identity")
+        publication_time = published_at_utc
+        if publication_time is None:
+            if entry.attempted_at_utc is None or entry.attempted_at_utc.tzinfo is None:
+                raise ValueError("confirmed_published requires durable attempted_at_utc provenance")
+            if publication_local_date(entry.attempted_at_utc) != publication_local_date(resolved_at):
+                raise ValueError(
+                    "confirmed_published requires explicit evidence-backed published_at_utc across publication dates"
+                )
+            publication_time = resolved_at
+        if publication_time.tzinfo is None:
+            raise ValueError("confirmed_published publication timestamp must be timezone-aware")
+        publication_time = publication_time.astimezone(UTC)
+        if entry.attempted_at_utc is None or entry.attempted_at_utc.tzinfo is None:
+            raise ValueError("confirmed_published requires durable attempted_at_utc provenance")
+        if publication_time < entry.attempted_at_utc.astimezone(UTC):
+            raise ValueError("confirmed_published publication timestamp cannot precede the durable dispatch attempt")
+        if publication_time > resolved_at:
+            raise ValueError("confirmed_published publication timestamp cannot be later than reconciliation")
         entry.state = "published"
         entry.provider_effect = "verified"
         entry.message_id = message_id
         entry.actual_chat_id = expected_chat_id
         entry.actual_chat_username = CHANNEL_USERNAME.removeprefix("@")
         entry.message_url = f"https://t.me/{CHANNEL_USERNAME.removeprefix('@')}/{message_id}"
-        entry.published_at_utc = resolved_at
+        entry.published_at_utc = publication_time
         entry.last_error = "manually reconciled as published"
     elif resolution == "confirmed_absent":
+        if published_at_utc is not None:
+            raise ValueError("published_at_utc is valid only for confirmed_published reconciliation")
         if entry.state not in {"dispatching", "unknown", "failed"}:
             raise ValueError("confirmed_absent is valid only for an unresolved or failed dispatch")
         if entry.state in {"dispatching", "unknown"} and entry.provider_effect != "may_exist":
@@ -383,6 +405,8 @@ def resolve_entry(
         entry.published_at_utc = None
         entry.last_error = "manually reconciled as confirmed absent"
     else:
+        if published_at_utc is not None:
+            raise ValueError("published_at_utc is valid only for confirmed_published reconciliation")
         if entry.state not in {"pending", "failed"}:
             raise ValueError("skip is forbidden while a provider effect is unresolved")
         if entry.provider_effect not in {"impossible", "not_dispatched", "confirmed_absent"}:
