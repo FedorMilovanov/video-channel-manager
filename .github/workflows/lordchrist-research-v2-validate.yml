@@ -7,10 +7,12 @@ on:
       - ".github/workflows/lordchrist-generic-target-discovery.yml"
       - "src/video_channel_manager/telegram_research.py"
       - "src/video_channel_manager/telegram_research_release.py"
+      - "src/video_channel_manager/telegram_research_release_cli.py"
       - "src/video_channel_manager/telegram_target_binding.py"
       - "src/video_channel_manager/telegram_target_binding_cli.py"
       - "tests/test_telegram_research.py"
       - "tests/test_telegram_research_release.py"
+      - "tests/test_telegram_research_release_cli.py"
       - "tests/test_telegram_target_binding.py"
       - "content/telegram/lordchrist/research-queues/**"
       - "content/telegram/lordchrist/research-posts/**"
@@ -53,6 +55,7 @@ jobs:
           python -m compileall -q \
             src/video_channel_manager/telegram_research.py \
             src/video_channel_manager/telegram_research_release.py \
+            src/video_channel_manager/telegram_research_release_cli.py \
             src/video_channel_manager/telegram_target_binding.py \
             src/video_channel_manager/telegram_target_binding_cli.py
 
@@ -69,6 +72,7 @@ jobs:
           PYTHONPATH=src python -m pytest -q \
             tests/test_telegram_research.py \
             tests/test_telegram_research_release.py \
+            tests/test_telegram_research_release_cli.py \
             tests/test_telegram_target_binding.py
 
       - name: Prove pull-request queue cannot publish
