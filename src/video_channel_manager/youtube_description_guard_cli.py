@@ -15,6 +15,7 @@ from video_channel_manager.platforms.youtube import (
     TokenStore,
     YOUTUBE_FORCE_SSL_SCOPE,
     YouTubeDescriptionWriter,
+    descriptions_equivalent,
 )
 from video_channel_manager.platforms.youtube.write_lock import local_youtube_write_lock
 
@@ -129,6 +130,7 @@ def execute(args: argparse.Namespace) -> int:
         raise ValueError("Execution confirmation does not match this immutable plan.")
 
     after = str(payload["after_description"])
+    before = str(payload["before_description"])
     _validate_description(after)
 
     store, writer = _writer(str(payload["account_alias"]))
@@ -145,22 +147,22 @@ def execute(args: argparse.Namespace) -> int:
         current = writer.read_description(video)
         if current.channel_id != channel:
             raise ValueError(f"Live channel mismatch: expected {channel}, got {current.channel_id}")
-        if current.description == after:
+        if descriptions_equivalent(current.description, after):
             print("DESCRIPTION ALREADY APPLIED — NO PROVIDER WRITE.")
             print(f"Video: {video}")
             return 0
-        if current.description != str(payload["before_description"]):
+        if not descriptions_equivalent(current.description, before):
             raise ValueError("Live description matches neither immutable before-state nor after-state; refusing overwrite.")
 
         verified = writer.replace_description(
             video_id=video,
             expected_channel_id=channel,
             expected_revision=str(payload["before_revision"]),
-            expected_description=str(payload["before_description"]),
+            expected_description=before,
             new_description=after,
         )
 
-        if verified.description != after:
+        if not descriptions_equivalent(verified.description, after):
             raise ValueError("Post-write description readback mismatch.")
 
     result = {
