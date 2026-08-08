@@ -96,7 +96,7 @@ def test_stale_slot_recovery_is_manual_state_only_and_current_main_proven() -> N
     assert "secrets." not in workflow
 
 
-def test_scheduler_mutation_is_cron_only_quality_proven_and_freshness_bounded() -> None:
+def test_scheduler_mutation_is_cron_only_quality_proven_canary_gated_and_freshness_bounded() -> None:
     profile = load_channel_profile(PROFILE_PATH)
     workflow = SCHEDULED_WORKFLOW.read_text(encoding="utf-8")
 
@@ -107,14 +107,20 @@ def test_scheduler_mutation_is_cron_only_quality_proven_and_freshness_bounded() 
     assert "Require current-main exact-SHA Svodka quality proof" in workflow
     assert "telegram_github_quality_gate" in workflow
     assert '--sha "$GITHUB_SHA"' in workflow
+    assert "Require verified manual canary before scheduler activity" in workflow
+    assert 'entry.dispatch_mode == "manual"' in workflow
+    assert 'entry.provider_effect == "verified"' in workflow
+    assert "steps.canary.outputs.ready == 'true'" in workflow
+    canary_index = workflow.index("Require verified manual canary before scheduler activity")
+    skip_index = workflow.index("Skip expired windows before any provider operation")
+    preflight_index = workflow.index("Fresh read-only target preflight")
+    assert canary_index < skip_index < preflight_index
     assert "MAX_PUBLICATION_LAG_MINUTES: 120" in workflow
     assert "Check strict-next publication freshness" in workflow
     assert "telegram_publication_freshness next" in workflow
     assert "steps.freshness.outputs.fresh == 'true'" in workflow
-    assert workflow.index("Require current-main exact-SHA Svodka quality proof") < workflow.index(
-        "Fresh read-only target preflight"
-    )
-    assert workflow.index("Check strict-next publication freshness") < workflow.index("Fresh read-only target preflight")
+    assert workflow.index("Require current-main exact-SHA Svodka quality proof") < preflight_index
+    assert workflow.index("Check strict-next publication freshness") < preflight_index
     assert "Persist scheduled intent before Telegram mutation" in workflow
     assert "Re-prove current-main quality immediately before Telegram mutation" in workflow
     persist_index = workflow.index("Persist scheduled intent before Telegram mutation")
