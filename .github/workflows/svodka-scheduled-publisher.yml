@@ -181,6 +181,8 @@ jobs:
 
       - name: Skip expired windows before any provider operation
         if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.canary.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
@@ -192,6 +194,10 @@ jobs:
             echo "No expired pending windows required state recovery."
             exit 0
           fi
+
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow svodka-quality.yml \
+            --sha "$GITHUB_SHA"
 
           git -C "$STATE_DIR" config user.name "svodka-publisher[bot]"
           git -C "$STATE_DIR" config user.email "svodka-publisher@users.noreply.github.com"
