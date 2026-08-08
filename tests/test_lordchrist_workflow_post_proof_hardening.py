@@ -2,16 +2,37 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKFLOW = ROOT / ".github/workflows/lordchrist-telegram-poster.yml"
+WORKFLOWS_DIR = ROOT / ".github/workflows"
+WORKFLOW = WORKFLOWS_DIR / "lordchrist-telegram-poster.yml"
+RECOVERY_WORKFLOW = WORKFLOWS_DIR / "lordchrist-reconcile-provider-outcome.yml"
+WRITER_GROUP = "group: lordchrist-telegram-publisher"
+EXPECTED_WRITERS = {WORKFLOW, RECOVERY_WORKFLOW}
 
 
 def workflow_text() -> str:
     return WORKFLOW.read_text(encoding="utf-8")
 
 
+def test_complete_lordchrist_writer_surface_uses_lossless_serialization_contract() -> None:
+    discovered = {
+        path
+        for path in WORKFLOWS_DIR.glob("*.yml")
+        if WRITER_GROUP in path.read_text(encoding="utf-8")
+    }
+
+    assert discovered == EXPECTED_WRITERS
+    for path in discovered:
+        text = path.read_text(encoding="utf-8")
+        assert "cancel-in-progress: false" in text, path.name
+        assert "queue: max" in text, path.name
+        assert "queue: single" not in text, path.name
+        assert "runs-on: ubuntu-24.04" in text, path.name
+        assert "runs-on: ubuntu-latest" not in text, path.name
+
+
 def test_lordchrist_scheduler_queues_pending_runs_without_cancelling_active_run() -> None:
     text = workflow_text()
-    assert "group: lordchrist-telegram-publisher" in text
+    assert WRITER_GROUP in text
     assert "cancel-in-progress: false" in text
     assert "queue: max" in text
     assert "queue: single" not in text
