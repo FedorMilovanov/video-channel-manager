@@ -14,11 +14,7 @@ def workflow_text() -> str:
 
 
 def test_complete_lordchrist_writer_surface_uses_lossless_serialization_contract() -> None:
-    discovered = {
-        path
-        for path in WORKFLOWS_DIR.glob("*.yml")
-        if WRITER_GROUP in path.read_text(encoding="utf-8")
-    }
+    discovered = {path for path in WORKFLOWS_DIR.glob("*.yml") if WRITER_GROUP in path.read_text(encoding="utf-8")}
 
     assert discovered == EXPECTED_WRITERS
     for path in discovered:
