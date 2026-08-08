@@ -33,16 +33,19 @@ WORKFLOW_SHA = "2" * 40
 def _authorized_release() -> tuple[TelegramChannelProfile, TelegramTargetBinding, GenericReleaseQueue]:
     base_profile = load_channel_profile(PROFILE_PATH)
     profile = base_profile.model_copy(update={"provider_writes_authorized": True})
-    binding = load_target_binding(BINDING_PATH, base_profile)
+    binding = load_target_binding(BINDING_PATH, base_profile).model_copy(update={"profile_sha256": profile.digest})
     draft = load_svodka_draft(QUEUE_PATH, profile)
     candidate = build_svodka_release_candidate(
         profile,
         draft,
         release_id="svodka-pilot-2026-08-release",
-        binding=binding.model_copy(update={"profile_sha256": profile.digest}),
+        binding=binding,
     )
     release = authorize_svodka_release(
         candidate,
+        profile=profile,
+        binding=binding,
+        expected_candidate_sha256=candidate.candidate_digest(),
         reviewed_by="test-reviewer",
         reviewed_at=datetime(2026, 8, 8, tzinfo=UTC),
     )
