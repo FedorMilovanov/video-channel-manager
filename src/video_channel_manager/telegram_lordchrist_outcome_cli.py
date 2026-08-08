@@ -8,6 +8,7 @@ from video_channel_manager.telegram_lordchrist_outcome import (
     apply_lordchrist_provider_outcome,
     capture_lordchrist_provider_outcome,
     load_lordchrist_provider_outcome,
+    verify_lordchrist_persisted_evidence,
 )
 from video_channel_manager.telegram_presentation import load_presentation_policy, load_rendered_post
 from video_channel_manager.telegram_publisher import (
@@ -25,6 +26,10 @@ def parser() -> argparse.ArgumentParser:
     root.add_argument("--ledger", type=Path, required=True)
     root.add_argument("--presentation-policy", type=Path)
     sub = root.add_subparsers(dest="command", required=True)
+
+    verify = sub.add_parser("verify-evidence")
+    verify.add_argument("--dispatch", type=Path, required=True)
+    verify.add_argument("--rendered", type=Path, required=True)
 
     capture = sub.add_parser("capture")
     capture.add_argument("--dispatch", type=Path, required=True)
@@ -44,6 +49,22 @@ def main() -> int:
     ledger = load_ledger(args.ledger, queue)
     envelope = load_dispatch(args.dispatch)
     rendered = load_rendered_post(args.rendered)
+
+    if args.command == "verify-evidence":
+        entry = verify_lordchrist_persisted_evidence(queue, ledger, envelope, rendered)
+        print(
+            json.dumps(
+                {
+                    "verified": True,
+                    "publication_id": entry.publication_id,
+                    "state": entry.state,
+                    "provider_effect": entry.provider_effect,
+                    "intent_id": entry.intent_id,
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
 
     if args.command == "capture":
         if args.presentation_policy is None:
