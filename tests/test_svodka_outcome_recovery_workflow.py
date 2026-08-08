@@ -3,9 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 
 from video_channel_manager.telegram_channel_profile import load_channel_profile
+from video_channel_manager.telegram_github_outcome_artifact import PROVIDER_WORKFLOWS
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/svodka-reconcile-provider-outcome.yml"
+CANARY_WORKFLOW = ROOT / ".github/workflows/svodka-canary.yml"
+SCHEDULED_WORKFLOW = ROOT / ".github/workflows/svodka-scheduled-publisher.yml"
 PROFILE = ROOT / "content/telegram/channels/svodka.json"
 
 
@@ -41,6 +44,24 @@ def test_archived_outcome_recovery_requires_exact_source_run_artifact_and_dispat
     assert "github-token: ${{ github.token }}" in workflow
     assert "provider outcome artifact must contain exactly one file" in workflow
     assert "outcome-recovery-proof.json" in workflow
+
+
+def test_provider_workflow_step_contract_matches_recovery_verifier() -> None:
+    canary = CANARY_WORKFLOW.read_text(encoding="utf-8")
+    scheduled = SCHEDULED_WORKFLOW.read_text(encoding="utf-8")
+
+    contracts = {
+        ".github/workflows/svodka-canary.yml": ("workflow_dispatch", canary),
+        ".github/workflows/svodka-scheduled-publisher.yml": ("schedule", scheduled),
+    }
+    assert set(PROVIDER_WORKFLOWS) == set(contracts)
+    for workflow_path, (expected_event, workflow) in contracts.items():
+        contract = PROVIDER_WORKFLOWS[workflow_path]
+        assert contract.event == expected_event
+        assert contract.persist_step in workflow
+        assert contract.send_step in workflow
+        assert contract.archive_step in workflow
+        assert contract.final_state_step in workflow
 
 
 def test_archived_outcome_recovery_applies_only_after_provenance_and_reproves_before_state_push() -> None:
