@@ -26,7 +26,7 @@ def test_reconciliation_is_manual_main_only_and_provider_free() -> None:
     assert "send-once" not in workflow
 
 
-def test_reconciliation_requires_github_step_evidence_and_exact_provenance() -> None:
+def test_reconciliation_requires_completed_matching_github_run_and_exact_provenance() -> None:
     workflow = WORKFLOW.read_text(encoding="utf-8")
 
     assert "source_run_id" in workflow
@@ -35,6 +35,13 @@ def test_reconciliation_requires_github_step_evidence_and_exact_provenance() -> 
     assert "verify-intent" in workflow
     assert "/actions/runs/{run_id}" in workflow
     assert "/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100" in workflow
+    assert 'run.get("status") != "completed"' in workflow
+    assert 'workflow_path = workflow_path.split("@", 1)[0]' in workflow
+    assert '".github/workflows/svodka-canary.yml": (' in workflow
+    assert '"workflow_dispatch"' in workflow
+    assert '".github/workflows/svodka-scheduled-publisher.yml": (' in workflow
+    assert '"schedule"' in workflow
+    assert 'run.get("event") != expected_event' in workflow
     assert 'persist_steps[0].get("conclusion") != "success"' in workflow
     assert 'send_steps[0].get("conclusion") != "skipped"' in workflow
     assert 'run.get("head_sha")' in workflow
