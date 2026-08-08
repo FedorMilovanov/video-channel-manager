@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -96,6 +96,35 @@ def test_authorized_generic_release_requires_reviewed_candidate_provenance() -> 
     payload["reviewed_at"] = "2026-08-08T01:30:00+00:00"
 
     with pytest.raises(ValueError, match="reviewed candidate provenance"):
+        GenericReleaseQueue.model_validate(payload)
+
+
+def test_authorized_release_rejects_tampered_reviewed_candidate_digest() -> None:
+    candidate = _candidate(with_binding=True)
+    release = authorize_svodka_release(
+        candidate,
+        reviewed_by="operator",
+        reviewed_at=datetime(2026, 8, 8, 1, 30, tzinfo=UTC),
+    )
+    payload = release.model_dump(mode="json")
+    payload["reviewed_candidate_sha256"] = "sha256:" + "0" * 64
+
+    with pytest.raises(ValueError, match="does not match its immutable candidate"):
+        GenericReleaseQueue.model_validate(payload)
+
+
+def test_authorized_release_rejects_schedule_change_after_review() -> None:
+    candidate = _candidate(with_binding=True)
+    release = authorize_svodka_release(
+        candidate,
+        reviewed_by="operator",
+        reviewed_at=datetime(2026, 8, 8, 1, 30, tzinfo=UTC),
+    )
+    payload = release.model_dump(mode="json")
+    original = release.items[0].scheduled_at
+    payload["items"][0]["scheduled_at"] = (original + timedelta(minutes=1)).isoformat()
+
+    with pytest.raises(ValueError, match="does not match its immutable candidate"):
         GenericReleaseQueue.model_validate(payload)
 
 
