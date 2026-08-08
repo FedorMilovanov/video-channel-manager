@@ -6,7 +6,7 @@ import os
 import re
 import urllib.parse
 import urllib.request
-from typing import Any
+from typing import Any, cast
 
 ALLOWED_QUALITY_EVENTS = frozenset({"push", "workflow_dispatch"})
 
@@ -28,7 +28,7 @@ def _safe_github_json(url: str, *, token: str) -> dict[str, Any]:
         raise RuntimeError(f"GitHub quality proof unavailable: {type(exc).__name__}") from exc
     if not isinstance(payload, dict):
         raise RuntimeError("GitHub quality proof returned a non-object response")
-    return payload
+    return cast(dict[str, Any], payload)
 
 
 def select_successful_quality_run(
@@ -42,6 +42,7 @@ def select_successful_quality_run(
         raise ValueError("GitHub quality proof has no workflow_runs list")
 
     expected_path = f".github/workflows/{workflow_file}"
+    allowed_paths = {expected_path, f"{expected_path}@main"}
     matching: list[dict[str, Any]] = []
     for candidate in runs:
         if not isinstance(candidate, dict):
@@ -52,9 +53,9 @@ def select_successful_quality_run(
             and candidate.get("status") == "completed"
             and candidate.get("conclusion") == "success"
             and candidate.get("event") in ALLOWED_QUALITY_EVENTS
-            and candidate.get("path") == expected_path
+            and candidate.get("path") in allowed_paths
         ):
-            matching.append(candidate)
+            matching.append(cast(dict[str, Any], candidate))
     if not matching:
         raise ValueError("no successful Svodka quality run proves the exact current main SHA")
 
