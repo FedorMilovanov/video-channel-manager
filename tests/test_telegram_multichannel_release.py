@@ -51,6 +51,7 @@ def test_authorized_release_requires_complete_exact_target_identity() -> None:
     )
     payload = candidate.model_dump(mode="json")
     payload["release_authorized"] = True
+    payload["reviewed_candidate_sha256"] = candidate.digest
     payload["reviewed_by"] = "release-test"
     payload["reviewed_at"] = datetime(2026, 8, 8, 0, 0, tzinfo=UTC).isoformat()
 
@@ -69,4 +70,19 @@ def test_release_rejects_partial_target_binding() -> None:
     payload["chat_id"] = -1003527567039
 
     with pytest.raises(ValueError, match="target binding must be either complete or entirely unset"):
+        GenericReleaseQueue.model_validate(payload)
+
+
+def test_release_rejects_equal_scheduled_timestamps() -> None:
+    profile, draft, binding = _inputs()
+    candidate = build_svodka_release_candidate(
+        profile,
+        draft,
+        release_id="svodka-pilot-2026-08-duplicate-time-test",
+        binding=binding,
+    )
+    payload = candidate.model_dump(mode="json")
+    payload["items"][1]["scheduled_at"] = payload["items"][0]["scheduled_at"]
+
+    with pytest.raises(ValueError, match="strictly ordered by scheduled_at"):
         GenericReleaseQueue.model_validate(payload)
