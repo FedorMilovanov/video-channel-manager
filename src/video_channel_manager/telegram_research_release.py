@@ -59,7 +59,10 @@ def build_research_release_candidate(
 ) -> GenericReleaseQueue:
     if research.live_eligible:
         raise ValueError("research evidence queue must remain staged while building a release candidate")
-    if profile.project_key != research.project_key or profile.channel_username.casefold() != research.channel_username.casefold():
+    if (
+        profile.project_key != research.project_key
+        or profile.channel_username.casefold() != research.channel_username.casefold()
+    ):
         raise ValueError("research queue identity differs from selected Telegram channel profile")
     if profile.timezone != research.schedule.timezone:
         raise ValueError("research schedule timezone differs from selected Telegram channel profile")
