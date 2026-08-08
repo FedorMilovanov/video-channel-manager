@@ -3,28 +3,6 @@ name: Svodka quality
 on:
   push:
     branches: [main]
-    paths:
-      - "content/telegram/channels/svodka*.json"
-      - "content/telegram/svodka/**"
-      - "requirements/telegram-publisher.txt"
-      - "src/video_channel_manager/svodka_*.py"
-      - "src/video_channel_manager/telegram_models.py"
-      - "src/video_channel_manager/telegram_transport.py"
-      - "src/video_channel_manager/telegram_channel_*.py"
-      - "src/video_channel_manager/telegram_html_entities.py"
-      - "src/video_channel_manager/telegram_multichannel_*.py"
-      - "src/video_channel_manager/telegram_target_binding.py"
-      - "tests/test_svodka*.py"
-      - "tests/test_telegram_channel*.py"
-      - "tests/test_telegram_html_entities.py"
-      - "tests/test_telegram_multichannel*.py"
-      - ".github/workflows/svodka-quality.yml"
-      - ".github/workflows/svodka-telegram-preflight.yml"
-      - ".github/workflows/svodka-ledger-init.yml"
-      - ".github/workflows/svodka-skip-expired.yml"
-      - ".github/workflows/svodka-reconcile-skipped-send.yml"
-      - ".github/workflows/svodka-canary.yml"
-      - ".github/workflows/svodka-scheduled-publisher.yml"
   workflow_dispatch:
 
 permissions:
