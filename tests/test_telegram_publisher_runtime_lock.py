@@ -19,9 +19,7 @@ EXPECTED_PACKAGES = {
     "typing-extensions==4.15.0",
     "typing-inspection==0.4.2",
 }
-PRODUCTION_PYDANTIC_CORE_HASH = (
-    "--hash=sha256:f9fa868638bf362d3d138ea55829cefb3d5f4b0d7f142234382a15e2485dbec4"
-)
+PRODUCTION_PYDANTIC_CORE_HASH = "--hash=sha256:f9fa868638bf362d3d138ea55829cefb3d5f4b0d7f142234382a15e2485dbec4"
 
 
 def _stanzas(text: str) -> list[str]:
