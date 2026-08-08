@@ -103,6 +103,8 @@ class GenericReleaseQueue(BaseModel):
         if self.release_authorized:
             if not target_is_complete:
                 raise ValueError("authorized release requires exact target binding and bot/channel identity")
+            if self.reviewed_candidate_sha256 is None:
+                raise ValueError("authorized release requires exact reviewed candidate provenance")
             if not self.reviewed_by or self.reviewed_at is None:
                 raise ValueError("authorized release requires reviewed_by and reviewed_at")
             if self.reviewed_at.tzinfo is None:
