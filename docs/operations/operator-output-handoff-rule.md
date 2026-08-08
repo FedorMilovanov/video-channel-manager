@@ -87,6 +87,22 @@ Start-Process explorer.exe -ArgumentList "/select,`"$Result`""
 
 The Explorer convenience step is local UI only. It does not authorize or perform any provider mutation.
 
+## Chat-to-PowerShell copy/paste boundary
+
+For this operator, assume the normal workflow is a direct `Ctrl+C` of the supplied command block followed by `Ctrl+V` into PowerShell. The handoff must therefore be safe under whole-block copy/paste without requiring the operator to distinguish executable lines from illustrative output.
+
+Rules:
+
+1. when the next action is to run PowerShell, provide exactly one fenced executable PowerShell block for that action;
+2. do not place a second fenced block immediately after it containing example output, placeholder output, pseudo-commands, labels such as `Channel:`, `Video:`, `STATE:`, `TITLE:`, or other text that PowerShell could try to execute if copied together;
+3. expected output may be described in prose, or omitted when the operator has been asked to return the real output;
+4. never ask the operator to paste a YouTube description, chapter list, metadata preview, or explanatory text into PowerShell unless the shell command intentionally consumes that text;
+5. prefer repository-owned files and exact paths over inline multiline payloads;
+6. avoid backslash-escaped underscores or colons in commands. A rendered `\_` or `\:` copied literally is a handoff defect, not an operator task to repair;
+7. if a prior answer exposed a misleading copyable example, correct the handoff format instead of teaching the operator to manually filter copied lines.
+
+The recurring failure mode behind this rule was not a PowerShell bug: explanatory/example output was rendered in the same copy-friendly form as executable commands, so a normal whole-block paste caused PowerShell to treat non-command lines as commands. The fix is presentation-level separation plus repository-owned deterministic inputs, not extra operator vigilance.
+
 ## Agent handoff requirement
 
 When an agent asks Fedor to run a command and then return a generated file, the agent must provide the output path itself. The agent must not require Fedor to infer repository location, search `data/`, inspect timestamps, or discover filenames manually.
