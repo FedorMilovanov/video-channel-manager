@@ -9,6 +9,7 @@ from video_channel_manager.telegram_target_binding import load_target_binding
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 LEDGER_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-ledger-init.yml"
 CANARY_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-canary.yml"
+SKIP_EXPIRED_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-skip-expired.yml"
 PROFILE_PATH = REPOSITORY_ROOT / "content/telegram/channels/svodka.json"
 BINDING_PATH = REPOSITORY_ROOT / "content/telegram/channels/svodka-target-binding.json"
 APPROVED_RELEASE = REPOSITORY_ROOT / "content/telegram/svodka/approved-release-2026-08.json"
@@ -54,11 +55,28 @@ def test_canary_is_one_exact_manual_dispatch_with_durable_intent_first() -> None
     assert f"group: {profile.concurrency_group}" in workflow
 
 
+def test_stale_slot_recovery_is_manual_state_only_and_provider_free() -> None:
+    profile = load_channel_profile(PROFILE_PATH)
+    workflow = SKIP_EXPIRED_WORKFLOW.read_text(encoding="utf-8")
+
+    assert "workflow_dispatch:" in workflow
+    assert "schedule:" not in workflow
+    assert "SKIP-EXPIRED:$REQUESTED_DIGEST" in workflow
+    assert "skip-expired" in workflow
+    assert "state/svodka-telegram" in workflow
+    assert f"group: {profile.concurrency_group}" in workflow
+    assert "cancel-in-progress: false" in workflow
+    assert "sendMessage" not in workflow
+    assert "sendPoll" not in workflow
+    assert "send-once" not in workflow
+    assert "secrets." not in workflow
+
+
 def test_all_svodka_state_writers_share_profile_concurrency_group() -> None:
     profile = load_channel_profile(PROFILE_PATH)
     expected = f"group: {profile.concurrency_group}"
 
-    for workflow_path in (LEDGER_WORKFLOW, CANARY_WORKFLOW):
+    for workflow_path in (LEDGER_WORKFLOW, SKIP_EXPIRED_WORKFLOW, CANARY_WORKFLOW):
         workflow = workflow_path.read_text(encoding="utf-8")
         assert expected in workflow, workflow_path.name
         assert "cancel-in-progress: false" in workflow, workflow_path.name
