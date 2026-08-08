@@ -106,10 +106,7 @@ def require_successful_quality_run(
             "per_page": "100",
         }
     )
-    runs_url = (
-        f"{api_url.rstrip('/')}/repos/{repository}/actions/workflows/"
-        f"{encoded_workflow}/runs?{query}"
-    )
+    runs_url = f"{api_url.rstrip('/')}/repos/{repository}/actions/workflows/{encoded_workflow}/runs?{query}"
     payload = _safe_github_json(runs_url, token=token)
     return select_successful_quality_run(payload, workflow_file=workflow_file, head_sha=head_sha)
 
