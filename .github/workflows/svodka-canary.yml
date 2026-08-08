@@ -144,13 +144,14 @@ jobs:
             --release "$RELEASE_PATH" \
             --ledger "$LEDGER_PATH"
 
-      - name: Require fresh canary publication window
+      - name: Require fresh strict-next canary window
         env:
           REQUESTED_PUBLICATION_ID: ${{ inputs.publication_id }}
         run: |
           set -euo pipefail
-          python -m video_channel_manager.telegram_publication_freshness item \
+          python -m video_channel_manager.telegram_publication_freshness next \
             --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
             --publication-id "$REQUESTED_PUBLICATION_ID" \
             --max-lag-minutes "$MAX_PUBLICATION_LAG_MINUTES"
 
