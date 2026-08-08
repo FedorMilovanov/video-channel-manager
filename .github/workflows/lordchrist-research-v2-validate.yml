@@ -14,6 +14,8 @@ on:
       - "tests/test_telegram_research_release.py"
       - "tests/test_telegram_research_release_cli.py"
       - "tests/test_telegram_target_binding.py"
+      - "content/telegram/channels/lordchrist.json"
+      - "content/telegram/channels/lordchrist-target-binding.json"
       - "content/telegram/lordchrist/research-queues/**"
       - "content/telegram/lordchrist/research-posts/**"
       - "docs/lordchrist/research-post-v2.md"
