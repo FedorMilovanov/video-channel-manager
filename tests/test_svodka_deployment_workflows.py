@@ -184,11 +184,17 @@ def test_complete_svodka_state_writer_surface_uses_lossless_serialization_contra
         "svodka-reconcile-skipped-send.yml",
         "svodka-reconcile-provider-outcome.yml",
     }
+    workflows_dir = REPOSITORY_ROOT / ".github/workflows"
+    discovered = {
+        path
+        for path in workflows_dir.glob("*.yml")
+        if expected_group in path.read_text(encoding="utf-8")
+    }
 
-    assert {path.name for path in STATE_WRITER_WORKFLOWS} == expected_names
-    for workflow_path in STATE_WRITER_WORKFLOWS:
+    assert {path.name for path in discovered} == expected_names
+    assert discovered == set(STATE_WRITER_WORKFLOWS)
+    for workflow_path in discovered:
         workflow = workflow_path.read_text(encoding="utf-8")
-        assert expected_group in workflow, workflow_path.name
         assert "cancel-in-progress: false" in workflow, workflow_path.name
         assert "queue: max" in workflow, workflow_path.name
         assert "runs-on: ubuntu-24.04" in workflow, workflow_path.name
