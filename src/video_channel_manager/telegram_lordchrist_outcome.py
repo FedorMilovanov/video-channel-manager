@@ -60,6 +60,23 @@ class LordchristProviderOutcome(BaseModel):
         return self
 
 
+def verify_lordchrist_persisted_evidence(
+    queue: TelegramQueue,
+    ledger: TelegramLedger,
+    envelope: DispatchEnvelope,
+    rendered: RenderedTelegramPost,
+) -> LedgerEntry:
+    """Verify durable pre-send evidence without reinterpreting it under a later policy."""
+
+    verify_dispatch_against_queue(queue, envelope)
+    entry = verify_persisted_intent(queue, ledger, envelope)
+    if rendered.publication_id != envelope.publication_id:
+        raise ValueError("persisted rendered publication differs from durable dispatch")
+    if rendered.source_payload_sha256 != envelope.payload_sha256:
+        raise ValueError("persisted rendered source payload differs from durable dispatch")
+    return entry
+
+
 def _require_outcome_matches_dispatch(
     outcome: LordchristProviderOutcome,
     envelope: DispatchEnvelope,
@@ -148,8 +165,7 @@ def apply_lordchrist_provider_outcome(
     # The source run already validated and durably persisted the rendered payload
     # before provider mutation. Recovery binds that exact persisted payload to the
     # exact dispatch and archived outcome instead of reinterpreting it under a new policy.
-    verify_dispatch_against_queue(queue, envelope)
-    verify_persisted_intent(queue, ledger, envelope)
+    verify_lordchrist_persisted_evidence(queue, ledger, envelope, rendered)
     _require_outcome_matches_dispatch(outcome, envelope, rendered)
 
     recovered = outcome.entry.model_copy(deep=True)
@@ -170,4 +186,5 @@ __all__ = [
     "apply_lordchrist_provider_outcome",
     "capture_lordchrist_provider_outcome",
     "load_lordchrist_provider_outcome",
+    "verify_lordchrist_persisted_evidence",
 ]
