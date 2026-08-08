@@ -41,15 +41,20 @@ jobs:
           python-version: "3.11"
 
       - name: Install repository dev runtime
-        run: |
-          set -euo pipefail
-          python -m pip install --disable-pip-version-check -e ".[dev]"
-
-      - name: Apply reviewed Svodka wording and source corrections
+        id: install
+        continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail
-          python - <<'PY'
+          set -o pipefail
+          python -m pip install --disable-pip-version-check -e ".[dev]" 2>&1 | tee /tmp/install.log
+
+      - name: Apply reviewed Svodka wording and source corrections
+        id: edit
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python - <<'PY' 2>&1 | tee /tmp/edit.log
           import json
           import os
           from pathlib import Path
@@ -142,12 +147,15 @@ jobs:
           ]
 
           path.write_text(json.dumps(queue, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          print("reviewed editorial patch applied")
           PY
 
       - name: Ruff format focused Svodka runtime
+        id: format
+        continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail
+          set -o pipefail
           ruff format \
             src/video_channel_manager/telegram_channel_profile.py \
             src/video_channel_manager/telegram_channel_discovery.py \
@@ -169,12 +177,15 @@ jobs:
             tests/test_telegram_multichannel_cli.py \
             tests/test_svodka_queue_contract.py \
             tests/test_svodka_release_review.py \
-            tests/test_svodka_preflight_workflow.py
+            tests/test_svodka_preflight_workflow.py \
+            2>&1 | tee /tmp/format.log
 
       - name: Ruff correctness gate
+        id: ruff
+        continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail
+          set -o pipefail
           ruff check \
             src/video_channel_manager/telegram_channel_profile.py \
             src/video_channel_manager/telegram_channel_discovery.py \
@@ -196,12 +207,15 @@ jobs:
             tests/test_telegram_multichannel_cli.py \
             tests/test_svodka_queue_contract.py \
             tests/test_svodka_release_review.py \
-            tests/test_svodka_preflight_workflow.py
+            tests/test_svodka_preflight_workflow.py \
+            2>&1 | tee /tmp/ruff.log
 
       - name: Static typing gate
+        id: mypy
+        continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail
+          set -o pipefail
           mypy \
             src/video_channel_manager/telegram_channel_profile.py \
             src/video_channel_manager/telegram_channel_discovery.py \
@@ -214,12 +228,14 @@ jobs:
             src/video_channel_manager/telegram_multichannel_cli.py \
             src/video_channel_manager/svodka_queue.py \
             src/video_channel_manager/svodka_release.py \
-            --show-error-codes
+            --show-error-codes 2>&1 | tee /tmp/mypy.log
 
       - name: Focused Svodka regression suite
+        id: pytest
+        continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail
+          set -o pipefail
           python -m pytest -q \
             tests/test_telegram_channel_profile_contract.py \
             tests/test_telegram_channel_cli.py \
@@ -230,39 +246,29 @@ jobs:
             tests/test_telegram_multichannel_cli.py \
             tests/test_svodka_queue_contract.py \
             tests/test_svodka_release_review.py \
-            tests/test_svodka_preflight_workflow.py
+            tests/test_svodka_preflight_workflow.py \
+            2>&1 | tee /tmp/pytest.log
 
       - name: Validate draft and rebuild exact write-disabled candidate
+        id: candidate
+        continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail
-          python -m video_channel_manager.telegram_channel_cli validate-profile --profile "$PROFILE_PATH"
-          python -m video_channel_manager.telegram_channel_cli validate-svodka \
-            --profile "$PROFILE_PATH" \
-            --queue "$QUEUE_PATH"
-          python -m video_channel_manager.telegram_channel_cli preview-svodka \
-            --profile "$PROFILE_PATH" \
-            --queue "$QUEUE_PATH" \
-            --sequence 2 >/dev/null
-          python -m video_channel_manager.telegram_channel_cli preview-svodka \
-            --profile "$PROFILE_PATH" \
-            --queue "$QUEUE_PATH" \
-            --sequence 6 >/dev/null
-          python -m video_channel_manager.telegram_channel_cli preview-svodka \
-            --profile "$PROFILE_PATH" \
-            --queue "$QUEUE_PATH" \
-            --sequence 8 >/dev/null
-          python -m video_channel_manager.telegram_channel_cli preview-svodka \
-            --profile "$PROFILE_PATH" \
-            --queue "$QUEUE_PATH" \
-            --sequence 13 >/dev/null
-          python -m video_channel_manager.telegram_channel_cli build-svodka-candidate \
-            --profile "$PROFILE_PATH" \
-            --queue "$QUEUE_PATH" \
-            --binding "$BINDING_PATH" \
-            --release-id svodka-pilot-2026-08-review-candidate \
-            --output "$CANDIDATE_PATH"
-          python - <<'PY'
+          set -o pipefail
+          {
+            python -m video_channel_manager.telegram_channel_cli validate-profile --profile "$PROFILE_PATH"
+            python -m video_channel_manager.telegram_channel_cli validate-svodka --profile "$PROFILE_PATH" --queue "$QUEUE_PATH"
+            for sequence in 2 6 8 13; do
+              python -m video_channel_manager.telegram_channel_cli preview-svodka \
+                --profile "$PROFILE_PATH" --queue "$QUEUE_PATH" --sequence "$sequence" >/dev/null
+            done
+            python -m video_channel_manager.telegram_channel_cli build-svodka-candidate \
+              --profile "$PROFILE_PATH" \
+              --queue "$QUEUE_PATH" \
+              --binding "$BINDING_PATH" \
+              --release-id svodka-pilot-2026-08-review-candidate \
+              --output "$CANDIDATE_PATH"
+            python - <<'PY'
           import os
           from pathlib import Path
 
@@ -275,10 +281,8 @@ jobs:
           release = load_release(Path(os.environ["CANDIDATE_PATH"]))
           if release.release_authorized:
               raise SystemExit("review candidate unexpectedly authorizes provider writes")
-          if release.profile_sha256 != profile.digest:
-              raise SystemExit("candidate profile digest differs from stable channel contract")
-          if release.target_binding_sha256 != binding.digest:
-              raise SystemExit("candidate target binding digest differs from pinned binding")
+          if release.profile_sha256 != profile.digest or release.target_binding_sha256 != binding.digest:
+              raise SystemExit("candidate differs from stable profile or pinned binding")
           if (release.chat_id, release.bot_id, release.bot_username) != (
               binding.chat_id,
               binding.bot_id,
@@ -291,21 +295,25 @@ jobs:
           print(f"binding={binding.digest}")
           print(f"profile={profile.digest}")
           PY
+          } 2>&1 | tee /tmp/candidate.log
 
       - name: Refresh exact Telegram proof read-only
+        id: preflight
+        continue-on-error: true
         env:
           SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
         shell: bash
         run: |
-          set -euo pipefail
-          mkdir -p .runtime
-          python -m video_channel_manager.telegram_channel_cli preflight \
-            --profile "$PROFILE_PATH" \
-            --expected-chat-id "$EXPECTED_CHAT_ID" \
-            --expected-bot-id "$EXPECTED_BOT_ID" \
-            --expected-bot-username "$EXPECTED_BOT_USERNAME" \
-            --output "$PROOF_PATH"
-          python - <<'PY'
+          set -o pipefail
+          {
+            mkdir -p .runtime
+            python -m video_channel_manager.telegram_channel_cli preflight \
+              --profile "$PROFILE_PATH" \
+              --expected-chat-id "$EXPECTED_CHAT_ID" \
+              --expected-bot-id "$EXPECTED_BOT_ID" \
+              --expected-bot-username "$EXPECTED_BOT_USERNAME" \
+              --output "$PROOF_PATH"
+            python - <<'PY'
           import json
           import os
           from pathlib import Path
@@ -317,16 +325,82 @@ jobs:
               os.environ["EXPECTED_BOT_USERNAME"].casefold(),
           )
           actual = (proof["chat_id"], proof["bot_id"], proof["bot_username"].casefold())
-          if actual != expected:
+          if actual != expected or proof["can_post_messages"] is not True:
               raise SystemExit(f"read-only preflight exact identity mismatch: {actual!r}")
-          if proof["can_post_messages"] is not True:
-              raise SystemExit("read-only preflight no longer proves can_post_messages")
+          print("read-only exact target preflight passed")
           PY
+          } 2>&1 | tee /tmp/preflight.log
 
-      - name: Record successful consolidation evidence
+      - name: Diagnose failure or commit repaired state
+        if: always()
+        env:
+          INSTALL_OUTCOME: ${{ steps.install.outcome }}
+          EDIT_OUTCOME: ${{ steps.edit.outcome }}
+          FORMAT_OUTCOME: ${{ steps.format.outcome }}
+          RUFF_OUTCOME: ${{ steps.ruff.outcome }}
+          MYPY_OUTCOME: ${{ steps.mypy.outcome }}
+          PYTEST_OUTCOME: ${{ steps.pytest.outcome }}
+          CANDIDATE_OUTCOME: ${{ steps.candidate.outcome }}
+          PREFLIGHT_OUTCOME: ${{ steps.preflight.outcome }}
         shell: bash
         run: |
           set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          outcomes=(
+            "$INSTALL_OUTCOME" "$EDIT_OUTCOME" "$FORMAT_OUTCOME" "$RUFF_OUTCOME"
+            "$MYPY_OUTCOME" "$PYTEST_OUTCOME" "$CANDIDATE_OUTCOME" "$PREFLIGHT_OUTCOME"
+          )
+          failed=false
+          for outcome in "${outcomes[@]}"; do
+            [[ "$outcome" == "success" ]] || failed=true
+          done
+
+          if [[ "$failed" == "true" ]]; then
+            mkdir -p docs/operations
+            python - <<'PY'
+          import os
+          from pathlib import Path
+
+          gates = [
+              ("install", os.environ["INSTALL_OUTCOME"], "/tmp/install.log"),
+              ("edit", os.environ["EDIT_OUTCOME"], "/tmp/edit.log"),
+              ("format", os.environ["FORMAT_OUTCOME"], "/tmp/format.log"),
+              ("ruff", os.environ["RUFF_OUTCOME"], "/tmp/ruff.log"),
+              ("mypy", os.environ["MYPY_OUTCOME"], "/tmp/mypy.log"),
+              ("pytest", os.environ["PYTEST_OUTCOME"], "/tmp/pytest.log"),
+              ("candidate", os.environ["CANDIDATE_OUTCOME"], "/tmp/candidate.log"),
+              ("preflight", os.environ["PREFLIGHT_OUTCOME"], "/tmp/preflight.log"),
+          ]
+          lines = [
+              "# Svodka consolidation repair diagnostic",
+              "",
+              f"Workflow run: {os.environ.get('GITHUB_RUN_ID', 'unknown')} attempt {os.environ.get('GITHUB_RUN_ATTEMPT', 'unknown')}",
+              "",
+              "| Gate | Outcome |",
+              "|---|---|",
+          ]
+          lines.extend(f"| {name} | {outcome} |" for name, outcome, _ in gates)
+          for name, _, log_path in gates:
+              lines.extend(["", f"## {name}", "```text"])
+              path = Path(log_path)
+              if path.exists():
+                  text = path.read_text(encoding="utf-8", errors="replace")
+                  lines.append(text[-12000:])
+              else:
+                  lines.append("no log captured")
+              lines.append("```")
+          Path("docs/operations/svodka-consolidation-repair-diagnostic.md").write_text(
+              "\n".join(lines) + "\n", encoding="utf-8"
+          )
+          PY
+            git add docs/operations/svodka-consolidation-repair-diagnostic.md
+            git commit -m "Record Svodka repair diagnostics [skip ci]"
+            git push origin HEAD:main
+            exit 1
+          fi
+
           mkdir -p docs/operations
           python - <<'PY'
           import os
@@ -370,14 +444,10 @@ Pinned identities:
 This file supersedes the earlier failed consolidation diagnostic for the repaired gate. The failure record remains in history as regression evidence.
 """
           Path("docs/operations/svodka-consolidation-result.md").write_text(result, encoding="utf-8")
+          diagnostic = Path("docs/operations/svodka-consolidation-repair-diagnostic.md")
+          if diagnostic.exists():
+              diagnostic.unlink()
           PY
-
-      - name: Remove superseded one-time workflows and commit repaired state
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           for file in \
             .github/workflows/svodka-runtime-quality-once.yml \
@@ -397,10 +467,6 @@ This file supersedes the earlier failed consolidation diagnostic for the repaire
             src/video_channel_manager \
             tests \
             docs/operations/svodka-consolidation-result.md
-
-          git diff --cached --quiet && {
-            echo "Repair gate produced no durable repository changes." >&2
-            exit 3
-          }
+          git add -u docs/operations
           git commit -m "Pass repaired Svodka consolidation gate"
           git push origin HEAD:main
