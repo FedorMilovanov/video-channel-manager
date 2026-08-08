@@ -36,11 +36,13 @@ def test_generic_profile_model_represents_multiple_channels_without_core_constan
     assert svodka.project_key == "svodka"
     assert svodka.channel_username == "@deep_info_life"
     assert svodka.state_branch == "state/svodka-telegram"
+    assert svodka.daily_verified_limit == 2
     assert svodka.bot_token_env == "SVODKA_TELEGRAM_BOT_TOKEN"
 
     assert lordchrist.project_key == "lord-god-strength"
     assert lordchrist.channel_username == "@lordchrist"
     assert lordchrist.state_branch == "state/lordchrist-telegram"
+    assert lordchrist.daily_verified_limit == 1
     assert lordchrist.bot_token_env == "LORDCHRIST_TELEGRAM_BOT_TOKEN"
     assert lordchrist.provider_writes_authorized is False
     assert lordchrist.digest != svodka.digest
