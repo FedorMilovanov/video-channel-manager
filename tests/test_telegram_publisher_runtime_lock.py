@@ -3,7 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-LOCK = ROOT / "requirements/telegram-publisher.txt"
+PORTABLE_LOCK = ROOT / "requirements/telegram-publisher.txt"
+PRODUCTION_LOCK = ROOT / "requirements/telegram-publisher-ubuntu24-py311.txt"
 WORKFLOWS = ROOT / ".github/workflows"
 
 EXPECTED_PACKAGES = {
@@ -40,30 +41,36 @@ def _stanzas(text: str) -> list[str]:
     return stanzas
 
 
-def test_minimal_telegram_runtime_is_fully_pinned_and_hash_checked() -> None:
-    text = LOCK.read_text(encoding="utf-8")
-    assert "--require-hashes" in {line.strip() for line in text.splitlines()}
+def test_production_telegram_runtime_is_fully_pinned_and_hash_checked() -> None:
+    production = PRODUCTION_LOCK.read_text(encoding="utf-8")
+    portable = PORTABLE_LOCK.read_text(encoding="utf-8")
+    assert "--require-hashes" in {line.strip() for line in production.splitlines()}
 
-    stanzas = _stanzas(text)
-    package_specs = {stanza.split()[0] for stanza in stanzas}
-    assert package_specs == EXPECTED_PACKAGES
-    assert len(stanzas) == len(EXPECTED_PACKAGES)
-    for stanza in stanzas:
+    production_stanzas = _stanzas(production)
+    portable_specs = {line.strip() for line in portable.splitlines() if line.strip()}
+    production_specs = {stanza.split()[0] for stanza in production_stanzas}
+    assert portable_specs == EXPECTED_PACKAGES
+    assert production_specs == EXPECTED_PACKAGES
+    assert len(production_stanzas) == len(EXPECTED_PACKAGES)
+    for stanza in production_stanzas:
         assert "--hash=sha256:" in stanza, stanza.split()[0]
         assert " @ " not in stanza
         assert ">=" not in stanza
         assert "~=" not in stanza
 
-    pydantic_core = next(stanza for stanza in stanzas if stanza.startswith("pydantic-core=="))
+    pydantic_core = next(stanza for stanza in production_stanzas if stanza.startswith("pydantic-core=="))
     assert PRODUCTION_PYDANTIC_CORE_HASH in pydantic_core
 
 
-def test_every_workflow_using_the_minimal_runtime_keeps_binary_only_install() -> None:
+def test_every_workflow_uses_only_the_hashed_production_telegram_runtime() -> None:
     consumers: list[Path] = []
     for workflow in WORKFLOWS.glob("*.yml"):
         text = workflow.read_text(encoding="utf-8")
-        if "requirements/telegram-publisher.txt" in text:
+        if "telegram-publisher" not in text:
+            continue
+        if "requirements/telegram-publisher-ubuntu24-py311.txt" in text:
             consumers.append(workflow)
             assert "--only-binary=:all:" in text, workflow.name
+        assert "-r requirements/telegram-publisher.txt" not in text, workflow.name
 
-    assert consumers, "no workflow consumes the guarded Telegram publisher runtime"
+    assert consumers, "no workflow consumes the hashed production Telegram runtime"
