@@ -6,7 +6,7 @@ from pathlib import Path
 from video_channel_manager.svodka_queue import load_svodka_draft
 from video_channel_manager.svodka_release import authorize_svodka_release, build_svodka_release_candidate
 from video_channel_manager.telegram_channel_profile import load_channel_profile
-from video_channel_manager.telegram_multichannel_state import initialize_ledger
+from video_channel_manager.telegram_multichannel_state import initialize_ledger, skip_expired_pending
 from video_channel_manager.telegram_publication_freshness import (
     next_publication_freshness,
     publication_freshness,
@@ -94,6 +94,35 @@ def test_next_freshness_uses_strict_next_pending_item() -> None:
 
     assert decision.eligible is True
     assert decision.publication_id == release.items[1].publication_id
+
+
+def test_evening_run_skips_missed_morning_then_sees_evening_as_fresh() -> None:
+    release = _release()
+    ledger = initialize_ledger(release)
+    evening_slot = datetime(2026, 8, 9, 16, 30, tzinfo=UTC)
+
+    skipped = skip_expired_pending(release, ledger, now=evening_slot)
+    decision = next_publication_freshness(release, ledger, now=evening_slot)
+
+    assert skipped == (release.items[0].publication_id,)
+    assert decision.eligible is True
+    assert decision.publication_id == release.items[1].publication_id
+    assert decision.reason == "publication_fresh"
+
+
+def test_final_evening_item_still_expires_after_two_hours_not_midnight() -> None:
+    release = _release()
+    final = release.items[-1]
+
+    decision = publication_freshness(
+        release,
+        final.publication_id,
+        now=datetime(2026, 8, 15, 18, 30, tzinfo=UTC),
+    )
+
+    assert decision.eligible is False
+    assert decision.reason == "publication_too_stale"
+    assert decision.deadline_utc == datetime(2026, 8, 15, 18, 30, tzinfo=UTC)
 
 
 def test_next_freshness_rejects_requested_item_that_is_not_strict_next() -> None:
