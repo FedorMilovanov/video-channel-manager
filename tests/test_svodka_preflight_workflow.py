@@ -62,6 +62,7 @@ def test_svodka_quality_workflow_is_full_read_only_verification() -> None:
 
     assert "push:\n    branches: [main]" in workflow
     assert "paths:" not in workflow
+    assert "if: github.ref == 'refs/heads/main'" in workflow
     assert "permissions:\n  contents: read" in workflow
     assert "persist-credentials: false" in workflow
     assert "provider_writes_authorized" not in workflow
@@ -82,6 +83,16 @@ def test_svodka_quality_workflow_is_full_read_only_verification() -> None:
     assert "tests/test_telegram_publication_freshness.py" in workflow
     assert "for sequence in $(seq 1 14)" in workflow
     assert "svodka-review-candidate" in workflow
+
+
+def test_svodka_quality_rejects_committed_release_from_stale_candidate() -> None:
+    workflow = QUALITY_WORKFLOW_PATH.read_text(encoding="utf-8")
+
+    assert "APPROVED_RELEASE_PATH: content/telegram/svodka/approved-release-2026-08.json" in workflow
+    assert "Validate committed release against current candidate" in workflow
+    assert 'release.reviewed_candidate_sha256 != candidate.digest' in workflow
+    assert 'release.candidate_digest() != candidate.digest' in workflow
+    assert "committed Svodka release was reviewed from a stale candidate" in workflow
 
 
 def test_self_mutating_svodka_repair_workflow_is_gone() -> None:
