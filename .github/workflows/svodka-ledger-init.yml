@@ -16,7 +16,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: svodka-telegram-state
+  group: svodka-telegram-publisher
   cancel-in-progress: false
 
 jobs:
