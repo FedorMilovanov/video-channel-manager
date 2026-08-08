@@ -8,10 +8,12 @@ on:
       - "content/telegram/svodka/**"
       - "src/video_channel_manager/svodka_*.py"
       - "src/video_channel_manager/telegram_channel_*.py"
+      - "src/video_channel_manager/telegram_html_entities.py"
       - "src/video_channel_manager/telegram_multichannel_*.py"
       - "src/video_channel_manager/telegram_target_binding.py"
       - "tests/test_svodka*.py"
       - "tests/test_telegram_channel*.py"
+      - "tests/test_telegram_html_entities.py"
       - "tests/test_telegram_multichannel*.py"
       - ".github/workflows/svodka-quality.yml"
       - ".github/workflows/svodka-telegram-preflight.yml"
@@ -61,6 +63,7 @@ jobs:
           src/video_channel_manager/telegram_channel_profile.py
           src/video_channel_manager/telegram_channel_discovery.py
           src/video_channel_manager/telegram_channel_cli.py
+          src/video_channel_manager/telegram_html_entities.py
           src/video_channel_manager/telegram_target_binding.py
           src/video_channel_manager/telegram_multichannel_release.py
           src/video_channel_manager/telegram_multichannel_state.py
@@ -71,6 +74,7 @@ jobs:
           src/video_channel_manager/svodka_release.py
           tests/test_telegram_channel_profile_contract.py
           tests/test_telegram_channel_cli.py
+          tests/test_telegram_html_entities.py
           tests/test_telegram_target_binding.py
           tests/test_telegram_multichannel_release.py
           tests/test_telegram_multichannel_state.py
@@ -88,6 +92,7 @@ jobs:
           src/video_channel_manager/telegram_channel_profile.py
           src/video_channel_manager/telegram_channel_discovery.py
           src/video_channel_manager/telegram_channel_cli.py
+          src/video_channel_manager/telegram_html_entities.py
           src/video_channel_manager/telegram_target_binding.py
           src/video_channel_manager/telegram_multichannel_release.py
           src/video_channel_manager/telegram_multichannel_state.py
@@ -98,6 +103,7 @@ jobs:
           src/video_channel_manager/svodka_release.py
           tests/test_telegram_channel_profile_contract.py
           tests/test_telegram_channel_cli.py
+          tests/test_telegram_html_entities.py
           tests/test_telegram_target_binding.py
           tests/test_telegram_multichannel_release.py
           tests/test_telegram_multichannel_state.py
@@ -115,6 +121,7 @@ jobs:
           src/video_channel_manager/telegram_channel_profile.py
           src/video_channel_manager/telegram_channel_discovery.py
           src/video_channel_manager/telegram_channel_cli.py
+          src/video_channel_manager/telegram_html_entities.py
           src/video_channel_manager/telegram_target_binding.py
           src/video_channel_manager/telegram_multichannel_release.py
           src/video_channel_manager/telegram_multichannel_state.py
@@ -130,6 +137,7 @@ jobs:
           python -m pytest -q
           tests/test_telegram_channel_profile_contract.py
           tests/test_telegram_channel_cli.py
+          tests/test_telegram_html_entities.py
           tests/test_telegram_target_binding.py
           tests/test_telegram_multichannel_release.py
           tests/test_telegram_multichannel_state.py
