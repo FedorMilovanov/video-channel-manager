@@ -81,8 +81,7 @@ class GenericReleaseQueue(BaseModel):
         if len(publication_ids) != len(set(publication_ids)):
             raise ValueError("release publication_id values must be unique")
         if any(
-            self.items[index].scheduled_at >= self.items[index + 1].scheduled_at
-            for index in range(len(self.items) - 1)
+            self.items[index].scheduled_at >= self.items[index + 1].scheduled_at for index in range(len(self.items) - 1)
         ):
             raise ValueError("release items must be strictly ordered by scheduled_at")
 
@@ -121,11 +120,7 @@ class GenericReleaseQueue(BaseModel):
                 raise ValueError("authorized release requires reviewed_by and reviewed_at")
             if self.reviewed_at.tzinfo is None:
                 raise ValueError("authorized release reviewed_at must be timezone-aware")
-        elif (
-            self.reviewed_candidate_sha256 is not None
-            or self.reviewed_by is not None
-            or self.reviewed_at is not None
-        ):
+        elif self.reviewed_candidate_sha256 is not None or self.reviewed_by is not None or self.reviewed_at is not None:
             raise ValueError("unauthorized release must not claim completed review metadata")
         return self
 
