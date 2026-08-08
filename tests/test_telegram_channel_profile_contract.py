@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from video_channel_manager.telegram_channel_profile import load_channel_profile
@@ -7,6 +8,7 @@ from video_channel_manager.telegram_channel_profile import load_channel_profile
 ROOT = Path(__file__).resolve().parents[1]
 SVODKA_PROFILE_PATH = ROOT / "content/telegram/channels/svodka.json"
 LORDCHRIST_PROFILE_PATH = ROOT / "content/telegram/channels/lordchrist.json"
+LORDCHRIST_PRODUCTION_PATH = ROOT / "content/telegram/lordchrist/production-schedule.json"
 EXPECTED_STABLE_DIGEST = "sha256:bbfd1a0b354a3ba874595a6397477498ba28f5dd5bdc2de298b1ef23649575d9"
 
 
@@ -46,3 +48,17 @@ def test_generic_profile_model_represents_multiple_channels_without_core_constan
     assert lordchrist.bot_token_env == "LORDCHRIST_TELEGRAM_BOT_TOKEN"
     assert lordchrist.provider_writes_authorized is False
     assert lordchrist.digest != svodka.digest
+
+
+def test_lordchrist_migration_profile_matches_existing_live_identity_and_limit() -> None:
+    profile = load_channel_profile(LORDCHRIST_PROFILE_PATH)
+    production = json.loads(LORDCHRIST_PRODUCTION_PATH.read_text(encoding="utf-8"))
+
+    assert production["enabled"] is True
+    assert profile.project_key == production["project_key"]
+    assert profile.channel_username == production["channel_username"]
+    assert profile.timezone == production["timezone"]
+    assert profile.daily_verified_limit == production["daily_verified_limit"] == 1
+    assert profile.state_branch == "state/lordchrist-telegram"
+    assert production["bot_id"] == 8716602202
+    assert production["bot_username"] == "preaching_mp3_bot"
