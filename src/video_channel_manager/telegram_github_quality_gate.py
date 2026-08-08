@@ -42,18 +42,18 @@ def select_successful_quality_run(
         raise ValueError("GitHub quality proof has no workflow_runs list")
 
     expected_path = f".github/workflows/{workflow_file}"
-    allowed_paths = {expected_path, f"{expected_path}@main"}
     matching: list[dict[str, Any]] = []
     for candidate in runs:
         if not isinstance(candidate, dict):
             continue
+        workflow_path = str(candidate.get("path") or "").split("@", 1)[0]
         if (
             candidate.get("head_sha") == head_sha
             and candidate.get("head_branch") == "main"
             and candidate.get("status") == "completed"
             and candidate.get("conclusion") == "success"
             and candidate.get("event") in ALLOWED_QUALITY_EVENTS
-            and candidate.get("path") in allowed_paths
+            and workflow_path == expected_path
         ):
             matching.append(cast(dict[str, Any], candidate))
     if not matching:
