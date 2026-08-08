@@ -167,6 +167,7 @@ jobs:
             tests/test_telegram_multichannel_state.py \
             tests/test_telegram_multichannel_outcome.py \
             tests/test_telegram_multichannel_cli.py \
+            tests/test_svodka_queue_contract.py \
             tests/test_svodka_release_review.py \
             tests/test_svodka_preflight_workflow.py
 
@@ -193,6 +194,7 @@ jobs:
             tests/test_telegram_multichannel_state.py \
             tests/test_telegram_multichannel_outcome.py \
             tests/test_telegram_multichannel_cli.py \
+            tests/test_svodka_queue_contract.py \
             tests/test_svodka_release_review.py \
             tests/test_svodka_preflight_workflow.py
 
@@ -226,6 +228,7 @@ jobs:
             tests/test_telegram_multichannel_state.py \
             tests/test_telegram_multichannel_outcome.py \
             tests/test_telegram_multichannel_cli.py \
+            tests/test_svodka_queue_contract.py \
             tests/test_svodka_release_review.py \
             tests/test_svodka_preflight_workflow.py
 
@@ -344,6 +347,7 @@ Status: PASS
 
 - install: pass
 - editorial source hardening: pass
+- schedule/source consistency contract: pass
 - ruff format/check: pass
 - mypy focused runtime: pass
 - pytest focused Svodka runtime: pass
