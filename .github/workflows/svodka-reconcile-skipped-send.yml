@@ -216,7 +216,7 @@ jobs:
               with urllib.request.urlopen(request, timeout=30) as response:
                   return json.load(response)
 
-          run = github_json(f"{api}/repos/{repo}/actions/runs/{run_id}")
+          run = github_json(f"{api}/repos/{repo}/actions/runs/{run_id}/attempts/{attempt}")
           if int(run.get("run_attempt", 0)) != attempt:
               raise SystemExit("GitHub run attempt differs from requested reconciliation")
           if run.get("head_branch") != "main":
