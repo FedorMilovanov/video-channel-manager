@@ -81,9 +81,10 @@ class GenericReleaseQueue(BaseModel):
         if len(publication_ids) != len(set(publication_ids)):
             raise ValueError("release publication_id values must be unique")
         if any(
-            self.items[index].scheduled_at > self.items[index + 1].scheduled_at for index in range(len(self.items) - 1)
+            self.items[index].scheduled_at >= self.items[index + 1].scheduled_at
+            for index in range(len(self.items) - 1)
         ):
-            raise ValueError("release items must be ordered by scheduled_at")
+            raise ValueError("release items must be strictly ordered by scheduled_at")
 
         per_day: dict[str, int] = {}
         for item in self.items:
