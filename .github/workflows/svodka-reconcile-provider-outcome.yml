@@ -32,11 +32,12 @@ permissions:
 concurrency:
   group: svodka-telegram-publisher
   cancel-in-progress: false
+  queue: max
 
 jobs:
   reconcile:
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 12
     env:
       PYTHONPATH: src
@@ -264,6 +265,11 @@ jobs:
         run: |
           set -euo pipefail
           evidence_rel_dir="content/telegram/svodka/dispatches/$SOURCE_RUN_ID-$SOURCE_RUN_ATTEMPT"
+          current_main_sha="$(git -C "$STATE_DIR" ls-remote origin refs/heads/main | cut -f1)"
+          [[ "$current_main_sha" == "$GITHUB_SHA" ]] || {
+            echo "recovery runtime SHA is no longer current main; rerun recovery from the current main revision" >&2
+            exit 3
+          }
 
           git -C "$STATE_DIR" config user.name "svodka-publisher[bot]"
           git -C "$STATE_DIR" config user.email "svodka-publisher@users.noreply.github.com"

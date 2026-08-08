@@ -11,9 +11,20 @@ LEDGER_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-ledger-init.yml"
 CANARY_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-canary.yml"
 SKIP_EXPIRED_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-skip-expired.yml"
 SCHEDULED_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-scheduled-publisher.yml"
+RECONCILE_SKIPPED_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-reconcile-skipped-send.yml"
+RECONCILE_OUTCOME_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-reconcile-provider-outcome.yml"
 PROFILE_PATH = REPOSITORY_ROOT / "content/telegram/channels/svodka.json"
 BINDING_PATH = REPOSITORY_ROOT / "content/telegram/channels/svodka-target-binding.json"
 APPROVED_RELEASE = REPOSITORY_ROOT / "content/telegram/svodka/approved-release-2026-08.json"
+
+STATE_WRITER_WORKFLOWS = (
+    LEDGER_WORKFLOW,
+    SKIP_EXPIRED_WORKFLOW,
+    CANARY_WORKFLOW,
+    SCHEDULED_WORKFLOW,
+    RECONCILE_SKIPPED_WORKFLOW,
+    RECONCILE_OUTCOME_WORKFLOW,
+)
 
 
 def test_ledger_initialization_is_manual_exact_provider_free_and_current_main_proven() -> None:
@@ -162,14 +173,27 @@ def test_scheduler_mutation_is_cron_only_quality_proven_canary_gated_and_freshne
     assert "send-once" in workflow
 
 
-def test_all_svodka_state_writers_share_profile_concurrency_group() -> None:
+def test_complete_svodka_state_writer_surface_uses_lossless_serialization_contract() -> None:
     profile = load_channel_profile(PROFILE_PATH)
-    expected = f"group: {profile.concurrency_group}"
+    expected_group = f"group: {profile.concurrency_group}"
+    expected_names = {
+        "svodka-ledger-init.yml",
+        "svodka-skip-expired.yml",
+        "svodka-canary.yml",
+        "svodka-scheduled-publisher.yml",
+        "svodka-reconcile-skipped-send.yml",
+        "svodka-reconcile-provider-outcome.yml",
+    }
+    workflows_dir = REPOSITORY_ROOT / ".github/workflows"
+    discovered = {path for path in workflows_dir.glob("*.yml") if expected_group in path.read_text(encoding="utf-8")}
 
-    for workflow_path in (LEDGER_WORKFLOW, SKIP_EXPIRED_WORKFLOW, CANARY_WORKFLOW, SCHEDULED_WORKFLOW):
+    assert {path.name for path in discovered} == expected_names
+    assert discovered == set(STATE_WRITER_WORKFLOWS)
+    for workflow_path in discovered:
         workflow = workflow_path.read_text(encoding="utf-8")
-        assert expected in workflow, workflow_path.name
         assert "cancel-in-progress: false" in workflow, workflow_path.name
+        assert "queue: max" in workflow, workflow_path.name
+        assert "runs-on: ubuntu-24.04" in workflow, workflow_path.name
 
 
 def test_committed_live_release_if_present_is_exact_and_authorized() -> None:
