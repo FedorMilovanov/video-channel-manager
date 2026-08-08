@@ -8,7 +8,12 @@ However, the generic release adapter previously copied only `post.payload_sha256
 
 This was a provenance gap, not a provider-write bypass. The research profile remained write-disabled and no research release had been activated.
 
-A second fact-check pass also found one evidence-mapping defect: the `3,600+` MacArthur archive claim was true, but its manifest pointed to a GTY history page plus a MacArthur Center page that currently says `3,500`. The claim is now bound to the exact current Grace to You archive source that states `more than 3,600 sermons`.
+The live source sweep also found two evidence-mapping defects before activation:
+
+1. the true `3,600+` MacArthur archive claim pointed to a GTY history page plus a MacArthur Center page that currently says `3,500`, rather than the exact current Grace to You archive source stating `more than 3,600 sermons`;
+2. the 2011 completion claim attributed a `42 years` description to sources that did not make that exact statement. It is now expressed from the exact dated first sermon (9 February 1969), exact dated final Mark sermon (5 June 2011), and Grace Community Church's official June 2011 New Testament completion record.
+
+The public Telegram copy did not need to change; the evidence claims and source mappings were corrected.
 
 ## Fix
 
@@ -20,15 +25,18 @@ Every research release item now binds an evidence capsule with:
 
 The resulting SHA-256 becomes the generic release item's `source_sha256`.
 
-Any change to verification metadata, source registry, claims, body, or post payload therefore changes the generic candidate digest and forces a new exact review.
+Any change to verification metadata, source registry, source mapping, claims, body, or post payload therefore changes the generic candidate digest and forces a new exact review.
 
-Current audited evidence identity:
+The validator also requires the research fact-check date to cover the bound registry check date and locks the `3,600+` claim to its exact checked GTY source.
 
-- source registry: `sha256:23f4521f1406dfcd775533bc435a8ba913d7e41405c8df8bbe23ea7d431f3ec8`;
-- research queue: `sha256:1b934d6acd95c42457dd3bee60fb6958291722e491979cd682324af3d4bd1271`;
-- target-bound candidate: `sha256:b87b69332a05fbf968e1d04b4f24543d89e7619113a8d076e8f81d20d7f69515`.
+## Final audited evidence identity
 
-The former candidates `sha256:0f25f23fc87665b03df0b8486d6f336e8e405b6213457772ead6ce2a363cd07d` and `sha256:dbd4bc71e7a2a4e1320beb51843f0553f853dab34f2bd04d1800b787c2433653` are intentionally obsolete and must never be approved.
+- source count: `30`;
+- source registry: `sha256:5873c269cb749d972e8edca981336ac058f228298f9332f8c33f410c0d960665`;
+- research queue: `sha256:9ee025da63f13e2363bb4bb3f9e0af430b46399c69eeca068da10f9cd24e1fa1`;
+- target-bound candidate: `sha256:779fd3bd41633b2f9ffe0052723d50fdb0593b27dff71bbed56ca7119c6acc13`.
+
+Former candidates `0f25…`, `dbd4…`, and `b87b…` are intentionally obsolete and must never be approved.
 
 ## Invariant
 
