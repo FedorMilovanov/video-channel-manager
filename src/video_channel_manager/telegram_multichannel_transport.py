@@ -75,6 +75,7 @@ class GenericPollPayload(BaseModel):
     explanation: str | None = Field(default=None, max_length=200)
     description: str | None = Field(default=None, max_length=1024)
     is_anonymous: bool = True
+    allows_multiple_answers: bool = False
 
     @model_validator(mode="after")
     def validate_quiz_fields(self) -> "GenericPollPayload":
@@ -87,6 +88,8 @@ class GenericPollPayload(BaseModel):
                 raise ValueError("quiz correct_option_ids must be unique and monotonically increasing")
             if any(index < 0 or index >= len(self.options) for index in self.correct_option_ids):
                 raise ValueError("quiz correct option id is outside the options list")
+            if len(self.correct_option_ids) > 1 and not self.allows_multiple_answers:
+                raise ValueError("quiz with multiple correct answers must allow multiple answers")
         elif self.correct_option_ids is not None or self.explanation is not None:
             raise ValueError("regular poll must not include quiz-only fields")
         return self
@@ -186,6 +189,7 @@ def render_poll_payload(
     explanation: str | None = None,
     description: str | None = None,
     is_anonymous: bool = True,
+    allows_multiple_answers: bool = False,
 ) -> GenericPollPayload:
     _validate_publication_id(profile, publication_id)
     digest_input: dict[str, Any] = {
@@ -201,6 +205,7 @@ def render_poll_payload(
         "explanation": explanation,
         "description": description,
         "is_anonymous": is_anonymous,
+        "allows_multiple_answers": allows_multiple_answers,
     }
     return GenericPollPayload(
         schema_name="video-channel-manager.telegram-generic-poll-payload",
@@ -217,6 +222,7 @@ def render_poll_payload(
         explanation=explanation,
         description=description,
         is_anonymous=is_anonymous,
+        allows_multiple_answers=allows_multiple_answers,
     )
 
 
@@ -518,6 +524,7 @@ def send_poll_once(
         "options": [{"text": option} for option in payload.options],
         "type": payload.poll_type,
         "is_anonymous": payload.is_anonymous,
+        "allows_multiple_answers": payload.allows_multiple_answers,
     }
     if payload.description:
         provider_payload["description"] = payload.description
@@ -561,7 +568,15 @@ def send_poll_once(
             raise TelegramApiError(
                 "Telegram returned poll options that differ from payload", provider_effect="may_exist"
             )
-        if payload.description is not None and str(poll.get("description") or "") != payload.description:
+        if poll.get("is_anonymous") is not payload.is_anonymous:
+            raise TelegramApiError(
+                "Telegram returned poll anonymity that differs from payload", provider_effect="may_exist"
+            )
+        if poll.get("allows_multiple_answers") is not payload.allows_multiple_answers:
+            raise TelegramApiError(
+                "Telegram returned poll multiple-answer semantics that differ from payload", provider_effect="may_exist"
+            )
+        if str(poll.get("description") or "") != (payload.description or ""):
             raise TelegramApiError(
                 "Telegram returned poll description that differs from payload", provider_effect="may_exist"
             )
@@ -578,6 +593,10 @@ def send_poll_once(
             if returned_correct != payload.correct_option_ids:
                 raise TelegramApiError(
                     "Telegram returned quiz answer ids that differ from payload", provider_effect="may_exist"
+                )
+            if str(poll.get("explanation") or "") != (payload.explanation or ""):
+                raise TelegramApiError(
+                    "Telegram returned quiz explanation that differs from payload", provider_effect="may_exist"
                 )
         message_id = _message_id(message)
         return _receipt(
