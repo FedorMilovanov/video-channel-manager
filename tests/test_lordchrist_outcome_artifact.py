@@ -6,6 +6,7 @@ import urllib.error
 import urllib.request
 import zipfile
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -15,9 +16,15 @@ from video_channel_manager.telegram_lordchrist_outcome import LordchristProvider
 from video_channel_manager.telegram_lordchrist_outcome_artifact import (
     LordchristProviderOutcomeArtifactProof,
     download_verified_lordchrist_provider_outcome,
+    prove_lordchrist_provider_outcome_artifact,
     verify_lordchrist_provider_outcome_archive,
 )
-from video_channel_manager.telegram_models import LedgerEntry
+from video_channel_manager.telegram_models import LedgerEntry, TargetProof
+from video_channel_manager.telegram_publisher import load_queue
+from video_channel_manager.telegram_state import initialize_ledger, prepare_next
+
+ROOT = Path(__file__).resolve().parents[1]
+QUEUE = ROOT / "content/telegram/lordchrist/verified-30-posts.json"
 
 
 def outcome_bytes() -> bytes:
@@ -95,6 +102,76 @@ def proof_for(archive: bytes) -> LordchristProviderOutcomeArtifactProof:
     )
 
 
+def source_dispatch():
+    queue = load_queue(QUEUE)
+    ledger = initialize_ledger(queue)
+    now = datetime(2026, 8, 9, 6, 17, tzinfo=UTC)
+    target = TargetProof(
+        schema_name="video-channel-manager.telegram-target-proof",
+        schema_version=2,
+        bot_id=8716602202,
+        bot_username="preaching_mp3_bot",
+        chat_id=-1001295216957,
+        chat_username="lordchrist",
+        chat_title="Господь Бог — Сила Моя",
+        chat_type="channel",
+        member_status="administrator",
+        can_post_messages=True,
+        checked_at_utc=now,
+    )
+    prepared = prepare_next(
+        queue,
+        ledger,
+        run_id="12345",
+        run_attempt="1",
+        github_sha="b" * 40,
+        github_workflow_sha="c" * 40,
+        mode="scheduled",
+        target=target,
+        now=now,
+    )
+    assert prepared.envelope is not None
+    return prepared.envelope
+
+
+def source_proof_payloads():
+    dispatch = source_dispatch()
+    run_payload = {
+        "run_attempt": 1,
+        "head_branch": "main",
+        "status": "completed",
+        "conclusion": "failure",
+        "path": ".github/workflows/lordchrist-telegram-poster.yml@refs/heads/main",
+        "event": "schedule",
+        "head_sha": dispatch.github_sha,
+    }
+    jobs_payload = {
+        "jobs": [
+            {
+                "steps": [
+                    {"name": artifact_module.PERSIST_STEP, "conclusion": "success"},
+                    {"name": artifact_module.SEND_STEP, "conclusion": "success"},
+                    {"name": artifact_module.ARCHIVE_STEP, "conclusion": "success"},
+                    {"name": artifact_module.FINAL_STATE_STEP, "conclusion": "failure"},
+                ]
+            }
+        ]
+    }
+    artifacts_payload = {
+        "artifacts": [
+            {
+                "id": 999,
+                "name": "lordchrist-provider-outcome-12345-1",
+                "expired": False,
+                "size_in_bytes": 321,
+                "digest": "sha256:" + "d" * 64,
+                "workflow_run": {"id": 12345, "head_sha": dispatch.github_sha},
+            }
+        ]
+    }
+    return dispatch, run_payload, jobs_payload, artifacts_payload
+
+
 class BytesResponse:
     def __init__(self, payload: bytes) -> None:
         self.payload = payload
@@ -117,6 +194,63 @@ def redirect_error(request: urllib.request.Request, location: str) -> urllib.err
         {"Location": location},
         io.BytesIO(),
     )
+
+
+def test_source_run_proof_binds_exact_attempt_event_steps_head_and_artifact() -> None:
+    dispatch, run_payload, jobs_payload, artifacts_payload = source_proof_payloads()
+    proof = prove_lordchrist_provider_outcome_artifact(
+        run_payload=run_payload,
+        jobs_payload=jobs_payload,
+        artifacts_payload=artifacts_payload,
+        dispatch=dispatch,
+        source_run_id="12345",
+        source_run_attempt="1",
+        requested_publication_id=dispatch.publication_id,
+        now=datetime(2026, 8, 9, 7, 0, tzinfo=UTC),
+    )
+    assert proof.source_run_id == "12345"
+    assert proof.source_run_attempt == "1"
+    assert proof.event == "schedule"
+    assert proof.head_sha == dispatch.github_sha
+    assert proof.artifact_id == 999
+
+
+@pytest.mark.parametrize(
+    ("mutation", "error"),
+    [
+        ("attempt", "attempt differs"),
+        ("head", "head SHA differs"),
+        ("event", "event differs"),
+        ("send", "send step did not execute"),
+        ("archive", "artifact was not archived"),
+        ("final", "final state persistence already succeeded"),
+    ],
+)
+def test_source_run_proof_rejects_mismatched_or_incomplete_provenance(mutation: str, error: str) -> None:
+    dispatch, run_payload, jobs_payload, artifacts_payload = source_proof_payloads()
+    if mutation == "attempt":
+        run_payload["run_attempt"] = 2
+    elif mutation == "head":
+        run_payload["head_sha"] = "e" * 40
+    elif mutation == "event":
+        run_payload["event"] = "workflow_dispatch"
+    elif mutation == "send":
+        jobs_payload["jobs"][0]["steps"][1]["conclusion"] = "failure"
+    elif mutation == "archive":
+        jobs_payload["jobs"][0]["steps"][2]["conclusion"] = "failure"
+    else:
+        jobs_payload["jobs"][0]["steps"][3]["conclusion"] = "success"
+
+    with pytest.raises(ValueError, match=error):
+        prove_lordchrist_provider_outcome_artifact(
+            run_payload=run_payload,
+            jobs_payload=jobs_payload,
+            artifacts_payload=artifacts_payload,
+            dispatch=dispatch,
+            source_run_id="12345",
+            source_run_attempt="1",
+            requested_publication_id=dispatch.publication_id,
+        )
 
 
 def test_verified_archive_returns_exact_valid_lordchrist_outcome_bytes() -> None:
