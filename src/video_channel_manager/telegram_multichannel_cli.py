@@ -219,9 +219,9 @@ def main() -> int:
 
     if args.command == "initialize-ledger":
         release = load_release(args.release)
-        expected = f"INITIALIZE:{release.release_id}:{release.digest}"
+        expected = f"INITIALIZE:{release.digest}"
         if args.confirm != expected:
-            raise ValueError("ledger initialization confirmation does not match exact release")
+            raise ValueError("ledger initialization confirmation does not match exact release digest")
         if args.output.exists():
             raise ValueError(f"refusing to overwrite existing Telegram ledger: {args.output}")
         ledger = initialize_ledger(release)
