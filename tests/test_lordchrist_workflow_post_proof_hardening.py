@@ -32,7 +32,7 @@ def test_lordchrist_provider_path_requires_exact_current_main_ci_before_prefligh
     assert "Require current-main exact-SHA repository CI proof" in text
     assert "Re-prove current-main CI immediately before Telegram mutation" in text
     assert text.count("telegram_github_quality_gate") == 2
-    assert text.count('--workflow ci.yml') == 2
+    assert text.count("--workflow ci.yml") == 2
     assert text.count('--sha "$GITHUB_SHA"') == 2
 
     initial_quality = text.index("Require current-main exact-SHA repository CI proof")
