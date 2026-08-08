@@ -173,6 +173,53 @@ def publication_local_date(value: datetime, timezone_name: str) -> date:
     return value.astimezone(zone).date()
 
 
+def publication_window(release: GenericReleaseQueue, publication_id: str) -> tuple[datetime, datetime]:
+    index = next((offset for offset, item in enumerate(release.items) if item.publication_id == publication_id), None)
+    if index is None:
+        raise ValueError(f"publication is absent from immutable release: {publication_id}")
+
+    item = release.items[index]
+    start = item.scheduled_at.astimezone(UTC)
+    if index + 1 < len(release.items):
+        end = release.items[index + 1].scheduled_at.astimezone(UTC)
+    else:
+        zone = ZoneInfo(release.timezone)
+        local_start = item.scheduled_at.astimezone(zone)
+        end = (local_start.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)).astimezone(UTC)
+    if end <= start:
+        raise ValueError(f"invalid publication window for {publication_id}")
+    return start, end
+
+
+def skip_expired_pending(
+    release: GenericReleaseQueue,
+    ledger: GenericPublicationLedger,
+    *,
+    now: datetime | None = None,
+) -> tuple[str, ...]:
+    effective_now = now or utc_now()
+    if effective_now.tzinfo is None:
+        raise ValueError("stale-publication check timestamp must be timezone-aware")
+    effective_now = effective_now.astimezone(UTC)
+    verify_ledger_against_release(ledger, release)
+
+    skipped: list[str] = []
+    for item in release.items:
+        entry = ledger.entries[item.publication_id]
+        if entry.state in {"published", "skipped"}:
+            continue
+        if entry.state != "pending":
+            break
+        _, end = publication_window(release, item.publication_id)
+        if effective_now < end:
+            break
+        entry.state = "skipped"
+        entry.provider_effect = "impossible"
+        entry.last_error = f"publication window expired at {end.isoformat()} before dispatch"
+        skipped.append(item.publication_id)
+    return tuple(skipped)
+
+
 def initialize_ledger(release: GenericReleaseQueue) -> GenericPublicationLedger:
     return GenericPublicationLedger(
         schema_name="video-channel-manager.telegram-generic-publication-ledger",
@@ -311,6 +358,7 @@ def prepare_next(
     prepared_at = now or utc_now()
     if prepared_at.tzinfo is None:
         raise ValueError("prepare timestamp must be timezone-aware")
+    prepared_at = prepared_at.astimezone(UTC)
     _require_release_and_profile(profile, release)
     verify_ledger_against_release(ledger, release)
     _require_target(profile, release, target, prepared_at)
@@ -366,19 +414,26 @@ def prepare_next(
                 reason=f"manual publication_id mismatch: requested {expected_publication_id}, strict next is {item.publication_id}",
                 item=item,
             )
-    else:
-        if expected_publication_id is not None:
-            return PreparedGenericDispatch(
-                envelope=None,
-                reason="scheduled execution must not carry a manual publication_id",
-                item=item,
-            )
-        if prepared_at < item.scheduled_at.astimezone(UTC):
-            return PreparedGenericDispatch(
-                envelope=None,
-                reason=f"next publication is not due until {item.scheduled_at.isoformat()}",
-                item=item,
-            )
+    elif expected_publication_id is not None:
+        return PreparedGenericDispatch(
+            envelope=None,
+            reason="scheduled execution must not carry a manual publication_id",
+            item=item,
+        )
+
+    window_start, window_end = publication_window(release, item.publication_id)
+    if prepared_at < window_start:
+        return PreparedGenericDispatch(
+            envelope=None,
+            reason=f"publication window does not open until {item.scheduled_at.isoformat()}",
+            item=item,
+        )
+    if prepared_at >= window_end:
+        return PreparedGenericDispatch(
+            envelope=None,
+            reason=f"publication window expired at {window_end.isoformat()}",
+            item=item,
+        )
 
     entry = ledger.entries[item.publication_id]
     intent_id = secrets.token_hex(16)
