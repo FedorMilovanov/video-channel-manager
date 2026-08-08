@@ -110,6 +110,11 @@ def test_scheduler_mutation_is_cron_only_quality_proven_canary_gated_and_freshne
     workflow = SCHEDULED_WORKFLOW.read_text(encoding="utf-8")
 
     assert "schedule:" in workflow
+    assert workflow.count("cron:") == 4
+    assert 'cron: "30 7 9-15 8 *"' in workflow
+    assert 'cron: "17 8 9-15 8 *"' in workflow
+    assert 'cron: "30 16 9-15 8 *"' in workflow
+    assert 'cron: "17 17 9-15 8 *"' in workflow
     assert "workflow_dispatch:" in workflow
     assert "if: github.event_name == 'schedule' && github.ref == 'refs/heads/main'" in workflow
     assert "actions: read" in workflow
