@@ -20,7 +20,7 @@ ROOT = Path(__file__).parents[1]
 PROFILE_PATH = ROOT / "content/telegram/channels/lordchrist.json"
 BINDING_PATH = ROOT / "content/telegram/channels/lordchrist-target-binding.json"
 QUEUE_PATH = ROOT / "content/telegram/lordchrist/research-queues/calvin-spurgeon-macarthur-v2.json"
-EXPECTED_CANDIDATE = "sha256:dbd4bc71e7a2a4e1320beb51843f0553f853dab34f2bd04d1800b787c2433653"
+EXPECTED_CANDIDATE = "sha256:b87b69332a05fbf968e1d04b4f24543d89e7619113a8d076e8f81d20d7f69515"
 REVIEWED_AT = datetime(2026, 8, 8, 9, 30, tzinfo=UTC)
 
 
