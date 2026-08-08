@@ -90,8 +90,8 @@ def test_svodka_quality_rejects_committed_release_from_stale_candidate() -> None
 
     assert "APPROVED_RELEASE_PATH: content/telegram/svodka/approved-release-2026-08.json" in workflow
     assert "Validate committed release against current candidate" in workflow
-    assert 'release.reviewed_candidate_sha256 != candidate.digest' in workflow
-    assert 'release.candidate_digest() != candidate.digest' in workflow
+    assert "release.reviewed_candidate_sha256 != candidate.digest" in workflow
+    assert "release.candidate_digest() != candidate.digest" in workflow
     assert "committed Svodka release was reviewed from a stale candidate" in workflow
 
 

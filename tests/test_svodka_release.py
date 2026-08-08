@@ -32,7 +32,7 @@ def test_build_svodka_release_candidate_freezes_exact_provider_payloads() -> Non
     quiz = release.items[6]
     assert quiz.publication_id == "svodka-quiz-lightning-vs-sun"
     assert isinstance(quiz.payload, GenericPollPayload)
-    assert quiz.payload.schema_version == 3
+    assert quiz.payload.schema_version == 4
     assert quiz.payload.correct_option_ids == (0,)
     assert quiz.payload.description is not None
     assert "NOAA" in quiz.payload.description

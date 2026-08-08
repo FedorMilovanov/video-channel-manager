@@ -195,8 +195,12 @@ def test_generic_transport_can_render_and_verify_quiz_poll_without_live_network(
                 "is_closed": False,
                 "is_anonymous": True,
                 "type": "quiz",
-                "allows_multiple_answers": False,
-                "correct_option_ids": [0],
+                "allows_multiple_answers": payload.allows_multiple_answers,
+                "allows_revoting": payload.allows_revoting,
+                "members_only": payload.members_only,
+                "description": payload.description,
+                "correct_option_ids": list(payload.correct_option_ids or ()),
+                "explanation": payload.explanation,
             },
         }
         return httpx.Response(200, json={"ok": True, "result": result})
