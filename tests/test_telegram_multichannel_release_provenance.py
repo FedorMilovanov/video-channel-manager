@@ -30,9 +30,14 @@ def _candidate() -> GenericReleaseQueue:
 
 
 def test_authorized_release_self_verifies_exact_candidate_digest() -> None:
+    profile = load_channel_profile(PROFILE_PATH)
+    binding = load_target_binding(BINDING_PATH, profile)
     candidate = _candidate()
     release = authorize_svodka_release(
         candidate,
+        profile=profile,
+        binding=binding,
+        expected_candidate_sha256=candidate.candidate_digest(),
         reviewed_by="reviewer",
         reviewed_at=datetime(2026, 8, 8, 3, 0, tzinfo=UTC),
     )
