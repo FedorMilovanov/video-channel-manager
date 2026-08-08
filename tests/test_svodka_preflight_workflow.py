@@ -10,6 +10,7 @@ PREFLIGHT_WORKFLOW_PATH = REPOSITORY_ROOT / ".github/workflows/svodka-telegram-p
 QUALITY_WORKFLOW_PATH = REPOSITORY_ROOT / ".github/workflows/svodka-quality.yml"
 PROFILE_PATH = REPOSITORY_ROOT / "content/telegram/channels/svodka.json"
 BINDING_PATH = REPOSITORY_ROOT / "content/telegram/channels/svodka-target-binding.json"
+CANONICAL_RELEASE_ID = "svodka-pilot-2026-08"
 
 
 def test_svodka_target_binding_is_exact_and_profile_bound() -> None:
@@ -36,6 +37,17 @@ def test_svodka_preflight_uses_pinned_binding_and_shared_bot_secret_without_muta
     assert "sendMessage" not in workflow
     assert "sendPoll" not in workflow
     assert "schedule:" not in workflow
+
+
+def test_quality_and_preflight_build_the_same_review_candidate_identity() -> None:
+    quality = QUALITY_WORKFLOW_PATH.read_text(encoding="utf-8")
+    preflight = PREFLIGHT_WORKFLOW_PATH.read_text(encoding="utf-8")
+
+    for workflow in (quality, preflight):
+        assert f"RELEASE_ID: {CANONICAL_RELEASE_ID}" in workflow
+        assert '--release-id "$RELEASE_ID"' in workflow
+        assert "CANDIDATE_PATH: .runtime/svodka-review-candidate.json" in workflow
+        assert "name: svodka-review-candidate" in workflow
 
 
 def test_svodka_preflight_keeps_colon_bearing_pip_command_in_block_scalar() -> None:
