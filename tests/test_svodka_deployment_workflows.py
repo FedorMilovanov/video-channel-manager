@@ -42,7 +42,7 @@ def test_canary_is_one_exact_fresh_manual_dispatch_with_durable_intent_first() -
     assert "schedule:" not in workflow
     assert "CANARY:$REQUESTED_PUBLICATION_ID:$REQUESTED_DIGEST" in workflow
     assert "actions: read" in workflow
-    assert "Require exact-SHA Svodka quality proof" in workflow
+    assert "Require current-main exact-SHA Svodka quality proof" in workflow
     assert "telegram_github_quality_gate" in workflow
     assert '--sha "$GITHUB_SHA"' in workflow
     assert "MAX_PUBLICATION_LAG_MINUTES: 120" in workflow
@@ -54,11 +54,17 @@ def test_canary_is_one_exact_fresh_manual_dispatch_with_durable_intent_first() -
     assert "release.release_authorized" in workflow
     assert "approved-release-2026-08.json" in workflow
     assert "Fresh read-only target preflight" in workflow
-    assert workflow.index("Require exact-SHA Svodka quality proof") < workflow.index("Fresh read-only target preflight")
+    assert workflow.index("Require current-main exact-SHA Svodka quality proof") < workflow.index(
+        "Fresh read-only target preflight"
+    )
     assert workflow.index("Require fresh strict-next canary window") < workflow.index("Fresh read-only target preflight")
     assert "Persist intent before Telegram mutation" in workflow
+    assert "Re-prove current-main quality immediately before Telegram mutation" in workflow
     assert "send-once" in workflow
-    assert workflow.index("Persist intent before Telegram mutation") < workflow.index("send-once")
+    persist_index = workflow.index("Persist intent before Telegram mutation")
+    reproof_index = workflow.index("Re-prove current-main quality immediately before Telegram mutation")
+    send_index = workflow.index("Send exactly one canary payload")
+    assert persist_index < reproof_index < send_index
     assert "apply-outcome" in workflow
     assert "if: always()" not in workflow
     assert "!cancelled()" in workflow
@@ -92,15 +98,23 @@ def test_scheduler_mutation_is_cron_only_quality_proven_and_freshness_bounded() 
     assert "workflow_dispatch:" in workflow
     assert "if: github.event_name == 'schedule' && github.ref == 'refs/heads/main'" in workflow
     assert "actions: read" in workflow
-    assert "Require exact-SHA Svodka quality proof" in workflow
+    assert "Require current-main exact-SHA Svodka quality proof" in workflow
     assert "telegram_github_quality_gate" in workflow
     assert '--sha "$GITHUB_SHA"' in workflow
     assert "MAX_PUBLICATION_LAG_MINUTES: 120" in workflow
     assert "Check strict-next publication freshness" in workflow
     assert "telegram_publication_freshness next" in workflow
     assert "steps.freshness.outputs.fresh == 'true'" in workflow
-    assert workflow.index("Require exact-SHA Svodka quality proof") < workflow.index("Fresh read-only target preflight")
+    assert workflow.index("Require current-main exact-SHA Svodka quality proof") < workflow.index(
+        "Fresh read-only target preflight"
+    )
     assert workflow.index("Check strict-next publication freshness") < workflow.index("Fresh read-only target preflight")
+    assert "Persist scheduled intent before Telegram mutation" in workflow
+    assert "Re-prove current-main quality immediately before Telegram mutation" in workflow
+    persist_index = workflow.index("Persist scheduled intent before Telegram mutation")
+    reproof_index = workflow.index("Re-prove current-main quality immediately before Telegram mutation")
+    send_index = workflow.index("Send exactly one scheduled payload")
+    assert persist_index < reproof_index < send_index
     assert f"group: {profile.concurrency_group}" in workflow
     assert "cancel-in-progress: false" in workflow
     assert "send-once" in workflow
