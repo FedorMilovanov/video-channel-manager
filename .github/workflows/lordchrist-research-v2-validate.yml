@@ -69,6 +69,21 @@ jobs:
             src/video_channel_manager/telegram_target_binding.py \
             src/video_channel_manager/telegram_target_binding_cli.py
 
+      - name: Report exact source registry digest
+        shell: bash
+        run: |
+          PYTHONPATH=src python - <<'PY'
+          import json
+          from pathlib import Path
+
+          from video_channel_manager.telegram_research import SourceRegistry
+
+          path = Path('content/telegram/lordchrist/research-queues/historical-preaching-sources-v1.json')
+          registry = SourceRegistry.model_validate(json.loads(path.read_text(encoding='utf-8')))
+          print(f'source_registry_sha256={registry.digest}')
+          print(f'source_count={len(registry.sources)}')
+          PY
+
       - name: Validate staged research queue
         shell: bash
         run: |
