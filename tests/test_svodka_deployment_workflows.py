@@ -185,11 +185,7 @@ def test_complete_svodka_state_writer_surface_uses_lossless_serialization_contra
         "svodka-reconcile-provider-outcome.yml",
     }
     workflows_dir = REPOSITORY_ROOT / ".github/workflows"
-    discovered = {
-        path
-        for path in workflows_dir.glob("*.yml")
-        if expected_group in path.read_text(encoding="utf-8")
-    }
+    discovered = {path for path in workflows_dir.glob("*.yml") if expected_group in path.read_text(encoding="utf-8")}
 
     assert {path.name for path in discovered} == expected_names
     assert discovered == set(STATE_WRITER_WORKFLOWS)
