@@ -10,6 +10,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 LEDGER_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-ledger-init.yml"
 CANARY_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-canary.yml"
 SKIP_EXPIRED_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-skip-expired.yml"
+SCHEDULED_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-scheduled-publisher.yml"
 PROFILE_PATH = REPOSITORY_ROOT / "content/telegram/channels/svodka.json"
 BINDING_PATH = REPOSITORY_ROOT / "content/telegram/channels/svodka-target-binding.json"
 APPROVED_RELEASE = REPOSITORY_ROOT / "content/telegram/svodka/approved-release-2026-08.json"
@@ -72,11 +73,23 @@ def test_stale_slot_recovery_is_manual_state_only_and_provider_free() -> None:
     assert "secrets." not in workflow
 
 
+def test_scheduler_mutation_is_cron_only_even_when_manual_dispatch_is_visible() -> None:
+    profile = load_channel_profile(PROFILE_PATH)
+    workflow = SCHEDULED_WORKFLOW.read_text(encoding="utf-8")
+
+    assert "schedule:" in workflow
+    assert "workflow_dispatch:" in workflow
+    assert "if: github.event_name == 'schedule' && github.ref == 'refs/heads/main'" in workflow
+    assert f"group: {profile.concurrency_group}" in workflow
+    assert "cancel-in-progress: false" in workflow
+    assert "send-once" in workflow
+
+
 def test_all_svodka_state_writers_share_profile_concurrency_group() -> None:
     profile = load_channel_profile(PROFILE_PATH)
     expected = f"group: {profile.concurrency_group}"
 
-    for workflow_path in (LEDGER_WORKFLOW, SKIP_EXPIRED_WORKFLOW, CANARY_WORKFLOW):
+    for workflow_path in (LEDGER_WORKFLOW, SKIP_EXPIRED_WORKFLOW, CANARY_WORKFLOW, SCHEDULED_WORKFLOW):
         workflow = workflow_path.read_text(encoding="utf-8")
         assert expected in workflow, workflow_path.name
         assert "cancel-in-progress: false" in workflow, workflow_path.name
