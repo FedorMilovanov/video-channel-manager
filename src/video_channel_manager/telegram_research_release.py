@@ -8,7 +8,13 @@ from zoneinfo import ZoneInfo
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile
 from video_channel_manager.telegram_multichannel_release import GenericReleaseItem, GenericReleaseQueue
 from video_channel_manager.telegram_multichannel_transport import render_message_payload
-from video_channel_manager.telegram_research import ResearchQueueV2, load_research_queue, validate_public_copy
+from video_channel_manager.telegram_research import (
+    PostSpec,
+    ResearchQueueV2,
+    load_research_queue,
+    sha256_json,
+    validate_public_copy,
+)
 from video_channel_manager.telegram_target_binding import TelegramTargetBinding
 
 
@@ -36,6 +42,18 @@ def _target_fields(
         "bot_id": binding.bot_id,
         "bot_username": binding.bot_username,
     }
+
+
+def research_evidence_sha256(research: ResearchQueueV2, post: PostSpec) -> str:
+    """Bind one release item to the exact fact-check/evidence contract that produced it."""
+
+    return sha256_json(
+        {
+            "research_queue_sha256": research.digest,
+            "source_registry_sha256": research.source_registry_sha256,
+            "post_payload_sha256": post.payload_sha256,
+        }
+    )
 
 
 def render_research_html(body: str) -> str:
@@ -86,7 +104,7 @@ def build_research_release_candidate(
                 sequence=post.sequence,
                 publication_id=post.publication_id,
                 scheduled_at=local_start + timedelta(days=post.release_offset_days),
-                source_sha256=post.payload_sha256,
+                source_sha256=research_evidence_sha256(research, post),
                 payload=payload,
             )
         )
