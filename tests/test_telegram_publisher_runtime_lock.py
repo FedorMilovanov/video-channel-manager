@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LOCK = ROOT / "requirements/telegram-publisher.txt"
 WORKFLOWS = ROOT / ".github/workflows"
+LOCK_REFERENCE = "requirements/telegram-publisher.txt"
 
 EXPECTED_PACKAGES = {
     "annotated-types==0.7.0",
@@ -62,8 +63,33 @@ def test_every_workflow_using_the_minimal_runtime_keeps_binary_only_install() ->
     consumers: list[Path] = []
     for workflow in WORKFLOWS.glob("*.yml"):
         text = workflow.read_text(encoding="utf-8")
-        if "requirements/telegram-publisher.txt" in text:
+        if LOCK_REFERENCE in text:
             consumers.append(workflow)
             assert "--only-binary=:all:" in text, workflow.name
+
+    assert consumers, "no workflow consumes the guarded Telegram publisher runtime"
+
+
+def test_hash_locked_runtime_file_is_terminal_in_every_workflow_pip_transaction() -> None:
+    consumers: list[Path] = []
+    for workflow in WORKFLOWS.glob("*.yml"):
+        lines = workflow.read_text(encoding="utf-8").splitlines()
+        matching = [(index, line) for index, line in enumerate(lines) if LOCK_REFERENCE in line]
+        if not matching:
+            continue
+        consumers.append(workflow)
+        for index, line in matching:
+            before, separator, after = line.partition(LOCK_REFERENCE)
+            assert separator == LOCK_REFERENCE
+            assert after.strip() == "", f"{workflow.name}:{index + 1} appends another requirement after the hash lock"
+            assert not line.rstrip().endswith("\\"), (
+                f"{workflow.name}:{index + 1} continues the pip transaction after the hash lock"
+            )
+            command_window = "\n".join(lines[max(0, index - 4) : index + 1])
+            assert "pip install" in command_window, f"{workflow.name}:{index + 1} lock reference is not a pip install"
+            assert "--only-binary=:all:" in command_window, (
+                f"{workflow.name}:{index + 1} hash-locked install lost binary-only enforcement"
+            )
+            assert before.strip(), f"{workflow.name}:{index + 1} malformed hash-lock requirements line"
 
     assert consumers, "no workflow consumes the guarded Telegram publisher runtime"
