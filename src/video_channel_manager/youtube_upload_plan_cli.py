@@ -12,6 +12,7 @@ from video_channel_manager.youtube_upload_plan import (
     journal_path,
     planned_journal,
     require_new_plan_allowed,
+    validate_intent,
     validate_journal,
 )
 
@@ -72,25 +73,25 @@ def plan(args: argparse.Namespace) -> int:
     return 0
 
 
-def status(args: argparse.Namespace) -> int:
-    spec = _read_json(Path(args.spec).resolve())
-    intent = build_intent(spec, Path(args.video).resolve())
+def _load_intent_and_journal(args: argparse.Namespace) -> tuple[dict[str, Any], Path, dict[str, Any]]:
+    intent = _read_json(Path(args.intent).resolve())
+    validate_intent(intent)
     stable_journal = journal_path(Path(args.data_dir).resolve(), str(intent["upload_key_sha256"]))
     if not stable_journal.is_file():
         raise UploadPlanError("No durable journal exists for this project/channel/media identity.")
     journal = _read_json(stable_journal)
     validate_journal(journal, intent=intent)
+    return intent, stable_journal, journal
+
+
+def status(args: argparse.Namespace) -> int:
+    _, _, journal = _load_intent_and_journal(args)
     print(json.dumps(journal, ensure_ascii=False, indent=2))
     return 0
 
 
 def abandon(args: argparse.Namespace) -> int:
-    spec = _read_json(Path(args.spec).resolve())
-    intent = build_intent(spec, Path(args.video).resolve())
-    stable_journal = journal_path(Path(args.data_dir).resolve(), str(intent["upload_key_sha256"]))
-    if not stable_journal.is_file():
-        raise UploadPlanError("No durable journal exists for this project/channel/media identity.")
-    journal = _read_json(stable_journal)
+    intent, stable_journal, journal = _load_intent_and_journal(args)
     updated = abandon_planned_journal(journal, intent=intent)
     _write_json_atomic(stable_journal, updated)
     print("LOCAL UPLOAD PLAN ABANDONED — PROVIDER EFFECT CONFIRMED ABSENT.")
@@ -102,13 +103,17 @@ def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description="Local-only YouTube upload stable-key planner.")
     sub = root.add_subparsers(dest="command", required=True)
 
-    for name, handler in (("plan", plan), ("status", status), ("abandon", abandon)):
+    p = sub.add_parser("plan")
+    p.add_argument("--spec", required=True)
+    p.add_argument("--video", required=True)
+    p.add_argument("--data-dir", required=True)
+    p.add_argument("--output", required=True)
+    p.set_defaults(func=plan)
+
+    for name, handler in (("status", status), ("abandon", abandon)):
         command = sub.add_parser(name)
-        command.add_argument("--spec", required=True)
-        command.add_argument("--video", required=True)
+        command.add_argument("--intent", required=True)
         command.add_argument("--data-dir", required=True)
-        if name == "plan":
-            command.add_argument("--output", required=True)
         command.set_defaults(func=handler)
     return root
 
