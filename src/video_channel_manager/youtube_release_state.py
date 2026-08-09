@@ -63,7 +63,12 @@ def build_release_state(
 
     children = [_child(child_id, kind) for child_id, kind in _FIXED_CHILDREN]
     children.extend(
-        _child(f"playlist:{playlist_id}", "playlist_membership", target_id=playlist_id) for playlist_id in playlists
+        _child(
+            f"playlist:{playlist_id}",
+            "playlist_membership",
+            target_id=playlist_id,
+        )
+        for playlist_id in playlists
     )
     children.extend(_child(child_id, kind) for child_id, kind in _TAIL_CHILDREN)
     state = {
