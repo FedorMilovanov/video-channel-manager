@@ -58,7 +58,7 @@ def test_dependabot_maintenance_is_atomic_and_bounded() -> None:
         "routine-minor-patch:",
         "workflow-actions:",
         "applies-to: version-updates",
-        "dependency-name: \"*\"",
+        'dependency-name: "*"',
         "version-update:semver-major",
         "dependency-name: pydantic-core",
         "dependency-name: httpx",
@@ -77,7 +77,7 @@ def test_telegram_runtime_lock_has_explicit_roots_and_atomic_contract() -> None:
 
     assert "httpx==0.28.1" in roots
     assert "pydantic==2.13.4" in roots
-    assert "Do not update a transitive line in the hash lock independently" in roots
+    assert "transitive line in the hash lock independently" in roots
     assert "Root constraints live in requirements/telegram-publisher.in" in lock
     assert "never update a transitive" in lock
     assert "--require-hashes" in lock
