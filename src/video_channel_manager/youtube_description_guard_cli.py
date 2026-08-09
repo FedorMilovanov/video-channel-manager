@@ -23,6 +23,7 @@ SCHEMA_NAME = "video-manager.youtube-description-exact-plan"
 SCHEMA_VERSION = 2
 RESULT_SCHEMA_NAME = "video-manager.youtube-description-exact-result"
 RESULT_SCHEMA_VERSION = 2
+_UNRESOLVED_CHAPTER_MARKER = "[[CHAPTERS_FROM_EXACT_VERIFIED_TIMING]]"
 
 
 def _canonical_json(value: object) -> bytes:
@@ -50,6 +51,11 @@ def _write_new_json(path: Path, payload: dict[str, Any]) -> None:
 
 
 def _validate_description(text: str) -> None:
+    if _UNRESOLVED_CHAPTER_MARKER in text:
+        raise ValueError(
+            "Description contains unresolved exact-timing chapter marker; "
+            "render chapters from verified media timing before planning."
+        )
     findings = validate_youtube_description(text)
     errors = [item for item in findings if item.severity == "error"]
     for item in findings:
