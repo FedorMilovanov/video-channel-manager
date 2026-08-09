@@ -101,7 +101,7 @@ def test_cli_writes_immutable_text_and_evidence(tmp_path: Path) -> None:
     proof = json.loads(evidence.read_text(encoding="utf-8"))
     assert proof["provider_write_authorized"] is False
     assert proof["album_package_sha256"] == package["package_sha256"]
-    assert proof["rendered_description_sha256"] == "sha256:" + hashlib.sha256(rendered.rstrip("\n").encode()).hexdigest()
+    assert proof["rendered_description_sha256"] == "sha256:" + hashlib.sha256(rendered.encode()).hexdigest()
 
     with pytest.raises(AlbumDescriptionError, match="overwrite immutable"):
         cli.render(args)
