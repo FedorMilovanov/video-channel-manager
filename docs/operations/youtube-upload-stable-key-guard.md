@@ -1,6 +1,6 @@
 # YouTube upload stable-key guard
 
-Status: repository/local safety model only. **YouTube provider upload execution is not present in this baseline.**
+Status: repository/local safety model plus read-only existing-target adoption. **YouTube provider upload execution is not present in this baseline.**
 
 This document supersedes the unsafe execution design in draft PR #171 without merging its provider transport or stale Black Man upload spec.
 
@@ -58,7 +58,7 @@ The stable journal path is derived from `upload_key_sha256`, never `intent_sha25
 
 A planned journal may be marked abandoned only while its provider effect is still `not_dispatched` and its active intent digest exactly matches. This is the safe way to release a local plan for metadata revision without deleting durable state.
 
-All local journal mutations (`plan` and `abandon`) are serialized by an atomic per-stable-key lock created with exclusive file creation. The journal is re-read only after that lock is acquired. An already-present lock blocks mutation rather than assuming it is stale; after an interrupted process, an operator must inspect the journal/lock before manually clearing anything. This keeps crash/concurrency behavior fail-closed instead of allowing two simultaneous timestamped attempts to race for the same media identity.
+All local stable-key journal mutations use one shared atomic lock implementation. The journal is re-read only after that lock is acquired. An already-present lock blocks mutation rather than assuming it is stale; after an interrupted process, an operator must inspect the journal/lock before manually clearing anything.
 
 If journal persistence fails while creating a plan, the newly written operator intent is removed before the command fails, so the planner does not hand off an intent that lacks its durable collision guard.
 
@@ -68,6 +68,27 @@ Old v1 intents/journals fail closed; they are not silently upgraded.
 
 A stable local journal is not allowed to “forget” a provider object merely because that object was created through historical code before the stable-key model existed.
 
+Current main provides a separate read-only release-state entrypoint:
+
+```text
+python -m video_channel_manager.youtube_release_cli adopt-existing \
+  --evidence <immutable-live-state.json> \
+  --data-dir <runtime-data-dir> \
+  --output <immutable-adoption-result.json>
+```
+
+The operation:
+
+1. validates the non-authorizing live-state evidence and canonical project/account/channel identity **before** loading client-secret/token material;
+2. computes the exact stable upload key from project/channel/media SHA-256;
+3. reads the exact supplied video ID through the official API without enumerating or fuzzily matching uploads;
+4. proves exact video ID, channel ID and evidence-declared title/privacy where those fields are present;
+5. persists a `verified` stable journal entry containing the adopted video ID, provider revision and source-evidence digest;
+6. initializes the release child-state model with both `existing-target` and `upload` verified as an adopted existing object, so upload is skipped rather than replayed;
+7. refuses to overwrite a planned, ambiguous, different-remote or otherwise incompatible stable journal;
+8. is idempotent for the same already-adopted video;
+9. performs provider reads only and records `provider_writes=0` in immutable result evidence.
+
 For the Black Man album, the historical media identity
 
 ```text
@@ -76,28 +97,33 @@ target_channel_id = UC-78ys2S3cQ3lpqgXfo-SvQ
 media_sha256 = sha256:e5450342249e95882136af35976ee3ab08bc85bba626a061be9944b28d8310a0
 ```
 
-has a known provider target:
+has provider target `x-puy27S2qs`, recorded in `black-man-youtube-live-state-2026-08-09.json` and the release retrospective. The repository evidence can now be adopted into the stable journal by the read-only command above. Adoption is not upload, replacement or re-publication.
+
+## Durable release child state
+
+`video_channel_manager.youtube_release_state` defines ordered children:
 
 ```text
-video_id = x-puy27S2qs
-provider_state = verified public at the 2026-08-09 release checkpoint
+existing-target reconciliation
+→ upload
+→ processing/private readback
+→ metadata/description
+→ thumbnail
+→ playlist memberships (exact IDs, in declared order)
+→ visibility/publication
+→ top-level comment
+→ manual pin evidence
 ```
 
-This target is recorded in `black-man-youtube-live-state-2026-08-09.json` and the release retrospective.
+Each child stores an immutable payload digest before provider effect can become `may_exist` or `verified`. Effects are one of:
 
-**Until a current-main adoption/reconciliation command exists, this known target is an external collision guard:** do not create a new upload plan/execute path for the same project/channel/media merely because the v2 journal directory lacks a `verified` entry.
+```text
+not_dispatched / confirmed_absent / may_exist / verified
+```
 
-A future supported adoption operation should:
+A `may_exist` child blocks all later work until read-only reconciliation. A `verified` parent cannot be downgraded or silently rebound to another remote ID/evidence digest. Existing-target `confirmed_absent` is the only absence state that permits the upload child to become eligible.
 
-1. compute the exact stable upload key;
-2. prove canonical project/account/channel identity;
-3. perform read-only provider reconciliation of the exact supplied video ID;
-4. verify enough remote identity/evidence to prove it is the intended historical target;
-5. persist a `verified` stable journal entry containing the adopted video ID and evidence digest;
-6. refuse to overwrite any conflicting stable journal;
-7. perform zero provider writes.
-
-Adoption is not upload, replacement or re-publication.
+The state model is provider-agnostic and provider-free in tests. Issue #232 remains open for the concrete mutation/resume transport on top of these durable semantics.
 
 ## Provider-semantic normalization
 
@@ -115,11 +141,11 @@ For fields such as `status.containsSyntheticMedia`, an omitted key is `unobserve
 
 An accepted provider mutation plus one empty/non-converged read is `may_exist`, never `confirmed_absent`. Preserve any returned remote object ID, poll only within a bounded read-only convergence window, and stop for reconciliation if the object is still not observable.
 
-For playlist membership specifically, verification should fully enumerate the target playlist with pagination and match exact video ID via `contentDetails.videoId` or `snippet.resourceId.videoId`. One immediate filtered read must not be promoted to proof of absence after an accepted insert.
+For playlist membership specifically, verification must fully enumerate the target playlist with pagination and match exact video ID via `contentDetails.videoId` or `snippet.resourceId.videoId`. One immediate filtered read must not be promoted to proof of absence after an accepted insert.
 
-## Local CLI
+## Local CLI surfaces
 
-The current operational surface is deliberately limited to:
+The upload planner remains deliberately provider-inert:
 
 ```text
 python -m video_channel_manager.youtube_upload_plan_cli plan ...
@@ -127,31 +153,35 @@ python -m video_channel_manager.youtube_upload_plan_cli status ...
 python -m video_channel_manager.youtube_upload_plan_cli abandon ...
 ```
 
-There is no `execute` command in this baseline.
+Read-only existing-target adoption is a separate release surface:
+
+```text
+python -m video_channel_manager.youtube_release_cli adopt-existing ...
+```
+
+There is no provider `execute` command in this baseline.
 
 ## Black Man status
 
 The old PR #171 upload spec is deliberately not copied into current `main`. It contains metadata/timestamps from before the quality-master provenance work and must not be treated as a current final provider payload.
 
-Historical release evidence now records the exact media SHA-256 `sha256:e5450342249e95882136af35976ee3ab08bc85bba626a061be9944b28d8310a0`, target channel `UC-78ys2S3cQ3lpqgXfo-SvQ`, and existing provider video `x-puy27S2qs`, which was verified public at the end of the 2026-08-09 release session.
+Historical release evidence records media SHA-256 `sha256:e5450342249e95882136af35976ee3ab08bc85bba626a061be9944b28d8310a0`, target channel `UC-78ys2S3cQ3lpqgXfo-SvQ`, and provider video `x-puy27S2qs`, verified public at the end of the 2026-08-09 release session.
 
 That provider success does **not** convert the old MP4 into current-policy artifact proof: Issue #154 still requires regeneration from the exact accepted seven quality masters under the post-#213 provenance contract when those bytes are available to the executing environment.
 
-The known public provider target is a reason to adopt/reconcile existing remote state before any future upload implementation, never a reason to start another upload.
-
 ## Future execution boundary
 
-A future provider uploader, if explicitly authorized later, must be designed as a separate reviewed change on top of this stable-key model. Before any `videos.insert` it must at minimum:
+Issue #232 owns the next layer: concrete current-main provider mutation/resume transport on top of the stable key, adoption and child-state model. Before any future `videos.insert` it must at minimum:
 
 1. load and validate the v2 intent;
 2. prove canonical project/account/channel identity before credentials;
-3. acquire the stable-key write lock;
+3. acquire the same stable-key lock;
 4. re-read the stable journal under the lock;
-5. reconcile/adopt any known existing provider target for that stable identity;
+5. reconcile/adopt known existing provider targets;
 6. refuse `may_exist`, `verified`, adopted-existing, unknown or stale journal states;
-7. persist dispatch intent under the stable key before provider mutation;
+7. persist the exact child payload digest before provider mutation;
 8. never create a second `videos.insert` to resolve an ambiguous first attempt;
 9. reconcile/read back the exact provider result before marking `verified`;
 10. keep thumbnail, playlist membership, publication and comment as separately journaled child operations rather than replaying upload as recovery.
 
-None of those provider actions are implemented or authorized by the current guard.
+None of those provider mutations are implemented or authorized by the adoption layer.
