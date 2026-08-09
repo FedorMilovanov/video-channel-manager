@@ -17,7 +17,7 @@ Owner scope: live rollout for `@deep_info_life` after repository implementation 
 - materials: all 14 reviewed items are preserved;
 - the time-sensitive Aug. 12 eclipse item is explicitly scheduled for 10:30 before the evergreen octopus item at 19:30;
 - reviewed candidate SHA-256: `sha256:98e259210f138b8ad0280dec38306dcecbbdba89899db336906994f9dfb0bc0f`;
-- approved release SHA-256: `sha256:e774115e4382ef9ff1871f0d9b5a7d80c075f41c66ecc9963ccbee7c23d41233`;
+- approved release SHA-256: `sha256:959a42e914acedc6969550ba842a12d1a2b174c940497d8a98f4ab8e2e63cdce`;
 - immutable approval receipt: `content/telegram/svodka/release-approval-2026-08.json`;
 - the full approved release is deterministically materialized and both candidate/release digests are checked before state or provider operations.
 
