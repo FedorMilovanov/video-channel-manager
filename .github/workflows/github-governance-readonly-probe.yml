@@ -1,0 +1,94 @@
+name: GitHub governance read-only probe
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Read GitHub governance state
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.error
+          import urllib.request
+
+          repo = os.environ["REPOSITORY"]
+          token = os.environ["GH_TOKEN"]
+          base = f"https://api.github.com/repos/{repo}"
+
+          def read(path: str):
+              request = urllib.request.Request(
+                  base + path,
+                  headers={
+                      "Accept": "application/vnd.github+json",
+                      "Authorization": f"Bearer {token}",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                      "User-Agent": "video-channel-manager-governance-probe",
+                  },
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      return response.status, json.loads(response.read().decode("utf-8"))
+              except urllib.error.HTTPError as exc:
+                  raw = exc.read().decode("utf-8", errors="replace")
+                  try:
+                      body = json.loads(raw)
+                  except json.JSONDecodeError:
+                      body = {"message": raw[:500]}
+                  return exc.code, body
+
+          branch_status, branch = read("/branches/main")
+          print(f"BRANCH_HTTP={branch_status}")
+          if branch_status == 200:
+              print(f"MAIN_PROTECTED={str(bool(branch.get('protected'))).lower()}")
+              protection = branch.get("protection") or {}
+              print("BRANCH_PROTECTION_KEYS=" + ",".join(sorted(protection)))
+          else:
+              print("BRANCH_MESSAGE=" + str(branch.get("message", "")))
+
+          protection_status, protection = read("/branches/main/protection")
+          print(f"PROTECTION_HTTP={protection_status}")
+          if protection_status == 200:
+              print("PROTECTION_KEYS=" + ",".join(sorted(protection)))
+          else:
+              print("PROTECTION_MESSAGE=" + str(protection.get("message", "")))
+
+          rulesets_status, rulesets = read("/rulesets")
+          print(f"RULESETS_HTTP={rulesets_status}")
+          if rulesets_status == 200 and isinstance(rulesets, list):
+              print(f"RULESETS_COUNT={len(rulesets)}")
+              for item in rulesets:
+                  safe = {
+                      "id": item.get("id"),
+                      "name": item.get("name"),
+                      "target": item.get("target"),
+                      "enforcement": item.get("enforcement"),
+                      "source_type": item.get("source_type"),
+                  }
+                  print("RULESET=" + json.dumps(safe, ensure_ascii=True, sort_keys=True))
+          else:
+              message = rulesets.get("message", "") if isinstance(rulesets, dict) else "unexpected response"
+              print("RULESETS_MESSAGE=" + str(message))
+
+          sbom_status, sbom = read("/dependency-graph/sbom")
+          print(f"SBOM_HTTP={sbom_status}")
+          if sbom_status == 200 and isinstance(sbom, dict):
+              document = sbom.get("sbom") or {}
+              packages = document.get("packages") or []
+              print(f"SBOM_SPDX_VERSION={document.get('spdxVersion', '')}")
+              print(f"SBOM_PACKAGE_COUNT={len(packages)}")
+          else:
+              message = sbom.get("message", "") if isinstance(sbom, dict) else "unexpected response"
+              print("SBOM_MESSAGE=" + str(message))
+          PY
