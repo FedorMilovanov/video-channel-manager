@@ -6,9 +6,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTER = ROOT / "docs" / "operations" / "audit-register-v6-2026-08-05.json"
+WAVE14_REGISTER = ROOT / "docs" / "operations" / "audit-register-v7-2026-08-05.json"
 CURRENT_STATE = ROOT / "docs" / "operations" / "current-state.md"
-BACKLOG = ROOT / "docs" / "operations" / "automation-backlog.md"
-OPERATIONS_INDEX = ROOT / "docs" / "operations" / "README.md"
 AGENTS = ROOT / "AGENTS.md"
 
 
@@ -59,32 +58,32 @@ def test_actual_child_issue_dispositions_are_complete() -> None:
     assert dispositions[119]["no_blind_replay"] is True
 
 
-def test_human_entrypoints_report_wave14_and_no_active_backlog() -> None:
-    texts = {
-        "current_state": CURRENT_STATE.read_text(encoding="utf-8"),
-        "backlog": BACKLOG.read_text(encoding="utf-8"),
-        "operations_index": OPERATIONS_INDEX.read_text(encoding="utf-8"),
-        "agents": AGENTS.read_text(encoding="utf-8"),
+def test_wave14_history_is_immutable_without_polluting_live_entrypoints() -> None:
+    wave14 = json.loads(WAVE14_REGISTER.read_text(encoding="utf-8"))
+    assert wave14["program_state"] == "WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES"
+    assert wave14["wave_14_repository_polish"] == {
+        "issue": 130,
+        "pull_request": 131,
+        "exact_head": "80f701b6926a5a9c788b99c69634b54d63ed1862",
+        "merge": "626f83c6e5c068d7faa8b6d14163b42916faa769",
+        "ci_run": 31000834701,
+        "pytest": "801 passed, 1 xfailed",
+        "coverage": "78% across 14306 statements",
+        "ruff_correctness": "green",
+        "ruff_format": "451 files already formatted",
+        "mypy": "145 source files",
+        "dependency_audit": "no known vulnerabilities",
+        "powershell_environments_green": 3,
+        "changed_files": 7,
+        "runtime_provider_code_files_changed": 0,
+        "production_runtime_behavior_changed": False,
+        "test_clock_determinism_fixed": True,
     }
 
-    required = (
-        "WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES",
-        "audit-register-v7-2026-08-05.json",
-        "Provider writes remain unauthorized",
-        "No operational continuation is pending",
-        "one shared user access token",
-        "OAuth alias `fedor-milovanov`",
-        "OAuth alias `legendary-poet`",
-        "Do not group #32/#38 as Legendary Poet",
-    )
-    joined = "\n".join(texts.values())
-    for statement in required:
-        assert statement in joined
-
-    assert "## Active backlog\n\nNone." in texts["backlog"]
-    assert "Actual fresh live provider reconciliation: pending." not in joined
-    assert "status: `requires_reconciliation`" not in joined
-    assert "#123 — deferred YouTube playlist mutation contract" not in joined
+    live = CURRENT_STATE.read_text(encoding="utf-8") + "\n" + AGENTS.read_text(encoding="utf-8")
+    assert wave14["program_state"] not in live
+    assert "No operational continuation is pending" not in live
+    assert "main@626f83c6e5c068d7faa8b6d14163b42916faa769" not in live
 
 
 def test_permanent_unknown_is_not_promoted_or_replayed() -> None:
