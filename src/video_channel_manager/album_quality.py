@@ -66,7 +66,9 @@ def _manifest_payload_without_digest(manifest: QualityMasterManifest) -> dict[st
 
 
 def _with_digest(manifest: QualityMasterManifest) -> QualityMasterManifest:
-    return manifest.model_copy(update={"quality_master_sha256": _canonical_sha256(_manifest_payload_without_digest(manifest))})
+    return manifest.model_copy(
+        update={"quality_master_sha256": _canonical_sha256(_manifest_payload_without_digest(manifest))}
+    )
 
 
 def _verify_manifest_digest(manifest: QualityMasterManifest) -> None:
@@ -217,7 +219,9 @@ def require_complete_quality_masters(
     by_ordinal = {entry.ordinal: entry for entry in quality.entries}
     missing = [track.ordinal for track in manifest.tracks if track.ordinal not in by_ordinal]
     if missing:
-        raise core.AlbumError(f"Final timing/render requires a bound quality master for every track; missing: {missing}")
+        raise core.AlbumError(
+            f"Final timing/render requires a bound quality master for every track; missing: {missing}"
+        )
     for track in manifest.tracks:
         verify_quality_master_entry(manifest, by_ordinal[track.ordinal], verify_bytes=verify_bytes)
     return by_ordinal
