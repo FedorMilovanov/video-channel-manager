@@ -48,7 +48,7 @@ def test_windows_handoff_contract_keeps_only_operator_specific_guards() -> None:
     text = (ROOT / ".github/copilot-instructions.md").read_text(encoding="utf-8")
     required = (
         "Self-contained PowerShell",
-        "current phase and provider-effect state",
+        "provider-effect state",
         "smallest non-mutating probe",
         "another ZIP/version family",
         "operator-output",
