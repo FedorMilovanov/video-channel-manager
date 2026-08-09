@@ -1,7 +1,7 @@
 # Current operational state
 
 Updated: 2026-08-09  
-Audited runtime baseline: `main@0776418450070a707370970977192dd59698b25e`  
+Audited runtime baseline: `main@aa47760109f65e93f241a2d9e6ee8d7bd62827c7`  
 Control audit: [`../lordchrist/audits/2026-08-09-telegram-control-audit.md`](../lordchrist/audits/2026-08-09-telegram-control-audit.md)  
 Defect continuation: [`../lordchrist/audits/2026-08-09-defect-register-continuation.json`](../lordchrist/audits/2026-08-09-defect-register-continuation.json)  
 Svodka runbook: [`svodka-readiness.md`](svodka-readiness.md)  
@@ -67,9 +67,11 @@ Effective branch protection/rulesets and the current Dependency Graph setting ar
 
 ## YouTube / Black Man album
 
+Canonical YouTube provider identity is now machine-bound in the existing project profile registry. Provider guards must prove the exact `project_key + OAuth alias + channel_id` triple before using credentials or treating a target as project-owned. The gate is provider-inert and was merged as `aa47760109f65e93f241a2d9e6ee8d7bd62827c7`.
+
 - `audit-register-v12-2026-08-07.json` is preserved as the immutable historical proof of the local seven-track album pipeline introduced by PR #157; its old `next_allowed_actions` describe that 2026-08-07 snapshot and do not override this file;
-- PR #197 is open non-provider-write YouTube copy/handoff/editorial work and requires current-main revalidation before merge;
-- PR #171 remains a draft guarded private-upload implementation and is not execution authorization;
+- PR #197 is open non-provider-write YouTube copy/handoff/editorial work and must be rebuilt/revalidated on current `main` using the canonical project identity gate before any guarded metadata writer is mergeable;
+- PR #171 remains a draft private-upload implementation, has not been authorized for execution, and requires canonical project binding plus stable same-media upload-journal identity before it can be considered mergeable;
 - PR #158 is a stale draft state-sync from an older baseline and is superseded by this file; its unique v12 evidence has been preserved separately.
 
 An upload plan, private video ID, rendered description, thumbnail or playlist target is not permission for a new YouTube write.
@@ -85,6 +87,8 @@ Supported MP3 capability remains `local_only_read_only_intake_and_manifest`. It 
 Credential names or shared tokens are never destination selectors. Project key, exact provider identity, immutable plan/release, durable state and target binding select the destination.
 
 Telegram may intentionally use the same bot for multiple channels. A bot token authenticates the bot; exact profile/chat/binding/release/state isolate the channel.
+
+YouTube OAuth aliases are similarly credentials/configuration selectors, not project identity. The canonical project/account/channel gate must pass before a guarded YouTube provider operation may rely on an alias.
 
 Never print, package, commit or log provider credentials.
 
@@ -108,6 +112,6 @@ Their historical status text may be superseded by this file and newer continuati
 
 ## Next allowed actions
 
-Repository-controlled Telegram findings from the latest handoff are closed by exact-tested merges or explicitly recorded as external unknowns. Keep Svodka and Lordchrist research activation closed until their own activation gates are satisfied. Resolve stale/open YouTube PR hygiene separately from Telegram production state.
+Repository-controlled Telegram findings from the latest handoff are closed by exact-tested merges or explicitly recorded as external unknowns. Keep Svodka and Lordchrist research activation closed until their own activation gates are satisfied. Finish the local-only Black Man album provenance fixes before salvaging the guarded YouTube upload draft, and rebuild stale YouTube metadata work against the canonical project identity gate.
 
 Nothing in this document is authorization for a new provider mutation.
