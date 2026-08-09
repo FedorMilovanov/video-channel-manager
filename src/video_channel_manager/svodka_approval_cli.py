@@ -53,7 +53,7 @@ def materialize_svodka_approved_release(
     output_path: Path,
 ) -> tuple[str, str]:
     profile = load_channel_profile(profile_path)
-    draft = load_svodka_draft(queue_path, profile)
+    draft = load_svodka_draft(queue_path, profile, apply_schedule_overlay=True)
     binding = load_target_binding(binding_path, profile)
     approval = load_svodka_release_approval(approval_path)
 
@@ -95,7 +95,9 @@ def materialize_svodka_approved_release(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Materialize an exact reviewed Svodka release without provider access.")
+    parser = argparse.ArgumentParser(
+        description="Materialize an exact reviewed Svodka release without provider access."
+    )
     parser.add_argument("--profile", type=Path, required=True)
     parser.add_argument("--queue", type=Path, required=True)
     parser.add_argument("--binding", type=Path, required=True)
