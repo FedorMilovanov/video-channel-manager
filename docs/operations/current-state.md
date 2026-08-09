@@ -90,7 +90,17 @@ It does not authorize ID3 rewrite, rename/transcode, browser automation, remote 
 
 ## GitHub governance and external state
 
-`.github/CODEOWNERS` exists for critical repository paths, but effective branch protection/rulesets and the current Dependency Graph setting are external GitHub state and remain **UNVERIFIED** through the available connector. Green CI or CODEOWNERS presence must not be presented as proof of those settings.
+Read-only governance evidence is recorded in [`github-governance-readonly-probe-2026-08-09.md`](github-governance-readonly-probe-2026-08-09.md). The one-shot probe used only `Contents: read` and `Metadata: read` and performed no checkout or mutation.
+
+At that probe point:
+
+- `GET /branches/main` returned HTTP 200 with `protected=false`; the current GitHub branch object did not mark `main` as protected;
+- `GET /rulesets` returned HTTP 200 with repository ruleset count `0`;
+- the detailed legacy branch-protection endpoint returned HTTP 403 to the integration, so nested protection details were not separately readable;
+- this repository is public, and GitHub documents Dependency Graph as permanently enabled for public repositories;
+- the SBOM export endpoint returned HTTP 404, so SBOM export availability remains **UNVERIFIED / unavailable in that probe** and must not be misreported as proof that Dependency Graph is disabled.
+
+`.github/CODEOWNERS` remains repository policy only; it must not be presented as branch protection. Green CI likewise does not create GitHub protection by itself.
 
 Only `main` is a supported repository code/runtime execution baseline. `state/lordchrist-telegram` and `state/svodka-telegram` are durable state-only refs and must never be used as runtime/code sources. Any other branch is ephemeral and non-authoritative after its scope closes; delete it where supported or align the ref to exact current `main` after preserving any genuinely unique useful work through a focused PR.
 
@@ -109,6 +119,6 @@ Unknown provider outcomes remain blocking until read-only reconciliation. A time
 1. For #154, regenerate/verify the final seven-master Black Man artifact only when the exact accepted master bytes are available to the executing environment.
 2. Keep Lordchrist research-v2 and Svodka provider-inert unless a new explicit live execution request is created and reviewed.
 3. Treat production Telegram lock refreshes as explicit coherent supply-chain changes; routine bot maintenance must not edit that closure piecemeal.
-4. Keep effective GitHub protection/Dependency Graph status `UNVERIFIED` until independently observable.
+4. Do not re-label GitHub branch protection/rulesets as `UNVERIFIED` without new contrary read-only evidence; only SBOM export availability remains unresolved from the 2026-08-09 governance probe.
 
 Nothing in this document is authorization for a provider mutation.
