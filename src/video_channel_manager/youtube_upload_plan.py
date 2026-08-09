@@ -197,6 +197,7 @@ def _validate_journal_identity(
     journal: dict[str, Any],
     *,
     project_key: str,
+    account_alias: str,
     target_channel_id: str,
     media_sha256: str,
     upload_key_sha256: str,
@@ -205,6 +206,7 @@ def _validate_journal_identity(
         raise UploadPlanError("Unsupported upload journal schema; do not bypass it.")
     expected = {
         "project_key": project_key,
+        "account_alias": account_alias,
         "target_channel_id": target_channel_id,
         "media_sha256": media_sha256,
         "upload_key_sha256": upload_key_sha256,
@@ -219,6 +221,7 @@ def validate_journal(journal: dict[str, Any], *, intent: dict[str, Any]) -> None
     _validate_journal_identity(
         journal,
         project_key=str(intent["project_key"]),
+        account_alias=str(intent["account_alias"]),
         target_channel_id=str(intent["target_channel_id"]),
         media_sha256=str(intent["media_sha256"]),
         upload_key_sha256=str(intent["upload_key_sha256"]),
@@ -332,11 +335,12 @@ def require_adoption_allowed(
     *,
     proposed: dict[str, Any],
 ) -> bool:
-    """Return True when a new journal write is needed; False for exact idempotent adoption."""
+    """Return True for first adoption; False only for byte-for-byte-equivalent durable adoption identity."""
 
     _validate_journal_identity(
         proposed,
         project_key=str(proposed["project_key"]),
+        account_alias=str(proposed["account_alias"]),
         target_channel_id=str(proposed["target_channel_id"]),
         media_sha256=str(proposed["media_sha256"]),
         upload_key_sha256=str(proposed["upload_key_sha256"]),
@@ -346,6 +350,7 @@ def require_adoption_allowed(
     _validate_journal_identity(
         current,
         project_key=str(proposed["project_key"]),
+        account_alias=str(proposed["account_alias"]),
         target_channel_id=str(proposed["target_channel_id"]),
         media_sha256=str(proposed["media_sha256"]),
         upload_key_sha256=str(proposed["upload_key_sha256"]),
@@ -355,10 +360,13 @@ def require_adoption_allowed(
         and current.get("provider_effect") == "verified"
         and current.get("adopted_existing_target") is True
         and current.get("remote_video_id") == proposed.get("remote_video_id")
+        and current.get("remote_revision") == proposed.get("remote_revision")
+        and current.get("adoption_evidence_sha256") == proposed.get("adoption_evidence_sha256")
     ):
         return False
     raise UploadPlanError(
         "Existing stable upload journal conflicts with existing-target adoption: "
         f"state={current.get('state')} provider_effect={current.get('provider_effect')} "
-        f"remote_video_id={current.get('remote_video_id')}."
+        f"remote_video_id={current.get('remote_video_id')}. "
+        "Remote revision, evidence, or canonical account drift requires explicit read-only reconciliation."
     )
