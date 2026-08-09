@@ -95,6 +95,7 @@ jobs:
           tests/test_svodka_deployment_workflows.py
           tests/test_svodka_reconciliation_workflow.py
           tests/test_svodka_outcome_recovery_workflow.py
+          tests/test_svodka_rollout_schedule.py
 
       - name: Ruff formatting
         run: >-
@@ -136,6 +137,7 @@ jobs:
           tests/test_svodka_deployment_workflows.py
           tests/test_svodka_reconciliation_workflow.py
           tests/test_svodka_outcome_recovery_workflow.py
+          tests/test_svodka_rollout_schedule.py
 
       - name: Static typing
         run: >-
@@ -182,6 +184,7 @@ jobs:
           tests/test_svodka_deployment_workflows.py
           tests/test_svodka_reconciliation_workflow.py
           tests/test_svodka_outcome_recovery_workflow.py
+          tests/test_svodka_rollout_schedule.py
 
       - name: Validate canonical Svodka inputs
         shell: bash
