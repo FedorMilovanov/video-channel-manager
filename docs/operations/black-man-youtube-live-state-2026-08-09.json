@@ -1,0 +1,62 @@
+{
+  "schema_name": "video-manager.youtube-live-state-evidence",
+  "schema_version": 1,
+  "recorded_at": "2026-08-09T18:33:00+03:00",
+  "repository_baseline_at_audit_start": "69682b09f3ee1613f83c552278fa85350babab12",
+  "project_key": "legendary-poet",
+  "account_alias": "legendary-poet",
+  "channel_id": "UC-78ys2S3cQ3lpqgXfo-SvQ",
+  "video": {
+    "video_id": "x-puy27S2qs",
+    "title": "Сергей Есенин ⚡ Аудиоальбом «ЧЁРНЫЙ ЧЕЛОВЕК» ⚡ 7 Версий Стихотворения",
+    "uploaded_media_sha256": "sha256:e5450342249e95882136af35976ee3ab08bc85bba626a061be9944b28d8310a0",
+    "privacy_status": "public",
+    "processing_status": "succeeded",
+    "self_declared_made_for_kids": false,
+    "contains_synthetic_media": {
+      "intended": true,
+      "api_readback": "unobserved_in_videos_list",
+      "studio_ui_observation": "yes"
+    },
+    "custom_thumbnail": {
+      "verified_present": true,
+      "input_sha256": "sha256:1d10f48a6a3eb38e9e155e4771b4d58f504c41d8e3d5edad6283af44202ccdf8",
+      "input_dimensions": "1920x1080"
+    }
+  },
+  "playlists": [
+    {
+      "name": "Сергей Есенин",
+      "playlist_id": "PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q",
+      "membership": "verified_present",
+      "playlist_item_id": "UEx5OWxMSmZvcTN1YXBLa2lkN0h6ZlhIbVNpM0ZSMnkzUS5GNDg1Njc1QzZERjlFRjE5"
+    },
+    {
+      "name": "Поющие Поэты",
+      "playlist_id": "PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8",
+      "membership": "inserted_and_verified",
+      "playlist_item_id": null
+    }
+  ],
+  "comment": {
+    "top_level_comment_created": true,
+    "thread_id": "UgwqMEOx27WrGwhO7Bt4AaABAg",
+    "pin_state": "unverified_manual_ui_only"
+  },
+  "local_operator_evidence": {
+    "release_result_path": "C:\\Users\\Fedor\\Projects\\video-channel-manager\\operator-output\\black-man-youtube-release-result.json",
+    "readonly_reconciliation_path": "C:\\Users\\Fedor\\Projects\\video-channel-manager\\operator-output\\black-man-youtube-readonly-reconciliation.json",
+    "description_result_path": "C:\\Users\\Fedor\\Projects\\video-channel-manager\\operator-output\\black-man-description-result-v3.json"
+  },
+  "completion": {
+    "provider_rollout_historical_media": "verified_public",
+    "current_policy_artifact_completion": "not_proven_issue_154_open"
+  },
+  "execution_authority": false,
+  "provider_writes_authorized": false,
+  "notes": [
+    "This evidence records historical provider state after an explicitly authorized release; it does not authorize replay.",
+    "The uploaded MP4 predates the quality-master provenance contract merged in PR #213 and therefore does not close the current artifact gate.",
+    "The live target must block future same-media uploads until a current-main adoption/reconciliation contract represents it in stable state."
+  ]
+}

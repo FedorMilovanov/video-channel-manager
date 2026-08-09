@@ -87,6 +87,28 @@ Start-Process explorer.exe -ArgumentList "/select,`"$Result`""
 
 The Explorer convenience step is local UI only. It does not authorize or perform any provider mutation.
 
+## Copy/paste serialization contract
+
+Interactive shell handoffs are designed for ordinary **Ctrl+C → Ctrl+V of the entire executable block**. The operator is not expected to distinguish executable lines from illustrative material inside the same visual handoff.
+
+Therefore:
+
+1. one operator action gets at most one executable fenced block;
+2. illustrative terminal output, labels such as `Channel:` / `Video:` / `Before SHA:`, or success examples must not appear in a second adjacent fenced block that can be mistaken for commands;
+3. long descriptions, comments, JSON bodies and other content are passed by exact file path rather than pasted inline into PowerShell;
+4. chat-rendering artifacts such as literal `\_` or `\:` inside an executable block are a handoff defect; never ask the operator to repair them character-by-character;
+5. if the client cannot preserve an inline command byte-for-byte, provide one exact `.ps1` artifact and one short invocation line;
+6. expected success/failure markers are described in prose outside executable material;
+7. a failed copy/paste handoff is fixed at the producer/repository layer rather than normalized as operator cleanup work.
+
+## Provider-capable handoff boundary
+
+Provider-capable PowerShell may choose exact paths, verify local preconditions and invoke a current-`main` repository entrypoint. It must not become a second provider client.
+
+Do not embed provider URLs, OAuth handling, HTTP mutation calls, pagination, retry loops, convergence policy or provider postflight inside generated PowerShell/temporary Python merely to complete an operational session. If current `main` lacks the required provider executor, stop and implement/review that executor under its own scope.
+
+After an accepted provider mutation, an empty or stale immediate readback is not proof of absence. Preserve returned remote IDs/evidence, classify the effect as `may_exist`, and use read-only reconciliation before any repeat mutation.
+
 ## Agent handoff requirement
 
 When an agent asks Fedor to run a command and then return a generated file, the agent must provide the output path itself. The agent must not require Fedor to infer repository location, search `data/`, inspect timestamps, or discover filenames manually.

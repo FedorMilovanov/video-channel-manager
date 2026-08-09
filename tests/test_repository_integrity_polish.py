@@ -72,14 +72,16 @@ def test_public_entrypoints_state_the_current_authorization_boundary() -> None:
     security = SECURITY.read_text(encoding="utf-8")
 
     for statement in (
-        "Provider writes, replay, deletion и mutation plans сейчас **не авторизованы**",
         "docs/operations/current-state.md",
         "сами по себе не разрешают запуск",
         "Completed-state CI `30994245235`",
-        "единственный активный owning issue #154",
+        "Issue #154",
+        "Issue #232",
+        "x-puy27S2qs",
         "artifact-level",
         "Исторические Waves 0–13 закрыты",
-        "Текущий repository-level backlog закрыт",
+        "Текущий точный residual разделён на два независимых owning scope",
+        "не разрешает повторный upload",
     ):
         assert statement in readme
 
@@ -89,6 +91,8 @@ def test_public_entrypoints_state_the_current_authorization_boundary() -> None:
         "## Следом",
         "safe playlist operations",
         "Активного roadmap или backlog нет",
+        "единственный активный owning issue #154",
+        "Текущий repository-level backlog закрыт",
     ):
         assert stale not in readme
 
