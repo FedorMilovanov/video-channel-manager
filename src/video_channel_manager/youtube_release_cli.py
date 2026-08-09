@@ -77,7 +77,7 @@ def _verify_existing_journal_for_adoption(
             )
         if current.get("adoption_evidence_sha256") != proposed.get("adoption_evidence_sha256"):
             raise UploadPlanError(
-                "Existing stable upload journal conflicts with existing-target adoption: immutable evidence drift."
+                "Existing stable upload journal was adopted from different immutable evidence; refusing silent rebinding."
             )
 
 
@@ -101,9 +101,7 @@ def adopt_existing(args: argparse.Namespace) -> int:
             f"Provider channel mismatch: expected {identity['target_channel_id']} got {remote.ref.channel_id}."
         )
     if remote.ref.remote_id != identity["video_id"]:
-        raise UploadPlanError(
-            f"Provider video mismatch: expected {identity['video_id']} got {remote.ref.remote_id}."
-        )
+        raise UploadPlanError(f"Provider video mismatch: expected {identity['video_id']} got {remote.ref.remote_id}.")
     _verify_remote_against_evidence(evidence=evidence, remote=remote)
 
     proposed = adopted_journal(
@@ -129,6 +127,8 @@ def adopt_existing(args: argparse.Namespace) -> int:
             write_json_atomic(stable_journal, proposed)
             durable = proposed
         else:
+            if current is None:
+                raise UploadPlanError("Idempotent adoption unexpectedly lacks an existing durable journal.")
             durable = current
 
     result = {
