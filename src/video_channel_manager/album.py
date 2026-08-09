@@ -115,9 +115,7 @@ def _quality_for_manifest(
         )
     quality_path = quality_master_path_from_manifest_path(Path(raw_manifest_path))
     if not quality_path.is_file():
-        raise AlbumError(
-            f"Final timing/render requires an explicit quality master manifest; missing: {quality_path}"
-        )
+        raise AlbumError(f"Final timing/render requires an explicit quality master manifest; missing: {quality_path}")
     return load_quality_master_manifest(quality_path, manifest)
 
 
