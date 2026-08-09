@@ -327,10 +327,7 @@ def test_adopted_release_state_skips_upload_forever() -> None:
 
 def test_actual_black_man_live_state_binds_expected_stable_identity() -> None:
     evidence_path = (
-        Path(__file__).resolve().parents[1]
-        / "docs"
-        / "operations"
-        / "black-man-youtube-live-state-2026-08-09.json"
+        Path(__file__).resolve().parents[1] / "docs" / "operations" / "black-man-youtube-live-state-2026-08-09.json"
     )
     evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
     identity = validate_live_state_evidence(evidence)
