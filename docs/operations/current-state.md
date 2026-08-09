@@ -2,6 +2,7 @@
 
 Updated: 2026-08-09  
 Audited runtime baseline: `main@aa47760109f65e93f241a2d9e6ee8d7bd62827c7`  
+Repository/coverage continuity proof: `main@73c0b831ff7e2168ea09ed8e390d386d1750e9a8`, exact-head CI #3781 SUCCESS; the 77% gate was restored by covering the provider-free Lordchrist outcome CLI rather than lowering the threshold.  
 Control audit: [`../lordchrist/audits/2026-08-09-telegram-control-audit.md`](../lordchrist/audits/2026-08-09-telegram-control-audit.md)  
 Defect continuation: [`../lordchrist/audits/2026-08-09-defect-register-continuation.json`](../lordchrist/audits/2026-08-09-defect-register-continuation.json)  
 Svodka runbook: [`svodka-readiness.md`](svodka-readiness.md)  
