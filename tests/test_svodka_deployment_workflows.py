@@ -39,8 +39,8 @@ def _workflow(path: Path) -> str:
 def _assert_materialized_release_contract(workflow: str) -> None:
     assert "release-approval-2026-08.json" in workflow
     assert "video_channel_manager.svodka_approval_cli" in workflow
-    assert "--approval \"$APPROVAL_PATH\"" in workflow
-    assert 'RELEASE_PATH: .runtime/svodka-approved-release.json' in workflow
+    assert '--approval "$APPROVAL_PATH"' in workflow
+    assert "RELEASE_PATH: .runtime/svodka-approved-release.json" in workflow
 
 
 def _assert_dual_current_main_quality(workflow: str) -> None:
@@ -54,7 +54,11 @@ def test_all_state_writers_share_exact_release_and_lossless_serialization_contra
     expected_group = f"group: {profile.concurrency_group}"
     expected_names = {path.name for path in STATE_WRITER_WORKFLOWS}
     workflows_dir = REPOSITORY_ROOT / ".github/workflows"
-    discovered = {path for path in workflows_dir.glob("*.yml") if expected_group in _workflow(path)}
+    discovered = {
+        path
+        for path in workflows_dir.glob("*.yml")
+        if expected_group in _workflow(path)
+    }
 
     assert {path.name for path in discovered} == expected_names
     assert discovered == set(STATE_WRITER_WORKFLOWS)
@@ -78,7 +82,9 @@ def test_ledger_initialization_is_manual_exact_provider_free_and_dual_quality_pr
     _assert_dual_current_main_quality(workflow)
     initialize_index = workflow.index("initialize-ledger")
     reproof_index = workflow.index("telegram_github_quality_gate", initialize_index)
-    commit_index = workflow.index('git -C "$STATE_DIR" commit -m "Initialize Svodka publication ledger [skip ci]"')
+    commit_index = workflow.index(
+        'git -C "$STATE_DIR" commit -m "Initialize Svodka publication ledger [skip ci]"'
+    )
     assert initialize_index < reproof_index < commit_index
     assert "sendMessage" not in workflow
     assert "sendPoll" not in workflow
@@ -106,7 +112,9 @@ def test_canary_is_exact_fresh_manual_dispatch_with_durable_intent_first() -> No
     assert "send-once" in workflow
 
     persist_index = workflow.index("Persist intent before Telegram mutation")
-    reproof_index = workflow.index("Re-prove current-main quality immediately before Telegram mutation")
+    reproof_index = workflow.index(
+        "Re-prove current-main quality immediately before Telegram mutation"
+    )
     send_index = workflow.index("Send exactly one canary payload")
     archive_index = workflow.index("Archive exact provider outcome before state mutation")
     apply_index = workflow.index("Apply and persist exact provider outcome")
@@ -162,11 +170,21 @@ def test_scheduler_is_canary_gated_freshness_bounded_and_covers_full_pilot() -> 
     freshness_index = workflow.index("Check strict-next publication freshness")
     preflight_index = workflow.index("Fresh read-only target preflight")
     persist_index = workflow.index("Persist scheduled intent before Telegram mutation")
-    reproof_index = workflow.index("Re-prove current-main quality immediately before Telegram mutation")
+    reproof_index = workflow.index(
+        "Re-prove current-main quality immediately before Telegram mutation"
+    )
     send_index = workflow.index("Send exactly one scheduled payload")
     archive_index = workflow.index("Archive exact provider outcome before state mutation")
     apply_index = workflow.index("Apply and persist exact scheduled provider outcome")
-    assert canary_index < skip_index < freshness_index < preflight_index < persist_index < reproof_index < send_index
+    assert (
+        canary_index
+        < skip_index
+        < freshness_index
+        < preflight_index
+        < persist_index
+        < reproof_index
+        < send_index
+    )
     assert send_index < archive_index < apply_index
     assert "send-once" in workflow
 
@@ -215,7 +233,11 @@ def test_no_push_triggered_write_capable_svodka_migration_workflows_remain() -> 
 def test_all_svodka_workflows_pin_supported_runner_image() -> None:
     for path in (REPOSITORY_ROOT / ".github/workflows").glob("svodka-*.yml"):
         workflow = _workflow(path)
-        runs_on = [line.strip() for line in workflow.splitlines() if line.lstrip().startswith("runs-on:")]
+        runs_on = [
+            line.strip()
+            for line in workflow.splitlines()
+            if line.lstrip().startswith("runs-on:")
+        ]
         assert runs_on, path.name
         assert set(runs_on) == {"runs-on: ubuntu-24.04"}, path.name
         assert "ubuntu-latest" not in workflow, path.name
