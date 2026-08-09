@@ -44,11 +44,28 @@ def test_current_state_is_a_live_index_not_a_commit_ledger() -> None:
     assert len(text.splitlines()) <= 180
     assert "main@" not in text
     assert "Issue #154 remains **artifact-level open**" in text
-    assert "Issue #168 should be treated as repository-hardening/content-model completion" in text
-    assert "Issue #170 should be treated as repository pipeline implementation completion" in text
+    assert "Issue #168 is closed as repository implementation complete" in text
+    assert "Issue #170 is closed as repository pipeline implementation complete" in text
     assert "provider_writes_authorized=false" in text
     assert "There is no provider upload executor" in text
     assert "UNVERIFIED" in text
+
+
+def test_dependabot_maintenance_is_atomic_and_bounded() -> None:
+    text = _text(".github/dependabot.yml")
+
+    for policy in (
+        "routine-minor-patch:",
+        "workflow-actions:",
+        "applies-to: version-updates",
+        "version-update:semver-major",
+        "dependency-name: mypy",
+    ):
+        assert policy in text
+
+    assert text.count("groups:") == 2
+    assert "routine-minor-patch:" in text and "- minor" in text and "- patch" in text
+    assert "workflow-actions:" in text and "- major" in text
 
 
 def test_windows_copilot_file_only_adds_handoff_rules() -> None:

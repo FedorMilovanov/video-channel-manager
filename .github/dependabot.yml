@@ -8,6 +8,18 @@ updates:
       time: "06:00"
       timezone: Europe/Moscow
     open-pull-requests-limit: 5
+    groups:
+      routine-minor-patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    ignore:
+      - dependency-name: mypy
+        update-types:
+          - version-update:semver-major
     labels:
       - dependencies
     commit-message:
@@ -21,6 +33,15 @@ updates:
       time: "06:30"
       timezone: Europe/Moscow
     open-pull-requests-limit: 5
+    groups:
+      workflow-actions:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - major
+          - minor
+          - patch
     labels:
       - dependencies
     commit-message:

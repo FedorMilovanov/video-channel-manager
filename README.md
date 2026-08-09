@@ -15,7 +15,7 @@
 - локальный media/image QC и SHA-256 fingerprints;
 - SQLAlchemy/Alembic foundation для будущего operation ledger.
 
-> **Текущий операционный статус:** Waves 0–13 закрыты; активного backlog нет. Provider writes, replay, deletion и mutation plans сейчас **не авторизованы**. Канонический статус: [`docs/operations/current-state.md`](docs/operations/current-state.md) и [`docs/operations/audit-register-v6-2026-08-05.json`](docs/operations/audit-register-v6-2026-08-05.json).
+> **Текущий операционный статус:** repository implementation закрыт по текущим Telegram/YouTube hardening-контурам; единственный активный owning issue #154 остаётся artifact-level open до физического rerender/verification «Чёрного человека» из семи accepted quality masters. Provider writes, replay, deletion и mutation plans сейчас **не авторизованы**. Канонический live-статус: [`docs/operations/current-state.md`](docs/operations/current-state.md). Исторические audit registers — evidence only.
 >
 > Приведённые ниже write/dry-run/execute-команды документируют возможности и safety protocol кода, но сами по себе не разрешают запуск. Любая будущая provider mutation требует нового явного запроса пользователя, нового точного project-bound issue, свежего bounded preflight, reviewed immutable exact-ID plan и отдельной авторизации.
 
@@ -457,9 +457,9 @@ CI запускается на Python 3.11, 3.12 и 3.13. Blocking gates: depend
 
 # Текущий статус развития
 
-Waves 0–13 и operational graph закрыты. Активного roadmap или backlog нет. Реализованные capability contracts сохраняются, но не являются разрешением на provider execution.
+Исторические Waves 0–13 закрыты и остаются audit evidence. Текущий repository-level backlog закрыт; #154 остаётся точным artifact-level residual до rerender/verification current-policy media. Реализованные capability contracts сохраняются, но не являются разрешением на provider execution.
 
-Будущая работа начинается только новым явным запросом пользователя и новым точным project-bound issue. Playlist mutations, unattended remote writes, автоматические transfer queues и исторические executors не являются задачами «следующего этапа».
+Новая provider-facing работа требует нового явного запроса пользователя и точного owning scope; локальное завершение #154 продолжается в его существующем owning issue. Playlist mutations, unattended remote writes, автоматические transfer queues и исторические executors не являются задачами «следующего этапа».
 
 ## Вне текущего scope
 
