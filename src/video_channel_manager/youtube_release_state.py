@@ -23,6 +23,7 @@ _TAIL_CHILDREN: tuple[tuple[str, str], ...] = (
     ("manual-pin-evidence", "manual_pin_evidence"),
 )
 _EFFECTS = frozenset({"not_dispatched", "confirmed_absent", "may_exist", "verified"})
+_TERMINAL_PROOF_EFFECTS = frozenset({"confirmed_absent", "verified"})
 
 
 class YouTubeReleaseStateError(UploadPlanError):
@@ -62,8 +63,7 @@ def build_release_state(
 
     children = [_child(child_id, kind) for child_id, kind in _FIXED_CHILDREN]
     children.extend(
-        _child(f"playlist:{playlist_id}", "playlist_membership", target_id=playlist_id)
-        for playlist_id in playlists
+        _child(f"playlist:{playlist_id}", "playlist_membership", target_id=playlist_id) for playlist_id in playlists
     )
     children.extend(_child(child_id, kind) for child_id, kind in _TAIL_CHILDREN)
     state = {
@@ -115,6 +115,13 @@ def validate_release_state(state: dict[str, Any]) -> None:
             raise YouTubeReleaseStateError(
                 f"Release child {child_id} has provider effect {effect} without an immutable payload digest."
             )
+        if effect in _TERMINAL_PROOF_EFFECTS and item.get("evidence_sha256") is None:
+            raise YouTubeReleaseStateError(
+                f"Release child {child_id} has terminal provider effect {effect} without immutable proof evidence."
+            )
+        remote_id = item.get("remote_id")
+        if remote_id is not None and (not isinstance(remote_id, str) or not remote_id):
+            raise YouTubeReleaseStateError(f"Release child {child_id} remote_id is invalid.")
         child_ids.append(child_id)
         child_pairs.append((child_id, kind))
 
@@ -149,7 +156,9 @@ def _index(state: dict[str, Any], child_id: str) -> int:
 def _prerequisite_satisfied(child: dict[str, Any]) -> bool:
     if child["provider_effect"] == "verified":
         return True
-    return child["kind"] == "existing_target_reconciliation" and child["provider_effect"] == "confirmed_absent"
+    return bool(
+        child["kind"] == "existing_target_reconciliation" and child["provider_effect"] == "confirmed_absent"
+    )
 
 
 def _require_prerequisites(state: dict[str, Any], index: int) -> None:
@@ -176,9 +185,7 @@ def prepare_child(
     digest = canonical_sha256(payload)
     current_digest = child.get("payload_sha256")
     if current_digest not in (None, digest):
-        raise YouTubeReleaseStateError(
-            f"Release child {child_id} already has a different immutable payload digest."
-        )
+        raise YouTubeReleaseStateError(f"Release child {child_id} already has a different immutable payload digest.")
     if child["provider_effect"] != "not_dispatched" and current_digest is None:
         raise YouTubeReleaseStateError(f"Release child {child_id} cannot be prepared after provider effect exists.")
     child["payload_sha256"] = digest
@@ -211,12 +218,14 @@ def transition_child(
         "verified": {"verified"},
     }[current]
     if provider_effect not in allowed:
-        raise YouTubeReleaseStateError(
-            f"Invalid release transition for {child_id}: {current} -> {provider_effect}."
-        )
+        raise YouTubeReleaseStateError(f"Invalid release transition for {child_id}: {current} -> {provider_effect}.")
     if provider_effect != "not_dispatched" and child.get("payload_sha256") is None:
         raise YouTubeReleaseStateError(
             f"Release child {child_id} must persist its immutable payload before provider effect {provider_effect}."
+        )
+    if provider_effect in _TERMINAL_PROOF_EFFECTS and evidence is None:
+        raise YouTubeReleaseStateError(
+            f"Release child {child_id} must persist immutable proof evidence before provider effect {provider_effect}."
         )
     if current == "verified":
         if remote_id is not None and child.get("remote_id") not in (None, remote_id):
@@ -233,6 +242,7 @@ def transition_child(
         child["evidence_sha256"] = canonical_sha256(evidence)
     child["updated_at"] = _now(now)
     updated["updated_at"] = _now(now)
+    validate_release_state(updated)
     return updated
 
 
@@ -246,7 +256,8 @@ def next_release_child(state: dict[str, Any]) -> dict[str, Any] | None:
     for child in state["children"]:
         if _prerequisite_satisfied(child):
             continue
-        return copy.deepcopy(child)
+        result: dict[str, Any] = copy.deepcopy(child)
+        return result
     return None
 
 
