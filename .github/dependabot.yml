@@ -17,9 +17,22 @@ updates:
           - minor
           - patch
     ignore:
-      - dependency-name: mypy
+      # Major dependency upgrades are explicit compatibility work, not routine bot maintenance.
+      - dependency-name: "*"
         update-types:
           - version-update:semver-major
+      # This exact/hash-bound production closure is refreshed coherently as one supply-chain artifact.
+      - dependency-name: annotated-types
+      - dependency-name: anyio
+      - dependency-name: certifi
+      - dependency-name: h11
+      - dependency-name: httpcore
+      - dependency-name: httpx
+      - dependency-name: idna
+      - dependency-name: pydantic
+      - dependency-name: pydantic-core
+      - dependency-name: typing-extensions
+      - dependency-name: typing-inspection
     labels:
       - dependencies
     commit-message:
