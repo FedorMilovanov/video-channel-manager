@@ -1,0 +1,12 @@
+# Root constraints for the exact production Telegram publisher runtime.
+#
+# requirements/telegram-publisher.txt is the installable SHA-256 hash lock and
+# must be refreshed as one resolved closure from these roots. Do not update a
+# transitive line in the hash lock independently.
+#
+# A lock refresh is accepted only after the exact regenerated lock installs in
+# the isolated Python 3.11 runtime and passes pip check, guarded CLI smoke, and
+# dependency audit in full CI.
+
+httpx==0.28.1
+pydantic==2.13.4
