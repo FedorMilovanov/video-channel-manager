@@ -1,0 +1,89 @@
+name: Svodka rollout candidate
+
+on:
+  pull_request:
+    paths:
+      - "content/telegram/svodka/**"
+      - "content/telegram/channels/svodka*.json"
+      - "src/video_channel_manager/svodka_queue.py"
+      - "src/video_channel_manager/svodka_release.py"
+      - "src/video_channel_manager/telegram_channel_cli.py"
+      - "src/video_channel_manager/telegram_multichannel_release.py"
+      - "tests/test_svodka_*.py"
+      - ".github/workflows/svodka-*.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: svodka-rollout-candidate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-review-artifact:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: src
+      PROFILE_PATH: content/telegram/channels/svodka.json
+      BINDING_PATH: content/telegram/channels/svodka-target-binding.json
+      QUEUE_PATH: content/telegram/svodka/draft-14-posts-2026-08.json
+      CANDIDATE_PATH: .runtime/svodka-review-candidate.json
+      RELEASE_ID: svodka-pilot-2026-08
+    steps:
+      - name: Check out candidate branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project
+        run: python -m pip install --disable-pip-version-check -e ".[dev]"
+
+      - name: Validate effective 14-item rollout queue
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_channel_cli validate-svodka \
+            --profile "$PROFILE_PATH" \
+            --queue "$QUEUE_PATH"
+          python -m pytest -q tests/test_svodka_rollout_schedule.py tests/test_svodka_deployment_workflows.py
+
+      - name: Build exact target-bound review candidate
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.telegram_channel_cli build-svodka-candidate \
+            --profile "$PROFILE_PATH" \
+            --queue "$QUEUE_PATH" \
+            --binding "$BINDING_PATH" \
+            --release-id "$RELEASE_ID" \
+            --output "$CANDIDATE_PATH"
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from video_channel_manager.telegram_multichannel_release import load_release
+
+          release = load_release(Path(os.environ["CANDIDATE_PATH"]))
+          assert release.release_authorized is False
+          assert len(release.items) == 14
+          assert release.items[0].scheduled_at.isoformat() == "2026-08-10T10:30:00+03:00"
+          assert release.items[-1].scheduled_at.isoformat() == "2026-08-16T19:30:00+03:00"
+          assert release.chat_id == -1003527567039
+          assert release.bot_id == 8716602202
+          assert release.bot_username == "preaching_mp3_bot"
+          print(f"candidate_digest={release.digest}")
+          PY
+
+      - name: Upload exact review candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: svodka-rollout-review-candidate
+          path: .runtime/svodka-review-candidate.json
+          if-no-files-found: error
+          retention-days: 7
