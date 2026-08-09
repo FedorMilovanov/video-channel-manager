@@ -220,6 +220,7 @@ class SvodkaScheduleOverlay(BaseModel):
     shift_days: int = Field(ge=1, le=31)
     effective_start_date: date
     effective_end_date: date
+    effective_publication_order: tuple[str, ...] | None = None
     owning_issue: int = Field(ge=1)
     reason: str = Field(min_length=20, max_length=1000)
 
@@ -230,6 +231,10 @@ class SvodkaScheduleOverlay(BaseModel):
             raise ValueError("Svodka schedule overlay effective_start_date differs from exact shift")
         if self.effective_end_date != self.base_end_date + delta:
             raise ValueError("Svodka schedule overlay effective_end_date differs from exact shift")
+        if self.effective_publication_order is not None and len(self.effective_publication_order) != len(
+            set(self.effective_publication_order)
+        ):
+            raise ValueError("Svodka schedule overlay publication order must not contain duplicates")
         return self
 
 
@@ -252,6 +257,11 @@ def _apply_schedule_overlay(queue: SvodkaDraftQueue, overlay: SvodkaScheduleOver
     if overlay.base_start_date != queue.pilot.start_date or overlay.base_end_date != queue.pilot.end_date:
         raise ValueError("Svodka schedule overlay base window differs from draft queue")
 
+    original_ids = tuple(post.publication_id for post in queue.posts)
+    effective_order = overlay.effective_publication_order or original_ids
+    if len(effective_order) != len(original_ids) or set(effective_order) != set(original_ids):
+        raise ValueError("Svodka schedule overlay publication order must contain every draft publication exactly once")
+
     delta = timedelta(days=overlay.shift_days)
     effective_pilot = queue.pilot.model_copy(
         update={
@@ -260,8 +270,11 @@ def _apply_schedule_overlay(queue: SvodkaDraftQueue, overlay: SvodkaScheduleOver
             "notes": f"{queue.pilot.notes} Effective rollout schedule shifted by {overlay.shift_days} day(s) under issue #{overlay.owning_issue}.",
         }
     )
+    shifted_slots = tuple(post.scheduled_at + delta for post in queue.posts)
+    posts_by_id = {post.publication_id: post for post in queue.posts}
     effective_posts = tuple(
-        post.model_copy(update={"scheduled_at": post.scheduled_at + delta}) for post in queue.posts
+        posts_by_id[publication_id].model_copy(update={"sequence": index, "scheduled_at": shifted_slots[index - 1]})
+        for index, publication_id in enumerate(effective_order, start=1)
     )
     return SvodkaDraftQueue.model_validate(
         queue.model_copy(update={"pilot": effective_pilot, "posts": effective_posts}).model_dump(mode="python")
