@@ -34,7 +34,9 @@ jobs:
       PYTHONPATH: src
       PROFILE_PATH: content/telegram/channels/svodka.json
       BINDING_PATH: content/telegram/channels/svodka-target-binding.json
-      RELEASE_PATH: content/telegram/svodka/approved-release-2026-08.json
+      QUEUE_PATH: content/telegram/svodka/draft-14-posts-2026-08.json
+      APPROVAL_PATH: content/telegram/svodka/release-approval-2026-08.json
+      RELEASE_PATH: .runtime/svodka-approved-release.json
       STATE_BRANCH: state/svodka-telegram
       STATE_DIR: .state/svodka
       LEDGER_RELATIVE_PATH: content/telegram/svodka/publication-ledger.json
@@ -63,13 +65,27 @@ jobs:
           set -euo pipefail
           python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
 
-      - name: Require current-main exact-SHA Svodka quality proof
+      - name: Materialize exact approved release from immutable review receipt
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.svodka_approval_cli \
+            --profile "$PROFILE_PATH" \
+            --queue "$QUEUE_PATH" \
+            --binding "$BINDING_PATH" \
+            --approval "$APPROVAL_PATH" \
+            --output "$RELEASE_PATH"
+
+      - name: Require current-main exact-SHA Svodka quality proofs
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           python -m video_channel_manager.telegram_github_quality_gate \
             --workflow svodka-quality.yml \
+            --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow svodka-approved-release-quality.yml \
             --sha "$GITHUB_SHA"
 
       - name: Validate exact live gates and explicit confirmation
@@ -90,10 +106,6 @@ jobs:
           }
           [[ "$CONFIRMATION" == "CANARY:$REQUESTED_PUBLICATION_ID:$REQUESTED_DIGEST" ]] || {
             echo "confirmation does not match exact release and publication" >&2
-            exit 2
-          }
-          [[ -f "$RELEASE_PATH" ]] || {
-            echo "approved release is not committed yet" >&2
             exit 2
           }
           python - <<'PY'
@@ -227,6 +239,9 @@ jobs:
           set -euo pipefail
           python -m video_channel_manager.telegram_github_quality_gate \
             --workflow svodka-quality.yml \
+            --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow svodka-approved-release-quality.yml \
             --sha "$GITHUB_SHA"
 
       - name: Send exactly one canary payload
