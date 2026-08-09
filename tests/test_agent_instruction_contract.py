@@ -1,0 +1,75 @@
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _text(relative: str) -> str:
+    return (ROOT / relative).read_text(encoding="utf-8")
+
+
+def test_root_agent_contract_stays_concise_and_nonvolatile() -> None:
+    text = _text("AGENTS.md")
+
+    assert len(text.splitlines()) <= 180
+    assert "docs/operations/current-state.md" in text
+    assert "docs/operations/project-identity-registry.md" in text
+    assert "docs/operations/operational-artifact-standard.md" in text
+    assert ".github/copilot-instructions.md" in text
+
+    for stale_pattern in (
+        "Current production code baseline:",
+        "Historical Wave",
+        "No operational continuation is pending",
+        "main@",
+    ):
+        assert stale_pattern not in text
+
+    for invariant in (
+        "Durable same-object keys must not include timestamps",
+        "Release/content approval and provider execution authority are separate gates",
+        "zero blind mutation retries",
+        "A final artifact must consume the exact accepted upstream artifacts it claims",
+        "one write owner at a time",
+        "repository implementation complete",
+        "artifact complete",
+        "provider rollout complete",
+    ):
+        assert invariant in text
+
+
+def test_current_state_is_a_live_index_not_a_commit_ledger() -> None:
+    text = _text("docs/operations/current-state.md")
+
+    assert len(text.splitlines()) <= 180
+    assert "main@" not in text
+    assert "Issue #154 remains **artifact-level open**" in text
+    assert "Issue #168 should be treated as repository-hardening/content-model completion" in text
+    assert "Issue #170 should be treated as repository pipeline implementation completion" in text
+    assert "provider_writes_authorized=false" in text
+    assert "There is no provider upload executor" in text
+    assert "UNVERIFIED" in text
+
+
+def test_windows_copilot_file_only_adds_handoff_rules() -> None:
+    text = _text(".github/copilot-instructions.md")
+
+    assert len(text.splitlines()) <= 130
+    assert "`AGENTS.md` is the repository operating contract" in text
+    assert "C:\\Users\\Fedor\\Projects\\video-channel-manager\\operator-output" in text
+    assert "LastWriteTime" in text
+    assert "Historical Wave" not in text
+    assert "Current production code baseline" not in text
+
+
+def test_agent_contract_references_exist() -> None:
+    for relative in (
+        "docs/operations/current-state.md",
+        "docs/operations/project-identity-registry.md",
+        "docs/operations/operational-artifact-standard.md",
+        "docs/operations/operational-package-acceptance.md",
+        "docs/operations/retirement-registry-v1.json",
+        "docs/operations/operator-output-handoff-rule.md",
+        ".github/copilot-instructions.md",
+    ):
+        assert (ROOT / relative).is_file(), relative
