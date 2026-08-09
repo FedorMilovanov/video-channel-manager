@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from video_channel_manager import album_legacy as _legacy
+from video_channel_manager import _album_core as _core
 from video_channel_manager.album_quality import (
     QualityMasterEntry,
     QualityMasterManifest,
@@ -19,24 +19,24 @@ from video_channel_manager.album_quality import (
     verify_quality_master_entry,
 )
 
-AlbumError = _legacy.AlbumError
-AlbumManifest = _legacy.AlbumManifest
-AlbumTimingManifest = _legacy.AlbumTimingManifest
-AlbumTimingTrack = _legacy.AlbumTimingTrack
-AlbumTrack = _legacy.AlbumTrack
+AlbumError = _core.AlbumError
+AlbumManifest = _core.AlbumManifest
+AlbumTimingManifest = _core.AlbumTimingManifest
+AlbumTimingTrack = _core.AlbumTimingTrack
+AlbumTrack = _core.AlbumTrack
 
-acquire_youtube_tracks = _legacy.acquire_youtube_tracks
-album_root = _legacy.album_root
-artwork_plan_path = _legacy.artwork_plan_path
-build_artwork_plan = _legacy.build_artwork_plan
-create_album_manifest = _legacy.create_album_manifest
-manifest_path = _legacy.manifest_path
-probe_album_tracks = _legacy.probe_album_tracks
-render_path = _legacy.render_path
-save_album_timing = _legacy.save_album_timing
-save_json = _legacy.save_json
-timing_path = _legacy.timing_path
-verify_album_render = _legacy.verify_album_render
+acquire_youtube_tracks = _core.acquire_youtube_tracks
+album_root = _core.album_root
+artwork_plan_path = _core.artwork_plan_path
+build_artwork_plan = _core.build_artwork_plan
+create_album_manifest = _core.create_album_manifest
+manifest_path = _core.manifest_path
+probe_album_tracks = _core.probe_album_tracks
+render_path = _core.render_path
+save_album_timing = _core.save_album_timing
+save_json = _core.save_json
+timing_path = _core.timing_path
+verify_album_render = _core.verify_album_render
 
 
 def _retitle(track: AlbumTrack, title: str) -> AlbumTrack:
@@ -64,7 +64,7 @@ def configure_youtube_track(
         and current.source_url == expected_url
     )
     if not same_source:
-        return _legacy.configure_youtube_track(manifest, ordinal=ordinal, video_id=video_id, title=title)
+        return _core.configure_youtube_track(manifest, ordinal=ordinal, video_id=video_id, title=title)
     replacement = _retitle(current, (title or current.title).strip())
     tracks = [replacement if track.ordinal == ordinal else track for track in manifest.tracks]
     return manifest.model_copy(update={"tracks": tracks})
@@ -83,7 +83,7 @@ def configure_local_track(
     resolved = path.expanduser().resolve()
     same_source = current.source_kind == "local_controlled_master" and current.local_path == str(resolved)
     if not same_source:
-        return _legacy.configure_local_track(manifest, ordinal=ordinal, path=path, title=title)
+        return _core.configure_local_track(manifest, ordinal=ordinal, path=path, title=title)
     replacement = _retitle(current, (title or current.title).strip())
     tracks = [replacement if track.ordinal == ordinal else track for track in manifest.tracks]
     return manifest.model_copy(update={"tracks": tracks})
@@ -95,11 +95,11 @@ def _attach_manifest_path(manifest: AlbumManifest, path: Path) -> AlbumManifest:
 
 
 def load_album_manifest(path: Path) -> AlbumManifest:
-    return _attach_manifest_path(_legacy.load_album_manifest(path), path)
+    return _attach_manifest_path(_core.load_album_manifest(path), path)
 
 
 def save_album_manifest(path: Path, manifest: AlbumManifest) -> AlbumManifest:
-    return _attach_manifest_path(_legacy.save_album_manifest(path, manifest), path)
+    return _attach_manifest_path(_core.save_album_manifest(path, manifest), path)
 
 
 def _quality_for_manifest(
@@ -130,7 +130,7 @@ def build_album_timing(
 ) -> AlbumTimingManifest:
     quality = _quality_for_manifest(manifest, quality_masters)
     mastered = manifest_with_quality_master_inputs(manifest, quality)
-    timing = _legacy.build_album_timing(
+    timing = _core.build_album_timing(
         mastered,
         grid_seconds=grid_seconds,
         minimum_gap_seconds=minimum_gap_seconds,
@@ -139,7 +139,7 @@ def build_album_timing(
 
 
 def load_album_timing(path: Path, *, manifest: AlbumManifest) -> AlbumTimingManifest:
-    return _legacy.load_album_timing(path, manifest=manifest)
+    return _core.load_album_timing(path, manifest=manifest)
 
 
 def render_album(
@@ -152,7 +152,7 @@ def render_album(
 ) -> Path:
     quality = _quality_for_manifest(manifest, quality_masters)
     mastered = manifest_with_quality_master_inputs(manifest, quality)
-    return _legacy.render_album(mastered, timing, root=root, ffmpeg=ffmpeg)
+    return _core.render_album(mastered, timing, root=root, ffmpeg=ffmpeg)
 
 
 def build_album_package(
@@ -165,10 +165,10 @@ def build_album_package(
 ) -> dict[str, Any]:
     quality = _quality_for_manifest(manifest, quality_masters)
     require_complete_quality_masters(manifest, quality, verify_bytes=True)
-    payload = _legacy.build_album_package(manifest, timing, verification, final_path=final_path)
+    payload = _core.build_album_package(manifest, timing, verification, final_path=final_path)
     payload["quality_master_sha256"] = quality.quality_master_sha256
     payload.pop("package_sha256", None)
-    payload["package_sha256"] = _legacy._canonical_sha256(payload)
+    payload["package_sha256"] = _core._canonical_sha256(payload)
     return payload
 
 
