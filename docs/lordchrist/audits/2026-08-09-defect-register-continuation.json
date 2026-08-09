@@ -4,7 +4,7 @@
   "project_key": "lord-god-strength",
   "channel_username": "@lordchrist",
   "as_of_date": "2026-08-09",
-  "audited_runtime_baseline": "aea3aa343d5bb42297c4ee25665ecf1058690a23",
+  "audited_runtime_baseline": "0776418450070a707370970977192dd59698b25e",
   "predecessor": "docs/lordchrist/audits/2026-08-08-defect-register.json",
   "predecessor_policy": "immutable_historical_record_do_not_rewrite",
   "updates": [
@@ -108,6 +108,22 @@
         ".github/CODEOWNERS exists for critical automation, Telegram runtime/content and audit paths",
         "the available GitHub connector does not expose effective rulesets/branch-protection settings",
         "do not claim main or state branches are force-push/delete protected until independently verified"
+      ]
+    },
+    {
+      "defect_id": "LCT-HASH-INTEGRATION-013",
+      "previous_status": null,
+      "status": "fixed",
+      "severity": "P1",
+      "fixed_by": "0776418450070a707370970977192dd59698b25e",
+      "root_cause_class": "hash_locked_runtime_and_unhashed_test_requirement_mixed_in_one_pip_transaction",
+      "architectural_invariant": "the production --require-hashes runtime must be installed in its own pip transaction; test-only packages cannot be appended to the hash-checked runtime command",
+      "evidence": [
+        "the first post-hash-lock Lordchrist research-v2 validation failed before tests because pytest>=8.3,<10 shared the --require-hashes transaction",
+        "the production Telegram lock remained unchanged and fully hash-bound",
+        "research-v2 now installs the hash-locked runtime separately from the provider-inert pytest harness",
+        "generic regression inspects every workflow pip install that consumes requirements/telegram-publisher.txt and forbids packages after the lock",
+        "PR #210 exact-head CI #3769 and specialized Lordchrist research-v2 validation #67 both passed before merge"
       ]
     }
   ]
