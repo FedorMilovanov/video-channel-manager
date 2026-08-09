@@ -92,6 +92,8 @@ It does not authorize ID3 rewrite, rename/transcode, browser automation, remote 
 
 `.github/CODEOWNERS` exists for critical repository paths, but effective branch protection/rulesets and the current Dependency Graph setting are external GitHub state and remain **UNVERIFIED** through the available connector. Green CI or CODEOWNERS presence must not be presented as proof of those settings.
 
+Only `main` is a supported repository code/runtime execution baseline. `state/lordchrist-telegram` and `state/svodka-telegram` are durable state-only refs and must never be used as runtime/code sources. Any other branch is ephemeral and non-authoritative after its scope closes; delete it where supported or align the ref to exact current `main` after preserving any genuinely unique useful work through a focused PR.
+
 Dependabot version-update work is a separate maintenance queue, not unresolved production state. Routine non-production-lock pip minor/patch updates may be grouped; all pip major upgrades are explicit compatibility work; GitHub Actions updates are grouped and exact-SHA pinned. The production Telegram hash lock is not a routine bot target. Every accepted maintenance change still requires exact-current-main CI.
 
 ## Provider/credential boundary
