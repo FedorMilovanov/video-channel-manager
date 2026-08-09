@@ -1,0 +1,130 @@
+{
+  "schema_name": "video-channel-manager.telegram-defect-register-continuation",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "as_of_date": "2026-08-09",
+  "audited_runtime_baseline": "0776418450070a707370970977192dd59698b25e",
+  "predecessor": "docs/lordchrist/audits/2026-08-08-defect-register.json",
+  "predecessor_policy": "immutable_historical_record_do_not_rewrite",
+  "updates": [
+    {
+      "defect_id": "LCT-CONCURRENCY-004",
+      "previous_status": "open",
+      "status": "fixed",
+      "fixed_by": "f98bc118229f54dec3d83e8160adc37c1695ee7c",
+      "evidence": [
+        "legacy Lordchrist publisher now uses queue:max with cancel-in-progress:false",
+        "runner is pinned to ubuntu-24.04",
+        "complete writer-surface discovery is separately locked by aea3aa343d5bb42297c4ee25665ecf1058690a23"
+      ]
+    },
+    {
+      "defect_id": "RESEARCH-STATE-006",
+      "previous_status": "prevented_pending_merge",
+      "status": "fixed_provider_inert",
+      "fixed_by": "a91e613afdc61211b35e5153fa89c009c8427280",
+      "evidence": [
+        "research-v2 adapts validated evidence into GenericReleaseQueue instead of defining a third sender/state machine",
+        "current generic Lordchrist research profile remains provider_writes_authorized=false",
+        "read-only validation locks the exact target-bound five-item candidate"
+      ]
+    },
+    {
+      "defect_id": "SUPPLY-HASHES-008",
+      "previous_status": "open",
+      "status": "fixed",
+      "fixed_by": "a3e978d13b9c9ebf46f2348bce5626515259cf43",
+      "evidence": [
+        "requirements/telegram-publisher.txt enables --require-hashes",
+        "all packages in the supported minimal runtime closure are exact-version and hash-bound",
+        "general CI builds an isolated Python 3.11 runtime from the lock and runs pip check, smoke tests and dependency audit"
+      ]
+    },
+    {
+      "defect_id": "SUPPLY-DEPGRAPH-007",
+      "previous_status": "open_prerequisite",
+      "status": "unverified_external_prerequisite",
+      "fixed_by": null,
+      "evidence": [
+        "the earlier official Dependency Review probe reported Dependency Graph disabled",
+        "the available repository connector does not expose a current Dependency Graph setting",
+        "pip-audit and the complete hash lock remain active repository-level controls"
+      ]
+    },
+    {
+      "defect_id": "LCT-OUTCOME-DURABILITY-009",
+      "previous_status": null,
+      "status": "fixed",
+      "severity": "P1",
+      "fixed_by": "a213bb0a6bf3ada94d2b7e08c66ee18c95bfc12a",
+      "root_cause_class": "post_provider_state_persistence_evidence_loss",
+      "architectural_invariant": "after a possible provider effect, exact run-attempt outcome evidence must survive final state-persistence failure and recovery must never blind-retry Telegram",
+      "evidence": [
+        "exact-current-main CI is proved before provider access and immediately before mutation",
+        "structured provider outcome is archived before final durable state persistence",
+        "provider-free recovery binds run, attempt, dispatch, archive bytes and outcome before applying state"
+      ]
+    },
+    {
+      "defect_id": "LCT-RECONCILIATION-TIME-010",
+      "previous_status": null,
+      "status": "fixed",
+      "severity": "P1",
+      "fixed_by": "3f1a1744c22364571912a89c19ecd5f85a83a844",
+      "root_cause_class": "resolution_time_used_as_publication_time",
+      "architectural_invariant": "manual proof time and provider publication time are distinct facts; daily publication quota must use evidence-backed provider publication time",
+      "evidence": [
+        "production CLI requires exact timezone-aware --published-at-utc for confirmed_published reconciliation",
+        "publication time must be no earlier than durable dispatch attempt and no later than reconciliation",
+        "cross-day regression proves a prior-day publication does not consume the next Moscow-day quota",
+        "PR #207 exact-head CI #3760 passed all six required jobs"
+      ]
+    },
+    {
+      "defect_id": "LCT-WRITER-SURFACE-011",
+      "previous_status": null,
+      "status": "fixed",
+      "severity": "P2",
+      "fixed_by": "aea3aa343d5bb42297c4ee25665ecf1058690a23",
+      "root_cause_class": "partial_writer_inventory_regression",
+      "architectural_invariant": "tests must discover the complete state-writer concurrency surface rather than assume a fixed single workflow",
+      "evidence": [
+        "regression discovers every workflow containing group: lordchrist-telegram-publisher",
+        "current exact writer set is publisher plus provider-outcome recovery",
+        "every discovered writer must use queue:max, cancel-in-progress:false and ubuntu-24.04",
+        "PR #208 exact-head CI #3763 passed all six required jobs"
+      ]
+    },
+    {
+      "defect_id": "REPO-GOVERNANCE-012",
+      "previous_status": null,
+      "status": "unverified_external",
+      "severity": "P1",
+      "fixed_by": null,
+      "root_cause_class": "repository_host_setting_not_observable_from_repo_content",
+      "architectural_invariant": "CODEOWNERS content does not prove branch-protection or ruleset enforcement; destructive-ref policy must be verified from GitHub settings before high-risk activation",
+      "evidence": [
+        ".github/CODEOWNERS exists for critical automation, Telegram runtime/content and audit paths",
+        "the available GitHub connector does not expose effective rulesets/branch-protection settings",
+        "do not claim main or state branches are force-push/delete protected until independently verified"
+      ]
+    },
+    {
+      "defect_id": "LCT-HASH-INTEGRATION-013",
+      "previous_status": null,
+      "status": "fixed",
+      "severity": "P1",
+      "fixed_by": "0776418450070a707370970977192dd59698b25e",
+      "root_cause_class": "hash_locked_runtime_and_unhashed_test_requirement_mixed_in_one_pip_transaction",
+      "architectural_invariant": "the production --require-hashes runtime must be installed in its own pip transaction; test-only packages cannot be appended to the hash-checked runtime command",
+      "evidence": [
+        "the first post-hash-lock Lordchrist research-v2 validation failed before tests because pytest>=8.3,<10 shared the --require-hashes transaction",
+        "the production Telegram lock remained unchanged and fully hash-bound",
+        "research-v2 now installs the hash-locked runtime separately from the provider-inert pytest harness",
+        "generic regression inspects every workflow pip install that consumes requirements/telegram-publisher.txt and forbids packages after the lock",
+        "PR #210 exact-head CI #3769 and specialized Lordchrist research-v2 validation #67 both passed before merge"
+      ]
+    }
+  ]
+}

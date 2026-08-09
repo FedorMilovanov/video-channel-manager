@@ -1,6 +1,6 @@
 # Svodka Telegram production readiness
 
-Last reviewed: 2026-08-08 after post-hardening `main@71fbaaac132c1bd337d915a02a2a20f7f987629f`
+Last reviewed: 2026-08-09 after control-audit `main@aea3aa343d5bb42297c4ee25665ecf1058690a23`
 
 ## Current state
 
@@ -143,7 +143,7 @@ A proven local/pre-provider no-effect failure may be safely restored only after 
 
 ## Repository and supply-chain boundary
 
-The production Telegram dependency closure is exact-version pinned and installed with binary-only packages, but package hashes are not yet enforced. Treat a complete `--require-hashes` lock as a remaining supply-chain hardening item; do not introduce a partial hash set.
+The production/minimal Telegram dependency closure is exact-version pinned **and hash-checked**. `requirements/telegram-publisher.txt` enables pip `--require-hashes` for the complete supported runtime closure, while production/minimal workflow installs continue to require binary packages. General CI builds an isolated Python 3.11 Telegram runtime from this lock, runs `pip check`, smoke-tests the guarded CLI without provider access and audits the pinned closure. Treat any future dependency update as a lock regeneration/review event; never remove hashes or introduce an unhashed dependency into this runtime path.
 
 Repository branch-protection/ruleset state is an external GitHub setting and is not inferred from repository files. Before activation independently verify protection of `main` and `state/svodka-telegram` against deletion/force-push while preserving the intended fast-forward state writer path.
 
