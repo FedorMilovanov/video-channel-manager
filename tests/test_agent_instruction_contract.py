@@ -50,7 +50,7 @@ def test_current_state_is_a_live_index_not_a_commit_ledger() -> None:
     assert "Issue #168 is closed as repository implementation complete" in text
     assert "Issue #170 is closed as repository pipeline implementation complete" in text
     assert "provider_writes_authorized=false" in text
-    assert "There is no provider upload executor" in text
+    assert "no provider upload/release execute command" in text
     assert "Only `main` is a supported repository code/runtime execution baseline" in text
     assert "`state/lordchrist-telegram` and `state/svodka-telegram` are durable state-only refs" in text
     assert "`protected=false`" in text
