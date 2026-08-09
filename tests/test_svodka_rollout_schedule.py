@@ -12,9 +12,22 @@ QUEUE_PATH = REPOSITORY_ROOT / "content/telegram/svodka/draft-14-posts-2026-08.j
 OVERLAY_PATH = REPOSITORY_ROOT / "content/telegram/svodka/rollout-schedule-2026-08.json"
 
 
+def _effective(path: Path = QUEUE_PATH) -> SvodkaDraftQueue:
+    return load_svodka_draft(path, apply_schedule_overlay=True)
+
+
+def test_default_loader_preserves_raw_editorial_schedule() -> None:
+    raw = load_svodka_draft(QUEUE_PATH)
+
+    assert raw.pilot.start_date.isoformat() == "2026-08-09"
+    assert raw.pilot.end_date.isoformat() == "2026-08-15"
+    assert raw.posts[0].scheduled_at.isoformat() == "2026-08-09T10:30:00+03:00"
+    assert raw.posts[-1].scheduled_at.isoformat() == "2026-08-15T19:30:00+03:00"
+
+
 def test_rollout_overlay_preserves_all_14_items_and_reviewed_content() -> None:
     raw = SvodkaDraftQueue.model_validate(json.loads(QUEUE_PATH.read_text(encoding="utf-8")))
-    effective = load_svodka_draft(QUEUE_PATH)
+    effective = _effective()
 
     assert OVERLAY_PATH.exists()
     assert len(raw.posts) == 14
@@ -36,7 +49,7 @@ def test_rollout_overlay_preserves_all_14_items_and_reviewed_content() -> None:
 
 
 def test_time_sensitive_eclipse_moves_ahead_of_evergreen_octopus_item() -> None:
-    effective = load_svodka_draft(QUEUE_PATH)
+    effective = _effective()
     ids = [post.publication_id for post in effective.posts]
 
     assert ids[4:6] == [
@@ -56,7 +69,7 @@ def test_rollout_overlay_is_bound_to_expected_base_window(tmp_path: Path) -> Non
     (tmp_path / OVERLAY_PATH.name).write_text(OVERLAY_PATH.read_text(encoding="utf-8"), encoding="utf-8")
 
     with pytest.raises(ValueError, match="base window differs"):
-        load_svodka_draft(queue_path)
+        _effective(queue_path)
 
 
 def test_rollout_overlay_rejects_missing_or_duplicate_publication_ids(tmp_path: Path) -> None:
@@ -67,11 +80,11 @@ def test_rollout_overlay_rejects_missing_or_duplicate_publication_ids(tmp_path: 
     (tmp_path / OVERLAY_PATH.name).write_text(json.dumps(overlay, ensure_ascii=False), encoding="utf-8")
 
     with pytest.raises(ValueError, match="must not contain duplicates"):
-        load_svodka_draft(queue_path)
+        _effective(queue_path)
 
 
 def test_effective_rollout_keeps_two_exact_moscow_slots_per_day() -> None:
-    effective = load_svodka_draft(QUEUE_PATH)
+    effective = _effective()
     slots_by_day: dict[str, list[str]] = {}
     for post in effective.posts:
         local = post.scheduled_at
