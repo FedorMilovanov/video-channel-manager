@@ -281,14 +281,20 @@ def _apply_schedule_overlay(queue: SvodkaDraftQueue, overlay: SvodkaScheduleOver
     )
 
 
-def load_svodka_draft(path: Path, profile: TelegramChannelProfile | None = None) -> SvodkaDraftQueue:
+def load_svodka_draft(
+    path: Path,
+    profile: TelegramChannelProfile | None = None,
+    *,
+    apply_schedule_overlay: bool = False,
+) -> SvodkaDraftQueue:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
         queue = SvodkaDraftQueue.model_validate(payload)
     except (OSError, json.JSONDecodeError, ValidationError) as exc:
         raise ValueError(f"invalid Svodka draft queue {path}: {exc}") from exc
 
-    queue = _apply_schedule_overlay(queue, _load_schedule_overlay(path))
+    if apply_schedule_overlay:
+        queue = _apply_schedule_overlay(queue, _load_schedule_overlay(path))
 
     if profile is not None:
         if profile.project_key != queue.project_key or profile.channel_username != queue.channel_username:
