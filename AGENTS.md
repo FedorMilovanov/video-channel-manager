@@ -75,6 +75,14 @@ Upload, processing/visibility, metadata, thumbnail, playlist creation, membershi
 - A timeout or failed final state push after a provider response is an incident to reconcile, not permission to send again.
 - Machine state belongs in durable journals/results/ledgers, not only logs or chat.
 
+## Branch lifecycle
+
+- `main` is the only supported repository code/runtime execution baseline.
+- `state/lordchrist-telegram` and `state/svodka-telegram` are durable state-only refs; never use them as code/runtime sources.
+- Every other `agent/`, `work/`, `feature/`, `integration/`, `ops/`, `research/`, `arena/`, `tmp*`, or ad-hoc branch is ephemeral.
+- After its PR/scope closes, delete an ephemeral ref where supported; if ref deletion is unavailable, align it to exact current `main`.
+- Never execute, deploy, recover, or start new work from a closed, unmerged, superseded, or retired branch. Preserve genuinely unique useful work through a focused current-main PR before retiring its ref.
+
 ## Browser and wrapper rules
 
 For browser UI work, bind the active page/modal root, prove visibility/hit testing and ownership of the control, capture before-state, perform one action, then verify the exact transition/postcondition. Playback, selection, modal closure, or matching visible text are not substitutes for separate-field readback.

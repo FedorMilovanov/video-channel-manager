@@ -31,6 +31,9 @@ def test_root_agent_contract_stays_concise_and_nonvolatile() -> None:
         "zero blind mutation retries",
         "A final artifact must consume the exact accepted upstream artifacts it claims",
         "one write owner at a time",
+        "`main` is the only supported repository code/runtime execution baseline",
+        "`state/lordchrist-telegram` and `state/svodka-telegram` are durable state-only refs",
+        "align it to exact current `main`",
         "repository implementation complete",
         "artifact complete",
         "provider rollout complete",
@@ -48,6 +51,8 @@ def test_current_state_is_a_live_index_not_a_commit_ledger() -> None:
     assert "Issue #170 is closed as repository pipeline implementation complete" in text
     assert "provider_writes_authorized=false" in text
     assert "There is no provider upload executor" in text
+    assert "Only `main` is a supported repository code/runtime execution baseline" in text
+    assert "`state/lordchrist-telegram` and `state/svodka-telegram` are durable state-only refs" in text
     assert "UNVERIFIED" in text
 
 
