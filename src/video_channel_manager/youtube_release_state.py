@@ -161,9 +161,7 @@ def _index(state: dict[str, Any], child_id: str) -> int:
 def _prerequisite_satisfied(child: dict[str, Any]) -> bool:
     if child["provider_effect"] == "verified":
         return True
-    return bool(
-        child["kind"] == "existing_target_reconciliation" and child["provider_effect"] == "confirmed_absent"
-    )
+    return bool(child["kind"] == "existing_target_reconciliation" and child["provider_effect"] == "confirmed_absent")
 
 
 def _require_prerequisites(state: dict[str, Any], index: int) -> None:
