@@ -19,7 +19,7 @@ Before changing provider-facing, workflow, state, release, or artifact code, rea
 
 Current durable/provider state overrides old chats, screenshots, remembered counts, filenames, stale issue text, and historical packages. Never infer a current authorization from historical success.
 
-## Task contract
+## Adaptive reasoning contract
 
 Before implementation or provider-capable handoff, establish:
 
@@ -31,7 +31,7 @@ Before implementation or provider-capable handoff, establish:
 - exact completion postcondition;
 - one falsifiable hypothesis, one smallest bounded probe, and one stop condition when diagnosing uncertainty.
 
-Do not add ceremony that cannot change a decision, block a defect class, or prove a postcondition.
+Preserve partial success. Resume from the first unverified child operation instead of replaying successful parents. Do not add ceremony that cannot change a decision, block a defect class, or prove a postcondition.
 
 ## Identity and provenance
 
@@ -43,6 +43,7 @@ Identity must be stable under irrelevant changes.
 - Attempt identity and durable object identity are separate when retries/re-plans are possible.
 - Exact accepted bytes are authoritative: bind SHA-256, exact path/ID, and required probe/metadata evidence.
 - A final artifact must consume the exact accepted upstream artifacts it claims. If the provenance policy changes, an older final MP4/ZIP/result is historical evidence until regenerated and re-verified under the new policy.
+- Content presented as a quotation must map to a contiguous source passage; synthesis/paraphrase must not be formatted as a quote.
 - Never select an artifact by newest file, broad wildcard, title-only match, or remembered path when exact identity is available.
 
 ## Provider mutation boundary
@@ -62,7 +63,7 @@ Before any provider mutation:
 
 A green CI run, review approval, release artifact, credentials, HTTP success, stdout, screenshot, visible UI state, or existing file is not provider execution authority.
 
-`may_exist`, accepted, processing, or otherwise ambiguous remote effects block replay until read-only reconciliation proves the next safe state.
+Unknown provider outcomes remain blocking. `may_exist`, accepted, processing, or otherwise ambiguous remote effects block replay until read-only reconciliation proves the next safe state.
 
 Upload, processing/visibility, metadata, thumbnail, playlist creation, membership, wall publication, and other remote changes are separate child operations. Preserve verified parent/child success and resume only the first unverified child.
 
