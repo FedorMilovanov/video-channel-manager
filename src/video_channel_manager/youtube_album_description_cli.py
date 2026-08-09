@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 from video_channel_manager.youtube_album_description import (
     AlbumDescriptionError,
@@ -11,7 +12,7 @@ from video_channel_manager.youtube_album_description import (
 )
 
 
-def _read_package(path: Path) -> dict[str, object]:
+def _read_package(path: Path) -> dict[str, Any]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -26,8 +27,6 @@ def _write_new_text(path: Path, text: str) -> None:
     try:
         with path.open("x", encoding="utf-8", newline="\n") as handle:
             handle.write(text)
-            if not text.endswith("\n"):
-                handle.write("\n")
     except FileExistsError as exc:
         raise AlbumDescriptionError(f"Refusing to overwrite immutable rendered description: {path}") from exc
 
