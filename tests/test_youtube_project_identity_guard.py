@@ -4,12 +4,14 @@ from pathlib import Path
 
 import pytest
 
+from video_channel_manager.editorial import (
+    PROJECT_YOUTUBE_OAUTH_ALIASES,
+    require_youtube_project_identity,
+)
 from video_channel_manager.editorial._project_profiles import (
     LEGENDARY_POET,
     LORD_GOD_STRENGTH,
     PROJECT_CHANNEL_IDS,
-    PROJECT_YOUTUBE_OAUTH_ALIASES,
-    require_youtube_project_identity,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
