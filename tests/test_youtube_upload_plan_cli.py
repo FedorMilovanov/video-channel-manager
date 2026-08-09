@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 import video_channel_manager.youtube_upload_plan_cli as cli
-from video_channel_manager.youtube_upload_plan import UploadPlanError, journal_path
+from video_channel_manager.youtube_upload_plan import UploadPlanError, intent_digest, journal_path
 
 
 CHANNEL_ID = "UC-78ys2S3cQ3lpqgXfo-SvQ"
@@ -95,14 +95,32 @@ def test_abandon_rejects_different_attempt_for_same_stable_key(tmp_path: Path) -
 
     intent = json.loads(output.read_text(encoding="utf-8"))
     intent["created_at"] = "2099-01-01T00:00:00+00:00"
-    from video_channel_manager.youtube_upload_plan import intent_digest
-
     intent["intent_sha256"] = intent_digest(intent)
     other_attempt = tmp_path / "other-attempt.json"
     other_attempt.write_text(json.dumps(intent), encoding="utf-8")
 
     with pytest.raises(UploadPlanError, match="Journal active intent differs"):
         cli.abandon(argparse.Namespace(intent=other_attempt, data_dir=data_dir))
+
+
+def test_existing_stable_key_lock_blocks_local_mutation(tmp_path: Path) -> None:
+    media, spec = _fixture(tmp_path)
+    data_dir = tmp_path / "state"
+    output = tmp_path / "intent.json"
+    spec_payload = json.loads(spec.read_text(encoding="utf-8"))
+    from video_channel_manager.youtube_upload_plan import build_intent
+
+    intent = build_intent(spec_payload, media)
+    stable_journal = journal_path(data_dir, intent["upload_key_sha256"])
+    lock_path = stable_journal.with_suffix(stable_journal.suffix + ".lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_path.write_text("existing writer\n", encoding="utf-8")
+
+    with pytest.raises(UploadPlanError, match="already locked"):
+        cli.plan(_plan_args(spec=spec, media=media, data_dir=data_dir, output=output))
+
+    assert not output.exists()
+    assert lock_path.exists()
 
 
 def test_planner_has_no_provider_execute_command() -> None:
