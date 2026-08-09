@@ -113,12 +113,7 @@ def test_adoption_persists_verified_stable_journal_and_blocks_replan(monkeypatch
 
     data_dir = tmp_path / "data"
     output = tmp_path / "adoption.json"
-    assert (
-        release_cli.adopt_existing(
-            argparse.Namespace(evidence=evidence_path, data_dir=data_dir, output=output)
-        )
-        == 0
-    )
+    assert release_cli.adopt_existing(argparse.Namespace(evidence=evidence_path, data_dir=data_dir, output=output)) == 0
     result = json.loads(output.read_text(encoding="utf-8"))
     stable = journal_path(data_dir, result["upload_key_sha256"])
     journal = json.loads(stable.read_text(encoding="utf-8"))
@@ -205,7 +200,7 @@ def test_same_video_evidence_drift_is_not_silently_idempotent(monkeypatch, tmp_p
     changed = _evidence(media_sha256=media_sha)
     changed["recorded_at"] = "2026-08-09T23:59:59+03:00"
     evidence_path.write_text(json.dumps(changed), encoding="utf-8")
-    with pytest.raises(UploadPlanError, match="conflicts with existing-target adoption"):
+    with pytest.raises(UploadPlanError, match="different immutable evidence"):
         release_cli.adopt_existing(
             argparse.Namespace(evidence=evidence_path, data_dir=data_dir, output=tmp_path / "second.json")
         )
@@ -246,9 +241,20 @@ def test_planned_journal_conflicts_with_adoption(monkeypatch, tmp_path: Path) ->
 def test_release_state_blocks_may_exist_and_preserves_verified_parent() -> None:
     state = build_release_state(upload_key_sha256="sha256:" + "d" * 64, playlist_ids=["PL1", "PL2"])
     state = prepare_child(state, child_id="existing-target", payload={"video_id": "VID"})
-    state = transition_child(state, child_id="existing-target", provider_effect="confirmed_absent")
+    state = transition_child(
+        state,
+        child_id="existing-target",
+        provider_effect="confirmed_absent",
+        evidence={"exact_video_lookup": "absent"},
+    )
     state = prepare_child(state, child_id="upload", payload={"media_sha256": "sha256:" + "e" * 64})
-    state = transition_child(state, child_id="upload", provider_effect="verified", remote_id="VID")
+    state = transition_child(
+        state,
+        child_id="upload",
+        provider_effect="verified",
+        remote_id="VID",
+        evidence={"upload_readback": "verified"},
+    )
     parent_snapshot = dict(state["children"][1])
     state = prepare_child(state, child_id="processing-private", payload={"video_id": "VID"})
     state = transition_child(state, child_id="processing-private", provider_effect="may_exist")
@@ -263,6 +269,13 @@ def test_release_state_requires_durable_payload_before_provider_effect() -> None
     with pytest.raises(YouTubeReleaseStateError, match="must persist its immutable payload"):
         transition_child(state, child_id="existing-target", provider_effect="verified", remote_id="VID")
     with pytest.raises(YouTubeReleaseStateError, match="must persist its immutable payload"):
+        transition_child(state, child_id="existing-target", provider_effect="confirmed_absent")
+
+
+def test_release_state_requires_proof_for_terminal_effect() -> None:
+    state = build_release_state(upload_key_sha256="sha256:" + "4" * 64)
+    state = prepare_child(state, child_id="existing-target", payload={"video_id": "VID"})
+    with pytest.raises(YouTubeReleaseStateError, match="must persist immutable proof evidence"):
         transition_child(state, child_id="existing-target", provider_effect="confirmed_absent")
 
 
@@ -313,12 +326,7 @@ def test_adopted_release_state_skips_upload_forever() -> None:
 
 
 def test_actual_black_man_live_state_binds_expected_stable_identity() -> None:
-    evidence_path = (
-        Path(__file__).resolve().parents[1]
-        / "docs"
-        / "operations"
-        / "black-man-youtube-live-state-2026-08-09.json"
-    )
+    evidence_path = Path(__file__).resolve().parents[1] / "docs" / "operations" / "black-man-youtube-live-state-2026-08-09.json"
     evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
     identity = validate_live_state_evidence(evidence)
 
