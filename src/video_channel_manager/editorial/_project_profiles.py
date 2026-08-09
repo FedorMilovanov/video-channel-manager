@@ -12,6 +12,12 @@ PROJECT_CHANNEL_IDS: Mapping[str, frozenset[str]] = MappingProxyType(
         LEGENDARY_POET: frozenset({"UC-78ys2S3cQ3lpqgXfo-SvQ"}),
     }
 )
+PROJECT_YOUTUBE_OAUTH_ALIASES: Mapping[str, str] = MappingProxyType(
+    {
+        LORD_GOD_STRENGTH: "fedor-milovanov",
+        LEGENDARY_POET: "legendary-poet",
+    }
+)
 
 PROJECT_VK_COMMUNITY_IDS: Mapping[str, frozenset[int]] = MappingProxyType(
     {
@@ -71,6 +77,29 @@ VK_COMMUNITY_ID_TO_PROJECT_KEY: Mapping[int, str] = MappingProxyType(
 )
 
 PROJECT_KEYS = frozenset(PROJECT_LINK_PROFILES)
+
+
+def require_youtube_project_identity(
+    *,
+    project_key: str,
+    account_alias: str,
+    channel_id: str,
+) -> None:
+    normalized_project = project_key.strip()
+    normalized_account = account_alias.strip()
+    normalized_channel = channel_id.strip()
+    if normalized_project not in PROJECT_KEYS:
+        raise ValueError(f"unknown project_key for YouTube operation: {project_key}")
+    expected_account = PROJECT_YOUTUBE_OAUTH_ALIASES.get(normalized_project)
+    if expected_account is None or normalized_account != expected_account:
+        raise ValueError(
+            f"YouTube OAuth alias differs from canonical project identity for {normalized_project}: {account_alias}"
+        )
+    expected_channels = PROJECT_CHANNEL_IDS.get(normalized_project, frozenset())
+    if normalized_channel not in expected_channels:
+        raise ValueError(
+            f"YouTube channel differs from canonical project identity for {normalized_project}: {channel_id}"
+        )
 
 
 def explicit_project_key(payload: Mapping[str, Any]) -> str | None:
@@ -159,9 +188,11 @@ __all__ = [
     "PROJECT_KEYS",
     "PROJECT_LINK_PROFILES",
     "PROJECT_VK_COMMUNITY_IDS",
+    "PROJECT_YOUTUBE_OAUTH_ALIASES",
     "VK_COMMUNITY_ID_TO_PROJECT_KEY",
     "channel_project_key",
     "explicit_project_key",
+    "require_youtube_project_identity",
     "resolve_project_key",
     "vk_community_project_key",
 ]
