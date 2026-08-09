@@ -60,7 +60,10 @@ def test_actual_child_issue_dispositions_are_complete() -> None:
 
 def test_wave14_history_is_immutable_without_polluting_live_entrypoints() -> None:
     wave14 = json.loads(WAVE14_REGISTER.read_text(encoding="utf-8"))
-    assert wave14["program_state"] == "WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES"
+    assert (
+        wave14["program_state"]
+        == "WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES"
+    )
     assert wave14["wave_14_repository_polish"] == {
         "issue": 130,
         "pull_request": 131,
