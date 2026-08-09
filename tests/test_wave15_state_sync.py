@@ -85,33 +85,17 @@ def test_mp3_foundation_remains_strictly_local_only() -> None:
     assert mp3["default_ready_chunk_size"] == 1
 
 
-def test_human_entrypoints_report_wave15_and_no_active_backlog() -> None:
-    texts = {
-        "current_state": (OPERATIONS / "current-state.md").read_text(encoding="utf-8"),
-        "backlog": (OPERATIONS / "automation-backlog.md").read_text(encoding="utf-8"),
-        "operations_index": (OPERATIONS / "README.md").read_text(encoding="utf-8"),
-        "agents": (ROOT / "AGENTS.md").read_text(encoding="utf-8"),
-    }
-    joined = "\n".join(texts.values())
-    required = (
-        "WAVES_0_15_COMPLETED_ADAPTIVE_AGENT_REASONING_LOCAL_MP3_FOUNDATION_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES",
-        "audit-register-v8-2026-08-05.json",
-        "main@eb58c1ad238fde01d66c6630b16e244b1c6c2992",
-        "PR #134",
-        "31006136529",
-        "833 passed, 1 xfailed",
-        "461 files already formatted",
-        "147 source files",
-        "local_only_read_only_intake_and_manifest",
-        "Provider writes remain unauthorized",
-        "No operational continuation is pending",
-    )
-    for phrase in required:
-        assert phrase in joined
+def test_wave15_history_does_not_claim_current_backlog_state() -> None:
+    data = _load(V8)
+    current = (OPERATIONS / "current-state.md").read_text(encoding="utf-8")
+    agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    live = current + "\n" + agents
 
-    assert "## Active backlog\n\nNone." in texts["backlog"]
-    assert "provider_mutation_support: true" not in joined.casefold()
-    assert "VK Audio writer is supported" not in joined
+    assert data["program_state"] not in live
+    assert "main@eb58c1ad238fde01d66c6630b16e244b1c6c2992" not in live
+    assert "No operational continuation is pending" not in live
+    assert "local_only_read_only_intake_and_manifest" in current
+    assert "provider mutations are unauthorized" in agents
 
 
 def test_v7_remains_immutable_wave14_contract() -> None:
