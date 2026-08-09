@@ -1,8 +1,8 @@
 # Telegram control audit — 2026-08-09
 
-Audited runtime baseline before this documentation-only continuation: `main@aea3aa343d5bb42297c4ee25665ecf1058690a23`.
+Audited runtime baseline before this documentation-only continuation: `main@0776418450070a707370970977192dd59698b25e`.
 
-This record closes the internal code/runtime findings that remained after the 2026-08-08 Lordchrist/Svodka hardening marathon. It does not authorize a provider operation and performs no Telegram read or write.
+This record closes the internal code/runtime findings that remained after the 2026-08-08 Lordchrist/Svodka hardening marathon and the first full control-audit continuation. It does not authorize a provider operation and performs no Telegram read or write.
 
 ## Current provider/state separation
 
@@ -54,6 +54,16 @@ The regression now discovers every `.github/workflows/*.yml` containing `group: 
 
 PR #208 exact head `b74f01d6f8b711bf5630057c78d715e1195b5aaa` passed full CI #3763 before squash merge `aea3aa343d5bb42297c4ee25665ecf1058690a23`.
 
+### Hash-lock workflow integration
+
+The complete Telegram dependency hash lock introduced by `a3e978d13b9c9ebf46f2348bce5626515259cf43` was correct, but the specialized Lordchrist research-v2 workflow still placed `-r requirements/telegram-publisher.txt` and the test-only requirement `pytest>=8.3,<10` in one pip transaction.
+
+Because the requirements file enables `--require-hashes`, pip correctly applies hash-checking to the whole transaction. The first specialized validation after the memory-sync branch therefore failed before tests instead of silently weakening the lock.
+
+PR #210 fixes the integration without changing the production lock: the exact hash-checked Telegram runtime is installed in its own binary-only transaction, the provider-inert pytest harness is installed separately, and a generic regression now inspects every workflow `pip install` that consumes the lock and forbids adding another package after it.
+
+PR #210 exact head `ec23fc88c44621e1d8fa22fb834b4d978d7a4234` passed full CI #3769 and specialized Lordchrist research-v2 validation #67 before squash merge `0776418450070a707370970977192dd59698b25e`.
+
 ### Previously closed but stale in the old defect register
 
 The immutable 2026-08-08 defect register intentionally remains unchanged. Its successor records that:
@@ -65,9 +75,9 @@ The immutable 2026-08-08 defect register intentionally remains unchanged. Its su
 
 ## Supply-chain state
 
-`requirements/telegram-publisher.txt` now uses pip `--require-hashes` for the exact supported minimal Telegram dependency closure. General CI builds an isolated Python 3.11 environment from this file, runs provider-free CLI smoke checks, `pip check`, vulnerability audit, Ruff, formatting, mypy and the full test suite.
+`requirements/telegram-publisher.txt` uses pip `--require-hashes` for the exact supported minimal Telegram dependency closure. Production/minimal workflow installs keep that lock in a separate binary-only pip transaction. General CI builds an isolated Python 3.11 environment from this file, runs provider-free CLI smoke checks, `pip check`, vulnerability audit, Ruff, formatting, mypy and the full test suite.
 
-This closes the repository-level hash-lock finding. It does not prove external GitHub repository settings.
+This closes both the repository-level hash-lock finding and the discovered workflow-integration error. It does not prove external GitHub repository settings.
 
 ## External governance boundary
 
@@ -84,6 +94,6 @@ Before a new high-risk activation, independently verify at minimum:
 
 ## Control-audit result
 
-No additional internal provider/state bypass was found after the timestamp and writer-surface fixes. Known repository-controlled P1/P2 findings from the handoff are closed or reduced to provider-inert documentation/state synchronization.
+No additional internal Telegram provider/state bypass was found after the timestamp, complete writer-surface and hash-lock integration fixes. Known repository-controlled Telegram P1/P2 findings from the handoff are closed or reduced to provider-inert documentation/state synchronization.
 
-The remaining non-green items are external governance verification and intentionally unopened provider activations. Neither is converted into an inferred success by this audit.
+The remaining non-green Telegram items are external governance verification and intentionally unopened provider activations. Neither is converted into an inferred success by this audit.
