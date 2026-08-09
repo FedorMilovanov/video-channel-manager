@@ -26,9 +26,7 @@ def test_black_man_live_state_is_non_authorizing_and_blocks_forgetful_reupload()
 
 
 def test_superseded_black_man_youtube_branches_are_retired() -> None:
-    registry = json.loads(
-        (ROOT / "docs/operations/retirement-registry-v1.json").read_text(encoding="utf-8")
-    )
+    registry = json.loads((ROOT / "docs/operations/retirement-registry-v1.json").read_text(encoding="utf-8"))
     retired = {item["id"]: item for item in registry["retired_families"]}
 
     for identifier in ("black-man-youtube-upload-pr171", "youtube-copy-apply-pr197"):
