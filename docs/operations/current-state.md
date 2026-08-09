@@ -52,7 +52,7 @@ Research-v2 repository implementation is complete as a **provider-inert content/
 - generic Lordchrist profile remains `provider_writes_authorized=false`;
 - no research sender/scheduler is activated by this state.
 
-Issue #168 should be treated as repository-hardening/content-model completion, not standing authorization for a live research canary. Any future live research publication must start from a new explicit execution scope proving exact release, isolated durable state, current provider identity, intent-before-send, zero blind retries, exact receipt/postcondition, and strict-next scheduling.
+Issue #168 is closed as repository implementation complete. The closure is not standing authorization for a live research canary. Any future live research publication is a new explicit rollout scope and must re-establish its current execution gates.
 
 ## Telegram / Svodka
 
@@ -66,7 +66,7 @@ Current activation state remains fail-closed:
 - no live Svodka publication ledger is present at the latest control point;
 - no Svodka provider mutation or scheduled production is authorized by this state.
 
-Issue #170 should be treated as repository pipeline implementation completion. A future canary or scheduled pilot is a separate live rollout decision and requires a new explicit exact provider scope rather than reopening generic implementation work.
+Issue #170 is closed as repository pipeline implementation complete. A future canary or scheduled pilot is a separate live rollout decision and requires a new explicit exact provider scope rather than reopening generic implementation work.
 
 ## Telegram runtime / supply chain
 
@@ -90,7 +90,7 @@ It does not authorize ID3 rewrite, rename/transcode, browser automation, remote 
 
 `.github/CODEOWNERS` exists for critical repository paths, but effective branch protection/rulesets and the current Dependency Graph setting are external GitHub state and remain **UNVERIFIED** through the available connector. Green CI or CODEOWNERS presence must not be presented as proof of those settings.
 
-Open Dependabot version-update PRs are a separate maintenance queue, not unresolved production state. Major dependency/action changes require independent compatibility review and exact-current-main CI; they are not bulk-merged to make the queue look empty.
+Dependabot version-update work is a separate grouped maintenance queue, not unresolved production state. Routine pip minor/patch updates are one maintenance unit; GitHub Actions updates are one workflow maintenance unit; deliberately capped major tool upgrades require an explicit compatibility decision rather than recurring bot pressure. Every accepted maintenance change still requires exact-current-main CI.
 
 ## Provider/credential boundary
 
@@ -104,7 +104,7 @@ Unknown provider outcomes remain blocking until read-only reconciliation. A time
 
 1. For #154, regenerate/verify the final seven-master Black Man artifact only when the exact accepted master bytes are available to the executing environment.
 2. Keep Lordchrist research-v2 and Svodka provider-inert unless a new explicit live execution request is created and reviewed.
-3. Treat Dependabot updates as bounded maintenance, not operational closure debt.
+3. Review grouped Dependabot maintenance as coherent units; do not merge stale single-dependency lockfile/workflow PRs piecemeal.
 4. Keep effective GitHub protection/Dependency Graph status `UNVERIFIED` until independently observable.
 
 Nothing in this document is authorization for a provider mutation.
