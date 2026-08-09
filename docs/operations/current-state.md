@@ -1,7 +1,7 @@
 # Current operational state
 
 Updated: 2026-08-09  
-Audited runtime baseline: `main@aea3aa343d5bb42297c4ee25665ecf1058690a23`  
+Audited runtime baseline: `main@0776418450070a707370970977192dd59698b25e`  
 Control audit: [`../lordchrist/audits/2026-08-09-telegram-control-audit.md`](../lordchrist/audits/2026-08-09-telegram-control-audit.md)  
 Defect continuation: [`../lordchrist/audits/2026-08-09-defect-register-continuation.json`](../lordchrist/audits/2026-08-09-defect-register-continuation.json)  
 Svodka runbook: [`svodka-readiness.md`](svodka-readiness.md)  
@@ -55,7 +55,7 @@ Research-v2 is a provider-inert content/release track on the shared generic Tele
 
 ## Telegram runtime and supply chain
 
-`requirements/telegram-publisher.txt` is exact-version and hash-bound with pip `--require-hashes`. General CI builds an isolated Python 3.11 Telegram runtime from that lock, smoke-tests the guarded CLI without provider access, runs `pip check` and dependency audit, then executes the normal Python/PowerShell quality matrices.
+`requirements/telegram-publisher.txt` is exact-version and hash-bound with pip `--require-hashes`. Production/minimal workflow installs keep this lock in its own binary-only pip transaction; test-only packages are installed separately and cannot be appended after the hash lock. General CI builds an isolated Python 3.11 Telegram runtime from the lock, smoke-tests the guarded CLI without provider access, runs `pip check` and dependency audit, then executes the normal Python/PowerShell quality matrices.
 
 Historical green CI never substitutes for an exact-current-main gate where a workflow requires one.
 
