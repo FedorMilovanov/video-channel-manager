@@ -1,0 +1,16 @@
+{
+  "schema_name": "video-channel-manager.svodka-rollout-status",
+  "schema_version": 1,
+  "project_key": "svodka",
+  "channel_username": "@deep_info_life",
+  "target_chat_id": -1003527567039,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "repository_implementation": "complete",
+  "approved_release": "absent",
+  "provider_write_gate": "disabled",
+  "manual_canary": "not_verified",
+  "scheduled_production": "inactive",
+  "rollout_complete": false,
+  "next_gate": "fresh_14_item_window_then_exact_candidate_review"
+}
