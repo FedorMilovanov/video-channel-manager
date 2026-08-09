@@ -51,7 +51,23 @@ The stable journal path is derived from `upload_key_sha256`, never `intent_sha25
 
 A planned journal may be marked abandoned only while its provider effect is still `not_dispatched` and its active intent digest exactly matches. This is the safe way to release a local plan for metadata revision without deleting durable state.
 
+All local journal mutations (`plan` and `abandon`) are serialized by an atomic per-stable-key lock created with exclusive file creation. The journal is re-read only after that lock is acquired. An already-present lock blocks mutation rather than assuming it is stale; after an interrupted process, an operator must inspect the journal/lock before manually clearing anything. This keeps crash/concurrency behavior fail-closed instead of allowing two simultaneous timestamped attempts to race for the same media identity.
+
+If journal persistence fails while creating a plan, the newly written operator intent is removed before the command fails, so the planner does not hand off an intent that lacks its durable collision guard.
+
 Old v1 intents/journals fail closed; they are not silently upgraded.
+
+## Local CLI
+
+The current operational surface is deliberately limited to:
+
+```text
+python -m video_channel_manager.youtube_upload_plan_cli plan ...
+python -m video_channel_manager.youtube_upload_plan_cli status ...
+python -m video_channel_manager.youtube_upload_plan_cli abandon ...
+```
+
+There is no `execute` command in this baseline.
 
 ## Black Man status
 
