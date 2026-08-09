@@ -25,7 +25,7 @@ def test_windows_handoff_contract_is_fail_closed_and_scoped() -> None:
         "evidence level",
         "exact `project_key`",
         "provider-effect state",
-        "repository-owned implementation",
+        "exact repository-owned entrypoint",
         "smallest non-mutating probe",
         "another ZIP/version family",
         "UTF-8 with BOM",
