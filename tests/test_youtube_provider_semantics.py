@@ -21,7 +21,9 @@ def test_tags_are_order_insensitive_but_multiplicity_preserving() -> None:
 
 def test_boolean_readback_distinguishes_unobserved_from_false() -> None:
     missing = classify_boolean_readback(payload={}, key="containsSyntheticMedia", expected=True)
-    null = classify_boolean_readback(payload={"containsSyntheticMedia": None}, key="containsSyntheticMedia", expected=True)
+    null = classify_boolean_readback(
+        payload={"containsSyntheticMedia": None}, key="containsSyntheticMedia", expected=True
+    )
     explicit_false = classify_boolean_readback(
         payload={"containsSyntheticMedia": False},
         key="containsSyntheticMedia",
