@@ -39,12 +39,13 @@ def test_svodka_preflight_uses_pinned_binding_and_shared_bot_secret_without_muta
     assert "schedule:" not in workflow
 
 
-def test_quality_and_preflight_build_the_same_review_candidate_identity() -> None:
+def test_quality_and_preflight_build_the_same_rollout_candidate_identity() -> None:
     quality = QUALITY_WORKFLOW_PATH.read_text(encoding="utf-8")
     preflight = PREFLIGHT_WORKFLOW_PATH.read_text(encoding="utf-8")
 
     for workflow in (quality, preflight):
         assert f"RELEASE_ID: {CANONICAL_RELEASE_ID}" in workflow
+        assert "video_channel_manager.svodka_rollout_candidate_cli" in workflow
         assert '--release-id "$RELEASE_ID"' in workflow
         assert "CANDIDATE_PATH: .runtime/svodka-review-candidate.json" in workflow
         assert "name: svodka-review-candidate" in workflow
@@ -65,7 +66,6 @@ def test_svodka_quality_workflow_is_full_read_only_verification() -> None:
     assert "if: github.ref == 'refs/heads/main'" in workflow
     assert "permissions:\n  contents: read" in workflow
     assert "persist-credentials: false" in workflow
-    assert "provider_writes_authorized" not in workflow
     assert "sendMessage" not in workflow
     assert "sendPoll" not in workflow
     assert "secrets." not in workflow
@@ -80,8 +80,12 @@ def test_svodka_quality_workflow_is_full_read_only_verification() -> None:
     assert "src/video_channel_manager/telegram_transport.py" in workflow
     assert "src/video_channel_manager/telegram_release_review.py" in workflow
     assert "src/video_channel_manager/telegram_github_outcome_artifact.py" in workflow
+    assert "src/video_channel_manager/svodka_rollout_candidate_cli.py" in workflow
+    assert "src/video_channel_manager/svodka_approval_cli.py" in workflow
     assert "tests/test_svodka_reconciliation_workflow.py" in workflow
     assert "tests/test_svodka_outcome_recovery_workflow.py" in workflow
+    assert "tests/test_svodka_rollout_schedule.py" in workflow
+    assert "tests/test_svodka_approval_cli.py" in workflow
     assert "tests/test_telegram_github_quality_gate.py" in workflow
     assert "tests/test_telegram_github_outcome_artifact.py" in workflow
     assert "tests/test_telegram_publication_freshness.py" in workflow
@@ -89,14 +93,22 @@ def test_svodka_quality_workflow_is_full_read_only_verification() -> None:
     assert "svodka-review-candidate" in workflow
 
 
-def test_svodka_quality_rejects_committed_release_from_stale_candidate() -> None:
+def test_svodka_quality_rejects_rollout_candidate_drift_from_approval_receipt() -> None:
     workflow = QUALITY_WORKFLOW_PATH.read_text(encoding="utf-8")
 
-    assert "APPROVED_RELEASE_PATH: content/telegram/svodka/approved-release-2026-08.json" in workflow
-    assert "Validate committed release against current candidate" in workflow
-    assert "release.reviewed_candidate_sha256 != candidate.digest" in workflow
-    assert "release.candidate_digest() != candidate.digest" in workflow
-    assert "committed Svodka release was reviewed from a stale candidate" in workflow
+    assert "APPROVAL_PATH: content/telegram/svodka/release-approval-2026-08.json" in workflow
+    assert "load_svodka_release_approval" in workflow
+    assert "candidate.digest == approval.candidate_sha256" in workflow
+    assert "Build exact target-bound rollout candidate" in workflow
+
+
+def test_svodka_preflight_requires_both_current_main_quality_proofs() -> None:
+    workflow = PREFLIGHT_WORKFLOW_PATH.read_text(encoding="utf-8")
+
+    assert "Require current-main exact-SHA Svodka quality proofs" in workflow
+    assert "--workflow svodka-quality.yml" in workflow
+    assert "--workflow svodka-approved-release-quality.yml" in workflow
+    assert workflow.count('--sha "$GITHUB_SHA"') == 2
 
 
 def test_self_mutating_svodka_repair_workflow_is_gone() -> None:

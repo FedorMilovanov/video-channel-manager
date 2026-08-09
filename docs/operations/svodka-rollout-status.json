@@ -1,0 +1,20 @@
+{
+  "schema_name": "video-channel-manager.svodka-rollout-status",
+  "schema_version": 1,
+  "project_key": "svodka",
+  "channel_username": "@deep_info_life",
+  "target_chat_id": -1003527567039,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "repository_implementation": "complete",
+  "effective_pilot_window": "2026-08-10/2026-08-16 Europe/Moscow",
+  "reviewed_candidate_sha256": "sha256:98e259210f138b8ad0280dec38306dcecbbdba89899db336906994f9dfb0bc0f",
+  "approved_release_sha256": "sha256:959a42e914acedc6969550ba842a12d1a2b174c940497d8a98f4ab8e2e63cdce",
+  "approved_release": "immutable_receipt_committed_and_deterministically_materialized",
+  "execution_gate": "enabled_with_manual_canary_and_durable_state_guards",
+  "durable_ledger": "not_initialized",
+  "manual_canary": "not_verified",
+  "scheduled_production": "configured_but_canary_gated",
+  "rollout_complete": false,
+  "next_gate": "exact_current_main_quality_then_initialize_ledger_then_one_fresh_manual_canary"
+}

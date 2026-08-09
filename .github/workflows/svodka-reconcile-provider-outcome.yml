@@ -43,7 +43,9 @@ jobs:
       PYTHONPATH: src
       PROFILE_PATH: content/telegram/channels/svodka.json
       BINDING_PATH: content/telegram/channels/svodka-target-binding.json
-      RELEASE_PATH: content/telegram/svodka/approved-release-2026-08.json
+      QUEUE_PATH: content/telegram/svodka/draft-14-posts-2026-08.json
+      APPROVAL_PATH: content/telegram/svodka/release-approval-2026-08.json
+      RELEASE_PATH: .runtime/svodka-approved-release.json
       STATE_BRANCH: state/svodka-telegram
       STATE_DIR: .state/svodka
       LEDGER_RELATIVE_PATH: content/telegram/svodka/publication-ledger.json
@@ -68,7 +70,18 @@ jobs:
           set -euo pipefail
           python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
 
-      - name: Verify exact recovery request and committed release
+      - name: Materialize exact approved release from immutable review receipt
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.svodka_approval_cli \
+            --profile "$PROFILE_PATH" \
+            --queue "$QUEUE_PATH" \
+            --binding "$BINDING_PATH" \
+            --approval "$APPROVAL_PATH" \
+            --output "$RELEASE_PATH"
+
+      - name: Verify exact recovery request and approved release
         env:
           REQUESTED_DIGEST: ${{ inputs.release_digest }}
           SOURCE_RUN_ID: ${{ inputs.source_run_id }}
@@ -99,10 +112,6 @@ jobs:
             echo "confirmation does not match the exact outcome recovery request" >&2
             exit 2
           }
-          [[ -f "$RELEASE_PATH" ]] || {
-            echo "approved Svodka release is missing" >&2
-            exit 2
-          }
           python - <<'PY'
           import os
           from pathlib import Path
@@ -115,19 +124,19 @@ jobs:
           binding = load_target_binding(Path(os.environ["BINDING_PATH"]), profile)
           release = load_release(Path(os.environ["RELEASE_PATH"]))
           if not release.release_authorized:
-              raise SystemExit("committed Svodka release is not authorized")
+              raise SystemExit("materialized Svodka release is not authorized")
           if release.digest != os.environ["REQUESTED_DIGEST"]:
-              raise SystemExit("requested release digest differs from committed release")
+              raise SystemExit("requested release digest differs from exact approved release")
           if release.profile_sha256 != profile.digest or release.target_binding_sha256 != binding.digest:
-              raise SystemExit("committed release differs from current profile or target binding")
+              raise SystemExit("approved release differs from current profile or target binding")
           if (release.chat_id, release.bot_id, release.bot_username) != (
               binding.chat_id,
               binding.bot_id,
               binding.bot_username,
           ):
-              raise SystemExit("committed release differs from exact Telegram target")
+              raise SystemExit("approved release differs from exact Telegram target")
           if os.environ["REQUESTED_PUBLICATION_ID"] not in {item.publication_id for item in release.items}:
-              raise SystemExit("publication_id is absent from committed release")
+              raise SystemExit("publication_id is absent from approved release")
           PY
 
       - name: Check out isolated durable state branch

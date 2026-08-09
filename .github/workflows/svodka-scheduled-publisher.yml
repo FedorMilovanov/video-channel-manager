@@ -2,10 +2,10 @@ name: Svodka scheduled publisher
 
 on:
   schedule:
-    - cron: "30 7 9-15 8 *"
-    - cron: "17 8 9-15 8 *"
-    - cron: "30 16 9-15 8 *"
-    - cron: "17 17 9-15 8 *"
+    - cron: "30 7 10-16 8 *"
+    - cron: "17 8 10-16 8 *"
+    - cron: "30 16 10-16 8 *"
+    - cron: "17 17 10-16 8 *"
   workflow_dispatch:
 
 permissions:
@@ -26,7 +26,9 @@ jobs:
       PYTHONPATH: src
       PROFILE_PATH: content/telegram/channels/svodka.json
       BINDING_PATH: content/telegram/channels/svodka-target-binding.json
-      RELEASE_PATH: content/telegram/svodka/approved-release-2026-08.json
+      QUEUE_PATH: content/telegram/svodka/draft-14-posts-2026-08.json
+      APPROVAL_PATH: content/telegram/svodka/release-approval-2026-08.json
+      RELEASE_PATH: .runtime/svodka-approved-release.json
       STATE_BRANCH: state/svodka-telegram
       STATE_DIR: .state/svodka
       LEDGER_RELATIVE_PATH: content/telegram/svodka/publication-ledger.json
@@ -52,16 +54,22 @@ jobs:
           set -euo pipefail
           python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
 
+      - name: Materialize exact approved release from immutable review receipt
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.svodka_approval_cli \
+            --profile "$PROFILE_PATH" \
+            --queue "$QUEUE_PATH" \
+            --binding "$BINDING_PATH" \
+            --approval "$APPROVAL_PATH" \
+            --output "$RELEASE_PATH"
+
       - name: Resolve activation gate
         id: activation
         shell: bash
         run: |
           set -euo pipefail
-          if [[ ! -f "$RELEASE_PATH" ]]; then
-            echo "active=false" >> "$GITHUB_OUTPUT"
-            echo "reason=approved_release_missing" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
           python - <<'PY'
           import os
           from datetime import UTC, datetime
@@ -77,9 +85,9 @@ jobs:
           release = load_release(Path(os.environ["RELEASE_PATH"]))
 
           if not release.release_authorized:
-              raise SystemExit("committed Svodka release is not authorized")
+              raise SystemExit("materialized Svodka release is not authorized")
           if release.reviewed_candidate_sha256 is None:
-              raise SystemExit("committed Svodka release lacks reviewed candidate provenance")
+              raise SystemExit("materialized Svodka release lacks reviewed candidate provenance")
           if (
               release.project_key != profile.project_key
               or release.profile_sha256 != profile.digest
@@ -88,7 +96,7 @@ jobs:
               or release.bot_id != binding.bot_id
               or (release.bot_username or "").casefold() != binding.bot_username.casefold()
           ):
-              raise SystemExit("committed Svodka release differs from current profile or pinned target binding")
+              raise SystemExit("materialized Svodka release differs from current profile or pinned target binding")
 
           active = profile.provider_writes_authorized
           first_start, _ = publication_window(release, release.items[0].publication_id)
@@ -111,7 +119,7 @@ jobs:
         if: steps.activation.outputs.active != 'true'
         run: echo "Svodka scheduler is inactive — ${{ steps.activation.outputs.reason }}. No Telegram read or write was attempted."
 
-      - name: Require current-main exact-SHA Svodka quality proof
+      - name: Require current-main exact-SHA Svodka quality proofs
         if: steps.activation.outputs.active == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -119,6 +127,9 @@ jobs:
           set -euo pipefail
           python -m video_channel_manager.telegram_github_quality_gate \
             --workflow svodka-quality.yml \
+            --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow svodka-approved-release-quality.yml \
             --sha "$GITHUB_SHA"
 
       - name: Check out isolated durable state branch
@@ -200,6 +211,9 @@ jobs:
 
           python -m video_channel_manager.telegram_github_quality_gate \
             --workflow svodka-quality.yml \
+            --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow svodka-approved-release-quality.yml \
             --sha "$GITHUB_SHA"
 
           git -C "$STATE_DIR" config user.name "svodka-publisher[bot]"
@@ -335,6 +349,9 @@ jobs:
           set -euo pipefail
           python -m video_channel_manager.telegram_github_quality_gate \
             --workflow svodka-quality.yml \
+            --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow svodka-approved-release-quality.yml \
             --sha "$GITHUB_SHA"
 
       - name: Send exactly one scheduled payload

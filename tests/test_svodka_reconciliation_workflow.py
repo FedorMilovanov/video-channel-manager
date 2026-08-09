@@ -37,7 +37,7 @@ def test_reconciliation_requires_completed_matching_exact_github_attempt_and_pro
     assert 'run = github_json(f"{api}/repos/{repo}/actions/runs/{run_id}")' not in workflow
     assert "/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100" in workflow
     assert 'run.get("status") != "completed"' in workflow
-    assert 'workflow_path = workflow_path.split("@", 1)[0]' in workflow
+    assert 'workflow_path = str(run.get("path") or "").split("@", 1)[0]' in workflow
     assert '".github/workflows/svodka-canary.yml": (' in workflow
     assert '"workflow_dispatch"' in workflow
     assert '".github/workflows/svodka-scheduled-publisher.yml": (' in workflow

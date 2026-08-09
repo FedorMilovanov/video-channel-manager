@@ -29,7 +29,10 @@ jobs:
     env:
       PYTHONPATH: src
       PROFILE_PATH: content/telegram/channels/svodka.json
-      RELEASE_PATH: content/telegram/svodka/approved-release-2026-08.json
+      BINDING_PATH: content/telegram/channels/svodka-target-binding.json
+      QUEUE_PATH: content/telegram/svodka/draft-14-posts-2026-08.json
+      APPROVAL_PATH: content/telegram/svodka/release-approval-2026-08.json
+      RELEASE_PATH: .runtime/svodka-approved-release.json
       STATE_BRANCH: state/svodka-telegram
       STATE_DIR: .state/svodka
       LEDGER_RELATIVE_PATH: content/telegram/svodka/publication-ledger.json
@@ -51,13 +54,27 @@ jobs:
           set -euo pipefail
           python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
 
-      - name: Require current-main exact-SHA Svodka quality proof
+      - name: Materialize exact approved release from immutable review receipt
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.svodka_approval_cli \
+            --profile "$PROFILE_PATH" \
+            --queue "$QUEUE_PATH" \
+            --binding "$BINDING_PATH" \
+            --approval "$APPROVAL_PATH" \
+            --output "$RELEASE_PATH"
+
+      - name: Require current-main exact-SHA Svodka quality proofs
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           python -m video_channel_manager.telegram_github_quality_gate \
             --workflow svodka-quality.yml \
+            --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow svodka-approved-release-quality.yml \
             --sha "$GITHUB_SHA"
 
       - name: Verify exact approved release and confirmation
@@ -75,10 +92,6 @@ jobs:
             echo "confirmation must be exactly INITIALIZE:$REQUESTED_DIGEST" >&2
             exit 2
           }
-          [[ -f "$RELEASE_PATH" ]] || {
-            echo "approved release is not committed yet: $RELEASE_PATH" >&2
-            exit 2
-          }
           python - <<'PY'
           import os
           from pathlib import Path
@@ -90,9 +103,9 @@ jobs:
           release = load_release(Path(os.environ["RELEASE_PATH"]))
           requested = os.environ["REQUESTED_DIGEST"]
           if release.digest != requested:
-              raise SystemExit("requested release digest differs from committed release")
+              raise SystemExit("requested release digest differs from exact approved release")
           if not release.release_authorized:
-              raise SystemExit("committed release is not authorized")
+              raise SystemExit("materialized release is not authorized")
           if release.project_key != profile.project_key or release.profile_sha256 != profile.digest:
               raise SystemExit("approved release differs from the selected Svodka profile")
           if (release.chat_id, release.bot_id, release.bot_username) != (-1003527567039, 8716602202, "preaching_mp3_bot"):
@@ -139,6 +152,9 @@ jobs:
 
           python -m video_channel_manager.telegram_github_quality_gate \
             --workflow svodka-quality.yml \
+            --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow svodka-approved-release-quality.yml \
             --sha "$GITHUB_SHA"
 
           git -C "$STATE_DIR" commit -m "Initialize Svodka publication ledger [skip ci]"

@@ -29,7 +29,7 @@ def test_new_multichannel_profile_does_not_change_legacy_lordchrist_identity() -
     assert profile.channel_username == "@deep_info_life"
     assert profile.publication_id_prefix == "svodka-"
     assert profile.daily_verified_limit == 2
-    assert profile.provider_writes_authorized is False
+    assert profile.provider_writes_authorized is True
     assert profile.digest.startswith("sha256:")
 
     assert PROJECT_KEY == "lord-god-strength"
@@ -113,8 +113,9 @@ def test_generic_preflight_resolves_svodka_exactly_without_lordchrist_hardcoding
     assert calls == ["getMe", "getChat", "getChat", "getChatAdministrators"]
 
 
-def test_disabled_profile_blocks_poll_write_before_transport() -> None:
-    profile = load_channel_profile(PROFILE_PATH)
+def test_explicitly_disabled_profile_blocks_poll_write_before_transport() -> None:
+    base_profile = load_channel_profile(PROFILE_PATH)
+    profile = base_profile.model_copy(update={"provider_writes_authorized": False})
     now = datetime(2026, 8, 8, 0, 0, tzinfo=UTC)
     target = GenericTargetProof(
         schema_name="video-channel-manager.telegram-generic-target-proof",

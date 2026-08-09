@@ -1,0 +1,12 @@
+{
+  "schema_name": "video-channel-manager.svodka-release-approval",
+  "schema_version": 1,
+  "project_key": "svodka",
+  "release_id": "svodka-pilot-2026-08",
+  "candidate_sha256": "sha256:98e259210f138b8ad0280dec38306dcecbbdba89899db336906994f9dfb0bc0f",
+  "approved_release_sha256": "sha256:959a42e914acedc6969550ba842a12d1a2b174c940497d8a98f4ab8e2e63cdce",
+  "reviewed_by": "FedorMilovanov / Issue #235 rollout review",
+  "reviewed_at": "2026-08-09T18:34:00+00:00",
+  "owning_issue": 235,
+  "provider_write_scope": "exact manual canary then canary-gated scheduled pilot only"
+}

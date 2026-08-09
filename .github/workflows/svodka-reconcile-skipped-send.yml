@@ -43,7 +43,9 @@ jobs:
       PYTHONPATH: src
       PROFILE_PATH: content/telegram/channels/svodka.json
       BINDING_PATH: content/telegram/channels/svodka-target-binding.json
-      RELEASE_PATH: content/telegram/svodka/approved-release-2026-08.json
+      QUEUE_PATH: content/telegram/svodka/draft-14-posts-2026-08.json
+      APPROVAL_PATH: content/telegram/svodka/release-approval-2026-08.json
+      RELEASE_PATH: .runtime/svodka-approved-release.json
       STATE_BRANCH: state/svodka-telegram
       STATE_DIR: .state/svodka
       LEDGER_RELATIVE_PATH: content/telegram/svodka/publication-ledger.json
@@ -66,6 +68,17 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Materialize exact approved release from immutable review receipt
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.svodka_approval_cli \
+            --profile "$PROFILE_PATH" \
+            --queue "$QUEUE_PATH" \
+            --binding "$BINDING_PATH" \
+            --approval "$APPROVAL_PATH" \
+            --output "$RELEASE_PATH"
 
       - name: Verify exact reconciliation request
         env:
@@ -98,10 +111,6 @@ jobs:
             echo "confirmation does not match the exact reconciliation request" >&2
             exit 2
           }
-          [[ -f "$RELEASE_PATH" ]] || {
-            echo "approved release is not committed" >&2
-            exit 2
-          }
           python - <<'PY'
           import os
           from pathlib import Path
@@ -114,13 +123,13 @@ jobs:
           binding = load_target_binding(Path(os.environ["BINDING_PATH"]), profile)
           release = load_release(Path(os.environ["RELEASE_PATH"]))
           if not release.release_authorized:
-              raise SystemExit("committed release is not authorized")
+              raise SystemExit("materialized release is not authorized")
           if release.digest != os.environ["REQUESTED_DIGEST"]:
-              raise SystemExit("requested release digest differs from committed release")
+              raise SystemExit("requested release digest differs from exact approved release")
           if release.profile_sha256 != profile.digest or release.target_binding_sha256 != binding.digest:
-              raise SystemExit("committed release differs from current profile or target binding")
+              raise SystemExit("approved release differs from current profile or target binding")
           if os.environ["REQUESTED_PUBLICATION_ID"] not in {item.publication_id for item in release.items}:
-              raise SystemExit("publication_id is absent from committed release")
+              raise SystemExit("publication_id is absent from approved release")
           PY
 
       - name: Check out isolated durable state branch
@@ -225,8 +234,7 @@ jobs:
           if run.get("status") != "completed":
               raise SystemExit("source GitHub run is not completed; reconciliation is forbidden")
 
-          workflow_path = str(run.get("path") or "")
-          workflow_path = workflow_path.split("@", 1)[0]
+          workflow_path = str(run.get("path") or "").split("@", 1)[0]
           allowed = {
               ".github/workflows/svodka-canary.yml": (
                   "workflow_dispatch",
@@ -241,18 +249,17 @@ jobs:
           }
           if workflow_path not in allowed:
               raise SystemExit(f"source run is not a recognized Svodka provider workflow: {workflow_path}")
-
           expected_event, persist_name, send_name = allowed[workflow_path]
           if run.get("event") != expected_event:
               raise SystemExit("source run event does not match the provider workflow contract")
 
-          evidence_rel = (
+          evidence_path = (
               Path(os.environ["STATE_DIR"])
               / "content/telegram/svodka/dispatches"
               / f"{run_id}-{attempt}"
               / "dispatch.json"
           )
-          dispatch = json.loads(evidence_rel.read_text(encoding="utf-8"))
+          dispatch = json.loads(evidence_path.read_text(encoding="utf-8"))
           if str(run.get("head_sha") or "") != dispatch["github_sha"]:
               raise SystemExit("source run head SHA differs from persisted dispatch provenance")
 
@@ -265,7 +272,6 @@ jobs:
                       persist_steps.append(step)
                   if step.get("name") == send_name:
                       send_steps.append(step)
-
           if len(persist_steps) != 1 or persist_steps[0].get("conclusion") != "success":
               raise SystemExit("cannot prove the durable intent step completed successfully")
           if len(send_steps) != 1 or send_steps[0].get("conclusion") != "skipped":
@@ -357,6 +363,9 @@ jobs:
 
           python -m video_channel_manager.telegram_github_quality_gate \
             --workflow svodka-quality.yml \
+            --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow svodka-approved-release-quality.yml \
             --sha "$GITHUB_SHA"
 
           git -C "$STATE_DIR" commit -m "Reconcile skipped Svodka provider send for run $SOURCE_RUN_ID/$SOURCE_RUN_ATTEMPT [skip ci]"
