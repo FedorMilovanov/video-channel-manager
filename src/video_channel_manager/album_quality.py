@@ -69,6 +69,12 @@ def _with_digest(manifest: QualityMasterManifest) -> QualityMasterManifest:
     return manifest.model_copy(update={"quality_master_sha256": _canonical_sha256(_manifest_payload_without_digest(manifest))})
 
 
+def _verify_manifest_digest(manifest: QualityMasterManifest) -> None:
+    expected = _canonical_sha256(_manifest_payload_without_digest(manifest))
+    if manifest.quality_master_sha256 != expected:
+        raise legacy.AlbumError("Quality master manifest SHA-256 does not match its canonical content")
+
+
 def quality_master_path_from_manifest_path(manifest_path: Path) -> Path:
     return manifest_path.expanduser().resolve().with_name("quality-masters.json")
 
@@ -96,9 +102,7 @@ def load_quality_master_manifest(path: Path, manifest: legacy.AlbumManifest) -> 
         quality = QualityMasterManifest.model_validate(payload)
     except (OSError, json.JSONDecodeError, ValidationError) as exc:
         raise legacy.AlbumError(f"Cannot read quality master manifest {path}: {exc}") from exc
-    expected = _canonical_sha256(_manifest_payload_without_digest(quality))
-    if quality.quality_master_sha256 != expected:
-        raise legacy.AlbumError("Quality master manifest SHA-256 does not match its canonical content")
+    _verify_manifest_digest(quality)
     if (
         quality.project_key != manifest.project_key
         or quality.album_key != manifest.album_key
@@ -148,6 +152,7 @@ def bind_quality_master(
     path: Path,
     ffprobe: str = "ffprobe",
 ) -> QualityMasterManifest:
+    _verify_manifest_digest(quality)
     if not 1 <= ordinal <= manifest.total_tracks:
         raise legacy.AlbumError(f"Track {ordinal} is outside 1..{manifest.total_tracks}")
     track = manifest.tracks[ordinal - 1]
@@ -202,6 +207,7 @@ def require_complete_quality_masters(
     *,
     verify_bytes: bool = True,
 ) -> dict[int, QualityMasterEntry]:
+    _verify_manifest_digest(quality)
     if (
         quality.project_key != manifest.project_key
         or quality.album_key != manifest.album_key
