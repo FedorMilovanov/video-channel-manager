@@ -15,7 +15,7 @@
 - локальный media/image QC и SHA-256 fingerprints;
 - SQLAlchemy/Alembic foundation для будущего operation ledger.
 
-> **Текущий операционный статус:** repository implementation закрыт по текущим Telegram/YouTube hardening-контурам; единственный активный owning issue #154 остаётся artifact-level open до физического rerender/verification «Чёрного человека» из семи accepted quality masters. Provider writes, replay, deletion и mutation plans сейчас **не авторизованы**. Канонический live-статус: [`docs/operations/current-state.md`](docs/operations/current-state.md). Исторические audit registers — evidence only.
+> **Текущий операционный статус:** текущие Telegram/YouTube hardening-контуры разделены по типу незавершённости. Issue #154 остаётся artifact-level open до физического rerender/verification «Чёрного человека» из семи accepted quality masters; отдельно Issue #232 владеет будущей repository-level реализацией current-main guarded YouTube release executor / existing-target adoption и сам по себе не авторизует provider writes. Исторический Black Man target `x-puy27S2qs` уже зафиксирован как verified public provider evidence, но это не превращает старые media bytes в current-policy artifact proof и не разрешает повторный upload. Канонический live-статус: [`docs/operations/current-state.md`](docs/operations/current-state.md). Исторические audit registers — evidence only.
 >
 > Приведённые ниже write/dry-run/execute-команды документируют возможности и safety protocol кода, но сами по себе не разрешают запуск. Любая будущая provider mutation требует нового явного запроса пользователя, нового точного project-bound issue, свежего bounded preflight, reviewed immutable exact-ID plan и отдельной авторизации.
 
@@ -457,9 +457,9 @@ CI запускается на Python 3.11, 3.12 и 3.13. Blocking gates: depend
 
 # Текущий статус развития
 
-Исторические Waves 0–13 закрыты и остаются audit evidence. Текущий repository-level backlog закрыт; #154 остаётся точным artifact-level residual до rerender/verification current-policy media. Реализованные capability contracts сохраняются, но не являются разрешением на provider execution.
+Исторические Waves 0–13 закрыты и остаются audit evidence. Текущий точный residual разделён на два независимых owning scope: #154 — artifact-level rerender/verification current-policy media из семи accepted quality masters; #232 — repository-level реализация будущего current-main guarded YouTube release executor с read-only existing-target adoption. Ни один из этих issue не является standing authorization для provider write.
 
-Новая provider-facing работа требует нового явного запроса пользователя и точного owning scope; локальное завершение #154 продолжается в его существующем owning issue. Playlist mutations, unattended remote writes, автоматические transfer queues и исторические executors не являются задачами «следующего этапа».
+Provider rollout исторических Black Man bytes уже зафиксирован как verified public evidence для `x-puy27S2qs`; этот факт блокирует забывчивый повторный upload, но не закрывает #154. Новая provider-facing execution по #232 потребует отдельного явного запроса пользователя, свежего exact preflight/review и отдельной авторизации. Unattended remote writes, произвольные playlist mutations и исторические executors не являются допустимым «следующим этапом».
 
 ## Вне текущего scope
 
