@@ -90,15 +90,19 @@ It does not authorize ID3 rewrite, rename/transcode, browser automation, remote 
 
 ## GitHub governance and external state
 
-Read-only governance evidence is recorded in [`github-governance-readonly-probe-2026-08-09.md`](github-governance-readonly-probe-2026-08-09.md). The one-shot probe used only `Contents: read` and `Metadata: read` and performed no checkout or mutation.
+Read-only governance evidence is recorded in [`github-governance-readonly-probe-2026-08-09.md`](github-governance-readonly-probe-2026-08-09.md). Both one-shot probes used only `Contents: read` / `Metadata: read`, performed no checkout, and changed no repository setting or provider state.
 
-At that probe point:
+At those probe points:
 
-- `GET /branches/main` returned HTTP 200 with `protected=false`; the current GitHub branch object did not mark `main` as protected;
+- `GET /branches/main` returned HTTP 200 with `protected=false`; the GitHub branch object did not mark `main` as protected;
 - `GET /rulesets` returned HTTP 200 with repository ruleset count `0`;
-- the detailed legacy branch-protection endpoint returned HTTP 403 to the integration, so nested protection details were not separately readable;
-- this repository is public, and GitHub documents Dependency Graph as permanently enabled for public repositories;
-- the SBOM export endpoint returned HTTP 404, so SBOM export availability remains **UNVERIFIED / unavailable in that probe** and must not be misreported as proof that Dependency Graph is disabled.
+- the detailed legacy branch-protection endpoint returned HTTP 403 to the integration, so nested legacy detail was not separately readable;
+- this repository is public, and GitHub documents Dependency Graph as enabled/permanently enabled for public repositories;
+- legacy `GET /dependency-graph/sbom` returned HTTP 404 `Not Found`;
+- after GitHub's 2026 asynchronous SBOM API change was identified, current `GET /dependency-graph/sbom/generate-report` was independently probed with `Contents: read` and also returned HTTP 404 `Not Found`;
+- GitHub's current SBOM REST documentation states that these export surfaces require only Contents(read), may be used without authentication for public resources, and document HTTP 404 as `Resource not found`.
+
+The exact current conclusion is therefore: Dependency Graph itself is policy-enabled for this public repository, while GitHub **SBOM REST export is verified unavailable through both documented generation surfaces at the probe points**. This is no longer a blanket `UNVERIFIED` item. It is a scoped observed REST status and may change if GitHub changes repository/service state later.
 
 `.github/CODEOWNERS` remains repository policy only; it must not be presented as branch protection. Green CI likewise does not create GitHub protection by itself.
 
@@ -119,6 +123,6 @@ Unknown provider outcomes remain blocking until read-only reconciliation. A time
 1. For #154, regenerate/verify the final seven-master Black Man artifact only when the exact accepted master bytes are available to the executing environment.
 2. Keep Lordchrist research-v2 and Svodka provider-inert unless a new explicit live execution request is created and reviewed.
 3. Treat production Telegram lock refreshes as explicit coherent supply-chain changes; routine bot maintenance must not edit that closure piecemeal.
-4. Do not re-label GitHub branch protection/rulesets as `UNVERIFIED` without new contrary read-only evidence; only SBOM export availability remains unresolved from the 2026-08-09 governance probe.
+4. Treat the 2026-08-09 GitHub governance evidence as observed state, not permanent truth: future changes require fresh read-only verification rather than assumptions.
 
 Nothing in this document is authorization for a provider mutation.
