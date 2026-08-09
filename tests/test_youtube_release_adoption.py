@@ -16,23 +16,31 @@ from video_channel_manager.youtube_release_state import (
     next_release_child,
     prepare_child,
     transition_child,
+    validate_release_state,
 )
 from video_channel_manager.youtube_upload_plan import (
     UploadPlanError,
     build_intent,
     journal_path,
     require_new_plan_allowed,
+    validate_live_state_evidence,
 )
 
 CHANNEL_ID = "UC-78ys2S3cQ3lpqgXfo-SvQ"
 
 
-def _evidence(*, media_sha256: str, title: str = "Existing target", channel_id: str = CHANNEL_ID) -> dict:
+def _evidence(
+    *,
+    media_sha256: str,
+    title: str = "Existing target",
+    channel_id: str = CHANNEL_ID,
+    account_alias: str = "legendary-poet",
+) -> dict:
     return {
         "schema_name": "video-manager.youtube-live-state-evidence",
         "schema_version": 1,
         "project_key": "legendary-poet",
-        "account_alias": "legendary-poet",
+        "account_alias": account_alias,
         "channel_id": channel_id,
         "video": {
             "video_id": "VID-EXISTING",
@@ -46,8 +54,14 @@ def _evidence(*, media_sha256: str, title: str = "Existing target", channel_id: 
 
 
 class _FakeReadClient:
-    def __init__(self, *, title: str = "Existing target") -> None:
+    def __init__(
+        self,
+        *,
+        title: str = "Existing target",
+        revision: str = "sha256:" + "a" * 64,
+    ) -> None:
         self.title = title
+        self.revision = revision
         self.closed = False
         self.calls = 0
 
@@ -56,7 +70,7 @@ class _FakeReadClient:
         return SimpleNamespace(
             title=self.title,
             privacy_status="public",
-            revision="sha256:" + "a" * 64,
+            revision=self.revision,
             ref=SimpleNamespace(channel_id=CHANNEL_ID, remote_id=video_id),
         )
 
@@ -152,6 +166,51 @@ def test_adoption_is_idempotent_for_same_existing_video(monkeypatch, tmp_path: P
     assert json.loads(second.read_text(encoding="utf-8"))["journal_write_performed"] is False
 
 
+def test_same_video_revision_drift_is_not_silently_idempotent(monkeypatch, tmp_path: Path) -> None:
+    media_sha = "sha256:" + "c" * 64
+    evidence_path = tmp_path / "evidence.json"
+    evidence_path.write_text(json.dumps(_evidence(media_sha256=media_sha)), encoding="utf-8")
+    data_dir = tmp_path / "data"
+
+    monkeypatch.setattr(
+        release_cli,
+        "_build_readonly_client",
+        lambda alias: _FakeReadClient(revision="sha256:" + "a" * 64),
+    )
+    release_cli.adopt_existing(
+        argparse.Namespace(evidence=evidence_path, data_dir=data_dir, output=tmp_path / "first.json")
+    )
+
+    monkeypatch.setattr(
+        release_cli,
+        "_build_readonly_client",
+        lambda alias: _FakeReadClient(revision="sha256:" + "b" * 64),
+    )
+    with pytest.raises(UploadPlanError, match="conflicts with existing-target adoption"):
+        release_cli.adopt_existing(
+            argparse.Namespace(evidence=evidence_path, data_dir=data_dir, output=tmp_path / "second.json")
+        )
+
+
+def test_same_video_evidence_drift_is_not_silently_idempotent(monkeypatch, tmp_path: Path) -> None:
+    media_sha = "sha256:" + "c" * 64
+    evidence_path = tmp_path / "evidence.json"
+    evidence_path.write_text(json.dumps(_evidence(media_sha256=media_sha)), encoding="utf-8")
+    data_dir = tmp_path / "data"
+    monkeypatch.setattr(release_cli, "_build_readonly_client", lambda alias: _FakeReadClient())
+    release_cli.adopt_existing(
+        argparse.Namespace(evidence=evidence_path, data_dir=data_dir, output=tmp_path / "first.json")
+    )
+
+    changed = _evidence(media_sha256=media_sha)
+    changed["recorded_at"] = "2026-08-09T23:59:59+03:00"
+    evidence_path.write_text(json.dumps(changed), encoding="utf-8")
+    with pytest.raises(UploadPlanError, match="conflicts with existing-target adoption"):
+        release_cli.adopt_existing(
+            argparse.Namespace(evidence=evidence_path, data_dir=data_dir, output=tmp_path / "second.json")
+        )
+
+
 def test_planned_journal_conflicts_with_adoption(monkeypatch, tmp_path: Path) -> None:
     media = tmp_path / "album.mp4"
     media.write_bytes(b"planned-before-adoption")
@@ -203,6 +262,39 @@ def test_release_state_requires_durable_payload_before_provider_effect() -> None
     state = build_release_state(upload_key_sha256="sha256:" + "f" * 64)
     with pytest.raises(YouTubeReleaseStateError, match="must persist its immutable payload"):
         transition_child(state, child_id="existing-target", provider_effect="verified", remote_id="VID")
+    with pytest.raises(YouTubeReleaseStateError, match="must persist its immutable payload"):
+        transition_child(state, child_id="existing-target", provider_effect="confirmed_absent")
+
+
+def test_release_state_rejects_tampered_child_kind_and_playlist_shape() -> None:
+    state = build_release_state(upload_key_sha256="sha256:" + "3" * 64, playlist_ids=["PL1"])
+
+    wrong_kind = json.loads(json.dumps(state))
+    wrong_kind["children"][1]["kind"] = "playlist_membership"
+    with pytest.raises(YouTubeReleaseStateError, match="fixed child identity/kind order"):
+        validate_release_state(wrong_kind)
+
+    wrong_playlist_target = json.loads(json.dumps(state))
+    playlist_child = next(child for child in wrong_playlist_target["children"] if child["child_id"] == "playlist:PL1")
+    playlist_child["target_id"] = "PL2"
+    with pytest.raises(YouTubeReleaseStateError, match="must bind target_id"):
+        validate_release_state(wrong_playlist_target)
+
+    arbitrary_middle = json.loads(json.dumps(state))
+    playlist_index = next(
+        index for index, child in enumerate(arbitrary_middle["children"]) if child["child_id"] == "playlist:PL1"
+    )
+    arbitrary_middle["children"][playlist_index] = {
+        "child_id": "surprise-operation",
+        "kind": "metadata_description",
+        "provider_effect": "not_dispatched",
+        "payload_sha256": None,
+        "remote_id": None,
+        "evidence_sha256": None,
+        "updated_at": None,
+    }
+    with pytest.raises(YouTubeReleaseStateError, match="middle children must be exact playlist"):
+        validate_release_state(arbitrary_middle)
 
 
 def test_adopted_release_state_skips_upload_forever() -> None:
@@ -218,3 +310,23 @@ def test_adopted_release_state_skips_upload_forever() -> None:
     assert next_child["child_id"] == "processing-private"
     assert state["children"][0]["provider_effect"] == "verified"
     assert state["children"][1]["provider_effect"] == "verified"
+
+
+def test_actual_black_man_live_state_binds_expected_stable_identity() -> None:
+    evidence_path = (
+        Path(__file__).resolve().parents[1]
+        / "docs"
+        / "operations"
+        / "black-man-youtube-live-state-2026-08-09.json"
+    )
+    evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+    identity = validate_live_state_evidence(evidence)
+
+    assert identity == {
+        "project_key": "legendary-poet",
+        "account_alias": "legendary-poet",
+        "target_channel_id": CHANNEL_ID,
+        "video_id": "x-puy27S2qs",
+        "media_sha256": "sha256:e5450342249e95882136af35976ee3ab08bc85bba626a061be9944b28d8310a0",
+        "upload_key_sha256": "sha256:8717dbba1face5b69941587a66a35a5644e3fb7cf7babe260fcfbf2df5f7e73f",
+    }
