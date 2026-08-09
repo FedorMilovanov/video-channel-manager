@@ -56,13 +56,13 @@ def test_windows_handoff_assumes_normal_whole_block_copy_paste() -> None:
 def test_stable_upload_guard_names_known_public_target_and_semantic_repairs() -> None:
     text = (ROOT / "docs/operations/youtube-upload-stable-key-guard.md").read_text(encoding="utf-8")
 
-    assert "video_id = x-puy27S2qs" in text
-    assert "provider_state = verified public" in text
+    assert "has provider target `x-puy27S2qs`" in text
+    assert "verified public at the end of the 2026-08-09 release session" in text
     assert "Existing remote target adoption/reconciliation" in text
     assert "multiplicity preserved" in text
     assert "an omitted key is `unobserved`, not `false`" in text
     assert "accepted provider mutation plus one empty/non-converged read is `may_exist`" in text
-    assert "There is no `execute` command in this baseline." in text
+    assert "There is no provider `execute` command in this baseline." in text
 
 
 def test_public_readme_does_not_hide_active_youtube_implementation_scope() -> None:
