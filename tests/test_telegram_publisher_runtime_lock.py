@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LOCK = ROOT / "requirements/telegram-publisher.txt"
 WORKFLOWS = ROOT / ".github/workflows"
+LOCK_REFERENCE = "requirements/telegram-publisher.txt"
 
 EXPECTED_PACKAGES = {
     "annotated-types==0.7.0",
@@ -40,6 +41,26 @@ def _stanzas(text: str) -> list[str]:
     return stanzas
 
 
+def _logical_shell_commands(text: str) -> tuple[str, ...]:
+    commands: list[str] = []
+    current: list[str] = []
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if current:
+            current.append(line.rstrip("\\").strip())
+            if not raw_line.rstrip().endswith("\\"):
+                commands.append(" ".join(part for part in current if part))
+                current = []
+            continue
+        if raw_line.rstrip().endswith("\\"):
+            current = [line.rstrip("\\").strip()]
+        else:
+            commands.append(line)
+    if current:
+        commands.append(" ".join(part for part in current if part))
+    return tuple(commands)
+
+
 def test_minimal_telegram_runtime_is_fully_pinned_and_hash_checked() -> None:
     text = LOCK.read_text(encoding="utf-8")
     assert "--require-hashes" in {line.strip() for line in text.splitlines()}
@@ -62,8 +83,25 @@ def test_every_workflow_using_the_minimal_runtime_keeps_binary_only_install() ->
     consumers: list[Path] = []
     for workflow in WORKFLOWS.glob("*.yml"):
         text = workflow.read_text(encoding="utf-8")
-        if "requirements/telegram-publisher.txt" in text:
+        if LOCK_REFERENCE in text:
             consumers.append(workflow)
             assert "--only-binary=:all:" in text, workflow.name
 
     assert consumers, "no workflow consumes the guarded Telegram publisher runtime"
+
+
+def test_hash_locked_runtime_file_is_terminal_in_every_workflow_pip_transaction() -> None:
+    install_commands: list[tuple[Path, str]] = []
+    for workflow in WORKFLOWS.glob("*.yml"):
+        text = workflow.read_text(encoding="utf-8")
+        for command in _logical_shell_commands(text):
+            if LOCK_REFERENCE not in command or "pip install" not in command:
+                continue
+            install_commands.append((workflow, command))
+            before, separator, after = command.partition(LOCK_REFERENCE)
+            assert separator == LOCK_REFERENCE
+            assert after.strip() == "", f"{workflow.name} appends another requirement after the hash lock"
+            assert "--only-binary=:all:" in before, f"{workflow.name} hash-locked install lost binary-only enforcement"
+            assert "pip install" in before, f"{workflow.name} malformed hash-locked pip install"
+
+    assert install_commands, "no workflow installs the guarded Telegram publisher runtime"
