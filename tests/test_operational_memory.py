@@ -50,7 +50,10 @@ def test_operations_index_has_no_broken_local_markdown_links() -> None:
 
 def test_wave14_history_remains_machine_readable_but_not_live_state() -> None:
     register = json.loads((OPERATIONS_DIR / "audit-register-v7-2026-08-05.json").read_text(encoding="utf-8"))
-    assert register["program_state"] == "WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES"
+    assert (
+        register["program_state"]
+        == "WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES"
+    )
     proof = register["wave_14_repository_polish"]
     assert proof["merge"] == "626f83c6e5c068d7faa8b6d14163b42916faa769"  # type: ignore[index]
     assert proof["pull_request"] == 131  # type: ignore[index]
