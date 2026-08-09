@@ -14,12 +14,12 @@ EXPECTED_STABLE_DIGEST = "sha256:bbfd1a0b354a3ba874595a6397477498ba28f5dd5bdc2de
 
 def test_svodka_profile_digest_is_stable_channel_contract_not_write_gate() -> None:
     profile = load_channel_profile(SVODKA_PROFILE_PATH)
-    activated = profile.model_copy(update={"provider_writes_authorized": True})
+    disabled = profile.model_copy(update={"provider_writes_authorized": False})
 
-    assert profile.provider_writes_authorized is False
-    assert activated.provider_writes_authorized is True
+    assert profile.provider_writes_authorized is True
+    assert disabled.provider_writes_authorized is False
     assert profile.digest == EXPECTED_STABLE_DIGEST
-    assert activated.digest == EXPECTED_STABLE_DIGEST
+    assert disabled.digest == EXPECTED_STABLE_DIGEST
     assert "provider_writes_authorized" not in profile.contract_payload()
 
 
@@ -53,6 +53,7 @@ def test_generic_profile_model_represents_multiple_channels_without_core_constan
     assert svodka.state_branch == "state/svodka-telegram"
     assert svodka.daily_verified_limit == 2
     assert svodka.bot_token_env == "SVODKA_TELEGRAM_BOT_TOKEN"
+    assert svodka.provider_writes_authorized is True
 
     assert lordchrist.project_key == "lord-god-strength"
     assert lordchrist.channel_username == "@lordchrist"
