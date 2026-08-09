@@ -98,6 +98,38 @@ Before any external mutation, bind the exact project/target, freeze the intended
 
 A timeout, exception, screenshot, process exit, CI result, preview, issue body or artifact name is not a provider postcondition.
 
+## Historical compatibility anchors
+
+The strings below are preserved **verbatim as historical continuity evidence only**. They describe closed Wave 14 / state-sync checkpoints and must not be interpreted as the current provider graph or current write authorization.
+
+Historical Wave 14 marker: `WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`.
+
+Historical completed-state proofs retained for repository-memory regressions:
+
+- `main@626f83c6e5c068d7faa8b6d14163b42916faa769`;
+- PR #131; merge `80f701b6926a5a9c788b99c69634b54d63ed1862`; CI `31000834701`; `801 passed, 1 xfailed`; `451 files already formatted`;
+- PR #129; tested state `44a1590fac0e8fe8b563d35cfd68f2bed4727743`; merge `07388521e8d3a2c5d501382227c35bdce6e6470e`; CI `30994245235`; `796 passed, 1 xfailed`; `449 files already formatted`; provider queries/writes/write plans: `0/0/0`;
+- predecessor ledgers `audit-register-v7-2026-08-05.json` and `audit-register-v6-2026-08-05.json`.
+
+Historical Wave 14 wording preserved for chain-of-custody tests:
+
+- `No operational continuation is pending` — historical closed-wave conclusion only; later explicitly reviewed work supersedes it.
+- `Provider writes remain unauthorized` — historical Wave 14 authorization statement only; it is not a claim about every later independently gated provider surface.
+- the historical VK credential model used one shared **user access token**; that credential `is not a project selector`.
+- OAuth alias `fedor-milovanov` and OAuth alias `legendary-poet` remained distinct YouTube account selectors.
+- #31 — Lord God long-form reconciliation.
+- #32 — non-authoritative Lord God 108-item Shorts auto-upload scope.
+- #119 — Legendary Poet Shorts/Clips reconciliation.
+- #38 — shared VK native Clip/ordinary-video provider-mode.
+- `Do not group #32/#38 as Legendary Poet`.
+- #33 — broad Lord God catalog/editorial/postponed-wall continuation.
+- #99 — unproved Legendary Poet article-wall launcher continuation.
+- #123 — deferred YouTube playlist mutation scope.
+- repository-wide JSON/Markdown integrity regressions.
+- `SEPARATE_EXPERIMENTAL_SYSTEM` remained the historical classification for VK Audio browser/internal-web automation.
+
+These anchors exist so later current-state rewrites cannot erase the evidence chain. The sections above this block are the current operational interpretation.
+
 ## Historical memory
 
 Immutable historical anchors remain under:
