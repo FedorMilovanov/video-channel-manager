@@ -1,7 +1,7 @@
 {
   "schema_name": "video-manager.retirement-registry",
   "schema_version": 1,
-  "updated_at": "2026-08-05T04:20:00+03:00",
+  "updated_at": "2026-08-09T18:33:00+03:00",
   "repository": "FedorMilovanov/video-channel-manager",
   "execution_authority": false,
   "provider_writes_authorized": false,
@@ -89,6 +89,30 @@
       "execution_prohibited": true,
       "replacement": "scripts/operator/Invoke-VideoManager.ps1 under a separately reviewed exact-ID plan",
       "reason": "Editorial readiness was confused with operational readiness; v2 duplicated provider logic and used groups.get(filter=admin), causing a false permission rejection; v3 is retained only as an operator-transcript-reported historical outcome and must not be rerun."
+    },
+    {
+      "id": "black-man-youtube-upload-pr171",
+      "kind": "superseded_youtube_provider_branch",
+      "issues": [
+        154,
+        171
+      ],
+      "status": "retired_non_executable",
+      "execution_prohibited": true,
+      "replacement": "PR #215 stable current-main upload identity guard plus a future separately reviewed current-main provider executor",
+      "reason": "PR #171 used timestamp/mutable-metadata intent identity and an order-sensitive tag readback; it was superseded by #215 and must not be executed from its historical worktree even though one explicitly authorized historical upload used that branch."
+    },
+    {
+      "id": "youtube-copy-apply-pr197",
+      "kind": "superseded_youtube_metadata_branch",
+      "issues": [
+        154,
+        197
+      ],
+      "status": "retired_non_executable",
+      "execution_prohibited": true,
+      "replacement": "PR #214 current-main source-first YouTube copy workflow",
+      "reason": "PR #197 was rebuilt and superseded by #214. Its historical v3 description execution is evidence only; future metadata work must use current-main canonical inputs and fresh provider readback."
     }
   ],
   "history_archives": [
@@ -129,6 +153,7 @@
     "Long-form and Shorts/Clips remain separate manifests and evidence objects.",
     "Editorial, preview, self-tested, canary-verified and batch-verified evidence levels are never collapsed.",
     "PowerShell orchestrates one repository-owned provider implementation and does not duplicate provider rules.",
+    "Closed, unmerged, superseded or retired branches are evidence only and never become runtime sources again.",
     "VK managed-community discovery uses groups.get(filter=moder, extended=1); exact project identity is verified separately."
   ]
 }
