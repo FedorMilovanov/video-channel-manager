@@ -63,3 +63,14 @@ def test_stable_upload_guard_names_known_public_target_and_semantic_repairs() ->
     assert "an omitted key is `unobserved`, not `false`" in text
     assert "accepted provider mutation plus one empty/non-converged read is `may_exist`" in text
     assert "There is no `execute` command in this baseline." in text
+
+
+def test_public_readme_does_not_hide_active_youtube_implementation_scope() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+
+    assert "единственный активный owning issue #154" not in readme
+    assert "Текущий repository-level backlog закрыт" not in readme
+    assert "Issue #154" in readme
+    assert "Issue #232" in readme
+    assert "x-puy27S2qs" in readme
+    assert "не разрешает повторный upload" in readme
