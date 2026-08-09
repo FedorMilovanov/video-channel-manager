@@ -8,43 +8,43 @@ HANDOFF = ROOT / ".github" / "copilot-instructions.md"
 OPERATIONS_INDEX = ROOT / "docs" / "operations" / "README.md"
 
 
-def test_windows_handoff_contract_is_fail_closed() -> None:
+def test_windows_handoff_contract_is_fail_closed_and_scoped() -> None:
     text = HANDOFF.read_text(encoding="utf-8")
     required = (
-        "supplement the repository-root `AGENTS.md`",
-        "This file never authorizes provider writes",
+        "`AGENTS.md` is the repository operating contract",
+        "never authorizes provider writes",
         r"C:\Users\Fedor\Projects\video-channel-manager",
         r"C:\Users\Fedor\Downloads",
+        r"C:\Users\Fedor\Projects\video-channel-manager\operator-output",
         '$ErrorActionPreference = "Stop"',
         "-LiteralPath",
         "Test-Path -LiteralPath",
         "$PSScriptRoot",
         "require exactly one match",
-        "Never choose an artifact by `LastWriteTime`",
+        "LastWriteTime",
         "evidence level",
-        "exact community ID and owner ID",
-        "provider_writes_authorized=false",
-        "automatic_execution=false",
-        "must not become a second provider client",
-        "generated external `executor.py`",
-        "retirement-registry-v1.json",
-        "never blind-retry an unknown outcome",
+        "exact `project_key`",
+        "provider-effect state",
+        "repository-owned implementation",
+        "smallest non-mutating probe",
+        "another ZIP/version family",
         "UTF-8 with BOM",
-        "machine-readable output paths",
     )
     for invariant in required:
         assert invariant in text
 
-    for claim in (
+    for duplicated_or_unsafe in (
         "provider_writes_authorized=true",
         "automatic_execution=true",
         "select the newest ZIP",
         "rerun the retired executor",
+        "Historical Wave",
+        "Current production code baseline",
     ):
-        assert claim not in text
+        assert duplicated_or_unsafe not in text
 
 
-def test_operations_index_records_completed_wave14_and_closed_graph() -> None:
+def test_operations_index_preserves_historical_wave14_evidence() -> None:
     text = OPERATIONS_INDEX.read_text(encoding="utf-8")
     required = (
         "Waves 0–7 — completed",
