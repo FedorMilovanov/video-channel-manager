@@ -1,150 +1,110 @@
 # Current operational state
 
-Updated: 2026-08-09  
-Audited runtime baseline: `main@aa47760109f65e93f241a2d9e6ee8d7bd62827c7`  
-Repository/coverage continuity proof: `main@73c0b831ff7e2168ea09ed8e390d386d1750e9a8`, exact-head CI #3781 SUCCESS; the 77% gate was restored by covering the provider-free Lordchrist outcome CLI rather than lowering the threshold.  
-Control audit: [`../lordchrist/audits/2026-08-09-telegram-control-audit.md`](../lordchrist/audits/2026-08-09-telegram-control-audit.md)  
-Defect continuation: [`../lordchrist/audits/2026-08-09-defect-register-continuation.json`](../lordchrist/audits/2026-08-09-defect-register-continuation.json)  
-Svodka runbook: [`svodka-readiness.md`](svodka-readiness.md)  
-Black Man album historical state: [`audit-register-v12-2026-08-07.json`](audit-register-v12-2026-08-07.json)  
-VK postponed-text state: [`audit-register-v11-2026-08-07.json`](audit-register-v11-2026-08-07.json)
+Updated: 2026-08-09
 
-This file is the current operational truth. Older chats, screenshots, ZIP names, issue wording and audit snapshots remain evidence only and never authorize execution.
+This file is the concise current operational interpretation. It does **not** authorize provider mutation. Historical audits/PRs/issues are evidence only.
 
-## Telegram
+For every new task, resolve the exact current `main` commit and relevant durable state at task start; do not treat a SHA written in an old document as the live baseline.
 
-### Lordchrist legacy quote publisher
+Latest repository/local control continuation: [`control-audit-continuation-2026-08-09.md`](control-audit-continuation-2026-08-09.md).
 
-`@lordchrist` has a guarded production quote publisher with durable verified history on `state/lordchrist-telegram`.
+## Current closure model
 
-At this control point:
+Repository implementation, final artifact production, and live provider rollout are separate completion states.
 
-- verified manual message `1470`;
-- verified scheduled message `1472`;
-- later strict queue entries pending;
-- no unresolved `may_exist` entry found in the reviewed ledger state;
-- schedule `09:17` / `21:17` Europe/Moscow;
-- one verified publication per Moscow date;
-- provider mutation retries `0`;
-- publisher and recovery share `lordchrist-telegram-publisher`, `cancel-in-progress:false`, `queue:max`, `ubuntu-24.04`;
-- current-main CI is proved before provider access and again immediately before mutation;
-- exact run/attempt provider outcome evidence is archived before final state persistence;
-- manual `confirmed_published` reconciliation requires evidence-backed provider publication time distinct from operator resolution time.
+- Repository code may be complete while live rollout remains intentionally unauthorized.
+- A media/artifact issue is not complete until the exact current-policy bytes are regenerated and verified.
+- Future provider execution requires a new explicit exact operation/review; an old issue, release, credential, CI run, or artifact is never standing authorization.
 
-### Lordchrist research-v2
+## YouTube / Legendary Poet / «Чёрный человек»
 
-Research-v2 is a provider-inert content/release track on the shared generic Telegram runtime, not a third sender.
+Repository/local implementation is hardened and current:
 
-- profile: `content/telegram/channels/lordchrist.json`;
-- `provider_writes_authorized=false`;
-- exact target-bound five-item candidate: `sha256:2eb3825390b8f4e70b847d9d1b328ea4e203bce0f1c88e036ea97ae667809cd0`;
-- validation remains read-only;
-- no research activation or canary is authorized by this state record.
+- final album timing/render/package paths require exact accepted quality-master provenance;
+- stale/tampered quality masters fail closed;
+- canonical YouTube project identity is `project_key + OAuth alias + channel_id` and must be proved before credentials are relied on;
+- description authoring is source-first and unresolved media-derived chapters fail closed;
+- exact chapters can be rendered only from a digest-valid album package and produce immutable evidence bound to body/package/media/timing/quality-master hashes;
+- same-media upload planning uses stable project/channel/media identity; timestamps or metadata changes cannot create a new journal namespace;
+- merged YouTube upload tooling is provider-inert (`plan/status/abandon` only). There is no provider upload executor in the supported baseline.
 
-### Svodka
+Issue #154 remains **artifact-level open** for one reason: the previously rendered album MP4 predates the quality-master binding fix. Completion requires regeneration from the seven accepted exact masters under the current pipeline, then fresh timing/render/verify/package/description evidence (SHA-256 + required ffprobe/QC). Do not reuse the historical MP4 as current-policy proof.
 
-`@deep_info_life` remains not live-enabled.
+No YouTube upload, metadata edit, thumbnail change, playlist creation/membership change, visibility change, or deletion is authorized by this state.
 
-- `provider_writes_authorized=false`;
-- approved release absent at the control point;
-- publication ledger absent at the control point;
-- exact target chat `-1003527567039`;
-- shared bot `8716602202 / @preaching_mp3_bot`;
-- canonical pilot queue remains 14 items;
-- skipped-send and archived-outcome recovery are separate provider-free paths;
-- activation still requires exact-current-main quality, fresh target proof, exact candidate review, approved immutable release, write enablement, ledger initialization and one verified strict-next manual canary.
+## Telegram / Lordchrist legacy quote publisher
 
-## Telegram runtime and supply chain
+The legacy `@lordchrist` quote publisher is the only live Telegram publishing track represented here.
 
-`requirements/telegram-publisher.txt` is exact-version and hash-bound with pip `--require-hashes`. Production/minimal workflow installs keep this lock in its own binary-only pip transaction; test-only packages are installed separately and cannot be appended after the hash lock. General CI builds an isolated Python 3.11 Telegram runtime from the lock, smoke-tests the guarded CLI without provider access, runs `pip check` and dependency audit, then executes the normal Python/PowerShell quality matrices.
+Durable reviewed state currently includes verified publications `1470`, `1472`, and `1473`; later reviewed queue items were pending with `provider_effect=impossible` at the latest control audit, with no reviewed unresolved `may_exist` entry.
 
-Historical green CI never substitutes for an exact-current-main gate where a workflow requires one.
+Safety properties include lossless single-writer serialization, exact-current-main/CI gates around provider access, durable intent-before-send, zero blind mutation retry, archived exact provider outcome before final state persistence, evidence-bound recovery, and publication-time-correct reconciliation.
 
-## GitHub governance
+Do not modify the legacy live path merely to activate another content class.
 
-`.github/CODEOWNERS` exists for critical automation, Telegram runtime/content and audit paths.
+## Telegram / Lordchrist research-v2
 
-Effective branch protection/rulesets and the current Dependency Graph setting are external GitHub state and remain **UNVERIFIED** by the available connector. CODEOWNERS presence alone does not prove required review or force-push/deletion protection. Verify those settings independently before a new high-risk activation.
+Research-v2 repository implementation is complete as a **provider-inert content/release track**:
 
-## YouTube / Black Man album
+- claim/source/evidence validation is separate from provider execution;
+- immutable evidence identity is separate from mutable activation state;
+- exact target-bound release review/approval is provider-inert;
+- generic Lordchrist profile remains `provider_writes_authorized=false`;
+- no research sender/scheduler is activated by this state.
 
-Canonical YouTube provider identity is now machine-bound in the existing project profile registry. Provider guards must prove the exact `project_key + OAuth alias + channel_id` triple before using credentials or treating a target as project-owned. The gate is provider-inert and was merged as `aa47760109f65e93f241a2d9e6ee8d7bd62827c7`.
+Issue #168 should be treated as repository-hardening/content-model completion, not standing authorization for a live research canary. Any future live research publication must start from a new explicit execution scope proving exact release, isolated durable state, current provider identity, intent-before-send, zero blind retries, exact receipt/postcondition, and strict-next scheduling.
 
-- `audit-register-v12-2026-08-07.json` is preserved as the immutable historical proof of the local seven-track album pipeline introduced by PR #157; its old `next_allowed_actions` describe that 2026-08-07 snapshot and do not override this file;
-- PR #197 is open non-provider-write YouTube copy/handoff/editorial work and must be rebuilt/revalidated on current `main` using the canonical project identity gate before any guarded metadata writer is mergeable;
-- PR #171 remains a draft private-upload implementation, has not been authorized for execution, and requires canonical project binding plus stable same-media upload-journal identity before it can be considered mergeable;
-- PR #158 is a stale draft state-sync from an older baseline and is superseded by this file; its unique v12 evidence has been preserved separately.
+## Telegram / Svodka
 
-An upload plan, private video ID, rendered description, thumbnail or playlist target is not permission for a new YouTube write.
+`@deep_info_life` has a separate generic multi-channel implementation, target binding, reviewed-content tooling, durable state model, provider-outcome recovery and deployment/catch-up safety regressions.
 
-## VK and local MP3
+Current activation state remains fail-closed:
 
-The completed Lord God postponed-text cleanup remains closed evidence. Reusable VK support is the guarded attachment-free postponed wall text-edit capability; historical cleanup packages are not replay authorization.
+- `content/telegram/channels/svodka.json` has `provider_writes_authorized=false`;
+- pinned target is chat `-1003527567039` with bot `8716602202 / @preaching_mp3_bot`;
+- no approved live August release is present at the latest control point;
+- no live Svodka publication ledger is present at the latest control point;
+- no Svodka provider mutation or scheduled production is authorized by this state.
 
-Supported MP3 capability remains `local_only_read_only_intake_and_manifest`. It may inspect and inventory local MP3 files and build deterministic manifests; it does not authorize remote upload, metadata mutation, playlist changes or browser automation.
+Issue #170 should be treated as repository pipeline implementation completion. A future canary or scheduled pilot is a separate live rollout decision and requires a new explicit exact provider scope rather than reopening generic implementation work.
 
-## Project and credential boundary
+## Telegram runtime / supply chain
 
-Credential names or shared tokens are never destination selectors. Project key, exact provider identity, immutable plan/release, durable state and target binding select the destination.
+The minimal Telegram runtime is exact-version and SHA-256 hash locked with pip `--require-hashes`; production/minimal installs keep the hash-locked transaction isolated from test-only dependencies. CI validates the installed graph, guarded provider-free CLI surface, dependency audit, Python quality matrices and PowerShell operator environments.
 
-Telegram may intentionally use the same bot for multiple channels. A bot token authenticates the bot; exact profile/chat/binding/release/state isolate the channel.
+One durable state/concurrency namespace has one write owner at a time. Parallel agents must not open competing hardening/mutation branches against shared Telegram runtime/state writers.
 
-YouTube OAuth aliases are similarly credentials/configuration selectors, not project identity. The canonical project/account/channel gate must pass before a guarded YouTube provider operation may rely on an alias.
+## VK
 
-Never print, package, commit or log provider credentials.
+The completed Lord God postponed-text cleanup is historical verified evidence only. Supported reusable VK capability remains the guarded attachment-free postponed wall text-edit contract with exact project/community/owner/post binding, durable intent, no blind replay and exact postflight.
 
-## Durable side-effect boundary
+Historical browser/internal-web VK Audio executors and ZIP families remain retired/experimental evidence and are not current execution surfaces.
 
-Before any external mutation, bind the exact project/target, freeze the intended payload, persist durable intent and prove the relevant authorization gates. After mutation, verify the provider-visible postcondition. Ambiguous effects remain possibly existing and require read-only reconciliation; they are never a reason for a blind retry.
+## Local MP3
 
-A timeout, exception, screenshot, process exit, CI result, preview, issue body or artifact name is not a provider postcondition.
+Supported capability remains `local_only_read_only_intake_and_manifest`: inspect/probe/hash/tag inventory, deterministic manifests, explicit metadata policy and conflict classification.
 
-## Historical compatibility anchors
+It does not authorize ID3 rewrite, rename/transcode, browser automation, remote upload, metadata mutation, playlist changes, or wall publication.
 
-The strings below are preserved **verbatim as historical continuity evidence only**. They describe closed Wave 14 / state-sync checkpoints and must not be interpreted as the current provider graph or current write authorization.
+## GitHub governance and external state
 
-Historical Wave 14 marker: `WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES`.
+`.github/CODEOWNERS` exists for critical repository paths, but effective branch protection/rulesets and the current Dependency Graph setting are external GitHub state and remain **UNVERIFIED** through the available connector. Green CI or CODEOWNERS presence must not be presented as proof of those settings.
 
-Historical completed-state proofs retained for repository-memory regressions:
+Open Dependabot version-update PRs are a separate maintenance queue, not unresolved production state. Major dependency/action changes require independent compatibility review and exact-current-main CI; they are not bulk-merged to make the queue look empty.
 
-- `main@626f83c6e5c068d7faa8b6d14163b42916faa769`;
-- PR #131; merge `80f701b6926a5a9c788b99c69634b54d63ed1862`; CI `31000834701`; `801 passed, 1 xfailed`; `451 files already formatted`;
-- PR #129; tested state `44a1590fac0e8fe8b563d35cfd68f2bed4727743`; merge `07388521e8d3a2c5d501382227c35bdce6e6470e`; CI `30994245235`; `796 passed, 1 xfailed`; `449 files already formatted`; provider queries/writes/write plans: `0/0/0`;
-- predecessor ledgers `audit-register-v7-2026-08-05.json` and `audit-register-v6-2026-08-05.json`.
+## Provider/credential boundary
 
-Historical Wave 14 wording preserved for chain-of-custody tests:
+Credentials authenticate/select configuration; they do not choose the project target.
 
-- `No operational continuation is pending` — historical closed-wave conclusion only; later explicitly reviewed work supersedes it.
-- `Provider writes remain unauthorized` — historical Wave 14 authorization statement only; it is not a claim about every later independently gated provider surface.
-- the historical VK credential model used one shared **user access token**; that credential `is not a project selector`.
-- OAuth alias `fedor-milovanov` and OAuth alias `legendary-poet` remained distinct YouTube account selectors.
-- #31 — Lord God long-form reconciliation.
-- #32 — non-authoritative Lord God 108-item Shorts auto-upload scope.
-- #119 — Legendary Poet Shorts/Clips reconciliation.
-- #38 — shared VK native Clip/ordinary-video provider-mode.
-- `Do not group #32/#38 as Legendary Poet`.
-- #33 — broad Lord God catalog/editorial/postponed-wall continuation.
-- #99 — unproved Legendary Poet article-wall launcher continuation.
-- #123 — deferred YouTube playlist mutation scope.
-- repository-wide JSON/Markdown integrity regressions.
-- `SEPARATE_EXPERIMENTAL_SYSTEM` remained the historical classification for VK Audio browser/internal-web automation.
+Canonical project identity, exact provider IDs, immutable release/plan, durable state and explicit execution authority select the operation. Never print, commit, package, log, or put provider credentials on a command line.
 
-These anchors exist so later current-state rewrites cannot erase the evidence chain. The sections above this block are the current operational interpretation.
+Unknown provider outcomes remain blocking until read-only reconciliation. A timeout, HTTP success, screenshot, stdout, filename, CI result, approval artifact, or visible UI state is not a provider postcondition.
 
-## Historical memory
+## Next safe work
 
-Immutable historical anchors remain under:
+1. For #154, regenerate/verify the final seven-master Black Man artifact only when the exact accepted master bytes are available to the executing environment.
+2. Keep Lordchrist research-v2 and Svodka provider-inert unless a new explicit live execution request is created and reviewed.
+3. Treat Dependabot updates as bounded maintenance, not operational closure debt.
+4. Keep effective GitHub protection/Dependency Graph status `UNVERIFIED` until independently observable.
 
-- `docs/operations/audit-register-v12-2026-08-07.json` (preserved former PR #158 evidence only);
-- `docs/operations/audit-register-v11-2026-08-07.json` and predecessors;
-- `docs/lordchrist/audits/2026-08-08-*`;
-- `docs/research/2026-08-08-svodka-*`;
-- Wave 14–16 records referenced by `AGENTS.md`.
-
-Their historical status text may be superseded by this file and newer continuation records; their evidence must not be rewritten to imitate current state.
-
-## Next allowed actions
-
-Repository-controlled Telegram findings from the latest handoff are closed by exact-tested merges or explicitly recorded as external unknowns. Keep Svodka and Lordchrist research activation closed until their own activation gates are satisfied. Finish the local-only Black Man album provenance fixes before salvaging the guarded YouTube upload draft, and rebuild stale YouTube metadata work against the canonical project identity gate.
-
-Nothing in this document is authorization for a new provider mutation.
+Nothing in this document is authorization for a provider mutation.
