@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -9,6 +10,8 @@ import video_channel_manager.album as album_module
 import video_channel_manager.album_quality as album_quality
 from video_channel_manager.album import (
     AlbumError,
+    AlbumManifest,
+    QualityMasterManifest,
     bind_quality_master,
     build_album_timing,
     build_artwork_plan,
@@ -27,7 +30,7 @@ def _sha(path: Path) -> str:
     return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _probed_youtube_manifest(tmp_path: Path, *, tracks: int = 2):
+def _probed_youtube_manifest(tmp_path: Path, *, tracks: int = 2) -> AlbumManifest:
     manifest = create_album_manifest(project_key="legendary-poet", album_key="black-man", total_tracks=tracks)
     for ordinal in range(1, tracks + 1):
         video_id = f"VID{ordinal:08d}"[:11]
@@ -49,6 +52,23 @@ def _probed_youtube_manifest(tmp_path: Path, *, tracks: int = 2):
     return manifest
 
 
+def _probed_local_manifest(tmp_path: Path) -> tuple[AlbumManifest, Path]:
+    manifest = create_album_manifest(project_key="legendary-poet", album_key="black-man", total_tracks=1)
+    source = tmp_path / "bonus.wav"
+    source.write_bytes(b"bonus-local-source")
+    manifest = configure_local_track(manifest, ordinal=1, path=source, title="Bonus")
+    current = manifest.tracks[0]
+    probed = current.model_copy(
+        update={
+            "status": "probed",
+            "sha256": _sha(source),
+            "duration_seconds": 42.0,
+            "probe": {"fixture": True, "local": True},
+        }
+    )
+    return manifest.model_copy(update={"tracks": [probed]}), source
+
+
 class _FakeReport:
     def __init__(self, path: Path, duration: float) -> None:
         self.sha256 = _sha(path)
@@ -64,7 +84,12 @@ class _FakeReport:
         }
 
 
-def _bind_masters(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, manifest, durations: tuple[float, ...]):
+def _bind_masters(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    manifest: AlbumManifest,
+    durations: tuple[float, ...],
+) -> tuple[QualityMasterManifest, list[Path]]:
     duration_by_name: dict[str, float] = {}
     masters: list[Path] = []
     for ordinal, duration in enumerate(durations, start=1):
@@ -141,6 +166,21 @@ def test_same_youtube_source_retitle_preserves_acquisition_probe_and_master_elig
     assert changed_track.probe is None
 
 
+def test_same_local_source_retitle_preserves_probe_and_sha(tmp_path: Path) -> None:
+    manifest, source = _probed_local_manifest(tmp_path)
+    before = manifest.tracks[0]
+
+    updated = configure_local_track(manifest, ordinal=1, path=source, title="Bonus final title")
+    after = updated.tracks[0]
+
+    assert after.title == "Bonus final title"
+    assert after.status == "probed"
+    assert after.local_path == before.local_path
+    assert after.sha256 == before.sha256
+    assert after.duration_seconds == before.duration_seconds
+    assert after.probe == before.probe
+
+
 def test_timing_uses_exact_bound_quality_master_durations(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     manifest = _probed_youtube_manifest(tmp_path, tracks=2)
     quality, _ = _bind_masters(monkeypatch, tmp_path, manifest, (10.0, 12.0))
@@ -177,13 +217,26 @@ def test_tampered_quality_master_bytes_fail_closed(monkeypatch: pytest.MonkeyPat
         build_album_timing(manifest, grid_seconds=5, quality_masters=quality)
 
 
+def test_quality_master_bound_to_stale_source_evidence_fails_closed(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    manifest = _probed_youtube_manifest(tmp_path, tracks=1)
+    quality, _ = _bind_masters(monkeypatch, tmp_path, manifest, (10.0,))
+    track = manifest.tracks[0].model_copy(update={"sha256": "sha256:" + "f" * 64})
+    stale_manifest = manifest.model_copy(update={"tracks": [track]})
+
+    with pytest.raises(AlbumError, match="belongs to stale source evidence"):
+        build_album_timing(stale_manifest, grid_seconds=5, quality_masters=quality)
+
+
 def test_render_receives_only_quality_master_paths(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     manifest = _probed_youtube_manifest(tmp_path, tracks=2)
     quality, masters = _bind_masters(monkeypatch, tmp_path, manifest, (10.0, 12.0))
     timing = build_album_timing(manifest, grid_seconds=5, quality_masters=quality)
     output = tmp_path / "build" / "album.mp4"
 
-    def fake_render(mastered, passed_timing, *, root: Path, ffmpeg: str):
+    def fake_render(mastered: AlbumManifest, passed_timing: object, *, root: Path, ffmpeg: str) -> Path:
         assert passed_timing == timing
         assert root == tmp_path
         assert ffmpeg == "unused"
@@ -191,7 +244,7 @@ def test_render_receives_only_quality_master_paths(monkeypatch: pytest.MonkeyPat
         assert [track.duration_seconds for track in mastered.tracks] == [10.0, 12.0]
         return output
 
-    monkeypatch.setattr(album_module._legacy, "render_album", fake_render)
+    monkeypatch.setattr(album_module._core, "render_album", fake_render)
     assert (
         render_album(
             manifest,
