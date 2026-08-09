@@ -28,9 +28,25 @@ Repository/local implementation is hardened and current:
 - same-media upload planning uses stable project/channel/media identity; timestamps or metadata changes cannot create a new journal namespace;
 - merged YouTube upload tooling is provider-inert (`plan/status/abandon` only). There is no provider upload executor in the supported baseline.
 
-Issue #154 remains **artifact-level open** for one reason: the previously rendered album MP4 predates the quality-master binding fix. Completion requires regeneration from the seven accepted exact masters under the current pipeline, then fresh timing/render/verify/package/description evidence (SHA-256 + required ffprobe/QC). Do not reuse the historical MP4 as current-policy proof.
+A separately authorized one-off provider rollout of the **historical pre-#213 media bytes** was completed on 2026-08-09 and is now durable remote-state evidence, not standing authorization:
 
-No YouTube upload, metadata edit, thumbnail change, playlist creation/membership change, visibility change, or deletion is authorized by this state.
+- video ID `x-puy27S2qs`;
+- uploaded media SHA-256 `sha256:e5450342249e95882136af35976ee3ab08bc85bba626a061be9944b28d8310a0`;
+- final visibility `public`, processing succeeded;
+- custom thumbnail verified present; exact input SHA-256 `sha256:1d10f48a6a3eb38e9e155e4771b4d58f504c41d8e3d5edad6283af44202ccdf8`;
+- `selfDeclaredMadeForKids=false`;
+- YouTube Studio AI-use setting observed `Yes`; `videos.list` omitted `status.containsSyntheticMedia` in the release readback and therefore that API omission is recorded as unobserved rather than false;
+- playlist `Сергей Есенин` (`PLy9lLJfoq3uapKkid7HzfXHmSi3FR2y3Q`) membership verified present;
+- playlist `Поющие Поэты` (`PLy9lLJfoq3uaxXMvilfZIYVXsf4fY18T8`) membership inserted and verified;
+- top-level comment thread `UgwqMEOx27WrGwhO7Bt4AaABAg` created; pin state remains unverified/manual-only.
+
+Exact retrospective/live-state evidence is recorded in [`black-man-youtube-release-retrospective-2026-08-09.md`](black-man-youtube-release-retrospective-2026-08-09.md) and [`black-man-youtube-live-state-2026-08-09.json`](black-man-youtube-live-state-2026-08-09.json).
+
+Issue #154 remains **artifact-level open** for one reason: the uploaded/rendered album MP4 predates the quality-master binding fix. Completion requires regeneration from the seven accepted exact masters under the current pipeline, then fresh timing/render/verify/package/description evidence (SHA-256 + required ffprobe/QC). Do not reuse the historical MP4 as current-policy proof and do **not** reupload the album to solve this provenance gap.
+
+The known public target `x-puy27S2qs` is an external collision guard for the stable project/channel/media identity. Until Issue #232 implements a current-main read-only adoption/reconciliation path, absence of a v2 local journal must never be interpreted as permission to create another `videos.insert` for the same media.
+
+No future YouTube upload, metadata edit, thumbnail change, playlist mutation, visibility change, comment mutation, deletion or replacement is authorized by this state. The successful historical rollout does not authorize replay.
 
 ## Telegram / Lordchrist legacy quote publisher
 
@@ -90,15 +106,19 @@ It does not authorize ID3 rewrite, rename/transcode, browser automation, remote 
 
 ## GitHub governance and external state
 
-Read-only governance evidence is recorded in [`github-governance-readonly-probe-2026-08-09.md`](github-governance-readonly-probe-2026-08-09.md). The one-shot probe used only `Contents: read` and `Metadata: read` and performed no checkout or mutation.
+Read-only governance evidence is recorded in [`github-governance-readonly-probe-2026-08-09.md`](github-governance-readonly-probe-2026-08-09.md). Both one-shot probes used only `Contents: read` / `Metadata: read`, performed no checkout, and changed no repository setting or provider state.
 
-At that probe point:
+At those probe points:
 
-- `GET /branches/main` returned HTTP 200 with `protected=false`; the current GitHub branch object did not mark `main` as protected;
+- `GET /branches/main` returned HTTP 200 with `protected=false`; the GitHub branch object did not mark `main` as protected;
 - `GET /rulesets` returned HTTP 200 with repository ruleset count `0`;
-- the detailed legacy branch-protection endpoint returned HTTP 403 to the integration, so nested protection details were not separately readable;
-- this repository is public, and GitHub documents Dependency Graph as permanently enabled for public repositories;
-- the SBOM export endpoint returned HTTP 404, so SBOM export availability remains **UNVERIFIED / unavailable in that probe** and must not be misreported as proof that Dependency Graph is disabled.
+- the detailed legacy branch-protection endpoint returned HTTP 403 to the integration, so nested legacy detail was not separately readable;
+- this repository is public, and GitHub documents Dependency Graph as enabled/permanently enabled for public repositories;
+- legacy `GET /dependency-graph/sbom` returned HTTP 404 `Not Found`;
+- after GitHub's 2026 asynchronous SBOM API change was identified, current `GET /dependency-graph/sbom/generate-report` was independently probed with `Contents: read` and also returned HTTP 404 `Not Found`;
+- GitHub's current SBOM REST documentation states that these export surfaces require only Contents(read), may be used without authentication for public resources, and document HTTP 404 as `Resource not found`.
+
+The exact current conclusion is therefore: Dependency Graph itself is policy-enabled for this public repository, while GitHub **SBOM REST export is verified unavailable through both documented generation surfaces at the probe points**. This is no longer a blanket `UNVERIFIED` item. It is a scoped observed REST status and may change if GitHub changes repository/service state later.
 
 `.github/CODEOWNERS` remains repository policy only; it must not be presented as branch protection. Green CI likewise does not create GitHub protection by itself.
 
@@ -116,9 +136,10 @@ Unknown provider outcomes remain blocking until read-only reconciliation. A time
 
 ## Next safe work
 
-1. For #154, regenerate/verify the final seven-master Black Man artifact only when the exact accepted master bytes are available to the executing environment.
-2. Keep Lordchrist research-v2 and Svodka provider-inert unless a new explicit live execution request is created and reviewed.
-3. Treat production Telegram lock refreshes as explicit coherent supply-chain changes; routine bot maintenance must not edit that closure piecemeal.
-4. Do not re-label GitHub branch protection/rulesets as `UNVERIFIED` without new contrary read-only evidence; only SBOM export availability remains unresolved from the 2026-08-09 governance probe.
+1. For #154, regenerate/verify the final seven-master Black Man artifact only when the exact accepted master bytes are available to the executing environment; do not reupload the known public target to resolve artifact provenance.
+2. Implement Issue #232 as a separately reviewed current-main provider executor/adoption scope before any future automated YouTube release write; no canary is authorized by the issue itself.
+3. Keep Lordchrist research-v2 and Svodka provider-inert unless a new explicit live execution request is created and reviewed.
+4. Treat production Telegram lock refreshes as explicit coherent supply-chain changes; routine bot maintenance must not edit that closure piecemeal.
+5. Treat the 2026-08-09 GitHub governance evidence as observed state, not permanent truth: future changes require fresh read-only verification rather than assumptions.
 
 Nothing in this document is authorization for a provider mutation.
