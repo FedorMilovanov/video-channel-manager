@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OPERATIONS = ROOT / "docs" / "operations"
 
 
-def test_wave15_sources_and_agent_entrypoints_exist() -> None:
+def test_wave15_sources_remain_available_as_historical_evidence() -> None:
     required = (
         OPERATIONS / "agent-reasoning-playbook.md",
         OPERATIONS / "mp3-batch-processing-contract.md",
@@ -20,43 +20,47 @@ def test_wave15_sources_and_agent_entrypoints_exist() -> None:
         assert path.is_file()
 
     agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    assert "Historical audits only when provenance or a past defect must be understood" in agents
     for path in required[:4]:
-        assert str(path.relative_to(ROOT)).replace("\\", "/") in agents
+        assert str(path.relative_to(ROOT)).replace("\\", "/") not in agents
 
 
 def test_agent_instructions_require_adaptive_transport_aware_reasoning() -> None:
     agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
     required = (
         "Adaptive reasoning contract",
-        "requested outcome independently of the old mechanism",
+        "requested outcome independent of the old mechanism",
         "internal_web_read",
         "browser_ui_write",
-        "provider effect is impossible, not dispatched, confirmed absent, may exist, or verified",
-        "one falsifiable hypothesis, one minimal bounded probe, and a stop condition",
+        "current phase and provider-effect state",
+        "one falsifiable hypothesis, one smallest bounded probe, and one stop condition",
         "Preserve partial success",
-        "Resume from the first unverified child phase",
-        "Bind the active browser surface before action",
-        "Stop the ZIP/version treadmill",
-        "Content in quotation marks must map to a contiguous source passage",
+        "Resume from the first unverified child operation",
+        "bind the active page/modal root",
+        "v2/v3/v4 ZIP families",
+        "Content presented as a quotation must map to a contiguous source passage",
     )
     for phrase in required:
         assert phrase in agents
 
 
-def test_windows_handoff_contract_rejects_selector_and_zip_treadmills() -> None:
+def test_windows_handoff_contract_keeps_only_operator_specific_guards() -> None:
     text = (ROOT / ".github/copilot-instructions.md").read_text(encoding="utf-8")
     required = (
-        "requested outcome independently of the historical mechanism",
-        "current phase and provider-effect state",
-        "Adaptive diagnosis before another package version",
-        "A second selector-only revision without a new DOM/state observation is prohibited",
-        "identify the topmost active root",
-        "One automation browser profile is a single-writer resource",
-        "Historical BrowserCanary, PlaylistOnly, Metadata Manager",
-        "rewrite ID3 tags",
+        "Self-contained PowerShell",
+        "provider-effect state",
+        "smallest non-mutating probe",
+        "another ZIP/version family",
+        "operator-output",
+        "LastWriteTime",
+        "$PSScriptRoot",
+        "UTF-8 with BOM",
     )
     for phrase in required:
         assert phrase in text
+
+    assert "Historical BrowserCanary, PlaylistOnly, Metadata Manager" not in text
+    assert "provider_writes_authorized=true" not in text
 
 
 def test_transcript_audit_binds_exact_supplied_source_hashes() -> None:

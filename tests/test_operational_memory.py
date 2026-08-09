@@ -9,9 +9,22 @@ ROOT = Path(__file__).resolve().parents[1]
 OPERATIONS_DIR = ROOT / "docs" / "operations"
 
 
-def test_agent_instructions_reference_existing_sources_of_truth() -> None:
+def test_agent_instructions_reference_current_sources_of_truth() -> None:
     text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
     required_sources = (
+        "docs/operations/current-state.md",
+        "docs/operations/project-identity-registry.md",
+        ".github/copilot-instructions.md",
+        "docs/operations/operational-artifact-standard.md",
+        "docs/operations/operational-package-acceptance.md",
+        "docs/operations/retirement-registry-v1.json",
+        "docs/operations/operator-output-handoff-rule.md",
+    )
+    for relative_path in required_sources:
+        assert relative_path in text
+        assert (ROOT / relative_path).is_file()
+
+    historical_sources = (
         "docs/operations/master-audit-marathon-v2-2026-08-04.md",
         "docs/operations/audit-register-v7-2026-08-05.json",
         "docs/operations/audit-register-v6-2026-08-05.json",
@@ -19,17 +32,11 @@ def test_agent_instructions_reference_existing_sources_of_truth() -> None:
         "docs/operations/audit-register-v4-2026-08-05.json",
         "docs/operations/audit-register-v3-2026-08-05.json",
         "docs/operations/audit-register-v2-2026-08-04.json",
-        "docs/operations/current-state.md",
-        "docs/operations/automation-backlog.md",
         "docs/operations/repository-integrity-audit-2026-08-05.md",
-        ".github/copilot-instructions.md",
-        "docs/operations/operational-artifact-standard.md",
-        "docs/operations/operational-package-acceptance.md",
-        "docs/operations/retirement-registry-v1.json",
     )
-    for relative_path in required_sources:
-        assert relative_path in text
+    for relative_path in historical_sources:
         assert (ROOT / relative_path).is_file()
+        assert relative_path not in text
 
 
 def test_operations_index_has_no_broken_local_markdown_links() -> None:
@@ -41,87 +48,52 @@ def test_operations_index_has_no_broken_local_markdown_links() -> None:
     assert broken == []
 
 
-def test_current_state_records_completed_wave14_and_zero_active_graph() -> None:
-    text = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
-    required = (
-        "WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES",
-        "main@626f83c6e5c068d7faa8b6d14163b42916faa769",
-        "PR #131",
-        "80f701b6926a5a9c788b99c69634b54d63ed1862",
-        "31000834701",
-        "801 passed, 1 xfailed",
-        "451 files already formatted",
-        "audit-register-v7-2026-08-05.json",
-        "audit-register-v6-2026-08-05.json",
-        "No operational continuation is pending",
-        "one shared **user access token**",
-        "is not a project selector",
-        "#31 — Lord God long-form reconciliation",
-        "#32 — non-authoritative Lord God 108-item Shorts auto-upload scope",
-        "#119 — Legendary Poet Shorts/Clips reconciliation",
-        "#38 — shared VK native Clip/ordinary-video provider-mode",
-        "OAuth alias `fedor-milovanov`",
-        "OAuth alias `legendary-poet`",
-        "Do not group #32/#38 as Legendary Poet",
-        "#33 — broad Lord God catalog/editorial/postponed-wall continuation",
-        "#99 — unproved Legendary Poet article-wall launcher continuation",
-        "#123 — deferred YouTube playlist mutation scope",
-        "repository-wide JSON/Markdown integrity regressions",
-        "SEPARATE_EXPERIMENTAL_SYSTEM",
-        "Provider writes remain unauthorized",
+def test_wave14_history_remains_machine_readable_but_not_live_state() -> None:
+    register = json.loads((OPERATIONS_DIR / "audit-register-v7-2026-08-05.json").read_text(encoding="utf-8"))
+    assert (
+        register["program_state"]
+        == "WAVES_0_14_COMPLETED_REPOSITORY_POLISHED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES"
     )
-    for fact in required:
-        assert fact in text
+    proof = register["wave_14_repository_polish"]
+    assert proof["merge"] == "626f83c6e5c068d7faa8b6d14163b42916faa769"  # type: ignore[index]
+    assert proof["pull_request"] == 131  # type: ignore[index]
+    assert proof["ci_run"] == 31000834701  # type: ignore[index]
+    assert proof["pytest"] == "801 passed, 1 xfailed"  # type: ignore[index]
+    assert proof["ruff_format"] == "451 files already formatted"  # type: ignore[index]
+    assert register["provider_writes_during_wave_14"] == 0
+    assert register["mutation_authorized"] is False
 
-    for claim in (
-        "Actual fresh live provider reconciliation: pending",
-        "status: `requires_reconciliation`",
-        "Correct active operational graph",
-        "All 56 are native Clips.",
-        "#37 is an active operational owner",
-        "safe playlist operations",
-        "editorial CI run #669",
-    ):
-        assert claim not in text
+    current = (OPERATIONS_DIR / "current-state.md").read_text(encoding="utf-8")
+    assert register["program_state"] not in current
+    assert "main@626f83c6e5c068d7faa8b6d14163b42916faa769" not in current
+    assert "No operational continuation is pending" not in current
+    assert "Issue #154 remains **artifact-level open**" in current
 
 
-def test_agent_instructions_preserve_final_project_and_credential_boundaries() -> None:
+def test_agent_instructions_preserve_current_identity_and_execution_boundaries() -> None:
     text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
     required = (
-        "main@626f83c6e5c068d7faa8b6d14163b42916faa769",
-        "PR #131",
-        "31000834701",
-        "801 passed, 1 xfailed",
-        "one shared user access token",
-        "it is not a project selector",
-        "They do not imply separate VK tokens",
-        "Package A output never authorizes a provider mutation by itself",
-        "PowerShell orchestrates one repository-owned implementation",
-        "#31 — exact Lord God 26-item long-form reconciliation",
-        "#32 — Lord God non-authoritative 108-item Shorts auto-upload scope",
-        "#119 — Legendary Poet Shorts/Clips reconciliation",
-        "#38 — shared VK native Clip/ordinary-video final-type contract",
-        "Do not group #32/#38 as Legendary Poet",
-        "#123 — deferred YouTube playlist mutation scope",
-        "Every tracked JSON file must parse",
-        "Local Markdown links must resolve",
-        "freeze their test clock",
-        "VK Audio browser/internal-web work remains",
-        "filter=moder",
-        "filter=admin",
-        "LastWriteTime",
-        "$PSScriptRoot",
-        "No operational continuation is pending",
+        "never by credential name alone",
+        "Durable same-object keys must not include timestamps",
+        "Release/content approval and provider execution authority are separate gates",
+        "persist durable intent before dispatch",
+        "zero blind mutation retries",
+        "Unknown provider outcomes remain blocking",
+        "PowerShell and shell wrappers orchestrate one repository-owned implementation",
+        "Retired executors/packages never become runnable again",
+        "repository implementation complete",
+        "artifact complete",
+        "provider rollout complete",
     )
     for fact in required:
         assert fact in text
 
-    for claim in (
-        "#37 — independent exact reviewed cleanup",
-        "active operational issues after the Wave 14 state-sync merge: `1`",
-        "automatic over-60-second native Clip publication is supported",
+    for stale in (
+        "No operational continuation is pending",
+        "main@626f83c6e5c068d7faa8b6d14163b42916faa769",
+        "Do not group #32/#38 as Legendary Poet",
     ):
-        assert claim not in text
+        assert stale not in text
 
 
 def test_wave12a_predecessor_overlay_remains_valid_and_fail_closed() -> None:

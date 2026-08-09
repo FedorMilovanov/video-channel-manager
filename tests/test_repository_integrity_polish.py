@@ -12,6 +12,7 @@ ROADMAP = ROOT / "docs" / "roadmap.md"
 SECURITY = ROOT / "docs" / "security.md"
 CURRENT_STATE = ROOT / "docs" / "operations" / "current-state.md"
 AUDIT = ROOT / "docs" / "operations" / "repository-integrity-audit-2026-08-05.md"
+WAVE14 = ROOT / "docs" / "operations" / "audit-register-v7-2026-08-05.json"
 
 _FENCED_CODE = re.compile(r"(^|\n)(?:```|~~~).*?(?:\n```|\n~~~)(?=\n|$)", re.DOTALL)
 _INLINE_CODE = re.compile(r"`[^`\n]*`")
@@ -118,18 +119,20 @@ def test_roadmap_is_closed_and_not_initial_project_boilerplate() -> None:
         assert stale not in roadmap
 
 
-def test_current_state_retains_completed_state_merge_proof() -> None:
-    text = CURRENT_STATE.read_text(encoding="utf-8")
+def test_completed_state_merge_proof_stays_in_immutable_register() -> None:
+    register = json.loads(WAVE14.read_text(encoding="utf-8"))
+    proof = register["wave_14_repository_polish"]
 
-    for fact in (
-        "PR #129",
-        "44a1590fac0e8fe8b563d35cfd68f2bed4727743",
-        "07388521e8d3a2c5d501382227c35bdce6e6470e",
-        "30994245235",
-        "796 passed, 1 xfailed",
-        "449 files already formatted",
-        "provider queries/writes/write plans: `0/0/0`",
-    ):
-        assert fact in text
+    assert proof["pull_request"] == 131  # type: ignore[index]
+    assert proof["exact_head"] == "80f701b6926a5a9c788b99c69634b54d63ed1862"  # type: ignore[index]
+    assert proof["merge"] == "626f83c6e5c068d7faa8b6d14163b42916faa769"  # type: ignore[index]
+    assert proof["ci_run"] == 31000834701  # type: ignore[index]
+    assert proof["pytest"] == "801 passed, 1 xfailed"  # type: ignore[index]
+    assert proof["ruff_format"] == "451 files already formatted"  # type: ignore[index]
+    assert register["provider_queries_during_wave_14"] == 0
+    assert register["provider_writes_during_wave_14"] == 0
+    assert register["write_plans_created_during_wave_14"] == 0
 
+    current = CURRENT_STATE.read_text(encoding="utf-8")
+    assert "main@626f83c6e5c068d7faa8b6d14163b42916faa769" not in current
     assert AUDIT.is_file()
