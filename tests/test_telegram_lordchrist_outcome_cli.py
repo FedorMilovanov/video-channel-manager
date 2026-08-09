@@ -5,19 +5,21 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 
 import video_channel_manager.telegram_lordchrist_outcome_cli as outcome_cli
 
 
-def _base_argv(command: str, *extra: str) -> list[str]:
+def _base_argv(command: str, *extra: str, root_extra: tuple[str, ...] = ()) -> list[str]:
     return [
         "telegram_lordchrist_outcome_cli",
         "--queue",
         "queue.json",
         "--ledger",
         "ledger.json",
+        *root_extra,
         command,
         "--dispatch",
         "dispatch.json",
@@ -27,7 +29,7 @@ def _base_argv(command: str, *extra: str) -> list[str]:
     ]
 
 
-def _install_common_stubs(monkeypatch: pytest.MonkeyPatch) -> tuple[object, object, object, object]:
+def _install_common_stubs(monkeypatch: pytest.MonkeyPatch) -> tuple[object, Any, Any, object]:
     queue = object()
     ledger = SimpleNamespace(entries={"pub-1": SimpleNamespace(publication_id="pub-1")})
     envelope = SimpleNamespace(publication_id="pub-1")
@@ -51,7 +53,7 @@ def test_verify_evidence_cli_reports_exact_persisted_state(
         intent_id="intent-1",
     )
 
-    def verify(actual_queue, actual_ledger, actual_envelope, actual_rendered):
+    def verify(actual_queue: object, actual_ledger: object, actual_envelope: object, actual_rendered: object) -> Any:
         assert (actual_queue, actual_ledger, actual_envelope, actual_rendered) == (
             queue,
             ledger,
@@ -99,7 +101,13 @@ def test_capture_cli_persists_structured_provider_outcome(
     saved: list[tuple[Path, object]] = []
     monkeypatch.setattr(outcome_cli, "load_presentation_policy", lambda path: policy)
 
-    def capture(actual_queue, actual_envelope, actual_rendered, actual_policy, actual_entry):
+    def capture(
+        actual_queue: object,
+        actual_envelope: object,
+        actual_rendered: object,
+        actual_policy: object,
+        actual_entry: object,
+    ) -> Any:
         assert actual_queue is queue
         assert actual_envelope is envelope
         assert actual_rendered is rendered
@@ -116,8 +124,7 @@ def test_capture_cli_persists_structured_provider_outcome(
             "capture",
             "--output",
             "outcome.json",
-            "--presentation-policy",
-            "policy.json",
+            root_extra=("--presentation-policy", "policy.json"),
         ),
     )
 
@@ -150,7 +157,13 @@ def test_apply_cli_updates_and_saves_ledger_without_provider_access(
     saved: list[tuple[Path, object]] = []
     monkeypatch.setattr(outcome_cli, "load_lordchrist_provider_outcome", lambda path: outcome)
 
-    def apply(actual_queue, actual_ledger, actual_envelope, actual_rendered, actual_outcome):
+    def apply(
+        actual_queue: object,
+        actual_ledger: object,
+        actual_envelope: object,
+        actual_rendered: object,
+        actual_outcome: object,
+    ) -> Any:
         assert (actual_queue, actual_ledger, actual_envelope, actual_rendered, actual_outcome) == (
             queue,
             ledger,
@@ -162,11 +175,7 @@ def test_apply_cli_updates_and_saves_ledger_without_provider_access(
 
     monkeypatch.setattr(outcome_cli, "apply_lordchrist_provider_outcome", apply)
     monkeypatch.setattr(outcome_cli, "save_ledger", lambda path, model: saved.append((path, model)))
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        _base_argv("apply", "--outcome", "outcome.json"),
-    )
+    monkeypatch.setattr(sys, "argv", _base_argv("apply", "--outcome", "outcome.json"))
 
     assert outcome_cli.main() == 0
     assert saved == [(Path("ledger.json"), ledger)]
