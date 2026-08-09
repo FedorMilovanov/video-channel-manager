@@ -59,6 +59,25 @@ def _verify_remote_against_evidence(*, evidence: dict[str, Any], remote: ReadOnl
         )
 
 
+def _verify_existing_journal_for_adoption(
+    current: dict[str, Any] | None,
+    *,
+    proposed: dict[str, Any],
+) -> None:
+    if current is None:
+        return
+    if current.get("account_alias") != proposed.get("account_alias"):
+        raise UploadPlanError("Existing stable upload journal OAuth alias conflicts with adoption evidence.")
+    if (
+        current.get("adopted_existing_target") is True
+        and current.get("remote_video_id") == proposed.get("remote_video_id")
+        and current.get("adoption_evidence_sha256") != proposed.get("adoption_evidence_sha256")
+    ):
+        raise UploadPlanError(
+            "Existing stable upload journal was adopted from different immutable evidence; refusing silent rebinding."
+        )
+
+
 def adopt_existing(args: argparse.Namespace) -> int:
     evidence_path = Path(args.evidence).resolve()
     data_dir = Path(args.data_dir).resolve()
@@ -101,6 +120,7 @@ def adopt_existing(args: argparse.Namespace) -> int:
 
     with stable_key_mutation_lock(stable_journal):
         current = read_json(stable_journal) if stable_journal.is_file() else None
+        _verify_existing_journal_for_adoption(current, proposed=proposed)
         write_needed = require_adoption_allowed(current, proposed=proposed)
         if write_needed:
             write_json_atomic(stable_journal, proposed)
@@ -138,7 +158,7 @@ def adopt_existing(args: argparse.Namespace) -> int:
 
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description="Guarded current-main YouTube release state operations.")
-    sub = root.add_subparsers(dest="command", required=True)
+    sub = root.add_subpar(dest="command", required=True)
     adoption = sub.add_parser("adopt-existing")
     adoption.add_argument("--evidence", required=True)
     adoption.add_argument("--data-dir", required=True)
