@@ -303,13 +303,9 @@ def adopted_journal(
 ) -> dict[str, Any]:
     identity = validate_live_state_evidence(evidence)
     if remote_video_id != identity["video_id"]:
-        raise UploadPlanError(
-            f"Provider video mismatch: evidence={identity['video_id']} provider={remote_video_id}."
-        )
+        raise UploadPlanError(f"Provider video mismatch: evidence={identity['video_id']} provider={remote_video_id}.")
     if remote_channel_id != identity["target_channel_id"]:
-        raise UploadPlanError(
-            "Provider channel does not match the canonical target in the live-state evidence."
-        )
+        raise UploadPlanError("Provider channel does not match the canonical target in the live-state evidence.")
     _validate_sha256(remote_revision, field="Provider remote revision")
     return {
         "schema_name": JOURNAL_SCHEMA,
@@ -335,7 +331,7 @@ def require_adoption_allowed(
     *,
     proposed: dict[str, Any],
 ) -> bool:
-    """Return True for first adoption; False only for byte-for-byte-equivalent durable adoption identity."""
+    """Return True for first adoption; False only for the same immutable adoption identity."""
 
     _validate_journal_identity(
         proposed,
