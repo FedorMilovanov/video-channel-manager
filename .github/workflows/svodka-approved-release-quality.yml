@@ -68,15 +68,20 @@ jobs:
           python - <<'PY'
           import os
           from pathlib import Path
+
+          from video_channel_manager.svodka_approval_cli import load_svodka_release_approval
           from video_channel_manager.telegram_multichannel_release import load_release
 
+          approval = load_svodka_release_approval(Path(os.environ["APPROVAL_PATH"]))
           release = load_release(Path(os.environ["RELEASE_PATH"]))
           assert release.release_authorized is True
-          assert release.reviewed_candidate_sha256 == "sha256:98e259210f138b8ad0280dec38306dcecbbdba89899db336906994f9dfb0bc0f"
-          assert release.digest == "sha256:e774115e4382ef9ff1871f0d9b5a7d80c075f41c66ecc9963ccbee7c23d41233"
+          assert release.reviewed_candidate_sha256 == approval.candidate_sha256
+          assert release.digest == approval.approved_release_sha256
           assert len(release.items) == 14
           assert release.items[4].publication_id == "svodka-2026-august-total-solar-eclipse"
           assert release.items[4].scheduled_at.isoformat() == "2026-08-12T10:30:00+03:00"
+          print(f"candidate_digest={approval.candidate_sha256}")
+          print(f"approved_release_digest={approval.approved_release_sha256}")
           print("provider_write_performed=false")
           PY
 
