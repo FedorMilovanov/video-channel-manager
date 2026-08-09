@@ -25,6 +25,7 @@ def test_youtube_project_identity_map_matches_canonical_registry() -> None:
 
     assert PROJECT_YOUTUBE_OAUTH_ALIASES == {key: value[0] for key, value in expected.items()}
     assert PROJECT_CHANNEL_IDS == {key: frozenset({value[1]}) for key, value in expected.items()}
+    assert len(set(PROJECT_YOUTUBE_OAUTH_ALIASES.values())) == len(PROJECT_YOUTUBE_OAUTH_ALIASES)
     for project_key, (account_alias, channel_id) in expected.items():
         assert f"`{project_key}`" in text
         assert f"`{account_alias}`" in text
