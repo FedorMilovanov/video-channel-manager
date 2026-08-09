@@ -55,8 +55,9 @@ def test_current_state_is_a_live_index_not_a_commit_ledger() -> None:
     assert "`state/lordchrist-telegram` and `state/svodka-telegram` are durable state-only refs" in text
     assert "`protected=false`" in text
     assert "repository ruleset count `0`" in text
-    assert "Dependency Graph as permanently enabled for public repositories" in text
-    assert "SBOM export availability remains **UNVERIFIED / unavailable in that probe**" in text
+    assert "Dependency Graph itself is policy-enabled for this public repository" in text
+    assert "SBOM REST export is verified unavailable through both documented generation surfaces" in text
+    assert "blanket `UNVERIFIED` item" in text
 
 
 def test_dependabot_maintenance_is_atomic_and_bounded() -> None:
