@@ -1,0 +1,117 @@
+name: GitHub async SBOM read-only probe
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Request and inspect async SBOM export
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          repo = os.environ["REPOSITORY"]
+          token = os.environ["GH_TOKEN"]
+          api_base = f"https://api.github.com/repos/{repo}"
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+          opener = urllib.request.build_opener(NoRedirect)
+
+          def github_get(url: str):
+              request = urllib.request.Request(
+                  url,
+                  headers={
+                      "Accept": "application/vnd.github+json",
+                      "Authorization": f"Bearer {token}",
+                      "X-GitHub-Api-Version": "2026-03-10",
+                      "User-Agent": "video-channel-manager-sbom-probe",
+                  },
+              )
+              try:
+                  with opener.open(request, timeout=30) as response:
+                      raw = response.read().decode("utf-8", errors="replace")
+                      try:
+                          body = json.loads(raw) if raw else {}
+                      except json.JSONDecodeError:
+                          body = {"message": raw[:500]}
+                      return response.status, body, dict(response.headers)
+              except urllib.error.HTTPError as exc:
+                  raw = exc.read().decode("utf-8", errors="replace")
+                  try:
+                      body = json.loads(raw) if raw else {}
+                  except json.JSONDecodeError:
+                      body = {"message": raw[:500]}
+                  return exc.code, body, dict(exc.headers)
+
+          generate_url = api_base + "/dependency-graph/sbom/generate-report"
+          status, body, headers = github_get(generate_url)
+          print(f"GENERATE_HTTP={status}")
+          if isinstance(body, dict):
+              print("GENERATE_MESSAGE=" + str(body.get("message", "")))
+
+          if status != 201:
+              raise SystemExit(0)
+
+          sbom_url = body.get("sbom_url") if isinstance(body, dict) else None
+          if not isinstance(sbom_url, str) or not sbom_url:
+              print("GENERATE_URL_VALID=false")
+              raise SystemExit(0)
+
+          parsed = urllib.parse.urlparse(sbom_url)
+          expected_prefix = f"/repos/{repo}/dependency-graph/sbom/fetch-report/"
+          safe = (
+              parsed.scheme == "https"
+              and parsed.hostname == "api.github.com"
+              and parsed.username is None
+              and parsed.password is None
+              and parsed.query == ""
+              and parsed.path.startswith(expected_prefix)
+              and len(parsed.path) > len(expected_prefix)
+          )
+          print(f"GENERATE_URL_VALID={str(safe).lower()}")
+          if not safe:
+              raise SystemExit(0)
+
+          for attempt in range(1, 13):
+              fetch_status, fetch_body, fetch_headers = github_get(sbom_url)
+              print(f"FETCH_ATTEMPT_{attempt}_HTTP={fetch_status}")
+              if fetch_status in {201, 202}:
+                  time.sleep(2)
+                  continue
+              if fetch_status == 302:
+                  location = fetch_headers.get("Location", "")
+                  location_parsed = urllib.parse.urlparse(location)
+                  safe_location = (
+                      location_parsed.scheme == "https"
+                      and bool(location_parsed.hostname)
+                      and location_parsed.username is None
+                      and location_parsed.password is None
+                  )
+                  print(f"FETCH_READY=true")
+                  print(f"DOWNLOAD_LOCATION_SAFE={str(safe_location).lower()}")
+                  raise SystemExit(0)
+              message = fetch_body.get("message", "") if isinstance(fetch_body, dict) else ""
+              print("FETCH_MESSAGE=" + str(message))
+              raise SystemExit(0)
+
+          print("FETCH_READY=false")
+          print("FETCH_TIMEOUT_BOUNDED=true")
+          PY
