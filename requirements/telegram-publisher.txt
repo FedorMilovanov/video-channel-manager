@@ -1,4 +1,7 @@
 # Exact minimal Telegram publisher runtime.
+# Root constraints live in requirements/telegram-publisher.in.
+# Refresh this entire resolved closure atomically; never update a transitive
+# package/hash line independently.
 # Hash checking is mandatory for every installation through this file.
 # Pure-Python packages use their exact PyPI wheel hash. pydantic-core includes
 # the CPython 3.11 wheel hashes needed by the supported runtime platforms;
