@@ -72,6 +72,8 @@ Issue #170 is closed as repository pipeline implementation complete. A future ca
 
 The minimal Telegram runtime is exact-version and SHA-256 hash locked with pip `--require-hashes`; production/minimal installs keep the hash-locked transaction isolated from test-only dependencies. CI validates the installed graph, guarded provider-free CLI surface, dependency audit, Python quality matrices and PowerShell operator environments.
 
+`requirements/telegram-publisher.in` is the small root-constraint source for this production runtime; `requirements/telegram-publisher.txt` is one exact resolved/hash-bound closure. The production lock is excluded from routine Dependabot version edits because independent transitive changes can make the closure impossible. Any lock refresh is one explicit coherent supply-chain change that regenerates the whole exact closure and must pass isolated Python 3.11 install, `pip check`, guarded CLI smoke and dependency audit before acceptance.
+
 One durable state/concurrency namespace has one write owner at a time. Parallel agents must not open competing hardening/mutation branches against shared Telegram runtime/state writers.
 
 ## VK
@@ -90,7 +92,7 @@ It does not authorize ID3 rewrite, rename/transcode, browser automation, remote 
 
 `.github/CODEOWNERS` exists for critical repository paths, but effective branch protection/rulesets and the current Dependency Graph setting are external GitHub state and remain **UNVERIFIED** through the available connector. Green CI or CODEOWNERS presence must not be presented as proof of those settings.
 
-Dependabot version-update work is a separate grouped maintenance queue, not unresolved production state. Routine pip minor/patch updates are one maintenance unit; GitHub Actions updates are one workflow maintenance unit; deliberately capped major tool upgrades require an explicit compatibility decision rather than recurring bot pressure. Every accepted maintenance change still requires exact-current-main CI.
+Dependabot version-update work is a separate maintenance queue, not unresolved production state. Routine non-production-lock pip minor/patch updates may be grouped; all pip major upgrades are explicit compatibility work; GitHub Actions updates are grouped and exact-SHA pinned. The production Telegram hash lock is not a routine bot target. Every accepted maintenance change still requires exact-current-main CI.
 
 ## Provider/credential boundary
 
@@ -104,7 +106,7 @@ Unknown provider outcomes remain blocking until read-only reconciliation. A time
 
 1. For #154, regenerate/verify the final seven-master Black Man artifact only when the exact accepted master bytes are available to the executing environment.
 2. Keep Lordchrist research-v2 and Svodka provider-inert unless a new explicit live execution request is created and reviewed.
-3. Review grouped Dependabot maintenance as coherent units; do not merge stale single-dependency lockfile/workflow PRs piecemeal.
+3. Treat production Telegram lock refreshes as explicit coherent supply-chain changes; routine bot maintenance must not edit that closure piecemeal.
 4. Keep effective GitHub protection/Dependency Graph status `UNVERIFIED` until independently observable.
 
 Nothing in this document is authorization for a provider mutation.
