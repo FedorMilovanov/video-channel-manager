@@ -26,7 +26,10 @@ Repository/local implementation is hardened and current:
 - description authoring is source-first and unresolved media-derived chapters fail closed;
 - exact chapters can be rendered only from a digest-valid album package and produce immutable evidence bound to body/package/media/timing/quality-master hashes;
 - same-media upload planning uses stable project/channel/media identity; timestamps or metadata changes cannot create a new journal namespace;
-- merged YouTube upload tooling is provider-inert (`plan/status/abandon` only). There is no provider upload executor in the supported baseline.
+- upload planning remains provider-inert (`plan/status/abandon` only);
+- current-main read-only release adoption can bind immutable live-state evidence plus exact provider readback into the same stable journal, with canonical identity checked before OAuth material is loaded;
+- the durable release child-state model preserves immutable payload digests, blocks on `may_exist`, preserves verified parents and marks an adopted existing target as already-uploaded rather than replaying upload;
+- there is still **no provider upload/release execute command** in the supported baseline. Issue #232 remains open for the concrete mutation/resume transport layer.
 
 A separately authorized one-off provider rollout of the **historical pre-#213 media bytes** was completed on 2026-08-09 and is now durable remote-state evidence, not standing authorization:
 
@@ -44,7 +47,7 @@ Exact retrospective/live-state evidence is recorded in [`black-man-youtube-relea
 
 Issue #154 remains **artifact-level open** for one reason: the uploaded/rendered album MP4 predates the quality-master binding fix. Completion requires regeneration from the seven accepted exact masters under the current pipeline, then fresh timing/render/verify/package/description evidence (SHA-256 + required ffprobe/QC). Do not reuse the historical MP4 as current-policy proof and do **not** reupload the album to solve this provenance gap.
 
-The known public target `x-puy27S2qs` is an external collision guard for the stable project/channel/media identity. Until Issue #232 implements a current-main read-only adoption/reconciliation path, absence of a v2 local journal must never be interpreted as permission to create another `videos.insert` for the same media.
+The known public target `x-puy27S2qs` remains a collision guard even before local adoption. The current-main read-only command `python -m video_channel_manager.youtube_release_cli adopt-existing ...` can now represent such evidence as a `verified` stable journal entry with provider writes fixed at zero. Absence of a local adoption journal is never permission to create another `videos.insert` for the same media.
 
 No future YouTube upload, metadata edit, thumbnail change, playlist mutation, visibility change, comment mutation, deletion or replacement is authorized by this state. The successful historical rollout does not authorize replay.
 
@@ -137,7 +140,7 @@ Unknown provider outcomes remain blocking until read-only reconciliation. A time
 ## Next safe work
 
 1. For #154, regenerate/verify the final seven-master Black Man artifact only when the exact accepted master bytes are available to the executing environment; do not reupload the known public target to resolve artifact provenance.
-2. Implement Issue #232 as a separately reviewed current-main provider executor/adoption scope before any future automated YouTube release write; no canary is authorized by the issue itself.
+2. Complete Issue #232 with the concrete current-main provider mutation/resume layer on top of the read-only adoption and durable release child-state model; the issue still authorizes no live canary or provider write.
 3. Keep Lordchrist research-v2 and Svodka provider-inert unless a new explicit live execution request is created and reviewed.
 4. Treat production Telegram lock refreshes as explicit coherent supply-chain changes; routine bot maintenance must not edit that closure piecemeal.
 5. Treat the 2026-08-09 GitHub governance evidence as observed state, not permanent truth: future changes require fresh read-only verification rather than assumptions.
