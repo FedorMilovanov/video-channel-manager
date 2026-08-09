@@ -58,14 +58,29 @@ def test_dependabot_maintenance_is_atomic_and_bounded() -> None:
         "routine-minor-patch:",
         "workflow-actions:",
         "applies-to: version-updates",
+        'dependency-name: "*"',
         "version-update:semver-major",
-        "dependency-name: mypy",
+        "dependency-name: pydantic-core",
+        "dependency-name: httpx",
     ):
         assert policy in text
 
     assert text.count("groups:") == 2
     assert "routine-minor-patch:" in text and "- minor" in text and "- patch" in text
     assert "workflow-actions:" in text and "- major" in text
+    assert "dependency-name: mypy" not in text
+
+
+def test_telegram_runtime_lock_has_explicit_roots_and_atomic_contract() -> None:
+    roots = _text("requirements/telegram-publisher.in")
+    lock = _text("requirements/telegram-publisher.txt")
+
+    assert "httpx==0.28.1" in roots
+    assert "pydantic==2.13.4" in roots
+    assert "transitive line in the hash lock independently" in roots
+    assert "Root constraints live in requirements/telegram-publisher.in" in lock
+    assert "never update a transitive" in lock
+    assert "--require-hashes" in lock
 
 
 def test_windows_copilot_file_only_adds_handoff_rules() -> None:
