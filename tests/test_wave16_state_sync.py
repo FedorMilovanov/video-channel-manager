@@ -111,34 +111,17 @@ def test_v9_mp3_identity_hardening_remains_local_only() -> None:
         assert mp3[prohibited] is False
 
 
-def test_human_entrypoints_report_wave16_and_no_active_backlog() -> None:
-    texts = {
-        "current_state": (OPERATIONS / "current-state.md").read_text(encoding="utf-8"),
-        "backlog": (OPERATIONS / "automation-backlog.md").read_text(encoding="utf-8"),
-        "operations_index": (OPERATIONS / "README.md").read_text(encoding="utf-8"),
-        "agents": (ROOT / "AGENTS.md").read_text(encoding="utf-8"),
-    }
-    joined = "\n".join(texts.values())
-    required = (
-        "WAVES_0_16_COMPLETED_CI_RUNTIME_SQLITE_MP3_IDENTITY_HARDENED_OPERATIONAL_GRAPH_CLOSED_NO_PROVIDER_WRITES",
-        "audit-register-v9-2026-08-05.json",
-        "main@22ed56256df3388c23c9f785f1e02cca71fd8524",
-        "PR #138",
-        "31022560789",
-        "845 passed, 1 xfailed",
-        "464 files already formatted",
-        "147 source files",
-        "source_id_sha256_conflict",
-        "sha256_multiple_source_ids",
-        "Provider writes remain unauthorized",
-        "No operational continuation is pending",
-    )
-    for phrase in required:
-        assert phrase in joined
+def test_wave16_history_does_not_claim_current_backlog_state() -> None:
+    data = _load(V9)
+    current = (OPERATIONS / "current-state.md").read_text(encoding="utf-8")
+    agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    live = current + "\n" + agents
 
-    assert "## Active backlog\n\nNone." in texts["backlog"]
-    assert "provider_mutation_support: true" not in joined.casefold()
-    assert "VK Audio writer is supported" not in joined
+    assert data["program_state"] not in live
+    assert "main@22ed56256df3388c23c9f785f1e02cca71fd8524" not in live
+    assert "No operational continuation is pending" not in live
+    assert "local_only_read_only_intake_and_manifest" in current
+    assert "Durable same-object keys must not include timestamps" in agents
 
 
 def test_v8_remains_immutable_wave15_contract() -> None:
