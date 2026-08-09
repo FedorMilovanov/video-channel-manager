@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from video_channel_manager.editorial._project_profiles import (
+    PROJECT_YOUTUBE_OAUTH_ALIASES,
+    require_youtube_project_identity,
+)
 from video_channel_manager.editorial.content import (
     CANONICAL_SCHEMA_NAME,
     CANONICAL_SCHEMA_VERSION,
@@ -43,11 +47,13 @@ __all__ = [
     "CopyFinding",
     "CopyFix",
     "EditorialContentRecord",
+    "PROJECT_YOUTUBE_OAUTH_ALIASES",
     "autofix_youtube_description",
     "parse_content_record",
     "preview_payload",
     "preview_records",
     "renderer_for",
+    "require_youtube_project_identity",
     "validate_content_collection",
     "validate_content_record",
     "validate_youtube_description",
