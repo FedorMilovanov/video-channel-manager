@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Literal
 from zoneinfo import ZoneInfo
@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, HttpUrl, ValidationError, fie
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile
 
 SvodkaFormat = Literal["quick_fact", "myth_fact", "mini_digest", "fresh_science", "quiz", "poll"]
+SCHEDULE_OVERLAY_FILENAME = "rollout-schedule-2026-08.json"
 
 
 def _normalized_options(options: tuple[str, ...]) -> tuple[str, ...]:
@@ -207,12 +208,75 @@ class SvodkaDraftQueue(BaseModel):
         return "sha256:" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
+class SvodkaScheduleOverlay(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.svodka-schedule-overlay"]
+    schema_version: Literal[1]
+    project_key: Literal["svodka"]
+    channel_username: Literal["@deep_info_life"]
+    base_start_date: date
+    base_end_date: date
+    shift_days: int = Field(ge=1, le=31)
+    effective_start_date: date
+    effective_end_date: date
+    owning_issue: int = Field(ge=1)
+    reason: str = Field(min_length=20, max_length=1000)
+
+    @model_validator(mode="after")
+    def shift_is_exact(self) -> "SvodkaScheduleOverlay":
+        delta = timedelta(days=self.shift_days)
+        if self.effective_start_date != self.base_start_date + delta:
+            raise ValueError("Svodka schedule overlay effective_start_date differs from exact shift")
+        if self.effective_end_date != self.base_end_date + delta:
+            raise ValueError("Svodka schedule overlay effective_end_date differs from exact shift")
+        return self
+
+
+def _load_schedule_overlay(path: Path) -> SvodkaScheduleOverlay | None:
+    overlay_path = path.with_name(SCHEDULE_OVERLAY_FILENAME)
+    if not overlay_path.exists():
+        return None
+    try:
+        payload = json.loads(overlay_path.read_text(encoding="utf-8"))
+        return SvodkaScheduleOverlay.model_validate(payload)
+    except (OSError, json.JSONDecodeError, ValidationError) as exc:
+        raise ValueError(f"invalid Svodka schedule overlay {overlay_path}: {exc}") from exc
+
+
+def _apply_schedule_overlay(queue: SvodkaDraftQueue, overlay: SvodkaScheduleOverlay | None) -> SvodkaDraftQueue:
+    if overlay is None:
+        return queue
+    if overlay.project_key != queue.project_key or overlay.channel_username != queue.channel_username:
+        raise ValueError("Svodka schedule overlay identity differs from draft queue")
+    if overlay.base_start_date != queue.pilot.start_date or overlay.base_end_date != queue.pilot.end_date:
+        raise ValueError("Svodka schedule overlay base window differs from draft queue")
+
+    delta = timedelta(days=overlay.shift_days)
+    effective_pilot = queue.pilot.model_copy(
+        update={
+            "start_date": overlay.effective_start_date,
+            "end_date": overlay.effective_end_date,
+            "notes": f"{queue.pilot.notes} Effective rollout schedule shifted by {overlay.shift_days} day(s) under issue #{overlay.owning_issue}.",
+        }
+    )
+    effective_posts = tuple(
+        post.model_copy(update={"scheduled_at": post.scheduled_at + delta}) for post in queue.posts
+    )
+    return SvodkaDraftQueue.model_validate(
+        queue.model_copy(update={"pilot": effective_pilot, "posts": effective_posts}).model_dump(mode="python")
+    )
+
+
 def load_svodka_draft(path: Path, profile: TelegramChannelProfile | None = None) -> SvodkaDraftQueue:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
         queue = SvodkaDraftQueue.model_validate(payload)
     except (OSError, json.JSONDecodeError, ValidationError) as exc:
         raise ValueError(f"invalid Svodka draft queue {path}: {exc}") from exc
+
+    queue = _apply_schedule_overlay(queue, _load_schedule_overlay(path))
+
     if profile is not None:
         if profile.project_key != queue.project_key or profile.channel_username != queue.channel_username:
             raise ValueError("Svodka queue identity differs from selected Telegram channel profile")
