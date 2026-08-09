@@ -76,7 +76,10 @@ def test_public_entrypoints_state_the_current_authorization_boundary() -> None:
         "docs/operations/current-state.md",
         "сами по себе не разрешают запуск",
         "Completed-state CI `30994245235`",
-        "Активного roadmap или backlog нет",
+        "единственный активный owning issue #154",
+        "artifact-level",
+        "Исторические Waves 0–13 закрыты",
+        "Текущий repository-level backlog закрыт",
     ):
         assert statement in readme
 
@@ -85,6 +88,7 @@ def test_public_entrypoints_state_the_current_authorization_boundary() -> None:
         "197 тестов",
         "## Следом",
         "safe playlist operations",
+        "Активного roadmap или backlog нет",
     ):
         assert stale not in readme
 
