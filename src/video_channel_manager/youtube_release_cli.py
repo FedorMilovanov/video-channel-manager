@@ -68,14 +68,17 @@ def _verify_existing_journal_for_adoption(
         return
     if current.get("account_alias") != proposed.get("account_alias"):
         raise UploadPlanError("Existing stable upload journal OAuth alias conflicts with adoption evidence.")
-    if (
-        current.get("adopted_existing_target") is True
-        and current.get("remote_video_id") == proposed.get("remote_video_id")
-        and current.get("adoption_evidence_sha256") != proposed.get("adoption_evidence_sha256")
+    if current.get("adopted_existing_target") is True and current.get("remote_video_id") == proposed.get(
+        "remote_video_id"
     ):
-        raise UploadPlanError(
-            "Existing stable upload journal was adopted from different immutable evidence; refusing silent rebinding."
-        )
+        if current.get("remote_revision") != proposed.get("remote_revision"):
+            raise UploadPlanError(
+                "Existing stable upload journal conflicts with existing-target adoption: provider revision drift."
+            )
+        if current.get("adoption_evidence_sha256") != proposed.get("adoption_evidence_sha256"):
+            raise UploadPlanError(
+                "Existing stable upload journal conflicts with existing-target adoption: immutable evidence drift."
+            )
 
 
 def adopt_existing(args: argparse.Namespace) -> int:
@@ -158,7 +161,7 @@ def adopt_existing(args: argparse.Namespace) -> int:
 
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description="Guarded current-main YouTube release state operations.")
-    sub = root.add_subpar(dest="command", required=True)
+    sub = root.add_subparsers(dest="command", required=True)
     adoption = sub.add_parser("adopt-existing")
     adoption.add_argument("--evidence", required=True)
     adoption.add_argument("--data-dir", required=True)
