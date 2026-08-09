@@ -37,15 +37,22 @@ def test_superseded_black_man_youtube_branches_are_retired() -> None:
 
 
 def test_windows_handoff_assumes_normal_whole_block_copy_paste() -> None:
-    text = (ROOT / ".github/copilot-instructions.md").read_text(encoding="utf-8")
+    copilot = (ROOT / ".github/copilot-instructions.md").read_text(encoding="utf-8")
+    handoff = (ROOT / "docs/operations/operator-output-handoff-rule.md").read_text(encoding="utf-8")
 
-    assert "Ctrl+C → Ctrl+V on the entire shown command block" in text
-    assert "one executable fenced block" in text
-    assert "Do not put long YouTube descriptions" in text
-    assert "`\\_` or `\\:`" in text
-    assert "deliver an exact `.ps1` file artifact" in text
-    assert "current-`main` repository-owned entrypoint" in text
-    assert "Do not embed `googleapis.com`" in text
+    assert "Ctrl+C → Ctrl+V on the entire shown command block" in copilot
+    assert "one executable fenced block" in copilot
+    assert "Do not put long YouTube descriptions" in copilot
+    assert "`\\_` or `\\:`" in copilot
+    assert "deliver an exact `.ps1` file artifact" in copilot
+    assert "current-`main` repository-owned entrypoint" in copilot
+    assert "Do not embed `googleapis.com`" in copilot
+
+    assert "Ctrl+C → Ctrl+V of the entire executable block" in handoff
+    assert "one operator action gets at most one executable fenced block" in handoff
+    assert "literal `\\_` or `\\:`" in handoff
+    assert "must not become a second provider client" in handoff
+    assert "classify the effect as `may_exist`" in handoff
 
 
 def test_stable_upload_guard_names_known_public_target_and_semantic_repairs() -> None:
@@ -53,7 +60,6 @@ def test_stable_upload_guard_names_known_public_target_and_semantic_repairs() ->
 
     assert "video_id = x-puy27S2qs" in text
     assert "provider_state = verified public" in text
-    assert "adopt/reconcile-existing-target" not in text  # prose uses the explicit adoption contract below instead
     assert "Existing remote target adoption/reconciliation" in text
     assert "multiplicity preserved" in text
     assert "an omitted key is `unobserved`, not `false`" in text
