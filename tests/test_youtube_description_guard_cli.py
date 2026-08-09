@@ -92,6 +92,13 @@ def test_writer_identity_gate_runs_before_credentials(monkeypatch) -> None:
     assert calls == ["identity:legendary-poet:legendary-poet:UC-78ys2S3cQ3lpqgXfo-SvQ"]
 
 
+def test_unresolved_chapter_marker_is_not_publishable_copy() -> None:
+    with pytest.raises(ValueError, match="unresolved exact-timing chapter marker"):
+        guard._validate_description(
+            "Body\n\n[[CHAPTERS_FROM_EXACT_VERIFIED_TIMING]]\n\nFooter"
+        )
+
+
 def test_execute_review_only_plan_stops_before_credentials(monkeypatch, tmp_path) -> None:
     payload = _valid_plan()
     plan_path = tmp_path / "plan.json"
