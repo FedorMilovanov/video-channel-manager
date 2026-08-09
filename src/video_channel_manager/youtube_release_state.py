@@ -88,7 +88,11 @@ def validate_release_state(state: dict[str, Any]) -> None:
     children = state.get("children")
     if not isinstance(children, list) or not children:
         raise YouTubeReleaseStateError("Release state must contain ordered child operations.")
+    if len(children) < len(_FIXED_CHILDREN) + len(_TAIL_CHILDREN):
+        raise YouTubeReleaseStateError("Release state is missing required child operations.")
+
     child_ids: list[str] = []
+    child_pairs: list[tuple[str, str]] = []
     for item in children:
         if not isinstance(item, dict):
             raise YouTubeReleaseStateError("Release child must be an object.")
@@ -107,13 +111,32 @@ def validate_release_state(state: dict[str, Any]) -> None:
                 not isinstance(digest, str) or not digest.startswith("sha256:") or len(digest) != 71
             ):
                 raise YouTubeReleaseStateError(f"Release child {child_id} {digest_field} is invalid.")
+        if effect != "not_dispatched" and item.get("payload_sha256") is None:
+            raise YouTubeReleaseStateError(
+                f"Release child {child_id} has provider effect {effect} without an immutable payload digest."
+            )
         child_ids.append(child_id)
+        child_pairs.append((child_id, kind))
+
     if len(child_ids) != len(set(child_ids)):
         raise YouTubeReleaseStateError("Release child IDs must be unique.")
-    if child_ids[: len(_FIXED_CHILDREN)] != [item[0] for item in _FIXED_CHILDREN]:
-        raise YouTubeReleaseStateError("Release state fixed child order is invalid.")
-    if child_ids[-len(_TAIL_CHILDREN) :] != [item[0] for item in _TAIL_CHILDREN]:
-        raise YouTubeReleaseStateError("Release state tail child order is invalid.")
+    if child_pairs[: len(_FIXED_CHILDREN)] != list(_FIXED_CHILDREN):
+        raise YouTubeReleaseStateError("Release state fixed child identity/kind order is invalid.")
+    if child_pairs[-len(_TAIL_CHILDREN) :] != list(_TAIL_CHILDREN):
+        raise YouTubeReleaseStateError("Release state tail child identity/kind order is invalid.")
+
+    middle = children[len(_FIXED_CHILDREN) : len(children) - len(_TAIL_CHILDREN)]
+    for item in middle:
+        child_id = str(item["child_id"])
+        if item["kind"] != "playlist_membership" or not child_id.startswith("playlist:"):
+            raise YouTubeReleaseStateError(
+                "Release state middle children must be exact playlist membership operations."
+            )
+        playlist_id = child_id.removeprefix("playlist:")
+        if not playlist_id or item.get("target_id") != playlist_id:
+            raise YouTubeReleaseStateError(
+                f"Release playlist child {child_id} must bind target_id to its exact playlist ID."
+            )
 
 
 def _index(state: dict[str, Any], child_id: str) -> int:
@@ -156,7 +179,7 @@ def prepare_child(
         raise YouTubeReleaseStateError(
             f"Release child {child_id} already has a different immutable payload digest."
         )
-    if child["provider_effect"] in {"may_exist", "verified"} and current_digest is None:
+    if child["provider_effect"] != "not_dispatched" and current_digest is None:
         raise YouTubeReleaseStateError(f"Release child {child_id} cannot be prepared after provider effect exists.")
     child["payload_sha256"] = digest
     child["updated_at"] = _now(now)
@@ -191,7 +214,7 @@ def transition_child(
         raise YouTubeReleaseStateError(
             f"Invalid release transition for {child_id}: {current} -> {provider_effect}."
         )
-    if provider_effect in {"may_exist", "verified"} and child.get("payload_sha256") is None:
+    if provider_effect != "not_dispatched" and child.get("payload_sha256") is None:
         raise YouTubeReleaseStateError(
             f"Release child {child_id} must persist its immutable payload before provider effect {provider_effect}."
         )
