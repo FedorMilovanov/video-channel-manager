@@ -94,9 +94,7 @@ def test_writer_identity_gate_runs_before_credentials(monkeypatch) -> None:
 
 def test_unresolved_chapter_marker_is_not_publishable_copy() -> None:
     with pytest.raises(ValueError, match="unresolved exact-timing chapter marker"):
-        guard._validate_description(
-            "Body\n\n[[CHAPTERS_FROM_EXACT_VERIFIED_TIMING]]\n\nFooter"
-        )
+        guard._validate_description("Body\n\n[[CHAPTERS_FROM_EXACT_VERIFIED_TIMING]]\n\nFooter")
 
 
 def test_execute_review_only_plan_stops_before_credentials(monkeypatch, tmp_path) -> None:
