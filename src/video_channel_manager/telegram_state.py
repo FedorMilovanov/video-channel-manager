@@ -144,11 +144,7 @@ def _published_author_history(queue: TelegramQueue, ledger: TelegramLedger) -> l
     history: list[tuple[datetime, int, str]] = []
     for post in queue.posts:
         entry = ledger.entries[post.publication_id]
-        if (
-            entry.state == "published"
-            and entry.provider_effect == "verified"
-            and entry.published_at_utc is not None
-        ):
+        if entry.state == "published" and entry.provider_effect == "verified" and entry.published_at_utc is not None:
             history.append((entry.published_at_utc.astimezone(UTC), post.sequence, post.source.author))
     history.sort(key=lambda item: (item[0], item[1]))
     return [author for _, _, author in history]
