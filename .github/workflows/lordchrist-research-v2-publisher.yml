@@ -209,7 +209,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
+          IFS=$'\t' read -r LORDCHRIST_RESEARCH_CHAT_ID LORDCHRIST_RESEARCH_BOT_ID LORDCHRIST_RESEARCH_BOT_USERNAME <<< "$(
+            python - <<'PY'
           import os
           from pathlib import Path
           from video_channel_manager.telegram_channel_profile import load_channel_profile
@@ -217,11 +218,13 @@ jobs:
 
           profile = load_channel_profile(Path(os.environ['RUNTIME_PROFILE_PATH']))
           binding = load_target_binding(Path(os.environ['BINDING_PATH']), profile)
-          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as handle:
-              handle.write(f"LORDCHRIST_RESEARCH_CHAT_ID={binding.chat_id}\n")
-              handle.write(f"LORDCHRIST_RESEARCH_BOT_ID={binding.bot_id}\n")
-              handle.write(f"LORDCHRIST_RESEARCH_BOT_USERNAME={binding.bot_username}\n")
+          print(f"{binding.chat_id}\t{binding.bot_id}\t{binding.bot_username}")
           PY
+          )"
+          [[ -n "$LORDCHRIST_RESEARCH_CHAT_ID" && -n "$LORDCHRIST_RESEARCH_BOT_ID" && -n "$LORDCHRIST_RESEARCH_BOT_USERNAME" ]] || {
+            echo "Exact Lordchrist research target values were not materialized for same-step preflight." >&2
+            exit 3
+          }
           python -m video_channel_manager.telegram_channel_cli preflight \
             --profile "$RUNTIME_PROFILE_PATH" \
             --expected-chat-id "$LORDCHRIST_RESEARCH_CHAT_ID" \

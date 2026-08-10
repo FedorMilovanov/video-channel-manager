@@ -81,6 +81,22 @@ def test_workflow_is_canary_first_same_writer_and_bounded() -> None:
     assert "content/telegram/lordchrist/publication-ledger.json" not in workflow
 
 
+def test_preflight_materializes_exact_target_inside_same_shell_step() -> None:
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    preflight = workflow.split("      - name: Fresh read-only exact target preflight\n", 1)[1].split(
+        "      - name: Prepare exactly one strict research dispatch\n", 1
+    )[0]
+    assert "GITHUB_ENV" not in preflight
+    assert (
+        "IFS=$'\\t' read -r LORDCHRIST_RESEARCH_CHAT_ID LORDCHRIST_RESEARCH_BOT_ID "
+        "LORDCHRIST_RESEARCH_BOT_USERNAME" in preflight
+    )
+    assert 'print(f"{binding.chat_id}\\t{binding.bot_id}\\t{binding.bot_username}")' in preflight
+    assert '--expected-chat-id "$LORDCHRIST_RESEARCH_CHAT_ID"' in preflight
+    assert '--expected-bot-id "$LORDCHRIST_RESEARCH_BOT_ID"' in preflight
+    assert '--expected-bot-username "$LORDCHRIST_RESEARCH_BOT_USERNAME"' in preflight
+
+
 def test_workflow_orders_durable_intent_before_provider_and_outcome_before_state() -> None:
     workflow = WORKFLOW.read_text(encoding="utf-8")
     persist = workflow.index("Persist research intent before Telegram mutation")
