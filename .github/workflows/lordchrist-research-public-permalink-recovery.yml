@@ -1,0 +1,151 @@
+name: Lordchrist research public permalink recovery
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/lordchrist-research-public-permalink-recovery.yml
+      - src/video_channel_manager/telegram_research_public_permalink_probe.py
+      - tests/test_telegram_research_public_permalink_probe.py
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: lordchrist-research-public-permalink-recovery
+  cancel-in-progress: false
+
+jobs:
+  scan-public-permalinks:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      BASE_PROFILE_PATH: content/telegram/channels/lordchrist.json
+      QUEUE_PATH: content/telegram/lordchrist/research-queues/calvin-spurgeon-macarthur-v2.json
+      BINDING_PATH: content/telegram/channels/lordchrist-target-binding.json
+      APPROVAL_PATH: content/telegram/lordchrist/research-queues/rollout-approval-2026-08.json
+      RELEASE_PATH: .runtime/lordchrist-research-approved-release.json
+      RUNTIME_PROFILE_PATH: .runtime/lordchrist-research-live-profile.json
+      PROBE_PATH: .runtime/lordchrist-research-public-permalink-probe.json
+      PUBLICATION_ID: lordchrist-research-three-preachers-numbers
+      CHANNEL_USERNAME: lordchrist
+      FIRST_MESSAGE_ID: "1475"
+      LAST_MESSAGE_ID: "1500"
+      HISTORICAL_RUN_ID: "31390497205"
+      HISTORICAL_RUN_ATTEMPT: "1"
+      HISTORICAL_OUTCOME_ARTIFACT_SHA256: sha256:22c6b1963f642384a7b59290a6992d9e5846ad12b393e77994e445960e2cf740
+    steps:
+      - name: Check out exact main recovery runtime
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install hash-locked Telegram runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Materialize exact historical approved release
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.lordchrist_research_rollout \
+            --profile "$BASE_PROFILE_PATH" \
+            --queue "$QUEUE_PATH" \
+            --binding "$BINDING_PATH" \
+            --approval "$APPROVAL_PATH" \
+            --release-output "$RELEASE_PATH" \
+            --runtime-profile-output "$RUNTIME_PROFILE_PATH"
+
+      - name: Scan bounded public Telegram permalinks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_research_public_permalink_probe \
+            --release "$RELEASE_PATH" \
+            --publication-id "$PUBLICATION_ID" \
+            --channel-username "$CHANNEL_USERNAME" \
+            --first-message-id "$FIRST_MESSAGE_ID" \
+            --last-message-id "$LAST_MESSAGE_ID" \
+            --historical-run-id "$HISTORICAL_RUN_ID" \
+            --historical-run-attempt "$HISTORICAL_RUN_ATTEMPT" \
+            --historical-outcome-artifact-sha256 "$HISTORICAL_OUTCOME_ARTIFACT_SHA256" \
+            --output "$PROBE_PATH"
+
+      - name: Prove public recovery is provider-inert and unambiguous if found
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          payload = json.loads(Path(os.environ['PROBE_PATH']).read_text(encoding='utf-8'))
+          assert payload['telegram_bot_token_used'] is False
+          assert payload['provider_write_performed'] is False
+          assert payload['first_message_id'] == int(os.environ['FIRST_MESSAGE_ID'])
+          assert payload['last_message_id'] == int(os.environ['LAST_MESSAGE_ID'])
+          if payload['status'] == 'found':
+              assert len(payload['candidates']) == 1
+              candidate = payload['candidates'][0]
+              assert candidate['visible_text_sha256'] == payload['expected_plain_text_sha256']
+              assert candidate['message_url'] == f"https://t.me/{os.environ['CHANNEL_USERNAME']}/{candidate['message_id']}"
+          elif payload['status'] == 'not_found':
+              assert payload['candidates'] == []
+          else:
+              assert payload['status'] == 'ambiguous'
+              assert len(payload['candidates']) >= 2
+          PY
+
+      - name: Upload exact public recovery certificate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v6.0.0
+        with:
+          name: lordchrist-research-public-permalink-recovery-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .runtime/lordchrist-research-public-permalink-probe.json
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+          include-hidden-files: true
+
+      - name: Record sanitized public recovery checkpoint on issue 263
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' > .runtime/recovery-comment.md
+          import json
+          import os
+          from pathlib import Path
+
+          payload = json.loads(Path(os.environ['PROBE_PATH']).read_text(encoding='utf-8'))
+          print('## Public Telegram permalink recovery probe')
+          print()
+          print(f"- main SHA: `{os.environ['GITHUB_SHA']}`")
+          print(f"- historical run: `{payload['historical_run_id']}/{payload['historical_run_attempt']}`")
+          print(f"- publication: `{payload['publication_id']}`")
+          print(f"- scanned public range: `{payload['first_message_id']}..{payload['last_message_id']}`")
+          print(f"- status: **{payload['status']}**")
+          print(f"- expected visible-text SHA-256: `{payload['expected_plain_text_sha256']}`")
+          print(f"- Telegram bot token used: `{payload['telegram_bot_token_used']}`")
+          print(f"- provider write performed: `{payload['provider_write_performed']}`")
+          for candidate in payload['candidates']:
+              print(f"- exact public match: `{candidate['message_id']}` — {candidate['message_url']}")
+              print(f"  - visible-text SHA-256: `{candidate['visible_text_sha256']}`")
+          print()
+          print('The scanner reads only bounded public t.me pages. It does not call the Bot API, use a Telegram token, publish, edit, delete, or mutate the durable state branch. A found candidate is still reconciled in a separate reviewed provider-free state transition.')
+          PY
+          gh issue comment 263 --repo "$GITHUB_REPOSITORY" --body-file .runtime/recovery-comment.md
