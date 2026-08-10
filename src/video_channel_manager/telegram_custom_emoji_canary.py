@@ -178,9 +178,7 @@ def _record_from_error(
     error: str,
     now: datetime,
 ) -> CustomEmojiCanaryRecord:
-    state: Literal["unknown", "not_dispatched"] = (
-        "not_dispatched" if provider_effect == "not_dispatched" else "unknown"
-    )
+    state: Literal["unknown", "not_dispatched"] = "not_dispatched" if provider_effect == "not_dispatched" else "unknown"
     effective_effect: Literal["may_exist", "not_dispatched"] = (
         "not_dispatched" if provider_effect == "not_dispatched" else "may_exist"
     )
@@ -293,9 +291,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "publication_id": payload.publication_id,
                     "provider_payload_sha256": payload.provider_payload_sha256,
                     "custom_emoji_ids": [
-                        entity.custom_emoji_id
-                        for entity in payload.expected_entities
-                        if entity.type == "custom_emoji"
+                        entity.custom_emoji_id for entity in payload.expected_entities if entity.type == "custom_emoji"
                     ],
                     "provider_write_performed": False,
                 },
