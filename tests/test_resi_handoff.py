@@ -51,7 +51,7 @@ def test_rejects_non_mpd_url() -> None:
         ResiHandoffSpec("https://example.com/video.mp4", "Video")
 
 
-def test_source_identity_ignores_transient_query_and_default_title_is_unique() -> None:
+def test_source_identity_ignores_resi_transient_query_but_preserves_generic_dash_query() -> None:
     assert canonical_source_identity(REALISTIC_URL) == (
         "https://resi.media/GiHDtf/9aa9ac24-fb79-4ca9-95ef-a3253afdf63f/Manifest.mpd"
     )
@@ -60,6 +60,11 @@ def test_source_identity_ignores_transient_query_and_default_title_is_unique() -
     assert ResiHandoffSpec(REALISTIC_URL).source_fingerprint == ResiHandoffSpec(
         REALISTIC_URL.replace("?src=emb", "?token=rotated")
     ).source_fingerprint
+
+    generic_a = "https://media.example/video/Manifest.mpd?variant=a"
+    generic_b = "https://media.example/video/Manifest.mpd?variant=b"
+    assert canonical_source_identity(generic_a).endswith("Manifest.mpd?variant=a")
+    assert ResiHandoffSpec(generic_a).source_fingerprint != ResiHandoffSpec(generic_b).source_fingerprint
 
 
 def test_requires_both_trim_bounds() -> None:
@@ -96,6 +101,7 @@ def test_render_is_self_contained_provenance_bound_and_not_chat_escaped() -> Non
     assert "bestvideo+bestaudio/best" in script
     assert "--retries 10 --fragment-retries 10" in script
     assert "--retries infinite" not in script
+    assert "Verified master is reusable; skipping remote format inspection and download." in script
     assert "$TrimStart = '00:50:12'" in script
     assert "$TrimEnd = '01:49:52'" in script
     assert "$TrimDuration = '00:59:40'" in script
