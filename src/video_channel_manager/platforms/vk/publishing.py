@@ -5,10 +5,15 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Mapping
 
-from video_channel_manager.editorial._project_profiles import LEGENDARY_POET, LORD_GOD_STRENGTH, PROJECT_KEYS
+from video_channel_manager.editorial._project_profiles import (
+    LEGENDARY_POET,
+    LORD_GOD_STRENGTH,
+    MILOVI_CAKE,
+    PROJECT_KEYS,
+)
 from video_channel_manager.platforms.vk.text import VkDescriptionRender, render_vk_video_description
 
-VK_PUBLICATION_POLICY_VERSION = "vk-publication-project-profile-v3"
+VK_PUBLICATION_POLICY_VERSION = "vk-publication-project-profile-v4"
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,6 +47,12 @@ VK_PUBLICATION_PROFILES: Mapping[str, VkPublicationProfile] = MappingProxyType(
             site_url="https://thelegendarypoet.ru/",
             brand_line="🎧 The Legendary Poet — русская поэзия, музыка и литературные материалы.",
             title_suffix="⚡",
+        ),
+        MILOVI_CAKE: VkPublicationProfile(
+            project_key=MILOVI_CAKE,
+            site_url="https://milovicake.ru/",
+            brand_line="Milovi Cake — авторские торты и десерты ручной работы в Санкт-Петербурге.",
+            title_suffix="",
         ),
     }
 )
