@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -109,6 +109,7 @@ def test_missing_token_becomes_retryable_not_dispatched_outcome(monkeypatch) -> 
     profile, release, ledger, envelope = _prepared_runtime()
 
     monkeypatch.delenv(profile.bot_token_env, raising=False)
+    monkeypatch.delenv("MAX_PUBLICATION_LAG_MINUTES", raising=False)
     outcome = _send_exact_payload(profile, release, ledger, envelope)
 
     assert outcome.provider_effect == "not_dispatched"
@@ -122,9 +123,10 @@ def test_missing_token_becomes_retryable_not_dispatched_outcome(monkeypatch) -> 
     assert entry.intent_id is None
 
 
-def test_pre_provider_intent_mismatch_becomes_retryable_not_dispatched_outcome() -> None:
+def test_pre_provider_intent_mismatch_becomes_retryable_not_dispatched_outcome(monkeypatch) -> None:
     profile, release, ledger, envelope = _prepared_runtime()
     ledger.entries[envelope.publication_id].intent_id = "different-persisted-intent"
+    monkeypatch.delenv("MAX_PUBLICATION_LAG_MINUTES", raising=False)
 
     outcome = _send_exact_payload(profile, release, ledger, envelope)
 
@@ -132,6 +134,31 @@ def test_pre_provider_intent_mismatch_becomes_retryable_not_dispatched_outcome()
     assert outcome.retryable is True
     assert outcome.receipt is None
     assert "persisted ledger intent differs" in (outcome.error or "")
+
+
+def test_expired_last_mile_freshness_proves_absence_without_provider_call(monkeypatch) -> None:
+    profile, release, ledger, envelope = _prepared_runtime()
+    monkeypatch.setenv(profile.bot_token_env, "provider-token-must-not-be-used")
+    monkeypatch.setenv("MAX_PUBLICATION_LAG_MINUTES", "120")
+
+    def unexpected_provider_call(*args, **kwargs):
+        raise AssertionError("provider transport must not run after the last-mile freshness deadline")
+
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli.send_message_once", unexpected_provider_call)
+    monkeypatch.setattr("video_channel_manager.telegram_multichannel_cli.send_poll_once", unexpected_provider_call)
+    after_deadline = release.items[0].scheduled_at + timedelta(minutes=120)
+
+    outcome = _send_exact_payload(profile, release, ledger, envelope, now=after_deadline)
+
+    assert outcome.provider_effect == "confirmed_absent"
+    assert outcome.retryable is True
+    assert outcome.receipt is None
+    assert outcome.error == "publication freshness gate closed before provider mutation: publication_too_stale"
+
+    entry = apply_provider_outcome(ledger, envelope, outcome)
+    assert entry.state == "pending"
+    assert entry.provider_effect == "confirmed_absent"
+    assert entry.intent_id is None
 
 
 def test_initialize_ledger_confirmation_is_exact_release_digest(monkeypatch, tmp_path: Path) -> None:
