@@ -2,6 +2,8 @@
 
 Owner scope: live rollout for `@deep_info_life` after repository implementation issue #170 was closed. Issue #235 remains open and owns the production rollout until a verified autonomous scheduled publication is durably recorded.
 
+This document records the reviewed rollout contract and durable checkpoints. It is **not** the mutable provider-state authority. At every operation start, read the current `state/svodka-telegram` ledger and Issue #235 first.
+
 ## Exact target
 
 - channel: `@deep_info_life`
@@ -33,27 +35,31 @@ Owner scope: live rollout for `@deep_info_life` after repository implementation 
 - exact-head rollout-candidate workflow: green and reproduced candidate `sha256:98e259210f138b8ad0280dec38306dcecbbdba89899db336906994f9dfb0bc0f`;
 - provider writes performed by PR #236: 0.
 
-## Current operational state
+## Durable checkpoint and live-truth boundary
 
-- durable ledger: not initialized yet;
-- manual canary: not yet verified;
-- scheduled workflow: configured for Aug. 10–16 but cannot dispatch until the same release has a verified manual canary in durable state;
-- rollout completion: false;
-- issue #235: must remain open until the closing criterion below is met.
+The latest verified checkpoint captured during the 2026-08-10 audit is:
+
+- the exact ledger for approved release `sha256:959a42e914acedc6969550ba842a12d1a2b174c940497d8a98f4ab8e2e63cdce` is initialized;
+- all 14 approved entries are still `pending` with `provider_effect=impossible`;
+- no manual canary is durably verified and no provider receipt is recorded;
+- scheduled workflow remains canary-gated;
+- rollout completion is false and Issue #235 remains open.
+
+This checkpoint is historical evidence only. If the durable state branch has advanced, the branch wins.
 
 ## Remaining gates before rollout completion
 
-1. Current `main` must have successful `svodka-quality.yml` and `svodka-approved-release-quality.yml` proofs for the exact main SHA used by the operator workflow.
-2. Initialize the exact release ledger on `state/svodka-telegram` with approved release `sha256:959a42e914acedc6969550ba842a12d1a2b174c940497d8a98f4ab8e2e63cdce`.
-3. In the first fresh publication window, dispatch exactly one strict-next manual canary: `svodka-venus-day-longer-than-year`, scheduled 2026-08-10 10:30 Europe/Moscow, bounded by the 120-minute freshness gate.
-4. Verify and durably persist the exact provider result for that canary: `state=published`, `provider_effect=verified`, exact chat/bot identity and message receipt.
-5. Only after that verified manual canary, allow the scheduled publisher to dispatch remaining strict-next items inside freshness windows and the two-per-day verified quota.
+1. Resolve the current exact durable state and current-main quality before any provider operation.
+2. If strict-next is outside its bounded freshness window, use only the reviewed state-only expired-slot recovery semantics; the observed freshness/recovery dead zone must fail closed and must not be bypassed by a guessed skip or send.
+3. The next provider mutation, when one is again eligible, must be exactly one fresh strict-next manual canary for this approved release with durable intent-before-send and zero blind retries.
+4. Require the exact canary result to be durably `published` with `provider_effect=verified`, exact chat/bot identity and message receipt.
+5. Only after that verified same-release manual canary may the scheduled publisher dispatch remaining strict-next items inside freshness windows and the two-per-day verified quota.
 6. Record at least one autonomous scheduled publication in durable state.
-7. Only then mark rollout complete and close issue #235.
+7. Only then mark rollout complete and close Issue #235.
 
 ## Recovery paths
 
-- missed but never-dispatched publication windows may be marked skipped only by the explicit state-only `svodka-skip-expired.yml` workflow after exact-release validation;
+- missed but never-dispatched publication windows may be marked skipped only by the explicit state-only `svodka-skip-expired.yml` workflow after exact-release validation and the same bounded freshness semantics used by dispatch;
 - a persisted intent whose GitHub send step is proven `skipped` may be reconciled to `confirmed_absent` only through `svodka-reconcile-skipped-send.yml`;
 - an unresolved mutation with an archived provider outcome may be recovered provider-free through `svodka-reconcile-provider-outcome.yml` after exact run/artifact/dispatch validation;
 - ambiguous/may-exist provider effects are never blindly retried.
