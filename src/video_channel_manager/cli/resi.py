@@ -64,7 +64,9 @@ def handoff(
     console.print(f"Source fingerprint: {spec.source_fingerprint}")
     console.print(f"Media title: {spec.safe_title}")
     console.print("Provider effect: impossible (local-only script generation).")
-    console.print("The generated script keeps and hashes the full master, writes source/result receipts, and performs QC.")
+    console.print(
+        "The generated script keeps and hashes the full master, writes source/result receipts, and performs QC."
+    )
     if spec.start is not None and spec.end is not None:
         console.print(
             f"Exact trim: {spec.normalized_start} -> {spec.normalized_end} "
