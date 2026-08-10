@@ -238,17 +238,17 @@ def clips_scan(
         list[str] | None,
         typer.Option(
             "--require-remote-id",
-            help="Exact Clip remote ID that must appear in the completed scan; repeat for multiple probes",
+            help="Exact known Clip remote ID to probe in the bounded search; repeat for multiple probes",
         ),
     ] = None,
     output: Annotated[Path | None, typer.Option("--output", "-o")] = None,
 ) -> None:
-    """Export the exact read-only VK Clips surface for one canonical project."""
+    """Export a read-only VK short-filter discovery snapshot for one canonical project."""
 
     settings = get_settings()
     try:
         _, client = _components(account)
-        with console.status("Reading exact VK Clips surface..."):
+        with console.status("Reading bounded VK short-filter candidates..."):
             snapshot = build_vk_clips_audit_snapshot(
                 client,
                 project_key=project,
@@ -267,7 +267,19 @@ def clips_scan(
 
     coverage = snapshot["coverage"]
     console.print(
-        f"[green]Exported exact VK Clips snapshot -> {output}[/green]\n"
+        f"[green]Exported VK short-filter discovery snapshot -> {output}[/green]\n"
         f"Project: {snapshot['project_key']} | Community: {community} | Owner: {owner_id} | "
-        f"Clips: {coverage['clip_count']} | Provider writes: 0"
+        f"Candidates: {coverage['search_candidate_count']} | Clips detected: {coverage['clip_count']} | "
+        f"Filter noise: {coverage['filter_noise_count']} | Provider writes: 0"
+    )
+    if coverage["required_remote_ids_returned_non_clip"]:
+        console.print(
+            "[yellow]Coverage probe warning: known Clip ID(s) were returned by search but not as type=short_video.[/yellow]"
+        )
+    if coverage["required_remote_ids_missing_from_search"]:
+        console.print(
+            "[yellow]Coverage probe warning: known Clip ID(s) were absent from the bounded short-filter search.[/yellow]"
+        )
+    console.print(
+        "[yellow]This snapshot does not prove the complete native Clips surface; absence is not upload evidence.[/yellow]"
     )
