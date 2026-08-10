@@ -2,7 +2,8 @@
 
 Date: 2026-08-10
 Repository: `FedorMilovanov/video-channel-manager`
-Fetched base: `origin/main` at `8eb584e19f7ba7c8cb78f5b9121cb312ac13bd06`
+Initial fetched base: `origin/main` at `8eb584e19f7ba7c8cb78f5b9121cb312ac13bd06`
+Final reconciled base: `origin/main` at `5aa3e0aeed561bc710c847e15be24ee363f50a7d`
 Provider writes performed for this change: **0**
 
 ## Scope
@@ -47,9 +48,11 @@ A successful HTTP response alone is not publication verification.
 
 The transport marks `verified` only when all of the following hold:
 
-1. a fresh read-only `GenericTargetProof` exactly matches project, profile,
-   channel id/username/type, bot id/username, and posting permission from the
-   immutable rich target binding;
+1. the rich target embeds the complete read-only `TelegramTargetBinding`, its
+   digest is recomputed, the exact runtime `TelegramChannelProfile` matches and
+   has its provider-write gate enabled, and a fresh `GenericTargetProof`
+   exactly matches project, profile, channel id/username/type, bot id/username,
+   and posting permission;
 2. exactly one `sendRichMessage` mutation request was made;
 3. the returned `Message.chat` exactly matches the expected numeric channel,
    username, and `type=channel`;
@@ -61,9 +64,13 @@ The transport marks `verified` only when all of the following hold:
    its location, type, and returned media object, equals the expected media
    digest.
 
-The full exact comparison is intentionally conservative. Optional fields,
-media identifiers, captions, nesting, ordering, or any other returned
-structure drift produce `may_exist`, not `verified`.
+The full exact comparison is intentionally conservative. Block-specific
+required fields, nesting, list labels, table cells, map bounds, captions and
+media object identity are validated against the reviewed Bot API contract.
+Optional fields, media identifiers, ordering, or any other returned structure
+drift produce `may_exist`, not `verified`. The archived outcome also carries
+the explicit expected chat/bot identities, target-binding digest, and exact
+fresh target-proof digest instead of relying on an opaque document hash alone.
 
 The Bot API response does **not** echo:
 

@@ -13,10 +13,13 @@ from video_channel_manager.platforms.http import (
     HttpClientOwner,
     HttpOperationClass,
     HttpTransportFailure,
+    RetryPolicy,
     execute_http_request,
 )
+from video_channel_manager.telegram_channel_profile import TelegramChannelProfile
 from video_channel_manager.telegram_models import DEFAULT_API_BASE
 from video_channel_manager.telegram_multichannel_transport import GenericMessagePayload, GenericTargetProof
+from video_channel_manager.telegram_target_binding import TelegramTargetBinding
 
 RICH_MUTATION_TRANSPORT_RETRIES = 0
 DEFAULT_TARGET_PROOF_MAX_AGE = timedelta(minutes=15)
@@ -126,6 +129,117 @@ def _media_signature(value: Any) -> tuple[tuple[str, str], ...]:
     return tuple((str(record["path"]), str(record["type"])) for record in _media_records(value))
 
 
+def _textual_character_count(value: Any, *, inside_text: bool = False) -> int:
+    if isinstance(value, str):
+        return len(value) if inside_text else 0
+    if isinstance(value, list):
+        return sum(_textual_character_count(item, inside_text=inside_text) for item in value)
+    if not isinstance(value, dict):
+        return 0
+    total = 0
+    for key, child in value.items():
+        textual = key in {"text", "summary", "credit", "caption", "expression", "label"}
+        total += _textual_character_count(child, inside_text=textual)
+    return total
+
+
+def _validate_rich_limits(value: dict[str, Any]) -> None:
+    selected_text = value.get("html") if "html" in value else value.get("markdown")
+    character_count = (
+        len(selected_text) if isinstance(selected_text, str) else _textual_character_count(value.get("blocks"))
+    )
+    if character_count > 32768:
+        raise ValueError("rich message exceeds the official 32768-character limit")
+    top_level_media = value.get("media")
+    top_level_media_count = len(top_level_media) if isinstance(top_level_media, list) else 0
+    if top_level_media_count + len(_media_records(value)) > 50:
+        raise ValueError("rich message exceeds the official 50-media limit")
+
+
+def _require_int_range(value: Any, *, field_name: str, minimum: int, maximum: int) -> int:
+    parsed = _strict_int(value)
+    if parsed is None or not minimum <= parsed <= maximum:
+        raise ValueError(f"{field_name} must be an integer between {minimum} and {maximum}")
+    return parsed
+
+
+def _validate_true_only_fields(value: dict[str, Any], fields: tuple[str, ...]) -> None:
+    for field_name in fields:
+        if field_name in value and value[field_name] is not True:
+            raise ValueError(f"rich {field_name} must be omitted or exactly true")
+
+
+def _validate_caption(value: Any) -> None:
+    if not isinstance(value, dict) or "text" not in value or set(value) - {"text", "credit"}:
+        raise ValueError("rich block caption must contain text and optional credit only")
+
+
+def _validate_location(value: Any) -> None:
+    if not isinstance(value, dict):
+        raise ValueError("rich map location must be a Location object")
+    latitude = value.get("latitude")
+    longitude = value.get("longitude")
+    if isinstance(latitude, bool) or not isinstance(latitude, int | float) or not -90 <= latitude <= 90:
+        raise ValueError("rich map latitude is invalid")
+    if isinstance(longitude, bool) or not isinstance(longitude, int | float) or not -180 <= longitude <= 180:
+        raise ValueError("rich map longitude is invalid")
+
+
+def _validate_table_cells(value: Any) -> int:
+    if not isinstance(value, list) or not value:
+        raise ValueError("rich table must contain rows")
+    cell_count = 0
+    for row in value:
+        if not isinstance(row, list) or not row:
+            raise ValueError("rich table row must contain cells")
+        for cell in row:
+            if not isinstance(cell, dict):
+                raise ValueError("rich table cell must be an object")
+            if set(cell) - {"text", "is_header", "colspan", "rowspan", "align", "valign"}:
+                raise ValueError("rich table cell contains unsupported fields")
+            _validate_true_only_fields(cell, ("is_header",))
+            for span_name in ("colspan", "rowspan"):
+                if span_name in cell:
+                    parsed = _strict_int(cell[span_name])
+                    if parsed is None or parsed <= 1:
+                        raise ValueError(f"rich table {span_name} must be an integer greater than 1")
+            if cell.get("align") not in {"left", "center", "right"}:
+                raise ValueError("rich table cell align is invalid")
+            if cell.get("valign") not in {"top", "middle", "bottom"}:
+                raise ValueError("rich table cell valign is invalid")
+            cell_count += 1
+    return cell_count
+
+
+def _allowed_block_fields(block_type: str, *, outgoing: bool) -> set[str]:
+    common: dict[str, set[str]] = {
+        "paragraph": {"type", "text"},
+        "heading": {"type", "text", "size"},
+        "pre": {"type", "text", "language"},
+        "footer": {"type", "text"},
+        "divider": {"type"},
+        "mathematical_expression": {"type", "expression"},
+        "anchor": {"type", "name"},
+        "list": {"type", "items"},
+        "blockquote": {"type", "blocks", "credit"},
+        "pullquote": {"type", "text", "credit"},
+        "collage": {"type", "blocks", "caption"},
+        "slideshow": {"type", "blocks", "caption"},
+        "table": {"type", "cells", "is_bordered", "is_striped", "caption"},
+        "details": {"type", "summary", "blocks", "is_open"},
+        "map": {"type", "location", "zoom", "width", "height", "caption"},
+        "animation": {"type", "animation", "caption"},
+        "audio": {"type", "audio", "caption"},
+        "photo": {"type", "photo", "caption"},
+        "video": {"type", "video", "caption"},
+        "voice_note": {"type", "voice_note", "caption"},
+    }
+    allowed = set(common[block_type])
+    if not outgoing and block_type in {"animation", "photo", "video"}:
+        allowed.add("has_spoiler")
+    return allowed
+
+
 def _validate_block_tree(blocks: Any, *, outgoing: bool, depth: int = 1) -> int:
     if not isinstance(blocks, list) or not blocks:
         raise ValueError("rich block collection must be a non-empty list")
@@ -141,20 +255,24 @@ def _validate_block_tree(blocks: Any, *, outgoing: bool, depth: int = 1) -> int:
             if block_type == "thinking":
                 raise ValueError("thinking blocks are draft-only and cannot be used or received by sendRichMessage")
             raise ValueError("rich block type is unsupported by the reviewed Bot API contract")
+        if set(block) - _allowed_block_fields(str(block_type), outgoing=outgoing):
+            raise ValueError(f"rich {block_type} block contains unsupported fields")
         count += 1
 
-        if block_type in {"paragraph", "heading", "pre", "footer"} and "text" not in block:
+        if block_type in {"paragraph", "heading", "pre", "footer", "pullquote"} and "text" not in block:
             raise ValueError(f"rich {block_type} block has no text")
         if block_type == "heading":
-            size = _strict_int(block.get("size"))
-            if size is None or not 1 <= size <= 6:
-                raise ValueError("rich heading size must be between 1 and 6")
+            _require_int_range(block.get("size"), field_name="rich heading size", minimum=1, maximum=6)
         if block_type == "mathematical_expression" and not isinstance(block.get("expression"), str):
             raise ValueError("rich mathematical_expression block has no expression")
-        if block_type in {"blockquote", "pullquote", "collage", "slideshow", "details"}:
+        if block_type == "anchor" and (not isinstance(block.get("name"), str) or not block["name"]):
+            raise ValueError("rich anchor block has no name")
+        if block_type in {"blockquote", "collage", "slideshow", "details"}:
             count += _validate_block_tree(block.get("blocks"), outgoing=outgoing, depth=depth + 1)
         if block_type == "details" and "summary" not in block:
             raise ValueError("rich details block has no summary")
+        _validate_true_only_fields(block, ("is_bordered", "is_striped", "is_open", "has_spoiler"))
+
         if block_type == "list":
             items = block.get("items")
             if not isinstance(items, list) or not items:
@@ -162,7 +280,39 @@ def _validate_block_tree(blocks: Any, *, outgoing: bool, depth: int = 1) -> int:
             for item in items:
                 if not isinstance(item, dict):
                     raise ValueError("rich list item must be an object")
-                count += _validate_block_tree(item.get("blocks"), outgoing=outgoing, depth=depth + 1)
+                allowed_item_fields = {"blocks", "has_checkbox", "is_checked", "value", "type"}
+                if not outgoing:
+                    allowed_item_fields.add("label")
+                if set(item) - allowed_item_fields:
+                    raise ValueError("rich list item contains unsupported fields")
+                if not outgoing and not isinstance(item.get("label"), str):
+                    raise ValueError("returned rich list item has no label")
+                _validate_true_only_fields(item, ("has_checkbox", "is_checked"))
+                if "value" in item and _strict_int(item["value"]) is None:
+                    raise ValueError("rich list item value must be an integer")
+                if "type" in item and item["type"] not in {"a", "A", "i", "I", "1"}:
+                    raise ValueError("rich list item label type is invalid")
+                count += 1 + _validate_block_tree(item.get("blocks"), outgoing=outgoing, depth=depth + 1)
+
+        if block_type == "table":
+            count += len(block.get("cells", []))
+            _validate_table_cells(block.get("cells"))
+
+        if block_type == "map":
+            _validate_location(block.get("location"))
+            zoom_minimum, zoom_maximum = (0, 24) if outgoing else (13, 20)
+            _require_int_range(
+                block.get("zoom"), field_name="rich map zoom", minimum=zoom_minimum, maximum=zoom_maximum
+            )
+            width = _require_int_range(block.get("width"), field_name="rich map width", minimum=0, maximum=10000)
+            height = _require_int_range(block.get("height"), field_name="rich map height", minimum=0, maximum=10000)
+            if outgoing and (
+                width + height > 10000 or min(width, height) == 0 or max(width, height) / min(width, height) > 20
+            ):
+                raise ValueError("rich map dimensions violate the official total or aspect-ratio limit")
+
+        if "caption" in block and block_type != "table":
+            _validate_caption(block["caption"])
 
         media_field = _MEDIA_BLOCK_FIELDS.get(str(block_type))
         if media_field is not None:
@@ -262,6 +412,7 @@ def _validate_input_rich_message(value: dict[str, Any]) -> None:
 
     # Reject non-JSON values and non-finite numbers before a document digest is accepted.
     _canonical_json(value)
+    _validate_rich_limits(value)
 
 
 def _validate_expected_rich_message(value: dict[str, Any]) -> None:
@@ -274,6 +425,7 @@ def _validate_expected_rich_message(value: dict[str, Any]) -> None:
     if "is_rtl" in value and not isinstance(value["is_rtl"], bool):
         raise ValueError("expected RichMessage is_rtl must be a boolean")
     _canonical_json(value)
+    _validate_rich_limits(value)
 
 
 class TelegramRichTargetBinding(BaseModel):
@@ -287,6 +439,7 @@ class TelegramRichTargetBinding(BaseModel):
     channel_username: str = Field(pattern=r"^@[A-Za-z0-9_]{5,32}$")
     profile_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     target_binding_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    source_binding: TelegramTargetBinding
     chat_id: int = Field(lt=0)
     chat_username: str = Field(pattern=r"^[A-Za-z0-9_]{5,32}$")
     bot_id: int = Field(gt=0)
@@ -296,6 +449,29 @@ class TelegramRichTargetBinding(BaseModel):
     def usernames_agree(self) -> "TelegramRichTargetBinding":
         if self.channel_username.removeprefix("@").casefold() != self.chat_username.casefold():
             raise ValueError("rich target channel and chat usernames differ")
+        source = self.source_binding
+        if self.target_binding_sha256 != source.digest:
+            raise ValueError("rich target binding digest differs from the exact source binding")
+        expected = (
+            self.project_key,
+            self.channel_username.casefold(),
+            self.profile_sha256,
+            self.chat_id,
+            self.chat_username.casefold(),
+            self.bot_id,
+            self.bot_username.casefold(),
+        )
+        actual = (
+            source.project_key,
+            source.channel_username.casefold(),
+            source.profile_sha256,
+            source.chat_id,
+            source.chat_username.casefold(),
+            source.bot_id,
+            source.bot_username.casefold(),
+        )
+        if actual != expected or source.can_post_messages is not True or source.provider_write_performed is not False:
+            raise ValueError("rich target identity differs from the exact read-only source binding")
         return self
 
 
@@ -444,6 +620,7 @@ class HttpxTelegramRichMutationProvider(HttpClientOwner):
                 operation=HttpOperationClass.AMBIGUOUS_MUTATION,
                 method="POST",
                 resource="sendRichMessage",
+                retry_policy=RetryPolicy(max_attempts=RICH_MUTATION_TRANSPORT_RETRIES + 1),
             )
         except HttpTransportFailure as exc:
             before_request = exc.cause_type in {"ConnectTimeout", "PoolTimeout", "ConnectError"}
@@ -471,6 +648,20 @@ class TelegramRichProviderOutcome(BaseModel):
     schema_name: Literal["video-channel-manager.telegram-rich-provider-outcome"]
     schema_version: Literal[1]
     publication_id: str = Field(min_length=5, max_length=96)
+    project_key: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{1,63}$")
+    channel_username: str = Field(pattern=r"^@[A-Za-z0-9_]{5,32}$")
+    profile_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    target_binding_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    expected_chat_id: int = Field(lt=0)
+    expected_chat_username: str = Field(pattern=r"^[A-Za-z0-9_]{5,32}$")
+    expected_bot_id: int = Field(gt=0)
+    expected_bot_username: str = Field(pattern=r"^[A-Za-z0-9_]{2,64}$")
+    target_proof_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    target_proof_checked_at_utc: datetime
+    proof_chat_id: int = Field(lt=0)
+    proof_chat_username: str = Field(pattern=r"^[A-Za-z0-9_]{5,32}$")
+    proof_bot_id: int = Field(gt=0)
+    proof_bot_username: str = Field(pattern=r"^[A-Za-z0-9_]{2,64}$")
     document_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     input_rich_message_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     expected_rich_structure_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
@@ -484,6 +675,7 @@ class TelegramRichProviderOutcome(BaseModel):
     dispatch_phase: RichDispatchPhase
     http_status_code: int | None = Field(default=None, ge=100, le=599)
     bot_identity_verification: RichBotVerification
+    provider_write_gate_verified: bool
     exact_target_binding_verified: bool
     returned_chat_verified: bool
     structure_verification: RichStructureVerification
@@ -501,6 +693,17 @@ class TelegramRichProviderOutcome(BaseModel):
 
     @model_validator(mode="after")
     def validate_evidence(self) -> "TelegramRichProviderOutcome":
+        if self.channel_username.removeprefix("@").casefold() != self.expected_chat_username.casefold():
+            raise ValueError("outcome channel username differs from expected chat username")
+        if self.target_proof_checked_at_utc.tzinfo is None:
+            raise ValueError("outcome target proof timestamp must be timezone-aware")
+        if self.bot_identity_verification == "exact_preflight" and (
+            self.proof_chat_id != self.expected_chat_id
+            or self.proof_chat_username.casefold() != self.expected_chat_username.casefold()
+            or self.proof_bot_id != self.expected_bot_id
+            or self.proof_bot_username.casefold() != self.expected_bot_username.casefold()
+        ):
+            raise ValueError("exact preflight requires matching proof and expected target/bot identity")
         if self.provider_call_count < self.mutation_request_count:
             raise ValueError("mutation request count cannot exceed provider call count")
         if self.provider_effect == "impossible":
@@ -522,8 +725,12 @@ class TelegramRichProviderOutcome(BaseModel):
                 or not self.message_url
                 or self.error is not None
                 or self.bot_identity_verification != "exact_preflight"
+                or not self.provider_write_gate_verified
                 or not self.exact_target_binding_verified
                 or not self.returned_chat_verified
+                or self.observed_chat_id != self.expected_chat_id
+                or (self.observed_chat_username or "").casefold() != self.expected_chat_username.casefold()
+                or self.message_url != f"https://t.me/{self.expected_chat_username}/{self.message_id}"
                 or self.structure_verification != "exact"
                 or self.media_verification not in {"exact", "not_applicable"}
                 or self.returned_rich_structure_sha256 != self.expected_rich_structure_sha256
@@ -586,12 +793,27 @@ RichStateMutation = Callable[[ArchivedTelegramRichOutcome], None]
 
 def _base_outcome(
     document: TelegramRichMessageDocument,
+    target: GenericTargetProof,
     **updates: Any,
 ) -> TelegramRichProviderOutcome:
     values: dict[str, Any] = {
         "schema_name": "video-channel-manager.telegram-rich-provider-outcome",
         "schema_version": 1,
         "publication_id": document.publication_id,
+        "project_key": document.target.project_key,
+        "channel_username": document.target.channel_username,
+        "profile_sha256": document.target.profile_sha256,
+        "target_binding_sha256": document.target.target_binding_sha256,
+        "expected_chat_id": document.target.chat_id,
+        "expected_chat_username": document.target.chat_username,
+        "expected_bot_id": document.target.bot_id,
+        "expected_bot_username": document.target.bot_username,
+        "target_proof_sha256": _sha256(target.model_dump(mode="json")),
+        "target_proof_checked_at_utc": target.checked_at_utc,
+        "proof_chat_id": target.chat_id,
+        "proof_chat_username": target.chat_username,
+        "proof_bot_id": target.bot_id,
+        "proof_bot_username": target.bot_username,
         "document_sha256": document.document_sha256,
         "input_rich_message_sha256": document.input_rich_message_sha256,
         "expected_rich_structure_sha256": document.expected_rich_structure_sha256,
@@ -601,6 +823,7 @@ def _base_outcome(
         "mutation_request_count": 1,
         "dispatch_phase": "request_may_have_been_dispatched",
         "bot_identity_verification": "exact_preflight",
+        "provider_write_gate_verified": True,
         "exact_target_binding_verified": True,
         "returned_chat_verified": False,
         "structure_verification": "not_observed",
@@ -621,11 +844,21 @@ def _base_outcome(
 
 def _preflight_error(
     document: TelegramRichMessageDocument,
+    profile: TelegramChannelProfile,
     target: GenericTargetProof,
     *,
     now: datetime,
-) -> tuple[str | None, RichBotVerification]:
+) -> tuple[str | None, RichBotVerification, bool]:
     binding = document.target
+    profile_matches = (
+        profile.project_key == binding.project_key
+        and profile.channel_username.casefold() == binding.channel_username.casefold()
+        and profile.digest == binding.profile_sha256
+    )
+    if not profile_matches:
+        return "runtime profile differs from the exact rich target binding", "mismatch", False
+    if not profile.provider_writes_authorized:
+        return "runtime profile does not authorize Telegram provider writes", "not_checked", False
     expected = (
         binding.project_key,
         binding.channel_username.casefold(),
@@ -645,11 +878,11 @@ def _preflight_error(
         target.bot_username.casefold(),
     )
     if actual != expected or target.chat_type != "channel" or target.can_post_messages is not True:
-        return "fresh target proof differs from the exact rich target or bot binding", "mismatch"
+        return "fresh target proof differs from the exact rich target or bot binding", "mismatch", True
     age = now - target.checked_at_utc.astimezone(UTC)
     if age < -timedelta(minutes=1) or age > DEFAULT_TARGET_PROOF_MAX_AGE:
-        return "target and bot identity proof is stale or has an invalid future timestamp", "stale"
-    return None, "exact_preflight"
+        return "target and bot identity proof is stale or has an invalid future timestamp", "stale", True
+    return None, "exact_preflight", True
 
 
 def _rejection_effect(status_code: int, body: dict[str, Any]) -> RichProviderEffect:
@@ -662,12 +895,14 @@ def _rejection_effect(status_code: int, body: dict[str, Any]) -> RichProviderEff
 
 def _outcome_from_response(
     document: TelegramRichMessageDocument,
+    target: GenericTargetProof,
     response: TelegramRichProviderResponse,
 ) -> TelegramRichProviderOutcome:
     body = response.body
     if not isinstance(body, dict):
         return _base_outcome(
             document,
+            target,
             dispatch_phase="response_received",
             http_status_code=response.status_code,
             error="Telegram returned a malformed non-object response after the mutation request",
@@ -679,6 +914,7 @@ def _outcome_from_response(
             description = str(body.get("description") or f"HTTP {response.status_code}")
             return _base_outcome(
                 document,
+                target,
                 provider_effect=effect,
                 dispatch_phase="response_received",
                 http_status_code=response.status_code,
@@ -693,6 +929,7 @@ def _outcome_from_response(
             )
         return _base_outcome(
             document,
+            target,
             dispatch_phase="response_received",
             http_status_code=response.status_code,
             error="Telegram returned an untrusted HTTP error response after the mutation request",
@@ -702,6 +939,7 @@ def _outcome_from_response(
     if not isinstance(result, dict):
         return _base_outcome(
             document,
+            target,
             dispatch_phase="response_received",
             http_status_code=response.status_code,
             error="Telegram sendRichMessage result is missing or malformed",
@@ -770,32 +1008,37 @@ def _outcome_from_response(
     if not chat_verified:
         return _base_outcome(
             document,
+            target,
             **common,
             error="Telegram returned a Message for an unexpected or incomplete exact channel identity",
         )
     if observed_message_id is None:
-        return _base_outcome(document, **common, error="Telegram returned no valid positive message_id")
+        return _base_outcome(document, target, **common, error="Telegram returned no valid positive message_id")
     if structure_verification in {"missing", "malformed", "not_observed"}:
         return _base_outcome(
             document,
+            target,
             **common,
             error="Telegram did not return the complete exact rich structure required by the expected document",
         )
     if media_verification in {"missing", "mismatch"}:
         return _base_outcome(
             document,
+            target,
             **common,
             error="Telegram returned rich-message media that differs from the expected document",
         )
     if structure_verification != "exact":
         return _base_outcome(
             document,
+            target,
             **common,
             error="Telegram did not return the complete exact rich structure required by the expected document",
         )
 
     return _base_outcome(
         document,
+        target,
         **common,
         provider_effect="verified",
         message_id=observed_message_id,
@@ -815,21 +1058,24 @@ def _outcome_from_response(
 
 def _dispatch_rich_once(
     document: TelegramRichMessageDocument,
+    profile: TelegramChannelProfile,
     target: GenericTargetProof,
     provider: TelegramRichMutationProvider,
     *,
     now: datetime,
     timeout: TelegramRichRequestTimeout,
 ) -> TelegramRichProviderOutcome:
-    preflight_error, bot_verification = _preflight_error(document, target, now=now)
+    preflight_error, bot_verification, write_gate_verified = _preflight_error(document, profile, target, now=now)
     if preflight_error is not None:
         return _base_outcome(
             document,
+            target,
             provider_effect="impossible",
             provider_call_count=0,
             mutation_request_count=0,
             dispatch_phase="not_started",
             bot_identity_verification=bot_verification,
+            provider_write_gate_verified=write_gate_verified,
             exact_target_binding_verified=False,
             error=preflight_error,
             proves=(
@@ -848,6 +1094,7 @@ def _dispatch_rich_once(
         may_exist = exc.request_may_have_been_dispatched
         return _base_outcome(
             document,
+            target,
             provider_effect="may_exist" if may_exist else "not_dispatched",
             provider_call_count=1,
             mutation_request_count=1 if may_exist else 0,
@@ -871,6 +1118,7 @@ def _dispatch_rich_once(
         may_exist = exc.request_may_have_been_dispatched
         return _base_outcome(
             document,
+            target,
             provider_effect="may_exist" if may_exist else "not_dispatched",
             provider_call_count=1,
             mutation_request_count=1 if may_exist else 0,
@@ -888,6 +1136,7 @@ def _dispatch_rich_once(
     except Exception as exc:
         return _base_outcome(
             document,
+            target,
             provider_effect="may_exist",
             provider_call_count=1,
             mutation_request_count=1,
@@ -898,7 +1147,7 @@ def _dispatch_rich_once(
                 "no automatic retry or fallback mutation was attempted",
             ),
         )
-    return _outcome_from_response(document, response)
+    return _outcome_from_response(document, target, response)
 
 
 def publish_rich_once(
@@ -907,6 +1156,7 @@ def publish_rich_once(
     provider: TelegramRichMutationProvider,
     archiver: TelegramRichOutcomeArchiver,
     *,
+    profile: TelegramChannelProfile,
     state_mutation: RichStateMutation | None = None,
     now: datetime | None = None,
     timeout: TelegramRichRequestTimeout | None = None,
@@ -921,7 +1171,14 @@ def publish_rich_once(
     if effective_now.tzinfo is None:
         raise ValueError("rich provider timestamp must be timezone-aware")
     effective_timeout = timeout or TelegramRichRequestTimeout()
-    outcome = _dispatch_rich_once(document, target, provider, now=effective_now, timeout=effective_timeout)
+    outcome = _dispatch_rich_once(
+        document,
+        profile,
+        target,
+        provider,
+        now=effective_now,
+        timeout=effective_timeout,
+    )
     archive_receipt = archiver.archive(outcome.archive_bytes, outcome_sha256=outcome.outcome_sha256)
     archived = ArchivedTelegramRichOutcome(outcome=outcome, archive=archive_receipt)
     if state_mutation is not None:

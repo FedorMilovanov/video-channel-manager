@@ -8,6 +8,7 @@ from typing import Any
 import httpx
 import pytest
 
+from video_channel_manager.telegram_channel_profile import TelegramChannelProfile
 from video_channel_manager.telegram_multichannel_transport import GenericMessagePayload, GenericTargetProof
 from video_channel_manager.telegram_rich_provider import (
     RICH_MUTATION_TRANSPORT_RETRIES,
@@ -21,12 +22,29 @@ from video_channel_manager.telegram_rich_provider import (
     TelegramRichTargetBinding,
     publish_rich_once,
 )
+from video_channel_manager.telegram_target_binding import TelegramTargetBinding
 
 NOW = datetime(2026, 8, 10, 20, 0, tzinfo=UTC)
 CHAT_ID = -1003527567039
 BOT_ID = 8716602202
-PROFILE_SHA256 = "sha256:" + "1" * 64
-BINDING_SHA256 = "sha256:" + "2" * 64
+PROFILE = TelegramChannelProfile(
+    schema_name="video-channel-manager.telegram-channel-profile",
+    schema_version=1,
+    project_key="svodka",
+    channel_username="@deep_info_life",
+    channel_title="СВОДКА",
+    publication_id_prefix="svodka-",
+    timezone="Europe/Moscow",
+    daily_verified_limit=2,
+    state_branch="state/svodka-telegram",
+    concurrency_group="svodka-telegram-publisher",
+    bot_token_env="SVODKA_TELEGRAM_BOT_TOKEN",
+    target_chat_id_env="SVODKA_TELEGRAM_CHAT_ID",
+    target_bot_id_env="SVODKA_TELEGRAM_BOT_ID",
+    target_bot_username_env="SVODKA_TELEGRAM_BOT_USERNAME",
+    provider_writes_authorized=True,
+)
+PROFILE_SHA256 = PROFILE.digest
 _FALLBACK_DIGEST_INPUT = {
     "kind": "message",
     "project_key": "svodka",
@@ -89,14 +107,34 @@ class FakeArchiver:
         )
 
 
+def _source_binding() -> TelegramTargetBinding:
+    return TelegramTargetBinding(
+        schema_name="video-channel-manager.telegram-target-binding",
+        schema_version=1,
+        project_key="svodka",
+        channel_username="@deep_info_life",
+        profile_sha256=PROFILE_SHA256,
+        chat_id=CHAT_ID,
+        chat_username="deep_info_life",
+        bot_id=BOT_ID,
+        bot_username="preaching_mp3_bot",
+        can_post_messages=True,
+        discovered_at_utc=NOW,
+        discovery_method="getMe + getChat(@username) + getChat(numeric id) + getChatAdministrators",
+        provider_write_performed=False,
+    )
+
+
 def _binding() -> TelegramRichTargetBinding:
+    source_binding = _source_binding()
     return TelegramRichTargetBinding(
         schema_name="video-channel-manager.telegram-rich-target-binding",
         schema_version=1,
         project_key="svodka",
         channel_username="@deep_info_life",
         profile_sha256=PROFILE_SHA256,
-        target_binding_sha256=BINDING_SHA256,
+        target_binding_sha256=source_binding.digest,
+        source_binding=source_binding,
         chat_id=CHAT_ID,
         chat_username="deep_info_life",
         bot_id=BOT_ID,
@@ -210,6 +248,7 @@ def _publish(provider: FakeProvider, *, archiver: FakeArchiver | None = None) ->
         _target(),
         provider,
         archiver or FakeArchiver(),
+        profile=PROFILE,
         now=NOW,
     )
 
@@ -228,6 +267,7 @@ def test_success_requires_exact_chat_message_id_structure_and_media_and_archives
         _target(),
         provider,
         archiver,
+        profile=PROFILE,
         state_mutation=mutate_state,
         now=NOW,
     )
@@ -241,6 +281,13 @@ def test_success_requires_exact_chat_message_id_structure_and_media_and_archives
     assert outcome.media_verification == "exact"
     assert outcome.returned_rich_structure_sha256 == outcome.expected_rich_structure_sha256
     assert outcome.returned_media_sha256 == outcome.expected_media_sha256
+    assert outcome.target_binding_sha256 == _source_binding().digest
+    assert outcome.expected_chat_id == CHAT_ID
+    assert outcome.expected_bot_id == BOT_ID
+    assert outcome.proof_chat_id == CHAT_ID
+    assert outcome.proof_bot_id == BOT_ID
+    assert outcome.target_proof_checked_at_utc == NOW
+    assert outcome.target_proof_sha256.startswith("sha256:")
     assert outcome.automatic_retry_allowed is False
     assert events == ["archive", "state"]
     assert len(provider.calls) == 1
@@ -248,6 +295,65 @@ def test_success_requires_exact_chat_message_id_structure_and_media_and_archives
     assert provider.calls[0]["rich_message"] == _input_rich_message()
     assert isinstance(provider.calls[0]["timeout"], TelegramRichRequestTimeout)
     assert archiver.archived == [outcome.archive_bytes]
+
+
+def test_verified_outcome_model_rejects_noncanonical_message_url() -> None:
+    outcome = _publish(FakeProvider(_telegram_response())).outcome
+    tampered = outcome.model_dump(mode="json")
+    tampered["message_url"] = "https://t.me/deep_info_life/999999"
+
+    with pytest.raises(ValueError, match="verified outcome requires"):
+        type(outcome).model_validate(tampered)
+
+
+def test_valid_pullquote_uses_text_instead_of_nested_blocks() -> None:
+    document = TelegramRichMessageDocument(
+        schema_name="video-channel-manager.telegram-rich-message-document",
+        schema_version=1,
+        publication_id="svodka-rich-pullquote-contract",
+        target=_binding(),
+        input_rich_message={"blocks": [{"type": "pullquote", "text": "Точная цитата", "credit": "Автор"}]},
+        expected_returned_rich_message={"blocks": [{"type": "pullquote", "text": "Точная цитата", "credit": "Автор"}]},
+    )
+
+    assert document.expected_rich_structure_sha256.startswith("sha256:")
+
+
+def test_valid_table_caption_is_rich_text_not_block_caption() -> None:
+    table = {
+        "type": "table",
+        "cells": [[{"text": "Значение", "align": "left", "valign": "top"}]],
+        "caption": "Таблица",
+    }
+    document = TelegramRichMessageDocument(
+        schema_name="video-channel-manager.telegram-rich-message-document",
+        schema_version=1,
+        publication_id="svodka-rich-table-contract",
+        target=_binding(),
+        input_rich_message={"blocks": [table]},
+        expected_returned_rich_message={"blocks": [table]},
+    )
+
+    assert document.expected_rich_structure_sha256.startswith("sha256:")
+
+
+def test_rich_target_rejects_forged_source_binding_digest() -> None:
+    source = _source_binding()
+
+    with pytest.raises(ValueError, match="digest differs"):
+        TelegramRichTargetBinding(
+            schema_name="video-channel-manager.telegram-rich-target-binding",
+            schema_version=1,
+            project_key="svodka",
+            channel_username="@deep_info_life",
+            profile_sha256=PROFILE_SHA256,
+            target_binding_sha256="sha256:" + "f" * 64,
+            source_binding=source,
+            chat_id=CHAT_ID,
+            chat_username="deep_info_life",
+            bot_id=BOT_ID,
+            bot_username="preaching_mp3_bot",
+        )
 
 
 def test_timeout_before_request_is_not_dispatched_and_never_retried() -> None:
@@ -365,6 +471,48 @@ def test_missing_or_partial_rich_structure_is_never_verified() -> None:
     assert "complete exact rich structure" in (outcome.error or "")
 
 
+def test_returned_list_without_required_provider_label_is_malformed_not_verified() -> None:
+    input_rich = {
+        "blocks": [
+            {
+                "type": "list",
+                "items": [{"blocks": [{"type": "paragraph", "text": "Пункт"}]}],
+            }
+        ]
+    }
+    expected_rich = {
+        "blocks": [
+            {
+                "type": "list",
+                "items": [{"label": "•", "blocks": [{"type": "paragraph", "text": "Пункт"}]}],
+            }
+        ]
+    }
+    document = TelegramRichMessageDocument(
+        schema_name="video-channel-manager.telegram-rich-message-document",
+        schema_version=1,
+        publication_id="svodka-rich-list-contract",
+        target=_binding(),
+        input_rich_message=input_rich,
+        expected_returned_rich_message=expected_rich,
+    )
+    returned_without_label = input_rich
+    provider = FakeProvider(_telegram_response(rich_message=returned_without_label))
+
+    outcome = publish_rich_once(
+        document,
+        _target(),
+        provider,
+        FakeArchiver(),
+        profile=PROFILE,
+        now=NOW,
+    ).outcome
+
+    assert outcome.provider_effect == "may_exist"
+    assert outcome.structure_verification == "malformed"
+    assert outcome.message_id is None
+
+
 @pytest.mark.parametrize(
     ("status_code", "body", "effect"),
     [
@@ -388,12 +536,38 @@ def test_http_errors_are_classified_without_retry(status_code: int, body: Any, e
 def test_exact_bot_and_target_binding_failure_is_impossible_without_provider_call() -> None:
     provider = FakeProvider(_telegram_response())
 
-    archived = publish_rich_once(_document(), _target(bot_id=BOT_ID + 1), provider, FakeArchiver(), now=NOW)
+    archived = publish_rich_once(
+        _document(),
+        _target(bot_id=BOT_ID + 1),
+        provider,
+        FakeArchiver(),
+        profile=PROFILE,
+        now=NOW,
+    )
 
     assert archived.outcome.provider_effect == "impossible"
     assert archived.outcome.bot_identity_verification == "mismatch"
     assert archived.outcome.provider_call_count == 0
     assert archived.outcome.mutation_request_count == 0
+    assert provider.calls == []
+
+
+def test_disabled_runtime_profile_write_gate_is_impossible_without_provider_call() -> None:
+    provider = FakeProvider(_telegram_response())
+    disabled_profile = PROFILE.model_copy(update={"provider_writes_authorized": False})
+
+    archived = publish_rich_once(
+        _document(),
+        _target(),
+        provider,
+        FakeArchiver(),
+        profile=disabled_profile,
+        now=NOW,
+    )
+
+    assert archived.outcome.provider_effect == "impossible"
+    assert archived.outcome.provider_write_gate_verified is False
+    assert archived.outcome.provider_call_count == 0
     assert provider.calls == []
 
 
@@ -408,6 +582,7 @@ def test_archive_digest_failure_blocks_state_mutation() -> None:
             _target(),
             provider,
             archiver,
+            profile=PROFILE,
             state_mutation=lambda _: events.append("state"),
             now=NOW,
         )
