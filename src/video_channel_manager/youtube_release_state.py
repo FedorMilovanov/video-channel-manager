@@ -151,7 +151,9 @@ def validate_release_state(state: dict[str, Any]) -> None:
     for item in middle:
         child_id = str(item["child_id"])
         if item["kind"] != "playlist_membership" or not child_id.startswith("playlist:"):
-            raise YouTubeReleaseStateError("Release state middle children must be exact playlist membership operations.")
+            raise YouTubeReleaseStateError(
+                "Release state middle children must be exact playlist membership operations."
+            )
         playlist_id = child_id.removeprefix("playlist:")
         if not playlist_id or item.get("target_id") != playlist_id:
             raise YouTubeReleaseStateError(
@@ -168,13 +170,19 @@ def _index(state: dict[str, Any], child_id: str) -> int:
 
 def child_by_id(state: dict[str, Any], child_id: str) -> dict[str, Any]:
     validate_release_state(state)
-    return copy.deepcopy(state["children"][_index(state, child_id)])
+    child = state["children"][_index(state, child_id)]
+    if not isinstance(child, dict):
+        raise YouTubeReleaseStateError(f"Release child {child_id} is invalid.")
+    return copy.deepcopy(child)
 
 
 def _prerequisite_satisfied(child: dict[str, Any]) -> bool:
     if child["provider_effect"] == "verified":
         return True
-    return bool(child["kind"] == "existing_target_reconciliation" and child["provider_effect"] == "confirmed_absent")
+    return bool(
+        child["kind"] == "existing_target_reconciliation"
+        and child["provider_effect"] == "confirmed_absent"
+    )
 
 
 def _require_prerequisites(state: dict[str, Any], index: int) -> None:
@@ -203,9 +211,13 @@ def prepare_child(
     digest = canonical_sha256(payload)
     current_digest = child.get("payload_sha256")
     if current_digest not in (None, digest):
-        raise YouTubeReleaseStateError(f"Release child {child_id} already has a different immutable payload digest.")
+        raise YouTubeReleaseStateError(
+            f"Release child {child_id} already has a different immutable payload digest."
+        )
     if child["provider_effect"] == "verified":
-        raise YouTubeReleaseStateError(f"Release child {child_id} is already verified and cannot be prepared again.")
+        raise YouTubeReleaseStateError(
+            f"Release child {child_id} is already verified and cannot be prepared again."
+        )
     child["payload_sha256"] = digest
     if attempt_id is not None:
         if not attempt_id:
@@ -245,7 +257,9 @@ def transition_child(
         "verified": {"verified"},
     }[current]
     if provider_effect not in allowed:
-        raise YouTubeReleaseStateError(f"Invalid release transition for {child_id}: {current} -> {provider_effect}.")
+        raise YouTubeReleaseStateError(
+            f"Invalid release transition for {child_id}: {current} -> {provider_effect}."
+        )
     if provider_effect != "not_dispatched" and child.get("payload_sha256") is None:
         raise YouTubeReleaseStateError(
             f"Release child {child_id} must persist its immutable payload before provider effect {provider_effect}."
@@ -265,7 +279,9 @@ def transition_child(
             current_runtime = child.get("runtime", {})
             for key, value in runtime_updates.items():
                 if key in current_runtime and current_runtime[key] != value:
-                    raise YouTubeReleaseStateError(f"Verified release child {child_id} runtime field {key} is immutable.")
+                    raise YouTubeReleaseStateError(
+                        f"Verified release child {child_id} runtime field {key} is immutable."
+                    )
 
     child["provider_effect"] = provider_effect
     if remote_id is not None:
@@ -283,15 +299,20 @@ def transition_child(
 
 def next_release_child(state: dict[str, Any]) -> dict[str, Any] | None:
     validate_release_state(state)
-    for child in state["children"]:
-        if child["provider_effect"] == "may_exist":
+    for raw_child in state["children"]:
+        if not isinstance(raw_child, dict):
+            raise YouTubeReleaseStateError("Release child must be an object.")
+        if raw_child["provider_effect"] == "may_exist":
             raise YouTubeReleaseStateError(
-                f"Release is blocked by unresolved provider effect for {child['child_id']}; reconcile read-only first."
+                f"Release is blocked by unresolved provider effect for {raw_child['child_id']}; "
+                "reconcile read-only first."
             )
-    for child in state["children"]:
-        if _prerequisite_satisfied(child):
+    for raw_child in state["children"]:
+        if not isinstance(raw_child, dict):
+            raise YouTubeReleaseStateError("Release child must be an object.")
+        if _prerequisite_satisfied(raw_child):
             continue
-        return copy.deepcopy(child)
+        return copy.deepcopy(raw_child)
     return None
 
 
@@ -320,7 +341,11 @@ def mark_existing_target_adopted(
     evidence: object,
     now: str | None = None,
 ) -> dict[str, Any]:
-    existing_payload = {"video_id": video_id, "remote_revision": remote_revision, "mode": "read_only_adoption"}
+    existing_payload = {
+        "video_id": video_id,
+        "remote_revision": remote_revision,
+        "mode": "read_only_adoption",
+    }
     updated = prepare_child(state, child_id="existing-target", payload=existing_payload, now=now)
     updated = transition_child(
         updated,
