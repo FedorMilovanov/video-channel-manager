@@ -1,4 +1,5 @@
 from video_channel_manager.platforms.vk.client import VkApiClient, VkApiError
+from video_channel_manager.platforms.vk.clips_audit import VK_CLIPS_AUDIT_SCHEMA, build_vk_clips_audit_snapshot
 from video_channel_manager.platforms.vk.lock import local_vk_write_lock
 from video_channel_manager.platforms.vk.models import (
     VkAccessToken,
@@ -69,6 +70,7 @@ __all__ = [
     "VKCommentRenderer",
     "VKPostRenderer",
     "VKVideoDescriptionRenderer",
+    "VK_CLIPS_AUDIT_SCHEMA",
     "VK_POSTPONED_TEXT_EDIT_PLAN_SCHEMA",
     "VK_POSTPONED_TEXT_EDIT_PLAN_VERSION",
     "VK_POSTPONED_TEXT_EDIT_REQUEST_SCHEMA",
@@ -97,6 +99,7 @@ __all__ = [
     "VkVideoTextWriter",
     "VkVideoWriter",
     "VkWriteError",
+    "build_vk_clips_audit_snapshot",
     "build_vk_postponed_text_edit_plan",
     "calculate_vk_postponed_text_plan_sha256",
     "canonical_vk_text",
