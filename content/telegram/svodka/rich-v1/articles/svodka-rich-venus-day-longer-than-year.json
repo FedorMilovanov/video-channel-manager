@@ -1,0 +1,179 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-article",
+  "schema_version": 1,
+  "project_key": "svodka",
+  "channel_username": "@deep_info_life",
+  "channel_title": "СВОДКА",
+  "article_id": "svodka-rich-venus-day-longer-than-year",
+  "revision": "rich-v1",
+  "status": "editorial_draft_review_required",
+  "provider_writes_authorized": false,
+  "premium_emoji_dependency": false,
+  "predecessor": {
+    "publication_id": "svodka-venus-day-longer-than-year",
+    "source_file": "content/telegram/svodka/draft-14-posts-2026-08.json",
+    "source_file_sha256": "8591f1055a2b8edac432eb2eb08c57253b307d00a7fc1f4c732ac01e48b8107e",
+    "release_id": "svodka-pilot-2026-08",
+    "source_format": "quick_fact"
+  },
+  "title": "На Венере день длиннее года",
+  "lead": "Заголовок звучит как парадокс, а ведёт себя как задача на внимательность. У Венеры слова «день» и «год» измеряют разное — и стоит договориться, что именно мы считаем.",
+  "icons_used": [
+    "🪐",
+    "📐",
+    "😎"
+  ],
+  "sections": [
+    {
+      "section_id": "chto-schitaem",
+      "heading": "Что именно мы считаем",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "Один оборот Венеры вокруг своей оси занимает примерно <b>243 земных суток</b>. Один оборот вокруг Солнца — около <b>225 суток</b>. Положи оба числа на одну линейку — и «день» действительно окажется длиннее «года».",
+          "footnotes": [
+            1
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "Но цифра 243 описывает <i>сидерические сутки</i>: полный оборот планеты относительно звёзд, без поправки на то, куда при этом движется Солнце.",
+          "footnotes": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "solnechnye-sutki",
+      "heading": "А если считать по Солнцу",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "Для человека естественнее другой счёт: от положения Солнца в небе до следующего такого же. Такие <i>солнечные сутки</i> на Венере длятся около <b>117 земных суток</b> — пригодная для жизни аналогия, но вдвое короче, чем в заголовке.",
+          "footnotes": [
+            2
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "Разница между двумя счётами не трюк. Планета медленно вращается и одновременно летит по орбите, поэтому «сутки по звёздам» и «сутки по Солнцу» расходятся — на Земле они тоже не совпадают, просто там разница составляет минуты, а не месяцы.",
+          "footnotes": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "obratnoe-vrashchenie",
+      "heading": "Вращение наоборот",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "У Венеры вращение <i>ретроградное</i>: против направления, привычного нам по Земле. Будь на её поверхности небо прозрачным, Солнце поднималось бы на западе и опускалось на востоке.",
+          "footnotes": [
+            1
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "Реальному наблюдателю это зрелище недоступно: над Венерой стоит сплошной облачный покров. Так что красивая картинка заката наоборот пока остаётся строгим следствием кинематики, а не фотографией.",
+          "footnotes": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "itog",
+      "heading": "Короткий итог",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "Формулировка «день длиннее года» верна, если под днём понимать сидерические сутки: <b>243</b> против <b>225</b>. По Солнцу выходит короче — <b>117</b>. Парадокс не в астрономии, а в том, что бытовое слово «день» мы используем сразу в двух смыслах.",
+          "footnotes": [
+            1,
+            2
+          ]
+        }
+      ]
+    }
+  ],
+  "quotes": [],
+  "media_slots": [
+    {
+      "slot_id": "media-01",
+      "placement": {
+        "after": "lead",
+        "before": "chto-schitaem"
+      },
+      "depicts": "Венера в естественных или почти естественных тонах — шар в плотной облачной атмосфере, без художественных фантазий.",
+      "purpose": "Задать масштаб темы и сразу показать: планета настоящая, а обещанный закат с запада зримо недоступен.",
+      "preferred_source_type": "archival frame of a mission (Venus Express / Mariner 10 imagery подборка на официальной странице NASA)",
+      "copyright_provenance": "NASA imagery is normally public domain with a requested credit line; the exact per-image credit must be read on the page and preserved in the caption. No third-party redraws of unclear rights.",
+      "caption": "Венера в облаках. Фото: NASA (точную атрибуцию см. на странице изображения)."
+    },
+    {
+      "slot_id": "media-02",
+      "placement": {
+        "after": "itog"
+      },
+      "depicts": "Редакционная диаграмма: ось Венеры и орбита, три отрезка рядом — «сидерические сутки ≈ 243», «год ≈ 225», «солнечные сутки ≈ 117».",
+      "purpose": "Три разных «дня» на одной картинке усваиваются быстрее, чем три абзаца текста; диаграмма фиксирует, что факт состоит из измерений, а не из парадокса.",
+      "preferred_source_type": "original editorial diagram drawn for this revision",
+      "copyright_provenance": "Original work of the editorial team; after acceptance, add the asset with authorship and licence committed to the repository notice. Facts (period values, terminology) are not copyrightable.",
+      "caption": "Три меры одного дня: сидерические сутки, солнечные сутки и год Венеры."
+    }
+  ],
+  "visual_plan": {
+    "rationale": "Парадокс «день длиннее года» измеряется тремя числами. Один аккуратный кадр — сейт и сравнение трёх длин в одном масштабе — понятнее, чем серия снимков.",
+    "panels": [
+      {
+        "order": 1,
+        "type": "diagram",
+        "content": "Time-axis: 117 / 225 / 243 земных суток, подписи словами из текста, нейтральная типографика"
+      }
+    ]
+  },
+  "footnotes": [
+    {
+      "n": 1,
+      "source_id": "src-nasa-venus-facts",
+      "label": "NASA Science — Venus: Facts",
+      "url": "https://science.nasa.gov/venus/venus-facts/"
+    },
+    {
+      "n": 2,
+      "source_id": "src-nasa-venus-solar-day",
+      "label": "NASA Science — Venus solar day",
+      "url": "https://science.nasa.gov/earth/climate-change/nasa-climate-modeling-suggests-venus-may-have-been-habitable/"
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "src-nasa-venus-facts",
+      "label": "NASA Science — Venus: Facts",
+      "url": "https://science.nasa.gov/venus/venus-facts/",
+      "verified_on": "2026-08-08",
+      "evidence": "NASA gives rotation about 243 Earth days, orbital period about 225 days, and retrograde rotation."
+    },
+    {
+      "source_id": "src-nasa-venus-solar-day",
+      "label": "NASA Science — Venus solar day",
+      "url": "https://science.nasa.gov/earth/climate-change/nasa-climate-modeling-suggests-venus-may-have-been-habitable/",
+      "verified_on": "2026-08-08",
+      "evidence": "NASA explicitly distinguishes a 117-Earth-day solar day from the 243-Earth-day sidereal day on Venus."
+    }
+  ],
+  "footer": {
+    "tagline": "Сводка — сводим факты, а не мнения 😎",
+    "hashtags": [
+      "#Сводка",
+      "#Космос",
+      "#Венера",
+      "#NASA",
+      "#Факты"
+    ]
+  },
+  "editorial_notes": "Micro-post sequence 1 rewritten as a compact explainer: the two kinds of 'day' are separated earlier, the all-caps headline and emoji string are out, the sensational framing is replaced by a measurement framing. Claims limited to the two NASA sources carried over unchanged from the frozen release."
+}
