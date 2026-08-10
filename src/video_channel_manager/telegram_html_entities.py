@@ -3,7 +3,7 @@ from __future__ import annotations
 from html.parser import HTMLParser
 from typing import Any, Literal, cast
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
 
 GenericMessageEntityType = Literal["bold", "italic", "text_link", "custom_emoji"]
 
@@ -32,6 +32,18 @@ class GenericMessageEntity(BaseModel):
         elif self.url is not None or self.custom_emoji_id is not None:
             raise ValueError("formatting entities must not contain URL or custom emoji metadata")
         return self
+
+    @model_serializer(mode="plain")
+    def serialize_entity(self) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "type": self.type,
+            "offset": self.offset,
+            "length": self.length,
+            "url": self.url,
+        }
+        if self.custom_emoji_id is not None:
+            payload["custom_emoji_id"] = self.custom_emoji_id
+        return payload
 
 
 class _TelegramHtmlEntityParser(HTMLParser):
