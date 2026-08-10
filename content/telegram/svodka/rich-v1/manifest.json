@@ -9,7 +9,8 @@
     "release_id": "svodka-pilot-2026-08",
     "source_file": "content/telegram/svodka/draft-14-posts-2026-08.json",
     "source_file_sha256": "8591f1055a2b8edac432eb2eb08c57253b307d00a7fc1f4c732ac01e48b8107e",
-    "note": "Historical frozen release. Read-only input to this revision; it is not modified, superseded or invalidated by rich-v1. Rollout schedule overlay (shift +1 day, effective 2026-08-10..2026-08-16) remains authoritative for the pilot micro-posts."
+    "note": "Historical frozen release. Read-only input to this revision; it is not modified, superseded or invalidated by rich-v1. Rollout schedule overlay (shift +1 day, effective 2026-08-10..2026-08-16) remains authoritative for the pilot micro-posts.",
+    "scheduled_at_basis": "old_scheduled_at values in mappings are the EFFECTIVE dates — draft-14-posts-2026-08.json base schedule shifted +1 day by content/telegram/svodka/rollout-schedule-2026-08.json (Issue #235), with the eclipse item ahead of the octopus item. The frozen queue file itself stores the pre-shift dates; the overlay is authoritative for the pilot and is referenced here, not modified."
   },
   "target": {
     "revision_dir": "content/telegram/svodka/rich-v1/",
@@ -198,5 +199,21 @@
       ],
       "notes": "Author named with affiliation; verbatim abstract claim quoted in editorial translation after source re-read on 2026-08-10."
     }
-  ]
+  ],
+  "second_pass_review": {
+    "date": "2026-08-10",
+    "scope": "self-review of the rich-v1 revision after the first commit",
+    "fixes": [
+      "moon: reflector fleet credited to Apollo only — corrected to Apollo 11/14/15 plus Lunokhod 1/2 after re-reading the NASA page; GR/interior sentence aligned to the NASA wording (gravity, fluid core); Mazarico quote added verbatim",
+      "wombat: removed an unsourced marking-behaviour claim (not in the RSC abstract) and a garbled sentence; added two-fold/four-fold tissue figures and named the author team from the RSC citation",
+      "tardigrades: mission attribution corrected to the ESA framing (Foton-M3 as ESA orbital mission, September 2007); Jönsson quote added verbatim",
+      "goldfish: unsourced negative claim about fish–owner recognition narrowed to the cited studies",
+      "crows: unverified statement about permits/ethics approval replaced with a source-safe description of the fieldwork",
+      "octopus: two popular-science glosses not present in the Smithsonian pages replaced with strictly sourced wording",
+      "sharks: unsourced anatomical enumeration removed",
+      "banana quiz: unsourced strawberry morphology (receptacle) removed",
+      "lightning quiz: exact lava temperature range softened to an order-of-magnitude figure; NOAA quote moved into the section block list for JSON/MD structural sync",
+      "markdown companions: variation-selector (VS16) emoji forms normalized to match the canonical icons_used sets"
+    ]
+  }
 }

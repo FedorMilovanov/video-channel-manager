@@ -39,6 +39,9 @@ renderer exists for it in this repository yet, and none is added here.
   - `html` uses only `<b>` and `<i>` inline semantics (bold = verified key
     fact or quantity; italic = term, definition, Latin name, soft emphasis).
 - `quotes` — index of quotation blocks with their attribution (may be `[]`).
+  Every entry here must also exist as a `{ type: "quote" }` block inside the
+  referenced section, so the JSON record and the markdown companion stay
+  structurally identical.
 - `media_slots` — ordered list of acquisition plans, **not** assets. Fields:
   - `slot_id`, `placement` (`after` / `before` section ids),
   - `depicts` — what must be shown,

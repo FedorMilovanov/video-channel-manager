@@ -37,7 +37,7 @@
         },
         {
           "type": "paragraph",
-          "html": "Много лет в ход шли версии от «выпуклого отверстия» до «кубики нужны как строительный материал». Первое неверно анатомически, второе — не объяснение, а наблюдение за привычкой метить следы на видных местах.",
+          "html": "Много лет в ход шли версии от «квадратного отверстия» до «кубики нужны как строительный материал». Первая прямо противоречит данным работы: форму задаёт кишечник, а не выход. Вторая — не объяснение механики, а догадка о применении.",
           "footnotes": [
             1
           ]
@@ -57,7 +57,7 @@
         },
         {
           "type": "paragraph",
-          "html": "Стенка кишечника там неоднородна: участки отличаются по толщине и жёсткости. Сокращения стенки давят на содержимое неравномерно — мягче там, где ткань гибче, жёстче там, где она плотнее. Так возникают плоские грани и углы.",
+          "html": "Стенка кишечника там неоднородна: по данным работы, отдельные её участки вдвое толще и вчетверо жёстче соседних. Сокращения стенки давят на содержимое неравномерно — мягче там, где ткань гибче, жёстче там, где она плотнее. Так возникают плоские грани и углы.",
           "footnotes": [
             1
           ]
@@ -77,14 +77,21 @@
       "blocks": [
         {
           "type": "paragraph",
-          "html": "Кубическая форма удобна для биолога-наблюдателя: такие метки не скатываются с камней и ветвей, где вомбаты предпочитают их оставлять. Это правдоподобное функциональное следствие, а не доказанная причина; исследование о метках механики умно отделяет.",
+          "html": "Одно следствие формы видно и без специальной работы: кубик не катится, в отличие от шарика, — такая метка остаётся там, где её оставили.",
           "footnotes": [
             1
           ]
         },
         {
           "type": "paragraph",
-          "html": "Здесь полезно различие уровней: <b>как</b> делается форма — известный механизм; <b>почему</b> она сохранилась у вида — вопрос для поведенческой экологии, и не всякий удобный эффект является целью эволюции."
+          "html": "Но превращать удобство в объяснение нельзя: полезный эффект не доказывает, что признак возник ради него. Исследование отвечает на вопрос <b>как</b> делается форма; вопрос <b>почему</b> она сохранилась у вида остаётся открытым."
+        },
+        {
+          "type": "paragraph",
+          "html": "У статьи есть лица: первые авторы работы — <b>Патриция Янг</b> и <b>Александр Ли</b> из Технологического института Джорджии; в команде также биологи Университета Тасмании и специалисты природоохранного общества «Таронга». За коротким красивым фактом стоит обычная научная вёрстка: препарирование, гистология, измерение жёсткости тканей, модель.",
+          "footnotes": [
+            1
+          ]
         }
       ]
     }
@@ -129,7 +136,8 @@
       "label": "Soft Matter, 2021",
       "url": "https://pubs.rsc.org/en/content/articlelanding/2021/sm/d0sm01230k",
       "verified_on": "2026-08-08",
-      "evidence": "Study reports cubes form within last 17% of the intestine and links corner formation to regions of differing thickness/stiffness and contractions."
+      "evidence": "Cubes form within roughly the last 17% of the intestine; regions of the intestinal wall differ two-fold in thickness and four-fold in stiffness; corners arise from uneven contractions. Re-read 2026-08-10: authors and affiliations verified from the RSC citation block (co-first authors Patricia J. Yang and Alexander B. Lee, Georgia Tech; University of Tasmania; Taronga Conservation Society).",
+      "reverified_on": "2026-08-10"
     }
   ],
   "footer": {
@@ -142,5 +150,5 @@
       "#Факты"
     ]
   },
-  "editorial_notes": "Post keeps its cup of humour but the article body is mechanics-first; a careful distinction between mechanism (known) and function (plausible, not settled) is added to avoid overstating the single study."
+  "editorial_notes": "Post keeps its humour but the article body is mechanics-first; mechanism/function distinction added. Second pass 2026-08-10: the unsourced marking-behaviour claim removed (the RSC abstract does not support it) and replaced with a source-safe geometric remark; thickness/stiffness figures completed from the abstract; team credited by name."
 }

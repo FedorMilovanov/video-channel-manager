@@ -17,7 +17,7 @@
     "source_format": "quick_fact"
   },
   "title": "Луна каждый год становится чуть дальше",
-  "lead": "Лучшая проверка расстояния до Луны — не телескоп, а отражённый свет. На равнине Спокойствия и ещё в нескольких местах лежат зеркала, оставленные астронавтами «Аполлонов». Каждый год они показывают одно и то же: Луна отодвигается примерно на 3,8 сантиметра.",
+  "lead": "Лучшая проверка расстояния до Луны — не телескоп, а отражённый свет. Со времён «Аполлонов» и «Луноходов» на Луне остались уголковые отражатели, и они показывают одно и то же: спутник отодвигается примерно на 3,8 сантиметра в год.",
   "icons_used": [
     "🌕",
     "🌀",
@@ -30,7 +30,7 @@
       "blocks": [
         {
           "type": "paragraph",
-          "html": "Пробником служат <i>ретрорефлекторы</i> — уголковые отражатели, возвращающие луч строго туда, откуда он пришёл. Их установили экипажи программы «Аполлон». С земных станций в эти панели стреляют лазерным импульсом и засекают время возврата света — отсюда расстояние до сантиметров.",
+          "html": "Пробником служат <i>ретрорефлекторы</i> — уголковые отражатели, возвращающие луч строго туда, откуда он пришёл. На Луне таких панелей пять: три доставили экипажи «Аполлон-11», «Аполлон-14» и «Аполлон-15», ещё два отражателя привезли советские аппараты «Луноход-1» и «Луноход-2». С земных станций в эти панели посылают лазерный импульс и засекают время возврата света — NASA определяет по этому времени расстояние с точностью до единиц миллиметров.",
           "footnotes": [
             1
           ]
@@ -76,8 +76,17 @@
           ]
         },
         {
+          "type": "quote",
+          "html": "«Лазерная радиолокация Луны — это долгая игра».",
+          "attribution": "Эрван Мазарико, планетолог из Центра космических полётов имени Годдарда (NASA)",
+          "note": "перевод редакции с английского",
+          "footnotes": [
+            1
+          ]
+        },
+        {
           "type": "paragraph",
-          "html": "Значение числа не в быте, а в точности метода: одна и та же приборная техника позволяет проверять общую теорию относительности и уточнять внутреннее строение Луны по тому, как она ведёт себя в тяготении Земли.",
+          "html": "Значение числа не в быте, а в точности метода. Та же техника ведёт дальше: десятилетия одной серии измерений уточняют представление о гравитации, а по едва заметным покачиваниям Луны в тяготении Земли учёные поняли, что у спутника жидкое ядро.",
           "footnotes": [
             1
           ]
@@ -85,7 +94,15 @@
       ]
     }
   ],
-  "quotes": [],
+  "quotes": [
+    {
+      "section_id": "chto-ne-znachit",
+      "html": "«Лазерная радиолокация Луны — это долгая игра».",
+      "attribution": "Эрван Мазарико, планетолог из Центра космических полётов имени Годдарда (NASA)",
+      "note": "перевод редакции с английского (Laser-ranging science is a long game)",
+      "verified_at_source": "https://www.nasa.gov/missions/laser-beams-reflected-between-earth-and-moon-boost-science/"
+    }
+  ],
   "media_slots": [
     {
       "slot_id": "media-01",
@@ -125,7 +142,8 @@
       "label": "NASA — Lunar Laser Ranging",
       "url": "https://www.nasa.gov/missions/laser-beams-reflected-between-earth-and-moon-boost-science/",
       "verified_on": "2026-08-08",
-      "evidence": "NASA states Earth and Moon drift apart about 1.5 inches / 3.8 cm per year, measured with lunar retroreflectors."
+      "evidence": "NASA states Earth and Moon drift apart about 1.5 inches / 3.8 cm per year, measured with lunar retroreflectors. Re-read 2026-08-10: five panels in total — Apollo 11/14/15 and Lunokhod 1/2; long series refine our understanding of gravity and revealed the Moon's fluid core via wobble monitoring; Mazarico quote verified verbatim; station-to-reflector distance precision quoted as less than a few millimetres.",
+      "reverified_on": "2026-08-10"
     }
   ],
   "footer": {
@@ -138,5 +156,5 @@
       "#Физика"
     ]
   },
-  "editorial_notes": "The draft's three-part logic (number → instrument → cause) is preserved, with a stronger emphasis on measurement as the grounding of knowledge and on what the figure does not imply. All claims stay within the single NASA source."
+  "editorial_notes": "The draft's three-part logic (number, instrument, cause) is preserved, with a stronger emphasis on measurement and on what the figure does not imply. Second pass 2026-08-10: reflector fleet attribution corrected to include the two Lunokhod panels (first draft credited Apollo only); the method-value sentence brought closer to NASA wording (gravity and fluid core); Mazarico quote added after verbatim verification."
 }

@@ -31,7 +31,7 @@
       "blocks": [
         {
           "type": "paragraph",
-          "html": "Эксперимент ESA под названием TARDIS выполнялся на российском спутнике «Фотон-М3». Около <b>3000 тихоходок</b> провели на орбите <b>12 дней</b> — в вакууме и под космическим излучением. После возвращения часть животных выжила.",
+          "html": "Эксперимент TARDIS («Tardigrades in space») придумали шведские и немецкие исследователи, а провели его на орбитальной миссии ESA «Фотон-М3». Около <b>3000 тихоходок</b> провели на орбите <b>12 дней</b> в сентябре 2007 года — открытые вакууму и космическому излучению. После возвращения часть животных выжила.",
           "footnotes": [
             1
           ]
@@ -39,6 +39,15 @@
         {
           "type": "paragraph",
           "html": "Это впечатляющий результат, но он не означает, что тихоходки «живут в космосе как дома». Речь о выживании при экстремальном режиме, а не о нормальной жизни за пределами атмосферы.",
+          "footnotes": [
+            1
+          ]
+        },
+        {
+          "type": "quote",
+          "html": "«Наш главный вывод: космический вакуум с его предельным обезвоживанием и излучением оказался тихоходкам по силам».",
+          "attribution": "Ингемар Йонссон, руководитель эксперимента TARDIS (Университет Кристианстада, Швеция)",
+          "note": "перевод редакции с английского",
           "footnotes": [
             1
           ]
@@ -86,7 +95,15 @@
       ]
     }
   ],
-  "quotes": [],
+  "quotes": [
+    {
+      "section_id": "eksperiment",
+      "html": "«Наш главный вывод: космический вакуум с его предельным обезвоживанием и излучением оказался тихоходкам по силам».",
+      "attribution": "Ингемар Йонссон, руководитель эксперимента TARDIS (Университет Кристианстада, Швеция)",
+      "note": "перевод редакции с английского (Our principle finding is that the space vacuum, which entails extreme dehydration and cosmic radiation, were not a problem for water bears)",
+      "verified_at_source": "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Research/Tiny_animals_survive_exposure_to_space"
+    }
+  ],
   "media_slots": [
     {
       "slot_id": "media-01",
@@ -143,7 +160,8 @@
       "label": "ESA — Tiny animals survive exposure to space",
       "url": "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Research/Tiny_animals_survive_exposure_to_space",
       "verified_on": "2026-08-08",
-      "evidence": "ESA reports roughly 3000 tardigrades were exposed during Foton-M3 for 12 days and survived vacuum/space conditions."
+      "evidence": "ESA reports roughly 3000 tardigrades exposed during Foton-M3 for 12 days and survived vacuum/space conditions. Re-read 2026-08-10: September 2007 timing, Swedish-German TARDIS team and the Jönsson quote verified verbatim; Foton-M3 flown as an ESA orbital mission.",
+      "reverified_on": "2026-08-10"
     },
     {
       "source_id": "src-esa-hreda-tardis",
@@ -163,5 +181,5 @@
       "#Биология"
     ]
   },
-  "editorial_notes": "The famous fact is retold with its limits intact: survival in anhydrobiosis, not life in space. The 2026 dataset republication is given its own section because that is the genuinely new information in the item."
+  "editorial_notes": "The famous fact is retold with its limits intact: survival in anhydrobiosis, not life in space. The 2026 dataset release gets its own section. Second pass 2026-08-10: mission attribution corrected to the ESA framing (Foton-M3 as ESA orbital mission, Swedish-German TARDIS team), the exact September-2007 dating restored, and the project leader's quote added after verbatim verification."
 }

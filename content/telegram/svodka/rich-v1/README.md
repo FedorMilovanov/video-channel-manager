@@ -57,6 +57,15 @@ Each micro-post is re-worked into a long-form rich article with:
 
 ## Editorial line applied
 
+Second-pass self-review (2026-08-10, same day, after the initial commit):
+three more sources were re-read for verbatim checks — NASA lunar laser ranging
+(reflector fleet attribution corrected: Apollo 11/14/15 **and** Lunokhod 1/2;
+gravity/fluid-core wording aligned to NASA), RSC wombat abstract (unsourced
+marking-behaviour claim removed, author team credited), ESA tardigrades page
+(mission framing and September-2007 dating confirmed, Jönsson quote added
+verbatim). The full fix list lives in `manifest.json` under
+`second_pass_review`.
+
 - Careful literary Russian without chancery: concrete nouns, short measured
   sentences, no bureaucratic constructions.
 - No cheap "coolness": no clickbait caps, no feigned shock, no ranking of
