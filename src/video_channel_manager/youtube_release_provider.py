@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-import json
+import random
 import re
 import time
 from collections.abc import Callable, Iterable
@@ -52,11 +52,6 @@ def _json_digest(payload: object) -> str:
     return canonical_sha256(payload)
 
 
-def _dict_field(payload: dict[str, Any], key: str) -> dict[str, Any]:
-    value = payload.get(key)
-    return value if isinstance(value, dict) else {}
-
-
 def _dict_items(payload: dict[str, Any], key: str = "items") -> list[dict[str, Any]]:
     value = payload.get(key)
     if not isinstance(value, list):
@@ -71,7 +66,9 @@ def _session_url_sha256(url: str) -> str:
 def _validate_session_url(url: str) -> str:
     parsed = urlparse(url)
     if parsed.scheme != "https" or parsed.hostname not in _ALLOWED_SESSION_HOSTS:
-        raise YouTubeReleaseProviderError("Stored resumable upload session URL is outside the allowed Google API host set.")
+        raise YouTubeReleaseProviderError(
+            "Stored resumable upload session URL is outside the allowed Google API host set."
+        )
     if "/upload/youtube/v3/videos" not in parsed.path:
         raise YouTubeReleaseProviderError("Stored resumable upload session URL has an unexpected path.")
     return url
@@ -114,7 +111,7 @@ class YouTubeReleaseProvider(HttpClientOwner):
         retry_policy: RetryPolicy | None = None,
         request_limiter: RequestRateLimiter | None = None,
         sleep: Callable[[float], None] = time.sleep,
-        jitter: Callable[[], float] = __import__("random").random,
+        jitter: Callable[[], float] = random.random,
     ) -> None:
         self.client_config = client_config
         self.token_store = token_store
@@ -227,7 +224,12 @@ class YouTubeReleaseProvider(HttpClientOwner):
         if status >= 500 or status in {408, 429}:
             return None, ReleaseProviderResult(
                 provider_effect="may_exist",
-                evidence={"http_status": status, "failure_kind": (result.failure_kind or HttpFailureKind.TRANSIENT_HTTP).value},
+                evidence={
+                    "http_status": status,
+                    "failure_kind": (
+                        result.failure_kind or HttpFailureKind.TRANSIENT_HTTP
+                    ).value,
+                },
             )
         if status >= 400:
             safe = redact_sensitive_text(response.text, secrets=(token.access_token,))
@@ -281,7 +283,9 @@ class YouTubeReleaseProvider(HttpClientOwner):
             )
             payload = self._json_object(response)
             if payload is None:
-                raise YouTubeReleaseProviderError("YouTube playlistItems.list returned invalid JSON.")
+                raise YouTubeReleaseProviderError(
+                    "YouTube playlistItems.list returned invalid JSON."
+                )
             records.extend(_dict_items(payload))
             next_token = str(payload.get("nextPageToken") or "").strip()
             if not next_token:
@@ -289,7 +293,10 @@ class YouTubeReleaseProvider(HttpClientOwner):
             page_token = next_token
 
     def playlist_contains_video(self, playlist_id: str, video_id: str) -> bool:
-        return any(playlist_item_video_id(item) == video_id for item in self.list_playlist_items(playlist_id))
+        return any(
+            playlist_item_video_id(item) == video_id
+            for item in self.list_playlist_items(playlist_id)
+        )
 
     def start_upload_session(
         self,
@@ -303,7 +310,11 @@ class YouTubeReleaseProvider(HttpClientOwner):
             "POST",
             f"{self.upload_api_base_url}/videos",
             resource="videos.insert.resumable-session",
-            params={"uploadType": "resumable", "part": "snippet,status", "notifySubscribers": "false"},
+            params={
+                "uploadType": "resumable",
+                "part": "snippet,status",
+                "notifySubscribers": "false",
+            },
             headers={
                 "X-Upload-Content-Length": str(media_size_bytes),
                 "X-Upload-Content-Type": media_mime_type,
@@ -319,7 +330,10 @@ class YouTubeReleaseProvider(HttpClientOwner):
         if not session_url:
             return ReleaseProviderResult(
                 provider_effect="may_exist",
-                evidence={"http_status": response.status_code, "reason": "resumable session response omitted Location"},
+                evidence={
+                    "http_status": response.status_code,
+                    "reason": "resumable session response omitted Location",
+                },
             )
         try:
             _validate_session_url(session_url)
@@ -371,7 +385,10 @@ class YouTubeReleaseProvider(HttpClientOwner):
         if response is None:
             raise AssertionError("mutation request returned neither response nor failure")
         if response.status_code == 308:
-            next_offset = _range_next_offset(response.headers.get("Range"), total_bytes=media_size_bytes)
+            next_offset = _range_next_offset(
+                response.headers.get("Range"),
+                total_bytes=media_size_bytes,
+            )
             if next_offset is None:
                 return ReleaseProviderResult(
                     provider_effect="may_exist",
@@ -380,7 +397,11 @@ class YouTubeReleaseProvider(HttpClientOwner):
                 )
             return ReleaseProviderResult(
                 provider_effect="confirmed_absent",
-                evidence={"http_status": 308, "range": response.headers.get("Range"), "final_video_absent": True},
+                evidence={
+                    "http_status": 308,
+                    "range": response.headers.get("Range"),
+                    "final_video_absent": True,
+                },
                 runtime={"next_offset": next_offset, "resume_requires_status_query": False},
             )
         payload = self._json_object(response)
@@ -389,16 +410,30 @@ class YouTubeReleaseProvider(HttpClientOwner):
             return ReleaseProviderResult(
                 provider_effect="verified",
                 remote_id=video_id,
-                evidence={"http_status": response.status_code, "provider_payload_sha256": _json_digest(payload)},
-                runtime={"next_offset": media_size_bytes, "resume_requires_status_query": False},
+                evidence={
+                    "http_status": response.status_code,
+                    "provider_payload_sha256": _json_digest(payload),
+                },
+                runtime={
+                    "next_offset": media_size_bytes,
+                    "resume_requires_status_query": False,
+                },
             )
         return ReleaseProviderResult(
             provider_effect="may_exist",
-            evidence={"http_status": response.status_code, "reason": "upload completion response lacked exact video ID"},
+            evidence={
+                "http_status": response.status_code,
+                "reason": "upload completion response lacked exact video ID",
+            },
             runtime={"resume_requires_status_query": True},
         )
 
-    def query_upload_status(self, *, session_url: str, media_size_bytes: int) -> ReleaseProviderResult:
+    def query_upload_status(
+        self,
+        *,
+        session_url: str,
+        media_size_bytes: int,
+    ) -> ReleaseProviderResult:
         _validate_session_url(session_url)
         token = self._token(require_write=True)
         try:
@@ -424,11 +459,17 @@ class YouTubeReleaseProvider(HttpClientOwner):
         except HttpTransportFailure as exc:
             return ReleaseProviderResult(
                 provider_effect="may_exist",
-                evidence={"status_query_transport_failure": exc.cause_type, "attempts": exc.attempts},
+                evidence={
+                    "status_query_transport_failure": exc.cause_type,
+                    "attempts": exc.attempts,
+                },
             )
         response = result.response
         if response.status_code == 308:
-            next_offset = _range_next_offset(response.headers.get("Range"), total_bytes=media_size_bytes)
+            next_offset = _range_next_offset(
+                response.headers.get("Range"),
+                total_bytes=media_size_bytes,
+            )
             if next_offset is None:
                 return ReleaseProviderResult(
                     provider_effect="may_exist",
@@ -436,7 +477,11 @@ class YouTubeReleaseProvider(HttpClientOwner):
                 )
             return ReleaseProviderResult(
                 provider_effect="confirmed_absent",
-                evidence={"http_status": 308, "range": response.headers.get("Range"), "final_video_absent": True},
+                evidence={
+                    "http_status": 308,
+                    "range": response.headers.get("Range"),
+                    "final_video_absent": True,
+                },
                 runtime={"next_offset": next_offset, "resume_requires_status_query": False},
             )
         payload = self._json_object(response)
@@ -445,12 +490,21 @@ class YouTubeReleaseProvider(HttpClientOwner):
             return ReleaseProviderResult(
                 provider_effect="verified",
                 remote_id=video_id,
-                evidence={"http_status": response.status_code, "provider_payload_sha256": _json_digest(payload)},
-                runtime={"next_offset": media_size_bytes, "resume_requires_status_query": False},
+                evidence={
+                    "http_status": response.status_code,
+                    "provider_payload_sha256": _json_digest(payload),
+                },
+                runtime={
+                    "next_offset": media_size_bytes,
+                    "resume_requires_status_query": False,
+                },
             )
         return ReleaseProviderResult(
             provider_effect="may_exist",
-            evidence={"http_status": response.status_code, "reason": "resumable status did not prove final or incomplete state"},
+            evidence={
+                "http_status": response.status_code,
+                "reason": "resumable status did not prove final or incomplete state",
+            },
         )
 
     def update_metadata_status(
@@ -477,12 +531,18 @@ class YouTubeReleaseProvider(HttpClientOwner):
             return ReleaseProviderResult(
                 provider_effect="may_exist",
                 remote_id=actual_id or None,
-                evidence={"http_status": response.status_code, "reason": "videos.update returned unexpected ID"},
+                evidence={
+                    "http_status": response.status_code,
+                    "reason": "videos.update returned unexpected ID",
+                },
             )
         return ReleaseProviderResult(
             provider_effect="may_exist",
             remote_id=video_id,
-            evidence={"http_status": response.status_code, "provider_payload_sha256": _json_digest(payload)},
+            evidence={
+                "http_status": response.status_code,
+                "provider_payload_sha256": _json_digest(payload),
+            },
             runtime={"accepted_response": True},
         )
 
@@ -498,7 +558,10 @@ class YouTubeReleaseProvider(HttpClientOwner):
             f"{self.upload_api_base_url}/thumbnails/set",
             resource="thumbnails.set",
             params={"videoId": video_id, "uploadType": "media"},
-            headers={"Content-Type": mime_type, "Content-Length": str(thumbnail_path.stat().st_size)},
+            headers={
+                "Content-Type": mime_type,
+                "Content-Length": str(thumbnail_path.stat().st_size),
+            },
             content=_file_chunks(thumbnail_path, offset=0),
         )
         if failure is not None:
@@ -509,15 +572,26 @@ class YouTubeReleaseProvider(HttpClientOwner):
         if payload is None:
             return ReleaseProviderResult(
                 provider_effect="may_exist",
-                evidence={"http_status": response.status_code, "reason": "thumbnail response was not JSON"},
+                evidence={
+                    "http_status": response.status_code,
+                    "reason": "thumbnail response was not JSON",
+                },
             )
         return ReleaseProviderResult(
             provider_effect="verified",
             remote_id=video_id,
-            evidence={"http_status": response.status_code, "provider_payload_sha256": _json_digest(payload)},
+            evidence={
+                "http_status": response.status_code,
+                "provider_payload_sha256": _json_digest(payload),
+            },
         )
 
-    def insert_playlist_item(self, *, playlist_id: str, video_id: str) -> ReleaseProviderResult:
+    def insert_playlist_item(
+        self,
+        *,
+        playlist_id: str,
+        video_id: str,
+    ) -> ReleaseProviderResult:
         response, failure = self._mutation_request(
             "POST",
             f"{self.api_base_url}/playlistItems",
@@ -546,7 +620,12 @@ class YouTubeReleaseProvider(HttpClientOwner):
             },
         )
 
-    def update_visibility(self, *, video_id: str, status: dict[str, Any]) -> ReleaseProviderResult:
+    def update_visibility(
+        self,
+        *,
+        video_id: str,
+        status: dict[str, Any],
+    ) -> ReleaseProviderResult:
         response, failure = self._mutation_request(
             "PUT",
             f"{self.api_base_url}/videos",
