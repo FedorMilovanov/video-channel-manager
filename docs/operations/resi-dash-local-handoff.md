@@ -25,13 +25,19 @@ When the user supplies a Resi/DASH `.mpd` URL and says to study the repository:
 
 ## Repository entrypoint
 
-Canonical Windows entrypoint:
+The supported installed entrypoint is:
 
 ```text
-C:\Users\Fedor\Projects\video-channel-manager\scripts\resi_dash_handoff.py
+video-manager-resi handoff
 ```
 
-The generator writes a UTF-8-BOM `.ps1` handoff into the repository `operator-output` directory by default. The generated PowerShell script also writes the retained full master and optional trimmed clip into that same canonical operator outbox, using flat deterministic filenames.
+On the canonical Windows checkout, prefer the exact virtual-environment executable so the command does not depend on the caller's current directory or `PATH`:
+
+```text
+C:\Users\Fedor\Projects\video-channel-manager\.venv\Scripts\video-manager-resi.exe
+```
+
+The CLI is installed by the repository's normal editable install (`pip install -e ".[dev]"`). It writes a UTF-8-BOM `.ps1` handoff into the repository `operator-output` directory by default. The generated PowerShell script also writes the retained full master and optional trimmed clip into that same canonical operator outbox, using flat deterministic filenames.
 
 Example for the 2026-08-10 Abner Chou workflow:
 
@@ -39,9 +45,11 @@ Example for the 2026-08-10 Abner Chou workflow:
 $ErrorActionPreference = "Stop"
 $Repo = "C:\Users\Fedor\Projects\video-channel-manager"
 $OperatorOutput = Join-Path $Repo "operator-output"
+$ResiCli = Join-Path $Repo ".venv\Scripts\video-manager-resi.exe"
 $Handoff = Join-Path $OperatorOutput "Как Христианам Понимать Израиль - Абнер Чау - resi-handoff.ps1"
 New-Item -ItemType Directory -Force -Path $OperatorOutput | Out-Null
-& py -3.11 "$Repo\scripts\resi_dash_handoff.py" handoff "https://resi.media/GiHDtf/9aa9ac24-fb79-4ca9-95ef-a3253afdf63f/Manifest.mpd?src=emb" --title "Как Христианам Понимать Израиль - Абнер Чау" --start "00:50:12" --end "01:49:52" --encoder auto --output $Handoff
+if (-not (Test-Path -LiteralPath $ResiCli -PathType Leaf)) { throw "Resi CLI is not installed: $ResiCli" }
+& $ResiCli handoff "https://resi.media/GiHDtf/9aa9ac24-fb79-4ca9-95ef-a3253afdf63f/Manifest.mpd?src=emb" --title "Как Христианам Понимать Израиль - Абнер Чау" --start "00:50:12" --end "01:49:52" --encoder auto --output $Handoff
 if ($LASTEXITCODE -ne 0) { throw "Resi handoff generation failed" }
 if (-not (Test-Path -LiteralPath $Handoff -PathType Leaf)) { throw "Expected handoff was not created: $Handoff" }
 Write-Host "RUN THIS FILE: $Handoff"
