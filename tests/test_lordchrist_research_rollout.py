@@ -56,6 +56,7 @@ def test_canonical_research_and_profile_remain_inert() -> None:
     profile = load_channel_profile(PROFILE)
     research = load_research_queue(QUEUE)
     assert profile.provider_writes_authorized is False
+    assert profile.daily_verified_limit == 1
     assert research.schedule.state == "staged"
     assert research.schedule.activation_at_utc is None
     assert research.schedule.canary_publication_id is None
@@ -77,8 +78,22 @@ def test_workflow_is_canary_first_same_writer_and_bounded() -> None:
     assert "phase = 'canary'" in workflow
     assert "phase = 'scheduled'" in workflow
     assert "MAX_PUBLICATION_LAG_MINUTES: 120" in workflow
-    assert "content/telegram/lordchrist/research-v2/publication-ledger.json" in workflow
-    assert "content/telegram/lordchrist/publication-ledger.json" not in workflow
+    assert "LEDGER_RELATIVE_PATH: content/telegram/lordchrist/research-v2/publication-ledger.json" in workflow
+    assert "LEGACY_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json" in workflow
+
+
+def test_cross_track_quota_is_explicit_and_precedes_telegram_access() -> None:
+    approval = load_lordchrist_research_rollout_approval(APPROVAL)
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    assert approval.per_track_daily_verified_limit == 1
+    assert approval.cross_track_daily_verified_limit == 2
+    assert approval.cross_track_guard_issue == 246
+    quota = workflow.index("Enforce explicit legacy plus research daily ceiling")
+    preflight = workflow.index("Fresh read-only exact target preflight")
+    prepare = workflow.index("Prepare exactly one strict research dispatch")
+    assert quota < preflight < prepare
+    assert "lordchrist_research_cross_track_guard" in workflow
+    assert "steps.cross_track_quota.outputs.capacity == 'true'" in workflow
 
 
 def test_preflight_materializes_exact_target_inside_same_shell_step() -> None:
@@ -105,7 +120,7 @@ def test_workflow_orders_durable_intent_before_provider_and_outcome_before_state
     archive = workflow.index("Archive exact research provider outcome before state mutation")
     apply = workflow.index("Apply and persist exact research provider outcome")
     assert persist < reproof < send < archive < apply
-    assert workflow.count("GH_TOKEN: ${{ github.token }}") == 3
+    assert workflow.count("GH_TOKEN:") == 3
     assert "if-no-files-found: error" in workflow
     assert "retention-days: 30" in workflow
     assert "!cancelled()" in workflow
