@@ -615,6 +615,21 @@ def test_get_me_timeout_is_not_dispatched_and_never_reaches_mutation() -> None:
     assert provider.calls == []
 
 
+def test_get_me_server_error_is_not_dispatched_and_never_reaches_mutation() -> None:
+    identity_error = TelegramRichProviderResponse(
+        status_code=503,
+        body={"ok": False, "error_code": 503, "description": "Service Unavailable"},
+    )
+    provider = FakeProvider(_telegram_response(), identity_result=identity_error)
+
+    outcome = _publish(provider).outcome
+
+    assert outcome.provider_effect == "not_dispatched"
+    assert outcome.mutation_request_count == 0
+    assert len(provider.identity_calls) == 1
+    assert provider.calls == []
+
+
 def test_disabled_runtime_profile_write_gate_is_impossible_without_provider_call() -> None:
     provider = FakeProvider(_telegram_response())
     disabled_profile = PROFILE.model_copy(update={"provider_writes_authorized": False})

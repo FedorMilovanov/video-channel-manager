@@ -930,7 +930,14 @@ def _credential_identity_result(
         return None, None, "Telegram getMe returned a malformed non-object response", "not_dispatched"
     if not 200 <= response.status_code < 300 or body.get("ok") is not True:
         description = str(body.get("description") or f"HTTP {response.status_code}")[:500]
-        return None, None, f"Telegram getMe did not verify the provider credential: {description}", "impossible"
+        error_code = _strict_int(body.get("error_code"))
+        effective_code = error_code if error_code is not None else response.status_code
+        effect: RichProviderEffect = (
+            "not_dispatched"
+            if response.status_code == 429 or response.status_code >= 500 or effective_code >= 500
+            else "impossible"
+        )
+        return None, None, f"Telegram getMe did not verify the provider credential: {description}", effect
     result = body.get("result")
     if not isinstance(result, dict) or result.get("is_bot") is not True:
         return None, None, "Telegram getMe returned no valid bot identity", "not_dispatched"
