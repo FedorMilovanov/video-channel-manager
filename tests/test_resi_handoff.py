@@ -65,10 +65,7 @@ def test_source_identity_ignores_resi_transient_query_but_preserves_generic_dash
     generic_a = "https://media.example/video/Manifest.mpd?variant=a"
     generic_b = "https://media.example/video/Manifest.mpd?variant=b"
     assert canonical_source_identity(generic_a).endswith("Manifest.mpd?variant=a")
-    assert (
-        ResiHandoffSpec(generic_a).source_fingerprint
-        != ResiHandoffSpec(generic_b).source_fingerprint
-    )
+    assert ResiHandoffSpec(generic_a).source_fingerprint != ResiHandoffSpec(generic_b).source_fingerprint
 
 
 def test_requires_both_trim_bounds() -> None:
