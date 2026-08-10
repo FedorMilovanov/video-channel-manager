@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
@@ -75,6 +76,7 @@ def test_probe_stops_at_configured_webhook_without_get_updates() -> None:
 
     assert result.status == "webhook_configured"
     assert result.get_updates_called is False
+    assert result.target_channel_neighbors == ()
     assert result.provider_write_performed is False
     assert len(calls) == 1
     assert calls[0][0].endswith("/getWebhookInfo")
@@ -101,6 +103,11 @@ def test_probe_finds_exact_channel_post_without_sending_offset_or_allowed_update
     assert result.message_id == 1700
     assert result.message_url == "https://t.me/lordchrist/1700"
     assert result.matching_update_ids == (800,)
+    assert len(result.target_channel_neighbors) == 1
+    neighbor = result.target_channel_neighbors[0]
+    assert neighbor.message_id == 1700
+    assert neighbor.message_date_utc == datetime.fromtimestamp(int(ATTEMPTED.timestamp()) + 3, tz=UTC)
+    assert neighbor.text_sha256 == "sha256:" + hashlib.sha256(payload.expected_plain_text.encode()).hexdigest()
     assert result.updates_confirmed is False
     assert result.webhook_changed is False
     assert result.provider_write_performed is False
@@ -112,10 +119,11 @@ def test_probe_finds_exact_channel_post_without_sending_offset_or_allowed_update
     assert "allowed_updates" not in get_updates_body
 
 
-def test_probe_rejects_text_or_time_drift_as_not_found() -> None:
+def test_probe_rejects_text_or_time_drift_as_not_found_but_retains_sanitized_neighbor() -> None:
     payload = _payload()
     wrong = _channel_post(payload, seconds_after=600)
-    wrong["channel_post"]["text"] = payload.expected_plain_text + " drift"
+    drifted_text = payload.expected_plain_text + " drift"
+    wrong["channel_post"]["text"] = drifted_text
 
     def handler(request: httpx.Request) -> httpx.Response:
         result: Any = {"url": ""} if request.url.path.endswith("/getWebhookInfo") else [wrong]
@@ -127,6 +135,27 @@ def test_probe_rejects_text_or_time_drift_as_not_found() -> None:
     assert result.status == "not_found"
     assert result.message_id is None
     assert result.examined_updates == 1
+    assert len(result.target_channel_neighbors) == 1
+    neighbor = result.target_channel_neighbors[0]
+    assert neighbor.message_id == 1700
+    assert neighbor.text_sha256 == "sha256:" + hashlib.sha256(drifted_text.encode()).hexdigest()
+    assert drifted_text not in result.model_dump_json()
+
+
+def test_probe_ignores_neighbor_metadata_from_other_chats() -> None:
+    payload = _payload()
+    other = _channel_post(payload, message_id=9000)
+    other["channel_post"]["chat"] = {"id": -1009999999999, "username": "other_public_channel", "type": "channel"}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        result: Any = {"url": ""} if request.url.path.endswith("/getWebhookInfo") else [other]
+        return httpx.Response(200, json={"ok": True, "result": result}, request=request)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        result = _probe_with_client(client)
+
+    assert result.status == "not_found"
+    assert result.target_channel_neighbors == ()
 
 
 def test_probe_fails_closed_when_more_than_one_exact_match_exists() -> None:
@@ -146,3 +175,4 @@ def test_probe_fails_closed_when_more_than_one_exact_match_exists() -> None:
     assert result.status == "ambiguous"
     assert result.message_id is None
     assert result.matching_update_ids == (800, 801)
+    assert [neighbor.message_id for neighbor in result.target_channel_neighbors] == [1700, 1701]

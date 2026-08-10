@@ -143,12 +143,19 @@ jobs:
           print(f"- updates confirmed: `{payload['updates_confirmed']}`")
           print(f"- webhook changed: `{payload['webhook_changed']}`")
           print(f"- provider write performed: `{payload['provider_write_performed']}`")
+          neighbors = payload.get('target_channel_neighbors') or []
+          print(f"- target-channel neighbors retained: `{len(neighbors)}`")
+          for neighbor in neighbors:
+              print(
+                  f"  - message `{neighbor['message_id']}` at `{neighbor['message_date_utc']}`; "
+                  f"text `{neighbor['text_sha256']}`"
+              )
           if payload['message_id'] is not None:
               print(f"- recovered message_id: `{payload['message_id']}`")
               print(f"- recovered message URL: `{payload['message_url']}`")
               print(f"- message date UTC: `{payload['message_date_utc']}`")
               print(f"- matching update IDs: `{payload['matching_update_ids']}`")
           print()
-          print('This workflow does not mutate the Telegram channel, webhook, update offset, or durable publication ledger. State reconciliation remains a separate reviewed transition.')
+          print('No neighbor text is persisted or posted; only target-channel message id, UTC date, and text SHA-256 are retained. This workflow does not mutate the Telegram channel, webhook, update offset, or durable publication ledger. State reconciliation remains a separate reviewed transition.')
           PY
           gh issue comment 263 --repo "$GITHUB_REPOSITORY" --body-file .runtime/recovery-comment.md
