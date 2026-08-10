@@ -5,8 +5,9 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS_DIR = ROOT / ".github/workflows"
 WORKFLOW = WORKFLOWS_DIR / "lordchrist-telegram-poster.yml"
 RECOVERY_WORKFLOW = WORKFLOWS_DIR / "lordchrist-reconcile-provider-outcome.yml"
+RESEARCH_WORKFLOW = WORKFLOWS_DIR / "lordchrist-research-v2-publisher.yml"
 WRITER_GROUP = "group: lordchrist-telegram-publisher"
-EXPECTED_WRITERS = {WORKFLOW, RECOVERY_WORKFLOW}
+EXPECTED_WRITERS = {WORKFLOW, RECOVERY_WORKFLOW, RESEARCH_WORKFLOW}
 
 
 def workflow_text() -> str:
