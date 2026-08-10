@@ -78,6 +78,19 @@ def _message_payload(profile):
     )
 
 
+def _url_free_message_payload(profile):
+    return render_message_payload(
+        profile,
+        publication_id="svodka-message-no-url-contract-test",
+        html_text=(
+            "- Сводка -\n\n"
+            "🧭 <b>ТОЧНЫЙ ТЕКСТ</b>\n\n"
+            "<i>В сообщении нет ссылки, способной породить web preview.</i>\n\n"
+            "#Сводка #Тест"
+        ),
+    )
+
+
 def _telegram_result(
     payload,
     *,
@@ -117,6 +130,7 @@ def _message_result(
     *,
     source_url: str | None = None,
     link_preview_disabled: bool = True,
+    include_link_preview_options: bool = True,
 ) -> dict[str, Any]:
     entities = [entity.model_dump(mode="json", exclude_none=True) for entity in payload.expected_entities]
     if source_url is not None:
@@ -124,20 +138,19 @@ def _message_result(
             if entity["type"] == "text_link":
                 entity["url"] = source_url
     entities.append({"type": "hashtag", "offset": 66, "length": 7})
-    return {
-        "ok": True,
-        "result": {
-            "message_id": 78,
-            "chat": {
-                "id": CHAT_ID,
-                "username": "deep_info_life",
-                "type": "channel",
-            },
-            "text": payload.expected_plain_text,
-            "entities": entities,
-            "link_preview_options": {"is_disabled": link_preview_disabled},
+    result: dict[str, Any] = {
+        "message_id": 78,
+        "chat": {
+            "id": CHAT_ID,
+            "username": "deep_info_life",
+            "type": "channel",
         },
+        "text": payload.expected_plain_text,
+        "entities": entities,
     }
+    if include_link_preview_options:
+        result["link_preview_options"] = {"is_disabled": link_preview_disabled}
+    return {"ok": True, "result": result}
 
 
 def _client(body: dict[str, Any], captured: dict[str, Any] | None = None) -> httpx.Client:
@@ -170,6 +183,32 @@ def test_send_message_once_verifies_exact_formatting_and_source_link_entities() 
     assert captured["json"]["text"] == payload.html_text
     assert captured["json"]["parse_mode"] == "HTML"
     assert captured["json"]["link_preview_options"] == {"is_disabled": True}
+
+
+def test_send_message_once_accepts_omitted_link_preview_echo_for_url_free_message() -> None:
+    profile = _profile()
+    target = _target(profile)
+    payload = _url_free_message_payload(profile)
+    captured: dict[str, Any] = {}
+
+    with _client(_message_result(payload, include_link_preview_options=False), captured) as client:
+        receipt = send_message_once(profile, target, payload, token="test-token", client=client, now=NOW)
+
+    assert receipt.message_id == 78
+    assert receipt.provider_effect == "verified"
+    assert captured["json"]["link_preview_options"] == {"is_disabled": True}
+
+
+def test_send_message_once_rejects_omitted_link_preview_echo_for_url_bearing_message() -> None:
+    profile = _profile()
+    target = _target(profile)
+    payload = _message_payload(profile)
+
+    with _client(_message_result(payload, include_link_preview_options=False)) as client:
+        with pytest.raises(TelegramApiError, match="omitted link-preview semantics") as exc_info:
+            send_message_once(profile, target, payload, token="test-token", client=client, now=NOW)
+
+    assert exc_info.value.provider_effect == "may_exist"
 
 
 def test_send_message_once_rejects_returned_source_link_drift() -> None:
