@@ -25,14 +25,16 @@ Describe "Resi/DASH generated handoff" {
         $Content | Should -Match "video-manager\.resi-result"
     }
 
-    It "executes download, exact trim, receipts, and safe master reuse with provider-free tool doubles" {
+    It "executes download, exact trim, receipts, and offline-safe master reuse with provider-free tool doubles" {
         $Output = Join-Path $TestDrive "resi-executable-handoff.ps1"
         $Url = "https://resi.media/GiHDtf/9aa9ac24-fb79-4ca9-95ef-a3253afdf63f/Manifest.mpd?src=emb"
+        $script:ResiFakeInspectCount = 0
         $script:ResiFakeDownloadCount = 0
         $script:ResiFakeTrimCount = 0
 
         function yt-dlp {
             if ($args -contains "-F") {
+                $script:ResiFakeInspectCount += 1
                 "0 mp4 1920x1080 video only"
                 "1 m4a audio only"
                 return
@@ -83,6 +85,7 @@ Describe "Resi/DASH generated handoff" {
         Test-Path -LiteralPath $ReceiptPath -PathType Leaf | Should -BeTrue
         Test-Path -LiteralPath $Clip -PathType Leaf | Should -BeTrue
         Test-Path -LiteralPath $ResultPath -PathType Leaf | Should -BeTrue
+        $script:ResiFakeInspectCount | Should -Be 1
         $script:ResiFakeDownloadCount | Should -Be 1
         $script:ResiFakeTrimCount | Should -Be 1
 
@@ -100,6 +103,7 @@ Describe "Resi/DASH generated handoff" {
         $Result.encoder | Should -Be "cpu"
 
         & $Output -RepositoryRoot $TestDrive
+        $script:ResiFakeInspectCount | Should -Be 1
         $script:ResiFakeDownloadCount | Should -Be 1
         $script:ResiFakeTrimCount | Should -Be 2
     }
