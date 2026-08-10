@@ -52,6 +52,16 @@ def _child(child_id: str, kind: str, *, target_id: str | None = None) -> dict[st
     return payload
 
 
+def _payload_digest(child_id: str, payload: object) -> str:
+    """Hash immutable provider identity, excluding resumable attempt-local offset evidence."""
+
+    if child_id == "upload" and isinstance(payload, dict) and "offset" in payload:
+        immutable_payload = dict(payload)
+        immutable_payload.pop("offset", None)
+        return canonical_sha256(immutable_payload)
+    return canonical_sha256(payload)
+
+
 def build_release_state(
     *,
     upload_key_sha256: str,
@@ -208,7 +218,7 @@ def prepare_child(
     _require_prerequisites(state, index)
     updated = copy.deepcopy(state)
     child = updated["children"][index]
-    digest = canonical_sha256(payload)
+    digest = _payload_digest(child_id, payload)
     current_digest = child.get("payload_sha256")
     if current_digest not in (None, digest):
         raise YouTubeReleaseStateError(
