@@ -28,12 +28,14 @@ jobs:
       RUNTIME_PROFILE_PATH: .runtime/lordchrist-research-live-profile.json
       BINDING_PATH: content/telegram/channels/lordchrist-target-binding.json
       QUEUE_PATH: content/telegram/lordchrist/research-queues/calvin-spurgeon-macarthur-v2.json
+      LEGACY_QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
       APPROVAL_PATH: content/telegram/lordchrist/research-queues/rollout-approval-2026-08.json
       RELEASE_PATH: .runtime/lordchrist-research-approved-release.json
       STATE_BRANCH: state/lordchrist-telegram
       STATE_DIR: .state/lordchrist
       LEDGER_RELATIVE_PATH: content/telegram/lordchrist/research-v2/publication-ledger.json
       LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/research-v2/publication-ledger.json
+      LEGACY_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json
       TARGET_PROOF_PATH: .runtime/lordchrist-research-target-proof.json
       ENVELOPE_PATH: .runtime/lordchrist-research-dispatch.json
       OUTCOME_PATH: .runtime/lordchrist-research-outcome.json
@@ -202,8 +204,34 @@ jobs:
         if: steps.freshness.outputs.fresh != 'true'
         run: echo "Research strict-next item is not inside its bounded 120-minute publication window. No Telegram access was attempted."
 
-      - name: Fresh read-only exact target preflight
+      - name: Enforce explicit legacy plus research daily ceiling
         if: steps.freshness.outputs.fresh == 'true'
+        id: cross_track_quota
+        shell: bash
+        run: |
+          set +e
+          python -m video_channel_manager.lordchrist_research_cross_track_guard \
+            --profile "$BASE_PROFILE_PATH" \
+            --approval "$APPROVAL_PATH" \
+            --legacy-queue "$LEGACY_QUEUE_PATH" \
+            --legacy-ledger "$LEGACY_LEDGER_PATH" \
+            --research-release "$RELEASE_PATH" \
+            --research-ledger "$LEDGER_PATH"
+          status=$?
+          set -e
+          if [[ "$status" == "3" ]]; then
+            echo "capacity=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          [[ "$status" == "0" ]] || exit "$status"
+          echo "capacity=true" >> "$GITHUB_OUTPUT"
+
+      - name: Report exhausted cross-track daily ceiling
+        if: steps.freshness.outputs.fresh == 'true' && steps.cross_track_quota.outputs.capacity != 'true'
+        run: echo "Lordchrist legacy + research verified-publication ceiling is already used for the current Moscow date. No Telegram access was attempted."
+
+      - name: Fresh read-only exact target preflight
+        if: steps.freshness.outputs.fresh == 'true' && steps.cross_track_quota.outputs.capacity == 'true'
         env:
           LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
         shell: bash
@@ -233,7 +261,7 @@ jobs:
             --output "$TARGET_PROOF_PATH"
 
       - name: Prepare exactly one strict research dispatch
-        if: steps.freshness.outputs.fresh == 'true'
+        if: steps.freshness.outputs.fresh == 'true' && steps.cross_track_quota.outputs.capacity == 'true'
         id: prepare
         shell: bash
         env:
