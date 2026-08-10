@@ -60,7 +60,7 @@ RichProviderEffect = Literal["impossible", "not_dispatched", "confirmed_absent",
 RichStructureVerification = Literal["not_observed", "missing", "malformed", "mismatch", "exact"]
 RichMediaVerification = Literal["not_observed", "not_applicable", "missing", "mismatch", "exact"]
 RichDispatchPhase = Literal["not_started", "before_request", "request_may_have_been_dispatched", "response_received"]
-RichBotVerification = Literal["not_checked", "mismatch", "stale", "exact_preflight"]
+RichBotVerification = Literal["not_checked", "mismatch", "stale", "exact_same_credential"]
 
 
 def _canonical_json(value: Any) -> str:
@@ -573,6 +573,8 @@ class TelegramRichProviderTransportError(RuntimeError):
 
 
 class TelegramRichMutationProvider(Protocol):
+    def get_me(self, *, timeout: TelegramRichRequestTimeout) -> TelegramRichProviderResponse: ...
+
     def send_rich_message(
         self,
         *,
@@ -594,13 +596,41 @@ class HttpxTelegramRichMutationProvider(HttpClientOwner):
     ) -> None:
         if not token.strip():
             raise ValueError("Telegram bot token is required")
-        self._url = f"{api_base.rstrip('/')}/bot{token}/sendRichMessage"
+        method_base = f"{api_base.rstrip('/')}/bot{token}"
+        self._get_me_url = f"{method_base}/getMe"
+        self._send_url = f"{method_base}/sendRichMessage"
         self._initialize_http_client(
             http_client,
             timeout=TelegramRichRequestTimeout().as_httpx(),
             follow_redirects=False,
             trust_env=False,
         )
+
+    def get_me(self, *, timeout: TelegramRichRequestTimeout) -> TelegramRichProviderResponse:
+        try:
+            result = execute_http_request(
+                lambda: self._http_client.post(
+                    self._get_me_url,
+                    json={},
+                    timeout=timeout.as_httpx(),
+                ),
+                provider="telegram",
+                operation=HttpOperationClass.SAFE_READ,
+                method="POST",
+                resource="getMe",
+                retry_policy=RetryPolicy(max_attempts=1),
+            )
+        except HttpTransportFailure as exc:
+            if "Timeout" in exc.cause_type:
+                raise TelegramRichProviderTimeout(request_may_have_been_dispatched=False) from exc
+            raise TelegramRichProviderTransportError(request_may_have_been_dispatched=False) from exc
+
+        response = result.response
+        try:
+            body: Any = response.json()
+        except ValueError:
+            body = None
+        return TelegramRichProviderResponse(status_code=response.status_code, body=body)
 
     def send_rich_message(
         self,
@@ -612,7 +642,7 @@ class HttpxTelegramRichMutationProvider(HttpClientOwner):
         try:
             result = execute_http_request(
                 lambda: self._http_client.post(
-                    self._url,
+                    self._send_url,
                     json={"chat_id": chat_id, "rich_message": rich_message},
                     timeout=timeout.as_httpx(),
                 ),
@@ -662,6 +692,8 @@ class TelegramRichProviderOutcome(BaseModel):
     proof_chat_username: str = Field(pattern=r"^[A-Za-z0-9_]{5,32}$")
     proof_bot_id: int = Field(gt=0)
     proof_bot_username: str = Field(pattern=r"^[A-Za-z0-9_]{2,64}$")
+    credential_bot_id: int | None = Field(default=None, gt=0)
+    credential_bot_username: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_]{2,64}$")
     document_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     input_rich_message_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     expected_rich_structure_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
@@ -697,13 +729,15 @@ class TelegramRichProviderOutcome(BaseModel):
             raise ValueError("outcome channel username differs from expected chat username")
         if self.target_proof_checked_at_utc.tzinfo is None:
             raise ValueError("outcome target proof timestamp must be timezone-aware")
-        if self.bot_identity_verification == "exact_preflight" and (
+        if self.bot_identity_verification == "exact_same_credential" and (
             self.proof_chat_id != self.expected_chat_id
             or self.proof_chat_username.casefold() != self.expected_chat_username.casefold()
             or self.proof_bot_id != self.expected_bot_id
             or self.proof_bot_username.casefold() != self.expected_bot_username.casefold()
+            or self.credential_bot_id != self.expected_bot_id
+            or (self.credential_bot_username or "").casefold() != self.expected_bot_username.casefold()
         ):
-            raise ValueError("exact preflight requires matching proof and expected target/bot identity")
+            raise ValueError("exact bot verification requires matching proof, credential, and expected identity")
         if self.provider_call_count < self.mutation_request_count:
             raise ValueError("mutation request count cannot exceed provider call count")
         if self.provider_effect == "impossible":
@@ -724,7 +758,7 @@ class TelegramRichProviderOutcome(BaseModel):
                 self.message_id is None
                 or not self.message_url
                 or self.error is not None
-                or self.bot_identity_verification != "exact_preflight"
+                or self.bot_identity_verification != "exact_same_credential"
                 or not self.provider_write_gate_verified
                 or not self.exact_target_binding_verified
                 or not self.returned_chat_verified
@@ -814,6 +848,8 @@ def _base_outcome(
         "proof_chat_username": target.chat_username,
         "proof_bot_id": target.bot_id,
         "proof_bot_username": target.bot_username,
+        "credential_bot_id": document.target.bot_id,
+        "credential_bot_username": document.target.bot_username,
         "document_sha256": document.document_sha256,
         "input_rich_message_sha256": document.input_rich_message_sha256,
         "expected_rich_structure_sha256": document.expected_rich_structure_sha256,
@@ -822,7 +858,7 @@ def _base_outcome(
         "provider_call_count": 1,
         "mutation_request_count": 1,
         "dispatch_phase": "request_may_have_been_dispatched",
-        "bot_identity_verification": "exact_preflight",
+        "bot_identity_verification": "exact_same_credential",
         "provider_write_gate_verified": True,
         "exact_target_binding_verified": True,
         "returned_chat_verified": False,
@@ -882,7 +918,30 @@ def _preflight_error(
     age = now - target.checked_at_utc.astimezone(UTC)
     if age < -timedelta(minutes=1) or age > DEFAULT_TARGET_PROOF_MAX_AGE:
         return "target and bot identity proof is stale or has an invalid future timestamp", "stale", True
-    return None, "exact_preflight", True
+    return None, "not_checked", True
+
+
+def _credential_identity_result(
+    document: TelegramRichMessageDocument,
+    response: TelegramRichProviderResponse,
+) -> tuple[int | None, str | None, str | None, RichProviderEffect]:
+    body = response.body
+    if not isinstance(body, dict):
+        return None, None, "Telegram getMe returned a malformed non-object response", "not_dispatched"
+    if not 200 <= response.status_code < 300 or body.get("ok") is not True:
+        description = str(body.get("description") or f"HTTP {response.status_code}")[:500]
+        return None, None, f"Telegram getMe did not verify the provider credential: {description}", "impossible"
+    result = body.get("result")
+    if not isinstance(result, dict) or result.get("is_bot") is not True:
+        return None, None, "Telegram getMe returned no valid bot identity", "not_dispatched"
+    bot_id = _strict_positive_int(result.get("id"))
+    username_value = result.get("username")
+    bot_username = username_value if isinstance(username_value, str) and username_value else None
+    if bot_id is None or bot_username is None:
+        return bot_id, bot_username, "Telegram getMe returned an incomplete bot identity", "not_dispatched"
+    if bot_id != document.target.bot_id or bot_username.casefold() != document.target.bot_username.casefold():
+        return bot_id, bot_username, "provider credential resolved to an unexpected Telegram bot", "impossible"
+    return bot_id, bot_username, None, "verified"
 
 
 def _rejection_effect(status_code: int, body: dict[str, Any]) -> RichProviderEffect:
@@ -1045,7 +1104,7 @@ def _outcome_from_response(
         message_url=f"https://t.me/{document.target.chat_username}/{observed_message_id}",
         error=None,
         proves=(
-            "fresh preflight matched the exact target and bot binding",
+            "fresh preflight and same-credential getMe matched the exact target and bot binding",
             "Telegram returned the exact expected channel identity and a positive message_id",
             "the complete returned RichMessage canonical digest matched the expected document",
             "returned media matched exactly"
@@ -1075,12 +1134,72 @@ def _dispatch_rich_once(
             mutation_request_count=0,
             dispatch_phase="not_started",
             bot_identity_verification=bot_verification,
+            credential_bot_id=None,
+            credential_bot_username=None,
             provider_write_gate_verified=write_gate_verified,
             exact_target_binding_verified=False,
             error=preflight_error,
             proves=(
                 "no provider method was called",
                 "the local exact target or bot precondition failed closed",
+            ),
+        )
+
+    try:
+        identity_response = provider.get_me(timeout=timeout)
+    except (TelegramRichProviderTimeout, TelegramRichProviderTransportError) as exc:
+        return _base_outcome(
+            document,
+            target,
+            provider_effect="not_dispatched",
+            provider_call_count=0,
+            mutation_request_count=0,
+            dispatch_phase="before_request",
+            bot_identity_verification="not_checked",
+            credential_bot_id=None,
+            credential_bot_username=None,
+            error=f"Telegram credential identity unavailable before mutation: {type(exc).__name__}",
+            proves=(
+                "the local profile, target binding, and fresh target proof matched",
+                "no Telegram mutation request was dispatched",
+            ),
+        )
+    except Exception as exc:
+        return _base_outcome(
+            document,
+            target,
+            provider_effect="not_dispatched",
+            provider_call_count=0,
+            mutation_request_count=0,
+            dispatch_phase="before_request",
+            bot_identity_verification="not_checked",
+            credential_bot_id=None,
+            credential_bot_username=None,
+            error=f"unexpected Telegram getMe failure before mutation: {type(exc).__name__}",
+            proves=(
+                "the local profile, target binding, and fresh target proof matched",
+                "no Telegram mutation request was dispatched",
+            ),
+        )
+
+    credential_bot_id, credential_bot_username, credential_error, credential_effect = _credential_identity_result(
+        document, identity_response
+    )
+    if credential_error is not None:
+        return _base_outcome(
+            document,
+            target,
+            provider_effect=credential_effect,
+            provider_call_count=0,
+            mutation_request_count=0,
+            dispatch_phase="not_started" if credential_effect == "impossible" else "before_request",
+            bot_identity_verification="mismatch" if credential_bot_id is not None else "not_checked",
+            credential_bot_id=credential_bot_id,
+            credential_bot_username=credential_bot_username,
+            error=credential_error,
+            proves=(
+                "the local profile, target binding, and fresh target proof matched",
+                "no Telegram mutation request was dispatched",
             ),
         )
 
@@ -1105,7 +1224,7 @@ def _dispatch_rich_once(
                 else "Telegram timed out before any mutation request was dispatched"
             ),
             proves=(
-                "fresh preflight matched the exact target and bot binding",
+                "fresh preflight and same-credential getMe matched the exact target and bot binding",
                 "no automatic retry or fallback mutation was attempted",
                 (
                     "the mutation may have reached Telegram and must be reconciled"
@@ -1129,7 +1248,7 @@ def _dispatch_rich_once(
                 else "Telegram transport failed before any mutation request was dispatched"
             ),
             proves=(
-                "fresh preflight matched the exact target and bot binding",
+                "fresh preflight and same-credential getMe matched the exact target and bot binding",
                 "no automatic retry or fallback mutation was attempted",
             ),
         )
@@ -1143,7 +1262,7 @@ def _dispatch_rich_once(
             dispatch_phase="request_may_have_been_dispatched",
             error=f"unexpected rich provider failure after dispatch boundary: {type(exc).__name__}",
             proves=(
-                "fresh preflight matched the exact target and bot binding",
+                "fresh preflight and same-credential getMe matched the exact target and bot binding",
                 "no automatic retry or fallback mutation was attempted",
             ),
         )

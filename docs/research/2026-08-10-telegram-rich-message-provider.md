@@ -50,9 +50,10 @@ The transport marks `verified` only when all of the following hold:
 
 1. the rich target embeds the complete read-only `TelegramTargetBinding`, its
    digest is recomputed, the exact runtime `TelegramChannelProfile` matches and
-   has its provider-write gate enabled, and a fresh `GenericTargetProof`
-   exactly matches project, profile, channel id/username/type, bot id/username,
-   and posting permission;
+   has its provider-write gate enabled, a fresh `GenericTargetProof` exactly
+   matches project, profile, channel id/username/type, bot id/username and
+   posting permission, and read-only `getMe` using the same credential selected
+   for the mutation resolves to that exact bot;
 2. exactly one `sendRichMessage` mutation request was made;
 3. the returned `Message.chat` exactly matches the expected numeric channel,
    username, and `type=channel`;
@@ -79,11 +80,12 @@ The Bot API response does **not** echo:
 - authenticated bot credentials/identity in the returned `Message`;
 - client-specific visual rendering beyond the returned `RichMessage` model.
 
-Therefore bot identity evidence comes from the fresh exact preflight using the
-same credential boundary, while semantic structure evidence comes only from
-`Message.rich_message`. If Telegram omits or partially returns that structure,
-the outcome is `may_exist`; the transport does not pretend that rich semantics
-were verified.
+Therefore bot identity evidence comes from both the fresh exact target proof
+and a bounded read-only `getMe` made with the same credential object immediately
+before dispatch; a mismatch or unavailable identity prevents the mutation.
+Semantic structure evidence still comes only from `Message.rich_message`. If
+Telegram omits or partially returns that structure, the outcome is `may_exist`;
+the transport does not pretend that rich semantics were verified.
 
 ## Failure/effect model
 
@@ -112,12 +114,13 @@ provider mutation under a separate reviewed dispatch.
 
 `publish_rich_once` performs these phases in order:
 
-1. fail-closed local binding/freshness checks;
-2. at most one provider mutation request with explicit connect/read/write/pool
+1. fail-closed local binding/write-gate/freshness checks;
+2. one bounded read-only same-credential `getMe` identity check;
+3. at most one provider mutation request with explicit connect/read/write/pool
    timeouts and transport retries fixed to zero;
-3. construct exact canonical provider-outcome bytes;
-4. require a durable archive receipt bound to those bytes by SHA-256;
-5. only then invoke an optional state-mutation callback.
+4. construct exact canonical provider-outcome bytes;
+5. require a durable archive receipt bound to those bytes by SHA-256;
+6. only then invoke an optional state-mutation callback.
 
 An archive failure or digest mismatch blocks state mutation. Non-verified
 outcomes may preserve an observed message id only as reconciliation evidence;

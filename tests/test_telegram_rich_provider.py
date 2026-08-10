@@ -66,9 +66,30 @@ PAYLOAD_SHA256 = (
 
 
 class FakeProvider:
-    def __init__(self, result: TelegramRichProviderResponse | Exception) -> None:
+    def __init__(
+        self,
+        result: TelegramRichProviderResponse | Exception,
+        *,
+        identity_result: TelegramRichProviderResponse | Exception | None = None,
+    ) -> None:
         self.result = result
+        self.identity_result = identity_result
+        self.identity_calls: list[TelegramRichRequestTimeout] = []
         self.calls: list[dict[str, Any]] = []
+
+    def get_me(self, *, timeout: TelegramRichRequestTimeout) -> TelegramRichProviderResponse:
+        self.identity_calls.append(timeout)
+        if isinstance(self.identity_result, Exception):
+            raise self.identity_result
+        if self.identity_result is not None:
+            return self.identity_result
+        return TelegramRichProviderResponse(
+            status_code=200,
+            body={
+                "ok": True,
+                "result": {"id": BOT_ID, "is_bot": True, "username": "preaching_mp3_bot"},
+            },
+        )
 
     def send_rich_message(
         self,
@@ -286,10 +307,14 @@ def test_success_requires_exact_chat_message_id_structure_and_media_and_archives
     assert outcome.expected_bot_id == BOT_ID
     assert outcome.proof_chat_id == CHAT_ID
     assert outcome.proof_bot_id == BOT_ID
+    assert outcome.credential_bot_id == BOT_ID
+    assert outcome.credential_bot_username == "preaching_mp3_bot"
+    assert outcome.bot_identity_verification == "exact_same_credential"
     assert outcome.target_proof_checked_at_utc == NOW
     assert outcome.target_proof_sha256.startswith("sha256:")
     assert outcome.automatic_retry_allowed is False
     assert events == ["archive", "state"]
+    assert len(provider.identity_calls) == 1
     assert len(provider.calls) == 1
     assert provider.calls[0]["chat_id"] == CHAT_ID
     assert provider.calls[0]["rich_message"] == _input_rich_message()
@@ -552,6 +577,44 @@ def test_exact_bot_and_target_binding_failure_is_impossible_without_provider_cal
     assert provider.calls == []
 
 
+def test_same_credential_get_me_must_match_exact_bot_before_mutation() -> None:
+    wrong_identity = TelegramRichProviderResponse(
+        status_code=200,
+        body={"ok": True, "result": {"id": BOT_ID + 1, "is_bot": True, "username": "wrong_bot"}},
+    )
+    provider = FakeProvider(_telegram_response(), identity_result=wrong_identity)
+
+    archived = publish_rich_once(
+        _document(),
+        _target(),
+        provider,
+        FakeArchiver(),
+        profile=PROFILE,
+        now=NOW,
+    )
+
+    assert archived.outcome.provider_effect == "impossible"
+    assert archived.outcome.bot_identity_verification == "mismatch"
+    assert archived.outcome.credential_bot_id == BOT_ID + 1
+    assert len(provider.identity_calls) == 1
+    assert provider.calls == []
+
+
+def test_get_me_timeout_is_not_dispatched_and_never_reaches_mutation() -> None:
+    provider = FakeProvider(
+        _telegram_response(),
+        identity_result=TelegramRichProviderTimeout(request_may_have_been_dispatched=False),
+    )
+
+    outcome = _publish(provider).outcome
+
+    assert outcome.provider_effect == "not_dispatched"
+    assert outcome.mutation_request_count == 0
+    assert outcome.credential_bot_id is None
+    assert len(provider.identity_calls) == 1
+    assert provider.calls == []
+
+
 def test_disabled_runtime_profile_write_gate_is_impossible_without_provider_call() -> None:
     provider = FakeProvider(_telegram_response())
     disabled_profile = PROFILE.model_copy(update={"provider_writes_authorized": False})
@@ -589,6 +652,31 @@ def test_archive_digest_failure_blocks_state_mutation() -> None:
 
     assert events == ["archive"]
     assert len(provider.calls) == 1
+
+
+def test_httpx_provider_get_me_binds_the_same_credential_once() -> None:
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            json={"ok": True, "result": {"id": BOT_ID, "is_bot": True, "username": "preaching_mp3_bot"}},
+            request=request,
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        with HttpxTelegramRichMutationProvider(
+            token="not-a-live-token",
+            api_base="https://api.telegram.test",
+            http_client=client,
+        ) as provider:
+            response = provider.get_me(timeout=TelegramRichRequestTimeout())
+
+    assert response.status_code == 200
+    assert len(requests) == 1
+    assert requests[0].url.path == "/botnot-a-live-token/getMe"
+    assert json.loads(requests[0].content) == {}
 
 
 def test_httpx_provider_uses_exact_official_method_and_one_post() -> None:
