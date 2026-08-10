@@ -26,14 +26,15 @@ class EffectEntry(Protocol):
 def unresolved_provider_effect_ids(
     entries: Iterable[EffectEntry],
     *,
-    retired_publication_ids: frozenset[str] = frozenset(),
+    retired_publication_ids: frozenset[str] | None = None,
 ) -> tuple[str, ...]:
+    retired = retired_publication_ids or frozenset()
     return tuple(
         sorted(
             entry.publication_id
             for entry in entries
             if (entry.state == "dispatching" or entry.provider_effect == "may_exist")
-            and entry.publication_id not in retired_publication_ids
+            and entry.publication_id not in retired
         )
     )
 
@@ -42,7 +43,7 @@ def require_no_unresolved_provider_effects(
     *,
     legacy_entries: Iterable[EffectEntry],
     research_entries: Iterable[EffectEntry],
-    retired_research_publication_ids: frozenset[str] = frozenset(),
+    retired_research_publication_ids: frozenset[str] | None = None,
 ) -> dict[str, tuple[str, ...]]:
     legacy = unresolved_provider_effect_ids(legacy_entries)
     research = unresolved_provider_effect_ids(
