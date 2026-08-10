@@ -12,6 +12,11 @@ console = Console()
 resi_app = typer.Typer(no_args_is_help=True, help="Generate local-only Resi/DASH download and trim handoffs.")
 
 
+@resi_app.callback()
+def _callback() -> None:
+    """Local-only Resi/DASH handoff commands."""
+
+
 @resi_app.command("handoff")
 def handoff(
     source_url: Annotated[str, typer.Argument(help="Absolute DASH .mpd manifest URL")],
