@@ -31,18 +31,23 @@ Canonical Windows entrypoint:
 C:\Users\Fedor\Projects\video-channel-manager\scripts\resi_dash_handoff.py
 ```
 
-The generator writes a UTF-8-BOM `.ps1` handoff into `operator-output` by default. The generated PowerShell script itself writes media into a deterministic Downloads subdirectory and performs its own prerequisite checks.
+The generator writes a UTF-8-BOM `.ps1` handoff into the repository `operator-output` directory by default. The generated PowerShell script also writes the retained full master and optional trimmed clip into that same canonical operator outbox, using flat deterministic filenames.
 
 Example for the 2026-08-10 Abner Chou workflow:
 
 ```powershell
 $ErrorActionPreference = "Stop"
 $Repo = "C:\Users\Fedor\Projects\video-channel-manager"
-& py -3.11 "$Repo\scripts\resi_dash_handoff.py" handoff "https://resi.media/GiHDtf/9aa9ac24-fb79-4ca9-95ef-a3253afdf63f/Manifest.mpd?src=emb" --title "Как Христианам Понимать Израиль - Абнер Чау" --start "00:50:12" --end "01:49:52" --encoder auto
+$OperatorOutput = Join-Path $Repo "operator-output"
+$Handoff = Join-Path $OperatorOutput "Как Христианам Понимать Израиль - Абнер Чау - resi-handoff.ps1"
+New-Item -ItemType Directory -Force -Path $OperatorOutput | Out-Null
+& py -3.11 "$Repo\scripts\resi_dash_handoff.py" handoff "https://resi.media/GiHDtf/9aa9ac24-fb79-4ca9-95ef-a3253afdf63f/Manifest.mpd?src=emb" --title "Как Христианам Понимать Израиль - Абнер Чау" --start "00:50:12" --end "01:49:52" --encoder auto --output $Handoff
 if ($LASTEXITCODE -ne 0) { throw "Resi handoff generation failed" }
+if (-not (Test-Path -LiteralPath $Handoff -PathType Leaf)) { throw "Expected handoff was not created: $Handoff" }
+Write-Host "RUN THIS FILE: $Handoff"
 ```
 
-This example resolves the exact sermon duration to `00:59:40` (3580 seconds).
+This example resolves the exact sermon duration to `00:59:40` (3580 seconds). The next operator action is one invocation of the exact generated `.ps1`; no command reconstruction is required.
 
 For download-only work, omit `--start` and `--end`. They are an atomic pair: supplying only one is rejected.
 
@@ -50,6 +55,7 @@ For download-only work, omit `--start` and `--end`. They are an atomic pair: sup
 
 The handoff script:
 
+- defines the canonical repository and `operator-output` paths inside the script;
 - verifies `yt-dlp`, `ffmpeg`, and `ffprobe` are in `PATH`;
 - prints the manifest format table with `yt-dlp -F`;
 - downloads `bestvideo+bestaudio/best` with concurrent fragment loading and infinite transport/fragment retries;
@@ -126,7 +132,7 @@ Error opening input file \Abner Chou - How Should We Think About Israel.mp4
 
 Cause: a new PowerShell session did not contain the previously defined `$out` variable.
 
-Prevention: generated handoffs define `$Downloads`, `$Work`, `$Master`, and `$Clip` in the same script.
+Prevention: generated handoffs define `$Repo`, `$OperatorOutput`, `$Master`, and `$Clip` in the same script.
 
 ### Markdown/chat escaping in commands
 
