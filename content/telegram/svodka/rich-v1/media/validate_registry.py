@@ -17,6 +17,7 @@ Enforces the checks required by the media-acquisition/provenance task for rich-v
 This is a local, read-only validator. It does not contact the network and it does not
 change any provider, workflow, or state.
 """
+
 from __future__ import annotations
 
 import json
@@ -81,7 +82,9 @@ def main() -> int:
 
         # per-asset checks
         if a["provider_upload_status"] != "not_uploaded":
-            errors.append(f"asset {aid}: provider_upload_status must be 'not_uploaded' (got {a['provider_upload_status']!r})")
+            errors.append(
+                f"asset {aid}: provider_upload_status must be 'not_uploaded' (got {a['provider_upload_status']!r})"
+            )
 
         if a.get("licence") in (None, ""):
             errors.append(f"asset {aid}: licence is empty")
@@ -108,7 +111,9 @@ def main() -> int:
                 # explicitly-flagged manifest: source page + licence must be present, else WARN
                 if not a.get("canonical_source_page_url"):
                     errors.append(f"asset {aid}: non-ready sourced asset missing canonical_source_page_url")
-                warnings.append(f"asset {aid}: remote_ready=False ({a.get('acquisition_status')}) - no direct media URL yet")
+                warnings.append(
+                    f"asset {aid}: remote_ready=False ({a.get('acquisition_status')}) - no direct media URL yet"
+                )
             url = a.get("direct_media_url") or ""
             if url and not HTTPS_RE.match(url):
                 errors.append(f"asset {aid}: direct_media_url is not HTTPS: {url}")
@@ -128,7 +133,9 @@ def main() -> int:
         elif kind == "diagram":
             # in-house originals: must NOT claim an external source URL or a checksum of external bytes
             if a.get("direct_media_url"):
-                warnings.append(f"asset {aid}: diagram has a direct_media_url (should be None): {a['direct_media_url']}")
+                warnings.append(
+                    f"asset {aid}: diagram has a direct_media_url (should be None): {a['direct_media_url']}"
+                )
             if a.get("expected_mime"):
                 warnings.append(f"asset {aid}: diagram has expected_mime (should be None)")
         else:
