@@ -10,7 +10,7 @@
   "legacy_scheduler_unlocked": false,
   "media_registry": {
     "path": "content/telegram/svodka/rich-v1/media/media-registry.json",
-    "sha256": "sha256:3d887736ee30083a90f15087ba2ec5c7805b27867792574e43a910c6608d9d2f",
+    "sha256": "sha256:e49f9789fdf017ffc6c86474b7604a2179e5b277abdf2ef2b6e202d3bf553e76",
     "source_pr": 293,
     "article_id": "svodka-rich-2026-august-total-solar-eclipse",
     "assets": [
