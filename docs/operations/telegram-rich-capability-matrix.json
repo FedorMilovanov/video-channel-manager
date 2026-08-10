@@ -90,7 +90,7 @@
       "verification_strategy": "N/A — formatting mode",
       "fallback": "Rich HTML or Blocks mode",
       "source_reference": "https://core.telegram.org/bots/api#rich-markdown-style",
-      "notes": "Supports bold, italic, underline, strikethrough, spoiler, code, marked, headings, lists, task lists, blockquotes, tables, footnotes, math, media blocks"
+      "notes": "Supports bold, italic, underline, strikethrough, spoiler, code, marked, headings, lists, task lists, blockquotes, tables, footnotes, math, media blocks. IMPORTANT LIMITATION: Markdown is NOT parsed inside HTML block tags except <blockquote>, <details>, and <aside>. Inside other HTML blocks only HTML tags can be used (no Markdown syntax)."
     },
     {
       "capability": "Rich HTML formatting",
@@ -451,7 +451,7 @@
       "bot_api_types": ["RichBlockCollage", "InputRichBlockCollage"],
       "bot_api_version_introduced": "10.1 (2026-06-11)",
       "limits": {
-        "items": "Array of media blocks (photo, video, animation)",
+        "items": "Array of media blocks ONLY (photo, video, animation) — not arbitrary blocks",
         "caption": "optional RichBlockCaption"
       },
       "usable_in_channel": true,
@@ -459,7 +459,7 @@
       "verification_strategy": "Check Message.rich_message.blocks for collage type blocks",
       "fallback": "Multiple sendPhoto calls (degraded)",
       "source_reference": "https://core.telegram.org/bots/api#inputrichblockcollage",
-      "notes": "HTML: <tg-collage>...</tg-collage>. Markdown: consecutive ![](url) blocks. Caption optional."
+      "notes": "HTML: <tg-collage>...</tg-collage>. Markdown: consecutive ![](url) blocks. Caption optional. IMPORTANT: collage/slideshow can contain ONLY media blocks (photo/video/animation), not text or other block types."
     },
     {
       "capability": "Slideshow blocks",
@@ -467,7 +467,7 @@
       "bot_api_types": ["RichBlockSlideshow", "InputRichBlockSlideshow"],
       "bot_api_version_introduced": "10.1 (2026-06-11)",
       "limits": {
-        "items": "Array of media blocks (photo, video, animation)",
+        "items": "Array of media blocks ONLY (photo, video, animation) — not arbitrary blocks",
         "caption": "optional RichBlockCaption"
       },
       "usable_in_channel": true,
@@ -475,7 +475,7 @@
       "verification_strategy": "Check Message.rich_message.blocks for slideshow type blocks",
       "fallback": "Multiple sendPhoto/sendVideo calls (degraded)",
       "source_reference": "https://core.telegram.org/bots/api#inputrichblockslideshow",
-      "notes": "HTML: <tg-slideshow>...</tg-slideshow>. Markdown: consecutive ![](url) blocks. Caption optional."
+      "notes": "HTML: <tg-slideshow>...</tg-slideshow>. Markdown: consecutive ![](url) blocks. Caption optional. IMPORTANT: slideshow can contain ONLY media blocks (photo/video/animation), not text or other block types."
     },
     {
       "capability": "Thinking blocks (AI streaming)",
@@ -500,12 +500,12 @@
       "limits": {
         "requirement": "Bot owner has Telegram Premium OR bot purchased username on Fragment"
       },
-      "usable_in_channel": "conditional (not explicitly documented for channels)",
+      "usable_in_channel": "unknown — not documented for channels",
       "usable_by_bot": "conditional",
       "verification_strategy": "Test send with custom emoji; check if rendered",
       "fallback": "Standard emoji or remove emoji",
       "source_reference": "https://core.telegram.org/bots/api (RichTextCustomEmoji), Stack Overflow: custom emoji bot requirements",
-      "notes": "Custom emoji entities require Premium owner or Fragment username. Works in private, group, supergroup. Channel support not explicitly documented."
+      "notes": "Custom emoji entities require Premium owner or Fragment username. Works in private, group, supergroup. Channel support: UNKNOWN — not documented. Do not assume channels support custom emoji from bots."
     },
     {
       "capability": "Inline mentions (user)",
@@ -771,7 +771,7 @@
     {
       "capability": "Custom emoji in channel posts (bots)",
       "status": "unknown",
-      "notes": "Not explicitly documented. Channel support for custom emoji from bots is unclear."
+      "notes": "Not explicitly documented in official Bot API docs. Custom emoji from bots documented only for private, group, supergroup chats. Do NOT assume channel support — test before relying on this."
     }
   ],
   "limits_summary": {
@@ -801,7 +801,9 @@
     "table_columns": {
       "value": 20,
       "unit": "columns",
-      "note": "per table (library validation limit)"
+      "note": "NOT an official Telegram limit. This limit comes from tg-rich-messages library validation. Official Telegram docs do not specify a maximum column count for tables.",
+      "official": false,
+      "source": "https://github.com/vdistortion/tg-rich-messages (library validation)"
     },
     "edit_text_length": {
       "value": "1-4096",

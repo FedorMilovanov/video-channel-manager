@@ -249,9 +249,10 @@ This allows explicit placement of media blocks between text blocks.
 **HTML:** `<tg-collage>...</tg-collage>`
 
 **Structure:**
-- Contains `blocks` array of media blocks (photo, video, animation)
+- Contains `blocks` array of **media blocks only** (photo, video, animation)
 - Optional `caption` (RichBlockCaption with text + credit)
 - Items specified as media URLs or tg:// links
+- Cannot contain arbitrary text blocks inside collage/slideshow — only media
 
 **Markdown syntax:**
 ```
@@ -412,8 +413,9 @@ This allows explicit placement of media blocks between text blocks.
 
 **Constraints:**
 - Table cells can contain ONLY inline formatting (no nested blocks)
-- Maximum 20 columns (from tg-rich-messages library validation)
-- Supports: bordered, striped, caption, colspan, rowspan, align (left/center/right), valign (top/middle/bottom)
+- colspan, rowspan, align (left/center/right), valign (top/middle/bottom) supported
+- bordered, striped, caption supported
+- Note: "Maximum 20 columns" comes from tg-rich-messages library validation, NOT from official Telegram docs. Official Telegram docs do not specify a column limit for tables.
 
 ---
 
@@ -770,6 +772,7 @@ Returns `True` (boolean) — no message structure proof available (ephemeral).
 - Media must be separate blocks (not inline)
 - Media blocks support only HTTP/HTTPS URLs (NOT tg:// links in Markdown mode)
 - Cannot specify programming language for standalone code tags
+- **Markdown not parsed inside HTML block tags** except `<blockquote>`, `<details>`, and `<aside>` — inside other HTML blocks only HTML tags can be used (no Markdown syntax)
 
 ### 21.2 Rich HTML Mode
 
