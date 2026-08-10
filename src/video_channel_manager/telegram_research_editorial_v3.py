@@ -71,9 +71,7 @@ def validate_rich_presentation(body: str, presentation_html: str) -> tuple[Gener
         raise ValueError("research v3 presentation requires at least one intentional italic reflection")
     first_line = canonical_body.splitlines()[0]
     heading_length = _utf16_length(first_line)
-    if not any(
-        entity.type == "bold" and entity.offset == 0 and entity.length == heading_length for entity in entities
-    ):
+    if not any(entity.type == "bold" and entity.offset == 0 and entity.length == heading_length for entity in entities):
         raise ValueError("research v3 presentation must bold the exact visible heading")
     if sum(entity.type == "bold" for entity in entities) < 2:
         raise ValueError("research v3 presentation requires meaningful hierarchy beyond the heading")
@@ -118,9 +116,7 @@ class ResearchEditorialSuccessor(BaseModel):
     channel_username: Literal["@lordchrist"]
     state: Literal["provider_inert"]
     editorial_policy: Literal["research-v3-restrained-rich-telegram"]
-    predecessor_queue_path: Literal[
-        "content/telegram/lordchrist/research-queues/calvin-spurgeon-macarthur-v2.json"
-    ]
+    predecessor_queue_path: Literal["content/telegram/lordchrist/research-queues/calvin-spurgeon-macarthur-v2.json"]
     predecessor_approved_release_digest: str = Field(pattern=SHA_RE)
     posts: tuple[EditorialSuccessorPost, ...] = Field(min_length=4, max_length=4)
 
@@ -217,7 +213,10 @@ def build_editorial_successor_candidate(
 ) -> GenericReleaseQueue:
     if package.state != "provider_inert":
         raise ValueError("research v3 editorial package must remain provider-inert while building candidate")
-    if profile.project_key != package.project_key or profile.channel_username.casefold() != package.channel_username.casefold():
+    if (
+        profile.project_key != package.project_key
+        or profile.channel_username.casefold() != package.channel_username.casefold()
+    ):
         raise ValueError("research v3 package identity differs from selected Telegram channel profile")
     if start_at.tzinfo is None:
         raise ValueError("research v3 release start_at must be timezone-aware")
