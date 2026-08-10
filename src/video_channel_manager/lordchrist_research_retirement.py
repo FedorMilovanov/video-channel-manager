@@ -1,0 +1,91 @@
+from __future__ import annotations
+
+import json
+from datetime import datetime
+from pathlib import Path
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+
+from video_channel_manager.telegram_multichannel_state import GenericPublicationLedger
+
+
+class LordchristResearchRetirement(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.lordchrist-research-retirement"]
+    schema_version: Literal[1]
+    project_key: Literal["lord-god-strength"]
+    channel_username: Literal["@lordchrist"]
+    release_id: str = Field(min_length=5, max_length=96)
+    release_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    publication_id: str = Field(min_length=5, max_length=96)
+    provider_payload_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    intent_id: str = Field(min_length=16, max_length=128)
+    workflow_run_id: str = Field(pattern=r"^[1-9][0-9]*$")
+    workflow_run_attempt: str = Field(pattern=r"^[1-9][0-9]*$")
+    attempted_at_utc: datetime
+    provider_effect: Literal["may_exist"]
+    disposition: Literal["retired_no_replay"]
+    provider_retry_forbidden: Literal[True]
+    successor_activation_authorized: Literal[False]
+    evidence_note: str = Field(min_length=20, max_length=2000)
+    retired_by: str = Field(min_length=3, max_length=200)
+    retired_at_utc: datetime
+    owning_issue: Literal[286]
+
+    @model_validator(mode="after")
+    def timestamps_are_aware_and_ordered(self) -> "LordchristResearchRetirement":
+        if self.attempted_at_utc.tzinfo is None or self.retired_at_utc.tzinfo is None:
+            raise ValueError("retirement timestamps must be timezone-aware")
+        if self.retired_at_utc < self.attempted_at_utc:
+            raise ValueError("retirement cannot predate the historical provider attempt")
+        return self
+
+
+def load_lordchrist_research_retirement(
+    path: Path,
+    *,
+    ledger: GenericPublicationLedger,
+) -> LordchristResearchRetirement:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        retirement = LordchristResearchRetirement.model_validate(payload)
+    except (OSError, json.JSONDecodeError, ValidationError) as exc:
+        raise ValueError(f"invalid Lordchrist research retirement evidence {path}: {exc}") from exc
+
+    if (
+        retirement.project_key != ledger.project_key
+        or retirement.channel_username.casefold() != ledger.channel_username.casefold()
+        or retirement.release_id != ledger.release_id
+        or retirement.release_digest != ledger.release_digest
+    ):
+        raise ValueError("research retirement identity differs from durable research ledger")
+
+    entry = ledger.entries.get(retirement.publication_id)
+    if entry is None:
+        raise ValueError("retired publication is absent from durable research ledger")
+    if entry.state != "unknown" or entry.provider_effect != "may_exist":
+        raise ValueError("only an unresolved unknown/may_exist research entry can be retired")
+    expected = (
+        retirement.provider_payload_sha256,
+        retirement.intent_id,
+        retirement.workflow_run_id,
+        retirement.workflow_run_attempt,
+        retirement.attempted_at_utc,
+    )
+    actual = (
+        entry.provider_payload_sha256,
+        entry.intent_id,
+        entry.workflow_run_id,
+        entry.workflow_run_attempt,
+        entry.attempted_at_utc,
+    )
+    if actual != expected:
+        raise ValueError("research retirement evidence differs from exact historical dispatch provenance")
+    if entry.message_id is not None or entry.message_url is not None or entry.published_at_utc is not None:
+        raise ValueError("retirement cannot override an entry that already claims verified message identity")
+    return retirement
+
+
+__all__ = ["LordchristResearchRetirement", "load_lordchrist_research_retirement"]
