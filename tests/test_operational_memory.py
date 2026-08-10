@@ -67,7 +67,8 @@ def test_wave14_history_remains_machine_readable_but_not_live_state() -> None:
     assert register["program_state"] not in current
     assert "main@626f83c6e5c068d7faa8b6d14163b42916faa769" not in current
     assert "No operational continuation is pending" not in current
-    assert "Issue #154 remains **artifact-level open**" in current
+    assert "Issue #154 is closed as **completed**" in current
+    assert "Issue #154 remains **artifact-level open**" not in current
 
 
 def test_agent_instructions_preserve_current_identity_and_execution_boundaries() -> None:
