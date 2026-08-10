@@ -15,6 +15,7 @@ PUBLICATION_ID = "lordchrist-research-three-preachers-numbers"
 PAYLOAD_SHA = "sha256:4df54902ef389abb9e577c74ff7ab0c60a989cf4795e731b83e0fdb103d59ba9"
 RELEASE_SHA = "sha256:b836f9dc6733cdc922e5aaed97c250d1d46484fe75a216c1f12e586214a2626f"
 INTENT_ID = "9a5e4fc686f8e28c6a3c0d2aedd08402"
+GITHUB_SHA = "eb9ccd52b28b957fbf2e1a6b8989880d6e85c43a"
 ATTEMPTED = datetime(2026, 8, 10, 12, 58, 6, 217510, tzinfo=UTC)
 
 
@@ -28,8 +29,8 @@ def _entry() -> GenericLedgerEntry:
         dispatch_mode="manual",
         workflow_run_id="31390497205",
         workflow_run_attempt="1",
-        github_sha="eb9ccd52b28b957fbf2e1a6b8989880d6e85c43a",
-        github_workflow_sha="eb9ccd52b28b957fbf2e1a6b8989880d6e85c43a",
+        github_sha=GITHUB_SHA,
+        github_workflow_sha=GITHUB_SHA,
         attempted_at_utc=ATTEMPTED,
         actual_chat_id=-1001295216957,
         actual_chat_username="lordchrist",
@@ -65,7 +66,13 @@ def _retirement_payload() -> dict[str, object]:
         "intent_id": INTENT_ID,
         "workflow_run_id": "31390497205",
         "workflow_run_attempt": "1",
+        "github_sha": GITHUB_SHA,
+        "github_workflow_sha": GITHUB_SHA,
         "attempted_at_utc": ATTEMPTED.isoformat(),
+        "actual_chat_id": -1001295216957,
+        "actual_chat_username": "lordchrist",
+        "bot_id": 8716602202,
+        "bot_username": "preaching_mp3_bot",
         "provider_effect": "may_exist",
         "disposition": "retired_no_replay",
         "provider_retry_forbidden": True,
@@ -109,6 +116,17 @@ def test_retirement_provenance_drift_fails_closed(tmp_path: Path) -> None:
     _write(path, payload)
 
     with pytest.raises(ValueError, match="historical dispatch provenance"):
+        load_lordchrist_research_retirement(path, ledger=ledger)
+
+
+def test_retirement_schema_rejects_target_drift(tmp_path: Path) -> None:
+    ledger = _ledger()
+    payload = _retirement_payload()
+    payload["actual_chat_id"] = -1003527567039
+    path = tmp_path / "retirement.json"
+    _write(path, payload)
+
+    with pytest.raises(ValueError, match="invalid Lordchrist research retirement evidence"):
         load_lordchrist_research_retirement(path, ledger=ledger)
 
 
