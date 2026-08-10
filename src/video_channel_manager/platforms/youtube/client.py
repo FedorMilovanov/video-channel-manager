@@ -242,6 +242,45 @@ class YouTubeApiClient(HttpClientOwner):
         self._uploads_playlist_cache[channel_id] = uploads
         return uploads
 
+    def get_video(self, video_id: str) -> VideoRecord:
+        """Read one exact video ID without enumerating the channel uploads playlist."""
+
+        expected_id = video_id.strip()
+        if not expected_id:
+            raise YouTubeApiError("video_id cannot be blank")
+        payload = self._get(
+            "videos",
+            params={
+                "part": "snippet,contentDetails,status",
+                "id": expected_id,
+                "maxResults": 1,
+            },
+        )
+        items = _dict_items(payload)
+        if len(items) != 1:
+            raise YouTubeApiError(f"Video not found or inaccessible: {expected_id}")
+        raw = items[0]
+        actual_id = str(raw.get("id") or "").strip()
+        snippet = _dict_field(raw, "snippet")
+        channel_id = str(snippet.get("channelId") or "").strip()
+        if actual_id != expected_id or not channel_id:
+            raise YouTubeApiError(f"YouTube returned an invalid video record for: {expected_id}")
+        details = _dict_field(raw, "contentDetails")
+        status = _dict_field(raw, "status")
+        raw_tags = snippet.get("tags")
+        return VideoRecord(
+            ref=RemoteRef(platform=PlatformName.YOUTUBE, channel_id=channel_id, remote_id=actual_id),
+            title=str(snippet.get("title") or actual_id),
+            description=str(snippet.get("description") or ""),
+            duration_seconds=_parse_duration(str(details.get("duration") or "")),
+            published_at=_parse_datetime(str(snippet.get("publishedAt") or "")),
+            privacy_status=str(status.get("privacyStatus") or "") or None,
+            tags=[str(tag) for tag in raw_tags] if isinstance(raw_tags, list) else [],
+            thumbnail_url=_best_thumbnail(snippet.get("thumbnails")),
+            revision=_revision(raw),
+            metadata=raw,
+        )
+
     def list_videos(self, channel_id: str) -> list[VideoRecord]:
         uploads_playlist = self._uploads_playlist_id(channel_id)
         playlist_items = self._list_all(
