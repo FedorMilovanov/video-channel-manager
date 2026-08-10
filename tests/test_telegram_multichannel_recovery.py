@@ -109,5 +109,5 @@ def test_pre_send_recovery_cannot_erase_non_live_or_already_resolved_intent() ->
     ledger, envelope = dispatching_fixture()
     resolve_confirmed_absent_before_send(ledger, envelope, evidence_note="Provider was not called.")
 
-    with pytest.raises(ValueError, match="live dispatching intent"):
+    with pytest.raises(ValueError, match="dispatch intent"):
         resolve_confirmed_absent_before_send(ledger, envelope, evidence_note="Provider was not called.")
