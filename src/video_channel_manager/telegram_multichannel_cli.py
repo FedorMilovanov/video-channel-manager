@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TypeVar, cast
 
@@ -34,6 +35,7 @@ from video_channel_manager.telegram_multichannel_transport import (
     send_message_once,
     send_poll_once,
 )
+from video_channel_manager.telegram_publication_freshness import publication_freshness
 
 ModelT = TypeVar("ModelT", bound=BaseModel)
 
@@ -132,6 +134,19 @@ def _token(profile: TelegramChannelProfile) -> str:
     return token
 
 
+def _configured_max_publication_lag_minutes() -> int | None:
+    raw = os.environ.get("MAX_PUBLICATION_LAG_MINUTES", "").strip()
+    if not raw:
+        return None
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise ValueError("MAX_PUBLICATION_LAG_MINUTES must be an integer") from exc
+    if not 1 <= value <= 360:
+        raise ValueError("MAX_PUBLICATION_LAG_MINUTES must be between 1 and 360")
+    return value
+
+
 def _safe_error(exc: Exception) -> str:
     if isinstance(exc, (TelegramApiError, ValueError)):
         return " ".join(str(exc).split())[:1000]
@@ -169,6 +184,8 @@ def _send_exact_payload(
     release: GenericReleaseQueue,
     ledger: GenericPublicationLedger,
     envelope: GenericDispatchEnvelope,
+    *,
+    now: datetime | None = None,
 ) -> GenericProviderOutcome:
     try:
         _require_runtime_profile(profile, release)
@@ -176,10 +193,25 @@ def _send_exact_payload(
         item = verify_dispatch_against_release(release, envelope)
         verify_persisted_intent(release, ledger, envelope)
         token = _token(profile)
+        max_lag_minutes = _configured_max_publication_lag_minutes()
+        if max_lag_minutes is not None:
+            decision = publication_freshness(
+                release,
+                envelope.publication_id,
+                now=now or datetime.now(tz=UTC),
+                max_lag_minutes=max_lag_minutes,
+            )
+            if not decision.eligible:
+                return _failure_outcome(
+                    envelope,
+                    effect="confirmed_absent",
+                    retryable=True,
+                    error=f"publication freshness gate closed before provider mutation: {decision.reason}",
+                )
         if isinstance(item.payload, GenericMessagePayload):
-            receipt = send_message_once(profile, envelope.target, item.payload, token=token)
+            receipt = send_message_once(profile, envelope.target, item.payload, token=token, now=now)
         elif isinstance(item.payload, GenericPollPayload):
-            receipt = send_poll_once(profile, envelope.target, item.payload, token=token)
+            receipt = send_poll_once(profile, envelope.target, item.payload, token=token, now=now)
         else:
             raise ValueError("unsupported generic Telegram provider payload")
     except TelegramApiError as exc:
