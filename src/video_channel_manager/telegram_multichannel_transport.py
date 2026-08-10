@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from datetime import UTC, datetime, timedelta
 from typing import Any, Literal, cast
 
@@ -19,6 +20,7 @@ from video_channel_manager.telegram_transport import TelegramApiError, _api_call
 
 READ_ONLY_TRANSPORT_RETRIES = 2
 MUTATION_TRANSPORT_RETRIES = 0
+_PREVIEWABLE_URL_RE = re.compile(r"(?i)(?:https?://|www\.)\S+")
 
 
 class GenericTargetProof(BaseModel):
@@ -438,6 +440,28 @@ def _message_id(message: dict[str, Any]) -> int:
     return message_id
 
 
+def _payload_has_previewable_url(payload: GenericMessagePayload) -> bool:
+    if any(entity.type == "text_link" for entity in payload.expected_entities):
+        return True
+    return _PREVIEWABLE_URL_RE.search(payload.expected_plain_text) is not None
+
+
+def _verify_returned_link_preview(message: dict[str, Any], payload: GenericMessagePayload) -> None:
+    returned_preview = message.get("link_preview_options")
+    if returned_preview is None:
+        if _payload_has_previewable_url(payload):
+            raise TelegramApiError(
+                "Telegram omitted link-preview semantics for a URL-bearing provider payload",
+                provider_effect="may_exist",
+            )
+        return
+    if not isinstance(returned_preview, dict) or returned_preview.get("is_disabled") is not True:
+        raise TelegramApiError(
+            "Telegram returned link-preview semantics that differ from the exact provider payload",
+            provider_effect="may_exist",
+        )
+
+
 def send_message_once(
     profile: TelegramChannelProfile,
     target: GenericTargetProof,
@@ -491,12 +515,7 @@ def send_message_once(
                 "Telegram returned formatting or source-link entities that differ from the exact provider payload",
                 provider_effect="may_exist",
             )
-        returned_preview = message.get("link_preview_options")
-        if not isinstance(returned_preview, dict) or returned_preview.get("is_disabled") is not True:
-            raise TelegramApiError(
-                "Telegram returned link-preview semantics that differ from the exact provider payload",
-                provider_effect="may_exist",
-            )
+        _verify_returned_link_preview(message, payload)
         message_id = _message_id(message)
         return _receipt(
             profile,
