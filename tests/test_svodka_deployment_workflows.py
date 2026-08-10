@@ -13,6 +13,7 @@ from video_channel_manager.telegram_target_binding import load_target_binding
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 LEDGER_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-ledger-init.yml"
 CANARY_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-canary.yml"
+CUSTOM_EMOJI_CANARY_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-custom-emoji-capability-canary.yml"
 SKIP_EXPIRED_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-skip-expired.yml"
 SCHEDULED_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-scheduled-publisher.yml"
 RECONCILE_SKIPPED_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-reconcile-skipped-send.yml"
@@ -22,7 +23,7 @@ BINDING_PATH = REPOSITORY_ROOT / "content/telegram/channels/svodka-target-bindin
 QUEUE_PATH = REPOSITORY_ROOT / "content/telegram/svodka/draft-14-posts-2026-08.json"
 APPROVAL_PATH = REPOSITORY_ROOT / "content/telegram/svodka/release-approval-2026-08.json"
 
-STATE_WRITER_WORKFLOWS = (
+RELEASE_STATE_WRITER_WORKFLOWS = (
     LEDGER_WORKFLOW,
     SKIP_EXPIRED_WORKFLOW,
     CANARY_WORKFLOW,
@@ -30,6 +31,7 @@ STATE_WRITER_WORKFLOWS = (
     RECONCILE_SKIPPED_WORKFLOW,
     RECONCILE_OUTCOME_WORKFLOW,
 )
+STATE_WRITER_WORKFLOWS = RELEASE_STATE_WRITER_WORKFLOWS + (CUSTOM_EMOJI_CANARY_WORKFLOW,)
 
 
 def _workflow(path: Path) -> str:
@@ -49,7 +51,7 @@ def _assert_dual_current_main_quality(workflow: str) -> None:
     assert '--sha "$GITHUB_SHA"' in workflow
 
 
-def test_all_state_writers_share_exact_release_and_lossless_serialization_contract() -> None:
+def test_all_state_writers_share_lossless_serialization_contract() -> None:
     profile = load_channel_profile(PROFILE_PATH)
     expected_group = f"group: {profile.concurrency_group}"
     expected_names = {path.name for path in STATE_WRITER_WORKFLOWS}
@@ -63,7 +65,37 @@ def test_all_state_writers_share_exact_release_and_lossless_serialization_contra
         assert "cancel-in-progress: false" in workflow, path.name
         assert "queue: max" in workflow, path.name
         assert "runs-on: ubuntu-24.04" in workflow, path.name
-        _assert_materialized_release_contract(workflow)
+    for path in RELEASE_STATE_WRITER_WORKFLOWS:
+        _assert_materialized_release_contract(_workflow(path))
+
+
+def test_custom_emoji_capability_canary_is_manual_serialized_and_release_independent() -> None:
+    workflow = _workflow(CUSTOM_EMOJI_CANARY_WORKFLOW)
+
+    assert "workflow_dispatch:" in workflow
+    assert "schedule:" not in workflow
+    assert "push:" not in workflow
+    assert "CUSTOM-EMOJI-CANARY:@deep_info_life:ONE-POST" in workflow
+    assert "group: svodka-telegram-publisher" in workflow
+    assert "cancel-in-progress: false" in workflow
+    assert "queue: max" in workflow
+    _assert_dual_current_main_quality(workflow)
+    assert "release-approval-2026-08.json" not in workflow
+    assert "svodka_approval_cli" not in workflow
+    assert "Persist intent before Telegram mutation" in workflow
+    assert "Archive exact canary outcome before durable-state mutation" in workflow
+    assert "Persist exact canary outcome and block blind retry" in workflow
+    assert "Refuse any second capability-canary attempt" in workflow
+    assert "telegram_custom_emoji_canary send" in workflow
+    assert "sendMessage" not in workflow
+    assert "deleteMessage" not in workflow
+
+    persist_index = workflow.index("Persist intent before Telegram mutation")
+    reproof_index = workflow.index("Re-prove current-main quality immediately before Telegram mutation")
+    send_index = workflow.index("Send exactly one visible custom-emoji capability post")
+    archive_index = workflow.index("Archive exact canary outcome before durable-state mutation")
+    apply_index = workflow.index("Persist exact canary outcome and block blind retry")
+    assert persist_index < reproof_index < send_index < archive_index < apply_index
 
 
 def test_ledger_initialization_is_manual_exact_provider_free_and_dual_quality_proven() -> None:
