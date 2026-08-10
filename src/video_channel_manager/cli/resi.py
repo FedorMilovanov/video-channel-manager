@@ -1,0 +1,55 @@
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Annotated
+
+import typer
+from rich.console import Console
+
+from video_channel_manager.resi_handoff import ResiHandoffSpec, default_handoff_path, render_powershell_handoff
+
+console = Console()
+resi_app = typer.Typer(no_args_is_help=True, help="Generate local-only Resi/DASH download and trim handoffs.")
+
+
+@resi_app.command("handoff")
+def handoff(
+    source_url: Annotated[str, typer.Argument(help="Absolute DASH .mpd manifest URL")],
+    title: Annotated[str, typer.Option("--title", help="Human-readable Windows-safe media title")] = "Resi Download",
+    start: Annotated[str | None, typer.Option("--start", help="Exact trim start, HH:MM:SS[.mmm]")] = None,
+    end: Annotated[str | None, typer.Option("--end", help="Exact trim end, HH:MM:SS[.mmm]")] = None,
+    encoder: Annotated[
+        str,
+        typer.Option("--encoder", help="Exact-trim encoder: auto, nvenc, or cpu"),
+    ] = "auto",
+    output: Annotated[
+        Path | None,
+        typer.Option("--output", "-o", help="Generated UTF-8-BOM PowerShell handoff path"),
+    ] = None,
+) -> None:
+    """Write one self-contained PowerShell script for DASH download, optional exact trim, and QC."""
+
+    try:
+        spec = ResiHandoffSpec(
+            source_url=source_url,
+            title=title,
+            start=start,
+            end=end,
+            encoder=encoder.lower(),
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    if output is None:
+        output = default_handoff_path(spec.safe_title)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(render_powershell_handoff(spec), encoding="utf-8-sig")
+
+    console.print(f"[green]Resi/DASH handoff ready:[/green] {output.resolve()}")
+    console.print("Provider effect: impossible (local-only script generation).")
+    console.print("The generated script keeps the full downloaded master and performs ffprobe + SHA-256 QC.")
+    if spec.start is not None and spec.end is not None:
+        console.print(
+            f"Exact trim: {spec.start} -> {spec.end} "
+            f"({spec.trim_duration_ffmpeg}, encoder={spec.encoder})."
+        )
