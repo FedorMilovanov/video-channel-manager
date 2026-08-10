@@ -1,0 +1,28 @@
+{
+  "article_sha256": "sha256:f6a282a5e5725b1679c9b47ea2da1d4440c408f88146c83615fc982693d94aa5",
+  "downgrades": [
+    "custom_emoji:5368324170671202286:unicode_fallback",
+    "details:det-1:expanded",
+    "footnote:plain_text",
+    "formula:plain_text",
+    "marked:plain_text",
+    "media:m-fallback:dropped_text_only_fallback",
+    "subscript:plain_text",
+    "superscript:plain_text",
+    "table:t-1:plain_text"
+  ],
+  "media_bundle_sha256": "sha256:8ea6b71dd2eba00b63f57861326584646d81e13465e2b2929807e0034b4befb3",
+  "messages": [
+    {
+      "html_text": "<b>Обзор: рендеринг и падение в legacy HTML</b>\n\nТекст с эмодзи ✅ и <b>жирным</b>, <i>курсивом</i>, <u>подчёркиванием</u>, <s>зачёркиванием</s>, <tg-spoiler>спойлером</tg-spoiler> и выделением. Затем <code>code()</code>, нижний, верхний индексы, формула x^2, сноска [1] и ссылка <a href=\"https://example.org/source\">на источник</a>, а также 👍.\n\n<b>Структура</b>\n\n• Абзацы сохраняются\n• Списки получают маркеры\n\n1. Первый\n2. Второй\n3. Третий\n\n<blockquote><b>Цитата внутри fallback-рендера.</b></blockquote>\n\n<pre><code class=\"language-bash\">echo legacy-html</code></pre>\n\n---\n\n$$E = mc^2$$\n\nТаблица результатов\n| Метрика | Значение |\n| Скорость | <b>42</b> мс |\n| Статус | готово |\n\nПодробности\n\nСкрытый текст разворачивается.\n\nПосле медиа идёт финальный абзац.\n\nИсточники: <a href=\"https://core.telegram.org/bots/api\">Документация Bot API</a>",
+      "sequence": 1,
+      "visible_text": "Обзор: рендеринг и падение в legacy HTML\n\nТекст с эмодзи ✅ и жирным, курсивом, подчёркиванием, зачёркиванием, спойлером и выделением. Затем code(), нижний, верхний индексы, формула x^2, сноска [1] и ссылка на источник, а также 👍.\n\nСтруктура\n\n• Абзацы сохраняются\n• Списки получают маркеры\n\n1. Первый\n2. Второй\n3. Третий\n\nЦитата внутри fallback-рендера.\n\necho legacy-html\n\n---\n\n$$E = mc^2$$\n\nТаблица результатов\n| Метрика | Значение |\n| Скорость | 42 мс |\n| Статус | готово |\n\nПодробности\n\nСкрытый текст разворачивается.\n\nПосле медиа идёт финальный абзац.\n\nИсточники: Документация Bot API"
+    }
+  ],
+  "parse_mode": "HTML",
+  "payload_sha256": "sha256:c6e9cdabb8990e9cf11f9ba75f23c9b5de97a1c61da33adaf52f8499dbfaf77a",
+  "renderer_id": "deterministic-html-v1",
+  "schema_name": "video-channel-manager.telegram-html-fallback",
+  "schema_version": 1,
+  "visible_text": "Обзор: рендеринг и падение в legacy HTML\n\nТекст с эмодзи ✅ и жирным, курсивом, подчёркиванием, зачёркиванием, спойлером и выделением. Затем code(), нижний, верхний индексы, формула x^2, сноска [1] и ссылка на источник, а также 👍.\n\nСтруктура\n\n• Абзацы сохраняются\n• Списки получают маркеры\n\n1. Первый\n2. Второй\n3. Третий\n\nЦитата внутри fallback-рендера.\n\necho legacy-html\n\n---\n\n$$E = mc^2$$\n\nТаблица результатов\n| Метрика | Значение |\n| Скорость | 42 мс |\n| Статус | готово |\n\nПодробности\n\nСкрытый текст разворачивается.\n\nПосле медиа идёт финальный абзац.\n\nИсточники: Документация Bot API"
+}

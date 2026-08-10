@@ -1,0 +1,75 @@
+{
+  "article_sha256": "sha256:e042aeb901528ebb0a934818d04b8670874c287123e54dcc7d6f5a31a33888f2",
+  "downgrades": [],
+  "media_bundle_sha256": "sha256:eed17b49c008b1e803a91589735fb556609cc1de79a5e9ab0fd1120357b4f7e6",
+  "renderer_id": "deterministic-rich-v1",
+  "requests": [
+    {
+      "method": "sendMessage",
+      "payload": {
+        "entities": [
+          {
+            "language": null,
+            "length": 33,
+            "offset": 0,
+            "type": "bold",
+            "url": null
+          }
+        ],
+        "link_preview_options": {
+          "is_disabled": true
+        },
+        "text": "Фотоотчёт: выставка «Свет и тень»\n\nЧетыре кадра с вернисажа. 🎨"
+      },
+      "sequence": 1
+    },
+    {
+      "method": "sendMediaGroup",
+      "payload": {
+        "media": [
+          {
+            "caption": "Вернисаж, общий план",
+            "media": "https://media.example.org/exp-01.jpg",
+            "type": "photo"
+          },
+          {
+            "media": "https://media.example.org/exp-02.jpg",
+            "type": "photo"
+          },
+          {
+            "media": "https://media.example.org/exp-03.jpg",
+            "type": "photo"
+          },
+          {
+            "media": "https://media.example.org/exp-04.jpg",
+            "type": "photo"
+          }
+        ]
+      },
+      "sequence": 2
+    },
+    {
+      "method": "sendMessage",
+      "payload": {
+        "entities": [
+          {
+            "language": null,
+            "length": 7,
+            "offset": 28,
+            "type": "text_link",
+            "url": "https://example.org/expo/review"
+          }
+        ],
+        "link_preview_options": {
+          "is_disabled": true
+        },
+        "text": "Подробный обзор — по ссылке в конце."
+      },
+      "sequence": 3
+    }
+  ],
+  "rich_payload_sha256": "sha256:bcd36ef7ad1202e13fb7aac23c3b5e1df020bfbadd6814efe15803ab0ab23863",
+  "schema_name": "video-channel-manager.telegram-rich-plan",
+  "schema_version": 1,
+  "visible_text": "Фотоотчёт: выставка «Свет и тень»\n\nЧетыре кадра с вернисажа. 🎨\n\nВернисаж, общий план\n\nПодробный обзор — по ссылке в конце."
+}

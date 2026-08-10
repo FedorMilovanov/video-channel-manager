@@ -1,0 +1,73 @@
+{
+  "article_sha256": "sha256:15b40b150ba3dfe12250bd5fd0966c39d1fd70985c1809692496263f157ad7c2",
+  "downgrades": [],
+  "media_bundle_sha256": "sha256:1ec3b7085588a582d3ddc92617388c0a80accad515a5cdb96ff296cb77e90fb3",
+  "renderer_id": "deterministic-rich-v1",
+  "requests": [
+    {
+      "method": "sendMessage",
+      "payload": {
+        "entities": [
+          {
+            "language": null,
+            "length": 15,
+            "offset": 0,
+            "type": "bold",
+            "url": null
+          }
+        ],
+        "link_preview_options": {
+          "is_disabled": true
+        },
+        "text": "Пейзажи Карелии\n\nЧетыре остановки на маршруте. 🏞️"
+      },
+      "sequence": 1
+    },
+    {
+      "method": "sendPhoto",
+      "payload": {
+        "caption": "Ладожские шхеры на рассвете",
+        "photo": "https://media.example.org/kar-01.jpg"
+      },
+      "sequence": 2
+    },
+    {
+      "method": "sendPhoto",
+      "payload": {
+        "caption": "Водопад Кивач",
+        "photo": "https://media.example.org/kar-02.jpg"
+      },
+      "sequence": 3
+    },
+    {
+      "method": "sendPhoto",
+      "payload": {
+        "caption": "Озеро с каменным островом",
+        "photo": "https://media.example.org/kar-03.jpg"
+      },
+      "sequence": 4
+    },
+    {
+      "method": "sendPhoto",
+      "payload": {
+        "caption": "Закат над лесом",
+        "photo": "https://media.example.org/kar-04.jpg"
+      },
+      "sequence": 5
+    },
+    {
+      "method": "sendMessage",
+      "payload": {
+        "link_preview_options": {
+          "is_disabled": true
+        },
+        "text": "Маршрут занял три дня."
+      },
+      "sequence": 6
+    }
+  ],
+  "rich_payload_sha256": "sha256:ca9a44835d347718b6aea9a7813d55b66a2de3c5021962dd3f0d6eedb020821b",
+  "schema_name": "video-channel-manager.telegram-rich-plan",
+  "schema_version": 1,
+  "visible_text": "Пейзажи Карелии\n\nЧетыре остановки на маршруте. 🏞️\n\nЛадожские шхеры на рассвете\n\nВодопад Кивач\n\nОзеро с каменным островом\n\nЗакат над лесом\n\nМаршрут занял три дня."
+}

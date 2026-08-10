@@ -1,0 +1,73 @@
+{
+  "article_sha256": "sha256:9a9112bcbe55221cf28b7a522a55e524845d8595f33c161e897dce5c9d12843f",
+  "downgrades": [],
+  "media_bundle_sha256": null,
+  "renderer_id": "deterministic-rich-v1",
+  "requests": [
+    {
+      "method": "sendMessage",
+      "payload": {
+        "entities": [
+          {
+            "language": null,
+            "length": 23,
+            "offset": 0,
+            "type": "bold",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 61,
+            "offset": 101,
+            "type": "blockquote",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 61,
+            "offset": 101,
+            "type": "bold",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 49,
+            "offset": 218,
+            "type": "blockquote",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 49,
+            "offset": 218,
+            "type": "italic",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 8,
+            "offset": 269,
+            "type": "bold",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 5,
+            "offset": 410,
+            "type": "text_link",
+            "url": "https://example.org/prayer"
+          }
+        ],
+        "link_preview_options": {
+          "is_disabled": true
+        },
+        "text": "Размышление о благодати\n\n🕊️ Благодать — это не заслуга, а дар, который меняет само желание сердца.\n\nБлагодатью вы спасены через веру, и сие не от вас, Божий дар.\n\nВажно не превращать дар в повод для самоуверенности.\n\nНе потому, что я достоин, а потому, что Он верен.\n\nТри шага\n\n• Признать нужду\n• Принять дар с благодарностью\n• Делиться им с ближними\n\nРазмышление завершается молитвой, которую можно прочесть здесь."
+      },
+      "sequence": 1
+    }
+  ],
+  "rich_payload_sha256": "sha256:1b5f5a613ddf2215c7cceb58c1c4009ad01064e420c054839f4c592fdf333428",
+  "schema_name": "video-channel-manager.telegram-rich-plan",
+  "schema_version": 1,
+  "visible_text": "Размышление о благодати\n\n🕊️ Благодать — это не заслуга, а дар, который меняет само желание сердца.\n\nБлагодатью вы спасены через веру, и сие не от вас, Божий дар.\n\nВажно не превращать дар в повод для самоуверенности.\n\nНе потому, что я достоин, а потому, что Он верен.\n\nТри шага\n\n• Признать нужду\n• Принять дар с благодарностью\n• Делиться им с ближними\n\nРазмышление завершается молитвой, которую можно прочесть здесь."
+}

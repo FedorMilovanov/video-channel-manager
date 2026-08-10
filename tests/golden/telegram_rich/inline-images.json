@@ -1,0 +1,93 @@
+{
+  "article_sha256": "sha256:769737586e58f7256908802c99450df7eb5299c686a783a421425a0d0bf72bde",
+  "downgrades": [],
+  "media_bundle_sha256": "sha256:e65a09d1ed0c0fe4a1a65c6f25a1369fb8b40962738ce511e770177a9c416bea",
+  "renderer_id": "deterministic-rich-v1",
+  "requests": [
+    {
+      "method": "sendMessage",
+      "payload": {
+        "entities": [
+          {
+            "language": null,
+            "length": 30,
+            "offset": 0,
+            "type": "bold",
+            "url": null
+          }
+        ],
+        "link_preview_options": {
+          "is_disabled": true
+        },
+        "text": "Паломничество в Оптину пустынь\n\nФотоотчёт об одной поездке. 🧭"
+      },
+      "sequence": 1
+    },
+    {
+      "method": "sendPhoto",
+      "payload": {
+        "caption": "Врата обители, 6:40 утра",
+        "photo": "https://media.example.org/photo-vrat.jpg"
+      },
+      "sequence": 2
+    },
+    {
+      "method": "sendMessage",
+      "payload": {
+        "link_preview_options": {
+          "is_disabled": true
+        },
+        "text": "Входные врата обители открываются рано утром."
+      },
+      "sequence": 3
+    },
+    {
+      "method": "sendPhoto",
+      "payload": {
+        "caption": "Иконостас главного храма",
+        "photo": "https://media.example.org/photo-khram.jpg"
+      },
+      "sequence": 4
+    },
+    {
+      "method": "sendMessage",
+      "payload": {
+        "entities": [
+          {
+            "language": null,
+            "length": 12,
+            "offset": 0,
+            "type": "bold",
+            "url": null
+          }
+        ],
+        "link_preview_options": {
+          "is_disabled": true
+        },
+        "text": "Главный храм\n\nИнтерьер храма — отдельная история."
+      },
+      "sequence": 5
+    },
+    {
+      "method": "sendPhoto",
+      "payload": {
+        "photo": "https://media.example.org/photo-skit.jpg"
+      },
+      "sequence": 6
+    },
+    {
+      "method": "sendMessage",
+      "payload": {
+        "link_preview_options": {
+          "is_disabled": true
+        },
+        "text": "Дорога к скиту идёт через берёзовую рощу."
+      },
+      "sequence": 7
+    }
+  ],
+  "rich_payload_sha256": "sha256:652ef2cdc2090f361024dfe694a0581d7d4dad180af8097ebc5c894bc09f5f79",
+  "schema_name": "video-channel-manager.telegram-rich-plan",
+  "schema_version": 1,
+  "visible_text": "Паломничество в Оптину пустынь\n\nФотоотчёт об одной поездке. 🧭\n\nВрата обители, 6:40 утра\n\nВходные врата обители открываются рано утром.\n\nИконостас главного храма\n\nГлавный храм\n\nИнтерьер храма — отдельная история.\n\nДорога к скиту идёт через берёзовую рощу."
+}

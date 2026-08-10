@@ -1,0 +1,115 @@
+{
+  "article_sha256": "sha256:b775239ae6eed37c2a4262ff1f41ab4cb661905732c041bd19573c49d1b47369",
+  "downgrades": [],
+  "media_bundle_sha256": null,
+  "renderer_id": "deterministic-rich-v1",
+  "requests": [
+    {
+      "method": "sendMessage",
+      "payload": {
+        "entities": [
+          {
+            "language": null,
+            "length": 35,
+            "offset": 0,
+            "type": "bold",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 11,
+            "offset": 75,
+            "type": "bold",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 10,
+            "offset": 122,
+            "type": "code",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 11,
+            "offset": 144,
+            "type": "text_link",
+            "url": "https://arxiv.org/abs/2606.00001"
+          },
+          {
+            "language": null,
+            "length": 11,
+            "offset": 158,
+            "type": "bold",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 16,
+            "offset": 195,
+            "type": "italic",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 22,
+            "offset": 214,
+            "type": "underline",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 8,
+            "offset": 267,
+            "type": "spoiler",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 12,
+            "offset": 295,
+            "type": "strikethrough",
+            "url": null
+          },
+          {
+            "language": "python",
+            "length": 62,
+            "offset": 313,
+            "type": "pre",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 105,
+            "offset": 377,
+            "type": "blockquote",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 5,
+            "offset": 549,
+            "type": "text_link",
+            "url": "https://arxiv.org/abs/2606.00001"
+          },
+          {
+            "language": null,
+            "length": 31,
+            "offset": 556,
+            "type": "text_link",
+            "url": "https://example.org/jep/2026/07"
+          }
+        ],
+        "link_preview_options": {
+          "is_disabled": true
+        },
+        "text": "Квантовая запутанность: новый рубеж\n\n🔬 В 2026 году коллаборация проверила спутанность на дистанции 120 км; погрешность — λ = 2,1 нм, результат опубликован.\n\nМетодология\n\nЭксперимент использовал четыре детектора и два независимых канала. Контрольные прогоны помечены секретно, а старые гипотезы опровергнуты. 📊\n\ndef correlate(photons):\n    return sum(photons) / len(photons)\n\nКорреляция сама по себе ещё не означает причинности, но здесь разрыв неравенства Белла превышает 12 сигм.\n\nВыводы требуют воспроизводимости на второй площадке.\n\nИсточники: arXiv, Журнал экспериментальной физики"
+      },
+      "sequence": 1
+    }
+  ],
+  "rich_payload_sha256": "sha256:2a8d31dfc5f762b253843fd0003c588319d5db06d51be30cc465fd3e917e8d7d",
+  "schema_name": "video-channel-manager.telegram-rich-plan",
+  "schema_version": 1,
+  "visible_text": "Квантовая запутанность: новый рубеж\n\n🔬 В 2026 году коллаборация проверила спутанность на дистанции 120 км; погрешность — λ = 2,1 нм, результат опубликован.\n\nМетодология\n\nЭксперимент использовал четыре детектора и два независимых канала. Контрольные прогоны помечены секретно, а старые гипотезы опровергнуты. 📊\n\ndef correlate(photons):\n    return sum(photons) / len(photons)\n\nКорреляция сама по себе ещё не означает причинности, но здесь разрыв неравенства Белла превышает 12 сигм.\n\nВыводы требуют воспроизводимости на второй площадке.\n\nИсточники: arXiv, Журнал экспериментальной физики"
+}

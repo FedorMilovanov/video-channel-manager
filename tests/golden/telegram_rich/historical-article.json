@@ -1,0 +1,66 @@
+{
+  "article_sha256": "sha256:e306ac39b460f5b5635ea2e3bad649fccf640cacf8f8a9384acd4ec7da2ee611",
+  "downgrades": [],
+  "media_bundle_sha256": null,
+  "renderer_id": "deterministic-rich-v1",
+  "requests": [
+    {
+      "method": "sendMessage",
+      "payload": {
+        "entities": [
+          {
+            "language": null,
+            "length": 41,
+            "offset": 0,
+            "type": "bold",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 10,
+            "offset": 106,
+            "type": "bold",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 7,
+            "offset": 173,
+            "type": "italic",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 7,
+            "offset": 229,
+            "type": "bold",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 55,
+            "offset": 244,
+            "type": "blockquote",
+            "url": null
+          },
+          {
+            "language": null,
+            "length": 15,
+            "offset": 338,
+            "type": "text_link",
+            "url": "https://example.org/hastings/overview"
+          }
+        ],
+        "link_preview_options": {
+          "is_disabled": true
+        },
+        "text": "Битва при Гастингсе: 14 октября 1066 года\n\n📜 Сражение при Гастингсе решило судьбу английского престола.\n\nХронология\n\n• Утро: нормандская армия строится в три линии\n• День: фаланга держит вал до вечера\n• Вечер: гибель Гарольда и перелом битвы\n\nСогласно хронике, знамя Гарольда пало вместе с королём.\n\nИсторики спорят о численности армий; обзор дискуссии."
+      },
+      "sequence": 1
+    }
+  ],
+  "rich_payload_sha256": "sha256:86952d25e53d1f9de347be5b5a982f295562aacdb4f5e87e6d1712800be8706f",
+  "schema_name": "video-channel-manager.telegram-rich-plan",
+  "schema_version": 1,
+  "visible_text": "Битва при Гастингсе: 14 октября 1066 года\n\n📜 Сражение при Гастингсе решило судьбу английского престола.\n\nХронология\n\n• Утро: нормандская армия строится в три линии\n• День: фаланга держит вал до вечера\n• Вечер: гибель Гарольда и перелом битвы\n\nСогласно хронике, знамя Гарольда пало вместе с королём.\n\nИсторики спорят о численности армий; обзор дискуссии."
+}
