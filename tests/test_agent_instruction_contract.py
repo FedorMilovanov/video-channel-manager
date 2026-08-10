@@ -46,7 +46,11 @@ def test_current_state_is_a_live_index_not_a_commit_ledger() -> None:
 
     assert len(text.splitlines()) <= 180
     assert "main@" not in text
-    assert "Issue #154 remains **artifact-level open**" in text
+    assert "Issue #154 is closed as **completed**" in text
+    assert "Issue #154 remains **artifact-level open**" not in text
+    assert "not required rework" in text
+    assert "Do not regenerate or reupload the album solely" in text
+    assert "A completed artifact/provider outcome is not retroactively reopened" in text
     assert "Issue #168 is closed as repository implementation complete" in text
     assert "Issue #170 is closed as repository pipeline implementation complete" in text
     assert "provider_writes_authorized=false" in text
@@ -58,6 +62,11 @@ def test_current_state_is_a_live_index_not_a_commit_ledger() -> None:
     assert not (ROOT / "docs/operations/svodka-rollout-status.json").exists()
     assert "current `main` includes the guarded YouTube release executor" in text
     assert "implementation completion does not itself authorize execution" in text
+    assert "historical research-v2 canary ambiguity is no longer a legacy blocker" in text
+    assert "Issue #286 / PR #287" in text
+    assert "`retired_no_replay`" in text
+    assert "every other `dispatching` or `may_exist` effect remains fail-closed" in text
+    assert "the retired August research release itself cannot resume, retry, or authorize a successor" in text
     assert "Only `main` is a supported repository code/runtime execution baseline" in text
     assert "`state/lordchrist-telegram` and `state/svodka-telegram` are durable state-only refs" in text
     assert "`protected=false`" in text
