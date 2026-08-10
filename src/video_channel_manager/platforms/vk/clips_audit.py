@@ -29,9 +29,7 @@ def _normalize_required_remote_ids(values: Sequence[str], *, owner_id: int) -> l
         if not value:
             raise ValueError("required VK remote ID cannot be blank")
         if not value.startswith(expected_prefix):
-            raise ValueError(
-                f"required VK remote ID does not belong to exact owner {owner_id}: {value}"
-            )
+            raise ValueError(f"required VK remote ID does not belong to exact owner {owner_id}: {value}")
         suffix = value[len(expected_prefix) :]
         if not suffix.isdigit() or int(suffix) <= 0:
             raise ValueError(f"invalid required VK remote ID: {value}")
@@ -71,9 +69,7 @@ def build_vk_clips_audit_snapshot(
             f"VK community differs from canonical project identity for {normalized_project}: {community_id}"
         )
     if owner_id != -community_id:
-        raise ValueError(
-            f"VK owner differs from canonical community identity for {normalized_project}: {owner_id}"
-        )
+        raise ValueError(f"VK owner differs from canonical community identity for {normalized_project}: {owner_id}")
 
     required = _normalize_required_remote_ids(required_remote_ids, owner_id=owner_id)
 
