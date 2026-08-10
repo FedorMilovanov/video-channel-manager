@@ -328,7 +328,9 @@ jobs:
             --envelope .runtime/remote-research-dispatch.json
 
       - name: Re-prove current-main CI immediately before Telegram mutation
+        id: pre_send_quality
         if: steps.prepare.outputs.prepared == 'true'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -338,8 +340,44 @@ jobs:
             --workflow ci.yml \
             --sha "$GITHUB_SHA"
 
+      - name: Resolve blocked research pre-send intent as confirmed absent
+        if: steps.prepare.outputs.prepared == 'true' && steps.pre_send_quality.outcome != 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_multichannel_recovery \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --envelope "$ENVELOPE_PATH" \
+            --evidence-note "Exact current-main repository CI reproof failed before the Telegram send step, so this workflow did not dispatch a provider mutation."
+
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo "pre-send research recovery produced no durable state delta" >&2
+            exit 4
+          }
+          git -C "$STATE_DIR" commit -m "Resolve Lordchrist research pre-send intent for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "remote Lordchrist state branch does not contain pre-send confirmed-absent recovery" >&2
+            exit 4
+          }
+          git -C "$STATE_DIR" fetch --no-tags origin "$STATE_BRANCH"
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$LEDGER_RELATIVE_PATH" > .runtime/remote-research-ledger.json
+          python -m video_channel_manager.telegram_multichannel_cli validate-ledger \
+            --release "$RELEASE_PATH" \
+            --ledger .runtime/remote-research-ledger.json
+
+      - name: Fail run after durable provider-free pre-send recovery
+        if: steps.prepare.outputs.prepared == 'true' && steps.pre_send_quality.outcome != 'success'
+        run: |
+          echo "Final current-main CI reproof failed before Telegram mutation; retryable confirmed-absent state was persisted." >&2
+          exit 4
+
       - name: Send exactly one research payload
-        if: steps.prepare.outputs.prepared == 'true'
+        if: steps.prepare.outputs.prepared == 'true' && steps.pre_send_quality.outcome == 'success'
         id: send
         env:
           LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
@@ -358,7 +396,7 @@ jobs:
           exit 0
 
       - name: Archive exact research provider outcome before state mutation
-        if: ${{ !cancelled() && steps.prepare.outputs.prepared == 'true' && steps.send.outcome != 'skipped' }}
+        if: ${{ !cancelled() && steps.prepare.outputs.prepared == 'true' && steps.pre_send_quality.outcome == 'success' && steps.send.outcome != 'skipped' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: lordchrist-research-provider-outcome-${{ github.run_id }}-${{ github.run_attempt }}
@@ -369,7 +407,7 @@ jobs:
           include-hidden-files: true
 
       - name: Apply and persist exact research provider outcome
-        if: ${{ !cancelled() && steps.prepare.outputs.prepared == 'true' && steps.send.outcome != 'skipped' }}
+        if: ${{ !cancelled() && steps.prepare.outputs.prepared == 'true' && steps.pre_send_quality.outcome == 'success' && steps.send.outcome != 'skipped' }}
         shell: bash
         run: |
           set -euo pipefail
