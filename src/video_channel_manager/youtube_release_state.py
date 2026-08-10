@@ -79,8 +79,7 @@ def build_release_state(
 
     children = [_child(child_id, kind) for child_id, kind in _FIXED_CHILDREN]
     children.extend(
-        _child(f"playlist:{playlist_id}", "playlist_membership", target_id=playlist_id)
-        for playlist_id in playlists
+        _child(f"playlist:{playlist_id}", "playlist_membership", target_id=playlist_id) for playlist_id in playlists
     )
     children.extend(_child(child_id, kind) for child_id, kind in _TAIL_CHILDREN)
     stamp = _now(now)
@@ -189,10 +188,7 @@ def child_by_id(state: dict[str, Any], child_id: str) -> dict[str, Any]:
 def _prerequisite_satisfied(child: dict[str, Any]) -> bool:
     if child["provider_effect"] == "verified":
         return True
-    return bool(
-        child["kind"] == "existing_target_reconciliation"
-        and child["provider_effect"] == "confirmed_absent"
-    )
+    return bool(child["kind"] == "existing_target_reconciliation" and child["provider_effect"] == "confirmed_absent")
 
 
 def _require_prerequisites(state: dict[str, Any], index: int) -> None:
@@ -221,13 +217,9 @@ def prepare_child(
     digest = _payload_digest(child_id, payload)
     current_digest = child.get("payload_sha256")
     if current_digest not in (None, digest):
-        raise YouTubeReleaseStateError(
-            f"Release child {child_id} already has a different immutable payload digest."
-        )
+        raise YouTubeReleaseStateError(f"Release child {child_id} already has a different immutable payload digest.")
     if child["provider_effect"] == "verified":
-        raise YouTubeReleaseStateError(
-            f"Release child {child_id} is already verified and cannot be prepared again."
-        )
+        raise YouTubeReleaseStateError(f"Release child {child_id} is already verified and cannot be prepared again.")
     child["payload_sha256"] = digest
     if attempt_id is not None:
         if not attempt_id:
@@ -267,9 +259,7 @@ def transition_child(
         "verified": {"verified"},
     }[current]
     if provider_effect not in allowed:
-        raise YouTubeReleaseStateError(
-            f"Invalid release transition for {child_id}: {current} -> {provider_effect}."
-        )
+        raise YouTubeReleaseStateError(f"Invalid release transition for {child_id}: {current} -> {provider_effect}.")
     if provider_effect != "not_dispatched" and child.get("payload_sha256") is None:
         raise YouTubeReleaseStateError(
             f"Release child {child_id} must persist its immutable payload before provider effect {provider_effect}."

@@ -43,9 +43,7 @@ def _required_text(payload: dict[str, Any], field: str) -> str:
     return value.strip()
 
 
-def _validate_local_file(
-    path_value: object, digest_value: object, *, field: str
-) -> Path:
+def _validate_local_file(path_value: object, digest_value: object, *, field: str) -> Path:
     if not isinstance(path_value, str) or not path_value.strip():
         raise UploadPlanError(f"{field}_path is required.")
     expected = validate_sha256(digest_value, field=f"{field}_sha256")
@@ -123,10 +121,7 @@ def build_release_plan(
 
 
 def validate_release_plan(plan: dict[str, Any], *, verify_files: bool = True) -> None:
-    if (
-        plan.get("schema_name") != RELEASE_PLAN_SCHEMA
-        or plan.get("schema_version") != RELEASE_PLAN_VERSION
-    ):
+    if plan.get("schema_name") != RELEASE_PLAN_SCHEMA or plan.get("schema_version") != RELEASE_PLAN_VERSION:
         raise UploadPlanError("Unsupported YouTube release-plan schema.")
     if plan.get("release_plan_sha256") != release_plan_digest(plan):
         raise UploadPlanError("Release plan SHA-256 does not match canonical content.")
@@ -168,9 +163,7 @@ def validate_release_plan(plan: dict[str, Any], *, verify_files: bool = True) ->
     if not isinstance(snippet, dict) or not str(snippet.get("title") or "").strip():
         raise UploadPlanError("Release snippet/title is required.")
     tags = snippet.get("tags")
-    if not isinstance(tags, list) or not all(
-        isinstance(item, str) and item.strip() for item in tags
-    ):
+    if not isinstance(tags, list) or not all(isinstance(item, str) and item.strip() for item in tags):
         raise UploadPlanError("Release tags must be non-empty strings.")
     if not isinstance(status, dict) or status.get("privacyStatus") != "private":
         raise UploadPlanError("Release initial_status must be private.")
@@ -186,16 +179,12 @@ def validate_release_plan(plan: dict[str, Any], *, verify_files: bool = True) ->
         if thumbnail.get("mime_type") not in {"image/png", "image/jpeg"}:
             raise UploadPlanError("Thumbnail MIME type must be image/png or image/jpeg.")
         if verify_files:
-            thumb_path = _validate_local_file(
-                thumbnail.get("path"), thumb_sha, field="thumbnail"
-            )
+            thumb_path = _validate_local_file(thumbnail.get("path"), thumb_sha, field="thumbnail")
             if thumb_path.stat().st_size != thumb_size:
                 raise UploadPlanError("Thumbnail size differs from immutable plan.")
 
     playlists = plan.get("playlist_ids")
-    if not isinstance(playlists, list) or not all(
-        isinstance(item, str) and item.strip() for item in playlists
-    ):
+    if not isinstance(playlists, list) or not all(isinstance(item, str) and item.strip() for item in playlists):
         raise UploadPlanError("Release playlist_ids must be a list of non-empty strings.")
     if len(playlists) != len(set(playlists)):
         raise UploadPlanError("Release playlist IDs must be unique.")
@@ -224,13 +213,9 @@ def validate_absence_evidence(evidence: dict[str, Any], *, plan: dict[str, Any])
     }
     for field, value in expected.items():
         if evidence.get(field) != value:
-            raise UploadPlanError(
-                f"Existing-target absence evidence {field} does not match release plan."
-            )
+            raise UploadPlanError(f"Existing-target absence evidence {field} does not match release plan.")
     if evidence.get("provider_effect") != "confirmed_absent":
-        raise UploadPlanError(
-            "Existing-target evidence must explicitly prove provider_effect=confirmed_absent."
-        )
+        raise UploadPlanError("Existing-target evidence must explicitly prove provider_effect=confirmed_absent.")
     if evidence.get("provider_writes_performed") != 0:
         raise UploadPlanError("Existing-target absence evidence must be provider-read-only.")
     _required_text(evidence, "reviewed_by")
@@ -275,9 +260,7 @@ def validate_execution_approval(
     _required_text(approval, "reviewed_at")
     bound_absence = approval.get("existing_target_absence_evidence_sha256")
     if absence_evidence_sha256 is not None and bound_absence != absence_evidence_sha256:
-        raise UploadPlanError(
-            "Execution approval does not bind the exact existing-target absence evidence."
-        )
+        raise UploadPlanError("Execution approval does not bind the exact existing-target absence evidence.")
 
 
 def load_json_object(path: Path) -> dict[str, Any]:

@@ -145,8 +145,7 @@ def metadata_verdict(
     fields_match = (
         snippet.get("title") == expected_snippet.get("title")
         and snippet.get("description", "") == expected_snippet.get("description", "")
-        and str(snippet.get("categoryId") or "")
-        == str(expected_snippet.get("categoryId") or "")
+        and str(snippet.get("categoryId") or "") == str(expected_snippet.get("categoryId") or "")
         and tags_equivalent(
             [str(item) for item in expected_snippet.get("tags", [])],
             [str(item) for item in raw_tags] if isinstance(raw_tags, list) else [],
@@ -278,9 +277,7 @@ def _run_upload(
     session_runtime = _dict_field(session, "runtime")
     session_url = str(session_runtime.get("session_url") or "")
     if not session_url:
-        raise UploadPlanError(
-            "Verified upload-session child lacks its durable resumable session URL."
-        )
+        raise UploadPlanError("Verified upload-session child lacks its durable resumable session URL.")
     current = child_by_id(release, "upload")
     runtime = _dict_field(current, "runtime")
     if runtime.get("resume_requires_status_query") is True:
@@ -333,11 +330,7 @@ def _run_readback_child(
         )
         verdict, evidence = processing_verdict(plan, provider.read_video(video_id))
         effect: ProviderEffect = (
-            "verified"
-            if verdict == "verified"
-            else "confirmed_absent"
-            if verdict == "not_ready"
-            else "may_exist"
+            "verified" if verdict == "verified" else "confirmed_absent" if verdict == "not_ready" else "may_exist"
         )
         release = transition_child(
             release,
@@ -561,9 +554,7 @@ def _run_auxiliary_child(
         )
         if plan["manual_pin_evidence_required"]:
             persist_release(stable_journal, journal, release)
-            raise UploadPlanError(
-                "Manual pin evidence is required; provider automation will not attempt pinning."
-            )
+            raise UploadPlanError("Manual pin evidence is required; provider automation will not attempt pinning.")
         release = transition_child(
             release,
             child_id=child_id,
@@ -615,9 +606,7 @@ def execute_next(
     provider_builder: ProviderBuilder = build_release_provider,
 ) -> int:
     if not args.execute:
-        raise UploadPlanError(
-            "Provider execution requires explicit --execute in addition to an exact approval file."
-        )
+        raise UploadPlanError("Provider execution requires explicit --execute in addition to an exact approval file.")
     plan = load_json_object(Path(args.plan).resolve())
     validate_release_plan(plan, verify_files=False)
     approval = load_json_object(Path(args.approval).resolve())
@@ -638,9 +627,7 @@ def execute_next(
             approval,
             plan=plan,
             child_id=child_id,
-            absence_evidence_sha256=(
-                str(absence_sha) if isinstance(absence_sha, str) else None
-            ),
+            absence_evidence_sha256=(str(absence_sha) if isinstance(absence_sha, str) else None),
         )
         # Exact identity/approval is proven before config/token material is loaded.
         provider = provider_builder(str(plan["account_alias"]))
@@ -659,10 +646,7 @@ def execute_next(
     if next_child is None:
         print("YOUTUBE RELEASE COMPLETE — ALL CHILD OPERATIONS VERIFIED.")
     else:
-        print(
-            f"YOUTUBE RELEASE CHILD PROCESSED: {child_id}; "
-            f"NEXT: {next_child['child_id']}"
-        )
+        print(f"YOUTUBE RELEASE CHILD PROCESSED: {child_id}; NEXT: {next_child['child_id']}")
     return 0
 
 
@@ -686,9 +670,7 @@ def reconcile(
             if isinstance(child, dict) and child.get("provider_effect") == "may_exist"
         ]
         if len(ambiguous) != 1:
-            raise UploadPlanError(
-                f"Expected exactly one unresolved release child, found {len(ambiguous)}."
-            )
+            raise UploadPlanError(f"Expected exactly one unresolved release child, found {len(ambiguous)}.")
         child_id = str(ambiguous[0]["child_id"])
         provider = provider_builder(str(plan["account_alias"]))
         try:
@@ -696,9 +678,7 @@ def reconcile(
                 session = child_by_id(release, "upload-session")
                 session_url = str(_dict_field(session, "runtime").get("session_url") or "")
                 if not session_url:
-                    raise UploadPlanError(
-                        "Cannot reconcile upload without the exact persisted resumable session URL."
-                    )
+                    raise UploadPlanError("Cannot reconcile upload without the exact persisted resumable session URL.")
                 release = _apply_result(
                     release,
                     child_id=child_id,
@@ -716,9 +696,7 @@ def reconcile(
                 raw = provider.read_video(video_id)
                 if child_id == "processing-private":
                     verdict, evidence = processing_verdict(plan, raw)
-                    effect: ProviderEffect = (
-                        "verified" if verdict == "verified" else "may_exist"
-                    )
+                    effect: ProviderEffect = "verified" if verdict == "verified" else "may_exist"
                 elif child_id == "metadata-status":
                     verified, evidence = metadata_verdict(plan, raw)
                     effect = "verified" if verified else "may_exist"

@@ -83,11 +83,7 @@ def verify_remote_against_evidence(
     if isinstance(expected_title, str) and expected_title and remote.title != expected_title:
         raise UploadPlanError("Provider video title does not match immutable live-state evidence.")
     expected_privacy = video.get("privacy_status")
-    if (
-        isinstance(expected_privacy, str)
-        and expected_privacy
-        and remote.privacy_status != expected_privacy
-    ):
+    if isinstance(expected_privacy, str) and expected_privacy and remote.privacy_status != expected_privacy:
         raise UploadPlanError(
             f"Provider privacy mismatch: evidence={expected_privacy} provider={remote.privacy_status}."
         )
@@ -114,13 +110,10 @@ def adopt_existing(
         client.close()
     if remote.ref.channel_id != identity["target_channel_id"]:
         raise UploadPlanError(
-            f"Provider channel mismatch: expected {identity['target_channel_id']} "
-            f"got {remote.ref.channel_id}."
+            f"Provider channel mismatch: expected {identity['target_channel_id']} got {remote.ref.channel_id}."
         )
     if remote.ref.remote_id != identity["video_id"]:
-        raise UploadPlanError(
-            f"Provider video mismatch: expected {identity['video_id']} got {remote.ref.remote_id}."
-        )
+        raise UploadPlanError(f"Provider video mismatch: expected {identity['video_id']} got {remote.ref.remote_id}.")
     verify_remote_against_evidence(evidence=evidence, remote=remote)
 
     proposed = adopted_journal(
@@ -138,9 +131,7 @@ def adopt_existing(
             durable = proposed
         else:
             if current is None:
-                raise UploadPlanError(
-                    "Idempotent adoption unexpectedly lacks an existing durable journal."
-                )
+                raise UploadPlanError("Idempotent adoption unexpectedly lacks an existing durable journal.")
             durable = current
 
     result = {
@@ -233,23 +224,17 @@ def initialize_release(args: argparse.Namespace) -> int:
     )
     output = Path(args.output).resolve()
     if output.exists():
-        raise UploadPlanError(
-            f"Refusing to overwrite immutable release initialization evidence: {output}"
-        )
+        raise UploadPlanError(f"Refusing to overwrite immutable release initialization evidence: {output}")
 
     with stable_key_mutation_lock(stable_journal):
         if not stable_journal.is_file():
-            raise UploadPlanError(
-                "Release initialization requires an existing planned or adopted stable journal."
-            )
+            raise UploadPlanError("Release initialization requires an existing planned or adopted stable journal.")
         journal = read_json(stable_journal)
         existing_release = journal.get("release")
         if isinstance(existing_release, dict):
             validate_release_state(existing_release)
             if existing_release.get("release_plan_sha256") != plan["release_plan_sha256"]:
-                raise UploadPlanError(
-                    "Stable journal already contains a different immutable release plan."
-                )
+                raise UploadPlanError("Stable journal already contains a different immutable release plan.")
             release = existing_release
             absence_sha = journal.get("release_absence_evidence_sha256")
         else:
@@ -258,16 +243,11 @@ def initialize_release(args: argparse.Namespace) -> int:
                 release_plan_sha256=str(plan["release_plan_sha256"]),
                 playlist_ids=[str(item) for item in plan["playlist_ids"]],
             )
-            if (
-                journal.get("adopted_existing_target") is True
-                and journal.get("provider_effect") == "verified"
-            ):
+            if journal.get("adopted_existing_target") is True and journal.get("provider_effect") == "verified":
                 remote_video_id = str(journal.get("remote_video_id") or "")
                 remote_revision = str(journal.get("remote_revision") or "")
                 if not remote_video_id or not remote_revision:
-                    raise UploadPlanError(
-                        "Adopted stable journal lacks exact remote video/revision evidence."
-                    )
+                    raise UploadPlanError("Adopted stable journal lacks exact remote video/revision evidence.")
                 release = mark_existing_target_adopted(
                     release,
                     video_id=remote_video_id,
@@ -278,16 +258,13 @@ def initialize_release(args: argparse.Namespace) -> int:
             else:
                 if not args.intent or not args.absence_evidence:
                     raise UploadPlanError(
-                        "New upload initialization requires --intent and exact reviewed "
-                        "--absence-evidence."
+                        "New upload initialization requires --intent and exact reviewed --absence-evidence."
                     )
                 intent = read_json(Path(args.intent).resolve())
                 validate_intent(intent)
                 validate_journal(journal, intent=intent)
                 if plan.get("source_intent_sha256") != intent.get("intent_sha256"):
-                    raise UploadPlanError(
-                        "Release plan does not bind the exact planned upload intent."
-                    )
+                    raise UploadPlanError("Release plan does not bind the exact planned upload intent.")
                 validate_release_plan(plan, verify_files=True)
                 absence = read_json(Path(args.absence_evidence).resolve())
                 absence_sha = validate_absence_evidence(absence, plan=plan)
@@ -303,9 +280,7 @@ def initialize_release(args: argparse.Namespace) -> int:
         "upload_key_sha256": plan["upload_key_sha256"],
         "release_plan_sha256": plan["release_plan_sha256"],
         "release_state_sha256": canonical_sha256(release),
-        "existing_target_mode": (
-            "adopted" if journal.get("adopted_existing_target") else "confirmed_absent"
-        ),
+        "existing_target_mode": ("adopted" if journal.get("adopted_existing_target") else "confirmed_absent"),
         "existing_target_absence_evidence_sha256": absence_sha,
         "provider_writes": 0,
         "journal_path": str(stable_journal),
@@ -328,16 +303,9 @@ def record_manual_evidence(args: argparse.Namespace) -> int:
         raise UploadPlanError(f"Manual evidence is not allowed for release child {child_id}.")
     if evidence.get("release_plan_sha256") != plan["release_plan_sha256"]:
         raise UploadPlanError("Manual evidence does not bind the exact release plan.")
-    if (
-        evidence.get("child_id") != child_id
-        or evidence.get("provider_effect") != "verified"
-    ):
-        raise UploadPlanError(
-            "Manual evidence must bind the exact child with provider_effect=verified."
-        )
-    if not str(evidence.get("reviewed_by") or "").strip() or not str(
-        evidence.get("reviewed_at") or ""
-    ).strip():
+    if evidence.get("child_id") != child_id or evidence.get("provider_effect") != "verified":
+        raise UploadPlanError("Manual evidence must bind the exact child with provider_effect=verified.")
+    if not str(evidence.get("reviewed_by") or "").strip() or not str(evidence.get("reviewed_at") or "").strip():
         raise UploadPlanError("Manual evidence requires reviewed_by and reviewed_at.")
 
     with stable_key_mutation_lock(stable_journal):
@@ -359,9 +327,7 @@ def record_manual_evidence(args: argparse.Namespace) -> int:
             evidence=evidence,
         )
         persist_release(stable_journal, journal, release)
-    print(
-        f"MANUAL YOUTUBE RELEASE EVIDENCE RECORDED FOR {child_id}; PROVIDER WRITES 0."
-    )
+    print(f"MANUAL YOUTUBE RELEASE EVIDENCE RECORDED FOR {child_id}; PROVIDER WRITES 0.")
     return 0
 
 

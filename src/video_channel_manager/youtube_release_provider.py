@@ -86,9 +86,7 @@ def _range_next_offset(value: str | None, *, total_bytes: int) -> int | None:
     return next_offset
 
 
-def _file_chunks(
-    path: Path, *, offset: int, chunk_size: int = 1024 * 1024
-) -> Iterable[bytes]:
+def _file_chunks(path: Path, *, offset: int, chunk_size: int = 1024 * 1024) -> Iterable[bytes]:
     with path.open("rb") as handle:
         handle.seek(offset)
         while True:
@@ -232,9 +230,7 @@ class YouTubeReleaseProvider(HttpClientOwner):
                 provider_effect="may_exist",
                 evidence={
                     "http_status": status,
-                    "failure_kind": (
-                        result.failure_kind or HttpFailureKind.TRANSIENT_HTTP
-                    ).value,
+                    "failure_kind": (result.failure_kind or HttpFailureKind.TRANSIENT_HTTP).value,
                 },
             )
         if status >= 400:
@@ -289,9 +285,7 @@ class YouTubeReleaseProvider(HttpClientOwner):
             )
             payload = self._json_object(response)
             if payload is None:
-                raise YouTubeReleaseProviderError(
-                    "YouTube playlistItems.list returned invalid JSON."
-                )
+                raise YouTubeReleaseProviderError("YouTube playlistItems.list returned invalid JSON.")
             records.extend(_dict_items(payload))
             next_token = str(payload.get("nextPageToken") or "").strip()
             if not next_token:
@@ -299,10 +293,7 @@ class YouTubeReleaseProvider(HttpClientOwner):
             page_token = next_token
 
     def playlist_contains_video(self, playlist_id: str, video_id: str) -> bool:
-        return any(
-            playlist_item_video_id(item) == video_id
-            for item in self.list_playlist_items(playlist_id)
-        )
+        return any(playlist_item_video_id(item) == video_id for item in self.list_playlist_items(playlist_id))
 
     def start_upload_session(
         self,
