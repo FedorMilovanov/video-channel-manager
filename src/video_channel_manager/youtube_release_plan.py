@@ -43,7 +43,9 @@ def _required_text(payload: dict[str, Any], field: str) -> str:
     return value.strip()
 
 
-def _validate_local_file(path_value: object, digest_value: object, *, field: str) -> Path:
+def _validate_local_file(
+    path_value: object, digest_value: object, *, field: str
+) -> Path:
     if not isinstance(path_value, str) or not path_value.strip():
         raise UploadPlanError(f"{field}_path is required.")
     expected = validate_sha256(digest_value, field=f"{field}_sha256")
@@ -80,13 +82,7 @@ def build_release_plan(
         if not resolved_thumbnail.is_file():
             raise UploadPlanError(f"Thumbnail file not found: {resolved_thumbnail}")
         suffix = resolved_thumbnail.suffix.casefold()
-        mime = (
-            "image/png"
-            if suffix == ".png"
-            else "image/jpeg"
-            if suffix in {".jpg", ".jpeg"}
-            else None
-        )
+        mime = "image/png" if suffix == ".png" else "image/jpeg" if suffix in {".jpg", ".jpeg"} else None
         if mime is None:
             raise UploadPlanError("Thumbnail must be PNG or JPEG.")
         if resolved_thumbnail.stat().st_size > 2 * 1024 * 1024:
@@ -190,7 +186,9 @@ def validate_release_plan(plan: dict[str, Any], *, verify_files: bool = True) ->
         if thumbnail.get("mime_type") not in {"image/png", "image/jpeg"}:
             raise UploadPlanError("Thumbnail MIME type must be image/png or image/jpeg.")
         if verify_files:
-            thumb_path = _validate_local_file(thumbnail.get("path"), thumb_sha, field="thumbnail")
+            thumb_path = _validate_local_file(
+                thumbnail.get("path"), thumb_sha, field="thumbnail"
+            )
             if thumb_path.stat().st_size != thumb_size:
                 raise UploadPlanError("Thumbnail size differs from immutable plan.")
 
