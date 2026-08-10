@@ -24,7 +24,13 @@ class LordchristResearchRetirement(BaseModel):
     intent_id: Literal["9a5e4fc686f8e28c6a3c0d2aedd08402"]
     workflow_run_id: Literal["31390497205"]
     workflow_run_attempt: Literal["1"]
+    github_sha: Literal["eb9ccd52b28b957fbf2e1a6b8989880d6e85c43a"]
+    github_workflow_sha: Literal["eb9ccd52b28b957fbf2e1a6b8989880d6e85c43a"]
     attempted_at_utc: datetime
+    actual_chat_id: Literal[-1001295216957]
+    actual_chat_username: Literal["lordchrist"]
+    bot_id: Literal[8716602202]
+    bot_username: Literal["preaching_mp3_bot"]
     provider_effect: Literal["may_exist"]
     disposition: Literal["retired_no_replay"]
     provider_retry_forbidden: Literal[True]
@@ -72,14 +78,26 @@ def load_lordchrist_research_retirement(
         retirement.intent_id,
         retirement.workflow_run_id,
         retirement.workflow_run_attempt,
+        retirement.github_sha,
+        retirement.github_workflow_sha,
         retirement.attempted_at_utc,
+        retirement.actual_chat_id,
+        retirement.actual_chat_username,
+        retirement.bot_id,
+        retirement.bot_username,
     )
     actual = (
         entry.provider_payload_sha256,
         entry.intent_id,
         entry.workflow_run_id,
         entry.workflow_run_attempt,
+        entry.github_sha,
+        entry.github_workflow_sha,
         entry.attempted_at_utc,
+        entry.actual_chat_id,
+        entry.actual_chat_username,
+        entry.bot_id,
+        entry.bot_username,
     )
     if actual != expected:
         raise ValueError("research retirement evidence differs from exact historical dispatch provenance")
