@@ -62,11 +62,15 @@ Per the official Bot API 10.2 docs (2026-07-14):
 - Media blocks support **only HTTP and HTTPS URLs**; media type is determined
   by the **MIME type** and the URL.
 - Rich messages allow up to **50 media attachments**.
-- There is **no first-class "inline / collage / slideshow" enum** in the Bot
-  API. Those are editorial intents in this registry; a collage/slideshow would
-  be realised as multiple separate media blocks or a media group
-  (`sendMediaGroup`).
-- `intended_mode` is therefore an editorial hint, not a Bot API guarantee.
+- `InputRichBlockCollage` and `InputRichBlockSlideshow` are **native
+  first-class `InputRichBlock` types** for `sendRichMessage`, corresponding to
+  the `<tg-collage>` and `<tg-slideshow>` HTML tags (each with a nested
+  `blocks` array and an optional `RichBlockCaption`). They are rich-message
+  blocks and are **not** realised via `sendMediaGroup`.
+- In this registry `intended_mode` is an **editorial hint**: `inline` means the
+  media is shown as its own separate rich media block; `collage` / `slideshow`
+  map to the native `InputRichBlockCollage` / `InputRichBlockSlideshow` rich
+  blocks.
 
 Implication: stable licensed HTTPS URLs are the correct provider-ready form,
 so no large binary files were committed. Each `direct_media_url` is HTTPS and

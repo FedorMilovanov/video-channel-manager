@@ -17,12 +17,13 @@
     "checked_at": "2026-08-10",
     "source": "https://core.telegram.org/bots/api (Bot API 10.2, 2026-07-14)",
     "findings": [
-      "Rich messages (RichMessage / InputRichMessage) structure content as blocks; media is embedded only as separate media blocks.",
+      "Rich messages (RichMessage / InputRichMessage) structure content as blocks; media is embedded as separate media blocks.",
       "Media blocks support only HTTP and HTTPS URLs; media type is determined by the MIME type and the URL.",
-      "Inline images inside running text are not a supported rich-message construct; each image is its own media block.",
+      "Inline images inside running text are not a supported rich-message construct; each image is its own media block (InputRichBlockPhoto / RichBlockPhoto).",
       "Bot API 10.2 adds InputRichMessageMedia and a media field on InputRichMessage so tg://photo?id=/video/audio links can be attached explicitly.",
       "sendRichMessage is the send method; rich messages allow up to 50 media attachments.",
-      "There is no first-class 'inline / collage / slideshow' enum in the Bot API. Those are editorial intents in this registry; a collage/slideshow would be realised as multiple separate media blocks or a media group (sendMediaGroup)."
+      "InputRichBlockCollage and InputRichBlockSlideshow are NATIVE first-class InputRichBlock types for sendRichMessage (corresponding to the <tg-collage> and <tg-slideshow> HTML tags, each with a nested blocks array and an optional RichBlockCaption). They are rich-message blocks, NOT realised via sendMediaGroup.",
+      "In this registry, 'inline' is an editorial placement hint meaning the media is shown as its own separate rich media block; 'collage'/'slideshow' map to the native InputRichBlockCollage / InputRichBlockSlideshow rich blocks."
     ]
   },
   "canary": {
