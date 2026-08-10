@@ -14,6 +14,12 @@ def test_parse_telegram_html_uses_utf16_offsets_and_preserves_text_links() -> No
         ("italic", 11, 6, None),
         ("text_link", 20, 8, "https://example.test/source"),
     ]
+    assert entities[0].model_dump(mode="json") == {
+        "type": "bold",
+        "offset": 2,
+        "length": 6,
+        "url": None,
+    }
 
 
 def test_parse_telegram_html_supports_custom_emoji_with_utf16_fallback() -> None:
@@ -27,6 +33,13 @@ def test_parse_telegram_html_supports_custom_emoji_with_utf16_fallback() -> None
     assert custom.length == 3
     assert custom.custom_emoji_id == "5368324170671202286"
     assert custom.url is None
+    assert custom.model_dump(mode="json") == {
+        "type": "custom_emoji",
+        "offset": 3,
+        "length": 3,
+        "url": None,
+        "custom_emoji_id": "5368324170671202286",
+    }
 
 
 def test_message_entities_match_ignores_unrelated_telegram_entities() -> None:
