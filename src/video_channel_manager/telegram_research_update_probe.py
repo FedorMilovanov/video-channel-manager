@@ -246,7 +246,9 @@ def _release_message_payload(release_path: Path, publication_id: str) -> Generic
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Provider-read-only recovery probe for one existing Telegram channel post.")
+    parser = argparse.ArgumentParser(
+        description="Provider-read-only recovery probe for one existing Telegram channel post."
+    )
     parser.add_argument("--release", type=Path, required=True)
     parser.add_argument("--publication-id", required=True)
     parser.add_argument("--expected-chat-id", type=int, required=True)
