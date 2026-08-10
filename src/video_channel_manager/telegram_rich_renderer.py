@@ -25,13 +25,12 @@ Mapping rules (deterministic, lossless for the supported vocabulary):
   anchor-link, math);
 * media blocks use the media-library ``uri`` (file id, public URL, or
   ``attach://`` reference) for the input payload; the expected returned
-  payload uses ``RichResolvedFile`` data.  A media block **without** a
-  resolved file cannot produce an honest expected structure: the renderer
-  fails closed unless ``allow_expected_placeholders=True``, in which case a
-  deterministic placeholder file identity is used and recorded in
-  ``media_placeholders`` (such a document can never reach ``verified`` —
-  the transport's exact-digest check will surface a mismatch, which is the
-  correct fail-closed behaviour before upload evidence exists).
+  payload normally uses ``RichResolvedFile`` data.  A media block **without**
+  a resolved file fails closed unless either (a) test-only expected
+  placeholders are enabled, or (b) its exact HTTPS photo id is explicitly
+  selected as provider-assigned URL media. The latter emits a reviewed
+  sentinel plus exact recursive media paths for the transport's normalized
+  evidence mode; callers must separately bind and re-prove the URL bytes.
 
 The renderer performs no HTTP calls and no provider writes.
 """
@@ -82,6 +81,7 @@ class RichRenderResult(BaseModel):
     article_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     visible_text: str
     media_placeholders: tuple[str, ...] = ()
+    provider_assigned_media: tuple[str, ...] = ()
     render_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
 
 
@@ -182,9 +182,21 @@ def _placeholder_resolved(media: RichMediaItem) -> RichResolvedFile:
     return RichResolvedFile(
         file_id=f"expected://{media.media_id}",
         file_unique_id=f"expected_{marker}",
-        width=0,
-        height=0,
+        width=1,
+        height=1,
         duration=0,
+    )
+
+
+def _provider_assigned_resolved(media: RichMediaItem) -> RichResolvedFile:
+    """Reviewed sentinel for URL photos whose file objects only exist after fetch."""
+    if media.kind != "photo" or not media.uri.startswith("https://"):
+        raise ValueError("provider-assigned media evidence currently requires an HTTPS photo")
+    return RichResolvedFile(
+        file_id="<provider-assigned-file-id>",
+        file_unique_id="<provider-assigned-file-unique-id>",
+        width=1,
+        height=1,
     )
 
 
@@ -310,6 +322,7 @@ def _build_blocks(
     returned: bool,
     placeholders: list[str],
     allow_placeholders: bool,
+    provider_assigned_media_ids: frozenset[str],
 ) -> list[dict[str, object]]:
     media_by_id = {entry.media_id: entry for entry in document.media}
     blocks: list[dict[str, object]] = []
@@ -319,6 +332,8 @@ def _build_blocks(
             media = media_by_id[block.media_id]
             if not returned:
                 return _media_block_input(block, media)
+            if media.media_id in provider_assigned_media_ids:
+                return _media_block_returned(block, media, _provider_assigned_resolved(media))
             if media.resolved is not None:
                 return _media_block_returned(block, media, media.resolved)
             if not allow_placeholders:
@@ -373,12 +388,41 @@ def _build_blocks(
     return blocks
 
 
+def _provider_assigned_media_paths(
+    blocks: list[dict[str, object]],
+    *,
+    selected_uris: frozenset[str],
+) -> tuple[str, ...]:
+    paths: list[str] = []
+
+    def walk(value: object, path: str) -> None:
+        if isinstance(value, dict):
+            block_type = value.get("type")
+            media = (
+                value.get(str(block_type))
+                if block_type in {"photo", "video", "animation", "audio", "voice_note"}
+                else None
+            )
+            if isinstance(media, dict) and media.get("media") in selected_uris:
+                paths.append(path)
+            for key, child in value.items():
+                walk(child, f"{path}/{key}")
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                walk(child, f"{path}/{index}")
+
+    walk(blocks, "$/blocks")
+    return tuple(paths)
+
+
 def render_rich_document(
     document: RichArticleDocument,
     target: TelegramRichTargetBinding,
     *,
     publication_id: str | None = None,
     allow_expected_placeholders: bool = False,
+    provider_assigned_media_ids: tuple[str, ...] = (),
+    skip_entity_detection: bool = False,
 ) -> tuple[TelegramRichMessageDocument, RichRenderResult]:
     """Render a rich article document into the transport's exact document.
 
@@ -388,17 +432,42 @@ def render_rich_document(
     structures.
     """
     validate_document(document)
+    selected_provider_media = frozenset(provider_assigned_media_ids)
+    if len(selected_provider_media) != len(provider_assigned_media_ids):
+        raise ValueError("provider-assigned media ids must be unique")
+    media_by_id = {entry.media_id: entry for entry in document.media}
+    if not selected_provider_media.issubset(media_by_id):
+        raise ValueError("provider-assigned media id is absent from the article media library")
+    for media_id in selected_provider_media:
+        media = media_by_id[media_id]
+        if media.resolved is not None:
+            raise ValueError("provider-assigned URL media must not claim a pre-existing resolved file")
+        _provider_assigned_resolved(media)
 
     placeholders: list[str] = []
     input_blocks = _build_blocks(
-        document, returned=False, placeholders=placeholders, allow_placeholders=allow_expected_placeholders
+        document,
+        returned=False,
+        placeholders=placeholders,
+        allow_placeholders=allow_expected_placeholders,
+        provider_assigned_media_ids=selected_provider_media,
     )
     expected_blocks = _build_blocks(
-        document, returned=True, placeholders=placeholders, allow_placeholders=allow_expected_placeholders
+        document,
+        returned=True,
+        placeholders=placeholders,
+        allow_placeholders=allow_expected_placeholders,
+        provider_assigned_media_ids=selected_provider_media,
     )
 
     input_rich_message: dict[str, Any] = {"blocks": input_blocks}
+    if skip_entity_detection:
+        input_rich_message["skip_entity_detection"] = True
     expected_returned_rich_message: dict[str, Any] = {"blocks": expected_blocks}
+    selected_uris = frozenset(media_by_id[media_id].uri for media_id in selected_provider_media)
+    provider_media_paths = _provider_assigned_media_paths(input_blocks, selected_uris=selected_uris)
+    if len(provider_media_paths) != len(selected_provider_media):
+        raise ValueError("provider-assigned media ids do not map one-to-one onto exact rich block paths")
 
     effective_publication_id = publication_id or document.document_id
     telegram_document = TelegramRichMessageDocument(
@@ -408,6 +477,7 @@ def render_rich_document(
         target=target,
         input_rich_message=input_rich_message,
         expected_returned_rich_message=expected_returned_rich_message,
+        provider_assigned_media_paths=provider_media_paths,
     )
 
     render_payload: dict[str, Any] = {
@@ -416,6 +486,7 @@ def render_rich_document(
         "expected_returned_rich_message": telegram_document.expected_returned_rich_message,
         "visible_text": plain_text(document),
         "media_placeholders": list(dict.fromkeys(placeholders)),
+        "provider_assigned_media": list(provider_assigned_media_ids),
     }
     result = RichRenderResult(
         schema_name="video-channel-manager.rich-render-result",
@@ -423,6 +494,7 @@ def render_rich_document(
         article_digest=document.digest,
         visible_text=plain_text(document),
         media_placeholders=tuple(dict.fromkeys(placeholders)),
+        provider_assigned_media=provider_assigned_media_ids,
         render_sha256=sha256_text(canonical_json(render_payload)),
     )
     return telegram_document, result

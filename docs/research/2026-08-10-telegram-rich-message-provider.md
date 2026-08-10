@@ -130,5 +130,32 @@ outcomes may preserve an observed message id only as reconciliation evidence;
 
 The existing `telegram_multichannel_transport.send_message_once` path is not
 rewritten. Rich transport selection must happen before dispatch. There is no
-same-attempt fallback, no blind retry, no live Svodka wiring, and no mutation of
-`state/svodka-telegram` in this PR.
+same-attempt fallback and no blind retry.
+
+## Follow-up: explicit URL-media evidence for the manual canary
+
+The later manual Svodka canary keeps the default full-byte-equivalent RichMessage
+comparison for ordinary documents. It adds one narrowly opted-in mechanism for
+URL media whose `file_id`, `file_unique_id`, and optional transfer metadata do
+not exist before Telegram fetches the reviewed URL:
+
+- each opted-in media block is named by its exact recursive block path;
+- the request document and exact reviewed URLs remain fully hashed; the canary
+  additionally records fresh byte-level SHA-256 proofs and requires an identical
+  read-only re-fetch immediately before mutation;
+- returned media must still be valid, non-empty Bot API media at the exact path
+  and type, with the exact caption and surrounding structure expected by the
+  reviewed document;
+- only the provider-generated `PhotoSize` variants (including their opaque
+  identities, dimensions/count, and optional transfer metadata) are
+  canonicalized for the expected-vs-returned digest, because none exist until
+  Telegram fetches URL media;
+- the complete actual returned `RichMessage`, including Telegram file
+  identities, is retained in the exact provider outcome artifact.
+
+This is not a wildcard for missing or misplaced media. Missing media, malformed
+or empty file evidence, wrong media path/type, caption or optional structural
+changes, or any other non-reviewed drift remains `may_exist`. The complete raw
+returned file identities, variants and dimensions remain in the archived
+provider outcome. Documents that do not explicitly list provider-assigned media
+paths retain the original full exact comparison.
