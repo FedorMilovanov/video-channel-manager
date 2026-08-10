@@ -6,20 +6,20 @@ Provider effect: `impossible`
 
 This workflow exists so a future operator or AI does not reconstruct `yt-dlp` / FFmpeg / PowerShell syntax from chat memory when given a Resi/DASH `Manifest.mpd` URL.
 
-It does **not** authorize publication, bypass access controls, or infer copyright permission. It only downloads a normally reachable DASH source on the operator machine, optionally extracts one exact time range, and verifies local bytes.
+It does **not** authorize publication, bypass access controls, or infer copyright permission. It downloads a normally reachable DASH source on the operator machine, optionally extracts one exact time range, and verifies local bytes.
 
 ## Assistant/operator contract
 
 When the user supplies a Resi/DASH `.mpd` URL and says to study the repository:
 
 1. Use this workflow instead of hand-authoring a multi-line `yt-dlp`/FFmpeg command.
-2. Do not ask which video/audio format to choose when the manifest is readable: the generated handoff uses `bestvideo+bestaudio/best` and prints `yt-dlp -F` evidence first.
+2. Do not ask which video/audio format to choose when the manifest is readable: first download uses `bestvideo+bestaudio/best` and prints `yt-dlp -F` evidence.
 3. Accept ordinary operator timestamps such as `50:12` and `1:49:52`; normalize them deterministically. Do not ask the user to add a leading `00:` or calculate `-t`.
-4. If exact start and end timestamps are supplied, generate exact-trim processing. Start/end are an atomic pair.
-5. If no encoder is explicitly requested, use `--encoder auto`: the generated script checks whether `h264_nvenc` is actually usable at runtime and otherwise falls back to CPU `libx264`.
-6. If the user explicitly requests NVENC or CPU, pass `--encoder nvenc` or `--encoder cpu`.
-7. Preserve the full downloaded master. A trim creates a second file and never destroys the source.
-8. Never reuse an existing final master from filename alone. Reuse is allowed only when the source receipt fingerprint and the current master SHA-256 both match.
+4. Start/end are an atomic pair. If both are supplied, generate exact-trim processing.
+5. If no encoder is explicitly requested, use `--encoder auto`: runtime-probe `h264_nvenc`, otherwise fall back to CPU `libx264`.
+6. Preserve the full downloaded master. A trim creates a second file and never destroys the source.
+7. Never trust an existing final master from filename alone. Reuse requires a matching source receipt and current master SHA-256.
+8. Once that provenance is proved, reuse is **offline-safe**: do not require the original manifest to remain reachable merely to re-trim the retained master.
 9. Return at most one executable PowerShell block for one operator action. It must define every variable inside the block and work from an arbitrary current directory.
 10. Never emit chat-escape defects such as `0\:v\:0`, `h264\_nvenc`, `-c\:v`, or depend on `$out` defined in a previous shell/message.
 11. Do not put Markdown link syntax in a PowerShell variable. The source value must be the raw URL.
@@ -27,31 +27,37 @@ When the user supplies a Resi/DASH `.mpd` URL and says to study the repository:
 
 ## Repository entrypoint
 
-The primary supported command is discoverable from the normal CLI:
+Primary command:
 
 ```text
 video-manager resi handoff
 ```
 
-The focused compatibility alias remains available:
+Focused alias retained:
 
 ```text
 video-manager-resi handoff
 ```
 
-On the canonical Windows checkout, prefer the existing primary CLI executable. Because the repository is installed editable during normal setup, adding the `resi` command to the primary CLI does not require the operator to discover or reinstall a new console-script name after pulling current `main`:
+On the canonical Windows checkout, prefer:
 
 ```text
 C:\Users\Fedor\Projects\video-channel-manager\.venv\Scripts\video-manager.exe
 ```
 
-The generator writes a UTF-8-BOM `.ps1` handoff into the repository `operator-output` directory by default. The generated PowerShell script writes the retained full master, source receipt, result JSON, and optional trimmed clip into the same canonical outbox with flat deterministic filenames.
+Because `video-manager` is the established editable-install entrypoint, adding the `resi` subcommand does not require the operator to discover a new executable name after pulling current code.
 
-If `--title` is omitted, the CLI derives a deterministic source-specific title from the Resi manifest path instead of reusing the collision-prone generic name `Resi Download`.
+The generator writes a UTF-8-BOM `.ps1` handoff into canonical `operator-output`. The generated PowerShell script defaults to:
+
+```text
+C:\Users\Fedor\Projects\video-channel-manager
+```
+
+as its repository root. For CI/testing or an intentionally different checkout, the generated handoff also accepts an optional `-RepositoryRoot`; ordinary operator use does not need to pass it.
+
+If `--title` is omitted, the CLI derives a deterministic source-specific title from the manifest path instead of using collision-prone `Resi Download`.
 
 ## One-action Windows example
-
-Example for the 2026-08-10 Abner Chou workflow:
 
 ```powershell
 $ErrorActionPreference = "Stop"
@@ -68,64 +74,85 @@ if (-not (Test-Path -LiteralPath $Handoff -PathType Leaf)) { throw "Expected han
 if ($LASTEXITCODE -ne 0) { throw "Resi handoff execution failed" }
 ```
 
-The CLI normalizes the example to `00:50:12 -> 01:49:52` and resolves the exact sermon duration to `00:59:40` (3580 seconds). The operator does not reconstruct a second FFmpeg command.
+The CLI normalizes this real case to `00:50:12 -> 01:49:52` and resolves `00:59:40` (3580 seconds). The operator does not reconstruct a second FFmpeg command.
 
 For download-only work, omit `--start` and `--end`.
 
 ## Generated files
 
-For a title `<TITLE>`, the generated handoff uses:
+For `<TITLE>`:
 
 ```text
 operator-output\<TITLE> - FULL.mp4
 operator-output\<TITLE> - FULL.source.json
 operator-output\<TITLE> - result.json
-operator-output\<TITLE>.mp4                 # only when exact trim is requested
+operator-output\<TITLE>.mp4                 # exact trim only
 ```
 
 The source receipt binds the retained master to:
 
-- a SHA-256 fingerprint of the canonical manifest identity (`scheme + host + path`; transient query parameters are excluded);
-- the exact current master SHA-256;
+- source fingerprint;
+- exact current master SHA-256;
 - positive master duration;
 - observed video/audio stream counts.
 
-An existing final master without that receipt is **not** accepted as a cache hit. An existing master whose current hash no longer matches the receipt is also rejected. This prevents a same-title file from a different source from being silently processed.
+The result JSON always binds the operation to the exact master SHA-256. Exact-trim results additionally record clip SHA-256, normalized start/end, expected/actual duration, and selected encoder.
 
-The result JSON always binds the operation to the exact master SHA-256. Exact-trim results additionally record clip SHA-256, normalized start/end, expected and actual duration, and the encoder actually selected.
+## Source identity policy
 
-## Generated download behavior
+Resi recording paths contain a stable source identifier while query values such as embed/access context may rotate. For `resi.media` and its subdomains, source identity therefore uses normalized scheme + host + path and excludes the query.
 
-The handoff script:
+For **generic non-Resi DASH URLs**, the query is retained in source identity. This prevents two potentially content-selecting URLs such as:
 
-- defines the canonical repository and `operator-output` paths inside the script;
-- verifies `yt-dlp`, `ffmpeg`, and `ffprobe` are in `PATH`;
-- validates any existing master through its source receipt and current SHA-256 before reuse;
-- prints the manifest format table with `yt-dlp -F`;
-- downloads `bestvideo+bestaudio/best` with concurrent fragment loading and **bounded** transport/fragment retries (`10` each);
+```text
+https://media.example/video/Manifest.mpd?variant=a
+https://media.example/video/Manifest.mpd?variant=b
+```
+
+from being treated as one source merely because their paths match.
+
+The source identity is stored only as SHA-256 in the receipt/result; it is not a substitute for the exact master SHA-256.
+
+## First download behavior
+
+When no proven reusable master exists, the generated handoff:
+
+- verifies `yt-dlp`, `ffmpeg`, and `ffprobe` are available;
+- prints `yt-dlp -F` evidence;
+- downloads `bestvideo+bestaudio/best`;
+- uses concurrent fragment loading;
+- uses bounded transport/fragment retries (`10` each), not infinite retry;
 - merges to MP4;
-- checks that the exact expected master path exists;
-- parses `ffprobe` JSON and fails closed unless the master has at least one video stream, at least one audio stream, and positive duration;
-- calculates the master SHA-256;
-- writes/refreshes the source receipt only after successful master QC;
-- preserves the full master;
-- writes a machine-readable result JSON.
+- parses `ffprobe` JSON;
+- requires at least one video stream, one audio stream, and positive duration;
+- calculates master SHA-256;
+- writes the source receipt only after successful QC;
+- writes machine-readable result evidence.
 
-The source URL is passed as a raw command argument after `--`; it is not rendered as Markdown.
+A dead or expired source eventually fails clearly instead of leaving an unattended shell retrying forever.
 
-Bounded retries are intentional. A dead or expired manifest must eventually fail with a clear operator error instead of leaving an unattended shell retrying forever.
+## Existing-master reuse
+
+If `<TITLE> - FULL.mp4` already exists, the handoff does **not** let `yt-dlp` decide cache identity from the filename.
+
+It first requires `<TITLE> - FULL.source.json`, then checks:
+
+1. receipt source fingerprint equals the handoff source fingerprint;
+2. current master SHA-256 equals the receipt master SHA-256.
+
+Missing/mismatched evidence fails closed. A proven master is then re-probed and re-hashed before result production.
+
+When those checks pass, remote format inspection and download are skipped. This intentionally allows later exact trims from the retained master even if the original Resi URL has expired or the machine is temporarily offline.
 
 ## Exact trim policy
 
-`-c copy` is not the default for an exact requested start because an H.264 stream-copy cut may begin on the nearest keyframe instead of the requested frame boundary.
-
-For exact trim, video is re-encoded while source audio is copied without an unnecessary AAC generation loss.
+H.264 stream-copy is not the default for an exact requested start because it may begin at a nearby keyframe. Exact trim re-encodes video while copying the source audio stream without an unnecessary AAC generation loss.
 
 ### Auto / NVENC
 
-`auto` first checks that FFmpeg advertises `h264_nvenc`, then performs a tiny runtime encoder probe. A build that lists NVENC but cannot initialize the NVIDIA runtime is treated as unavailable and falls back to CPU.
+`auto` first checks whether FFmpeg advertises `h264_nvenc`, then performs a tiny runtime encode probe. A build that lists NVENC but cannot initialize the NVIDIA runtime/GPU is treated as unavailable.
 
-When NVENC is usable, the profile is:
+Usable NVENC profile:
 
 ```text
 h264_nvenc
@@ -136,20 +163,18 @@ cq 21
 profile high
 ```
 
-If the source exposes a numeric video bitrate, the generated script sets a source-aware ceiling:
+If source video bitrate is numeric:
 
 ```text
 maxrate = 1.5 × source video bitrate
 bufsize = 2 × maxrate
 ```
 
-If stream-level bitrate is unavailable, container-level bitrate is used as the conservative fallback basis instead of silently dropping the ceiling.
+If stream bitrate is absent, container bitrate is used as the conservative fallback basis instead of silently dropping the ceiling.
 
-This is intentional. In the 2026-08-10 real Resi test, NVENC `P6/CQ18` processed a 59:40 clip at about `7.11x` realtime but inflated it to about 4.75 GiB / 11.1 Mbit/s from a roughly 4.25 Mbit/s H.264 source. `CQ21` plus a source-aware rate ceiling avoids treating a low-bitrate source as if extra encoded bits could recreate detail that is not present.
+The policy is based on the 2026-08-10 real Resi run: NVENC `P6/CQ18` processed the 59:40 clip at about `7.11x` realtime but inflated it to about 4.75 GiB / 11.1 Mbit/s from a roughly 4.25 Mbit/s H.264 source. `CQ21` plus the source-aware ceiling avoids spending bits that cannot restore absent source detail.
 
 ### CPU fallback
-
-When NVENC is unavailable, or `--encoder cpu` is selected:
 
 ```text
 libx264
@@ -158,85 +183,63 @@ crf 18
 profile high
 ```
 
-In the same real workflow, CPU `libx264 slow CRF18` produced a materially smaller result (about 2.88 GiB) but ran around `1.44x` realtime. The workflow therefore treats CPU as the compression-efficient fallback and NVENC as the speed-oriented default on capable machines.
+In the same workflow CPU `libx264 slow CRF18` produced about 2.88 GiB but ran around `1.44x` realtime. CPU is therefore the compression-efficient fallback and NVENC the speed-oriented default on a capable machine.
+
+Source audio remains `-c:a copy` during exact trim.
 
 ## Post-trim QC
 
-The generated script fails closed unless:
+The handoff fails closed unless:
 
-- the expected output file exists;
+- expected output exists;
 - `ffprobe` succeeds;
-- at least one video stream exists;
-- at least one audio stream exists;
-- actual duration is within 0.25 seconds of the deterministic expected duration.
+- video stream exists;
+- audio stream exists;
+- actual duration is within 0.25 seconds of deterministic expected duration.
 
-It then writes the result JSON and prints the exact clip path, clip SHA-256, master SHA-256, retained master path, and exact result path.
+It then writes result JSON and prints clip SHA-256, master SHA-256, retained master path, duration, and result path.
 
-## Defects this workflow prevents
+## CI proof
 
-### Undefined shell state
+The repository does not rely only on Python string assertions.
 
-Observed failure:
+Pester CI:
 
-```text
-Error opening input file \Abner Chou - How Should We Think About Israel.mp4
-```
+- generates the actual UTF-8-BOM handoff through `video-manager resi handoff`;
+- parses it with `System.Management.Automation.Language.Parser`;
+- executes the generated script end-to-end against provider-free `yt-dlp`/`ffmpeg`/`ffprobe` tool doubles;
+- proves first-download master creation;
+- proves master/clip SHA evidence and JSON receipts;
+- proves exact `50:12 -> 1:49:52` normalization/result duration;
+- proves CPU fallback control flow;
+- runs the handoff a second time and proves the verified master is reused without another remote inspection/download.
 
-Cause: a new PowerShell session did not contain the previously defined `$out` variable.
+The repository's PowerShell matrix runs these tests in Windows PowerShell 5.1, PowerShell 7 on Windows, and PowerShell 7 on Linux. Python CI additionally covers timestamp validation, source identity, title safety, CLI integration, rendering and provenance guards.
 
-Prevention: generated handoffs define `$Repo`, `$OperatorOutput`, `$Master`, `$SourceReceipt`, `$Result`, and optional `$Clip` in the same script.
+## Defects explicitly prevented
 
-### Markdown/chat escaping in commands
+Observed/reviewed failure classes now covered include:
 
-Observed malformed tokens included:
-
-```text
-0\:v\:0
--c\:v
-h264\_nvenc
--b\:a
-```
-
-These are not PowerShell/FFmpeg syntax. They were rendering/serialization artifacts.
-
-Prevention: the generator owns literal command rendering; the operator never repairs escaped punctuation manually.
-
-### Broken PowerShell continuation
-
-Observed multi-line backtick pastes caused FFmpeg to interpret `-t` as an input filename.
-
-Prevention: generated `.ps1` uses PowerShell argument arrays for the complicated FFmpeg invocation and does not rely on fragile chat line continuations.
-
-### Wrong format assumption
-
-A Resi MPD may expose separate video-only and audio-only streams. In the real example, 1080p video and AAC audio were separate representations.
-
-Prevention: the handoff prints the format table for evidence and downloads `bestvideo+bestaudio/best` instead of assuming one combined format ID.
-
-### Wasteful audio up-bitrate
-
-The real source audio was approximately 126 kbit/s AAC. Re-encoding it to 192 kbit/s cannot restore information and introduces another lossy generation.
-
-Prevention: exact-trim processing copies the existing audio stream.
-
-### Filename-only cache reuse
-
-A final file named `<TITLE> - FULL.mp4` is not proof that it came from the current manifest. `yt-dlp` can otherwise treat an existing final filename as already downloaded.
-
-Prevention: existing masters are reusable only when a source receipt exists, its canonical source fingerprint matches, and the exact current master SHA-256 matches the receipt.
-
-### Human timestamp friction
-
-A normal operator may provide `50:12` rather than `00:50:12`.
-
-Prevention: both `MM:SS[.mmm]` and `HH:MM:SS[.mmm]` are accepted, normalized, and regression-tested.
+- undefined previous-session `$out` producing paths such as `\Abner Chou...mp4`;
+- chat/Markdown escapes such as `0\:v\:0`, `-c\:v`, `h264\_nvenc`;
+- fragile multiline backtick paste causing FFmpeg argument shifts;
+- assuming one combined Resi format when video/audio are separate;
+- wasteful AAC up-bitrate;
+- generic `Resi Download` filename collisions;
+- same-name stale master reuse;
+- master without A/V proof;
+- unbounded retry on dead manifest;
+- compile-time-only NVENC detection;
+- loss of bitrate ceiling when stream-level bitrate is absent;
+- forcing the operator to rewrite `50:12` as `00:50:12`;
+- forcing a network recheck when a retained master has already proved source + SHA identity.
 
 ## Stop conditions
 
 Stop instead of improvising when:
 
-- the URL is not an absolute HTTP(S) `.mpd` manifest;
-- DRM/access controls prevent normal `yt-dlp` access;
+- URL is not an absolute HTTP(S) `.mpd` manifest;
+- normal `yt-dlp` access is blocked by DRM/access controls;
 - only one of start/end is known;
 - end is not later than start;
 - required local tools are missing;
