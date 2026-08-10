@@ -84,7 +84,9 @@ def validate_source_url(value: str) -> None:
 def canonical_source_identity(value: str) -> str:
     validate_source_url(value)
     parsed = urlparse(value)
-    return urlunparse((parsed.scheme.lower(), parsed.netloc.lower(), parsed.path, "", "", ""))
+    host = (parsed.hostname or "").lower()
+    query = "" if host == "resi.media" or host.endswith(".resi.media") else parsed.query
+    return urlunparse((parsed.scheme.lower(), parsed.netloc.lower(), parsed.path, "", query, ""))
 
 
 def default_title_for_url(value: str) -> str:
@@ -214,11 +216,12 @@ def render_powershell_handoff(spec: ResiHandoffSpec) -> str:
             'Write-Host "Reusing source-bound master: $Master"',
             "}",
             "",
-            'Write-Host "Available DASH formats:"',
-            "& yt-dlp -F --no-warnings -- $SourceUrl",
-            'if ($LASTEXITCODE -ne 0) { throw "yt-dlp format inspection failed" }',
-            "",
-            "if (-not $ReuseMaster) {",
+            "if ($ReuseMaster) {",
+            '    Write-Host "Verified master is reusable; skipping remote format inspection and download."',
+            "} else {",
+            '    Write-Host "Available DASH formats:"',
+            "    & yt-dlp -F --no-warnings -- $SourceUrl",
+            '    if ($LASTEXITCODE -ne 0) { throw "yt-dlp format inspection failed" }',
             '    Write-Host "Downloading best video + best audio..."',
             '    & yt-dlp -f "bestvideo+bestaudio/best" --concurrent-fragments 8 --retries 10 --fragment-retries 10 --merge-output-format mp4 --newline -o $Master -- $SourceUrl',
             '    if ($LASTEXITCODE -ne 0) { throw "yt-dlp download failed after bounded retries" }',
