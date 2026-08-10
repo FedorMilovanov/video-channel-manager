@@ -6,6 +6,7 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Iterable, Protocol, Sequence
 
+from video_channel_manager.lordchrist_cross_track_effect_guard import require_no_unresolved_provider_effects
 from video_channel_manager.lordchrist_research_rollout import load_lordchrist_research_rollout_approval
 from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_multichannel_release import load_release
@@ -18,6 +19,9 @@ from video_channel_manager.telegram_state import (
 
 
 class VerifiedEntry(Protocol):
+    @property
+    def publication_id(self) -> str: ...
+
     @property
     def state(self) -> str: ...
 
@@ -70,6 +74,11 @@ def require_cross_track_capacity(
         or legacy_ledger.channel_username.casefold() != profile.channel_username.casefold()
     ):
         raise ValueError("legacy ledger differs from canonical Lordchrist channel identity")
+
+    require_no_unresolved_provider_effects(
+        legacy_entries=legacy_ledger.entries.values(),
+        research_entries=research_ledger.entries.values(),
+    )
 
     effective_now = (now or datetime.now(tz=UTC)).astimezone(UTC)
     today = publication_local_date(effective_now, profile.timezone)
