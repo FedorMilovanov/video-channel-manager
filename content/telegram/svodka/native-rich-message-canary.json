@@ -1,0 +1,499 @@
+{
+  "schema_name": "video-channel-manager.svodka-native-rich-canary-state",
+  "schema_version": 1,
+  "state": "intent",
+  "provider_effect": "impossible",
+  "project_key": "svodka",
+  "channel_username": "@deep_info_life",
+  "chat_id": -1003527567039,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "publication_id": "svodka-native-rich-message-canary",
+  "confirmation": "RICH-CANARY:@deep_info_life:ONE-ARTICLE",
+  "github_repository": "FedorMilovanov/video-channel-manager",
+  "github_ref": "refs/heads/main",
+  "github_sha": "42eab3c514e8594c91f3a84881261eebd16180df",
+  "github_workflow_sha": "42eab3c514e8594c91f3a84881261eebd16180df",
+  "workflow_run_id": "31441659164",
+  "workflow_run_attempt": "1",
+  "exact_quality_workflows": [
+    "svodka-quality.yml",
+    "svodka-approved-release-quality.yml"
+  ],
+  "profile_sha256": "sha256:bbfd1a0b354a3ba874595a6397477498ba28f5dd5bdc2de298b1ef23649575d9",
+  "target_binding_sha256": "sha256:d95113f19ef340587653e45ba25c01ccdcc8d6aefedc32043c61a4c4db6e6a63",
+  "target_proof_sha256": "sha256:16d4615a89848e619af3dd772510c8d3e1680019eb35ac798de333e5c3b59089",
+  "spec_sha256": "sha256:a26aa1769985c72cf8ecedde1750f7bfcc165ec2250186dfb01d8ac0bd25a8d0",
+  "media_registry_sha256": "sha256:e49f9789fdf017ffc6c86474b7604a2179e5b277abdf2ef2b6e202d3bf553e76",
+  "media_asset_entry_sha256": [
+    "sha256:6b6735b3aa7f97e787adc2d52b7725856db777ee0fb5da4c554af33ab903f2dc",
+    "sha256:a3c8a29aac6c87c792b261b76809fd7bc2f29d30f2c12a29c50dd3dca83a49eb"
+  ],
+  "media_proof_sha256": "sha256:f7f9101427fb57b0802bce6b6af339859ccf8f2b70f6e5111aac1a05ea987fc4",
+  "media_proof": {
+    "schema_name": "video-channel-manager.svodka-native-rich-media-proof",
+    "schema_version": 1,
+    "media_registry_sha256": "sha256:e49f9789fdf017ffc6c86474b7604a2179e5b277abdf2ef2b6e202d3bf553e76",
+    "items": [
+      {
+        "asset_id": "asset-2026-august-total-solar-eclipse-media-01",
+        "direct_media_url": "https://assets.science.nasa.gov/dynamicimage/assets/science/hpd/eclipse/eclipse_map_20260812.jpg?w=1024&h=1024&fit=clip&crop=faces%2Cfocalpoint",
+        "content_type": "image/jpeg",
+        "content_length": 160723,
+        "content_sha256": "sha256:c135cb27e6c1c33646da4b74d431afd40abf53944e6bb71be81d7db325333275"
+      },
+      {
+        "asset_id": "asset-2026-august-total-solar-eclipse-media-02",
+        "direct_media_url": "https://science.nasa.gov/wp-content/uploads/2024/02/05pd1556medium-e1707864845295.jpg",
+        "content_type": "image/jpeg",
+        "content_length": 61447,
+        "content_sha256": "sha256:918f6c05646f0ef0fce1720201e3098dc9bb39b8e3be29a60da70360b03424de"
+      }
+    ],
+    "checked_at_utc": "2026-08-10T23:16:01.890719Z",
+    "provider_write_performed": false
+  },
+  "rich_article_sha256": "sha256:3c62afa069e7131c78899d918d45a3bd3deb14836b327293db6d04c3cdf3e838",
+  "rich_render_sha256": "sha256:af970ed5c9476bca9c9b8c524da20eb97ab64be7053e8940e2003ca8be42a4fe",
+  "document_sha256": "sha256:b71d04cb6fd2b96da464b34b9ad76cf257881d824b6de4259175676e9f4e2f2e",
+  "expected_rich_structure_sha256": "sha256:b1727ce36bce0d107f5be8fd170101052f2ac8f976bfcb592ba66fb97fc3a5a0",
+  "expected_media_sha256": "sha256:43c4b58608fddd777665ed01ec2f8adcd0f7d840fba9c49fde4a77eb0be85379",
+  "target_proof": {
+    "schema_name": "video-channel-manager.telegram-generic-target-proof",
+    "schema_version": 1,
+    "project_key": "svodka",
+    "channel_username": "@deep_info_life",
+    "profile_sha256": "sha256:bbfd1a0b354a3ba874595a6397477498ba28f5dd5bdc2de298b1ef23649575d9",
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1003527567039,
+    "chat_username": "deep_info_life",
+    "chat_title": "- СводкА -",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-08-10T23:16:03.761773Z"
+  },
+  "document": {
+    "schema_name": "video-channel-manager.telegram-rich-message-document",
+    "schema_version": 1,
+    "publication_id": "svodka-native-rich-message-canary",
+    "target": {
+      "schema_name": "video-channel-manager.telegram-rich-target-binding",
+      "schema_version": 1,
+      "project_key": "svodka",
+      "channel_username": "@deep_info_life",
+      "profile_sha256": "sha256:bbfd1a0b354a3ba874595a6397477498ba28f5dd5bdc2de298b1ef23649575d9",
+      "target_binding_sha256": "sha256:d95113f19ef340587653e45ba25c01ccdcc8d6aefedc32043c61a4c4db6e6a63",
+      "source_binding": {
+        "schema_name": "video-channel-manager.telegram-target-binding",
+        "schema_version": 1,
+        "project_key": "svodka",
+        "channel_username": "@deep_info_life",
+        "profile_sha256": "sha256:bbfd1a0b354a3ba874595a6397477498ba28f5dd5bdc2de298b1ef23649575d9",
+        "chat_id": -1003527567039,
+        "chat_username": "deep_info_life",
+        "bot_id": 8716602202,
+        "bot_username": "preaching_mp3_bot",
+        "can_post_messages": true,
+        "discovered_at_utc": "2026-08-07T22:42:00.262349Z",
+        "discovery_method": "getMe + getChat(@username) + getChat(numeric id) + getChatAdministrators",
+        "provider_write_performed": false
+      },
+      "chat_id": -1003527567039,
+      "chat_username": "deep_info_life",
+      "bot_id": 8716602202,
+      "bot_username": "preaching_mp3_bot"
+    },
+    "input_rich_message": {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Затмение 12 августа: карта и наука",
+          "size": 2
+        },
+        {
+          "type": "paragraph",
+          "text": [
+            "12 августа 2026 года полоса ",
+            {
+              "type": "bold",
+              "text": "полного солнечного затмения"
+            },
+            " пройдёт через Гренландию, Исландию и Испанию. Для исследователей это ещё и короткое окно, когда можно увидеть слабую ",
+            {
+              "type": "italic",
+              "text": "солнечную корону"
+            },
+            "."
+          ]
+        },
+        {
+          "type": "photo",
+          "photo": {
+            "type": "photo",
+            "media": "https://assets.science.nasa.gov/dynamicimage/assets/science/hpd/eclipse/eclipse_map_20260812.jpg?w=1024&h=1024&fit=clip&crop=faces%2Cfocalpoint"
+          },
+          "caption": {
+            "text": "Полоса полной фазы затмения 12 августа 2026 года.",
+            "credit": "Карта: NASA / NASA's Scientific Visualization Studio"
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Что проверят во время полной фазы",
+          "size": 3
+        },
+        {
+          "type": "list",
+          "items": [
+            {
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "С высотного самолёта проследят структуру солнечной короны."
+                }
+              ]
+            },
+            {
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Научные аэростаты измерят быстрый отклик земной атмосферы."
+                }
+              ]
+            },
+            {
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Официальная карта поможет отделить полную фазу от частичной."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Самолёт поднимает приборы выше большей части водяного пара и даёт им более чистый инфракрасный обзор."
+        },
+        {
+          "type": "photo",
+          "photo": {
+            "type": "photo",
+            "media": "https://science.nasa.gov/wp-content/uploads/2024/02/05pd1556medium-e1707864845295.jpg"
+          },
+          "caption": {
+            "text": "Наблюдать затмение будут и с высотных платформ.",
+            "credit": "Фото: NASA"
+          }
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "type": "blockquote",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "За пределами полной фазы смотреть на Солнце можно только через сертифицированные затменные фильтры. Обычные солнцезащитные очки не подходят."
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Почему Луна может закрыть Солнце",
+          "size": 3
+        },
+        {
+          "type": "paragraph",
+          "text": "Важен не физический диаметр, а угловой размер диска на небе: он приблизительно равен отношению диаметра объекта к расстоянию до него."
+        },
+        {
+          "type": "mathematical_expression",
+          "expression": "\\theta \\approx \\frac{D}{d}"
+        },
+        {
+          "type": "table",
+          "cells": [
+            [
+              {
+                "text": "Платформа",
+                "is_header": true,
+                "align": "left",
+                "valign": "top"
+              },
+              {
+                "text": "Что наблюдает",
+                "is_header": true,
+                "align": "left",
+                "valign": "top"
+              }
+            ],
+            [
+              {
+                "text": "WB-57",
+                "align": "left",
+                "valign": "top"
+              },
+              {
+                "text": "солнечную корону",
+                "align": "left",
+                "valign": "top"
+              }
+            ],
+            [
+              {
+                "text": "Аэростаты",
+                "align": "left",
+                "valign": "top"
+              },
+              {
+                "text": "реакцию атмосферы",
+                "align": "left",
+                "valign": "top"
+              }
+            ]
+          ],
+          "is_bordered": true,
+          "caption": "Две высотные программы NASA"
+        },
+        {
+          "type": "details",
+          "summary": "Источники и точная карта",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": [
+                {
+                  "type": "url",
+                  "text": "NASA — путь затмения 12 августа 2026 года",
+                  "url": "https://science.nasa.gov/eclipses/future-eclipses/total-solar-eclipse-on-august-12-2026/"
+                },
+                " · ",
+                {
+                  "type": "url",
+                  "text": "NASA — самолёт и аэростаты",
+                  "url": "https://science.nasa.gov/science-research/heliophysics/nasa-science-soars-during-august-total-solar-eclipse/"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "footer",
+          "text": "СВОДКА — сводим факты, а не мнения."
+        }
+      ],
+      "skip_entity_detection": true
+    },
+    "expected_returned_rich_message": {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Затмение 12 августа: карта и наука",
+          "size": 2
+        },
+        {
+          "type": "paragraph",
+          "text": [
+            "12 августа 2026 года полоса ",
+            {
+              "type": "bold",
+              "text": "полного солнечного затмения"
+            },
+            " пройдёт через Гренландию, Исландию и Испанию. Для исследователей это ещё и короткое окно, когда можно увидеть слабую ",
+            {
+              "type": "italic",
+              "text": "солнечную корону"
+            },
+            "."
+          ]
+        },
+        {
+          "type": "photo",
+          "photo": [
+            {
+              "file_id": "<provider-assigned-file-id>",
+              "file_unique_id": "<provider-assigned-file-unique-id>",
+              "width": 1,
+              "height": 1
+            }
+          ],
+          "caption": {
+            "text": "Полоса полной фазы затмения 12 августа 2026 года.",
+            "credit": "Карта: NASA / NASA's Scientific Visualization Studio"
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Что проверят во время полной фазы",
+          "size": 3
+        },
+        {
+          "type": "list",
+          "items": [
+            {
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "С высотного самолёта проследят структуру солнечной короны."
+                }
+              ],
+              "label": "•"
+            },
+            {
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Научные аэростаты измерят быстрый отклик земной атмосферы."
+                }
+              ],
+              "label": "•"
+            },
+            {
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Официальная карта поможет отделить полную фазу от частичной."
+                }
+              ],
+              "label": "•"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Самолёт поднимает приборы выше большей части водяного пара и даёт им более чистый инфракрасный обзор."
+        },
+        {
+          "type": "photo",
+          "photo": [
+            {
+              "file_id": "<provider-assigned-file-id>",
+              "file_unique_id": "<provider-assigned-file-unique-id>",
+              "width": 1,
+              "height": 1
+            }
+          ],
+          "caption": {
+            "text": "Наблюдать затмение будут и с высотных платформ.",
+            "credit": "Фото: NASA"
+          }
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "type": "blockquote",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "За пределами полной фазы смотреть на Солнце можно только через сертифицированные затменные фильтры. Обычные солнцезащитные очки не подходят."
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Почему Луна может закрыть Солнце",
+          "size": 3
+        },
+        {
+          "type": "paragraph",
+          "text": "Важен не физический диаметр, а угловой размер диска на небе: он приблизительно равен отношению диаметра объекта к расстоянию до него."
+        },
+        {
+          "type": "mathematical_expression",
+          "expression": "\\theta \\approx \\frac{D}{d}"
+        },
+        {
+          "type": "table",
+          "cells": [
+            [
+              {
+                "text": "Платформа",
+                "is_header": true,
+                "align": "left",
+                "valign": "top"
+              },
+              {
+                "text": "Что наблюдает",
+                "is_header": true,
+                "align": "left",
+                "valign": "top"
+              }
+            ],
+            [
+              {
+                "text": "WB-57",
+                "align": "left",
+                "valign": "top"
+              },
+              {
+                "text": "солнечную корону",
+                "align": "left",
+                "valign": "top"
+              }
+            ],
+            [
+              {
+                "text": "Аэростаты",
+                "align": "left",
+                "valign": "top"
+              },
+              {
+                "text": "реакцию атмосферы",
+                "align": "left",
+                "valign": "top"
+              }
+            ]
+          ],
+          "is_bordered": true,
+          "caption": "Две высотные программы NASA"
+        },
+        {
+          "type": "details",
+          "summary": "Источники и точная карта",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": [
+                {
+                  "type": "url",
+                  "text": "NASA — путь затмения 12 августа 2026 года",
+                  "url": "https://science.nasa.gov/eclipses/future-eclipses/total-solar-eclipse-on-august-12-2026/"
+                },
+                " · ",
+                {
+                  "type": "url",
+                  "text": "NASA — самолёт и аэростаты",
+                  "url": "https://science.nasa.gov/science-research/heliophysics/nasa-science-soars-during-august-total-solar-eclipse/"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "footer",
+          "text": "СВОДКА — сводим факты, а не мнения."
+        }
+      ]
+    },
+    "provider_assigned_media_paths": [
+      "$/blocks/2",
+      "$/blocks/6"
+    ],
+    "legacy_fallback": null
+  },
+  "mutation_request_limit": 1,
+  "automatic_retry_allowed": false,
+  "blind_retry_allowed": false,
+  "may_exist_requires_stop": true,
+  "publication_ledger_consumed": false,
+  "counts_as_pilot_post": false,
+  "pilot_release_modified": false,
+  "legacy_scheduler_unlocked": false,
+  "automatic_delete_allowed": false,
+  "automatic_edit_allowed": false,
+  "created_at_utc": "2026-08-10T23:16:06.572289Z"
+}
