@@ -6,6 +6,11 @@ on:
       - agent/youtube-current-state-sync
     paths:
       - .github/workflows/youtube-current-state-sync-once.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/youtube-current-state-sync-once.yml
 
 permissions:
   contents: write
