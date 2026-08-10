@@ -1,0 +1,89 @@
+{
+  "schema_name": "video-channel-manager.telegram-research-editorial-successor",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "state": "provider_inert",
+  "editorial_policy": "research-v3-restrained-rich-telegram",
+  "predecessor_queue_path": "content/telegram/lordchrist/research-queues/calvin-spurgeon-macarthur-v2.json",
+  "predecessor_approved_release_digest": "sha256:b836f9dc6733cdc922e5aaed97c250d1d46484fe75a216c1f12e586214a2626f",
+  "posts": [
+    {
+      "sequence": 1,
+      "predecessor_sequence": 2,
+      "predecessor_publication_id": "lordchrist-research-sermons-survive-century",
+      "publication_id": "lordchrist-research-v3-sermons-survive-century",
+      "title": "Перо, стенографист и магнитная лента",
+      "body_path": "content/telegram/lordchrist/research-posts-v3/sermons-survive-century.txt",
+      "body_sha256": "sha256:754118d4e1165392abb9cacb009078f8bd4dd4913f909055f1b598e307a60484",
+      "presentation_path": "content/telegram/lordchrist/research-posts-v3/sermons-survive-century.html",
+      "presentation_sha256": "sha256:02f3a89ac9d15ce4200e19bc6c00691b91462200a12a04091eaa43912d377449",
+      "release_offset_days": 0,
+      "source_claim_ids": [
+        "claim-raguenier-1549",
+        "claim-calvin-1805-sale",
+        "claim-spurgeon-weekly-print",
+        "claim-spurgeon-after-death",
+        "claim-gty-media-history"
+      ]
+    },
+    {
+      "sequence": 2,
+      "predecessor_sequence": 3,
+      "predecessor_publication_id": "lordchrist-research-learning-across-generations",
+      "publication_id": "lordchrist-research-v3-learning-across-generations",
+      "title": "Учиться у тех, кто жил до нас",
+      "body_path": "content/telegram/lordchrist/research-posts-v3/learning-across-generations.txt",
+      "body_sha256": "sha256:a35c9984534bb46e3a775d66d7db1d682020f02064ff0723e3b630624d2b7260",
+      "presentation_path": "content/telegram/lordchrist/research-posts-v3/learning-across-generations.html",
+      "presentation_sha256": "sha256:9d55d0e6f7b39dc2609928a44f2f4f464a7e925f8cbb5a70a7b8ab4cfc027dbe",
+      "release_offset_days": 2,
+      "source_claim_ids": [
+        "claim-spurgeon-admired-calvin",
+        "claim-spurgeon-calvin-boundary",
+        "claim-spurgeon-calvin-medal",
+        "claim-macarthur-spurgeon-encouragement",
+        "claim-macarthur-broader-influences"
+      ]
+    },
+    {
+      "sequence": 3,
+      "predecessor_sequence": 4,
+      "predecessor_publication_id": "lordchrist-research-three-expository-patterns",
+      "publication_id": "lordchrist-research-v3-three-expository-patterns",
+      "title": "Один текст — разные способы проповедовать",
+      "body_path": "content/telegram/lordchrist/research-posts-v3/three-expository-patterns.txt",
+      "body_sha256": "sha256:8c531fd3fe4947cc3bbd5f32d9ef61b133bd1fcabf1578dab5b82f3b45d28459",
+      "presentation_path": "content/telegram/lordchrist/research-posts-v3/three-expository-patterns.html",
+      "presentation_sha256": "sha256:8f9536153e989b01d585af9ddae79e684e6379c407746c950fa35d85bc9e123b",
+      "release_offset_days": 4,
+      "source_claim_ids": [
+        "claim-calvin-lectio-continua",
+        "claim-calvin-application",
+        "claim-spurgeon-selected-text",
+        "claim-macarthur-1969-start",
+        "claim-macarthur-2011-completion",
+        "claim-macarthur-spurgeon-method"
+      ]
+    },
+    {
+      "sequence": 4,
+      "predecessor_sequence": 5,
+      "predecessor_publication_id": "lordchrist-research-hidden-discipline",
+      "publication_id": "lordchrist-research-v3-hidden-discipline",
+      "title": "Невидимая дисциплина",
+      "body_path": "content/telegram/lordchrist/research-posts-v3/hidden-discipline.txt",
+      "body_sha256": "sha256:74d304ae067ca75eb292a6ee8d56d56c0bc3a4ac5f83286ced6918e3ea13179d",
+      "presentation_path": "content/telegram/lordchrist/research-posts-v3/hidden-discipline.html",
+      "presentation_sha256": "sha256:c3ff81a2bcd1bffd6c5aa714debab31f7f8364ff1cd8ec1c6202e8e8ecfb9e72",
+      "release_offset_days": 6,
+      "source_claim_ids": [
+        "claim-calvin-cadence",
+        "claim-spurgeon-weekly-workflow",
+        "claim-spurgeon-prep-not-improv",
+        "claim-macarthur-30-hours",
+        "claim-macarthur-father-advice"
+      ]
+    }
+  ]
+}
