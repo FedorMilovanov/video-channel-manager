@@ -70,12 +70,12 @@ class SvodkaCustomEmojiCatalog(BaseModel):
             if set(number_set.digits) != expected_digits[key]:
                 raise ValueError(f"number set {key} has incomplete or unexpected digits")
             for digit, custom_id in number_set.digits.items():
-                item = by_id.get(custom_id)
-                if item is None:
+                number_item = by_id.get(custom_id)
+                if number_item is None:
                     raise ValueError(f"number set {key} references unknown custom emoji {custom_id}")
-                if item.set_name != number_set.set_name:
+                if number_item.set_name != number_set.set_name:
                     raise ValueError(f"number set {key} crosses sticker-set identity")
-                if not item.fallback_emoji.startswith(digit):
+                if not number_item.fallback_emoji.startswith(digit):
                     raise ValueError(f"number set {key} digit {digit} has a mismatched fallback")
 
         if not self.roles:
@@ -89,8 +89,8 @@ class SvodkaCustomEmojiCatalog(BaseModel):
         if len(self.check_variants) != 4 or len(set(self.check_variants)) != 4:
             raise ValueError("catalog must preserve all four distinct verified check-mark variants")
         for custom_id in self.check_variants:
-            item = by_id.get(custom_id)
-            if item is None or item.fallback_emoji != "✅":
+            check_item = by_id.get(custom_id)
+            if check_item is None or check_item.fallback_emoji != "✅":
                 raise ValueError("check variant must reference a verified check-mark custom emoji")
         return self
 
