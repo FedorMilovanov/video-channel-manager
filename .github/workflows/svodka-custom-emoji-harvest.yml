@@ -29,7 +29,7 @@ permissions:
 
 concurrency:
   group: svodka-custom-emoji-harvest-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   harvest:
@@ -93,13 +93,14 @@ jobs:
         run: |
           python - <<'PY'
           import json
+          import os
           from pathlib import Path
 
           payload = json.loads(Path('.runtime/svodka-custom-emoji-verified-harvest.json').read_text(encoding='utf-8'))
           lines = [
               '## Svodka custom emoji harvest — verified',
               '',
-              f"- main SHA: `{__import__('os').environ['GITHUB_SHA']}`",
+              f"- main SHA: `{os.environ['GITHUB_SHA']}`",
               f"- channel: `{payload['channel_username']}`",
               f"- exemplar message ids: `{', '.join(str(item['message_id']) for item in payload['exemplars'])}`",
               f"- distinct custom emoji ids: `{len(payload['all_custom_emoji_ids'])}`",
