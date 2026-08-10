@@ -23,9 +23,7 @@ def test_parse_telegram_html_uses_utf16_offsets_and_preserves_text_links() -> No
 
 
 def test_parse_telegram_html_supports_custom_emoji_with_utf16_fallback() -> None:
-    plain, entities = parse_telegram_html(
-        '📚 <tg-emoji emoji-id="5368324170671202286">1️⃣</tg-emoji> <b>Факт</b>'
-    )
+    plain, entities = parse_telegram_html('📚 <tg-emoji emoji-id="5368324170671202286">1️⃣</tg-emoji> <b>Факт</b>')
 
     assert plain == "📚 1️⃣ Факт"
     custom = next(entity for entity in entities if entity.type == "custom_emoji")
