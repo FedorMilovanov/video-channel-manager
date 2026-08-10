@@ -73,7 +73,9 @@ def _client(tmp_path: Path, *, mode: str = "ok") -> tuple[VkApiClient, list[dict
             ]
             if mode == "foreign-owner" and items:
                 items[0]["owner_id"] = -235216998
-            if mode == "wrong-type" and items:
+            if mode == "mixed-type" and offset == 0 and len(items) > 1:
+                items[1]["type"] = "video"
+            if mode == "probe-non-clip" and offset == 0 and items:
                 items[0]["type"] = "video"
             return httpx.Response(200, json={"response": {"count": len(video_ids), "items": items}})
 
@@ -99,22 +101,77 @@ def test_vk_clips_snapshot_paginates_and_proves_known_clip(tmp_path: Path) -> No
         required_remote_ids=[KNOWN_SHREK_CLIP],
     )
 
-    assert snapshot["schema"] == "vk-clips-readonly-audit-v1"
+    assert snapshot["schema"] == "vk-clips-readonly-audit-v2"
     assert snapshot["project_key"] == "milovi-cake"
     assert snapshot["community"]["managed_by_token"] is True
+    assert snapshot["coverage"]["search_candidate_count"] == 201
     assert snapshot["coverage"]["clip_count"] == 201
-    assert snapshot["coverage"]["required_remote_ids_found"] == [KNOWN_SHREK_CLIP]
+    assert snapshot["coverage"]["filter_noise_count"] == 0
+    assert snapshot["coverage"]["required_remote_ids_found_as_clips"] == [KNOWN_SHREK_CLIP]
+    assert snapshot["coverage"]["clip_surface_complete"] is False
     assert snapshot["clips"][0]["remote_id"] == KNOWN_SHREK_CLIP
     assert snapshot["clips"][0]["permalink"] == "https://vk.com/clip-68859909_456239130"
     search_requests = [request for request in requests if request["method"] == "video.search"]
     assert [request["offset"] for request in search_requests] == ["0", "200"]
 
 
-@pytest.mark.parametrize("mode, message", [("foreign-owner", "foreign owner"), ("wrong-type", "non-Clip type")])
-def test_vk_clips_snapshot_rejects_non_exact_search_results(tmp_path: Path, mode: str, message: str) -> None:
-    client, _ = _client(tmp_path, mode=mode)
+def test_vk_clips_snapshot_records_short_filter_noise_instead_of_failing(tmp_path: Path) -> None:
+    client, _ = _client(tmp_path, mode="mixed-type")
 
-    with pytest.raises(VkApiError, match=message):
+    snapshot = build_vk_clips_audit_snapshot(
+        client,
+        project_key="milovi-cake",
+        community_id=MILOVI_COMMUNITY_ID,
+        owner_id=MILOVI_OWNER_ID,
+        required_remote_ids=[KNOWN_SHREK_CLIP],
+    )
+
+    assert snapshot["coverage"]["clip_count"] == 200
+    assert snapshot["coverage"]["filter_noise_count"] == 1
+    assert snapshot["coverage"]["short_filter_is_clip_exclusive"] is False
+    assert snapshot["coverage"]["returned_type_counts"] == {"short_video": 200, "video": 1}
+    assert snapshot["filter_noise"][0]["remote_id"] == f"{MILOVI_OWNER_ID}_1000"
+    assert snapshot["filter_noise"][0]["type"] == "video"
+    assert snapshot["filter_noise"][0]["permalink"] == f"https://vk.com/video{MILOVI_OWNER_ID}_1000"
+
+
+def test_vk_clips_snapshot_records_required_probe_returned_as_non_clip(tmp_path: Path) -> None:
+    client, _ = _client(tmp_path, mode="probe-non-clip")
+
+    snapshot = build_vk_clips_audit_snapshot(
+        client,
+        project_key="milovi-cake",
+        community_id=MILOVI_COMMUNITY_ID,
+        owner_id=MILOVI_OWNER_ID,
+        required_remote_ids=[KNOWN_SHREK_CLIP],
+    )
+
+    assert snapshot["coverage"]["required_remote_ids_found_as_clips"] == []
+    assert snapshot["coverage"]["required_remote_ids_returned_non_clip"] == [KNOWN_SHREK_CLIP]
+    assert snapshot["coverage"]["required_remote_ids_missing_from_search"] == []
+
+
+def test_vk_clips_snapshot_records_required_probe_missing_from_search(tmp_path: Path) -> None:
+    client, _ = _client(tmp_path)
+    missing = f"{MILOVI_OWNER_ID}_999999999"
+
+    snapshot = build_vk_clips_audit_snapshot(
+        client,
+        project_key="milovi-cake",
+        community_id=MILOVI_COMMUNITY_ID,
+        owner_id=MILOVI_OWNER_ID,
+        required_remote_ids=[missing],
+    )
+
+    assert snapshot["coverage"]["required_remote_ids_found_as_clips"] == []
+    assert snapshot["coverage"]["required_remote_ids_returned_non_clip"] == []
+    assert snapshot["coverage"]["required_remote_ids_missing_from_search"] == [missing]
+
+
+def test_vk_clips_snapshot_rejects_foreign_owner(tmp_path: Path) -> None:
+    client, _ = _client(tmp_path, mode="foreign-owner")
+
+    with pytest.raises(VkApiError, match="foreign owner"):
         build_vk_clips_audit_snapshot(
             client,
             project_key="milovi-cake",
