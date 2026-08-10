@@ -11,6 +11,7 @@ from video_channel_manager.editorial import (
 from video_channel_manager.editorial._project_profiles import (
     LEGENDARY_POET,
     LORD_GOD_STRENGTH,
+    MILOVI_CAKE,
     PROJECT_CHANNEL_IDS,
 )
 
@@ -23,6 +24,7 @@ def test_youtube_project_identity_map_matches_canonical_registry() -> None:
     expected = {
         LORD_GOD_STRENGTH: ("fedor-milovanov", "UCeSJsC6go2c9pdJCuUI1BYA"),
         LEGENDARY_POET: ("legendary-poet", "UC-78ys2S3cQ3lpqgXfo-SvQ"),
+        MILOVI_CAKE: ("milovi-cake", "UCMDnxfGZiBqcDzgUV1zjFpw"),
     }
 
     assert PROJECT_YOUTUBE_OAUTH_ALIASES == {key: value[0] for key, value in expected.items()}
@@ -44,6 +46,11 @@ def test_exact_project_account_channel_triples_are_accepted() -> None:
         project_key=LEGENDARY_POET,
         account_alias="legendary-poet",
         channel_id="UC-78ys2S3cQ3lpqgXfo-SvQ",
+    )
+    require_youtube_project_identity(
+        project_key=MILOVI_CAKE,
+        account_alias="milovi-cake",
+        channel_id="UCMDnxfGZiBqcDzgUV1zjFpw",
     )
 
 

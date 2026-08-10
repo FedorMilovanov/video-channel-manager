@@ -1,8 +1,8 @@
 # Project identity registry
 
-Updated: 2026-08-05
+Updated: 2026-08-10
 
-This repository operates two separate media projects owned by Fedor Milovanov. They are never aliases of one project and must not be mixed in descriptions, comments, playlists, manifests, API writes, reports, ledgers, results, or public footer links.
+This repository operates three separate media projects owned by Fedor Milovanov. They are never aliases of one project and must not be mixed in descriptions, comments, playlists, manifests, API writes, reports, ledgers, results, or public footer links.
 
 Every provider operation declares one `project_key` and binds exact provider identities. Credential aliases are labels, not project identities.
 
@@ -16,12 +16,13 @@ YouTube uses channel-specific local OAuth aliases:
 | --- | --- | --- |
 | `lord-god-strength` | `fedor-milovanov` | `UCeSJsC6go2c9pdJCuUI1BYA` |
 | `legendary-poet` | `legendary-poet` | `UC-78ys2S3cQ3lpqgXfo-SvQ` |
+| `milovi-cake` | `milovi-cake` | `UCMDnxfGZiBqcDzgUV1zjFpw` |
 
-Every scan or write verifies the exact returned channel ID. Reauthorizing one alias never substitutes the other project.
+Every scan or write verifies the exact returned channel ID. Reauthorizing one alias never substitutes another project.
 
 ### VK
 
-VK uses one user access token for both communities. The current local token alias is `legendary-poet`, but that alias only names the stored credential belonging to user `Федор Милованов`. It is not a project selector and does not mean each group needs a separate token.
+VK uses one user access token for all managed communities. The current local token alias is `legendary-poet`, but that alias only names the stored credential belonging to user `Федор Милованов`. It is not a project selector and does not mean each group needs a separate token.
 
 Project isolation requires exact:
 
@@ -110,6 +111,38 @@ Operational/admin routes are not public links:
 
 Default public footer: website, Telegram, canonical VK, and Rutube. Add the public Clips route only when the target text specifically promotes short-form material. Never put `cabinet.vkvideo.ru` in public output.
 
+## Project 3: Milovi Cake
+
+- Project key: `milovi-cake`
+- Content: author cakes, bento cakes, wedding/children's/3D cakes and handmade desserts
+- Exact provider identity was re-proved by a read-only operator snapshot on 2026-08-10 under Issue #257.
+
+### YouTube
+
+- Handle: `@milovi_cake`
+- Public channel: https://www.youtube.com/@milovi_cake
+- Channel ID: `UCMDnxfGZiBqcDzgUV1zjFpw`
+- OAuth alias: `milovi-cake`
+
+The read-only provider snapshot returned channel title `Milovi Cake`, `customUrl=@milovi_cake`, and exact channel ID `UCMDnxfGZiBqcDzgUV1zjFpw`. A handle must never substitute the exact channel ID in operational identity.
+
+### VK
+
+- Community: `Milovi Cake - Торты и Десерты - Санкт-Петербург`
+- Canonical public URL: https://vk.ru/milovi_cake
+- Compatibility URL: https://vk.com/milovi_cake
+- Community ID: `68859909`
+- API owner ID: `-68859909`
+- Shared VK credential alias: `legendary-poet`
+
+The shared VK credential is only authentication. The target is selected by `project_key=milovi-cake`, `community_id=68859909`, and `owner_id=-68859909`.
+
+### Other registered links
+
+- Website: https://milovicake.ru/
+
+Only cake content belongs to Milovi cake-transfer queues. Personal/family/non-cake channel material is always out of scope unless a separate reviewed operation explicitly says otherwise.
+
 ## Mandatory isolation rules
 
 1. Every plan, journal, report, backup, and manifest includes `project_key`.
@@ -123,7 +156,7 @@ Default public footer: website, Telegram, canonical VK, and Rutube. Add the publ
 9. Public and admin routes remain distinct.
 10. Source-code profiles and validators stay synchronized with this registry; documentation alone never authorizes writes.
 11. Only one exact project-bound owning issue may authorize the next operation.
-12. Current active read-only owners are #31, #32, and #119; later gates are #33 and #99; #38 is shared/provider-neutral; #123 is deferred and non-authorizing.
+12. Milovi Cake read-only reconciliation is owned by Issue #257; that issue does not authorize provider writes or deletion.
 
 ## Required identity checks
 
@@ -147,4 +180,14 @@ VK community ID: 235216998
 VK owner ID: -235216998
 ```
 
-One shared VK token may resolve both communities; exact numeric IDs and `project_key` decide the target. Any mismatch stops without scanning or writing.
+Milovi Cake:
+
+```text
+project_key: milovi-cake
+YouTube OAuth alias: milovi-cake
+YouTube channel ID: UCMDnxfGZiBqcDzgUV1zjFpw
+VK community ID: 68859909
+VK owner ID: -68859909
+```
+
+One shared VK token may resolve all three communities; exact numeric IDs and `project_key` decide the target. Any mismatch stops without scanning or writing.

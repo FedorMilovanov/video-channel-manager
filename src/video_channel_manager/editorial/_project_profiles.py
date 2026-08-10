@@ -5,17 +5,20 @@ from typing import Any, Mapping
 
 LORD_GOD_STRENGTH = "lord-god-strength"
 LEGENDARY_POET = "legendary-poet"
+MILOVI_CAKE = "milovi-cake"
 
 PROJECT_CHANNEL_IDS: Mapping[str, frozenset[str]] = MappingProxyType(
     {
         LORD_GOD_STRENGTH: frozenset({"UCeSJsC6go2c9pdJCuUI1BYA"}),
         LEGENDARY_POET: frozenset({"UC-78ys2S3cQ3lpqgXfo-SvQ"}),
+        MILOVI_CAKE: frozenset({"UCMDnxfGZiBqcDzgUV1zjFpw"}),
     }
 )
 PROJECT_YOUTUBE_OAUTH_ALIASES: Mapping[str, str] = MappingProxyType(
     {
         LORD_GOD_STRENGTH: "fedor-milovanov",
         LEGENDARY_POET: "legendary-poet",
+        MILOVI_CAKE: "milovi-cake",
     }
 )
 
@@ -23,6 +26,7 @@ PROJECT_VK_COMMUNITY_IDS: Mapping[str, frozenset[int]] = MappingProxyType(
     {
         LORD_GOD_STRENGTH: frozenset({60805374}),
         LEGENDARY_POET: frozenset({235216998}),
+        MILOVI_CAKE: frozenset({68859909}),
     }
 )
 
@@ -60,6 +64,14 @@ PROJECT_LINK_PROFILES: Mapping[str, frozenset[str]] = MappingProxyType(
                 "https://www.youtube.com/playlist?list=PLy9lLJfoq3uYTrhcN1TDMUeks46Y-TT_M",
                 "https://www.youtube.com/playlist?list=PLy9lLJfoq3ua1QeVsZutwScsM0l-asll4",
                 "https://www.youtube.com/playlist?list=PLy9lLJfoq3uZcrWY0F3Qux93xos6kIS7-",
+            }
+        ),
+        MILOVI_CAKE: frozenset(
+            {
+                "https://milovicake.ru/",
+                "https://www.youtube.com/@milovi_cake",
+                "https://vk.ru/milovi_cake",
+                "https://vk.com/milovi_cake",
             }
         ),
     }
@@ -184,6 +196,7 @@ __all__ = [
     "CHANNEL_ID_TO_PROJECT_KEY",
     "LEGENDARY_POET",
     "LORD_GOD_STRENGTH",
+    "MILOVI_CAKE",
     "PROJECT_CHANNEL_IDS",
     "PROJECT_KEYS",
     "PROJECT_LINK_PROFILES",
