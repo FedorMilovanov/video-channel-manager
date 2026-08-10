@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import re
@@ -127,6 +128,83 @@ def _media_records(value: Any) -> list[dict[str, Any]]:
 
 def _media_signature(value: Any) -> tuple[tuple[str, str], ...]:
     return tuple((str(record["path"]), str(record["type"])) for record in _media_records(value))
+
+
+def _provider_assigned_file_evidence(media_type: str, value: Any) -> Any:
+    """Canonicalize only opaque provider-assigned identity fields.
+
+    A reviewed document can opt individual URL-backed media blocks into this
+    representation. The complete response stays archived, while the expected
+    digest treats Telegram's post-fetch PhotoSize collection and opaque file
+    identities as one validated provider-assigned value that cannot exist
+    pre-dispatch.
+    """
+
+    def normalize_file(file_value: Any, required_numeric: tuple[str, ...]) -> dict[str, Any]:
+        if not isinstance(file_value, dict):
+            return {"invalid_provider_media": True}
+        normalized: dict[str, Any] = {
+            "file_id": "<provider-assigned-file-id>",
+            "file_unique_id": "<provider-assigned-file-unique-id>",
+        }
+        for field_name in required_numeric:
+            normalized[field_name] = file_value.get(field_name)
+        return normalized
+
+    if media_type == "photo":
+        if not isinstance(value, list) or not value:
+            return {"invalid_provider_media": True}
+        # Telegram chooses the PhotoSize variants only after fetching URL media.
+        # Full objects are validated before normalization and retained in the
+        # archived outcome; the reviewed digest represents their exact role as
+        # one valid, non-empty provider-assigned photo-size collection.
+        return [
+            {
+                "file_id": "<provider-assigned-file-id>",
+                "file_unique_id": "<provider-assigned-file-unique-id>",
+                "width": 1,
+                "height": 1,
+            }
+        ]
+    required_numeric = {
+        "animation": ("width", "height", "duration"),
+        "audio": ("duration",),
+        "video": ("width", "height", "duration"),
+        "voice_note": ("duration",),
+    }.get(media_type)
+    if required_numeric is None:
+        return {"invalid_provider_media": True}
+    return normalize_file(value, required_numeric)
+
+
+def _normalized_rich_evidence(value: dict[str, Any], provider_assigned_media_paths: tuple[str, ...]) -> dict[str, Any]:
+    normalized = copy.deepcopy(value)
+    selected_paths = frozenset(provider_assigned_media_paths)
+
+    def walk(candidate: Any, path: str) -> None:
+        if isinstance(candidate, dict):
+            block_type = candidate.get("type")
+            media_field = _MEDIA_BLOCK_FIELDS.get(block_type) if isinstance(block_type, str) else None
+            if path in selected_paths and media_field is not None and media_field in candidate:
+                candidate[media_field] = _provider_assigned_file_evidence(str(block_type), candidate[media_field])
+            for key, child in candidate.items():
+                walk(child, f"{path}/{key}")
+        elif isinstance(candidate, list):
+            for index, child in enumerate(candidate):
+                walk(child, f"{path}/{index}")
+
+    walk(normalized, "$")
+    return normalized
+
+
+def _rich_evidence_sha256(value: dict[str, Any], provider_assigned_media_paths: tuple[str, ...]) -> str:
+    return _sha256(_normalized_rich_evidence(value, provider_assigned_media_paths))
+
+
+def _rich_media_evidence_sha256(value: dict[str, Any], provider_assigned_media_paths: tuple[str, ...]) -> str | None:
+    normalized = _normalized_rich_evidence(value, provider_assigned_media_paths)
+    media = _media_records(normalized)
+    return _sha256(media) if media else None
 
 
 def _textual_character_count(value: Any, *, inside_text: bool = False) -> int:
@@ -350,7 +428,8 @@ def _validate_returned_file(value: Any, *, required_numeric: tuple[str, ...]) ->
         raise ValueError("returned rich media has no file_unique_id")
     for field_name in required_numeric:
         parsed = _strict_int(value.get(field_name))
-        if parsed is None or parsed < 0:
+        minimum = 1 if field_name in {"width", "height"} else 0
+        if parsed is None or parsed < minimum:
             raise ValueError(f"returned rich media has invalid {field_name}")
 
 
@@ -491,6 +570,7 @@ class TelegramRichMessageDocument(BaseModel):
     target: TelegramRichTargetBinding
     input_rich_message: dict[str, Any]
     expected_returned_rich_message: dict[str, Any]
+    provider_assigned_media_paths: tuple[str, ...] = ()
     legacy_fallback: GenericMessagePayload | None = None
 
     @model_validator(mode="after")
@@ -498,11 +578,26 @@ class TelegramRichMessageDocument(BaseModel):
         _validate_input_rich_message(self.input_rich_message)
         _validate_expected_rich_message(self.expected_returned_rich_message)
 
-        if "blocks" in self.input_rich_message:
-            input_signature = _media_signature(self.input_rich_message)
-            expected_signature = _media_signature(self.expected_returned_rich_message)
-            if input_signature != expected_signature:
-                raise ValueError("input and expected rich block media positions or types differ")
+        input_signature = _media_signature(self.input_rich_message)
+        expected_signature = _media_signature(self.expected_returned_rich_message)
+        if "blocks" in self.input_rich_message and input_signature != expected_signature:
+            raise ValueError("input and expected rich block media positions or types differ")
+
+        selected_paths = self.provider_assigned_media_paths
+        if len(selected_paths) != len(set(selected_paths)):
+            raise ValueError("provider-assigned rich media paths must be unique")
+        if selected_paths:
+            if "blocks" not in self.input_rich_message:
+                raise ValueError("provider-assigned rich media paths require block-form input")
+            available_paths = {path for path, _ in input_signature}
+            if any(path not in available_paths for path in selected_paths):
+                raise ValueError("provider-assigned rich media path does not identify an exact media block")
+            input_records = {str(record["path"]): record for record in _media_records(self.input_rich_message)}
+            for path in selected_paths:
+                media = input_records[path]["media"]
+                media_identity = media.get("media") if isinstance(media, dict) else None
+                if not isinstance(media_identity, str) or not media_identity.startswith("https://"):
+                    raise ValueError("provider-assigned rich media must use a reviewed exact HTTPS URL")
 
         fallback = self.legacy_fallback
         if fallback is not None:
@@ -524,12 +619,14 @@ class TelegramRichMessageDocument(BaseModel):
 
     @property
     def expected_rich_structure_sha256(self) -> str:
-        return _sha256(self.expected_returned_rich_message)
+        return _rich_evidence_sha256(self.expected_returned_rich_message, self.provider_assigned_media_paths)
 
     @property
     def expected_media_sha256(self) -> str | None:
-        media = _media_records(self.expected_returned_rich_message)
-        return _sha256(media) if media else None
+        return _rich_media_evidence_sha256(
+            self.expected_returned_rich_message,
+            self.provider_assigned_media_paths,
+        )
 
     @property
     def document_sha256(self) -> str:
@@ -698,6 +795,7 @@ class TelegramRichProviderOutcome(BaseModel):
     input_rich_message_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     expected_rich_structure_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     expected_media_sha256: str | None = Field(default=None, pattern=r"^sha256:[0-9a-f]{64}$")
+    provider_assigned_media_paths: tuple[str, ...] = ()
     provider_method: Literal["sendRichMessage"] = "sendRichMessage"
     legacy_fallback_method: Literal["sendMessage"] = "sendMessage"
     provider_effect: RichProviderEffect
@@ -714,6 +812,7 @@ class TelegramRichProviderOutcome(BaseModel):
     media_verification: RichMediaVerification
     returned_rich_structure_sha256: str | None = Field(default=None, pattern=r"^sha256:[0-9a-f]{64}$")
     returned_media_sha256: str | None = Field(default=None, pattern=r"^sha256:[0-9a-f]{64}$")
+    returned_rich_message: dict[str, Any] | None = None
     observed_message_id: int | None = Field(default=None, gt=0)
     observed_chat_id: int | None = None
     observed_chat_username: str | None = None
@@ -738,6 +837,18 @@ class TelegramRichProviderOutcome(BaseModel):
             or (self.credential_bot_username or "").casefold() != self.expected_bot_username.casefold()
         ):
             raise ValueError("exact bot verification requires matching proof, credential, and expected identity")
+        if len(self.provider_assigned_media_paths) != len(set(self.provider_assigned_media_paths)):
+            raise ValueError("outcome provider-assigned media paths must be unique")
+        if self.returned_rich_message is not None:
+            if self.returned_rich_structure_sha256 is not None and self.returned_rich_structure_sha256 != (
+                _rich_evidence_sha256(self.returned_rich_message, self.provider_assigned_media_paths)
+            ):
+                raise ValueError("returned rich structure digest differs from archived response evidence")
+            if self.returned_media_sha256 is not None and self.returned_media_sha256 != _rich_media_evidence_sha256(
+                self.returned_rich_message,
+                self.provider_assigned_media_paths,
+            ):
+                raise ValueError("returned rich media digest differs from archived response evidence")
         if self.provider_call_count < self.mutation_request_count:
             raise ValueError("mutation request count cannot exceed provider call count")
         if self.provider_effect == "impossible":
@@ -767,6 +878,7 @@ class TelegramRichProviderOutcome(BaseModel):
                 or self.message_url != f"https://t.me/{self.expected_chat_username}/{self.message_id}"
                 or self.structure_verification != "exact"
                 or self.media_verification not in {"exact", "not_applicable"}
+                or self.returned_rich_message is None
                 or self.returned_rich_structure_sha256 != self.expected_rich_structure_sha256
                 or self.returned_media_sha256 != self.expected_media_sha256
             ):
@@ -854,6 +966,7 @@ def _base_outcome(
         "input_rich_message_sha256": document.input_rich_message_sha256,
         "expected_rich_structure_sha256": document.expected_rich_structure_sha256,
         "expected_media_sha256": document.expected_media_sha256,
+        "provider_assigned_media_paths": document.provider_assigned_media_paths,
         "provider_effect": "may_exist",
         "provider_call_count": 1,
         "mutation_request_count": 1,
@@ -1040,9 +1153,14 @@ def _outcome_from_response(
     else:
         try:
             _validate_expected_rich_message(returned_rich)
-            returned_structure_sha256 = _sha256(returned_rich)
-            returned_media = _media_records(returned_rich)
-            returned_media_sha256 = _sha256(returned_media) if returned_media else None
+            returned_structure_sha256 = _rich_evidence_sha256(
+                returned_rich,
+                document.provider_assigned_media_paths,
+            )
+            returned_media_sha256 = _rich_media_evidence_sha256(
+                returned_rich,
+                document.provider_assigned_media_paths,
+            )
         except (TypeError, ValueError):
             structure_verification = "malformed"
             media_verification = "missing" if document.expected_media_sha256 is not None else "not_observed"
@@ -1067,6 +1185,7 @@ def _outcome_from_response(
         "media_verification": media_verification,
         "returned_rich_structure_sha256": returned_structure_sha256,
         "returned_media_sha256": returned_media_sha256,
+        "returned_rich_message": returned_rich if isinstance(returned_rich, dict) else None,
         "observed_message_id": observed_message_id,
         "observed_chat_id": observed_chat_id,
         "observed_chat_username": observed_chat_username,
