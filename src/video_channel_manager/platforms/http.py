@@ -284,6 +284,7 @@ class HttpClientOwner:
         *,
         timeout: float | httpx.Timeout,
         follow_redirects: bool = True,
+        trust_env: bool = True,
     ) -> None:
         if hasattr(self, "_http_client"):
             raise RuntimeError("HTTP client lifecycle was initialized more than once")
@@ -291,6 +292,7 @@ class HttpClientOwner:
         self._http_client = http_client or httpx.Client(
             timeout=timeout,
             follow_redirects=follow_redirects,
+            trust_env=trust_env,
         )
         self._owned_http_client_closed = False
 

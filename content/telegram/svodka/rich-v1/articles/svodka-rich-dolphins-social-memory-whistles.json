@@ -1,0 +1,153 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-article",
+  "schema_version": 1,
+  "project_key": "svodka",
+  "channel_username": "@deep_info_life",
+  "channel_title": "СВОДКА",
+  "article_id": "svodka-rich-dolphins-social-memory-whistles",
+  "revision": "rich-v1",
+  "status": "editorial_draft_review_required",
+  "provider_writes_authorized": false,
+  "premium_emoji_dependency": false,
+  "predecessor": {
+    "publication_id": "svodka-dolphins-social-memory-whistles",
+    "source_file": "content/telegram/svodka/draft-14-posts-2026-08.json",
+    "source_file_sha256": "8591f1055a2b8edac432eb2eb08c57253b307d00a7fc1f4c732ac01e48b8107e",
+    "release_id": "svodka-pilot-2026-08",
+    "source_format": "quick_fact"
+  },
+  "title": "Дельфины узнают старых знакомых по свисту спустя десятилетия",
+  "lead": "У афалин есть индивидуальные сигнатурные свисты — устойчивые «имена» в звуковой форме. Проверка показала: животное откликается на свист бывшего соседа, даже если они разлучены больше двадцати лет.",
+  "icons_used": [
+    "🐬",
+    "🎧",
+    "😎"
+  ],
+  "sections": [
+    {
+      "section_id": "svistyi",
+      "heading": "Свист как имя",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "Сигнатурный свист афалины — стабильный призовной звук, привязанный к конкретному животному. Он не «случайная трель», а устойчивый и повторяемый сигнал, по которому дельфинов могут различить другие дельфины.",
+          "footnotes": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "eksperiment",
+      "heading": "Проверка памяти",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "В исследовании Proceedings of the Royal Society B дельфинам проигрывали записи тех, с кем они жили раньше. Это было возможно благодаря многоплощадочной программе содержания: животных перевозят между учреждениями, и часть бывших соседей разошлась на годы и десятилетия.",
+          "footnotes": [
+            1
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "На знакомые свисты животные реагировали заметно сильнее, чем на незнакомые. Причём эффект оставался виден после разлуки длиной более <b>20 лет</b>.",
+          "footnotes": [
+            1
+          ]
+        },
+        {
+          "type": "quote",
+          "html": "«Насколько мне известно, это первая работа, которая показывает социальное узнавание продолжительностью как минимум 20 лет у нечеловеческого вида».",
+          "attribution": "Джейсон Брак, автор исследования (University of Chicago)",
+          "note": "перевод редакции по аннотации статьи",
+          "footnotes": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "chto-eto-ne-znachit",
+      "heading": "Что это не означает",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "Результат не делает дельфина «владельцем человеческой памяти в воде». Он говорит конкретное: социальное узнавание афалин способно длиться десятилетиями, и это первый показанный случай такой длительности у нечеловеческого вида.",
+          "footnotes": [
+            1
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "Сравнение с легендарной «слоновьей памятью» удобно для разговора, но для науки важна точность: что именно помнят животные, как это измерено и в каких границах получен результат.",
+          "footnotes": [
+            1
+          ]
+        }
+      ]
+    }
+  ],
+  "quotes": [
+    {
+      "section_id": "eksperiment",
+      "html": "«Насколько мне известно, это первая работа, которая показывает социальное узнавание продолжительностью как минимум 20 лет у нечеловеческого вида».",
+      "attribution": "Джейсон Брак",
+      "note": "перевод редакции с английского (This is, to my knowledge, the first study to show that social recognition can last for at least 20 years in a non-human species)",
+      "verified_at_source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3757989/"
+    }
+  ],
+  "media_slots": [
+    {
+      "slot_id": "media-01",
+      "placement": {
+        "after": "lead",
+        "before": "svistyi"
+      },
+      "depicts": "Афалины в воде, группа из двух-трёх животных; спокойный кадр без дрессированной постановки.",
+      "purpose": "Показать социальных животных — статья именно о социальной памяти.",
+      "preferred_source_type": "public-domain photograph (NOAA or similar)",
+      "copyright_provenance": "Prefer NOAA public-domain imagery; record exact author and licence for any alternative.",
+      "caption": "Афалины. Индивидуальный свист служит устойчивым звуковым 'именем'."
+    },
+    {
+      "slot_id": "media-02",
+      "placement": {
+        "after": "eksperiment"
+      },
+      "depicts": "Редакционная схема эксперимента: дельфин в бассейне, динамик, проигрываемые свисты (знакомый / незнакомый), интенсивность реакции.",
+      "purpose": "Опытная схема часто читается лучше рисунка, чем абзац уточнений.",
+      "preferred_source_type": "original editorial diagram",
+      "copyright_provenance": "Original work; do not trace the journal's figures. Procedure descriptions are not copyrightable.",
+      "caption": "Как проверяли память: дельфинам проигрывали знакомые и незнакомые свисты и сравнивали реакцию."
+    }
+  ],
+  "footnotes": [
+    {
+      "n": 1,
+      "source_id": "src-procb-2013-dolphins",
+      "label": "Proceedings of the Royal Society B, 2013 — Decades-long social memory in bottlenose dolphins",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3757989/"
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "src-procb-2013-dolphins",
+      "label": "Proceedings B, 2013 — Decades-long social memory in bottlenose dolphins",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3757989/",
+      "verified_on": "2026-08-08",
+      "reverified_on": "2026-08-10",
+      "evidence": "The original study reports recognition of familiar signature whistles after separations of at least 20 years and frames the result as the first demonstration of social recognition lasting that long in a non-human species. Author Jason N. Bruck, University of Chicago."
+    }
+  ],
+  "footer": {
+    "tagline": "Сводка — сводим факты, а не мнения 😎",
+    "hashtags": [
+      "#Сводка",
+      "#Дельфины",
+      "#Память",
+      "#Животные",
+      "#Наука"
+    ]
+  },
+  "editorial_notes": "The study's own framing (signature whistles as names, playback design, 'to my knowledge' first-of-kind claim) is respected verbatim; the author is named with his affiliation. The closing does not rank animals against each other."
+}

@@ -1,0 +1,170 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-article",
+  "schema_version": 1,
+  "project_key": "svodka",
+  "channel_username": "@deep_info_life",
+  "channel_title": "СВОДКА",
+  "article_id": "svodka-rich-2026-august-total-solar-eclipse",
+  "revision": "rich-v1",
+  "status": "editorial_draft_review_required",
+  "provider_writes_authorized": false,
+  "premium_emoji_dependency": false,
+  "predecessor": {
+    "publication_id": "svodka-2026-august-total-solar-eclipse",
+    "source_file": "content/telegram/svodka/draft-14-posts-2026-08.json",
+    "source_file_sha256": "8591f1055a2b8edac432eb2eb08c57253b307d00a7fc1f4c732ac01e48b8107e",
+    "release_id": "svodka-pilot-2026-08",
+    "source_format": "fresh_science"
+  },
+  "title": "Полное солнечное затмение 12 августа 2026 года",
+  "lead": "В среду 12 августа 2026 года полоса полной фазы пройдёт через север России, Гренландию, Исландию, Испанию и небольшой участок Португалии. Для науки затмение — не только красивое зрелище, но и редкий природный эксперимент.",
+  "icons_used": [
+    "🌑",
+    "✈️",
+    "😎"
+  ],
+  "sections": [
+    {
+      "section_id": "geografiya",
+      "heading": "Где будет полная фаза",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "Полная фаза пройдёт по <b>северу России, Гренландии, Исландии, Испании</b> и коснётся небольшого угла Португалии. В широких районах остальной Европы в тот же день будет видна частичная фаза.",
+          "footnotes": [
+            1
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "Точное время и глубина фазы зависят от места наблюдения; единственный надёжный способ узнать свои числа — карта NASA по ссылке внизу, а не приблизительные «будет видно примерно вечером».",
+          "footnotes": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "chto-delayut-uchyonye",
+      "heading": "Что в этот день делают учёные",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "Когда яркий диск Солнца закрыт Луной, невооружённому взгляду и инструментам открывается <i>корона</i> — слабая внешняя атмосфера Солнца. В обычный день её свет тонет в сиянии диска; во время полной фазы её можно регистрировать.",
+          "footnotes": [
+            2
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "По сообщению NASA, исследовательские группы будут наблюдать затмение с <b>высотного самолёта</b> и с <b>научных аэростатов</b>: на большой высоте атмосфера мешает меньше, и приборы видят дальше в инфракрасном диапазоне.",
+          "footnotes": [
+            2
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "Затмение — это ещё и естественный эксперимент с самой Землёй: над регионом стремительно и ненадолго падает поток солнечного света. По тому, как отвечает атмосфера, уточняют модели переноса энергии в верхних слоях.",
+          "footnotes": [
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "kak-smotret",
+      "heading": "Как смотреть без последствий",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "Полная фаза — короткие минуты, когда диск полностью закрыт. Всё остальное время, до и после полной фазы, а также любая частичная фаза требуют <b>сертифицированных затменных фильтров</b>: бытовые солнцезащитные очки, тонированное стекло и фото-черно-белый негатив не защищают сетчатку.",
+          "footnotes": [
+            1
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "Это не редакторская осторожность, а медицинский факт: глаз не чувствует ожога сетчатки в момент повреждения, а последствия необратимы."
+        }
+      ]
+    }
+  ],
+  "quotes": [],
+  "media_slots": [
+    {
+      "slot_id": "media-01",
+      "placement": {
+        "after": "lead",
+        "before": "geografiya"
+      },
+      "depicts": "Официальная карта полосы полной фазы NASA для затмения 12 августа 2026 года по Европе и Северной Атлантике.",
+      "purpose": "Дать читателю визуальный ответ на главный практический вопрос: «а у нас будет?». Официальная карта точнее любого пересказа.",
+      "preferred_source_type": "NASA eclipse web page map, downloaded exactly as published",
+      "copyright_provenance": "NASA eclipse path maps are public domain with a requested NASA credit; use the official map and keep the NASA credit in the caption. Avoid third-party redrawn 'branded' maps with unclear rights.",
+      "caption": "Полоса полной фазы затмения 12 августа 2026 года. Карта: NASA."
+    },
+    {
+      "slot_id": "media-02",
+      "placement": {
+        "after": "chto-delayut-uchyonye"
+      },
+      "depicts": "Фотография высотного самолёта NASA (WB-57F) или запуска научной аэростатной платформы — в контексте наблюдений за затмением.",
+      "purpose": "Показать реальный инструмент исследования — не телескоп в башне, а самолёт и аэростат; это делает раздел о научной работе конкретным.",
+      "preferred_source_type": "NASA imagery from the cited eclipse-science article",
+      "copyright_provenance": "NASA imagery is public domain; preserve exact per-image credit from the NASA page.",
+      "caption": "Наблюдать затмение будут и с высотных платформ. Фото: NASA."
+    }
+  ],
+  "visual_plan": {
+    "rationale": "У читателя за пределами полной фазы практический вопрос один: «а у нас что будет?». Один проверенный кадр карты, отданный раньше текста, закрывает его лучше любой композиции.",
+    "panels": [
+      {
+        "order": 1,
+        "type": "map",
+        "content": "NASA, официальная карта полосы затмения; без самостоятельных правок географии и цвета"
+      }
+    ]
+  },
+  "footnotes": [
+    {
+      "n": 1,
+      "source_id": "src-nasa-eclipse-2026-path",
+      "label": "NASA Science — Total solar eclipse on August 12, 2026",
+      "url": "https://science.nasa.gov/eclipses/future-eclipses/total-solar-eclipse-on-august-12-2026/"
+    },
+    {
+      "n": 2,
+      "source_id": "src-nasa-eclipse-2026-science",
+      "label": "NASA Science — NASA science soars during August total solar eclipse",
+      "url": "https://science.nasa.gov/science-research/heliophysics/nasa-science-soars-during-august-total-solar-eclipse/"
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "src-nasa-eclipse-2026-path",
+      "label": "NASA Science — Aug. 12, 2026 eclipse path",
+      "url": "https://science.nasa.gov/eclipses/future-eclipses/total-solar-eclipse-on-august-12-2026/",
+      "verified_on": "2026-08-08",
+      "evidence": "NASA places totality across northern Russia, Greenland, Iceland, Spain and a small corner of Portugal, with a partial eclipse across much of Europe and other Northern Hemisphere regions."
+    },
+    {
+      "source_id": "src-nasa-eclipse-2026-science",
+      "label": "NASA Science — eclipse aircraft and balloon research",
+      "url": "https://science.nasa.gov/science-research/heliophysics/nasa-science-soars-during-august-total-solar-eclipse/",
+      "verified_on": "2026-08-08",
+      "evidence": "NASA-funded teams will use a high-altitude aircraft and balloons to study the solar corona and atmospheric effects during the Aug. 12, 2026 eclipse."
+    }
+  ],
+  "footer": {
+    "tagline": "Сводка — сводим факты, а не мнения 😎",
+    "hashtags": [
+      "#Сводка",
+      "#Затмение",
+      "#Космос",
+      "#Солнце",
+      "#NASA",
+      "#2026"
+    ]
+  },
+  "editorial_notes": "The time-sensitive item becomes a preview article with an explicit date anchor instead of relative time words; eye-safety guidance is moved out of the fine print, where it is easy to skip. Claims stay with the two NASA sources carried over from the frozen release."
+}

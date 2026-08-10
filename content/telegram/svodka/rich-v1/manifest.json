@@ -1,0 +1,219 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-migration-manifest",
+  "schema_version": 1,
+  "project_key": "svodka",
+  "revision": "rich-v1",
+  "generated_at": "2026-08-10T21:30:00+00:00",
+  "generated_by": "editorial/data migration agent (Arena.ai Agent Mode)",
+  "source_release": {
+    "release_id": "svodka-pilot-2026-08",
+    "source_file": "content/telegram/svodka/draft-14-posts-2026-08.json",
+    "source_file_sha256": "8591f1055a2b8edac432eb2eb08c57253b307d00a7fc1f4c732ac01e48b8107e",
+    "note": "Historical frozen release. Read-only input to this revision; it is not modified, superseded or invalidated by rich-v1. Rollout schedule overlay (shift +1 day, effective 2026-08-10..2026-08-16) remains authoritative for the pilot micro-posts.",
+    "scheduled_at_basis": "old_scheduled_at values in mappings are the EFFECTIVE dates — draft-14-posts-2026-08.json base schedule shifted +1 day by content/telegram/svodka/rollout-schedule-2026-08.json (Issue #235), with the eclipse item ahead of the octopus item. The frozen queue file itself stores the pre-shift dates; the overlay is authoritative for the pilot and is referenced here, not modified."
+  },
+  "target": {
+    "revision_dir": "content/telegram/svodka/rich-v1/",
+    "articles_dir": "content/telegram/svodka/rich-v1/articles/",
+    "status": "editorial_draft_review_required",
+    "provider_writes_authorized": false,
+    "publication": "not_scheduled",
+    "note": "Rich articles are a new editorial revision, not a provider release. Publishing any of them would require a separate reviewed candidate, release authorization and the regular guarded pipeline."
+  },
+  "boundaries": {
+    "runtime_changed": false,
+    "workflows_changed": false,
+    "provider_payloads_changed": false,
+    "telegram_posts_sent": 0,
+    "frozen_release_modified": false,
+    "image_assets_committed": 0,
+    "premium_emoji_dependency": false,
+    "unicode_icons_only": true
+  },
+  "mappings": [
+    {
+      "sequence": 1,
+      "old_publication_id": "svodka-venus-day-longer-than-year",
+      "old_format": "quick_fact",
+      "old_scheduled_at": "2026-08-10T10:30:00+03:00",
+      "rich_article_id": "svodka-rich-venus-day-longer-than-year",
+      "rich_files": [
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-venus-day-longer-than-year.json",
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-venus-day-longer-than-year.md"
+      ],
+      "notes": "Same NASA sources; two-senses-of-day framing retained and sharpened."
+    },
+    {
+      "sequence": 2,
+      "old_publication_id": "svodka-goldfish-three-second-memory-myth",
+      "old_format": "myth_fact",
+      "old_scheduled_at": "2026-08-10T19:30:00+03:00",
+      "rich_article_id": "svodka-rich-goldfish-three-second-memory-myth",
+      "rich_files": [
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-goldfish-three-second-memory-myth.json",
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-goldfish-three-second-memory-myth.md"
+      ],
+      "notes": "Myth framing retained; experimental grounds separated from household folklore."
+    },
+    {
+      "sequence": 3,
+      "old_publication_id": "svodka-wombat-cubic-poop",
+      "old_format": "quick_fact",
+      "old_scheduled_at": "2026-08-11T10:30:00+03:00",
+      "rich_article_id": "svodka-rich-wombat-cubic-poop",
+      "rich_files": [
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-wombat-cubic-poop.json",
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-wombat-cubic-poop.md"
+      ],
+      "notes": "Mechanism/function distinction added; the RSC study remains the sole source."
+    },
+    {
+      "sequence": 4,
+      "old_publication_id": "svodka-moon-recedes-38-mm-year",
+      "old_format": "quick_fact",
+      "old_scheduled_at": "2026-08-11T19:30:00+03:00",
+      "rich_article_id": "svodka-rich-moon-recedes-38-mm-year",
+      "rich_files": [
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-moon-recedes-38-mm-year.json",
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-moon-recedes-38-mm-year.md"
+      ],
+      "notes": "Measurement-first structure; 'what it does not mean' section added."
+    },
+    {
+      "sequence": 5,
+      "old_publication_id": "svodka-2026-august-total-solar-eclipse",
+      "old_format": "fresh_science",
+      "old_scheduled_at": "2026-08-12T10:30:00+03:00",
+      "rich_article_id": "svodka-rich-2026-august-total-solar-eclipse",
+      "rich_files": [
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-2026-august-total-solar-eclipse.json",
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-2026-august-total-solar-eclipse.md"
+      ],
+      "notes": "Time-sensitive item anchored to the explicit date 12.08.2026; eye-safety paragraph promoted to a visible section."
+    },
+    {
+      "sequence": 6,
+      "old_publication_id": "svodka-octopus-three-hearts-blue-blood",
+      "old_format": "mini_digest",
+      "old_scheduled_at": "2026-08-12T19:30:00+03:00",
+      "rich_article_id": "svodka-rich-octopus-three-hearts-blue-blood",
+      "rich_files": [
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-octopus-three-hearts-blue-blood.json",
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-octopus-three-hearts-blue-blood.md"
+      ],
+      "notes": "Three-fact digest unified into one article; engagement question dropped."
+    },
+    {
+      "sequence": 7,
+      "old_publication_id": "svodka-quiz-lightning-vs-sun",
+      "old_format": "quiz",
+      "old_scheduled_at": "2026-08-13T10:30:00+03:00",
+      "rich_article_id": "svodka-rich-quiz-lightning-vs-sun",
+      "rich_files": [
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-quiz-lightning-vs-sun.json",
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-quiz-lightning-vs-sun.md"
+      ],
+      "notes": "Quiz structure kept (question before answer); NOAA sentence quoted in editorial translation after source re-read on 2026-08-10."
+    },
+    {
+      "sequence": 8,
+      "old_publication_id": "svodka-crows-remember-human-faces",
+      "old_format": "quick_fact",
+      "old_scheduled_at": "2026-08-13T19:30:00+03:00",
+      "rich_article_id": "svodka-rich-crows-remember-human-faces",
+      "rich_files": [
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-crows-remember-human-faces.json",
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-crows-remember-human-faces.md"
+      ],
+      "notes": "Limits of the threatening-face paradigm kept; field researchers acknowledged without glorification."
+    },
+    {
+      "sequence": 9,
+      "old_publication_id": "svodka-sunflower-tracking-myth",
+      "old_format": "myth_fact",
+      "old_scheduled_at": "2026-08-14T10:30:00+03:00",
+      "rich_article_id": "svodka-rich-sunflower-tracking-myth",
+      "rich_files": [
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-sunflower-tracking-myth.json",
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-sunflower-tracking-myth.md"
+      ],
+      "notes": "Growing vs mature stages split; Harmer quote verified verbatim on 2026-08-10."
+    },
+    {
+      "sequence": 10,
+      "old_publication_id": "svodka-sharks-over-400-million-years",
+      "old_format": "quick_fact",
+      "old_scheduled_at": "2026-08-14T19:30:00+03:00",
+      "rich_article_id": "svodka-rich-sharks-over-400-million-years",
+      "rich_files": [
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-sharks-over-400-million-years.json",
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-sharks-over-400-million-years.md"
+      ],
+      "notes": "Lineage-age vs unchanged-species distinction foregrounded; timeline diagram planned."
+    },
+    {
+      "sequence": 11,
+      "old_publication_id": "svodka-tardigrades-survived-space-exposure",
+      "old_format": "quick_fact",
+      "old_scheduled_at": "2026-08-15T10:30:00+03:00",
+      "rich_article_id": "svodka-rich-tardigrades-survived-space-exposure",
+      "rich_files": [
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-tardigrades-survived-space-exposure.json",
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-tardigrades-survived-space-exposure.md"
+      ],
+      "notes": "Survival-not-living-in-space boundary kept; 2026 dataset release given its own section."
+    },
+    {
+      "sequence": 12,
+      "old_publication_id": "svodka-eiffel-thermal-expansion-movement",
+      "old_format": "quick_fact",
+      "old_scheduled_at": "2026-08-15T19:30:00+03:00",
+      "rich_article_id": "svodka-rich-eiffel-thermal-expansion-movement",
+      "rich_files": [
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-eiffel-thermal-expansion-movement.json",
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-eiffel-thermal-expansion-movement.md"
+      ],
+      "notes": "Two distinct 15-cm phenomena separated; night-photo copyright pitfall documented in the media plan."
+    },
+    {
+      "sequence": 13,
+      "old_publication_id": "svodka-quiz-banana-is-berry",
+      "old_format": "quiz",
+      "old_scheduled_at": "2026-08-16T10:30:00+03:00",
+      "rich_article_id": "svodka-rich-quiz-banana-is-berry",
+      "rich_files": [
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-quiz-banana-is-berry.json",
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-quiz-banana-is-berry.md"
+      ],
+      "notes": "Quiz kept as staged Q&A; everyday vs botanical terminology boundary made explicit."
+    },
+    {
+      "sequence": 14,
+      "old_publication_id": "svodka-dolphins-social-memory-whistles",
+      "old_format": "quick_fact",
+      "old_scheduled_at": "2026-08-16T19:30:00+03:00",
+      "rich_article_id": "svodka-rich-dolphins-social-memory-whistles",
+      "rich_files": [
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-dolphins-social-memory-whistles.json",
+        "content/telegram/svodka/rich-v1/articles/svodka-rich-dolphins-social-memory-whistles.md"
+      ],
+      "notes": "Author named with affiliation; verbatim abstract claim quoted in editorial translation after source re-read on 2026-08-10."
+    }
+  ],
+  "second_pass_review": {
+    "date": "2026-08-10",
+    "scope": "self-review of the rich-v1 revision after the first commit",
+    "fixes": [
+      "moon: reflector fleet credited to Apollo only — corrected to Apollo 11/14/15 plus Lunokhod 1/2 after re-reading the NASA page; GR/interior sentence aligned to the NASA wording (gravity, fluid core); Mazarico quote added verbatim",
+      "wombat: removed an unsourced marking-behaviour claim (not in the RSC abstract) and a garbled sentence; added two-fold/four-fold tissue figures and named the author team from the RSC citation",
+      "tardigrades: mission attribution corrected to the ESA framing (Foton-M3 as ESA orbital mission, September 2007); Jönsson quote added verbatim",
+      "goldfish: unsourced negative claim about fish–owner recognition narrowed to the cited studies",
+      "crows: unverified statement about permits/ethics approval replaced with a source-safe description of the fieldwork",
+      "octopus: two popular-science glosses not present in the Smithsonian pages replaced with strictly sourced wording",
+      "sharks: unsourced anatomical enumeration removed",
+      "banana quiz: unsourced strawberry morphology (receptacle) removed",
+      "lightning quiz: exact lava temperature range softened to an order-of-magnitude figure; NOAA quote moved into the section block list for JSON/MD structural sync",
+      "markdown companions: variation-selector (VS16) emoji forms normalized to match the canonical icons_used sets"
+    ]
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-article",
+  "schema_version": 1,
+  "project_key": "svodka",
+  "channel_username": "@deep_info_life",
+  "channel_title": "СВОДКА",
+  "article_id": "svodka-rich-wombat-cubic-poop",
+  "revision": "rich-v1",
+  "status": "editorial_draft_review_required",
+  "provider_writes_authorized": false,
+  "premium_emoji_dependency": false,
+  "predecessor": {
+    "publication_id": "svodka-wombat-cubic-poop",
+    "source_file": "content/telegram/svodka/draft-14-posts-2026-08.json",
+    "source_file_sha256": "8591f1055a2b8edac432eb2eb08c57253b307d00a7fc1f4c732ac01e48b8107e",
+    "release_id": "svodka-pilot-2026-08",
+    "source_format": "quick_fact"
+  },
+  "title": "Почему вомбаты делают кубики",
+  "lead": "О вомбатах обычно рассказывают одну и ту же шутку. Шутка верна по факту — помёт у них действительно кубический, — но мимо механики. Как это устроено, разобрали исследователи, и объяснение оказалось серьёзнее анекдота.",
+  "icons_used": [
+    "🐾",
+    "🧩",
+    "😎"
+  ],
+  "sections": [
+    {
+      "section_id": "sam-fakt",
+      "heading": "Сам факт",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "Помёт вомбата по форме близок к кубу — с заметными плоскими гранями и углами. Это не редкость и не дефект, а стабильная норма вида.",
+          "footnotes": [
+            1
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "Много лет в ход шли версии от «квадратного отверстия» до «кубики нужны как строительный материал». Первая прямо противоречит данным работы: форму задаёт кишечник, а не выход. Вторая — не объяснение механики, а догадка о применении.",
+          "footnotes": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "mekhanika",
+      "heading": "Механика процесса",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "Исследователи проследили, где именно появляется форма: кубики возникают в последних примерно <b>17% кишечника</b>, задолго до выхода.",
+          "footnotes": [
+            1
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "Стенка кишечника там неоднородна: по данным работы, отдельные её участки вдвое толще и вчетверо жёстче соседних. Сокращения стенки давят на содержимое неравномерно — мягче там, где ткань гибче, жёстче там, где она плотнее. Так возникают плоские грани и углы.",
+          "footnotes": [
+            1
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "Проще говоря, геометрию задаёт не отверстие и не привычка животного, а неоднородный <i>перистальтический пресс</i>.",
+          "footnotes": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "zachem-eto-vombatu",
+      "heading": "Зачем это вомбату — аккуратная версия",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "Одно следствие формы видно и без специальной работы: кубик не катится, в отличие от шарика, — такая метка остаётся там, где её оставили.",
+          "footnotes": [
+            1
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "Но превращать удобство в объяснение нельзя: полезный эффект не доказывает, что признак возник ради него. Исследование отвечает на вопрос <b>как</b> делается форма; вопрос <b>почему</b> она сохранилась у вида остаётся открытым."
+        },
+        {
+          "type": "paragraph",
+          "html": "У статьи есть лица: первые авторы работы — <b>Патриция Янг</b> и <b>Александр Ли</b> из Технологического института Джорджии; в команде также биологи Университета Тасмании и специалисты природоохранного общества «Таронга». За коротким красивым фактом стоит обычная научная вёрстка: препарирование, гистология, измерение жёсткости тканей, модель.",
+          "footnotes": [
+            1
+          ]
+        }
+      ]
+    }
+  ],
+  "quotes": [],
+  "media_slots": [
+    {
+      "slot_id": "media-01",
+      "placement": {
+        "after": "lead",
+        "before": "sam-fakt"
+      },
+      "depicts": "Вомбат в естественной среде — портрет животного без постановки, лучше в профиль, где видно массивное туловище.",
+      "purpose": "Снять анекдотический флер и вернуть в кадр животное, а не только курьёз.",
+      "preferred_source_type": "public-domain or explicitly licensed wildlife photograph",
+      "copyright_provenance": "Prefer Australian government/CSIRO open imagery or Wikimedia Commons CC BY / CC BY-SA items with recorded author and licence. No reposts from social networks.",
+      "caption": "Вомбат. Кубическая форма помёта — следствие устройства кишечника, а не странность «на выходе»."
+    },
+    {
+      "slot_id": "media-02",
+      "placement": {
+        "after": "mekhanika"
+      },
+      "depicts": "Редакционная схема: условный участок кишечника с отмеченными зонами разной жёсткости, стрелки сокращений, стадия формирования рёбер у содержимого.",
+      "purpose": "Без схемы слова «толщина и жёсткость стенки» остаются абстракцией; рисунок делает механизм осязаемым.",
+      "preferred_source_type": "original editorial diagram redrawn from the textual description of the model",
+      "copyright_provenance": "Figures in the RSC paper are copyrighted. Only an original diagram is acceptable; underlying facts are not copyrightable. Credit the article as a source of the model in the caption, not as the source of the artwork.",
+      "caption": "Грани и углы появляются внутри кишечника — там, где стенка сокращается неравномерно."
+    }
+  ],
+  "footnotes": [
+    {
+      "n": 1,
+      "source_id": "src-softmatter-2021-wombat",
+      "label": "Soft Matter, 2021",
+      "url": "https://pubs.rsc.org/en/content/articlelanding/2021/sm/d0sm01230k"
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "src-softmatter-2021-wombat",
+      "label": "Soft Matter, 2021",
+      "url": "https://pubs.rsc.org/en/content/articlelanding/2021/sm/d0sm01230k",
+      "verified_on": "2026-08-08",
+      "evidence": "Cubes form within roughly the last 17% of the intestine; regions of the intestinal wall differ two-fold in thickness and four-fold in stiffness; corners arise from uneven contractions. Re-read 2026-08-10: authors and affiliations verified from the RSC citation block (co-first authors Patricia J. Yang and Alexander B. Lee, Georgia Tech; University of Tasmania; Taronga Conservation Society).",
+      "reverified_on": "2026-08-10"
+    }
+  ],
+  "footer": {
+    "tagline": "Сводка — сводим факты, а не мнения 😎",
+    "hashtags": [
+      "#Сводка",
+      "#Животные",
+      "#Вомбат",
+      "#Биология",
+      "#Факты"
+    ]
+  },
+  "editorial_notes": "Post keeps its humour but the article body is mechanics-first; mechanism/function distinction added. Second pass 2026-08-10: the unsourced marking-behaviour claim removed (the RSC abstract does not support it) and replaced with a source-safe geometric remark; thickness/stiffness figures completed from the abstract; team credited by name."
+}

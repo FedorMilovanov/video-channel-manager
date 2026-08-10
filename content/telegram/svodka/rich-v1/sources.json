@@ -1,0 +1,242 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-source-provenance",
+  "schema_version": 1,
+  "project_key": "svodka",
+  "revision": "rich-v1",
+  "description": "Source and provenance ledger for the rich-v1 editorial revision. All claims remain anchored to sources verified for the frozen pilot release on 2026-08-08. reverified_on is set only where the revising editor re-read the source while preparing rich-v1. No source claims were changed without that check.",
+  "source_files_revised": [
+    {
+      "path": "content/telegram/svodka/draft-14-posts-2026-08.json",
+      "sha256": "8591f1055a2b8edac432eb2eb08c57253b307d00a7fc1f4c732ac01e48b8107e",
+      "note": "Input is read-only. rich-v1 does not modify the frozen pilot queue or its approved release."
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "src-nasa-venus-facts",
+      "label": "NASA Science — Venus: Facts",
+      "url": "https://science.nasa.gov/venus/venus-facts/",
+      "verified_on": "2026-08-08",
+      "used_by": [
+        "svodka-rich-venus-day-longer-than-year"
+      ],
+      "supports": "Rotation period about 243 Earth days, orbital period about 225 days, retrograde rotation.",
+      "media_policy": "NASA still imagery is normally public domain with a requested credit line; confirm per-image credit on the NASA page before download. Never mirror assets into the repository."
+    },
+    {
+      "source_id": "src-nasa-venus-solar-day",
+      "label": "NASA Science — Venus solar day",
+      "url": "https://science.nasa.gov/earth/climate-change/nasa-climate-modeling-suggests-venus-may-have-been-habitable/",
+      "verified_on": "2026-08-08",
+      "used_by": [
+        "svodka-rich-venus-day-longer-than-year"
+      ],
+      "supports": "Explicit distinction between the ~117-Earth-day solar day and the ~243-Earth-day sidereal day on Venus.",
+      "media_policy": "Text reference only."
+    },
+    {
+      "source_id": "src-pbb-1976-goldfish",
+      "label": "Pharmacology Biochemistry and Behavior, 1976",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/935220/",
+      "verified_on": "2026-08-08",
+      "used_by": [
+        "svodka-rich-goldfish-three-second-memory-myth"
+      ],
+      "supports": "Goldfish trained over two consecutive days showed savings in relearning on day 2, used as a measure of long-term memory strength.",
+      "media_policy": "Journal record; figures not licensed for reuse. No imagery taken from the paper."
+    },
+    {
+      "source_id": "src-jeab-1979-goldfish",
+      "label": "Journal of the Experimental Analysis of Behavior, 1979",
+      "url": "https://onlinelibrary.wiley.com/doi/10.1901/jeab.1979.31-259",
+      "verified_on": "2026-08-08",
+      "used_by": [
+        "svodka-rich-goldfish-three-second-memory-myth"
+      ],
+      "supports": "Goldfish acquired matching/oddity tasks over prolonged training, reaching performance substantially above chance.",
+      "media_policy": "Journal record; figures not licensed for reuse."
+    },
+    {
+      "source_id": "src-softmatter-2021-wombat",
+      "label": "Soft Matter, 2021 (Royal Society of Chemistry)",
+      "url": "https://pubs.rsc.org/en/content/articlelanding/2021/sm/d0sm01230k",
+      "verified_on": "2026-08-08",
+      "used_by": [
+        "svodka-rich-wombat-cubic-poop"
+      ],
+      "supports": "Cubes form within roughly the last 17% of the intestine; corner formation linked to regions of differing thickness/stiffness and uneven contractions. Re-read 2026-08-10: abstract confirms the last-17% result and two-fold thickness / four-fold stiffness regions; author names and affiliations verified from the citation block.",
+      "media_policy": "RSC figures are copyrighted; do not reuse. An original editorial diagram may restate the published model, since facts are not copyrightable.",
+      "reverified_on": "2026-08-10"
+    },
+    {
+      "source_id": "src-nasa-lunar-laser-ranging",
+      "label": "NASA — Lunar Laser Ranging",
+      "url": "https://www.nasa.gov/missions/laser-beams-reflected-between-earth-and-moon-boost-science/",
+      "verified_on": "2026-08-08",
+      "used_by": [
+        "svodka-rich-moon-recedes-38-mm-year"
+      ],
+      "supports": "Earth and Moon drift apart about 1.5 inches / 3.8 cm per year, measured with lunar retroreflectors left by Apollo crews. Re-read 2026-08-10: five reflector panels (Apollo 11/14/15 and Lunokhod 1/2); long series refines understanding of gravity; wobble monitoring revealed the Moon's fluid core; distance precision less than a few millimetres; Mazarico quote verbatim.",
+      "media_policy": "NASA imagery public domain with requested credit; confirm per-image credit.",
+      "reverified_on": "2026-08-10"
+    },
+    {
+      "source_id": "src-smithsonian-cephalopods",
+      "label": "Smithsonian Ocean — Cephalopods",
+      "url": "https://ocean.si.edu/ocean-life/invertebrates/octopuses-squids-and-relatives",
+      "verified_on": "2026-08-08",
+      "used_by": [
+        "svodka-rich-octopus-three-hearts-blue-blood"
+      ],
+      "supports": "Three-heart circulatory system (two branchial, one systemic) and copper-based hemocyanin giving blue blood.",
+      "media_policy": "Smithsonian web imagery mixes rights holders; use only items explicitly marked Smithsonian Open Access / CC0, otherwise NOAA or public-domain alternatives with checked credit."
+    },
+    {
+      "source_id": "src-smithsonian-color-change",
+      "label": "Smithsonian Ocean — How Cephalopods Change Color",
+      "url": "https://ocean.si.edu/ocean-life/invertebrates/how-octopuses-and-squids-change-color",
+      "verified_on": "2026-08-08",
+      "used_by": [
+        "svodka-rich-octopus-three-hearts-blue-blood"
+      ],
+      "supports": "Chromatophores in the skin and rapid, neurally controlled colour change in cephalopods.",
+      "media_policy": "Same Smithsonian policy as above."
+    },
+    {
+      "source_id": "src-nasa-eclipse-2026-path",
+      "label": "NASA Science — Total solar eclipse on August 12, 2026",
+      "url": "https://science.nasa.gov/eclipses/future-eclipses/total-solar-eclipse-on-august-12-2026/",
+      "verified_on": "2026-08-08",
+      "used_by": [
+        "svodka-rich-2026-august-total-solar-eclipse"
+      ],
+      "supports": "Totality path across northern Russia, Greenland, Iceland, Spain and a small corner of Portugal; partial eclipse across much of Europe.",
+      "media_policy": "NASA eclipse path maps are public domain with requested NASA credit; use the official map, not a third-party redraw with unclear rights."
+    },
+    {
+      "source_id": "src-nasa-eclipse-2026-science",
+      "label": "NASA Science — NASA science soars during August total solar eclipse",
+      "url": "https://science.nasa.gov/science-research/heliophysics/nasa-science-soars-during-august-total-solar-eclipse/",
+      "verified_on": "2026-08-08",
+      "used_by": [
+        "svodka-rich-2026-august-total-solar-eclipse"
+      ],
+      "supports": "NASA-funded teams will observe from a high-altitude aircraft and scientific balloons to study the corona and atmospheric effects of the eclipse.",
+      "media_policy": "NASA imagery public domain with requested credit."
+    },
+    {
+      "source_id": "src-noaa-lightning-thunder",
+      "label": "NOAA — What Causes Lightning and Thunder?",
+      "url": "https://www.nesdis.noaa.gov/about/k-12-education/severe-weather/what-causes-lightning-and-thunder",
+      "verified_on": "2026-08-08",
+      "reverified_on": "2026-08-10",
+      "used_by": [
+        "svodka-rich-quiz-lightning-vs-sun"
+      ],
+      "supports": "Lightning heats the air in its channel to as hot as 54,000 °F / 30,000 °C — about five times hotter than the surface of the Sun; explosive expansion of heated air creates the shockwave heard as thunder.",
+      "media_policy": "US federal (NOAA) imagery is public domain; page already credits illustrators by name — preserve credit."
+    },
+    {
+      "source_id": "src-animal-behaviour-2010-crows",
+      "label": "Animal Behaviour, 2010 — wild American crows learn and remember a threatening human face",
+      "url": "https://www.sciencedirect.com/science/article/pii/S0003347209005806",
+      "verified_on": "2026-08-08",
+      "used_by": [
+        "svodka-rich-crows-remember-human-faces"
+      ],
+      "supports": "Field experiment: crows captured once by a person in a distinctive mask scolded that mask for at least 2.7 years despite differences in wearer height, age, sex and gait; wording limited to the tested threatening-face paradigm.",
+      "media_policy": "Elsevier figures are copyrighted; do not reuse. Original editorial diagram is acceptable."
+    },
+    {
+      "source_id": "src-ucdavis-sunflowers",
+      "label": "UC Davis / Science, 2016 — Sunflowers move by the clock",
+      "url": "https://www.ucdavis.edu/news/sunflowers-move-clock",
+      "verified_on": "2026-08-08",
+      "reverified_on": "2026-08-10",
+      "used_by": [
+        "svodka-rich-sunflower-tracking-myth"
+      ],
+      "supports": "Growing sunflowers use their circadian clock to track the Sun east-to-west and return east at night; mature flowers settle facing east; east-facing flowers warm faster in the morning and attracted about five times more pollinators; quotes by Stacey Harmer verified verbatim on the page.",
+      "media_policy": "UC Davis newsroom photo is credited (Chris Nicolini, UC Davis) — rights reserved; prefer original or CC0/Pixabay-grade imagery with checked licence, or an editorial diagram of the daily path."
+    },
+    {
+      "source_id": "src-smithsonian-sharks",
+      "label": "Smithsonian Ocean — Sharks",
+      "url": "https://ocean.si.edu/ocean-life/sharks-rays/sharks",
+      "verified_on": "2026-08-08",
+      "used_by": [
+        "svodka-rich-sharks-over-400-million-years"
+      ],
+      "supports": "First sharks evolved more than 400 million years ago; oldest confirmed shark scales about 420 million years old.",
+      "media_policy": "Mixed rights on Smithsonian pages; prefer NOAA Ocean Service PD imagery or own timeline diagram."
+    },
+    {
+      "source_id": "src-esa-tardigrades",
+      "label": "ESA — Tiny animals survive exposure to space",
+      "url": "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Research/Tiny_animals_survive_exposure_to_space",
+      "verified_on": "2026-08-08",
+      "used_by": [
+        "svodka-rich-tardigrades-survived-space-exposure"
+      ],
+      "supports": "About 3000 tardigrades exposed during the Foton-M3/TARDIS experiment for 12 days; some survived vacuum and cosmic radiation. Re-read 2026-08-10: September 2007, ~3000 animals, 12 days, Foton-M3 orbital mission; Swedish-German TARDIS team; Jönsson quote verbatim.",
+      "media_policy": "ESA multimedia is generally CC BY-SA 3.0 IGO—check the stated licence beside each asset; attribution required; never rehost licence-ambiguous files.",
+      "reverified_on": "2026-08-10"
+    },
+    {
+      "source_id": "src-esa-hreda-tardis",
+      "label": "ESA HREDA — TARDIS dataset",
+      "url": "https://esdcdoi.esac.esa.int/doi/html/data/hre/hreda/ea4ded24-c367-4245-96dd-e1eedb98cf81.html",
+      "verified_on": "2026-08-08",
+      "used_by": [
+        "svodka-rich-tardigrades-survived-space-exposure"
+      ],
+      "supports": "Dataset page published 22 May 2026 and updated 9 July 2026; links the TARDIS experiment and the 2008 Current Biology publication.",
+      "media_policy": "Data page; no imagery needed from it."
+    },
+    {
+      "source_id": "src-purdue-eiffel-thermal",
+      "label": "Purdue Materials Engineering — Eiffel Tower thermal expansion",
+      "url": "https://engineering.purdue.edu/MSE/about-us/gotmaterials/Buildings/patel.html",
+      "verified_on": "2026-08-08",
+      "used_by": [
+        "svodka-rich-eiffel-thermal-expansion-movement"
+      ],
+      "supports": "The iron structure expands and contracts by about 15 cm between the hottest and the coldest day.",
+      "media_policy": "Educational page; no imagery reused from it."
+    },
+    {
+      "source_id": "src-toureiffel-official-movement",
+      "label": "Official Eiffel Tower site — Why does the Eiffel Tower change size?",
+      "url": "https://www.toureiffel.paris/en/news/history-and-culture/why-does-eiffel-tower-change-size",
+      "verified_on": "2026-08-08",
+      "used_by": [
+        "svodka-rich-eiffel-thermal-expansion-movement"
+      ],
+      "supports": "Asymmetric solar heating makes the top drift away from the Sun and trace a curve of roughly 15 cm in diameter over a clear day.",
+      "media_policy": "Site imagery rights reserved; rely on openly licensed or original imagery instead."
+    },
+    {
+      "source_id": "src-kew-cavendish-banana",
+      "label": "Kew Gardens — Cavendish banana",
+      "url": "https://www.kew.org/plants/cavendish-banana",
+      "verified_on": "2026-08-08",
+      "used_by": [
+        "svodka-rich-quiz-banana-is-berry"
+      ],
+      "supports": "Banana fruits are botanically classified as berries; the berry criterion is a fruit developing from a single flower with a single ovary.",
+      "media_policy": "Kew imagery generally rights reserved; prefer editorial photographs/diagrams."
+    },
+    {
+      "source_id": "src-procb-2013-dolphins",
+      "label": "Proceedings of the Royal Society B, 2013 — Decades-long social memory in bottlenose dolphins",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3757989/",
+      "verified_on": "2026-08-08",
+      "reverified_on": "2026-08-10",
+      "used_by": [
+        "svodka-rich-dolphins-social-memory-whistles"
+      ],
+      "supports": "Playback study with former tank mates: stronger response to familiar signature whistles, including after separations of more than 20 years; author Jason N. Bruck, University of Chicago, describes it as the first study to show social recognition lasting at least 20 years in a non-human species.",
+      "media_policy": "Open-access text (© 2013 The Author(s), Published by the Royal Society); figures not reused. Photography from NOAA or checked open-licence sources only."
+    }
+  ]
+}

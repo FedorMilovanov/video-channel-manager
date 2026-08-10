@@ -1,0 +1,169 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-article",
+  "schema_version": 1,
+  "project_key": "svodka",
+  "channel_username": "@deep_info_life",
+  "channel_title": "СВОДКА",
+  "article_id": "svodka-rich-octopus-three-hearts-blue-blood",
+  "revision": "rich-v1",
+  "status": "editorial_draft_review_required",
+  "provider_writes_authorized": false,
+  "premium_emoji_dependency": false,
+  "predecessor": {
+    "publication_id": "svodka-octopus-three-hearts-blue-blood",
+    "source_file": "content/telegram/svodka/draft-14-posts-2026-08.json",
+    "source_file_sha256": "8591f1055a2b8edac432eb2eb08c57253b307d00a7fc1f4c732ac01e48b8107e",
+    "release_id": "svodka-pilot-2026-08",
+    "source_format": "mini_digest"
+  },
+  "title": "Три странности осьминога",
+  "lead": "Осьминог удобно брать для списков «невероятных фактов» — всё правда звучит как выдумка. За каждой из трёх странностей стоит проверяемая биология, и она интереснее заголовка.",
+  "icons_used": [
+    "🐙",
+    "🎛️",
+    "😎"
+  ],
+  "sections": [
+    {
+      "section_id": "tri-serdtsa",
+      "heading": "Три сердца",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "У головоногих <b>три сердца</b>. Два <i>жаберных</i> гонят кровь через жабры, третье — <i>системное</i> — отправляет уже обогащённую кислородом кровь дальше по телу.",
+          "footnotes": [
+            1
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "Три вместо одного — не избыточность, а разделение труда: два сердца обслуживают дыхание, третье — всё остальное тело.",
+          "footnotes": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "golubaya-krov",
+      "heading": "Голубая кровь",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "Переносчиком кислорода служит не железистый <i>гемоглобин</i>, как у нас, а медистый <i>гемоцианин</i>. Окисленная медь и даёт крови синий оттенок.",
+          "footnotes": [
+            1
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "Медь вместо железа — это и есть разница архитектур: зеркальный случай нашей крови, где транспортный пигмент красный именно из-за железа.",
+          "footnotes": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "smena-tsveta",
+      "heading": "Смена цвета",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "Кожа осьминога усеяна <i>хроматофорами</i> — клетками с пигментом, которые он растягивает и сжимает напрямую, нервной системой. Смена цвета поэтому идёт за доли секунды и при этом очень детально: полосами, пятнами, «набегающими волнами».",
+          "footnotes": [
+            2
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "Это не мимикрия в бытовом смысле слова, а управляемый кожный экран — им осьминог пользуется и для маскировки, и для общения, но сам механизм остаётся клеточным, никакой мистики.",
+          "footnotes": [
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "itog",
+      "heading": "Короткий итог",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "Три сердца, медная кровь и кожа-экран — не украшения образа осьминога, а рабочие инструменты выживания в море. Читатель, которому эти факты кажутся «слишком красивыми», может проверить каждый по ссылкам ниже: они не приукрашены, а просто измерены.",
+          "footnotes": [
+            1,
+            2
+          ]
+        }
+      ]
+    }
+  ],
+  "quotes": [],
+  "media_slots": [
+    {
+      "slot_id": "media-01",
+      "placement": {
+        "after": "lead",
+        "before": "tri-serdtsa"
+      },
+      "depicts": "Крупный портрет осьминога в воде — видны глаз, тело и основание щупалец; без аквариумного глянца.",
+      "purpose": "Дать спокойный образ животного, о котором пойдёт строгий разбор; снять карнавальную подачу.",
+      "preferred_source_type": "public-domain or explicitly licensed marine photograph",
+      "copyright_provenance": "Smithsonian web pages mix rights holders; prefer Smithsonian Open Access / CC0-tagged items or NOAA PD imagery. Record exact author and licence in the caption.",
+      "caption": "Осьминог. Три сердца и медная кровь — его рабочая норма, а не курьёз."
+    },
+    {
+      "slot_id": "media-02",
+      "placement": {
+        "after": "smena-tsveta"
+      },
+      "depicts": "Редакционная схема кожи осьминога в сечении: слой с хроматофорами — пигментная клетка в двух состояниях (сжата/растянута) — и управление от нервной системы.",
+      "purpose": "Пример, где диаграмма убирает соблазн мистификации: цвет меняют мышцы и нервы, а не «настроение».",
+      "preferred_source_type": "original editorial diagram",
+      "copyright_provenance": "Original work; do not trace Smithsonian's photographs. Facts are not copyrightable.",
+      "caption": "Хроматофоры: пигментная клетка растягивается по команде нервной системы — так меняется узор кожи."
+    }
+  ],
+  "footnotes": [
+    {
+      "n": 1,
+      "source_id": "src-smithsonian-cephalopods",
+      "label": "Smithsonian Ocean — Cephalopods",
+      "url": "https://ocean.si.edu/ocean-life/invertebrates/octopuses-squids-and-relatives"
+    },
+    {
+      "n": 2,
+      "source_id": "src-smithsonian-color-change",
+      "label": "Smithsonian Ocean — How Cephalopods Change Color",
+      "url": "https://ocean.si.edu/ocean-life/invertebrates/how-octopuses-and-squids-change-color"
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "src-smithsonian-cephalopods",
+      "label": "Smithsonian Ocean — Cephalopods",
+      "url": "https://ocean.si.edu/ocean-life/invertebrates/octopuses-squids-and-relatives",
+      "verified_on": "2026-08-08",
+      "evidence": "Smithsonian explains three-heart circulatory system and blue blood based on copper-containing hemocyanin."
+    },
+    {
+      "source_id": "src-smithsonian-color-change",
+      "label": "Smithsonian Ocean — Color change",
+      "url": "https://ocean.si.edu/ocean-life/invertebrates/how-octopuses-and-squids-change-color",
+      "verified_on": "2026-08-08",
+      "evidence": "Smithsonian describes chromatophores and rapid skin color change in cephalopods."
+    }
+  ],
+  "footer": {
+    "tagline": "Сводка — сводим факты, а не мнения 😎",
+    "hashtags": [
+      "#Сводка",
+      "#Осьминог",
+      "#Океан",
+      "#Животные",
+      "#Наука"
+    ]
+  },
+  "editorial_notes": "The mini-digest becomes a single three-part article; audience-question tail is dropped in favour of a calm close. All three claims remain tied to the two Smithsonian pages."
+}

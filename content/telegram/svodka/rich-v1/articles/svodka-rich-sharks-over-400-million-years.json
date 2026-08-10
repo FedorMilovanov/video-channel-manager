@@ -1,0 +1,152 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-article",
+  "schema_version": 1,
+  "project_key": "svodka",
+  "channel_username": "@deep_info_life",
+  "channel_title": "СВОДКА",
+  "article_id": "svodka-rich-sharks-over-400-million-years",
+  "revision": "rich-v1",
+  "status": "editorial_draft_review_required",
+  "provider_writes_authorized": false,
+  "premium_emoji_dependency": false,
+  "predecessor": {
+    "publication_id": "svodka-sharks-over-400-million-years",
+    "source_file": "content/telegram/svodka/draft-14-posts-2026-08.json",
+    "source_file_sha256": "8591f1055a2b8edac432eb2eb08c57253b307d00a7fc1f4c732ac01e48b8107e",
+    "release_id": "svodka-pilot-2026-08",
+    "source_format": "quick_fact"
+  },
+  "title": "Акулы старше динозавров",
+  "lead": "Сравнение с динозаврами работает потому, что все помнят, как давно вымерли динозавры. Акулы в океане появились задолго до них — но верна эта фраза лишь в точном смысле.",
+  "icons_used": [
+    "🦈",
+    "⏳",
+    "😎"
+  ],
+  "sections": [
+    {
+      "section_id": "chisla",
+      "heading": "Цифры рядом",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "Самые ранние следы акул уходят более чем на <b>400 миллионов лет</b> назад; подтверждённая древняя чешуя относится примерно к <b>420 млн лет назад</b>. Первые динозавры появились лишь около <b>230 млн лет назад</b>.",
+          "footnotes": [
+            1
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "Разница — почти двести миллионов лет. На такой шкале точность «плюс-минус несколько миллионов» не меняет вывода: акулья линия ощутимо старше.",
+          "footnotes": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "chto-eto-znachit",
+      "heading": "Что именно означает «старше»",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "Старши здесь не отдельные современные акулы, а сама их родословная. Говоря «акулы старше динозавров», мы говорим о группе, чья история длится свыше 400 млн лет, — внутри неё возникали и исчезали тысячи форм.",
+          "footnotes": [
+            1
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "Поэтому версия «белая акула не менялась 400 млн лет» неверна. Стабильность линии не означает остановки внутри неё: виды появлялись и исчезали, а сохранился узнаваемый план строения акулы.",
+          "footnotes": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "pochemu-eto-vazhno",
+      "heading": "Почему это важно",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "html": "Долгая история группы — факт, к которому стоит относиться без восторга превосходства: она говорит не «акулы сильнее динозавров», а «у сегодняшнего океана есть очень древние линии». Это разные смыслы, и второй интереснее.",
+          "footnotes": [
+            1
+          ]
+        },
+        {
+          "type": "paragraph",
+          "html": "Чешуя, зубы и редкие отпечатки тканей дают точки для такой шкалы; точные даты уточняются по мере новых находок, поэтому скобка «более 400 млн лет» честнее точного ровного числа.",
+          "footnotes": [
+            1
+          ]
+        }
+      ]
+    }
+  ],
+  "quotes": [],
+  "media_slots": [
+    {
+      "slot_id": "media-01",
+      "placement": {
+        "after": "lead",
+        "before": "chisla"
+      },
+      "depicts": "Современная акула в открытой воде — спокойный кадр без «атакующей» постановки; виден характерный силуэт.",
+      "purpose": "Дать образ нынешнего представителя древней линии без киношной драматизации.",
+      "preferred_source_type": "NOAA Ocean Service or other public-domain underwater photograph",
+      "copyright_provenance": "Prefer NOAA or other US federal PD imagery; Smithsonian pages mix rights holders and need per-image licence checks.",
+      "caption": "Акула. Её родословная значительно старше динозавров, но это не «неизменность видов»."
+    },
+    {
+      "slot_id": "media-02",
+      "placement": {
+        "after": "chto-eto-znachit"
+      },
+      "depicts": "Редакционная шкала времени: 420 млн лет (древняя чешуя акул), 400 млн лет (самые ранние следы), 230 млн лет (первые динозавры), сегодняшний день.",
+      "purpose": "Разница в шкалах в цифрах усваивается плохо; одна линейка делает вывод очевидным и тут же обнажает границу: шкала о группе, не о виде.",
+      "preferred_source_type": "original editorial diagram",
+      "copyright_provenance": "Original work; palaeontological dates are facts and not copyrightable.",
+      "caption": "Три вехи на одной шкале: древнейшая акулья чешуя, первые динозавры, наше время."
+    }
+  ],
+  "visual_plan": {
+    "rationale": "Довод статьи — порядок величин на оси времени; блокнот из трёх дат понятнее абзаца сравнений.",
+    "panels": [
+      {
+        "order": 1,
+        "type": "timeline",
+        "content": "Горизонтальная шкала от 430 млн лет назад до настоящего; точки 420, 400 и 230 млн лет; подписи словами из текста"
+      }
+    ]
+  },
+  "footnotes": [
+    {
+      "n": 1,
+      "source_id": "src-smithsonian-sharks",
+      "label": "Smithsonian Ocean — Sharks",
+      "url": "https://ocean.si.edu/ocean-life/sharks-rays/sharks"
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "src-smithsonian-sharks",
+      "label": "Smithsonian Ocean — Sharks",
+      "url": "https://ocean.si.edu/ocean-life/sharks-rays/sharks",
+      "verified_on": "2026-08-08",
+      "evidence": "Smithsonian states first sharks evolved more than 400 million years ago; oldest confirmed shark scales about 420 million years old."
+    }
+  ],
+  "footer": {
+    "tagline": "Сводка — сводим факты, а не мнения 😎",
+    "hashtags": [
+      "#Сводка",
+      "#Акулы",
+      "#Палеонтология",
+      "#Океан",
+      "#Факты"
+    ]
+  },
+  "editorial_notes": "The comparison with dinosaurs is preserved as a hook and then carefully qualified: the article distinguishes 'lineage age' from 'unchanged species', avoiding the usual sensational misreading."
+}
