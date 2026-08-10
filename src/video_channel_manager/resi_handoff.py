@@ -41,7 +41,9 @@ class ResiHandoffSpec:
 
     @property
     def safe_title(self) -> str:
-        source_title = self.title.strip() if self.title and self.title.strip() else default_title_for_url(self.source_url)
+        source_title = (
+            self.title.strip() if self.title and self.title.strip() else default_title_for_url(self.source_url)
+        )
         return windows_safe_name(source_title)
 
     @property
@@ -217,7 +219,7 @@ def render_powershell_handoff(spec: ResiHandoffSpec) -> str:
             "}",
             "",
             "if ($ReuseMaster) {",
-            '    Write-Host "Verified master is reusable; skipping remote format inspection and download."',
+            "    Write-Host \"Verified master is reusable; skipping remote format inspection and download.\"",
             "} else {",
             '    Write-Host "Available DASH formats:"',
             "    & yt-dlp -F --no-warnings -- $SourceUrl",
@@ -305,7 +307,7 @@ def render_powershell_handoff(spec: ResiHandoffSpec) -> str:
             "if ($UseNvenc) {",
             '    $SelectedEncoder = "nvenc"',
             '    $VideoArgs = @("-c:v", "h264_nvenc", "-preset", "p6", "-tune", "hq", "-rc", "vbr", "-cq", "21", "-b:v", "0", "-profile:v", "high")',
-            "    $SourceVideoBitrateText = ($MasterVideoStreams | Select-Object -First 1).bit_rate",
+            '    $SourceVideoBitrateText = ($MasterVideoStreams | Select-Object -First 1).bit_rate',
             "    $SourceVideoBitrate = [long]0",
             '    if (-not [long]::TryParse(($SourceVideoBitrateText | Out-String).Trim(), [ref]$SourceVideoBitrate) -or $SourceVideoBitrate -le 0) {',
             "        $SourceFormatBitrateText = $MasterProbe.format.bit_rate",
