@@ -8,9 +8,7 @@ from video_channel_manager.telegram_publisher import load_queue
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PORTFOLIO_PATH = REPOSITORY_ROOT / "content/telegram/lordchrist/editorial-portfolio-v1.json"
 QUOTE_QUEUE_PATH = REPOSITORY_ROOT / "content/telegram/lordchrist/verified-30-posts.json"
-RESEARCH_QUEUE_PATH = (
-    REPOSITORY_ROOT / "content/telegram/lordchrist/research-queues/calvin-spurgeon-macarthur-v2.json"
-)
+RESEARCH_QUEUE_PATH = REPOSITORY_ROOT / "content/telegram/lordchrist/research-queues/calvin-spurgeon-macarthur-v2.json"
 EXPECTED_QUOTE_DIGEST = "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"
 
 
