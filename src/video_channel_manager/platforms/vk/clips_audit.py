@@ -68,9 +68,7 @@ def _serialize_search_item(item: dict[str, Any], *, owner_id: int) -> dict[str, 
         "width": _int_or_none(item.get("width")),
         "height": _int_or_none(item.get("height")),
         "views": _int_or_none(item.get("views")),
-        "permalink": (
-            f"https://vk.com/clip{remote_id}" if is_native_clip else f"https://vk.com/video{remote_id}"
-        ),
+        "permalink": (f"https://vk.com/clip{remote_id}" if is_native_clip else f"https://vk.com/video{remote_id}"),
         "raw": item,
     }
 
