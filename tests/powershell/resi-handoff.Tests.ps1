@@ -28,9 +28,9 @@ Describe "Resi/DASH generated handoff" {
     It "executes download, exact trim, receipts, and offline-safe master reuse with provider-free tool doubles" {
         $Output = Join-Path $TestDrive "resi-executable-handoff.ps1"
         $Url = "https://resi.media/GiHDtf/9aa9ac24-fb79-4ca9-95ef-a3253afdf63f/Manifest.mpd?src=emb"
-        $ResiFakeInspectCount = 0
-        $ResiFakeDownloadCount = 0
-        $ResiFakeTrimCount = 0
+        $script:ResiFakeInspectCount = 0
+        $script:ResiFakeDownloadCount = 0
+        $script:ResiFakeTrimCount = 0
 
         function yt-dlp {
             if ($args -contains "-F") {
