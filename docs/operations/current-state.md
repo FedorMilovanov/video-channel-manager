@@ -1,6 +1,6 @@
 # Current operational state
 
-Updated: 2026-08-09
+Updated: 2026-08-10
 
 This file is the concise current operational interpretation. It does **not** authorize provider mutation. Historical audits/PRs/issues are evidence only.
 
@@ -50,25 +50,32 @@ No future YouTube upload, metadata edit, thumbnail change, playlist mutation, vi
 
 ## Telegram / Lordchrist legacy quote publisher
 
-The legacy `@lordchrist` quote publisher is the only live Telegram publishing track represented here.
+The legacy `@lordchrist` quote publisher remains a live Telegram publishing track.
 
-Durable reviewed state currently includes verified publications `1470`, `1472`, and `1473`; later reviewed queue items were pending with `provider_effect=impossible` at the latest control audit, with no reviewed unresolved `may_exist` entry.
+Durable reviewed state includes verified publications `1470`, `1472`, `1473`, and `1474`; later reviewed queue items remain governed by the strict durable ledger. Cross-author rotation is implemented without changing the immutable legacy queue/digest, so repeated-author history no longer forces exhaustion of one author before alternatives when a safe alternative exists.
 
-Safety properties include lossless single-writer serialization, exact-current-main/CI gates around provider access, durable intent-before-send, zero blind mutation retry, archived exact provider outcome before final state persistence, evidence-bound recovery, and publication-time-correct reconciliation.
+Safety properties include lossless single-writer serialization, exact-current-main/CI gates around provider access, durable intent-before-send, zero blind mutation retry, archived exact provider outcome before final state persistence, evidence-bound recovery, publication-time-correct reconciliation, and cross-track blocking when either Lordchrist ledger contains an unresolved provider effect.
 
 Do not modify the legacy live path merely to activate another content class.
 
 ## Telegram / Lordchrist research-v2
 
-Research-v2 repository implementation is complete as a **provider-inert content/release track**:
+The canonical research-v2 evidence queue remains **staged/provider-inert**: claim/source/evidence validation is separate from provider execution, immutable evidence identity is separate from mutable activation state, and the generic Lordchrist profile remains `provider_writes_authorized=false`.
 
-- claim/source/evidence validation is separate from provider execution;
-- immutable evidence identity is separate from mutable activation state;
-- exact target-bound release review/approval is provider-inert;
-- generic Lordchrist profile remains `provider_writes_authorized=false`;
-- no research sender/scheduler is activated by this state.
+A separate exact live execution scope was explicitly reviewed in Issue #242 and is now installed on current `main` for the immutable release `lordchrist-research-live-2026-08` only:
 
-Issue #168 is closed as repository implementation complete. The closure is not standing authorization for a live research canary. Any future live research publication is a new explicit rollout scope and must re-establish its current execution gates.
+- exact target: project `lord-god-strength`, channel `@lordchrist`, chat `-1001295216957`, bot `8716602202 / preaching_mp3_bot`;
+- first strict canary: `lordchrist-research-three-preachers-numbers`;
+- reviewed schedule: 2026-08-10, 12, 14, 16, and 18 at 15:00 `Europe/Moscow`, with a bounded same-day 15:47 catch-up opportunity;
+- the first provider effect must be the exact canary in truthful manual mode; only a verified manual canary unlocks subsequent scheduled strict-next research items;
+- execution authority is materialized only in an execution-only runtime profile; the canonical profile and canonical research schedule are not converted into standing broad write authority;
+- durable research state lives separately under `state/lordchrist-telegram` at `content/telegram/lordchrist/research-v2/publication-ledger.json`; provider-visible outcome truth must be taken from the current durable state branch rather than this document;
+- legacy and research share the `lordchrist-telegram-publisher` serialization namespace, explicit aggregate daily ceiling, and reciprocal unresolved-provider-effect blocking;
+- exact current-main CI is required before provider access and again after durable intent; mutation transport retries remain zero;
+- the 120-minute research freshness policy is checked both before preparation and again at the final generic send boundary, so a run that becomes stale while executing resolves provider absence without calling Telegram;
+- ambiguous `may_exist` outcomes remain blocking until read-only reconciliation proves the next safe state.
+
+Issue #168 is closed as repository implementation complete. Issue #242 authorizes only the exact reviewed August research release above; it is not standing authorization for another research release, new content, changed schedule, changed target, or broader generic Telegram writes.
 
 ## Telegram / Svodka
 
@@ -138,8 +145,9 @@ Unknown provider outcomes remain blocking until read-only reconciliation. A time
 
 1. For #154, regenerate/verify the final seven-master Black Man artifact only when the exact accepted master bytes are available to the executing environment; do not reupload the known public target to resolve artifact provenance.
 2. Implement Issue #232 as a separately reviewed current-main provider executor/adoption scope before any future automated YouTube release write; no canary is authorized by the issue itself.
-3. Keep Lordchrist research-v2 and Svodka provider-inert unless a new explicit live execution request is created and reviewed.
-4. Treat production Telegram lock refreshes as explicit coherent supply-chain changes; routine bot maintenance must not edit that closure piecemeal.
-5. Treat the 2026-08-09 GitHub governance evidence as observed state, not permanent truth: future changes require fresh read-only verification rather than assumptions.
+3. Keep the Lordchrist research-v2 canonical evidence queue/provider profile inert and do not broaden execution beyond Issue #242's exact reviewed August release; read current provider outcome from the durable state branch, and require a new exact authorization for any later research release or changed schedule/target.
+4. Keep Svodka provider-inert unless a new explicit live execution request is created and reviewed.
+5. Treat production Telegram lock refreshes as explicit coherent supply-chain changes; routine bot maintenance must not edit that closure piecemeal.
+6. Treat the 2026-08-09 GitHub governance evidence as observed state, not permanent truth: future changes require fresh read-only verification rather than assumptions.
 
 Nothing in this document is authorization for a provider mutation.
