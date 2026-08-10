@@ -1,0 +1,16 @@
+{
+  "schema_name": "video-channel-manager.telegram-generic-target-proof",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "profile_sha256": "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6",
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "chat_id": -1001295216957,
+  "chat_username": "lordchrist",
+  "chat_title": "† Господь Бог - Сила Моя †",
+  "chat_type": "channel",
+  "member_status": "administrator",
+  "can_post_messages": true,
+  "checked_at_utc": "2026-08-10T12:58:05.950858Z"
+}
