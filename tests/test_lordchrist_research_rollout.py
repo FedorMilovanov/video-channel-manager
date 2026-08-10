@@ -89,6 +89,7 @@ def test_workflow_orders_durable_intent_before_provider_and_outcome_before_state
     archive = workflow.index("Archive exact research provider outcome before state mutation")
     apply = workflow.index("Apply and persist exact research provider outcome")
     assert persist < reproof < send < archive < apply
+    assert workflow.count("GH_TOKEN: ${{ github.token }}") == 3
     assert "if-no-files-found: error" in workflow
     assert "retention-days: 30" in workflow
     assert "!cancelled()" in workflow
