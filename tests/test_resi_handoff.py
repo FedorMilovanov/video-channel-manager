@@ -56,7 +56,10 @@ def test_source_identity_ignores_resi_transient_query_but_preserves_generic_dash
         "https://resi.media/GiHDtf/9aa9ac24-fb79-4ca9-95ef-a3253afdf63f/Manifest.mpd"
     )
     assert default_title_for_url(REALISTIC_URL) == "Resi 9aa9ac24-fb79-4ca9-95ef-a3253afdf63f"
-    assert ResiHandoffSpec(REALISTIC_URL).safe_title == "Resi 9aa9ac24-fb79-4ca9-95ef-a3253afdf63f"
+    assert (
+        ResiHandoffSpec(REALISTIC_URL).safe_title
+        == "Resi 9aa9ac24-fb79-4ca9-95ef-a3253afdf63f"
+    )
     assert ResiHandoffSpec(REALISTIC_URL).source_fingerprint == ResiHandoffSpec(
         REALISTIC_URL.replace("?src=emb", "?token=rotated")
     ).source_fingerprint
