@@ -7,8 +7,10 @@ on:
     paths:
       - "content/telegram/svodka/custom-emoji-exemplars.json"
       - "src/video_channel_manager/telegram_custom_emoji_harvest.py"
+      - "src/video_channel_manager/telegram_custom_emoji_archive_harvest.py"
       - "src/video_channel_manager/telegram_html_entities.py"
       - "tests/test_telegram_custom_emoji_harvest.py"
+      - "tests/test_telegram_custom_emoji_archive_harvest.py"
       - "tests/test_telegram_html_entities.py"
       - ".github/workflows/svodka-custom-emoji-harvest.yml"
   push:
@@ -17,8 +19,10 @@ on:
     paths:
       - "content/telegram/svodka/custom-emoji-exemplars.json"
       - "src/video_channel_manager/telegram_custom_emoji_harvest.py"
+      - "src/video_channel_manager/telegram_custom_emoji_archive_harvest.py"
       - "src/video_channel_manager/telegram_html_entities.py"
       - "tests/test_telegram_custom_emoji_harvest.py"
+      - "tests/test_telegram_custom_emoji_archive_harvest.py"
       - "tests/test_telegram_html_entities.py"
       - ".github/workflows/svodka-custom-emoji-harvest.yml"
   workflow_dispatch:
@@ -58,7 +62,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p .runtime
-          python -m video_channel_manager.telegram_custom_emoji_harvest \
+          python -m video_channel_manager.telegram_custom_emoji_archive_harvest \
             --config "$EXEMPLARS_PATH" \
             --output .runtime/svodka-custom-emoji-public-harvest.json
 
@@ -75,7 +79,7 @@ jobs:
           SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
         run: |
           set -euo pipefail
-          python -m video_channel_manager.telegram_custom_emoji_harvest \
+          python -m video_channel_manager.telegram_custom_emoji_archive_harvest \
             --config "$EXEMPLARS_PATH" \
             --verify-bot-api \
             --output .runtime/svodka-custom-emoji-verified-harvest.json
