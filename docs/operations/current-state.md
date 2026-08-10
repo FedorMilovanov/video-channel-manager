@@ -81,15 +81,16 @@ Issue #168 is closed as repository implementation complete. Issue #242 authorize
 
 `@deep_info_life` has a separate generic multi-channel implementation, target binding, reviewed-content tooling, durable state model, provider-outcome recovery and deployment/catch-up safety regressions.
 
-Current activation state remains fail-closed:
+The exact August rollout is separately reviewed under Issue #235 and remains fail-closed at the manual-canary boundary:
 
-- `content/telegram/channels/svodka.json` has `provider_writes_authorized=false`;
+- `content/telegram/channels/svodka.json` has `provider_writes_authorized=true` only for the reviewed rollout gates; this is not standing broad Telegram authority;
+- immutable approval `content/telegram/svodka/release-approval-2026-08.json` binds release `svodka-pilot-2026-08` and approved digest `sha256:959a42e914acedc6969550ba842a12d1a2b174c940497d8a98f4ab8e2e63cdce`;
 - pinned target is chat `-1003527567039` with bot `8716602202 / @preaching_mp3_bot`;
-- no approved live August release is present at the latest control point;
-- no live Svodka publication ledger is present at the latest control point;
-- no Svodka provider mutation or scheduled production is authorized by this state.
+- the durable ledger now exists on `state/svodka-telegram`; at the latest verified checkpoint all 14 approved entries are still `pending` with `provider_effect=impossible`, with no verified manual canary or provider receipt;
+- scheduled production remains blocked until the same-release manual canary is durably `published` with `provider_effect=verified`;
+- mutable provider outcome truth must be read from the current durable state branch and Issue #235 at operation start; this document is not a substitute for either.
 
-Issue #170 is closed as repository pipeline implementation complete. A future canary or scheduled pilot is a separate live rollout decision and requires a new explicit exact provider scope rather than reopening generic implementation work.
+Issue #170 is closed as repository pipeline implementation complete. Issue #235 remains the live-rollout owner until its durable autonomous-publication closing criterion is met; no later or broader Svodka rollout is authorized by this August approval.
 
 ## Telegram runtime / supply chain
 
@@ -165,7 +166,7 @@ Unknown provider outcomes remain blocking until read-only reconciliation. A time
 1. For #154, regenerate/verify the final seven-master Black Man artifact only when the exact accepted master bytes are available to the executing environment; do not reupload the known public target to resolve artifact provenance.
 2. Treat Issue #232 / PR #271 as repository implementation complete only: use the guarded current-main YouTube executor only after a future exact execution approval is separately reviewed; no YouTube canary, upload, metadata/thumbnail/playlist/visibility/comment mutation, deletion, replacement, or replay is currently authorized by that completion.
 3. Keep the Lordchrist research-v2 canonical evidence queue/provider profile inert and do not broaden execution beyond Issue #242's exact reviewed August release; read current provider outcome from the durable state branch, and require a new exact authorization for any later research release or changed schedule/target.
-4. Keep Svodka provider-inert unless a new explicit live execution request is created and reviewed.
+4. Keep Svodka inside Issue #235's exact approved August scope: read the current durable ledger first, resolve expired-slot recovery fail-closed, and never allow scheduled publishing before the same-release manual canary is durably verified.
 5. Treat production Telegram lock refreshes as explicit coherent supply-chain changes; routine bot maintenance must not edit that closure piecemeal.
 6. Treat the 2026-08-09 GitHub governance evidence as observed state, not permanent truth: future changes require fresh read-only verification rather than assumptions.
 
