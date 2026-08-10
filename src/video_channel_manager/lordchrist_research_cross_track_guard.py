@@ -18,9 +18,14 @@ from video_channel_manager.telegram_state import (
 
 
 class VerifiedEntry(Protocol):
-    state: str
-    provider_effect: str
-    published_at_utc: datetime | None
+    @property
+    def state(self) -> str: ...
+
+    @property
+    def provider_effect(self) -> str: ...
+
+    @property
+    def published_at_utc(self) -> datetime | None: ...
 
 
 def verified_on_date(entries: Iterable[VerifiedEntry], *, timezone_name: str, local_date: date) -> int:
@@ -55,16 +60,20 @@ def require_cross_track_capacity(
         raise ValueError("canonical Lordchrist per-track daily limit differs from rollout approval")
     if release.daily_verified_limit != approval.per_track_daily_verified_limit:
         raise ValueError("research release per-track daily limit differs from rollout approval")
-    if release.project_key != profile.project_key or release.channel_username.casefold() != profile.channel_username.casefold():
+    if (
+        release.project_key != profile.project_key
+        or release.channel_username.casefold() != profile.channel_username.casefold()
+    ):
         raise ValueError("research release differs from canonical Lordchrist channel identity")
-    if legacy_ledger.project_key != profile.project_key or legacy_ledger.channel_username.casefold() != profile.channel_username.casefold():
+    if (
+        legacy_ledger.project_key != profile.project_key
+        or legacy_ledger.channel_username.casefold() != profile.channel_username.casefold()
+    ):
         raise ValueError("legacy ledger differs from canonical Lordchrist channel identity")
 
     effective_now = (now or datetime.now(tz=UTC)).astimezone(UTC)
     today = publication_local_date(effective_now, profile.timezone)
-    legacy_verified = verified_on_date(
-        legacy_ledger.entries.values(), timezone_name=profile.timezone, local_date=today
-    )
+    legacy_verified = verified_on_date(legacy_ledger.entries.values(), timezone_name=profile.timezone, local_date=today)
     research_verified = verified_on_date(
         research_ledger.entries.values(), timezone_name=profile.timezone, local_date=today
     )
