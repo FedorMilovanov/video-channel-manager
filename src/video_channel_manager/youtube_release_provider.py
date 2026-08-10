@@ -86,7 +86,9 @@ def _range_next_offset(value: str | None, *, total_bytes: int) -> int | None:
     return next_offset
 
 
-def _file_chunks(path: Path, *, offset: int, chunk_size: int = 1024 * 1024) -> Iterable[bytes]:
+def _file_chunks(
+    path: Path, *, offset: int, chunk_size: int = 1024 * 1024
+) -> Iterable[bytes]:
     with path.open("rb") as handle:
         handle.seek(offset)
         while True:
@@ -208,7 +210,11 @@ class YouTubeReleaseProvider(HttpClientOwner):
                 jitter=self._jitter,
             )
         except HttpTransportFailure as exc:
-            known_no_dispatch = exc.cause_type in {"ConnectError", "ConnectTimeout", "PoolTimeout"}
+            known_no_dispatch = exc.cause_type in {
+                "ConnectError",
+                "ConnectTimeout",
+                "PoolTimeout",
+            }
             effect: ProviderEffect = "confirmed_absent" if known_no_dispatch else "may_exist"
             return None, ReleaseProviderResult(
                 provider_effect=effect,
