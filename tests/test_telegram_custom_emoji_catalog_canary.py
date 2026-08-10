@@ -68,12 +68,8 @@ def test_catalog_preserves_all_verified_ids_and_curated_number_sets() -> None:
 def test_catalog_renders_exact_tg_emoji_fallbacks() -> None:
     catalog = load_custom_emoji_catalog(CATALOG_PATH)
 
-    assert render_digit(catalog, 1) == (
-        '<tg-emoji emoji-id="5426972640587853090">1️⃣</tg-emoji>'
-    )
-    assert render_role(catalog, "science.microscope") == (
-        '<tg-emoji emoji-id="5379679518740978720">🔬</tg-emoji>'
-    )
+    assert render_digit(catalog, 1) == ('<tg-emoji emoji-id="5426972640587853090">1️⃣</tg-emoji>')
+    assert render_role(catalog, "science.microscope") == ('<tg-emoji emoji-id="5379679518740978720">🔬</tg-emoji>')
     html = build_capability_canary_html(catalog)
     assert html.count("<tg-emoji ") == 3
     assert "<b>СВОДКА — проверка оформления</b>" in html
