@@ -1,0 +1,10 @@
+{
+  "schema_name": "video-channel-manager.telegram-generic-provider-outcome",
+  "schema_version": 1,
+  "publication_id": "lordchrist-research-three-preachers-numbers",
+  "provider_payload_sha256": "sha256:4df54902ef389abb9e577c74ff7ab0c60a989cf4795e731b83e0fdb103d59ba9",
+  "provider_effect": "may_exist",
+  "retryable": false,
+  "error": "Telegram returned link-preview semantics that differ from the exact provider payload",
+  "receipt": null
+}
