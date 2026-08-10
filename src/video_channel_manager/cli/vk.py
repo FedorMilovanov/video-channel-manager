@@ -22,6 +22,10 @@ from video_channel_manager.platforms.vk import (
     VkTokenStore,
 )
 from video_channel_manager.platforms.vk.clips_audit import build_vk_clips_audit_snapshot
+from video_channel_manager.platforms.vk.clips_owner_probe import (
+    VK_OWNER_CLIPS_PROBE_API_VERSION,
+    build_vk_owner_clips_probe_snapshot,
+)
 
 console = Console()
 vk_app = typer.Typer(no_args_is_help=True, help="Read-only VK community, video, and album inventory.")
@@ -282,4 +286,68 @@ def clips_scan(
         )
     console.print(
         "[yellow]This snapshot does not prove the complete native Clips surface; absence is not upload evidence.[/yellow]"
+    )
+
+
+@vk_app.command("clips-owner-probe")
+def clips_owner_probe(
+    project: Annotated[str, typer.Option("--project", help="Canonical project key")],
+    community: Annotated[int, typer.Option("--community", "-c", help="Exact positive VK community ID")],
+    owner_id: Annotated[int, typer.Option("--owner-id", help="Exact negative VK owner ID")],
+    account: Annotated[str, typer.Option("--account", "-a", help="Local VK credential alias")] = "default",
+    require_remote_id: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--require-remote-id",
+            help="Exact known Clip remote ID to probe in the owner endpoint; repeat for multiple probes",
+        ),
+    ] = None,
+    output: Annotated[Path | None, typer.Option("--output", "-o")] = None,
+) -> None:
+    """Export an experimental read-only owner Clips endpoint probe for one canonical project."""
+
+    settings = get_settings()
+    try:
+        store, _ = _components(account)
+        client = VkApiClient(
+            token_store=store,
+            account_alias=account,
+            api_version=VK_OWNER_CLIPS_PROBE_API_VERSION,
+        )
+        with console.status("Probing VK Video owner Clips surface without provider writes..."):
+            snapshot = build_vk_owner_clips_probe_snapshot(
+                client,
+                project_key=project,
+                community_id=community,
+                owner_id=owner_id,
+                required_remote_ids=require_remote_id or (),
+            )
+        if output is None:
+            timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
+            output = settings.data_dir / "exports" / f"vk-owner-clips-probe-{project}-{community}-{timestamp}.json"
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")
+    except (VkAccountNotFoundError, OSError, ValueError, VkApiError) as exc:
+        console.print(f"[red]VK owner Clips probe failed before evidence export:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+    probe = snapshot["provider_probe"]
+    coverage = snapshot["coverage"]
+    console.print(
+        f"[green]Exported VK owner Clips experimental probe -> {output}[/green]\n"
+        f"Project: {snapshot['project_key']} | Community: {community} | Owner: {owner_id} | "
+        f"Endpoint status: {probe['status']} | Provider total: {probe['provider_reported_total']} | "
+        f"Retrieved: {probe['retrieved_raw_item_count']} | Native Clips: {coverage['clip_count']} | "
+        "Provider writes: 0"
+    )
+    if probe["status"] != "ok":
+        console.print(
+            "[yellow]The undocumented owner endpoint returned an error; the JSON still preserves the read-only evidence.[/yellow]"
+        )
+    if coverage["required_remote_ids_missing_from_probe"]:
+        console.print(
+            "[yellow]Coverage warning: known Clip ID(s) were absent from this experimental endpoint response.[/yellow]"
+        )
+    console.print(
+        "[yellow]Do not derive upload/delete actions from this probe until it is reconciled against independently observed wall Clips.[/yellow]"
     )
