@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+from video_channel_manager.lordchrist_cross_track_effect_guard import require_no_cross_track_unresolved_effects
 from video_channel_manager.telegram_presentation import (
     CANONICAL_PRESENTATION_POLICY_PATH,
     load_presentation_policy,
@@ -34,6 +35,7 @@ from video_channel_manager.telegram_publisher import (
 )
 
 INITIALIZE_CONFIRMATION = "INITIALIZE_NEW_LORDCHRIST_LEDGER"
+LORDCHRIST_PROFILE_PATH = Path("content/telegram/channels/lordchrist.json")
 
 
 def _aware_datetime(value: str) -> datetime:
@@ -114,6 +116,15 @@ def _token() -> str:
     return token
 
 
+def _cross_track_guard(queue_path: Path, ledger_path: Path) -> dict[str, object]:
+    return require_no_cross_track_unresolved_effects(
+        profile_path=LORDCHRIST_PROFILE_PATH,
+        legacy_queue_path=queue_path,
+        legacy_ledger_path=ledger_path,
+        research_ledger_path=ledger_path.parent / "research-v2/publication-ledger.json",
+    )
+
+
 def main() -> int:
     args = parser().parse_args()
     queue = load_queue(args.queue)
@@ -140,6 +151,7 @@ def main() -> int:
     ledger = load_ledger(args.ledger, queue)
 
     if args.command == "validate":
+        cross_track = _cross_track_guard(args.queue, args.ledger)
         print(
             json.dumps(
                 {
@@ -149,6 +161,8 @@ def main() -> int:
                     "presentation_policy_id": presentation_policy.policy_id,
                     "presentation_policy_sha256": presentation_policy.digest,
                     "ledger_entries": len(ledger.entries),
+                    "cross_track_provider_effects_clear": cross_track["clear"],
+                    "research_ledger_present": cross_track["research_ledger_present"],
                 },
                 ensure_ascii=False,
             )
@@ -191,6 +205,7 @@ def main() -> int:
         return 0
 
     if args.command == "preflight":
+        _cross_track_guard(args.queue, args.ledger)
         require_preflight_config(queue_digest=queue.digest)
         try:
             proof = preflight_target(
