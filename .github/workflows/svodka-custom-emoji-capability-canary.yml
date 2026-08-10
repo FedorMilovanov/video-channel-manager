@@ -145,6 +145,7 @@ jobs:
             echo 'remote state branch does not contain exact custom-emoji canary intent' >&2
             exit 3
           }
+          git -C "$STATE_DIR" fetch --no-tags origin "$STATE_BRANCH"
           git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$STATE_RELATIVE_PATH" > .runtime/remote-custom-emoji-intent.json
           cmp --silent "$INTENT_PATH" .runtime/remote-custom-emoji-intent.json || {
             echo 'remote custom-emoji canary intent bytes differ from local intent' >&2
