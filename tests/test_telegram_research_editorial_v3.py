@@ -82,16 +82,20 @@ def test_editorial_successor_builds_four_item_rich_provider_inert_candidate(
 
 
 def test_rich_presentation_rejects_visible_text_drift() -> None:
-    body = ("🕯️ Заголовок\n\n" + "Точный проверенный текст. " * 30 + "\n\n✦ Благодарим Бога за верный труд.")
-    presentation = "<b>🕯️ Заголовок</b>\n\n" + "Подменённый текст. " * 30 + "\n\n<i>✦ Благодарим Бога за верный труд.</i>"
+    body = "🕯️ Заголовок\n\n" + "Точный проверенный текст. " * 30 + "\n\n✦ Благодарим Бога за верный труд."
+    presentation = (
+        "<b>🕯️ Заголовок</b>\n\n" + "Подменённый текст. " * 30 + "\n\n<i>✦ Благодарим Бога за верный труд.</i>"
+    )
 
     with pytest.raises(ValueError, match="changes canonical reader text"):
         validate_rich_presentation(body, presentation)
 
 
 def test_rich_presentation_rejects_heading_only_formatting() -> None:
-    body = ("🕯️ Заголовок\n\n" + "Точный проверенный текст. " * 30 + "\n\n✦ Благодарим Бога за верный труд.")
-    presentation = "<b>🕯️ Заголовок</b>\n\n" + "Точный проверенный текст. " * 30 + "\n\n✦ Благодарим Бога за верный труд."
+    body = "🕯️ Заголовок\n\n" + "Точный проверенный текст. " * 30 + "\n\n✦ Благодарим Бога за верный труд."
+    presentation = (
+        "<b>🕯️ Заголовок</b>\n\n" + "Точный проверенный текст. " * 30 + "\n\n✦ Благодарим Бога за верный труд."
+    )
 
     with pytest.raises(ValueError, match="italic reflection"):
         validate_rich_presentation(body, presentation)
