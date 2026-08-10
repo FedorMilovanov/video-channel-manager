@@ -145,16 +145,10 @@ class _TelegramPublicPageParser(HTMLParser):
         for key, value in attrs.items():
             normalized_key = key.casefold()
             normalized_value = value.casefold()
-            if (
-                "emoji" in normalized_key
-                or "document" in normalized_key
-                or normalized_tag == "tg-emoji"
-            ):
+            if "emoji" in normalized_key or "document" in normalized_key or normalized_tag == "tg-emoji":
                 ids.update(_ID_RE.findall(value))
             ids.update(_TG_EMOJI_RE.findall(value))
-            if "emoji" in normalized_value and (
-                "id" in normalized_value or "document" in normalized_value
-            ):
+            if "emoji" in normalized_value and ("id" in normalized_value or "document" in normalized_value):
                 ids.update(_ID_RE.findall(value))
         return tuple(sorted(ids, key=int))
 
@@ -287,18 +281,10 @@ def _select_unique(
     spec: CustomEmojiExemplarSpec,
 ) -> _PublicMessage | None:
     fingerprint = " ".join(spec.fingerprint.split()).casefold()
-    candidates = [
-        message
-        for message in messages
-        if fingerprint in " ".join(message.text.split()).casefold()
-    ]
+    candidates = [message for message in messages if fingerprint in " ".join(message.text.split()).casefold()]
     if not candidates:
         return None
-    dated = [
-        message
-        for message in candidates
-        if message.message_date_utc.date() == spec.expected_date
-    ]
+    dated = [message for message in candidates if message.message_date_utc.date() == spec.expected_date]
     selected = dated if dated else candidates
     unique_by_id = {message.message_id: message for message in selected}
     if len(unique_by_id) != 1:
@@ -361,10 +347,7 @@ def _resolve_archive(
             return resolved
 
         oldest = min(message.message_date_utc for message in page_messages)
-        if all(
-            oldest.date() < spec.expected_date - _ARCHIVE_STOP_MARGIN
-            for spec in unresolved.values()
-        ):
+        if all(oldest.date() < spec.expected_date - _ARCHIVE_STOP_MARGIN for spec in unresolved.values()):
             break
 
         next_before = min(message.message_id for message in page_messages)
@@ -372,9 +355,7 @@ def _resolve_archive(
             break
         before = next_before
 
-    details = ", ".join(
-        f"{spec.key}@{spec.expected_date.isoformat()}" for spec in unresolved.values()
-    )
+    details = ", ".join(f"{spec.key}@{spec.expected_date.isoformat()}" for spec in unresolved.values())
     raise ValueError(f"public Telegram archive exhausted before resolving exemplars: {details}")
 
 
@@ -426,9 +407,7 @@ def _fetch_exemplars(
     )
     harvested = _to_harvested(config, resolved)
     if not any(item.custom_emoji_ids for item in harvested):
-        raise ValueError(
-            "no custom emoji ids were discoverable in the selected public Telegram exemplars"
-        )
+        raise ValueError("no custom emoji ids were discoverable in the selected public Telegram exemplars")
     return harvested
 
 
@@ -462,9 +441,7 @@ def _verify_custom_emoji_ids(
     if set(by_id) != set(custom_ids):
         missing = sorted(set(custom_ids) - set(by_id), key=int)
         unexpected = sorted(set(by_id) - set(custom_ids), key=int)
-        raise ValueError(
-            f"custom emoji verification mismatch; missing={missing} unexpected={unexpected}"
-        )
+        raise ValueError(f"custom emoji verification mismatch; missing={missing} unexpected={unexpected}")
 
     verified: list[VerifiedCustomEmoji] = []
     for custom_id in custom_ids:
@@ -516,11 +493,7 @@ def harvest_custom_emoji(
         )
         all_ids = tuple(
             sorted(
-                {
-                    custom_id
-                    for exemplar in exemplars
-                    for custom_id in exemplar.custom_emoji_ids
-                },
+                {custom_id for exemplar in exemplars for custom_id in exemplar.custom_emoji_ids},
                 key=int,
             )
         )
@@ -551,9 +524,7 @@ def harvest_custom_emoji(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="Harvest Svodka custom emoji ids from public historical posts."
-    )
+    parser = argparse.ArgumentParser(description="Harvest Svodka custom emoji ids from public historical posts.")
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--verify-bot-api", action="store_true")
