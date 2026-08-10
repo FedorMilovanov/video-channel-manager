@@ -26,7 +26,7 @@ Repository/local implementation is hardened and current:
 - description authoring is source-first and unresolved media-derived chapters fail closed;
 - exact chapters can be rendered only from a digest-valid album package and produce immutable evidence bound to body/package/media/timing/quality-master hashes;
 - same-media upload planning uses stable project/channel/media identity; timestamps or metadata changes cannot create a new journal namespace;
-- merged YouTube upload tooling is provider-inert (`plan/status/abandon` only). There is no provider upload executor in the supported baseline.
+- current `main` includes the guarded YouTube release executor completed by Issue #232 / PR #271: read-only existing-target adoption, immutable provider-inert release planning, separate exact execution approval, durable child-operation state, resumable upload/status reconciliation, metadata/status, thumbnail, fully paginated playlist membership, visibility, top-level comment, and manual-only pin evidence; mutation transport uses zero blind retries. Canonical plans remain provider-inert and implementation completion does not itself authorize execution.
 
 A separately authorized one-off provider rollout of the **historical pre-#213 media bytes** was completed on 2026-08-09 and is now durable remote-state evidence, not standing authorization:
 
@@ -44,7 +44,7 @@ Exact retrospective/live-state evidence is recorded in [`black-man-youtube-relea
 
 Issue #154 remains **artifact-level open** for one reason: the uploaded/rendered album MP4 predates the quality-master binding fix. Completion requires regeneration from the seven accepted exact masters under the current pipeline, then fresh timing/render/verify/package/description evidence (SHA-256 + required ffprobe/QC). Do not reuse the historical MP4 as current-policy proof and do **not** reupload the album to solve this provenance gap.
 
-The known public target `x-puy27S2qs` is an external collision guard for the stable project/channel/media identity. Until Issue #232 implements a current-main read-only adoption/reconciliation path, absence of a v2 local journal must never be interpreted as permission to create another `videos.insert` for the same media.
+The known public target `x-puy27S2qs` remains an external collision guard for the stable project/channel/media identity. Issue #232 is now repository-implementation complete and current `main` provides the read-only adoption/reconciliation path, but absence of a local journal still must never be interpreted as permission to create another `videos.insert` for the same media. Any future mutation requires a separately reviewed exact execution approval bound to the intended release operation.
 
 No future YouTube upload, metadata edit, thumbnail change, playlist mutation, visibility change, comment mutation, deletion or replacement is authorized by this state. The successful historical rollout does not authorize replay.
 
@@ -163,7 +163,7 @@ Unknown provider outcomes remain blocking until read-only reconciliation. A time
 ## Next safe work
 
 1. For #154, regenerate/verify the final seven-master Black Man artifact only when the exact accepted master bytes are available to the executing environment; do not reupload the known public target to resolve artifact provenance.
-2. Implement Issue #232 as a separately reviewed current-main provider executor/adoption scope before any future automated YouTube release write; no canary is authorized by the issue itself.
+2. Treat Issue #232 / PR #271 as repository implementation complete only: use the guarded current-main YouTube executor only after a future exact execution approval is separately reviewed; no YouTube canary, upload, metadata/thumbnail/playlist/visibility/comment mutation, deletion, replacement, or replay is currently authorized by that completion.
 3. Keep the Lordchrist research-v2 canonical evidence queue/provider profile inert and do not broaden execution beyond Issue #242's exact reviewed August release; read current provider outcome from the durable state branch, and require a new exact authorization for any later research release or changed schedule/target.
 4. Keep Svodka provider-inert unless a new explicit live execution request is created and reviewed.
 5. Treat production Telegram lock refreshes as explicit coherent supply-chain changes; routine bot maintenance must not edit that closure piecemeal.
