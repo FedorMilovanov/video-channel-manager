@@ -350,7 +350,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "message_id": probe.message_id,
                 "message_url": probe.message_url,
                 "examined_updates": probe.examined_updates,
-                "target_channel_neighbors": [neighbor.model_dump(mode="json") for neighbor in probe.target_channel_neighbors],
+                "target_channel_neighbors": [
+                    neighbor.model_dump(mode="json") for neighbor in probe.target_channel_neighbors
+                ],
                 "get_updates_offset_sent": False,
                 "provider_write_performed": False,
             },
