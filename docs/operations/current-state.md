@@ -75,7 +75,7 @@ A separate exact live execution scope was explicitly reviewed in Issue #242 and 
 - the 120-minute research freshness policy is checked both before preparation and again at the final generic send boundary, so a run that becomes stale while executing resolves provider absence without calling Telegram;
 - ambiguous `may_exist` outcomes remain blocking until read-only reconciliation proves the next safe state.
 
-Issue #168 remains closed as repository implementation complete. Issue #242 authorizes only the exact reviewed August research release above; it is not standing authorization for another research release, new content, changed schedule, changed target, or broader generic Telegram writes.
+Issue #168 is closed as repository implementation complete. Issue #242 authorizes only the exact reviewed August research release above; it is not standing authorization for another research release, new content, changed schedule, changed target, or broader generic Telegram writes.
 
 ## Telegram / Svodka
 
