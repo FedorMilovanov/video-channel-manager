@@ -103,7 +103,6 @@ def _ps_single_quote(value: str) -> str:
 def render_powershell_handoff(spec: ResiHandoffSpec) -> str:
     source_url = _ps_single_quote(spec.source_url)
     safe_title = _ps_single_quote(spec.safe_title)
-    work_name = _ps_single_quote(f"Resi-{spec.safe_title}")
     encoder = _ps_single_quote(spec.encoder)
     lines = [
         '$ErrorActionPreference = "Stop"',
@@ -111,16 +110,16 @@ def render_powershell_handoff(spec: ResiHandoffSpec) -> str:
         f"$SourceUrl = {source_url}",
         f"$Title = {safe_title}",
         f"$EncoderPreference = {encoder}",
-        '$Downloads = Join-Path $env:USERPROFILE "Downloads"',
-        f"$Work = Join-Path $Downloads {work_name}",
-        '$Master = Join-Path $Work ($Title + " - FULL.mp4")',
+        '$Repo = "C:\\Users\\Fedor\\Projects\\video-channel-manager"',
+        '$OperatorOutput = Join-Path $Repo "operator-output"',
+        '$Master = Join-Path $OperatorOutput ($Title + " - FULL.mp4")',
     ]
     if spec.start is not None and spec.end is not None:
-        lines.append('$Clip = Join-Path $Work ($Title + ".mp4")')
+        lines.append('$Clip = Join-Path $OperatorOutput ($Title + ".mp4")')
     lines.extend(
         [
             "",
-            "New-Item -ItemType Directory -Force -Path $Work | Out-Null",
+            "New-Item -ItemType Directory -Force -Path $OperatorOutput | Out-Null",
             'foreach ($Tool in @("yt-dlp", "ffmpeg", "ffprobe")) {',
             "    if (-not (Get-Command $Tool -ErrorAction SilentlyContinue)) {",
             '        throw "Required tool not found in PATH: $Tool"',
@@ -171,7 +170,7 @@ def render_powershell_handoff(spec: ResiHandoffSpec) -> str:
             "if ($UseNvenc) {",
             '    $VideoArgs = @("-c:v", "h264_nvenc", "-preset", "p6", "-tune", "hq", "-rc", "vbr", "-cq", "21", "-b:v", "0", "-profile:v", "high")',
             '    $SourceVideoBitrateText = (& ffprobe -v error -select_streams v:0 -show_entries stream=bit_rate -of default=noprint_wrappers=1:nokey=1 $Master | Select-Object -First 1)',
-            "    $SourceVideoBitrate = 0L",
+            "    $SourceVideoBitrate = [long]0",
             '    if ([long]::TryParse(($SourceVideoBitrateText | Out-String).Trim(), [ref]$SourceVideoBitrate) -and $SourceVideoBitrate -gt 0) {',
             "        $MaxRate = [long][math]::Ceiling($SourceVideoBitrate * 1.5)",
             "        $BufferSize = [long]($MaxRate * 2)",
