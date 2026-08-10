@@ -8,7 +8,7 @@ from typing import Any
 from video_channel_manager.youtube_stable_state import (
     read_json,
     stable_key_mutation_lock,
-    write_json_atomic,
+    write_json_atomic as _write_json_atomic,
     write_new_json,
 )
 from video_channel_manager.youtube_upload_plan import (
@@ -39,7 +39,7 @@ def plan(args: argparse.Namespace) -> int:
         require_new_plan_allowed(existing, intent=intent)
         write_new_json(output, intent)
         try:
-            write_json_atomic(stable_journal, planned_journal(intent))
+            _write_json_atomic(stable_journal, planned_journal(intent))
         except OSError:
             output.unlink(missing_ok=True)
             raise
@@ -82,7 +82,7 @@ def abandon(args: argparse.Namespace) -> int:
     with stable_key_mutation_lock(stable_journal):
         journal = _read_matching_journal(stable_journal, intent=intent)
         updated = abandon_planned_journal(journal, intent=intent)
-        write_json_atomic(stable_journal, updated)
+        _write_json_atomic(stable_journal, updated)
     print("LOCAL UPLOAD PLAN ABANDONED — PROVIDER EFFECT CONFIRMED ABSENT.")
     print(f"Stable upload key: {intent['upload_key_sha256']}")
     return 0
