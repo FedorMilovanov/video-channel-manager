@@ -46,7 +46,8 @@ def handoff(
         raise typer.BadParameter(str(exc)) from exc
 
     if output is None:
-        output = default_handoff_path(spec.safe_title)
+        repository_root = Path(__file__).resolve().parents[3]
+        output = repository_root / default_handoff_path(spec.safe_title)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(render_powershell_handoff(spec), encoding="utf-8-sig")
 
