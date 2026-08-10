@@ -2,8 +2,7 @@
 
 Scope: merged #259 / closed #258, audited from current-main baseline `484031aa17827cb1a7785470d105e866a086734b` before post-merge hardening.
 
-Owning follow-up: #262.
-
+Owning follow-up: #262.  
 Provider effect during audit/implementation: `impossible` / zero provider writes.
 
 ## Audit method
@@ -16,118 +15,158 @@ Checked the implementation against:
 - `docs/operations/operational-artifact-standard.md`;
 - `.github/copilot-instructions.md`;
 - the actual 2026-08-10 Abner Chou Resi workflow and its observed PowerShell/FFmpeg defects;
-- full repository CI surfaces, including Python 3.11/3.12/3.13 and PowerShell 5.1/7 jobs.
+- full repository CI surfaces: Python 3.11/3.12/3.13 and PowerShell 5.1/7.
 
-The audit intentionally treated green CI as necessary but not sufficient. The main questions were operator friction, stale-byte hazards, provenance, failure boundedness, shell serialization, discoverability, and whether a future agent could follow the repository without reconstructing chat history.
+Green CI was treated as necessary but not sufficient. The audit explicitly examined operator friction, shell-state dependence, stale-byte hazards, provenance, retry boundedness, source identity, offline continuation, runtime encoder availability, serialization, discoverability, and whether a future agent can use repository truth instead of chat memory.
 
-## Findings
+## Findings and dispositions
 
-### F1 — operator timestamps still required manual normalization
+### F1 — operator timestamps required manual normalization
 
 Severity: usability / repeat-defect risk.
 
-The first implementation accepted only `HH:MM:SS[.mmm]`. A normal operator input such as `50:12` would fail even though that is exactly how sermon boundaries are commonly communicated.
+Initial support accepted only `HH:MM:SS[.mmm]`; natural operator input `50:12` failed.
 
-Resolution: accept both `MM:SS[.mmm]` and `HH:MM:SS[.mmm]`; normalize internally. Regression includes `50:12 -> 00:50:12` and the real `50:12 -> 1:49:52 = 00:59:40` case.
+**Disposition:** accept `MM:SS[.mmm]` and `HH:MM:SS[.mmm]`, normalize internally. The real regression is `50:12 -> 1:49:52 = 00:59:40`.
 
 ### F2 — Resi was not discoverable from the established primary CLI
 
 Severity: usability / repository-memory risk.
 
-The first implementation added only `video-manager-resi`. A future operator already using `video-manager` would not discover the workflow from `video-manager --help`, and a newly added console-script name can require entrypoint metadata reinstall after a pull.
+Initial support added only `video-manager-resi`. Existing operators naturally discover functionality through `video-manager`.
 
-Resolution: mount the Resi Typer app at `video-manager resi`; retain `video-manager-resi` only as a focused compatibility alias.
+**Disposition:** mount the same Typer app at `video-manager resi`; keep `video-manager-resi` only as a focused alias.
 
 ### F3 — default title was collision-prone
 
 Severity: correctness.
 
-Omitting `--title` produced the generic `Resi Download`, so unrelated manifests could target the same final filename.
+Omitting `--title` produced generic `Resi Download`.
 
-Resolution: derive a deterministic source-specific default title from the manifest path.
+**Disposition:** derive a deterministic source-specific default title from the manifest path.
 
 ### F4 — filename-only existing-master reuse could silently process stale bytes
 
 Severity: high correctness / provenance.
 
-`yt-dlp` can regard an already-existing final output filename as downloaded. The first implementation had no proof that an existing `<TITLE> - FULL.mp4` belonged to the supplied manifest.
+`yt-dlp` can treat an already-existing final output filename as downloaded. A filename did not prove source identity.
 
-Resolution: introduce a source receipt. Existing final masters are reusable only when:
+**Disposition:** introduce source receipt; existing master reuse requires matching source fingerprint and current master SHA-256. Missing/mismatched evidence fails closed.
 
-1. receipt exists;
-2. canonical source fingerprint matches;
-3. current master SHA-256 matches the receipt.
-
-Anything else fails closed instead of silently using filename identity.
-
-### F5 — trim result did not durably bind itself to the exact master hash
+### F5 — trim result did not durably bind to exact master hash
 
 Severity: provenance.
 
-The clip was hashed, but the retained master SHA-256 was not always carried into durable result evidence.
+Clip hash existed, but durable result evidence did not always bind the clip to exact master bytes.
 
-Resolution: master is always hashed after QC. Result JSON records exact master SHA-256; exact-trim results additionally record clip SHA-256, normalized timing, expected/actual duration, and selected encoder.
+**Disposition:** always hash master after QC. Result JSON records exact master SHA-256; trim results also record clip SHA-256, normalized timing, expected/actual duration and selected encoder.
 
 ### F6 — master QC printed metadata but did not fail closed on missing streams
 
 Severity: correctness.
 
-The clip path checked A/V presence, but the retained master path only printed `ffprobe` output.
+Initial master path printed `ffprobe` output but only the clip path enforced A/V presence.
 
-Resolution: parse master `ffprobe` JSON and require at least one video stream, one audio stream, and positive duration before receipt/result creation.
+**Disposition:** parse master `ffprobe` JSON; require video, audio and positive duration before receipt/result creation.
 
-### F7 — infinite retries could turn a dead manifest into an unbounded shell hang
+### F7 — infinite retries could create an unbounded shell hang
 
 Severity: operator reliability.
 
-`--retries infinite --fragment-retries infinite` is inappropriate for a self-contained handoff that is expected to fail clearly when a source is stale or inaccessible.
+`--retries infinite --fragment-retries infinite` could leave a dead/stale manifest retrying indefinitely.
 
-Resolution: bounded transport and fragment retries (`10` each) with explicit failure.
+**Disposition:** bounded transport and fragment retries (`10` each) with explicit failure.
 
-### F8 — NVENC source-aware ceiling could disappear when stream bitrate was absent
+### F8 — NVENC source-aware ceiling disappeared when stream bitrate was absent
 
 Severity: media-size regression risk.
 
-The first version used only stream-level `bit_rate`. When absent, the rate ceiling disappeared even if container bitrate remained available.
+Initial implementation used only stream-level `bit_rate`.
 
-Resolution: fall back to container-level bitrate as the conservative ceiling basis.
+**Disposition:** use container bitrate as conservative fallback when stream bitrate is unavailable.
 
-### F9 — NVENC compile-time presence was treated as runtime availability
+### F9 — NVENC listing was treated as runtime availability
 
 Severity: portability.
 
-An FFmpeg build may list `h264_nvenc` while the NVIDIA runtime/GPU cannot initialize it.
+An FFmpeg build can list `h264_nvenc` even when the NVIDIA runtime/GPU cannot initialize it.
 
-Resolution: `auto` performs a tiny runtime encode probe. Failed runtime initialization falls back to CPU; explicit `--encoder nvenc` fails clearly.
+**Disposition:** `auto` performs a tiny runtime encode probe. Failure falls back to CPU; explicit `--encoder nvenc` fails clearly.
 
-### F10 — current-state/README discoverability lagged the merged implementation
+### F10 — current-state/README discoverability lagged implementation
 
 Severity: future-agent/repository UX.
 
-The authoritative repository surfaces did not yet explain that Resi/DASH local video was supported.
+Authoritative repository surfaces did not expose the newly supported local-video workflow.
 
-Resolution: current-state, runbook, README and CLI inventory are updated as part of #262.
+**Disposition:** update README, current-state, runbook and CLI inventory.
 
-### F11 — tests asserted rendered strings but not PowerShell parser acceptance
+### F11 — tests checked rendered strings but not PowerShell parser acceptance
 
 Severity: serialization regression risk.
 
-Python tests could prove that bad `\:` / `\_` strings were absent, but not that the complete generated `.ps1` is syntactically accepted by the PowerShell environments that operators use.
+Python tests could reject known `\:` / `\_` corruption without proving that the complete generated `.ps1` parses on operator PowerShell versions.
 
-Resolution: add a Pester regression that invokes `video-manager resi handoff`, generates the UTF-8-BOM handoff, and parses it with `System.Management.Automation.Language.Parser`. The existing CI matrix exercises this under Windows PowerShell 5.1, PowerShell 7 on Windows, and PowerShell 7 on Linux.
+**Disposition:** Pester generates the actual handoff and parses it with `System.Management.Automation.Language.Parser` in the repository PowerShell matrix.
+
+### F12 — generated handoff was difficult to execute safely in hermetic CI
+
+Severity: testability / portability.
+
+The generated script hardcoded the canonical Windows repository root with no override, making full control-flow execution in Linux/temporary CI workspaces impractical.
+
+**Disposition:** generated handoff now has optional `-RepositoryRoot`, defaulting to the canonical Windows checkout. Ordinary users provide nothing; CI can execute the exact same script in `$TestDrive` without text-rewriting it.
+
+### F13 — generic DASH query variants could collide if every query were discarded
+
+Severity: source-identity correctness.
+
+For Resi, path identity is stable while embed/access query context may rotate. Extending that assumption to arbitrary DASH URLs would be unsafe because `?variant=a` and `?variant=b` may select different content.
+
+**Disposition:** Resi host/subdomain source identity excludes transient query; generic non-Resi DASH identity preserves query. Receipt stores only the resulting SHA-256 identity, not a replacement for master SHA-256.
+
+### F14 — proven master still depended on live source reachability
+
+Severity: operator UX / recovery.
+
+Initial hardened flow validated receipt+SHA but then still ran `yt-dlp -F`. An expired Resi URL therefore blocked re-trimming an already proven retained master.
+
+**Disposition:** once receipt fingerprint and current master SHA-256 match, remote inspection/download are skipped. Master is still re-probed/re-hashed locally. This makes later trim work offline-safe without weakening byte identity.
+
+### F15 — parser-only CI still did not prove generated control flow
+
+Severity: integration confidence.
+
+A syntactically valid script can still have broken path, receipt, hashing, branch or reuse logic.
+
+**Disposition:** Pester additionally executes the generated handoff end-to-end using provider-free `yt-dlp`, `ffmpeg`, and `ffprobe` tool doubles. It proves:
+
+- initial format-inspection branch;
+- fake master creation;
+- master A/V/duration QC;
+- source receipt + master SHA-256;
+- CPU fallback branch;
+- exact fake trim + clip SHA-256;
+- result JSON timing/provenance;
+- second-run master reuse;
+- no second remote inspection/download on verified reuse.
+
+This test is intentionally provider-free and network-free.
 
 ## Expected post-hardening operator behavior
 
-A future agent given only a Resi `.mpd` URL may use a source-derived title without asking the operator for one. If the operator supplies a title and boundaries such as `50:12–1:49:52`, the repository normalizes timing, generates one exact handoff, inspects/downloads the best A/V representation, preserves and hashes the master, performs exact trim/QC when requested, and writes source/result evidence under canonical `operator-output`.
+A future agent given only a Resi `.mpd` URL can derive a collision-resistant title and generate the supported handoff without asking format/encoder/path questions. If the operator supplies a human title and boundaries such as `50:12–1:49:52`, repository code normalizes timing, downloads best A/V when needed, preserves/hashes the master, performs exact trim/QC, and writes source/result evidence under canonical `operator-output`.
 
-The assistant/operator is not expected to reconstruct format IDs, calculate duration, repair Markdown escape damage, preserve prior shell variables, or decide whether a same-name master is trustworthy.
+If that retained master later has a valid source receipt and unchanged SHA-256, the same handoff can re-trim it without the source remaining online.
+
+The operator is not expected to reconstruct format IDs, calculate duration, repair Markdown escapes, preserve prior shell variables, decide whether a same-name master is trustworthy, or manually distinguish compile-time from runtime NVENC availability.
 
 ## Completion gate
 
 This audit is repository-complete only after #262 has:
 
 - exact-current-head full CI green;
-- PowerShell parser regression green in all three PowerShell jobs;
+- PowerShell parser + executable provider-free handoff regressions green in all three PowerShell jobs;
 - Python format/type/test gates green;
 - source-of-truth documentation updated;
 - reviewed diff with zero provider effects;
