@@ -82,8 +82,10 @@ def test_render_is_self_contained_provenance_bound_and_not_chat_escaped() -> Non
         )
     )
 
+    assert script.startswith("param(\n")
+    assert '[string]$RepositoryRoot = "C:\\Users\\Fedor\\Projects\\video-channel-manager"' in script
     assert '$ErrorActionPreference = "Stop"' in script
-    assert '$Repo = "C:\\Users\\Fedor\\Projects\\video-channel-manager"' in script
+    assert "$Repo = $RepositoryRoot" in script
     assert "$OperatorOutput =" in script
     assert "$Master =" in script
     assert "$SourceReceipt =" in script
