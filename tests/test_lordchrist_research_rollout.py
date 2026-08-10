@@ -112,6 +112,22 @@ def test_preflight_materializes_exact_target_inside_same_shell_step() -> None:
     assert '--expected-bot-username "$LORDCHRIST_RESEARCH_BOT_USERNAME"' in preflight
 
 
+def test_final_ci_failure_is_resolved_before_send_and_never_replayed_blindly() -> None:
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    persist = workflow.index("Persist research intent before Telegram mutation")
+    reproof = workflow.index("Re-prove current-main CI immediately before Telegram mutation")
+    resolve = workflow.index("Resolve blocked research pre-send intent as confirmed absent")
+    fail = workflow.index("Fail run after durable provider-free pre-send recovery")
+    send = workflow.index("Send exactly one research payload")
+    assert persist < reproof < resolve < fail < send
+    assert "id: pre_send_quality" in workflow
+    assert "continue-on-error: true" in workflow
+    assert "telegram_multichannel_recovery" in workflow
+    assert "steps.pre_send_quality.outcome != 'success'" in workflow
+    assert "steps.pre_send_quality.outcome == 'success'" in workflow
+    assert "confirmed-absent state was persisted" in workflow
+
+
 def test_workflow_orders_durable_intent_before_provider_and_outcome_before_state() -> None:
     workflow = WORKFLOW.read_text(encoding="utf-8")
     persist = workflow.index("Persist research intent before Telegram mutation")
