@@ -56,18 +56,19 @@ def test_source_identity_ignores_resi_transient_query_but_preserves_generic_dash
         "https://resi.media/GiHDtf/9aa9ac24-fb79-4ca9-95ef-a3253afdf63f/Manifest.mpd"
     )
     assert default_title_for_url(REALISTIC_URL) == "Resi 9aa9ac24-fb79-4ca9-95ef-a3253afdf63f"
+    assert ResiHandoffSpec(REALISTIC_URL).safe_title == "Resi 9aa9ac24-fb79-4ca9-95ef-a3253afdf63f"
     assert (
-        ResiHandoffSpec(REALISTIC_URL).safe_title
-        == "Resi 9aa9ac24-fb79-4ca9-95ef-a3253afdf63f"
+        ResiHandoffSpec(REALISTIC_URL).source_fingerprint
+        == ResiHandoffSpec(REALISTIC_URL.replace("?src=emb", "?token=rotated")).source_fingerprint
     )
-    assert ResiHandoffSpec(REALISTIC_URL).source_fingerprint == ResiHandoffSpec(
-        REALISTIC_URL.replace("?src=emb", "?token=rotated")
-    ).source_fingerprint
 
     generic_a = "https://media.example/video/Manifest.mpd?variant=a"
     generic_b = "https://media.example/video/Manifest.mpd?variant=b"
     assert canonical_source_identity(generic_a).endswith("Manifest.mpd?variant=a")
-    assert ResiHandoffSpec(generic_a).source_fingerprint != ResiHandoffSpec(generic_b).source_fingerprint
+    assert (
+        ResiHandoffSpec(generic_a).source_fingerprint
+        != ResiHandoffSpec(generic_b).source_fingerprint
+    )
 
 
 def test_requires_both_trim_bounds() -> None:
