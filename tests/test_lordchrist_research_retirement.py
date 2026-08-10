@@ -104,7 +104,7 @@ def test_exact_retirement_suppresses_only_matching_research_blocker(tmp_path: Pa
 def test_retirement_provenance_drift_fails_closed(tmp_path: Path) -> None:
     ledger = _ledger()
     payload = _retirement_payload()
-    payload["intent_id"] = "0" * 32
+    payload["attempted_at_utc"] = "2026-08-10T12:58:07+00:00"
     path = tmp_path / "retirement.json"
     _write(path, payload)
 
