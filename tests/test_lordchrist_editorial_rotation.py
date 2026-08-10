@@ -3,21 +3,28 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from video_channel_manager.telegram_publisher import initialize_ledger, load_queue, preview_next
+from video_channel_manager.telegram_publisher import (
+    LedgerEntry,
+    TelegramLedger,
+    TelegramQueue,
+    initialize_ledger,
+    load_queue,
+    preview_next,
+)
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 QUEUE_PATH = REPOSITORY_ROOT / "content/telegram/lordchrist/verified-30-posts.json"
 EXPECTED_QUEUE_DIGEST = "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"
 
 
-def _publish(entry: object, *, at: datetime, message_id: int) -> None:
-    entry.state = "published"  # type: ignore[attr-defined]
-    entry.provider_effect = "verified"  # type: ignore[attr-defined]
-    entry.published_at_utc = at  # type: ignore[attr-defined]
-    entry.message_id = message_id  # type: ignore[attr-defined]
+def _publish(entry: LedgerEntry, *, at: datetime, message_id: int) -> None:
+    entry.state = "published"
+    entry.provider_effect = "verified"
+    entry.published_at_utc = at
+    entry.message_id = message_id
 
 
-def _historical_four_bunyan() -> tuple[object, object]:
+def _historical_four_bunyan() -> tuple[TelegramQueue, TelegramLedger]:
     queue = load_queue(QUEUE_PATH)
     ledger = initialize_ledger(queue)
     start = datetime(2026, 8, 7, 12, 14, tzinfo=UTC)
@@ -65,7 +72,7 @@ def test_rotation_continues_across_authors_without_rewriting_source_order() -> N
 
     preview = preview_next(queue, ledger)
     assert preview.post is not None
-    assert preview.post.publication_id == "lordchrist-owen-mortify-daily"
+    assert preview.post.publication_id == "lordchrist-owen-daily-mortification"
     assert preview.post.source.author == "Джон Оуэн"
 
 
