@@ -5,7 +5,7 @@ import hashlib
 import json
 import os
 import re
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Literal, Sequence
@@ -19,6 +19,8 @@ from video_channel_manager.telegram_transport import _api_call, _result_list
 
 _ID_RE = re.compile(r"(?<!\d)([0-9]{10,22})(?!\d)")
 _TG_EMOJI_RE = re.compile(r"tg://emoji\?id=([0-9]{10,22})", re.IGNORECASE)
+_MAX_ARCHIVE_PAGES = 120
+_ARCHIVE_STOP_MARGIN = timedelta(days=2)
 _VOID_TAGS = {
     "area",
     "base",
@@ -120,7 +122,7 @@ class _PublicMessage(BaseModel):
     custom_emoji_ids: tuple[str, ...]
 
 
-class _TelegramSearchPageParser(HTMLParser):
+class _TelegramPublicPageParser(HTMLParser):
     def __init__(self, *, channel_username: str) -> None:
         super().__init__(convert_charrefs=True)
         self._bare_channel = channel_username.removeprefix("@").casefold()
@@ -139,13 +141,20 @@ class _TelegramSearchPageParser(HTMLParser):
     @staticmethod
     def _extract_custom_ids(tag: str, attrs: dict[str, str]) -> tuple[str, ...]:
         ids: set[str] = set()
+        normalized_tag = tag.casefold()
         for key, value in attrs.items():
-            lowered_key = key.casefold()
-            lowered_value = value.casefold()
-            if "emoji" in lowered_key or "document" in lowered_key or tag.casefold() == "tg-emoji":
+            normalized_key = key.casefold()
+            normalized_value = value.casefold()
+            if (
+                "emoji" in normalized_key
+                or "document" in normalized_key
+                or normalized_tag == "tg-emoji"
+            ):
                 ids.update(_ID_RE.findall(value))
             ids.update(_TG_EMOJI_RE.findall(value))
-            if "emoji" in lowered_value and ("id" in lowered_value or "document" in lowered_value):
+            if "emoji" in normalized_value and (
+                "id" in normalized_value or "document" in normalized_value
+            ):
                 ids.update(_ID_RE.findall(value))
         return tuple(sorted(ids, key=int))
 
@@ -161,7 +170,7 @@ class _TelegramSearchPageParser(HTMLParser):
             try:
                 channel, raw_id = data_post.rsplit("/", 1)
                 message_id = int(raw_id)
-            except (ValueError, TypeError):
+            except (TypeError, ValueError):
                 return
             if channel.casefold() != self._bare_channel or message_id <= 0:
                 return
@@ -199,8 +208,8 @@ class _TelegramSearchPageParser(HTMLParser):
     def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         if self._message_depth == 0:
             return
-        values = {key.casefold(): value or "" for key, value in attrs}
         normalized = tag.casefold()
+        values = {key.casefold(): value or "" for key, value in attrs}
         self._custom_ids.extend(self._extract_custom_ids(normalized, values))
         if self._text_depth and normalized == "br":
             self._parts.append("\n")
@@ -258,53 +267,169 @@ def load_exemplar_config(path: Path) -> CustomEmojiExemplarConfig:
         raise ValueError(f"invalid custom emoji exemplar config {path}: {exc}") from exc
 
 
-def _select_exemplar_message(
+def _parse_page(html: str, *, channel_username: str) -> tuple[_PublicMessage, ...]:
+    parser = _TelegramPublicPageParser(channel_username=channel_username)
+    parser.feed(html)
+    parser.close()
+    return tuple(parser.messages)
+
+
+def _validate_public_response(response: httpx.Response, *, context: str) -> None:
+    response.raise_for_status()
+    content_type = response.headers.get("content-type", "").casefold()
+    if content_type and "text/html" not in content_type:
+        raise ValueError(f"Telegram public archive returned non-HTML for {context}")
+
+
+def _select_unique(
     messages: Sequence[_PublicMessage],
     *,
     spec: CustomEmojiExemplarSpec,
-) -> _PublicMessage:
-    fingerprint = _normalize_visible_text(spec.fingerprint).casefold()
-    candidates = [message for message in messages if fingerprint in message.text.casefold()]
-    dated = [message for message in candidates if message.message_date_utc.date() == spec.expected_date]
+) -> _PublicMessage | None:
+    fingerprint = " ".join(spec.fingerprint.split()).casefold()
+    candidates = [
+        message
+        for message in messages
+        if fingerprint in " ".join(message.text.split()).casefold()
+    ]
+    if not candidates:
+        return None
+    dated = [
+        message
+        for message in candidates
+        if message.message_date_utc.date() == spec.expected_date
+    ]
     selected = dated if dated else candidates
-    if len(selected) != 1:
-        raise ValueError(
-            f"expected exactly one public Telegram exemplar for {spec.key}; found {len(selected)}"
+    unique_by_id = {message.message_id: message for message in selected}
+    if len(unique_by_id) != 1:
+        ids = sorted(unique_by_id)
+        raise ValueError(f"ambiguous public Telegram exemplar {spec.key}; candidate ids={ids}")
+    return next(iter(unique_by_id.values()))
+
+
+def _fetch_search_candidate(
+    *,
+    client: httpx.Client,
+    channel_username: str,
+    spec: CustomEmojiExemplarSpec,
+) -> _PublicMessage | None:
+    bare_channel = channel_username.removeprefix("@")
+    response = client.get(f"https://t.me/s/{bare_channel}?q={quote_plus(spec.query)}")
+    _validate_public_response(response, context=f"search:{spec.key}")
+    return _select_unique(
+        _parse_page(response.text, channel_username=channel_username),
+        spec=spec,
+    )
+
+
+def _resolve_archive(
+    *,
+    client: httpx.Client,
+    channel_username: str,
+    specs: Sequence[CustomEmojiExemplarSpec],
+    max_pages: int,
+) -> dict[str, _PublicMessage]:
+    if not specs:
+        return {}
+    if not 1 <= max_pages <= _MAX_ARCHIVE_PAGES:
+        raise ValueError(f"max_archive_pages must be between 1 and {_MAX_ARCHIVE_PAGES}")
+
+    bare_channel = channel_username.removeprefix("@")
+    unresolved = {spec.key: spec for spec in specs}
+    resolved: dict[str, _PublicMessage] = {}
+    seen_messages: dict[int, _PublicMessage] = {}
+    before: int | None = None
+
+    for _ in range(max_pages):
+        suffix = "" if before is None else f"?before={before}"
+        response = client.get(f"https://t.me/s/{bare_channel}{suffix}")
+        _validate_public_response(response, context=f"archive-before:{before or 'latest'}")
+        page_messages = _parse_page(response.text, channel_username=channel_username)
+        if not page_messages:
+            break
+
+        for message in page_messages:
+            seen_messages[message.message_id] = message
+
+        corpus = tuple(seen_messages.values())
+        for key, spec in tuple(unresolved.items()):
+            match = _select_unique(corpus, spec=spec)
+            if match is not None:
+                resolved[key] = match
+                unresolved.pop(key)
+        if not unresolved:
+            return resolved
+
+        oldest = min(message.message_date_utc for message in page_messages)
+        if all(
+            oldest.date() < spec.expected_date - _ARCHIVE_STOP_MARGIN
+            for spec in unresolved.values()
+        ):
+            break
+
+        next_before = min(message.message_id for message in page_messages)
+        if next_before <= 1 or next_before == before:
+            break
+        before = next_before
+
+    details = ", ".join(
+        f"{spec.key}@{spec.expected_date.isoformat()}" for spec in unresolved.values()
+    )
+    raise ValueError(f"public Telegram archive exhausted before resolving exemplars: {details}")
+
+
+def _to_harvested(
+    config: CustomEmojiExemplarConfig,
+    resolved: dict[str, _PublicMessage],
+) -> tuple[HarvestedExemplar, ...]:
+    bare_channel = config.channel_username.removeprefix("@")
+    return tuple(
+        HarvestedExemplar(
+            key=spec.key,
+            message_id=resolved[spec.key].message_id,
+            message_url=f"https://t.me/{bare_channel}/{resolved[spec.key].message_id}",
+            message_date_utc=resolved[spec.key].message_date_utc,
+            visible_text_sha256=_sha256_text(resolved[spec.key].text),
+            custom_emoji_ids=resolved[spec.key].custom_emoji_ids,
         )
-    return selected[0]
+        for spec in config.exemplars
+    )
 
 
 def _fetch_exemplars(
     config: CustomEmojiExemplarConfig,
     *,
     client: httpx.Client,
+    max_archive_pages: int,
 ) -> tuple[HarvestedExemplar, ...]:
-    bare_channel = config.channel_username.removeprefix("@")
-    harvested: list[HarvestedExemplar] = []
+    resolved: dict[str, _PublicMessage] = {}
+    unresolved: list[CustomEmojiExemplarSpec] = []
+
     for spec in config.exemplars:
-        url = f"https://t.me/s/{bare_channel}?q={quote_plus(spec.query)}"
-        response = client.get(url)
-        response.raise_for_status()
-        content_type = response.headers.get("content-type", "").casefold()
-        if content_type and "text/html" not in content_type:
-            raise ValueError(f"Telegram public search returned non-HTML for {spec.key}")
-        parser = _TelegramSearchPageParser(channel_username=config.channel_username)
-        parser.feed(response.text)
-        parser.close()
-        message = _select_exemplar_message(parser.messages, spec=spec)
-        harvested.append(
-            HarvestedExemplar(
-                key=spec.key,
-                message_id=message.message_id,
-                message_url=f"https://t.me/{bare_channel}/{message.message_id}",
-                message_date_utc=message.message_date_utc,
-                visible_text_sha256=_sha256_text(message.text),
-                custom_emoji_ids=message.custom_emoji_ids,
-            )
+        match = _fetch_search_candidate(
+            client=client,
+            channel_username=config.channel_username,
+            spec=spec,
         )
+        if match is None:
+            unresolved.append(spec)
+        else:
+            resolved[spec.key] = match
+
+    resolved.update(
+        _resolve_archive(
+            client=client,
+            channel_username=config.channel_username,
+            specs=unresolved,
+            max_pages=max_archive_pages,
+        )
+    )
+    harvested = _to_harvested(config, resolved)
     if not any(item.custom_emoji_ids for item in harvested):
-        raise ValueError("no custom emoji ids were discoverable in the selected public Telegram exemplars")
-    return tuple(harvested)
+        raise ValueError(
+            "no custom emoji ids were discoverable in the selected public Telegram exemplars"
+        )
+    return harvested
 
 
 def _verify_custom_emoji_ids(
@@ -337,7 +462,9 @@ def _verify_custom_emoji_ids(
     if set(by_id) != set(custom_ids):
         missing = sorted(set(custom_ids) - set(by_id), key=int)
         unexpected = sorted(set(by_id) - set(custom_ids), key=int)
-        raise ValueError(f"custom emoji verification mismatch; missing={missing} unexpected={unexpected}")
+        raise ValueError(
+            f"custom emoji verification mismatch; missing={missing} unexpected={unexpected}"
+        )
 
     verified: list[VerifiedCustomEmoji] = []
     for custom_id in custom_ids:
@@ -368,6 +495,7 @@ def harvest_custom_emoji(
     api_base: str = DEFAULT_API_BASE,
     checked_at_utc: datetime | None = None,
     client: httpx.Client | None = None,
+    max_archive_pages: int = _MAX_ARCHIVE_PAGES,
 ) -> CustomEmojiHarvestReport:
     own_client = client is None
     http_client = client or httpx.Client(
@@ -381,10 +509,18 @@ def harvest_custom_emoji(
         },
     )
     try:
-        exemplars = _fetch_exemplars(config, client=http_client)
+        exemplars = _fetch_exemplars(
+            config,
+            client=http_client,
+            max_archive_pages=max_archive_pages,
+        )
         all_ids = tuple(
             sorted(
-                {custom_id for exemplar in exemplars for custom_id in exemplar.custom_emoji_ids},
+                {
+                    custom_id
+                    for exemplar in exemplars
+                    for custom_id in exemplar.custom_emoji_ids
+                },
                 key=int,
             )
         )
@@ -415,10 +551,13 @@ def harvest_custom_emoji(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Harvest Svodka custom emoji ids from public historical posts.")
+    parser = argparse.ArgumentParser(
+        description="Harvest Svodka custom emoji ids from public historical posts."
+    )
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--verify-bot-api", action="store_true")
+    parser.add_argument("--max-archive-pages", type=int, default=_MAX_ARCHIVE_PAGES)
     return parser
 
 
@@ -430,7 +569,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         token = os.environ.get("SVODKA_TELEGRAM_BOT_TOKEN", "").strip()
         if not token:
             raise SystemExit("SVODKA_TELEGRAM_BOT_TOKEN is required for Bot API verification")
-    report = harvest_custom_emoji(config, token=token)
+    report = harvest_custom_emoji(
+        config,
+        token=token,
+        max_archive_pages=args.max_archive_pages,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(report.model_dump_json(indent=2) + "\n", encoding="utf-8")
     print(
