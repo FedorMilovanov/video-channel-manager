@@ -20,9 +20,18 @@ def _callback() -> None:
 @resi_app.command("handoff")
 def handoff(
     source_url: Annotated[str, typer.Argument(help="Absolute DASH .mpd manifest URL")],
-    title: Annotated[str, typer.Option("--title", help="Human-readable Windows-safe media title")] = "Resi Download",
-    start: Annotated[str | None, typer.Option("--start", help="Exact trim start, HH:MM:SS[.mmm]")] = None,
-    end: Annotated[str | None, typer.Option("--end", help="Exact trim end, HH:MM:SS[.mmm]")] = None,
+    title: Annotated[
+        str | None,
+        typer.Option("--title", help="Optional media title; defaults to a deterministic source-derived name"),
+    ] = None,
+    start: Annotated[
+        str | None,
+        typer.Option("--start", help="Exact trim start, MM:SS[.mmm] or HH:MM:SS[.mmm]"),
+    ] = None,
+    end: Annotated[
+        str | None,
+        typer.Option("--end", help="Exact trim end, MM:SS[.mmm] or HH:MM:SS[.mmm]"),
+    ] = None,
     encoder: Annotated[
         str,
         typer.Option("--encoder", help="Exact-trim encoder: auto, nvenc, or cpu"),
@@ -40,7 +49,7 @@ def handoff(
             title=title,
             start=start,
             end=end,
-            encoder=encoder.lower(),
+            encoder=encoder.strip().lower(),
         )
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
@@ -52,10 +61,17 @@ def handoff(
     output.write_text(render_powershell_handoff(spec), encoding="utf-8-sig")
 
     console.print(f"[green]Resi/DASH handoff ready:[/green] {output.resolve()}")
+    console.print(f"Source fingerprint: {spec.source_fingerprint}")
+    console.print(f"Media title: {spec.safe_title}")
     console.print("Provider effect: impossible (local-only script generation).")
-    console.print("The generated script keeps the full downloaded master and performs ffprobe + SHA-256 QC.")
+    console.print(
+        "The generated script keeps and hashes the full master, writes source/result receipts, and performs QC."
+    )
     if spec.start is not None and spec.end is not None:
-        console.print(f"Exact trim: {spec.start} -> {spec.end} ({spec.trim_duration_ffmpeg}, encoder={spec.encoder}).")
+        console.print(
+            f"Exact trim: {spec.normalized_start} -> {spec.normalized_end} "
+            f"({spec.trim_duration_ffmpeg}, encoder={spec.encoder})."
+        )
 
 
 def run() -> None:

@@ -102,6 +102,12 @@ complete snapshot + SHA-256
 - [`docs/research/2026-07-25-vk-api-source-ledger.md`](docs/research/2026-07-25-vk-api-source-ledger.md) — VK API source ledger;
 - [`docs/research/2026-07-25-cross-platform-hardening-source-ledger.md`](docs/research/2026-07-25-cross-platform-hardening-source-ledger.md) — cross-platform hardening ledger.
 
+### Local media / Resi DASH
+
+- [`docs/operations/resi-dash-local-handoff.md`](docs/operations/resi-dash-local-handoff.md) — канонический Resi/DASH `Manifest.mpd` → retained master → optional exact trim → ffprobe/SHA-256 workflow;
+- [`docs/operations/operator-output-handoff-rule.md`](docs/operations/operator-output-handoff-rule.md) — canonical Windows outbox и copy/paste contract;
+- [`docs/audits/2026-08-10-resi-postmerge-operator-audit.md`](docs/audits/2026-08-10-resi-postmerge-operator-audit.md) — post-merge аудит operator UX/provenance и закрытые классы дефектов.
+
 Operational docs и versioned plans имеют приоритет над памятью чата.
 
 ## Установка — Windows PowerShell
@@ -398,6 +404,24 @@ python .\scripts\resume_youtube_to_vk_exact_ids.py `
 
 Dry-run строит transfer manifest SHA-256. Execute требует подтвердить community, new upload count, source snapshot и manifest. Журнал фиксирует `upload_reserved → uploaded_processing → uploaded_and_verified`.
 
+# Resi / DASH — локальное видео
+
+Для обычного Resi/DASH `Manifest.mpd` используется repository-owned local-only handoff, а не заново собранная команда `yt-dlp`/FFmpeg из памяти чата:
+
+```powershell
+video-manager resi handoff "https://resi.media/.../Manifest.mpd?src=emb" `
+  --title "Название ролика" `
+  --start "50:12" `
+  --end "1:49:52" `
+  --encoder auto
+```
+
+`--start/--end` можно не указывать для полного скачивания. Времена принимаются как `MM:SS[.mmm]` или `HH:MM:SS[.mmm]`; длительность вычисляется автоматически. Если `--title` не задан, используется детерминированное source-derived имя, а не общий `Resi Download`.
+
+Сгенерированный UTF-8-BOM PowerShell handoff лежит в canonical `operator-output`, сам показывает `yt-dlp -F`, выбирает `bestvideo+bestaudio/best`, использует bounded retries, сохраняет полный master, валидирует A/V/duration через `ffprobe`, считает SHA-256 и пишет source receipt + result JSON. Existing master разрешено использовать повторно только при совпадении source fingerprint и текущего master SHA-256. При exact trim видео перекодируется для точной границы, исходный audio stream копируется без бессмысленного lossy up-bitrate.
+
+Полный one-action Windows пример, NVENC/CPU policy, stop conditions и разбор реальных дефектов 2026-08-10 находятся в [`docs/operations/resi-dash-local-handoff.md`](docs/operations/resi-dash-local-handoff.md).
+
 # Локальные данные
 
 Generated artifacts находятся в ignored `data/`:
@@ -409,6 +433,8 @@ data/cache/     # downloaded media and thumbnails
 data/locks/     # local writer locks
 data/secrets/   # local credentials
 ```
+
+User-facing interactive artifacts, включая Resi handoff/master/result, находятся в ignored `operator-output/` по [`operator-output-handoff-rule.md`](docs/operations/operator-output-handoff-rule.md).
 
 JSON snapshots/backups/results не являются исходным кодом и не должны попадать в публичный GitHub. Для отдельной копии используется зашифрованное резервное хранилище с проверкой восстановления.
 
@@ -430,6 +456,7 @@ video-manager content plan validate editorial-plan.json
 video-manager content plan preflight editorial-plan.json --state live-state.json
 video-manager content plan adapt-vk-catalog vk-catalog-plan.json --input content/editorial --require-all
 video-manager local scan H:\ --output local-inventory.json
+video-manager resi handoff https://resi.media/.../Manifest.mpd --start 50:12 --end 1:49:52
 video-manager youtube login --account legendary-poet
 video-manager youtube accounts
 video-manager youtube channels --account legendary-poet

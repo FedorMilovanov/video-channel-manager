@@ -17,6 +17,7 @@ from video_channel_manager.application.plan_preview import build_plan_preview
 from video_channel_manager.cli.album import album_app
 from video_channel_manager.cli.compare import compare_app
 from video_channel_manager.cli.content import content_app
+from video_channel_manager.cli.resi import resi_app
 from video_channel_manager.cli.vk import vk_app
 from video_channel_manager.cli.youtube import youtube_app
 from video_channel_manager.config import get_settings
@@ -25,9 +26,9 @@ from video_channel_manager.domain.models import ChannelRecord, CollectionRecord,
 from video_channel_manager.exchange.audit_package import AuditFinding, AuditPackage
 from video_channel_manager.exchange.change_plan import ChangeOperation, ChangePlan
 from video_channel_manager.local_media import scan_local_media
+from video_channel_manager.persistence import Database
 from video_channel_manager.wave_engine.cli import schema_documents as wave_schema_documents
 from video_channel_manager.wave_engine.cli import wave_app
-from video_channel_manager.persistence import Database
 
 app = typer.Typer(no_args_is_help=True, help="Audit, organize, and safely synchronize video channels.")
 db_app = typer.Typer(no_args_is_help=True, help="Database lifecycle commands.")
@@ -43,6 +44,7 @@ app.add_typer(example_app, name="example")
 app.add_typer(album_app, name="album")
 app.add_typer(compare_app, name="compare")
 app.add_typer(content_app, name="content")
+app.add_typer(resi_app, name="resi")
 app.add_typer(youtube_app, name="youtube")
 app.add_typer(vk_app, name="vk")
 app.add_typer(wave_app, name="wave")
