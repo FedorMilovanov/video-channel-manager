@@ -14,7 +14,22 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from video_channel_manager.telegram_multichannel_release import load_release
 from video_channel_manager.telegram_multichannel_transport import GenericMessagePayload
 
-_VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
+_VOID_TAGS = {
+    "area",
+    "base",
+    "br",
+    "col",
+    "embed",
+    "hr",
+    "img",
+    "input",
+    "link",
+    "meta",
+    "param",
+    "source",
+    "track",
+    "wbr",
+}
 
 
 def _sha256_text(value: str) -> str:
