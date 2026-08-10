@@ -140,14 +140,67 @@ def load_target_proof(path: Path) -> TargetProof:
         raise ValueError(f"invalid target proof {path}: {exc}") from exc
 
 
-def strict_next_post(queue: TelegramQueue, ledger: TelegramLedger) -> tuple[TelegramPost | None, str]:
+def _published_author_history(queue: TelegramQueue, ledger: TelegramLedger) -> list[str]:
+    history: list[tuple[datetime, int, str]] = []
     for post in queue.posts:
+        entry = ledger.entries[post.publication_id]
+        if entry.state == "published" and entry.provider_effect == "verified" and entry.published_at_utc is not None:
+            history.append((entry.published_at_utc.astimezone(UTC), post.sequence, post.source.author))
+    history.sort(key=lambda item: (item[0], item[1]))
+    return [author for _, _, author in history]
+
+
+def _requires_editorial_author_rotation(queue: TelegramQueue, ledger: TelegramLedger) -> bool:
+    authors = _published_author_history(queue, ledger)
+    return any(previous == current for previous, current in zip(authors, authors[1:], strict=False))
+
+
+def _author_round_robin(queue: TelegramQueue) -> list[TelegramPost]:
+    author_order: list[str] = []
+    by_author: dict[str, list[TelegramPost]] = {}
+    for post in queue.posts:
+        author = post.source.author
+        if author not in by_author:
+            author_order.append(author)
+            by_author[author] = []
+        by_author[author].append(post)
+
+    ordered: list[TelegramPost] = []
+    round_index = 0
+    while True:
+        added = False
+        for author in author_order:
+            posts = by_author[author]
+            if round_index < len(posts):
+                ordered.append(posts[round_index])
+                added = True
+        if not added:
+            break
+        round_index += 1
+    return ordered
+
+
+def strict_next_post(queue: TelegramQueue, ledger: TelegramLedger) -> tuple[TelegramPost | None, str]:
+    rotate_authors = _requires_editorial_author_rotation(queue, ledger)
+    if rotate_authors:
+        for post in queue.posts:
+            entry = ledger.entries[post.publication_id]
+            if entry.state not in {"published", "skipped", "pending"}:
+                return None, f"strict queue blocked by {post.publication_id} in state {entry.state}"
+        candidates = _author_round_robin(queue)
+    else:
+        candidates = list(queue.posts)
+
+    for post in candidates:
         entry = ledger.entries[post.publication_id]
         if entry.state in {"published", "skipped"}:
             continue
         if entry.state != "pending":
             return None, f"strict queue blocked by {post.publication_id} in state {entry.state}"
-        return post, "next pending publication"
+        reason = "next pending publication"
+        if rotate_authors:
+            reason += " (editorial author rotation)"
+        return post, reason
     return None, "queue complete"
 
 
