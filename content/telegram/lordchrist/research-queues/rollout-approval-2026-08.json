@@ -1,0 +1,14 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-research-rollout-approval",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "release_id": "lordchrist-research-live-2026-08",
+  "start_at": "2026-08-10T15:00:00+03:00",
+  "candidate_sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "approved_release_sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "reviewed_by": "FedorMilovanov / Issue #242 live rollout request",
+  "reviewed_at": "2026-08-10T09:57:23Z",
+  "owning_issue": 242,
+  "first_canary_publication_id": "lordchrist-research-three-preachers-numbers",
+  "provider_write_scope": "exact research-v2 canary then canary-gated scheduled pilot only"
+}
