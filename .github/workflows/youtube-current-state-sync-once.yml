@@ -1,0 +1,59 @@
+name: YouTube current-state sync once
+
+on:
+  push:
+    branches:
+      - agent/youtube-current-state-sync
+    paths:
+      - .github/workflows/youtube-current-state-sync-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-self-remove:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/youtube-current-state-sync
+          fetch-depth: 1
+
+      - name: Replace stale YouTube operational statements
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('docs/operations/current-state.md')
+          text = path.read_text(encoding='utf-8')
+
+          replacements = {
+              '- merged YouTube upload tooling is provider-inert (`plan/status/abandon` only). There is no provider upload executor in the supported baseline.':
+              '- current `main` includes the guarded YouTube release executor completed by Issue #232 / PR #271: read-only existing-target adoption, immutable provider-inert release planning, separate exact execution approval, durable child-operation state, resumable upload/status reconciliation, metadata/status, thumbnail, fully paginated playlist membership, visibility, top-level comment, and manual-only pin evidence; mutation transport uses zero blind retries. Canonical plans remain provider-inert and implementation completion does not itself authorize execution.',
+              'The known public target `x-puy27S2qs` is an external collision guard for the stable project/channel/media identity. Until Issue #232 implements a current-main read-only adoption/reconciliation path, absence of a v2 local journal must never be interpreted as permission to create another `videos.insert` for the same media.':
+              'The known public target `x-puy27S2qs` remains an external collision guard for the stable project/channel/media identity. Issue #232 is now repository-implementation complete and current `main` provides the read-only adoption/reconciliation path, but absence of a local journal still must never be interpreted as permission to create another `videos.insert` for the same media. Any future mutation requires a separately reviewed exact execution approval bound to the intended release operation.',
+              '2. Implement Issue #232 as a separately reviewed current-main provider executor/adoption scope before any future automated YouTube release write; no canary is authorized by the issue itself.':
+              '2. Treat Issue #232 / PR #271 as repository implementation complete only: use the guarded current-main YouTube executor only after a future exact execution approval is separately reviewed; no YouTube canary, upload, metadata/thumbnail/playlist/visibility/comment mutation, deletion, replacement, or replay is currently authorized by that completion.'
+          }
+
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit(f'stale current-state anchor not found: {old[:80]}')
+              text = text.replace(old, new, 1)
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Commit sync and remove this workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/youtube-current-state-sync-once.yml
+          git add docs/operations/current-state.md
+          git commit -m 'Sync current-state after YouTube executor completion'
+          git push origin HEAD:agent/youtube-current-state-sync
