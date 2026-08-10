@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -20,6 +21,7 @@ from video_channel_manager.platforms.vk import (
     VkInventoryService,
     VkTokenStore,
 )
+from video_channel_manager.platforms.vk.clips_audit import build_vk_clips_audit_snapshot
 
 console = Console()
 vk_app = typer.Typer(no_args_is_help=True, help="Read-only VK community, video, and album inventory.")
@@ -223,4 +225,49 @@ def scan(
         f"[green]Exported AuditPackage -> {output}[/green]\n"
         f"Videos: {len(package.videos)} | Albums: {len(package.collections)} "
         f"({system_albums} system) | Memberships: {len(package.memberships)}"
+    )
+
+
+@vk_app.command("clips-scan")
+def clips_scan(
+    project: Annotated[str, typer.Option("--project", help="Canonical project key")],
+    community: Annotated[int, typer.Option("--community", "-c", help="Exact positive VK community ID")],
+    owner_id: Annotated[int, typer.Option("--owner-id", help="Exact negative VK owner ID")],
+    account: Annotated[str, typer.Option("--account", "-a", help="Local VK credential alias")] = "default",
+    require_remote_id: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--require-remote-id",
+            help="Exact Clip remote ID that must appear in the completed scan; repeat for multiple probes",
+        ),
+    ] = None,
+    output: Annotated[Path | None, typer.Option("--output", "-o")] = None,
+) -> None:
+    """Export the exact read-only VK Clips surface for one canonical project."""
+
+    settings = get_settings()
+    try:
+        _, client = _components(account)
+        with console.status("Reading exact VK Clips surface..."):
+            snapshot = build_vk_clips_audit_snapshot(
+                client,
+                project_key=project,
+                community_id=community,
+                owner_id=owner_id,
+                required_remote_ids=require_remote_id or (),
+            )
+        if output is None:
+            timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
+            output = settings.data_dir / "exports" / f"vk-clips-{project}-{community}-{timestamp}.json"
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")
+    except (VkAccountNotFoundError, OSError, ValueError, VkApiError) as exc:
+        console.print(f"[red]VK Clips scan failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+    coverage = snapshot["coverage"]
+    console.print(
+        f"[green]Exported exact VK Clips snapshot -> {output}[/green]\n"
+        f"Project: {snapshot['project_key']} | Community: {community} | Owner: {owner_id} | "
+        f"Clips: {coverage['clip_count']} | Provider writes: 0"
     )
