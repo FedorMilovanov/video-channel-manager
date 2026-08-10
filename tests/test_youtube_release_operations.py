@@ -141,7 +141,7 @@ def test_adoption_validates_identity_before_client_builder(tmp_path: Path) -> No
         called = True
         raise AssertionError("client must not be built")
 
-    with pytest.raises(Exception):
+    with pytest.raises(UploadPlanError):
         adopt_existing(
             argparse.Namespace(
                 evidence=evidence_path,

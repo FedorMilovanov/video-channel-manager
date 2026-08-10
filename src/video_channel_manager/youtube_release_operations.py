@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -92,7 +93,7 @@ def verify_remote_against_evidence(
 def adopt_existing(
     args: argparse.Namespace,
     *,
-    client_builder=build_readonly_client,
+    client_builder: Callable[[str], ReadOnlyYouTubeClient] = build_readonly_client,
 ) -> int:
     evidence_path = Path(args.evidence).resolve()
     data_dir = Path(args.data_dir).resolve()
