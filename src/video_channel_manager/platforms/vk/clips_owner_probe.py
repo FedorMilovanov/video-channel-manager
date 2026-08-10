@@ -107,9 +107,7 @@ def _serialize_candidate(item: dict[str, Any], *, owner_id: int) -> tuple[dict[s
             "width": _int_or_none(video.get("width")),
             "height": _int_or_none(video.get("height")),
             "views": _int_or_none(video.get("views")),
-            "permalink": (
-                f"https://vk.com/clip{remote_id}" if is_native_clip else f"https://vk.com/video{remote_id}"
-            ),
+            "permalink": (f"https://vk.com/clip{remote_id}" if is_native_clip else f"https://vk.com/video{remote_id}"),
             "raw": item,
         },
         None,
