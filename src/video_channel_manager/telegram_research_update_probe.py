@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from datetime import UTC, datetime, timedelta
@@ -14,6 +15,14 @@ from video_channel_manager.telegram_html_entities import message_entities_match
 from video_channel_manager.telegram_models import DEFAULT_API_BASE
 from video_channel_manager.telegram_multichannel_release import load_release
 from video_channel_manager.telegram_multichannel_transport import GenericMessagePayload
+
+
+class ChannelPostNeighbor(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    message_id: int = Field(gt=0)
+    message_date_utc: datetime
+    text_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
 
 
 class TelegramResearchRecoveryProbe(BaseModel):
@@ -35,6 +44,7 @@ class TelegramResearchRecoveryProbe(BaseModel):
     webhook_changed: Literal[False] = False
     provider_write_performed: Literal[False] = False
     examined_updates: int = Field(ge=0, le=100)
+    target_channel_neighbors: tuple[ChannelPostNeighbor, ...] = ()
     matching_update_ids: tuple[int, ...]
     message_id: int | None = Field(default=None, gt=0)
     message_url: str | None = None
@@ -63,6 +73,39 @@ def _post(
 ) -> Any:
     response = client.post(f"{api_base.rstrip('/')}/bot{token}/{method}", json=payload)
     return _api_result(response, method=method)
+
+
+def _target_channel_neighbor(
+    update: object,
+    *,
+    expected_chat_id: int,
+    expected_chat_username: str,
+) -> ChannelPostNeighbor | None:
+    if not isinstance(update, dict):
+        return None
+    post = update.get("channel_post")
+    if not isinstance(post, dict):
+        return None
+    chat = post.get("chat")
+    if not isinstance(chat, dict):
+        return None
+    try:
+        chat_id = int(chat.get("id", 0))
+        message_id = int(post.get("message_id", 0))
+        message_date = datetime.fromtimestamp(int(post.get("date", 0)), tz=UTC)
+    except (TypeError, ValueError, OSError):
+        return None
+    if chat_id != expected_chat_id or message_id <= 0:
+        return None
+    if str(chat.get("username") or "").casefold() != expected_chat_username.casefold():
+        return None
+    text = str(post.get("text") or "")
+    text_sha256 = "sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest()
+    return ChannelPostNeighbor(
+        message_id=message_id,
+        message_date_utc=message_date,
+        text_sha256=text_sha256,
+    )
 
 
 def _matching_channel_post(
@@ -166,6 +209,7 @@ def probe_research_channel_post(
                 status="webhook_configured",
                 get_updates_called=False,
                 examined_updates=0,
+                target_channel_neighbors=(),
                 matching_update_ids=(),
                 **common,
             )
@@ -184,6 +228,20 @@ def probe_research_channel_post(
             raise ValueError("Telegram getUpdates returned invalid data")
         if len(updates) > 100:
             raise ValueError("Telegram getUpdates exceeded requested limit")
+
+        neighbors = tuple(
+            neighbor
+            for update in updates
+            if (
+                neighbor := _target_channel_neighbor(
+                    update,
+                    expected_chat_id=expected_chat_id,
+                    expected_chat_username=expected_chat_username,
+                )
+            )
+            is not None
+        )
+        common["target_channel_neighbors"] = neighbors
 
         attempted = attempted_at_utc.astimezone(UTC)
         earliest = attempted - timedelta(seconds=match_window_seconds)
@@ -292,6 +350,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "message_id": probe.message_id,
                 "message_url": probe.message_url,
                 "examined_updates": probe.examined_updates,
+                "target_channel_neighbors": [neighbor.model_dump(mode="json") for neighbor in probe.target_channel_neighbors],
                 "get_updates_offset_sent": False,
                 "provider_write_performed": False,
             },
