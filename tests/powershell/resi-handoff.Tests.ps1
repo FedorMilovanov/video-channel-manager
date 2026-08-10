@@ -17,8 +17,8 @@ Describe "Resi/DASH generated handoff" {
 
         $ParseErrors.Count | Should -Be 0
         $Content = Get-Content -Raw -LiteralPath $Output
-        $Content | Should -Match [regex]::Escape("$TrimStart = '00:50:12'")
-        $Content | Should -Match [regex]::Escape("$TrimDuration = '00:59:40'")
+        $Content | Should -Match [regex]::Escape('$TrimStart = ''00:50:12''')
+        $Content | Should -Match [regex]::Escape('$TrimDuration = ''00:59:40''')
         $Content | Should -Not -Match "--retries infinite"
         $Content | Should -Match "video-manager\.resi-result"
     }
