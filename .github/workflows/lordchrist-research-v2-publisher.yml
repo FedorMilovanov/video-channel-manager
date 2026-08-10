@@ -1,0 +1,375 @@
+name: Lordchrist research v2 publisher
+
+on:
+  schedule:
+    - cron: "0 15 10-18 8 *"
+      timezone: Europe/Moscow
+    - cron: "47 15 10-18 8 *"
+      timezone: Europe/Moscow
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: lordchrist-telegram-publisher
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  publish-research:
+    if: github.event_name == 'schedule' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: src
+      BASE_PROFILE_PATH: content/telegram/channels/lordchrist.json
+      RUNTIME_PROFILE_PATH: .runtime/lordchrist-research-live-profile.json
+      BINDING_PATH: content/telegram/channels/lordchrist-target-binding.json
+      QUEUE_PATH: content/telegram/lordchrist/research-queues/calvin-spurgeon-macarthur-v2.json
+      APPROVAL_PATH: content/telegram/lordchrist/research-queues/rollout-approval-2026-08.json
+      RELEASE_PATH: .runtime/lordchrist-research-approved-release.json
+      STATE_BRANCH: state/lordchrist-telegram
+      STATE_DIR: .state/lordchrist
+      LEDGER_RELATIVE_PATH: content/telegram/lordchrist/research-v2/publication-ledger.json
+      LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/research-v2/publication-ledger.json
+      TARGET_PROOF_PATH: .runtime/lordchrist-research-target-proof.json
+      ENVELOPE_PATH: .runtime/lordchrist-research-dispatch.json
+      OUTCOME_PATH: .runtime/lordchrist-research-outcome.json
+      FIRST_CANARY_PUBLICATION_ID: lordchrist-research-three-preachers-numbers
+      MAX_PUBLICATION_LAG_MINUTES: 120
+    steps:
+      - name: Reject scheduled workflow re-runs
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_RUN_ATTEMPT" == "1" ]] || {
+            echo "Research scheduled re-runs are forbidden; a possible provider effect must never be blind-replayed." >&2
+            exit 5
+          }
+
+      - name: Check out exact main runtime and immutable research
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Materialize exact approved research release and execution-only profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.lordchrist_research_rollout \
+            --profile "$BASE_PROFILE_PATH" \
+            --queue "$QUEUE_PATH" \
+            --binding "$BINDING_PATH" \
+            --approval "$APPROVAL_PATH" \
+            --release-output "$RELEASE_PATH" \
+            --runtime-profile-output "$RUNTIME_PROFILE_PATH"
+
+      - name: Require current-main exact-SHA repository CI proof
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow ci.yml \
+            --sha "$GITHUB_SHA"
+
+      - name: Check out isolated durable Lordchrist state branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/lordchrist-telegram
+          path: .state/lordchrist
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Initialize exact research ledger once if absent
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f "$LEDGER_PATH" ]]; then
+            python -m video_channel_manager.telegram_multichannel_cli validate-ledger \
+              --release "$RELEASE_PATH" \
+              --ledger "$LEDGER_PATH"
+            exit 0
+          fi
+
+          release_digest="$(python - <<'PY'
+          import os
+          from pathlib import Path
+          from video_channel_manager.telegram_multichannel_release import load_release
+          print(load_release(Path(os.environ['RELEASE_PATH'])).digest)
+          PY
+          )"
+          mkdir -p "$(dirname "$LEDGER_PATH")"
+          python -m video_channel_manager.telegram_multichannel_cli initialize-ledger \
+            --release "$RELEASE_PATH" \
+            --output "$LEDGER_PATH" \
+            --confirm "INITIALIZE:$release_digest"
+
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow ci.yml \
+            --sha "$GITHUB_SHA"
+
+          git -C "$STATE_DIR" config user.name "lordchrist-research-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "lordchrist-research-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH"
+          git -C "$STATE_DIR" commit -m "Initialize Lordchrist research-v2 publication ledger [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "remote Lordchrist state branch does not contain exact research ledger initialization" >&2
+            exit 3
+          }
+          git -C "$STATE_DIR" fetch --no-tags origin "$STATE_BRANCH"
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$LEDGER_RELATIVE_PATH" > .runtime/remote-research-ledger.json
+          python -m video_channel_manager.telegram_multichannel_cli validate-ledger \
+            --release "$RELEASE_PATH" \
+            --ledger .runtime/remote-research-ledger.json
+
+      - name: Resolve strict canary or scheduled mode
+        id: mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from video_channel_manager.telegram_multichannel_release import load_release
+          from video_channel_manager.telegram_multichannel_state import load_ledger
+
+          release = load_release(Path(os.environ['RELEASE_PATH']))
+          ledger = load_ledger(Path(os.environ['LEDGER_PATH']), release)
+          first_id = os.environ['FIRST_CANARY_PUBLICATION_ID']
+          first = ledger.entries[first_id]
+          if first.state == 'pending':
+              mode = 'manual'
+              publication_id = first_id
+              phase = 'canary'
+          elif first.state == 'published' and first.provider_effect == 'verified' and first.dispatch_mode == 'manual':
+              mode = 'scheduled'
+              publication_id = ''
+              phase = 'scheduled'
+          else:
+              raise SystemExit(
+                  f"research canary is not safely resumable: state={first.state} effect={first.provider_effect} mode={first.dispatch_mode}"
+              )
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as handle:
+              handle.write(f"mode={mode}\n")
+              handle.write(f"publication_id={publication_id}\n")
+              handle.write(f"phase={phase}\n")
+          PY
+
+      - name: Require fresh strict-next research window
+        id: freshness
+        shell: bash
+        env:
+          EXPECTED_PUBLICATION_ID: ${{ steps.mode.outputs.publication_id }}
+        run: |
+          set +e
+          args=(next --release "$RELEASE_PATH" --ledger "$LEDGER_PATH" --max-lag-minutes "$MAX_PUBLICATION_LAG_MINUTES")
+          if [[ -n "$EXPECTED_PUBLICATION_ID" ]]; then
+            args+=(--publication-id "$EXPECTED_PUBLICATION_ID")
+          fi
+          python -m video_channel_manager.telegram_publication_freshness "${args[@]}"
+          status=$?
+          set -e
+          if [[ "$status" == "3" ]]; then
+            echo "fresh=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          [[ "$status" == "0" ]] || exit "$status"
+          echo "fresh=true" >> "$GITHUB_OUTPUT"
+
+      - name: Report non-fresh research slot
+        if: steps.freshness.outputs.fresh != 'true'
+        run: echo "Research strict-next item is not inside its bounded 120-minute publication window. No Telegram access was attempted."
+
+      - name: Fresh read-only exact target preflight
+        if: steps.freshness.outputs.fresh == 'true'
+        env:
+          LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from video_channel_manager.telegram_channel_profile import load_channel_profile
+          from video_channel_manager.telegram_target_binding import load_target_binding
+
+          profile = load_channel_profile(Path(os.environ['RUNTIME_PROFILE_PATH']))
+          binding = load_target_binding(Path(os.environ['BINDING_PATH']), profile)
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as handle:
+              handle.write(f"LORDCHRIST_RESEARCH_CHAT_ID={binding.chat_id}\n")
+              handle.write(f"LORDCHRIST_RESEARCH_BOT_ID={binding.bot_id}\n")
+              handle.write(f"LORDCHRIST_RESEARCH_BOT_USERNAME={binding.bot_username}\n")
+          PY
+          python -m video_channel_manager.telegram_channel_cli preflight \
+            --profile "$RUNTIME_PROFILE_PATH" \
+            --expected-chat-id "$LORDCHRIST_RESEARCH_CHAT_ID" \
+            --expected-bot-id "$LORDCHRIST_RESEARCH_BOT_ID" \
+            --expected-bot-username "$LORDCHRIST_RESEARCH_BOT_USERNAME" \
+            --output "$TARGET_PROOF_PATH"
+
+      - name: Prepare exactly one strict research dispatch
+        if: steps.freshness.outputs.fresh == 'true'
+        id: prepare
+        shell: bash
+        env:
+          DISPATCH_MODE: ${{ steps.mode.outputs.mode }}
+          REQUESTED_PUBLICATION_ID: ${{ steps.mode.outputs.publication_id }}
+        run: |
+          set +e
+          args=(prepare \
+            --profile "$RUNTIME_PROFILE_PATH" \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --target-proof "$TARGET_PROOF_PATH" \
+            --mode "$DISPATCH_MODE" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --github-sha "$GITHUB_SHA" \
+            --github-workflow-sha "${{ github.workflow_sha }}" \
+            --envelope-output "$ENVELOPE_PATH")
+          if [[ -n "$REQUESTED_PUBLICATION_ID" ]]; then
+            args+=(--publication-id "$REQUESTED_PUBLICATION_ID")
+          fi
+          python -m video_channel_manager.telegram_multichannel_cli "${args[@]}"
+          status=$?
+          set -e
+          if [[ "$status" == "3" ]]; then
+            echo "prepared=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          [[ "$status" == "0" ]] || exit "$status"
+          echo "prepared=true" >> "$GITHUB_OUTPUT"
+
+      - name: Persist research intent before Telegram mutation
+        if: steps.prepare.outputs.prepared == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_rel_dir="content/telegram/lordchrist/research-v2/dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          evidence_abs_dir="$STATE_DIR/$evidence_rel_dir"
+          mkdir -p "$evidence_abs_dir"
+          cp -- "$ENVELOPE_PATH" "$evidence_abs_dir/dispatch.json"
+          cp -- "$TARGET_PROOF_PATH" "$evidence_abs_dir/target-proof.json"
+
+          git -C "$STATE_DIR" config user.name "lordchrist-research-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "lordchrist-research-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel_dir"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo "prepared research dispatch produced no durable state delta" >&2
+            exit 3
+          }
+          git -C "$STATE_DIR" commit -m "Record Lordchrist research intent for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "remote Lordchrist state branch does not contain exact research intent" >&2
+            exit 3
+          }
+          git -C "$STATE_DIR" fetch --no-tags origin "$STATE_BRANCH"
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$LEDGER_RELATIVE_PATH" > .runtime/remote-research-ledger.json
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$evidence_rel_dir/dispatch.json" > .runtime/remote-research-dispatch.json
+          python -m video_channel_manager.telegram_multichannel_cli verify-intent \
+            --release "$RELEASE_PATH" \
+            --ledger .runtime/remote-research-ledger.json \
+            --envelope .runtime/remote-research-dispatch.json
+
+      - name: Re-prove current-main CI immediately before Telegram mutation
+        if: steps.prepare.outputs.prepared == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow ci.yml \
+            --sha "$GITHUB_SHA"
+
+      - name: Send exactly one research payload
+        if: steps.prepare.outputs.prepared == 'true'
+        id: send
+        env:
+          LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        shell: bash
+        run: |
+          set +e
+          python -m video_channel_manager.telegram_multichannel_cli send-once \
+            --profile "$RUNTIME_PROFILE_PATH" \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --envelope "$ENVELOPE_PATH" \
+            --outcome-output "$OUTCOME_PATH"
+          status=$?
+          set -e
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Archive exact research provider outcome before state mutation
+        if: ${{ !cancelled() && steps.prepare.outputs.prepared == 'true' && steps.send.outcome != 'skipped' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lordchrist-research-provider-outcome-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .runtime/lordchrist-research-outcome.json
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+          include-hidden-files: true
+
+      - name: Apply and persist exact research provider outcome
+        if: ${{ !cancelled() && steps.prepare.outputs.prepared == 'true' && steps.send.outcome != 'skipped' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -f "$OUTCOME_PATH" ]] || {
+            echo "No research provider outcome exists. Durable intent remains blocking; blind retry is forbidden." >&2
+            exit 4
+          }
+          python -m video_channel_manager.telegram_multichannel_cli apply-outcome \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --envelope "$ENVELOPE_PATH" \
+            --outcome "$OUTCOME_PATH"
+
+          evidence_rel_dir="content/telegram/lordchrist/research-v2/dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          evidence_abs_dir="$STATE_DIR/$evidence_rel_dir"
+          cp -- "$OUTCOME_PATH" "$evidence_abs_dir/outcome.json"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel_dir/outcome.json"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo "research provider outcome produced no durable state delta" >&2
+            exit 4
+          }
+          git -C "$STATE_DIR" commit -m "Record Lordchrist research result for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "remote Lordchrist state branch does not contain exact research outcome" >&2
+            exit 4
+          }
+          if [[ "${{ steps.send.outputs.exit_code }}" != "0" ]]; then
+            echo "Research publication was not fully verified. Durable outcome blocks automatic replay." >&2
+            exit 4
+          fi
+          python -m video_channel_manager.telegram_multichannel_cli validate-ledger \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH"
