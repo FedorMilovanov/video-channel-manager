@@ -33,6 +33,9 @@ class LordchristResearchRolloutApproval(BaseModel):
     owning_issue: Literal[242]
     first_canary_publication_id: Literal["lordchrist-research-three-preachers-numbers"]
     provider_write_scope: Literal["exact research-v2 canary then canary-gated scheduled pilot only"]
+    per_track_daily_verified_limit: Literal[1]
+    cross_track_daily_verified_limit: Literal[2]
+    cross_track_guard_issue: Literal[246]
 
     @field_validator("start_at", "reviewed_at")
     @classmethod
@@ -77,6 +80,8 @@ def materialize_lordchrist_research_rollout(
 
     if approval.project_key != base_profile.project_key:
         raise ValueError("research rollout approval project differs from selected profile")
+    if base_profile.daily_verified_limit != approval.per_track_daily_verified_limit:
+        raise ValueError("research rollout per-track daily limit differs from canonical profile")
     if research.schedule.state != "staged" or research.live_eligible:
         raise ValueError("canonical research evidence queue must remain staged/provider-inert")
 
