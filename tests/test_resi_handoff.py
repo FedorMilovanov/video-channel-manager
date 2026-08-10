@@ -55,10 +55,12 @@ def test_render_is_self_contained_and_not_chat_escaped() -> None:
     )
 
     assert '$ErrorActionPreference = "Stop"' in script
-    assert "$Downloads =" in script
-    assert "$Work =" in script
+    assert '$Repo = "C:\\Users\\Fedor\\Projects\\video-channel-manager"' in script
+    assert "$OperatorOutput =" in script
     assert "$Master =" in script
     assert "$Clip =" in script
+    assert "$Downloads" not in script
+    assert "$Work" not in script
     assert "bestvideo+bestaudio/best" in script
     assert "$TrimDuration = '00:59:40'" in script
     assert "$ExpectedDurationSeconds = 3580.000" in script
@@ -76,6 +78,7 @@ def test_render_download_only_keeps_and_hashes_master() -> None:
     assert "MASTER READY" in script
     assert "$Clip" not in script
     assert "Get-FileHash" in script
+    assert "operator-output" in script
 
 
 def test_powershell_single_quote_is_escaped() -> None:
