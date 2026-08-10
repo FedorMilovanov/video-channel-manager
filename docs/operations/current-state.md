@@ -111,6 +111,25 @@ Supported capability remains `local_only_read_only_intake_and_manifest`: inspect
 
 It does not authorize ID3 rewrite, rename/transcode, browser automation, remote upload, metadata mutation, playlist changes, or wall publication.
 
+## Local video / Resi DASH
+
+Supported local-only capability is `video-manager resi handoff` (with `video-manager-resi` retained as a focused alias) for ordinary HTTP(S) DASH `Manifest.mpd` sources.
+
+The workflow:
+
+- accepts a manifest URL plus optional title and optional exact start/end;
+- accepts operator-friendly `MM:SS[.mmm]` and `HH:MM:SS[.mmm]` timestamps and normalizes them deterministically;
+- prints `yt-dlp -F` evidence and selects `bestvideo+bestaudio/best` without manual format-ID reconstruction;
+- uses bounded download/fragment retries;
+- preserves the full master and permits existing-master reuse only when a source receipt fingerprint and current master SHA-256 both match;
+- fails closed unless master QC proves video, audio, and positive duration;
+- optionally creates an exact trimmed second MP4 with NVENC runtime detection / CPU fallback and source-aware bitrate ceiling;
+- stream-copies source audio during exact trim;
+- writes source receipt + result JSON with exact master SHA-256 and, when trimming, exact clip SHA-256 plus normalized timing/duration evidence;
+- writes user-facing outputs under canonical `operator-output`.
+
+This capability has provider effect `impossible`. It does not bypass DRM/access controls, infer rights/permission, upload media, or authorize any provider mutation. The canonical runbook is [`resi-dash-local-handoff.md`](resi-dash-local-handoff.md).
+
 ## GitHub governance and external state
 
 Read-only governance evidence is recorded in [`github-governance-readonly-probe-2026-08-09.md`](github-governance-readonly-probe-2026-08-09.md). Both one-shot probes used only `Contents: read` / `Metadata: read`, performed no checkout, and changed no repository setting or provider state.
