@@ -50,6 +50,12 @@ def test_current_state_is_a_live_index_not_a_commit_ledger() -> None:
     assert "Issue #168 is closed as repository implementation complete" in text
     assert "Issue #170 is closed as repository pipeline implementation complete" in text
     assert "provider_writes_authorized=false" in text
+    assert "`provider_writes_authorized=true` only for the reviewed rollout gates" in text
+    assert "release `svodka-pilot-2026-08`" in text
+    assert "the durable ledger now exists on `state/svodka-telegram`" in text
+    assert "no approved live August release is present" not in text
+    assert "no live Svodka publication ledger is present" not in text
+    assert not (ROOT / "docs/operations/svodka-rollout-status.json").exists()
     assert "current `main` includes the guarded YouTube release executor" in text
     assert "implementation completion does not itself authorize execution" in text
     assert "Only `main` is a supported repository code/runtime execution baseline" in text
