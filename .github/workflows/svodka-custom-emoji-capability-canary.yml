@@ -1,0 +1,250 @@
+name: Svodka custom emoji capability canary
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type CUSTOM-EMOJI-CANARY:@deep_info_life:ONE-POST
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+  issues: write
+
+concurrency:
+  group: svodka-telegram-publisher
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  canary:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: src
+      PROFILE_PATH: content/telegram/channels/svodka.json
+      CATALOG_PATH: content/telegram/svodka/custom-emoji-catalog.json
+      TARGET_PROOF_PATH: .runtime/svodka-custom-emoji-target-proof.json
+      PAYLOAD_PATH: .runtime/svodka-custom-emoji-payload.json
+      INTENT_PATH: .runtime/svodka-custom-emoji-intent.json
+      OUTCOME_PATH: .runtime/svodka-custom-emoji-outcome.json
+      STATE_BRANCH: state/svodka-telegram
+      STATE_DIR: .state/svodka
+      STATE_RELATIVE_PATH: content/telegram/svodka/custom-emoji-capability-canary.json
+      STATE_PATH: .state/svodka/content/telegram/svodka/custom-emoji-capability-canary.json
+      EXPECTED_CHAT_ID: -1003527567039
+      EXPECTED_BOT_ID: 8716602202
+      EXPECTED_BOT_USERNAME: preaching_mp3_bot
+    steps:
+      - name: Check out current main runtime
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Require explicit one-post confirmation
+        env:
+          CONFIRMATION: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          [[ "$CONFIRMATION" == 'CUSTOM-EMOJI-CANARY:@deep_info_life:ONE-POST' ]] || {
+            echo 'confirmation must exactly authorize one visible custom-emoji test post' >&2
+            exit 2
+          }
+
+      - name: Validate catalog and exact canary payload without provider access
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.telegram_custom_emoji_canary preview \
+            --profile "$PROFILE_PATH" \
+            --catalog "$CATALOG_PATH" \
+            --payload-output "$PAYLOAD_PATH"
+
+      - name: Require current-main exact-SHA Svodka quality proofs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow svodka-quality.yml \
+            --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow svodka-approved-release-quality.yml \
+            --sha "$GITHUB_SHA"
+
+      - name: Fresh read-only exact target preflight
+        env:
+          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_channel_cli preflight \
+            --profile "$PROFILE_PATH" \
+            --expected-chat-id "$EXPECTED_CHAT_ID" \
+            --expected-bot-id "$EXPECTED_BOT_ID" \
+            --expected-bot-username "$EXPECTED_BOT_USERNAME" \
+            --output "$TARGET_PROOF_PATH"
+
+      - name: Check out isolated durable Svodka state branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/svodka-telegram
+          path: .state/svodka
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Refuse any second capability-canary attempt
+        run: |
+          set -euo pipefail
+          if [[ -e "$STATE_PATH" ]]; then
+            echo 'A durable custom-emoji capability canary record already exists. Blind retry is forbidden.' >&2
+            cat "$STATE_PATH"
+            exit 3
+          fi
+
+      - name: Prepare exact durable intent
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_custom_emoji_canary prepare \
+            --profile "$PROFILE_PATH" \
+            --catalog "$CATALOG_PATH" \
+            --target-proof "$TARGET_PROOF_PATH" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --github-sha "$GITHUB_SHA" \
+            --github-workflow-sha "${{ github.workflow_sha }}" \
+            --intent-output "$INTENT_PATH" \
+            --payload-output "$PAYLOAD_PATH"
+
+      - name: Persist intent before Telegram mutation
+        run: |
+          set -euo pipefail
+          mkdir -p "$(dirname "$STATE_PATH")"
+          cp -- "$INTENT_PATH" "$STATE_PATH"
+          git -C "$STATE_DIR" config user.name 'svodka-publisher[bot]'
+          git -C "$STATE_DIR" config user.email 'svodka-publisher@users.noreply.github.com'
+          git -C "$STATE_DIR" add -- "$STATE_RELATIVE_PATH"
+          git -C "$STATE_DIR" commit -m "Record Svodka custom emoji canary intent for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo 'remote state branch does not contain exact custom-emoji canary intent' >&2
+            exit 3
+          }
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$STATE_RELATIVE_PATH" > .runtime/remote-custom-emoji-intent.json
+          cmp --silent "$INTENT_PATH" .runtime/remote-custom-emoji-intent.json || {
+            echo 'remote custom-emoji canary intent bytes differ from local intent' >&2
+            exit 3
+          }
+
+      - name: Re-prove current-main quality immediately before Telegram mutation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow svodka-quality.yml \
+            --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow svodka-approved-release-quality.yml \
+            --sha "$GITHUB_SHA"
+
+      - name: Send exactly one visible custom-emoji capability post
+        id: send
+        env:
+          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        shell: bash
+        run: |
+          set +e
+          python -m video_channel_manager.telegram_custom_emoji_canary send \
+            --profile "$PROFILE_PATH" \
+            --catalog "$CATALOG_PATH" \
+            --target-proof "$TARGET_PROOF_PATH" \
+            --intent "$INTENT_PATH" \
+            --outcome-output "$OUTCOME_PATH"
+          status=$?
+          set -e
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Archive exact canary outcome before durable-state mutation
+        if: ${{ !cancelled() && steps.send.outcome != 'skipped' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: svodka-custom-emoji-canary-outcome-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .runtime/svodka-custom-emoji-outcome.json
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+          include-hidden-files: true
+
+      - name: Persist exact canary outcome and block blind retry
+        if: ${{ !cancelled() && steps.send.outcome != 'skipped' }}
+        run: |
+          set -euo pipefail
+          [[ -f "$OUTCOME_PATH" ]] || {
+            echo 'No provider outcome exists. Durable intent remains blocking; blind retry is forbidden.' >&2
+            exit 4
+          }
+          cp -- "$OUTCOME_PATH" "$STATE_PATH"
+          git -C "$STATE_DIR" add -- "$STATE_RELATIVE_PATH"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo 'custom-emoji canary outcome produced no durable state delta' >&2
+            exit 4
+          }
+          git -C "$STATE_DIR" commit -m "Record Svodka custom emoji canary outcome for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo 'remote state branch does not contain exact custom-emoji canary outcome' >&2
+            exit 4
+          }
+          if [[ "${{ steps.send.outputs.exit_code }}" != '0' ]]; then
+            echo 'Custom-emoji canary was not verified. Durable outcome blocks all blind retry.' >&2
+            exit 4
+          fi
+
+      - name: Record successful capability checkpoint in issue 273
+        if: ${{ success() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          outcome = json.loads(Path('.runtime/svodka-custom-emoji-outcome.json').read_text(encoding='utf-8'))
+          assert outcome['state'] == 'verified'
+          assert outcome['provider_effect'] == 'verified'
+          Path('.runtime/custom-emoji-canary-comment.md').write_text(
+              '## Svodka Premium Emoji channel capability — VERIFIED\n\n'
+              f"- main SHA: `{outcome['github_sha']}`\n"
+              f"- target: `{outcome['channel_username']}` / `{outcome['chat_id']}`\n"
+              f"- bot: `{outcome['bot_username']}` / `{outcome['bot_id']}`\n"
+              f"- exact message: {outcome['message_url']}\n"
+              f"- message id: `{outcome['message_id']}`\n"
+              f"- catalog digest: `{outcome['catalog_sha256']}`\n"
+              f"- provider payload digest: `{outcome['provider_payload_sha256']}`\n"
+              '- exact returned custom-emoji entities: `verified by shared send_message_once`\n'
+              '- provider effect: `verified`\n'
+              '- blind retry: `blocked by durable state record`\n',
+              encoding='utf-8',
+          )
+          PY
+          gh issue comment 273 --repo "$GITHUB_REPOSITORY" --body-file .runtime/custom-emoji-canary-comment.md
