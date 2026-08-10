@@ -1,0 +1,78 @@
+name: Branch Ruff format once
+
+on:
+  push:
+    branches:
+      - agent/youtube-release-executor-current-main
+    paths:
+      - .github/workflows/branch-ruff-format-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install repository dev tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -e ".[dev]"
+
+      - name: Format only the reviewed YouTube successor surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            src/video_channel_manager/youtube_release_execution.py
+            src/video_channel_manager/youtube_release_operations.py
+            src/video_channel_manager/youtube_release_plan.py
+            src/video_channel_manager/youtube_release_provider.py
+            src/video_channel_manager/youtube_release_state.py
+          )
+          python -m ruff format "${files[@]}"
+          rm -f __probe_should_fail_existing__
+          git rm .github/workflows/branch-ruff-format-once.yml
+
+          python - <<'PY'
+          import subprocess
+          allowed = {
+              "src/video_channel_manager/youtube_release_execution.py",
+              "src/video_channel_manager/youtube_release_operations.py",
+              "src/video_channel_manager/youtube_release_plan.py",
+              "src/video_channel_manager/youtube_release_provider.py",
+              "src/video_channel_manager/youtube_release_state.py",
+              ".github/workflows/branch-ruff-format-once.yml",
+              "__probe_should_fail_existing__",
+          }
+          changed = set(subprocess.check_output(["git", "diff", "--name-only", "HEAD"]).decode().splitlines())
+          unexpected = changed - allowed
+          if unexpected:
+              raise SystemExit(f"unexpected formatter diff: {sorted(unexpected)}")
+          PY
+
+          git add \
+            src/video_channel_manager/youtube_release_execution.py \
+            src/video_channel_manager/youtube_release_operations.py \
+            src/video_channel_manager/youtube_release_plan.py \
+            src/video_channel_manager/youtube_release_provider.py \
+            src/video_channel_manager/youtube_release_state.py \
+            .github/workflows/branch-ruff-format-once.yml
+          git add -u -- __probe_should_fail_existing__ || true
+          git diff --cached --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Apply exact Ruff formatter output"
+          git push origin HEAD:agent/youtube-release-executor-current-main
