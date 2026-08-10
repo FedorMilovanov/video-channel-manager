@@ -1,8 +1,8 @@
 {
   "schema_name": "video-channel-manager.svodka-custom-emoji-capability-canary",
   "schema_version": 1,
-  "state": "intent",
-  "provider_effect": "impossible",
+  "state": "unknown",
+  "provider_effect": "may_exist",
   "project_key": "svodka",
   "channel_username": "@deep_info_life",
   "chat_id": -1003527567039,
@@ -18,8 +18,8 @@
   "github_sha": "8eb584e19f7ba7c8cb78f5b9121cb312ac13bd06",
   "github_workflow_sha": "8eb584e19f7ba7c8cb78f5b9121cb312ac13bd06",
   "created_at_utc": "2026-08-10T19:04:38.131577Z",
-  "updated_at_utc": "2026-08-10T19:04:38.131577Z",
+  "updated_at_utc": "2026-08-10T19:04:42.559812Z",
   "message_id": null,
   "message_url": null,
-  "error": null
+  "error": "Telegram returned formatting or source-link entities that differ from the exact provider payload"
 }
