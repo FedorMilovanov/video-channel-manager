@@ -47,10 +47,18 @@ def _select_unique(
     spec: CustomEmojiExemplarSpec,
 ) -> _PublicMessage | None:
     fingerprint = " ".join(spec.fingerprint.split()).casefold()
-    candidates = [message for message in messages if fingerprint in " ".join(message.text.split()).casefold()]
+    candidates = [
+        message
+        for message in messages
+        if fingerprint in " ".join(message.text.split()).casefold()
+    ]
     if not candidates:
         return None
-    dated = [message for message in candidates if message.message_date_utc.date() == spec.expected_date]
+    dated = [
+        message
+        for message in candidates
+        if message.message_date_utc.date() == spec.expected_date
+    ]
     selected = dated if dated else candidates
     unique_by_id = {message.message_id: message for message in selected}
     if len(unique_by_id) != 1:
@@ -68,7 +76,10 @@ def _fetch_search_candidate(
     bare_channel = channel_username.removeprefix("@")
     response = client.get(f"https://t.me/s/{bare_channel}?q={quote_plus(spec.query)}")
     _validate_public_response(response, context=f"search:{spec.key}")
-    return _select_unique(_parse_page(response.text, channel_username=channel_username), spec=spec)
+    return _select_unique(
+        _parse_page(response.text, channel_username=channel_username),
+        spec=spec,
+    )
 
 
 def _archive_resolve(
@@ -88,7 +99,6 @@ def _archive_resolve(
     resolved: dict[str, _PublicMessage] = {}
     seen_messages: dict[int, _PublicMessage] = {}
     before: int | None = None
-    previous_before: int | None = None
 
     for _ in range(max_pages):
         suffix = "" if before is None else f"?before={before}"
@@ -111,17 +121,21 @@ def _archive_resolve(
             return resolved
 
         oldest = min(message.message_date_utc for message in page_messages)
-        if all(oldest.date() < (spec.expected_date - _ARCHIVE_STOP_MARGIN).date() for spec in unresolved.values()):
+        if all(
+            oldest.date() < spec.expected_date - _ARCHIVE_STOP_MARGIN
+            for spec in unresolved.values()
+        ):
             break
 
         next_before = min(message.message_id for message in page_messages)
-        if next_before <= 1 or next_before == previous_before:
+        if next_before <= 1 or next_before == before:
             break
-        previous_before = before
         before = next_before
 
     if unresolved:
-        details = ", ".join(f"{spec.key}@{spec.expected_date.isoformat()}" for spec in unresolved.values())
+        details = ", ".join(
+            f"{spec.key}@{spec.expected_date.isoformat()}" for spec in unresolved.values()
+        )
         raise ValueError(f"public Telegram archive exhausted before resolving exemplars: {details}")
     return resolved
 
@@ -189,11 +203,17 @@ def harvest_custom_emoji_with_archive_fallback(
         )
         exemplars = _to_harvested(config=config, resolved=resolved)
         if not any(item.custom_emoji_ids for item in exemplars):
-            raise ValueError("no custom emoji ids were discoverable in the selected public Telegram exemplars")
+            raise ValueError(
+                "no custom emoji ids were discoverable in the selected public Telegram exemplars"
+            )
 
         all_ids = tuple(
             sorted(
-                {custom_id for exemplar in exemplars for custom_id in exemplar.custom_emoji_ids},
+                {
+                    custom_id
+                    for exemplar in exemplars
+                    for custom_id in exemplar.custom_emoji_ids
+                },
                 key=int,
             )
         )
