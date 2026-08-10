@@ -17,13 +17,13 @@ class LordchristResearchRetirement(BaseModel):
     schema_version: Literal[1]
     project_key: Literal["lord-god-strength"]
     channel_username: Literal["@lordchrist"]
-    release_id: str = Field(min_length=5, max_length=96)
-    release_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
-    publication_id: str = Field(min_length=5, max_length=96)
-    provider_payload_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
-    intent_id: str = Field(min_length=16, max_length=128)
-    workflow_run_id: str = Field(pattern=r"^[1-9][0-9]*$")
-    workflow_run_attempt: str = Field(pattern=r"^[1-9][0-9]*$")
+    release_id: Literal["lordchrist-research-live-2026-08"]
+    release_digest: Literal["sha256:b836f9dc6733cdc922e5aaed97c250d1d46484fe75a216c1f12e586214a2626f"]
+    publication_id: Literal["lordchrist-research-three-preachers-numbers"]
+    provider_payload_sha256: Literal["sha256:4df54902ef389abb9e577c74ff7ab0c60a989cf4795e731b83e0fdb103d59ba9"]
+    intent_id: Literal["9a5e4fc686f8e28c6a3c0d2aedd08402"]
+    workflow_run_id: Literal["31390497205"]
+    workflow_run_attempt: Literal["1"]
     attempted_at_utc: datetime
     provider_effect: Literal["may_exist"]
     disposition: Literal["retired_no_replay"]
