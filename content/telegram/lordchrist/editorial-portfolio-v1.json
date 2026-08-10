@@ -1,0 +1,160 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-editorial-portfolio",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "provider_writes_authorized": false,
+  "checked_on": "2026-08-10",
+  "video_channel_manager_main_anchor": "2d7f854beabfaaa8970da482f1e250149189ce93",
+  "research_repository": {
+    "repository": "FedorMilovanov/Research",
+    "checked_main_anchor": "093cbfa541c6c94bd842dcb7ce52e6dc8ebfef88",
+    "root_authority_path": "00_RESEARCH_CURRENT_AUTHORITY_2026-08-01.md",
+    "rule": "Research presence, site readiness, or Research closure never implies Telegram publication authorization."
+  },
+  "selection_policy": {
+    "goal": "alternate authors, content kinds, and editorial lanes without weakening evidence or provider gates",
+    "max_consecutive_same_author_when_alternative_exists": 1,
+    "max_consecutive_same_lane_when_alternative_exists": 1,
+    "preserve_source_order_within_lane": true,
+    "fail_closed_on_unresolved_provider_effect": true,
+    "fallback_lane": "legacy_quotes",
+    "eligibility_rule": "Only lanes with eligibility=live_ready may be selected by current production. Other lanes require their explicit next_gate first."
+  },
+  "preferred_cycle": [
+    "legacy_quotes",
+    "historical_preaching_research_v2",
+    "legacy_quotes",
+    "heart_series_adaptations",
+    "legacy_quotes",
+    "historical_preaching_research_v2",
+    "legacy_quotes",
+    "deep_bible_study_adaptations"
+  ],
+  "lanes": [
+    {
+      "lane_id": "legacy_quotes",
+      "content_kinds": ["quote"],
+      "eligibility": "live_ready",
+      "current_runtime_consumes_lane": true,
+      "local_source_path": "content/telegram/lordchrist/verified-30-posts.json",
+      "editorial_role": "short primary-source devotional quotation",
+      "selection_notes": "Current live lane. Author round-robin already prevents exhausting one author block when alternatives exist.",
+      "next_gate": "none"
+    },
+    {
+      "lane_id": "historical_preaching_research_v2",
+      "content_kinds": ["comparison", "historical_analysis"],
+      "eligibility": "release_reviewed_provider_inert",
+      "current_runtime_consumes_lane": false,
+      "local_source_path": "content/telegram/lordchrist/research-queues/calvin-spurgeon-macarthur-v2.json",
+      "candidate_count": 5,
+      "verification_summary": "76-page verification pass; 28 claim-used sources; bodies and source registry SHA-256 bound; fact-check accepted",
+      "candidate_publication_ids": [
+        "lordchrist-research-three-preachers-numbers",
+        "lordchrist-research-sermons-survive-century",
+        "lordchrist-research-learning-across-generations",
+        "lordchrist-research-three-expository-patterns",
+        "lordchrist-research-hidden-discipline"
+      ],
+      "editorial_role": "original evidence-backed history and ministry analysis",
+      "next_gate": "independent research provider execution authority, one exact canary, verified outcome, then reviewed scheduler activation"
+    },
+    {
+      "lane_id": "heart_series_adaptations",
+      "content_kinds": ["devotional_explanation", "biblical_theology", "historical_theology"],
+      "eligibility": "candidate_requires_telegram_adaptation",
+      "current_runtime_consumes_lane": false,
+      "external_authority": {
+        "repository": "FedorMilovanov/Research",
+        "path": "СЕРИЯ СЕРДЦЕ/00_CURRENT_AUTHORITY_2026-08-01.md"
+      },
+      "verification_summary": "85-source closure; 81 trusted primary/open/official/academic records; Site implementation merged and verified in production ancestry",
+      "candidate_topics": [
+        "Рождение свыше",
+        "Возрождение и обитание Духа в Ветхом Завете",
+        "Борьба без возрождения",
+        "Четыре почвы",
+        "Две борьбы",
+        "Сердце и Слово",
+        "Фарисей и ученик",
+        "Созерцание славы Христа",
+        "Христос Откровения"
+      ],
+      "editorial_role": "short original explainers derived from already-closed source dossiers, not copied article chunks",
+      "next_gate": "draft Telegram-native bodies, bind claim-level evidence locally, fact-check, rights check, immutable release review, then separate provider canary"
+    },
+    {
+      "lane_id": "deep_bible_study_adaptations",
+      "content_kinds": ["difficult_text_exegesis", "archaeology", "social_history", "textual_history"],
+      "eligibility": "publication_hold",
+      "current_runtime_consumes_lane": false,
+      "external_authority": {
+        "repository": "FedorMilovanov/Research",
+        "path": "1 Коринфянам 11:2–16 current authority pointer at Research main 093cbfa541c6c94bd842dcb7ce52e6dc8ebfef88"
+      },
+      "candidate_topics": [
+        "1 Кор 11: покрытие или только волосы?",
+        "Почему миф о храмовой проститутке не выдерживает проверки",
+        "capite velato и римский ритуальный фон",
+        "Что означает exousia в 1 Кор 11:10",
+        "Ангелы в 1 Кор 11:10: что можно утверждать уверенно"
+      ],
+      "editorial_role": "deep but compact evidence-calibrated Bible-study posts with archaeological/social-history controls",
+      "next_gate": "current Research authority explicitly has PUBLICATION_HOLD=true; remove that hold through its own authority process before any Telegram adaptation or release"
+    },
+    {
+      "lane_id": "genesis_enoch_hard_texts",
+      "content_kinds": ["difficult_text_exegesis", "manuscript_history", "biblical_theology"],
+      "eligibility": "publication_hold",
+      "current_runtime_consumes_lane": false,
+      "external_authority": {
+        "repository": "FedorMilovanov/Research",
+        "path": "ТРУДНЫЕ ТЕКСТЫ/00_GENESIS6_MASTER_AUTHORITY_INDEX_AND_SUPERSESSION_MAP_XLII.md"
+      },
+      "candidate_topics": [
+        "Иуда 14–15 и 4Q204",
+        "Ангелы под мраком: Иуда 6–7 и 2 Петра 2",
+        "Духи в темнице, Ной и крещение",
+        "1 Петра 4:5–6 и благовестие мёртвым"
+      ],
+      "editorial_role": "manuscript-aware hard-text explainers",
+      "next_gate": "obey current Research publication/rights authority and clear Telegram-specific claim/evidence/release review before use"
+    },
+    {
+      "lane_id": "pulpit_and_church_history",
+      "content_kinds": ["pastoral_case_analysis", "church_history", "biography"],
+      "eligibility": "publication_hold_or_active_research",
+      "current_runtime_consumes_lane": false,
+      "external_authority": {
+        "repository": "FedorMilovanov/Research",
+        "path": "00_RESEARCH_CURRENT_AUTHORITY_2026-08-01.md"
+      },
+      "candidate_families": [
+        "Обратная сторона кафедры: faithful responses and bounded case lessons",
+        "Баптисты России: archive-backed history and biographies"
+      ],
+      "editorial_role": "historical/pastoral lessons without sensationalism or unresolved allegations",
+      "next_gate": "use only claim bundles whose current authority removes publication HOLD and whose Telegram adaptation passes independent fact-check and rights review"
+    },
+    {
+      "lane_id": "biblical_atlas",
+      "content_kinds": ["biblical_geography", "archaeology", "historical_context"],
+      "eligibility": "active_research",
+      "current_runtime_consumes_lane": false,
+      "external_authority": {
+        "repository": "FedorMilovanov/Research",
+        "path": "БИБЛЕЙСКИЙ АТЛАС/README.md"
+      },
+      "editorial_role": "map/archaeology/context posts that visually break up text-heavy theology",
+      "next_gate": "finish current primary-source strengthening, then create Telegram-native evidence-backed releases with cleared image rights"
+    }
+  ],
+  "rollout_sequence": [
+    "legacy author rotation is active now",
+    "independently authorize and verify one research-v2 canary",
+    "after canary, allow mixed quote/research-v2 lane rotation",
+    "adapt and fact-check the first Heart mini-series as the next new lane",
+    "only then admit individually cleared deep-study/history/atlas lanes"
+  ]
+}
