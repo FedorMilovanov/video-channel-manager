@@ -1,6 +1,6 @@
 # HTTP client ownership inventory
 
-Updated: 2026-08-04  
+Updated: 2026-08-10
 Owner: Wave 3 / issue #69
 
 This inventory is enforced by `tests/test_http_client_inventory.py`. A direct `httpx.Client()` constructor is allowed only when its lifecycle and operation semantics are recorded here. Reusable provider classes must use `HttpClientOwner`; they may own one persistent client or borrow an injected client, but may not construct a client per request.
@@ -17,6 +17,7 @@ This inventory is enforced by `tests/test_http_client_inventory.py`. A direct `h
 | `VkApiClient` | owned or borrowed persistent client | safe reads | Uses shared retry classification and an injectable limiter. |
 | `VkVideoWriter` | owned or borrowed persistent client | explicit safe-read verification plus ambiguous mutations | `retry_transient=True` is limited to read verification; reservation, upload, album, and other writes remain one attempt and surface `retryable=False`. |
 | `VkThumbnailWriter` | owned or borrowed persistent client | safe upload-URL reservation plus ambiguous mutations | `video.getThumbUploadUrl` may use bounded retry; upload-server POST and `video.saveUploadedThumb` are single attempt, surface `retryable=False`, and never expose the opaque upload URL in errors. |
+| `HttpxTelegramRichMutationProvider` | owned or borrowed persistent client | ambiguous `sendRichMessage` mutation | Uses `HttpClientOwner` and `HttpOperationClass.AMBIGUOUS_MUTATION`; one POST is attempted, transport retries are zero, and ambiguous failures never trigger retry or the legacy `sendMessage` fallback. |
 
 The default limiter interval is zero. A nonzero VK interval must be explicitly configured or injected from a verified provider policy; the library does not invent a request-per-second value.
 
