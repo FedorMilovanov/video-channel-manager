@@ -98,7 +98,7 @@ def test_release_plan_binds_thumbnail_bytes(tmp_path: Path) -> None:
     assert plan["thumbnail"]["path"] == str(thumbnail.resolve())
     validate_release_plan(plan)
     thumbnail.write_bytes(b"tampered")
-    with pytest.raises(UploadPlanError, match="Thumbnail SHA mismatch"):
+    with pytest.raises(UploadPlanError, match="thumbnail SHA mismatch"):
         validate_release_plan(plan)
 
 
