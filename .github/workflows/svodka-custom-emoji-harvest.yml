@@ -62,28 +62,7 @@ jobs:
             --config "$EXEMPLARS_PATH" \
             --output .runtime/svodka-custom-emoji-public-harvest.json
 
-      - name: Diagnose public exemplar identities and custom emoji ids
-        if: failure()
-        run: |
-          python - <<'PY'
-          import httpx
-          from video_channel_manager.telegram_custom_emoji_harvest import _parse_page
-
-          channel = '@deep_info_life'
-          with httpx.Client(timeout=30, follow_redirects=False, trust_env=False) as client:
-              response = client.get('https://t.me/s/deep_info_life')
-              response.raise_for_status()
-              messages = _parse_page(response.text, channel_username=channel)
-              for item in messages:
-                  first_line = item.text.split('\n', 1)[0][:180]
-                  print(
-                      f'id={item.message_id} date={item.message_date_utc.date()} '
-                      f'custom_ids={list(item.custom_emoji_ids)} first_line={first_line!r}'
-                  )
-          PY
-
       - name: Upload public harvest proof
-        if: success()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: svodka-custom-emoji-public-harvest
@@ -91,7 +70,7 @@ jobs:
           if-no-files-found: error
 
       - name: Verify harvested ids with read-only Bot API
-        if: github.event_name != 'pull_request' && success()
+        if: github.event_name != 'pull_request'
         env:
           SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
         run: |
@@ -102,7 +81,7 @@ jobs:
             --output .runtime/svodka-custom-emoji-verified-harvest.json
 
       - name: Upload verified custom emoji proof
-        if: github.event_name != 'pull_request' && success()
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: svodka-custom-emoji-verified-harvest
@@ -110,7 +89,7 @@ jobs:
           if-no-files-found: error
 
       - name: Build sanitized issue checkpoint
-        if: github.event_name != 'pull_request' && success()
+        if: github.event_name != 'pull_request'
         run: |
           python - <<'PY'
           import json
@@ -136,7 +115,7 @@ jobs:
           PY
 
       - name: Record verified harvest checkpoint in issue 273
-        if: github.event_name != 'pull_request' && success()
+        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh issue comment 273 --repo "$GITHUB_REPOSITORY" --body-file .runtime/custom-emoji-issue-comment.md
