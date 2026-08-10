@@ -34,6 +34,7 @@ dev = [
 [project.scripts]
 video-manager = "video_channel_manager.cli.app:run"
 video-manager-package-a = "video_channel_manager.wave_engine.package_a_cli:run"
+video-manager-resi = "video_channel_manager.cli.resi:run"
 video-manager-vk-postponed-text = "video_channel_manager.cli.vk_postponed_text:run"
 
 [tool.setuptools.packages.find]
