@@ -1,0 +1,1007 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Telegram Rich Messages Capability Matrix",
+  "description": "Verified capability matrix for Telegram Rich Messages (Bot API 10.1+, June 2026). Base SHA: 8eb584e19f7ba7c8cb78f5b9121cb312ac13bd06",
+  "version": "2026-08-10",
+  "bot_api_version": "10.2",
+  "base_sha": "8eb584e19f7ba7c8cb78f5b9121cb312ac13bd06",
+  "capabilities": [
+    {
+      "capability": "sendRichMessage",
+      "official_support": "yes",
+      "bot_api_method": "sendRichMessage",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "text_chars": 32768,
+        "blocks": 500,
+        "nesting_depth": 16,
+        "media_attachments": 50
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message field in response; absence indicates fallback",
+      "fallback": "sendMessage with parse_mode=MarkdownV2 or HTML",
+      "source_reference": "https://core.telegram.org/bots/api#sendrichmessage",
+      "notes": "Works for private chats, bots, supergroups, channels. Supports business_connection_id, message_thread_id, direct_messages_topic_id."
+    },
+    {
+      "capability": "sendRichMessageDraft",
+      "official_support": "yes",
+      "bot_api_method": "sendRichMessageDraft",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "chat_type": "private only",
+        "draft_expiration": "approximately 30 seconds (ephemeral)",
+        "new_file_upload": false
+      },
+      "usable_in_channel": false,
+      "usable_by_bot": true,
+      "verification_strategy": "Returns True on success; ephemeral, no message structure proof",
+      "fallback": "sendMessage with parse_mode=MarkdownV2",
+      "source_reference": "https://core.telegram.org/bots/api#sendrichmessagedraft",
+      "notes": "Must call sendRichMessage to persist final content. Direct upload of new files not supported."
+    },
+    {
+      "capability": "editRichMessage",
+      "official_support": "conditional",
+      "bot_api_method": "editMessageText (with rich_message parameter)",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "text_chars": "1-4096 after entity parsing",
+        "new_file_upload_inline": false,
+        "mutually_exclusive": "text and rich_message"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Returns edited Message object with rich_message field if preserved",
+      "fallback": "Delete old message + send new rich message",
+      "source_reference": "https://core.telegram.org/bots/api#editmessagetext",
+      "notes": "No dedicated editRichMessage method. text and rich_message are mutually exclusive. For inline messages, cannot upload new files."
+    },
+    {
+      "capability": "InputRichMessage (document object)",
+      "official_support": "yes",
+      "bot_api_type": "InputRichMessage",
+      "bot_api_version_introduced": "10.1 (2026-06-11), blocks field added 10.2 (2026-07-14)",
+      "limits": {
+        "mutually_exclusive_fields": "Exactly one of html, markdown, or blocks must be used",
+        "media_array_supported": "Yes (Bot API 10.2+)"
+      },
+      "usable_in_channel": "via sendRichMessage",
+      "usable_by_bot": true,
+      "verification_strategy": "N/A — input type",
+      "fallback": "N/A",
+      "source_reference": "https://core.telegram.org/bots/api#inputrichmessage",
+      "notes": "Fields: html (string), markdown (string), blocks (InputRichBlock[]), media (InputRichMessageMedia[]), is_rtl (boolean), skip_entity_detection (boolean)"
+    },
+    {
+      "capability": "Rich Markdown formatting",
+      "official_support": "yes",
+      "bot_api_method": "sendRichMessage with markdown field",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "ghfm_compatible": "Yes, where possible",
+        "arbitrary_html": true,
+        "media_inline": false,
+        "media_url_scheme": "HTTP/HTTPS only (not tg:// in markdown mode)"
+      },
+      "usable_in_channel": "via sendRichMessage",
+      "usable_by_bot": true,
+      "verification_strategy": "N/A — formatting mode",
+      "fallback": "Rich HTML or Blocks mode",
+      "source_reference": "https://core.telegram.org/bots/api#rich-markdown-style",
+      "notes": "Supports bold, italic, underline, strikethrough, spoiler, code, marked, headings, lists, task lists, blockquotes, tables, footnotes, math, media blocks"
+    },
+    {
+      "capability": "Rich HTML formatting",
+      "official_support": "yes",
+      "bot_api_method": "sendRichMessage with html field",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "code_language_specification": false,
+        "media_inline": false,
+        "media_url_scheme": "HTTP/HTTPS or tg:// with media array (Bot API 10.2+)"
+      },
+      "usable_in_channel": "via sendRichMessage",
+      "usable_by_bot": true,
+      "verification_strategy": "N/A — formatting mode",
+      "fallback": "Rich Markdown or Blocks mode",
+      "source_reference": "https://core.telegram.org/bots/api#rich-html-style",
+      "notes": "Supports all HTML tags plus custom Telegram tags: tg-math, tg-math-block, tg-collage, tg-slideshow, tg-map, tg-spoiler, tg-emoji, tg-time, tg-reference, tg-reference-link"
+    },
+    {
+      "capability": "Blocks mode (explicit structure)",
+      "official_support": "yes",
+      "bot_api_type": "InputRichMessage.blocks (InputRichBlock[])",
+      "bot_api_version_introduced": "10.2 (2026-07-14)",
+      "limits": {
+        "total_blocks": 500,
+        "nesting_depth": 16
+      },
+      "usable_in_channel": "via sendRichMessage",
+      "usable_by_bot": true,
+      "verification_strategy": "N/A — input mode",
+      "fallback": "Markdown or HTML mode",
+      "source_reference": "https://core.telegram.org/bots/api#inputrichmessage",
+      "notes": "Most verbose but type-safe. 21 InputRichBlock types available."
+    },
+    {
+      "capability": "Media insertion via tg:// links",
+      "official_support": "yes",
+      "bot_api_type": "InputRichMessageMedia",
+      "bot_api_version_introduced": "10.2 (2026-07-14)",
+      "limits": {
+        "media_id_length": "1-64 characters",
+        "media_id_charset": "A-Z, a-z, 0-9, _, -",
+        "total_media": 50
+      },
+      "usable_in_channel": "via sendRichMessage",
+      "usable_by_bot": true,
+      "verification_strategy": "Media array maps IDs to InputMediaPhoto/Video/Audio/Animation/VoiceNote",
+      "fallback": "HTTP/HTTPS URLs directly in markdown/html",
+      "source_reference": "https://core.telegram.org/bots/api#inputrichmessagemedia",
+      "notes": "Links: tg://photo?id=, tg://video?id=, tg://audio?id=. Media array resolves IDs to actual media."
+    },
+    {
+      "capability": "Heading blocks (h1-h6)",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockSectionHeading", "InputRichBlockSectionHeading"],
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "levels": "1-6 (1=largest, 6=smallest)"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for heading type blocks",
+      "fallback": "MarkdownV2: # visible or bold text",
+      "source_reference": "https://core.telegram.org/bots/api#richblocksectionheading",
+      "notes": "Markdown: # Heading 1 through ###### Heading 6. HTML: <h1>-<h6>."
+    },
+    {
+      "capability": "Paragraph blocks",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockParagraph", "InputRichBlockParagraph"],
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {},
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for paragraph type blocks",
+      "fallback": "Plain text in sendMessage",
+      "source_reference": "https://core.telegram.org/bots/api#richblockparagraph",
+      "notes": "HTML: <p>. Markdown: plain text paragraphs."
+    },
+    {
+      "capability": "Preformatted/code blocks",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockPreformatted", "InputRichBlockPreformatted"],
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "language_specification": "Yes in blocks/HTML mode, no in standalone HTML <code>"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for pre type blocks",
+      "fallback": "MarkdownV2: indented code or inline code",
+      "source_reference": "https://core.telegram.org/bots/api#richblockpreformatted",
+      "notes": "Markdown: ```language\\ncode\\n```. HTML: <pre><code class=\"language-x\">."
+    },
+    {
+      "capability": "Footer blocks",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockFooter", "InputRichBlockFooter"],
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {},
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for footer type blocks",
+      "fallback": "Plain text",
+      "source_reference": "https://core.telegram.org/bots/api#richblockfooter",
+      "notes": "HTML: <footer>."
+    },
+    {
+      "capability": "Divider blocks",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockDivider", "InputRichBlockDivider"],
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {},
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for divider type blocks",
+      "fallback": "--- in MarkdownV2 (horizontal rule)",
+      "source_reference": "https://core.telegram.org/bots/api#richblockdivider",
+      "notes": "Markdown: ---. HTML: <hr/>."
+    },
+    {
+      "capability": "Anchor blocks",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockAnchor", "InputRichBlockAnchor"],
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {},
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for anchor type blocks",
+      "fallback": "N/A — anchors not available in MarkdownV2",
+      "source_reference": "https://core.telegram.org/bots/api#richblockanchor",
+      "notes": "HTML: <a name=\"...\">. Used for in-document navigation."
+    },
+    {
+      "capability": "List blocks (ordered/unordered)",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockList", "InputRichBlockList", "InputRichBlockListItem"],
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "ordered_types": ["1 (decimal)", "a (lowercase)", "A (uppercase)", "i (lowercase roman)", "I (uppercase roman)"],
+        "start_value": " configurable"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for list type blocks",
+      "fallback": "MarkdownV2: -, *, + for unordered; 1., 2. for ordered",
+      "source_reference": "https://core.telegram.org/bots/api#richblocklist",
+      "notes": "Supports ordered with type/start/reversed attributes. List items can contain nested blocks."
+    },
+    {
+      "capability": "Task lists (checklists)",
+      "official_support": "yes",
+      "bot_api_types": ["InputRichBlockListItem (has_checkbox, is_checked)"],
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {},
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for list with checkbox items",
+      "fallback": "MarkdownV2: - [ ] and - [x] visible as text",
+      "source_reference": "https://core.telegram.org/bots/api#inputrichblocklistitem",
+      "notes": "Markdown: - [ ] unchecked, - [x] checked. HTML: <li> with checkbox."
+    },
+    {
+      "capability": "Block quotation",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockBlockQuotation", "InputRichBlockBlockQuotation"],
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "content": "Array of RichBlock (can be nested)",
+        "credit": "Optional RichText"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for blockquote type blocks",
+      "fallback": "MarkdownV2: > prefix (renders as quote)",
+      "source_reference": "https://core.telegram.org/bots/api#richblockblockquotation",
+      "notes": "Markdown: > prefix. HTML: <blockquote> with optional <cite>."
+    },
+    {
+      "capability": "Pull quotation",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockPullQuotation", "InputRichBlockPullQuotation"],
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "text": "RichText",
+        "credit": "Optional RichText"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for pullquote type blocks",
+      "fallback": "N/A — no MarkdownV2 equivalent",
+      "source_reference": "https://core.telegram.org/bots/api#richblockpullquotation",
+      "notes": "HTML: <aside> with optional <cite>. Centered presentation."
+    },
+    {
+      "capability": "Table blocks",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockTable", "InputRichBlockTable", "RichBlockTableCell"],
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "max_columns": 20,
+        "cells_inline_only": true,
+        "colspan": "supported",
+        "rowspan": "supported",
+        "align": "left, center, right",
+        "valign": "top, middle, bottom",
+        "bordered": "optional",
+        "striped": "optional",
+        "caption": "optional"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for table type blocks",
+      "fallback": "MarkdownV2: plain text rows (degraded)",
+      "source_reference": "https://core.telegram.org/bots/api#richblocktable",
+      "notes": "Markdown GFM: | header | header |\\n| --- | --- |\\n| cell | cell |. HTML: <table bordered striped>."
+    },
+    {
+      "capability": "Collapsible details blocks",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockDetails", "InputRichBlockDetails"],
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "open_by_default": "optional (open boolean)",
+        "content": "Array of RichBlock (can be nested)",
+        "title": "RichText (summary)"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for details type blocks",
+      "fallback": "MarkdownV2: no native equivalent (visible markers)",
+      "source_reference": "https://core.telegram.org/bots/api#richblockdetails",
+      "notes": "HTML: <details> / <details open> with <summary>. Content can be nested blocks."
+    },
+    {
+      "capability": "Mathematical expressions (formulas)",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockMathematicalExpression", "InputRichBlockMathematicalExpression"],
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "formula_source": "raw LaTeX",
+        "inline_tag": "<tg-math>",
+        "block_tag": "<tg-math-block>"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for mathematical_expression type blocks",
+      "fallback": "MarkdownV2: raw LaTeX text visible",
+      "source_reference": "https://core.telegram.org/bots/api#richblockmathematicalexpression",
+      "notes": "Inline: $x^2 + y^2$ or <tg-math>. Block: $$E = mc^2$$ or ```math\\nE = mc^2\\n``` or <tg-math-block>."
+    },
+    {
+      "capability": "Map blocks",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockMap", "InputRichBlockMap"],
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "attributes": "lat, long, zoom",
+        "caption": "optional RichBlockCaption"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for map type blocks",
+      "fallback": "N/A — no MarkdownV2 equivalent",
+      "source_reference": "https://core.telegram.org/bots/api#richblockmap",
+      "notes": "HTML: <tg-map lat=\"...\" long=\"...\" zoom=\"...\"/>. Optional caption."
+    },
+    {
+      "capability": "Photo blocks",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockPhoto", "InputRichBlockPhoto"],
+      "bot_api_version_introduced": "10.1 (2026-06-11), InputRichBlockPhoto added 10.2",
+      "limits": {
+        "caption": "optional RichBlockCaption",
+        "credit": "optional (via caption)",
+        "spoiler": "optional (tg-spoiler)",
+        "url_scheme": "HTTP/HTTPS or tg://photo?id= with media array"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for photo type blocks",
+      "fallback": "sendPhoto method",
+      "source_reference": "https://core.telegram.org/bots/api#inputrichblockphoto",
+      "notes": "Markdown: ![](url). HTML: <img src=\"...\"/> or <figure><img><figcaption><cite>credit</cite></figcaption></figure>."
+    },
+    {
+      "capability": "Video blocks",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockVideo", "InputRichBlockVideo"],
+      "bot_api_version_introduced": "10.1 (2026-06-11), InputRichBlockVideo added 10.2",
+      "limits": {
+        "caption": "optional RichBlockCaption",
+        "credit": "optional (via caption)",
+        "spoiler": "optional (tg-spoiler)",
+        "autoplay": "optional",
+        "loop": "optional",
+        "url_scheme": "HTTP/HTTPS or tg://video?id= with media array"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for video type blocks",
+      "fallback": "sendVideo method",
+      "source_reference": "https://core.telegram.org/bots/api#inputrichblockvideo",
+      "notes": "Markdown: ![](url). HTML: <video src=\"...\"></video> or <figure><video><figcaption>...</figcaption></figure>."
+    },
+    {
+      "capability": "Animation (GIF) blocks",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockAnimation", "InputRichBlockAnimation"],
+      "bot_api_version_introduced": "10.1 (2026-06-11), InputRichBlockAnimation added 10.2",
+      "limits": {
+        "caption": "optional RichBlockCaption",
+        "credit": "optional (via caption)",
+        "spoiler": "optional (tg-spoiler)"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for animation type blocks",
+      "fallback": "sendAnimation method",
+      "source_reference": "https://core.telegram.org/bots/api#inputrichblockanimation",
+      "notes": "HTML: <video> for .gif files. Markdown: ![](animation.gif)."
+    },
+    {
+      "capability": "Audio blocks",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockAudio", "InputRichBlockAudio"],
+      "bot_api_version_introduced": "10.1 (2026-06-11), InputRichBlockAudio added 10.2",
+      "limits": {
+        "caption": "optional RichBlockCaption",
+        "credit": "optional (via caption)",
+        "url_scheme": "HTTP/HTTPS or tg://audio?id= with media array"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for audio type blocks",
+      "fallback": "sendAudio method",
+      "source_reference": "https://core.telegram.org/bots/api#inputrichblockaudio",
+      "notes": "HTML: <audio src=\"...\"></audio> or <figure><audio><figcaption>...</figcaption></figure>."
+    },
+    {
+      "capability": "Voice note blocks",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockVoiceNote", "InputRichBlockVoiceNote", "InputMediaVoiceNote"],
+      "bot_api_version_introduced": "10.1 (2026-06-11), InputRichBlockVoiceNote and InputMediaVoiceNote added 10.2",
+      "limits": {
+        "caption": "optional RichBlockCaption"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for voice_note type blocks",
+      "fallback": "sendVoice method",
+      "source_reference": "https://core.telegram.org/bots/api#inputrichblockvoice-note",
+      "notes": "HTML: <audio src=\"...ogg\"></audio>. Corresponds to voice note type."
+    },
+    {
+      "capability": "Collage blocks",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockCollage", "InputRichBlockCollage"],
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "items": "Array of media blocks (photo, video, animation)",
+        "caption": "optional RichBlockCaption"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for collage type blocks",
+      "fallback": "Multiple sendPhoto calls (degraded)",
+      "source_reference": "https://core.telegram.org/bots/api#inputrichblockcollage",
+      "notes": "HTML: <tg-collage>...</tg-collage>. Markdown: consecutive ![](url) blocks. Caption optional."
+    },
+    {
+      "capability": "Slideshow blocks",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockSlideshow", "InputRichBlockSlideshow"],
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "items": "Array of media blocks (photo, video, animation)",
+        "caption": "optional RichBlockCaption"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for slideshow type blocks",
+      "fallback": "Multiple sendPhoto/sendVideo calls (degraded)",
+      "source_reference": "https://core.telegram.org/bots/api#inputrichblockslideshow",
+      "notes": "HTML: <tg-slideshow>...</tg-slideshow>. Markdown: consecutive ![](url) blocks. Caption optional."
+    },
+    {
+      "capability": "Thinking blocks (AI streaming)",
+      "official_support": "yes",
+      "bot_api_types": ["RichBlockThinking", "InputRichBlockThinking"],
+      "bot_api_version_introduced": "10.2 (2026-07-14)",
+      "limits": {
+        "text": "RichText (custom emoji recommended via t.me/addemoji/AIActions)"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Check Message.rich_message.blocks for thinking type blocks",
+      "fallback": "Plain text indicator",
+      "source_reference": "https://core.telegram.org/bots/api-changelog (July 14, 2026)",
+      "notes": "Designed for AI streaming use cases. Shows bot is thinking."
+    },
+    {
+      "capability": "Custom emoji in rich messages",
+      "official_support": "conditional",
+      "bot_api_type": "RichTextCustomEmoji",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "requirement": "Bot owner has Telegram Premium OR bot purchased username on Fragment"
+      },
+      "usable_in_channel": "conditional (not explicitly documented for channels)",
+      "usable_by_bot": "conditional",
+      "verification_strategy": "Test send with custom emoji; check if rendered",
+      "fallback": "Standard emoji or remove emoji",
+      "source_reference": "https://core.telegram.org/bots/api (RichTextCustomEmoji), Stack Overflow: custom emoji bot requirements",
+      "notes": "Custom emoji entities require Premium owner or Fragment username. Works in private, group, supergroup. Channel support not explicitly documented."
+    },
+    {
+      "capability": "Inline mentions (user)",
+      "official_support": "yes",
+      "bot_api_type": "RichTextTextMention",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "link_format": "tg://user?id=USER_ID"
+      },
+      "usable_in_channel": "via Bot API (requires user ID)",
+      "usable_by_bot": true,
+      "verification_strategy": "User mention renders as inline mention in supported clients",
+      "fallback": "Text mention with username",
+      "source_reference": "https://core.telegram.org/bots/api#richtexttextmention",
+      "notes": "Markdown: [text](tg://user?id=123456789). HTML: <a href=\"tg://user?id=123456789\">text</a>."
+    },
+    {
+      "capability": "DateTime blocks",
+      "official_support": "yes",
+      "bot_api_type": "RichTextDateTime",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "format": "wDT style format codes",
+        "link_format": "tg://time?unix=TIMESTAMP&format=FORMAT"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "DateTime renders as interactive timestamp in supported clients",
+      "fallback": "Plain text date/time",
+      "source_reference": "https://core.telegram.org/bots/api#richtextdatetime",
+      "notes": "Markdown: ![](tg://time?unix=1647531900&format=wDT). HTML: <tg-time unix=\"...\" format=\"...\">."
+    },
+    {
+      "capability": "Bank card number formatting",
+      "official_support": "yes",
+      "bot_api_type": "RichTextBankCardNumber",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "detection": "Automatic (no manual markup needed)"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Card numbers detected and formatted automatically",
+      "fallback": "Plain text",
+      "source_reference": "https://core.telegram.org/bots/api (formatting options)",
+      "notes": "Automatically detected in text. Example: card: 4242 4242 4242 4242."
+    },
+    {
+      "capability": "Channel posting via sendRichMessage",
+      "official_support": "yes",
+      "bot_api_method": "sendRichMessage",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "chat_id_format": "@channelusername",
+        "bot_requirement": "Bot must be admin or have post permissions"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Send to channel; verify Message.rich_message in response",
+      "fallback": "sendMessage to channel (with parse_mode)",
+      "source_reference": "https://core.telegram.org/bots/api#sendrichmessage (chat_id description)",
+      "notes": "chat_id accepts 'username of the target ... channel in the format @username'."
+    },
+    {
+      "capability": "Forum topic posting",
+      "official_support": "yes",
+      "bot_api_method": "sendRichMessage",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "parameter": "message_thread_id (forum supergroups and private chats with forum topic mode)"
+      },
+      "usable_in_channel": "N/A — forum topics in supergroups",
+      "usable_by_bot": true,
+      "verification_strategy": "Send with message_thread_id; verify in correct topic",
+      "fallback": "sendMessage with message_thread_id",
+      "source_reference": "https://core.telegram.org/bots/api#sendrichmessage (message_thread_id)",
+      "notes": "For forum supergroups and private chats of bots with forum topic mode enabled."
+    },
+    {
+      "capability": "Direct messages topic posting",
+      "official_support": "yes",
+      "bot_api_method": "sendRichMessage",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "parameter": "direct_messages_topic_id (required for DM chats)",
+        "suggested_post_parameters": "optional (DM chats only)"
+      },
+      "usable_in_channel": "N/A — DM chats",
+      "usable_by_bot": true,
+      "verification_strategy": "Send with direct_messages_topic_id; verify in correct DM topic",
+      "fallback": "sendMessage with direct_messages_topic_id",
+      "source_reference": "https://core.telegram.org/bots/api#sendrichmessage (direct_messages_topic_id)",
+      "notes": "Identifier of the direct messages topic to which the message will be sent."
+    },
+    {
+      "capability": "Business account sending",
+      "official_support": "conditional",
+      "bot_api_method": "sendRichMessage",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "parameter": "business_connection_id",
+        "requirement": "Bot can send on behalf of business account only if corresponding user can send rich messages"
+      },
+      "usable_in_channel": "via business account",
+      "usable_by_bot": true,
+      "verification_strategy": "Send with business_connection_id; check response",
+      "fallback": "Send as bot directly",
+      "source_reference": "https://core.telegram.org/bots/api#sendrichmessage (business_connection_id)",
+      "notes": "Optional parameter for business connection."
+    },
+    {
+      "capability": "Paid broadcast (allow_paid_broadcast)",
+      "official_support": "yes",
+      "bot_api_method": "sendRichMessage",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "rate": "up to 1000 messages per second",
+        "cost": "0.1 Telegram Stars per message",
+        "requirement": "Stars withdrawn from bot's balance"
+      },
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Send with allow_paid_broadcast=True; check Stars balance",
+      "fallback": "Regular send (rate limited to ~30 msg/sec globally)",
+      "source_reference": "https://core.telegram.org/bots/api#sendrichmessage (allow_paid_broadcast)",
+      "notes": "Optional parameter to bypass broadcasting limits for a fee."
+    },
+    {
+      "capability": "Message effect (message_effect_id)",
+      "official_support": "yes",
+      "bot_api_method": "sendRichMessage",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "scope": "private chats only"
+      },
+      "usable_in_channel": false,
+      "usable_by_bot": true,
+      "verification_strategy": "Send with message_effect_id; check animation in private chat",
+      "fallback": "Send without effect",
+      "source_reference": "https://core.telegram.org/bots/api#sendrichmessage (message_effect_id)",
+      "notes": "Unique identifier of the message effect to be added to the message."
+    },
+    {
+      "capability": "Reply markup (inline keyboard)",
+      "official_support": "yes",
+      "bot_api_method": "sendRichMessage",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {},
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Send with reply_markup; check buttons present",
+      "fallback": "N/A — standard feature",
+      "source_reference": "https://core.telegram.org/bots/api#sendrichmessage (reply_markup)",
+      "notes": "InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove, ForceReply supported."
+    },
+    {
+      "capability": "Reply parameters (reply to message)",
+      "official_support": "yes",
+      "bot_api_method": "sendRichMessage",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {},
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Send with reply_parameters; check message is reply",
+      "fallback": "N/A — standard feature",
+      "source_reference": "https://core.telegram.org/bots/api#sendrichmessage (reply_parameters)",
+      "notes": "ReplyParameters object. Note: legacy reply_to_message_id scalar also works but is undocumented."
+    },
+    {
+      "capability": "Content protection (protect_content)",
+      "official_support": "yes",
+      "bot_api_method": "sendRichMessage",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {},
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Send with protect_content=True; check forward/save disabled",
+      "fallback": "Send without protection",
+      "source_reference": "https://core.telegram.org/bots/api#sendrichmessage (protect_content)",
+      "notes": "Protects contents from forwarding and saving."
+    },
+    {
+      "capability": "Disable notification (silent send)",
+      "official_support": "yes",
+      "bot_api_method": "sendRichMessage",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {},
+      "usable_in_channel": true,
+      "usable_by_bot": true,
+      "verification_strategy": "Send with disable_notification=True; check no notification",
+      "fallback": "Send with notification",
+      "source_reference": "https://core.telegram.org/bots/api#sendrichmessage (disable_notification)",
+      "notes": "Sends message silently. Users receive notification with no sound."
+    },
+    {
+      "capability": "is_rtl (right-to-left support)",
+      "official_support": "yes",
+      "bot_api_type": "InputRichMessage.is_rtl",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {},
+      "usable_in_channel": "via sendRichMessage",
+      "usable_by_bot": true,
+      "verification_strategy": "Send with is_rtl=True; check rendering in RTL language",
+      "fallback": "Send with is_rtl=False (default)",
+      "source_reference": "https://core.telegram.org/bots/api#inputrichmessage (is_rtl)",
+      "notes": "Pass True if rich message must be shown right-to-left."
+    },
+    {
+      "capability": "skip_entity_detection",
+      "official_support": "yes",
+      "bot_api_type": "InputRichMessage.skip_entity_detection",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {},
+      "usable_in_channel": "via sendRichMessage",
+      "usable_by_bot": true,
+      "verification_strategy": "Send with skip_entity_detection=True; check URLs not auto-linked",
+      "fallback": "Send with detection enabled (default)",
+      "source_reference": "https://core.telegram.org/bots/api#inputrichmessage (skip_entity_detection)",
+      "notes": "Skip automatic detection of URLs, emails, username mentions, hashtags, cashtags, bot commands, phone numbers."
+    },
+    {
+      "capability": "InputRichMessageContent (inline mode)",
+      "official_support": "yes",
+      "bot_api_type": "InputRichMessageContent",
+      "bot_api_version_introduced": "10.1 (2026-06-11)",
+      "limits": {
+        "usage": "inline queries, guest queries, Web App queries"
+      },
+      "usable_in_channel": "via inline mode",
+      "usable_by_bot": true,
+      "verification_strategy": "Return InputRichMessageContent from inline query; check rendering",
+      "fallback": "InputTextMessageContent",
+      "source_reference": "https://core.telegram.org/bots/api#inputrichmessagecontent",
+      "notes": "Can be used as InputMessageContent in results of inline, guest, and Web App queries."
+    }
+  ],
+  "unsupported_features": [
+    {
+      "capability": "editRichMessage (dedicated method)",
+      "status": "unsupported",
+      "notes": "Use editMessageText with rich_message parameter instead"
+    },
+    {
+      "capability": "sendRichMessage scheduling",
+      "status": "unsupported",
+      "notes": "No schedule_date parameter in sendRichMessage. Use sendMessage for scheduled messages (different capabilities)."
+    },
+    {
+      "capability": "sendRichMessageDraft in channels/groups",
+      "status": "unsupported",
+      "notes": "sendRichMessageDraft is private chat only per official documentation"
+    },
+    {
+      "capability": "New file upload in sendRichMessageDraft",
+      "status": "unsupported",
+      "notes": "Direct upload of new files not supported in drafts"
+    },
+    {
+      "capability": "New file upload when editing inline rich messages",
+      "status": "unsupported",
+      "notes": "When editing inline messages, cannot upload new files — use file_id or URL"
+    },
+    {
+      "capability": "Custom emoji in channel posts (bots)",
+      "status": "unknown",
+      "notes": "Not explicitly documented. Channel support for custom emoji from bots is unclear."
+    }
+  ],
+  "limits_summary": {
+    "text_characters": {
+      "value": 32768,
+      "unit": "UTF-8 characters",
+      "includes": "custom emoji alternative text and formula source"
+    },
+    "blocks": {
+      "value": 500,
+      "includes": "nested blocks, list items, table rows, quotation blocks, details blocks"
+    },
+    "nesting_depth": {
+      "value": 16,
+      "unit": "levels",
+      "includes": "formatting and blocks"
+    },
+    "media_attachments": {
+      "value": 50,
+      "includes": "photos, videos, audio files total"
+    },
+    "media_id_length": {
+      "value": "1-64",
+      "unit": "characters",
+      "charset": "A-Z, a-z, 0-9, _, -"
+    },
+    "table_columns": {
+      "value": 20,
+      "unit": "columns",
+      "note": "per table (library validation limit)"
+    },
+    "edit_text_length": {
+      "value": "1-4096",
+      "unit": "characters after entity parsing",
+      "method": "editMessageText"
+    }
+  },
+  "chat_type_support": {
+    "private_chat": {
+      "sendRichMessage": true,
+      "sendRichMessageDraft": true,
+      "editMessageText_rich": true
+    },
+    "bot": {
+      "sendRichMessage": true,
+      "sendRichMessageDraft": false,
+      "editMessageText_rich": "inline only"
+    },
+    "supergroup": {
+      "sendRichMessage": true,
+      "sendRichMessageDraft": false,
+      "editMessageText_rich": true
+    },
+    "channel": {
+      "sendRichMessage": true,
+      "sendRichMessageDraft": false,
+      "editMessageText_rich": true
+    },
+    "forum_topic": {
+      "sendRichMessage": true,
+      "sendRichMessageDraft": false,
+      "editMessageText_rich": true,
+      "parameter": "message_thread_id"
+    },
+    "dm_topic": {
+      "sendRichMessage": true,
+      "sendRichMessageDraft": false,
+      "editMessageText_rich": true,
+      "parameter": "direct_messages_topic_id (required)"
+    }
+  },
+  "premium_requirements": {
+    "for_bot_api_rich_features": {
+      "required": false,
+      "note": "sendRichMessage, sendRichMessageDraft, editMessageText(rich), all rich block types work via Bot API without Premium"
+    },
+    "for_custom_emoji": {
+      "required": true,
+      "condition": "Bot owner has Telegram Premium OR bot purchased username on Fragment",
+      "supported_chats": ["private", "group", "supergroup"],
+      "channel_support": "not explicitly documented"
+    },
+    "for_user_rendering": {
+      "required": false,
+      "note": "Telegram clients render rich messages for all users regardless of Premium status"
+    }
+  },
+  "verification_strategies": {
+    "rich_structure_preserved": {
+      "check": "Message.rich_message field presence and content",
+      "success_criteria": "rich_message.blocks array matches sent structure",
+      "failure_indication": "rich_message field absent (fallback occurred)"
+    },
+    "capability_detection": {
+      "method": "Attempt sendRichMessage on test chat",
+      "success": "Returns Message with rich_message",
+      "failure": "Bad Request or method not found error",
+      "recommendation": "Cache result (capability latch)"
+    },
+    "media_preserved": {
+      "check": "Message.media group or Message.photo/video/audio arrays",
+      "note": "Media may appear in both rich_message.blocks and standard media fields"
+    }
+  },
+  "fallback_matrix": {
+    "tables": "sendMessage with MarkdownV2 → plain text rows (degraded)",
+    "headings": "sendMessage with MarkdownV2 → # markers visible or bold",
+    "code_blocks": "sendMessage with MarkdownV2 → indented or inline code",
+    "collapsible_details": "sendMessage with MarkdownV2 → no native equivalent",
+    "math_formulas": "sendMessage with MarkdownV2 → raw LaTeX visible",
+    "media_blocks": "sendPhoto/sendVideo/sendAudio separately (degraded)",
+    "task_lists": "sendMessage with MarkdownV2 → - [ ] markers visible",
+    "pull_quotes": "sendMessage with MarkdownV2 → no native equivalent",
+    "anchors": "sendMessage with MarkdownV2 → no native equivalent",
+    "maps": "sendMessage with MarkdownV2 → no native equivalent",
+    "collages": "Multiple sendPhoto calls (degraded)",
+    "slideshows": "Multiple sendPhoto/sendVideo calls (degraded)"
+  },
+  "recommended_fallback_trigger": {
+    "use_rich_mode_when": [
+      "Content contains tables",
+      "Content contains task lists",
+      "Content contains <details> blocks",
+      "Content contains block math/formula syntax",
+      "Content contains other structures that degrade poorly through MarkdownV2"
+    ],
+    "use_sendMessage_for": [
+      "Ordinary prose without rich-only structures",
+      "When consistent typography across clients is prioritized"
+    ]
+  },
+  "known_issues": [
+    {
+      "issue": "Telegram Web rendering",
+      "status": "reported",
+      "date": "2026-06",
+      "notes": "Telegram Web may not render sendRichMessage replies correctly. Workaround: disable rich for Web users or use fallback."
+    },
+    {
+      "issue": "Body text size inconsistency",
+      "status": "reported",
+      "date": "2026-06",
+      "notes": "Rich Message body text appears larger than normal bot messages, may ignore user's text-size setting."
+    },
+    {
+      "issue": "Line break collapse",
+      "status": "reported",
+      "date": "2026-06",
+      "notes": "Rich messages may collapse ordinary line breaks into single paragraph. Mitigation: convert newlines to <br/>."
+    }
+  ],
+  "sources": [
+    {
+      "name": "Telegram Bot API — sendRichMessage",
+      "url": "https://core.telegram.org/bots/api#sendrichmessage",
+      "accessed": "2026-08-10"
+    },
+    {
+      "name": "Telegram Bot API — Rich Messages",
+      "url": "https://core.telegram.org/bots/api#rich-messages",
+      "accessed": "2026-08-10"
+    },
+    {
+      "name": "Telegram Bot API — editMessageText",
+      "url": "https://core.telegram.org/bots/api#editmessagetext",
+      "accessed": "2026-08-10"
+    },
+    {
+      "name": "Bot API Changelog (June 11, 2026)",
+      "url": "https://core.telegram.org/bots/api-changelog",
+      "accessed": "2026-08-10"
+    },
+    {
+      "name": "Bot API Changelog (July 14, 2026)",
+      "url": "https://core.telegram.org/bots/api-changelog",
+      "accessed": "2026-08-10"
+    },
+    {
+      "name": "tg-rich-messages TypeScript library",
+      "url": "https://github.com/vdistortion/tg-rich-messages",
+      "accessed": "2026-08-10"
+    },
+    {
+      "name": "Telegram Premium FAQ",
+      "url": "https://telegram.org/faq_premium",
+      "accessed": "2026-08-10"
+    },
+    {
+      "name": "Hermes Agent PR #44829",
+      "url": "https://github.com/NousResearch/hermes-agent/pull/44829",
+      "accessed": "2026-08-10"
+    },
+    {
+      "name": "Hermes Agent Issue #46009",
+      "url": "https://github.com/NousResearch/hermes-agent/issues/46009",
+      "accessed": "2026-08-10"
+    },
+    {
+      "name": "Python Telegram Bot Issue #5261",
+      "url": "https://github.com/python-telegram-bot/python-telegram-bot/issues/5261",
+      "accessed": "2026-08-10"
+    }
+  ],
+  "contract_for_following_agents": {
+    "this_spec_is_source_of_truth": true,
+    "do_not_trust_previous_chat_claims_without_verification": true,
+    "key_facts": [
+      "sendRichMessage is REAL and ACUTAL (Bot API 10.1+, June 2026)",
+      "Rich document = InputRichMessage with ONE of: html, markdown, or blocks",
+      "Media between text via: markdown/html + media array (tg:// links), OR explicit blocks array",
+      "Collage = <tg-collage> with media items; Slideshow = <tg-slideshow> with media items",
+      "Bot CAN edit rich via editMessageText with rich_message parameter",
+      "Proof of saved structure = Message.rich_message field in response",
+      "Most rich features work via Bot API without Premium; custom emoji needs Premium owner or Fragment",
+      "sendRichMessageDraft is private-chat-only; sendRichMessage works for all chat types",
+      "No dedicated editRichMessage method exists",
+      "No scheduling for rich messages"
+    ],
+    "must_implement": [
+      "sendRichMessage with valid InputRichMessage",
+      "Pre-send validation (text ≤ 32768, blocks ≤ 500, media ≤ 50, depth ≤ 16)",
+      "Response verification (check Message.rich_message)",
+      "Capability detection with caching (latch)",
+      "Fallback to sendMessage with MarkdownV2/HTML when rich unavailable"
+    ],
+    "may_implement": [
+      "sendRichMessageDraft for private chat streaming",
+      "editMessageText with rich_message for edits",
+      "Blocks mode for explicit structure",
+      "HTML mode with media array for tg:// resolution"
+    ]
+  }
+}
