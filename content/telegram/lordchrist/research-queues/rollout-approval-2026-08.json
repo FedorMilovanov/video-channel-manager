@@ -10,5 +10,8 @@
   "reviewed_at": "2026-08-10T09:57:23Z",
   "owning_issue": 242,
   "first_canary_publication_id": "lordchrist-research-three-preachers-numbers",
-  "provider_write_scope": "exact research-v2 canary then canary-gated scheduled pilot only"
+  "provider_write_scope": "exact research-v2 canary then canary-gated scheduled pilot only",
+  "per_track_daily_verified_limit": 1,
+  "cross_track_daily_verified_limit": 2,
+  "cross_track_guard_issue": 246
 }
