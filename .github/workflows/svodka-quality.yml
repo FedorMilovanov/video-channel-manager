@@ -74,6 +74,13 @@ jobs:
           src/video_channel_manager/telegram_multichannel_transport.py
           src/video_channel_manager/telegram_multichannel_outcome.py
           src/video_channel_manager/telegram_multichannel_cli.py
+          src/video_channel_manager/telegram_rich_provider.py
+          src/video_channel_manager/telegram_rich_models.py
+          src/video_channel_manager/telegram_rich_validation.py
+          src/video_channel_manager/telegram_rich_renderer.py
+          src/video_channel_manager/telegram_rich_fallback.py
+          src/video_channel_manager/svodka_rich_loader.py
+          src/video_channel_manager/svodka_native_rich_canary.py
           src/video_channel_manager/svodka_queue.py
           src/video_channel_manager/svodka_release.py
           src/video_channel_manager/svodka_rollout_candidate_cli.py
@@ -91,6 +98,14 @@ jobs:
           tests/test_telegram_multichannel_transport.py
           tests/test_telegram_multichannel_outcome.py
           tests/test_telegram_multichannel_cli.py
+          tests/test_telegram_rich_provider.py
+          tests/test_telegram_rich_validation.py
+          tests/test_telegram_rich_renderer.py
+          tests/test_telegram_rich_fallback.py
+          tests/test_telegram_rich_integration.py
+          tests/test_telegram_rich_legacy_digests.py
+          tests/test_svodka_rich_loader.py
+          tests/test_svodka_native_rich_canary.py
           tests/test_svodka_queue_contract.py
           tests/test_svodka_release_review.py
           tests/test_svodka_preflight_workflow.py
@@ -119,6 +134,13 @@ jobs:
           src/video_channel_manager/telegram_multichannel_transport.py
           src/video_channel_manager/telegram_multichannel_outcome.py
           src/video_channel_manager/telegram_multichannel_cli.py
+          src/video_channel_manager/telegram_rich_provider.py
+          src/video_channel_manager/telegram_rich_models.py
+          src/video_channel_manager/telegram_rich_validation.py
+          src/video_channel_manager/telegram_rich_renderer.py
+          src/video_channel_manager/telegram_rich_fallback.py
+          src/video_channel_manager/svodka_rich_loader.py
+          src/video_channel_manager/svodka_native_rich_canary.py
           src/video_channel_manager/svodka_queue.py
           src/video_channel_manager/svodka_release.py
           src/video_channel_manager/svodka_rollout_candidate_cli.py
@@ -136,6 +158,14 @@ jobs:
           tests/test_telegram_multichannel_transport.py
           tests/test_telegram_multichannel_outcome.py
           tests/test_telegram_multichannel_cli.py
+          tests/test_telegram_rich_provider.py
+          tests/test_telegram_rich_validation.py
+          tests/test_telegram_rich_renderer.py
+          tests/test_telegram_rich_fallback.py
+          tests/test_telegram_rich_integration.py
+          tests/test_telegram_rich_legacy_digests.py
+          tests/test_svodka_rich_loader.py
+          tests/test_svodka_native_rich_canary.py
           tests/test_svodka_queue_contract.py
           tests/test_svodka_release_review.py
           tests/test_svodka_preflight_workflow.py
@@ -164,6 +194,13 @@ jobs:
           src/video_channel_manager/telegram_multichannel_transport.py
           src/video_channel_manager/telegram_multichannel_outcome.py
           src/video_channel_manager/telegram_multichannel_cli.py
+          src/video_channel_manager/telegram_rich_provider.py
+          src/video_channel_manager/telegram_rich_models.py
+          src/video_channel_manager/telegram_rich_validation.py
+          src/video_channel_manager/telegram_rich_renderer.py
+          src/video_channel_manager/telegram_rich_fallback.py
+          src/video_channel_manager/svodka_rich_loader.py
+          src/video_channel_manager/svodka_native_rich_canary.py
           src/video_channel_manager/svodka_queue.py
           src/video_channel_manager/svodka_release.py
           src/video_channel_manager/svodka_rollout_candidate_cli.py
@@ -186,6 +223,14 @@ jobs:
           tests/test_telegram_multichannel_transport.py
           tests/test_telegram_multichannel_outcome.py
           tests/test_telegram_multichannel_cli.py
+          tests/test_telegram_rich_provider.py
+          tests/test_telegram_rich_validation.py
+          tests/test_telegram_rich_renderer.py
+          tests/test_telegram_rich_fallback.py
+          tests/test_telegram_rich_integration.py
+          tests/test_telegram_rich_legacy_digests.py
+          tests/test_svodka_rich_loader.py
+          tests/test_svodka_native_rich_canary.py
           tests/test_svodka_queue_contract.py
           tests/test_svodka_release_review.py
           tests/test_svodka_preflight_workflow.py
@@ -199,6 +244,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python content/telegram/svodka/rich-v1/media/validate_registry.py
           python -m video_channel_manager.telegram_channel_cli validate-profile --profile "$PROFILE_PATH"
           python -m video_channel_manager.telegram_channel_cli validate-svodka --profile "$PROFILE_PATH" --queue "$QUEUE_PATH"
           python - <<'PY'

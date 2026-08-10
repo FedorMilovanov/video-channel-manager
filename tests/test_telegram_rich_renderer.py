@@ -146,6 +146,38 @@ def test_unresolved_media_fails_closed_without_placeholders() -> None:
     )
 
 
+def test_reviewed_provider_assigned_url_photo_emits_exact_transport_path() -> None:
+    document = inline_media_article().model_copy(
+        update={
+            "media": tuple(
+                entry.model_copy(update={"resolved": None}) if entry.media_id == "photo-vrat" else entry
+                for entry in inline_media_article().media
+            )
+        }
+    )
+
+    telegram_document, result = render_rich_document(
+        document,
+        _target(),
+        provider_assigned_media_ids=("photo-vrat",),
+        skip_entity_detection=True,
+    )
+
+    assert result.media_placeholders == ()
+    assert result.provider_assigned_media == ("photo-vrat",)
+    assert telegram_document.provider_assigned_media_paths == ("$/blocks/2",)
+    assert telegram_document.input_rich_message["skip_entity_detection"] is True
+    returned = telegram_document.expected_returned_rich_message["blocks"][2]["photo"]
+    assert returned == [
+        {
+            "file_id": "<provider-assigned-file-id>",
+            "file_unique_id": "<provider-assigned-file-unique-id>",
+            "width": 1,
+            "height": 1,
+        }
+    ]
+
+
 def test_collage_renders_as_nested_media_blocks() -> None:
     document = collage_article()
     telegram_document, _ = render_rich_document(document, _target())
