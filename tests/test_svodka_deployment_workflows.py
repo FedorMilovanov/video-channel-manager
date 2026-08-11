@@ -208,15 +208,16 @@ def test_stale_slot_recovery_is_manual_state_only_and_dual_quality_proven() -> N
     assert "secrets." not in workflow
 
 
-def test_scheduler_is_canary_gated_freshness_bounded_and_covers_full_pilot() -> None:
+def test_legacy_scheduler_is_manual_recovery_only_and_still_fail_closed() -> None:
     workflow = _workflow(SCHEDULED_WORKFLOW)
 
-    assert workflow.count("cron:") == 4
-    assert 'cron: "30 7 10-16 8 *"' in workflow
-    assert 'cron: "17 8 10-16 8 *"' in workflow
-    assert 'cron: "30 16 10-16 8 *"' in workflow
-    assert 'cron: "17 17 10-16 8 *"' in workflow
-    assert "if: github.event_name == 'schedule' && github.ref == 'refs/heads/main'" in workflow
+    assert "schedule:" not in workflow
+    assert "workflow_dispatch:" in workflow
+    assert workflow.count("cron:") == 0
+    assert "SVODKA-LEGACY-RECOVERY:@deep_info_life" in workflow
+    assert "github.event_name == 'workflow_dispatch'" in workflow
+    assert "inputs.confirm == 'SVODKA-LEGACY-RECOVERY:@deep_info_life'" in workflow
+    assert "github.ref == 'refs/heads/main'" in workflow
     _assert_materialized_release_contract(workflow)
     _assert_dual_current_main_quality(workflow)
     assert "Require verified manual canary before scheduler activity" in workflow
