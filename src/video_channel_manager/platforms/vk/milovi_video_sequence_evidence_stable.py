@@ -6,7 +6,7 @@ import json
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote, urlsplit
+from urllib.parse import parse_qs, quote, urlsplit
 
 from video_channel_manager.platforms.vk import milovi_video_sequence_evidence as base
 
@@ -52,8 +52,16 @@ iframe{{border:0;width:100vw;height:100vh;display:block}}
 </html>"""
 
 
+def _split_vk_remote_id(remote_id: str) -> tuple[str, str]:
+    owner_id, video_id = remote_id.rsplit("_", 1)
+    if not owner_id.startswith("-") or not owner_id[1:].isdigit() or not video_id.isdigit():
+        raise ValueError(f"invalid VK Clip remote id: {remote_id}")
+    return owner_id, video_id
+
+
 def _vk_capture_url(remote_id: str) -> str:
-    return f"https://vk.ru/clip{remote_id}"
+    owner_id, video_id = _split_vk_remote_id(remote_id)
+    return f"https://vk.com/clip_ext.php?oid={owner_id}&id={video_id}&autoplay=1"
 
 
 def _stable_identity_url_matches(*, platform: str, expected_id: str, raw_url: str) -> bool:
@@ -76,6 +84,12 @@ def _stable_identity_url_matches(*, platform: str, expected_id: str, raw_url: st
         )
         if allowed_embed_host and path.endswith(f"/embed/{expected_id}"):
             return True
+    if platform == "vk":
+        allowed_vk_host = host in {"vk.com", "vk.ru"} or host.endswith(".vk.com") or host.endswith(".vk.ru")
+        if allowed_vk_host and path.endswith("/clip_ext.php"):
+            owner_id, video_id = _split_vk_remote_id(expected_id)
+            query = parse_qs(parsed.query)
+            return (query.get("oid") or [""])[0] == owner_id and (query.get("id") or [""])[0] == video_id
     return _ORIGINAL_IDENTITY(platform=platform, expected_id=expected_id, raw_url=raw_url)
 
 
@@ -95,6 +109,24 @@ def _capture_error(*, canonical_url: str, page: Any, exc: Exception) -> base.Cap
         page_title="",
         block_hints=(),
         error=f"{type(exc).__name__}: {exc}"[:1000],
+    )
+
+
+def _temporal_diversity_gate(result: base.CaptureResult) -> base.CaptureResult:
+    if result.status != "captured" or len(result.frames) < 6:
+        return result
+    unique_sha_count = len({str(frame.get("sha256") or "") for frame in result.frames})
+    minimum_unique = max(4, len(result.frames) // 3)
+    if unique_sha_count >= minimum_unique:
+        return result
+    return replace(
+        result,
+        status="temporal_capture_unreliable",
+        frames=(),
+        error=(
+            f"timeline capture collapsed to {unique_sha_count} unique rendered frames "
+            f"across {len(result.frames)} samples; sequence evidence suppressed"
+        ),
     )
 
 
@@ -132,10 +164,11 @@ def _isolated_capture_page_sequence(
         else url
     )
 
-    # A fresh page per media identity prevents delayed consent/redirect navigation from one
-    # item interrupting the next item. YouTube is loaded as a real iframe child of a local
-    # HTTP document so Chromium supplies an HTTP Referer instead of direct-address-bar Error 153.
-    # The local document exists only inside Playwright routing; no server and no provider write.
+    # A fresh page per media identity prevents delayed navigation from one item interrupting
+    # the next. YouTube is embedded under a local HTTP parent to supply a valid referrer.
+    # VK uses its exact clip_ext player instead of the recommendation/feed Clip surface, so
+    # the sampled <video> is bound to owner_id + video_id rather than whichever feed item is visible.
+    # All transports are read-only; no clicks, forms, uploads, deletes, or wall actions occur.
     last_result: base.CaptureResult | None = None
     last_error: Exception | None = None
     for _attempt in range(2):
@@ -159,7 +192,7 @@ def _isolated_capture_page_sequence(
             except Exception as exc:
                 last_error = exc
                 result = _capture_error(canonical_url=url, page=isolated_page, exc=exc)
-            result = replace(result, canonical_url=url)
+            result = _temporal_diversity_gate(replace(result, canonical_url=url))
             last_result = result
             if result.status == "captured":
                 return result
