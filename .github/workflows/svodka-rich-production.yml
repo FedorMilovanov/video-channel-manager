@@ -280,21 +280,15 @@ jobs:
             exit 4
           }
 
-      - name: Record canary proof and close Premium Emoji capability issue
+      - name: Record verified production canary
         if: steps.select.outputs.eligible == 'true' && steps.select.outputs.dispatch_mode == 'canary' && steps.send.outputs.exit_code == '0'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           message_url="$(python -c "import json; print(json.load(open('$OUTCOME_PATH'))['message_url'])")"
-          body="Production rich canary VERIFIED on the real Svodka article. Exact returned RichMessage matched the reviewed structure, including verified custom_emoji IDs. Message: $message_url. No technical test post or fallback sendMessage was used."
+          body="Production rich canary VERIFIED on the real Svodka article. Exact returned RichMessage matched the reviewed channel-safe structure, including explicit hashtag entities and reviewed Unicode emoji fallbacks. Message: $message_url. No technical test post or fallback sendMessage was used. Premium custom emoji remain a separate Telegram capability blocked for channel posts unless the bot has an additional Fragment username."
           gh issue comment 235 --repo "$GITHUB_REPOSITORY" --body "$body"
-          state="$(gh issue view 273 --repo "$GITHUB_REPOSITORY" --json state --jq .state)"
-          if [[ "$state" == 'OPEN' ]]; then
-            gh issue close 273 --repo "$GITHUB_REPOSITORY" --reason completed --comment "$body"
-          else
-            gh issue comment 273 --repo "$GITHUB_REPOSITORY" --body "$body"
-          fi
 
       - name: Close rollout after first autonomous post following canary
         if: steps.select.outputs.eligible == 'true' && steps.send.outputs.exit_code == '0'
