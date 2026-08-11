@@ -16,8 +16,8 @@
     "release_id": "svodka-pilot-2026-08",
     "source_format": "quick_fact"
   },
-  "title": "На Венере день длиннее года",
-  "lead": "Заголовок звучит как парадокс, а ведёт себя как задача на внимательность. У Венеры слова «день» и «год» измеряют разное — и стоит договориться, что именно мы считаем.",
+  "title": "На Венере день длиннее года — но только в одном смысле",
+  "lead": "Фраза звучит как астрономическая шутка, но в ней нет фокуса. Нужно всего лишь понять, что словом «день» астрономы могут называть два разных промежутка времени: оборот планеты относительно звёзд и путь от одного положения Солнца в небе до следующего такого же.",
   "icons_used": [
     "🪐",
     "📐",
@@ -26,75 +26,69 @@
   "sections": [
     {
       "section_id": "chto-schitaem",
-      "heading": "Что именно мы считаем",
+      "heading": "Сначала заведём два таймера",
       "blocks": [
         {
           "type": "paragraph",
-          "html": "Один оборот Венеры вокруг своей оси занимает примерно <b>243 земных суток</b>. Один оборот вокруг Солнца — около <b>225 суток</b>. Положи оба числа на одну линейку — и «день» действительно окажется длиннее «года».",
-          "footnotes": [
-            1
-          ]
+          "html": "Первый таймер отвечает на простой вопрос: сколько нужно Венере, чтобы один раз повернуться вокруг своей оси относительно далёких звёзд? Ответ — примерно <b>243 земных суток</b>. Такой оборот называют <i>сидерическими сутками</i>.",
+          "footnotes": [1]
         },
         {
           "type": "paragraph",
-          "html": "Но цифра 243 описывает <i>сидерические сутки</i>: полный оборот планеты относительно звёзд, без поправки на то, куда при этом движется Солнце.",
-          "footnotes": [
-            1
-          ]
+          "html": "Второй таймер измеряет год: один полный круг Венеры вокруг Солнца занимает около <b>225 земных суток</b>. Поэтому если под «днём» понимать именно полный оборот относительно звёзд, получается буквально: <b>243 больше 225</b> — день длиннее года.",
+          "footnotes": [1]
+        },
+        {
+          "type": "paragraph",
+          "html": "Это не означает, что на поверхности Венеры между рассветами проходит 243 дня. Для рассветов нужен другой счёт — по положению Солнца в небе."
         }
       ]
     },
     {
       "section_id": "solnechnye-sutki",
-      "heading": "А если считать по Солнцу",
+      "heading": "Почему между рассветами получается другое число",
       "blocks": [
         {
           "type": "paragraph",
-          "html": "Для человека естественнее другой счёт: от положения Солнца в небе до следующего такого же. Такие <i>солнечные сутки</i> на Венере длятся около <b>117 земных суток</b> — пригодная для жизни аналогия, но вдвое короче, чем в заголовке.",
-          "footnotes": [
-            2
-          ]
+          "html": "Пока Венера медленно поворачивается вокруг оси, она одновременно движется по орбите. Поэтому после одного оборота относительно звёзд Солнце ещё не обязано оказаться в той же точке венерианского неба. Нужно немного другой промежуток времени.",
+          "footnotes": [1]
         },
         {
           "type": "paragraph",
-          "html": "Разница между двумя счётами не трюк. Планета медленно вращается и одновременно летит по орбите, поэтому «сутки по звёздам» и «сутки по Солнцу» расходятся — на Земле они тоже не совпадают, просто там разница составляет минуты, а не месяцы.",
-          "footnotes": [
-            1
-          ]
+          "html": "От одного солнечного полудня до следующего проходит около <b>117 земных суток</b>. Это <i>солнечные сутки</i> — тот вариант «дня», который ближе нашему бытовому ощущению: утро, день, вечер и снова утро.",
+          "footnotes": [2]
+        },
+        {
+          "type": "paragraph",
+          "html": "Поэтому обе цифры — 243 и 117 — правильные. Они просто отвечают на разные вопросы. На Земле эти два способа счёта почти совпадают, а на Венере различие огромное из-за очень медленного и необычного вращения.",
+          "footnotes": [1, 2]
         }
       ]
     },
     {
       "section_id": "obratnoe-vrashchenie",
-      "heading": "Вращение наоборот",
+      "heading": "И ещё одна странность: Венера вращается «назад»",
       "blocks": [
         {
           "type": "paragraph",
-          "html": "У Венеры вращение <i>ретроградное</i>: против направления, привычного нам по Земле. Будь на её поверхности небо прозрачным, Солнце поднималось бы на западе и опускалось на востоке.",
-          "footnotes": [
-            1
-          ]
+          "html": "Венера вращается <i>ретроградно</i> — в направлении, противоположном привычному нам вращению Земли. Если бы плотные облака вдруг стали прозрачными, Солнце на Венере поднималось бы на западе и садилось на востоке.",
+          "footnotes": [1]
         },
         {
           "type": "paragraph",
-          "html": "Реальному наблюдателю это зрелище недоступно: над Венерой стоит сплошной облачный покров. Так что красивая картинка заката наоборот пока остаётся строгим следствием кинематики, а не фотографией.",
-          "footnotes": [
-            1
-          ]
+          "html": "Увидеть такой закат глазами с поверхности пока нельзя: планету закрывает сплошной облачный слой. Но направление движения следует из измеренного вращения планеты, а не из художественной фантазии.",
+          "footnotes": [1]
         }
       ]
     },
     {
       "section_id": "itog",
-      "heading": "Короткий итог",
+      "heading": "Что запомнить",
       "blocks": [
         {
           "type": "paragraph",
-          "html": "Формулировка «день длиннее года» верна, если под днём понимать сидерические сутки: <b>243</b> против <b>225</b>. По Солнцу выходит короче — <b>117</b>. Парадокс не в астрономии, а в том, что бытовое слово «день» мы используем сразу в двух смыслах.",
-          "footnotes": [
-            1,
-            2
-          ]
+          "html": "У Венеры есть три удобных числа: <b>243 суток</b> — оборот относительно звёзд, <b>225 суток</b> — год вокруг Солнца, <b>117 суток</b> — день по Солнцу. Фраза «день длиннее года» верна только для первого значения слова «день». Парадокс исчезает сразу, как только мы подписываем, что именно измеряем.",
+          "footnotes": [1, 2]
         }
       ]
     }
@@ -103,77 +97,37 @@
   "media_slots": [
     {
       "slot_id": "media-01",
-      "placement": {
-        "after": "lead",
-        "before": "chto-schitaem"
-      },
+      "placement": {"after": "lead", "before": "chto-schitaem"},
       "depicts": "Венера в естественных или почти естественных тонах — шар в плотной облачной атмосфере, без художественных фантазий.",
-      "purpose": "Задать масштаб темы и сразу показать: планета настоящая, а обещанный закат с запада зримо недоступен.",
+      "purpose": "Сразу показать реальную планету и её плотный облачный покров, прежде чем объяснять непривычное вращение.",
       "preferred_source_type": "archival frame of a mission (Venus Express / Mariner 10 imagery подборка на официальной странице NASA)",
       "copyright_provenance": "NASA imagery is normally public domain with a requested credit line; the exact per-image credit must be read on the page and preserved in the caption. No third-party redraws of unclear rights.",
-      "caption": "Венера в облаках. Фото: NASA (точную атрибуцию см. на странице изображения)."
+      "caption": "Венера скрыта плотными облаками. Фото: NASA (точную атрибуцию см. на странице изображения)."
     },
     {
       "slot_id": "media-02",
-      "placement": {
-        "after": "itog"
-      },
-      "depicts": "Редакционная диаграмма: ось Венеры и орбита, три отрезка рядом — «сидерические сутки ≈ 243», «год ≈ 225», «солнечные сутки ≈ 117».",
-      "purpose": "Три разных «дня» на одной картинке усваиваются быстрее, чем три абзаца текста; диаграмма фиксирует, что факт состоит из измерений, а не из парадокса.",
+      "placement": {"after": "itog"},
+      "depicts": "Редакционная диаграмма: три отрезка рядом — «солнечные сутки ≈ 117», «год ≈ 225», «сидерические сутки ≈ 243».",
+      "purpose": "Показать три разных измерения на одной шкале и убрать ощущение словесного парадокса.",
       "preferred_source_type": "original editorial diagram drawn for this revision",
       "copyright_provenance": "Original work of the editorial team; after acceptance, add the asset with authorship and licence committed to the repository notice. Facts (period values, terminology) are not copyrightable.",
-      "caption": "Три меры одного дня: сидерические сутки, солнечные сутки и год Венеры."
+      "caption": "Три разных таймера Венеры: день по Солнцу, год и оборот относительно звёзд."
     }
   ],
   "visual_plan": {
-    "rationale": "Парадокс «день длиннее года» измеряется тремя числами. Один аккуратный кадр — сейт и сравнение трёх длин в одном масштабе — понятнее, чем серия снимков.",
+    "rationale": "Главная трудность темы — не числа, а два значения слова «день». Одна шкала из трёх подписанных интервалов объясняет это быстрее любого декоративного элемента.",
     "panels": [
-      {
-        "order": 1,
-        "type": "diagram",
-        "content": "Time-axis: 117 / 225 / 243 земных суток, подписи словами из текста, нейтральная типографика"
-      }
+      {"order": 1, "type": "diagram", "content": "Time-axis: 117 / 225 / 243 земных суток; подписи: солнечные сутки / год / сидерические сутки"}
     ]
   },
   "footnotes": [
-    {
-      "n": 1,
-      "source_id": "src-nasa-venus-facts",
-      "label": "NASA Science — Venus: Facts",
-      "url": "https://science.nasa.gov/venus/venus-facts/"
-    },
-    {
-      "n": 2,
-      "source_id": "src-nasa-venus-solar-day",
-      "label": "NASA Science — Venus solar day",
-      "url": "https://science.nasa.gov/earth/climate-change/nasa-climate-modeling-suggests-venus-may-have-been-habitable/"
-    }
+    {"n": 1, "source_id": "src-nasa-venus-facts", "label": "NASA Science — Venus: Facts", "url": "https://science.nasa.gov/venus/venus-facts/"},
+    {"n": 2, "source_id": "src-nasa-venus-solar-day", "label": "NASA Science — Venus solar day", "url": "https://science.nasa.gov/earth/climate-change/nasa-climate-modeling-suggests-venus-may-have-been-habitable/"}
   ],
   "sources": [
-    {
-      "source_id": "src-nasa-venus-facts",
-      "label": "NASA Science — Venus: Facts",
-      "url": "https://science.nasa.gov/venus/venus-facts/",
-      "verified_on": "2026-08-08",
-      "evidence": "NASA gives rotation about 243 Earth days, orbital period about 225 days, and retrograde rotation."
-    },
-    {
-      "source_id": "src-nasa-venus-solar-day",
-      "label": "NASA Science — Venus solar day",
-      "url": "https://science.nasa.gov/earth/climate-change/nasa-climate-modeling-suggests-venus-may-have-been-habitable/",
-      "verified_on": "2026-08-08",
-      "evidence": "NASA explicitly distinguishes a 117-Earth-day solar day from the 243-Earth-day sidereal day on Venus."
-    }
+    {"source_id": "src-nasa-venus-facts", "label": "NASA Science — Venus: Facts", "url": "https://science.nasa.gov/venus/venus-facts/", "verified_on": "2026-08-08", "evidence": "NASA gives rotation about 243 Earth days, orbital period about 225 days, and retrograde rotation."},
+    {"source_id": "src-nasa-venus-solar-day", "label": "NASA Science — Venus solar day", "url": "https://science.nasa.gov/earth/climate-change/nasa-climate-modeling-suggests-venus-may-have-been-habitable/", "verified_on": "2026-08-08", "evidence": "NASA explicitly distinguishes a 117-Earth-day solar day from the 243-Earth-day sidereal day on Venus."}
   ],
-  "footer": {
-    "tagline": "Сводка — сводим факты, а не мнения 😎",
-    "hashtags": [
-      "#Сводка",
-      "#Космос",
-      "#Венера",
-      "#NASA",
-      "#Факты"
-    ]
-  },
-  "editorial_notes": "Micro-post sequence 1 rewritten as a compact explainer: the two kinds of 'day' are separated earlier, the all-caps headline and emoji string are out, the sensational framing is replaced by a measurement framing. Claims limited to the two NASA sources carried over unchanged from the frozen release."
+  "footer": {"tagline": "Сводка — сводим факты, а не мнения 😎", "hashtags": ["#Сводка", "#Космос", "#Венера", "#NASA", "#Факты"]},
+  "editorial_notes": "Clarity pass 2026-08-11: rebuilt around two intuitive timers before introducing terminology; each number now answers an explicit question; no formula or feature-demo block is used. Claims remain limited to the two verified NASA sources."
 }
