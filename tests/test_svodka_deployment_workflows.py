@@ -15,6 +15,7 @@ LEDGER_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-ledger-init.yml"
 CANARY_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-canary.yml"
 CUSTOM_EMOJI_CANARY_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-custom-emoji-capability-canary.yml"
 NATIVE_RICH_CANARY_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-native-rich-message-canary.yml"
+RICH_PRODUCTION_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-rich-production.yml"
 SKIP_EXPIRED_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-skip-expired.yml"
 SCHEDULED_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-scheduled-publisher.yml"
 RECONCILE_SKIPPED_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-reconcile-skipped-send.yml"
@@ -35,6 +36,7 @@ RELEASE_STATE_WRITER_WORKFLOWS = (
 STATE_WRITER_WORKFLOWS = RELEASE_STATE_WRITER_WORKFLOWS + (
     CUSTOM_EMOJI_CANARY_WORKFLOW,
     NATIVE_RICH_CANARY_WORKFLOW,
+    RICH_PRODUCTION_WORKFLOW,
 )
 
 
