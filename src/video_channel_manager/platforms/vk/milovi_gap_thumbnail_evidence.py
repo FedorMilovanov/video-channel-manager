@@ -128,12 +128,7 @@ def _sha256_path(path: Path) -> str:
 
 
 def _canonical_json_sha256(value: object) -> str:
-    raw = json.dumps(
-        value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode()
+    raw = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
     return _sha256_bytes(raw)
 
 
@@ -148,8 +143,7 @@ def _allowed_image_url(url: str) -> bool:
     parsed = urlsplit(url)
     host = (parsed.hostname or "").lower()
     return parsed.scheme == "https" and any(
-        host == suffix or host.endswith(f".{suffix}")
-        for suffix in _ALLOWED_IMAGE_HOST_SUFFIXES
+        host == suffix or host.endswith(f".{suffix}") for suffix in _ALLOWED_IMAGE_HOST_SUFFIXES
     )
 
 
@@ -174,14 +168,8 @@ def _extract_wall_clips(posts: object) -> dict[str, dict[str, Any]]:
                 continue
             owner_id = item.get("owner_id")
             video_id = item.get("id")
-            if (
-                owner_id != MILOVI_OWNER_ID
-                or not isinstance(video_id, int)
-                or video_id <= 0
-            ):
-                raise ValueError(
-                    "wall evidence contains malformed or foreign native Clip"
-                )
+            if owner_id != MILOVI_OWNER_ID or not isinstance(video_id, int) or video_id <= 0:
+                raise ValueError("wall evidence contains malformed or foreign native Clip")
             clips.setdefault(f"{owner_id}_{video_id}", item)
     return clips
 
@@ -189,9 +177,7 @@ def _extract_wall_clips(posts: object) -> dict[str, dict[str, Any]]:
 def _exact_member(names: Sequence[str], suffix: str) -> str:
     matches = [name for name in names if name.endswith(suffix)]
     if len(matches) != 1:
-        raise ValueError(
-            f"expected exactly one ZIP member ending with {suffix!r}; got {len(matches)}"
-        )
+        raise ValueError(f"expected exactly one ZIP member ending with {suffix!r}; got {len(matches)}")
     return matches[0]
 
 
@@ -207,9 +193,7 @@ def _read_input(path: Path) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
             "02-wall-evidence-handoff.zip",
         }
         if set(outer.namelist()) != required:
-            raise ValueError(
-                "reconciliation ZIP members do not match the exact v1 contract"
-            )
+            raise ValueError("reconciliation ZIP members do not match the exact v1 contract")
         manifest_bytes = outer.read("00-manifest.json")
         ui_bytes = outer.read("01-vk-clips-ui-inventory.json")
         wall_bytes = outer.read("02-wall-evidence-handoff.zip")
@@ -254,16 +238,10 @@ def _read_input(path: Path) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
         raise ValueError("known Shrek control Clip is absent")
 
     ui_clips = ui.get("clips") or []
-    ui_ids = [
-        str(row.get("remote_id") or "")
-        for row in ui_clips
-        if isinstance(row, dict)
-    ]
+    ui_ids = [str(row.get("remote_id") or "") for row in ui_clips if isinstance(row, dict)]
     if len(ui_ids) != EXPECTED_CLIP_COUNT or len(ui_ids) != len(set(ui_ids)):
         raise ValueError("UI inventory does not contain 106 unique Clip IDs")
-    if any(
-        not remote_id.startswith(f"{MILOVI_OWNER_ID}_") for remote_id in ui_ids
-    ):
+    if any(not remote_id.startswith(f"{MILOVI_OWNER_ID}_") for remote_id in ui_ids):
         raise ValueError("UI inventory contains a foreign normalized Clip")
 
     with zipfile.ZipFile(io.BytesIO(wall_bytes)) as nested:
@@ -275,9 +253,7 @@ def _read_input(path: Path) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
 
     wall_clips = _extract_wall_clips(json.loads(posts_bytes.decode("utf-8-sig")))
     if len(wall_clips) != EXPECTED_CLIP_COUNT or set(ui_ids) != set(wall_clips):
-        raise ValueError(
-            "exact public UI and wall native Clip sets are not identical 106-item sets"
-        )
+        raise ValueError("exact public UI and wall native Clip sets are not identical 106-item sets")
 
     return wall_clips, {
         "outer_input_sha256": outer_sha,
@@ -331,9 +307,7 @@ def _dhash(data: bytes, safe_source: str) -> ImageEvidence:
     value = 0
     for y in range(8):
         for x in range(8):
-            value = (value << 1) | (
-                1 if pixels[y * 9 + x] > pixels[y * 9 + x + 1] else 0
-            )
+            value = (value << 1) | (1 if pixels[y * 9 + x] > pixels[y * 9 + x + 1] else 0)
     return ImageEvidence(
         _sha256_bytes(data),
         f"{value:016x}",
@@ -351,11 +325,7 @@ def _tokens(value: str) -> set[str]:
     normalized = value.lower().replace("ё", "е")
     normalized = re.sub(r"#[0-9a-zа-я_]+", " ", normalized)
     normalized = re.sub(r"[^0-9a-zа-я]+", " ", normalized)
-    return {
-        token
-        for token in normalized.split()
-        if len(token) > 1 and token not in _GENERIC_TOKENS
-    }
+    return {token for token in normalized.split() if len(token) > 1 and token not in _GENERIC_TOKENS}
 
 
 def _metadata_score(
@@ -367,11 +337,7 @@ def _metadata_score(
     overlap = len(yt_tokens & vk_tokens) / max(1, len(yt_tokens | vk_tokens))
 
     duration = clip.get("duration")
-    duration_delta = (
-        abs(int(candidate["duration_s"]) - int(duration))
-        if isinstance(duration, int)
-        else 9999
-    )
+    duration_delta = abs(int(candidate["duration_s"]) - int(duration)) if isinstance(duration, int) else 9999
     date_delta = 9999
     if isinstance(clip.get("date"), int):
         vk_date = datetime.fromtimestamp(int(clip["date"]), UTC).date()
@@ -439,13 +405,8 @@ def _rank(
     for remote_id, clip in wall_clips.items():
         distance = None
         if yt_images and remote_id in vk_images:
-            distance = min(
-                _hamming(image.dhash_hex, vk_images[remote_id].dhash_hex)
-                for image in yt_images
-            )
-        visual_score = (
-            0.0 if distance is None else max(0.0, 1.0 - distance / 64.0)
-        )
+            distance = min(_hamming(image.dhash_hex, vk_images[remote_id].dhash_hex) for image in yt_images)
+        visual_score = 0.0 if distance is None else max(0.0, 1.0 - distance / 64.0)
         metadata, duration_delta, date_delta = _metadata_score(candidate, clip)
         ranked.append(
             {
@@ -474,16 +435,9 @@ def _support_label(top: dict[str, Any] | None) -> str:
     distance = top.get("visual_dhash_distance")
     duration_delta = int(top.get("duration_delta_s") or 9999)
     metadata = float(top.get("metadata_score") or 0.0)
-    if (
-        isinstance(distance, int)
-        and distance <= 7
-        and duration_delta <= 3
-        and metadata >= 0.22
-    ):
+    if isinstance(distance, int) and distance <= 7 and duration_delta <= 3 and metadata >= 0.22:
         return "STRONG_SUPPORTING_CANDIDATE"
-    if isinstance(distance, int) and distance <= 11 and (
-        duration_delta <= 5 or metadata >= 0.28
-    ):
+    if isinstance(distance, int) and distance <= 11 and (duration_delta <= 5 or metadata >= 0.28):
         return "POSSIBLE_SUPPORTING_CANDIDATE"
     if metadata >= 0.62 and duration_delta <= 3:
         return "METADATA_SUPPORTING_CANDIDATE"
@@ -571,9 +525,7 @@ def build_gap_thumbnail_evidence(
             {
                 **candidate,
                 "youtube_url": f"https://www.youtube.com/watch?v={video_id}",
-                "transfer_gate": _transfer_gate(
-                    str(candidate.get("ip_class") or "")
-                ),
+                "transfer_gate": _transfer_gate(str(candidate.get("ip_class") or "")),
                 "support_label": _support_label(ranked[0] if ranked else None),
                 "top_vk_candidates": ranked,
                 "youtube_thumbnail_downloads": yt_downloads.get(video_id, []),
@@ -583,14 +535,8 @@ def build_gap_thumbnail_evidence(
             }
         )
 
-    vk_downloaded = sum(
-        row.get("status") == "downloaded" for row in vk_downloads.values()
-    )
-    yt_downloaded = sum(
-        row.get("status") == "downloaded"
-        for rows in yt_downloads.values()
-        for row in rows
-    )
+    vk_downloaded = sum(row.get("status") == "downloaded" for row in vk_downloads.values())
+    yt_downloaded = sum(row.get("status") == "downloaded" for rows in yt_downloads.values() for row in rows)
     expected_yt = len(_GAP_CANDIDATES) * len(_YT_THUMB_KINDS)
     run_status = (
         "completed"
@@ -668,9 +614,7 @@ def build_gap_thumbnail_evidence(
         "provider_writes": 0,
         "result_file": result_path.name,
         "result_sha256": _sha256_path(result_path),
-        "media_file_count": sum(
-            path.is_file() for path in media_root.rglob("*")
-        ),
+        "media_file_count": sum(path.is_file() for path in media_root.rglob("*")),
         "input_evidence": input_hashes,
         "candidate_manifest_sha256": _canonical_json_sha256(_GAP_CANDIDATES),
         "surface_complete_claim": False,
@@ -695,10 +639,7 @@ def build_gap_thumbnail_evidence(
 
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(
-        description=(
-            "Build read-only visual evidence for unresolved Milovi "
-            "cake/dessert candidates."
-        )
+        description=("Build read-only visual evidence for unresolved Milovi cake/dessert candidates.")
     )
     root.add_argument("--input", type=Path, required=True)
     root.add_argument("--output-dir", type=Path, required=True)
