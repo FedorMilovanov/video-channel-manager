@@ -318,9 +318,11 @@ def _run_playwright_probe(
     try:
         sync_api = importlib.import_module("playwright.sync_api")
     except ModuleNotFoundError as exc:
-        raise RuntimeError('Playwright is not installed; install current repo with: pip install -e ".[browser-read]"') from exc
+        raise RuntimeError(
+            'Playwright is not installed; install current repo with: pip install -e ".[browser-read]"'
+        ) from exc
 
-    sync_playwright: Any = getattr(sync_api, "sync_playwright")
+    sync_playwright: Any = vars(sync_api)["sync_playwright"]
     executable = _resolve_browser_executable(browser_executable)
     target_records: dict[str, dict[str, Any]] = {}
     foreign_remote_ids: set[str] = set()
@@ -356,7 +358,9 @@ def _run_playwright_probe(
                 try:
                     parsed = urlsplit(str(response.url))
                     host = parsed.hostname or ""
-                    if not any(host == suffix or host.endswith(f".{suffix}") for suffix in _ALLOWED_RESPONSE_HOST_SUFFIXES):
+                    if not any(
+                        host == suffix or host.endswith(f".{suffix}") for suffix in _ALLOWED_RESPONSE_HOST_SUFFIXES
+                    ):
                         return
                     content_type = str(response.headers.get("content-type") or "").lower()
                     if "json" not in content_type:
@@ -563,7 +567,9 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 
 
 def parser() -> argparse.ArgumentParser:
-    root = argparse.ArgumentParser(description="Read Milovi Cake VK Clips from the public browser UI without provider mutation.")
+    root = argparse.ArgumentParser(
+        description="Read Milovi Cake VK Clips from the public browser UI without provider mutation."
+    )
     root.add_argument("--project", required=True)
     root.add_argument("--community", required=True, type=int)
     root.add_argument("--owner-id", required=True, type=int)
