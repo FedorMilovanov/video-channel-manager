@@ -16,144 +16,52 @@
     "release_id": "svodka-pilot-2026-08",
     "source_format": "quiz"
   },
-  "title": "Что из этого ботанически ягода?",
-  "lead": "Бытовая и ботаническая «ягода» — разные слова с одинаковым написанием. Проверка показывает, где они расходятся.",
-  "icons_used": [
-    "🍌",
-    "🌿",
-    "😎"
-  ],
+  "title": "Почему банан для ботаника — ягода",
+  "lead": "В магазине слово «ягода» означает одно, в ботанике — другое. Поэтому вопрос «что из этого ягода?» нельзя решить по размеру, сладости или тому, кладём ли мы плод в компот. Ботаник смотрит прежде всего на происхождение и устройство плода.",
+  "icons_used": ["🍌", "🌿", "😎"],
   "sections": [
     {
       "section_id": "vopros",
       "heading": "Сначала вопрос",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Что из этого с точки зрения ботаники является ягодой?"
-        },
-        {
-          "type": "list",
-          "ordered": false,
-          "items": [
-            "банан",
-            "клубника",
-            "малина",
-            "вишня"
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Разбор ниже."
-        }
+        {"type": "paragraph", "html": "Что из этого с точки зрения ботаники относится к ягодам?"},
+        {"type": "list", "ordered": false, "items": ["банан", "клубника", "малина", "вишня"]},
+        {"type": "paragraph", "html": "Подсказка: внешний вид почти не помогает. Нужно подумать о том, <b>из какой части цветка образовался плод</b>."}
       ]
     },
     {
       "section_id": "otvet",
-      "heading": "Ответ",
+      "heading": "Ответ: банан",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Правильный ответ: <b>банан</b>. Kew Gardens прямо указывает, что плод банана ботанически относится к <b>ягодам</b>.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Это не опечатка и не шутка. Слово «ягода» в быту описывает внешний вид — маленький сочный плод. У ботаников слово определяет <i>как устроен плод изнутри</i>.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "Kew Gardens прямо относит плод банана к <b>ботаническим ягодам</b>.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Это не шутка с терминами. Бытовое слово «ягода» обычно описывает маленький сочный плод, который удобно есть целиком. Ботаническое слово описывает путь развития плода из цветка. Поэтому два значения спокойно расходятся.", "footnotes": [1]}
       ]
     },
     {
       "section_id": "kriterii",
-      "heading": "Что решает ботаник",
+      "heading": "Что ботаник видит там, где мы видим просто фрукт",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "В ботанике смотрят на то, как плод развивается из завязи цветка и как устроены его стенки. Типичный ягодный критерий — плод из одного цветка с одной завязью. Этому условию и отвечает банан.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "При бытовом подходе мы смотрим на размер, сладость и привычку подавать к десерту. По таким меркам «ягода» — и клубника, и малина; по ботаническим — нет. Критерий ягоды, привязанный к устройству плода, банан проходит, а остальные варианты — нет: у каждого из них своё строение.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "В упрощённом виде критерий такой: ягодный плод развивается из <b>одного цветка с одной завязью</b>. Завязь — это часть цветка, из которой после опыления развивается плод.", "footnotes": [1]},
+        {"type": "paragraph", "html": "У банана этот путь подходит под ботаническое определение ягоды. Поэтому его размер, толстая кожура и отсутствие привычного «ягодного» вида значения не имеют.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Остальные варианты в вопросе устроены иначе, поэтому в ботанической классификации не попадают в ту же категорию. Для ответа здесь важна не кухня, а происхождение плода.", "footnotes": [1]}
       ]
     },
     {
       "section_id": "granitsy",
-      "heading": "Где граница шутки",
+      "heading": "Почему это не парадокс, а просто два словаря",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Не нужно делать из этого «парадокс науки». Никакого противоречия нет: ботанический термин и кулинарное слово просто называют разные вещи. Полезный навык — понимать, в какой системе отсчёта говоришь.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "Когда повар говорит «ягоды», он не обязан пользоваться ботаническим определением, а ботаник не пытается переименовать отдел фруктов в магазине. Они решают разные задачи и поэтому классифицируют плоды по разным признакам."},
+        {"type": "paragraph", "html": "Полезный вывод шире банана: прежде чем спорить о научном термине, стоит спросить, <b>по какому признаку наука делит объекты на группы</b>. Очень часто кажущийся парадокс исчезает после определения слова."}
       ]
     }
   ],
   "quotes": [],
   "media_slots": [
-    {
-      "slot_id": "media-01",
-      "placement": {
-        "after": "lead",
-        "before": "vopros"
-      },
-      "depicts": "Банан в разрезе в полный рост — целый плод, предпочтительно на светлом фоне; видны внутренние семенные следы.",
-      "purpose": "Показать героя задачи просто и без кулинарного антуража; разрез тонко намекает на «внутреннее» определение ягоды.",
-      "preferred_source_type": "editorial photograph or clearly licensed stock photo",
-      "copyright_provenance": "Prefer editorial photography with an owned licence, or a checked CC0 image. Kew's own images are rights-managed and are not suitable without a licence.",
-      "caption": "Банан. С точки зрения ботаники это ягода."
-    },
-    {
-      "slot_id": "media-02",
-      "placement": {
-        "after": "kriterii"
-      },
-      "depicts": "Редакционная схема одного цветка и одной завязи: путь «один цветок → одна завязь → ягодный плод»; простая контурная графика.",
-      "purpose": "Критерий «один цветок, одна завязь» удерживается лучше, если его увидеть на линии, а не только прочитать.",
-      "preferred_source_type": "original editorial diagram",
-      "copyright_provenance": "Original work; botanical criteria are facts and not copyrightable.",
-      "caption": "Ботаническая ягода: плод из одного цветка и одной завязи."
-    }
+    {"slot_id": "media-01", "placement": {"after": "lead", "before": "vopros"}, "depicts": "Банан в разрезе — целый плод и поперечный срез на светлом фоне.", "purpose": "Подтолкнуть читателя смотреть не на привычную категорию 'фрукт', а на внутреннее устройство и происхождение плода.", "preferred_source_type": "editorial photograph or clearly licensed stock photo", "copyright_provenance": "Prefer editorial photography with an owned licence, or a checked CC0 image. Kew's own images are rights-managed and are not suitable without a licence.", "caption": "Для ботанической классификации важнее происхождение плода, чем его размер и вкус."},
+    {"slot_id": "media-02", "placement": {"after": "kriterii"}, "depicts": "Редакционная схема: цветок → одна завязь → развивающийся плод; подпись «ботаническая ягода».", "purpose": "Объяснить слово 'завязь' и показать критерий одним простым переходом от цветка к плоду.", "preferred_source_type": "original editorial diagram", "copyright_provenance": "Original work; botanical criteria are facts and not copyrightable.", "caption": "Упрощённая логика: один цветок, одна завязь — из неё развивается ягодный плод."}
   ],
-  "footnotes": [
-    {
-      "n": 1,
-      "source_id": "src-kew-cavendish-banana",
-      "label": "Kew Gardens — Cavendish banana",
-      "url": "https://www.kew.org/plants/cavendish-banana"
-    }
-  ],
-  "sources": [
-    {
-      "source_id": "src-kew-cavendish-banana",
-      "label": "Kew Gardens — Cavendish banana",
-      "url": "https://www.kew.org/plants/cavendish-banana",
-      "verified_on": "2026-08-08",
-      "evidence": "Kew explicitly states that Cavendish banana fruits are botanically classified as berries and explains the single-flower, single-ovary berry criterion."
-    }
-  ],
-  "footer": {
-    "tagline": "Сводка — сводим факты, а не мнения 😎",
-    "hashtags": [
-      "#Сводка",
-      "#Тест",
-      "#Ботаника",
-      "#Банан",
-      "#Факты"
-    ]
-  },
-  "editorial_notes": "The quiz is kept as a staged question-and-answer; the long-form value is the boundary it draws between a common noun and a botanical term. No extra botanical claims beyond the Kew source."
+  "footnotes": [{"n": 1, "source_id": "src-kew-cavendish-banana", "label": "Kew Gardens — Cavendish banana", "url": "https://www.kew.org/plants/cavendish-banana"}],
+  "sources": [{"source_id": "src-kew-cavendish-banana", "label": "Kew Gardens — Cavendish banana", "url": "https://www.kew.org/plants/cavendish-banana", "verified_on": "2026-08-08", "evidence": "Kew explicitly states that Cavendish banana fruits are botanically classified as berries and explains the single-flower, single-ovary berry criterion."}],
+  "footer": {"tagline": "Сводка — сводим факты, а не мнения 😎", "hashtags": ["#Сводка", "#Тест", "#Ботаника", "#Банан", "#Факты"]},
+  "editorial_notes": "Clarity pass 2026-08-11: the quiz now defines ovary in plain language and explains why botanical classification uses development rather than culinary appearance. No additional morphology beyond the Kew source is asserted."
 }
