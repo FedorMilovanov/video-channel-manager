@@ -109,6 +109,9 @@ def test_workflow_has_real_evening_canary_redundant_ticks_and_no_legacy_fallback
         'cron: "17 17 12-17 8 *"',
     ):
         assert cron in workflow
+    assert "github.event_name == 'schedule' ||" in workflow
+    assert "github.event_name == 'workflow_dispatch'" in workflow
+    assert "SVODKA-RICH-PRODUCTION:@deep_info_life" in workflow
     assert "svodka_rich_production send" in workflow
     assert "telegram_multichannel_cli send-once" not in workflow
     assert "/sendMessage" not in workflow
