@@ -1,12 +1,12 @@
-name: Svodka scheduled publisher
+name: Svodka legacy publisher (manual recovery only)
 
 on:
-  schedule:
-    - cron: "30 7 10-16 8 *"
-    - cron: "17 8 10-16 8 *"
-    - cron: "30 16 10-16 8 *"
-    - cron: "17 17 10-16 8 *"
   workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type SVODKA-LEGACY-RECOVERY:@deep_info_life
+        required: true
+        type: string
 
 permissions:
   actions: read
@@ -19,7 +19,10 @@ concurrency:
 
 jobs:
   publish-next:
-    if: github.event_name == 'schedule' && github.ref == 'refs/heads/main'
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.confirm == 'SVODKA-LEGACY-RECOVERY:@deep_info_life'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -117,7 +120,7 @@ jobs:
 
       - name: Report inactive scheduler
         if: steps.activation.outputs.active != 'true'
-        run: echo "Svodka scheduler is inactive — ${{ steps.activation.outputs.reason }}. No Telegram read or write was attempted."
+        run: echo "Svodka legacy recovery is inactive — ${{ steps.activation.outputs.reason }}. No Telegram read or write was attempted."
 
       - name: Require current-main exact-SHA Svodka quality proofs
         if: steps.activation.outputs.active == 'true'
@@ -160,7 +163,7 @@ jobs:
 
       - name: Report missing ledger
         if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready != 'true'
-        run: echo "Svodka scheduler cannot dispatch — ${{ steps.ledger.outputs.reason }}. No Telegram read or write was attempted."
+        run: echo "Svodka legacy recovery cannot dispatch — ${{ steps.ledger.outputs.reason }}. No Telegram read or write was attempted."
 
       - name: Require verified manual canary before scheduler activity
         if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true'
@@ -191,7 +194,7 @@ jobs:
 
       - name: Report scheduler waiting for verified manual canary
         if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.canary.outputs.ready != 'true'
-        run: echo "Svodka scheduler is waiting for a verified manual canary. No state mutation or Telegram access was attempted."
+        run: echo "Svodka legacy recovery is waiting for its historical verified manual canary. No state mutation or Telegram access was attempted."
 
       - name: Skip expired windows before any provider operation
         if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.canary.outputs.ready == 'true'
@@ -219,7 +222,7 @@ jobs:
           git -C "$STATE_DIR" config user.name "svodka-publisher[bot]"
           git -C "$STATE_DIR" config user.email "svodka-publisher@users.noreply.github.com"
           git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH"
-          git -C "$STATE_DIR" commit -m "Skip expired Svodka windows before scheduled dispatch [skip ci]"
+          git -C "$STATE_DIR" commit -m "Skip expired Svodka windows before legacy recovery [skip ci]"
           local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
           remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
@@ -242,7 +245,7 @@ jobs:
           set -e
           if [[ "$status" == "3" ]]; then
             echo "fresh=false" >> "$GITHUB_OUTPUT"
-            echo "Strict-next Svodka item is not inside the bounded publication freshness window."
+            echo "Strict-next Svodka legacy item is not inside the bounded publication freshness window."
             exit 0
           fi
           [[ "$status" == "0" ]] || exit "$status"
@@ -250,7 +253,7 @@ jobs:
 
       - name: Report non-fresh scheduled slot
         if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.canary.outputs.ready == 'true' && steps.freshness.outputs.fresh != 'true'
-        run: echo "Svodka scheduler skipped provider access because the strict-next slot is not fresh enough."
+        run: echo "Svodka legacy recovery skipped provider access because the strict-next slot is not fresh enough."
 
       - name: Fresh read-only target preflight
         if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.canary.outputs.ready == 'true' && steps.freshness.outputs.fresh == 'true'
@@ -301,7 +304,7 @@ jobs:
           set -e
           if [[ "$status" == "3" ]]; then
             echo "prepared=false" >> "$GITHUB_OUTPUT"
-            echo "No scheduled provider dispatch is eligible in this run."
+            echo "No legacy provider dispatch is eligible in this run."
             exit 0
           fi
           [[ "$status" == "0" ]] || exit "$status"
@@ -322,15 +325,15 @@ jobs:
           git -C "$STATE_DIR" config user.email "svodka-publisher@users.noreply.github.com"
           git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel_dir"
           git -C "$STATE_DIR" diff --cached --quiet && {
-            echo "prepared scheduled publication produced no durable state delta" >&2
+            echo "prepared legacy publication produced no durable state delta" >&2
             exit 3
           }
-          git -C "$STATE_DIR" commit -m "Record Svodka scheduled intent for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          git -C "$STATE_DIR" commit -m "Record Svodka legacy recovery intent for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
           local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
           remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
           [[ "$local_sha" == "$remote_sha" ]] || {
-            echo "remote state branch does not contain exact scheduled intent" >&2
+            echo "remote state branch does not contain exact legacy recovery intent" >&2
             exit 3
           }
           git -C "$STATE_DIR" fetch --no-tags origin "$STATE_BRANCH"
@@ -390,7 +393,7 @@ jobs:
         run: |
           set -euo pipefail
           [[ -f "$OUTCOME_PATH" ]] || {
-            echo "No provider outcome exists. Durable scheduled intent remains blocking; blind retry is forbidden." >&2
+            echo "No provider outcome exists. Durable legacy recovery intent remains blocking; blind retry is forbidden." >&2
             exit 4
           }
           python -m video_channel_manager.telegram_multichannel_cli apply-outcome \
@@ -405,20 +408,20 @@ jobs:
 
           git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel_dir/outcome.json"
           git -C "$STATE_DIR" diff --cached --quiet && {
-            echo "scheduled provider outcome produced no durable state delta" >&2
+            echo "legacy provider outcome produced no durable state delta" >&2
             exit 4
           }
-          git -C "$STATE_DIR" commit -m "Record Svodka scheduled result for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          git -C "$STATE_DIR" commit -m "Record Svodka legacy recovery result for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
           local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
           remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
           [[ "$local_sha" == "$remote_sha" ]] || {
-            echo "remote state branch does not contain exact scheduled outcome" >&2
+            echo "remote state branch does not contain exact legacy recovery outcome" >&2
             exit 4
           }
 
           if [[ "${{ steps.send.outputs.exit_code }}" != "0" ]]; then
-            echo "Scheduled publication was not fully verified. Review durable outcome before any further attempt." >&2
+            echo "Legacy recovery publication was not fully verified. Review durable outcome before any further attempt." >&2
             exit 4
           fi
           python -m video_channel_manager.telegram_multichannel_cli validate-ledger \
