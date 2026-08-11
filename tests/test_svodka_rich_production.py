@@ -47,18 +47,27 @@ def test_release_binds_all_14_exact_sources_and_renders_one_production_path() ->
         assert document.publication_id == item["publication_id"]
         assert document.legacy_fallback is None
         assert document.input_rich_message["skip_entity_detection"] is True
-        assert _custom_emoji_ids(document.input_rich_message)
+        assert not _custom_emoji_ids(document.input_rich_message)
+        hashtag_block = next(
+            block
+            for block in document.input_rich_message["blocks"]
+            if block.get("type") == "paragraph"
+            and isinstance(block.get("text"), list)
+            and any(isinstance(node, dict) and node.get("type") == "hashtag" for node in block["text"])
+        )
+        assert hashtag_block["text"][0] == "\n"
         assert render.media_placeholders == ()
         assert len(document.provider_assigned_media_paths) == len(article.media)
         assert render.provider_assigned_media == tuple(media.media_id for media in article.media)
 
 
-def test_release_uses_verified_primary_premium_numbers_in_section_headings() -> None:
+def test_channel_production_uses_reviewed_unicode_fallback_instead_of_invalid_custom_emoji() -> None:
     release = load_release(RELEASE_PATH, Path("."))
     item = cast(list[dict[str, Any]], release["items"])[0]
     document, _render, _article = build_document(Path("."), release, item)
-    custom_ids = _custom_emoji_ids(document.input_rich_message)
-    assert "5426972640587853090" in custom_ids  # primary premium digit 1
+    assert not _custom_emoji_ids(document.input_rich_message)
+    headings = [block for block in document.input_rich_message["blocks"] if block.get("type") == "heading"]
+    assert headings[1]["text"][0] == "1️⃣"
 
 
 def test_first_due_item_is_canary_then_next_due_item_is_scheduled(tmp_path: Path) -> None:

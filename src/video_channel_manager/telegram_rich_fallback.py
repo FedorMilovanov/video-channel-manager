@@ -110,6 +110,8 @@ def _inline_html(value: RichTextContent, *, downgrades: list[str]) -> str:
             return (
                 f'<a href="{html.escape(value.url, quote=True)}">{_inline_html(value.text, downgrades=downgrades)}</a>'
             )
+        case "hashtag":
+            return _inline_html(value.text, downgrades=downgrades)
         case "custom_emoji":
             downgrades.append(f"custom_emoji:{value.custom_emoji_id}:unicode_fallback")
             return html.escape(value.alternative_text, quote=False)

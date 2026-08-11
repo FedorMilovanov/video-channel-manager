@@ -172,6 +172,13 @@ class RichTextUrl(_TextEntity):
     url: str = Field(min_length=1, max_length=2048, pattern=LINK_PATTERN)
 
 
+class RichTextHashtag(_TextEntity):
+    """Explicit hashtag; corresponds to ``RichTextHashtag`` in Bot API 10.2."""
+
+    type: Literal["hashtag"] = "hashtag"
+    hashtag: str = Field(min_length=1, max_length=128)
+
+
 class RichTextAnchor(BaseModel):
     """In-document anchor definition; corresponds to ``RichTextAnchor``."""
 
@@ -237,6 +244,7 @@ RichTextEntity: TypeAlias = Annotated[
     | RichTextSubscript
     | RichTextSuperscript
     | RichTextUrl
+    | RichTextHashtag
     | RichTextAnchor
     | RichTextAnchorLink
     | RichTextReference
