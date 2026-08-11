@@ -3,12 +3,20 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+import pytest
+
 from video_channel_manager.svodka_queue import load_svodka_draft
 from video_channel_manager.svodka_release import authorize_svodka_release, build_svodka_release_candidate
 from video_channel_manager.telegram_channel_profile import load_channel_profile
-from video_channel_manager.telegram_multichannel_cli import _recover_expired_before_exact_manual_prepare
+from video_channel_manager.telegram_multichannel_cli import (
+    _recover_expired_before_exact_manual_prepare,
+    parser as generic_parser,
+)
 from video_channel_manager.telegram_multichannel_state import initialize_ledger
-from video_channel_manager.telegram_publication_freshness import next_publication_freshness
+from video_channel_manager.telegram_publication_freshness import (
+    next_publication_freshness,
+    parser as freshness_parser,
+)
 from video_channel_manager.telegram_target_binding import load_target_binding
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,7 +24,9 @@ PROFILE_PATH = ROOT / "content/telegram/channels/svodka.json"
 BINDING_PATH = ROOT / "content/telegram/channels/svodka-target-binding.json"
 QUEUE_PATH = ROOT / "content/telegram/svodka/draft-14-posts-2026-08.json"
 CANARY_WORKFLOW = ROOT / ".github/workflows/svodka-canary.yml"
+READINESS_PATH = ROOT / "docs/operations/svodka-readiness.md"
 MAX_LAG_MINUTES = 120
+APPROVED_RELEASE_DIGEST = "sha256:959a42e914acedc6969550ba842a12d1a2b174c940497d8a98f4ab8e2e63cdce"
 
 
 def _release():
@@ -61,6 +71,78 @@ def test_exact_canary_preflight_can_see_through_only_stale_predecessors_without_
     assert all(entry.provider_effect == "impossible" for entry in ledger.entries.values())
 
 
+def test_generic_exact_preflight_keeps_strict_next_semantics_without_explicit_recovery() -> None:
+    release = _release()
+    ledger = initialize_ledger(release)
+    requested = release.items[2]
+    now = requested.scheduled_at.astimezone(UTC)
+
+    decision = next_publication_freshness(
+        release,
+        ledger,
+        now=now,
+        expected_publication_id=requested.publication_id,
+        max_lag_minutes=MAX_LAG_MINUTES,
+    )
+
+    assert decision.eligible is False
+    assert decision.reason == "requested_publication_is_not_strict_next"
+    assert decision.publication_id == release.items[0].publication_id
+    assert all(entry.state == "pending" for entry in ledger.entries.values())
+
+
+def test_freshness_cli_requires_explicit_recovery_switch() -> None:
+    base = [
+        "next",
+        "--release",
+        "release.json",
+        "--ledger",
+        "ledger.json",
+        "--publication-id",
+        "svodka-wombat-cubic-poop",
+    ]
+
+    normal = freshness_parser().parse_args(base)
+    recovery = freshness_parser().parse_args([*base, "--recover-stale-predecessors"])
+
+    assert normal.recover_stale_predecessors is False
+    assert recovery.recover_stale_predecessors is True
+
+
+def test_prepare_cli_requires_explicit_recovery_switch() -> None:
+    base = [
+        "prepare",
+        "--profile",
+        "profile.json",
+        "--release",
+        "release.json",
+        "--ledger",
+        "ledger.json",
+        "--target-proof",
+        "target.json",
+        "--mode",
+        "manual",
+        "--publication-id",
+        "svodka-wombat-cubic-poop",
+        "--run-id",
+        "1",
+        "--run-attempt",
+        "1",
+        "--github-sha",
+        "a" * 40,
+        "--github-workflow-sha",
+        "b" * 40,
+        "--envelope-output",
+        "envelope.json",
+    ]
+
+    normal = generic_parser().parse_args(base)
+    recovery = generic_parser().parse_args([*base, "--recover-stale-predecessors"])
+
+    assert normal.recover_stale_predecessors is False
+    assert recovery.recover_stale_predecessors is True
+
+
 def test_exact_canary_preflight_still_rejects_wrong_or_premature_requested_item() -> None:
     release = _release()
     ledger = initialize_ledger(release)
@@ -93,7 +175,31 @@ def test_exact_canary_preflight_still_rejects_wrong_or_premature_requested_item(
     assert all(entry.state == "pending" for entry in ledger.entries.values())
 
 
-def test_exact_manual_prepare_recovers_only_expired_predecessors_when_bound_is_explicit(monkeypatch) -> None:
+def test_exact_manual_prepare_recovers_only_expired_predecessors_when_explicitly_enabled(monkeypatch) -> None:
+    release = _release()
+    ledger = initialize_ledger(release)
+    requested = release.items[2]
+    now = requested.scheduled_at.astimezone(UTC)
+    monkeypatch.setenv("MAX_PUBLICATION_LAG_MINUTES", str(MAX_LAG_MINUTES))
+
+    recovered = _recover_expired_before_exact_manual_prepare(
+        release,
+        ledger,
+        mode="manual",
+        expected_publication_id=requested.publication_id,
+        recover_stale_predecessors=True,
+        now=now,
+    )
+
+    assert recovered == (release.items[0].publication_id, release.items[1].publication_id)
+    for publication_id in recovered:
+        assert ledger.entries[publication_id].state == "skipped"
+        assert ledger.entries[publication_id].provider_effect == "impossible"
+    assert ledger.entries[requested.publication_id].state == "pending"
+    assert ledger.entries[requested.publication_id].provider_effect == "impossible"
+
+
+def test_prepare_recovery_default_is_noop_even_when_bound_is_configured(monkeypatch) -> None:
     release = _release()
     ledger = initialize_ledger(release)
     requested = release.items[2]
@@ -108,45 +214,39 @@ def test_exact_manual_prepare_recovers_only_expired_predecessors_when_bound_is_e
         now=now,
     )
 
-    assert recovered == (release.items[0].publication_id, release.items[1].publication_id)
-    for publication_id in recovered:
-        assert ledger.entries[publication_id].state == "skipped"
-        assert ledger.entries[publication_id].provider_effect == "impossible"
-    assert ledger.entries[requested.publication_id].state == "pending"
-    assert ledger.entries[requested.publication_id].provider_effect == "impossible"
+    assert recovered == ()
+    assert all(entry.state == "pending" for entry in ledger.entries.values())
 
 
-def test_prepare_recovery_is_disabled_without_exact_manual_and_explicit_bound(monkeypatch) -> None:
+def test_explicit_prepare_recovery_fails_without_exact_manual_bound(monkeypatch) -> None:
     release = _release()
     requested = release.items[2]
     now = requested.scheduled_at.astimezone(UTC)
 
     no_bound = initialize_ledger(release)
     monkeypatch.delenv("MAX_PUBLICATION_LAG_MINUTES", raising=False)
-    assert (
+    with pytest.raises(ValueError, match="requires MAX_PUBLICATION_LAG_MINUTES"):
         _recover_expired_before_exact_manual_prepare(
             release,
             no_bound,
             mode="manual",
             expected_publication_id=requested.publication_id,
+            recover_stale_predecessors=True,
             now=now,
         )
-        == ()
-    )
     assert all(entry.state == "pending" for entry in no_bound.entries.values())
 
     scheduled = initialize_ledger(release)
     monkeypatch.setenv("MAX_PUBLICATION_LAG_MINUTES", str(MAX_LAG_MINUTES))
-    assert (
+    with pytest.raises(ValueError, match="requires exact manual prepare"):
         _recover_expired_before_exact_manual_prepare(
             release,
             scheduled,
             mode="scheduled",
             expected_publication_id=None,
+            recover_stale_predecessors=True,
             now=now,
         )
-        == ()
-    )
     assert all(entry.state == "pending" for entry in scheduled.entries.values())
 
 
@@ -156,6 +256,7 @@ def test_existing_canary_workflow_supplies_exact_identity_and_bound_before_durab
     assert "MAX_PUBLICATION_LAG_MINUTES: 120" in workflow
     assert "telegram_publication_freshness next" in workflow
     assert '--publication-id "$REQUESTED_PUBLICATION_ID"' in workflow
+    assert workflow.count("--recover-stale-predecessors") == 2
     assert "telegram_multichannel_cli prepare" in workflow
     assert "--mode manual" in workflow
     assert workflow.index("Require fresh strict-next canary window") < workflow.index(
@@ -165,3 +266,17 @@ def test_existing_canary_workflow_supplies_exact_identity_and_bound_before_durab
         "Persist intent before Telegram mutation"
     )
     assert workflow.index("Persist intent before Telegram mutation") < workflow.index("Send exactly one canary payload")
+
+
+def test_readiness_document_tracks_current_activation_state_and_explicit_recovery_contract() -> None:
+    readiness = READINESS_PATH.read_text(encoding="utf-8")
+
+    assert "activation-armed but not yet canary-proven" in readiness
+    assert "provider_writes_authorized=true" in readiness
+    assert "content/telegram/svodka/release-approval-2026-08.json" in readiness
+    assert APPROVED_RELEASE_DIGEST in readiness
+    assert "14/14 `pending`" in readiness
+    assert "--recover-stale-predecessors" in readiness
+    assert "There is no committed `content/telegram/svodka/approved-release-2026-08.json` file" in readiness
+    assert "provider_writes_authorized=false" not in readiness
+    assert "approved release: absent" not in readiness

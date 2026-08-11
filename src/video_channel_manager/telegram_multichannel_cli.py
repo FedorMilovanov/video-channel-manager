@@ -63,6 +63,11 @@ def parser() -> argparse.ArgumentParser:
     prepare.add_argument("--target-proof", type=Path, required=True)
     prepare.add_argument("--mode", choices=("manual", "scheduled"), required=True)
     prepare.add_argument("--publication-id")
+    prepare.add_argument(
+        "--recover-stale-predecessors",
+        action="store_true",
+        help="Recover only bounded-stale pending predecessors before an exact manual dispatch.",
+    )
     prepare.add_argument("--run-id", required=True)
     prepare.add_argument("--run-attempt", required=True)
     prepare.add_argument("--github-sha", required=True)
@@ -156,20 +161,23 @@ def _recover_expired_before_exact_manual_prepare(
     *,
     mode: str,
     expected_publication_id: str | None,
+    recover_stale_predecessors: bool = False,
     now: datetime | None = None,
 ) -> tuple[str, ...]:
-    """Apply only bounded stale predecessors for an exact manual dispatch.
+    """Apply bounded stale predecessors only under an explicit exact-manual opt-in.
 
     The caller persists this mutation only if the requested strict-next dispatch
     is successfully prepared, so a wrong or premature publication_id cannot
     advance durable state.
     """
 
-    if mode != "manual" or expected_publication_id is None:
+    if not recover_stale_predecessors:
         return ()
+    if mode != "manual" or expected_publication_id is None:
+        raise ValueError("stale predecessor recovery requires exact manual prepare with publication_id")
     max_lag_minutes = _configured_max_publication_lag_minutes()
     if max_lag_minutes is None:
-        return ()
+        raise ValueError("stale predecessor recovery requires MAX_PUBLICATION_LAG_MINUTES")
     return skip_expired_pending_by_freshness(
         release,
         ledger,
@@ -356,6 +364,7 @@ def main() -> int:
             ledger,
             mode=args.mode,
             expected_publication_id=args.publication_id,
+            recover_stale_predecessors=args.recover_stale_predecessors,
         )
         target = _load_model(args.target_proof, GenericTargetProof)
         prepared = prepare_next(
