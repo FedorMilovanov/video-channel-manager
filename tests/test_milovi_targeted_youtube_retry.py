@@ -20,9 +20,7 @@ def test_retry_scope_is_exactly_the_two_failed_youtube_ids() -> None:
 
 
 def test_retry_is_pinned_to_the_accepted_exact_vk_probe() -> None:
-    assert retry.ACCEPTED_MEDIA_PROBE_ZIP_SHA256 == (
-        "89aefa40e51450ab3823db1f794ccf262203d8dd14ac5f2543f10b4ec69487ea"
-    )
+    assert retry.ACCEPTED_MEDIA_PROBE_ZIP_SHA256 == ("89aefa40e51450ab3823db1f794ccf262203d8dd14ac5f2543f10b4ec69487ea")
     assert retry.ACCEPTED_MEDIA_PROBE_RESULT_SHA256 == (
         "c3db469e1b4c6d450481b87951db16b13a9ffa93b4d292ceb91553f458a61f36"
     )
