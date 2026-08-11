@@ -89,13 +89,15 @@ def test_expired_strict_next_fails_closed() -> None:
         select(release, ledger, datetime.fromisoformat("2026-08-11T21:30:00+03:00"))
 
 
-def test_workflow_has_real_evening_canary_and_no_fallback_sendmessage() -> None:
+def test_workflow_has_real_evening_canary_and_no_legacy_fallback_path() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
     assert 'cron: "30 16 11 8 *"' in workflow
     assert 'cron: "30 7 12-18 8 *"' in workflow
     assert 'cron: "30 16 12-17 8 *"' in workflow
     assert "svodka_rich_production send" in workflow
-    assert "sendMessage" not in workflow
+    assert "telegram_multichannel_cli send-once" not in workflow
+    assert "/sendMessage" not in workflow
     assert "group: svodka-telegram-publisher" in workflow
+    assert "queue: max" in workflow
     assert "Archive exact provider outcome before ledger mutation" in workflow
     assert "Persist intent and evidence before Telegram mutation" in workflow
