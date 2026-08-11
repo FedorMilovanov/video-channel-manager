@@ -194,6 +194,7 @@ jobs:
             --target-proof "$TARGET_PROOF_PATH" \
             --mode manual \
             --publication-id "$REQUESTED_PUBLICATION_ID" \
+            --recover-stale-predecessors \
             --run-id "$GITHUB_RUN_ID" \
             --run-attempt "$GITHUB_RUN_ATTEMPT" \
             --github-sha "$GITHUB_SHA" \
