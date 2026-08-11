@@ -160,7 +160,9 @@ def test_pipeline_uses_one_owner_probe_for_reconciliation_and_triage(monkeypatch
     assert manifest["manifest_sha256"] == canonical_sha256(unsigned)
 
 
-def test_pipeline_preserves_read_error_evidence_without_creating_mutation_authority(monkeypatch, tmp_path: Path) -> None:
+def test_pipeline_preserves_read_error_evidence_without_creating_mutation_authority(
+    monkeypatch, tmp_path: Path
+) -> None:
     probe = _owner_probe(status="error")
     monkeypatch.setattr(
         clips_evidence_pipeline,
