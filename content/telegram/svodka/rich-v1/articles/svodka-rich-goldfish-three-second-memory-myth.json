@@ -16,140 +16,49 @@
     "release_id": "svodka-pilot-2026-08",
     "source_format": "myth_fact"
   },
-  "title": "Миф о трёхсекундной памяти золотой рыбки",
-  "lead": "Фраза про три секунды удобна: короткая, красивая, её легко повторить. Проверить её тоже оказалось несложно — это делали в лабораториях ещё полвека назад. Результат миф не подтверждает.",
-  "icons_used": [
-    "🐠",
-    "🧪",
-    "😎"
-  ],
+  "title": "У золотой рыбки память не на три секунды",
+  "lead": "Миф удобный: рыбка сделала круг по аквариуму — значит, всё забыла и начала жизнь заново. Но круг по аквариуму ничего не измеряет. Память проверяют иначе: животному дают задачу, а потом смотрят, осталось ли от обучения что-то спустя время.",
+  "icons_used": ["🐠", "🧪", "😎"],
   "sections": [
     {
       "section_id": "otkuda-mif",
-      "heading": "Откуда взялся миф",
+      "heading": "Почему наблюдение за аквариумом нас обманывает",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "У гипотезы «три секунды» нет при этом лабораторного происхождения: это бытовое наблюдение — рыбка кружит по аквариуму и, кажется, каждый раз видит всё как впервые. Симпатичная мысль была слишком удобна, чтобы перепроверять."
-        },
-        {
-          "type": "paragraph",
-          "html": "Наблюдение подменяет измерение: «рыба плавает по кругу» — это поведение в замкнутом пространстве, а не диагноз памяти."
-        }
+        {"type": "paragraph", "html": "Рыбка плавает по кругу, возвращается к тому же камню и снова его осматривает. На глаз это легко принять за забывчивость. Но одинаковое движение не доказывает отсутствие памяти: оно может быть просто нормальным поведением животного в ограниченном пространстве."},
+        {"type": "paragraph", "html": "Чтобы говорить о памяти научно, нужен вопрос, на который можно ответить числом: <b>обучается ли животное быстрее после перерыва, чем в первый раз?</b> Или сохраняет ли оно правило задачи после длительной тренировки?"}
       ]
     },
     {
       "section_id": "chto-izmerili",
-      "heading": "Что измерили в экспериментах",
+      "heading": "Как в опыте ловят след вчерашнего дня",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "В работе 1976 года золотых рыбок обучали два дня подряд. Фиксировали, насколько быстрее идёт повторное обучение на следующий день, — <i>экономия</i> при переобучении считается мерой долговременной памяти. У рыб она была.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "В эксперименте 1979 года рыб длительно тренировали на задачах различения, где правильный выбор зависел от показанного образца. После обучения результат заметно превосходил уровень случайного угадывания.",
-          "footnotes": [
-            2
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "В обоих случаях мы видим не «три секунды», а удержание выученного в течение суток и долгую отработку сложного поведения.",
-          "footnotes": [
-            1,
-            2
-          ]
-        }
+        {"type": "paragraph", "html": "В работе 1976 года золотых рыбок обучали два дня подряд. На второй день исследователи смотрели, насколько быстрее идёт повторное обучение. Логика простая: если вчерашний опыт полностью исчез, всё пришлось бы учить почти с нуля; если второй раз получается быстрее, значит, прошлое обучение оставило след.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Такую разницу называют <i>экономией при переобучении</i>. У золотых рыбок она была — то есть информация пережила как минимум паузу между днями, а не исчезла через три секунды.", "footnotes": [1]},
+        {"type": "paragraph", "html": "В другом эксперименте, опубликованном в 1979 году, рыб долго учили задачам различения, где правильный выбор зависел от показанного образца. После обучения результат был заметно выше случайного угадывания. Это уже не рефлекс на мгновение, а выученное правило поведения.", "footnotes": [2]}
       ]
     },
     {
       "section_id": "chto-eto-znachit",
-      "heading": "Что это значит",
+      "heading": "Что мы вправе из этого заключить",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Это не значит, что домашняя рыбка запомнит хозяина на всю жизнь — в этих работах задача узнавания людей не стояла. Из экспериментов следует аккуратный вывод: <b>у золотых рыбок есть устойчивая память на обучение</b>, и она держится значительно дольше, чем рассказывает поговорка.",
-          "footnotes": [
-            1,
-            2
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Есть и практический вывод для владельцев аквариумов: животное, способное к обучению, заметит и режим кормления, и освещение. «Рыбке всё равно» — не более чем оправдание небрежности."
-        }
+        {"type": "paragraph", "html": "Эксперименты не показывают, что золотая рыбка помнит всё месяцами или узнаёт конкретного хозяина. Эти вопросы в работах не проверяли. Но они надёжно опровергают главное утверждение мифа: <b>память золотой рыбки не ограничена несколькими секундами</b>.", "footnotes": [1, 2]},
+        {"type": "paragraph", "html": "Полезная привычка здесь шире рыбок: когда кто-то говорит «у животного память X секунд», стоит спросить, <i>какую именно память измеряли и какой задачей</i>. Память — не один переключатель, а результат, который зависит от того, что животному дали выучить и как потом проверили."}
       ]
     }
   ],
   "quotes": [],
   "media_slots": [
-    {
-      "slot_id": "media-01",
-      "placement": {
-        "after": "lead",
-        "before": "otkuda-mif"
-      },
-      "depicts": "Обычный аквариум с золотой рыбкой — без декораций и мультяшности; живой рыбке уделены спокойный цвет и естественная поза.",
-      "purpose": "Отвязать тему от карикатуры: речь о реальном поведении животного, а не о пословице.",
-      "preferred_source_type": "public-domain or clearly licensed stock photograph",
-      "copyright_provenance": "Prefer NOAA/public-domain imagery or an explicit CC0 licence. No watermarked preview assets and no ‘found on the internet’ images.",
-      "caption": "Золотая рыбка. Память у неё измерима — если правильно поставить опыт."
-    },
-    {
-      "slot_id": "media-02",
-      "placement": {
-        "after": "chto-izmerili"
-      },
-      "depicts": "Редакционная схема процедуры из работы 1976 года: два дня подряд — обучение → разрыв → повторное обучение; стрелка «экономия при переобучении».",
-      "purpose": "Показать, что слово «память» в работах означает конкретное измеримое явление, а не обещание «помнить всё».",
-      "preferred_source_type": "original editorial diagram based on the published method",
-      "copyright_provenance": "Journal figures are copyrighted — the diagram must be an original redraw based on the textual description of the method. Facts and procedures are not copyrightable.",
-      "caption": "Как измеряли память: повторное обучение шло быстрее — это и есть след прошлого дня."
-    }
+    {"slot_id": "media-01", "placement": {"after": "lead", "before": "otkuda-mif"}, "depicts": "Обычный аквариум с золотой рыбкой — без декораций и мультяшности; живой рыбке уделены спокойный цвет и естественная поза.", "purpose": "Отвязать тему от карикатуры: речь о реальном поведении животного, а не о пословице.", "preferred_source_type": "public-domain or clearly licensed stock photograph", "copyright_provenance": "Prefer NOAA/public-domain imagery or an explicit CC0 licence. No watermarked preview assets and no ‘found on the internet’ images.", "caption": "Золотая рыбка. Память проверяют не кругами по аквариуму, а повторным обучением."},
+    {"slot_id": "media-02", "placement": {"after": "chto-izmerili"}, "depicts": "Редакционная схема процедуры из работы 1976 года: день 1 — обучение; пауза; день 2 — повторное обучение; стрелка «если быстрее, память сохранила след».", "purpose": "Показать бытовым языком, что означает «экономия при переобучении» и почему это вообще измерение памяти.", "preferred_source_type": "original editorial diagram based on the published method", "copyright_provenance": "Journal figures are copyrighted — the diagram must be an original redraw based on the textual description of the method. Facts and procedures are not copyrightable.", "caption": "Как поймать память в опыте: если второй раз учиться легче, первый опыт не исчез."}
   ],
   "footnotes": [
-    {
-      "n": 1,
-      "source_id": "src-pbb-1976-goldfish",
-      "label": "Pharmacology Biochemistry and Behavior, 1976",
-      "url": "https://pubmed.ncbi.nlm.nih.gov/935220/"
-    },
-    {
-      "n": 2,
-      "source_id": "src-jeab-1979-goldfish",
-      "label": "Journal of the Experimental Analysis of Behavior, 1979",
-      "url": "https://onlinelibrary.wiley.com/doi/10.1901/jeab.1979.31-259"
-    }
+    {"n": 1, "source_id": "src-pbb-1976-goldfish", "label": "Pharmacology Biochemistry and Behavior, 1976", "url": "https://pubmed.ncbi.nlm.nih.gov/935220/"},
+    {"n": 2, "source_id": "src-jeab-1979-goldfish", "label": "Journal of the Experimental Analysis of Behavior, 1979", "url": "https://onlinelibrary.wiley.com/doi/10.1901/jeab.1979.31-259"}
   ],
   "sources": [
-    {
-      "source_id": "src-pbb-1976-goldfish",
-      "label": "Pharmacology Biochemistry and Behavior, 1976",
-      "url": "https://pubmed.ncbi.nlm.nih.gov/935220/",
-      "verified_on": "2026-08-08",
-      "evidence": "Goldfish were trained over two consecutive days; savings in relearning on day 2 was used as a measure of long-term memory strength."
-    },
-    {
-      "source_id": "src-jeab-1979-goldfish",
-      "label": "Journal of the Experimental Analysis of Behavior, 1979",
-      "url": "https://onlinelibrary.wiley.com/doi/10.1901/jeab.1979.31-259",
-      "verified_on": "2026-08-08",
-      "evidence": "Goldfish acquired matching/oddity tasks over prolonged training, reaching performance substantially above chance."
-    }
+    {"source_id": "src-pbb-1976-goldfish", "label": "Pharmacology Biochemistry and Behavior, 1976", "url": "https://pubmed.ncbi.nlm.nih.gov/935220/", "verified_on": "2026-08-08", "evidence": "Goldfish were trained over two consecutive days; savings in relearning on day 2 was used as a measure of long-term memory strength."},
+    {"source_id": "src-jeab-1979-goldfish", "label": "Journal of the Experimental Analysis of Behavior, 1979", "url": "https://onlinelibrary.wiley.com/doi/10.1901/jeab.1979.31-259", "verified_on": "2026-08-08", "evidence": "Goldfish acquired matching/oddity tasks over prolonged training, reaching performance substantially above chance."}
   ],
-  "footer": {
-    "tagline": "Сводка — сводим факты, а не мнения 😎",
-    "hashtags": [
-      "#Сводка",
-      "#Мифы",
-      "#Животные",
-      "#Память",
-      "#Наука"
-    ]
-  },
-  "editorial_notes": "Myth-debunk kept, but the punch line is moved from the final slogan into the measured conclusion; a husbandry remark is added as practical consequence without ranking species or people. Claims remain within the two 1976/1979 laboratory sources."
+  "footer": {"tagline": "Сводка — сводим факты, а не мнения 😎", "hashtags": ["#Сводка", "#Мифы", "#Животные", "#Память", "#Наука"]},
+  "editorial_notes": "Clarity pass 2026-08-11: the article now explains how memory is operationally measured before naming the laboratory terms. The unsupported husbandry extrapolation was removed. Conclusion stays strictly within the two 1976/1979 experiments."
 }
