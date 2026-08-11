@@ -26,6 +26,9 @@ dependencies = [
 browser-read = [
   "playwright>=1.54,<2",
 ]
+milovi-gap-read = [
+  "Pillow>=11,<12",
+]
 dev = [
   "mypy>=1.14,<2",
   "pip-audit>=2.9,<3",

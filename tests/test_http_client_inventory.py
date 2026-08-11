@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_CONSTRUCTORS = Counter(
     {
         "src/video_channel_manager/platforms/http.py": 1,
+        "src/video_channel_manager/platforms/vk/milovi_gap_thumbnail_evidence.py": 1,
         "src/video_channel_manager/telegram_transport.py": 2,
         "src/video_channel_manager/telegram_channel_discovery.py": 1,
         "src/video_channel_manager/telegram_custom_emoji_harvest.py": 1,
