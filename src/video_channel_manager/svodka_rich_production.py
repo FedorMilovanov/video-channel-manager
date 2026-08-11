@@ -223,7 +223,9 @@ def _bind_media(article: RichArticleDocument, root: Path, release: dict[str, Any
         caption = str(raw.get("caption") or slot.caption or raw.get("depicts") or "Иллюстрация")
         attribution = str(raw.get("attribution_text") or "").strip()
         credit = None if not attribution or attribution in caption else attribution
-        media.append(RichMediaItem(media_id=media_id, kind="photo", uri=url, alt_text=str(raw.get("depicts") or caption)[:300]))
+        media.append(
+            RichMediaItem(media_id=media_id, kind="photo", uri=url, alt_text=str(raw.get("depicts") or caption)[:300])
+        )
         planned.append(
             (
                 _insert_at(blocks, slot),
@@ -249,7 +251,9 @@ def _item(release: dict[str, Any], publication_id: str) -> dict[str, Any]:
 
 def build_document(root: Path, release: dict[str, Any], item: dict[str, Any]) -> tuple[Any, Any, RichArticleDocument]:
     article = load_svodka_rich_article(_verify(root, cast(dict[str, Any], item["article"])))
-    article = _decorate(article, _verify(root, cast(dict[str, Any], release["custom_emoji_catalog"])), str(item["emoji_role"]))
+    article = _decorate(
+        article, _verify(root, cast(dict[str, Any], release["custom_emoji_catalog"])), str(item["emoji_role"])
+    )
     article = _bind_media(article, root, release)
     document, render = render_rich_document(
         article,
@@ -263,7 +267,9 @@ def build_document(root: Path, release: dict[str, Any], item: dict[str, Any]) ->
 
 class _Reader(HttpClientOwner):
     def __init__(self) -> None:
-        self._initialize_http_client(None, timeout=httpx.Timeout(connect=15, read=30, write=15, pool=15), follow_redirects=False, trust_env=False)
+        self._initialize_http_client(
+            None, timeout=httpx.Timeout(connect=15, read=30, write=15, pool=15), follow_redirects=False, trust_env=False
+        )
 
     def fetch(self, url: str) -> tuple[int, str, bytes]:
         result = execute_http_request(
@@ -275,10 +281,16 @@ class _Reader(HttpClientOwner):
             retry_policy=RetryPolicy(max_attempts=2),
         )
         response = result.response
-        return response.status_code, response.headers.get("content-type", "").split(";", 1)[0].strip().lower(), response.content
+        return (
+            response.status_code,
+            response.headers.get("content-type", "").split(";", 1)[0].strip().lower(),
+            response.content,
+        )
 
 
-def media_proof(root: Path, release: dict[str, Any], item: dict[str, Any], expected: dict[str, Any] | None = None) -> dict[str, Any]:
+def media_proof(
+    root: Path, release: dict[str, Any], item: dict[str, Any], expected: dict[str, Any] | None = None
+) -> dict[str, Any]:
     _document, _render, article = build_document(root, release, item)
     mime = {str(raw["asset_id"]): str(raw["expected_mime"]) for raw in _assets(root, release, str(item["article_id"]))}
     reader = _Reader()
@@ -288,20 +300,63 @@ def media_proof(root: Path, release: dict[str, Any], item: dict[str, Any], expec
             status, content_type, content = reader.fetch(media.uri)
             if status != 200 or content_type != mime[media.media_id] or not content or len(content) > 10_000_000:
                 raise ValueError(f"media proof failed: {media.media_id}")
-            signature_ok = content.startswith(b"\xff\xd8\xff") if content_type == "image/jpeg" else content.startswith(b"\x89PNG\r\n\x1a\n")
+            signature_ok = (
+                content.startswith(b"\xff\xd8\xff")
+                if content_type == "image/jpeg"
+                else content.startswith(b"\x89PNG\r\n\x1a\n")
+            )
             if not signature_ok:
                 raise ValueError(f"media signature failed: {media.media_id}")
-            evidence.append({"media_id": media.media_id, "url": media.uri, "content_type": content_type, "content_length": len(content), "content_sha256": "sha256:" + hashlib.sha256(content).hexdigest()})
+            evidence.append(
+                {
+                    "media_id": media.media_id,
+                    "url": media.uri,
+                    "content_type": content_type,
+                    "content_length": len(content),
+                    "content_sha256": "sha256:" + hashlib.sha256(content).hexdigest(),
+                }
+            )
     finally:
         reader.close()
-    proof = {"schema_name": "video-channel-manager.svodka-rich-production-media-proof", "schema_version": 1, "release_sha256": release_digest(release), "publication_id": item["publication_id"], "checked_at_utc": datetime.now(tz=UTC).isoformat(), "items": evidence, "provider_write_performed": False}
+    proof = {
+        "schema_name": "video-channel-manager.svodka-rich-production-media-proof",
+        "schema_version": 1,
+        "release_sha256": release_digest(release),
+        "publication_id": item["publication_id"],
+        "checked_at_utc": datetime.now(tz=UTC).isoformat(),
+        "items": evidence,
+        "provider_write_performed": False,
+    }
     if expected is not None and expected.get("items") != proof["items"]:
         raise ValueError("media bytes changed after durable intent")
     return proof
 
 
 def new_ledger(release: dict[str, Any]) -> dict[str, Any]:
-    return {"schema_name": "video-channel-manager.svodka-rich-production-ledger", "schema_version": 1, "release_id": RELEASE_ID, "release_sha256": release_digest(release), "project_key": PROJECT, "channel_username": CHANNEL, "entries": {str(item["publication_id"]): {"publication_id": item["publication_id"], "scheduled_at": item["scheduled_at"], "state": "pending", "provider_effect": "impossible", "dispatch_mode": None, "workflow_run_id": None, "workflow_run_attempt": None, "document_sha256": None, "message_id": None, "message_url": None, "error": None} for item in cast(list[dict[str, Any]], release["items"])}}
+    return {
+        "schema_name": "video-channel-manager.svodka-rich-production-ledger",
+        "schema_version": 1,
+        "release_id": RELEASE_ID,
+        "release_sha256": release_digest(release),
+        "project_key": PROJECT,
+        "channel_username": CHANNEL,
+        "entries": {
+            str(item["publication_id"]): {
+                "publication_id": item["publication_id"],
+                "scheduled_at": item["scheduled_at"],
+                "state": "pending",
+                "provider_effect": "impossible",
+                "dispatch_mode": None,
+                "workflow_run_id": None,
+                "workflow_run_attempt": None,
+                "document_sha256": None,
+                "message_id": None,
+                "message_url": None,
+                "error": None,
+            }
+            for item in cast(list[dict[str, Any]], release["items"])
+        },
+    }
 
 
 def load_ledger(path: Path, release: dict[str, Any], create: bool = False) -> dict[str, Any]:
@@ -315,12 +370,21 @@ def load_ledger(path: Path, release: dict[str, Any], create: bool = False) -> di
     return ledger
 
 
-def select(release: dict[str, Any], ledger: dict[str, Any], now: datetime | None = None) -> tuple[dict[str, Any], Literal["canary", "scheduled"]] | None:
+def select(
+    release: dict[str, Any], ledger: dict[str, Any], now: datetime | None = None
+) -> tuple[dict[str, Any], Literal["canary", "scheduled"]] | None:
     entries = cast(dict[str, dict[str, Any]], ledger["entries"])
     blockers = [e for e in entries.values() if e["state"] in {"intent", "may_exist", "failed_no_effect"}]
     if blockers:
         raise ValueError(f"durable blocker: {blockers[0]['publication_id']}/{blockers[0]['state']}")
-    next_item = next((item for item in cast(list[dict[str, Any]], release["items"]) if entries[str(item["publication_id"])]["state"] == "pending"), None)
+    next_item = next(
+        (
+            item
+            for item in cast(list[dict[str, Any]], release["items"])
+            if entries[str(item["publication_id"])]["state"] == "pending"
+        ),
+        None,
+    )
     if next_item is None:
         return None
     scheduled = datetime.fromisoformat(str(next_item["scheduled_at"]))
@@ -329,7 +393,10 @@ def select(release: dict[str, Any], ledger: dict[str, Any], now: datetime | None
         return None
     if current >= scheduled + timedelta(minutes=120):
         raise ValueError(f"strict-next window expired: {next_item['publication_id']}")
-    canary_done = any(e["state"] == "published" and e.get("dispatch_mode") == "canary" and e["provider_effect"] == "verified" for e in entries.values())
+    canary_done = any(
+        e["state"] == "published" and e.get("dispatch_mode") == "canary" and e["provider_effect"] == "verified"
+        for e in entries.values()
+    )
     return next_item, "scheduled" if canary_done else "canary"
 
 
@@ -338,11 +405,27 @@ def _proof(path: Path) -> GenericTargetProof:
 
 
 def _require_proof(proof: GenericTargetProof, document: Any) -> None:
-    if (proof.chat_id, proof.bot_id, proof.bot_username.casefold(), proof.can_post_messages, proof.profile_sha256) != (document.target.chat_id, document.target.bot_id, document.target.bot_username.casefold(), True, document.target.profile_sha256):
+    if (proof.chat_id, proof.bot_id, proof.bot_username.casefold(), proof.can_post_messages, proof.profile_sha256) != (
+        document.target.chat_id,
+        document.target.bot_id,
+        document.target.bot_username.casefold(),
+        True,
+        document.target.profile_sha256,
+    ):
         raise ValueError("fresh target proof differs from exact rich target")
 
 
-def prepare(root: Path, release: dict[str, Any], ledger: dict[str, Any], target_path: Path, proof_media: dict[str, Any], repository: str, sha: str, run_id: str, attempt: str) -> tuple[dict[str, Any], dict[str, Any]]:
+def prepare(
+    root: Path,
+    release: dict[str, Any],
+    ledger: dict[str, Any],
+    target_path: Path,
+    proof_media: dict[str, Any],
+    repository: str,
+    sha: str,
+    run_id: str,
+    attempt: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
     selected = select(release, ledger)
     if selected is None:
         raise ValueError("no eligible rich publication")
@@ -350,11 +433,43 @@ def prepare(root: Path, release: dict[str, Any], ledger: dict[str, Any], target_
     document, render, _article = build_document(root, release, item)
     target = _proof(target_path)
     _require_proof(target, document)
-    if repository != REPOSITORY or proof_media.get("release_sha256") != release_digest(release) or proof_media.get("publication_id") != item["publication_id"]:
+    if (
+        repository != REPOSITORY
+        or proof_media.get("release_sha256") != release_digest(release)
+        or proof_media.get("publication_id") != item["publication_id"]
+    ):
         raise ValueError("intent inputs differ from exact release")
-    intent = {"schema_name": "video-channel-manager.svodka-rich-production-intent", "schema_version": 1, "release_sha256": release_digest(release), "publication_id": item["publication_id"], "dispatch_mode": mode, "github_repository": repository, "github_sha": sha, "workflow_run_id": run_id, "workflow_run_attempt": attempt, "document_sha256": document.document_sha256, "render_sha256": render.render_sha256, "target_proof_sha256": _sha(target.model_dump(mode="json")), "media_proof": proof_media, "created_at_utc": datetime.now(tz=UTC).isoformat(), "mutation_request_limit": 1, "automatic_retry_allowed": False, "blind_retry_allowed": False}
+    intent = {
+        "schema_name": "video-channel-manager.svodka-rich-production-intent",
+        "schema_version": 1,
+        "release_sha256": release_digest(release),
+        "publication_id": item["publication_id"],
+        "dispatch_mode": mode,
+        "github_repository": repository,
+        "github_sha": sha,
+        "workflow_run_id": run_id,
+        "workflow_run_attempt": attempt,
+        "document_sha256": document.document_sha256,
+        "render_sha256": render.render_sha256,
+        "target_proof_sha256": _sha(target.model_dump(mode="json")),
+        "media_proof": proof_media,
+        "created_at_utc": datetime.now(tz=UTC).isoformat(),
+        "mutation_request_limit": 1,
+        "automatic_retry_allowed": False,
+        "blind_retry_allowed": False,
+    }
     entry = cast(dict[str, dict[str, Any]], ledger["entries"])[str(item["publication_id"])]
-    entry.update({"state": "intent", "provider_effect": "impossible", "dispatch_mode": mode, "workflow_run_id": run_id, "workflow_run_attempt": attempt, "document_sha256": document.document_sha256, "error": None})
+    entry.update(
+        {
+            "state": "intent",
+            "provider_effect": "impossible",
+            "dispatch_mode": mode,
+            "workflow_run_id": run_id,
+            "workflow_run_attempt": attempt,
+            "document_sha256": document.document_sha256,
+            "error": None,
+        }
+    )
     return intent, ledger
 
 
@@ -367,11 +482,29 @@ class _Archiver:
         self.path.write_bytes(outcome_bytes)
         if "sha256:" + hashlib.sha256(outcome_bytes).hexdigest() != outcome_sha256:
             raise ValueError("provider outcome archive digest mismatch")
-        return TelegramRichOutcomeArchiveReceipt(schema_name="video-channel-manager.telegram-rich-outcome-archive-receipt", schema_version=1, outcome_sha256=outcome_sha256, archive_reference=f"workflow-local:{self.path}", durable_before_state_mutation=True)
+        return TelegramRichOutcomeArchiveReceipt(
+            schema_name="video-channel-manager.telegram-rich-outcome-archive-receipt",
+            schema_version=1,
+            outcome_sha256=outcome_sha256,
+            archive_reference=f"workflow-local:{self.path}",
+            durable_before_state_mutation=True,
+        )
 
 
-def send(root: Path, release: dict[str, Any], intent: dict[str, Any], target_path: Path, recheck: dict[str, Any], outcome_path: Path, token: str) -> TelegramRichProviderOutcome:
-    if intent.get("release_sha256") != release_digest(release) or intent.get("github_repository") != REPOSITORY or recheck.get("items") != cast(dict[str, Any], intent["media_proof"]).get("items"):
+def send(
+    root: Path,
+    release: dict[str, Any],
+    intent: dict[str, Any],
+    target_path: Path,
+    recheck: dict[str, Any],
+    outcome_path: Path,
+    token: str,
+) -> TelegramRichProviderOutcome:
+    if (
+        intent.get("release_sha256") != release_digest(release)
+        or intent.get("github_repository") != REPOSITORY
+        or recheck.get("items") != cast(dict[str, Any], intent["media_proof"]).get("items")
+    ):
         raise ValueError("durable intent/media recheck mismatch")
     item = _item(release, str(intent["publication_id"]))
     document, render, _article = build_document(root, release, item)
@@ -384,7 +517,9 @@ def send(root: Path, release: dict[str, Any], intent: dict[str, Any], target_pat
     profile = load_channel_profile(_verify(root, cast(dict[str, Any], release["profile"])))
     provider = HttpxTelegramRichMutationProvider(token=token)
     try:
-        archived = publish_rich_once(document, proof, provider, _Archiver(outcome_path), profile=profile, state_mutation=None)
+        archived = publish_rich_once(
+            document, proof, provider, _Archiver(outcome_path), profile=profile, state_mutation=None
+        )
     finally:
         provider.close()
     return archived.outcome
@@ -392,14 +527,38 @@ def send(root: Path, release: dict[str, Any], intent: dict[str, Any], target_pat
 
 def apply(ledger: dict[str, Any], intent: dict[str, Any], outcome: TelegramRichProviderOutcome) -> dict[str, Any]:
     entry = cast(dict[str, dict[str, Any]], ledger["entries"])[str(intent["publication_id"])]
-    if entry["state"] != "intent" or entry["document_sha256"] != intent.get("document_sha256") or outcome.document_sha256 != intent.get("document_sha256"):
+    if (
+        entry["state"] != "intent"
+        or entry["document_sha256"] != intent.get("document_sha256")
+        or outcome.document_sha256 != intent.get("document_sha256")
+    ):
         raise ValueError("outcome has no exact durable intent")
     if outcome.provider_effect == "verified":
-        entry.update({"state": "published", "provider_effect": "verified", "message_id": outcome.message_id, "message_url": outcome.message_url, "error": None})
+        entry.update(
+            {
+                "state": "published",
+                "provider_effect": "verified",
+                "message_id": outcome.message_id,
+                "message_url": outcome.message_url,
+                "error": None,
+            }
+        )
     elif outcome.provider_effect == "may_exist":
-        entry.update({"state": "may_exist", "provider_effect": "may_exist", "error": outcome.error or "ambiguous provider effect"})
+        entry.update(
+            {
+                "state": "may_exist",
+                "provider_effect": "may_exist",
+                "error": outcome.error or "ambiguous provider effect",
+            }
+        )
     else:
-        entry.update({"state": "failed_no_effect", "provider_effect": outcome.provider_effect, "error": outcome.error or f"provider effect: {outcome.provider_effect}"})
+        entry.update(
+            {
+                "state": "failed_no_effect",
+                "provider_effect": outcome.provider_effect,
+                "error": outcome.error or f"provider effect: {outcome.provider_effect}",
+            }
+        )
     return ledger
 
 
@@ -442,8 +601,21 @@ def main(argv: Sequence[str] | None = None) -> int:
         items = []
         for item in cast(list[dict[str, Any]], release["items"]):
             doc, rendered, article = build_document(args.root, release, item)
-            items.append({"publication_id": item["publication_id"], "scheduled_at": item["scheduled_at"], "document_sha256": doc.document_sha256, "render_sha256": rendered.render_sha256, "media_count": len(article.media)})
-        print(json.dumps({"release_sha256": release_digest(release), "items": items, "provider_write_performed": False}, ensure_ascii=False))
+            items.append(
+                {
+                    "publication_id": item["publication_id"],
+                    "scheduled_at": item["scheduled_at"],
+                    "document_sha256": doc.document_sha256,
+                    "render_sha256": rendered.render_sha256,
+                    "media_count": len(article.media),
+                }
+            )
+        print(
+            json.dumps(
+                {"release_sha256": release_digest(release), "items": items, "provider_write_performed": False},
+                ensure_ascii=False,
+            )
+        )
         return 0
     if args.cmd == "ensure-ledger":
         ledger = load_ledger(args.ledger, release, create=True)
@@ -456,27 +628,73 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(json.dumps({"eligible": False, "provider_write_performed": False}))
             return 3
         item, mode = chosen
-        print(json.dumps({"eligible": True, "publication_id": item["publication_id"], "dispatch_mode": mode, "provider_write_performed": False}))
+        print(
+            json.dumps(
+                {
+                    "eligible": True,
+                    "publication_id": item["publication_id"],
+                    "dispatch_mode": mode,
+                    "provider_write_performed": False,
+                }
+            )
+        )
         return 0
     if args.cmd == "media-proof":
         expected = _read(args.expected) if args.expected else None
         value = media_proof(args.root, release, _item(release, args.publication_id), expected)
         _write(args.output, value)
-        print(json.dumps({"publication_id": args.publication_id, "media_count": len(value["items"]), "provider_write_performed": False}))
+        print(
+            json.dumps(
+                {
+                    "publication_id": args.publication_id,
+                    "media_count": len(value["items"]),
+                    "provider_write_performed": False,
+                }
+            )
+        )
         return 0
     if args.cmd == "prepare":
         ledger = load_ledger(args.ledger, release)
-        intent, ledger = prepare(args.root, release, ledger, args.target_proof, _read(args.media_proof), args.github_repository, args.github_sha, args.run_id, args.run_attempt)
+        intent, ledger = prepare(
+            args.root,
+            release,
+            ledger,
+            args.target_proof,
+            _read(args.media_proof),
+            args.github_repository,
+            args.github_sha,
+            args.run_id,
+            args.run_attempt,
+        )
         _write(args.ledger, ledger)
         _write(args.intent_output, intent)
-        print(json.dumps({"publication_id": intent["publication_id"], "dispatch_mode": intent["dispatch_mode"], "provider_write_performed": False}))
+        print(
+            json.dumps(
+                {
+                    "publication_id": intent["publication_id"],
+                    "dispatch_mode": intent["dispatch_mode"],
+                    "provider_write_performed": False,
+                }
+            )
+        )
         return 0
     if args.cmd == "send":
         token = os.environ.get("SVODKA_TELEGRAM_BOT_TOKEN", "").strip()
         if not token:
             raise SystemExit("SVODKA_TELEGRAM_BOT_TOKEN is required")
-        outcome = send(args.root, release, _read(args.intent), args.target_proof, _read(args.media_recheck), args.outcome, token)
-        print(json.dumps({"provider_effect": outcome.provider_effect, "message_id": outcome.message_id, "message_url": outcome.message_url}, ensure_ascii=False))
+        outcome = send(
+            args.root, release, _read(args.intent), args.target_proof, _read(args.media_recheck), args.outcome, token
+        )
+        print(
+            json.dumps(
+                {
+                    "provider_effect": outcome.provider_effect,
+                    "message_id": outcome.message_id,
+                    "message_url": outcome.message_url,
+                },
+                ensure_ascii=False,
+            )
+        )
         return 0 if outcome.provider_effect == "verified" else 4
     if args.cmd == "apply":
         ledger = load_ledger(args.ledger, release)
@@ -485,7 +703,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         ledger = apply(ledger, intent, outcome)
         _write(args.ledger, ledger)
         state = cast(dict[str, dict[str, Any]], ledger["entries"])[str(intent["publication_id"])]["state"]
-        print(json.dumps({"publication_id": intent["publication_id"], "state": state, "provider_effect": outcome.provider_effect}))
+        print(
+            json.dumps(
+                {"publication_id": intent["publication_id"], "state": state, "provider_effect": outcome.provider_effect}
+            )
+        )
         return 0 if state == "published" else 4
     ledger = load_ledger(args.ledger, release)
     counts: dict[str, int] = {}
