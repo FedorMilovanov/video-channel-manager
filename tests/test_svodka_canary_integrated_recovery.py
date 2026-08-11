@@ -8,7 +8,10 @@ from video_channel_manager.svodka_release import authorize_svodka_release, build
 from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_multichannel_cli import _recover_expired_before_exact_manual_prepare
 from video_channel_manager.telegram_multichannel_state import initialize_ledger
-from video_channel_manager.telegram_publication_freshness import next_publication_freshness
+from video_channel_manager.telegram_publication_freshness import (
+    next_publication_freshness,
+    parser as freshness_parser,
+)
 from video_channel_manager.telegram_target_binding import load_target_binding
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -59,6 +62,44 @@ def test_exact_canary_preflight_can_see_through_only_stale_predecessors_without_
     assert decision.reason == "publication_fresh"
     assert all(entry.state == "pending" for entry in ledger.entries.values())
     assert all(entry.provider_effect == "impossible" for entry in ledger.entries.values())
+
+
+def test_generic_exact_preflight_keeps_strict_next_semantics_without_explicit_recovery() -> None:
+    release = _release()
+    ledger = initialize_ledger(release)
+    requested = release.items[2]
+    now = requested.scheduled_at.astimezone(UTC)
+
+    decision = next_publication_freshness(
+        release,
+        ledger,
+        now=now,
+        expected_publication_id=requested.publication_id,
+        max_lag_minutes=MAX_LAG_MINUTES,
+    )
+
+    assert decision.eligible is False
+    assert decision.reason == "requested_publication_is_not_strict_next"
+    assert decision.publication_id == release.items[0].publication_id
+    assert all(entry.state == "pending" for entry in ledger.entries.values())
+
+
+def test_freshness_cli_requires_explicit_recovery_switch() -> None:
+    base = [
+        "next",
+        "--release",
+        "release.json",
+        "--ledger",
+        "ledger.json",
+        "--publication-id",
+        "svodka-wombat-cubic-poop",
+    ]
+
+    normal = freshness_parser().parse_args(base)
+    recovery = freshness_parser().parse_args([*base, "--recover-stale-predecessors"])
+
+    assert normal.recover_stale_predecessors is False
+    assert recovery.recover_stale_predecessors is True
 
 
 def test_exact_canary_preflight_still_rejects_wrong_or_premature_requested_item() -> None:
@@ -156,6 +197,7 @@ def test_existing_canary_workflow_supplies_exact_identity_and_bound_before_durab
     assert "MAX_PUBLICATION_LAG_MINUTES: 120" in workflow
     assert "telegram_publication_freshness next" in workflow
     assert '--publication-id "$REQUESTED_PUBLICATION_ID"' in workflow
+    assert "--recover-stale-predecessors" in workflow
     assert "telegram_multichannel_cli prepare" in workflow
     assert "--mode manual" in workflow
     assert workflow.index("Require fresh strict-next canary window") < workflow.index(
