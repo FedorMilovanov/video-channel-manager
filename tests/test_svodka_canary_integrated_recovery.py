@@ -24,7 +24,9 @@ PROFILE_PATH = ROOT / "content/telegram/channels/svodka.json"
 BINDING_PATH = ROOT / "content/telegram/channels/svodka-target-binding.json"
 QUEUE_PATH = ROOT / "content/telegram/svodka/draft-14-posts-2026-08.json"
 CANARY_WORKFLOW = ROOT / ".github/workflows/svodka-canary.yml"
+READINESS_PATH = ROOT / "docs/operations/svodka-readiness.md"
 MAX_LAG_MINUTES = 120
+APPROVED_RELEASE_DIGEST = "sha256:959a42e914acedc6969550ba842a12d1a2b174c940497d8a98f4ab8e2e63cdce"
 
 
 def _release():
@@ -264,3 +266,17 @@ def test_existing_canary_workflow_supplies_exact_identity_and_bound_before_durab
         "Persist intent before Telegram mutation"
     )
     assert workflow.index("Persist intent before Telegram mutation") < workflow.index("Send exactly one canary payload")
+
+
+def test_readiness_document_tracks_current_activation_state_and_explicit_recovery_contract() -> None:
+    readiness = READINESS_PATH.read_text(encoding="utf-8")
+
+    assert "activation-armed but not yet canary-proven" in readiness
+    assert "provider_writes_authorized=true" in readiness
+    assert "content/telegram/svodka/release-approval-2026-08.json" in readiness
+    assert APPROVED_RELEASE_DIGEST in readiness
+    assert "14/14 `pending`" in readiness
+    assert "--recover-stale-predecessors" in readiness
+    assert "There is no committed `content/telegram/svodka/approved-release-2026-08.json` file" in readiness
+    assert "provider_writes_authorized=false" not in readiness
+    assert "approved release: absent" not in readiness
