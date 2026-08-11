@@ -117,6 +117,51 @@ def skip_expired_pending_by_freshness(
     return tuple(skipped)
 
 
+def _freshness_after_recoverable_stale_predecessors(
+    release: GenericReleaseQueue,
+    ledger: GenericPublicationLedger,
+    *,
+    now: datetime,
+    expected_publication_id: str,
+    max_lag_minutes: int,
+) -> FreshnessDecision:
+    """Preview exact-manual strict-next semantics without mutating durable state."""
+
+    verify_ledger_against_release(ledger, release)
+    for item in release.items:
+        entry = ledger.entries[item.publication_id]
+        if entry.state in {"published", "skipped"}:
+            continue
+        if entry.state != "pending":
+            return FreshnessDecision(
+                False,
+                f"strict queue blocked by {item.publication_id} in state {entry.state}",
+                item.publication_id,
+                item.scheduled_at.astimezone(UTC),
+                None,
+            )
+
+        decision = publication_freshness(
+            release,
+            item.publication_id,
+            now=now,
+            max_lag_minutes=max_lag_minutes,
+        )
+        if item.publication_id == expected_publication_id:
+            return decision
+        if decision.reason == "publication_too_stale":
+            continue
+        return FreshnessDecision(
+            False,
+            "requested_publication_is_not_strict_next",
+            item.publication_id,
+            item.scheduled_at.astimezone(UTC),
+            decision.deadline_utc,
+        )
+
+    return FreshnessDecision(False, "release_complete_after_stale_recovery", None, None, None)
+
+
 def next_publication_freshness(
     release: GenericReleaseQueue,
     ledger: GenericPublicationLedger,
@@ -124,7 +169,19 @@ def next_publication_freshness(
     now: datetime,
     expected_publication_id: str | None = None,
     max_lag_minutes: int = DEFAULT_MAX_LAG_MINUTES,
+    recover_stale_predecessors: bool = False,
 ) -> FreshnessDecision:
+    if recover_stale_predecessors:
+        if expected_publication_id is None:
+            raise ValueError("stale predecessor recovery preview requires an exact publication_id")
+        return _freshness_after_recoverable_stale_predecessors(
+            release,
+            ledger,
+            now=now,
+            expected_publication_id=expected_publication_id,
+            max_lag_minutes=max_lag_minutes,
+        )
+
     item, reason = strict_next_item(release, ledger)
     if item is None:
         return FreshnessDecision(False, reason, None, None, None)
@@ -194,6 +251,7 @@ def main() -> int:
             now=now,
             expected_publication_id=args.publication_id,
             max_lag_minutes=args.max_lag_minutes,
+            recover_stale_predecessors=args.publication_id is not None,
         )
     else:
         raise AssertionError(f"unhandled freshness command: {args.command}")
