@@ -92,5 +92,5 @@ def test_reader_first_standard_explicitly_rejects_feature_demo_editorial() -> No
     standard = STANDARD_PATH.read_text(encoding="utf-8")
     assert "A Rich Message is an article, not a Telegram feature demo." in standard
     assert "capability proof" in standard
-    assert "not the production editorial template" in standard
+    assert "editorial template for production posts" in standard
     assert "provider writes remain separately authorised" in standard
