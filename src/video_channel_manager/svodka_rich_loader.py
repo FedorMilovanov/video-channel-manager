@@ -55,6 +55,7 @@ from video_channel_manager.telegram_rich_models import (
     RichMediaSlot,
     RichTextBold,
     RichTextContent,
+    RichTextHashtag,
     RichTextItalic,
     RichTextNode,
     RichTextUrl,
@@ -277,8 +278,15 @@ def _build_blocks(payload: dict[str, Any]) -> tuple[object, ...]:
         if isinstance(tagline, str) and tagline.strip():
             blocks.append(RichBlockParagraph(block_id="p-footer", text=tagline))
         if isinstance(hashtags, list) and hashtags:
-            hashtag_text = " ".join(str(tag) for tag in hashtags)
-            blocks.append(RichBlockParagraph(block_id="p-hashtags", text=hashtag_text))
+            hashtag_nodes: list[RichTextNode] = ["\n"]
+            for index, raw_tag in enumerate(hashtags):
+                tag = str(raw_tag)
+                if not tag.startswith("#") or len(tag) < 2 or any(char.isspace() for char in tag):
+                    raise SvodkaRichLoadError(f"invalid footer hashtag: {tag!r}")
+                if index:
+                    hashtag_nodes.append(" ")
+                hashtag_nodes.append(RichTextHashtag(text=tag, hashtag=tag[1:]))
+            blocks.append(RichBlockParagraph(block_id="p-hashtags", text=tuple(hashtag_nodes)))
     return tuple(blocks)
 
 

@@ -22,7 +22,6 @@ from video_channel_manager.telegram_rich_models import (
     RichBlockMedia,
     RichMediaItem,
     RichTextContent,
-    RichTextCustomEmoji,
     RichTextNode,
 )
 from video_channel_manager.telegram_rich_provider import (
@@ -153,7 +152,10 @@ def _prepend(text: RichTextContent, *prefix: RichTextNode) -> RichTextContent:
 def _decorate(article: RichArticleDocument, catalog_path: Path, role: str) -> RichArticleDocument:
     catalog = load_custom_emoji_catalog(catalog_path)
     themed = catalog.item_for_role(role)
-    icon = RichTextCustomEmoji(custom_emoji_id=themed.custom_emoji_id, alternative_text=themed.fallback_emoji)
+    # Bot API permits custom emoji in channel posts only for bots with an additional
+    # Fragment username. This bot does not have that capability, so production uses
+    # the catalog's reviewed Unicode fallback instead of emitting an invalid entity.
+    icon = themed.fallback_emoji
     section = 0
     blocks: list[Any] = []
     for block in article.blocks:
@@ -164,7 +166,7 @@ def _decorate(article: RichArticleDocument, catalog_path: Path, role: str) -> Ri
             if section > 9:
                 raise ValueError("more than nine numbered sections")
             item = catalog.item_for_digit(section, style="primary")
-            digit = RichTextCustomEmoji(custom_emoji_id=item.custom_emoji_id, alternative_text=item.fallback_emoji)
+            digit = item.fallback_emoji
             blocks.append(block.model_copy(update={"text": _prepend(block.text, digit, " ")}))
         else:
             blocks.append(block)

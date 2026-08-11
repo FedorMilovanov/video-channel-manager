@@ -112,6 +112,8 @@ def _inline(value: RichTextContent) -> object:
             return {"type": "superscript", "text": _inline(value.text)}
         case "url":
             return {"type": "url", "text": _inline(value.text), "url": value.url}
+        case "hashtag":
+            return {"type": "hashtag", "text": _inline(value.text), "hashtag": value.hashtag}
         case "custom_emoji":
             return {
                 "type": "custom_emoji",
