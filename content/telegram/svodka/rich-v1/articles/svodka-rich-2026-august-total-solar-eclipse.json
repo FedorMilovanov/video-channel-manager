@@ -16,155 +16,56 @@
     "release_id": "svodka-pilot-2026-08",
     "source_format": "fresh_science"
   },
-  "title": "Полное солнечное затмение 12 августа 2026 года",
-  "lead": "В среду 12 августа 2026 года полоса полной фазы пройдёт через север России, Гренландию, Исландию, Испанию и небольшой участок Португалии. Для науки затмение — не только красивое зрелище, но и редкий природный эксперимент.",
-  "icons_used": [
-    "🌑",
-    "✈️",
-    "😎"
-  ],
+  "title": "Затмение 12 августа 2026 года: где будет видно и зачем за ним летят самолёты",
+  "lead": "Полное солнечное затмение длится недолго, но за эти минуты меняется сама задача наблюдения. Яркий диск Солнца исчезает за Луной, и становится доступна слабая внешняя атмосфера Солнца — корона. Поэтому для одних это редкое зрелище, а для исследователей — короткое окно, к которому готовят самолёты, аэростаты и приборы.",
+  "icons_used": ["🌑", "✈️", "😎"],
   "sections": [
     {
       "section_id": "geografiya",
-      "heading": "Где будет полная фаза",
+      "heading": "Сначала главное: полная фаза будет видна не везде",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Полная фаза пройдёт по <b>северу России, Гренландии, Исландии, Испании</b> и коснётся небольшого угла Португалии. В широких районах остальной Европы в тот же день будет видна частичная фаза.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Точное время и глубина фазы зависят от места наблюдения; единственный надёжный способ узнать свои числа — карта NASA по ссылке внизу, а не приблизительные «будет видно примерно вечером».",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "Полная фаза пройдёт по <b>северу России, Гренландии, Исландии и Испании</b> и коснётся небольшого участка Португалии. Во многих других районах Европы будет видно только частичное затмение.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Разница принципиальная. В полосе полной фазы Луна на короткое время полностью закрывает яркий солнечный диск. Вне этой полосы часть диска остаётся открытой, даже если закрыто 90 или 99 процентов. Поэтому две соседние точки на карте могут получить очень разное впечатление от одного события.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Точное время, длительность и глубина фазы зависят от конкретного места. Здесь карта полезнее любого пересказа: официальный сервис NASA позволяет проверить свою точку, а не ориентироваться на фразу «в Европе будет затмение».", "footnotes": [1]}
       ]
     },
     {
       "section_id": "chto-delayut-uchyonye",
-      "heading": "Что в этот день делают учёные",
+      "heading": "Почему учёным особенно нужна именно полная фаза",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Когда яркий диск Солнца закрыт Луной, невооружённому взгляду и инструментам открывается <i>корона</i> — слабая внешняя атмосфера Солнца. В обычный день её свет тонет в сиянии диска; во время полной фазы её можно регистрировать.",
-          "footnotes": [
-            2
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "По сообщению NASA, исследовательские группы будут наблюдать затмение с <b>высотного самолёта</b> и с <b>научных аэростатов</b>: на большой высоте атмосфера мешает меньше, и приборы видят дальше в инфракрасном диапазоне.",
-          "footnotes": [
-            2
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Затмение — это ещё и естественный эксперимент с самой Землёй: над регионом стремительно и ненадолго падает поток солнечного света. По тому, как отвечает атмосфера, уточняют модели переноса энергии в верхних слоях.",
-          "footnotes": [
-            2
-          ]
-        }
+        {"type": "paragraph", "html": "В обычный день яркая поверхность Солнца настолько сильно светит, что слабую <i>корону</i> — внешнюю солнечную атмосферу — рядом с ней наблюдать гораздо труднее. Во время полной фазы Луна работает как естественный заслон: яркий диск закрыт, а корона остаётся вокруг него видимой.", "footnotes": [2]},
+        {"type": "paragraph", "html": "Вот почему несколько минут полной фазы ценны не сами по себе, а как изменение контраста. Это примерно как пытаться рассмотреть слабую лампочку рядом с прожектором: сначала нужно убрать из поля зрения прожектор. Луна на короткое время делает именно это."},
+        {"type": "paragraph", "html": "NASA сообщает, что исследовательские группы будут наблюдать затмение с <b>высотного самолёта</b> и <b>научных аэростатов</b>. Высота нужна не ради красивого вида: чем выше прибор, тем меньше земной атмосферы находится между ним и объектом наблюдения, а значит, часть измерений становится чище.", "footnotes": [2]},
+        {"type": "paragraph", "html": "Есть и второй эксперимент — уже с Землёй. Когда Луна перекрывает солнечный свет, над регионом быстро меняется приток энергии. Исследователи используют это резкое и заранее известное изменение, чтобы следить за реакцией атмосферы.", "footnotes": [2]}
       ]
     },
     {
       "section_id": "kak-smotret",
-      "heading": "Как смотреть без последствий",
+      "heading": "Как смотреть безопасно",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Полная фаза — короткие минуты, когда диск полностью закрыт. Всё остальное время, до и после полной фазы, а также любая частичная фаза требуют <b>сертифицированных затменных фильтров</b>: бытовые солнцезащитные очки, тонированное стекло и фото-черно-белый негатив не защищают сетчатку.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Это не редакторская осторожность, а медицинский факт: глаз не чувствует ожога сетчатки в момент повреждения, а последствия необратимы."
-        }
+        {"type": "paragraph", "html": "Главное правило простое: во время любой частичной фазы и до наступления полной фазы на Солнце смотрят только через <b>сертифицированные затменные фильтры</b>. Обычные солнцезащитные очки, тонированное стекло и самодельные затемнители для этого не подходят.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Полная фаза — отдельный короткий момент, когда солнечный диск действительно закрыт целиком. Но если вы не уверены, наступила ли она именно в вашей точке, безопасная стратегия одна: не снимать защиту и сверяться с точными данными для места наблюдения.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Для обычного наблюдателя хороший план поэтому состоит из трёх вещей: заранее открыть карту NASA, подготовить нормальные фильтры и не пытаться угадывать фазу по яркости неба."}
       ]
     }
   ],
   "quotes": [],
   "media_slots": [
-    {
-      "slot_id": "media-01",
-      "placement": {
-        "after": "lead",
-        "before": "geografiya"
-      },
-      "depicts": "Официальная карта полосы полной фазы NASA для затмения 12 августа 2026 года по Европе и Северной Атлантике.",
-      "purpose": "Дать читателю визуальный ответ на главный практический вопрос: «а у нас будет?». Официальная карта точнее любого пересказа.",
-      "preferred_source_type": "NASA eclipse web page map, downloaded exactly as published",
-      "copyright_provenance": "NASA eclipse path maps are public domain with a requested NASA credit; use the official map and keep the NASA credit in the caption. Avoid third-party redrawn 'branded' maps with unclear rights.",
-      "caption": "Полоса полной фазы затмения 12 августа 2026 года. Карта: NASA."
-    },
-    {
-      "slot_id": "media-02",
-      "placement": {
-        "after": "chto-delayut-uchyonye"
-      },
-      "depicts": "Фотография высотного самолёта NASA (WB-57F) или запуска научной аэростатной платформы — в контексте наблюдений за затмением.",
-      "purpose": "Показать реальный инструмент исследования — не телескоп в башне, а самолёт и аэростат; это делает раздел о научной работе конкретным.",
-      "preferred_source_type": "NASA imagery from the cited eclipse-science article",
-      "copyright_provenance": "NASA imagery is public domain; preserve exact per-image credit from the NASA page.",
-      "caption": "Наблюдать затмение будут и с высотных платформ. Фото: NASA."
-    }
+    {"slot_id": "media-01", "placement": {"after": "lead", "before": "geografiya"}, "depicts": "Официальная карта полосы полной фазы NASA для затмения 12 августа 2026 года по Европе и Северной Атлантике.", "purpose": "Ответить на главный практический вопрос читателя — где именно будет полная фаза — до длинного объяснения физики.", "preferred_source_type": "NASA eclipse web page map, downloaded exactly as published", "copyright_provenance": "NASA eclipse path maps are public domain with a requested NASA credit; use the official map and keep the NASA credit in the caption. Avoid third-party redrawn 'branded' maps with unclear rights.", "caption": "Полоса полной фазы затмения 12 августа 2026 года. Карта: NASA."},
+    {"slot_id": "media-02", "placement": {"after": "chto-delayut-uchyonye"}, "depicts": "Фотография высотного самолёта NASA (WB-57F) или запуска научной аэростатной платформы — в контексте наблюдений за затмением.", "purpose": "Показать конкретный исследовательский инструмент после объяснения, зачем наблюдения поднимают выше основной массы атмосферы.", "preferred_source_type": "NASA imagery from the cited eclipse-science article", "copyright_provenance": "NASA imagery is public domain; preserve exact per-image credit from the NASA page.", "caption": "Часть приборов поднимут на высотные платформы, чтобы уменьшить влияние земной атмосферы. Фото: NASA."}
   ],
   "visual_plan": {
-    "rationale": "У читателя за пределами полной фазы практический вопрос один: «а у нас что будет?». Один проверенный кадр карты, отданный раньше текста, закрывает его лучше любой композиции.",
-    "panels": [
-      {
-        "order": 1,
-        "type": "map",
-        "content": "NASA, официальная карта полосы затмения; без самостоятельных правок географии и цвета"
-      }
-    ]
+    "rationale": "Для этой темы нужны не демонстрационные формулы, а две объясняющие картинки: точная карта полосы полной фазы и реальный высотный инструмент NASA.",
+    "panels": [{"order": 1, "type": "map", "content": "NASA, официальная карта полосы затмения; без самостоятельных правок географии и цвета"}]
   },
   "footnotes": [
-    {
-      "n": 1,
-      "source_id": "src-nasa-eclipse-2026-path",
-      "label": "NASA Science — Total solar eclipse on August 12, 2026",
-      "url": "https://science.nasa.gov/eclipses/future-eclipses/total-solar-eclipse-on-august-12-2026/"
-    },
-    {
-      "n": 2,
-      "source_id": "src-nasa-eclipse-2026-science",
-      "label": "NASA Science — NASA science soars during August total solar eclipse",
-      "url": "https://science.nasa.gov/science-research/heliophysics/nasa-science-soars-during-august-total-solar-eclipse/"
-    }
+    {"n": 1, "source_id": "src-nasa-eclipse-2026-path", "label": "NASA Science — Total solar eclipse on August 12, 2026", "url": "https://science.nasa.gov/eclipses/future-eclipses/total-solar-eclipse-on-august-12-2026/"},
+    {"n": 2, "source_id": "src-nasa-eclipse-2026-science", "label": "NASA Science — NASA science soars during August total solar eclipse", "url": "https://science.nasa.gov/science-research/heliophysics/nasa-science-soars-during-august-total-solar-eclipse/"}
   ],
   "sources": [
-    {
-      "source_id": "src-nasa-eclipse-2026-path",
-      "label": "NASA Science — Aug. 12, 2026 eclipse path",
-      "url": "https://science.nasa.gov/eclipses/future-eclipses/total-solar-eclipse-on-august-12-2026/",
-      "verified_on": "2026-08-08",
-      "evidence": "NASA places totality across northern Russia, Greenland, Iceland, Spain and a small corner of Portugal, with a partial eclipse across much of Europe and other Northern Hemisphere regions."
-    },
-    {
-      "source_id": "src-nasa-eclipse-2026-science",
-      "label": "NASA Science — eclipse aircraft and balloon research",
-      "url": "https://science.nasa.gov/science-research/heliophysics/nasa-science-soars-during-august-total-solar-eclipse/",
-      "verified_on": "2026-08-08",
-      "evidence": "NASA-funded teams will use a high-altitude aircraft and balloons to study the solar corona and atmospheric effects during the Aug. 12, 2026 eclipse."
-    }
+    {"source_id": "src-nasa-eclipse-2026-path", "label": "NASA Science — Aug. 12, 2026 eclipse path", "url": "https://science.nasa.gov/eclipses/future-eclipses/total-solar-eclipse-on-august-12-2026/", "verified_on": "2026-08-08", "evidence": "NASA places totality across northern Russia, Greenland, Iceland, Spain and a small corner of Portugal, with a partial eclipse across much of Europe and other Northern Hemisphere regions."},
+    {"source_id": "src-nasa-eclipse-2026-science", "label": "NASA Science — eclipse aircraft and balloon research", "url": "https://science.nasa.gov/science-research/heliophysics/nasa-science-soars-during-august-total-solar-eclipse/", "verified_on": "2026-08-08", "evidence": "NASA-funded teams will use a high-altitude aircraft and balloons to study the solar corona and atmospheric effects during the Aug. 12, 2026 eclipse."}
   ],
-  "footer": {
-    "tagline": "Сводка — сводим факты, а не мнения 😎",
-    "hashtags": [
-      "#Сводка",
-      "#Затмение",
-      "#Космос",
-      "#Солнце",
-      "#NASA",
-      "#2026"
-    ]
-  },
-  "editorial_notes": "The time-sensitive item becomes a preview article with an explicit date anchor instead of relative time words; eye-safety guidance is moved out of the fine print, where it is easy to skip. Claims stay with the two NASA sources carried over from the frozen release."
+  "footer": {"tagline": "Сводка — сводим факты, а не мнения 😎", "hashtags": ["#Сводка", "#Затмение", "#Космос", "#Солнце", "#NASA", "#2026"]},
+  "editorial_notes": "Clarity pass 2026-08-11 after live Rich Message canary: the demonstration-only formula/table structure was explicitly rejected for production. The article now explains totality through contrast, why high-altitude platforms matter, and what the reader should do; every rich element must serve comprehension. Claims remain bound to the two verified NASA sources."
 }
