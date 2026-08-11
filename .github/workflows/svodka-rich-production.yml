@@ -3,8 +3,11 @@ name: Svodka rich production publisher
 on:
   schedule:
     - cron: "30 16 11 8 *"
+    - cron: "17 17 11 8 *"
     - cron: "30 7 12-18 8 *"
+    - cron: "17 8 12-18 8 *"
     - cron: "30 16 12-17 8 *"
+    - cron: "17 17 12-17 8 *"
   workflow_dispatch:
     inputs:
       confirm:
@@ -26,7 +29,8 @@ jobs:
   publish:
     if: >-
       github.ref == 'refs/heads/main' &&
-      (github.event_name == 'schedule' || inputs.confirm == 'SVODKA-RICH-PRODUCTION:@deep_info_life')
+      (github.event_name == 'schedule' ||
+       (github.event_name == 'workflow_dispatch' && inputs.confirm == 'SVODKA-RICH-PRODUCTION:@deep_info_life'))
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
