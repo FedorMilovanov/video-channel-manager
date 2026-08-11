@@ -37,6 +37,7 @@ jobs:
       STATE_DIR: .state/svodka
       LEDGER_RELATIVE_PATH: content/telegram/svodka/publication-ledger.json
       LEDGER_PATH: .state/svodka/content/telegram/svodka/publication-ledger.json
+      MAX_PUBLICATION_LAG_MINUTES: 120
     steps:
       - name: Check out immutable release source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

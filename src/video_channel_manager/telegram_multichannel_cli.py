@@ -35,7 +35,10 @@ from video_channel_manager.telegram_multichannel_transport import (
     send_message_once,
     send_poll_once,
 )
-from video_channel_manager.telegram_publication_freshness import publication_freshness
+from video_channel_manager.telegram_publication_freshness import (
+    publication_freshness,
+    skip_expired_pending_by_freshness,
+)
 
 ModelT = TypeVar("ModelT", bound=BaseModel)
 
@@ -283,7 +286,15 @@ def main() -> int:
         if not release.release_authorized:
             raise ValueError("stale-publication skipping requires an authorized immutable release")
         ledger = load_ledger(args.ledger, release)
-        skipped = skip_expired_pending(release, ledger)
+        max_lag_minutes = _configured_max_publication_lag_minutes()
+        if max_lag_minutes is None:
+            skipped = skip_expired_pending(release, ledger)
+        else:
+            skipped = skip_expired_pending_by_freshness(
+                release,
+                ledger,
+                max_lag_minutes=max_lag_minutes,
+            )
         if skipped:
             save_ledger(args.ledger, ledger)
         print(

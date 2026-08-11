@@ -12,6 +12,7 @@ from video_channel_manager.telegram_multichannel_state import (
     load_ledger,
     publication_window,
     strict_next_item,
+    verify_ledger_against_release,
 )
 
 DEFAULT_MAX_LAG_MINUTES = 120
@@ -26,6 +27,24 @@ class FreshnessDecision:
     deadline_utc: datetime | None
 
 
+def publication_deadline(
+    release: GenericReleaseQueue,
+    publication_id: str,
+    *,
+    max_lag_minutes: int = DEFAULT_MAX_LAG_MINUTES,
+) -> datetime:
+    if not 1 <= max_lag_minutes <= 360:
+        raise ValueError("max publication lag must be between 1 and 360 minutes")
+
+    item = next((candidate for candidate in release.items if candidate.publication_id == publication_id), None)
+    if item is None:
+        raise ValueError(f"publication is absent from immutable release: {publication_id}")
+
+    scheduled = item.scheduled_at.astimezone(UTC)
+    _, state_window_end = publication_window(release, publication_id)
+    return min(state_window_end, scheduled + timedelta(minutes=max_lag_minutes))
+
+
 def publication_freshness(
     release: GenericReleaseQueue,
     publication_id: str,
@@ -35,8 +54,6 @@ def publication_freshness(
 ) -> FreshnessDecision:
     if now.tzinfo is None:
         raise ValueError("freshness timestamp must be timezone-aware")
-    if not 1 <= max_lag_minutes <= 360:
-        raise ValueError("max publication lag must be between 1 and 360 minutes")
 
     item = next((candidate for candidate in release.items if candidate.publication_id == publication_id), None)
     if item is None:
@@ -44,14 +61,60 @@ def publication_freshness(
 
     effective_now = now.astimezone(UTC)
     scheduled = item.scheduled_at.astimezone(UTC)
-    _, state_window_end = publication_window(release, publication_id)
-    deadline = min(state_window_end, scheduled + timedelta(minutes=max_lag_minutes))
+    deadline = publication_deadline(
+        release,
+        publication_id,
+        max_lag_minutes=max_lag_minutes,
+    )
 
     if effective_now < scheduled:
         return FreshnessDecision(False, "publication_not_due", publication_id, scheduled, deadline)
     if effective_now >= deadline:
         return FreshnessDecision(False, "publication_too_stale", publication_id, scheduled, deadline)
     return FreshnessDecision(True, "publication_fresh", publication_id, scheduled, deadline)
+
+
+def skip_expired_pending_by_freshness(
+    release: GenericReleaseQueue,
+    ledger: GenericPublicationLedger,
+    *,
+    now: datetime | None = None,
+    max_lag_minutes: int = DEFAULT_MAX_LAG_MINUTES,
+) -> tuple[str, ...]:
+    """Skip strict-next pending items exactly when their dispatch freshness expires.
+
+    This is intentionally opt-in for callers that also enforce the same bounded
+    publication freshness before provider mutation. Legacy window-only recovery
+    remains available in ``telegram_multichannel_state.skip_expired_pending``.
+    """
+
+    effective_now = now or datetime.now(tz=UTC)
+    if effective_now.tzinfo is None:
+        raise ValueError("stale-publication check timestamp must be timezone-aware")
+    effective_now = effective_now.astimezone(UTC)
+    verify_ledger_against_release(ledger, release)
+
+    skipped: list[str] = []
+    for item in release.items:
+        entry = ledger.entries[item.publication_id]
+        if entry.state in {"published", "skipped"}:
+            continue
+        if entry.state != "pending":
+            break
+
+        deadline = publication_deadline(
+            release,
+            item.publication_id,
+            max_lag_minutes=max_lag_minutes,
+        )
+        if effective_now < deadline:
+            break
+
+        entry.state = "skipped"
+        entry.provider_effect = "impossible"
+        entry.last_error = f"publication freshness deadline expired at {deadline.isoformat()} before dispatch"
+        skipped.append(item.publication_id)
+    return tuple(skipped)
 
 
 def next_publication_freshness(
