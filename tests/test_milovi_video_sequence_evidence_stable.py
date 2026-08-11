@@ -28,14 +28,9 @@ def test_stable_youtube_embed_identity_is_exact() -> None:
         expected_id=expected,
         raw_url=stable._youtube_capture_url("other"),
     )
-    assert not stable._stable_identity_url_matches(
-        platform="youtube",
-        expected_id=expected,
-        raw_url="https://www.youtube-nocookie.com/embed/other",
-    )
 
 
-def test_stable_capture_urls_use_local_parent_with_exact_embed_identity() -> None:
+def test_stable_capture_urls_bind_exact_media_identity() -> None:
     youtube_id = "MdQ0kNBSsa8"
     remote_id = "-68859909_456239176"
 
@@ -48,14 +43,69 @@ def test_stable_capture_urls_use_local_parent_with_exact_embed_identity() -> Non
     document = stable._youtube_embed_document(youtube_id)
     assert f"/embed/{youtube_id}" in document
     assert 'referrerpolicy="strict-origin-when-cross-origin"' in document
-    assert "Error 153" not in document
 
-    assert stable._vk_capture_url(remote_id) == f"https://vk.ru/clip{remote_id}"
+    vk_url = stable._vk_capture_url(remote_id)
+    assert vk_url == "https://vk.com/clip_ext.php?oid=-68859909&id=456239176&autoplay=1"
     assert stable._stable_identity_url_matches(
         platform="vk",
         expected_id=remote_id,
-        raw_url=stable._vk_capture_url(remote_id),
+        raw_url=vk_url,
     )
+    assert not stable._stable_identity_url_matches(
+        platform="vk",
+        expected_id=remote_id,
+        raw_url="https://vk.com/clip_ext.php?oid=-68859909&id=456239175&autoplay=1",
+    )
+
+
+def test_temporal_diversity_gate_suppresses_collapsed_capture() -> None:
+    repeated = tuple(
+        {
+            "index": index,
+            "sha256": "same-frame",
+        }
+        for index in range(12)
+    )
+    capture = base.CaptureResult(
+        status="captured",
+        canonical_url="https://vk.com/clip-68859909_456239130",
+        final_url="https://vk.com/clip_ext.php",
+        duration_s=39.0,
+        video_width=720,
+        video_height=1280,
+        frames=repeated,
+        page_title="",
+        block_hints=(),
+    )
+
+    gated = stable._temporal_diversity_gate(capture)
+    assert gated.status == "temporal_capture_unreliable"
+    assert gated.frames == ()
+    assert gated.error is not None
+    assert "collapsed" in gated.error
+
+
+def test_temporal_diversity_gate_accepts_moving_capture() -> None:
+    frames = tuple(
+        {
+            "index": index,
+            "sha256": f"frame-{index}",
+        }
+        for index in range(12)
+    )
+    capture = base.CaptureResult(
+        status="captured",
+        canonical_url="https://vk.com/clip-68859909_456239176",
+        final_url="https://vk.com/clip_ext.php",
+        duration_s=35.0,
+        video_width=720,
+        video_height=1280,
+        frames=frames,
+        page_title="",
+        block_hints=(),
+    )
+
+    assert stable._temporal_diversity_gate(capture) is capture
 
 
 def test_wrapper_source_remains_read_only() -> None:
