@@ -1,19 +1,19 @@
 name: Format Svodka rich PR
 
 on:
-  push:
-    branches:
-      - agent/svodka-rich-production-final
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
 
 jobs:
   format:
+    if: github.head_ref == 'agent/svodka-rich-production-final'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - name: Check out branch
+      - name: Check out exact PR branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: agent/svodka-rich-production-final
@@ -25,22 +25,60 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Format exact new source
+      - name: Synchronize existing state-writer contract
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          workflow = Path('.github/workflows/svodka-rich-production.yml')
+          text = workflow.read_text(encoding='utf-8')
+          needle = '  cancel-in-progress: false\n'
+          if '  queue: max\n' not in text:
+              if needle not in text:
+                  raise SystemExit('rich production concurrency contract moved')
+              text = text.replace(needle, needle + '  queue: max\n', 1)
+              workflow.write_text(text, encoding='utf-8')
+
+          tests = Path('tests/test_svodka_deployment_workflows.py')
+          text = tests.read_text(encoding='utf-8')
+          constant = 'RICH_PRODUCTION_WORKFLOW = WORKFLOW_DIR / "svodka-rich-production.yml"\n'
+          anchor = 'CUSTOM_EMOJI_CANARY_WORKFLOW = WORKFLOW_DIR / "svodka-custom-emoji-capability-canary.yml"\n'
+          if constant not in text:
+              if anchor not in text:
+                  raise SystemExit('state-writer test constants moved')
+              text = text.replace(anchor, anchor + constant, 1)
+          tuple_anchor = '    CUSTOM_EMOJI_CANARY_WORKFLOW,\n)\n'
+          tuple_replacement = '    CUSTOM_EMOJI_CANARY_WORKFLOW,\n    RICH_PRODUCTION_WORKFLOW,\n)\n'
+          if '    RICH_PRODUCTION_WORKFLOW,\n' not in text:
+              if tuple_anchor not in text:
+                  raise SystemExit('state-writer tuple moved')
+              text = text.replace(tuple_anchor, tuple_replacement, 1)
+          tests.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Format with exact CI Ruff
         run: |
           set -euo pipefail
           python -m pip install --disable-pip-version-check 'ruff==0.16.2'
-          ruff format src/video_channel_manager/svodka_rich_production.py tests/test_svodka_rich_production.py
-          ruff check src/video_channel_manager/svodka_rich_production.py tests/test_svodka_rich_production.py
+          ruff format src/video_channel_manager/svodka_rich_production.py tests/test_svodka_rich_production.py tests/test_svodka_deployment_workflows.py
+          ruff check src/video_channel_manager/svodka_rich_production.py tests/test_svodka_rich_production.py tests/test_svodka_deployment_workflows.py
 
-      - name: Commit formatter-only delta
+      - name: Commit deterministic formatter and contract delta
         run: |
           set -euo pipefail
-          if git diff --quiet -- src/video_channel_manager/svodka_rich_production.py tests/test_svodka_rich_production.py; then
-            echo 'No formatting delta.'
+          paths=(
+            .github/workflows/svodka-rich-production.yml
+            src/video_channel_manager/svodka_rich_production.py
+            tests/test_svodka_rich_production.py
+            tests/test_svodka_deployment_workflows.py
+          )
+          if git diff --quiet -- "${paths[@]}"; then
+            echo 'No deterministic delta.'
             exit 0
           fi
           git config user.name 'svodka-ci-formatter[bot]'
           git config user.email 'svodka-ci-formatter@users.noreply.github.com'
-          git add src/video_channel_manager/svodka_rich_production.py tests/test_svodka_rich_production.py
-          git commit -m 'Format Svodka rich production source'
+          git add -- "${paths[@]}"
+          git commit -m 'Normalize Svodka rich production contracts'
           git push origin HEAD:agent/svodka-rich-production-final
