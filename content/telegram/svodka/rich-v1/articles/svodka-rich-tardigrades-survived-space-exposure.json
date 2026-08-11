@@ -16,170 +16,51 @@
     "release_id": "svodka-pilot-2026-08",
     "source_format": "quick_fact"
   },
-  "title": "Тихоходки пережили открытый космос",
-  "lead": "В 2007 году около трёх тысяч тихоходок провели двенадцать дней на орбите, открытые вакууму и космическому излучению. Некоторые выжили. Факт известный — и поэтому особенно важно рассказать его без преувеличений.",
-  "icons_used": [
-    "🔬",
-    "💧",
-    "🛰️",
-    "😎"
-  ],
+  "title": "Тихоходки пережили открытый космос — но не жили там обычной жизнью",
+  "lead": "Фраза «тихоходки выживают в космосе» часто звучит так, будто эти микроскопические животные могут спокойно ползать по спутнику без воздуха. Реальный опыт был жёстче и интереснее: животных заранее ввели в почти обезвоженное состояние, на 12 дней вынесли в открытый космос, а потом проверили, кто сможет восстановиться после возвращения.",
+  "icons_used": ["🔬", "💧", "🛰️", "😎"],
   "sections": [
     {
       "section_id": "eksperiment",
-      "heading": "Каким был эксперимент",
+      "heading": "Что именно отправили в космос",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Эксперимент TARDIS («Tardigrades in space») придумали шведские и немецкие исследователи, а провели его на орбитальной миссии ESA «Фотон-М3». Около <b>3000 тихоходок</b> провели на орбите <b>12 дней</b> в сентябре 2007 года — открытые вакууму и космическому излучению. После возвращения часть животных выжила.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Это впечатляющий результат, но он не означает, что тихоходки «живут в космосе как дома». Речь о выживании при экстремальном режиме, а не о нормальной жизни за пределами атмосферы.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "quote",
-          "html": "«Наш главный вывод: космический вакуум с его предельным обезвоживанием и излучением оказался тихоходкам по силам».",
-          "attribution": "Ингемар Йонссон, руководитель эксперимента TARDIS (Университет Кристианстада, Швеция)",
-          "note": "перевод редакции с английского",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "В сентябре 2007 года эксперимент TARDIS прошёл на орбитальной миссии ESA «Фотон-М3». Около <b>3000 тихоходок</b> провели на орбите <b>12 дней</b>, подвергаясь космическому вакууму и излучению. После возвращения часть животных выжила.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Ключевое слово здесь — <b>выжила</b>. Это не означает, что животные всё это время нормально питались, двигались и размножались. Эксперимент проверял способность пережить экстремальные условия и восстановиться потом.", "footnotes": [1]},
+        {"type": "quote", "html": "«Наш главный вывод: космический вакуум с его предельным обезвоживанием и излучением оказался тихоходкам по силам».", "attribution": "Ингемар Йонссон, руководитель эксперимента TARDIS", "note": "перевод редакции с английского", "footnotes": [1]}
       ]
     },
     {
       "section_id": "kak-oni-eto-delayut",
-      "heading": "Как они это делают",
+      "heading": "Как пережить условия, в которых обычный организм быстро погибнет",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Тихоходки переживают неблагоприятные условия, переходя в состояние почти полного обезвоживания — <i>ангидробиоз</i>. Активность животного резко падает, метаболизм почти замирает; в таком виде организм переносит то, что в обычном состоянии недоступно.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Это не «заклинание устойчивости», а физиология, которую можно регистрировать и изучать. Именно поэтому тихоходки так интересны биологам: их устойчивость имеет механику, требующую объяснения.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "Тихоходки способны переходить в состояние <i>ангидробиоза</i> — почти полного обезвоживания. Вода уходит из организма, активность резко падает, а обмен веществ замедляется до крайне низкого уровня.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Для понимания полезно представить не «сверхживучее бодрое животное», а организм на паузе. Он не становится неуязвимым; он просто переносит часть повреждающих факторов в состоянии, где обычные жизненные процессы почти остановлены.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Именно поэтому тихоходки интересны исследователям: экстремальная устойчивость здесь связана с конкретным физиологическим состоянием, которое можно сравнивать, измерять и проверять, а не с мистической «бессмертностью»."}
       ]
     },
     {
       "section_id": "dannye-2026",
-      "heading": "Почему данные всплыли сейчас",
+      "heading": "Почему об опыте снова говорят в 2026 году",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "В 2026 году ESA выложило архивный набор данных по эксперименту TARDIS как отдельный научный датасет: страница опубликована в мае и обновлена в июле. Это не новое исследование, а открытый доступ к материалам старого.",
-          "footnotes": [
-            2
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Такой шаг полезен тем, что делает результат проверяемым: датасет связывает конкретный эксперимент и публикацию 2008 года в Current Biology и позволяет независимо смотреть на исходные условия.",
-          "footnotes": [
-            2
-          ]
-        }
+        {"type": "paragraph", "html": "Сам эксперимент не новый: он прошёл в 2007 году, а научная публикация вышла в 2008-м. В 2026 году ESA отдельно опубликовало архивный набор данных TARDIS и обновило его страницу.", "footnotes": [2]},
+        {"type": "paragraph", "html": "Это важное различие для новостей о науке. <b>Новый датасет не равен новому открытию.</b> Иногда в информационную ленту возвращается старый эксперимент потому, что его исходные материалы стали удобнее доступны для проверки и повторного анализа.", "footnotes": [2]}
       ]
     }
   ],
-  "quotes": [
-    {
-      "section_id": "eksperiment",
-      "html": "«Наш главный вывод: космический вакуум с его предельным обезвоживанием и излучением оказался тихоходкам по силам».",
-      "attribution": "Ингемар Йонссон, руководитель эксперимента TARDIS (Университет Кристианстада, Швеция)",
-      "note": "перевод редакции с английского (Our principle finding is that the space vacuum, which entails extreme dehydration and cosmic radiation, were not a problem for water bears)",
-      "verified_at_source": "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Research/Tiny_animals_survive_exposure_to_space"
-    }
-  ],
+  "quotes": [{"section_id": "eksperiment", "html": "«Наш главный вывод: космический вакуум с его предельным обезвоживанием и излучением оказался тихоходкам по силам».", "attribution": "Ингемар Йонссон, руководитель эксперимента TARDIS (Университет Кристианстада, Швеция)", "note": "перевод редакции с английского (Our principle finding is that the space vacuum, which entails extreme dehydration and cosmic radiation, were not a problem for water bears)", "verified_at_source": "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Research/Tiny_animals_survive_exposure_to_space"}],
   "media_slots": [
-    {
-      "slot_id": "media-01",
-      "placement": {
-        "after": "lead",
-        "before": "eksperiment"
-      },
-      "depicts": "Микрофотография тихоходки — реальный снимок малого существа с восемью ногами, а не комиксовый «космический зверёк».",
-      "purpose": "Снять мультяшный ореол: герой статьи — животное длиной в доли миллиметра.",
-      "preferred_source_type": "openly licensed microscopy image, preferably with a scientific credit",
-      "copyright_provenance": "Prefer Wikipedia/Commons CC BY-SA or public-domain microscopy with recorded author and licence, or university open collections with a checked licence. No unattributed reposts.",
-      "caption": "Тихоходка под микроскопом. Животное крошечное; его известность — следствие физиологии."
-    },
-    {
-      "slot_id": "media-02",
-      "placement": {
-        "after": "kak-oni-eto-delayut"
-      },
-      "depicts": "Редакционная диаграмма: обычное состояние тихоходки → обезвоживание → ангидробиоз; подписи «активность ↓», «метаболизм ≈ 0».",
-      "purpose": "Пояснить механизм ангидробиоза одним зрительным жестом, не вдаваясь в спорные или непроверенные подробности.",
-      "preferred_source_type": "original editorial diagram",
-      "copyright_provenance": "Original work; the state-transition description is a fact and not copyrightable.",
-      "caption": "Ангидробиоз: животное почти полностью обезвожено, метаболизм резко замедлен."
-    },
-    {
-      "slot_id": "media-03",
-      "placement": {
-        "after": "dannye-2026"
-      },
-      "depicts": "Архивное фото или логотип миссии «Фотон-М3» / TARDIS со страницы ESA — строго в контексте эксперимента 2007 года.",
-      "purpose": "Связать статью с документальным следом: миссия и датасет реальны и проверяемы.",
-      "preferred_source_type": "ESA multimedia library with checked licence",
-      "copyright_provenance": "ESA imagery is generally CC BY-SA 3.0 IGO; the per-asset licence text must be checked on the ESA page and the attribution preserved, e.g. 'Фото: ESA'.",
-      "caption": "Эксперимент TARDIS на «Фотоне-М3». Фото: ESA."
-    }
+    {"slot_id": "media-01", "placement": {"after": "lead", "before": "eksperiment"}, "depicts": "Микрофотография тихоходки — реальный снимок малого существа с восемью ногами, а не комиксовый «космический зверёк».", "purpose": "Сразу показать масштаб героя статьи и убрать фантастический образ 'космического монстра'.", "preferred_source_type": "openly licensed microscopy image, preferably with a scientific credit", "copyright_provenance": "Prefer Wikipedia/Commons CC BY-SA or public-domain microscopy with recorded author and licence, or university open collections with a checked licence. No unattributed reposts.", "caption": "Тихоходка под микроскопом. В космос отправляли крошечных животных в почти обезвоженном состоянии."},
+    {"slot_id": "media-02", "placement": {"after": "kak-oni-eto-delayut"}, "depicts": "Редакционная диаграмма: активная тихоходка → потеря воды → состояние ангидробиоза → восстановление после возвращения условий.", "purpose": "Показать, что слово 'выжила' означает переход в особое состояние и последующее восстановление, а не обычную активную жизнь в вакууме.", "preferred_source_type": "original editorial diagram", "copyright_provenance": "Original work; the state-transition description is a fact and not copyrightable.", "caption": "Ангидробиоз — не суперсила, а физиологическая пауза с почти полной потерей воды."},
+    {"slot_id": "media-03", "placement": {"after": "dannye-2026"}, "depicts": "Архивное фото или логотип миссии «Фотон-М3» / TARDIS со страницы ESA — строго в контексте эксперимента 2007 года.", "purpose": "Связать современную публикацию датасета с реальной миссией 2007 года и не создавать впечатление нового полёта.", "preferred_source_type": "ESA multimedia library with checked licence", "copyright_provenance": "ESA imagery is generally CC BY-SA 3.0 IGO; the per-asset licence text must be checked on the ESA page and the attribution preserved, e.g. 'Фото: ESA'.", "caption": "TARDIS летал на «Фотоне-М3» в 2007 году; в 2026-м ESA открыл архивный датасет эксперимента."}
   ],
   "footnotes": [
-    {
-      "n": 1,
-      "source_id": "src-esa-tardigrades",
-      "label": "ESA — Tiny animals survive exposure to space",
-      "url": "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Research/Tiny_animals_survive_exposure_to_space"
-    },
-    {
-      "n": 2,
-      "source_id": "src-esa-hreda-tardis",
-      "label": "ESA HREDA — TARDIS dataset",
-      "url": "https://esdcdoi.esac.esa.int/doi/html/data/hre/hreda/ea4ded24-c367-4245-96dd-e1eedb98cf81.html"
-    }
+    {"n": 1, "source_id": "src-esa-tardigrades", "label": "ESA — Tiny animals survive exposure to space", "url": "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Research/Tiny_animals_survive_exposure_to_space"},
+    {"n": 2, "source_id": "src-esa-hreda-tardis", "label": "ESA HREDA — TARDIS dataset", "url": "https://esdcdoi.esac.esa.int/doi/html/data/hre/hreda/ea4ded24-c367-4245-96dd-e1eedb98cf81.html"}
   ],
   "sources": [
-    {
-      "source_id": "src-esa-tardigrades",
-      "label": "ESA — Tiny animals survive exposure to space",
-      "url": "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Research/Tiny_animals_survive_exposure_to_space",
-      "verified_on": "2026-08-08",
-      "evidence": "ESA reports roughly 3000 tardigrades exposed during Foton-M3 for 12 days and survived vacuum/space conditions. Re-read 2026-08-10: September 2007 timing, Swedish-German TARDIS team and the Jönsson quote verified verbatim; Foton-M3 flown as an ESA orbital mission.",
-      "reverified_on": "2026-08-10"
-    },
-    {
-      "source_id": "src-esa-hreda-tardis",
-      "label": "ESA HREDA — TARDIS dataset",
-      "url": "https://esdcdoi.esac.esa.int/doi/html/data/hre/hreda/ea4ded24-c367-4245-96dd-e1eedb98cf81.html",
-      "verified_on": "2026-08-08",
-      "evidence": "ESA dataset page published May 22, 2026 and updated July 9, 2026 links the TARDIS experiment and 2008 Current Biology publication."
-    }
+    {"source_id": "src-esa-tardigrades", "label": "ESA — Tiny animals survive exposure to space", "url": "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Research/Tiny_animals_survive_exposure_to_space", "verified_on": "2026-08-08", "evidence": "ESA reports roughly 3000 tardigrades exposed during Foton-M3 for 12 days and survived vacuum/space conditions. Re-read 2026-08-10: September 2007 timing, Swedish-German TARDIS team and the Jönsson quote verified verbatim; Foton-M3 flown as an ESA orbital mission.", "reverified_on": "2026-08-10"},
+    {"source_id": "src-esa-hreda-tardis", "label": "ESA HREDA — TARDIS dataset", "url": "https://esdcdoi.esac.esa.int/doi/html/data/hre/hreda/ea4ded24-c367-4245-96dd-e1eedb98cf81.html", "verified_on": "2026-08-08", "evidence": "ESA dataset page published May 22, 2026 and updated July 9, 2026 links the TARDIS experiment and 2008 Current Biology publication."}
   ],
-  "footer": {
-    "tagline": "Сводка — сводим факты, а не мнения 😎",
-    "hashtags": [
-      "#Сводка",
-      "#Тихоходки",
-      "#Космос",
-      "#ESA",
-      "#Биология"
-    ]
-  },
-  "editorial_notes": "The famous fact is retold with its limits intact: survival in anhydrobiosis, not life in space. The 2026 dataset release gets its own section. Second pass 2026-08-10: mission attribution corrected to the ESA framing (Foton-M3 as ESA orbital mission, Swedish-German TARDIS team), the exact September-2007 dating restored, and the project leader's quote added after verbatim verification."
+  "footer": {"tagline": "Сводка — сводим факты, а не мнения 😎", "hashtags": ["#Сводка", "#Тихоходки", "#Космос", "#ESA", "#Биология"]},
+  "editorial_notes": "Clarity pass 2026-08-11: survival is separated from active life in space; anhydrobiosis is explained as a physiological pause before terminology; the 2026 dataset is explicitly distinguished from the 2007 experiment and 2008 publication."
 }
