@@ -228,6 +228,11 @@ def parser() -> argparse.ArgumentParser:
     next_item.add_argument("--ledger", type=Path, required=True)
     next_item.add_argument("--publication-id")
     next_item.add_argument("--max-lag-minutes", type=int, default=DEFAULT_MAX_LAG_MINUTES)
+    next_item.add_argument(
+        "--recover-stale-predecessors",
+        action="store_true",
+        help="Preview through only bounded-stale pending predecessors before an exact requested publication.",
+    )
     return root
 
 
@@ -251,7 +256,7 @@ def main() -> int:
             now=now,
             expected_publication_id=args.publication_id,
             max_lag_minutes=args.max_lag_minutes,
-            recover_stale_predecessors=args.publication_id is not None,
+            recover_stale_predecessors=args.recover_stale_predecessors,
         )
     else:
         raise AssertionError(f"unhandled freshness command: {args.command}")
