@@ -82,6 +82,15 @@ def test_first_due_item_is_canary_then_next_due_item_is_scheduled(tmp_path: Path
     assert second_mode == "scheduled"
 
 
+def test_redundant_tick_cannot_reselect_verified_canary() -> None:
+    release = load_release(RELEASE_PATH, Path("."))
+    ledger = load_ledger(Path("/definitely/missing/svodka-rich-ledger.json"), release, create=True)
+    first_id = "svodka-rich-venus-day-longer-than-year"
+    entry = cast(dict[str, dict[str, Any]], ledger["entries"])[first_id]
+    entry.update({"state": "published", "provider_effect": "verified", "dispatch_mode": "canary"})
+    assert select(release, ledger, datetime.fromisoformat("2026-08-11T20:17:00+03:00")) is None
+
+
 def test_expired_strict_next_fails_closed() -> None:
     release = load_release(RELEASE_PATH, Path("."))
     ledger = load_ledger(Path("/definitely/missing/svodka-rich-ledger.json"), release, create=True)
@@ -89,11 +98,17 @@ def test_expired_strict_next_fails_closed() -> None:
         select(release, ledger, datetime.fromisoformat("2026-08-11T21:30:00+03:00"))
 
 
-def test_workflow_has_real_evening_canary_and_no_legacy_fallback_path() -> None:
+def test_workflow_has_real_evening_canary_redundant_ticks_and_no_legacy_fallback_path() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
-    assert 'cron: "30 16 11 8 *"' in workflow
-    assert 'cron: "30 7 12-18 8 *"' in workflow
-    assert 'cron: "30 16 12-17 8 *"' in workflow
+    for cron in (
+        'cron: "30 16 11 8 *"',
+        'cron: "17 17 11 8 *"',
+        'cron: "30 7 12-18 8 *"',
+        'cron: "17 8 12-18 8 *"',
+        'cron: "30 16 12-17 8 *"',
+        'cron: "17 17 12-17 8 *"',
+    ):
+        assert cron in workflow
     assert "svodka_rich_production send" in workflow
     assert "telegram_multichannel_cli send-once" not in workflow
     assert "/sendMessage" not in workflow
