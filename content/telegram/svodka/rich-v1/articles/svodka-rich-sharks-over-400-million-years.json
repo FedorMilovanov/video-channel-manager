@@ -16,137 +16,44 @@
     "release_id": "svodka-pilot-2026-08",
     "source_format": "quick_fact"
   },
-  "title": "Акулы старше динозавров",
-  "lead": "Сравнение с динозаврами работает потому, что все помнят, как давно вымерли динозавры. Акулы в океане появились задолго до них — но верна эта фраза лишь в точном смысле.",
-  "icons_used": [
-    "🦈",
-    "⏳",
-    "😎"
-  ],
+  "title": "Акулья родословная старше динозавров почти на 200 миллионов лет",
+  "lead": "Фраза «акулы старше динозавров» звучит так, будто сегодняшняя белая акула плавала рядом с первыми лесами Земли. Это не так. Древняя здесь не современная разновидность, а большая эволюционная линия, к которой относятся акулы.",
+  "icons_used": ["🦈", "⏳", "😎"],
   "sections": [
     {
       "section_id": "chisla",
-      "heading": "Цифры рядом",
+      "heading": "Поставим две даты на одну шкалу",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Самые ранние следы акул уходят более чем на <b>400 миллионов лет</b> назад; подтверждённая древняя чешуя относится примерно к <b>420 млн лет назад</b>. Первые динозавры появились лишь около <b>230 млн лет назад</b>.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Разница — почти двести миллионов лет. На такой шкале точность «плюс-минус несколько миллионов» не меняет вывода: акулья линия ощутимо старше.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "Smithsonian относит самые ранние следы акул более чем к <b>400 миллионам лет назад</b>; древнейшие подтверждённые чешуйки акульего типа датируют примерно <b>420 млн лет</b>. Первые динозавры появились около <b>230 млн лет назад</b>.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Разница между 420 и 230 миллионами лет — почти <b>190 миллионов лет</b>. Это больше всего промежутка от первых динозавров до их исчезновения. Поэтому сравнение действительно показывает огромный возраст акульей линии, даже если отдельные даты будущие находки ещё будут уточнять.", "footnotes": [1]}
       ]
     },
     {
       "section_id": "chto-eto-znachit",
-      "heading": "Что именно означает «старше»",
+      "heading": "Но что именно жило 400 миллионов лет назад",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Старши здесь не отдельные современные акулы, а сама их родословная. Говоря «акулы старше динозавров», мы говорим о группе, чья история длится свыше 400 млн лет, — внутри неё возникали и исчезали тысячи форм.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Поэтому версия «белая акула не менялась 400 млн лет» неверна. Стабильность линии не означает остановки внутри неё: виды появлялись и исчезали, а сохранился узнаваемый план строения акулы.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "Не нынешняя белая акула и не любой современный вид. Речь о ранних представителях большой линии, от которой за сотни миллионов лет расходились разные формы. Одни ветви исчезали, другие появлялись." , "footnotes": [1]},
+        {"type": "paragraph", "html": "Хорошая аналогия — очень старое семейное дерево. Если вашей фамилии много веков, это не значит, что конкретный современный человек жил всё это время. Так же и здесь: <b>древняя линия не равна неизменному современному виду</b>.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Поэтому популярная формулировка «акулы не изменились за 400 млн лет» слишком сильная. Верно другое: акулья эволюционная история уходит очень глубоко в палеозой.", "footnotes": [1]}
       ]
     },
     {
       "section_id": "pochemu-eto-vazhno",
-      "heading": "Почему это важно",
+      "heading": "Что нам вообще дают такие древние даты",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Долгая история группы — факт, к которому стоит относиться без восторга превосходства: она говорит не «акулы сильнее динозавров», а «у сегодняшнего океана есть очень древние линии». Это разные смыслы, и второй интереснее.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Чешуя, зубы и редкие отпечатки тканей дают точки для такой шкалы; точные даты уточняются по мере новых находок, поэтому скобка «более 400 млн лет» честнее точного ровного числа.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "Палеонтологи собирают шкалу не из одного идеального скелета. Для очень древних этапов важны отдельные находки — например, чешуя, которую можно отнести к акульей линии и датировать вместе с породой.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Поэтому корректнее говорить <b>«более 400 млн лет»</b>, а не придумывать красивую точную дату рождения акул. Чем старше событие, тем важнее различать надёжную нижнюю границу и эффектный заголовок.", "footnotes": [1]}
       ]
     }
   ],
   "quotes": [],
   "media_slots": [
-    {
-      "slot_id": "media-01",
-      "placement": {
-        "after": "lead",
-        "before": "chisla"
-      },
-      "depicts": "Современная акула в открытой воде — спокойный кадр без «атакующей» постановки; виден характерный силуэт.",
-      "purpose": "Дать образ нынешнего представителя древней линии без киношной драматизации.",
-      "preferred_source_type": "NOAA Ocean Service or other public-domain underwater photograph",
-      "copyright_provenance": "Prefer NOAA or other US federal PD imagery; Smithsonian pages mix rights holders and need per-image licence checks.",
-      "caption": "Акула. Её родословная значительно старше динозавров, но это не «неизменность видов»."
-    },
-    {
-      "slot_id": "media-02",
-      "placement": {
-        "after": "chto-eto-znachit"
-      },
-      "depicts": "Редакционная шкала времени: 420 млн лет (древняя чешуя акул), 400 млн лет (самые ранние следы), 230 млн лет (первые динозавры), сегодняшний день.",
-      "purpose": "Разница в шкалах в цифрах усваивается плохо; одна линейка делает вывод очевидным и тут же обнажает границу: шкала о группе, не о виде.",
-      "preferred_source_type": "original editorial diagram",
-      "copyright_provenance": "Original work; palaeontological dates are facts and not copyrightable.",
-      "caption": "Три вехи на одной шкале: древнейшая акулья чешуя, первые динозавры, наше время."
-    }
+    {"slot_id": "media-01", "placement": {"after": "lead", "before": "chisla"}, "depicts": "Современная акула в открытой воде — спокойный кадр без атакующей постановки; виден характерный силуэт.", "purpose": "Показать современного представителя и сразу подготовить главное уточнение: этот вид не тождествен древней линии.", "preferred_source_type": "NOAA Ocean Service or other public-domain underwater photograph", "copyright_provenance": "Prefer NOAA or other US federal PD imagery; Smithsonian pages mix rights holders and need per-image licence checks.", "caption": "Современная акула — один из нынешних представителей линии, чья история уходит более чем на 400 млн лет назад."},
+    {"slot_id": "media-02", "placement": {"after": "chto-eto-znachit"}, "depicts": "Редакционная шкала: 420 млн лет — древняя подтверждённая акулья чешуя; ~230 млн лет — первые динозавры; сегодня.", "purpose": "Сделать почти 190 миллионов лет разницы видимыми и отделить возраст линии от возраста современного вида.", "preferred_source_type": "original editorial diagram", "copyright_provenance": "Original work; palaeontological dates are facts and not copyrightable.", "caption": "Акулья линия появляется на шкале задолго до первых динозавров."}
   ],
-  "visual_plan": {
-    "rationale": "Довод статьи — порядок величин на оси времени; блокнот из трёх дат понятнее абзаца сравнений.",
-    "panels": [
-      {
-        "order": 1,
-        "type": "timeline",
-        "content": "Горизонтальная шкала от 430 млн лет назад до настоящего; точки 420, 400 и 230 млн лет; подписи словами из текста"
-      }
-    ]
-  },
-  "footnotes": [
-    {
-      "n": 1,
-      "source_id": "src-smithsonian-sharks",
-      "label": "Smithsonian Ocean — Sharks",
-      "url": "https://ocean.si.edu/ocean-life/sharks-rays/sharks"
-    }
-  ],
-  "sources": [
-    {
-      "source_id": "src-smithsonian-sharks",
-      "label": "Smithsonian Ocean — Sharks",
-      "url": "https://ocean.si.edu/ocean-life/sharks-rays/sharks",
-      "verified_on": "2026-08-08",
-      "evidence": "Smithsonian states first sharks evolved more than 400 million years ago; oldest confirmed shark scales about 420 million years old."
-    }
-  ],
-  "footer": {
-    "tagline": "Сводка — сводим факты, а не мнения 😎",
-    "hashtags": [
-      "#Сводка",
-      "#Акулы",
-      "#Палеонтология",
-      "#Океан",
-      "#Факты"
-    ]
-  },
-  "editorial_notes": "The comparison with dinosaurs is preserved as a hook and then carefully qualified: the article distinguishes 'lineage age' from 'unchanged species', avoiding the usual sensational misreading."
+  "visual_plan": {"rationale": "Главный аргумент — временная шкала, а не декоративный портрет. Даты должны быть подписаны как признаки линии, а не возраст современного вида.", "panels": [{"order": 1, "type": "timeline", "content": "420 млн лет: древняя подтверждённая акулья чешуя → 230 млн лет: первые динозавры → сегодня"}]},
+  "footnotes": [{"n": 1, "source_id": "src-smithsonian-sharks", "label": "Smithsonian Ocean — Sharks", "url": "https://ocean.si.edu/ocean-life/sharks-rays/sharks"}],
+  "sources": [{"source_id": "src-smithsonian-sharks", "label": "Smithsonian Ocean — Sharks", "url": "https://ocean.si.edu/ocean-life/sharks-rays/sharks", "verified_on": "2026-08-08", "evidence": "Smithsonian states first sharks evolved more than 400 million years ago; oldest confirmed shark scales about 420 million years old."}],
+  "footer": {"tagline": "Сводка — сводим факты, а не мнения 😎", "hashtags": ["#Сводка", "#Акулы", "#Палеонтология", "#Океан", "#Факты"]},
+  "editorial_notes": "Clarity pass 2026-08-11: the lineage/species distinction is explained with a family-tree analogy; unsupported fossil-detail enumeration was removed; the 420-vs-230 Ma scale is made explicit without pretending to know a single birth date for sharks."
 }
