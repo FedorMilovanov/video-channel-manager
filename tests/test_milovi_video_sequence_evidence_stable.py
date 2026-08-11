@@ -11,6 +11,11 @@ def test_stable_youtube_embed_identity_is_exact() -> None:
     assert stable._stable_identity_url_matches(
         platform="youtube",
         expected_id=expected,
+        raw_url=stable._youtube_capture_url(expected),
+    )
+    assert stable._stable_identity_url_matches(
+        platform="youtube",
+        expected_id=expected,
         raw_url=f"https://www.youtube-nocookie.com/embed/{expected}?autoplay=1&mute=1",
     )
     assert stable._stable_identity_url_matches(
@@ -21,15 +26,30 @@ def test_stable_youtube_embed_identity_is_exact() -> None:
     assert not stable._stable_identity_url_matches(
         platform="youtube",
         expected_id=expected,
+        raw_url=stable._youtube_capture_url("other"),
+    )
+    assert not stable._stable_identity_url_matches(
+        platform="youtube",
+        expected_id=expected,
         raw_url="https://www.youtube-nocookie.com/embed/other",
     )
 
 
-def test_stable_capture_urls_keep_exact_media_identity() -> None:
+def test_stable_capture_urls_use_local_parent_with_exact_embed_identity() -> None:
     youtube_id = "MdQ0kNBSsa8"
     remote_id = "-68859909_456239176"
 
-    assert stable._youtube_capture_url(youtube_id).startswith(f"https://www.youtube-nocookie.com/embed/{youtube_id}?")
+    assert stable._youtube_capture_url(youtube_id) == f"{stable._LOCAL_YOUTUBE_ORIGIN}/youtube/{youtube_id}"
+    embed_url = stable._youtube_embed_url(youtube_id)
+    assert embed_url.startswith(f"https://www.youtube-nocookie.com/embed/{youtube_id}?")
+    assert "enablejsapi=1" in embed_url
+    assert "origin=http%3A%2F%2F127.0.0.1%3A8765" in embed_url
+
+    document = stable._youtube_embed_document(youtube_id)
+    assert f"/embed/{youtube_id}" in document
+    assert 'referrerpolicy="strict-origin-when-cross-origin"' in document
+    assert "Error 153" not in document
+
     assert stable._vk_capture_url(remote_id) == f"https://vk.ru/clip{remote_id}"
     assert stable._stable_identity_url_matches(
         platform="vk",

@@ -1,20 +1,55 @@
 from __future__ import annotations
 
 import argparse
+import html
 import json
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 from video_channel_manager.platforms.vk import milovi_video_sequence_evidence as base
 
 _ORIGINAL_CAPTURE = base._capture_page_sequence
 _ORIGINAL_IDENTITY = base._identity_url_matches
+_LOCAL_YOUTUBE_ORIGIN = "http://127.0.0.1:8765"
 
 
 def _youtube_capture_url(video_id: str) -> str:
-    return f"https://www.youtube-nocookie.com/embed/{video_id}?autoplay=1&mute=1&playsinline=1&rel=0"
+    return f"{_LOCAL_YOUTUBE_ORIGIN}/youtube/{video_id}"
+
+
+def _youtube_embed_url(video_id: str) -> str:
+    origin = quote(_LOCAL_YOUTUBE_ORIGIN, safe="")
+    return (
+        f"https://www.youtube-nocookie.com/embed/{video_id}"
+        f"?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1&origin={origin}"
+    )
+
+
+def _youtube_embed_document(video_id: str) -> str:
+    embed_url = html.escape(_youtube_embed_url(video_id), quote=True)
+    return f"""<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Milovi read-only YouTube evidence</title>
+<style>
+html,body{{margin:0;width:100%;height:100%;background:#111;overflow:hidden}}
+iframe{{border:0;width:100vw;height:100vh;display:block}}
+</style>
+</head>
+<body>
+<iframe
+  id="milovi-youtube-player"
+  src="{embed_url}"
+  allow="autoplay; encrypted-media; picture-in-picture"
+  referrerpolicy="strict-origin-when-cross-origin"
+  allowfullscreen
+></iframe>
+</body>
+</html>"""
 
 
 def _vk_capture_url(remote_id: str) -> str:
@@ -26,6 +61,13 @@ def _stable_identity_url_matches(*, platform: str, expected_id: str, raw_url: st
     host = (parsed.hostname or "").lower()
     path = parsed.path.rstrip("/")
     if platform == "youtube":
+        local_origin = urlsplit(_LOCAL_YOUTUBE_ORIGIN)
+        if (
+            host == (local_origin.hostname or "").lower()
+            and parsed.port == local_origin.port
+            and path == f"/youtube/{expected_id}"
+        ):
+            return True
         allowed_embed_host = (
             host == "youtube-nocookie.com"
             or host.endswith(".youtube-nocookie.com")
@@ -56,6 +98,23 @@ def _capture_error(*, canonical_url: str, page: Any, exc: Exception) -> base.Cap
     )
 
 
+def _install_youtube_referrer_page(page: Any, *, video_id: str, capture_url: str) -> None:
+    document = _youtube_embed_document(video_id)
+
+    def fulfill(route: Any) -> None:
+        route.fulfill(
+            status=200,
+            body=document,
+            content_type="text/html; charset=utf-8",
+            headers={
+                "Cache-Control": "no-store",
+                "Referrer-Policy": "strict-origin-when-cross-origin",
+            },
+        )
+
+    page.route(capture_url, fulfill)
+
+
 def _isolated_capture_page_sequence(
     *,
     page: Any,
@@ -74,13 +133,20 @@ def _isolated_capture_page_sequence(
     )
 
     # A fresh page per media identity prevents delayed consent/redirect navigation from one
-    # item interrupting the next item. The outer page supplied by the v1 collector remains
-    # untouched and exists only because the accepted v1 build contract creates it.
+    # item interrupting the next item. YouTube is loaded as a real iframe child of a local
+    # HTTP document so Chromium supplies an HTTP Referer instead of direct-address-bar Error 153.
+    # The local document exists only inside Playwright routing; no server and no provider write.
     last_result: base.CaptureResult | None = None
     last_error: Exception | None = None
     for _attempt in range(2):
         isolated_page = page.context.new_page()
         try:
+            if platform == "youtube":
+                _install_youtube_referrer_page(
+                    isolated_page,
+                    video_id=expected_id,
+                    capture_url=capture_url,
+                )
             try:
                 result = _ORIGINAL_CAPTURE(
                     page=isolated_page,
