@@ -150,6 +150,34 @@ def _configured_max_publication_lag_minutes() -> int | None:
     return value
 
 
+def _recover_expired_before_exact_manual_prepare(
+    release: GenericReleaseQueue,
+    ledger: GenericPublicationLedger,
+    *,
+    mode: str,
+    expected_publication_id: str | None,
+    now: datetime | None = None,
+) -> tuple[str, ...]:
+    """Apply only bounded stale predecessors for an exact manual dispatch.
+
+    The caller persists this mutation only if the requested strict-next dispatch
+    is successfully prepared, so a wrong or premature publication_id cannot
+    advance durable state.
+    """
+
+    if mode != "manual" or expected_publication_id is None:
+        return ()
+    max_lag_minutes = _configured_max_publication_lag_minutes()
+    if max_lag_minutes is None:
+        return ()
+    return skip_expired_pending_by_freshness(
+        release,
+        ledger,
+        now=now,
+        max_lag_minutes=max_lag_minutes,
+    )
+
+
 def _safe_error(exc: Exception) -> str:
     if isinstance(exc, (TelegramApiError, ValueError)):
         return " ".join(str(exc).split())[:1000]
@@ -323,6 +351,12 @@ def main() -> int:
         profile = load_channel_profile(args.profile)
         release = load_release(args.release)
         ledger = load_ledger(args.ledger, release)
+        recovered = _recover_expired_before_exact_manual_prepare(
+            release,
+            ledger,
+            mode=args.mode,
+            expected_publication_id=args.publication_id,
+        )
         target = _load_model(args.target_proof, GenericTargetProof)
         prepared = prepare_next(
             profile,
@@ -348,6 +382,7 @@ def main() -> int:
                     "publication_id": prepared.envelope.publication_id,
                     "intent_id": prepared.envelope.intent_id,
                     "provider_payload_sha256": prepared.envelope.provider_payload_sha256,
+                    "recovered_expired": list(recovered),
                     "reason": prepared.reason,
                 },
                 ensure_ascii=False,
