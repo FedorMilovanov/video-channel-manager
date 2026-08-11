@@ -42,14 +42,14 @@ jobs:
 
           tests = Path('tests/test_svodka_deployment_workflows.py')
           text = tests.read_text(encoding='utf-8')
-          constant = 'RICH_PRODUCTION_WORKFLOW = WORKFLOW_DIR / "svodka-rich-production.yml"\n'
-          anchor = 'CUSTOM_EMOJI_CANARY_WORKFLOW = WORKFLOW_DIR / "svodka-custom-emoji-capability-canary.yml"\n'
+          constant = 'RICH_PRODUCTION_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-rich-production.yml"\n'
+          anchor = 'NATIVE_RICH_CANARY_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-native-rich-message-canary.yml"\n'
           if constant not in text:
               if anchor not in text:
                   raise SystemExit('state-writer test constants moved')
               text = text.replace(anchor, anchor + constant, 1)
-          tuple_anchor = '    CUSTOM_EMOJI_CANARY_WORKFLOW,\n)\n'
-          tuple_replacement = '    CUSTOM_EMOJI_CANARY_WORKFLOW,\n    RICH_PRODUCTION_WORKFLOW,\n)\n'
+          tuple_anchor = 'STATE_WRITER_WORKFLOWS = RELEASE_STATE_WRITER_WORKFLOWS + (\n    CUSTOM_EMOJI_CANARY_WORKFLOW,\n    NATIVE_RICH_CANARY_WORKFLOW,\n)\n'
+          tuple_replacement = 'STATE_WRITER_WORKFLOWS = RELEASE_STATE_WRITER_WORKFLOWS + (\n    CUSTOM_EMOJI_CANARY_WORKFLOW,\n    NATIVE_RICH_CANARY_WORKFLOW,\n    RICH_PRODUCTION_WORKFLOW,\n)\n'
           if '    RICH_PRODUCTION_WORKFLOW,\n' not in text:
               if tuple_anchor not in text:
                   raise SystemExit('state-writer tuple moved')
