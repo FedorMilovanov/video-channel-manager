@@ -30,9 +30,7 @@ _IP_HOLD_TERMS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("squid_game", ("squid game", "игра в кальмара")),
     ("om_nom", ("om nom", "omnom", "ам ням")),
 )
-_IP_GUIDELINE_TERMS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("minecraft", ("minecraft", "майнкрафт")),
-)
+_IP_GUIDELINE_TERMS: tuple[tuple[str, tuple[str, ...]], ...] = (("minecraft", ("minecraft", "майнкрафт")),)
 _VISUAL_REVIEW_TERMS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("fox", ("fox", "лиса", "лисич")),
     ("bear", ("bear", "медвед")),
