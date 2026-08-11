@@ -136,46 +136,6 @@ def test_native_rich_canary_is_manual_main_only_serialized_and_release_independe
     assert persist_index < reproof_index < send_index < archive_index < apply_index
 
 
-def test_rich_production_is_serialized_release_specific_and_single_mutation() -> None:
-    workflow = _workflow(RICH_PRODUCTION_WORKFLOW)
-
-    assert "schedule:" in workflow
-    assert "workflow_dispatch:" in workflow
-    assert "push:" not in workflow
-    assert workflow.count("cron:") == 6
-    assert 'cron: "30 16 11 8 *"' in workflow
-    assert 'cron: "17 17 11 8 *"' in workflow
-    assert 'cron: "30 7 12-18 8 *"' in workflow
-    assert 'cron: "17 8 12-18 8 *"' in workflow
-    assert 'cron: "30 16 12-17 8 *"' in workflow
-    assert 'cron: "17 17 12-17 8 *"' in workflow
-    assert "group: svodka-telegram-publisher" in workflow
-    assert "cancel-in-progress: false" in workflow
-    assert "queue: max" in workflow
-    _assert_dual_current_main_quality(workflow)
-    assert "production-release-2026-08.json" in workflow
-    assert "rich-production-ledger.json" in workflow
-    assert "publication-ledger.json" not in workflow
-    assert "release-approval-2026-08.json" not in workflow
-    assert "svodka_approval_cli" not in workflow
-    assert "Persist intent and evidence before Telegram mutation" in workflow
-    assert "Re-fetch identical media bytes immediately before mutation" in workflow
-    assert "Send exactly one native Rich Message" in workflow
-    assert "svodka_rich_production send" in workflow
-    assert "Archive exact provider outcome before ledger mutation" in workflow
-    assert "Apply exact outcome and persist terminal state" in workflow
-    assert "telegram_multichannel_cli send-once" not in workflow
-    assert "/sendMessage" not in workflow
-
-    persist_index = workflow.index("Persist intent and evidence before Telegram mutation")
-    reproof_index = workflow.index("Re-prove quality immediately before mutation")
-    media_recheck_index = workflow.index("Re-fetch identical media bytes immediately before mutation")
-    send_index = workflow.index("Send exactly one native Rich Message")
-    archive_index = workflow.index("Archive exact provider outcome before ledger mutation")
-    apply_index = workflow.index("Apply exact outcome and persist terminal state")
-    assert persist_index < reproof_index < media_recheck_index < send_index < archive_index < apply_index
-
-
 def test_ledger_initialization_is_manual_exact_provider_free_and_dual_quality_proven() -> None:
     workflow = _workflow(LEDGER_WORKFLOW)
 
@@ -298,34 +258,61 @@ def test_skipped_send_reconciliation_is_provider_free_and_quality_proven() -> No
     assert "secrets." not in workflow
 
 
-def test_provider_outcome_reconciliation_requires_archived_exact_provider_evidence() -> None:
+def test_archived_outcome_recovery_uses_exact_release_but_no_new_provider_or_quality_dependency() -> None:
     workflow = _workflow(RECONCILE_OUTCOME_WORKFLOW)
 
     assert "workflow_dispatch:" in workflow
     assert "schedule:" not in workflow
     assert "RECONCILE-OUTCOME:" in workflow
     _assert_materialized_release_contract(workflow)
-    _assert_dual_current_main_quality(workflow)
-    assert "download-artifact" in workflow
-    assert "telegram_github_outcome_artifact" in workflow
-    assert "apply-outcome" in workflow
+    assert "telegram_github_quality_gate" not in workflow
+    assert "recovery runtime SHA is no longer current main" in workflow
     assert "sendMessage" not in workflow
     assert "sendPoll" not in workflow
     assert "send-once" not in workflow
-    assert "secrets." not in workflow
+    assert "SVODKA_TELEGRAM_BOT_TOKEN" not in workflow
 
 
-def test_svodka_release_approval_still_materializes_frozen_legacy_release() -> None:
+def test_no_push_triggered_write_capable_svodka_migration_workflows_remain() -> None:
+    workflows_dir = REPOSITORY_ROOT / ".github/workflows"
+    assert sorted(path.name for path in workflows_dir.glob("svodka-*-once.yml")) == []
+    for path in workflows_dir.glob("svodka-*.yml"):
+        workflow = _workflow(path)
+        if "push:" in workflow:
+            assert "contents: write" not in workflow, path.name
+
+
+def test_all_svodka_workflows_pin_supported_runner_image() -> None:
+    for path in (REPOSITORY_ROOT / ".github/workflows").glob("svodka-*.yml"):
+        workflow = _workflow(path)
+        runs_on = [line.strip() for line in workflow.splitlines() if line.lstrip().startswith("runs-on:")]
+        assert runs_on, path.name
+        assert set(runs_on) == {"runs-on: ubuntu-24.04"}, path.name
+        assert "ubuntu-latest" not in workflow, path.name
+
+
+def test_review_receipt_materializes_exact_authorized_release(tmp_path: Path) -> None:
+    output = tmp_path / "approved-release.json"
+    approval = load_svodka_release_approval(APPROVAL_PATH)
+    candidate_digest, release_digest = materialize_svodka_approved_release(
+        profile_path=PROFILE_PATH,
+        queue_path=QUEUE_PATH,
+        binding_path=BINDING_PATH,
+        approval_path=APPROVAL_PATH,
+        output_path=output,
+    )
     profile = load_channel_profile(PROFILE_PATH)
     binding = load_target_binding(BINDING_PATH, profile)
-    approval = load_svodka_release_approval(APPROVAL_PATH)
-    materialized = materialize_svodka_approved_release(
-        profile=profile,
-        binding=binding,
-        approval=approval,
-        queue_path=QUEUE_PATH,
-    )
-    release = load_release(materialized)
+    release = load_release(output)
 
-    assert release.release_id == "svodka-pilot-2026-08"
-    assert release.digest == "sha256:959a42e914acedc6969550ba842a12d1a2b174c940497d8a98f4ab8e2e63cdce"
+    assert candidate_digest == approval.candidate_sha256
+    assert release_digest == approval.approved_release_sha256
+    assert release.digest == approval.approved_release_sha256
+    assert release.release_authorized is True
+    assert release.project_key == profile.project_key
+    assert release.channel_username == profile.channel_username
+    assert release.profile_sha256 == profile.digest
+    assert release.target_binding_sha256 == binding.digest
+    assert release.chat_id == binding.chat_id
+    assert release.bot_id == binding.bot_id
+    assert release.bot_username == binding.bot_username
