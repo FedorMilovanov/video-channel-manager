@@ -9,12 +9,12 @@
     "svodka-rich-venus-day-longer-than-year": {
       "publication_id": "svodka-rich-venus-day-longer-than-year",
       "scheduled_at": "2026-08-11T19:30:00+03:00",
-      "state": "pending",
+      "state": "intent",
       "provider_effect": "impossible",
-      "dispatch_mode": null,
-      "workflow_run_id": null,
-      "workflow_run_attempt": null,
-      "document_sha256": null,
+      "dispatch_mode": "canary",
+      "workflow_run_id": "31517401165",
+      "workflow_run_attempt": "1",
+      "document_sha256": "sha256:c2f4d680c2fa4b120612f2a07e4136af6d61ec2d01c548c724f643582676328d",
       "message_id": null,
       "message_url": null,
       "error": null

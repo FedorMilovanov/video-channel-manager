@@ -1,0 +1,17 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-production-media-proof",
+  "schema_version": 1,
+  "release_sha256": "sha256:ca7a4047c4808c5800022aebd2a9e8334ad0751197a121aa1c54d707d36b7b9c",
+  "publication_id": "svodka-rich-venus-day-longer-than-year",
+  "checked_at_utc": "2026-08-11T17:25:08.375849+00:00",
+  "items": [
+    {
+      "media_id": "asset-venus-day-longer-than-year-media-01",
+      "url": "https://images-assets.nasa.gov/image/PIA23791/PIA23791~orig.jpg",
+      "content_type": "image/jpeg",
+      "content_length": 94315,
+      "content_sha256": "sha256:853268f7922ea572a0966df4a378e6b54221102d6740bdc78f4011708ee71007"
+    }
+  ],
+  "provider_write_performed": false
+}

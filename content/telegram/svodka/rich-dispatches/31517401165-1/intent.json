@@ -1,0 +1,35 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-production-intent",
+  "schema_version": 1,
+  "release_sha256": "sha256:ca7a4047c4808c5800022aebd2a9e8334ad0751197a121aa1c54d707d36b7b9c",
+  "publication_id": "svodka-rich-venus-day-longer-than-year",
+  "dispatch_mode": "canary",
+  "github_repository": "FedorMilovanov/video-channel-manager",
+  "github_sha": "7356491e7c3aec7dfcc47aa60f313d6eae0cb49e",
+  "workflow_run_id": "31517401165",
+  "workflow_run_attempt": "1",
+  "document_sha256": "sha256:c2f4d680c2fa4b120612f2a07e4136af6d61ec2d01c548c724f643582676328d",
+  "render_sha256": "sha256:b1e13e67b1f308dea26bb542efcc3e8b728c6a889c79464dfbfc8b12449fd550",
+  "target_proof_sha256": "sha256:651cc474e3854b117e68a087a747c84293e03e0f79b7db7e064d9dd26750bbb6",
+  "media_proof": {
+    "schema_name": "video-channel-manager.svodka-rich-production-media-proof",
+    "schema_version": 1,
+    "release_sha256": "sha256:ca7a4047c4808c5800022aebd2a9e8334ad0751197a121aa1c54d707d36b7b9c",
+    "publication_id": "svodka-rich-venus-day-longer-than-year",
+    "checked_at_utc": "2026-08-11T17:25:08.375849+00:00",
+    "items": [
+      {
+        "media_id": "asset-venus-day-longer-than-year-media-01",
+        "url": "https://images-assets.nasa.gov/image/PIA23791/PIA23791~orig.jpg",
+        "content_type": "image/jpeg",
+        "content_length": 94315,
+        "content_sha256": "sha256:853268f7922ea572a0966df4a378e6b54221102d6740bdc78f4011708ee71007"
+      }
+    ],
+    "provider_write_performed": false
+  },
+  "created_at_utc": "2026-08-11T17:25:08.873539+00:00",
+  "mutation_request_limit": 1,
+  "automatic_retry_allowed": false,
+  "blind_retry_allowed": false
+}
