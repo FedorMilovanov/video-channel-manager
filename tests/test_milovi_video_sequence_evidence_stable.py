@@ -29,9 +29,7 @@ def test_stable_capture_urls_keep_exact_media_identity() -> None:
     youtube_id = "MdQ0kNBSsa8"
     remote_id = "-68859909_456239176"
 
-    assert stable._youtube_capture_url(youtube_id).startswith(
-        f"https://www.youtube-nocookie.com/embed/{youtube_id}?"
-    )
+    assert stable._youtube_capture_url(youtube_id).startswith(f"https://www.youtube-nocookie.com/embed/{youtube_id}?")
     assert stable._vk_capture_url(remote_id) == f"https://vk.ru/clip{remote_id}"
     assert stable._stable_identity_url_matches(
         platform="vk",
