@@ -8,7 +8,7 @@ from typing import Any
 from video_channel_manager.editorial._project_profiles import PROJECT_KEYS, PROJECT_VK_COMMUNITY_IDS
 from video_channel_manager.platforms.vk.client import VkApiClient, VkApiError
 
-VK_OWNER_CLIPS_PROBE_SCHEMA = "vk-owner-clips-experimental-probe-v1"
+VK_OWNER_CLIPS_PROBE_SCHEMA = "vk-owner-clips-experimental-probe-v2"
 VK_OWNER_CLIPS_PROBE_API_VERSION = "5.253"
 VK_OWNER_CLIPS_PROBE_METHOD = "shortVideo.getOwnerVideos"
 VK_OWNER_CLIPS_PROBE_PAGE_SIZE = 24
@@ -114,6 +114,18 @@ def _serialize_candidate(item: dict[str, Any], *, owner_id: int) -> tuple[dict[s
     )
 
 
+def _require_managed_community(client: VkApiClient, *, community_id: int) -> Any:
+    """Resolve the exact target through groups.get without deprecated 5.253 parameters."""
+
+    matches = [item for item in client.list_managed_communities() if item.community_id == community_id]
+    if len(matches) != 1:
+        raise VkApiError(
+            f"VK token did not prove management access for exact community {community_id}",
+            method="groups.get",
+        )
+    return matches[0]
+
+
 def build_vk_owner_clips_probe_snapshot(
     client: VkApiClient,
     *,
@@ -142,25 +154,7 @@ def build_vk_owner_clips_probe_snapshot(
         )
     required = _normalize_required_remote_ids(required_remote_ids, owner_id=owner_id)
 
-    channel = client.get_community(community_id)
-    returned_community_id = int(channel.ref.channel_id)
-    returned_owner_id = channel.metadata.get("owner_id")
-    managed_by_token = bool(channel.metadata.get("managed_by_token"))
-    if returned_community_id != community_id:
-        raise VkApiError(
-            f"VK groups.getById resolved a different community: expected {community_id}, got {returned_community_id}",
-            method="groups.getById",
-        )
-    if returned_owner_id != owner_id:
-        raise VkApiError(
-            f"VK groups.getById resolved a different owner: expected {owner_id}, got {returned_owner_id}",
-            method="groups.getById",
-        )
-    if not managed_by_token:
-        raise VkApiError(
-            f"VK token did not prove management access for exact community {community_id}",
-            method="groups.getById",
-        )
+    community = _require_managed_community(client, community_id=community_id)
 
     raw_items: list[dict[str, Any]] = []
     provider_reported_total: int | None = None
@@ -275,9 +269,15 @@ def build_vk_owner_clips_probe_snapshot(
         "community": {
             "community_id": community_id,
             "owner_id": owner_id,
-            "title": channel.title,
-            "url": channel.url,
+            "title": community.title,
+            "url": community.url,
             "managed_by_token": True,
+        },
+        "management_preflight": {
+            "method": "groups.get",
+            "filter": "moder",
+            "exact_community_match": True,
+            "reason": "groups.getById group_id is deprecated at VK API >=5.218; probe runs at 5.253",
         },
         "request_contract": {
             "method": VK_OWNER_CLIPS_PROBE_METHOD,
@@ -309,7 +309,8 @@ def build_vk_owner_clips_probe_snapshot(
         },
         "known_limitations": [
             "shortVideo.getOwnerVideos is observed in the VK Video web client but is not in the public VK API 5.199 schema.",
-            "This first probe is evidence collection, not authorization for upload, edit, hide, delete, wall post, or scheduling.",
+            "Management access is proven by exact membership in groups.get(filter=moder), not by deprecated groups.getById(group_id).",
+            "This probe is evidence collection, not authorization for upload, edit, hide, delete, wall post, or scheduling.",
             "Only records explicitly proving type=short_video are classified as native Clips.",
             "Even a successful pagination pass must be reconciled against independently observed wall Clips before a complete-surface claim is made.",
         ],
