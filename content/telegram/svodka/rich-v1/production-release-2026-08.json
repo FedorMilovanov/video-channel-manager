@@ -1,0 +1,146 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-production-release",
+  "schema_version": 1,
+  "release_id": "svodka-rich-v1-production-2026-08",
+  "project_key": "svodka",
+  "channel_username": "@deep_info_life",
+  "chat_id": -1003527567039,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "state_branch": "state/svodka-telegram",
+  "approved": true,
+  "approval_basis": "Explicit rollout instruction on 2026-08-11: finish Svodka production end-to-end without ad-hoc bypasses; publish the reviewed rich-v1 articles through one guarded production path.",
+  "publication_window_minutes": 120,
+  "max_verified_per_day_moscow": 2,
+  "first_canary_publication_id": "svodka-rich-venus-day-longer-than-year",
+  "profile": {
+    "path": "content/telegram/channels/svodka.json",
+    "git_blob_sha": "81bb5089dcc82a4acab9283dcb3aa8592911c4cc"
+  },
+  "target_binding": {
+    "path": "content/telegram/channels/svodka-target-binding.json",
+    "git_blob_sha": "5ecbb52d7187f7013baeba96e479285762f0b363"
+  },
+  "media_registry": {
+    "path": "content/telegram/svodka/rich-v1/media/media-registry.json",
+    "git_blob_sha": "96436a46777004fbd67925d273390f16dd4a59cc"
+  },
+  "custom_emoji_catalog": {
+    "path": "content/telegram/svodka/custom-emoji-catalog.json",
+    "git_blob_sha": "a7cf960724a47d7fed15f0ed31882590ae5f6b99"
+  },
+  "items": [
+    {
+      "sequence": 1,
+      "publication_id": "svodka-rich-venus-day-longer-than-year",
+      "article_id": "svodka-rich-venus-day-longer-than-year",
+      "article": {"path": "content/telegram/svodka/rich-v1/articles/svodka-rich-venus-day-longer-than-year.json", "git_blob_sha": "1578310ca4cda8db5ddc667da7fac7a0a454b369"},
+      "scheduled_at": "2026-08-11T19:30:00+03:00",
+      "emoji_role": "geography.globe"
+    },
+    {
+      "sequence": 2,
+      "publication_id": "svodka-rich-2026-august-total-solar-eclipse",
+      "article_id": "svodka-rich-2026-august-total-solar-eclipse",
+      "article": {"path": "content/telegram/svodka/rich-v1/articles/svodka-rich-2026-august-total-solar-eclipse.json", "git_blob_sha": "fef7a0586a94907acf32087adc904152b753ad68"},
+      "scheduled_at": "2026-08-12T10:30:00+03:00",
+      "emoji_role": "geography.map"
+    },
+    {
+      "sequence": 3,
+      "publication_id": "svodka-rich-goldfish-three-second-memory-myth",
+      "article_id": "svodka-rich-goldfish-three-second-memory-myth",
+      "article": {"path": "content/telegram/svodka/rich-v1/articles/svodka-rich-goldfish-three-second-memory-myth.json", "git_blob_sha": "741c0636489df3dc13cafb69e878c8d84d7dc3f7"},
+      "scheduled_at": "2026-08-12T19:30:00+03:00",
+      "emoji_role": "science.microscope"
+    },
+    {
+      "sequence": 4,
+      "publication_id": "svodka-rich-wombat-cubic-poop",
+      "article_id": "svodka-rich-wombat-cubic-poop",
+      "article": {"path": "content/telegram/svodka/rich-v1/articles/svodka-rich-wombat-cubic-poop.json", "git_blob_sha": "3f88e640709e2d4fa8115cd04c7ae7116d6b2729"},
+      "scheduled_at": "2026-08-13T10:30:00+03:00",
+      "emoji_role": "science.microscope"
+    },
+    {
+      "sequence": 5,
+      "publication_id": "svodka-rich-moon-recedes-38-mm-year",
+      "article_id": "svodka-rich-moon-recedes-38-mm-year",
+      "article": {"path": "content/telegram/svodka/rich-v1/articles/svodka-rich-moon-recedes-38-mm-year.json", "git_blob_sha": "5684a5b491b315cfc55a279577122f699713ebc6"},
+      "scheduled_at": "2026-08-13T19:30:00+03:00",
+      "emoji_role": "geography.globe"
+    },
+    {
+      "sequence": 6,
+      "publication_id": "svodka-rich-octopus-three-hearts-blue-blood",
+      "article_id": "svodka-rich-octopus-three-hearts-blue-blood",
+      "article": {"path": "content/telegram/svodka/rich-v1/articles/svodka-rich-octopus-three-hearts-blue-blood.json", "git_blob_sha": "f00edaf4f24ac4c2159436159bad0cd46d23ed98"},
+      "scheduled_at": "2026-08-14T10:30:00+03:00",
+      "emoji_role": "science.microscope"
+    },
+    {
+      "sequence": 7,
+      "publication_id": "svodka-rich-quiz-lightning-vs-sun",
+      "article_id": "svodka-rich-quiz-lightning-vs-sun",
+      "article": {"path": "content/telegram/svodka/rich-v1/articles/svodka-rich-quiz-lightning-vs-sun.json", "git_blob_sha": "43f28f4f1120b6606e2b7cd9781cef1daadf1641"},
+      "scheduled_at": "2026-08-14T19:30:00+03:00",
+      "emoji_role": "science.impact"
+    },
+    {
+      "sequence": 8,
+      "publication_id": "svodka-rich-crows-remember-human-faces",
+      "article_id": "svodka-rich-crows-remember-human-faces",
+      "article": {"path": "content/telegram/svodka/rich-v1/articles/svodka-rich-crows-remember-human-faces.json", "git_blob_sha": "0d857a229626120a6e79070c2e1b2ae4129ae129"},
+      "scheduled_at": "2026-08-15T10:30:00+03:00",
+      "emoji_role": "animals.bird"
+    },
+    {
+      "sequence": 9,
+      "publication_id": "svodka-rich-sunflower-tracking-myth",
+      "article_id": "svodka-rich-sunflower-tracking-myth",
+      "article": {"path": "content/telegram/svodka/rich-v1/articles/svodka-rich-sunflower-tracking-myth.json", "git_blob_sha": "834c1f88858be1c810de01b5be8431d3a177d52f"},
+      "scheduled_at": "2026-08-15T19:30:00+03:00",
+      "emoji_role": "science.lab"
+    },
+    {
+      "sequence": 10,
+      "publication_id": "svodka-rich-sharks-over-400-million-years",
+      "article_id": "svodka-rich-sharks-over-400-million-years",
+      "article": {"path": "content/telegram/svodka/rich-v1/articles/svodka-rich-sharks-over-400-million-years.json", "git_blob_sha": "f2f38be859d4dc0382c674d2d9255d81e2c085cf"},
+      "scheduled_at": "2026-08-16T10:30:00+03:00",
+      "emoji_role": "science.bone"
+    },
+    {
+      "sequence": 11,
+      "publication_id": "svodka-rich-tardigrades-survived-space-exposure",
+      "article_id": "svodka-rich-tardigrades-survived-space-exposure",
+      "article": {"path": "content/telegram/svodka/rich-v1/articles/svodka-rich-tardigrades-survived-space-exposure.json", "git_blob_sha": "d228831a128adda910020f11f14288a64756c103"},
+      "scheduled_at": "2026-08-16T19:30:00+03:00",
+      "emoji_role": "science.microscope"
+    },
+    {
+      "sequence": 12,
+      "publication_id": "svodka-rich-eiffel-thermal-expansion-movement",
+      "article_id": "svodka-rich-eiffel-thermal-expansion-movement",
+      "article": {"path": "content/telegram/svodka/rich-v1/articles/svodka-rich-eiffel-thermal-expansion-movement.json", "git_blob_sha": "af0e33ccb95579a2c9663afaf13479fa9384ec70"},
+      "scheduled_at": "2026-08-17T10:30:00+03:00",
+      "emoji_role": "navigation.pin"
+    },
+    {
+      "sequence": 13,
+      "publication_id": "svodka-rich-quiz-banana-is-berry",
+      "article_id": "svodka-rich-quiz-banana-is-berry",
+      "article": {"path": "content/telegram/svodka/rich-v1/articles/svodka-rich-quiz-banana-is-berry.json", "git_blob_sha": "54000c7149334c0d8cbf6cdb7e08289ec4d3a22d"},
+      "scheduled_at": "2026-08-17T19:30:00+03:00",
+      "emoji_role": "science.lab"
+    },
+    {
+      "sequence": 14,
+      "publication_id": "svodka-rich-dolphins-social-memory-whistles",
+      "article_id": "svodka-rich-dolphins-social-memory-whistles",
+      "article": {"path": "content/telegram/svodka/rich-v1/articles/svodka-rich-dolphins-social-memory-whistles.json", "git_blob_sha": "6ab347c8ca6fb228919a7f6e824be20d49bfbdc7"},
+      "scheduled_at": "2026-08-18T10:30:00+03:00",
+      "emoji_role": "animals.whale"
+    }
+  ]
+}
