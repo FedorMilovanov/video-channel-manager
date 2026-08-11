@@ -1,0 +1,31 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
+  "publication_id": "lordchrist-spurgeon-putting-away-sin",
+  "sequence": 6,
+  "intent_id": "99a303155bfa6508ade4ba8458c4d2e6",
+  "workflow_run_id": "31469550934",
+  "workflow_run_attempt": "1",
+  "github_sha": "9ff7d83287ade45f808b2b3caca61d3388a9aea0",
+  "github_workflow_sha": "9ff7d83287ade45f808b2b3caca61d3388a9aea0",
+  "payload_sha256": "sha256:53a63553190fbd37b6e7adae7f2ea2e941c32cb41a2252763903e1489691bf62",
+  "text": "Израильтянам было повелено перед Пасхой удалить из домов всю закваску, и доныне они исполняют это предписание с великой тщательностью. Дом внимательно подметают, чтобы не осталось ни крошки квасного хлеба; шкафы обыскивают, ящики опустошают и очищают маленькой щёткой, а затем хозяин проходит по всем помещениям, чтобы убедиться, что не осталось никакого следа закваски. Вся закваска должна быть удалена, чтобы праздновать с опресноками.\n\nТак же Иисус Христос удалил грех. Если бы в тайной области моего сердца, души, совести или памяти — в тёмном отделении моей природы — остался хотя бы один малый грех, он погубил бы меня. Но Иисус удалил всё: каждую крошку и каждую частицу этой ужасной закваски Христос вымел совершенно.\n\n© Чарльз Сперджен, «Удаление греха»\n\n#ЧарльзСперджен #Христос #Искупление #Прощение",
+  "dispatch_mode": "scheduled",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-08-11T07:35:20.515739Z"
+  },
+  "prepared_at_utc": "2026-08-11T07:35:22.116277Z"
+}
