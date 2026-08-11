@@ -16,139 +16,50 @@
     "release_id": "svodka-pilot-2026-08",
     "source_format": "quick_fact"
   },
-  "title": "Почему Эйфелева башня меняет размеры и положение",
-  "lead": "Вирусная фраза «летом башня вырастает на 15 см» упрощена почти до ошибки. На самом деле число 15 см встречается в двух разных историях о башне, и они не тождественны.",
-  "icons_used": [
-    "🗼",
-    "📐",
-    "😎"
-  ],
+  "title": "Почему Эйфелева башня меняет размер и слегка качается от Солнца",
+  "lead": "Металл кажется твёрдым и неподвижным, но на больших конструкциях даже микроскопическое расширение каждого участка складывается в сантиметры. У Эйфелевой башни есть два разных тепловых эффекта, которые часто смешивают в одну фразу «летом она вырастает на 15 см».",
+  "icons_used": ["🗼", "📐", "😎"],
   "sections": [
     {
       "section_id": "teplovoe-rasshirenie",
-      "heading": "Тепловое расширение",
+      "heading": "Первый эффект: весь металл расширяется при нагреве",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Железная конструкция расширяется при нагреве и сжимается при охлаждении. Оценка, которую приводит Purdue: между самым жарким и самым холодным днём размеры конструкции меняются примерно на <b>15 см</b>.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Это не превращение башни в более высокую башню «на лето». Это тихий термометрический отклик металла, и он идёт по всем направлениям, а не только вверх.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "Когда железо нагревается, расстояния между атомами в среднем немного увеличиваются — материал расширяется. Для маленькой детали это почти незаметно. Но башня состоит из огромного количества металла, поэтому крошечные изменения складываются по всей конструкции."},
+        {"type": "paragraph", "html": "Purdue приводит оценку: между самым жарким и самым холодным днём размеры Эйфелевой башни могут различаться примерно на <b>15 см</b>.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Это тот же принцип, из-за которого мостам и железным дорогам нужны температурные зазоры. Башня не «включает летний режим роста» — её металл просто немного расширяется при нагреве и сжимается при охлаждении."}
       ]
     },
     {
       "section_id": "solnechnyi-izm",
-      "heading": "Солнечный изгиб",
+      "heading": "Второй эффект: Солнце нагревает башню неравномерно",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Есть и второй эффект, о котором пишет официальный сайт башни: солнце нагревает стороны неравномерно, и верхушка слегка отклоняется от Солнца. За ясный день она может описать кривую диаметром примерно <b>15 см</b>.",
-          "footnotes": [
-            2
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Оба «15 см» — про тепло, но не одно и то же: один про сезонное расширение всего металла, другой про суточное качание верхней точки из-за одностороннего нагрева.",
-          "footnotes": [
-            1,
-            2
-          ]
-        }
+        {"type": "paragraph", "html": "Если одна сторона конструкции освещена Солнцем сильнее другой, она нагревается и расширяется немного больше. Из-за этой разницы верхушка башни отклоняется в сторону, противоположную Солнцу.", "footnotes": [2]},
+        {"type": "paragraph", "html": "Официальный сайт Эйфелевой башни пишет, что за ясный день верхняя точка может описать кривую диаметром около <b>15 см</b>.", "footnotes": [2]},
+        {"type": "paragraph", "html": "Получаются два одинаковых числа с разным смыслом: примерно 15 см сезонного изменения размеров и примерно 15 см суточного движения верхушки. Одно — расширение всей конструкции, другое — небольшой изгиб из-за неравномерного нагрева.", "footnotes": [1, 2]}
       ]
     },
     {
       "section_id": "pochemu-fraza-netochna",
-      "heading": "Почему вирусная фраза неточна",
+      "heading": "Почему фраза «башня летом на 15 см выше» слишком грубая",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Формулировка «летом башня ровно на 15 см выше» слишком гладкая: реальное движение конструкции зависит от температуры, от того, с какой стороны идёт нагрев, и от того, что сравнивать. Число в заголовках путает два разных измерения.",
-          "footnotes": [
-            1,
-            2
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Хорошая привычка для читателя научных фактов — спрашивать не «правда ли, что…», а «что именно измерено и в каком промежутке». Здесь это помогло бы сразу увидеть две разные величины под одним числом."
-        }
+        {"type": "paragraph", "html": "Она превращает сложное движение металла в одно вертикальное число. На самом деле размеры меняются вместе с температурой, а положение верхушки ещё зависит от того, какая сторона сильнее нагрета Солнцем.", "footnotes": [1, 2]},
+        {"type": "paragraph", "html": "Правильный вопрос звучит не «на сколько сантиметров выросла башня?», а <b>«что именно измеряли: общий размер конструкции или смещение верхней точки?»</b>. Как только разделяешь эти две величины, путаница исчезает."}
       ]
     }
   ],
   "quotes": [],
   "media_slots": [
-    {
-      "slot_id": "media-01",
-      "placement": {
-        "after": "lead",
-        "before": "teplovoe-rasshirenie"
-      },
-      "depicts": "Эйфелева башня днём, полный рост; нейтральная туристическая точка без эффектной ночной подсветки (она имеет отдельные права).",
-      "purpose": "Простой узнаваемый образ объекта статьи; ночная подсветка башни имеет отдельную охрану авторских прав, и редакция намеренно её избегает.",
-      "preferred_source_type": "day-time photograph with a checked licence (CC BY/CC BY-SA or public domain)",
-      "copyright_provenance": "Day-time photographs of the tower are generally unencumbered; the night lighting design is separately copyrighted and must not be used. Record author and licence for any chosen file.",
-      "caption": "Эйфелева башня. Размеры и положение верхней точки зависят от температуры и нагрева."
-    },
-    {
-      "slot_id": "media-02",
-      "placement": {
-        "after": "solnechnyi-izm"
-      },
-      "depicts": "Редакционная схема серии суток: положение верхней точки утром/днём/вечером, пунктирная кривая «диаметр ≈ 15 см»; рядом стрелка сезонного расширения.",
-      "purpose": "Развести в глазах читателя два эффекта — сезонное расширение и дневное качание — которые обычно склеивают в одно число.",
-      "preferred_source_type": "original editorial diagram",
-      "copyright_provenance": "Original work; physical facts are not copyrightable.",
-      "caption": "Два разных «15 см»: сезонное расширение металла и суточное качание верхушки."
-    }
+    {"slot_id": "media-01", "placement": {"after": "lead", "before": "teplovoe-rasshirenie"}, "depicts": "Эйфелева башня днём, полный рост; нейтральная туристическая точка без эффектной ночной подсветки.", "purpose": "Показать масштаб металлической конструкции, где очень малое расширение каждого участка суммируется в сантиметры.", "preferred_source_type": "day-time photograph with a checked licence (CC BY/CC BY-SA or public domain)", "copyright_provenance": "Day-time photographs of the tower are generally unencumbered; the night lighting design is separately copyrighted and must not be used. Record author and licence for any chosen file.", "caption": "На большой металлической конструкции микроскопическое тепловое расширение складывается в заметные сантиметры."},
+    {"slot_id": "media-02", "placement": {"after": "solnechnyi-izm"}, "depicts": "Редакционная схема: слева равномерное нагревание и расширение башни; справа одна солнечная сторона нагрета сильнее и верхушка отклоняется.", "purpose": "Развести два разных эффекта визуально, чтобы одинаковое число 15 см не склеивалось в один миф.", "preferred_source_type": "original editorial diagram", "copyright_provenance": "Original work; physical facts are not copyrightable.", "caption": "Два разных эффекта: равномерное расширение всей конструкции и изгиб от неравномерного солнечного нагрева."}
   ],
   "footnotes": [
-    {
-      "n": 1,
-      "source_id": "src-purdue-eiffel-thermal",
-      "label": "Purdue Materials Engineering — Eiffel Tower thermal expansion",
-      "url": "https://engineering.purdue.edu/MSE/about-us/gotmaterials/Buildings/patel.html"
-    },
-    {
-      "n": 2,
-      "source_id": "src-toureiffel-official-movement",
-      "label": "Official Eiffel Tower site — thermal movement",
-      "url": "https://www.toureiffel.paris/en/news/history-and-culture/why-does-eiffel-tower-change-size"
-    }
+    {"n": 1, "source_id": "src-purdue-eiffel-thermal", "label": "Purdue Materials Engineering — Eiffel Tower thermal expansion", "url": "https://engineering.purdue.edu/MSE/about-us/gotmaterials/Buildings/patel.html"},
+    {"n": 2, "source_id": "src-toureiffel-official-movement", "label": "Official Eiffel Tower site — thermal movement", "url": "https://www.toureiffel.paris/en/news/history-and-culture/why-does-eiffel-tower-change-size"}
   ],
   "sources": [
-    {
-      "source_id": "src-purdue-eiffel-thermal",
-      "label": "Purdue Materials Engineering — Eiffel Tower thermal expansion",
-      "url": "https://engineering.purdue.edu/MSE/about-us/gotmaterials/Buildings/patel.html",
-      "verified_on": "2026-08-08",
-      "evidence": "Purdue Materials Engineering states the Eiffel Tower expands and contracts about 15 cm from the hottest to the coldest day."
-    },
-    {
-      "source_id": "src-toureiffel-official-movement",
-      "label": "Official Eiffel Tower site — thermal movement",
-      "url": "https://www.toureiffel.paris/en/news/history-and-culture/why-does-eiffel-tower-change-size",
-      "verified_on": "2026-08-08",
-      "evidence": "The official Eiffel Tower site explains asymmetric solar heating and says the top can trace a curve of roughly 15 cm in diameter over a clear day."
-    }
+    {"source_id": "src-purdue-eiffel-thermal", "label": "Purdue Materials Engineering — Eiffel Tower thermal expansion", "url": "https://engineering.purdue.edu/MSE/about-us/gotmaterials/Buildings/patel.html", "verified_on": "2026-08-08", "evidence": "Purdue Materials Engineering states the Eiffel Tower expands and contracts about 15 cm from the hottest to the coldest day."},
+    {"source_id": "src-toureiffel-official-movement", "label": "Official Eiffel Tower site — thermal movement", "url": "https://www.toureiffel.paris/en/news/history-and-culture/why-does-eiffel-tower-change-size", "verified_on": "2026-08-08", "evidence": "The official Eiffel Tower site explains asymmetric solar heating and says the top can trace a curve of roughly 15 cm in diameter over a clear day."}
   ],
-  "footer": {
-    "tagline": "Сводка — сводим факты, а не мнения 😎",
-    "hashtags": [
-      "#Сводка",
-      "#ЭйфелеваБашня",
-      "#Париж",
-      "#Физика",
-      "#Материалы"
-    ]
-  },
-  "editorial_notes": "The draft's careful two-effect distinction is retained and foregrounded. The media plan deliberately avoids night photos of the tower because the lighting design is separately copyrighted."
+  "footer": {"tagline": "Сводка — сводим факты, а не мнения 😎", "hashtags": ["#Сводка", "#ЭйфелеваБашня", "#Париж", "#Физика", "#Материалы"]},
+  "editorial_notes": "Clarity pass 2026-08-11: thermal expansion is introduced through the familiar bridge/railway-gap idea, and the two independent 15-cm effects are separated before the viral claim is evaluated."
 }
