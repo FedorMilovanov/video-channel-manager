@@ -14,10 +14,7 @@ _ORIGINAL_IDENTITY = base._identity_url_matches
 
 
 def _youtube_capture_url(video_id: str) -> str:
-    return (
-        f"https://www.youtube-nocookie.com/embed/{video_id}"
-        "?autoplay=1&mute=1&playsinline=1&rel=0"
-    )
+    return f"https://www.youtube-nocookie.com/embed/{video_id}?autoplay=1&mute=1&playsinline=1&rel=0"
 
 
 def _vk_capture_url(remote_id: str) -> str:
@@ -143,10 +140,7 @@ def build_video_sequence_evidence(
 
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(
-        description=(
-            "Build stable read-only browser video-sequence evidence for reviewed Milovi "
-            "confectionery pairs."
-        )
+        description=("Build stable read-only browser video-sequence evidence for reviewed Milovi confectionery pairs.")
     )
     root.add_argument("--input", type=Path, required=True)
     root.add_argument("--output-dir", type=Path, required=True)
