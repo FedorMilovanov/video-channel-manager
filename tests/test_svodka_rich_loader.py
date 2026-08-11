@@ -65,7 +65,7 @@ def test_paragraph_html_parses_bold_and_italic() -> None:
     assert paragraphs
     intro = paragraphs[0]
     assert intro.block_id == "p-lead"
-    assert "Заголовок звучит как парадокс" in intro.text  # type: ignore[operator]
+    assert "Фраза звучит как астрономическая шутка" in intro.text  # type: ignore[operator]
     body = paragraphs[1]
     fragments = body.text if isinstance(body.text, tuple) else (body.text,)
     assert any(isinstance(fragment, RichTextBold) and "243 земных суток" in fragment.text for fragment in fragments)

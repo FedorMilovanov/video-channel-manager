@@ -16,145 +16,47 @@
     "release_id": "svodka-pilot-2026-08",
     "source_format": "quick_fact"
   },
-  "title": "Луна каждый год становится чуть дальше",
-  "lead": "Лучшая проверка расстояния до Луны — не телескоп, а отражённый свет. Со времён «Аполлонов» и «Луноходов» на Луне остались уголковые отражатели, и они показывают одно и то же: спутник отодвигается примерно на 3,8 сантиметра в год.",
-  "icons_used": [
-    "🌕",
-    "🌀",
-    "😎"
-  ],
+  "title": "Луна удаляется от Земли примерно на 3,8 см в год",
+  "lead": "Три с половиной сантиметра — меньше ширины ладони. Но когда такую крошечную прибавку измеряют год за годом на расстоянии почти 400 тысяч километров, она превращается в важный физический сигнал. Узнать его удалось с помощью зеркал, оставленных на Луне людьми и автоматическими аппаратами.",
+  "icons_used": ["🌕", "🌀", "😎"],
   "sections": [
     {
       "section_id": "kak-izmereno",
-      "heading": "Как это измерено",
+      "heading": "Как измеряют расстояние до Луны лазером",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Пробником служат <i>ретрорефлекторы</i> — уголковые отражатели, возвращающие луч строго туда, откуда он пришёл. На Луне таких панелей пять: три доставили экипажи «Аполлон-11», «Аполлон-14» и «Аполлон-15», ещё два отражателя привезли советские аппараты «Луноход-1» и «Луноход-2». С земных станций в эти панели посылают лазерный импульс и засекают время возврата света — NASA определяет по этому времени расстояние с точностью до единиц миллиметров.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Такая серия измерений не разовый «запечатленный миг», а долгое наблюдение одной и той же величины. Именно серия и даёт цифру дрейфа: около <b>3,8 сантиметра в год</b>.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "На Луне стоят специальные панели — <i>ретрорефлекторы</i>. Это наборы уголковых зеркал, которые умеют возвращать свет почти точно обратно к источнику. Три панели оставили миссии «Аполлон-11», «Аполлон-14» и «Аполлон-15», ещё две доставили «Луноход-1» и «Луноход-2».", "footnotes": [1]},
+        {"type": "paragraph", "html": "С Земли посылают короткий лазерный импульс, часть света отражается от панели и возвращается назад. Учёные измеряют время пути туда и обратно. Поскольку скорость света известна, из времени получается расстояние. NASA указывает, что такие измерения позволяют определять его с точностью до нескольких миллиметров.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Один замер почти ничего не рассказал бы. Сила метода — в десятилетиях повторений. Когда одна и та же дистанция измеряется снова и снова, становится виден медленный тренд: Луна в среднем отдаляется примерно на <b>3,8 см в год</b>.", "footnotes": [1]}
       ]
     },
     {
       "section_id": "pochemu-dal",
-      "heading": "Почему Луна уходит",
+      "heading": "Почему вращение Земли понемногу «подталкивает» Луну",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Цена движения — приливное взаимодействие. Луна поднимает на Земле океанские горбы; вращение планеты утаскивает эти горбы чуть вперёд линии Земля–Луна, и их тяготение подтягивает спутник по орбите. Энергия при этом перекачивается из вращения Земли в орбиту Луны.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Следствия симметричные: земные сутки понемногу длинеют, а Луна получает избыток орбитального момента и поднимается на более далёкую орбиту. Никакой «утечки» в буквальном смысле нет — есть строгое сохранение момента импульса.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "Луна своей гравитацией создаёт приливы. Но приливные выпуклости на Земле не стоят точно на линии Земля–Луна: вращающаяся Земля уносит их немного вперёд. Получается небольшая гравитационная тяга, которая действует на Луну по направлению её движения.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Энергия не возникает из ниоткуда. Земля очень медленно теряет часть энергии вращения, поэтому сутки постепенно удлиняются, а Луна получает орбитальную энергию и переходит на чуть более далёкую орбиту. Проще говоря: система Земля–Луна перераспределяет энергию и момент движения между вращением планеты и орбитой спутника.", "footnotes": [1]},
+        {"type": "paragraph", "html": "На человеческом масштабе эффект почти незаметен. Важен не бытовой размер этих сантиметров, а то, что они годами складываются в измеримый и проверяемый закон движения."}
       ]
     },
     {
       "section_id": "chto-ne-znachit",
-      "heading": "Чего это не значит",
+      "heading": "Почему эти сантиметры важны науке",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Три с точкой восемь сантиметра в год на масштабе читательской жизни — мизер. За луну наблюдаемого поколения расстояние вырастет меньше чем на высоту человека. Полнолуния не померкнут, а морской прилив не сравняется с лужей.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "quote",
-          "html": "«Лазерная радиолокация Луны — это долгая игра».",
-          "attribution": "Эрван Мазарико, планетолог из Центра космических полётов имени Годдарда (NASA)",
-          "note": "перевод редакции с английского",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Значение числа не в быте, а в точности метода. Та же техника ведёт дальше: десятилетия одной серии измерений уточняют представление о гравитации, а по едва заметным покачиваниям Луны в тяготении Земли учёные поняли, что у спутника жидкое ядро.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "Луна не «убегает» от Земли в каком-то тревожном бытовом смысле. Текущий дрейф слишком мал, чтобы заметить его глазами или по виду Луны на небе. Зато лазерная серия работает как очень чувствительный тест гравитации и движения системы Земля–Луна.", "footnotes": [1]},
+        {"type": "quote", "html": "«Лазерная радиолокация Луны — это долгая игра».", "attribution": "Эрван Мазарико, планетолог Центра космических полётов имени Годдарда (NASA)", "note": "перевод редакции с английского", "footnotes": [1]},
+        {"type": "paragraph", "html": "По той же многолетней серии измерений учёные уточняют модели гравитации и замечают едва заметные движения самой Луны. NASA отмечает, что наблюдение её покачиваний помогло получить данные о жидком ядре спутника.", "footnotes": [1]}
       ]
     }
   ],
   "quotes": [
-    {
-      "section_id": "chto-ne-znachit",
-      "html": "«Лазерная радиолокация Луны — это долгая игра».",
-      "attribution": "Эрван Мазарико, планетолог из Центра космических полётов имени Годдарда (NASA)",
-      "note": "перевод редакции с английского (Laser-ranging science is a long game)",
-      "verified_at_source": "https://www.nasa.gov/missions/laser-beams-reflected-between-earth-and-moon-boost-science/"
-    }
+    {"section_id": "chto-ne-znachit", "html": "«Лазерная радиолокация Луны — это долгая игра».", "attribution": "Эрван Мазарико, планетолог Центра космических полётов имени Годдарда (NASA)", "note": "перевод редакции с английского (Laser-ranging science is a long game)", "verified_at_source": "https://www.nasa.gov/missions/laser-beams-reflected-between-earth-and-moon-boost-science/"}
   ],
   "media_slots": [
-    {
-      "slot_id": "media-01",
-      "placement": {
-        "after": "lead",
-        "before": "kak-izmereno"
-      },
-      "depicts": "Фотография лунного ретрорефлектора миссий «Аполлон» — массив с рядами маленьких зеркал на поверхности.",
-      "purpose": "Показать предмет, о котором говорит статья: реальный прибор, а не абстрактные «лазеры в космосе».",
-      "preferred_source_type": "NASA mission photography (Apollo-era archive)",
-      "copyright_provenance": "NASA imagery is public domain; preserve the mission frame and NASA credit, e.g. 'Фото: NASA'. Check the exact per-image credit on the NASA page.",
-      "caption": "Ретрорефлектор на поверхности Луны. Фото: NASA."
-    },
-    {
-      "slot_id": "media-02",
-      "placement": {
-        "after": "pochemu-dal"
-      },
-      "depicts": "Редакционная диаграмма: Земля, приливный горб, сдвинутый вперёд линии Земля–Луна; стрелки момента вращения и орбитального момента.",
-      "purpose": "Приливный перенос момента — единственное место в статье, где объяснение сложнее одной фразы; схема экономит абзац текста.",
-      "preferred_source_type": "original editorial diagram",
-      "copyright_provenance": "Original work. Diagrammatic restatement of a well-known physical picture is acceptable; do not copy any specific published figure.",
-      "caption": "Приливный горб убегает вперёд и слегка подтягивает Луну по орбите."
-    }
+    {"slot_id": "media-01", "placement": {"after": "lead", "before": "kak-izmereno"}, "depicts": "Фотография лунного ретрорефлектора миссий «Аполлон» — массив с рядами маленьких зеркал на поверхности.", "purpose": "Показать реальный прибор, который превращает абстрактное расстояние до Луны в измеряемое время полёта света.", "preferred_source_type": "NASA mission photography (Apollo-era archive)", "copyright_provenance": "NASA imagery is public domain; preserve the mission frame and NASA credit, e.g. 'Фото: NASA'. Check the exact per-image credit on the NASA page.", "caption": "Ретрорефлектор на Луне возвращает часть лазерного импульса обратно на Землю. Фото: NASA."},
+    {"slot_id": "media-02", "placement": {"after": "pochemu-dal"}, "depicts": "Редакционная диаграмма: Земля, приливный горб, немного сдвинутый вперёд линии Земля–Луна; стрелка вращения Земли и направление орбитального движения Луны.", "purpose": "Показать без формул, откуда берётся небольшой гравитационный толчок вперёд и почему Луна уходит на более далёкую орбиту.", "preferred_source_type": "original editorial diagram", "copyright_provenance": "Original work. Diagrammatic restatement of a well-known physical picture is acceptable; do not copy any specific published figure.", "caption": "Вращение Земли уносит приливный горб вперёд, и его притяжение слегка ускоряет Луну по орбите."}
   ],
-  "footnotes": [
-    {
-      "n": 1,
-      "source_id": "src-nasa-lunar-laser-ranging",
-      "label": "NASA — Lunar Laser Ranging",
-      "url": "https://www.nasa.gov/missions/laser-beams-reflected-between-earth-and-moon-boost-science/"
-    }
-  ],
-  "sources": [
-    {
-      "source_id": "src-nasa-lunar-laser-ranging",
-      "label": "NASA — Lunar Laser Ranging",
-      "url": "https://www.nasa.gov/missions/laser-beams-reflected-between-earth-and-moon-boost-science/",
-      "verified_on": "2026-08-08",
-      "evidence": "NASA states Earth and Moon drift apart about 1.5 inches / 3.8 cm per year, measured with lunar retroreflectors. Re-read 2026-08-10: five panels in total — Apollo 11/14/15 and Lunokhod 1/2; long series refine our understanding of gravity and revealed the Moon's fluid core via wobble monitoring; Mazarico quote verified verbatim; station-to-reflector distance precision quoted as less than a few millimetres.",
-      "reverified_on": "2026-08-10"
-    }
-  ],
-  "footer": {
-    "tagline": "Сводка — сводим факты, а не мнения 😎",
-    "hashtags": [
-      "#Сводка",
-      "#Луна",
-      "#Космос",
-      "#NASA",
-      "#Физика"
-    ]
-  },
-  "editorial_notes": "The draft's three-part logic (number, instrument, cause) is preserved, with a stronger emphasis on measurement and on what the figure does not imply. Second pass 2026-08-10: reflector fleet attribution corrected to include the two Lunokhod panels (first draft credited Apollo only); the method-value sentence brought closer to NASA wording (gravity and fluid core); Mazarico quote added after verbatim verification."
+  "footnotes": [{"n": 1, "source_id": "src-nasa-lunar-laser-ranging", "label": "NASA — Lunar Laser Ranging", "url": "https://www.nasa.gov/missions/laser-beams-reflected-between-earth-and-moon-boost-science/"}],
+  "sources": [{"source_id": "src-nasa-lunar-laser-ranging", "label": "NASA — Lunar Laser Ranging", "url": "https://www.nasa.gov/missions/laser-beams-reflected-between-earth-and-moon-boost-science/", "verified_on": "2026-08-08", "evidence": "NASA states Earth and Moon drift apart about 1.5 inches / 3.8 cm per year, measured with lunar retroreflectors. Re-read 2026-08-10: five panels in total — Apollo 11/14/15 and Lunokhod 1/2; long series refine our understanding of gravity and revealed the Moon's fluid core via wobble monitoring; Mazarico quote verified verbatim; station-to-reflector distance precision quoted as less than a few millimetres.", "reverified_on": "2026-08-10"}],
+  "footer": {"tagline": "Сводка — сводим факты, а не мнения 😎", "hashtags": ["#Сводка", "#Луна", "#Космос", "#NASA", "#Физика"]},
+  "editorial_notes": "Clarity pass 2026-08-11: laser ranging is explained as a time-of-flight measurement before technical consequences; tidal transfer is described without equations; the previous awkward scale paragraph was replaced with a clear separation between human and scientific scales."
 }

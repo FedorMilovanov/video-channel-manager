@@ -16,160 +16,46 @@
     "release_id": "svodka-pilot-2026-08",
     "source_format": "myth_fact"
   },
-  "title": "Не все подсолнухи весь день следят за Солнцем",
-  "lead": "Растущие подсолнухи и правда поворачиваются за Солнцем — но не всегда и не без размышлений. У их движения есть внутренние часы, ясная задача и естественный конец.",
-  "icons_used": [
-    "🌻",
-    "🕰️",
-    "😎"
-  ],
+  "title": "Подсолнух следит за Солнцем только пока растёт",
+  "lead": "Фотографии поля создают впечатление, будто каждый подсолнух весь день разворачивает цветок вслед за Солнцем. Это верно только для молодого растущего растения. Когда корзинка созревает, ежедневное движение почти прекращается — и большинство взрослых цветков остаётся смотреть на восток.",
+  "icons_used": ["🌻", "🕰️", "😎"],
   "sections": [
     {
       "section_id": "mif",
-      "heading": "Миф и его предел",
+      "heading": "Два возраста — два разных поведения",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Расхожая фраза «подсолнух весь день смотрит за Солнцем» верна лишь для растущего растения. Зрелая картинка другая: цветок, раскрывший корзинку, обычно остаётся обращённым <b>на восток</b>.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Разница объяснима через возраст: пока стебель активно растёт, у растения есть механизм слежения; как рост прекращается, суточные повороты стихают.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "Пока стебель активно растёт, молодой подсолнух утром обращён на восток, днём постепенно поворачивается к западу, а ночью возвращается обратно. Это движение называют <i>гелиотропизмом</i>.", "footnotes": [1]},
+        {"type": "paragraph", "html": "После раскрытия и созревания корзинки картина меняется: рост стебля замедляется, суточные повороты прекращаются, и зрелый цветок обычно остаётся ориентированным <b>на восток</b>.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Поэтому фраза «подсолнух всегда смотрит за Солнцем» смешивает две стадии жизни растения в одну."}
       ]
     },
     {
       "section_id": "chasy-i-stebel",
-      "heading": "Часы и стебель",
+      "heading": "Как растение двигается без мышц",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Растущее растение ведёт себя стабильно: днём наклоняется с востока на запад, ночью возвращается на восток. Управляют этим <i>циркадные часы</i> вместе с неравномерным ростом сторон стебля: днём больше растёт одна сторона, ночью — другая.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Команда в Калифорнийском университете в Дэвисе проверила это не одним способом: и в поле, и в горшках, и в комнатах с искусственным светом. Результат совпал: при неподвижном свете растения несколько дней продолжали качаться «по своему» расписанию, как и следует от механизма с внутренними часами.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "Подсолнух не поворачивается как голова животного. Он меняет направление потому, что разные стороны растущего стебля удлиняются с разной скоростью. Если одна сторона растёт быстрее другой, стебель изгибается.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Днём преобладает рост, который ведёт верхушку с востока на запад; ночью соотношение меняется, и растение возвращается на восток к рассвету. Этим циклом управляют <i>циркадные часы</i> — внутренний примерно суточный ритм растения.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Исследователи проверили роль внутренних часов в поле и при искусственном освещении. Даже когда направление света переставало меняться, растения некоторое время продолжали двигаться по собственному суточному расписанию. Это и выдаёт работу внутреннего ритма, а не простую мгновенную реакцию на луч света.", "footnotes": [1]}
       ]
     },
     {
       "section_id": "zachem-vostok",
-      "heading": "Зачем взрослым восток",
+      "heading": "Почему взрослый цветок остаётся смотреть на восток",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "У зрелых цветков, повёрнутых на восток, есть измеряемое преимущество: утром они нагреваются быстрее, а тепло привлекает опылителей. В полевом сравнении у таких цветков опылителей было примерно в пять раз больше.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "quote",
-          "html": "«Пчёлам нравятся тёплые цветки».",
-          "attribution": "Стейси Хармер, профессор биологии растений в UC Davis, старший автор работы",
-          "note": "перевод редакции с английского",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Слежение юного подсолнуха и неподвижность зрелого — не противоречие, а две стадии одной стратегии: сначала догнать рост, потом зафиксировать лучшую ориентацию для цветения.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "Восточная ориентация даёт зрелой корзинке практическое преимущество: утром она быстрее нагревается на Солнце. В полевом сравнении такие цветки посещали примерно в <b>пять раз больше опылителей</b>.", "footnotes": [1]},
+        {"type": "quote", "html": "«Пчёлам нравятся тёплые цветки».", "attribution": "Стейси Хармер, профессор биологии растений UC Davis, старший автор работы", "note": "перевод редакции с английского", "footnotes": [1]},
+        {"type": "paragraph", "html": "Итак, здесь нет противоречия. Молодому растению полезно двигаться во время роста, а зрелому — закрепить направление. Одно и то же растение меняет стратегию вместе с возрастом.", "footnotes": [1]}
       ]
     }
   ],
-  "quotes": [
-    {
-      "section_id": "zachem-vostok",
-      "html": "«Пчёлам нравятся тёплые цветки».",
-      "attribution": "Стейси Хармер, профессор биологии растений в UC Davis",
-      "note": "перевод редакции с английского (Bees like warm flowers)",
-      "verified_at_source": "https://www.ucdavis.edu/news/sunflowers-move-clock"
-    }
-  ],
+  "quotes": [{"section_id": "zachem-vostok", "html": "«Пчёлам нравятся тёплые цветки».", "attribution": "Стейси Хармер, профессор биологии растений в UC Davis", "note": "перевод редакции с английского (Bees like warm flowers)", "verified_at_source": "https://www.ucdavis.edu/news/sunflowers-move-clock"}],
   "media_slots": [
-    {
-      "slot_id": "media-01",
-      "placement": {
-        "after": "lead",
-        "before": "mif"
-      },
-      "depicts": "Поле молодых, ещё не раскрывшихся подсолнухов на рассвете; видно, как головки смотрят на восток.",
-      "purpose": "Показать именно ту стадию, о которой идёт речь, — растущие головки, а не декоративный «подсолнух с картинки».",
-      "preferred_source_type": "openly licensed or editorial photograph",
-      "copyright_provenance": "The UC Davis newsroom photograph is credited and rights reserved; prefer a CC0/CC BY image with recorded author and licence, or original field imagery.",
-      "caption": "Растущие подсолнухи утром повёрнуты на восток."
-    },
-    {
-      "slot_id": "media-02",
-      "placement": {
-        "after": "chasy-i-stebel"
-      },
-      "depicts": "Редакционная диаграмма суток растущего подсолнуха: восток утром → запад вечером → обратный поворот ночью; рядом шкала «рост сторон стебля».",
-      "purpose": "Суточная кинематика и внутренние часы — вещь, которую проще показать одним кадром, чем доказывать текстом.",
-      "preferred_source_type": "original editorial diagram",
-      "copyright_provenance": "Original work; do not trace copyrighted figures from Science or UC Davis. Facts are not copyrightable.",
-      "caption": "Сутки растущего подсолнуха: движение за Солнцем и обратный ночной поворот."
-    }
+    {"slot_id": "media-01", "placement": {"after": "lead", "before": "mif"}, "depicts": "Поле молодых, ещё не раскрывшихся подсолнухов на рассвете; видно, как головки смотрят на восток.", "purpose": "Сразу показать именно растущую стадию, которая действительно двигается за Солнцем.", "preferred_source_type": "openly licensed or editorial photograph", "copyright_provenance": "The UC Davis newsroom photograph is credited and rights reserved; prefer a CC0/CC BY image with recorded author and licence, or original field imagery.", "caption": "Молодые подсолнухи утром ориентированы на восток и в течение дня меняют направление."},
+    {"slot_id": "media-02", "placement": {"after": "chasy-i-stebel"}, "depicts": "Редакционная диаграмма суток: восток утром → запад вечером → возвращение ночью; рядом две стороны растущего стебля с разной скоростью роста.", "purpose": "Показать, что движение создаётся не поворотным суставом, а неравномерным ростом стебля под контролем внутренних часов.", "preferred_source_type": "original editorial diagram", "copyright_provenance": "Original work; do not trace copyrighted figures from Science or UC Davis. Facts are not copyrightable.", "caption": "Стебель изгибается, потому что его стороны растут с разной скоростью; ночью направление роста меняется."}
   ],
-  "visual_plan": {
-    "rationale": "Миф опровергается картинкой суток и картинкой итогового выбора: сначала движение, потом зафиксированное направление. Два последовательных кадра заменяют длинные пояснения.",
-    "panels": [
-      {
-        "order": 1,
-        "type": "diagram",
-        "content": "Растущее растение: восток → запад → восток; рядом шкала неравномерного роста сторон стебля"
-      },
-      {
-        "order": 2,
-        "type": "diagram",
-        "content": "Зрелая корзинка: остановлена на восток; стрелки утреннего нагрева и подпись '≈ в 5 раз больше опылителей'"
-      }
-    ]
-  },
-  "footnotes": [
-    {
-      "n": 1,
-      "source_id": "src-ucdavis-sunflowers",
-      "label": "UC Davis / Science, 2016 — Sunflowers move by the clock",
-      "url": "https://www.ucdavis.edu/news/sunflowers-move-clock"
-    }
-  ],
-  "sources": [
-    {
-      "source_id": "src-ucdavis-sunflowers",
-      "label": "UC Davis / Science, 2016",
-      "url": "https://www.ucdavis.edu/news/sunflowers-move-clock",
-      "verified_on": "2026-08-08",
-      "reverified_on": "2026-08-10",
-      "evidence": "Growing sunflowers use circadian clock to track the Sun; mature flowers face east, which warms them in morning and attracts about five times more pollinators. Harmer quote 'Bees like warm flowers' verified verbatim on the page."
-    }
-  ],
-  "footer": {
-    "tagline": "Сводка — сводим факты, а не мнения 😎",
-    "hashtags": [
-      "#Сводка",
-      "#Мифы",
-      "#Подсолнух",
-      "#Растения",
-      "#Биология"
-    ]
-  },
-  "editorial_notes": "Myth-correction kept, with the timeline split into 'growing' vs 'mature' stages. A verbatim-verified quote from the study's senior author is added with transparent attribution; the 'five times more pollinators' figure is brought forward into the body where the mechanism is explained."
+  "visual_plan": {"rationale": "Два кадра должны объяснять два возраста: движение молодого растения и фиксированный восток зрелой корзинки.", "panels": [{"order": 1, "type": "diagram", "content": "Молодое растение: восток → запад → восток; неравномерный рост сторон стебля"}, {"order": 2, "type": "diagram", "content": "Зрелая корзинка: фиксированный восток; утренний нагрев и подпись ≈ в 5 раз больше опылителей"}]},
+  "footnotes": [{"n": 1, "source_id": "src-ucdavis-sunflowers", "label": "UC Davis / Science, 2016 — Sunflowers move by the clock", "url": "https://www.ucdavis.edu/news/sunflowers-move-clock"}],
+  "sources": [{"source_id": "src-ucdavis-sunflowers", "label": "UC Davis / Science, 2016", "url": "https://www.ucdavis.edu/news/sunflowers-move-clock", "verified_on": "2026-08-08", "reverified_on": "2026-08-10", "evidence": "Growing sunflowers use circadian clock to track the Sun; mature flowers face east, which warms them in morning and attracts about five times more pollinators. Harmer quote 'Bees like warm flowers' verified verbatim on the page."}],
+  "footer": {"tagline": "Сводка — сводим факты, а не мнения 😎", "hashtags": ["#Сводка", "#Мифы", "#Подсолнух", "#Растения", "#Биология"]},
+  "editorial_notes": "Clarity pass 2026-08-11: removed anthropomorphic wording, defined circadian clock and explained movement through unequal stem growth before presenting the pollinator result."
 }

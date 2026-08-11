@@ -16,128 +16,44 @@
     "release_id": "svodka-pilot-2026-08",
     "source_format": "quick_fact"
   },
-  "title": "Американские вороны помнят опасное лицо годами",
-  "lead": "Исследователи в Сиэтле поймали диких ворон один раз, в одной и той же маске. Прошло несколько лет — птицы по-прежнему ругают именно «этого человека», хотя под маской каждый раз мог быть другой носитель.",
-  "icons_used": [
-    "🐦",
-    "🧭",
-    "😎"
-  ],
+  "title": "Вороны могут помнить опасное лицо годами",
+  "lead": "Звучит почти как городская легенда: обидел ворону — она запомнила тебя навсегда. Реальный эксперимент интереснее и аккуратнее. Учёные не проверяли «месть» и не просили птиц узнавать сотни людей. Они связали одну необычную маску с неприятным событием и потом годами проверяли реакцию именно на неё.",
+  "icons_used": ["🐦", "🧭", "😎"],
   "sections": [
     {
       "section_id": "eksperiment",
-      "heading": "Как был поставлен опыт",
+      "heading": "Как отделить лицо от самого человека",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Полевая работа шла в окрестностях Сиэтла. Исследователи ловили, кольцевали и отпускали диких американских ворон — делал это человек в одной и той же приметной маске. Для птиц это было краткое, но напряжённое событие.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Спустя время в разные районы возвращались люди в той же маске — и в нейтральной, «безобидной». Рост, возраст, пол и походка носителя менялись; узнавание перевешивало эти различия. На человека в «опасной» маске птицы кричали и нападали заметно чаще, чем на человека в нейтральной.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Граница результата дошла по крайней мере до <b>2,7 года</b>: к этому сроку узнавание сохранялось.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "В окрестностях Сиэтла исследователи ловили, кольцевали и отпускали диких американских ворон. Во время этой процедуры человек был в одной и той же приметной маске. Для птиц маска стала частью неприятного события.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Позже в район приходили люди либо в той же «опасной» маске, либо в нейтральной. При этом под маской мог быть другой человек. Такой приём важен: если реакция сохраняется при смене носителя, птица отвечает не на конкретную походку или голос человека, а на устойчивый визуальный образ маски.", "footnotes": [1]},
+        {"type": "paragraph", "html": "На «опасную» маску вороны чаще кричали и атаковали, чем на нейтральную. Реакция сохранялась как минимум до <b>2,7 года</b> после первоначального события.", "footnotes": [1]}
       ]
     },
     {
       "section_id": "chto-dokazano",
-      "heading": "Что именно доказано",
+      "heading": "Что именно здесь называется памятью",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Вывод, который есть в статье, точен и скромен: дикие вороны способны запоминать <i>конкретный угрожающий визуальный сигнал</i> и удерживать его годами без подкрепляющих событий.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Из этого не следует, что ворона «помнит лицо любого человека навсегда». Опыт касался одной связанной с опасностью маски, а не галереи портретов. Гипербола про «мстительных птиц, которые сдают нарушителя потомству» — уже не текст исследования.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "Исследование показывает долговременное узнавание <i>конкретного угрожающего визуального сигнала</i>. Птицам не нужно было снова попадать в ловушку, чтобы продолжать реагировать на ту же маску спустя годы.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Но из этого нельзя честно сделать вывод «ворона запоминает любое человеческое лицо навсегда». В опыте была одна особая маска, связанная с сильным событием. Это важная граница: хороший эксперимент отвечает на узкий вопрос гораздо надёжнее, чем на красивую легенду.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Поэтому корректная версия популярного факта звучит так: <b>дикие американские вороны способны годами помнить визуальный образ, который они связали с угрозой</b>.", "footnotes": [1]}
       ]
     },
     {
       "section_id": "o-lyudyakh",
-      "heading": "О людях за работой",
+      "heading": "Почему для такого результата нужны годы",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "У этого результата есть авторы — полевая группа из Вашингтонского университета. За аккуратной цифрой стоят годы методической, мало заметной со стороны работы с дикими птицами: ловля, кольцование, долгие повторные наблюдения.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "Самая трудная часть здесь не маска, а время. Одних и тех же диких птиц нужно ловить, маркировать, отпускать и потом снова наблюдать через месяцы и годы. Поэтому число «2,7 года» — результат не одного эффектного опыта, а длинной полевой серии.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Работу выполнила полевая группа Вашингтонского университета. В таких исследованиях ценность часто создаёт не редкий прибор, а дисциплина повторных наблюдений и одинаковая процедура проверки."}
       ]
     }
   ],
   "quotes": [],
   "media_slots": [
-    {
-      "slot_id": "media-01",
-      "placement": {
-        "after": "lead",
-        "before": "eksperiment"
-      },
-      "depicts": "Американская ворона в дикой обстановке — на ветке или проводе; естественный цвет, спокойная композиция.",
-      "purpose": "Показать наблюдаемый вид, а не карикатуру «умной птицы».",
-      "preferred_source_type": "public-domain or explicitly licensed wildlife photograph",
-      "copyright_provenance": "Prefer USFWS/NOAA public-domain imagery or a verified CC BY licence with recorded author and licence; no social-network reposts.",
-      "caption": "Американская ворона. Узнавание «опасной» маски держалось годами."
-    },
-    {
-      "slot_id": "media-02",
-      "placement": {
-        "after": "chto-dokazano"
-      },
-      "depicts": "Редакционная диаграмма эксперимента: день ловли (маска X) → возвращение в маске X → возвращение в нейтральной маске → реакция птиц по времени.",
-      "purpose": "Разделить для глаз экспериментальный замысел и наблюдаемый исход — тогда границы вывода становятся очевидными.",
-      "preferred_source_type": "original editorial diagram",
-      "copyright_provenance": "Journal figures from Elsevier are copyrighted; redraw only an original diagram. Facts and procedures are not copyrightable.",
-      "caption": "Одна встреча в одной маске — и годы реакции именно на неё."
-    }
+    {"slot_id": "media-01", "placement": {"after": "lead", "before": "eksperiment"}, "depicts": "Американская ворона в дикой обстановке — на ветке или проводе; естественный цвет, спокойная композиция.", "purpose": "Показать реальный вид без карикатуры на 'мстительную умную птицу'.", "preferred_source_type": "public-domain or explicitly licensed wildlife photograph", "copyright_provenance": "Prefer USFWS/NOAA public-domain imagery or a verified CC BY licence with recorded author and licence; no social-network reposts.", "caption": "Американская ворона. В опыте проверяли память на один конкретный угрожающий визуальный сигнал."},
+    {"slot_id": "media-02", "placement": {"after": "chto-dokazano"}, "depicts": "Редакционная схема: ловля в маске X → спустя время другой человек в маске X / нейтральной маске → сравнение реакции ворон.", "purpose": "Сделать очевидным главное достоинство опыта: носитель меняется, визуальный сигнал остаётся тем же.", "preferred_source_type": "original editorial diagram", "copyright_provenance": "Journal figures from Elsevier are copyrighted; redraw only an original diagram. Facts and procedures are not copyrightable.", "caption": "Меняется человек под маской, но не сама маска — так проверяют, что вороны узнают именно визуальный сигнал."}
   ],
-  "footnotes": [
-    {
-      "n": 1,
-      "source_id": "src-animal-behaviour-2010-crows",
-      "label": "Animal Behaviour, 2010 — wild American crows remember a threatening human face",
-      "url": "https://www.sciencedirect.com/science/article/pii/S0003347209005806"
-    }
-  ],
-  "sources": [
-    {
-      "source_id": "src-animal-behaviour-2010-crows",
-      "label": "Animal Behaviour, 2010 — original study",
-      "url": "https://www.sciencedirect.com/science/article/pii/S0003347209005806",
-      "verified_on": "2026-08-08",
-      "evidence": "Field experiment showed wild American crows learned a threatening mask and continued to recognize and scold it for at least 2.7 years; wording is limited to the tested threatening-face paradigm."
-    }
-  ],
-  "footer": {
-    "tagline": "Сводка — сводим факты, а не мнения 😎",
-    "hashtags": [
-      "#Сводка",
-      "#Вороны",
-      "#Животные",
-      "#Память",
-      "#Поведение",
-      "#Наука"
-    ]
-  },
-  "editorial_notes": "The single-source study is kept within its own limits: the 2.7-year figure is presented as 'at least', the human-interest 'revenge' framing is explicitly excluded, and the field team is mentioned with respect rather than as a genius list."
+  "footnotes": [{"n": 1, "source_id": "src-animal-behaviour-2010-crows", "label": "Animal Behaviour, 2010 — wild American crows remember a threatening human face", "url": "https://www.sciencedirect.com/science/article/pii/S0003347209005806"}],
+  "sources": [{"source_id": "src-animal-behaviour-2010-crows", "label": "Animal Behaviour, 2010 — original study", "url": "https://www.sciencedirect.com/science/article/pii/S0003347209005806", "verified_on": "2026-08-08", "evidence": "Field experiment showed wild American crows learned a threatening mask and continued to recognize and scold it for at least 2.7 years; wording is limited to the tested threatening-face paradigm."}],
+  "footer": {"tagline": "Сводка — сводим факты, а не мнения 😎", "hashtags": ["#Сводка", "#Вороны", "#Животные", "#Память", "#Поведение", "#Наука"]},
+  "editorial_notes": "Clarity pass 2026-08-11: the experimental control is explained explicitly so a non-specialist can see why the result concerns the mask rather than the wearer. Sensational 'revenge' framing is removed and the 2.7-year limit remains explicit."
 }

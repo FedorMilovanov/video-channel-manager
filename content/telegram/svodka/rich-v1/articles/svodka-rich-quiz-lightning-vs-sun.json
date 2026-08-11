@@ -16,161 +16,54 @@
     "release_id": "svodka-pilot-2026-08",
     "source_format": "quiz"
   },
-  "title": "Что горячее: молния или поверхность Солнца?",
-  "lead": "Проверочный вопрос, который часто решают «на ощущение»: Солнце звучит неоспоримее. Ощущение проигрывает измерению.",
-  "icons_used": [
-    "⚡",
-    "📊",
-    "😎"
-  ],
+  "title": "Что горячее: канал молнии или поверхность Солнца?",
+  "lead": "Интуиция почти всегда выбирает Солнце: оно огромное и светит миллиарды лет. Но вопрос не про общую энергию, а про температуру очень маленькой области воздуха на очень короткое время. Здесь ответ оказывается неожиданным.",
+  "icons_used": ["⚡", "📊", "😎"],
   "sections": [
     {
       "section_id": "vopros",
-      "heading": "Сначала вопрос",
+      "heading": "Сначала попробуйте угадать",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Что может быть горячее поверхности Солнца?"
-        },
-        {
-          "type": "list",
-          "ordered": false,
-          "items": [
-            "канал молнии",
-            "лава вулкана",
-            "кипящая вода",
-            "ничего из перечисленного"
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Отметьте свой вариант — разбор ниже."
-        }
+        {"type": "paragraph", "html": "Что может на короткий момент иметь более высокую температуру, чем видимая поверхность Солнца?"},
+        {"type": "list", "ordered": false, "items": ["канал молнии", "лава вулкана", "кипящая вода", "ничего из перечисленного"]},
+        {"type": "paragraph", "html": "Важно: сравниваем именно <b>температуру</b>, а не размер объекта, длительность нагрева или общее количество энергии."}
       ]
     },
     {
       "section_id": "otvet",
-      "heading": "Ответ",
+      "heading": "Ответ: воздух внутри канала молнии",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Правильный ответ: <b>канал молнии</b>. NOAA указывает, что воздух внутри него за долю секунды может нагреться примерно до <b>30 000 °C</b> — примерно в пять раз горячее поверхности Солнца.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "quote",
-          "html": "«Молния за доли секунды нагревает воздух вокруг себя до невероятных температур — вплоть до 54 000 °F (30 000 °C). Это в пять раз горячее поверхности Солнца!»",
-          "attribution": "NOAA — What Causes Lightning and Thunder?",
-          "note": "перевод редакции с английского",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Пара фраз из NOAA об устройстве грома тоже помогает прочувствовать масштаб: раскалённый воздух расширяется взрывом, сжимая окружающий воздух; охлаждаясь, стремительно сжимается — отсюда первый удар и последующие раскаты.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "NOAA указывает, что воздух в канале молнии за доли секунды может нагреться примерно до <b>30 000 °C</b>. Это примерно в пять раз выше температуры видимой поверхности Солнца.", "footnotes": [1]},
+        {"type": "quote", "html": "«Молния за доли секунды нагревает воздух вокруг себя до невероятных температур — вплоть до 54 000 °F (30 000 °C). Это в пять раз горячее поверхности Солнца!»", "attribution": "NOAA — What Causes Lightning and Thunder?", "note": "перевод редакции с английского", "footnotes": [1]},
+        {"type": "paragraph", "html": "Почему тогда молния не выглядит как маленькое Солнце? Потому что речь идёт о тонком канале воздуха и очень коротком импульсе. Высокая температура в небольшой области на мгновение — не то же самое, что гигантский объект, который постоянно излучает огромную мощность."}
       ]
     },
     {
       "section_id": "sravnenie",
-      "heading": "Насколько это много",
+      "heading": "Что происходит с воздухом и откуда берётся гром",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Сравнение здесь нужно не ради эффекта, а ради масштаба. Лава при выходе — порядка тысячи градусов, кипящая вода — сто. Молния на миг создаёт температуру совсем другого порядка.",
-          "footnotes": [
-            1
-          ]
-        },
-        {
-          "type": "paragraph",
-          "html": "Важно понимать, что <b>30 000 °C — температура воздуха в канале, а не «температура электрического удара в длинном интервале»</b>. Импульс длится доли секунды; именно кратковременность и отличает канал молнии от плавки металла.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "При таком быстром нагреве воздух почти мгновенно расширяется. Это расширение толкает окружающий воздух и создаёт ударную волну. Мы слышим её как гром.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Для масштаба достаточно трёх точек: кипящая вода — около 100 °C, лава — порядка тысячи градусов, канал молнии — до десятков тысяч. Здесь важен не красивый рекорд, а скачок на другой порядок величины.", "footnotes": [1]},
+        {"type": "paragraph", "html": "Поэтому фраза «молния горячее Солнца» без уточнения вводит в заблуждение. Точнее говорить: <b>воздух внутри канала молнии на короткий момент может быть горячее видимой поверхности Солнца</b>.", "footnotes": [1]}
       ]
     },
     {
       "section_id": "ostorozhnost",
-      "heading": "Практическая осторожность",
+      "heading": "И это не повод смотреть на грозу слишком близко",
       "blocks": [
-        {
-          "type": "paragraph",
-          "html": "Гроза по-прежнему опасна независимо от красоты чисел. Если слышен гром, разумнее уйти в помещение или автомобиль и подождать ещё полчаса после последнего раската.",
-          "footnotes": [
-            1
-          ]
-        }
+        {"type": "paragraph", "html": "Температура — лишь одна из причин, почему молния опасна. Если слышен гром, гроза уже достаточно близко, чтобы относиться к ней серьёзно: безопаснее находиться внутри капитального здания или закрытого автомобиля, а не искать удачный кадр с улицы.", "footnotes": [1]}
       ]
     }
   ],
   "quotes": [
-    {
-      "section_id": "otvet",
-      "html": "«Молния за доли секунды нагревает воздух вокруг себя до невероятных температур — вплоть до 54 000 °F (30 000 °C). Это в пять раз горячее поверхности Солнца!»",
-      "attribution": "NOAA — What Causes Lightning and Thunder?",
-      "note": "перевод редакции по тексту NOAA"
-    }
+    {"section_id": "otvet", "html": "«Молния за доли секунды нагревает воздух вокруг себя до невероятных температур — вплоть до 54 000 °F (30 000 °C). Это в пять раз горячее поверхности Солнца!»", "attribution": "NOAA — What Causes Lightning and Thunder?", "note": "перевод редакции по тексту NOAA"}
   ],
   "media_slots": [
-    {
-      "slot_id": "media-01",
-      "placement": {
-        "after": "lead",
-        "before": "vopros"
-      },
-      "depicts": "Молния в ночном небе над ровным горизонтом — один основной канал; без лишних спецэффектов.",
-      "purpose": "Задать тему вопроса, не забегая вперёд к ответу.",
-      "preferred_source_type": "NOAA / NWS public-domain photograph",
-      "copyright_provenance": "US federal imagery is public domain; keep the NOAA credit in the caption.",
-      "caption": "Молния. Фото: NOAA."
-    },
-    {
-      "slot_id": "media-02",
-      "placement": {
-        "after": "sravnenie"
-      },
-      "depicts": "Редакционная графическая шкала: три точки на одной линейке — кипящая вода (100 °C), лава (≈1000 °C), канал молнии (≈30 000 °C) — с пунктирной отметкой «поверхность Солнца».",
-      "purpose": "Сравнение порядков величин в цифрах читается плохо; одна линейка заменяет абзац.",
-      "preferred_source_type": "original editorial diagram",
-      "copyright_provenance": "Original work; numerical facts are not copyrightable.",
-      "caption": "Три точки на одной шкале: кипящая вода, лава и канал молнии. Пунктир — поверхность Солнца."
-    }
+    {"slot_id": "media-01", "placement": {"after": "lead", "before": "vopros"}, "depicts": "Молния в ночном небе над ровным горизонтом — один основной канал; без лишних спецэффектов.", "purpose": "Задать масштаб тонкого канала, а не превращать тему в абстрактный температурный рекорд.", "preferred_source_type": "NOAA / NWS public-domain photograph", "copyright_provenance": "US federal imagery is public domain; keep the NOAA credit in the caption.", "caption": "Молния. Экстремальная температура возникает в тонком канале воздуха и длится очень недолго."},
+    {"slot_id": "media-02", "placement": {"after": "sravnenie"}, "depicts": "Редакционная шкала: кипящая вода ~100 °C, лава ~1000 °C, поверхность Солнца, канал молнии ~30 000 °C.", "purpose": "Показать порядки величин и одновременно подписать, что сравниваются температуры, а не общая энергия объектов.", "preferred_source_type": "original editorial diagram", "copyright_provenance": "Original work; numerical facts are not copyrightable.", "caption": "На одной шкале температур молния действительно оказывается выше поверхности Солнца — но лишь локально и на мгновение."}
   ],
-  "footnotes": [
-    {
-      "n": 1,
-      "source_id": "src-noaa-lightning-thunder",
-      "label": "NOAA — What Causes Lightning and Thunder?",
-      "url": "https://www.nesdis.noaa.gov/about/k-12-education/severe-weather/what-causes-lightning-and-thunder"
-    }
-  ],
-  "sources": [
-    {
-      "source_id": "src-noaa-lightning-thunder",
-      "label": "NOAA — Lightning and Thunder",
-      "url": "https://www.nesdis.noaa.gov/about/k-12-education/severe-weather/what-causes-lightning-and-thunder",
-      "verified_on": "2026-08-08",
-      "reverified_on": "2026-08-10",
-      "evidence": "NOAA gives lightning-heated air as hot as 54,000 °F / 30,000 °C and says that is about five times hotter than the surface of the Sun; the thunder passage was re-read while preparing rich-v1 for an exact attributed sentence."
-    }
-  ],
-  "footer": {
-    "tagline": "Сводка — сводим факты, а не мнения 😎",
-    "hashtags": [
-      "#Сводка",
-      "#Тест",
-      "#Молния",
-      "#Физика",
-      "#Наука"
-    ]
-  },
-  "editorial_notes": "The quiz is kept interactive in structure: the question is asked before the answer is given. The NOAA sentence is quoted verbatim in an editorial translation, the exact attribution preserved. Safety advice is retained as a short paragraph rather than cut."
+  "footnotes": [{"n": 1, "source_id": "src-noaa-lightning-thunder", "label": "NOAA — What Causes Lightning and Thunder?", "url": "https://www.nesdis.noaa.gov/about/k-12-education/severe-weather/what-causes-lightning-and-thunder"}],
+  "sources": [{"source_id": "src-noaa-lightning-thunder", "label": "NOAA — Lightning and Thunder", "url": "https://www.nesdis.noaa.gov/about/k-12-education/severe-weather/what-causes-lightning-and-thunder", "verified_on": "2026-08-08", "reverified_on": "2026-08-10", "evidence": "NOAA gives lightning-heated air as hot as 54,000 °F / 30,000 °C and says that is about five times hotter than the surface of the Sun; the thunder passage was re-read while preparing rich-v1 for an exact attributed sentence."}],
+  "footer": {"tagline": "Сводка — сводим факты, а не мнения 😎", "hashtags": ["#Сводка", "#Тест", "#Молния", "#Физика", "#Наука"]},
+  "editorial_notes": "Clarity pass 2026-08-11: the quiz now distinguishes temperature from total energy before revealing the answer, explains why a brief hot channel can exceed the solar surface temperature, and links rapid expansion to thunder. The unsupported fixed waiting-time instruction was removed."
 }
