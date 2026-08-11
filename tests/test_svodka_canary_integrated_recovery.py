@@ -158,6 +158,10 @@ def test_existing_canary_workflow_supplies_exact_identity_and_bound_before_durab
     assert '--publication-id "$REQUESTED_PUBLICATION_ID"' in workflow
     assert "telegram_multichannel_cli prepare" in workflow
     assert "--mode manual" in workflow
-    assert workflow.index("Require fresh strict-next canary window") < workflow.index("Prepare exactly one manual dispatch")
-    assert workflow.index("Prepare exactly one manual dispatch") < workflow.index("Persist intent before Telegram mutation")
+    assert workflow.index("Require fresh strict-next canary window") < workflow.index(
+        "Prepare exactly one manual dispatch"
+    )
+    assert workflow.index("Prepare exactly one manual dispatch") < workflow.index(
+        "Persist intent before Telegram mutation"
+    )
     assert workflow.index("Persist intent before Telegram mutation") < workflow.index("Send exactly one canary payload")
