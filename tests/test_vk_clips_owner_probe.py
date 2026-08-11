@@ -32,24 +32,22 @@ def _client(tmp_path: Path, *, mode: str = "ok") -> tuple[VkApiClient, list[dict
         assert params["access_token"] == "access"
         assert params["v"] == VK_OWNER_CLIPS_PROBE_API_VERSION
 
-        if method == "groups.getById":
-            return httpx.Response(
-                200,
-                json={
-                    "response": {
-                        "groups": [
-                            {
-                                "id": MILOVI_COMMUNITY_ID,
-                                "name": "Milovi Cake - Торты и Десерты - Санкт-Петербург",
-                                "screen_name": "milovi_cake",
-                                "description": "Cakes",
-                                "is_admin": 1,
-                            }
-                        ],
-                        "profiles": [],
+        if method == "groups.get":
+            assert params["extended"] == "1"
+            assert params["filter"] == "moder"
+            assert params["count"] == "1000"
+            assert params["offset"] == "0"
+            items = []
+            if mode != "not-managed":
+                items = [
+                    {
+                        "id": MILOVI_COMMUNITY_ID,
+                        "name": "Milovi Cake - Торты и Десерты - Санкт-Петербург",
+                        "screen_name": "milovi_cake",
+                        "description": "Cakes",
                     }
-                },
-            )
+                ]
+            return httpx.Response(200, json={"response": {"count": len(items), "items": items}})
 
         if method == "shortVideo.getOwnerVideos":
             assert params["owner_id"] == str(MILOVI_OWNER_ID)
@@ -115,7 +113,9 @@ def test_owner_clips_probe_paginates_and_finds_known_clip(tmp_path: Path) -> Non
         required_remote_ids=[KNOWN_SHREK_CLIP],
     )
 
-    assert snapshot["schema"] == "vk-owner-clips-experimental-probe-v1"
+    assert snapshot["schema"] == "vk-owner-clips-experimental-probe-v2"
+    assert snapshot["management_preflight"]["method"] == "groups.get"
+    assert snapshot["management_preflight"]["exact_community_match"] is True
     assert snapshot["provider_probe"]["status"] == "ok"
     assert snapshot["provider_probe"]["provider_reported_total"] == 26
     assert snapshot["provider_probe"]["retrieved_raw_item_count"] == 26
@@ -123,6 +123,7 @@ def test_owner_clips_probe_paginates_and_finds_known_clip(tmp_path: Path) -> Non
     assert snapshot["coverage"]["clip_count"] == 26
     assert snapshot["coverage"]["required_remote_ids_found_as_clips"] == [KNOWN_SHREK_CLIP]
     assert snapshot["coverage"]["surface_complete_claim"] is False
+    assert not any(request["method"] == "groups.getById" for request in requests)
     probe_requests = [request for request in requests if request["method"] == "shortVideo.getOwnerVideos"]
     assert [request["offset"] for request in probe_requests] == ["0", "24"]
 
@@ -186,6 +187,22 @@ def test_owner_clips_probe_rejects_foreign_owner(tmp_path: Path) -> None:
             community_id=MILOVI_COMMUNITY_ID,
             owner_id=MILOVI_OWNER_ID,
         )
+
+
+def test_owner_clips_probe_requires_exact_managed_community_before_clip_call(tmp_path: Path) -> None:
+    client, requests = _client(tmp_path, mode="not-managed")
+
+    with pytest.raises(VkApiError, match="management access"):
+        build_vk_owner_clips_probe_snapshot(
+            client,
+            project_key="milovi-cake",
+            community_id=MILOVI_COMMUNITY_ID,
+            owner_id=MILOVI_OWNER_ID,
+        )
+
+    assert any(request["method"] == "groups.get" for request in requests)
+    assert not any(request["method"] == "groups.getById" for request in requests)
+    assert not any(request["method"] == "shortVideo.getOwnerVideos" for request in requests)
 
 
 def test_owner_clips_probe_rejects_cross_project_before_provider_call(tmp_path: Path) -> None:
