@@ -192,10 +192,7 @@ def test_sequence_metrics_can_support_distinct_sequence_without_absence_claim() 
 
     assert metrics["loose_coverage"] == 0.0
     assert evidence == "DISTINCT_SEQUENCE_SUPPORT"
-    assert (
-        seq._operational_disposition(evidence)
-        == "NO_ABSENCE_CLAIM_DISTINCT_FROM_THIS_VK_CLIP"
-    )
+    assert seq._operational_disposition(evidence) == "NO_ABSENCE_CLAIM_DISTINCT_FROM_THIS_VK_CLIP"
 
 
 def test_browser_sequence_module_contains_no_mutation_actions() -> None:
