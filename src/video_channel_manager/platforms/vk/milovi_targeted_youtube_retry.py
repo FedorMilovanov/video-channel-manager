@@ -98,7 +98,9 @@ def _read_accepted_probe(input_zip: Path) -> tuple[dict[str, Any], bytes]:
         raise ValueError("accepted live probe no longer has exactly the two expected YouTube failures")
 
     pair_rows = result.get("pair_results") or []
-    expected_pair_set = {(youtube_id, remote_id) for youtube_id, remote_ids in RETRY_PAIRS.items() for remote_id in remote_ids}
+    expected_pair_set = {
+        (youtube_id, remote_id) for youtube_id, remote_ids in RETRY_PAIRS.items() for remote_id in remote_ids
+    }
     observed_pair_set = {
         (str(row.get("youtube_id") or ""), str(row.get("vk_remote_id") or ""))
         for row in pair_rows
@@ -128,7 +130,9 @@ def _read_accepted_probe(input_zip: Path) -> tuple[dict[str, Any], bytes]:
 
 def _copy_vk_frames(*, input_zip: Path, output_dir: Path) -> int:
     copied = 0
-    wanted_prefixes = {f"frames/vk/{remote_id.replace('-', 'neg')}/" for remote_ids in RETRY_PAIRS.values() for remote_id in remote_ids}
+    wanted_prefixes = {
+        f"frames/vk/{remote_id.replace('-', 'neg')}/" for remote_ids in RETRY_PAIRS.values() for remote_id in remote_ids
+    }
     with zipfile.ZipFile(input_zip) as archive:
         for member in archive.namelist():
             if not member.endswith(".jpg"):
