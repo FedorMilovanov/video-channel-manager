@@ -1,0 +1,314 @@
+name: Svodka rich production publisher
+
+on:
+  schedule:
+    - cron: "30 16 11 8 *"
+    - cron: "30 7 12-18 8 *"
+    - cron: "30 16 12-17 8 *"
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type SVODKA-RICH-PRODUCTION:@deep_info_life
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+  issues: write
+
+concurrency:
+  group: svodka-telegram-publisher
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'schedule' || inputs.confirm == 'SVODKA-RICH-PRODUCTION:@deep_info_life')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: src
+      RELEASE_PATH: content/telegram/svodka/rich-v1/production-release-2026-08.json
+      PROFILE_PATH: content/telegram/channels/svodka.json
+      STATE_BRANCH: state/svodka-telegram
+      STATE_DIR: .state/svodka
+      LEDGER_RELATIVE_PATH: content/telegram/svodka/rich-production-ledger.json
+      LEDGER_PATH: .state/svodka/content/telegram/svodka/rich-production-ledger.json
+      TARGET_PROOF_PATH: .runtime/svodka-rich-target-proof.json
+      MEDIA_PROOF_PATH: .runtime/svodka-rich-media-proof.json
+      MEDIA_RECHECK_PATH: .runtime/svodka-rich-media-recheck.json
+      INTENT_PATH: .runtime/svodka-rich-intent.json
+      OUTCOME_PATH: .runtime/svodka-rich-outcome.json
+      EXPECTED_CHAT_ID: -1003527567039
+      EXPECTED_BOT_ID: 8716602202
+      EXPECTED_BOT_USERNAME: preaching_mp3_bot
+
+    steps:
+      - name: Check out exact current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install reviewed runtime and QA tools
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -e ".[dev]"
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+          python -m pip check
+
+      - name: Validate immutable rich release and render all 14 provider-free
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.svodka_rich_production preview \
+            --release "$RELEASE_PATH" \
+            --root . > .runtime/svodka-rich-preview.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('.runtime/svodka-rich-preview.json').read_text(encoding='utf-8'))
+          assert len(data['items']) == 14
+          assert data['provider_write_performed'] is False
+          PY
+
+      - name: Focused production regression gate
+        run: |
+          set -euo pipefail
+          ruff check src/video_channel_manager/svodka_rich_production.py tests/test_svodka_rich_production.py
+          ruff format --check src/video_channel_manager/svodka_rich_production.py tests/test_svodka_rich_production.py
+          mypy src/video_channel_manager/svodka_rich_production.py --show-error-codes
+          python -m pytest -q tests/test_svodka_rich_production.py
+
+      - name: Require current-main Svodka quality proofs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate --workflow svodka-quality.yml --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate --workflow svodka-approved-release-quality.yml --sha "$GITHUB_SHA"
+
+      - name: Check out isolated durable Svodka state
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/svodka-telegram
+          path: .state/svodka
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Create or validate release-specific ledger
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.svodka_rich_production ensure-ledger \
+            --release "$RELEASE_PATH" --root . --ledger "$LEDGER_PATH"
+          if git -C "$STATE_DIR" diff --quiet -- "$LEDGER_RELATIVE_PATH" && git -C "$STATE_DIR" ls-files --error-unmatch "$LEDGER_RELATIVE_PATH" >/dev/null 2>&1; then
+            echo 'Exact rich-production ledger already exists.'
+          else
+            git -C "$STATE_DIR" config user.name 'svodka-publisher[bot]'
+            git -C "$STATE_DIR" config user.email 'svodka-publisher@users.noreply.github.com'
+            git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH"
+            git -C "$STATE_DIR" commit -m "Initialize immutable Svodka rich production ledger [skip ci]"
+            git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          fi
+
+      - name: Resolve strict-next eligible publication
+        id: select
+        shell: bash
+        run: |
+          set +e
+          python -m video_channel_manager.svodka_rich_production select \
+            --release "$RELEASE_PATH" --root . --ledger "$LEDGER_PATH" > .runtime/svodka-rich-selection.json
+          status=$?
+          set -e
+          if [[ "$status" == "3" ]]; then
+            echo 'eligible=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          [[ "$status" == "0" ]] || exit "$status"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          data = json.loads(Path('.runtime/svodka-rich-selection.json').read_text(encoding='utf-8'))
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as fh:
+              fh.write('eligible=true\n')
+              fh.write(f"publication_id={data['publication_id']}\n")
+              fh.write(f"dispatch_mode={data['dispatch_mode']}\n")
+          PY
+
+      - name: Report no eligible slot
+        if: steps.select.outputs.eligible != 'true'
+        run: echo 'No rich publication is inside its exact 120-minute window; no Telegram access is attempted.'
+
+      - name: Fresh exact Telegram target preflight
+        if: steps.select.outputs.eligible == 'true'
+        env:
+          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_channel_cli preflight \
+            --profile "$PROFILE_PATH" \
+            --expected-chat-id "$EXPECTED_CHAT_ID" \
+            --expected-bot-id "$EXPECTED_BOT_ID" \
+            --expected-bot-username "$EXPECTED_BOT_USERNAME" \
+            --output "$TARGET_PROOF_PATH"
+
+      - name: Fetch and hash exact remote media read-only
+        if: steps.select.outputs.eligible == 'true'
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.svodka_rich_production media-proof \
+            --release "$RELEASE_PATH" --root . \
+            --publication-id "${{ steps.select.outputs.publication_id }}" \
+            --output "$MEDIA_PROOF_PATH"
+
+      - name: Prepare exact durable intent
+        if: steps.select.outputs.eligible == 'true'
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.svodka_rich_production prepare \
+            --release "$RELEASE_PATH" --root . --ledger "$LEDGER_PATH" \
+            --target-proof "$TARGET_PROOF_PATH" --media-proof "$MEDIA_PROOF_PATH" \
+            --github-repository "$GITHUB_REPOSITORY" --github-sha "$GITHUB_SHA" \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --intent-output "$INTENT_PATH"
+
+      - name: Persist intent and evidence before Telegram mutation
+        if: steps.select.outputs.eligible == 'true'
+        run: |
+          set -euo pipefail
+          evidence_rel="content/telegram/svodka/rich-dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          evidence_abs="$STATE_DIR/$evidence_rel"
+          mkdir -p "$evidence_abs"
+          cp -- "$INTENT_PATH" "$evidence_abs/intent.json"
+          cp -- "$TARGET_PROOF_PATH" "$evidence_abs/target-proof.json"
+          cp -- "$MEDIA_PROOF_PATH" "$evidence_abs/media-proof.json"
+          git -C "$STATE_DIR" config user.name 'svodka-publisher[bot]'
+          git -C "$STATE_DIR" config user.email 'svodka-publisher@users.noreply.github.com'
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel"
+          git -C "$STATE_DIR" diff --cached --quiet && { echo 'Prepared intent produced no durable state delta.' >&2; exit 3; }
+          git -C "$STATE_DIR" commit -m "Record Svodka rich intent for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || { echo 'Remote state lacks exact rich intent.' >&2; exit 3; }
+          git -C "$STATE_DIR" show "HEAD:$evidence_rel/intent.json" > .runtime/remote-rich-intent.json
+          git -C "$STATE_DIR" show "HEAD:$evidence_rel/media-proof.json" > .runtime/remote-rich-media-proof.json
+          cmp --silent "$INTENT_PATH" .runtime/remote-rich-intent.json
+
+      - name: Re-prove quality immediately before mutation
+        if: steps.select.outputs.eligible == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate --workflow svodka-quality.yml --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate --workflow svodka-approved-release-quality.yml --sha "$GITHUB_SHA"
+
+      - name: Re-fetch identical media bytes immediately before mutation
+        if: steps.select.outputs.eligible == 'true'
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.svodka_rich_production media-proof \
+            --release "$RELEASE_PATH" --root . \
+            --publication-id "${{ steps.select.outputs.publication_id }}" \
+            --expected .runtime/remote-rich-media-proof.json \
+            --output "$MEDIA_RECHECK_PATH"
+
+      - name: Send exactly one native Rich Message
+        if: steps.select.outputs.eligible == 'true'
+        id: send
+        env:
+          SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        shell: bash
+        run: |
+          set +e
+          python -m video_channel_manager.svodka_rich_production send \
+            --release "$RELEASE_PATH" --root . \
+            --intent .runtime/remote-rich-intent.json \
+            --target-proof "$TARGET_PROOF_PATH" \
+            --media-recheck "$MEDIA_RECHECK_PATH" \
+            --outcome "$OUTCOME_PATH"
+          status=$?
+          set -e
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Archive exact provider outcome before ledger mutation
+        if: steps.select.outputs.eligible == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: svodka-rich-provider-outcome-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .runtime/svodka-rich-outcome.json
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+          include-hidden-files: true
+
+      - name: Apply exact outcome and persist terminal state
+        if: steps.select.outputs.eligible == 'true'
+        run: |
+          set +e
+          python -m video_channel_manager.svodka_rich_production apply \
+            --release "$RELEASE_PATH" --root . --ledger "$LEDGER_PATH" \
+            --intent .runtime/remote-rich-intent.json --outcome "$OUTCOME_PATH"
+          apply_status=$?
+          set -e
+          evidence_rel="content/telegram/svodka/rich-dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          cp -- "$OUTCOME_PATH" "$STATE_DIR/$evidence_rel/outcome.json"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel/outcome.json"
+          git -C "$STATE_DIR" diff --cached --quiet && { echo 'Provider outcome produced no durable state delta.' >&2; exit 4; }
+          git -C "$STATE_DIR" commit -m "Record Svodka rich outcome for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || { echo 'Remote state lacks exact rich outcome.' >&2; exit 4; }
+          [[ "${{ steps.send.outputs.exit_code }}" == '0' && "$apply_status" == '0' ]] || {
+            echo 'Rich publication is not fully verified; durable state now blocks blind retry.' >&2
+            exit 4
+          }
+
+      - name: Record canary proof and close Premium Emoji capability issue
+        if: steps.select.outputs.eligible == 'true' && steps.select.outputs.dispatch_mode == 'canary' && steps.send.outputs.exit_code == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          message_url="$(python -c "import json; print(json.load(open('$OUTCOME_PATH'))['message_url'])")"
+          body="Production rich canary VERIFIED on the real Svodka article. Exact returned RichMessage matched the reviewed structure, including verified custom_emoji IDs. Message: $message_url. No technical test post or fallback sendMessage was used."
+          gh issue comment 235 --repo "$GITHUB_REPOSITORY" --body "$body"
+          state="$(gh issue view 273 --repo "$GITHUB_REPOSITORY" --json state --jq .state)"
+          if [[ "$state" == 'OPEN' ]]; then
+            gh issue close 273 --repo "$GITHUB_REPOSITORY" --reason completed --comment "$body"
+          else
+            gh issue comment 273 --repo "$GITHUB_REPOSITORY" --body "$body"
+          fi
+
+      - name: Close rollout after first autonomous post following canary
+        if: steps.select.outputs.eligible == 'true' && steps.send.outputs.exit_code == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          close_rollout="$(python - <<'PY'
+          import json, os
+          ledger = json.load(open(os.environ['LEDGER_PATH'], encoding='utf-8'))
+          entries = list(ledger['entries'].values())
+          canary = any(e['state'] == 'published' and e.get('dispatch_mode') == 'canary' and e['provider_effect'] == 'verified' for e in entries)
+          scheduled = any(e['state'] == 'published' and e.get('dispatch_mode') == 'scheduled' and e['provider_effect'] == 'verified' for e in entries)
+          print('true' if canary and scheduled else 'false')
+          PY
+          )"
+          if [[ "$close_rollout" == 'true' ]]; then
+            state="$(gh issue view 235 --repo "$GITHUB_REPOSITORY" --json state --jq .state)"
+            if [[ "$state" == 'OPEN' ]]; then
+              gh issue close 235 --repo "$GITHUB_REPOSITORY" --reason completed --comment 'Svodka rich rollout complete: durable verified production canary plus a later autonomous scheduled Rich Message are both recorded in the release-specific ledger.'
+            fi
+          fi
