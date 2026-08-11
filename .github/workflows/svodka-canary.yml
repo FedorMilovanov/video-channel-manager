@@ -166,6 +166,7 @@ jobs:
             --release "$RELEASE_PATH" \
             --ledger "$LEDGER_PATH" \
             --publication-id "$REQUESTED_PUBLICATION_ID" \
+            --recover-stale-predecessors \
             --max-lag-minutes "$MAX_PUBLICATION_LAG_MINUTES"
 
       - name: Fresh read-only target preflight
