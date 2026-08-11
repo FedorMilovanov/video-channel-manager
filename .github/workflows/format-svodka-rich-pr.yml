@@ -1,0 +1,46 @@
+name: Format Svodka rich PR
+
+on:
+  push:
+    branches:
+      - agent/svodka-rich-production-final
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/svodka-rich-production-final
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Format exact new source
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'ruff==0.16.2'
+          ruff format src/video_channel_manager/svodka_rich_production.py tests/test_svodka_rich_production.py
+          ruff check src/video_channel_manager/svodka_rich_production.py tests/test_svodka_rich_production.py
+
+      - name: Commit formatter-only delta
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- src/video_channel_manager/svodka_rich_production.py tests/test_svodka_rich_production.py; then
+            echo 'No formatting delta.'
+            exit 0
+          fi
+          git config user.name 'svodka-ci-formatter[bot]'
+          git config user.email 'svodka-ci-formatter@users.noreply.github.com'
+          git add src/video_channel_manager/svodka_rich_production.py tests/test_svodka_rich_production.py
+          git commit -m 'Format Svodka rich production source'
+          git push origin HEAD:agent/svodka-rich-production-final
