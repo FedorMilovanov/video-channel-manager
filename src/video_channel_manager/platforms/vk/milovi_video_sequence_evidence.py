@@ -23,8 +23,7 @@ INPUT_MANIFEST_SCHEMA = f"{gap.OUTPUT_SCHEMA}-manifest"
 EXPECTED_CLIP_COUNT = 106
 _SAMPLE_POSITIONS = (0.06, 0.14, 0.22, 0.30, 0.38, 0.46, 0.54, 0.62, 0.70, 0.78, 0.86, 0.94)
 _DCT_COS: tuple[tuple[float, ...], ...] = tuple(
-    tuple(math.cos((2 * position + 1) * frequency * math.pi / 64.0) for position in range(32))
-    for frequency in range(8)
+    tuple(math.cos((2 * position + 1) * frequency * math.pi / 64.0) for position in range(32)) for frequency in range(8)
 )
 _BLOCK_HINTS = (
     "captcha",
@@ -118,8 +117,7 @@ def _identity_url_matches(*, platform: str, expected_id: str, raw_url: str) -> b
         allowed = host == "youtube.com" or host.endswith(".youtube.com")
         query_video_id = (parse_qs(parsed.query).get("v") or [""])[0]
         return allowed and (
-            path.endswith(f"/shorts/{expected_id}")
-            or (path.endswith("/watch") and query_video_id == expected_id)
+            path.endswith(f"/shorts/{expected_id}") or (path.endswith("/watch") and query_video_id == expected_id)
         )
     if platform == "vk":
         allowed = (
@@ -128,10 +126,7 @@ def _identity_url_matches(*, platform: str, expected_id: str, raw_url: str) -> b
             or host.endswith(".vk.ru")
             or host.endswith(".vkvideo.ru")
         )
-        return allowed and (
-            path.endswith(f"/clip{expected_id}")
-            or path.endswith(f"/video{expected_id}")
-        )
+        return allowed and (path.endswith(f"/clip{expected_id}") or path.endswith(f"/video{expected_id}"))
     raise ValueError(f"unsupported platform: {platform}")
 
 
@@ -219,10 +214,7 @@ def _distance_matrix(
     left_frames: Sequence[dict[str, Any]],
     right_frames: Sequence[dict[str, Any]],
 ) -> list[list[float]]:
-    return [
-        [_combined_distance(left, right) for right in right_frames]
-        for left in left_frames
-    ]
+    return [[_combined_distance(left, right) for right in right_frames] for left in left_frames]
 
 
 def _monotonic_matches(
@@ -282,10 +274,7 @@ def _sequence_metrics(
     loose_matches = _monotonic_matches(matrix, threshold=16.0)
     denominator = min(len(left_frames), len(right_frames))
     row_best = [min(row) for row in matrix if row]
-    exact_sha = len(
-        {str(left["sha256"]) for left in left_frames}
-        & {str(right["sha256"]) for right in right_frames}
-    )
+    exact_sha = len({str(left["sha256"]) for left in left_frames} & {str(right["sha256"]) for right in right_frames})
     return {
         "comparable": True,
         "strong_match_count": len(strong_matches),
@@ -294,9 +283,7 @@ def _sequence_metrics(
         "support_coverage": round(len(support_matches) / denominator, 6),
         "loose_coverage": round(len(loose_matches) / denominator, 6),
         "median_support_distance": (
-            round(statistics.median(match[2] for match in support_matches), 3)
-            if support_matches
-            else None
+            round(statistics.median(match[2] for match in support_matches), 3) if support_matches else None
         ),
         "median_row_best_distance": round(statistics.median(row_best), 3) if row_best else None,
         "exact_normalized_frame_sha_matches": exact_sha,
@@ -326,12 +313,7 @@ def _evidence_class(
     median_support = metrics.get("median_support_distance")
     row_best = metrics.get("median_row_best_distance")
     duration_ratio = None
-    if (
-        youtube_duration_s is not None
-        and vk_duration_s is not None
-        and youtube_duration_s > 0
-        and vk_duration_s > 0
-    ):
+    if youtube_duration_s is not None and vk_duration_s is not None and youtube_duration_s > 0 and vk_duration_s > 0:
         duration_ratio = min(youtube_duration_s, vk_duration_s) / max(youtube_duration_s, vk_duration_s)
 
     if support_coverage >= 0.75 and strong_count >= 5 and isinstance(median_support, (int, float)):
@@ -402,11 +384,7 @@ def _read_input(input_zip: Path) -> tuple[dict[str, Any], dict[str, Any], dict[s
         raise ValueError("input Milovi identity/read-only/coverage contract is invalid")
 
     candidates = result.get("candidates") or []
-    candidate_ids = {
-        str(candidate.get("youtube_id") or "")
-        for candidate in candidates
-        if isinstance(candidate, dict)
-    }
+    candidate_ids = {str(candidate.get("youtube_id") or "") for candidate in candidates if isinstance(candidate, dict)}
     expected_candidate_ids = {str(row["youtube_id"]) for row in gap._GAP_CANDIDATES}
     if candidate_ids != expected_candidate_ids:
         raise ValueError("input candidate manifest does not match the exact reviewed 25-item scope")
@@ -419,11 +397,15 @@ def _read_input(input_zip: Path) -> tuple[dict[str, Any], dict[str, Any], dict[s
             if vk_member not in archive.namelist():
                 raise ValueError(f"reviewed VK Clip is not present in accepted 106-item media evidence: {remote_id}")
 
-    return manifest, result, {
-        "input_zip_sha256": _sha256_path(input_zip),
-        "input_manifest_sha256": _sha256_bytes(manifest_bytes),
-        "input_result_sha256": _sha256_bytes(result_bytes),
-    }
+    return (
+        manifest,
+        result,
+        {
+            "input_zip_sha256": _sha256_path(input_zip),
+            "input_manifest_sha256": _sha256_bytes(manifest_bytes),
+            "input_result_sha256": _sha256_bytes(result_bytes),
+        },
+    )
 
 
 def _playwright_version() -> str | None:
