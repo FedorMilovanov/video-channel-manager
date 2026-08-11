@@ -9,15 +9,15 @@
     "svodka-rich-venus-day-longer-than-year": {
       "publication_id": "svodka-rich-venus-day-longer-than-year",
       "scheduled_at": "2026-08-11T19:30:00+03:00",
-      "state": "intent",
-      "provider_effect": "impossible",
+      "state": "may_exist",
+      "provider_effect": "may_exist",
       "dispatch_mode": "canary",
       "workflow_run_id": "31517401165",
       "workflow_run_attempt": "1",
       "document_sha256": "sha256:c2f4d680c2fa4b120612f2a07e4136af6d61ec2d01c548c724f643582676328d",
       "message_id": null,
       "message_url": null,
-      "error": null
+      "error": "Telegram did not return the complete exact rich structure required by the expected document"
     },
     "svodka-rich-2026-august-total-solar-eclipse": {
       "publication_id": "svodka-rich-2026-august-total-solar-eclipse",
