@@ -114,7 +114,7 @@ def _serialize_candidate(item: dict[str, Any], *, owner_id: int) -> tuple[dict[s
     )
 
 
-def _require_managed_community(client: VkApiClient, *, community_id: int):
+def _require_managed_community(client: VkApiClient, *, community_id: int) -> Any:
     """Resolve the exact target through groups.get without deprecated 5.253 parameters."""
 
     matches = [item for item in client.list_managed_communities() if item.community_id == community_id]
