@@ -259,7 +259,9 @@ def build_media_match_probe(
     try:
         sync_api = importlib.import_module("playwright.sync_api")
     except ModuleNotFoundError as exc:
-        raise RuntimeError('Playwright is required; install current repo with: pip install -e ".[browser-read,milovi-gap-read]"') from exc
+        raise RuntimeError(
+            'Playwright is required; install current repo with: pip install -e ".[browser-read,milovi-gap-read]"'
+        ) from exc
 
     executable = clips_ui._resolve_browser_executable(browser_executable)
     pair_plan = _probe_pairs()
