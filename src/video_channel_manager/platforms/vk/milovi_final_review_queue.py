@@ -184,9 +184,7 @@ def _validate_sequence_input(path: Path) -> tuple[dict[str, Any], dict[str, str]
         for row in pair_results
         if isinstance(row, dict)
     }
-    expected_pairs = {
-        (youtube_id, str(spec["vk_remote_id"])) for youtube_id, spec in _MANUAL_ADJUDICATIONS.items()
-    }
+    expected_pairs = {(youtube_id, str(spec["vk_remote_id"])) for youtube_id, spec in _MANUAL_ADJUDICATIONS.items()}
     if observed_pairs != expected_pairs:
         raise ValueError("sequence evidence pair manifest is not the accepted eight-pair scope")
     return result, {
