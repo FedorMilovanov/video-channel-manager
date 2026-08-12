@@ -227,9 +227,7 @@ class MiloviImmediateWallWriter(VkWallWriter):
         if not before.complete:
             raise VkWriteError("VK wall preflight snapshot is incomplete", method="wall.get")
         duplicates = [
-            post
-            for post in before.posts
-            if _post_has_video(post, owner_id=MILOVI_OWNER_ID, video_id=video_id)
+            post for post in before.posts if _post_has_video(post, owner_id=MILOVI_OWNER_ID, video_id=video_id)
         ]
         if duplicates:
             locations = sorted(f"{post.surface.value}:{post.remote_id}" for post in duplicates)
