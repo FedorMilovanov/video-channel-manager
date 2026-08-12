@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# ruff: noqa: B010
+
 import argparse
 import hashlib
 import importlib
