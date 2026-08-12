@@ -65,11 +65,7 @@ def detect_browser_runtime() -> BrowserRuntime:
 def target_tokens_present(*, page_url: str, html: str, text: str) -> bool:
     joined = f"{page_url}\n{html}\n{text}".casefold()
     route_ok = f"/clips/club{MILOVI_COMMUNITY_ID}" in page_url.casefold()
-    exact_token = (
-        f"club{MILOVI_COMMUNITY_ID}" in joined
-        or str(MILOVI_OWNER_ID) in joined
-        or MILOVI_SCREEN_NAME in joined
-    )
+    exact_token = f"club{MILOVI_COMMUNITY_ID}" in joined or str(MILOVI_OWNER_ID) in joined or MILOVI_SCREEN_NAME in joined
     title_token = bool(re.search(r"\bmilovi\s*cake\b", text, flags=re.IGNORECASE))
     wrong_selected = "thelegendarypoet" in joined and (
         'aria-selected="true"' in joined or 'aria-checked="true"' in joined
