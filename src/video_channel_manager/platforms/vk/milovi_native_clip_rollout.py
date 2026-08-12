@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import importlib
+import time
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterable
-import time
 
 from video_channel_manager.config import get_settings
 from video_channel_manager.editorial._project_profiles import MILOVI_CAKE, resolve_project_key
@@ -109,12 +110,16 @@ def _record_matches_source(record: Any, asset: SourceAsset) -> bool:
 
 
 def _find_existing_clip(records: Iterable[Any], asset: SourceAsset) -> Any | None:
-    clips = [record for record in records if _record_matches_source(record, asset) and _record_type(record) == "short_video"]
+    clips = [
+        record for record in records if _record_matches_source(record, asset) and _record_type(record) == "short_video"
+    ]
     if len(clips) > 1:
         raise MiloviRolloutBlocked(
             f"Multiple existing native Clips match {asset.source_id}: {[item.ref.remote_id for item in clips]}"
         )
-    ordinary = [record for record in records if _record_matches_source(record, asset) and _record_type(record) != "short_video"]
+    ordinary = [
+        record for record in records if _record_matches_source(record, asset) and _record_type(record) != "short_video"
+    ]
     if ordinary and not clips:
         raise MiloviRolloutBlocked(
             f"Existing source marker is attached to ordinary VK video(s) for {asset.source_id}: "
@@ -181,7 +186,9 @@ def _wait_for_exact_clip(
             return clips[0]
         time.sleep(10)
     if ordinary:
-        raise MiloviRolloutBlocked(f"VK created ordinary video instead of native Clip for {asset.source_id}: {ordinary}")
+        raise MiloviRolloutBlocked(
+            f"VK created ordinary video instead of native Clip for {asset.source_id}: {ordinary}"
+        )
     raise MiloviRolloutBlocked(f"Publish outcome for {asset.source_id} was not recovered as an exact native Clip")
 
 
@@ -479,12 +486,16 @@ def run_issue_323_rollout(
         )
         browser = detect_browser_runtime()
         try:
-            from playwright.sync_api import sync_playwright
+            sync_playwright = importlib.import_module("playwright.sync_api").sync_playwright
         except ImportError as exc:
-            raise MiloviRolloutBlocked("Playwright is not installed; install the repository browser-read extra") from exc
+            raise MiloviRolloutBlocked(
+                "Playwright is not installed; install the repository browser-read extra"
+            ) from exc
 
         lock_path = settings.data_dir / "vk" / "milovi-cake-issue-323.lock"
-        with local_vk_write_lock(lock_path, account=alias, community_id=MILOVI_COMMUNITY_ID, operation="issue-323-rollout"):
+        with local_vk_write_lock(
+            lock_path, account=alias, community_id=MILOVI_COMMUNITY_ID, operation="issue-323-rollout"
+        ):
             with sync_playwright() as playwright:
                 context = playwright.chromium.launch_persistent_context(
                     user_data_dir=browser.user_data_dir,
