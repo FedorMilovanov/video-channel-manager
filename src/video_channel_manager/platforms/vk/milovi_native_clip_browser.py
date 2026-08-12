@@ -63,14 +63,16 @@ def detect_browser_runtime() -> BrowserRuntime:
 
 
 def target_tokens_present(*, page_url: str, html: str, text: str) -> bool:
-    joined = f"{page_url}\n{html}\n{text}".casefold()
+    visible_evidence = f"{html}\n{text}".casefold()
     route_ok = f"/clips/club{MILOVI_COMMUNITY_ID}" in page_url.casefold()
     exact_token = (
-        f"club{MILOVI_COMMUNITY_ID}" in joined or str(MILOVI_OWNER_ID) in joined or MILOVI_SCREEN_NAME in joined
+        f"club{MILOVI_COMMUNITY_ID}" in visible_evidence
+        or str(MILOVI_OWNER_ID) in visible_evidence
+        or MILOVI_SCREEN_NAME in visible_evidence
     )
     title_token = bool(re.search(r"\bmilovi\s*cake\b", text, flags=re.IGNORECASE))
-    wrong_selected = "thelegendarypoet" in joined and (
-        'aria-selected="true"' in joined or 'aria-checked="true"' in joined
+    wrong_selected = "thelegendarypoet" in visible_evidence and (
+        'aria-selected="true"' in visible_evidence or 'aria-checked="true"' in visible_evidence
     )
     return route_ok and exact_token and title_token and not wrong_selected
 
