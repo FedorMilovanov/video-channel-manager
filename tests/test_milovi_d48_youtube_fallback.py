@@ -5,12 +5,8 @@ from video_channel_manager.platforms.vk import milovi_video_sequence_evidence_st
 
 
 def test_fallback_is_pinned_to_uploaded_stable_retry() -> None:
-    assert fallback.ACCEPTED_RETRY_ZIP_SHA256 == (
-        "22604bc2329381b563e7243e66bbd548b93fbe770e3b8b23d0a6f9b0b0ca5022"
-    )
-    assert fallback.ACCEPTED_RETRY_RESULT_SHA256 == (
-        "76f46a7ac7b8183a8033f6d859ac8cd96c2f426dea105771892f2563594053e6"
-    )
+    assert fallback.ACCEPTED_RETRY_ZIP_SHA256 == ("22604bc2329381b563e7243e66bbd548b93fbe770e3b8b23d0a6f9b0b0ca5022")
+    assert fallback.ACCEPTED_RETRY_RESULT_SHA256 == ("76f46a7ac7b8183a8033f6d859ac8cd96c2f426dea105771892f2563594053e6")
 
 
 def test_fallback_scope_is_only_d48_and_three_reviewed_vk_candidates() -> None:
