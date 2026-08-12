@@ -153,9 +153,7 @@ def _suppress_consent_overlay(page: Any) -> dict[str, Any]:
                     const right = Math.min(a.right, b.right);
                     const bottom = Math.min(a.bottom, b.bottom);
                     if (right <= left || bottom <= top) return 0;
-                    const intersection = (right - left) * (bottom - top);
-                    const base = Math.max(1, b.width * b.height);
-                    return intersection / base;
+                    return ((right - left) * (bottom - top)) / Math.max(1, b.width * b.height);
                 };
                 const candidates = new Set();
                 document.querySelectorAll(
@@ -238,8 +236,8 @@ def _capture_one(
         suppressions.append(_suppress_consent_overlay(page))
         return seek
 
-    sequence._find_video_handle = clean_find
-    sequence._seek_video = clean_seek
+    setattr(sequence, "_find_video_handle", clean_find)
+    setattr(sequence, "_seek_video", clean_seek)
     try:
         try:
             capture = sequence._capture_page_sequence(
@@ -264,8 +262,8 @@ def _capture_one(
                 error=f"{type(exc).__name__}: {exc}"[:1000],
             )
     finally:
-        sequence._find_video_handle = original_find
-        sequence._seek_video = original_seek
+        setattr(sequence, "_find_video_handle", original_find)
+        setattr(sequence, "_seek_video", original_seek)
 
     capture = stable_sequence._temporal_diversity_gate(capture)
     capture = _perceptual_diversity_gate(capture)
@@ -355,7 +353,7 @@ def build_overlay_clean_evidence(
     copied_vk_frame_count = _copy_vk_frames(input_zip=input_zip, output_dir=output_dir)
 
     previous_identity = sequence._identity_url_matches
-    sequence._identity_url_matches = stable_sequence._stable_identity_url_matches
+    setattr(sequence, "_identity_url_matches", stable_sequence._stable_identity_url_matches)
     try:
         sync_playwright: Any = vars(sync_api)["sync_playwright"]
         with sync_playwright() as playwright:
@@ -376,7 +374,7 @@ def build_overlay_clean_evidence(
                 context.close()
                 browser.close()
     finally:
-        sequence._identity_url_matches = previous_identity
+        setattr(sequence, "_identity_url_matches", previous_identity)
 
     youtube_capture = sequence._capture_to_json(capture)
     accepted_vk = accepted["captures"]["vk"]
