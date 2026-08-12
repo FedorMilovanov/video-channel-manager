@@ -51,9 +51,7 @@ def _parse_clip_remote_id(remote_id: str) -> int:
     except ValueError as exc:
         raise MiloviDailyWallBlocked(f"Invalid VK Clip remote ID: {remote_id}") from exc
     if owner_id != MILOVI_OWNER_ID or video_id <= 0:
-        raise MiloviDailyWallBlocked(
-            f"VK Clip {remote_id} does not belong to exact Milovi owner {MILOVI_OWNER_ID}"
-        )
+        raise MiloviDailyWallBlocked(f"VK Clip {remote_id} does not belong to exact Milovi owner {MILOVI_OWNER_ID}")
     return video_id
 
 
