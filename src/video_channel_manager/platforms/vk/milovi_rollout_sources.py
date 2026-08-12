@@ -6,7 +6,7 @@ import shutil
 import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 YOUTUBE_CHANNEL_ID = "UCMDnxfGZiBqcDzgUV1zjFpw"
 PREPARED_SCHEMA = "video-manager.milovi-issue-323-prepared-sources"
@@ -92,11 +92,7 @@ def build_description(title: str, source_id: str) -> str:
 
 def build_wall_message(title: str, source_id: str) -> str:
     normalized = title.strip() or "Milovi Cake"
-    return (
-        f"{normalized}\n\n"
-        "🌐 https://milovicake.ru/\n"
-        f"Источник: https://www.youtube.com/shorts/{source_id}"
-    )
+    return f"{normalized}\n\n🌐 https://milovicake.ru/\nИсточник: https://www.youtube.com/shorts/{source_id}"
 
 
 def _hydrate_source(yt_dlp: str, source_id: str) -> dict[str, Any]:
@@ -105,13 +101,11 @@ def _hydrate_source(yt_dlp: str, source_id: str) -> dict[str, Any]:
         [yt_dlp, "--no-playlist", "--no-warnings", "--quiet", "--dump-single-json", source_url],
         timeout=180,
     )
-    payload = json.loads(raw)
+    payload = cast(dict[str, Any], json.loads(raw))
     if str(payload.get("id") or "") != source_id:
         raise MiloviSourceError(f"YouTube identity mismatch for {source_id}")
     if str(payload.get("channel_id") or "") != YOUTUBE_CHANNEL_ID:
-        raise MiloviSourceError(
-            f"{source_id} belongs to {payload.get('channel_id')!r}, expected {YOUTUBE_CHANNEL_ID}"
-        )
+        raise MiloviSourceError(f"{source_id} belongs to {payload.get('channel_id')!r}, expected {YOUTUBE_CHANNEL_ID}")
     duration = float(payload.get("duration") or 0)
     if duration <= 0 or duration > 180.5:
         raise MiloviSourceError(f"{source_id} duration is outside the reviewed Clip bound: {duration}")
