@@ -22,12 +22,12 @@
     "svodka-rich-2026-august-total-solar-eclipse": {
       "publication_id": "svodka-rich-2026-august-total-solar-eclipse",
       "scheduled_at": "2026-08-12T10:30:00+03:00",
-      "state": "pending",
+      "state": "intent",
       "provider_effect": "impossible",
-      "dispatch_mode": null,
-      "workflow_run_id": null,
-      "workflow_run_attempt": null,
-      "document_sha256": null,
+      "dispatch_mode": "canary",
+      "workflow_run_id": "31580051298",
+      "workflow_run_attempt": "1",
+      "document_sha256": "sha256:8b82ec63bec025a711c161caedfb1de38c1ee302b9106a2014d9924e2a008a96",
       "message_id": null,
       "message_url": null,
       "error": null

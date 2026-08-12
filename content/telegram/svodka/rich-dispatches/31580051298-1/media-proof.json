@@ -1,0 +1,24 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-production-media-proof",
+  "schema_version": 1,
+  "release_sha256": "sha256:ca7a4047c4808c5800022aebd2a9e8334ad0751197a121aa1c54d707d36b7b9c",
+  "publication_id": "svodka-rich-2026-august-total-solar-eclipse",
+  "checked_at_utc": "2026-08-12T08:49:31.969057+00:00",
+  "items": [
+    {
+      "media_id": "asset-2026-august-total-solar-eclipse-media-01",
+      "url": "https://assets.science.nasa.gov/dynamicimage/assets/science/hpd/eclipse/eclipse_map_20260812.jpg?w=1024&h=1024&fit=clip&crop=faces%2Cfocalpoint",
+      "content_type": "image/jpeg",
+      "content_length": 160723,
+      "content_sha256": "sha256:c135cb27e6c1c33646da4b74d431afd40abf53944e6bb71be81d7db325333275"
+    },
+    {
+      "media_id": "asset-2026-august-total-solar-eclipse-media-02",
+      "url": "https://science.nasa.gov/wp-content/uploads/2024/02/05pd1556medium-e1707864845295.jpg",
+      "content_type": "image/jpeg",
+      "content_length": 61447,
+      "content_sha256": "sha256:918f6c05646f0ef0fce1720201e3098dc9bb39b8e3be29a60da70360b03424de"
+    }
+  ],
+  "provider_write_performed": false
+}
