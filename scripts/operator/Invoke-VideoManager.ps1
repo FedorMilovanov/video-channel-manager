@@ -11,7 +11,9 @@ param(
     [string]$OutputDirectory,
 
     [string]$PythonPath,
-    [switch]$EnableProviderWrites
+    [switch]$EnableProviderWrites,
+    [ValidateRange(1, 86400)]
+    [int]$TimeoutSeconds = 900
 )
 
 $ErrorActionPreference = "Stop"
@@ -32,6 +34,7 @@ try {
         -OutputDirectory $OutputPath `
         -PythonPath $PythonPath `
         -EnableProviderWrites:$EnableProviderWrites `
+        -TimeoutSeconds $TimeoutSeconds `
         -RepositoryRoot $RepositoryRoot
 
     Write-Host ("Operator status: {0}. Structured result: {1}" -f $Result.status, $ResultPath)
