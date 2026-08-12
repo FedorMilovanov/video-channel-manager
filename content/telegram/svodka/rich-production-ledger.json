@@ -22,15 +22,15 @@
     "svodka-rich-2026-august-total-solar-eclipse": {
       "publication_id": "svodka-rich-2026-august-total-solar-eclipse",
       "scheduled_at": "2026-08-12T10:30:00+03:00",
-      "state": "intent",
-      "provider_effect": "impossible",
+      "state": "may_exist",
+      "provider_effect": "may_exist",
       "dispatch_mode": "canary",
       "workflow_run_id": "31580051298",
       "workflow_run_attempt": "1",
       "document_sha256": "sha256:8b82ec63bec025a711c161caedfb1de38c1ee302b9106a2014d9924e2a008a96",
       "message_id": null,
       "message_url": null,
-      "error": null
+      "error": "Telegram did not return the complete exact rich structure required by the expected document"
     },
     "svodka-rich-goldfish-three-second-memory-myth": {
       "publication_id": "svodka-rich-goldfish-three-second-memory-myth",
