@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 from video_channel_manager.platforms.vk import milovi_targeted_youtube_retry as base_retry
 from video_channel_manager.platforms.vk import milovi_video_sequence_evidence as sequence
@@ -16,7 +18,7 @@ def build_targeted_retry(
     browser_executable: Path | None = None,
     headless: bool = True,
     wait_ms: int = 750,
-) -> dict[str, object]:
+) -> dict[str, Any]:
     previous_identity = sequence._identity_url_matches
     sequence._identity_url_matches = stable_sequence._stable_identity_url_matches
     try:
@@ -32,7 +34,7 @@ def build_targeted_retry(
         sequence._identity_url_matches = previous_identity
 
 
-def parser():
+def parser() -> argparse.ArgumentParser:
     return base_retry.parser()
 
 
