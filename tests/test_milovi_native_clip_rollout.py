@@ -44,6 +44,14 @@ def test_browser_target_proof_accepts_exact_milovi_route_and_identity() -> None:
     )
 
 
+def test_browser_target_proof_rejects_route_without_identity_inside_active_ui() -> None:
+    assert not target_tokens_present(
+        page_url="https://vkvideo.ru/clips/club68859909",
+        html="<div>Milovi Cake</div>",
+        text="Milovi Cake\nДобавить клип",
+    )
+
+
 def test_browser_target_proof_rejects_wrong_route() -> None:
     assert not target_tokens_present(
         page_url="https://vkvideo.ru/clips/club235216998",
