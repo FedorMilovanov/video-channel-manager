@@ -406,18 +406,27 @@ def run_issue_323_live_resume(
                 if index and not journal.get("canary_verified"):
                     raise MiloviTokenRolloutBlocked("Canary is not fully verified; remaining 11 are blocked")
                 item = _item(journal, asset.source_id)
-                clip_id = _ensure_clip_live(
-                    asset,
-                    artifacts[asset.source_id],
-                    item,
-                    journal,
-                    journal_path,
-                    writer,
-                    live_writer,
-                    client,
-                    verify_timeout_seconds,
-                )
-                _assert_live_clip(writer, asset, clip_id)
+                status = str(item.get("status") or "")
+                if status == "wall_verified":
+                    continue
+                if status == "clip_verified":
+                    clip_id = item.get("clip_remote_id")
+                    if not isinstance(clip_id, str) or not clip_id:
+                        raise MiloviTokenRolloutBlocked(
+                            f"Durable clip_verified item has no exact clip_remote_id: {asset.source_id}"
+                        )
+                else:
+                    clip_id = _ensure_clip_live(
+                        asset,
+                        artifacts[asset.source_id],
+                        item,
+                        journal,
+                        journal_path,
+                        writer,
+                        live_writer,
+                        client,
+                        verify_timeout_seconds,
+                    )
                 _ensure_wall(
                     asset,
                     clip_id,
