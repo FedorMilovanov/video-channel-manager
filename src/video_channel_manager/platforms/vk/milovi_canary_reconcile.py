@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from video_channel_manager.config import get_settings
-from video_channel_manager.platforms.vk import VkApiClient, VkTokenStore
+from video_channel_manager.platforms.vk import VkTokenStore
 from video_channel_manager.platforms.vk.milovi_immediate_wall import MILOVI_COMMUNITY_ID, MILOVI_OWNER_ID
 from video_channel_manager.platforms.vk.milovi_rollout_sources import ROLL_OUT_IDS, write_json_atomic
 from video_channel_manager.platforms.vk.milovi_token_clip_rollout import (
@@ -135,7 +135,10 @@ def reconcile_canary(*, journal_path: Path, output_path: Path) -> dict[str, Any]
     if journal.get("canary_verified") is not False:
         raise MiloviTokenRolloutBlocked("Canary wall verification is already complete; this reconciler must not run")
     item, record = _bound_canary(journal)
-    remaining = [str(_mapping(journal["items"].get(source_id), field=source_id).get("status") or "") for source_id in ROLL_OUT_IDS[1:]]
+    remaining = [
+        str(_mapping(journal["items"].get(source_id), field=source_id).get("status") or "")
+        for source_id in ROLL_OUT_IDS[1:]
+    ]
     if any(status != "pending" for status in remaining):
         raise MiloviTokenRolloutBlocked("Remaining 11 items are no longer all pending; exact incident scope changed")
 
@@ -270,10 +273,7 @@ def main() -> int:
     if args.execute != EXECUTION_CONFIRMATION:
         raise MiloviTokenRolloutBlocked(f"Exact confirmation required: {EXECUTION_CONFIRMATION}")
     result = reconcile_canary(journal_path=args.journal, output_path=args.output)
-    print(
-        f"Milovi #323 canary: {result['status']} | remote={EXPECTED_REMOTE_ID} | "
-        "provider_mutation=false"
-    )
+    print(f"Milovi #323 canary: {result['status']} | remote={EXPECTED_REMOTE_ID} | provider_mutation=false")
     return 0
 
 
