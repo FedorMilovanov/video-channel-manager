@@ -1,1 +1,509 @@
-{"schema_name":"video-manager.mutation-fault-proof-register","schema_version":1,"boundary_register":"docs/operations/mutation-boundary-register.json","aggregate_coverage_policy":"informational_only","provider_writes_in_tests":false,"boundaries":[{"boundary_id":"vk.video.album.create","proofs":[{"stages":["before_dispatch"],"test_id":"tests/test_mutation_boundary_predispatch.py::test_vk_album_create_rejects_invalid_input_before_dispatch","claim":"invalid identity/title reaches zero provider calls"},{"stages":["after_dispatch_before_response"],"test_id":"tests/test_vk_mutation_fault_matrix.py::test_album_create_ambiguous_server_failure_is_attempted_once","claim":"ambiguous HTTP failure is one attempt and non-retryable"}]},{"boundary_id":"vk.video.album.add","proofs":[{"stages":["before_dispatch"],"test_id":"tests/test_vk_writer.py::test_add_to_album_is_idempotent","claim":"existing membership prevents mutation dispatch"},{"stages":["after_dispatch_before_response"],"test_id":"tests/test_vk_mutation_fault_matrix.py::test_album_membership_ambiguous_write_is_not_replayed","claim":"ambiguous membership mutation is attempted once"},{"stages":["during_postflight"],"test_id":"tests/test_vk_writer.py::test_add_to_album_uses_verified_membership_not_response_shape","claim":"success depends on exact membership postflight"}]},{"boundary_id":"vk.video.album.edit","proofs":[{"stages":["before_dispatch"],"test_id":"tests/test_mutation_boundary_predispatch.py::test_vk_album_edit_rejects_invalid_target_before_dispatch","claim":"invalid target reaches zero provider calls"},{"stages":["after_dispatch_before_response"],"test_id":"tests/test_vk_mutation_fault_matrix.py::test_album_edit_ambiguous_server_failure_is_attempted_once","claim":"ambiguous edit is one attempt and non-retryable"}]},{"boundary_id":"vk.video.upload.reserve","proofs":[{"stages":["before_intent_commit","after_intent_commit","before_dispatch","after_dispatch_before_response","after_response_before_commit"],"test_id":"tests/test_vk_upload_lifecycle.py::test_crash_boundaries_never_allow_second_reservation","claim":"all reservation crash boundaries preserve one-reservation replay barrier"},{"stages":["after_dispatch_before_response"],"test_id":"tests/test_vk_upload_lifecycle.py::test_ambiguous_reservation_failure_is_never_retried","claim":"lost reservation response becomes unknown and never replays"}]},{"boundary_id":"vk.video.upload.transfer","proofs":[{"stages":["before_dispatch","after_response_before_commit","during_processing","before_final_commit"],"test_id":"tests/test_vk_upload_lifecycle.py::test_crash_boundaries_never_allow_second_reservation","claim":"transfer lifecycle crash stages resume without a second reservation or retransmission"},{"stages":["after_dispatch_before_response"],"test_id":"tests/test_vk_upload_lifecycle.py::test_upload_transport_failure_is_unknown_and_never_retransmitted","claim":"lost upload response becomes unknown and never retransmits"},{"stages":["during_postflight"],"test_id":"tests/test_vk_upload_lifecycle.py::test_unexpected_wall_delta_blocks_verified_and_requires_reconciliation","claim":"changed wall delta prevents verified final state"}]},{"boundary_id":"vk.wall.post","proofs":[{"stages":["before_dispatch"],"test_id":"tests/test_vk_wall.py::test_incomplete_wall_surface_blocks_before_mutation","claim":"incomplete two-surface preflight prevents wall.post"},{"stages":["after_dispatch_before_response"],"test_id":"tests/test_vk_wall.py::test_wall_post_does_not_retry_ambiguous_failure_and_stays_unknown","claim":"ambiguous wall.post is one attempt"},{"stages":["during_postflight"],"test_id":"tests/test_vk_wall.py::test_ambiguous_wall_response_can_reconcile_exact_post_without_replay","claim":"only one exact postponed delta reconciles lost response"},{"stages":["before_final_commit"],"test_id":"tests/test_vk_wall.py::test_wall_writer_posts_once_to_postponed_and_reconciles_exact_delta","claim":"final result binds complete before/after snapshots and exact post"}]},{"boundary_id":"vk.wall.postponed_text.edit","proofs":[{"stages":["before_dispatch"],"test_id":"tests/test_vk_postponed_text_edit.py::test_publication_distance_is_rechecked_before_dispatch","claim":"a target that crosses the publication-distance threshold stops before wall.edit dispatch"},{"stages":["after_dispatch_before_response","during_postflight"],"test_id":"tests/test_vk_postponed_text_edit.py::test_post_dispatch_read_failure_stops_unknown_without_retry","claim":"a lost mutation response followed by failed reconciliation becomes unknown after exactly one wall.edit and never blind-retries"},{"stages":["before_final_commit"],"test_id":"tests/test_vk_postponed_text_edit.py::test_non_target_mutation_fails_final_postcondition","claim":"final success is blocked when any non-target postponed fingerprint changes"}]},{"boundary_id":"vk.video.text.edit","proofs":[{"stages":["before_dispatch"],"test_id":"tests/test_mutation_boundary_predispatch.py::test_vk_video_text_conflict_stops_before_mutation_dispatch","claim":"reviewed-before conflict prevents video.edit"},{"stages":["after_dispatch_before_response"],"test_id":"tests/test_vk_mutation_fault_matrix.py::test_video_text_edit_ambiguous_server_failure_stops_after_one_write","claim":"ambiguous video.edit is one attempt"},{"stages":["during_postflight"],"test_id":"tests/test_vk_text_writer.py::test_replace_text_accepts_structured_success_and_verifies_live_state","claim":"exact title/description postflight is required"}]},{"boundary_id":"vk.thumbnail.upload","proofs":[{"stages":["before_dispatch"],"test_id":"tests/test_vk_thumbnails.py::test_upload_image_rejects_empty_file","claim":"empty image cannot reach upload server"},{"stages":["after_dispatch_before_response"],"test_id":"tests/test_vk_mutation_fault_matrix.py::test_thumbnail_upload_ambiguous_server_failure_is_attempted_once","claim":"ambiguous thumbnail transfer is one attempt"}]},{"boundary_id":"vk.thumbnail.commit","proofs":[{"stages":["before_dispatch"],"test_id":"tests/test_mutation_boundary_predispatch.py::test_vk_thumbnail_commit_rejects_invalid_payload_before_dispatch","claim":"invalid target/payload reaches zero provider calls"},{"stages":["after_dispatch_before_response"],"test_id":"tests/test_vk_thumbnails.py::test_save_uploaded_thumbnail_does_not_retry_ambiguous_failure","claim":"ambiguous saveUploadedThumb is one attempt"}]},{"boundary_id":"youtube.comment.create","proofs":[{"stages":["before_dispatch"],"test_id":"tests/test_youtube_comments.py::test_create_refuses_a_different_existing_channel_comment","claim":"owned conflicting comment prevents insert"},{"stages":["after_dispatch_before_response"],"test_id":"tests/test_youtube_comments.py::test_comment_mutation_timeout_is_attempted_once","claim":"lost insert response is one attempt"},{"stages":["during_postflight"],"test_id":"tests/test_youtube_comments.py::test_create_comment_is_verified_and_idempotent_with_contextual_direct_read","claim":"created comment is verified and repeat is idempotent"}]},{"boundary_id":"youtube.comment.update","proofs":[{"stages":["before_dispatch"],"test_id":"tests/test_youtube_comments.py::test_update_requires_exact_reviewed_before_text","claim":"reviewed-before mismatch prevents update"},{"stages":["after_dispatch_before_response"],"test_id":"tests/test_mutation_boundary_predispatch.py::test_youtube_comment_update_timeout_is_attempted_once","claim":"lost update response is one attempt"},{"stages":["during_postflight"],"test_id":"tests/test_youtube_comments.py::test_update_accepts_write_response_without_target_fields_and_verifies","claim":"updated comment is re-read with exact target identity"}]},{"boundary_id":"youtube.description.update","proofs":[{"stages":["before_dispatch"],"test_id":"tests/test_youtube_writer.py::test_description_conflict_stops_before_put","claim":"revision/text conflict prevents PUT"},{"stages":["after_dispatch_before_response"],"test_id":"tests/test_youtube_writer.py::test_description_mutation_server_error_is_not_retried","claim":"ambiguous videos.update is one attempt"},{"stages":["during_postflight"],"test_id":"tests/test_youtube_writer.py::test_verification_retries_eventually_consistent_get","claim":"success requires bounded canonical-description postflight"}]},{"boundary_id":"wave.operation.dispatch","proofs":[{"stages":["before_intent_commit","after_intent_commit","before_dispatch","after_dispatch_before_response","after_response_before_commit","before_final_commit"],"test_id":"tests/test_wave_engine_faults.py::test_apply_fault_boundaries_preserve_durable_replay_barrier","claim":"nine deterministic apply crash points preserve durable replay barriers"}]},{"boundary_id":"wave.reconciliation.dispatch","proofs":[{"stages":["before_intent_commit","after_intent_commit","before_dispatch","after_dispatch_before_response","after_response_before_commit","before_final_commit"],"test_id":"tests/test_wave_engine_faults.py::test_reconciliation_fault_boundaries_preserve_durable_replay_barrier","claim":"seven deterministic reconciliation crash points preserve sidecar replay barriers"}]},{"boundary_id":"operator.native.child","proofs":[{"stages":["before_dispatch"],"test_id":"tests/powershell/VideoManager.Operator.Tests.ps1::It::blocks apply mode in CI before a provider child can start","claim":"CI mutation request stops before child dispatch"},{"stages":["after_dispatch_before_response"],"test_id":"tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::terminates an interrupted child at the reviewed timeout boundary","claim":"bounded timeout kills child and returns exit 124 evidence"},{"stages":["after_dispatch_before_response"],"test_id":"tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::drains concurrent stdout and stderr without deadlock","claim":"concurrent output cannot deadlock child completion"},{"stages":["after_response_before_commit"],"test_id":"tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::rejects missing and malformed structured result evidence","claim":"missing or malformed result fails closed"},{"stages":["after_response_before_commit"],"test_id":"tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::rejects inconsistent unknown result semantics","claim":"status/exit/retry/unknown contradictions fail closed"}]},{"boundary_id":"vk.wall.photo.save","proofs":[{"stages":["before_dispatch"],"test_id":"tests/test_vk_article_provider.py::test_exact_existing_post_is_adopted_but_schedule_collision_is_blocked","claim":"exact duplicates and occupied postponed slots stop before photo-save dispatch"},{"stages":["after_dispatch_before_response"],"test_id":"tests/test_vk_article_provider.py::test_adapter_preserves_unknown_outcome_and_does_not_retry","claim":"an ambiguous provider outcome is surfaced once and never replayed"},{"stages":["during_postflight"],"test_id":"tests/test_vk_article_provider_postflight.py::test_schedule_postflight_mismatch_is_unknown_and_never_replayed","claim":"a non-exact postponed postflight remains unknown after one photo save and one wall post"},{"stages":["before_final_commit"],"test_id":"tests/test_vk_article_provider_postflight.py::test_schedule_requires_exact_postflight_before_final_success","claim":"success is returned only after exact text, date, URL, photo and one-post wall delta verification"}]},{"boundary_id":"telegram.rich_message.send","proofs":[{"stages":["before_dispatch"],"test_id":"tests/test_telegram_rich_provider.py::test_exact_bot_and_target_binding_failure_is_impossible_without_provider_call","claim":"wrong exact bot or target binding fails as impossible before the provider is called"},{"stages":["before_dispatch"],"test_id":"tests/test_telegram_rich_provider.py::test_same_credential_get_me_must_match_exact_bot_before_mutation","claim":"same-credential getMe mismatch is archived as impossible and reaches zero mutation calls"},{"stages":["after_dispatch_before_response"],"test_id":"tests/test_telegram_rich_provider.py::test_timeout_after_possible_mutation_is_may_exist_and_never_retried_or_fallen_back","claim":"a timeout after possible dispatch remains may_exist and triggers neither retry nor sendMessage fallback"},{"stages":["after_response_before_commit"],"test_id":"tests/test_telegram_rich_provider.py::test_archive_digest_failure_blocks_state_mutation","claim":"an invalid archive receipt blocks the state callback after exactly one provider request"},{"stages":["before_dispatch","after_dispatch_before_response"],"test_id":"tests/test_svodka_native_rich_canary.py::test_durable_intent_exists_before_mutation_and_outcome_archive","claim":"the isolated durable canary intent exists before the only sendRichMessage call and provider evidence is archived before terminal state"},{"stages":["after_dispatch_before_response"],"test_id":"tests/test_svodka_native_rich_canary.py::test_ambiguous_timeout_is_may_exist_and_never_retried","claim":"an ambiguous native rich canary timeout makes one mutation and remains permanently non-retryable"},{"stages":["after_response_before_commit"],"test_id":"tests/test_svodka_native_rich_canary.py::test_exact_success_requires_chat_message_rich_structure_and_media_then_finalizes","claim":"durable verified state requires exact chat, positive message id, returned RichMessage, exact structure, exact inline media evidence, and an uploaded outcome artifact"}]}],"cross_cutting_proofs":[{"scenario":"truncated_or_malformed_json","test_id":"tests/test_wave_engine_evidence_faults.py::test_read_json_object_rejects_truncated_malformed_and_non_object_evidence"},{"scenario":"reordered_evidence","test_id":"tests/test_wave_engine_contract.py::test_plan_rejects_tamper_reordering_and_missing_coverage"},{"scenario":"stale_or_wrong_digest","test_id":"tests/test_wave_engine_contract.py::test_engine_rejects_plan_path_mismatch_digest_mismatch_and_nonempty_journal"},{"scenario":"cross_project","test_id":"tests/test_wave_engine_contract.py::test_project_binding_rejects_cross_project_ids_and_numeric_strings"},{"scenario":"wrong_owner","test_id":"tests/test_wave_engine_identity_faults.py::test_project_binding_rejects_wrong_owner_for_registered_project"},{"scenario":"wrong_snapshot_or_policy","test_id":"tests/test_wave_engine_evidence_faults.py::test_apply_intent_rejects_cross_project_wrong_policy_and_wrong_source_snapshot"},{"scenario":"duplicate_operation","test_id":"tests/test_wave_engine_contract.py::test_duplicate_operation_order_key_is_rejected"},{"scenario":"incomplete_or_duplicate_result","test_id":"tests/test_wave_engine_evidence_faults.py::test_result_rejects_missing_duplicate_and_cross_plan_operation_coverage"},{"scenario":"interrupted_atomic_write_and_orphan_temp","test_id":"tests/test_wave_engine_evidence_faults.py::test_atomic_replace_failure_preserves_old_file_and_cleans_orphan_temp"},{"scenario":"nonempty_journal","test_id":"tests/test_wave_engine_contract.py::test_engine_rejects_plan_path_mismatch_digest_mismatch_and_nonempty_journal"},{"scenario":"historical_pre_dispatch_migration","test_id":"tests/test_vk_upload_journal_migration.py::test_pre_dispatch_record_can_bind_missing_wall_policy_and_rehash_identity"},{"scenario":"historical_post_dispatch_migration_block","test_id":"tests/test_vk_upload_journal_migration.py::test_provider_dispatched_record_without_wall_policy_fails_closed"},{"scenario":"utf8_without_bom","test_id":"tests/powershell/VideoManager.Operator.Tests.ps1::It::writes atomic JSON as UTF-8 without BOM"},{"scenario":"crlf_lf_canonical_digest","test_id":"tests/powershell/VideoManager.Operator.Tests.ps1::It::canonicalizes text digests across LF and CRLF checkouts"},{"scenario":"unsupported_explicit_python","test_id":"tests/powershell/VideoManager.Operator.Tests.ps1::It::does not fall back when an explicit Python path is invalid"},{"scenario":"operator_output_path_collision","test_id":"tests/powershell/VideoManager.Operator.Tests.ps1::It::rejects output paths that would overwrite the request"},{"scenario":"ci_apply_prohibition","test_id":"tests/powershell/VideoManager.Operator.Tests.ps1::It::blocks apply mode in CI before a provider child can start"},{"scenario":"operator_unknown_mutation_classification","test_id":"tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::classifies outcomes from exit evidence and never from stdout wording"},{"scenario":"operator_timeout_and_interrupted_child","test_id":"tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::terminates an interrupted child at the reviewed timeout boundary"},{"scenario":"operator_concurrent_output_no_deadlock","test_id":"tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::drains concurrent stdout and stderr without deadlock"},{"scenario":"operator_missing_or_malformed_result","test_id":"tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::rejects missing and malformed structured result evidence"},{"scenario":"operator_inconsistent_unknown_result","test_id":"tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::rejects inconsistent unknown result semantics"},{"scenario":"vk_safe_read_bounded_retry","test_id":"tests/test_vk_writer.py::test_read_video_retries_transient_failure_and_checks_identity"},{"scenario":"youtube_comment_safe_read_bounded_retry","test_id":"tests/test_youtube_comments.py::test_comment_safe_read_retries_transient_http"},{"scenario":"youtube_description_safe_read_bounded_retry","test_id":"tests/test_youtube_writer.py::test_description_safe_read_retries_transient_http"},{"scenario":"unknown_outcome_stops_later_operations","test_id":"tests/test_wave_engine_contract.py::test_ambiguous_failure_is_unknown_non_retryable_and_never_replayed"},{"scenario":"visible_object_is_not_completion","test_id":"tests/test_vk_upload_lifecycle.py::test_visible_zero_duration_object_is_not_verified"}]}
+{
+  "schema_name": "video-manager.mutation-fault-proof-register",
+  "schema_version": 1,
+  "boundary_register": "docs/operations/mutation-boundary-register.json",
+  "aggregate_coverage_policy": "informational_only",
+  "provider_writes_in_tests": false,
+  "boundaries": [
+    {
+      "boundary_id": "vk.video.album.create",
+      "proofs": [
+        {
+          "stages": ["before_dispatch"],
+          "test_id": "tests/test_mutation_boundary_predispatch.py::test_vk_album_create_rejects_invalid_input_before_dispatch",
+          "claim": "invalid identity/title reaches zero provider calls"
+        },
+        {
+          "stages": ["after_dispatch_before_response"],
+          "test_id": "tests/test_vk_mutation_fault_matrix.py::test_album_create_ambiguous_server_failure_is_attempted_once",
+          "claim": "ambiguous HTTP failure is one attempt and non-retryable"
+        }
+      ]
+    },
+    {
+      "boundary_id": "vk.video.album.add",
+      "proofs": [
+        {
+          "stages": ["before_dispatch"],
+          "test_id": "tests/test_vk_writer.py::test_add_to_album_is_idempotent",
+          "claim": "existing membership prevents mutation dispatch"
+        },
+        {
+          "stages": ["after_dispatch_before_response"],
+          "test_id": "tests/test_vk_mutation_fault_matrix.py::test_album_membership_ambiguous_write_is_not_replayed",
+          "claim": "ambiguous membership mutation is attempted once"
+        },
+        {
+          "stages": ["during_postflight"],
+          "test_id": "tests/test_vk_writer.py::test_add_to_album_uses_verified_membership_not_response_shape",
+          "claim": "success depends on exact membership postflight"
+        }
+      ]
+    },
+    {
+      "boundary_id": "vk.video.album.edit",
+      "proofs": [
+        {
+          "stages": ["before_dispatch"],
+          "test_id": "tests/test_mutation_boundary_predispatch.py::test_vk_album_edit_rejects_invalid_target_before_dispatch",
+          "claim": "invalid target reaches zero provider calls"
+        },
+        {
+          "stages": ["after_dispatch_before_response"],
+          "test_id": "tests/test_vk_mutation_fault_matrix.py::test_album_edit_ambiguous_server_failure_is_attempted_once",
+          "claim": "ambiguous edit is one attempt and non-retryable"
+        }
+      ]
+    },
+    {
+      "boundary_id": "vk.video.upload.reserve",
+      "proofs": [
+        {
+          "stages": [
+            "before_intent_commit",
+            "after_intent_commit",
+            "before_dispatch",
+            "after_dispatch_before_response",
+            "after_response_before_commit"
+          ],
+          "test_id": "tests/test_vk_upload_lifecycle.py::test_crash_boundaries_never_allow_second_reservation",
+          "claim": "all reservation crash boundaries preserve one-reservation replay barrier"
+        },
+        {
+          "stages": ["after_dispatch_before_response"],
+          "test_id": "tests/test_vk_upload_lifecycle.py::test_ambiguous_reservation_failure_is_never_retried",
+          "claim": "lost reservation response becomes unknown and never replays"
+        }
+      ]
+    },
+    {
+      "boundary_id": "vk.video.upload.transfer",
+      "proofs": [
+        {
+          "stages": ["before_dispatch", "after_response_before_commit", "during_processing", "before_final_commit"],
+          "test_id": "tests/test_vk_upload_lifecycle.py::test_crash_boundaries_never_allow_second_reservation",
+          "claim": "transfer lifecycle crash stages resume without a second reservation or retransmission"
+        },
+        {
+          "stages": ["after_dispatch_before_response"],
+          "test_id": "tests/test_vk_upload_lifecycle.py::test_upload_transport_failure_is_unknown_and_never_retransmitted",
+          "claim": "lost upload response becomes unknown and never retransmits"
+        },
+        {
+          "stages": ["during_postflight"],
+          "test_id": "tests/test_vk_upload_lifecycle.py::test_unexpected_wall_delta_blocks_verified_and_requires_reconciliation",
+          "claim": "changed wall delta prevents verified final state"
+        }
+      ]
+    },
+    {
+      "boundary_id": "vk.wall.post",
+      "proofs": [
+        {
+          "stages": ["before_dispatch"],
+          "test_id": "tests/test_vk_wall.py::test_incomplete_wall_surface_blocks_before_mutation",
+          "claim": "incomplete two-surface preflight prevents wall.post"
+        },
+        {
+          "stages": ["after_dispatch_before_response"],
+          "test_id": "tests/test_vk_wall.py::test_wall_post_does_not_retry_ambiguous_failure_and_stays_unknown",
+          "claim": "ambiguous wall.post is one attempt"
+        },
+        {
+          "stages": ["during_postflight"],
+          "test_id": "tests/test_vk_wall.py::test_ambiguous_wall_response_can_reconcile_exact_post_without_replay",
+          "claim": "only one exact postponed delta reconciles lost response"
+        },
+        {
+          "stages": ["before_final_commit"],
+          "test_id": "tests/test_vk_wall.py::test_wall_writer_posts_once_to_postponed_and_reconciles_exact_delta",
+          "claim": "final result binds complete before/after snapshots and exact post"
+        }
+      ]
+    },
+    {
+      "boundary_id": "vk.wall.postponed_text.edit",
+      "proofs": [
+        {
+          "stages": ["before_dispatch"],
+          "test_id": "tests/test_vk_postponed_text_edit.py::test_publication_distance_is_rechecked_before_dispatch",
+          "claim": "a target that crosses the publication-distance threshold stops before wall.edit dispatch"
+        },
+        {
+          "stages": ["after_dispatch_before_response", "during_postflight"],
+          "test_id": "tests/test_vk_postponed_text_edit.py::test_post_dispatch_read_failure_stops_unknown_without_retry",
+          "claim": "a lost mutation response followed by failed reconciliation becomes unknown after exactly one wall.edit and never blind-retries"
+        },
+        {
+          "stages": ["before_final_commit"],
+          "test_id": "tests/test_vk_postponed_text_edit.py::test_non_target_mutation_fails_final_postcondition",
+          "claim": "final success is blocked when any non-target postponed fingerprint changes"
+        }
+      ]
+    },
+    {
+      "boundary_id": "vk.video.text.edit",
+      "proofs": [
+        {
+          "stages": ["before_dispatch"],
+          "test_id": "tests/test_mutation_boundary_predispatch.py::test_vk_video_text_conflict_stops_before_mutation_dispatch",
+          "claim": "reviewed-before conflict prevents video.edit"
+        },
+        {
+          "stages": ["after_dispatch_before_response"],
+          "test_id": "tests/test_vk_mutation_fault_matrix.py::test_video_text_edit_ambiguous_server_failure_stops_after_one_write",
+          "claim": "ambiguous video.edit is one attempt"
+        },
+        {
+          "stages": ["during_postflight"],
+          "test_id": "tests/test_vk_text_writer.py::test_replace_text_accepts_structured_success_and_verifies_live_state",
+          "claim": "exact title/description postflight is required"
+        }
+      ]
+    },
+    {
+      "boundary_id": "vk.thumbnail.upload",
+      "proofs": [
+        {
+          "stages": ["before_dispatch"],
+          "test_id": "tests/test_vk_thumbnails.py::test_upload_image_rejects_empty_file",
+          "claim": "empty image cannot reach upload server"
+        },
+        {
+          "stages": ["after_dispatch_before_response"],
+          "test_id": "tests/test_vk_mutation_fault_matrix.py::test_thumbnail_upload_ambiguous_server_failure_is_attempted_once",
+          "claim": "ambiguous thumbnail transfer is one attempt"
+        }
+      ]
+    },
+    {
+      "boundary_id": "vk.thumbnail.commit",
+      "proofs": [
+        {
+          "stages": ["before_dispatch"],
+          "test_id": "tests/test_mutation_boundary_predispatch.py::test_vk_thumbnail_commit_rejects_invalid_payload_before_dispatch",
+          "claim": "invalid target/payload reaches zero provider calls"
+        },
+        {
+          "stages": ["after_dispatch_before_response"],
+          "test_id": "tests/test_vk_thumbnails.py::test_save_uploaded_thumbnail_does_not_retry_ambiguous_failure",
+          "claim": "ambiguous saveUploadedThumb is one attempt"
+        }
+      ]
+    },
+    {
+      "boundary_id": "youtube.comment.create",
+      "proofs": [
+        {
+          "stages": ["before_dispatch"],
+          "test_id": "tests/test_youtube_comments.py::test_create_refuses_a_different_existing_channel_comment",
+          "claim": "owned conflicting comment prevents insert"
+        },
+        {
+          "stages": ["after_dispatch_before_response"],
+          "test_id": "tests/test_youtube_comments.py::test_comment_mutation_timeout_is_attempted_once",
+          "claim": "lost insert response is one attempt"
+        },
+        {
+          "stages": ["during_postflight"],
+          "test_id": "tests/test_youtube_comments.py::test_create_comment_is_verified_and_idempotent_with_contextual_direct_read",
+          "claim": "created comment is verified and repeat is idempotent"
+        }
+      ]
+    },
+    {
+      "boundary_id": "youtube.comment.update",
+      "proofs": [
+        {
+          "stages": ["before_dispatch"],
+          "test_id": "tests/test_youtube_comments.py::test_update_requires_exact_reviewed_before_text",
+          "claim": "reviewed-before mismatch prevents update"
+        },
+        {
+          "stages": ["after_dispatch_before_response"],
+          "test_id": "tests/test_mutation_boundary_predispatch.py::test_youtube_comment_update_timeout_is_attempted_once",
+          "claim": "lost update response is one attempt"
+        },
+        {
+          "stages": ["during_postflight"],
+          "test_id": "tests/test_youtube_comments.py::test_update_accepts_write_response_without_target_fields_and_verifies",
+          "claim": "updated comment is re-read with exact target identity"
+        }
+      ]
+    },
+    {
+      "boundary_id": "youtube.description.update",
+      "proofs": [
+        {
+          "stages": ["before_dispatch"],
+          "test_id": "tests/test_youtube_writer.py::test_description_conflict_stops_before_put",
+          "claim": "revision/text conflict prevents PUT"
+        },
+        {
+          "stages": ["after_dispatch_before_response"],
+          "test_id": "tests/test_youtube_writer.py::test_description_mutation_server_error_is_not_retried",
+          "claim": "ambiguous videos.update is one attempt"
+        },
+        {
+          "stages": ["during_postflight"],
+          "test_id": "tests/test_youtube_writer.py::test_verification_retries_eventually_consistent_get",
+          "claim": "success requires bounded canonical-description postflight"
+        }
+      ]
+    },
+    {
+      "boundary_id": "wave.operation.dispatch",
+      "proofs": [
+        {
+          "stages": [
+            "before_intent_commit",
+            "after_intent_commit",
+            "before_dispatch",
+            "after_dispatch_before_response",
+            "after_response_before_commit",
+            "before_final_commit"
+          ],
+          "test_id": "tests/test_wave_engine_faults.py::test_apply_fault_boundaries_preserve_durable_replay_barrier",
+          "claim": "nine deterministic apply crash points preserve durable replay barriers"
+        }
+      ]
+    },
+    {
+      "boundary_id": "wave.reconciliation.dispatch",
+      "proofs": [
+        {
+          "stages": [
+            "before_intent_commit",
+            "after_intent_commit",
+            "before_dispatch",
+            "after_dispatch_before_response",
+            "after_response_before_commit",
+            "before_final_commit"
+          ],
+          "test_id": "tests/test_wave_engine_faults.py::test_reconciliation_fault_boundaries_preserve_durable_replay_barrier",
+          "claim": "seven deterministic reconciliation crash points preserve sidecar replay barriers"
+        }
+      ]
+    },
+    {
+      "boundary_id": "operator.native.child",
+      "proofs": [
+        {
+          "stages": ["before_dispatch"],
+          "test_id": "tests/powershell/VideoManager.Operator.Tests.ps1::It::blocks apply mode in CI before a provider child can start",
+          "claim": "CI mutation request stops before child dispatch"
+        },
+        {
+          "stages": ["after_dispatch_before_response"],
+          "test_id": "tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::terminates an interrupted child at the reviewed timeout boundary",
+          "claim": "bounded timeout kills child and returns exit 124 evidence"
+        },
+        {
+          "stages": ["after_dispatch_before_response"],
+          "test_id": "tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::drains concurrent stdout and stderr without deadlock",
+          "claim": "concurrent output cannot deadlock child completion"
+        },
+        {
+          "stages": ["after_response_before_commit"],
+          "test_id": "tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::rejects missing and malformed structured result evidence",
+          "claim": "missing or malformed result fails closed"
+        },
+        {
+          "stages": ["after_response_before_commit"],
+          "test_id": "tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::rejects inconsistent unknown result semantics",
+          "claim": "status/exit/retry/unknown contradictions fail closed"
+        }
+      ]
+    },
+    {
+      "boundary_id": "vk.wall.photo.save",
+      "proofs": [
+        {
+          "stages": ["before_dispatch"],
+          "test_id": "tests/test_vk_article_provider.py::test_exact_existing_post_is_adopted_but_schedule_collision_is_blocked",
+          "claim": "exact duplicates and occupied postponed slots stop before photo-save dispatch"
+        },
+        {
+          "stages": ["after_dispatch_before_response"],
+          "test_id": "tests/test_vk_article_provider.py::test_adapter_preserves_unknown_outcome_and_does_not_retry",
+          "claim": "an ambiguous provider outcome is surfaced once and never replayed"
+        },
+        {
+          "stages": ["during_postflight"],
+          "test_id": "tests/test_vk_article_provider_postflight.py::test_schedule_postflight_mismatch_is_unknown_and_never_replayed",
+          "claim": "a non-exact postponed postflight remains unknown after one photo save and one wall post"
+        },
+        {
+          "stages": ["before_final_commit"],
+          "test_id": "tests/test_vk_article_provider_postflight.py::test_schedule_requires_exact_postflight_before_final_success",
+          "claim": "success is returned only after exact text, date, URL, photo and one-post wall delta verification"
+        }
+      ]
+    },
+    {
+      "boundary_id": "telegram.rich_message.send",
+      "proofs": [
+        {
+          "stages": ["before_dispatch"],
+          "test_id": "tests/test_telegram_rich_provider.py::test_exact_bot_and_target_binding_failure_is_impossible_without_provider_call",
+          "claim": "wrong exact bot or target binding fails as impossible before the provider is called"
+        },
+        {
+          "stages": ["before_dispatch"],
+          "test_id": "tests/test_telegram_rich_provider.py::test_same_credential_get_me_must_match_exact_bot_before_mutation",
+          "claim": "same-credential getMe mismatch is archived as impossible and reaches zero mutation calls"
+        },
+        {
+          "stages": ["after_dispatch_before_response"],
+          "test_id": "tests/test_telegram_rich_provider.py::test_timeout_after_possible_mutation_is_may_exist_and_never_retried_or_fallen_back",
+          "claim": "a timeout after possible dispatch remains may_exist and triggers neither retry nor sendMessage fallback"
+        },
+        {
+          "stages": ["after_response_before_commit"],
+          "test_id": "tests/test_telegram_rich_provider.py::test_archive_digest_failure_blocks_state_mutation",
+          "claim": "an invalid archive receipt blocks the state callback after exactly one provider request"
+        },
+        {
+          "stages": ["before_dispatch", "after_dispatch_before_response"],
+          "test_id": "tests/test_svodka_native_rich_canary.py::test_durable_intent_exists_before_mutation_and_outcome_archive",
+          "claim": "the isolated durable canary intent exists before the only sendRichMessage call and provider evidence is archived before terminal state"
+        },
+        {
+          "stages": ["after_dispatch_before_response"],
+          "test_id": "tests/test_svodka_native_rich_canary.py::test_ambiguous_timeout_is_may_exist_and_never_retried",
+          "claim": "an ambiguous native rich canary timeout makes one mutation and remains permanently non-retryable"
+        },
+        {
+          "stages": ["after_response_before_commit"],
+          "test_id": "tests/test_svodka_native_rich_canary.py::test_exact_success_requires_chat_message_rich_structure_and_media_then_finalizes",
+          "claim": "durable verified state requires exact chat, positive message id, returned RichMessage, exact structure, exact inline media evidence, and an uploaded outcome artifact"
+        }
+      ]
+    },
+    {
+      "boundary_id": "vk.wall.issue323.anomaly.delete",
+      "proofs": [
+        {
+          "stages": ["before_dispatch"],
+          "test_id": "tests/test_milovi_promotion.py::test_issue323_anomaly_cleanup_blocks_before_delete_dispatch",
+          "claim": "identity/text drift blocks before the exact wall.delete mutation can dispatch"
+        },
+        {
+          "stages": ["after_dispatch_before_response", "during_postflight", "before_final_commit"],
+          "test_id": "tests/test_milovi_promotion.py::test_issue323_anomaly_cleanup_reconciles_ambiguous_delete_once",
+          "claim": "a lost wall.delete response is reconciled by exact absence after one provider call, and durable verified_absent is committed only after postflight"
+        }
+      ]
+    }
+  ],
+  "cross_cutting_proofs": [
+    {
+      "scenario": "truncated_or_malformed_json",
+      "test_id": "tests/test_wave_engine_evidence_faults.py::test_read_json_object_rejects_truncated_malformed_and_non_object_evidence"
+    },
+    {
+      "scenario": "reordered_evidence",
+      "test_id": "tests/test_wave_engine_contract.py::test_plan_rejects_tamper_reordering_and_missing_coverage"
+    },
+    {
+      "scenario": "stale_or_wrong_digest",
+      "test_id": "tests/test_wave_engine_contract.py::test_engine_rejects_plan_path_mismatch_digest_mismatch_and_nonempty_journal"
+    },
+    {
+      "scenario": "cross_project",
+      "test_id": "tests/test_wave_engine_contract.py::test_project_binding_rejects_cross_project_ids_and_numeric_strings"
+    },
+    {
+      "scenario": "wrong_owner",
+      "test_id": "tests/test_wave_engine_identity_faults.py::test_project_binding_rejects_wrong_owner_for_registered_project"
+    },
+    {
+      "scenario": "wrong_snapshot_or_policy",
+      "test_id": "tests/test_wave_engine_evidence_faults.py::test_apply_intent_rejects_cross_project_wrong_policy_and_wrong_source_snapshot"
+    },
+    {
+      "scenario": "duplicate_operation",
+      "test_id": "tests/test_wave_engine_contract.py::test_duplicate_operation_order_key_is_rejected"
+    },
+    {
+      "scenario": "incomplete_or_duplicate_result",
+      "test_id": "tests/test_wave_engine_evidence_faults.py::test_result_rejects_missing_duplicate_and_cross_plan_operation_coverage"
+    },
+    {
+      "scenario": "interrupted_atomic_write_and_orphan_temp",
+      "test_id": "tests/test_wave_engine_evidence_faults.py::test_atomic_replace_failure_preserves_old_file_and_cleans_orphan_temp"
+    },
+    {
+      "scenario": "nonempty_journal",
+      "test_id": "tests/test_wave_engine_contract.py::test_engine_rejects_plan_path_mismatch_digest_mismatch_and_nonempty_journal"
+    },
+    {
+      "scenario": "historical_pre_dispatch_migration",
+      "test_id": "tests/test_vk_upload_journal_migration.py::test_pre_dispatch_record_can_bind_missing_wall_policy_and_rehash_identity"
+    },
+    {
+      "scenario": "historical_post_dispatch_migration_block",
+      "test_id": "tests/test_vk_upload_journal_migration.py::test_provider_dispatched_record_without_wall_policy_fails_closed"
+    },
+    {
+      "scenario": "utf8_without_bom",
+      "test_id": "tests/powershell/VideoManager.Operator.Tests.ps1::It::writes atomic JSON as UTF-8 without BOM"
+    },
+    {
+      "scenario": "crlf_lf_canonical_digest",
+      "test_id": "tests/powershell/VideoManager.Operator.Tests.ps1::It::canonicalizes text digests across LF and CRLF checkouts"
+    },
+    {
+      "scenario": "unsupported_explicit_python",
+      "test_id": "tests/powershell/VideoManager.Operator.Tests.ps1::It::does not fall back when an explicit Python path is invalid"
+    },
+    {
+      "scenario": "operator_output_path_collision",
+      "test_id": "tests/powershell/VideoManager.Operator.Tests.ps1::It::rejects output paths that would overwrite the request"
+    },
+    {
+      "scenario": "ci_apply_prohibition",
+      "test_id": "tests/powershell/VideoManager.Operator.Tests.ps1::It::blocks apply mode in CI before a provider child can start"
+    },
+    {
+      "scenario": "operator_unknown_mutation_classification",
+      "test_id": "tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::classifies outcomes from exit evidence and never from stdout wording"
+    },
+    {
+      "scenario": "operator_timeout_and_interrupted_child",
+      "test_id": "tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::terminates an interrupted child at the reviewed timeout boundary"
+    },
+    {
+      "scenario": "operator_concurrent_output_no_deadlock",
+      "test_id": "tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::drains concurrent stdout and stderr without deadlock"
+    },
+    {
+      "scenario": "operator_missing_or_malformed_result",
+      "test_id": "tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::rejects missing and malformed structured result evidence"
+    },
+    {
+      "scenario": "operator_inconsistent_unknown_result",
+      "test_id": "tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::rejects inconsistent unknown result semantics"
+    },
+    {
+      "scenario": "vk_safe_read_bounded_retry",
+      "test_id": "tests/test_vk_writer.py::test_read_video_retries_transient_failure_and_checks_identity"
+    },
+    {
+      "scenario": "youtube_comment_safe_read_bounded_retry",
+      "test_id": "tests/test_youtube_comments.py::test_comment_safe_read_retries_transient_http"
+    },
+    {
+      "scenario": "youtube_description_safe_read_bounded_retry",
+      "test_id": "tests/test_youtube_writer.py::test_description_safe_read_retries_transient_http"
+    },
+    {
+      "scenario": "unknown_outcome_stops_later_operations",
+      "test_id": "tests/test_wave_engine_contract.py::test_ambiguous_failure_is_unknown_non_retryable_and_never_replayed"
+    },
+    {
+      "scenario": "visible_object_is_not_completion",
+      "test_id": "tests/test_vk_upload_lifecycle.py::test_visible_zero_duration_object_is_not_verified"
+    }
+  ]
+}
