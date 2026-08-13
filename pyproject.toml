@@ -20,6 +20,7 @@ dependencies = [
   "sqlalchemy>=2.0.36,<3",
   "tenacity>=9,<10",
   "typer>=0.15,<1",
+  "tzdata>=2025.2,<2027; platform_system == 'Windows'",
 ]
 
 [project.optional-dependencies]
