@@ -18,10 +18,16 @@ from video_channel_manager.platforms.vk.milovi_daily_postponed_wall import (
     plan_daily_publish_slots,
 )
 from video_channel_manager.platforms.vk.milovi_immediate_wall import MILOVI_COMMUNITY_ID, MILOVI_OWNER_ID
-from video_channel_manager.platforms.vk.milovi_rollout_sources import ROLL_OUT_IDS, SourceAsset, prepare_sources, write_json_atomic
+from video_channel_manager.platforms.vk.milovi_rollout_sources import (
+    ROLL_OUT_IDS,
+    SourceAsset,
+    prepare_sources,
+    write_json_atomic,
+)
 from video_channel_manager.platforms.vk.milovi_token_clip_rollout import (
     CANARY_SOURCE_ID,
     MiloviTokenRolloutBlocked,
+    _ensure_wall,
     _find_existing_clip,
     _has_provider_effect,
     _item,
@@ -33,7 +39,6 @@ from video_channel_manager.platforms.vk.milovi_token_clip_rollout import (
     _result,
     _save,
     _upload_remote_id,
-    _ensure_wall,
     clip_readiness,
 )
 from video_channel_manager.platforms.vk.upload_lifecycle import (
@@ -91,7 +96,8 @@ def _native_clip_assessment(
         return assessment
     if not bool(observed.get("playable")):
         return assessment
-    if int(observed.get("duration_seconds") or 0) < readiness.minimum_duration_seconds:
+    duration = observed.get("duration_seconds")
+    if not isinstance(duration, int) or isinstance(duration, bool) or duration < readiness.minimum_duration_seconds:
         return assessment
     if "title_mismatch" in reasons and str(observed.get("title") or "") != "":
         return assessment
@@ -100,6 +106,30 @@ def _native_clip_assessment(
     observed["provider_processing_flag_tolerated"] = "processing" in reasons
     observed["blank_clip_title_tolerated"] = "title_mismatch" in reasons
     return VkUploadReadinessAssessment(ready=True, reasons=(), observed=observed)
+
+
+def _lifecycle_ready_view(
+    item: Mapping[str, Any],
+    *,
+    readiness: VkUploadReadiness,
+    assessment: VkUploadReadinessAssessment,
+) -> dict[str, Any]:
+    """Return a lifecycle-compatible view only after real native-Clip readiness is proven.
+
+    The raw provider item is delivered to the lifecycle observation callback before
+    this view is returned, so durable journal evidence retains VK's actual
+    `processing` flag and blank title. The compatibility view exists only because
+    the shared lifecycle intentionally re-runs its stricter generic assessment.
+    """
+
+    view = dict(item)
+    if assessment.observed.get("readiness_mode") != "playable_native_short_video":
+        return view
+    if assessment.observed.get("provider_processing_flag_tolerated") is True:
+        view["processing"] = 0
+    if assessment.observed.get("blank_clip_title_tolerated") is True:
+        view["title"] = readiness.expected_title
+    return view
 
 
 def _source_marker_ok(item: Mapping[str, Any], source_id: str) -> bool:
@@ -119,7 +149,9 @@ def _assert_live_clip(writer: VkWallWriter, asset: SourceAsset, remote_id: str) 
         readiness=clip_readiness(asset),
     )
     if not assessment.ready:
-        raise MiloviTokenRolloutBlocked(f"VK object {remote_id} is not a verified native short_video: {assessment.reasons}")
+        raise MiloviTokenRolloutBlocked(
+            f"VK object {remote_id} is not a verified native short_video: {assessment.reasons}"
+        )
     if not _source_marker_ok(raw, asset.source_id):
         raise MiloviTokenRolloutBlocked(f"VK Clip {remote_id} lost source marker for {asset.source_id}")
 
@@ -170,7 +202,7 @@ class _LiveClipWriter:
                 if on_observation is not None:
                     on_observation(item, assessment)
                 if assessment.ready:
-                    return item
+                    return _lifecycle_ready_view(item, readiness=readiness, assessment=assessment)
                 observed_type = str(item.get("type") or "").strip()
                 provider_busy = bool(item.get("processing")) or bool(item.get("converting"))
                 if observed_type and observed_type != "short_video" and not provider_busy:
@@ -180,7 +212,9 @@ class _LiveClipWriter:
             elif on_observation is not None:
                 on_observation(None, None)
             time.sleep(min(10.0, max(0.1, deadline - time.monotonic())))
-        raise MiloviTokenRolloutBlocked(f"VK object {ticket.remote_id} did not become a playable native short_video in time")
+        raise MiloviTokenRolloutBlocked(
+            f"VK object {ticket.remote_id} did not become a playable native short_video in time"
+        )
 
     def capture_wall_snapshot(self, *, community_id: int, max_posts_per_surface: int = 10000) -> Any:
         return self.delegate.capture_wall_snapshot(
@@ -306,7 +340,9 @@ def _load_or_rebase_schedule(
     if all(value > current for value in slots.values()):
         return slots
     if _has_rollout_wall_effect(journal):
-        raise MiloviTokenRolloutBlocked("Frozen Issue #323 schedule expired after a wall effect; automatic rebase is forbidden")
+        raise MiloviTokenRolloutBlocked(
+            "Frozen Issue #323 schedule expired after a wall effect; automatic rebase is forbidden"
+        )
 
     snapshot = writer.capture_wall_snapshot(community_id=MILOVI_COMMUNITY_ID, max_posts_per_surface=10000)
     if not snapshot.complete:
@@ -397,7 +433,9 @@ def run_issue_323_live_resume(
                     _save(journal_path, journal)
                 write_json_atomic(output_path, _result(journal, "in_progress"))
 
-        incomplete = [source_id for source_id in ROLL_OUT_IDS if _item(journal, source_id).get("status") != "wall_verified"]
+        incomplete = [
+            source_id for source_id in ROLL_OUT_IDS if _item(journal, source_id).get("status") != "wall_verified"
+        ]
         if incomplete or not journal.get("canary_verified"):
             raise MiloviTokenRolloutBlocked(f"Final verification incomplete: {incomplete}")
         payload = _result(journal, "batch_verified")
