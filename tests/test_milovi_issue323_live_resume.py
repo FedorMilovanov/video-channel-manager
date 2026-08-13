@@ -168,6 +168,14 @@ def test_expired_schedule_never_rebases_after_wall_intent(tmp_path: Path) -> Non
         )
 
 
+def test_resume_loop_skips_durable_verified_children_before_fresh_clip_readback() -> None:
+    source = inspect.getsource(resume.run_issue_323_live_resume)
+    assert 'if status == "wall_verified":\n                    continue' in source
+    assert 'if status == "clip_verified":' in source
+    assert "Durable clip_verified item has no exact clip_remote_id" in source
+    assert "_assert_live_clip(writer, asset, clip_id)" not in source
+
+
 def test_resume_module_has_no_browser_dependency() -> None:
     source = inspect.getsource(resume).casefold()
     assert "playwright" not in source
