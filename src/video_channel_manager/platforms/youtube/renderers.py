@@ -33,7 +33,7 @@ def _comment_heading(value: str) -> str:
     for marker in _DECORATIVE_MARKERS:
         prefix = f"{marker} "
         if value.startswith(prefix):
-            return f"{prefix}*{value[len(prefix):]}*"
+            return f"{prefix}*{value[len(prefix) :]}*"
     return f"*{value}*"
 
 
@@ -68,9 +68,7 @@ def _render_blocks(record: EditorialContentRecord, *, surface: str) -> str:
     else:
         heading = record.fact.heading
         lead = record.question.lead
-        link_lines = [
-            f"{canonicalize_youtube_link_label(link.kind, link.label)} {link.url}".strip() for link in links
-        ]
+        link_lines = [f"{canonicalize_youtube_link_label(link.kind, link.label)} {link.url}".strip() for link in links]
 
     question = f"{lead} {record.question.text}".strip()
     blocks = [heading, record.fact.text, question, "\n".join(link_lines)]
