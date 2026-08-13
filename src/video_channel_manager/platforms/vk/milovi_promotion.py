@@ -134,6 +134,15 @@ def public_wall_message(title: str) -> str:
     )
 
 
+def public_urls(value: str) -> tuple[str, ...]:
+    return tuple(
+        token
+        for line in value.splitlines()
+        for token in line.split()
+        if token.startswith("https://") or token.startswith("http://")
+    )
+
+
 def assert_internal_promotion_copy(value: str, *, title: str) -> None:
     normalized = value.strip()
     if not normalized:
@@ -141,12 +150,13 @@ def assert_internal_promotion_copy(value: str, *, title: str) -> None:
     lowered = normalized.casefold()
     if "youtube.com" in lowered or "youtu.be" in lowered or "youtube" in lowered:
         raise ValueError("YouTube is provenance-only and forbidden in Milovi public copy")
+    urls = public_urls(normalized)
     for url in PUBLIC_PROMOTION_URLS:
-        if normalized.count(url) != 1:
+        if urls.count(url) != 1:
             raise ValueError(f"Milovi public copy must contain canonical URL exactly once: {url}")
     route = _route_for_title(title)
     for url in (route.url, MILOVI_ABOUT_URL, MILOVI_CERTIFICATES_URL):
-        if normalized.count(url) != 1:
+        if urls.count(url) != 1:
             raise ValueError(f"Milovi public copy must contain required deep link exactly once: {url}")
 
 
@@ -170,6 +180,7 @@ __all__ = [
     "assert_internal_promotion_copy",
     "promotion_block",
     "public_clip_description",
+    "public_urls",
     "public_wall_message",
     "trust_block",
 ]
