@@ -1,328 +1,133 @@
-# Точный стандарт рендеринга описаний YouTube
+# YouTube description rendering standard
 
-Канал: **The Legendary Poet**  
-Project key: `legendary-poet`  
-Статус: **обязательное дополнение** к [`youtube-editorial-standard.md`](youtube-editorial-standard.md)
+Project: `legendary-poet` / The Legendary Poet
 
-Точные идентификаторы и ссылки проекта находятся в [`operations/project-identity-registry.md`](operations/project-identity-registry.md) и [`operations/legendary-poet-description-profile.md`](operations/legendary-poet-description-profile.md). При расхождении эти документы имеют приоритет.
+This document separates three different surfaces that must never share one formatting grammar:
 
-Этот документ фиксирует фактическую связку:
+1. Chat/operator handoff.
+2. YouTube video descriptions.
+3. YouTube comments and pinned comments.
 
-```text
-сырой текст в YouTube Studio → отображение на странице просмотра
-```
+## 1. Video descriptions are generated as plain text
 
-## 1. Точная идентичность проекта
+A generated YouTube video-description payload MUST NOT use Markdown-like emphasis markers as formatting.
 
-```text
-project_key: legendary-poet
-YouTube channel ID: UC-78ys2S3cQ3lpqgXfo-SvQ
-VK community ID: 235216998
-VK owner ID: -235216998
-```
-
-Подтверждённые публичные маршруты:
-
-- сайт: https://thelegendarypoet.ru/
-- Telegram: https://t.me/thelegendarypoet
-- канонический VK: https://vk.ru/thelegendarypoet
-- совместимый VK: https://vk.com/thelegendarypoet
-- VK Клипы: https://vkvideo.ru/@thelegendarypoet/clips
-- RUTUBE: https://rutube.ru/channel/74579453/
-
-Новый канонический вывод предпочитает `https://vk.ru/thelegendarypoet`. Адрес `https://vk.com/thelegendarypoet` остаётся допустимым только как compatibility/migration input.
-
-Ссылки кабинета автора:
-
-- https://cabinet.vkvideo.ru/dashboard/@thelegendarypoet
-- https://cabinet.vkvideo.ru/dashboard/@thelegendarypoet?filterPreset=published&section=video_my_content&subsection=video_my_content_clips
-
-являются operational/admin routes. Их нельзя вставлять в публичные описания, комментарии, посты, футеры или рекламные блоки.
-
-## 2. Что подтверждено фактическим рендером
-
-В YouTube Studio описание хранится с видимыми маркерами:
+Forbidden as description formatting:
 
 ```text
-*жирное*
-_курсив_
--зачёркнутое-
+**bold**
+*bold*
+_italic_
+__bold__
 ```
 
-На странице просмотра YouTube отображает их как жирный, курсив и зачёркивание.
+They can survive as literal characters in YouTube Studio and therefore are a copy/paste defect.
 
-Для текстов, которые пользователь должен скопировать вручную, готовый результат всегда выдаётся внутри блока `text`, чтобы `*` и `_` оставались видимыми.
+YouTube Studio supports bold, italic, and strikethrough through its own description editor controls. If rich text is required, the operator applies it in Studio. The generated copy stays plain text.
 
-## 3. Главное правило пунктуации
-
-Пунктуация ставится по смысловой границе выделения.
-
-### 3.1. Знак внутри обёртки
-
-Если запятая, точка, двоеточие, многоточие, вопросительный или восклицательный знак относится к выделенной фразе, знак входит в выделение.
-
-Правильно:
+Correct generated payload:
 
 ```text
-*Первая часть цикла была написана 7 июня 1908 года,* а позднее...
+🕯 О РОМАНЕ
+Лишь в 1833 году «Евгений Онегин» впервые появился единым изданием.
 
-Цикл вошёл в раздел *«Родина».*
-
-*«О, Русь моя! Жена моя!»*
-
-_Покой нам только снится._
-
-*Плейлист «Поющие Поэты»:* https://www.youtube.com/playlist?list=...
-
-*VK:* https://vk.ru/thelegendarypoet
+🎼 Текст: Александр Сергеевич Пушкин
 ```
 
-Неправильно:
+Incorrect generated payload:
 
 ```text
-*1908 года*,
-*«Родина»*.
-_Покой нам только снится_.
-*Плейлист «Поющие Поэты»*: https://...
-*VK*: https://...
+🕯 *О РОМАНЕ*
+Лишь в **1833 году** «Евгений Онегин» впервые появился единым изданием.
+
+🎼 *Текст:* Александр Сергеевич Пушкин
 ```
 
-### 3.2. Знак снаружи обёртки
+Use short headings, capitalization, emojis when appropriate, paragraph order, and whitespace for hierarchy.
 
-Если знак соединяет выделение с окружающим предложением, он остаётся снаружи.
+## 2. Chat/operator copy transport
 
-Правильно:
+When the user asks only for a finished YouTube description or pinned comment, return the finished copy inside one fenced code block tagged `text`.
+
+The fence exists only so ChatGPT does not consume visible formatting characters and so line breaks copy exactly. The opening and closing fence are never part of the YouTube payload.
+
+Do not backslash-escape `*` or `_`.
+
+If several variants are requested, use one separate `text` block per variant.
+
+## 3. Comments are a separate surface
+
+YouTube comments/pinned comments have their own supported text tags:
 
 ```text
-*The Legendary Poet* — поэзия, история, AI-музыка, голосовые эксперименты и визуальные реконструкции.
-
-*Александр Блок* и *Сергей Есенин* по-разному строят образ России.
-
-Стихотворение *«Россия»* (1908) входит в цикл *«Родина».*
+*bold text*
+_italic text_
+-strikethrough text-
 ```
 
-Практический вопрос перед закрывающим `*` или `_`:
+These rules apply only to comments. Never generalize comment syntax to video descriptions. Never use `**text**` as a universal YouTube bold syntax.
 
-> Закончилась ли выделенная фраза уже вместе с этим знаком?
+## 4. First paragraph
 
-- Да → знак внутри.
-- Нет, знак связывает выделение с внешней конструкцией → знак снаружи.
+The first description paragraph should:
 
-## 4. Кавычки и цитаты
+- be plain text;
+- describe the exact work/video immediately;
+- normally contain 2–4 sentences;
+- contain no link dump;
+- contain no internal placeholders;
+- avoid generic openings such as «Это не просто...» unless editorially justified.
 
-Если цитата выделяется целиком, внутрь обёртки входят кавычки и относящаяся к цитате пунктуация:
+## 5. Links
+
+- Keep URLs as visible plain URLs.
+- Do not use Markdown links.
+- Keep label and URL on one line.
+- Include only playlists relevant to the specific video.
+- Never invent a playlist or project URL.
+- Never mix links from another project profile.
+- Never publish operator/admin dashboard URLs.
+
+## 6. Placeholder guard
+
+Publishable copy must contain no unresolved template markers, including angle-bracket placeholders or double-square-bracket placeholders.
+
+Internal drafts may use structured placeholders, but the final copy/paste payload must resolve or remove them before it is called ready.
+
+## 7. The Legendary Poet footer
+
+Baseline public links:
 
 ```text
-*«О, Русь моя! Жена моя!»*
-_«Покой нам только снится...»_
-*«И вечный бой!»*
+Сайт проекта: https://thelegendarypoet.ru/
+VK: https://vk.ru/thelegendarypoet
+Telegram: https://t.me/thelegendarypoet
+RUTUBE: https://rutube.ru/channel/74579453/
 ```
 
-Нельзя разрывать цитату так:
+Add relevant playlists above this block only when their exact URL is known and they relate to the current video.
 
-```text
-«*О, Русь моя! Жена моя!*»
-*«Покой нам только снится»*...
-```
+## 8. Final preflight for video descriptions
 
-## 5. Пробелы и целостность обёрток
+Before returning or publishing final description copy, verify the exact final bytes:
 
-Правильно:
+1. No Markdown emphasis markers are being used as description formatting.
+2. No Markdown links.
+3. No unresolved template placeholders.
+4. No cross-project or operator-only links.
+5. Playlist links are known and relevant.
+6. The first paragraph is concrete and readable.
+7. Paragraph spacing is intentional.
+8. The copy fits YouTube's current description limit.
+9. If this is a ChatGPT handoff, the response uses the required `text` fence, while the fence itself is not part of the payload.
 
-```text
-*текст*
-_текст_
-*«Название произведения»*
-_важный образ_
-```
+## 9. Platform evidence rule
 
-Неправильно:
+Do not infer formatting rules from Markdown, old screenshots, or another YouTube surface.
 
-```text
-* текст*
-*текст *
-_ текст_
-_текст _
-```
+Before changing this contract, check current official YouTube Help. At the time this standard was corrected:
 
-Обязательные ограничения:
+- video-description rich text is applied through Studio editor formatting controls;
+- comments support `*bold*`, `_italic_`, and `-strikethrough-` text tags.
 
-- открывающий и закрывающий маркеры парные;
-- обёртка не пересекает пустую строку;
-- жирное и курсив не перекрещиваются;
-- длинный абзац целиком не выделяется;
-- URL не помещается внутрь жирного или курсива;
-- подпись к URL выделяется отдельно, двоеточие входит в подпись.
-
-## 6. Первый абзац
-
-Первый абзац виден в превью до раскрытия полного описания.
-
-Обязательно:
-
-- без `*` и `_`;
-- без списка ссылок;
-- без технической рубрикации;
-- обычно 2–4 предложения;
-- сразу даёт конкретный вход в произведение;
-- не начинается с шаблона «Это не просто...».
-
-Один уместный эмодзи в начале допустим, но не обязателен. Нельзя автоматически добавлять эмодзи в первый абзац каждого ролика.
-
-## 7. Эмодзи в основной части
-
-Эмодзи — смысловой и навигационный инструмент, а не обязательный префикс абзаца.
-
-Допустимы три режима:
-
-1. без эмодзи — строгий анализ, биография, трагическая или историческая тема;
-2. выборочные смысловые опоры — основной режим для крупных описаний;
-3. плотное визуальное оформление — только по прямой редакционной задаче.
-
-Нельзя автоматически:
-
-- добавлять эмодзи перед каждым абзацем;
-- считать текст без эмодзи слабым;
-- сохранять один набор значков для всех произведений;
-- выбирать знак только по ключевому слову без чтения смысла.
-
-## 8. Абзацы и переносы
-
-- Одна пустая строка между смысловыми абзацами.
-- Не ставить пустую строку после каждого предложения.
-- Не допускать трёх и более переводов строки подряд.
-- Один абзац развивает одну мысль.
-- Монолитный блок свыше примерно 700 символов требует ручной проверки.
-- Нельзя дробить текст на множество микропунктов только ради эмодзи.
-
-## 9. Канонический финальный блок
-
-Эталонная логика:
-
-```text
-_Покой нам только снится._
-
-🎧 *The Legendary Poet* — поэзия, история, AI-музыка, голосовые эксперименты и визуальные реконструкции.
-
-*Плейлист «Поющие Поэты»:* https://www.youtube.com/playlist?list=...
-*Плейлист «Александр Блок»:* https://www.youtube.com/playlist?list=...
-*Плейлист «Эксперименты AI»:* https://www.youtube.com/playlist?list=...
-
-*Сайт проекта:* https://thelegendarypoet.ru/
-*VK:* https://vk.ru/thelegendarypoet
-*Telegram:* https://t.me/thelegendarypoet
-*RUTUBE:* https://rutube.ru/channel/74579453/
-
-#TheLegendaryPoet #АлександрБлок #НаПолеКуликовом #РусскаяПоэзия
-```
-
-Для ролика, который продвигает короткий формат, можно добавить:
-
-```text
-*VK Клипы:* https://vkvideo.ru/@thelegendarypoet/clips
-```
-
-Правила:
-
-- точка в курсивном предложении находится внутри `_..._`;
-- тире после названия канала остаётся снаружи;
-- двоеточия в подписях ссылок находятся внутри `*...*`;
-- URL остаются обычным текстом;
-- плейлисты идут без пустых строк между собой;
-- ссылки проекта идут без пустых строк между собой;
-- после хэштегов ничего не добавляется;
-- используются только ссылки профиля `legendary-poet`;
-- `cabinet.vkvideo.ru` запрещён.
-
-## 10. Проверка по реальному ролику «На поле Куликовом»
-
-Эталонные конструкции:
-
-- `*Первая часть цикла была написана 7 июня 1908 года,*` — запятая внутри;
-- `*«На поле Куликовом»,*` — запятая внутри;
-- `*«Родина».*` — точка внутри;
-- `*«О, Русь моя! Жена моя!»*` — кавычки и восклицательные знаки внутри;
-- `*вечный бой* —` — внешнее тире снаружи;
-- `_Покой нам только снится._` — точка внутри курсива;
-- `🎧 *The Legendary Poet* —` — тире снаружи;
-- `*Плейлист «...»:*` и `*VK:*` — двоеточия внутри.
-
-Плотность эмодзи может быть редакционным выбором конкретного ролика. Линтер вправе предупредить, но не должен автоматически удалять оформление.
-
-## 11. Что должен проверять ИИ перед выдачей
-
-1. `project_key` и channel ID соответствуют `legendary-poet`.
-2. Первый абзац не содержит `*` и `_`.
-3. Все обёртки закрыты.
-4. Внутри обёрток нет лишнего пробела у края.
-5. Пунктуация не вынесена за выделение, когда завершает выделенную фразу.
-6. Внешнее тире не захвачено внутрь имени канала.
-7. Кавычки и знаки цитаты не вывалились за пределы выделения.
-8. Эмодзи не стоят механически перед каждым абзацем.
-9. Пустые строки не разрывают связные предложения.
-10. Подписи ссылок оформлены как `*Подпись:* URL`.
-11. URL не скрыты в Markdown-ссылках.
-12. Все публичные ссылки принадлежат профилю `legendary-poet`.
-13. Новый VK-вывод предпочитает `https://vk.ru/thelegendarypoet`.
-14. Кабинетные URL отсутствуют.
-15. Готовый текст можно вставить в Studio без ручной перестановки символов.
-
-## 12. Уровни автоматической проверки
-
-### Ошибка
-
-- незакрытая обёртка;
-- пробел внутри края обёртки;
-- форматирование в первом абзаце;
-- неверная пунктуация у закрывающего `*` или `_`;
-- Markdown-ссылка вместо открытого URL;
-- описание длиннее лимита YouTube;
-- ссылка другого проекта;
-- неизвестный project route;
-- `cabinet.vkvideo.ru` в публичном тексте.
-
-### Предупреждение
-
-- каждый большой абзац начинается с эмодзи;
-- один эмодзи механически повторяется;
-- абзац слишком длинный;
-- три и более перевода строки подряд;
-- слишком много выделений;
-- подозрительно плотный декоративный стиль;
-- compatibility-ссылка `vk.com` используется там, где можно вывести канонический `vk.ru`.
-
-### Не является ошибкой
-
-- описание полностью без эмодзи;
-- один эмодзи в первом абзаце;
-- эмодзи внутри отдельного абзаца;
-- внешнее тире после выделенного имени канала;
-- обычный абзац между двумя абзацами с эмодзи;
-- сознательно плотное оформление одного конкретного ролика после ручной проверки.
-
-## 13. Контрольный пример
-
-```text
-«На поле Куликовом» показывает русскую историю как путь, который не заканчивается одной битвой. Память, боль, вера и надежда проходят через века вместе с самой Россией.
-
-📜 *Первая часть цикла была написана 7 июня 1908 года,* а позднее вошла в цикл *«На поле Куликовом»,* опубликованный в 1909 году и включённый в раздел *«Родина».*
-
-Первые строки почти неподвижны, но затем ритм ускоряется. История перестаёт быть далёким прошлым и проходит через личное сердце читателя.
-
-🐎 *«Летит, летит степная кобылица и мнёт ковыль...»* — движение становится главным образом финала.
-
-_Покой нам только снится._
-
-🎧 *The Legendary Poet* — поэзия, история, AI-музыка, голосовые эксперименты и визуальные реконструкции.
-
-*Плейлист «Александр Блок»:* https://www.youtube.com/playlist?list=PLy9lLJfoq3ua3Q9BQe1Dhuzn7Knbz2djU
-
-*Сайт проекта:* https://thelegendarypoet.ru/
-*VK:* https://vk.ru/thelegendarypoet
-*Telegram:* https://t.me/thelegendarypoet
-*RUTUBE:* https://rutube.ru/channel/74579453/
-
-#TheLegendaryPoet #АлександрБлок #НаПолеКуликовом #РусскаяПоэзия
-```
-
-Этот пример намеренно смешивает абзацы с эмодзи и без них. Такая вариативность является нормой канала.
+If YouTube changes these rules, update this contract first and then update examples/renderers.
