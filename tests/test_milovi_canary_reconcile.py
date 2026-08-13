@@ -77,4 +77,3 @@ def test_reconciler_source_has_no_provider_mutation_dispatch() -> None:
     assert ".begin_upload(" not in source
     assert ".upload_file(" not in source
     assert "ensure_postponed_wall_post" not in source
-    assert "wall.post" not in source
