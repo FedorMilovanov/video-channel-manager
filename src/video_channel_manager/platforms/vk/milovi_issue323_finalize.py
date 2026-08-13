@@ -398,7 +398,7 @@ def _edit_wall_message(
     operation.update(status="edit_intent", remote_id=wall_remote_id)
     _save_finalizer(finalizer_path, finalizer)
     _prove_target(client)
-    params = {
+    params: dict[str, str | int | bool] = {
         "owner_id": MILOVI_OWNER_ID,
         "post_id": post_id,
         "message": asset.wall_message,
@@ -433,7 +433,12 @@ def _final_postflight(writer: VkWallWriter, assets: list[SourceAsset], journal: 
         clip_remote_id = str(item.get("clip_remote_id") or "")
         wall_remote_id = str(item.get("wall_remote_id") or "")
         publish_date = item.get("publish_date")
-        if item.get("status") != "wall_verified" or not clip_remote_id or not wall_remote_id or type(publish_date) is not int:
+        if (
+            item.get("status") != "wall_verified"
+            or not clip_remote_id
+            or not wall_remote_id
+            or type(publish_date) is not int
+        ):
             raise MiloviFinalizerBlocked(f"Final durable mapping is incomplete: {asset.source_id}")
         _assert_native_clip(writer, asset, clip_remote_id, description_mode="promoted")
         owner_id, video_id = _parse_remote_id(clip_remote_id)
@@ -591,7 +596,9 @@ def run_issue_323_finalizer(
                 )
                 write_json_atomic(rollout_output_path, _result(journal, "in_progress"))
 
-            incomplete = [source_id for source_id in ROLL_OUT_IDS if _item(journal, source_id).get("status") != "wall_verified"]
+            incomplete = [
+                source_id for source_id in ROLL_OUT_IDS if _item(journal, source_id).get("status") != "wall_verified"
+            ]
             if incomplete:
                 raise MiloviFinalizerBlocked(f"Rollout child completion is incomplete: {incomplete}")
 
