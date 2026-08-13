@@ -10,9 +10,11 @@ from typing import Any
 
 from video_channel_manager.config import get_settings
 from video_channel_manager.platforms.vk import VkApiClient, VkTokenStore, local_vk_write_lock
+from video_channel_manager.platforms.vk.milovi_daily_postponed_wall import load_or_create_daily_schedule
 from video_channel_manager.platforms.vk.milovi_immediate_wall import MILOVI_COMMUNITY_ID, MILOVI_OWNER_ID
 from video_channel_manager.platforms.vk.milovi_issue323_live_resume import (
     _LiveClipWriter,
+    _ensure_clip_live,
     _native_clip_assessment,
     _resume_wall_baseline,
 )
@@ -29,7 +31,6 @@ from video_channel_manager.platforms.vk.milovi_rollout_sources import (
     write_json_atomic,
 )
 from video_channel_manager.platforms.vk.milovi_token_clip_rollout import (
-    CANARY_SOURCE_ID,
     MiloviTokenRolloutBlocked,
     _ensure_wall,
     _has_provider_effect,
@@ -53,7 +54,6 @@ from video_channel_manager.platforms.vk.upload_lifecycle import (
 from video_channel_manager.platforms.vk.upload_media import execute_upload_operation
 from video_channel_manager.platforms.vk.wall import VkWallWriter
 from video_channel_manager.platforms.vk.wall_safety import DEFAULT_UPLOAD_WALL_POLICY, VkWallSurface
-from video_channel_manager.platforms.vk.milovi_daily_postponed_wall import load_or_create_daily_schedule
 
 EXECUTION_CONFIRMATION = "ISSUE_323_FINALIZE_INTERNAL_PROMOTION_AND_CLEANUP_475"
 FINALIZER_SCHEMA = "video-manager.milovi-issue-323-finalizer"
@@ -106,7 +106,6 @@ def _new_finalizer_journal(assets: list[SourceAsset]) -> dict[str, Any]:
 
 
 def _load_finalizer_journal(path: Path, assets: list[SourceAsset]) -> dict[str, Any]:
-    expected_plan = _promotion_plan(assets)
     if not path.is_file():
         payload = _new_finalizer_journal(assets)
         write_json_atomic(path, payload)
@@ -121,7 +120,7 @@ def _load_finalizer_journal(path: Path, assets: list[SourceAsset]) -> dict[str, 
         "owner_id": MILOVI_OWNER_ID,
         "anomaly_wall_remote_id": ANOMALY_WALL_REMOTE_ID,
         "anomaly_clip_remote_id": ANOMALY_CLIP_REMOTE_ID,
-        "promotion_plan": expected_plan,
+        "promotion_plan": _promotion_plan(assets),
     }
     mismatch = {key: (value, payload.get(key)) for key, value in expected.items() if payload.get(key) != value}
     if mismatch:
@@ -160,12 +159,12 @@ def _assert_native_clip(
             f"VK object {remote_id} is not a verified native short_video: {assessment.reasons}"
         )
     description = str(raw.get("description") or "").strip()
-    if description_mode == "legacy_or_promoted":
-        if not _legacy_marker_ok(raw, asset.source_id) and description != asset.description.strip():
-            raise MiloviFinalizerBlocked(f"VK Clip {remote_id} cannot be bound to source {asset.source_id}")
-    elif description_mode == "promoted":
+    if description_mode == "promoted":
         if description != asset.description.strip():
             raise MiloviFinalizerBlocked(f"VK Clip {remote_id} public description differs from promotion plan")
+    elif description_mode == "legacy_or_promoted":
+        if description != asset.description.strip() and not _legacy_marker_ok(raw, asset.source_id):
+            raise MiloviFinalizerBlocked(f"VK Clip {remote_id} cannot be bound to source {asset.source_id}")
     else:
         raise ValueError(f"Unknown description_mode: {description_mode}")
     return raw
@@ -174,17 +173,17 @@ def _assert_native_clip(
 def _one_video_attachment(post: Mapping[str, Any]) -> tuple[int, int, Mapping[str, Any]]:
     attachments = post.get("attachments")
     if not isinstance(attachments, list) or len(attachments) != 1:
-        raise MiloviFinalizerBlocked("Anomaly wall post must contain exactly one attachment")
+        raise MiloviFinalizerBlocked("Wall post must contain exactly one attachment")
     attachment = attachments[0]
     if not isinstance(attachment, Mapping) or attachment.get("type") != "video":
-        raise MiloviFinalizerBlocked("Anomaly wall post attachment is not exactly one video")
+        raise MiloviFinalizerBlocked("Wall attachment is not exactly one video")
     video = attachment.get("video")
     if not isinstance(video, Mapping):
-        raise MiloviFinalizerBlocked("Anomaly wall post has no expanded video attachment")
+        raise MiloviFinalizerBlocked("Wall post has no expanded video attachment")
     owner_id = video.get("owner_id")
     video_id = video.get("id")
     if type(owner_id) is not int or type(video_id) is not int:
-        raise MiloviFinalizerBlocked("Anomaly wall attachment identity is invalid")
+        raise MiloviFinalizerBlocked("Wall attachment identity is invalid")
     return owner_id, video_id, video
 
 
@@ -195,7 +194,7 @@ def _validate_anomaly_post(post: Mapping[str, Any], legacy_asset: SourceAsset) -
         raise MiloviFinalizerBlocked("Wall 475 is no longer the empty-text anomaly authorized for deletion")
     owner_id, video_id, expanded = _one_video_attachment(post)
     expected_owner, expected_video = _parse_remote_id(ANOMALY_CLIP_REMOTE_ID)
-    if owner_id != expected_owner or video_id != expected_video:
+    if (owner_id, video_id) != (expected_owner, expected_video):
         raise MiloviFinalizerBlocked("Wall 475 no longer attaches exact Clip 456239232")
     observed_type = str(expanded.get("type") or "")
     if observed_type and observed_type != "short_video":
@@ -217,27 +216,27 @@ def _cleanup_anomaly_475(
     post = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
     if post is None:
         _assert_native_clip(writer, promoted_asset, ANOMALY_CLIP_REMOTE_ID, description_mode="legacy_or_promoted")
-        state.update(status="verified_absent")
+        state["status"] = "verified_absent"
         _save_finalizer(finalizer_path, finalizer)
         return
 
     _validate_anomaly_post(post, legacy_asset)
     _assert_native_clip(writer, promoted_asset, ANOMALY_CLIP_REMOTE_ID, description_mode="legacy_or_promoted")
-    state.update(status="delete_intent", predelete_post_sha256=_sha256_text(json.dumps(post, sort_keys=True, ensure_ascii=False)))
+    state.update(
+        status="delete_intent",
+        predelete_post_sha256=_sha256_text(json.dumps(post, sort_keys=True, ensure_ascii=False)),
+    )
     _save_finalizer(finalizer_path, finalizer)
     _prove_target(client)
     try:
-        writer._call(
-            "wall.delete",
-            params={"owner_id": MILOVI_OWNER_ID, "post_id": ANOMALY_POST_ID},
-        )
+        writer._call("wall.delete", params={"owner_id": MILOVI_OWNER_ID, "post_id": ANOMALY_POST_ID})
     except Exception:
         if writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID) is not None:
             raise
     if writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID) is not None:
         raise MiloviFinalizerBlocked("Exact anomaly wall 475 still exists after delete response")
     _assert_native_clip(writer, promoted_asset, ANOMALY_CLIP_REMOTE_ID, description_mode="legacy_or_promoted")
-    state.update(status="verified_absent")
+    state["status"] = "verified_absent"
     _save_finalizer(finalizer_path, finalizer)
 
 
@@ -282,7 +281,6 @@ def _ensure_promoted_clip(
     if not current_wall.complete:
         raise MiloviFinalizerBlocked("Complete wall baseline unavailable before upload/resume")
     wall_before = _resume_wall_baseline(record, current_wall) if _has_provider_effect(record) else current_wall
-
     journal["provider_write_attempted"] = True
     item["status"] = "upload_in_progress"
     _save(journal_path, journal)
@@ -303,7 +301,11 @@ def _ensure_promoted_clip(
         raise MiloviFinalizerBlocked(f"Upload lifecycle did not verify {asset.source_id}")
     remote_id = _upload_remote_id(record)
     _assert_native_clip(writer, asset, remote_id, description_mode="promoted")
-    item.update(status="clip_verified", clip_remote_id=remote_id, clip_origin="new_token_short_video_internal_promotion")
+    item.update(
+        status="clip_verified",
+        clip_remote_id=remote_id,
+        clip_origin="new_token_short_video_internal_promotion",
+    )
     _save(journal_path, journal)
     return remote_id
 
@@ -324,12 +326,10 @@ def _find_postponed_raw(writer: VkWallWriter, post_id: int) -> dict[str, Any] | 
 
 def _assert_post_shape(post: Mapping[str, Any], *, clip_remote_id: str, publish_date: int) -> None:
     owner_id, video_id = _parse_remote_id(clip_remote_id)
-    if post.get("owner_id") != MILOVI_OWNER_ID:
-        raise MiloviFinalizerBlocked("Post owner differs from Milovi")
-    if post.get("date") != publish_date:
-        raise MiloviFinalizerBlocked("Postponed publish_date changed")
+    if post.get("owner_id") != MILOVI_OWNER_ID or post.get("date") != publish_date:
+        raise MiloviFinalizerBlocked("Postponed wall identity/date changed")
     attachment_owner, attachment_video, _expanded = _one_video_attachment(post)
-    if attachment_owner != owner_id or attachment_video != video_id:
+    if (attachment_owner, attachment_video) != (owner_id, video_id):
         raise MiloviFinalizerBlocked("Postponed wall attachment changed")
 
 
@@ -345,7 +345,7 @@ def _edit_clip_description(
 ) -> None:
     raw = _assert_native_clip(writer, asset, remote_id, description_mode="legacy_or_promoted")
     if str(raw.get("description") or "").strip() == asset.description.strip():
-        operation.update(status="verified")
+        operation.update(status="verified", remote_id=remote_id)
         _save_finalizer(finalizer_path, finalizer)
         return
     if not _legacy_marker_ok(raw, asset.source_id):
@@ -356,13 +356,13 @@ def _edit_clip_description(
     _save_finalizer(finalizer_path, finalizer)
     _prove_target(client)
     try:
-        writer._call(
-            "video.edit",
-            params={"owner_id": owner_id, "video_id": video_id, "desc": asset.description},
-        )
+        writer._call("video.edit", params={"owner_id": owner_id, "video_id": video_id, "desc": asset.description})
     except Exception:
         observed = writer.read_video(owner_id=owner_id, video_id=video_id)
-        if not isinstance(observed, Mapping) or str(observed.get("description") or "").strip() != asset.description.strip():
+        if (
+            not isinstance(observed, Mapping)
+            or str(observed.get("description") or "").strip() != asset.description.strip()
+        ):
             raise
     after = _assert_native_clip(writer, asset, remote_id, description_mode="promoted")
     after_title = str(after.get("title") or "")
@@ -398,17 +398,15 @@ def _edit_wall_message(
     operation.update(status="edit_intent", remote_id=wall_remote_id)
     _save_finalizer(finalizer_path, finalizer)
     _prove_target(client)
+    params = {
+        "owner_id": MILOVI_OWNER_ID,
+        "post_id": post_id,
+        "message": asset.wall_message,
+        "attachments": f"video{clip_remote_id}",
+        "publish_date": publish_date,
+    }
     try:
-        writer._call(
-            "wall.edit",
-            params={
-                "owner_id": MILOVI_OWNER_ID,
-                "post_id": post_id,
-                "message": asset.wall_message,
-                "attachments": f"video{clip_remote_id}",
-                "publish_date": publish_date,
-            },
-        )
+        writer._call("wall.edit", params=params)
     except Exception:
         observed = _find_postponed_raw(writer, post_id)
         if not isinstance(observed, Mapping) or str(observed.get("text") or "").strip() != asset.wall_message.strip():
@@ -423,12 +421,7 @@ def _edit_wall_message(
     _save_finalizer(finalizer_path, finalizer)
 
 
-def _final_postflight(
-    *,
-    writer: VkWallWriter,
-    assets: list[SourceAsset],
-    journal: dict[str, Any],
-) -> list[dict[str, Any]]:
+def _final_postflight(writer: VkWallWriter, assets: list[SourceAsset], journal: dict[str, Any]) -> list[dict[str, Any]]:
     if writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID) is not None:
         raise MiloviFinalizerBlocked("Anomaly wall 475 reappeared")
     snapshot = writer.capture_wall_snapshot(community_id=MILOVI_COMMUNITY_ID, max_posts_per_surface=10000)
@@ -437,21 +430,18 @@ def _final_postflight(
     evidence: list[dict[str, Any]] = []
     for asset in assets:
         item = _item(journal, asset.source_id)
-        if item.get("status") != "wall_verified":
-            raise MiloviFinalizerBlocked(f"Final item is not wall_verified: {asset.source_id}")
         clip_remote_id = str(item.get("clip_remote_id") or "")
         wall_remote_id = str(item.get("wall_remote_id") or "")
         publish_date = item.get("publish_date")
-        if not clip_remote_id or not wall_remote_id or type(publish_date) is not int:
+        if item.get("status") != "wall_verified" or not clip_remote_id or not wall_remote_id or type(publish_date) is not int:
             raise MiloviFinalizerBlocked(f"Final durable mapping is incomplete: {asset.source_id}")
         _assert_native_clip(writer, asset, clip_remote_id, description_mode="promoted")
         owner_id, video_id = _parse_remote_id(clip_remote_id)
         attachment = f"video{owner_id}_{video_id}"
         matches = [post for post in snapshot.posts if attachment in post.attachments]
-        published = [post for post in matches if post.surface is VkWallSurface.PUBLISHED]
+        if any(post.surface is VkWallSurface.PUBLISHED for post in matches):
+            raise MiloviFinalizerBlocked(f"Immediate rollout wall post remains for {asset.source_id}")
         postponed = [post for post in matches if post.surface is VkWallSurface.POSTPONED]
-        if published:
-            raise MiloviFinalizerBlocked(f"Immediate rollout wall post remains for {asset.source_id}: {published}")
         if len(postponed) != 1 or postponed[0].remote_id != wall_remote_id or postponed[0].publish_date != publish_date:
             raise MiloviFinalizerBlocked(f"Postponed mapping differs for {asset.source_id}")
         _owner, post_id = _parse_remote_id(wall_remote_id)
@@ -469,6 +459,60 @@ def _final_postflight(
             }
         )
     return evidence
+
+
+def _complete_child(
+    source_id: str,
+    *,
+    legacy_assets: dict[str, SourceAsset],
+    promoted_assets: dict[str, SourceAsset],
+    artifacts: dict[str, Any],
+    journal: dict[str, Any],
+    journal_path: Path,
+    slots: Mapping[str, Any],
+    writer: VkWallWriter,
+    upload_writer: _LiveClipWriter,
+    client: VkApiClient,
+    verify_timeout_seconds: int,
+) -> None:
+    item = _item(journal, source_id)
+    if item.get("status") == "wall_verified":
+        return
+    asset = promoted_assets[source_id]
+    if source_id == ANOMALY_SOURCE_ID and item.get("status") != "clip_verified":
+        clip_id = _ensure_clip_live(
+            legacy_assets[source_id],
+            artifacts[source_id],
+            item,
+            journal,
+            journal_path,
+            writer,
+            upload_writer,
+            client,
+            verify_timeout_seconds,
+        )
+        if clip_id != ANOMALY_CLIP_REMOTE_ID:
+            raise MiloviFinalizerBlocked("Eighth reconciliation returned another Clip")
+    elif item.get("status") == "clip_verified":
+        clip_id = str(item.get("clip_remote_id") or "")
+        if not clip_id:
+            raise MiloviFinalizerBlocked(f"clip_verified item lost remote ID: {source_id}")
+        mode = "legacy_or_promoted" if source_id == ANOMALY_SOURCE_ID else "promoted"
+        _assert_native_clip(writer, asset, clip_id, description_mode=mode)
+    else:
+        clip_id = _ensure_promoted_clip(
+            asset,
+            artifacts[source_id],
+            item,
+            journal,
+            journal_path,
+            writer,
+            upload_writer,
+            verify_timeout_seconds,
+        )
+    if source_id == ANOMALY_SOURCE_ID and clip_id != ANOMALY_CLIP_REMOTE_ID:
+        raise MiloviFinalizerBlocked("Eighth Clip identity changed")
+    _ensure_wall(asset, clip_id, slots[source_id], item, journal, journal_path, writer, client)
 
 
 def run_issue_323_finalizer(
@@ -490,12 +534,12 @@ def run_issue_323_finalizer(
     journal = _load_journal(journal_path)
     if journal.get("canary_verified") is not True:
         raise MiloviFinalizerBlocked("Issue #323 canary is not durably verified")
-    legacy_assets = prepare_sources(work_dir)
-    promoted_assets = [_promote_asset(asset) for asset in legacy_assets]
-    legacy_by_id = {asset.source_id: asset for asset in legacy_assets}
-    promoted_by_id = {asset.source_id: asset for asset in promoted_assets}
-    artifacts = _media_artifacts(legacy_assets)
-    finalizer = _load_finalizer_journal(finalizer_journal_path, promoted_assets)
+    legacy_list = prepare_sources(work_dir)
+    promoted_list = [_promote_asset(asset) for asset in legacy_list]
+    legacy_assets = {asset.source_id: asset for asset in legacy_list}
+    promoted_assets = {asset.source_id: asset for asset in promoted_list}
+    artifacts = _media_artifacts(legacy_list)
+    finalizer = _load_finalizer_journal(finalizer_journal_path, promoted_list)
 
     settings = get_settings()
     store = VkTokenStore(settings.data_dir)
@@ -525,75 +569,25 @@ def run_issue_323_finalizer(
             _cleanup_anomaly_475(
                 writer=writer,
                 client=client,
-                legacy_asset=legacy_by_id[ANOMALY_SOURCE_ID],
-                promoted_asset=promoted_by_id[ANOMALY_SOURCE_ID],
+                legacy_asset=legacy_assets[ANOMALY_SOURCE_ID],
+                promoted_asset=promoted_assets[ANOMALY_SOURCE_ID],
                 finalizer=finalizer,
                 finalizer_path=finalizer_journal_path,
             )
 
-            if anomaly_item.get("status") != "wall_verified":
-                if anomaly_item.get("status") != "clip_verified":
-                    from video_channel_manager.platforms.vk.milovi_issue323_live_resume import _ensure_clip_live
-
-                    clip_id = _ensure_clip_live(
-                        legacy_by_id[ANOMALY_SOURCE_ID],
-                        artifacts[ANOMALY_SOURCE_ID],
-                        anomaly_item,
-                        journal,
-                        journal_path,
-                        writer,
-                        upload_writer,
-                        client,
-                        verify_timeout_seconds,
-                    )
-                    if clip_id != ANOMALY_CLIP_REMOTE_ID:
-                        raise MiloviFinalizerBlocked("Eighth reconciliation returned another Clip")
-                else:
-                    clip_id = str(anomaly_item.get("clip_remote_id") or "")
-                    if clip_id != ANOMALY_CLIP_REMOTE_ID:
-                        raise MiloviFinalizerBlocked("Eighth clip_verified state is bound to another Clip")
-                _ensure_wall(
-                    promoted_by_id[ANOMALY_SOURCE_ID],
-                    clip_id,
-                    slots[ANOMALY_SOURCE_ID],
-                    anomaly_item,
-                    journal,
-                    journal_path,
-                    writer,
-                    client,
-                )
-
-            start = ROLL_OUT_IDS.index(ANOMALY_SOURCE_ID) + 1
-            for source_id in ROLL_OUT_IDS[start:]:
-                item = _item(journal, source_id)
-                asset = promoted_by_id[source_id]
-                if item.get("status") == "wall_verified":
-                    continue
-                if item.get("status") == "clip_verified":
-                    clip_id = str(item.get("clip_remote_id") or "")
-                    if not clip_id:
-                        raise MiloviFinalizerBlocked(f"clip_verified item lost remote ID: {source_id}")
-                    _assert_native_clip(writer, asset, clip_id, description_mode="promoted")
-                else:
-                    clip_id = _ensure_promoted_clip(
-                        asset,
-                        artifacts[source_id],
-                        item,
-                        journal,
-                        journal_path,
-                        writer,
-                        upload_writer,
-                        verify_timeout_seconds,
-                    )
-                _ensure_wall(
-                    asset,
-                    clip_id,
-                    slots[source_id],
-                    item,
-                    journal,
-                    journal_path,
-                    writer,
-                    client,
+            for source_id in ROLL_OUT_IDS[ROLL_OUT_IDS.index(ANOMALY_SOURCE_ID) :]:
+                _complete_child(
+                    source_id,
+                    legacy_assets=legacy_assets,
+                    promoted_assets=promoted_assets,
+                    artifacts=artifacts,
+                    journal=journal,
+                    journal_path=journal_path,
+                    slots=slots,
+                    writer=writer,
+                    upload_writer=upload_writer,
+                    client=client,
+                    verify_timeout_seconds=verify_timeout_seconds,
                 )
                 write_json_atomic(rollout_output_path, _result(journal, "in_progress"))
 
@@ -601,7 +595,7 @@ def run_issue_323_finalizer(
             if incomplete:
                 raise MiloviFinalizerBlocked(f"Rollout child completion is incomplete: {incomplete}")
 
-            for asset in promoted_assets:
+            for asset in promoted_list:
                 item = _item(journal, asset.source_id)
                 clip_remote_id = str(item.get("clip_remote_id") or "")
                 wall_remote_id = str(item.get("wall_remote_id") or "")
@@ -629,7 +623,7 @@ def run_issue_323_finalizer(
                     finalizer_path=finalizer_journal_path,
                 )
 
-            evidence = _final_postflight(writer=writer, assets=promoted_assets, journal=journal)
+            evidence = _final_postflight(writer, promoted_list, journal)
             rollout_payload = _result(journal, "batch_verified")
             rollout_payload["public_promotion"] = {
                 "youtube_public_links": False,
@@ -652,22 +646,26 @@ def run_issue_323_finalizer(
             write_json_atomic(output_path, payload)
             return payload
     except Exception as exc:
-        blocked = {
-            "schema_name": FINALIZER_SCHEMA,
-            "schema_version": 1,
-            "status": "blocked",
-            "project_key": "milovi-cake",
-            "community_id": MILOVI_COMMUNITY_ID,
-            "owner_id": MILOVI_OWNER_ID,
-            "browser_used": False,
-            "error": {"type": type(exc).__name__, "message": str(exc)},
-        }
-        write_json_atomic(output_path, blocked)
+        write_json_atomic(
+            output_path,
+            {
+                "schema_name": FINALIZER_SCHEMA,
+                "schema_version": 1,
+                "status": "blocked",
+                "project_key": "milovi-cake",
+                "community_id": MILOVI_COMMUNITY_ID,
+                "owner_id": MILOVI_OWNER_ID,
+                "browser_used": False,
+                "error": {"type": type(exc).__name__, "message": str(exc)},
+            },
+        )
         raise
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Finish Milovi Issue #323 with internal promotion and exact wall-475 cleanup")
+    parser = argparse.ArgumentParser(
+        description="Finish Milovi Issue #323 with internal promotion and exact wall-475 cleanup"
+    )
     parser.add_argument("--execute", required=True)
     parser.add_argument("--output", type=Path, default=Path("operator-output/milovi-cake-issue-323-finalizer.json"))
     parser.add_argument(
