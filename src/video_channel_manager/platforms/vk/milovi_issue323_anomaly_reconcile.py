@@ -19,13 +19,15 @@ from video_channel_manager.platforms.vk.milovi_issue323_finalize import (
     _legacy_marker_ok,
     _load_finalizer_journal,
     _one_video_attachment,
-    _parse_remote_id,
     _promote_asset,
-    _prove_target,
     _save_finalizer,
 )
 from video_channel_manager.platforms.vk.milovi_rollout_sources import prepare_sources, write_json_atomic
-from video_channel_manager.platforms.vk.milovi_token_clip_rollout import _resolve_account
+from video_channel_manager.platforms.vk.milovi_token_clip_rollout import (
+    _parse_remote_id,
+    _prove_target,
+    _resolve_account,
+)
 from video_channel_manager.platforms.vk.wall import VkWallWriter
 
 EXECUTION_CONFIRMATION = "ISSUE_323_RECONCILE_TEXT_DRIFT_AND_CLEANUP_475"
