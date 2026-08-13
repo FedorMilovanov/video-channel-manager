@@ -1,10 +1,17 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
-from video_channel_manager.platforms.vk.milovi_issue323_finalize import ANOMALY_POST_ID, _validate_anomaly_post
+from video_channel_manager.platforms.vk import milovi_issue323_finalize as finalize
+from video_channel_manager.platforms.vk.milovi_issue323_finalize import (
+    ANOMALY_POST_ID,
+    MiloviFinalizerBlocked,
+    _validate_anomaly_post,
+)
 from video_channel_manager.platforms.vk.milovi_promotion import (
     MILOVI_ABOUT_URL,
     MILOVI_CERTIFICATES_URL,
@@ -57,6 +64,28 @@ def _exact_anomaly_post() -> dict[str, object]:
             }
         ],
     }
+
+
+class _DeleteWriter:
+    def __init__(self, post: dict[str, object], *, lose_response_after_delete: bool = False) -> None:
+        self.post = post
+        self.lose_response_after_delete = lose_response_after_delete
+        self.deleted = False
+        self.delete_calls = 0
+
+    def read_post(self, *, community_id: int, post_id: int) -> dict[str, object] | None:
+        assert community_id == 68859909
+        assert post_id == ANOMALY_POST_ID
+        return None if self.deleted else self.post
+
+    def _call(self, method: str, *, params: dict[str, Any]) -> object:
+        assert method == "wall.delete"
+        assert params == {"owner_id": -68859909, "post_id": ANOMALY_POST_ID}
+        self.delete_calls += 1
+        self.deleted = True
+        if self.lose_response_after_delete:
+            raise RuntimeError("simulated lost wall.delete response")
+        return 1
 
 
 @pytest.mark.parametrize(
@@ -118,7 +147,7 @@ def test_issue323_anomaly_guard_accepts_only_exact_wall_shape() -> None:
 def test_issue323_anomaly_guard_rejects_identity_or_text_drift(field: str, value: object) -> None:
     post = _exact_anomaly_post()
     post[field] = value
-    with pytest.raises(Exception):
+    with pytest.raises(MiloviFinalizerBlocked):
         _validate_anomaly_post(post, _legacy_anomaly_asset())
 
 
@@ -129,5 +158,52 @@ def test_issue323_anomaly_guard_rejects_another_clip() -> None:
     video = attachments[0]["video"]
     assert isinstance(video, dict)
     video["id"] = 456239999
-    with pytest.raises(Exception):
+    with pytest.raises(MiloviFinalizerBlocked):
         _validate_anomaly_post(post, _legacy_anomaly_asset())
+
+
+def test_issue323_anomaly_cleanup_blocks_before_delete_dispatch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    post = _exact_anomaly_post()
+    post["text"] = "drifted text"
+    writer = _DeleteWriter(post)
+    monkeypatch.setattr(finalize, "_assert_native_clip", lambda *args, **kwargs: {})
+    monkeypatch.setattr(finalize, "_prove_target", lambda client: None)
+    finalizer = {"cleanup_475": {"status": "pending"}}
+
+    with pytest.raises(MiloviFinalizerBlocked, match="empty-text anomaly"):
+        finalize._cleanup_anomaly_475(
+            writer=writer,
+            client=object(),  # type: ignore[arg-type]
+            legacy_asset=_legacy_anomaly_asset(),
+            promoted_asset=_legacy_anomaly_asset(),
+            finalizer=finalizer,
+            finalizer_path=tmp_path / "finalizer.json",
+        )
+
+    assert writer.delete_calls == 0
+    assert finalizer["cleanup_475"]["status"] == "pending"
+
+
+def test_issue323_anomaly_cleanup_reconciles_ambiguous_delete_once(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    writer = _DeleteWriter(_exact_anomaly_post(), lose_response_after_delete=True)
+    monkeypatch.setattr(finalize, "_assert_native_clip", lambda *args, **kwargs: {})
+    monkeypatch.setattr(finalize, "_prove_target", lambda client: None)
+    finalizer = {"cleanup_475": {"status": "pending"}}
+    journal_path = tmp_path / "finalizer.json"
+
+    finalize._cleanup_anomaly_475(
+        writer=writer,
+        client=object(),  # type: ignore[arg-type]
+        legacy_asset=_legacy_anomaly_asset(),
+        promoted_asset=_legacy_anomaly_asset(),
+        finalizer=finalizer,
+        finalizer_path=journal_path,
+    )
+
+    assert writer.delete_calls == 1
+    assert writer.deleted is True
+    assert finalizer["cleanup_475"]["status"] == "verified_absent"
+    persisted = json.loads(journal_path.read_text(encoding="utf-8"))
+    assert persisted["cleanup_475"]["status"] == "verified_absent"
