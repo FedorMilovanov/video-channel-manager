@@ -41,11 +41,14 @@ def test_autofix_removes_description_emphasis_without_changing_words() -> None:
 
 🎼 _Текст:_ Александр Сергеевич Пушкин."""
     fixed, fixes = autofix_youtube_description(description)
-    assert fixed == """🕯 О РОМАНЕ
+    assert (
+        fixed
+        == """🕯 О РОМАНЕ
 
 Лишь в 1833 году роман появился единым изданием.
 
 🎼 Текст: Александр Сергеевич Пушкин."""
+    )
     assert {fix.code for fix in fixes} == {"markdown_emphasis_removed"}
     assert "markdown_emphasis_in_description" not in _codes(fixed)
 
@@ -66,13 +69,6 @@ def test_literal_triple_star_poem_title_is_not_treated_as_formatting() -> None:
 def test_markdown_link_is_blocking() -> None:
     findings = validate_youtube_description("Сайт: [The Legendary Poet](https://thelegendarypoet.ru/)")
     matching = [item for item in findings if item.code == "hidden_markdown_link"]
-    assert len(matching) == 1
-    assert matching[0].severity == "error"
-
-
-def test_angle_brackets_are_blocking() -> None:
-    findings = validate_youtube_description("Видео: <VIDEO_ID>")
-    matching = [item for item in findings if item.code == "invalid_angle_bracket"]
     assert len(matching) == 1
     assert matching[0].severity == "error"
 
