@@ -11,10 +11,7 @@ from typing import Any, cast
 YOUTUBE_CHANNEL_ID = "UCMDnxfGZiBqcDzgUV1zjFpw"
 PREPARED_SCHEMA = "video-manager.milovi-issue-323-prepared-sources"
 SOURCE_SNAPSHOT_ID = "milovi-cake-issue-323-reviewed-public106-final-d48-a8841ece-v1"
-VK_CLIP_FORMAT_SELECTOR = (
-    "bv[vcodec^=avc1][ext=mp4]+ba[acodec^=mp4a][ext=m4a]/"
-    "b[vcodec^=avc1][acodec^=mp4a][ext=mp4]"
-)
+VK_CLIP_FORMAT_SELECTOR = "bv[vcodec^=avc1][ext=mp4]+ba[acodec^=mp4a][ext=m4a]/b[vcodec^=avc1][acodec^=mp4a][ext=mp4]"
 VK_VIDEO_CODEC = "h264"
 VK_AUDIO_CODEC = "aac"
 VK_MEDIA_CACHE_DIR = "media-vk-h264-aac-v1"
