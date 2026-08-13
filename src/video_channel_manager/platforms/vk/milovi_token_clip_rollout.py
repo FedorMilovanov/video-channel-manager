@@ -185,9 +185,12 @@ def _prove_target(client: VkApiClient) -> None:
     screen = str(matches[0].screen_name or "").strip().casefold()
     if screen and screen != MILOVI_SCREEN_NAME:
         raise MiloviTokenRolloutBlocked(f"Community 68859909 resolved to unexpected screen_name {screen!r}")
-    if resolve_project_key(
-        {"project_key": MILOVI_CAKE, "community_id": MILOVI_COMMUNITY_ID, "owner_id": MILOVI_OWNER_ID}
-    ) != MILOVI_CAKE:
+    if (
+        resolve_project_key(
+            {"project_key": MILOVI_CAKE, "community_id": MILOVI_COMMUNITY_ID, "owner_id": MILOVI_OWNER_ID}
+        )
+        != MILOVI_CAKE
+    ):
         raise MiloviTokenRolloutBlocked("Canonical Milovi project/community/owner identity failed")
 
 
@@ -223,7 +226,8 @@ def _find_existing_clip(client: VkApiClient, asset: SourceAsset) -> str | None:
     clips = [
         record
         for record in matching
-        if str((record.metadata if isinstance(record.metadata, dict) else {}).get("vk_video_type") or "") == "short_video"
+        if str((record.metadata if isinstance(record.metadata, dict) else {}).get("vk_video_type") or "")
+        == "short_video"
     ]
     ordinary = [record for record in matching if record not in clips]
     if len(clips) > 1:
@@ -457,7 +461,9 @@ def _ensure_wall(
     if str(item.get("status") or "") in {"wall_intent", "wall_may_exist"}:
         reconciled = _read_wall_attachment(writer, clip_remote_id, publish_at)
         if reconciled is None:
-            raise MiloviTokenRolloutBlocked(f"Prior wall effect unresolved for {asset.source_id}; blind replay forbidden")
+            raise MiloviTokenRolloutBlocked(
+                f"Prior wall effect unresolved for {asset.source_id}; blind replay forbidden"
+            )
         item.update(status="wall_verified", wall_remote_id=reconciled, wall_origin="reconciled")
         _save(journal_path, journal)
         return reconciled
@@ -609,8 +615,12 @@ def run_issue_323_token_rollout(
 def main() -> int:
     parser = argparse.ArgumentParser(description="Milovi #323 token-only native Clips + one postponed wall post/day")
     parser.add_argument("--execute", required=True)
-    parser.add_argument("--output", type=Path, default=Path("operator-output/milovi-cake-issue-323-token-daily-rollout.json"))
-    parser.add_argument("--journal", type=Path, default=Path("data/vk/milovi-cake/issue-323-token-daily-rollout-journal.json"))
+    parser.add_argument(
+        "--output", type=Path, default=Path("operator-output/milovi-cake-issue-323-token-daily-rollout.json")
+    )
+    parser.add_argument(
+        "--journal", type=Path, default=Path("data/vk/milovi-cake/issue-323-token-daily-rollout-journal.json")
+    )
     parser.add_argument("--schedule", type=Path, default=Path("data/vk/milovi-cake/issue-323-daily-wall-schedule.json"))
     parser.add_argument("--work-dir", type=Path, default=Path("operator-output/milovi-cake-issue-323-work"))
     parser.add_argument("--verify-timeout", type=int, default=1800)
