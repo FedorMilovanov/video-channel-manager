@@ -53,6 +53,10 @@ class SourceAsset:
     wall_message: str
 
 
+def _progress(message: str) -> None:
+    print(f"[Milovi source] {message}", flush=True)
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -218,6 +222,65 @@ def _download_source(yt_dlp: str, ffprobe: str, source_id: str, media_dir: Path)
     )
 
 
+def _transcode_legacy_asset(ffmpeg: str, ffprobe: str, asset: SourceAsset, media_dir: Path) -> SourceAsset:
+    source_path = Path(asset.media_path)
+    media_dir.mkdir(parents=True, exist_ok=True)
+    output_path = (media_dir / f"{asset.source_id}.mp4").resolve()
+    _run_checked(
+        [
+            ffmpeg,
+            "-y",
+            "-v",
+            "error",
+            "-i",
+            str(source_path),
+            "-map",
+            "0:v:0",
+            "-map",
+            "0:a:0",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "medium",
+            "-crf",
+            "18",
+            "-pix_fmt",
+            "yuv420p",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "192k",
+            "-movflags",
+            "+faststart",
+            str(output_path),
+        ],
+        timeout=900,
+    )
+    if not output_path.is_file() or output_path.stat().st_size <= 0:
+        raise MiloviSourceError(f"ffmpeg did not produce a usable file for {asset.source_id}")
+    width, height, duration = _probe_media(ffprobe, output_path)
+    if width != asset.width or height != asset.height:
+        raise MiloviSourceError(
+            f"Local transcode changed geometry for {asset.source_id}: {width}x{height} vs {asset.width}x{asset.height}"
+        )
+    if abs(duration - float(asset.duration_seconds)) > 4.0:
+        raise MiloviSourceError(
+            f"Local transcode changed duration for {asset.source_id}: {duration} vs {asset.duration_seconds}"
+        )
+    return SourceAsset(
+        source_id=asset.source_id,
+        source_url=asset.source_url,
+        title=asset.title,
+        duration_seconds=asset.duration_seconds,
+        media_path=str(output_path),
+        media_sha256=sha256_file(output_path),
+        width=width,
+        height=height,
+        description=asset.description,
+        wall_message=asset.wall_message,
+    )
+
+
 def _validate_cached_assets(assets: list[SourceAsset], *, ffprobe: str) -> bool:
     """Return False only for the known legacy codec-cache case; all other drift is a hard failure."""
     for asset in assets:
@@ -252,6 +315,7 @@ def _write_prepared_manifest(path: Path, assets: list[SourceAsset]) -> None:
 def prepare_sources(work_dir: Path) -> list[SourceAsset]:
     prepared_path = work_dir / "prepared-sources.json"
     ffprobe: str | None = None
+    legacy_assets: list[SourceAsset] | None = None
     if prepared_path.is_file():
         payload = json.loads(prepared_path.read_text(encoding="utf-8"))
         if (
@@ -264,16 +328,32 @@ def prepare_sources(work_dir: Path) -> list[SourceAsset]:
         if tuple(asset.source_id for asset in assets) != ROLL_OUT_IDS:
             raise MiloviSourceError("Prepared-source allowlist/order differs from Issue #323")
         ffprobe = _require_tool("ffprobe")
+        _progress("validating existing reviewed cache")
         if _validate_cached_assets(assets, ffprobe=ffprobe):
+            _progress("existing cache already matches H.264/AAC profile")
             return assets
+        legacy_assets = assets
+        _progress("legacy cache SHA is intact; refreshing locally with ffmpeg (no YouTube re-download)")
 
-    yt_dlp = _require_tool("yt-dlp")
     if ffprobe is None:
         ffprobe = _require_tool("ffprobe")
     media_dir = work_dir / VK_MEDIA_CACHE_DIR
-    assets = [_download_source(yt_dlp, ffprobe, source_id, media_dir) for source_id in ROLL_OUT_IDS]
-    _write_prepared_manifest(prepared_path, assets)
-    return assets
+    refreshed: list[SourceAsset] = []
+
+    if legacy_assets is not None:
+        ffmpeg = _require_tool("ffmpeg")
+        for index, asset in enumerate(legacy_assets, start=1):
+            _progress(f"transcode {index}/{len(ROLL_OUT_IDS)} {asset.source_id}")
+            refreshed.append(_transcode_legacy_asset(ffmpeg, ffprobe, asset, media_dir))
+    else:
+        yt_dlp = _require_tool("yt-dlp")
+        for index, source_id in enumerate(ROLL_OUT_IDS, start=1):
+            _progress(f"download {index}/{len(ROLL_OUT_IDS)} {source_id}")
+            refreshed.append(_download_source(yt_dlp, ffprobe, source_id, media_dir))
+
+    _write_prepared_manifest(prepared_path, refreshed)
+    _progress("prepared 12/12 VK-compatible sources")
+    return refreshed
 
 
 __all__ = [
