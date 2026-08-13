@@ -140,9 +140,7 @@ def test_source_probe_rejects_codec_incompatible_media(monkeypatch: pytest.Monke
         sources._probe_media("ffprobe", tmp_path / "legacy.mp4")
 
 
-def test_legacy_codec_cache_is_refreshed_before_provider_use(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_legacy_codec_cache_is_refreshed_before_provider_use(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     assets = _cached_assets(tmp_path)
     _write_manifest(tmp_path, assets)
     monkeypatch.setattr(sources, "_require_tool", lambda name: name)
@@ -185,9 +183,7 @@ def test_legacy_codec_cache_is_refreshed_before_provider_use(
     assert manifest["media_profile"] == "vk-h264-aac-v1"
 
 
-def test_changed_cached_bytes_hard_fail_instead_of_refresh(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_changed_cached_bytes_hard_fail_instead_of_refresh(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     assets = _cached_assets(tmp_path)
     _write_manifest(tmp_path, assets)
     Path(assets[0].media_path).write_bytes(b"tampered")
