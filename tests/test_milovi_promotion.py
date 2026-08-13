@@ -162,7 +162,9 @@ def test_issue323_anomaly_guard_rejects_another_clip() -> None:
         _validate_anomaly_post(post, _legacy_anomaly_asset())
 
 
-def test_issue323_anomaly_cleanup_blocks_before_delete_dispatch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_issue323_anomaly_cleanup_blocks_before_delete_dispatch(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     post = _exact_anomaly_post()
     post["text"] = "drifted text"
     writer = _DeleteWriter(post)
