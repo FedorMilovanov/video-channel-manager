@@ -59,6 +59,31 @@ def test_playable_native_short_video_accepts_provider_processing_and_blank_title
     assert assessment.observed["blank_clip_title_tolerated"] is True
 
 
+def test_lifecycle_view_preserves_raw_provider_shape_and_satisfies_shared_recheck() -> None:
+    raw = _live_item()
+    readiness = _readiness()
+    assessment = resume._native_clip_assessment(
+        raw,
+        expected_owner_id=-68859909,
+        expected_video_id=456239225,
+        readiness=readiness,
+    )
+
+    view = resume._lifecycle_ready_view(raw, readiness=readiness, assessment=assessment)
+    strict = resume.assess_vk_upload_readiness(
+        view,
+        expected_owner_id=-68859909,
+        expected_video_id=456239225,
+        readiness=readiness,
+    )
+
+    assert strict.ready is True
+    assert raw["processing"] == 1
+    assert raw["title"] == ""
+    assert view["processing"] == 0
+    assert view["title"] == readiness.expected_title
+
+
 @pytest.mark.parametrize(
     "overrides",
     [
