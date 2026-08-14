@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import time
 from collections.abc import Mapping
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -52,7 +53,11 @@ from video_channel_manager.platforms.vk.upload_lifecycle import (
 )
 from video_channel_manager.platforms.vk.upload_media import execute_upload_operation
 from video_channel_manager.platforms.vk.wall import VkWallWriter
-from video_channel_manager.platforms.vk.wall_safety import DEFAULT_UPLOAD_WALL_POLICY, VkWallSurface
+from video_channel_manager.platforms.vk.wall_safety import (
+    DEFAULT_UPLOAD_WALL_POLICY,
+    VkWallSnapshot,
+    VkWallSurface,
+)
 
 EXECUTION_CONFIRMATION = "ISSUE_323_RESUME_LIVE_SHORT_VIDEO_AND_FINISH"
 RESULT_SCHEMA = "video-manager.milovi-issue-323-live-resume"
@@ -260,21 +265,115 @@ def _assert_issue323_eighth_wall_history(record: Mapping[str, Any], wall_safety:
         )
 
 
-def _resume_wall_baseline(record: Mapping[str, Any], current: Any) -> Any:
-    """Bind a restarted provider-dispatched upload to its original exact wall content.
+def _prior_verified_wall_contract(journal: Mapping[str, Any], source_id: str) -> dict[str, int]:
+    """Return exact earlier wall IDs/dates that may have naturally published since an upload baseline."""
 
-    For the interrupted eighth Clip, the durable postflight may record one
-    historical side effect: published wall 475. Phase 1 is the sole destructive
-    owner of that post. After it is reconciled away, the current wall still has
-    to hash exactly to the original pre-upload baseline before generic recovery
-    is allowed to continue.
+    if source_id not in ROLL_OUT_IDS:
+        raise UploadRecoveryRequired(f"Issue #323 recovery source is outside the exact rollout: {source_id}")
+    items = journal.get("items")
+    if not isinstance(items, Mapping):
+        raise UploadRecoveryRequired("Issue #323 journal has no item map for wall recovery")
+    result: dict[str, int] = {}
+    for prior_source_id in ROLL_OUT_IDS[: ROLL_OUT_IDS.index(source_id)]:
+        raw = items.get(prior_source_id)
+        if not isinstance(raw, Mapping) or raw.get("status") != "wall_verified":
+            raise UploadRecoveryRequired(
+                f"Earlier rollout item is not durably wall_verified during recovery: {prior_source_id}"
+            )
+        remote_id = raw.get("wall_remote_id")
+        publish_date = raw.get("publish_date")
+        if not isinstance(remote_id, str) or not remote_id or type(publish_date) is not int:
+            raise UploadRecoveryRequired(f"Earlier rollout wall binding is incomplete: {prior_source_id}")
+        owner_id, post_id = _parse_remote_id(remote_id)
+        if owner_id != MILOVI_OWNER_ID or post_id <= 0:
+            raise UploadRecoveryRequired(f"Earlier rollout wall binding left Milovi: {prior_source_id}")
+        result[remote_id] = publish_date
+    return result
+
+
+def _normalize_due_prior_wall_surfaces(
+    current: VkWallSnapshot,
+    *,
+    journal: Mapping[str, Any],
+    source_id: str,
+    now_epoch: int | None = None,
+) -> tuple[VkWallSnapshot, tuple[str, ...]]:
+    """Reverse only due exact postponed→published transitions for historical SHA comparison."""
+
+    contract = _prior_verified_wall_contract(journal, source_id)
+    if not contract:
+        return current, ()
+    observed_now = int(time.time()) if now_epoch is None else now_epoch
+    seen: set[str] = set()
+    normalized_posts = []
+    normalized_ids: list[str] = []
+    for post in current.posts:
+        expected_date = contract.get(post.remote_id)
+        if expected_date is None:
+            normalized_posts.append(post)
+            continue
+        seen.add(post.remote_id)
+        if post.publish_date != expected_date:
+            raise UploadRecoveryRequired(
+                f"Earlier rollout wall date changed for {post.remote_id}: {post.publish_date} != {expected_date}"
+            )
+        if post.surface is VkWallSurface.PUBLISHED:
+            if observed_now + 60 < expected_date:
+                raise UploadRecoveryRequired(f"Earlier rollout wall published before its slot: {post.remote_id}")
+            normalized_posts.append(replace(post, surface=VkWallSurface.POSTPONED))
+            normalized_ids.append(post.remote_id)
+        else:
+            normalized_posts.append(post)
+    missing = sorted(set(contract) - seen)
+    if missing:
+        raise UploadRecoveryRequired(f"Earlier rollout wall mapping disappeared during recovery: {missing}")
+    if not normalized_ids:
+        return current, ()
+    return replace(current, posts=tuple(normalized_posts)), tuple(sorted(normalized_ids))
+
+
+def _resume_wall_baseline(
+    record: Mapping[str, Any],
+    current: VkWallSnapshot,
+    *,
+    journal: Mapping[str, Any] | None = None,
+    now_epoch: int | None = None,
+) -> VkWallSnapshot:
+    """Bind restarted provider work to the original wall while allowing only proven natural transitions.
+
+    The interrupted eighth Clip may have one historical upload side effect: wall
+    475, owned exclusively by phase 1 cleanup. Separately, earlier Issue #323
+    posts can naturally move from postponed to published after their frozen slot.
+    Only exact earlier `wall_verified` IDs/dates are reversed for historical SHA
+    comparison. Any other post/content/attachment drift still changes the digest
+    and fails closed.
     """
 
     raw = record.get("wall_safety")
     if not isinstance(raw, Mapping):
         raise UploadRecoveryRequired("Provider-dispatched upload has no durable wall baseline")
     _assert_issue323_eighth_wall_history(record, raw)
-    return normalize_current_wall_to_historical_capture(current, raw)
+    normalized = current
+    normalized_ids: tuple[str, ...] = ()
+    source_id = str(record.get("source_video_id") or "")
+    if journal is not None:
+        normalized, normalized_ids = _normalize_due_prior_wall_surfaces(
+            current,
+            journal=journal,
+            source_id=source_id,
+            now_epoch=now_epoch,
+        )
+    if normalized_ids:
+        before_published_pages = raw.get("before_published_pages")
+        before_postponed_pages = raw.get("before_postponed_pages")
+        if type(before_published_pages) is not int or type(before_postponed_pages) is not int:
+            raise UploadRecoveryRequired("Historical upload wall page counts are missing")
+        normalized = replace(
+            normalized,
+            published_pages=before_published_pages,
+            postponed_pages=before_postponed_pages,
+        )
+    return normalize_current_wall_to_historical_capture(normalized, raw)
 
 
 def _ensure_clip_live(
@@ -327,7 +426,9 @@ def _ensure_clip_live(
     current_wall = writer.capture_wall_snapshot(community_id=MILOVI_COMMUNITY_ID, max_posts_per_surface=10000)
     if not current_wall.complete:
         raise MiloviTokenRolloutBlocked("Complete wall baseline unavailable before upload/resume")
-    wall_before = _resume_wall_baseline(record, current_wall) if _has_provider_effect(record) else current_wall
+    wall_before = (
+        _resume_wall_baseline(record, current_wall, journal=journal) if _has_provider_effect(record) else current_wall
+    )
 
     journal["provider_write_attempted"] = True
     item["status"] = "upload_in_progress"
