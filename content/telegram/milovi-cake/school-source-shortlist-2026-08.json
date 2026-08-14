@@ -1,0 +1,42 @@
+{
+  "schema_name": "video-channel-manager.milovi-school-editorial-source-shortlist",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "status": "provider_inert",
+  "source_repository": "FedorMilovanov/Milovi_School",
+  "source_commit": "aa82176012b93a50ccfcfb90293d496618e50b61",
+  "article_catalog_path": "src/data/articles.ts",
+  "article_catalog_blob_sha": "5ef4cf1cb7db6e7bb6914607ec69d144b3d78cc5",
+  "deep_content_path": "src/data/deepContents.ts",
+  "deep_content_blob_sha": "d13e0dc0466ac1b73552729053043cf533dc9e39",
+  "publication_rule": "Metadata binding is not enough for live copy. Re-read the exact article/deep content and its cited source trail immediately before approving a live Telegram payload.",
+  "articles": [
+    {
+      "id": "paris-brest-race-dessert",
+      "title": "Paris-Brest: десерт для велогонки, который пережил её на 100 лет",
+      "image": "/images/articles/paris-brest-race-dessert.webp",
+      "public_url": "https://french.milovicake.ru/articles/paris-brest-race-dessert/",
+      "catalog_source_url": "https://www.ice.edu/blog/history-of-paris-brest",
+      "catalog_source_label": "ICE Culinary School",
+      "telegram_claim_boundary": "Safe launch hook: Paris-Brest is connected to the Paris-Brest cycling race and its wheel-like form. Exact dates, inventor attribution, and later Conticini history must be revalidated against the full article/source trail before publication."
+    },
+    {
+      "id": "millefeuille-histoire",
+      "title": "Мильфей: 729 слоёв, миф о Наполеоне и Seugnot 1867",
+      "image": "/images/articles/millefeuille-histoire.webp",
+      "public_url": "https://french.milovicake.ru/articles/millefeuille-histoire/",
+      "catalog_source_url": "https://www.boulangerienet.fr/bn/viewtopic.php?t=47393",
+      "catalog_source_label": "BoulangerieNet",
+      "telegram_claim_boundary": "Safe launch hook: the popular Napoleon-origin story should not be presented as settled documented origin. Precise early recipe dates, layer-count claims, Seugnot attribution, and wording such as 'false legend' require full-article/source-trail revalidation before publication."
+    },
+    {
+      "id": "creme-brulee-dispute",
+      "title": "Крем-брюле: Франция, Англия и Каталония — кто изобрёл и как это доказать",
+      "image": "/images/articles/creme-brulee-dispute.webp",
+      "public_url": "https://french.milovicake.ru/articles/creme-brulee-dispute/",
+      "catalog_source_url": "https://www.ice.edu/blog/creme-brulee-history",
+      "catalog_source_label": "ICE Culinary School",
+      "telegram_claim_boundary": "Safe launch hook: competing French, English, and Catalan historical claims exist, so a single uncontested inventor should not be asserted. Specific manuscript/menu dates and priority arguments require full-article/source-trail revalidation before publication."
+    }
+  ]
+}
