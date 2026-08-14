@@ -70,9 +70,7 @@ def _single_video_attachment(post: Mapping[str, Any]) -> tuple[int, int, Mapping
         videos.append(video)
 
     if len(videos) != 1:
-        raise MiloviFinalizerBlocked(
-            f"Wall post must contain exactly one video attachment; observed {len(videos)}"
-        )
+        raise MiloviFinalizerBlocked(f"Wall post must contain exactly one video attachment; observed {len(videos)}")
 
     video = videos[0]
     owner_id = video.get("owner_id")
