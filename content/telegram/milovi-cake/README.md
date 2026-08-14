@@ -2,7 +2,7 @@
 
 Owning issue: #353.
 
-This directory contains **provider-inert editorial and canary-preparation material only**. It is not a scheduler queue and is not consumed by the Telegram publisher runtime.
+This directory contains **provider-inert editorial, canary-preparation and media-readiness material only**. It is not a scheduler queue and is not consumed by the Telegram publisher runtime.
 
 Current artifacts:
 
@@ -15,7 +15,11 @@ Current artifacts:
 - `media-delivery-readiness-2026-08.json` — reviewed Telegram photo/video transport constraints and current fail-closed readiness state;
 - `canary-candidate-2026-08.json` — one exact future `sendPhoto` candidate with unresolved target/binding and provider authorization explicitly false;
 - `canary-review-lock-2026-08.json` — exact Git-blob identities for the reviewed candidate/readiness bytes plus unresolved authorization inputs;
-- `canary-preparation-2026-08.md` — human-readable pre-dispatch, target, media, authorization and outcome-verification boundaries for that exact candidate.
+- `canary-preparation-2026-08.md` — human-readable pre-dispatch, target, media, authorization and outcome-verification boundaries for that exact candidate;
+- `video-source-readiness-2026-08.json` — exact 16-item WebM source manifest pinned to one Milovi Cake commit, with canonical titles/posters, exact Git blobs/sizes and unresolved probe fields;
+- `video-conversion-contract-2026-08.json` — deterministic MP4/H.264/yuv420p conversion and acceptance contract, with toolchain/probe/output gates and no document fallback;
+- `video-output-records-2026-08.json` — one-to-one blocked output evidence records for `v01`–`v16`; all output/probe fields remain unresolved and accepted output count is zero;
+- `video-conversion-readiness-2026-08.md` — human-readable source-probe, geometry, timing, audio, conversion and acceptance rules for the native-video lane.
 
 The asset contract is authoritative when an older draft/example could be read as requiring kitchen, production or BTS footage. While the current contract is active, finished-cake photos/videos are the primary visual source and production BTS/kitchen content remains at 0% unless separately reviewed source footage exists.
 
@@ -27,7 +31,9 @@ The canary candidate is deliberately **not executable**. Its numeric `chat_id`, 
 
 The canary review lock protects the exact candidate/readiness bytes. Any change that produces a different Git blob invalidates the lock and requires a new review identity before authorization can even be considered.
 
-Current WebM gallery videos are editorial source assets, not proven Telegram-native video payloads. Do not silently send them as documents. A separate deterministic MP4 conversion/readiness lane is required before a WebM-backed slot becomes a native-video release candidate.
+Current WebM gallery videos are editorial source assets, not proven Telegram-native video payloads. The video-readiness lane now freezes all 16 source identities and defines a deterministic MP4 conversion contract, but **accepted native-video outputs remain 0 / 16**. Source files being small enough for Telegram's video byte ceiling does not make them native-video-ready. Exact source probe, toolchain identity, conversion argv, output probe and output SHA-256 are required first.
+
+Do not silently send WebM or a failed MP4 as `sendDocument`. Conversion acceptance creates only a transport-ready local artifact; it never creates a Telegram release authorization.
 
 Live publication requires, in order:
 
@@ -39,4 +45,4 @@ Live publication requires, in order:
 6. one exact explicitly authorized canary tied to the reviewed candidate identity;
 7. verified provider outcome before any subsequent post, pin, schedule or automation.
 
-Do not convert editorial drafts, the media map, editorial sequence or canary-preparation files into a release queue merely because these files exist.
+Do not convert editorial drafts, the media map, editorial sequence, canary-preparation files or media-readiness records into a release queue merely because these files exist.
