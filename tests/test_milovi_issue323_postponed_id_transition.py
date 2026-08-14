@@ -129,7 +129,7 @@ def _tombstone(*, owner_id: int = -68859909, post_id: int = 468, date: int = PUB
     }
 
 
-def test_due_postponed_tombstone_rekeys_unique_published_successor_for_historical_sha() -> None:
+def test_due_postponed_tombstone_proves_successor_without_rewriting_current_id() -> None:
     reader = _ExactWallReader(_tombstone())
     current = _current_with_successor()
 
@@ -143,22 +143,25 @@ def test_due_postponed_tombstone_rekeys_unique_published_successor_for_historica
 
     assert reader.calls == [(68859909, 468)]
     assert exact_ids == ("-68859909_468",)
-    assert all(post.post_id != 476 for post in effective.posts)
-    canonical = next(post for post in effective.posts if post.post_id == 468)
-    assert canonical.surface.value == "published"
-    assert canonical.publish_date == PUBLISH_DATES[0]
-    assert canonical.attachments == ("video-68859909_456239225",)
+    assert any(post.post_id == 476 for post in effective.posts)
+    assert all(post.post_id != 468 for post in effective.posts)
+    successor = next(post for post in effective.posts if post.post_id == 476)
+    assert successor.surface.value == "published"
+    assert successor.publish_date == PUBLISH_DATES[0]
+    assert successor.attachments == ("video-68859909_456239225",)
 
     historical = resume._resume_wall_baseline(
         _record(),
         effective,
         journal=_journal(),
+        successor_resolution_proven=True,
         now_epoch=PUBLISH_DATES[0] + 3600,
     )
     assert historical.snapshot_sha256 == _historical_before().snapshot_sha256
+    assert any(post.post_id == 468 and post.surface.value == "postponed" for post in historical.posts)
 
 
-def test_due_postponed_missing_exact_object_can_use_unique_published_successor() -> None:
+def test_due_postponed_missing_exact_object_can_use_proven_published_successor() -> None:
     reader = _ExactWallReader(None)
 
     effective, exact_ids = resume._supplement_due_prior_wall_readbacks(
@@ -170,10 +173,12 @@ def test_due_postponed_missing_exact_object_can_use_unique_published_successor()
     )
 
     assert exact_ids == ("-68859909_468",)
+    assert any(post.post_id == 476 for post in effective.posts)
     historical = resume._resume_wall_baseline(
         _record(),
         effective,
         journal=_journal(),
+        successor_resolution_proven=True,
         now_epoch=PUBLISH_DATES[0] + 3600,
     )
     assert historical.snapshot_sha256 == _historical_before().snapshot_sha256
@@ -193,6 +198,7 @@ def test_published_successor_text_drift_still_fails_exact_historical_sha() -> No
             _record(),
             effective,
             journal=_journal(),
+            successor_resolution_proven=True,
             now_epoch=PUBLISH_DATES[0] + 3600,
         )
 
@@ -208,7 +214,7 @@ def test_multiple_published_successors_are_ambiguous() -> None:
         )
 
 
-def test_wrong_tombstone_identity_blocks_before_successor_rekey() -> None:
+def test_wrong_tombstone_identity_blocks_before_successor_proof() -> None:
     with pytest.raises(UploadRecoveryRequired, match="tombstone changed identity"):
         resume._supplement_due_prior_wall_readbacks(
             _ExactWallReader(_tombstone(post_id=999)),
