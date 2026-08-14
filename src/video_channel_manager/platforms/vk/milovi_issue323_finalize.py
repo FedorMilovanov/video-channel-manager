@@ -157,9 +157,7 @@ def _copy_state(*, current: str, legacy: str, promoted: str, source_id: str, fie
         return "promoted"
     if current == legacy:
         return "legacy"
-    raise MiloviFinalizerBlocked(
-        f"{field} for {source_id} is neither exact reviewed legacy nor exact promoted copy"
-    )
+    raise MiloviFinalizerBlocked(f"{field} for {source_id} is neither exact reviewed legacy nor exact promoted copy")
 
 
 def _assert_native_clip(
@@ -605,7 +603,7 @@ def _promotion_preflight(
     *,
     writer: VkWallWriter,
     assets: list[SourceAsset],
-    journal: Mapping[str, Any],
+    journal: dict[str, Any],
     now_epoch: int | None = None,
 ) -> dict[str, Any]:
     """Read-only proof that all 12 mappings are safe before the first promotion write."""
@@ -655,9 +653,7 @@ def _promotion_preflight(
             now_epoch=observed_now,
         )
         if current_remote_id in current_wall_ids:
-            raise MiloviFinalizerBlocked(
-                f"Promotion preflight current wall incarnation is reused: {current_remote_id}"
-            )
+            raise MiloviFinalizerBlocked(f"Promotion preflight current wall incarnation is reused: {current_remote_id}")
         current_wall_ids.add(current_remote_id)
         wall_text = str(post.get("text") or "").strip()
         wall_state = _copy_state(
@@ -720,9 +716,7 @@ def _edit_clip_description(
         _save_finalizer(finalizer_path, finalizer)
         return
     if current_description != _legacy_clip_description(asset):
-        raise MiloviFinalizerBlocked(
-            f"Refusing description edit: {remote_id} is not exact reviewed legacy copy"
-        )
+        raise MiloviFinalizerBlocked(f"Refusing description edit: {remote_id} is not exact reviewed legacy copy")
 
     prior_status = str(operation.get("status") or "pending")
     if operation.get("dispatch_started") is True or prior_status in {
@@ -842,9 +836,7 @@ def _edit_wall_message(
         _save_finalizer(finalizer_path, finalizer)
         return
     if current_message != _legacy_wall_message(asset):
-        raise MiloviFinalizerBlocked(
-            f"Refusing wall edit: {wall_remote_id} is not exact reviewed legacy copy"
-        )
+        raise MiloviFinalizerBlocked(f"Refusing wall edit: {wall_remote_id} is not exact reviewed legacy copy")
 
     prior_status = str(operation.get("status") or "pending")
     if operation.get("dispatch_started") is True or prior_status in {
