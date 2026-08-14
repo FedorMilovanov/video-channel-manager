@@ -53,11 +53,13 @@ def _journal() -> dict[str, Any]:
     return {"items": items}
 
 
-def _historical_before():
+def _historical_before(*, first_already_published: bool = False):
+    published = [_wall_item(0)] if first_already_published else []
+    postponed_start = 1 if first_already_published else 0
     return build_wall_snapshot(
         community_id=68859909,
-        published_items=[],
-        postponed_items=[_wall_item(index) for index in range(7)],
+        published_items=published,
+        postponed_items=[_wall_item(index) for index in range(postponed_start, 7)],
         published_pages=1,
         postponed_pages=1,
         complete=True,
@@ -65,8 +67,8 @@ def _historical_before():
     )
 
 
-def _record() -> dict[str, Any]:
-    before = _historical_before()
+def _record(*, first_already_published: bool = False) -> dict[str, Any]:
+    before = _historical_before(first_already_published=first_already_published)
     after_sha = "sha256:wall-475-side-effect"
     return {
         "source_video_id": resume.ISSUE323_EIGHTH_SOURCE_ID,
@@ -104,7 +106,7 @@ def _current_after_first_publication(*, first_text: str | None = None, extra: di
     )
 
 
-def test_eighth_resume_accepts_only_due_prior_postponed_to_published_transition() -> None:
+def test_eighth_resume_reverses_only_due_transition_needed_for_exact_historical_sha() -> None:
     normalized = resume._resume_wall_baseline(
         _record(),
         _current_after_first_publication(),
@@ -114,6 +116,21 @@ def test_eighth_resume_accepts_only_due_prior_postponed_to_published_transition(
 
     assert normalized.snapshot_sha256 == _historical_before().snapshot_sha256
     assert normalized.captured_at == _historical_before().captured_at
+    first = next(post for post in normalized.posts if post.post_id == 468)
+    assert first.surface.value == "postponed"
+
+
+def test_solver_keeps_published_surface_when_it_was_already_published_in_historical_baseline() -> None:
+    normalized = resume._resume_wall_baseline(
+        _record(first_already_published=True),
+        _current_after_first_publication(),
+        journal=_journal(),
+        now_epoch=PUBLISH_DATES[0] + 3600,
+    )
+
+    assert normalized.snapshot_sha256 == _historical_before(first_already_published=True).snapshot_sha256
+    first = next(post for post in normalized.posts if post.post_id == 468)
+    assert first.surface.value == "published"
 
 
 def test_surface_normalization_rejects_prior_post_published_before_its_slot() -> None:
@@ -127,7 +144,7 @@ def test_surface_normalization_rejects_prior_post_published_before_its_slot() ->
 
 
 def test_surface_normalization_does_not_hide_text_drift() -> None:
-    with pytest.raises(resume.MiloviTokenRolloutBlocked, match="pre-upload baseline"):
+    with pytest.raises(resume.MiloviTokenRolloutBlocked, match="cannot be reduced"):
         resume._resume_wall_baseline(
             _record(),
             _current_after_first_publication(first_text="changed text"),
@@ -144,7 +161,7 @@ def test_surface_normalization_does_not_hide_unexpected_extra_post() -> None:
         "text": "unexpected",
         "attachments": [],
     }
-    with pytest.raises(resume.MiloviTokenRolloutBlocked, match="pre-upload baseline"):
+    with pytest.raises(resume.MiloviTokenRolloutBlocked, match="cannot be reduced"):
         resume._resume_wall_baseline(
             _record(),
             _current_after_first_publication(extra=extra),
