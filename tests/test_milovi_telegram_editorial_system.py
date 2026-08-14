@@ -106,7 +106,7 @@ def test_milovi_first_screen_has_variety_utility_collection_and_trust() -> None:
     first_ten_media = [media_id for slot in first_ten for media_id in slot["media_ids"]]
     assert len(set(first_ten_media)) >= 10
 
-    for previous, current in zip(first_ten, first_ten[1:], strict=True):
+    for previous, current in zip(first_ten[:-1], first_ten[1:], strict=True):
         assert previous["media_ids"] != current["media_ids"] or not previous["media_ids"]
 
 
