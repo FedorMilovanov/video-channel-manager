@@ -116,7 +116,8 @@ def test_growth_playbook_matches_current_no_bts_exact_member_discovery_state() -
 
     assert "getChatMember(chat_id, user_id=<proved bot id>)" in playbook
     assert "`getMe`, `getChat`, `getChatMember`" in playbook
-    assert "getChatAdministrators" not in playbook
+    assert "getChatAdministrators(chat_id" not in playbook
+    assert "failure on `getChatAdministrators` was repaired in PR #356" in playbook
 
     assert "Production/kitchen/BTS footage is currently unavailable" in playbook
     assert "production BTS/kitchen share = 0%" in playbook
