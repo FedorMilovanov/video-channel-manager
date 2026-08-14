@@ -183,15 +183,24 @@ def _assert_native_clip(
 
 
 def _one_video_attachment(post: Mapping[str, Any]) -> tuple[int, int, Mapping[str, Any]]:
+    """Return the exact single video while tolerating provider-projected non-video attachments."""
+
     attachments = post.get("attachments")
-    if not isinstance(attachments, list) or len(attachments) != 1:
-        raise MiloviFinalizerBlocked("Wall post must contain exactly one attachment")
-    attachment = attachments[0]
-    if not isinstance(attachment, Mapping) or attachment.get("type") != "video":
-        raise MiloviFinalizerBlocked("Wall attachment is not exactly one video")
-    video = attachment.get("video")
-    if not isinstance(video, Mapping):
-        raise MiloviFinalizerBlocked("Wall post has no expanded video attachment")
+    if not isinstance(attachments, list):
+        raise MiloviFinalizerBlocked("Wall post attachments are unavailable")
+    videos: list[Mapping[str, Any]] = []
+    for index, attachment in enumerate(attachments):
+        if not isinstance(attachment, Mapping):
+            raise MiloviFinalizerBlocked(f"Wall attachment {index} is not an object")
+        if attachment.get("type") != "video":
+            continue
+        video = attachment.get("video")
+        if not isinstance(video, Mapping):
+            raise MiloviFinalizerBlocked("Wall video attachment has no expanded video object")
+        videos.append(video)
+    if len(videos) != 1:
+        raise MiloviFinalizerBlocked(f"Wall post must contain exactly one video attachment; observed {len(videos)}")
+    video = videos[0]
     owner_id = video.get("owner_id")
     video_id = video.get("id")
     if type(owner_id) is not int or type(video_id) is not int:
