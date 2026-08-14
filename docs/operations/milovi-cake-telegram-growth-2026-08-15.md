@@ -10,7 +10,9 @@ Status: **provider-inert planning and onboarding**. This document does not autho
 
 Build the first useful, relevant St Petersburg audience for Milovi Cake without turning Telegram into an extra mandatory step in the order funnel.
 
-Primary commercial surfaces remain `https://milovicake.ru/` and the registered Milovi Cake VK community. Telegram is the owned-audience and retention layer: real works, brand/person presence, useful buyer guidance, pastry culture, verified reviews and occasional factual offers.
+Primary commercial surfaces remain `https://milovicake.ru/` and the registered Milovi Cake VK community. Telegram is the owned-audience and retention layer: real finished works, useful buyer guidance, verified reviews, selected brand/person context and a small sourced pastry-culture layer from Milovi School.
+
+Production/kitchen/BTS footage is currently unavailable as a reviewed editorial source. Its share is **0%** until the explicit Milovi asset contract is deliberately revised against real reviewed footage. Do not stage, imply or promise production access to satisfy a generic content template.
 
 Working growth gates are 50, 150 and 300 relevant subscribers. They are decision gates, not promises or vanity targets. The quality test is whether subscribers read, forward, remain, message, visit Milovi surfaces and eventually contribute to attributable enquiries or sales.
 
@@ -18,9 +20,17 @@ Working growth gates are 50, 150 and 300 relevant subscribers. They are decision
 
 ### Gate A — editorial readiness
 
-Use the reviewed 30-post launch pack in `content/telegram/milovi-cake/launch-pack-2026-08.md`.
+The current editorial source of truth is the finished-work system under `content/telegram/milovi-cake/`:
 
-Do not dump all posts at once. Build a coherent archive: positioning → real work → utility → person/trust → real work → School story → verified social proof. Discovery posts are interleaved rather than clustered.
+- `media-source-map-2026-08.json` — 46 verified finished-work assets: 30 photos + 16 videos;
+- `editorial-sequence-30-posts-2026-08.json` — exact 30-slot provider-inert launch sequence;
+- `editorial-asset-contract-2026-08.md` — production BTS/kitchen share = 0%;
+- `editorial-operating-plan-2026-08.md` — caption, first-screen, reuse and cadence rules;
+- `school-source-shortlist-2026-08.json` — exact three-item School source binding.
+
+The older `launch-pack-2026-08.md` remains useful draft material but is subordinate to the newer asset/operating contracts wherever wording conflicts. In particular, its old `детали и процесс` welcome wording is not publishable while the no-BTS contract is active.
+
+Do not dump all posts at once. After an explicitly authorized and provider-verified canary, build a coherent native archive rather than a link dump. The first-screen sequence should already contain visually different finished works, buyer utility, a collection/poll, a verified trust signal and only a small educational share.
 
 Every customer quote must be exact from the current published Milovi review source. First-person Victoria copy requires explicit approval or an exact sourced quotation.
 
@@ -41,73 +51,113 @@ This profile-first step is not a username-only publishing path. It creates the d
 
 Before the first automated/live post:
 
-1. run the Milovi-only read-only discovery workflow from current `main`;
-2. shared bot resolves exactly to the pinned id/username;
-3. `@MiloviCake` resolves to one exact negative numeric `chat_id`;
+1. run the Milovi-only read-only discovery workflow from **current `main`**;
+2. shared bot resolves exactly to the pinned id/username via `getMe`;
+3. `@MiloviCake` resolves via `getChat` to one exact negative numeric `chat_id`;
 4. numeric `getChat(chat_id)` round-trips to the same username and type `channel`;
-5. shared bot appears as channel administrator and has `can_post_messages`;
-6. all provider calls used for discovery are read-only (`getMe`, `getChat`, `getChatAdministrators`);
-7. the proof is converted into an immutable target-binding candidate tied to the same profile digest;
-8. binding is human-reviewed and committed in a separate change;
-9. cross-project tests prove Milovi release/profile/binding cannot target Lordchrist or Svodka and vice versa;
-10. first provider mutation is exactly one reviewed canary post;
-11. canary outcome is verified before any second post or scheduling.
+5. exact shared-bot membership is queried with `getChatMember(chat_id, user_id=<proved bot id>)`;
+6. the returned member identity must resolve to the same bot, status must be `administrator` or `creator`, and `can_post_messages` must be true;
+7. all discovery provider calls remain read-only: `getMe`, `getChat`, `getChatMember`;
+8. the proof is converted into an immutable target-binding candidate tied to the same profile digest;
+9. binding is human-reviewed and committed in a separate change;
+10. cross-project tests prove Milovi release/profile/binding cannot target Lordchrist or Svodka and vice versa;
+11. first provider mutation is exactly one reviewed canary post tied to the exact candidate review identity, exact target binding and exact materialized media digest;
+12. canary outcome is provider-verified before any second post, pin, scheduling or rollout.
+
+The previous discovery failure on `getChatAdministrators` was repaired in PR #356. Do **not** reintroduce broad administrator enumeration merely for target proof; the exact bot member is the only subject that must be proved.
 
 No username-only publishing path is acceptable after onboarding.
 
-### Gate D — owned distribution
+### Gate D — media readiness
 
-Only after the channel is worth subscribing to, activate source-attributed entry points on owned surfaces. Never replace the primary order path with Telegram.
+Editorially valid media is not automatically transport-ready.
 
-Order of attack:
+The first canary preparation in PR #360 deliberately uses one exact photo candidate (`p18`) and remains blocked until exact source bytes are materialized, decoded, dimension-checked and SHA-256-frozen.
+
+The 16 canonical Milovi videos are WebM editorial sources. PR #361 freezes their exact source identities/sizes and defines a deterministic MP4/H.264 readiness lane, but accepted native-video outputs remain **0 / 16**. Do not silently send a WebM or failed MP4 as `sendDocument` merely to make a post succeed.
+
+### Gate E — owned distribution
+
+Only after the channel is worth subscribing to and the exact canary path is verified should source-attributed entry points be activated on owned surfaces. Never replace the primary order path with Telegram.
+
+Recommended order of attack:
 
 1. existing customers / post-purchase material;
-2. `milovicake.ru` contextual links;
-3. VK posts/clips where Telegram genuinely continues the story;
-4. YouTube descriptions/pinned comments where appropriate;
-5. packaging/card QR;
+2. packaging/card QR;
+3. `milovicake.ru` contextual links;
+4. VK posts/clips where Telegram genuinely continues the content;
+5. YouTube descriptions/pinned comments where appropriate;
 6. Dzen secondary distribution;
 7. local partnerships;
-8. paid Telegram placements only after retention can be measured.
+8. paid Telegram placements only after attribution and retention review are operational.
 
-## 3. Invite-link attribution contract
+The machine-readable source registry is `docs/operations/milovi-cake-telegram-acquisition-registry-2026-08-15.json`. The evidence ledger is `docs/operations/milovi-cake-telegram-acquisition-experiments-2026-08-15.json`.
 
-When live acquisition is authorized, use one Telegram invite link per meaningful source rather than one generic URL everywhere.
+## 3. Attribution control plane
 
-| Source ID | Placement | Purpose |
-|---|---|---|
-| `tg-site` | `milovicake.ru` | owned web → Telegram |
-| `tg-vk` | VK community/posts/clips | VK → Telegram |
-| `tg-youtube` | YouTube descriptions/comments | YouTube → Telegram |
-| `tg-dzen` | Dzen bio/posts where appropriate | Dzen → Telegram |
-| `tg-box` | cake box / insert QR | post-purchase retention |
-| `tg-client` | existing-client follow-up | attributable client base |
-| `tg-partner-<slug>` | photographer/decorator/studio partner | collaboration attribution |
-| `tg-placement-<slug>-<yyyymm>` | each paid placement | media-buy attribution |
+The old prose-only source table is replaced by the machine-readable registry. Fixed source IDs include:
 
-Rules:
+- `tg-site-gallery` — contextual gallery → Telegram;
+- `tg-site-footer` — site-wide social/footer discovery;
+- `tg-vk-organic` — VK content with genuine Telegram continuation;
+- `tg-youtube-organic` — YouTube continuation where useful;
+- `tg-dzen-organic` — low-cost Dzen contribution;
+- `tg-box` — packaging/insert QR;
+- `tg-client` — natural post-purchase/existing-customer follow-up only.
 
-- one source = one invite link;
-- title link with exact source ID;
-- never recycle a paid-placement link for another channel;
-- preserve source ID in the experiment ledger even after revocation;
-- QR points to the source-specific invite link, not the generic public username;
-- no join-request friction unless abuse becomes a measured problem;
-- no paid subscription invite links for this project.
+Dynamic namespaces are reserved for exact named experiments:
+
+- `tg-partner-<slug>`;
+- `tg-placement-<slug>-<yyyymm>`.
+
+### Source-link rules
+
+When live acquisition is separately authorized:
+
+- one measured source = one source-specific invite link;
+- never recycle a paid-placement link for another channel or later buy;
+- preserve source identity/evidence after closure or revocation;
+- QR for a measured source points to that source-specific route, not the generic public username;
+- the generic public route may remain an unmeasured profile/social link;
+- no join-request friction by default unless abuse becomes a measured problem;
+- no paid-subscription invite links for this project.
+
+### Admin-rights boundary
+
+Invite-link creation is **not** part of the posting bot's current publishing permission merely because source attribution is desirable.
+
+Do not grant `@preaching_mp3_bot` broader rights such as `can_invite_users` only to automate analytics. The preferred default is manual source-link creation by a channel admin unless a separate exact provider mutation and permission change is reviewed and authorized.
+
+The registry therefore keeps every `invite_url` null, every provider state `not_created`, and `invite_link_creation_authorized=false` until a real activation step exists.
 
 ## 4. Measurement model
 
+The evidence ledger starts **empty**. Do not populate remembered/approximate metrics just to create a baseline. Capture a dated, evidence-backed baseline when the first experiment is actually activated.
+
 ### Acquisition
 
-Record source ID, date range, spend if any, attributed joins, retention/unsubscribes where measurable, cost per join and cost per retained relevant subscriber for paid sources.
+For each experiment record:
+
+- immutable experiment ID;
+- exact source ID;
+- declared measurement method;
+- start/end time;
+- spend if applicable;
+- attributed joins only when the declared method supports them;
+- 7-day/30-day retained counts only if actually measurable;
+- attributable enquiries/order signals only where evidence supports attribution;
+- exact evidence references;
+- explicit decision: `keep`, `iterate`, `stop` or `inconclusive`.
+
+Missing evidence is `null`, not zero. Timing coincidence is not attribution.
 
 Raw join count alone is not success.
 
 ### Content
 
-Track views/reach over a consistent window, forwards, reactions, replies/channel DMs, clicks to Milovi-owned surfaces, and a topic tag (`work`, `victoria`, `utility`, `school`, `review`, `commercial`, `poll`).
+Track views/reach over a consistent window, forwards, reactions, replies/channel DMs, clicks to Milovi-owned surfaces, and the reviewed content pillar. Current editorial pillars are more precise than the old generic tags: finished showcase, finished detail/design, collection/poll, social proof/buyer guidance, Milovi School and factual commercial.
 
-For external placement evaluation, TGStat may be used for recent subscriber dynamics, average reach, ERR/ER, ad reach, forwards and post-level stats. Seller-reported subscriber count alone is insufficient evidence.
+For external placement evaluation, current channel/account evidence and third-party analytics may be used only as supporting evidence. Seller-reported subscriber count alone is insufficient.
 
 ### Commercial signal
 
@@ -115,43 +165,49 @@ The commercial funnel remains human and low-friction:
 
 `Telegram source → site/VK/channel DM → qualified enquiry → order`.
 
-Do not force customers through a bot for attribution. Prefer source-specific links and an optional “где нас нашли?” when useful.
+Do not force customers through a bot for attribution. Prefer source-specific links and optional human attribution such as “где нас нашли?” only where useful.
 
 ## 5. Owned-surface implementations
 
 ### `milovicake.ru`
 
-The site already has analytics hooks for Telegram clicks. A later site PR should preserve the purchase path and use contextual Telegram entry points near gallery/editorial/trust content, not replace primary order actions.
+The site remains a conversion surface. A site implementation should preserve the order path and use contextual Telegram entry points near gallery/editorial/trust content rather than replacing primary order actions.
 
-Candidates:
+Candidate copy while the no-BTS contract is active:
 
-- gallery: “Новые работы и процесс — в Telegram”;
-- reviews/post-purchase area: “Следить за новыми работами”;
-- footer/social area: source-attributed Telegram link;
+- gallery: **“Новые работы и подборки — в Telegram”**;
+- reviews/post-purchase area: **“Следить за новыми работами”**;
+- footer/social area: a source-attributed Telegram link;
 - no modal, interstitial or forced subscribe gate.
+
+Do not use “процесс”, “закулисье” or similar production-access promises until reviewed production footage actually exists.
 
 ### Packaging / client insert
 
-Use two independent QR actions:
+Keep Telegram growth and review collection as distinct actions:
 
-- `tg-box`: “Новые работы и закулисье Milovi Cake”;
-- official Yandex Business review QR: “Поделиться впечатлением”.
+- `tg-box`: **“Новые работы и идеи Milovi Cake”**;
+- separate official review action: **“Поделиться впечатлением”** where appropriate.
 
-Never offer a reward for a positive Yandex review and never dictate review wording.
+The Telegram QR is a retention/inspiration route, not a review quid pro quo and not a required part of collecting the order.
 
 ### VK
 
-Do not use verbatim cross-posting as the growth mechanic. Bridge examples:
+Do not use verbatim cross-posting as the growth mechanic. Bridge examples while BTS is unavailable:
 
-- VK clip shows the finished cake → Telegram has process/detail/choice context;
-- VK post shows one work → Telegram has a real follow-up/poll/close-up;
-- VK educational teaser → exact School/TG continuation.
+- VK clip shows a finished cake → Telegram has an extended finished-work selection, close-up/details or a real poll;
+- VK post shows one work → Telegram has a thematic collection or comparison;
+- VK educational teaser → exact School/TG continuation when the topic genuinely fits.
 
 A bridge must add genuine value; “подпишитесь ещё и там” is not a strategy.
 
+### YouTube
+
+Use `tg-youtube-organic` only when a specific video has a sensible Telegram continuation. Do not blanket every description/pinned comment with an identical cross-platform CTA solely to inflate link frequency.
+
 ### Dzen
 
-Use Dzen as secondary reach, not a dependency. Default to low-cost Telegram-to-Dzen synchronization plus occasional adapted School long-form when the format warrants it.
+Use Dzen as secondary reach, not a dependency. Default to low-cost reuse/synchronization plus occasional adapted School long-form when the format warrants it.
 
 Do not duplicate a separate editorial calendar unless measured results earn that effort.
 
@@ -162,55 +218,54 @@ Set the review point before launch; do not judge from one post. Track impression
 Decision:
 
 - **GO / expand** only if there is meaningful incremental reach or qualified traffic relative to time cost;
-- **KEEP CHEAP** if sync provides some free reach but manual adaptation is not justified;
+- **KEEP CHEAP** if reuse provides some free reach but manual adaptation is not justified;
 - **STOP MANUAL WORK** if repeated adapted posts produce negligible qualified reach/traffic.
 
 Do not claim Dzen backlinks automatically improve `milovicake.ru` SEO.
 
 ## 7. Local partner loop
 
-Priority categories in St Petersburg: event/wedding photographers, decorators/florists, wedding/event organizers, children's studios/party organizers, presenters/small venues, and local family/lifestyle creators with credible geography.
+Potential St Petersburg categories include event/wedding photographers, decorators/florists, wedding/event organizers, children's studios/party organizers, presenters/small venues, and local family/lifestyle creators with credible geography.
 
-Every collaboration needs a source-specific invite link and a clear value exchange. Avoid generic engagement swaps.
+A category is not a recommendation to buy. Each actual partner is a separate reviewed experiment with its own `tg-partner-<slug>` source, explicit value exchange and evidence. Avoid generic engagement swaps.
 
 ## 8. Paid Telegram placement checklist
 
-Do not buy a placement until the channel has content depth and a source-specific invite link.
+Do not buy a placement until the channel has content depth, an exact source-specific route and a declared measurement method.
 
-For each candidate record exact channel, geography, recent subscriber dynamics, recent and average reach, ERR/ER, forwards/mentions, ad frequency, suspicious spikes, format/duration, price, legal/marking handling, source ID, test-spend ceiling and post-campaign retention.
+For each candidate record exact channel, geography, recent subscriber dynamics, recent and average reach, forwards/mentions, ad frequency, suspicious spikes, format/duration, price, current legal/marking handling, source ID, test-spend ceiling and post-campaign retention where measurable.
 
-Start with small relevant local channels. Measure retained relevant subscribers and enquiry quality, not raw joins.
+Start with small relevant local tests rather than scale. Measure retained relevant subscribers and enquiry quality, not raw joins.
 
 ## 9. Working milestone decisions
 
-### 7 → 50
+### Tiny launch cohort → 50 relevant subscribers
 
-No paid scale. Build depth and use owned/post-purchase sources. Look for non-family subscribers who actually read and remain.
+No paid scale. Build native archive depth and use owned/post-purchase sources. Look for non-family subscribers who actually read and remain.
 
 ### 50 → 150
 
-Keep owned loops; begin measured local collaborations. Small paid placements only if archive and attribution are ready.
+Keep owned loops; begin measured local collaborations. Small paid placements only if archive, attribution and legal handling are ready.
 
 ### 150 → 300
 
-Compare sources by retained relevant subscriber and enquiry quality. Increase only sources that survive the comparison. Telegram Ads may be considered only if it solves a measured acquisition problem better than local seeding.
+Compare sources by retained relevant subscriber and enquiry quality. Increase only sources that survive the comparison. Telegram Ads or larger seeding may be considered only if they solve a measured acquisition problem better than owned/local sources.
 
 ### 300+
 
 Do not scale automatically. Establish a repeatable cohort model: source → retention → reach → enquiry → order where measurable.
 
-## 10. Golden features worth using — and not overusing
+## 10. Platform features worth using — and not overusing
 
 - source-specific Telegram invite links for acquisition attribution;
-- public post search: descriptive natural-language first lines, not hashtag spam;
-- similar/recommended public channels: keep the channel public and coherent, but do not expect discovery to replace acquisition at tiny scale;
-- channel Direct Messages as a low-friction human contact path;
-- native polls only when there is a real follow-up;
-- Yandex Business review QR as a post-purchase trust loop;
-- Yandex live rating badge as a later trust test near reviews, not in the protected hero by default;
-- Yandex Actions only for genuine current offers;
-- VK channel-promotion object and AdBlogger as later measurable tools;
-- short real-work video variants as a VK test hypothesis, not a universal rule.
+- descriptive natural-language first lines that help humans and public discovery understand the post;
+- channel Direct Messages as a low-friction human contact path where useful;
+- native polls only when there is a real editorial question/follow-up;
+- Yandex Business review/trust work as a separate post-purchase loop;
+- VK paid/organic growth tools only when they support a measured objective;
+- finished-work video variants as a cross-surface test hypothesis, not a universal rule.
+
+Do not expect platform discovery alone to replace acquisition at tiny scale.
 
 ## 11. Hard prohibitions
 
@@ -221,13 +276,26 @@ Do not scale automatically. Establish a repeatable cohort model: source → rete
 - unapproved first-person Victoria voice;
 - invented availability or “last slots” scarcity;
 - stale prices;
+- staged/fake BTS or production-access copy while no reviewed production footage exists;
 - another project's Telegram binding/state/release;
 - username-only destination after exact binding exists;
+- broad administrator enumeration when exact `getChatMember` proof is sufficient;
+- automatic posting-bot permission expansion merely to create invite links;
 - blind retry after ambiguous provider effect;
-- live mutation merely because this planning document exists.
+- live mutation merely because a planning/registry document exists.
 
-## 12. Exact next technical step
+## 12. Exact current technical state and next dependency
 
-After branch review/CI, merge the provider-inert onboarding artifacts. Then manually run `.github/workflows/telegram-milovi-target-discovery.yml` on current `main`.
+Merged provider-inert foundation:
 
-Review the generated proof and binding candidate. Commit the exact Milovi binding separately with cross-project guards. Only after that should #353 receive one exact canary payload and explicit provider-write authorization for that single operation.
+- #354 — initial Milovi onboarding/research/growth artifacts;
+- #356 — exact-bot discovery repair (`getChatMember`, not administrator-list enumeration);
+- #358 — 46-item finished-work source map + 30-slot no-BTS editorial system;
+- #360 — exact blocked photo canary candidate + media readiness + Git-blob review lock;
+- #361 — exact 16-WebM source manifest + deterministic native-video MP4 readiness lane, accepted outputs 0 / 16.
+
+The live path is currently blocked on one fresh read-only action: manually run `.github/workflows/telegram-milovi-target-discovery.yml` from **current `main`**. Do not rerun the historical failed workflow run, because a rerun executes its original old SHA.
+
+Review the resulting exact proof/binding candidate. Only then may a separate PR commit the exact Milovi target binding with cross-project guards. The existing photo canary remains blocked until the selected source bytes are materialized/verified and one exact mutation is explicitly authorized.
+
+The acquisition registry and experiment ledger remain provider-inert until the channel canary and archive are verified; no invite links are created by this playbook.
