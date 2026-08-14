@@ -201,6 +201,7 @@ def _mark_verified_absent(
         promoted_asset,
         ANOMALY_CLIP_REMOTE_ID,
         description_mode="legacy_or_promoted",
+        preservation_only=True,
     )
     state = finalizer["cleanup_475"]
     state.update(
@@ -225,8 +226,9 @@ def _cleanup_exact_wall475(
     A live post still requires the full stable identity contract and a second
     fresh proof immediately before the single authorized delete. VK may return
     an ``is_deleted=true`` tombstone without attachments for an already-absent
-    wall object; only exact owner/id tombstones are accepted as absence, and the
-    protected Clip is then re-verified before continuation.
+    wall object; only exact owner/id tombstones are accepted as absence. The
+    protected Clip check here is preservation-only; final readiness belongs to
+    the resume/finalizer lifecycle after destructive cleanup is complete.
     """
 
     state = finalizer["cleanup_475"]
@@ -250,6 +252,7 @@ def _cleanup_exact_wall475(
         promoted_asset,
         ANOMALY_CLIP_REMOTE_ID,
         description_mode="legacy_or_promoted",
+        preservation_only=True,
     )
     _record_observed_projection(state, post)
     state.update(

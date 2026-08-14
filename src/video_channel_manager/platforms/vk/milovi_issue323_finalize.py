@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import time
 from collections.abc import Mapping
 from dataclasses import replace
 from pathlib import Path
@@ -13,6 +14,7 @@ from video_channel_manager.platforms.vk import VkApiClient, VkTokenStore, local_
 from video_channel_manager.platforms.vk.milovi_daily_postponed_wall import load_or_create_daily_schedule
 from video_channel_manager.platforms.vk.milovi_immediate_wall import MILOVI_COMMUNITY_ID, MILOVI_OWNER_ID
 from video_channel_manager.platforms.vk.milovi_issue323_live_resume import (
+    _Issue323RecoveryWriter,
     _LiveClipWriter,
     _ensure_clip_live,
     _native_clip_assessment,
@@ -143,21 +145,31 @@ def _assert_native_clip(
     remote_id: str,
     *,
     description_mode: str,
+    preservation_only: bool = False,
+    durable_verified: bool = False,
 ) -> dict[str, Any]:
     owner_id, video_id = _parse_remote_id(remote_id)
     raw = writer.read_video(owner_id=owner_id, video_id=video_id)
     if raw is None:
         raise MiloviFinalizerBlocked(f"VK Clip disappeared: {remote_id}")
-    assessment = _native_clip_assessment(
-        raw,
-        expected_owner_id=owner_id,
-        expected_video_id=video_id,
-        readiness=clip_readiness(asset),
-    )
-    if not assessment.ready:
-        raise MiloviFinalizerBlocked(
-            f"VK object {remote_id} is not a verified native short_video: {assessment.reasons}"
+    if raw.get("owner_id") != owner_id or raw.get("id") != video_id:
+        raise MiloviFinalizerBlocked(f"VK Clip identity changed: {remote_id}")
+    if preservation_only:
+        return raw
+    if durable_verified:
+        if str(raw.get("type") or "") != "short_video":
+            raise MiloviFinalizerBlocked(f"Durably verified VK Clip lost native short_video type: {remote_id}")
+    else:
+        assessment = _native_clip_assessment(
+            raw,
+            expected_owner_id=owner_id,
+            expected_video_id=video_id,
+            readiness=clip_readiness(asset),
         )
+        if not assessment.ready:
+            raise MiloviFinalizerBlocked(
+                f"VK object {remote_id} is not a verified native short_video: {assessment.reasons}"
+            )
     description = str(raw.get("description") or "").strip()
     if description_mode == "promoted":
         if description != asset.description.strip():
@@ -187,56 +199,46 @@ def _one_video_attachment(post: Mapping[str, Any]) -> tuple[int, int, Mapping[st
     return owner_id, video_id, video
 
 
-def _validate_anomaly_post(post: Mapping[str, Any], legacy_asset: SourceAsset) -> None:
-    if post.get("owner_id") != MILOVI_OWNER_ID or post.get("id") != ANOMALY_POST_ID:
-        raise MiloviFinalizerBlocked("Wall 475 identity differs from exact Issue #323 anomaly")
-    if str(post.get("text") or "").strip():
-        raise MiloviFinalizerBlocked("Wall 475 is no longer the empty-text anomaly authorized for deletion")
-    owner_id, video_id, expanded = _one_video_attachment(post)
-    expected_owner, expected_video = _parse_remote_id(ANOMALY_CLIP_REMOTE_ID)
-    if (owner_id, video_id) != (expected_owner, expected_video):
-        raise MiloviFinalizerBlocked("Wall 475 no longer attaches exact Clip 456239232")
-    observed_type = str(expanded.get("type") or "")
-    if observed_type and observed_type != "short_video":
-        raise MiloviFinalizerBlocked("Wall 475 attachment is no longer a native short_video")
-    if not _legacy_marker_ok(expanded, legacy_asset.source_id):
-        raise MiloviFinalizerBlocked("Wall 475 attachment lost exact legacy source marker")
+def _assert_wall475_absent(writer: VkWallWriter) -> str:
+    """Verify absence read-only; destructive authority belongs only to phase 1."""
+
+    post = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
+    if post is None:
+        return "wall.getById:none"
+    if post.get("is_deleted") is True and post.get("owner_id") == MILOVI_OWNER_ID and post.get("id") == ANOMALY_POST_ID:
+        return "wall.getById:is_deleted_true"
+    raise MiloviFinalizerBlocked("Wall 475 is live or its tombstone identity changed; phase 2 has no delete authority")
 
 
 def _cleanup_anomaly_475(
     *,
     writer: VkWallWriter,
-    client: VkApiClient,
-    legacy_asset: SourceAsset,
     promoted_asset: SourceAsset,
     finalizer: dict[str, Any],
     finalizer_path: Path,
 ) -> None:
-    state = finalizer["cleanup_475"]
-    post = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
-    if post is None:
-        _assert_native_clip(writer, promoted_asset, ANOMALY_CLIP_REMOTE_ID, description_mode="legacy_or_promoted")
-        state["status"] = "verified_absent"
-        _save_finalizer(finalizer_path, finalizer)
-        return
+    """Adopt phase-1 cleanup read-only; never delete or replay wall 475 here."""
 
-    _validate_anomaly_post(post, legacy_asset)
-    _assert_native_clip(writer, promoted_asset, ANOMALY_CLIP_REMOTE_ID, description_mode="legacy_or_promoted")
-    state.update(
-        status="delete_intent",
-        predelete_post_sha256=_sha256_text(json.dumps(post, sort_keys=True, ensure_ascii=False)),
+    state = finalizer["cleanup_475"]
+    if state.get("status") != "verified_absent":
+        raise MiloviFinalizerBlocked(
+            "Wall 475 cleanup is not durably reconciled by phase 1; phase 2 has no delete authority"
+        )
+    absence_evidence = _assert_wall475_absent(writer)
+    _assert_native_clip(
+        writer,
+        promoted_asset,
+        ANOMALY_CLIP_REMOTE_ID,
+        description_mode="legacy_or_promoted",
+        preservation_only=True,
     )
-    _save_finalizer(finalizer_path, finalizer)
-    _prove_target(client)
-    try:
-        writer._call("wall.delete", params={"owner_id": MILOVI_OWNER_ID, "post_id": ANOMALY_POST_ID})
-    except Exception:
-        if writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID) is not None:
-            raise
-    if writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID) is not None:
-        raise MiloviFinalizerBlocked("Exact anomaly wall 475 still exists after delete response")
-    _assert_native_clip(writer, promoted_asset, ANOMALY_CLIP_REMOTE_ID, description_mode="legacy_or_promoted")
-    state["status"] = "verified_absent"
+    state.update(
+        status="verified_absent",
+        phase2_delete_authority=False,
+        phase2_absence_evidence=absence_evidence,
+        protected_clip_remote_id=ANOMALY_CLIP_REMOTE_ID,
+        protected_clip_preserved=True,
+    )
     _save_finalizer(finalizer_path, finalizer)
 
 
@@ -252,7 +254,7 @@ def _ensure_promoted_clip(
 ) -> str:
     current = item.get("clip_remote_id")
     if isinstance(current, str) and current:
-        _assert_native_clip(writer, asset, current, description_mode="promoted")
+        _assert_native_clip(writer, asset, current, description_mode="promoted", durable_verified=True)
         return current
 
     raw_record = item.get("upload_record")
@@ -280,13 +282,36 @@ def _ensure_promoted_clip(
     current_wall = writer.capture_wall_snapshot(community_id=MILOVI_COMMUNITY_ID, max_posts_per_surface=10000)
     if not current_wall.complete:
         raise MiloviFinalizerBlocked("Complete wall baseline unavailable before upload/resume")
-    wall_before = _resume_wall_baseline(record, current_wall) if _has_provider_effect(record) else current_wall
+    had_provider_effect = _has_provider_effect(record)
+    operation_writer: Any = upload_writer
+    recovery_writer: _Issue323RecoveryWriter | None = None
+    if had_provider_effect:
+        wall_before = _resume_wall_baseline(record, current_wall, journal=journal)
+        raw_wall_safety = record.get("wall_safety")
+        if not isinstance(raw_wall_safety, Mapping):
+            raise UploadRecoveryRequired("Provider-dispatched promoted upload lost durable wall safety evidence")
+        recovery_writer = _Issue323RecoveryWriter(
+            upload_writer,
+            wall_safety=raw_wall_safety,
+            journal=journal,
+            source_id=asset.source_id,
+        )
+        operation_writer = recovery_writer
+        record["issue323_recovery_wall_view"] = {
+            "baseline_actual_snapshot_sha256": current_wall.snapshot_sha256,
+            "historical_before_snapshot_sha256": wall_before.snapshot_sha256,
+            "reservation_replay_authorized": False,
+            "binary_retransmission_authorized": False,
+        }
+        persist()
+    else:
+        wall_before = current_wall
     journal["provider_write_attempted"] = True
     item["status"] = "upload_in_progress"
     _save(journal_path, journal)
     execute_upload_operation(
         record,
-        writer=upload_writer,
+        writer=operation_writer,
         community_id=MILOVI_COMMUNITY_ID,
         title=asset.title,
         description=asset.description,
@@ -297,6 +322,15 @@ def _ensure_promoted_clip(
         wall_before_snapshot=wall_before,
         persist=persist,
     )
+    if recovery_writer is not None:
+        evidence = record.get("issue323_recovery_wall_view")
+        if isinstance(evidence, dict):
+            evidence.update(
+                postflight_actual_snapshot_sha256=recovery_writer.last_actual_snapshot_sha256,
+                postflight_historical_snapshot_sha256=recovery_writer.last_historical_snapshot_sha256,
+                postflight_reversed_surface_ids=list(recovery_writer.last_reversed_surface_ids),
+            )
+            persist()
     if UploadStage(str(record.get("stage"))) is not UploadStage.VERIFIED:
         raise MiloviFinalizerBlocked(f"Upload lifecycle did not verify {asset.source_id}")
     remote_id = _upload_remote_id(record)
@@ -304,33 +338,39 @@ def _ensure_promoted_clip(
     item.update(
         status="clip_verified",
         clip_remote_id=remote_id,
-        clip_origin="new_token_short_video_internal_promotion",
+        clip_origin="resumed_token_short_video_internal_promotion"
+        if had_provider_effect
+        else "new_token_short_video_internal_promotion",
     )
     _save(journal_path, journal)
     return remote_id
 
 
-def _find_postponed_raw(writer: VkWallWriter, post_id: int) -> dict[str, Any] | None:
-    items, _pages, complete = writer._read_wall_surface(
-        community_id=MILOVI_COMMUNITY_ID,
-        surface=VkWallSurface.POSTPONED,
-        max_posts=10000,
-    )
-    if not complete:
-        raise MiloviFinalizerBlocked("Postponed wall scan is incomplete")
-    matches = [item for item in items if item.get("id") == post_id and item.get("owner_id") == MILOVI_OWNER_ID]
+def _find_rollout_wall_raw(writer: VkWallWriter, post_id: int) -> tuple[VkWallSurface, dict[str, Any]] | None:
+    matches: list[tuple[VkWallSurface, dict[str, Any]]] = []
+    for surface in (VkWallSurface.PUBLISHED, VkWallSurface.POSTPONED):
+        items, _pages, complete = writer._read_wall_surface(
+            community_id=MILOVI_COMMUNITY_ID,
+            surface=surface,
+            max_posts=10000,
+        )
+        if not complete:
+            raise MiloviFinalizerBlocked(f"{surface.value} wall scan is incomplete")
+        matches.extend(
+            (surface, item) for item in items if item.get("id") == post_id and item.get("owner_id") == MILOVI_OWNER_ID
+        )
     if len(matches) > 1:
-        raise MiloviFinalizerBlocked(f"Postponed wall post {post_id} is duplicated in readback")
+        raise MiloviFinalizerBlocked(f"Wall post {post_id} appears on multiple surfaces")
     return matches[0] if matches else None
 
 
 def _assert_post_shape(post: Mapping[str, Any], *, clip_remote_id: str, publish_date: int) -> None:
     owner_id, video_id = _parse_remote_id(clip_remote_id)
     if post.get("owner_id") != MILOVI_OWNER_ID or post.get("date") != publish_date:
-        raise MiloviFinalizerBlocked("Postponed wall identity/date changed")
+        raise MiloviFinalizerBlocked("Wall identity/date changed")
     attachment_owner, attachment_video, _expanded = _one_video_attachment(post)
     if (attachment_owner, attachment_video) != (owner_id, video_id):
-        raise MiloviFinalizerBlocked("Postponed wall attachment changed")
+        raise MiloviFinalizerBlocked("Wall attachment changed")
 
 
 def _edit_clip_description(
@@ -343,7 +383,13 @@ def _edit_clip_description(
     finalizer: dict[str, Any],
     finalizer_path: Path,
 ) -> None:
-    raw = _assert_native_clip(writer, asset, remote_id, description_mode="legacy_or_promoted")
+    raw = _assert_native_clip(
+        writer,
+        asset,
+        remote_id,
+        description_mode="legacy_or_promoted",
+        durable_verified=True,
+    )
     if str(raw.get("description") or "").strip() == asset.description.strip():
         operation.update(status="verified", remote_id=remote_id)
         _save_finalizer(finalizer_path, finalizer)
@@ -364,7 +410,13 @@ def _edit_clip_description(
             or str(observed.get("description") or "").strip() != asset.description.strip()
         ):
             raise
-    after = _assert_native_clip(writer, asset, remote_id, description_mode="promoted")
+    after = _assert_native_clip(
+        writer,
+        asset,
+        remote_id,
+        description_mode="promoted",
+        durable_verified=True,
+    )
     after_title = str(after.get("title") or "")
     if before_title and after_title and after_title != before_title:
         raise MiloviFinalizerBlocked(f"video.edit unexpectedly changed title for {remote_id}")
@@ -387,15 +439,16 @@ def _edit_wall_message(
     owner_id, post_id = _parse_remote_id(wall_remote_id)
     if owner_id != MILOVI_OWNER_ID:
         raise MiloviFinalizerBlocked("Wall remote ID is outside Milovi")
-    post = _find_postponed_raw(writer, post_id)
-    if post is None:
-        raise MiloviFinalizerBlocked(f"Postponed wall post disappeared: {wall_remote_id}")
+    mapping = _find_rollout_wall_raw(writer, post_id)
+    if mapping is None:
+        raise MiloviFinalizerBlocked(f"Wall post disappeared: {wall_remote_id}")
+    surface, post = mapping
     _assert_post_shape(post, clip_remote_id=clip_remote_id, publish_date=publish_date)
     if str(post.get("text") or "").strip() == asset.wall_message.strip():
-        operation.update(status="verified", remote_id=wall_remote_id)
+        operation.update(status="verified", remote_id=wall_remote_id, surface=surface.value)
         _save_finalizer(finalizer_path, finalizer)
         return
-    operation.update(status="edit_intent", remote_id=wall_remote_id)
+    operation.update(status="edit_intent", remote_id=wall_remote_id, surface=surface.value)
     _save_finalizer(finalizer_path, finalizer)
     _prove_target(client)
     params: dict[str, str | int | bool] = {
@@ -403,30 +456,32 @@ def _edit_wall_message(
         "post_id": post_id,
         "message": asset.wall_message,
         "attachments": f"video{clip_remote_id}",
-        "publish_date": publish_date,
     }
+    if surface is VkWallSurface.POSTPONED:
+        params["publish_date"] = publish_date
     try:
         writer._call("wall.edit", params=params)
     except Exception:
-        observed = _find_postponed_raw(writer, post_id)
-        if not isinstance(observed, Mapping) or str(observed.get("text") or "").strip() != asset.wall_message.strip():
+        observed_mapping = _find_rollout_wall_raw(writer, post_id)
+        if observed_mapping is None or str(observed_mapping[1].get("text") or "").strip() != asset.wall_message.strip():
             raise
-    after = _find_postponed_raw(writer, post_id)
-    if after is None:
-        raise MiloviFinalizerBlocked(f"Postponed wall post disappeared after edit: {wall_remote_id}")
+    after_mapping = _find_rollout_wall_raw(writer, post_id)
+    if after_mapping is None:
+        raise MiloviFinalizerBlocked(f"Wall post disappeared after edit: {wall_remote_id}")
+    after_surface, after = after_mapping
     _assert_post_shape(after, clip_remote_id=clip_remote_id, publish_date=publish_date)
     if str(after.get("text") or "").strip() != asset.wall_message.strip():
-        raise MiloviFinalizerBlocked(f"Postponed wall message failed verification: {wall_remote_id}")
-    operation.update(status="verified", remote_id=wall_remote_id)
+        raise MiloviFinalizerBlocked(f"Wall message failed verification: {wall_remote_id}")
+    operation.update(status="verified", remote_id=wall_remote_id, surface=after_surface.value)
     _save_finalizer(finalizer_path, finalizer)
 
 
 def _final_postflight(writer: VkWallWriter, assets: list[SourceAsset], journal: dict[str, Any]) -> list[dict[str, Any]]:
-    if writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID) is not None:
-        raise MiloviFinalizerBlocked("Anomaly wall 475 reappeared")
+    _assert_wall475_absent(writer)
     snapshot = writer.capture_wall_snapshot(community_id=MILOVI_COMMUNITY_ID, max_posts_per_surface=10000)
     if not snapshot.complete:
         raise MiloviFinalizerBlocked("Final wall snapshot is incomplete")
+    now_epoch = int(time.time())
     evidence: list[dict[str, Any]] = []
     for asset in assets:
         item = _item(journal, asset.source_id)
@@ -440,18 +495,30 @@ def _final_postflight(writer: VkWallWriter, assets: list[SourceAsset], journal: 
             or type(publish_date) is not int
         ):
             raise MiloviFinalizerBlocked(f"Final durable mapping is incomplete: {asset.source_id}")
-        _assert_native_clip(writer, asset, clip_remote_id, description_mode="promoted")
+        _assert_native_clip(
+            writer,
+            asset,
+            clip_remote_id,
+            description_mode="promoted",
+            durable_verified=True,
+        )
         owner_id, video_id = _parse_remote_id(clip_remote_id)
         attachment = f"video{owner_id}_{video_id}"
         matches = [post for post in snapshot.posts if attachment in post.attachments]
-        if any(post.surface is VkWallSurface.PUBLISHED for post in matches):
-            raise MiloviFinalizerBlocked(f"Immediate rollout wall post remains for {asset.source_id}")
-        postponed = [post for post in matches if post.surface is VkWallSurface.POSTPONED]
-        if len(postponed) != 1 or postponed[0].remote_id != wall_remote_id or postponed[0].publish_date != publish_date:
-            raise MiloviFinalizerBlocked(f"Postponed mapping differs for {asset.source_id}")
+        if len(matches) != 1:
+            raise MiloviFinalizerBlocked(f"Wall mapping count differs for {asset.source_id}: {len(matches)}")
+        wall_post = matches[0]
+        if wall_post.remote_id != wall_remote_id or wall_post.publish_date != publish_date:
+            raise MiloviFinalizerBlocked(f"Wall mapping identity/date differs for {asset.source_id}")
+        if wall_post.surface is VkWallSurface.PUBLISHED and now_epoch + 60 < publish_date:
+            raise MiloviFinalizerBlocked(f"Wall post published before its scheduled slot for {asset.source_id}")
         _owner, post_id = _parse_remote_id(wall_remote_id)
-        raw_post = _find_postponed_raw(writer, post_id)
-        if raw_post is None or str(raw_post.get("text") or "").strip() != asset.wall_message.strip():
+        raw_mapping = _find_rollout_wall_raw(writer, post_id)
+        if raw_mapping is None:
+            raise MiloviFinalizerBlocked(f"Final wall post disappeared for {asset.source_id}")
+        raw_surface, raw_post = raw_mapping
+        _assert_post_shape(raw_post, clip_remote_id=clip_remote_id, publish_date=publish_date)
+        if str(raw_post.get("text") or "").strip() != asset.wall_message.strip():
             raise MiloviFinalizerBlocked(f"Final wall public copy differs for {asset.source_id}")
         evidence.append(
             {
@@ -459,6 +526,7 @@ def _final_postflight(writer: VkWallWriter, assets: list[SourceAsset], journal: 
                 "clip_remote_id": clip_remote_id,
                 "wall_remote_id": wall_remote_id,
                 "publish_date": publish_date,
+                "wall_surface": raw_surface.value,
                 "clip_description_sha256": _sha256_text(asset.description),
                 "wall_message_sha256": _sha256_text(asset.wall_message),
             }
@@ -503,7 +571,13 @@ def _complete_child(
         if not clip_id:
             raise MiloviFinalizerBlocked(f"clip_verified item lost remote ID: {source_id}")
         mode = "legacy_or_promoted" if source_id == ANOMALY_SOURCE_ID else "promoted"
-        _assert_native_clip(writer, asset, clip_id, description_mode=mode)
+        _assert_native_clip(
+            writer,
+            asset,
+            clip_id,
+            description_mode=mode,
+            durable_verified=True,
+        )
     else:
         clip_id = _ensure_promoted_clip(
             asset,
@@ -573,8 +647,6 @@ def run_issue_323_finalizer(
 
             _cleanup_anomaly_475(
                 writer=writer,
-                client=client,
-                legacy_asset=legacy_assets[ANOMALY_SOURCE_ID],
                 promoted_asset=promoted_assets[ANOMALY_SOURCE_ID],
                 finalizer=finalizer,
                 finalizer_path=finalizer_journal_path,

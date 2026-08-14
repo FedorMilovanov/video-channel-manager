@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import time
 from collections.abc import Mapping
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -52,12 +53,18 @@ from video_channel_manager.platforms.vk.upload_lifecycle import (
 )
 from video_channel_manager.platforms.vk.upload_media import execute_upload_operation
 from video_channel_manager.platforms.vk.wall import VkWallWriter
-from video_channel_manager.platforms.vk.wall_safety import DEFAULT_UPLOAD_WALL_POLICY, VkWallSurface
+from video_channel_manager.platforms.vk.wall_safety import (
+    DEFAULT_UPLOAD_WALL_POLICY,
+    VkWallSnapshot,
+    VkWallSurface,
+)
 
 EXECUTION_CONFIRMATION = "ISSUE_323_RESUME_LIVE_SHORT_VIDEO_AND_FINISH"
 RESULT_SCHEMA = "video-manager.milovi-issue-323-live-resume"
 EXPECTED_CANARY_REMOTE_ID = "-68859909_456239225"
 MINIMUM_FUTURE_SECONDS = 300
+ISSUE323_EIGHTH_SOURCE_ID = "o1WXIMupuws"
+ISSUE323_RECONCILED_WALL_VIEW = "published:-68859909_475"
 
 
 def _native_clip_assessment(
@@ -223,13 +230,239 @@ class _LiveClipWriter:
         )
 
 
-def _resume_wall_baseline(record: Mapping[str, Any], current: Any) -> Any:
-    """Bind a restarted provider-dispatched upload to its original wall content, not a fresh capture timestamp."""
+def _assert_issue323_eighth_wall_history(record: Mapping[str, Any], wall_safety: Mapping[str, Any]) -> None:
+    """Allow only the already-observed wall-475 side effect for the interrupted eighth upload."""
+
+    if record.get("source_video_id") != ISSUE323_EIGHTH_SOURCE_ID:
+        return
+    raw_delta = wall_safety.get("delta")
+    if not isinstance(raw_delta, Mapping):
+        raise UploadRecoveryRequired("Eighth upload has no durable wall postflight delta")
+    if raw_delta.get("status") == "clean":
+        return
+    expected_lists = {
+        "created": [ISSUE323_RECONCILED_WALL_VIEW],
+        "removed": [],
+        "changed": [],
+        "reasons": [],
+    }
+    mismatches = {
+        key: {"expected": expected, "actual": raw_delta.get(key)}
+        for key, expected in expected_lists.items()
+        if raw_delta.get(key) != expected
+    }
+    if raw_delta.get("status") != "changed":
+        mismatches["status"] = {"expected": "changed", "actual": raw_delta.get("status")}
+    before_sha = wall_safety.get("before_snapshot_sha256")
+    after_sha = wall_safety.get("after_snapshot_sha256")
+    if not isinstance(before_sha, str) or raw_delta.get("before_sha256") != before_sha:
+        mismatches["before_sha256"] = {"expected": before_sha, "actual": raw_delta.get("before_sha256")}
+    if not isinstance(after_sha, str) or raw_delta.get("after_sha256") != after_sha:
+        mismatches["after_sha256"] = {"expected": after_sha, "actual": raw_delta.get("after_sha256")}
+    if mismatches:
+        raise UploadRecoveryRequired(
+            f"Eighth upload wall history is not the single authorized wall-475 side effect: {mismatches}"
+        )
+
+
+def _prior_verified_wall_contract(journal: Mapping[str, Any], source_id: str) -> dict[str, int]:
+    """Return exact earlier wall IDs/dates eligible for normal scheduled surface evolution."""
+
+    if source_id not in ROLL_OUT_IDS:
+        raise UploadRecoveryRequired(f"Issue #323 recovery source is outside the exact rollout: {source_id}")
+    items = journal.get("items")
+    if not isinstance(items, Mapping):
+        raise UploadRecoveryRequired("Issue #323 journal has no item map for wall recovery")
+    result: dict[str, int] = {}
+    for prior_source_id in ROLL_OUT_IDS[: ROLL_OUT_IDS.index(source_id)]:
+        raw = items.get(prior_source_id)
+        if not isinstance(raw, Mapping) or raw.get("status") != "wall_verified":
+            raise UploadRecoveryRequired(
+                f"Earlier rollout item is not durably wall_verified during recovery: {prior_source_id}"
+            )
+        remote_id = raw.get("wall_remote_id")
+        publish_date = raw.get("publish_date")
+        if not isinstance(remote_id, str) or not remote_id or type(publish_date) is not int:
+            raise UploadRecoveryRequired(f"Earlier rollout wall binding is incomplete: {prior_source_id}")
+        owner_id, post_id = _parse_remote_id(remote_id)
+        if owner_id != MILOVI_OWNER_ID or post_id <= 0:
+            raise UploadRecoveryRequired(f"Earlier rollout wall binding left Milovi: {prior_source_id}")
+        result[remote_id] = publish_date
+    return result
+
+
+def _historical_issue323_wall_view(
+    current: VkWallSnapshot,
+    *,
+    wall_safety: Mapping[str, Any],
+    journal: Mapping[str, Any],
+    source_id: str,
+    now_epoch: int | None = None,
+) -> tuple[VkWallSnapshot, tuple[str, ...]]:
+    """Resolve the unique historical wall view using only due prior scheduled surface transitions.
+
+    Current published prior rollout posts may either have already been published
+    in the historical baseline or may have been postponed then. We do not guess.
+    We enumerate only those exact due prior IDs as possible published→postponed
+    reversals and accept exactly one candidate whose complete snapshot hashes to
+    the durable pre-upload SHA. Text, attachments, IDs, dates and every unrelated
+    wall object remain untouched, so any other drift still fails closed.
+    """
+
+    if not current.complete:
+        raise UploadRecoveryRequired("Current wall snapshot is incomplete during Issue #323 recovery")
+    contract = _prior_verified_wall_contract(journal, source_id)
+    observed_now = int(time.time()) if now_epoch is None else now_epoch
+    seen_counts: dict[str, int] = {remote_id: 0 for remote_id in contract}
+    flippable_indexes: list[int] = []
+    for index, post in enumerate(current.posts):
+        expected_date = contract.get(post.remote_id)
+        if expected_date is None:
+            continue
+        seen_counts[post.remote_id] += 1
+        if post.publish_date != expected_date:
+            raise UploadRecoveryRequired(
+                f"Earlier rollout wall date changed for {post.remote_id}: {post.publish_date} != {expected_date}"
+            )
+        if post.surface is VkWallSurface.PUBLISHED:
+            if observed_now + 60 < expected_date:
+                raise UploadRecoveryRequired(f"Earlier rollout wall published before its slot: {post.remote_id}")
+            flippable_indexes.append(index)
+    duplicate = sorted(remote_id for remote_id, count in seen_counts.items() if count > 1)
+    if duplicate:
+        raise UploadRecoveryRequired(f"Earlier rollout wall mapping appears on multiple surfaces: {duplicate}")
+    missing = sorted(remote_id for remote_id, count in seen_counts.items() if count == 0)
+    if missing:
+        raise UploadRecoveryRequired(f"Earlier rollout wall mapping disappeared during recovery: {missing}")
+
+    captured_at = str(wall_safety.get("before_captured_at") or "")
+    expected_sha = str(wall_safety.get("before_snapshot_sha256") or "")
+    before_published_pages = wall_safety.get("before_published_pages")
+    before_postponed_pages = wall_safety.get("before_postponed_pages")
+    if not captured_at or not expected_sha:
+        raise UploadRecoveryRequired("Historical upload wall digest/capture timestamp is missing")
+    if type(before_published_pages) is not int or type(before_postponed_pages) is not int:
+        raise UploadRecoveryRequired("Historical upload wall page counts are missing")
+
+    matches: list[tuple[VkWallSnapshot, tuple[str, ...]]] = []
+    for mask in range(1 << len(flippable_indexes)):
+        posts = list(current.posts)
+        reversed_ids: list[str] = []
+        for bit, post_index in enumerate(flippable_indexes):
+            if not mask & (1 << bit):
+                continue
+            post = posts[post_index]
+            posts[post_index] = replace(post, surface=VkWallSurface.POSTPONED)
+            reversed_ids.append(post.remote_id)
+        candidate = replace(
+            current,
+            captured_at=captured_at,
+            published_pages=before_published_pages,
+            postponed_pages=before_postponed_pages,
+            posts=tuple(posts),
+        )
+        if candidate.snapshot_sha256 == expected_sha:
+            matches.append((candidate, tuple(sorted(reversed_ids))))
+    if not matches:
+        raise MiloviTokenRolloutBlocked(
+            "Current Milovi wall cannot be reduced to the journaled pre-upload baseline using only due exact "
+            "Issue #323 scheduled surface transitions"
+        )
+    if len(matches) != 1:
+        raise UploadRecoveryRequired("Historical Issue #323 wall view is ambiguous after exact surface normalization")
+    return matches[0]
+
+
+def _resume_wall_baseline(
+    record: Mapping[str, Any],
+    current: VkWallSnapshot,
+    *,
+    journal: Mapping[str, Any] | None = None,
+    now_epoch: int | None = None,
+) -> VkWallSnapshot:
+    """Bind restarted provider work to the unique exact historical wall view."""
 
     raw = record.get("wall_safety")
     if not isinstance(raw, Mapping):
         raise UploadRecoveryRequired("Provider-dispatched upload has no durable wall baseline")
-    return normalize_current_wall_to_historical_capture(current, raw)
+    _assert_issue323_eighth_wall_history(record, raw)
+    if journal is None:
+        return normalize_current_wall_to_historical_capture(current, raw)
+    source_id = str(record.get("source_video_id") or "")
+    historical, _reversed_ids = _historical_issue323_wall_view(
+        current,
+        wall_safety=raw,
+        journal=journal,
+        source_id=source_id,
+        now_epoch=now_epoch,
+    )
+    return historical
+
+
+class _Issue323RecoveryWriter:
+    """Read-only historical wall view for an already-dispatched upload recovery.
+
+    Reservation and binary-upload methods intentionally fail closed. The shared
+    lifecycle therefore cannot accidentally replay the provider dispatch while
+    this adapter is in use. Only wall snapshot readback is normalized, and only
+    through the exact SHA-solving contract above.
+    """
+
+    def __init__(
+        self,
+        delegate: _LiveClipWriter,
+        *,
+        wall_safety: Mapping[str, Any],
+        journal: Mapping[str, Any],
+        source_id: str,
+    ) -> None:
+        self.delegate = delegate
+        self.wall_safety = wall_safety
+        self.journal = journal
+        self.source_id = source_id
+        self.last_actual_snapshot_sha256: str | None = None
+        self.last_historical_snapshot_sha256: str | None = None
+        self.last_reversed_surface_ids: tuple[str, ...] = ()
+
+    def begin_upload(self, *, community_id: int, title: str, description: str, wall_policy: Any) -> Any:
+        raise UploadRecoveryRequired("Issue #323 recovery adapter forbids a second upload reservation")
+
+    def upload_file(self, ticket: Any, path: Path) -> dict[str, Any]:
+        raise UploadRecoveryRequired("Issue #323 recovery adapter forbids binary retransmission")
+
+    def read_video(self, *, owner_id: int, video_id: int) -> dict[str, Any] | None:
+        return self.delegate.read_video(owner_id=owner_id, video_id=video_id)
+
+    def wait_until_available(
+        self,
+        ticket: Any,
+        *,
+        readiness: VkUploadReadiness,
+        timeout_seconds: int,
+        on_observation: Any = None,
+    ) -> dict[str, Any]:
+        return self.delegate.wait_until_available(
+            ticket,
+            readiness=readiness,
+            timeout_seconds=timeout_seconds,
+            on_observation=on_observation,
+        )
+
+    def capture_wall_snapshot(self, *, community_id: int, max_posts_per_surface: int = 10000) -> VkWallSnapshot:
+        actual = self.delegate.capture_wall_snapshot(
+            community_id=community_id,
+            max_posts_per_surface=max_posts_per_surface,
+        )
+        historical, reversed_ids = _historical_issue323_wall_view(
+            actual,
+            wall_safety=self.wall_safety,
+            journal=self.journal,
+            source_id=self.source_id,
+        )
+        self.last_actual_snapshot_sha256 = actual.snapshot_sha256
+        self.last_historical_snapshot_sha256 = historical.snapshot_sha256
+        self.last_reversed_surface_ids = reversed_ids
+        return historical
 
 
 def _ensure_clip_live(
@@ -282,14 +515,36 @@ def _ensure_clip_live(
     current_wall = writer.capture_wall_snapshot(community_id=MILOVI_COMMUNITY_ID, max_posts_per_surface=10000)
     if not current_wall.complete:
         raise MiloviTokenRolloutBlocked("Complete wall baseline unavailable before upload/resume")
-    wall_before = _resume_wall_baseline(record, current_wall) if _has_provider_effect(record) else current_wall
+    operation_writer: Any = upload_writer
+    recovery_writer: _Issue323RecoveryWriter | None = None
+    if _has_provider_effect(record):
+        wall_before = _resume_wall_baseline(record, current_wall, journal=journal)
+        raw_wall_safety = record.get("wall_safety")
+        if not isinstance(raw_wall_safety, Mapping):
+            raise UploadRecoveryRequired("Provider-dispatched upload lost durable wall safety evidence")
+        recovery_writer = _Issue323RecoveryWriter(
+            upload_writer,
+            wall_safety=raw_wall_safety,
+            journal=journal,
+            source_id=asset.source_id,
+        )
+        operation_writer = recovery_writer
+        record["issue323_recovery_wall_view"] = {
+            "baseline_actual_snapshot_sha256": current_wall.snapshot_sha256,
+            "historical_before_snapshot_sha256": wall_before.snapshot_sha256,
+            "reservation_replay_authorized": False,
+            "binary_retransmission_authorized": False,
+        }
+        persist()
+    else:
+        wall_before = current_wall
 
     journal["provider_write_attempted"] = True
     item["status"] = "upload_in_progress"
     _save(journal_path, journal)
     execute_upload_operation(
         record,
-        writer=upload_writer,
+        writer=operation_writer,
         community_id=MILOVI_COMMUNITY_ID,
         title=asset.title,
         description=asset.description,
@@ -300,6 +555,15 @@ def _ensure_clip_live(
         wall_before_snapshot=wall_before,
         persist=persist,
     )
+    if recovery_writer is not None:
+        evidence = record.get("issue323_recovery_wall_view")
+        if isinstance(evidence, dict):
+            evidence.update(
+                postflight_actual_snapshot_sha256=recovery_writer.last_actual_snapshot_sha256,
+                postflight_historical_snapshot_sha256=recovery_writer.last_historical_snapshot_sha256,
+                postflight_reversed_surface_ids=list(recovery_writer.last_reversed_surface_ids),
+            )
+            persist()
     if UploadStage(str(record.get("stage"))) is not UploadStage.VERIFIED:
         raise MiloviTokenRolloutBlocked(f"Upload lifecycle did not verify {asset.source_id}")
     remote_id = _upload_remote_id(record)
