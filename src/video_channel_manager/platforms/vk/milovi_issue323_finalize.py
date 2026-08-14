@@ -55,7 +55,7 @@ from video_channel_manager.platforms.vk.upload_lifecycle import (
 )
 from video_channel_manager.platforms.vk.upload_media import execute_upload_operation
 from video_channel_manager.platforms.vk.wall import VkWallWriter
-from video_channel_manager.platforms.vk.wall_safety import DEFAULT_UPLOAD_WALL_POLICY, VkWallSurface
+from video_channel_manager.platforms.vk.wall_safety import DEFAULT_UPLOAD_WALL_POLICY, VkWallSnapshot, VkWallSurface
 
 EXECUTION_CONFIRMATION = "ISSUE_323_FINALIZE_INTERNAL_PROMOTION_AND_CLEANUP_475"
 FINALIZER_SCHEMA = "video-manager.milovi-issue-323-finalizer"
@@ -382,6 +382,142 @@ def _assert_post_shape(post: Mapping[str, Any], *, clip_remote_id: str, publish_
         raise MiloviFinalizerBlocked("Wall attachment changed")
 
 
+def _journaled_wall_ids(journal: Mapping[str, Any]) -> set[str]:
+    items = journal.get("items")
+    if not isinstance(items, Mapping):
+        raise MiloviFinalizerBlocked("Issue #323 journal has no item map for finalizer wall resolution")
+    result: set[str] = set()
+    for source_id in ROLL_OUT_IDS:
+        raw = items.get(source_id)
+        if not isinstance(raw, Mapping):
+            continue
+        remote_id = raw.get("wall_remote_id")
+        if not isinstance(remote_id, str) or not remote_id:
+            continue
+        owner_id, post_id = _parse_remote_id(remote_id)
+        if owner_id != MILOVI_OWNER_ID or post_id <= 0:
+            raise MiloviFinalizerBlocked(f"Journaled wall ID left Milovi: {source_id}")
+        if remote_id in result:
+            raise MiloviFinalizerBlocked(f"Journaled wall ID is reused by multiple sources: {remote_id}")
+        result.add(remote_id)
+    return result
+
+
+def _read_exact_wall_incarnation(
+    writer: VkWallWriter,
+    *,
+    remote_id: str,
+    clip_remote_id: str,
+    publish_date: int,
+) -> dict[str, Any]:
+    owner_id, post_id = _parse_remote_id(remote_id)
+    raw = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=post_id)
+    if raw is None or raw.get("is_deleted") is True:
+        raise MiloviFinalizerBlocked(f"Resolved wall incarnation is not live: {remote_id}")
+    if raw.get("owner_id") != owner_id or raw.get("id") != post_id:
+        raise MiloviFinalizerBlocked(f"Resolved wall incarnation changed identity: {remote_id}")
+    _assert_post_shape(raw, clip_remote_id=clip_remote_id, publish_date=publish_date)
+    return dict(raw)
+
+
+def _resolve_wall_incarnation(
+    *,
+    writer: VkWallWriter,
+    snapshot: VkWallSnapshot,
+    journal: Mapping[str, Any],
+    wall_remote_id: str,
+    clip_remote_id: str,
+    publish_date: int,
+    now_epoch: int | None = None,
+) -> tuple[str, VkWallSurface, dict[str, Any], str]:
+    """Resolve the one live provider incarnation of an Issue #323 logical wall mapping."""
+
+    if not snapshot.complete:
+        raise MiloviFinalizerBlocked("Complete wall snapshot is required for finalizer wall resolution")
+    owner_id, post_id = _parse_remote_id(wall_remote_id)
+    if owner_id != MILOVI_OWNER_ID or post_id <= 0:
+        raise MiloviFinalizerBlocked("Wall remote ID is outside Milovi")
+    expected_attachment = f"video{clip_remote_id}"
+    logical_candidates = [
+        post
+        for post in snapshot.posts
+        if post.owner_id == owner_id
+        and post.publish_date == publish_date
+        and expected_attachment in post.attachments
+    ]
+    old_matches = [post for post in snapshot.posts if post.remote_id == wall_remote_id]
+    if len(old_matches) > 1:
+        raise MiloviFinalizerBlocked(f"Journaled wall ID appears on multiple surfaces: {wall_remote_id}")
+    observed_now = int(time.time()) if now_epoch is None else now_epoch
+
+    if old_matches:
+        current = old_matches[0]
+        if len(logical_candidates) != 1 or logical_candidates[0].remote_id != wall_remote_id:
+            raise MiloviFinalizerBlocked(f"Logical wall mapping is duplicated for {wall_remote_id}")
+        if current.publish_date != publish_date or expected_attachment not in current.attachments:
+            raise MiloviFinalizerBlocked(f"Journaled wall mapping changed binding: {wall_remote_id}")
+        if current.surface is VkWallSurface.PUBLISHED and observed_now + 60 < publish_date:
+            raise MiloviFinalizerBlocked(f"Wall post published before its scheduled slot: {wall_remote_id}")
+        raw = _read_exact_wall_incarnation(
+            writer,
+            remote_id=wall_remote_id,
+            clip_remote_id=clip_remote_id,
+            publish_date=publish_date,
+        )
+        return wall_remote_id, current.surface, raw, "journaled_id"
+
+    if observed_now + 60 < publish_date:
+        raise MiloviFinalizerBlocked(f"Wall mapping disappeared before its frozen slot: {wall_remote_id}")
+
+    exact_old = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=post_id)
+    if exact_old is not None and exact_old.get("is_deleted") is not True:
+        if exact_old.get("owner_id") != owner_id or exact_old.get("id") != post_id:
+            raise MiloviFinalizerBlocked(f"Journaled wall exact read changed identity: {wall_remote_id}")
+        _assert_post_shape(exact_old, clip_remote_id=clip_remote_id, publish_date=publish_date)
+        if logical_candidates:
+            candidate_ids = sorted(post.remote_id for post in logical_candidates)
+            raise MiloviFinalizerBlocked(
+                f"Journaled wall exact read is live but aggregate snapshot also has logical candidates: {candidate_ids}"
+            )
+        return wall_remote_id, VkWallSurface.PUBLISHED, dict(exact_old), "exact_old_id"
+
+    if exact_old is not None:
+        if exact_old.get("is_deleted") is not True:
+            raise MiloviFinalizerBlocked(f"Journaled wall exact read has ambiguous state: {wall_remote_id}")
+        if exact_old.get("owner_id") != owner_id or exact_old.get("id") != post_id:
+            raise MiloviFinalizerBlocked(f"Journaled wall tombstone changed identity: {wall_remote_id}")
+        tombstone_date = exact_old.get("date")
+        if type(tombstone_date) is int and tombstone_date != publish_date:
+            raise MiloviFinalizerBlocked(
+                f"Journaled wall tombstone date changed: {wall_remote_id}: {tombstone_date} != {publish_date}"
+            )
+
+    successors = [
+        post
+        for post in logical_candidates
+        if post.surface is VkWallSurface.PUBLISHED and post.remote_id != wall_remote_id
+    ]
+    if not successors:
+        raise MiloviFinalizerBlocked(f"No published successor exists for due wall mapping: {wall_remote_id}")
+    if len(successors) != 1:
+        successor_ids = sorted(post.remote_id for post in successors)
+        raise MiloviFinalizerBlocked(f"Published successor is ambiguous for {wall_remote_id}: {successor_ids}")
+    successor = successors[0]
+    if successor.remote_id in _journaled_wall_ids(journal):
+        raise MiloviFinalizerBlocked(
+            f"Published successor collides with another journaled wall ID: {wall_remote_id} -> {successor.remote_id}"
+        )
+    if successor.remote_id == ANOMALY_WALL_REMOTE_ID:
+        raise MiloviFinalizerBlocked("Published successor unexpectedly reused anomaly wall 475")
+    raw = _read_exact_wall_incarnation(
+        writer,
+        remote_id=successor.remote_id,
+        clip_remote_id=clip_remote_id,
+        publish_date=publish_date,
+    )
+    return successor.remote_id, VkWallSurface.PUBLISHED, raw, "published_successor"
+
+
 def _edit_clip_description(
     *,
     writer: VkWallWriter,
@@ -438,6 +574,7 @@ def _edit_wall_message(
     writer: VkWallWriter,
     client: VkApiClient,
     asset: SourceAsset,
+    journal: Mapping[str, Any],
     wall_remote_id: str,
     clip_remote_id: str,
     publish_date: int,
@@ -445,24 +582,38 @@ def _edit_wall_message(
     finalizer: dict[str, Any],
     finalizer_path: Path,
 ) -> None:
-    owner_id, post_id = _parse_remote_id(wall_remote_id)
-    if owner_id != MILOVI_OWNER_ID:
-        raise MiloviFinalizerBlocked("Wall remote ID is outside Milovi")
-    mapping = _find_rollout_wall_raw(writer, post_id)
-    if mapping is None:
-        raise MiloviFinalizerBlocked(f"Wall post disappeared: {wall_remote_id}")
-    surface, post = mapping
-    _assert_post_shape(post, clip_remote_id=clip_remote_id, publish_date=publish_date)
+    before_snapshot = writer.capture_wall_snapshot(community_id=MILOVI_COMMUNITY_ID, max_posts_per_surface=10000)
+    actual_remote_id, surface, post, resolution_mode = _resolve_wall_incarnation(
+        writer=writer,
+        snapshot=before_snapshot,
+        journal=journal,
+        wall_remote_id=wall_remote_id,
+        clip_remote_id=clip_remote_id,
+        publish_date=publish_date,
+    )
     if str(post.get("text") or "").strip() == asset.wall_message.strip():
-        operation.update(status="verified", remote_id=wall_remote_id, surface=surface.value)
+        operation.update(
+            status="verified",
+            journal_remote_id=wall_remote_id,
+            remote_id=actual_remote_id,
+            surface=surface.value,
+            resolution_mode=resolution_mode,
+        )
         _save_finalizer(finalizer_path, finalizer)
         return
-    operation.update(status="edit_intent", remote_id=wall_remote_id, surface=surface.value)
+    _actual_owner, actual_post_id = _parse_remote_id(actual_remote_id)
+    operation.update(
+        status="edit_intent",
+        journal_remote_id=wall_remote_id,
+        remote_id=actual_remote_id,
+        surface=surface.value,
+        resolution_mode=resolution_mode,
+    )
     _save_finalizer(finalizer_path, finalizer)
     _prove_target(client)
     params: dict[str, str | int | bool] = {
         "owner_id": MILOVI_OWNER_ID,
-        "post_id": post_id,
+        "post_id": actual_post_id,
         "message": asset.wall_message,
         "attachments": f"video{clip_remote_id}",
     }
@@ -471,27 +622,55 @@ def _edit_wall_message(
     try:
         writer._call("wall.edit", params=params)
     except Exception:
-        observed_mapping = _find_rollout_wall_raw(writer, post_id)
-        if observed_mapping is None or str(observed_mapping[1].get("text") or "").strip() != asset.wall_message.strip():
+        observed_snapshot = writer.capture_wall_snapshot(
+            community_id=MILOVI_COMMUNITY_ID,
+            max_posts_per_surface=10000,
+        )
+        _observed_id, _observed_surface, observed, _observed_mode = _resolve_wall_incarnation(
+            writer=writer,
+            snapshot=observed_snapshot,
+            journal=journal,
+            wall_remote_id=wall_remote_id,
+            clip_remote_id=clip_remote_id,
+            publish_date=publish_date,
+        )
+        if str(observed.get("text") or "").strip() != asset.wall_message.strip():
             raise
-    after_mapping = _find_rollout_wall_raw(writer, post_id)
-    if after_mapping is None:
-        raise MiloviFinalizerBlocked(f"Wall post disappeared after edit: {wall_remote_id}")
-    after_surface, after = after_mapping
-    _assert_post_shape(after, clip_remote_id=clip_remote_id, publish_date=publish_date)
+    after_snapshot = writer.capture_wall_snapshot(community_id=MILOVI_COMMUNITY_ID, max_posts_per_surface=10000)
+    after_remote_id, after_surface, after, after_mode = _resolve_wall_incarnation(
+        writer=writer,
+        snapshot=after_snapshot,
+        journal=journal,
+        wall_remote_id=wall_remote_id,
+        clip_remote_id=clip_remote_id,
+        publish_date=publish_date,
+    )
     if str(after.get("text") or "").strip() != asset.wall_message.strip():
         raise MiloviFinalizerBlocked(f"Wall message failed verification: {wall_remote_id}")
-    operation.update(status="verified", remote_id=wall_remote_id, surface=after_surface.value)
+    operation.update(
+        status="verified",
+        journal_remote_id=wall_remote_id,
+        remote_id=after_remote_id,
+        surface=after_surface.value,
+        resolution_mode=after_mode,
+    )
     _save_finalizer(finalizer_path, finalizer)
 
 
-def _final_postflight(writer: VkWallWriter, assets: list[SourceAsset], journal: dict[str, Any]) -> list[dict[str, Any]]:
+def _final_postflight(
+    writer: VkWallWriter,
+    assets: list[SourceAsset],
+    journal: dict[str, Any],
+    *,
+    now_epoch: int | None = None,
+) -> list[dict[str, Any]]:
     _assert_wall475_absent(writer)
     snapshot = writer.capture_wall_snapshot(community_id=MILOVI_COMMUNITY_ID, max_posts_per_surface=10000)
     if not snapshot.complete:
         raise MiloviFinalizerBlocked("Final wall snapshot is incomplete")
-    now_epoch = int(time.time())
+    observed_now = int(time.time()) if now_epoch is None else now_epoch
     evidence: list[dict[str, Any]] = []
+    current_wall_ids: set[str] = set()
     for asset in assets:
         item = _item(journal, asset.source_id)
         clip_remote_id = str(item.get("clip_remote_id") or "")
@@ -511,22 +690,18 @@ def _final_postflight(writer: VkWallWriter, assets: list[SourceAsset], journal: 
             description_mode="promoted",
             durable_verified=True,
         )
-        owner_id, video_id = _parse_remote_id(clip_remote_id)
-        attachment = f"video{owner_id}_{video_id}"
-        matches = [post for post in snapshot.posts if attachment in post.attachments]
-        if len(matches) != 1:
-            raise MiloviFinalizerBlocked(f"Wall mapping count differs for {asset.source_id}: {len(matches)}")
-        wall_post = matches[0]
-        if wall_post.remote_id != wall_remote_id or wall_post.publish_date != publish_date:
-            raise MiloviFinalizerBlocked(f"Wall mapping identity/date differs for {asset.source_id}")
-        if wall_post.surface is VkWallSurface.PUBLISHED and now_epoch + 60 < publish_date:
-            raise MiloviFinalizerBlocked(f"Wall post published before its scheduled slot for {asset.source_id}")
-        _owner, post_id = _parse_remote_id(wall_remote_id)
-        raw_mapping = _find_rollout_wall_raw(writer, post_id)
-        if raw_mapping is None:
-            raise MiloviFinalizerBlocked(f"Final wall post disappeared for {asset.source_id}")
-        raw_surface, raw_post = raw_mapping
-        _assert_post_shape(raw_post, clip_remote_id=clip_remote_id, publish_date=publish_date)
+        actual_remote_id, raw_surface, raw_post, resolution_mode = _resolve_wall_incarnation(
+            writer=writer,
+            snapshot=snapshot,
+            journal=journal,
+            wall_remote_id=wall_remote_id,
+            clip_remote_id=clip_remote_id,
+            publish_date=publish_date,
+            now_epoch=observed_now,
+        )
+        if actual_remote_id in current_wall_ids:
+            raise MiloviFinalizerBlocked(f"Final wall incarnation is reused by multiple sources: {actual_remote_id}")
+        current_wall_ids.add(actual_remote_id)
         if str(raw_post.get("text") or "").strip() != asset.wall_message.strip():
             raise MiloviFinalizerBlocked(f"Final wall public copy differs for {asset.source_id}")
         evidence.append(
@@ -534,6 +709,8 @@ def _final_postflight(writer: VkWallWriter, assets: list[SourceAsset], journal: 
                 "source_id": asset.source_id,
                 "clip_remote_id": clip_remote_id,
                 "wall_remote_id": wall_remote_id,
+                "current_wall_remote_id": actual_remote_id,
+                "wall_resolution_mode": resolution_mode,
                 "publish_date": publish_date,
                 "wall_surface": raw_surface.value,
                 "clip_description_sha256": _sha256_text(asset.description),
@@ -703,6 +880,7 @@ def run_issue_323_finalizer(
                     writer=writer,
                     client=client,
                     asset=asset,
+                    journal=journal,
                     wall_remote_id=wall_remote_id,
                     clip_remote_id=clip_remote_id,
                     publish_date=publish_date,
