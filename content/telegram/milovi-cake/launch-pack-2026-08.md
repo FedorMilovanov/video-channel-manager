@@ -6,9 +6,17 @@ Channel: `@MiloviCake`.
 
 ## Editorial contract
 
-The channel is not a link dump and not a permanent sales banner. It should earn a subscription through four things: real Milovi Cake work, Victoria/brand presence, useful client guidance, and short pastry-culture stories from Milovi School. Commercial CTAs stay soft and factual. No invented availability, ingredients, customer stories, lead times, scarcity or delivery promises.
+The channel is not a link dump and not a permanent sales banner. It should earn a subscription through four things: real Milovi Cake work, Victoria/brand presence, useful client guidance, and short pastry-culture stories from Milovi School. Commercial CTAs stay soft and factual.
 
-Use natural Russian. Prefer a strong searchable first line over hashtag stacks. Normally use zero hashtags; add one only when it genuinely helps navigation. Product links should land on the closest useful `milovicake.ru` page, not automatically on the homepage. School links should point to the exact article.
+Hard rules:
+
+- no invented availability, scarcity, ingredients, lead times, customer stories or quotes;
+- no first-person Victoria copy unless Victoria has approved that wording or it is an exact sourced quotation;
+- current prices, address and delivery wording must be re-checked immediately before publication;
+- review text must match the current published review source exactly;
+- School history claims must not be stronger than the sourced article;
+- use natural Russian and normally zero hashtags;
+- product links land on the closest useful `milovicake.ru` page; School links land on the exact article.
 
 `DISCOVERY` marks the ten posts intentionally designed to be searchable/forwardable beyond the existing audience.
 
@@ -24,31 +32,31 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Milovi Cake — не только витрина тортов.**
 
-Здесь собираем красивые реальные работы Milovi Cake, детали и процесс, полезные подсказки перед заказом и короткие истории французской кондитерской культуры из Milovi School.
+Здесь — реальные работы Milovi Cake, детали и процесс, полезные подсказки перед заказом и короткие истории французской кондитерской культуры из Milovi School.
 
-Если торт нужен не сегодня — всё равно оставайтесь. Канал задуман как место, куда можно прийти за идеей для будущего праздника, посмотреть новые работы и узнать чуть больше о том, почему десерт выглядит и ощущается именно так.
+Если торт нужен не сегодня — канал всё равно можно сохранить: за идеями для будущего праздника, новыми работами и интересными деталями о десертах.
 
-Санкт-Петербург. Автор проекта и кондитер — Виктория Милованова.
+Санкт-Петербург. Основатель и кондитер — Виктория Милованова.
 
 Заказать и посмотреть основные форматы: https://milovicake.ru/
 
 ---
 
-## MC-TG-002 — Victoria
+## MC-TG-002 — Victoria / brand person
 
 **Role:** person / trust.
-**Media:** use only a verified Victoria portrait from Milovi assets if one is selected during review; otherwise publish as text + work photo.
+**Media:** use only a verified Victoria portrait from Milovi assets if selected during review; otherwise use a current Milovi work.
 **Source:** `Milovi_Cake/llms.txt`.
 
 **Draft**
 
 **Кто стоит за Milovi Cake**
 
-Меня зовут Виктория Милованова. Я кондитер и основатель Milovi Cake в Санкт-Петербурге.
+Milovi Cake основала кондитер Виктория Милованова в Санкт-Петербурге.
 
-Для меня хороший заказ начинается не с выбора декора, а с понимания самого праздника: даты, повода, количества гостей и того настроения, которое хочется получить. Уже потом складываются формат, начинка, вес и оформление.
+В заказе сначала фиксируются дата, повод, количество гостей и пожелания по стилю или референсу. Затем подбираются формат, начинка, вес и декор — и уже после этого рассчитывается индивидуальная стоимость.
 
-В этом канале буду показывать не только финальную картинку, но и саму логику выбора — чтобы заказывать десерт было проще и спокойнее.
+В этом канале будем показывать не только финальные работы, но и логику выбора: что действительно помогает подготовить заказ без лишней переписки.
 
 ---
 
@@ -62,16 +70,14 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Что написать кондитеру в первом сообщении, чтобы быстрее получить точный расчёт**
 
-Сохраните короткий чек-лист:
+Сохраните четыре пункта:
 
 • дата;
 • повод;
 • примерное количество гостей;
 • желаемый стиль или референс.
 
-После этого уже можно спокойно выбрать формат десерта, начинку, вес и декор. Финальная стоимость у Milovi Cake рассчитывается индивидуально — она зависит именно от этих параметров.
-
-Это тот случай, когда четыре строки в первом сообщении экономят длинную переписку.
+После этого можно перейти к формату десерта, начинке, весу и декору. Финальная стоимость Milovi Cake рассчитывается индивидуально.
 
 Подробно о заказе: https://milovicake.ru/zakazat-tort-spb/
 
@@ -86,13 +92,13 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Draft**
 
-**3D-торт «Книги»: когда десерт становится частью подарка**
+**3D-торт «Книги»: когда форма становится частью идеи**
 
-Не просто надпись сверху, а целая форма: скульптурный торт в виде книг.
+Это не просто рисунок или надпись сверху, а скульптурный 3D-торт в виде книг.
 
-Такие работы особенно хорошо показывают разницу между «выбрать красивый торт» и «собрать торт под конкретного человека». Тема уже работает как персональная деталь праздника.
+Такие работы хорошо показывают принцип персонального дизайна: тема праздника задаётся самой формой десерта.
 
-Ещё реальные работы Milovi Cake: https://milovicake.ru/gallery/
+Ещё реальные работы: https://milovicake.ru/gallery/
 
 ---
 
@@ -100,15 +106,15 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Role:** School / pastry history.
 **Media:** `Milovi_School/public/images/articles/paris-brest-race-dessert.webp`.
-**Source:** Milovi School article `paris-brest-race-dessert`; source trail in the article.
+**Source:** Milovi School article `paris-brest-race-dessert`; use its source trail.
 
 **Draft**
 
 **Почему Paris-Brest выглядит как колесо?**
 
-У этого французского десерта связь с велосипедом не декоративная. В Milovi School есть отдельный разбор истории Paris–Brest и велогонки Париж–Брест–Париж, а также того, как классика менялась позже.
+Связь этого французского десерта с велосипедом не декоративная. В Milovi School есть отдельный разбор истории Paris–Brest, велогонки Париж–Брест–Париж и того, как классика менялась позже.
 
-Самое интересное здесь не запомнить дату, а увидеть принцип: форма знаменитого десерта может быть частью его истории, а не случайным дизайном.
+Хороший пример того, как форма десерта может быть частью его истории.
 
 Полный материал и источники: https://french.milovicake.ru/articles/paris-brest-race-dessert/
 
@@ -116,40 +122,36 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 ## MC-TG-006 — gold texture
 
-**Role:** visual / taste of brand.
+**Role:** visual / brand taste.
 **Media:** `/img/gallery/videos/video-02-spb-cakes.webm`.
 **Poster:** `/img/gallery/gallery-14.webp`.
 **Source:** gallery item `v02`.
 
 **Draft**
 
-**Фактура вместо лишнего декора**
+**Фактурный торт с золотом — крупным планом**
 
-В этой работе весь эффект держится на объёме поверхности и золотых акцентах. Не нужно десять разных деталей, если сама фактура уже создаёт характер торта.
+В этой работе акцент сделан на объёмной поверхности и золотых деталях. В видео особенно хорошо видно саму фактуру — то, что на одном статичном кадре легко потерять.
 
-Показываю видео крупнее — здесь как раз интересно смотреть не только общий силуэт, но и поверхность.
-
-Галерея: https://milovicake.ru/gallery/
+Галерея Milovi Cake: https://milovicake.ru/gallery/
 
 ---
 
-## MC-TG-007 — Maria review
+## MC-TG-007 — verified review: Евгения Монтихо
 
 **Role:** verified social proof.
-**Media:** use the corresponding verified review screenshot only after exact visual mapping during review.
-**Source:** `Milovi_Cake/otzyvy/index.html`, published review by Мария К.
+**Media:** use a review screenshot only after exact visual mapping to this review.
+**Source:** current `Milovi_Cake/otzyvy/index.html`, published review by Евгения Монтихо.
 
 **Draft**
 
-**«Торт получился именно таким, как я представляла»**
+**Дважды заказывали — и вот что написала клиентка**
 
-Мария К.:
+Евгения Монтихо:
 
-«Заказывала торт мужу на день рождения. Виктория очень внимательно выслушала все пожелания. Торт получился именно таким, как я представляла!»
+«Дважды заказывали торты. Оба торта просто шикарные — ваше творчество дарит не только эстетическое, но и гастрономическое удовольствие.»
 
-Люблю этот отзыв за формулировку «как я представляла». В индивидуальном заказе это важнее попытки угадать универсально красивый вариант.
-
-Все опубликованные отзывы: https://milovicake.ru/otzyvy/
+Отзывы Milovi Cake: https://milovicake.ru/otzyvy/
 
 ---
 
@@ -164,9 +166,9 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Когда большой торт просто не нужен**
 
-Бенто с персональной надписью — компактный формат, где смысл часто важнее масштаба. Здесь как раз тот случай: маленький десерт работает как отдельный подарок и сообщение одновременно.
+Бенто с персональной надписью — компактный формат для подарка. Здесь смысл держится не на масштабе, а на самой идее и сообщении.
 
-Форматы бенто Milovi Cake: https://milovicake.ru/bento-torty/
+Форматы бенто: https://milovicake.ru/bento-torty/
 
 ---
 
@@ -180,9 +182,7 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Эклер существовал раньше, чем получил привычное нам имя**
 
-История éclair заметно сложнее легенды «кто-то однажды придумал длинное пирожное». В Milovi School собран отдельный материал о ранних формах десерта, роли заварного теста и том, как эклер менялся до современных кондитерских.
-
-Если любите происхождение привычных вещей — хороший материал на несколько минут.
+История éclair сложнее легенды об одном изобретателе. В Milovi School собран отдельный материал о ранних формах десерта, заварном тесте и развитии эклера до современной pâtisserie.
 
 Полная история и источники: https://french.milovicake.ru/articles/eclair-histoire-complete/
 
@@ -193,35 +193,31 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 **Role:** product visual.
 **Media:** `/img/gallery/videos/video-04-eclair.webm`.
 **Poster:** `/img/gallery/gallery-25.webp`.
-**Important:** physical filename contains `eclair`, but verified gallery metadata states that the content is meringue roll. Do not rename or describe it as éclair.
+**Important:** the old physical filename contains `eclair`, but verified gallery metadata identifies the content as meringue roll. Do not describe it as éclair.
 **Source:** gallery item `v04`.
 
 **Draft**
 
-**Меренговый рулет — тот самый случай, когда видео лучше фотографии**
+**Меренговый рулет — тот случай, когда видео показывает больше фотографии**
 
-На фото видна форма. В движении лучше считываются лёгкость, крем и сам характер десерта.
-
-В галерее этот ролик подписан именно как меренговый рулет — несмотря на старое техническое имя видеофайла.
+В движении лучше видно форму и фактуру десерта. В исходной галерее этот ролик подтверждён как меренговый рулет, несмотря на старое техническое имя файла.
 
 Подробнее: https://milovicake.ru/meringue-roll/
 
 ---
 
-## MC-TG-011 — Olga review
+## MC-TG-011 — verified review: Жанель
 
 **Role:** verified social proof.
-**Source:** `Milovi_Cake/otzyvy/index.html`, published review by Ольга Н.
+**Source:** current `Milovi_Cake/otzyvy/index.html`, published review by Жанель.
 
 **Draft**
 
-**Отзыв про меренговый рулет, который особенно приятно перечитывать**
+**Про внимательность к заказу — словами клиентки**
 
-Ольга Н.:
+Жанель:
 
-«Меренговый рулет — это что-то невероятное! Нежный, воздушный, ягоды свежие. Уже третий раз заказываю.»
-
-Без пересказа от нас — оставляю слова клиента как есть.
+«Спасибо за оперативность, внимательный подход, рекомендации по вкусам и вашу работу. Торт получился отличным, именинница довольна.»
 
 Отзывы: https://milovicake.ru/otzyvy/
 
@@ -236,11 +232,9 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Draft**
 
-**3D-торт с лисёнком: персонаж важнее надписи**
+**3D-торт с лисёнком: один персонаж задаёт весь сюжет**
 
-В детских тематических тортах один узнаваемый герой часто создаёт весь сюжет. Здесь — ручная лепка лисёнка и сам торт как небольшая сцена.
-
-Показываю видео без лишней упаковки в «рекламный ролик»: сама работа интереснее заставки.
+В галерее Milovi Cake эта работа описана как детский 3D-торт с ручной лепкой персонажа. В видео хорошо видно, как фигурка становится центром всей композиции.
 
 Детские торты: https://milovicake.ru/detskie-torty/
 
@@ -255,11 +249,11 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Почему у индивидуального торта нет одной цены «за картинку»**
 
-На расчёт влияют не только килограммы. Сначала определяются формат, начинка, вес и декор — и только после этого получается индивидуальная стоимость.
+Сначала определяются формат, начинка, вес и декор. После этого рассчитывается индивидуальная стоимость.
 
-Поэтому два внешне похожих референса могут оказаться разными по сложности и цене.
+Поэтому внешне похожие референсы могут отличаться по сложности исполнения и итоговой цене.
 
-Актуальные базовые форматы и порядок заказа: https://milovicake.ru/zakazat-tort-spb/
+Порядок заказа: https://milovicake.ru/zakazat-tort-spb/
 
 ---
 
@@ -272,28 +266,28 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Draft**
 
-**Свадебный торт без визуального шума**
+**Свадебный торт с сердцем — без визуального перегруза**
 
-Светлая работа с сердцем и минималистичным оформлением. Здесь интереснее всего то, что свадебный торт не обязан быть перегруженным декором, чтобы выглядеть празднично.
+Светлая работа с минималистичным декором. Здесь главный акцент — чистая композиция и одна понятная деталь.
 
-Ещё свадебные работы и информация: https://milovicake.ru/svadebnye-torty/
+Свадебные торты Milovi Cake: https://milovicake.ru/svadebnye-torty/
 
 ---
 
-## MC-TG-015 — Ekaterina review
+## MC-TG-015 — verified review: Ирина Силантьева
 
-**Role:** verified social proof / wedding trust.
-**Source:** `Milovi_Cake/otzyvy/index.html`, published review by Екатерина С.
+**Role:** verified social proof / wedding relevance.
+**Source:** current `Milovi_Cake/otzyvy/index.html`, published review by Ирина Силантьева.
 
 **Draft**
 
-**Про свадебный заказ — словами клиента**
+**Торт к 40-летию свадьбы — отзыв клиента**
 
-Екатерина С.:
+Ирина Силантьева:
 
-«Заказывали свадебный торт на 45 гостей. Виктория помогла рассчитать размер, подобрала начинку. Торт привезли точно ко времени, все гости спрашивали контакты!»
+«Спасибо за прекрасно выполненную работу к 40-летию свадьбы. И вкусовые качества, и дизайн, и упаковка — гости были в восторге.»
 
-Полный раздел отзывов: https://milovicake.ru/otzyvy/
+Отзывы: https://milovicake.ru/otzyvy/
 
 ---
 
@@ -301,15 +295,15 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Role:** School / myth-busting / forwardable.
 **Media:** `Milovi_School/public/images/articles/millefeuille-histoire.webp`.
-**Source:** Milovi School article `millefeuille-histoire`; the article explicitly separates documented history from the Napoleon legend.
+**Source:** Milovi School article `millefeuille-histoire`; preserve its distinction between documented history and the Napoleon legend.
 
 **Draft**
 
 **Почему «Наполеон» и millefeuille — не одна простая история**
 
-У мильфея длинная документированная история, а популярная легенда про Наполеона слишком удобна, чтобы принимать её без проверки.
+У мильфея длинная документированная история, а популярная легенда о Наполеоне не подтверждается как история происхождения десерта.
 
-В Milovi School собрали отдельный разбор: ранние рецепты, парижская популяризация и происхождение мифа.
+В Milovi School разобраны ранние рецепты, парижская популяризация и происхождение мифа.
 
 Читать с источниками: https://french.milovicake.ru/articles/millefeuille-histoire/
 
@@ -324,9 +318,9 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Draft**
 
-**Не каждый праздничный десерт должен быть одним большим тортом**
+**Праздничный десерт не обязательно должен быть одним большим тортом**
 
-Капкейки с кремом и ягодным декором — другой сценарий подачи: отдельная порция уже собрана и выглядит законченно сама по себе.
+В галерее есть отдельный набор капкейков с кремом и ягодным декором. Это другой формат подачи: каждая порция уже оформлена отдельно.
 
 Больше реальных работ: https://milovicake.ru/gallery/
 
@@ -341,21 +335,19 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Draft**
 
-**Торт для человека, который живёт баскетболом**
+**3D-торт «Баскетбол»: персонализация через увлечение**
 
-Один из самых понятных способов сделать заказ персональным — начать не с цвета, а с увлечения человека.
+Спортивная тема считывается сразу, без длинной надписи и объяснений. Хороший пример того, как дизайн можно строить вокруг конкретного интереса, а не только вокруг цвета.
 
-Здесь тема задана сразу: 3D-торт «Баскетбол». Такой сюжет не требует длинной подписи, чтобы было понятно, для кого он сделан.
-
-3D-форматы Milovi Cake: https://milovicake.ru/
+Галерея: https://milovicake.ru/gallery/
 
 ---
 
-## MC-TG-019 — poll draft
+## MC-TG-019 — native poll draft
 
 **Role:** engagement / audience research.
-**Format:** native Telegram poll when live publishing is authorized.
-**Source:** verified available gallery videos.
+**Format:** native Telegram poll only after live publishing is authorized.
+**Source:** verified gallery videos.
 
 **Question:** Что показать следующим крупным планом?
 
@@ -365,7 +357,7 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 - Бенто
 - «Луна и звёзды»
 
-**Follow-up rule:** the winning option should produce a real follow-up post using the corresponding verified asset. Do not run a poll with no planned payoff.
+**Follow-up gate:** run this poll only if the winning option will produce a real follow-up post using the corresponding verified asset.
 
 ---
 
@@ -373,13 +365,13 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Role:** School / pastry history.
 **Media:** `Milovi_School/public/images/articles/opera-gateau-histoire.webp`.
-**Source:** Milovi School article `opera-gateau-histoire`; treat attribution history as disputed and point readers to the source trail.
+**Source:** Milovi School article `opera-gateau-histoire`; keep attribution history explicitly disputed where the article does.
 
 **Draft**
 
-**Почему торт «Опера» — это ещё и история о спорном авторстве**
+**Почему торт «Опера» — ещё и история о спорном авторстве**
 
-У знаменитого прямоугольного десерта есть не только узнаваемая архитектура слоёв, но и спор о происхождении. Поэтому в Milovi School мы не сводим историю к одной красивой легенде — там разобраны версии и источники.
+У знаменитого десерта есть узнаваемая архитектура слоёв и несколько версий происхождения. В Milovi School история не сведена к одной удобной легенде — версии разобраны вместе с источниками.
 
 Полный материал: https://french.milovicake.ru/articles/opera-gateau-histoire/
 
@@ -394,18 +386,18 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Draft**
 
-**Бенто Love — маленький формат, которому не нужен большой повод**
+**Бенто Love — компактный формат для небольшого подарка**
 
-Романтичный бенто с кремовым декором. Иногда компактный десерт уместнее полноценного праздничного торта — особенно когда главная задача просто сделать человеку приятно.
+Романтичный бенто-торт с кремовым декором из реальной галереи Milovi Cake.
 
-Бенто: https://milovicake.ru/bento-torty/
+Форматы бенто: https://milovicake.ru/bento-torty/
 
 ---
 
 ## MC-TG-022 — DISCOVERY — current format prices
 
 **Role:** useful commercial reference / saveable.
-**Source:** current `Milovi_Cake/llms.txt`. Re-check prices against source immediately before any live publication.
+**Source:** current `Milovi_Cake/llms.txt`.
 
 **Draft**
 
@@ -421,11 +413,11 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 • Павлова — от 350 ₽;
 • капкейки — от 350 ₽.
 
-Это не фиксированный прайс на любой дизайн: итог зависит от выбранных параметров и декора и рассчитывается индивидуально.
+Итоговая стоимость рассчитывается индивидуально и зависит от выбранных параметров и декора.
 
 Актуальная информация: https://milovicake.ru/
 
-**Pre-publish gate:** if any source price changed, update this draft; stale pricing is a hard block.
+**Pre-publish hard gate:** compare every number with the current fact sheet; any mismatch blocks publication.
 
 ---
 
@@ -438,26 +430,26 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Draft**
 
-**Детский торт с зайчиком — мягкая тема без мультяшного перегруза**
+**Детский торт с зайчиком — спокойная тематическая композиция**
 
-Зайчик, цветы и спокойная композиция. Детский торт может быть тематическим и при этом оставаться визуально лёгким.
+В исходной галерее работа описана как торт с зайчиком и цветочным декором. Показываем саму работу без придуманной истории заказа.
 
 Детские торты: https://milovicake.ru/detskie-torty/
 
 ---
 
-## MC-TG-024 — Anna review
+## MC-TG-024 — verified review: Екатерина Гарсес Еникеева
 
-**Role:** verified social proof / bento.
-**Source:** `Milovi_Cake/otzyvy/index.html`, published review by Анна П.
+**Role:** verified social proof / repeat-client trust.
+**Source:** current `Milovi_Cake/otzyvy/index.html`, published review by Екатерина Гарсес Еникеева.
 
 **Draft**
 
-**Бенто на девичник — отзыв без рекламного пересказа**
+**Отзыв постоянного клиента**
 
-Анна П.:
+Екатерина Гарсес Еникеева:
 
-«Бенто-торт на девичник — просто чудо! Очень нежный, красивый и без приторной сладости. Девочки были в восторге.»
+«Я являюсь постоянным клиентом Виктории. Все торты на детские дни рождения берём у неё. Индивидуальный подход, всё вовремя, вкусно, красиво и качественно.»
 
 Отзывы: https://milovicake.ru/otzyvy/
 
@@ -467,15 +459,13 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Role:** School / curiosity / forwardable.
 **Media:** `Milovi_School/public/images/articles/creme-brulee-dispute.webp`.
-**Source:** Milovi School article `creme-brulee-dispute`; article deliberately presents competing claims rather than a false single inventor.
+**Source:** Milovi School article `creme-brulee-dispute`; present competing historical claims rather than a false single inventor.
 
 **Draft**
 
-**Кто придумал crème brûlée? Хороший ответ — не «точно французы»**
+**Кто придумал crème brûlée? Хороший ответ не помещается в одно имя**
 
-Франция, Англия и Каталония имеют свои исторические основания для спора, и именно поэтому эта история интереснее простой легенды об одном изобретателе.
-
-В Milovi School собраны версии и источники без попытки выдать спорный факт за установленный.
+У Франции, Англии и Каталонии есть разные исторические основания для спора. Поэтому в Milovi School собраны версии и источники без попытки выдать спорный вопрос за окончательно решённый.
 
 Разбор: https://french.milovicake.ru/articles/creme-brulee-dispute/
 
@@ -490,9 +480,9 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Draft**
 
-**«Луна и звёзды» — когда тема строится на двух деталях**
+**«Луна и звёзды» — тема, построенная на нескольких акцентах**
 
-Голубая гамма, космические мотивы и золотые звёзды. Хороший пример того, как понятная тема может держаться на нескольких акцентах, а не на десятках элементов.
+Голубая гамма, космические мотивы и золотые звёзды — именно так эта работа описана в галерее Milovi Cake.
 
 Галерея: https://milovicake.ru/gallery/
 
@@ -507,28 +497,28 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Milovi Cake: доставка и самовывоз в Петербурге**
 
-Заказы доступны с доставкой по Санкт-Петербургу и пригородам. Самовывоз — Санкт-Петербург, Пулковская улица, 19.
+По текущему фактшиту заказы доступны с доставкой по Санкт-Петербургу и пригородам. Самовывоз — Санкт-Петербург, Пулковская улица, 19.
 
-Если планируете заказ, сначала лучше прислать дату, повод, число гостей и пример желаемого стиля — после этого можно перейти к формату, начинке, весу и декору.
+Для первого сообщения достаточно даты, повода, числа гостей и примера желаемого стиля.
 
 Подробнее: https://milovicake.ru/tort-s-dostavkoy/
 
-**Pre-publish gate:** re-check address/delivery wording against the current fact sheet.
+**Pre-publish hard gate:** re-check address and delivery wording against the current fact sheet.
 
 ---
 
-## MC-TG-028 — Svetlana review
+## MC-TG-028 — verified review: Татьяна
 
-**Role:** verified long-term trust.
-**Source:** `Milovi_Cake/otzyvy/index.html`, published review by Светлана Р.
+**Role:** verified social proof / service trust.
+**Source:** current `Milovi_Cake/otzyvy/index.html`, published review by Татьяна.
 
 **Draft**
 
-**Самый сильный отзыв — иногда самый спокойный**
+**Когда клиент отмечает не только сам торт**
 
-Светлана Р.:
+Татьяна:
 
-«Заказываю торты у Виктории уже 3 года. Всегда безупречное качество — и вкус, и внешний вид, и пунктуальность.»
+«Изумительно! Всё на высшем уровне: картинка, заказ, фото, чеки, доставка, упаковка — всё с душой.»
 
 Отзывы: https://milovicake.ru/otzyvy/
 
@@ -542,13 +532,11 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Draft**
 
-**Роза, личи и малина: почему Ispahan Пьера Эрме разбирают как архитектуру вкуса**
+**Роза, личи и малина: почему Ispahan разбирают как архитектуру вкуса**
 
-В Milovi School есть учебный материал про сочетание, ставшее одним из самых узнаваемых в современной французской pâtisserie: цветочная нота розы, личи и кислотность малины.
+В Milovi School есть материал о сочетании, связанном с Пьером Эрме: роза, личи и малина. В коротком посте не пересказываем весь рецепт — интереснее показать сам принцип сочетания и дать ссылку на полный разбор.
 
-Не пытаемся уместить рецепт в один Telegram-пост — здесь интереснее сначала понять саму конструкцию вкуса.
-
-Разбор и источники: https://french.milovicake.ru/articles/herme-ispahan-deep/
+Материал и источники: https://french.milovicake.ru/articles/herme-ispahan-deep/
 
 ---
 
@@ -556,39 +544,40 @@ Use natural Russian. Prefer a strong searchable first line over hashtag stacks. 
 
 **Role:** commercial close without fake urgency.
 **Media:** one reviewed current work.
-**Source:** Milovi Cake order flow.
+**Source:** current Milovi Cake order flow.
 
 **Draft**
 
-**Если у вас уже есть дата и идея — можно начать с четырёх строк**
+**Если уже есть дата и идея — начать можно с четырёх строк**
 
 Дата. Повод. Количество гостей. Стиль или референс.
 
-Этого достаточно для первого сообщения. Дальше уже подбираются формат, начинка, вес и декор и рассчитывается индивидуальная стоимость.
+Дальше подбираются формат, начинка, вес и декор и рассчитывается индивидуальная стоимость.
 
 Заказ и варианты: https://milovicake.ru/zakazat-tort-spb/
 
-Никаких «осталось два места», если это не подтверждено на момент публикации.
+Никаких «последних мест» или срочности без фактического подтверждения на момент публикации.
 
 ---
 
 ## Ten discovery / forwardable posts
 
-The first deliberate discovery set is: `003`, `004`, `005`, `009`, `012`, `016`, `018`, `020`, `022`, `025`.
+The initial discovery set is: `003`, `004`, `005`, `009`, `012`, `016`, `018`, `020`, `022`, `025`.
 
-They cover four different sharing reasons rather than repeating one format:
-- useful checklist (`003`, `022`);
-- visually surprising real work (`004`, `012`, `018`);
-- searchable pastry history / myth-busting (`005`, `009`, `016`, `020`, `025`).
+It deliberately covers different sharing reasons:
 
-Do not publish these ten consecutively. Discovery content must be interleaved with Victoria, real work and verified social proof so the channel still feels human.
+- practical/saveable: `003`, `022`;
+- visually distinctive real work: `004`, `012`, `018`;
+- pastry history / myth-busting: `005`, `009`, `016`, `020`, `025`.
+
+Do not publish these ten consecutively. Interleave them with real work, brand/person posts and verified social proof.
 
 ## Review gates before any live scheduling
 
 1. Media path still exists and visually matches the copy.
-2. Any current price/address/delivery wording is re-checked against the current Milovi Cake fact sheet.
-3. Exact customer quotes are copied from the current published review source, not memory.
-4. School history claims are not strengthened beyond what the sourced article supports; contested attribution stays contested.
-5. Links are checked for HTTP success and correct destination.
-6. No post contains fake availability, fake scarcity, invented ingredients or an invented client backstory.
-7. A provider publication still requires exact Telegram target binding + reviewed canary under #353.
+2. Current price/address/delivery wording is re-checked against the current Milovi Cake fact sheet.
+3. Every customer quote is copied exactly from the current published source; screenshot mapping is verified separately.
+4. School history claims are checked against the article/source trail and contested attribution stays contested.
+5. All outbound links are checked for the intended destination.
+6. No post contains fake availability, fake scarcity, invented ingredients, invented customer context or unapproved first-person Victoria copy.
+7. A live provider publication still requires exact Telegram target binding + cross-project guards + one explicitly reviewed canary under #353.
