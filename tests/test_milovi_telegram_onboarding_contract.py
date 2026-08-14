@@ -9,6 +9,7 @@ PROFILE = ROOT / "content/telegram/channels/milovi-cake.json"
 WORKFLOW = ROOT / ".github/workflows/telegram-milovi-target-discovery.yml"
 RETIRED_GENERIC_WORKFLOW = ROOT / ".github/workflows/telegram-generic-target-discovery.yml"
 LAUNCH_PACK = ROOT / "content/telegram/milovi-cake/launch-pack-2026-08.md"
+ASSET_CONTRACT = ROOT / "content/telegram/milovi-cake/editorial-asset-contract-2026-08.md"
 
 
 def test_milovi_discovery_profile_is_exact_and_write_disabled() -> None:
@@ -78,3 +79,17 @@ def test_launch_pack_has_no_known_rejected_review_placeholders() -> None:
 
     assert "no first-person Victoria copy" in launch_pack
     assert "provider-inert / review only" in launch_pack
+
+
+def test_milovi_asset_contract_uses_finished_media_and_prohibits_fake_bts() -> None:
+    contract = ASSET_CONTRACT.read_text(encoding="utf-8")
+
+    assert "finished cake photographs" in contract
+    assert "finished cake videos" in contract
+    assert "Production BTS / kitchen share: **0%**" in contract
+    assert "do **not** plan, promise, stage or publish" in contract
+    assert "kitchen footage" in contract
+    assert "behind-the-scenes / BTS production footage" in contract
+    assert "The current kitchen is not an editorial asset" in contract
+    assert "45% finished-work showcase" in contract
+    assert "20% finished-work detail/design breakdowns" in contract

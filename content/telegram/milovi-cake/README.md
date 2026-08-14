@@ -4,9 +4,12 @@ Owning issue: #353.
 
 This directory contains **provider-inert editorial material only**. It is not a scheduler queue and is not consumed by the Telegram publisher runtime.
 
-Current artifact:
+Current artifacts:
 
-- `launch-pack-2026-08.md` — reviewed-source launch corpus for editorial preparation.
+- `launch-pack-2026-08.md` — reviewed-source launch corpus for editorial preparation;
+- `editorial-asset-contract-2026-08.md` — current source-availability constraint for what the launch corpus may actually promise or show.
+
+The asset contract is authoritative when an older draft/example could be read as requiring kitchen, production or BTS footage. While the current contract is active, finished-cake photos/videos are the primary visual source and production BTS/kitchen content remains at 0% unless separately reviewed source footage exists.
 
 Live publication requires, in order:
 

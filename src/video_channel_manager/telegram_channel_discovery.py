@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any, Literal, cast
+from typing import Literal, cast
 
 import httpx
 
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile
 from video_channel_manager.telegram_models import DEFAULT_API_BASE
 from video_channel_manager.telegram_multichannel_transport import GenericTargetProof
-from video_channel_manager.telegram_transport import TelegramApiError, _api_call, _result_dict, _result_list
+from video_channel_manager.telegram_transport import TelegramApiError, _api_call, _result_dict
 
 READ_ONLY_TRANSPORT_RETRIES = 2
 
@@ -27,7 +27,7 @@ def discover_channel_target(
 
     This operation is read-only. It proves the token identity, resolves the public
     username, round-trips the resulting numeric chat ID back through getChat, and
-    checks that the same bot is an administrator with posting permission.
+    checks the exact bot membership for administrator status and posting permission.
     """
 
     own_client = client is None
@@ -112,39 +112,41 @@ def discover_channel_target(
                 "numeric and username Telegram target resolution disagree", provider_effect="not_dispatched"
             )
 
-        administrators = _result_list(
+        member = _result_dict(
             _api_call(
                 http_client,
                 api_base=api_base,
                 token=token,
-                method="getChatAdministrators",
-                payload={"chat_id": chat_id, "return_bots": True},
+                method="getChatMember",
+                payload={"chat_id": chat_id, "user_id": bot_id},
                 mutation=False,
             ),
-            method="getChatAdministrators",
+            method="getChatMember",
+            provider_effect="not_dispatched",
         )
-        matching_member: dict[str, Any] | None = None
-        for candidate in administrators:
-            if not isinstance(candidate, dict):
-                continue
-            user = candidate.get("user")
-            if not isinstance(user, dict):
-                continue
-            try:
-                candidate_id = int(user.get("id", 0))
-            except (TypeError, ValueError):
-                continue
-            if candidate_id == bot_id:
-                matching_member = candidate
-                break
-        if matching_member is None:
+        member_user = member.get("user")
+        if not isinstance(member_user, dict):
+            raise TelegramApiError("posting bot membership has no user identity", provider_effect="not_dispatched")
+        try:
+            member_user_id = int(member_user["id"])
+        except (KeyError, TypeError, ValueError) as exc:
             raise TelegramApiError(
-                "posting bot is absent from the channel administrator list", provider_effect="not_dispatched"
+                "posting bot membership has no valid numeric user id", provider_effect="not_dispatched"
+            ) from exc
+        if member_user_id != bot_id:
+            raise TelegramApiError("posting bot membership resolved to a different user", provider_effect="not_dispatched")
+        if member_user.get("is_bot") is not True:
+            raise TelegramApiError("posting bot membership did not resolve to a bot", provider_effect="not_dispatched")
+        member_username = str(member_user.get("username") or "")
+        if member_username and member_username.casefold() != bot_username.casefold():
+            raise TelegramApiError(
+                "posting bot membership username differs from token identity", provider_effect="not_dispatched"
             )
-        status = str(matching_member.get("status") or "")
+
+        status = str(member.get("status") or "")
         if status not in {"administrator", "creator"}:
             raise TelegramApiError("posting bot is not a channel administrator", provider_effect="not_dispatched")
-        can_post = status == "creator" or matching_member.get("can_post_messages") is True
+        can_post = status == "creator" or member.get("can_post_messages") is True
         if not can_post:
             raise TelegramApiError("posting bot lacks can_post_messages", provider_effect="not_dispatched")
         member_status = cast(Literal["administrator", "creator"], status)
