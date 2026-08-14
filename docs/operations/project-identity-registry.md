@@ -1,6 +1,6 @@
 # Project identity registry
 
-Updated: 2026-08-10
+Updated: 2026-08-15
 
 This repository operates three separate media projects owned by Fedor Milovanov. They are never aliases of one project and must not be mixed in descriptions, comments, playlists, manifests, API writes, reports, ledgers, results, or public footer links.
 
@@ -140,6 +140,8 @@ The shared VK credential is only authentication. The target is selected by `proj
 ### Other registered links
 
 - Website: https://milovicake.ru/
+- Telegram: https://t.me/MiloviCake
+- Dzen: https://dzen.ru/milovicake.ru
 
 Only cake content belongs to Milovi cake-transfer queues. Personal/family/non-cake channel material is always out of scope unless a separate reviewed operation explicitly says otherwise.
 
