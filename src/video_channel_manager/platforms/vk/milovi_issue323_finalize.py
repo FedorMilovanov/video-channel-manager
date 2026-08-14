@@ -441,9 +441,7 @@ def _resolve_wall_incarnation(
     logical_candidates = [
         post
         for post in snapshot.posts
-        if post.owner_id == owner_id
-        and post.publish_date == publish_date
-        and expected_attachment in post.attachments
+        if post.owner_id == owner_id and post.publish_date == publish_date and expected_attachment in post.attachments
     ]
     old_matches = [post for post in snapshot.posts if post.remote_id == wall_remote_id]
     if len(old_matches) > 1:
