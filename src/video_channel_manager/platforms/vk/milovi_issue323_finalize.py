@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import time
 from collections.abc import Mapping
 from dataclasses import replace
 from pathlib import Path
@@ -305,27 +306,33 @@ def _ensure_promoted_clip(
     return remote_id
 
 
-def _find_postponed_raw(writer: VkWallWriter, post_id: int) -> dict[str, Any] | None:
-    items, _pages, complete = writer._read_wall_surface(
-        community_id=MILOVI_COMMUNITY_ID,
-        surface=VkWallSurface.POSTPONED,
-        max_posts=10000,
-    )
-    if not complete:
-        raise MiloviFinalizerBlocked("Postponed wall scan is incomplete")
-    matches = [item for item in items if item.get("id") == post_id and item.get("owner_id") == MILOVI_OWNER_ID]
+def _find_rollout_wall_raw(writer: VkWallWriter, post_id: int) -> tuple[VkWallSurface, dict[str, Any]] | None:
+    matches: list[tuple[VkWallSurface, dict[str, Any]]] = []
+    for surface in (VkWallSurface.PUBLISHED, VkWallSurface.POSTPONED):
+        items, _pages, complete = writer._read_wall_surface(
+            community_id=MILOVI_COMMUNITY_ID,
+            surface=surface,
+            max_posts=10000,
+        )
+        if not complete:
+            raise MiloviFinalizerBlocked(f"{surface.value} wall scan is incomplete")
+        matches.extend(
+            (surface, item)
+            for item in items
+            if item.get("id") == post_id and item.get("owner_id") == MILOVI_OWNER_ID
+        )
     if len(matches) > 1:
-        raise MiloviFinalizerBlocked(f"Postponed wall post {post_id} is duplicated in readback")
+        raise MiloviFinalizerBlocked(f"Wall post {post_id} appears on multiple surfaces")
     return matches[0] if matches else None
 
 
 def _assert_post_shape(post: Mapping[str, Any], *, clip_remote_id: str, publish_date: int) -> None:
     owner_id, video_id = _parse_remote_id(clip_remote_id)
     if post.get("owner_id") != MILOVI_OWNER_ID or post.get("date") != publish_date:
-        raise MiloviFinalizerBlocked("Postponed wall identity/date changed")
+        raise MiloviFinalizerBlocked("Wall identity/date changed")
     attachment_owner, attachment_video, _expanded = _one_video_attachment(post)
     if (attachment_owner, attachment_video) != (owner_id, video_id):
-        raise MiloviFinalizerBlocked("Postponed wall attachment changed")
+        raise MiloviFinalizerBlocked("Wall attachment changed")
 
 
 def _edit_clip_description(
@@ -382,15 +389,16 @@ def _edit_wall_message(
     owner_id, post_id = _parse_remote_id(wall_remote_id)
     if owner_id != MILOVI_OWNER_ID:
         raise MiloviFinalizerBlocked("Wall remote ID is outside Milovi")
-    post = _find_postponed_raw(writer, post_id)
-    if post is None:
-        raise MiloviFinalizerBlocked(f"Postponed wall post disappeared: {wall_remote_id}")
+    mapping = _find_rollout_wall_raw(writer, post_id)
+    if mapping is None:
+        raise MiloviFinalizerBlocked(f"Wall post disappeared: {wall_remote_id}")
+    surface, post = mapping
     _assert_post_shape(post, clip_remote_id=clip_remote_id, publish_date=publish_date)
     if str(post.get("text") or "").strip() == asset.wall_message.strip():
-        operation.update(status="verified", remote_id=wall_remote_id)
+        operation.update(status="verified", remote_id=wall_remote_id, surface=surface.value)
         _save_finalizer(finalizer_path, finalizer)
         return
-    operation.update(status="edit_intent", remote_id=wall_remote_id)
+    operation.update(status="edit_intent", remote_id=wall_remote_id, surface=surface.value)
     _save_finalizer(finalizer_path, finalizer)
     _prove_target(client)
     params: dict[str, str | int | bool] = {
@@ -398,21 +406,23 @@ def _edit_wall_message(
         "post_id": post_id,
         "message": asset.wall_message,
         "attachments": f"video{clip_remote_id}",
-        "publish_date": publish_date,
     }
+    if surface is VkWallSurface.POSTPONED:
+        params["publish_date"] = publish_date
     try:
         writer._call("wall.edit", params=params)
     except Exception:
-        observed = _find_postponed_raw(writer, post_id)
-        if not isinstance(observed, Mapping) or str(observed.get("text") or "").strip() != asset.wall_message.strip():
+        observed_mapping = _find_rollout_wall_raw(writer, post_id)
+        if observed_mapping is None or str(observed_mapping[1].get("text") or "").strip() != asset.wall_message.strip():
             raise
-    after = _find_postponed_raw(writer, post_id)
-    if after is None:
-        raise MiloviFinalizerBlocked(f"Postponed wall post disappeared after edit: {wall_remote_id}")
+    after_mapping = _find_rollout_wall_raw(writer, post_id)
+    if after_mapping is None:
+        raise MiloviFinalizerBlocked(f"Wall post disappeared after edit: {wall_remote_id}")
+    after_surface, after = after_mapping
     _assert_post_shape(after, clip_remote_id=clip_remote_id, publish_date=publish_date)
     if str(after.get("text") or "").strip() != asset.wall_message.strip():
-        raise MiloviFinalizerBlocked(f"Postponed wall message failed verification: {wall_remote_id}")
-    operation.update(status="verified", remote_id=wall_remote_id)
+        raise MiloviFinalizerBlocked(f"Wall message failed verification: {wall_remote_id}")
+    operation.update(status="verified", remote_id=wall_remote_id, surface=after_surface.value)
     _save_finalizer(finalizer_path, finalizer)
 
 
@@ -421,6 +431,7 @@ def _final_postflight(writer: VkWallWriter, assets: list[SourceAsset], journal: 
     snapshot = writer.capture_wall_snapshot(community_id=MILOVI_COMMUNITY_ID, max_posts_per_surface=10000)
     if not snapshot.complete:
         raise MiloviFinalizerBlocked("Final wall snapshot is incomplete")
+    now_epoch = int(time.time())
     evidence: list[dict[str, Any]] = []
     for asset in assets:
         item = _item(journal, asset.source_id)
@@ -438,14 +449,20 @@ def _final_postflight(writer: VkWallWriter, assets: list[SourceAsset], journal: 
         owner_id, video_id = _parse_remote_id(clip_remote_id)
         attachment = f"video{owner_id}_{video_id}"
         matches = [post for post in snapshot.posts if attachment in post.attachments]
-        if any(post.surface is VkWallSurface.PUBLISHED for post in matches):
-            raise MiloviFinalizerBlocked(f"Immediate rollout wall post remains for {asset.source_id}")
-        postponed = [post for post in matches if post.surface is VkWallSurface.POSTPONED]
-        if len(postponed) != 1 or postponed[0].remote_id != wall_remote_id or postponed[0].publish_date != publish_date:
-            raise MiloviFinalizerBlocked(f"Postponed mapping differs for {asset.source_id}")
+        if len(matches) != 1:
+            raise MiloviFinalizerBlocked(f"Wall mapping count differs for {asset.source_id}: {len(matches)}")
+        wall_post = matches[0]
+        if wall_post.remote_id != wall_remote_id or wall_post.publish_date != publish_date:
+            raise MiloviFinalizerBlocked(f"Wall mapping identity/date differs for {asset.source_id}")
+        if wall_post.surface is VkWallSurface.PUBLISHED and now_epoch + 60 < publish_date:
+            raise MiloviFinalizerBlocked(f"Wall post published before its scheduled slot for {asset.source_id}")
         _owner, post_id = _parse_remote_id(wall_remote_id)
-        raw_post = _find_postponed_raw(writer, post_id)
-        if raw_post is None or str(raw_post.get("text") or "").strip() != asset.wall_message.strip():
+        raw_mapping = _find_rollout_wall_raw(writer, post_id)
+        if raw_mapping is None:
+            raise MiloviFinalizerBlocked(f"Final wall post disappeared for {asset.source_id}")
+        raw_surface, raw_post = raw_mapping
+        _assert_post_shape(raw_post, clip_remote_id=clip_remote_id, publish_date=publish_date)
+        if str(raw_post.get("text") or "").strip() != asset.wall_message.strip():
             raise MiloviFinalizerBlocked(f"Final wall public copy differs for {asset.source_id}")
         evidence.append(
             {
@@ -453,6 +470,7 @@ def _final_postflight(writer: VkWallWriter, assets: list[SourceAsset], journal: 
                 "clip_remote_id": clip_remote_id,
                 "wall_remote_id": wall_remote_id,
                 "publish_date": publish_date,
+                "wall_surface": raw_surface.value,
                 "clip_description_sha256": _sha256_text(asset.description),
                 "wall_message_sha256": _sha256_text(asset.wall_message),
             }
