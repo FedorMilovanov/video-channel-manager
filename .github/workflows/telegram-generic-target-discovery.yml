@@ -1,4 +1,0 @@
-# Intentionally retired in #353.
-# Milovi Cake discovery is isolated in telegram-milovi-target-discovery.yml.
-# Keep generic/provider logic in Python; do not couple unrelated channel identities
-# in one manually dispatched onboarding workflow.
