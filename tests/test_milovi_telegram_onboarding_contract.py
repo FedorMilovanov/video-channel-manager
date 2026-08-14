@@ -46,6 +46,13 @@ def test_milovi_target_discovery_workflow_is_narrow_and_read_only() -> None:
     ):
         assert forbidden not in workflow
 
+    # The shared bot token is exposed only to the single provider-read step,
+    # never to checkout/setup/install/profile-validation steps or job-wide env.
+    discovery_marker = "- name: Discover exact target without provider mutation"
+    before_discovery, discovery_and_after = workflow.split(discovery_marker, maxsplit=1)
+    assert "MILOVI_CAKE_TELEGRAM_BOT_TOKEN" not in before_discovery
+    assert discovery_and_after.count("MILOVI_CAKE_TELEGRAM_BOT_TOKEN") == 1
+
     # Milovi onboarding must not expose unrelated channel choices.
     assert "@lord_god_strength" not in workflow
     assert "deep_info_life" not in workflow
