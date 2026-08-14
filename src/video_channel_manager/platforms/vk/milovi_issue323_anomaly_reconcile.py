@@ -221,19 +221,57 @@ def _cleanup_exact_wall475(
     finalizer: dict[str, Any],
     finalizer_path: Path,
 ) -> None:
-    """Delete only exact live wall 475; adopt exact deleted tombstone as absence.
+    """Delete only exact live wall 475; adopt terminal state without replay.
 
-    A live post still requires the full stable identity contract and a second
-    fresh proof immediately before the single authorized delete. VK may return
-    an ``is_deleted=true`` tombstone without attachments for an already-absent
-    wall object; only exact owner/id tombstones are accepted as absence. The
-    protected Clip check here is preservation-only; final readiness belongs to
-    the resume/finalizer lifecycle after destructive cleanup is complete.
+    Historical versions persisted ``delete_intent`` but did not persist a
+    dispatch-started barrier. Therefore any durable intent from a prior process
+    is treated as possibly dispatched: absence/tombstone may reconcile it, but a
+    still-live post never grants a blind second delete. Fresh dispatch persists
+    ``delete_dispatch_started`` before the one provider call.
     """
 
     state = finalizer["cleanup_475"]
+    prior_status = str(state.get("status") or "pending")
     post = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
     _record_read_observation(state, post, stage="initial")
+
+    if prior_status == "verified_absent":
+        if not _wall475_is_absent(post):
+            raise MiloviFinalizerBlocked(
+                "Wall 475 cleanup authority was already consumed but the post is live again; automatic re-delete is forbidden"
+            )
+        evidence = "wall.getById:none-resume-verified" if post is None else "wall.getById:is_deleted_true-resume-verified"
+        _mark_verified_absent(
+            writer=writer,
+            promoted_asset=promoted_asset,
+            finalizer=finalizer,
+            finalizer_path=finalizer_path,
+            absence_evidence=evidence,
+        )
+        return
+
+    prior_may_have_dispatched = state.get("delete_dispatch_started") is True or prior_status in {
+        "delete_intent",
+        "delete_dispatch_started",
+        "unknown_requires_reconciliation",
+    }
+    if prior_may_have_dispatched:
+        if _wall475_is_absent(post):
+            evidence = "wall.getById:none-resume" if post is None else "wall.getById:is_deleted_true-resume"
+            _mark_verified_absent(
+                writer=writer,
+                promoted_asset=promoted_asset,
+                finalizer=finalizer,
+                finalizer_path=finalizer_path,
+                absence_evidence=evidence,
+            )
+            return
+        assert post is not None
+        _validate_wall475_identity(post, legacy_asset.source_id)
+        raise MiloviFinalizerBlocked(
+            "Wall 475 delete may already have been dispatched by a prior process; blind retry is forbidden"
+        )
+
     if _wall475_is_absent(post):
         evidence = "wall.getById:none" if post is None else "wall.getById:is_deleted_true"
         _mark_verified_absent(
@@ -258,6 +296,7 @@ def _cleanup_exact_wall475(
     state.update(
         status="delete_intent",
         predelete_post_sha256=_sha256_text(json.dumps(post, sort_keys=True, ensure_ascii=False, default=str)),
+        delete_dispatch_started=False,
     )
     _save_finalizer(finalizer_path, finalizer)
 
@@ -277,17 +316,23 @@ def _cleanup_exact_wall475(
     assert dispatch_post is not None
     _validate_wall475_identity(dispatch_post, legacy_asset.source_id)
 
+    state.update(status="delete_dispatch_started", delete_dispatch_started=True)
+    _save_finalizer(finalizer_path, finalizer)
     try:
         writer._call("wall.delete", params={"owner_id": MILOVI_OWNER_ID, "post_id": ANOMALY_POST_ID})
     except Exception:
         ambiguous_readback = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
         _record_read_observation(state, ambiguous_readback, stage="delete-exception-readback")
         if not _wall475_is_absent(ambiguous_readback):
+            state["status"] = "unknown_requires_reconciliation"
+            _save_finalizer(finalizer_path, finalizer)
             raise
 
     final_readback = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
     _record_read_observation(state, final_readback, stage="postdelete")
     if not _wall475_is_absent(final_readback):
+        state["status"] = "unknown_requires_reconciliation"
+        _save_finalizer(finalizer_path, finalizer)
         raise MiloviFinalizerBlocked("Exact anomaly wall 475 still exists after delete response")
 
     evidence = "wall.getById:none-postdelete" if final_readback is None else "wall.getById:is_deleted_true-postdelete"
