@@ -81,7 +81,11 @@ def test_video_source_readiness_matches_exact_canonical_gallery_identity() -> No
     assert readiness["status"] == "provider_inert"
     assert readiness["source_repository"] == "FedorMilovanov/Milovi_Cake"
     assert readiness["source_commit"] == "c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370"
-    assert readiness["source_gallery_blob_sha"] == media_map["source_blob_sha"] == "e20e60c07479e8b20c1db700f1a40364b81eb669"
+    assert (
+        readiness["source_gallery_blob_sha"]
+        == media_map["source_blob_sha"]
+        == "e20e60c07479e8b20c1db700f1a40364b81eb669"
+    )
     assert readiness["declared_video_count"] == 16
     assert readiness["telegram_native_video_ready_count"] == 0
     assert set(readiness_videos) == set(media_videos) == set(EXPECTED_SOURCE)
