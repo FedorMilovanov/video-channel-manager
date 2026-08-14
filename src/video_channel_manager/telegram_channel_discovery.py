@@ -134,7 +134,9 @@ def discover_channel_target(
                 "posting bot membership has no valid numeric user id", provider_effect="not_dispatched"
             ) from exc
         if member_user_id != bot_id:
-            raise TelegramApiError("posting bot membership resolved to a different user", provider_effect="not_dispatched")
+            raise TelegramApiError(
+                "posting bot membership resolved to a different user", provider_effect="not_dispatched"
+            )
         if member_user.get("is_bot") is not True:
             raise TelegramApiError("posting bot membership did not resolve to a bot", provider_effect="not_dispatched")
         member_username = str(member_user.get("username") or "")
