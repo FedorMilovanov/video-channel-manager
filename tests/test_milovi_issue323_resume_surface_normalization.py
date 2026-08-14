@@ -45,6 +45,7 @@ def _journal() -> dict[str, Any]:
     for index, source_id in enumerate(ROLL_OUT_IDS[:7]):
         items[source_id] = {
             "status": "wall_verified",
+            "clip_remote_id": f"-68859909_{456239225 + index}",
             "wall_remote_id": f"-68859909_{468 + index}",
             "publish_date": PUBLISH_DATES[index],
         }
@@ -106,6 +107,28 @@ def _current_after_first_publication(*, first_text: str | None = None, extra: di
     )
 
 
+def _current_missing_first_publication():
+    return build_wall_snapshot(
+        community_id=68859909,
+        published_items=[],
+        postponed_items=[_wall_item(index) for index in range(1, 7)],
+        published_pages=1,
+        postponed_pages=1,
+        complete=True,
+        captured_at=datetime(2026, 8, 14, 18, 0, tzinfo=UTC),
+    )
+
+
+class _ExactWallReader:
+    def __init__(self, post: dict[str, Any] | None) -> None:
+        self.post = post
+        self.calls: list[tuple[int, int]] = []
+
+    def read_post(self, *, community_id: int, post_id: int) -> dict[str, Any] | None:
+        self.calls.append((community_id, post_id))
+        return self.post
+
+
 def test_eighth_resume_reverses_only_due_transition_needed_for_exact_historical_sha() -> None:
     normalized = resume._resume_wall_baseline(
         _record(),
@@ -131,6 +154,94 @@ def test_solver_keeps_published_surface_when_it_was_already_published_in_histori
     assert normalized.snapshot_sha256 == _historical_before(first_already_published=True).snapshot_sha256
     first = next(post for post in normalized.posts if post.post_id == 468)
     assert first.surface.value == "published"
+
+
+def test_due_prior_wall_omitted_by_bulk_snapshot_is_recovered_by_exact_readback() -> None:
+    reader = _ExactWallReader(_wall_item(0))
+
+    effective, exact_ids = resume._supplement_due_prior_wall_readbacks(
+        reader,
+        _current_missing_first_publication(),
+        journal=_journal(),
+        source_id=resume.ISSUE323_EIGHTH_SOURCE_ID,
+        now_epoch=PUBLISH_DATES[0] + 3600,
+    )
+
+    assert reader.calls == [(68859909, 468)]
+    assert exact_ids == ("-68859909_468",)
+    recovered = next(post for post in effective.posts if post.post_id == 468)
+    assert recovered.surface.value == "published"
+
+    normalized = resume._resume_wall_baseline(
+        _record(),
+        effective,
+        journal=_journal(),
+        now_epoch=PUBLISH_DATES[0] + 3600,
+    )
+    assert normalized.snapshot_sha256 == _historical_before().snapshot_sha256
+
+
+def test_exact_readback_does_not_treat_missing_or_deleted_prior_wall_as_projection() -> None:
+    reader = _ExactWallReader(None)
+
+    with pytest.raises(UploadRecoveryRequired, match="disappeared during exact readback"):
+        resume._supplement_due_prior_wall_readbacks(
+            reader,
+            _current_missing_first_publication(),
+            journal=_journal(),
+            source_id=resume.ISSUE323_EIGHTH_SOURCE_ID,
+            now_epoch=PUBLISH_DATES[0] + 3600,
+        )
+
+    tombstone = _wall_item(0)
+    tombstone["is_deleted"] = True
+    reader = _ExactWallReader(tombstone)
+    with pytest.raises(UploadRecoveryRequired, match="disappeared during exact readback"):
+        resume._supplement_due_prior_wall_readbacks(
+            reader,
+            _current_missing_first_publication(),
+            journal=_journal(),
+            source_id=resume.ISSUE323_EIGHTH_SOURCE_ID,
+            now_epoch=PUBLISH_DATES[0] + 3600,
+        )
+
+
+def test_exact_readback_requires_exact_prior_clip_binding() -> None:
+    changed = _wall_item(0)
+    changed["attachments"][0]["video"]["id"] = 999
+    reader = _ExactWallReader(changed)
+
+    with pytest.raises(UploadRecoveryRequired, match="changed Clip binding"):
+        resume._supplement_due_prior_wall_readbacks(
+            reader,
+            _current_missing_first_publication(),
+            journal=_journal(),
+            source_id=resume.ISSUE323_EIGHTH_SOURCE_ID,
+            now_epoch=PUBLISH_DATES[0] + 3600,
+        )
+
+
+def test_exact_readback_never_backfills_a_future_missing_post() -> None:
+    current = build_wall_snapshot(
+        community_id=68859909,
+        published_items=[_wall_item(0)],
+        postponed_items=[_wall_item(index) for index in range(2, 7)],
+        published_pages=1,
+        postponed_pages=1,
+        complete=True,
+        captured_at=datetime(2026, 8, 14, 18, 0, tzinfo=UTC),
+    )
+    reader = _ExactWallReader(_wall_item(1))
+
+    with pytest.raises(UploadRecoveryRequired, match="before its frozen slot"):
+        resume._supplement_due_prior_wall_readbacks(
+            reader,
+            current,
+            journal=_journal(),
+            source_id=resume.ISSUE323_EIGHTH_SOURCE_ID,
+            now_epoch=PUBLISH_DATES[0] + 3600,
+        )
+    assert reader.calls == []
 
 
 def test_surface_normalization_rejects_prior_post_published_before_its_slot() -> None:
