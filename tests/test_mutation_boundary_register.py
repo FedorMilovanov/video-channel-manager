@@ -141,6 +141,30 @@ def _scan_python_mutation_callsites() -> list[tuple[str, str, str]]:
     return callsites
 
 
+def _scan_snippet(source: str) -> _MutationCallsiteVisitor:
+    visitor = _MutationCallsiteVisitor("snippet.py")
+    visitor.visit(ast.parse(source, filename="snippet.py"))
+    return visitor
+
+
+def test_vk_mutation_inventory_rejects_dynamic_direct_call() -> None:
+    visitor = _scan_snippet(
+        "def mutate(writer, method):\n"
+        "    writer._call(method, params={})\n"
+    )
+    assert visitor.callsites == []
+    assert visitor.violations == [("vk_api:dynamic_or_missing_method", "snippet.py", "mutate")]
+
+
+def test_vk_mutation_inventory_rejects_transient_retry_on_mutation() -> None:
+    visitor = _scan_snippet(
+        "def mutate(writer):\n"
+        "    writer._call('wall.delete', params={}, retry_transient=True)\n"
+    )
+    assert visitor.callsites == []
+    assert visitor.violations == [("vk_api:wall.delete:retry_transient", "snippet.py", "mutate")]
+
+
 def test_register_schema_and_unique_boundaries() -> None:
     payload = _load_register()
     assert payload["schema_name"] == "video-channel-manager.mutation-boundary-register"
