@@ -1,6 +1,6 @@
 # Current operational state
 
-Updated: 2026-08-14
+Updated: 2026-08-15
 
 This file is the concise current operational interpretation. It does **not** authorize provider mutation. Historical audits/PRs/issues are evidence only.
 
@@ -97,24 +97,31 @@ One durable state/concurrency namespace has one write owner at a time. Parallel 
 
 The completed Lord God postponed-text cleanup is historical verified evidence only. Supported reusable VK capability remains the guarded attachment-free postponed wall text-edit contract with exact project/community/owner/post binding, durable intent, no blind replay and exact postflight.
 
+The reusable architecture target for future native-Clip projects is [`vk-native-clip-golden-path.md`](vk-native-clip-golden-path.md). It combines the useful Legendary Poet operational lineage with the stronger identity/replay/temporal rules learned under Milovi. It is an architecture contract, not provider-write authority and not a reason to refactor an in-progress live rollout underneath its durable state.
+
 ### Milovi Cake / Issue #323
 
-Issue #323 is a separate exact live rollout scope and remains **open**. Repository recovery/finalizer hardening is merged, but live 12/12 completion is not established by repository state alone. Read Issue #323 and its durable journal/provider state at operation start.
+Issue #323 is a separate exact live rollout scope and remains **open**. Repository recovery/finalizer hardening may be merged while live 12/12 completion is still unproved. Read Issue #323 and its durable journal/provider state at operation start.
 
-Current retained safety interpretation through PR #355:
+Current retained safety interpretation through PR #359 once merged:
 
 - wall `-68859909_475` cleanup has one destructive owner only: `milovi_issue323_anomaly_reconcile.py` phase 1; the finalizer has no delete authority for that post;
+- wall-475 phase 1 persists `delete_dispatch_started` before its one provider delete. A restart from historical `delete_intent`, dispatch-started or unknown state may reconcile exact absence/tombstone but never blindly delete again; once cleanup is durably `verified_absent`, automatic re-delete authority is consumed even if a live object later reappears;
 - latest recorded live evidence still accepts wall 475 only as exact absence/deleted-tombstone evidence and preserves exact eighth Clip `-68859909_456239232`; this checkpoint is not standing proof of later provider state;
 - already-dispatched recovery cannot reserve or retransmit the binary; recovery capability is narrower than fresh upload capability;
-- strict readiness remains required for a new/resumed upload, while an already-created exact native Clip may cross child completion with either the exact legacy source-bound description or the exact promoted description. Arbitrary descriptions still fail closed; promotion remains owned only by the finalizer;
-- the fresh continuation after PR #352 established source 9's exact native Clip `-68859909_456239233` and then exposed an impossible phase prerequisite: child completion demanded promoted copy before the only authorized promotion phase could establish it. PR #355 removes that ordering deadlock without granting recovery metadata-write authority;
-- final provider success still requires exact promoted Clip descriptions and wall messages. Legacy/source-bound copy is accepted only as a pre-promotion child binding, never as final completion;
-- promotion `video.edit` and successor-aware `wall.edit` now persist exact intent plus a durable `dispatch_started` barrier before the single mutation, re-read the exact target immediately before dispatch, reconcile a lost response only from exact target-state readback, and forbid blind replay when dispatch may already have occurred;
+- strict readiness remains required for a new/resumed upload. An already-created exact native Clip may cross child completion only with one of two reviewed description states: exact legacy copy or exact promoted copy. A source URL/marker by itself is no longer sufficient overwrite or child-completion authority;
+- the fresh continuation after PR #352 established source 9's exact native Clip `-68859909_456239233` and then exposed an impossible phase prerequisite. PR #355 removed that child/promotion ordering deadlock without granting recovery metadata-write authority;
+- final provider success still requires exact promoted Clip descriptions and wall messages. Legacy copy is accepted only as a pre-promotion state, never as final completion;
+- before the first promotion edit, one read-only batch preflight proves all 12 durable mappings, exact current wall incarnations and exact legacy/promoted copy states. A deterministic conflict on a later item therefore blocks before partial promotion of earlier items;
+- promotion `video.edit` and successor-aware `wall.edit` persist exact intent plus a durable `dispatch_started` barrier before the single mutation, re-read the exact target immediately before dispatch, reconcile a lost response only from exact target-state readback, and forbid blind replay when dispatch may already have occurred;
+- promotion target identity does not grant overwrite authority. `video.edit` may start only from exact reviewed legacy description; `wall.edit` may start only from exact reviewed legacy wall message. Any third text state blocks even when owner/date/Clip/source marker still look correct;
+- all local VK writers sharing a lock directory now converge on one canonical mutex per `community_id`; operation-specific filenames cannot allow rollout, resume, anomaly reconciliation or finalizer processes to mutate the same community concurrently;
 - the logical scheduled wall mapping is durable, but a VK postponed timer `post_id` is not assumed durable across publication. Before its frozen slot, the journaled postponed ID must remain exact; after the slot, the current incarnation may be the old ID or one uniquely proven published successor;
+- unresolved `wall_intent` / `wall_may_exist` recovery is also time-aware: a uniquely bound published incarnation may be adopted after the frozen slot without replay, while publication before the slot, wrong date, duplicate mapping or multiple video attachments block;
 - aggregate omission is contextual evidence, not exact-object disappearance proof when a durable exact ID exists. Exact readback governs that object's live/tombstone state; complete aggregate snapshots still govern drift and historical-SHA reconstruction;
 - source 9–12 upload-side-effect cleanup remains one narrow exact `wall.delete` boundary only when the durable upload delta, exact reserved Clip, capture window, exact current candidate and exact historical pre-upload SHA all prove the one side effect. It does not authorize source 8/wall 475 cleanup, broad cleanup or upload replay;
 - recovery, metadata maintenance, ambiguous edit reconciliation and final postflight share the same logical source/Clip/frozen-slot/current-incarnation model;
-- mutation governance is now callsite-aware: the inventory binds provider marker + source file + callable, so a second direct `wall.delete`, `wall.edit`, `video.edit` or `wall.post` cannot disappear behind a method-name set entry;
+- mutation governance is callsite-aware: the inventory binds provider marker + source file + callable, so a second direct `wall.delete`, `wall.edit`, `video.edit` or `wall.post` cannot disappear behind a method-name set entry;
 - Issue #323 is complete only after fresh live readback proves all 12 exact Clip mappings, all 12 logical scheduled wall mappings with legitimate current provider incarnations, authorized internal Milovi public copy with no YouTube public links, and a clean final provider postflight.
 
 Canonical incident analysis: [`2026-08-14-milovi-issue-323-interim-postmortem.md`](2026-08-14-milovi-issue-323-interim-postmortem.md).
@@ -147,7 +154,7 @@ At those probe points:
 - GitHub SBOM REST export is verified unavailable through both documented generation surfaces at the probe points;
 - this is a scoped observed REST status, not a blanket `UNVERIFIED` item and not permanent truth.
 
-`.github/CODEOWNERS` remains repository policy only; it must not be presented as branch protection. Green CI likewise does not create GitHub protection by itself.
+A fresh read before PR #359 work again observed `main` as unprotected. `.github/CODEOWNERS` remains repository policy only; it must not be presented as branch protection. Green CI likewise does not create GitHub protection by itself.
 
 Only `main` is a supported repository code/runtime execution baseline. `state/lordchrist-telegram` and `state/svodka-telegram` are durable state-only refs and must never be used as runtime/code sources. Any other branch is ephemeral and non-authoritative after its scope closes; delete it where supported or align the ref to exact current `main` after preserving any genuinely unique useful work through a focused PR.
 
@@ -166,8 +173,9 @@ Unknown provider outcomes remain blocking until read-only reconciliation **unles
 1. Treat Issue #232 / PR #271 as repository implementation complete only: no future YouTube provider mutation is authorized without a new exact execution approval.
 2. Treat Lordchrist P0 / Issue #286 as closed: the exact historical research ambiguity is retired for legacy cross-track purposes, while the retired research release itself remains no-replay and no-successor.
 3. Keep Svodka inside Issue #235's current exact scope and read its durable state at operation start; do not infer live rollout status from this document.
-4. For Milovi #323, preserve the single-owner/replay-proof/successor-aware recovery+finalizer identity model and read current durable/provider state before any continuation; do not infer 12/12 completion from merged code or this document.
-5. Treat production Telegram lock refreshes as explicit coherent supply-chain changes; routine bot maintenance must not edit that closure piecemeal.
-6. Treat the 2026-08-09 GitHub governance evidence as observed state, not permanent truth: future changes require fresh read-only verification rather than assumptions.
+4. For Milovi #323, merge only an exact-current-main green hardening head; then read fresh durable/provider state before continuation. Do not infer 12/12 completion from PR #359, this document or historical checkpoints.
+5. After exact live #323 completion, extract the shared native-Clip kernel behind compatibility tests according to `vk-native-clip-golden-path.md`; do not refactor the in-progress durable rollout merely for architectural cleanup.
+6. Treat production Telegram lock refreshes as explicit coherent supply-chain changes; routine bot maintenance must not edit that closure piecemeal.
+7. Treat GitHub governance evidence as observed state, not permanent truth: future changes require fresh read-only verification rather than assumptions.
 
 Nothing in this document is authorization for a provider mutation.
