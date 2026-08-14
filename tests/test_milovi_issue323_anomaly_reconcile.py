@@ -7,13 +7,20 @@ import pytest
 from video_channel_manager.platforms.vk.milovi_issue323_anomaly_reconcile import (
     ANOMALY_CREATED_AT,
     ANOMALY_CREATED_BY,
-    _TextNormalizedAnomalyWriter,
-    _strict_raw_anomaly,
+    IDENTITY_CONTRACT,
+    _record_observed_projection,
+    _validate_wall475_identity,
 )
 from video_channel_manager.platforms.vk.milovi_issue323_finalize import MiloviFinalizerBlocked
 
 
-def _post(*, text: str = "provider-rendered text") -> dict[str, Any]:
+def _post(
+    *,
+    text: str = "provider-rendered text",
+    post_source: object = None,
+) -> dict[str, Any]:
+    if post_source is None:
+        post_source = {"type": "api"}
     return {
         "owner_id": -68859909,
         "id": 475,
@@ -21,7 +28,7 @@ def _post(*, text: str = "provider-rendered text") -> dict[str, Any]:
         "from_id": -68859909,
         "created_by": ANOMALY_CREATED_BY,
         "post_type": "post",
-        "post_source": {"type": "vk"},
+        "post_source": post_source,
         "text": text,
         "attachments": [
             {
@@ -40,8 +47,20 @@ def _post(*, text: str = "provider-rendered text") -> dict[str, Any]:
     }
 
 
-def test_strict_raw_anomaly_accepts_provider_text_drift() -> None:
-    _strict_raw_anomaly(_post(text="provider later rendered this text"), "o1WXIMupuws")
+@pytest.mark.parametrize(
+    ("text", "post_source"),
+    [
+        ("", {"type": "vk"}),
+        ("provider later rendered this text", {"type": "api"}),
+        ("another provider projection", {}),
+        ("non-empty provider projection", None),
+    ],
+)
+def test_wall475_identity_ignores_mutable_provider_projection(
+    text: str,
+    post_source: object,
+) -> None:
+    _validate_wall475_identity(_post(text=text, post_source=post_source), "o1WXIMupuws")
 
 
 @pytest.mark.parametrize(
@@ -55,55 +74,50 @@ def test_strict_raw_anomaly_accepts_provider_text_drift() -> None:
         ("post_type", "reply"),
     ],
 )
-def test_strict_raw_anomaly_rejects_immutable_identity_drift(field: str, value: object) -> None:
+def test_wall475_identity_rejects_stable_identity_drift(field: str, value: object) -> None:
     post = _post()
     post[field] = value
     with pytest.raises(MiloviFinalizerBlocked):
-        _strict_raw_anomaly(post, "o1WXIMupuws")
+        _validate_wall475_identity(post, "o1WXIMupuws")
 
 
-def test_strict_raw_anomaly_rejects_provider_source_drift() -> None:
+def test_wall475_identity_allows_missing_optional_created_by() -> None:
     post = _post()
-    post["post_source"] = {"type": "api"}
-    with pytest.raises(MiloviFinalizerBlocked, match="provider source"):
-        _strict_raw_anomaly(post, "o1WXIMupuws")
+    post.pop("created_by")
+    _validate_wall475_identity(post, "o1WXIMupuws")
 
 
-def test_strict_raw_anomaly_rejects_attachment_drift() -> None:
+def test_wall475_identity_rejects_attachment_drift() -> None:
     post = _post()
     post["attachments"][0]["video"]["id"] = 456239999
     with pytest.raises(MiloviFinalizerBlocked, match="456239232"):
-        _strict_raw_anomaly(post, "o1WXIMupuws")
+        _validate_wall475_identity(post, "o1WXIMupuws")
 
 
-def test_strict_raw_anomaly_rejects_source_marker_drift() -> None:
+def test_wall475_identity_rejects_attachment_type_drift() -> None:
+    post = _post()
+    post["attachments"][0]["video"]["type"] = "video"
+    with pytest.raises(MiloviFinalizerBlocked, match="short_video"):
+        _validate_wall475_identity(post, "o1WXIMupuws")
+
+
+def test_wall475_identity_rejects_source_marker_drift() -> None:
     post = _post()
     post["attachments"][0]["video"]["description"] = "different source"
     with pytest.raises(MiloviFinalizerBlocked, match="source marker"):
-        _strict_raw_anomaly(post, "o1WXIMupuws")
+        _validate_wall475_identity(post, "o1WXIMupuws")
 
 
-class _Reader:
-    def __init__(self, post: dict[str, Any]) -> None:
-        self.post = post
+def test_projection_is_recorded_as_evidence_without_becoming_identity() -> None:
+    state: dict[str, Any] = {}
+    post = _post(text="provider-rendered text", post_source={"type": "api", "platform": "iphone"})
 
-    def read_post(self, *, community_id: int, post_id: int) -> dict[str, Any] | None:
-        assert community_id == 68859909
-        assert post_id == 475
-        return self.post
+    _record_observed_projection(state, post)
 
-    def sentinel(self) -> str:
-        return "delegated"
-
-
-def test_normalized_writer_changes_only_in_process_text_view() -> None:
-    original = _post(text="provider-rendered text")
-    delegate = _Reader(original)
-    writer = _TextNormalizedAnomalyWriter(delegate, "o1WXIMupuws")  # type: ignore[arg-type]
-
-    observed = writer.read_post(community_id=68859909, post_id=475)
-
-    assert observed is not None
-    assert observed["text"] == ""
-    assert original["text"] == "provider-rendered text"
-    assert writer.sentinel() == "delegated"
+    assert state["identity_contract"] == IDENTITY_CONTRACT
+    assert state["observed_provider_text_nonempty"] is True
+    assert state["observed_post_source_type"] == "api"
+    assert state["mutable_projection_fields"] == ["text", "post_source"]
+    assert len(state["observed_provider_text_sha256"]) == 64
+    assert len(state["observed_post_source_sha256"]) == 64
+    assert len(state["observed_raw_post_sha256"]) == 64
