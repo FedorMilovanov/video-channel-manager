@@ -3,7 +3,7 @@
   "schema_version": 1,
   "project_key": "milovi-cake",
   "status": "provider_inert",
-  "reviewed_at_utc": "2026-08-14T23:00:00Z",
+  "reviewed_at_utc": "2026-08-14T22:52:00Z",
   "telegram_bot_api_source": "https://core.telegram.org/bots/api",
   "telegram_contract": {
     "photo_multipart_max_bytes": 10485760,
