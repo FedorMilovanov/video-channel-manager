@@ -22,7 +22,7 @@
   },
   "slots": [
     {"slot":1,"pillar":"finished_showcase","media_ids":["v01"],"working_title":"3D-торт «Книги»: форма как часть идеи","launch_pack_ref":"MC-TG-004","discovery":true},
-    {"slot":2,"pillar":"social_proof_or_guidance","media_ids":["p07"],"working_title":"Что написать кондитеру в первом сообщении","launch_pack_ref":"MC-TG-003","discovery":true},
+    {"slot":2,"pillar":"social_proof_or_guidance","media_ids":["p18"],"working_title":"Что написать кондитеру в первом сообщении","launch_pack_ref":"MC-TG-003","discovery":true},
     {"slot":3,"pillar":"finished_showcase","media_ids":["v02"],"working_title":"Фактурный торт с золотом — крупным планом","launch_pack_ref":"MC-TG-006","discovery":false},
     {"slot":4,"pillar":"finished_detail","media_ids":["p04"],"working_title":"Прозрачный цилиндр как часть композиции","launch_pack_ref":null,"discovery":false},
     {"slot":5,"pillar":"milovi_school","media_ids":[],"school_article_id":"paris-brest-race-dessert","working_title":"Почему Paris-Brest выглядит как колесо","launch_pack_ref":"MC-TG-005","discovery":true},
@@ -50,6 +50,6 @@
     {"slot":27,"pillar":"collection_poll","media_ids":["p06","p07","p11","p29"],"working_title":"Какую палитру сохранить для будущего праздника","launch_pack_ref":null,"discovery":false},
     {"slot":28,"pillar":"finished_showcase","media_ids":["v13"],"working_title":"Детский торт с зайчиком","launch_pack_ref":"MC-TG-023","discovery":false},
     {"slot":29,"pillar":"finished_detail","media_ids":["p22"],"working_title":"3D-торт с собаками: фигурки как центр композиции","launch_pack_ref":null,"discovery":false},
-    {"slot":30,"pillar":"commercial","media_ids":["p07"],"working_title":"Если уже есть дата и идея — начать можно с четырёх строк","launch_pack_ref":"MC-TG-030","discovery":false}
+    {"slot":30,"pillar":"commercial","media_ids":["p09"],"working_title":"Если уже есть дата и идея — начать можно с четырёх строк","launch_pack_ref":"MC-TG-030","discovery":false}
   ]
 }
