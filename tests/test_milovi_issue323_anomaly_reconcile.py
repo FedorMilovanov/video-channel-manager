@@ -20,6 +20,21 @@ from video_channel_manager.platforms.vk.milovi_issue323_finalize import MiloviFi
 _UNSET = object()
 
 
+def _video_attachment(*, video_id: int = 456239232) -> dict[str, Any]:
+    return {
+        "type": "video",
+        "video": {
+            "owner_id": -68859909,
+            "id": video_id,
+            "type": "short_video",
+            "description": (
+                "#Торт на День Рождения от #Milovi_Cake #ВикторияМилованова\n\n"
+                "Источник YouTube Shorts: https://www.youtube.com/shorts/o1WXIMupuws"
+            ),
+        },
+    }
+
+
 def _post(
     *,
     text: str = "provider-rendered text",
@@ -36,20 +51,7 @@ def _post(
         "post_type": "post",
         "post_source": post_source,
         "text": text,
-        "attachments": [
-            {
-                "type": "video",
-                "video": {
-                    "owner_id": -68859909,
-                    "id": 456239232,
-                    "type": "short_video",
-                    "description": (
-                        "#Торт на День Рождения от #Milovi_Cake #ВикторияМилованова\n\n"
-                        "Источник YouTube Shorts: https://www.youtube.com/shorts/o1WXIMupuws"
-                    ),
-                },
-            }
-        ],
+        "attachments": [_video_attachment()],
     }
 
 
@@ -93,6 +95,45 @@ def test_wall475_identity_allows_missing_optional_created_by() -> None:
     _validate_wall475_identity(post, "o1WXIMupuws")
 
 
+def test_wall475_identity_accepts_additional_non_video_provider_attachment() -> None:
+    post = _post()
+    post["attachments"].append(
+        {
+            "type": "link",
+            "link": {
+                "url": "https://vk.ru/milovi_cake",
+                "title": "provider projection",
+            },
+        }
+    )
+
+    _validate_wall475_identity(post, "o1WXIMupuws")
+
+
+def test_wall475_identity_rejects_second_video_attachment() -> None:
+    post = _post()
+    post["attachments"].append(_video_attachment(video_id=456239999))
+
+    with pytest.raises(MiloviFinalizerBlocked, match="exactly one video attachment; observed 2"):
+        _validate_wall475_identity(post, "o1WXIMupuws")
+
+
+def test_wall475_identity_rejects_zero_video_attachments() -> None:
+    post = _post()
+    post["attachments"] = [{"type": "link", "link": {"url": "https://vk.ru/milovi_cake"}}]
+
+    with pytest.raises(MiloviFinalizerBlocked, match="exactly one video attachment; observed 0"):
+        _validate_wall475_identity(post, "o1WXIMupuws")
+
+
+def test_wall475_identity_rejects_malformed_non_video_attachment() -> None:
+    post = _post()
+    post["attachments"].append("not-an-object")
+
+    with pytest.raises(MiloviFinalizerBlocked, match="is not an object"):
+        _validate_wall475_identity(post, "o1WXIMupuws")
+
+
 def test_wall475_identity_rejects_attachment_drift() -> None:
     post = _post()
     post["attachments"][0]["video"]["id"] = 456239999
@@ -117,15 +158,20 @@ def test_wall475_identity_rejects_source_marker_drift() -> None:
 def test_projection_is_recorded_as_evidence_without_becoming_identity() -> None:
     state: dict[str, Any] = {}
     post = _post(text="provider-rendered text", post_source={"type": "api", "platform": "iphone"})
+    post["attachments"].append({"type": "link", "link": {"url": "https://vk.ru/milovi_cake"}})
 
     _record_observed_projection(state, post)
 
     assert state["identity_contract"] == IDENTITY_CONTRACT
     assert state["observed_provider_text_nonempty"] is True
     assert state["observed_post_source_type"] == "api"
-    assert state["mutable_projection_fields"] == ["text", "post_source"]
+    assert state["observed_attachment_count"] == 2
+    assert state["observed_video_attachment_count"] == 1
+    assert state["observed_attachment_types"] == ["video", "link"]
+    assert state["mutable_projection_fields"] == ["text", "post_source", "non_video_attachments"]
     assert len(state["observed_provider_text_sha256"]) == 64
     assert len(state["observed_post_source_sha256"]) == 64
+    assert len(state["observed_attachments_sha256"]) == 64
     assert len(state["observed_raw_post_sha256"]) == 64
 
 
@@ -195,6 +241,21 @@ def test_cleanup_reproves_wall475_immediately_before_single_delete(
     assert finalizer["cleanup_475"]["identity_contract"] == IDENTITY_CONTRACT
 
 
+def test_cleanup_accepts_non_video_projection_and_still_deletes_only_wall475(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Any,
+) -> None:
+    post = _post()
+    post["attachments"].append({"type": "link", "link": {"url": "https://vk.ru/milovi_cake"}})
+    writer = _Writer(post)
+
+    finalizer = _run_cleanup(monkeypatch, tmp_path, writer)
+
+    assert writer.calls == [("wall.delete", {"owner_id": -68859909, "post_id": 475})]
+    assert finalizer["cleanup_475"]["observed_attachment_count"] == 2
+    assert finalizer["cleanup_475"]["observed_video_attachment_count"] == 1
+
+
 def test_cleanup_blocks_if_stable_identity_changes_between_intent_and_dispatch(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Any,
@@ -204,6 +265,20 @@ def test_cleanup_blocks_if_stable_identity_changes_between_intent_and_dispatch(
     writer = _Writer(_post(), dispatch_post=changed)
 
     with pytest.raises(MiloviFinalizerBlocked, match="456239232"):
+        _run_cleanup(monkeypatch, tmp_path, writer)
+
+    assert writer.calls == []
+
+
+def test_cleanup_blocks_if_second_video_appears_between_intent_and_dispatch(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Any,
+) -> None:
+    changed = _post()
+    changed["attachments"].append(_video_attachment(video_id=456239999))
+    writer = _Writer(_post(), dispatch_post=changed)
+
+    with pytest.raises(MiloviFinalizerBlocked, match="exactly one video attachment; observed 2"):
         _run_cleanup(monkeypatch, tmp_path, writer)
 
     assert writer.calls == []
