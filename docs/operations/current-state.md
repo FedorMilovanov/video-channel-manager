@@ -15,7 +15,7 @@ Repository implementation, final artifact production, and live provider rollout 
 - Repository code may be complete while live rollout remains intentionally unauthorized or incomplete.
 - A completed artifact/provider outcome is not retroactively reopened only because a stricter policy is introduced later; reopening requires a new explicit owning scope.
 - Future provider execution requires a new explicit exact operation/review; an old issue, release, credential, CI run, artifact, or successful rollout is never standing authorization.
-- A durable verified child remains durable across later phases unless exact identity/postcondition evidence proves it changed; transient provider projection alone must not erase prior success.
+- A durable verified child remains durable across later phases unless exact identity/postcondition evidence proves it changed; transient or incomplete provider projection alone must not erase prior success.
 
 ## YouTube / Legendary Poet / «Чёрный человек»
 
@@ -101,13 +101,14 @@ The completed Lord God postponed-text cleanup is historical verified evidence on
 
 Issue #323 is a separate exact live rollout scope and remains **open**. Repository recovery hardening is merged, but live 12/12 completion is not established by repository state alone. Read Issue #323 and its durable journal/provider state at operation start.
 
-Current retained safety interpretation after PRs #342 and #343:
+Current retained safety interpretation after PRs #342–#344:
 
 - wall `-68859909_475` cleanup has one destructive owner only: `milovi_issue323_anomaly_reconcile.py` phase 1; the finalizer has no delete authority for that post;
-- the latest durable checkpoint records wall 475 reconciled absent and protects exact eighth Clip `-68859909_456239232` from deletion or re-upload; this checkpoint must be re-verified, not assumed current forever;
+- latest recorded live evidence verified wall 475 absent via exact deleted tombstone and preserved exact eighth Clip `-68859909_456239232`; this evidence must still be treated as a checkpoint, not standing proof of every later provider state;
 - already-dispatched recovery cannot reserve or retransmit the binary; recovery capability is narrower than fresh upload capability;
 - strict readiness remains required for a new/resumed upload, while preservation and already-durable metadata/final-audit checks use stable owner/id/type/source binding rather than temporary player/title projection;
 - exact scheduled wall mappings may naturally transition from `postponed` to `published` after their frozen slot; early publication, identity/date/attachment drift, unrelated wall changes, or ambiguous state still fail closed;
+- omission of an already-due, previously `wall_verified` exact mapping from aggregate `wall.get` projection is not by itself deletion proof: PR #344 permits one read-only exact `wall.getById` fallback only for that known due ID, requiring exact owner/post/date and journaled Clip binding before the historical SHA solver may continue; future missing scheduled IDs and missing/deleted/wrong exact readbacks remain blocking;
 - wall semantic identity requires exactly one video attachment, not exactly one attachment total; provider-projected non-video attachments do not become video identity;
 - Issue #323 is complete only after live readback proves all 12 exact Clip mappings, their exact scheduled wall mappings on the legitimate current surface, authorized internal Milovi public copy, and a clean final postflight.
 
@@ -160,7 +161,7 @@ Unknown provider outcomes remain blocking until read-only reconciliation **unles
 1. Treat Issue #232 / PR #271 as repository implementation complete only: no future YouTube provider mutation is authorized without a new exact execution approval.
 2. Treat Lordchrist P0 / Issue #286 as closed: the exact historical research ambiguity is retired for legacy cross-track purposes, while the retired research release itself remains no-replay and no-successor.
 3. Keep Svodka inside Issue #235's current exact scope and read its durable state at operation start; do not infer live rollout status from this document.
-4. For Milovi #323, preserve the single-owner/replay-proof recovery model and read current durable/provider state before any continuation; do not infer 12/12 completion from merged code or this document.
+4. For Milovi #323, preserve the single-owner/replay-proof/exact-read recovery model and read current durable/provider state before any continuation; do not infer 12/12 completion from merged code or this document.
 5. Treat production Telegram lock refreshes as explicit coherent supply-chain changes; routine bot maintenance must not edit that closure piecemeal.
 6. Treat the 2026-08-09 GitHub governance evidence as observed state, not permanent truth: future changes require fresh read-only verification rather than assumptions.
 
