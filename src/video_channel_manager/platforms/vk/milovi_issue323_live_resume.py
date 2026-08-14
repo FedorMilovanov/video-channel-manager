@@ -441,42 +441,20 @@ def _historical_issue323_wall_view(
     source_id: str,
     now_epoch: int | None = None,
 ) -> tuple[VkWallSnapshot, tuple[str, ...]]:
-    """Resolve the unique historical wall view using only due prior scheduled surface transitions.
+    """Resolve the unique durable historical wall view from semantic Issue #323 identity.
 
-    Current published prior rollout posts may either have already been published
-    in the historical baseline or may have been postponed then. We do not guess.
-    We enumerate only those exact due prior IDs as possible published->postponed
-    reversals and accept exactly one candidate whose complete snapshot hashes to
-    the durable pre-upload SHA. Text, attachments, IDs, dates and every unrelated
-    wall object remain untouched, so any other drift still fails closed.
+    The durable capture timestamp, not the current clock, determines whether each
+    exact prior rollout mapping was historically postponed or published. Current
+    provider state may contain canonical non-video projections that were never part
+    of the rollout mutation; for an exact prior owner/date/text/Clip mapping only,
+    the solver therefore considers both the current canonical attachments and the
+    original video-only semantic projection. It never changes text, the video
+    identity, dates, IDs or unrelated wall objects. The complete durable pre-upload
+    SHA remains the final and exact acceptance proof.
     """
 
     if not current.complete:
         raise UploadRecoveryRequired("Current wall snapshot is incomplete during Issue #323 recovery")
-    contract = _prior_verified_wall_contract(journal, source_id)
-    observed_now = int(time.time()) if now_epoch is None else now_epoch
-    seen_counts: dict[str, int] = {remote_id: 0 for remote_id in contract}
-    flippable_indexes: list[int] = []
-    for index, post in enumerate(current.posts):
-        binding = contract.get(post.remote_id)
-        if binding is None:
-            continue
-        expected_date, _clip_remote_id = binding
-        seen_counts[post.remote_id] += 1
-        if post.publish_date != expected_date:
-            raise UploadRecoveryRequired(
-                f"Earlier rollout wall date changed for {post.remote_id}: {post.publish_date} != {expected_date}"
-            )
-        if post.surface is VkWallSurface.PUBLISHED:
-            if observed_now + 60 < expected_date:
-                raise UploadRecoveryRequired(f"Earlier rollout wall published before its slot: {post.remote_id}")
-            flippable_indexes.append(index)
-    duplicate = sorted(remote_id for remote_id, count in seen_counts.items() if count > 1)
-    if duplicate:
-        raise UploadRecoveryRequired(f"Earlier rollout wall mapping appears on multiple surfaces: {duplicate}")
-    missing = sorted(remote_id for remote_id, count in seen_counts.items() if count == 0)
-    if missing:
-        raise UploadRecoveryRequired(f"Earlier rollout wall mapping disappeared during recovery: {missing}")
 
     captured_at = str(wall_safety.get("before_captured_at") or "")
     expected_sha = str(wall_safety.get("before_snapshot_sha256") or "")
@@ -486,17 +464,104 @@ def _historical_issue323_wall_view(
         raise UploadRecoveryRequired("Historical upload wall digest/capture timestamp is missing")
     if type(before_published_pages) is not int or type(before_postponed_pages) is not int:
         raise UploadRecoveryRequired("Historical upload wall page counts are missing")
+    try:
+        captured_datetime = datetime.fromisoformat(captured_at)
+    except ValueError as exc:
+        raise UploadRecoveryRequired("Historical upload wall capture timestamp is invalid") from exc
+    if captured_datetime.tzinfo is None or captured_datetime.utcoffset() is None:
+        raise UploadRecoveryRequired("Historical upload wall capture timestamp is naive")
+    capture_epoch = int(captured_datetime.timestamp())
+
+    contract = _prior_verified_wall_contract(journal, source_id)
+    observed_now = int(time.time()) if now_epoch is None else now_epoch
+    seen_counts: dict[str, int] = {remote_id: 0 for remote_id in contract}
+    variant_options: dict[int, tuple[tuple[VkWallPostFingerprint, bool], ...]] = {}
+
+    for index, post in enumerate(current.posts):
+        binding = contract.get(post.remote_id)
+        if binding is None:
+            continue
+        expected_date, clip_remote_id = binding
+        seen_counts[post.remote_id] += 1
+        if post.publish_date != expected_date:
+            raise UploadRecoveryRequired(
+                f"Earlier rollout wall date changed for {post.remote_id}: {post.publish_date} != {expected_date}"
+            )
+
+        expected_attachment = f"video{clip_remote_id}"
+        video_attachments = tuple(value for value in post.attachments if value.startswith("video"))
+        if len(video_attachments) != 1:
+            raise UploadRecoveryRequired(
+                f"Earlier rollout wall must contain exactly one video during historical recovery: {post.remote_id}"
+            )
+        if video_attachments[0] != expected_attachment:
+            raise UploadRecoveryRequired(f"Earlier rollout wall changed Clip binding: {post.remote_id}")
+
+        if post.surface is VkWallSurface.PUBLISHED and observed_now + 60 < expected_date:
+            raise UploadRecoveryRequired(f"Earlier rollout wall published before its slot: {post.remote_id}")
+
+        if post.surface is VkWallSurface.POSTPONED:
+            if capture_epoch - 60 > expected_date:
+                raise UploadRecoveryRequired(
+                    f"Historical capture is after the frozen slot but the current mapping is still postponed: "
+                    f"{post.remote_id}"
+                )
+            historical_surfaces = (VkWallSurface.POSTPONED,)
+        elif capture_epoch + 60 < expected_date:
+            historical_surfaces = (VkWallSurface.POSTPONED,)
+        elif capture_epoch - 60 > expected_date:
+            historical_surfaces = (VkWallSurface.PUBLISHED,)
+        else:
+            historical_surfaces = (VkWallSurface.PUBLISHED, VkWallSurface.POSTPONED)
+
+        attachment_variants = [post.attachments]
+        video_only = (expected_attachment,)
+        if post.attachments != video_only:
+            attachment_variants.append(video_only)
+
+        options: list[tuple[VkWallPostFingerprint, bool]] = []
+        seen_option_keys: set[tuple[str, tuple[str, ...]]] = set()
+        for historical_surface in historical_surfaces:
+            if post.surface is VkWallSurface.POSTPONED and historical_surface is VkWallSurface.PUBLISHED:
+                continue
+            for attachments in attachment_variants:
+                key = (historical_surface.value, attachments)
+                if key in seen_option_keys:
+                    continue
+                seen_option_keys.add(key)
+                options.append(
+                    (
+                        replace(post, surface=historical_surface, attachments=attachments),
+                        post.surface is VkWallSurface.PUBLISHED
+                        and historical_surface is VkWallSurface.POSTPONED,
+                    )
+                )
+        if not options:
+            raise UploadRecoveryRequired(f"Earlier rollout wall has no valid historical state: {post.remote_id}")
+        variant_options[index] = tuple(options)
+
+    duplicate = sorted(remote_id for remote_id, count in seen_counts.items() if count > 1)
+    if duplicate:
+        raise UploadRecoveryRequired(f"Earlier rollout wall mapping appears on multiple surfaces: {duplicate}")
+    missing = sorted(remote_id for remote_id, count in seen_counts.items() if count == 0)
+    if missing:
+        raise UploadRecoveryRequired(f"Earlier rollout wall mapping disappeared during recovery: {missing}")
+
+    states: list[tuple[list[VkWallPostFingerprint], tuple[str, ...]]] = [(list(current.posts), ())]
+    for post_index in sorted(variant_options):
+        expanded: list[tuple[list[VkWallPostFingerprint], tuple[str, ...]]] = []
+        for posts, reversed_ids in states:
+            for variant, reversed_surface in variant_options[post_index]:
+                next_posts = list(posts)
+                next_posts[post_index] = variant
+                next_reversed = reversed_ids
+                if reversed_surface:
+                    next_reversed = tuple(sorted((*reversed_ids, variant.remote_id)))
+                expanded.append((next_posts, next_reversed))
+        states = expanded
 
     matches: list[tuple[VkWallSnapshot, tuple[str, ...]]] = []
-    for mask in range(1 << len(flippable_indexes)):
-        posts = list(current.posts)
-        reversed_ids: list[str] = []
-        for bit, post_index in enumerate(flippable_indexes):
-            if not mask & (1 << bit):
-                continue
-            post = posts[post_index]
-            posts[post_index] = replace(post, surface=VkWallSurface.POSTPONED)
-            reversed_ids.append(post.remote_id)
+    for posts, reversed_ids in states:
         candidate = replace(
             current,
             captured_at=captured_at,
@@ -505,14 +570,16 @@ def _historical_issue323_wall_view(
             posts=tuple(posts),
         )
         if candidate.snapshot_sha256 == expected_sha:
-            matches.append((candidate, tuple(sorted(reversed_ids))))
+            matches.append((candidate, reversed_ids))
     if not matches:
         raise MiloviTokenRolloutBlocked(
-            "Current Milovi wall cannot be reduced to the journaled pre-upload baseline using only due exact "
-            "Issue #323 scheduled surface transitions"
+            "Current Milovi wall cannot be reduced to the journaled pre-upload baseline using capture-time "
+            "Issue #323 surface semantics and exact semantic provider-projection normalization"
         )
     if len(matches) != 1:
-        raise UploadRecoveryRequired("Historical Issue #323 wall view is ambiguous after exact surface normalization")
+        raise UploadRecoveryRequired(
+            "Historical Issue #323 wall view is ambiguous after capture-time semantic normalization"
+        )
     return matches[0]
 
 
