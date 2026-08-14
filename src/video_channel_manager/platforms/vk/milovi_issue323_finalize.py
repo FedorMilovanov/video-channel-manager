@@ -143,11 +143,16 @@ def _assert_native_clip(
     remote_id: str,
     *,
     description_mode: str,
+    preservation_only: bool = False,
 ) -> dict[str, Any]:
     owner_id, video_id = _parse_remote_id(remote_id)
     raw = writer.read_video(owner_id=owner_id, video_id=video_id)
     if raw is None:
         raise MiloviFinalizerBlocked(f"VK Clip disappeared: {remote_id}")
+    if raw.get("owner_id") != owner_id or raw.get("id") != video_id:
+        raise MiloviFinalizerBlocked(f"VK Clip identity changed: {remote_id}")
+    if preservation_only:
+        return raw
     assessment = _native_clip_assessment(
         raw,
         expected_owner_id=owner_id,
@@ -187,56 +192,52 @@ def _one_video_attachment(post: Mapping[str, Any]) -> tuple[int, int, Mapping[st
     return owner_id, video_id, video
 
 
-def _validate_anomaly_post(post: Mapping[str, Any], legacy_asset: SourceAsset) -> None:
-    if post.get("owner_id") != MILOVI_OWNER_ID or post.get("id") != ANOMALY_POST_ID:
-        raise MiloviFinalizerBlocked("Wall 475 identity differs from exact Issue #323 anomaly")
-    if str(post.get("text") or "").strip():
-        raise MiloviFinalizerBlocked("Wall 475 is no longer the empty-text anomaly authorized for deletion")
-    owner_id, video_id, expanded = _one_video_attachment(post)
-    expected_owner, expected_video = _parse_remote_id(ANOMALY_CLIP_REMOTE_ID)
-    if (owner_id, video_id) != (expected_owner, expected_video):
-        raise MiloviFinalizerBlocked("Wall 475 no longer attaches exact Clip 456239232")
-    observed_type = str(expanded.get("type") or "")
-    if observed_type and observed_type != "short_video":
-        raise MiloviFinalizerBlocked("Wall 475 attachment is no longer a native short_video")
-    if not _legacy_marker_ok(expanded, legacy_asset.source_id):
-        raise MiloviFinalizerBlocked("Wall 475 attachment lost exact legacy source marker")
+def _assert_wall475_absent(writer: VkWallWriter) -> str:
+    """Verify absence read-only; destructive authority belongs only to phase 1."""
+
+    post = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
+    if post is None:
+        return "wall.getById:none"
+    if (
+        post.get("is_deleted") is True
+        and post.get("owner_id") == MILOVI_OWNER_ID
+        and post.get("id") == ANOMALY_POST_ID
+    ):
+        return "wall.getById:is_deleted_true"
+    raise MiloviFinalizerBlocked(
+        "Wall 475 is live or its tombstone identity changed; phase 2 has no delete authority"
+    )
 
 
 def _cleanup_anomaly_475(
     *,
     writer: VkWallWriter,
-    client: VkApiClient,
-    legacy_asset: SourceAsset,
     promoted_asset: SourceAsset,
     finalizer: dict[str, Any],
     finalizer_path: Path,
 ) -> None:
-    state = finalizer["cleanup_475"]
-    post = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
-    if post is None:
-        _assert_native_clip(writer, promoted_asset, ANOMALY_CLIP_REMOTE_ID, description_mode="legacy_or_promoted")
-        state["status"] = "verified_absent"
-        _save_finalizer(finalizer_path, finalizer)
-        return
+    """Adopt phase-1 cleanup read-only; never delete or replay wall 475 here."""
 
-    _validate_anomaly_post(post, legacy_asset)
-    _assert_native_clip(writer, promoted_asset, ANOMALY_CLIP_REMOTE_ID, description_mode="legacy_or_promoted")
-    state.update(
-        status="delete_intent",
-        predelete_post_sha256=_sha256_text(json.dumps(post, sort_keys=True, ensure_ascii=False)),
+    state = finalizer["cleanup_475"]
+    if state.get("status") != "verified_absent":
+        raise MiloviFinalizerBlocked(
+            "Wall 475 cleanup is not durably reconciled by phase 1; phase 2 has no delete authority"
+        )
+    absence_evidence = _assert_wall475_absent(writer)
+    _assert_native_clip(
+        writer,
+        promoted_asset,
+        ANOMALY_CLIP_REMOTE_ID,
+        description_mode="legacy_or_promoted",
+        preservation_only=True,
     )
-    _save_finalizer(finalizer_path, finalizer)
-    _prove_target(client)
-    try:
-        writer._call("wall.delete", params={"owner_id": MILOVI_OWNER_ID, "post_id": ANOMALY_POST_ID})
-    except Exception:
-        if writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID) is not None:
-            raise
-    if writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID) is not None:
-        raise MiloviFinalizerBlocked("Exact anomaly wall 475 still exists after delete response")
-    _assert_native_clip(writer, promoted_asset, ANOMALY_CLIP_REMOTE_ID, description_mode="legacy_or_promoted")
-    state["status"] = "verified_absent"
+    state.update(
+        status="verified_absent",
+        phase2_delete_authority=False,
+        phase2_absence_evidence=absence_evidence,
+        protected_clip_remote_id=ANOMALY_CLIP_REMOTE_ID,
+        protected_clip_preserved=True,
+    )
     _save_finalizer(finalizer_path, finalizer)
 
 
@@ -422,8 +423,7 @@ def _edit_wall_message(
 
 
 def _final_postflight(writer: VkWallWriter, assets: list[SourceAsset], journal: dict[str, Any]) -> list[dict[str, Any]]:
-    if writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID) is not None:
-        raise MiloviFinalizerBlocked("Anomaly wall 475 reappeared")
+    _assert_wall475_absent(writer)
     snapshot = writer.capture_wall_snapshot(community_id=MILOVI_COMMUNITY_ID, max_posts_per_surface=10000)
     if not snapshot.complete:
         raise MiloviFinalizerBlocked("Final wall snapshot is incomplete")
@@ -573,8 +573,6 @@ def run_issue_323_finalizer(
 
             _cleanup_anomaly_475(
                 writer=writer,
-                client=client,
-                legacy_asset=legacy_assets[ANOMALY_SOURCE_ID],
                 promoted_asset=promoted_assets[ANOMALY_SOURCE_ID],
                 finalizer=finalizer,
                 finalizer_path=finalizer_journal_path,
