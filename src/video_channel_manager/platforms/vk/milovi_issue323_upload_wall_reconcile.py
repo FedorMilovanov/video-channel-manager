@@ -208,28 +208,61 @@ def _candidate_fingerprints(
     for created_remote_id in created_remote_ids:
         try:
             owner_id, post_id = _parse_remote_id(created_remote_id)
-        except Exception:
-            continue
+        except Exception as exc:
+            raise Issue323UploadWallReconcileBlocked(
+                f"Upload wall delta contains an invalid created post identity: {created_remote_id}"
+            ) from exc
         if owner_id != MILOVI_OWNER_ID or post_id <= 0:
+            raise Issue323UploadWallReconcileBlocked(
+                f"Upload wall delta created post left the exact Milovi owner: {created_remote_id}"
+            )
+
+        exact = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=post_id)
+        if _absent_exact(exact, post_id=post_id):
             continue
-        fingerprints = [
+        assert exact is not None
+        if exact.get("owner_id") != MILOVI_OWNER_ID or exact.get("id") != post_id:
+            raise Issue323UploadWallReconcileBlocked(
+                f"Upload-created wall exact readback changed identity: {created_remote_id}"
+            )
+        exact_owner_id, exact_video_id = _exact_video(exact)
+        if (exact_owner_id, exact_video_id) != (ticket.owner_id, ticket.video_id):
+            raise Issue323UploadWallReconcileBlocked(
+                f"Upload-created wall exact readback changed Clip binding: {created_remote_id}"
+            )
+        exact_date = exact.get("date")
+        if type(exact_date) is not int:
+            raise Issue323UploadWallReconcileBlocked(
+                f"Upload-created wall exact readback has no exact publication date: {created_remote_id}"
+            )
+        if not (
+            before_epoch - _CAPTURE_WINDOW_SLOP_SECONDS <= exact_date <= after_epoch + _CAPTURE_WINDOW_SLOP_SECONDS
+        ):
+            raise Issue323UploadWallReconcileBlocked(
+                f"Upload-created wall exact readback is outside the durable capture window: {created_remote_id}"
+            )
+        try:
+            exact_fingerprint = VkWallPostFingerprint.from_item(exact, surface=VkWallSurface.PUBLISHED)
+        except ValueError as exc:
+            raise Issue323UploadWallReconcileBlocked(
+                f"Upload-created wall exact readback cannot form a published fingerprint: {created_remote_id}"
+            ) from exc
+        video_attachments = [value for value in exact_fingerprint.attachments if value.startswith("video")]
+        if video_attachments != [expected_attachment]:
+            raise Issue323UploadWallReconcileBlocked(
+                f"Upload-created wall exact fingerprint changed Clip binding: {created_remote_id}"
+            )
+
+        aggregate_fingerprints = [
             post
             for post in current.posts
             if post.surface is VkWallSurface.PUBLISHED and post.remote_id == created_remote_id
         ]
-        if len(fingerprints) != 1:
-            continue
-        fingerprint = fingerprints[0]
-        video_attachments = [value for value in fingerprint.attachments if value.startswith("video")]
-        if video_attachments != [expected_attachment] or fingerprint.publish_date is None:
-            continue
-        if not (
-            before_epoch - _CAPTURE_WINDOW_SLOP_SECONDS
-            <= fingerprint.publish_date
-            <= after_epoch + _CAPTURE_WINDOW_SLOP_SECONDS
-        ):
-            continue
-        virtual = _remove_fingerprint(current, created_remote_id)
+        if len(aggregate_fingerprints) > 1:
+            raise Issue323UploadWallReconcileBlocked(
+                f"Upload-created wall candidate appears multiple times on aggregate published surface: {created_remote_id}"
+            )
+        virtual = _remove_fingerprint(current, created_remote_id) if aggregate_fingerprints else current
         try:
             baseline, exact_read_ids = _prove_historical_baseline(
                 record=record,
@@ -240,7 +273,7 @@ def _candidate_fingerprints(
             )
         except (UploadRecoveryRequired, MiloviTokenRolloutBlocked):
             continue
-        matches.append((fingerprint, baseline, exact_read_ids))
+        matches.append((exact_fingerprint, baseline, exact_read_ids))
     return matches
 
 
