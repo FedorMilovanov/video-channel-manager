@@ -342,9 +342,7 @@ def _supplement_due_prior_wall_readbacks(
         owner_id, post_id = _parse_remote_id(remote_id)
         raw = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=post_id)
         if raw is None or raw.get("is_deleted") is True:
-            raise UploadRecoveryRequired(
-                f"Earlier rollout wall mapping disappeared during exact readback: {remote_id}"
-            )
+            raise UploadRecoveryRequired(f"Earlier rollout wall mapping disappeared during exact readback: {remote_id}")
         if raw.get("owner_id") != owner_id or raw.get("id") != post_id:
             raise UploadRecoveryRequired(f"Earlier rollout wall exact readback changed identity: {remote_id}")
         if raw.get("date") != expected_date:
@@ -380,7 +378,9 @@ def _supplement_due_prior_wall_readbacks(
 
         fingerprint = VkWallPostFingerprint.from_item(raw, surface=VkWallSurface.PUBLISHED)
         if f"video{clip_remote_id}" not in fingerprint.attachments:
-            raise UploadRecoveryRequired(f"Earlier rollout wall exact readback lost canonical Clip binding: {remote_id}")
+            raise UploadRecoveryRequired(
+                f"Earlier rollout wall exact readback lost canonical Clip binding: {remote_id}"
+            )
         posts.append(fingerprint)
         supplemented.append(remote_id)
 
