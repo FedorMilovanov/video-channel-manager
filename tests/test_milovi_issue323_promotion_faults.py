@@ -33,6 +33,8 @@ def _asset() -> Any:
         title="Cake",
         description=PROMOTED_DESCRIPTION,
         wall_message=PROMOTED_WALL,
+        legacy_description=LEGACY_DESCRIPTION,
+        legacy_wall_message=LEGACY_WALL,
         duration_seconds=30.0,
         media_path="unused.mp4",
     )
@@ -221,9 +223,7 @@ def test_recovered_child_rejects_unrelated_description_before_wall_mutation(
     assert wall_calls == []
 
 
-def test_clip_source_marker_alone_is_not_reviewed_before_state(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_clip_source_marker_alone_is_not_reviewed_before_state(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     writer = _PromotionWriter(description=f"manual override https://www.youtube.com/shorts/{SOURCE_ID}")
     monkeypatch.setattr(finalize, "_prove_target", lambda _client: None)
     operation: dict[str, Any] = {"status": "pending"}
@@ -418,11 +418,15 @@ class _BatchPreflightWriter:
             title = f"Cake {index + 1}"
             promoted_description = f"promoted description {source_id}"
             promoted_wall = f"promoted wall {source_id}"
+            legacy_description = build_description(title, source_id)
+            legacy_wall = build_wall_message(title, source_id)
             asset = SimpleNamespace(
                 source_id=source_id,
                 title=title,
                 description=promoted_description,
                 wall_message=promoted_wall,
+                legacy_description=legacy_description,
+                legacy_wall_message=legacy_wall,
                 duration_seconds=30.0,
                 media_path="unused.mp4",
             )
@@ -430,8 +434,8 @@ class _BatchPreflightWriter:
             clip_id = 456240000 + index
             wall_id = 1000 + index
             publish_date = PUBLISH_DATE + index * 86400
-            description = build_description(title, source_id) if index % 2 == 0 else promoted_description
-            wall_text = build_wall_message(title, source_id) if index % 2 == 0 else promoted_wall
+            description = legacy_description if index % 2 == 0 else promoted_description
+            wall_text = legacy_wall if index % 2 == 0 else promoted_wall
             if source_id == drift_source:
                 description = f"manual drift https://www.youtube.com/shorts/{source_id}"
             self.clips[clip_id] = {
