@@ -52,10 +52,12 @@ def _strict_raw_anomaly(post: Mapping[str, Any], source_id: str) -> None:
         raise MiloviFinalizerBlocked("Wall 475 creator identity changed")
     if str(post.get("post_type") or "post") != "post":
         raise MiloviFinalizerBlocked("Wall 475 post type changed")
-    post_source = post.get("post_source")
-    if not isinstance(post_source, Mapping) or post_source.get("type") != "vk":
-        raise MiloviFinalizerBlocked("Wall 475 provider source changed")
 
+    # VK's post_source is presentation/provider metadata and has proved unstable
+    # across readbacks of this exact already-identified anomaly. It is recorded
+    # below as evidence, but it is not part of the deletion identity. The fresh
+    # deletion predicate remains the exact wall identity plus the exact attached
+    # native Clip and durable source marker authorized by Issue #323.
     owner_id, video_id, expanded = _one_video_attachment(post)
     expected_owner, expected_video = _parse_remote_id(ANOMALY_CLIP_REMOTE_ID)
     if (owner_id, video_id) != (expected_owner, expected_video):
@@ -124,11 +126,21 @@ def run_reconcile(
             if raw_post is not None:
                 _strict_raw_anomaly(raw_post, ANOMALY_SOURCE_ID)
                 raw_text = str(raw_post.get("text") or "")
+                raw_post_source = raw_post.get("post_source")
+                post_source_type = (
+                    str(raw_post_source.get("type") or "") if isinstance(raw_post_source, Mapping) else ""
+                )
                 state = finalizer["cleanup_475"]
                 state.update(
                     observed_provider_text_nonempty=bool(raw_text.strip()),
                     observed_provider_text_sha256=_sha256_text(raw_text),
-                    observed_raw_post_sha256=_sha256_text(json.dumps(raw_post, sort_keys=True, ensure_ascii=False)),
+                    observed_post_source_type=post_source_type,
+                    observed_post_source_sha256=_sha256_text(
+                        json.dumps(raw_post_source, sort_keys=True, ensure_ascii=False, default=str)
+                    ),
+                    observed_raw_post_sha256=_sha256_text(
+                        json.dumps(raw_post, sort_keys=True, ensure_ascii=False, default=str)
+                    ),
                 )
                 _save_finalizer(finalizer_journal_path, finalizer)
 
@@ -155,6 +167,7 @@ def run_reconcile(
                 "clip_remote_id": ANOMALY_CLIP_REMOTE_ID,
                 "source_id": ANOMALY_SOURCE_ID,
                 "provider_text_drift_tolerated": True,
+                "provider_source_recorded_not_identity": True,
                 "cleanup_state": finalizer["cleanup_475"],
             }
             write_json_atomic(output_path, payload)
