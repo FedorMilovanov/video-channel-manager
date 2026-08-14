@@ -1,5 +1,4 @@
 # Current operational state
-
 Updated: 2026-08-15
 
 This file is the concise current operational interpretation. It does **not** authorize provider mutation. Historical audits/PRs/issues are evidence only.
