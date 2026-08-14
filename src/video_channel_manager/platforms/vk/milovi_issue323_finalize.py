@@ -338,7 +338,9 @@ def _ensure_promoted_clip(
     item.update(
         status="clip_verified",
         clip_remote_id=remote_id,
-        clip_origin="resumed_token_short_video_internal_promotion" if had_provider_effect else "new_token_short_video_internal_promotion",
+        clip_origin="resumed_token_short_video_internal_promotion"
+        if had_provider_effect
+        else "new_token_short_video_internal_promotion",
     )
     _save(journal_path, journal)
     return remote_id
@@ -773,7 +775,7 @@ def main() -> int:
         output_path=args.output,
         rollout_output_path=args.rollout_output,
         journal_path=args.journal,
-        finalizer_journal_path=args.finalizer_journal,
+        finalizer_journal_path=finalizer_journal_path,
         schedule_path=args.schedule,
         work_dir=args.work_dir,
         verify_timeout_seconds=args.verify_timeout,
