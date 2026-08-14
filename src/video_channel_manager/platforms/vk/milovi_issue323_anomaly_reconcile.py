@@ -35,7 +35,7 @@ from video_channel_manager.platforms.vk.wall import VkWallWriter
 
 EXECUTION_CONFIRMATION = "ISSUE_323_RECONCILE_TEXT_DRIFT_AND_CLEANUP_475"
 RESULT_SCHEMA = "video-manager.milovi-issue-323-anomaly-text-drift-reconcile"
-IDENTITY_CONTRACT = "milovi-wall-475-stable-identity-v2"
+IDENTITY_CONTRACT = "milovi-wall-475-stable-identity-v3"
 ANOMALY_CREATED_AT = 1786645941
 ANOMALY_CREATED_BY = 631487
 
@@ -81,14 +81,10 @@ def _single_video_attachment(post: Mapping[str, Any]) -> tuple[int, int, Mapping
 
 
 def _validate_wall475_identity(post: Mapping[str, Any], source_id: str) -> None:
-    """Prove the exact wall object using provider-stable identity fields only.
+    """Prove the exact live wall object using provider-stable identity fields."""
 
-    VK may re-project mutable presentation metadata such as wall text,
-    ``post_source`` and non-video attachment projections between reads. Those
-    values are recorded as evidence, but destructive identity is the exact wall
-    object plus its single exact video attachment.
-    """
-
+    if post.get("is_deleted") is True:
+        raise MiloviFinalizerBlocked("Wall 475 live identity cannot be proved from a deleted tombstone")
     if post.get("owner_id") != MILOVI_OWNER_ID or post.get("id") != ANOMALY_POST_ID:
         raise MiloviFinalizerBlocked("Wall 475 identity changed")
     if post.get("date") != ANOMALY_CREATED_AT:
@@ -112,6 +108,24 @@ def _validate_wall475_identity(post: Mapping[str, Any], source_id: str) -> None:
         raise MiloviFinalizerBlocked("Wall 475 attachment lost source marker o1WXIMupuws")
 
 
+def _validate_deleted_wall475_tombstone(post: Mapping[str, Any]) -> None:
+    """Accept only VK's exact deleted-object tombstone for the authorized post."""
+
+    if post.get("is_deleted") is not True:
+        raise MiloviFinalizerBlocked("Wall 475 readback is not an exact deleted tombstone")
+    if post.get("owner_id") != MILOVI_OWNER_ID or post.get("id") != ANOMALY_POST_ID:
+        raise MiloviFinalizerBlocked("Deleted wall 475 tombstone identity changed")
+
+
+def _wall475_is_absent(post: Mapping[str, Any] | None) -> bool:
+    if post is None:
+        return True
+    if post.get("is_deleted") is True:
+        _validate_deleted_wall475_tombstone(post)
+        return True
+    return False
+
+
 def _attachment_projection(post: Mapping[str, Any]) -> tuple[int, int, list[str]]:
     attachments = post.get("attachments")
     if not isinstance(attachments, list):
@@ -127,6 +141,27 @@ def _attachment_projection(post: Mapping[str, Any]) -> tuple[int, int, list[str]
         if attachment_type == "video":
             video_count += 1
     return len(attachments), video_count, types
+
+
+def _record_read_observation(state: dict[str, Any], post: Mapping[str, Any] | None, *, stage: str) -> None:
+    state["last_read_stage"] = stage
+    state["last_read_is_none"] = post is None
+    if post is None:
+        state["last_read_is_deleted"] = False
+        state["last_read_keys"] = []
+        state["last_read_has_attachments"] = False
+        return
+
+    state["last_read_is_deleted"] = post.get("is_deleted") is True
+    state["last_read_keys"] = sorted(str(key) for key in post)
+    state["last_read_has_attachments"] = isinstance(post.get("attachments"), list)
+    state["last_read_owner_id"] = post.get("owner_id")
+    state["last_read_post_id"] = post.get("id")
+    state["last_read_date"] = post.get("date")
+    state["last_read_from_id"] = post.get("from_id")
+    state["last_read_created_by"] = post.get("created_by")
+    state["last_read_post_type"] = post.get("post_type")
+    state["last_read_raw_post_sha256"] = _sha256_text(json.dumps(post, sort_keys=True, ensure_ascii=False, default=str))
 
 
 def _record_observed_projection(state: dict[str, Any], post: Mapping[str, Any]) -> None:
@@ -153,6 +188,29 @@ def _record_observed_projection(state: dict[str, Any], post: Mapping[str, Any]) 
     )
 
 
+def _mark_verified_absent(
+    *,
+    writer: VkWallWriter,
+    promoted_asset: SourceAsset,
+    finalizer: dict[str, Any],
+    finalizer_path: Path,
+    absence_evidence: str,
+) -> None:
+    _assert_native_clip(
+        writer,
+        promoted_asset,
+        ANOMALY_CLIP_REMOTE_ID,
+        description_mode="legacy_or_promoted",
+    )
+    state = finalizer["cleanup_475"]
+    state.update(
+        status="verified_absent",
+        identity_contract=IDENTITY_CONTRACT,
+        absence_evidence=absence_evidence,
+    )
+    _save_finalizer(finalizer_path, finalizer)
+
+
 def _cleanup_exact_wall475(
     *,
     writer: VkWallWriter,
@@ -162,28 +220,30 @@ def _cleanup_exact_wall475(
     finalizer: dict[str, Any],
     finalizer_path: Path,
 ) -> None:
-    """Delete only exact wall 475 after fresh stable-identity proofs.
+    """Delete only exact live wall 475; adopt exact deleted tombstone as absence.
 
-    The intent is persisted before the provider write. Immediately before the
-    delete, Milovi target identity is re-proved and wall 475 is re-read through
-    the same stable identity contract. An ambiguous delete is never replayed
-    blindly: provider state is read back first. The protected Clip is verified
-    both before and after the wall deletion.
+    A live post still requires the full stable identity contract and a second
+    fresh proof immediately before the single authorized delete. VK may return
+    an ``is_deleted=true`` tombstone without attachments for an already-absent
+    wall object; only exact owner/id tombstones are accepted as absence, and the
+    protected Clip is then re-verified before continuation.
     """
 
     state = finalizer["cleanup_475"]
     post = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
-    if post is None:
-        _assert_native_clip(
-            writer,
-            promoted_asset,
-            ANOMALY_CLIP_REMOTE_ID,
-            description_mode="legacy_or_promoted",
+    _record_read_observation(state, post, stage="initial")
+    if _wall475_is_absent(post):
+        evidence = "wall.getById:none" if post is None else "wall.getById:is_deleted_true"
+        _mark_verified_absent(
+            writer=writer,
+            promoted_asset=promoted_asset,
+            finalizer=finalizer,
+            finalizer_path=finalizer_path,
+            absence_evidence=evidence,
         )
-        state.update(status="verified_absent", identity_contract=IDENTITY_CONTRACT)
-        _save_finalizer(finalizer_path, finalizer)
         return
 
+    assert post is not None
     _validate_wall475_identity(post, legacy_asset.source_id)
     _assert_native_clip(
         writer,
@@ -200,35 +260,41 @@ def _cleanup_exact_wall475(
 
     _prove_target(client)
     dispatch_post = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
-    if dispatch_post is None:
-        _assert_native_clip(
-            writer,
-            promoted_asset,
-            ANOMALY_CLIP_REMOTE_ID,
-            description_mode="legacy_or_promoted",
+    _record_read_observation(state, dispatch_post, stage="predelete")
+    if _wall475_is_absent(dispatch_post):
+        evidence = "wall.getById:none-predelete" if dispatch_post is None else "wall.getById:is_deleted_true-predelete"
+        _mark_verified_absent(
+            writer=writer,
+            promoted_asset=promoted_asset,
+            finalizer=finalizer,
+            finalizer_path=finalizer_path,
+            absence_evidence=evidence,
         )
-        state.update(status="verified_absent", identity_contract=IDENTITY_CONTRACT)
-        _save_finalizer(finalizer_path, finalizer)
         return
+    assert dispatch_post is not None
     _validate_wall475_identity(dispatch_post, legacy_asset.source_id)
 
     try:
         writer._call("wall.delete", params={"owner_id": MILOVI_OWNER_ID, "post_id": ANOMALY_POST_ID})
     except Exception:
-        if writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID) is not None:
+        ambiguous_readback = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
+        _record_read_observation(state, ambiguous_readback, stage="delete-exception-readback")
+        if not _wall475_is_absent(ambiguous_readback):
             raise
 
-    if writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID) is not None:
+    final_readback = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
+    _record_read_observation(state, final_readback, stage="postdelete")
+    if not _wall475_is_absent(final_readback):
         raise MiloviFinalizerBlocked("Exact anomaly wall 475 still exists after delete response")
 
-    _assert_native_clip(
-        writer,
-        promoted_asset,
-        ANOMALY_CLIP_REMOTE_ID,
-        description_mode="legacy_or_promoted",
+    evidence = "wall.getById:none-postdelete" if final_readback is None else "wall.getById:is_deleted_true-postdelete"
+    _mark_verified_absent(
+        writer=writer,
+        promoted_asset=promoted_asset,
+        finalizer=finalizer,
+        finalizer_path=finalizer_path,
+        absence_evidence=evidence,
     )
-    state.update(status="verified_absent", identity_contract=IDENTITY_CONTRACT)
-    _save_finalizer(finalizer_path, finalizer)
 
 
 def run_reconcile(
@@ -272,7 +338,9 @@ def run_reconcile(
                 finalizer_path=finalizer_journal_path,
             )
 
-            if writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID) is not None:
+            final_post = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
+            _record_read_observation(finalizer["cleanup_475"], final_post, stage="reconcile-postflight")
+            if not _wall475_is_absent(final_post):
                 raise MiloviFinalizerBlocked("Exact anomaly wall 475 still exists after reconciliation")
 
             payload = {
@@ -307,6 +375,7 @@ def run_reconcile(
             "community_id": MILOVI_COMMUNITY_ID,
             "owner_id": MILOVI_OWNER_ID,
             "identity_contract": IDENTITY_CONTRACT,
+            "cleanup_state": finalizer.get("cleanup_475", {}),
             "error": {"type": type(exc).__name__, "message": str(exc)},
         }
         write_json_atomic(output_path, payload)
