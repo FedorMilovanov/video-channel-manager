@@ -88,9 +88,7 @@ def _record_observed_projection(state: dict[str, Any], post: Mapping[str, Any]) 
         observed_post_source_sha256=_sha256_text(
             json.dumps(raw_post_source, sort_keys=True, ensure_ascii=False, default=str)
         ),
-        observed_raw_post_sha256=_sha256_text(
-            json.dumps(post, sort_keys=True, ensure_ascii=False, default=str)
-        ),
+        observed_raw_post_sha256=_sha256_text(json.dumps(post, sort_keys=True, ensure_ascii=False, default=str)),
         mutable_projection_fields=["text", "post_source"],
     )
 
@@ -252,9 +250,7 @@ def run_reconcile(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Reconcile exact Issue #323 wall 475 using provider-stable identity"
-    )
+    parser = argparse.ArgumentParser(description="Reconcile exact Issue #323 wall 475 using provider-stable identity")
     parser.add_argument("--execute", required=True)
     parser.add_argument(
         "--output",
