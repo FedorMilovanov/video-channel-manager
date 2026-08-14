@@ -32,9 +32,7 @@ def _live_post() -> dict[str, Any]:
                     "owner_id": -68859909,
                     "id": 456239232,
                     "type": "short_video",
-                    "description": (
-                        "legacy source https://www.youtube.com/shorts/o1WXIMupuws"
-                    ),
+                    "description": "legacy source https://www.youtube.com/shorts/o1WXIMupuws",
                 },
             }
         ],
