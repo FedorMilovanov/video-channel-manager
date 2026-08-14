@@ -1,0 +1,130 @@
+name: Telegram generic target discovery
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Write-disabled Telegram channel profile to discover
+        required: true
+        type: choice
+        options:
+          - milovi-cake
+          - lordchrist
+
+permissions:
+  contents: read
+
+concurrency:
+  group: telegram-generic-target-discovery-${{ inputs.profile }}
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      PROFILE_KEY: ${{ inputs.profile }}
+      EXPECTED_BOT_ID: 8716602202
+      EXPECTED_BOT_USERNAME: preaching_mp3_bot
+      # One shared bot credential is intentional. The profile selects the exact
+      # destination contract; generic discovery remains provider-read-only.
+      LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+      MILOVI_CAKE_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+
+    steps:
+      - name: Check out immutable current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal read-only Telegram runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+
+      - name: Resolve immutable profile paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$PROFILE_KEY" in
+            milovi-cake|lordchrist) ;;
+            *) echo "unsupported profile: $PROFILE_KEY" >&2; exit 2 ;;
+          esac
+          echo "PROFILE_PATH=content/telegram/channels/${PROFILE_KEY}.json" >> "$GITHUB_ENV"
+          echo "PROOF_PATH=.runtime/${PROFILE_KEY}-generic-target-proof.json" >> "$GITHUB_ENV"
+          echo "BINDING_PATH=.runtime/${PROFILE_KEY}-target-binding-candidate.json" >> "$GITHUB_ENV"
+
+      - name: Validate selected profile is write-disabled
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_channel_cli validate-profile \
+            --profile "$PROFILE_PATH" > /tmp/profile.json
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          payload = json.loads(Path('/tmp/profile.json').read_text(encoding='utf-8'))
+          if payload.get('provider_writes_authorized') is not False:
+              raise SystemExit('generic target discovery accepts only provider-write-disabled profiles')
+          if payload.get('project_key') not in {'milovi-cake', 'lord-god-strength'}:
+              raise SystemExit('selected profile resolved to an unexpected project')
+          print(json.dumps(payload, ensure_ascii=False))
+          PY
+
+      - name: Discover exact target without provider mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.telegram_channel_cli discover-target \
+            --profile "$PROFILE_PATH" \
+            --expected-bot-id "$EXPECTED_BOT_ID" \
+            --expected-bot-username "$EXPECTED_BOT_USERNAME" \
+            --output "$PROOF_PATH"
+
+      - name: Freeze proof as target-binding candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_target_binding_cli \
+            --profile "$PROFILE_PATH" \
+            --proof "$PROOF_PATH" \
+            --output "$BINDING_PATH" > /tmp/binding-summary.json
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          summary = json.loads(Path('/tmp/binding-summary.json').read_text(encoding='utf-8'))
+          if summary.get('provider_write_performed') is not False:
+              raise SystemExit('target discovery unexpectedly claimed a provider write')
+          if summary.get('bot_id') != int(os.environ['EXPECTED_BOT_ID']):
+              raise SystemExit('discovered bot id differs from expected shared bot identity')
+          if str(summary.get('bot_username') or '').casefold() != os.environ['EXPECTED_BOT_USERNAME'].casefold():
+              raise SystemExit('discovered bot username differs from expected shared bot identity')
+          if int(summary.get('chat_id', 0)) >= 0:
+              raise SystemExit('discovered Telegram channel id must be negative')
+          print(json.dumps(summary, ensure_ascii=False))
+          PY
+
+      - name: Upload read-only proof and binding candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: telegram-target-discovery-${{ inputs.profile }}-${{ github.sha }}
+          path: |
+            ${{ env.PROOF_PATH }}
+            ${{ env.BINDING_PATH }}
+          if-no-files-found: error
+          retention-days: 7
