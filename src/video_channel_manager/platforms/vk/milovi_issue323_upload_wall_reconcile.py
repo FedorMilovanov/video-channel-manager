@@ -52,6 +52,20 @@ def _delta(wall_safety: Mapping[str, Any]) -> Mapping[str, Any]:
     raw = wall_safety.get("delta")
     if not isinstance(raw, Mapping):
         raise Issue323UploadWallReconcileBlocked("Provider-dispatched upload has no durable wall delta")
+    if raw.get("status") != "changed":
+        raise Issue323UploadWallReconcileBlocked(
+            f"Upload wall recovery requires a changed durable delta, observed {raw.get('status')!r}"
+        )
+    if raw.get("before_sha256") != wall_safety.get("before_snapshot_sha256"):
+        raise Issue323UploadWallReconcileBlocked("Upload wall delta before digest differs from durable wall safety")
+    if raw.get("after_sha256") != wall_safety.get("after_snapshot_sha256"):
+        raise Issue323UploadWallReconcileBlocked("Upload wall delta after digest differs from durable wall safety")
+    for field in ("created", "removed", "changed", "reasons"):
+        values = raw.get(field)
+        if not isinstance(values, list) or any(not isinstance(value, str) for value in values):
+            raise Issue323UploadWallReconcileBlocked(f"Upload wall delta {field} list is invalid")
+    if raw.get("reasons"):
+        raise Issue323UploadWallReconcileBlocked(f"Upload wall delta is incomplete: {raw.get('reasons')}")
     return raw
 
 
@@ -71,23 +85,7 @@ def _prior_rollout_wall_ids(journal: Mapping[str, Any]) -> set[str]:
 
 def _created_published_ids(delta: Mapping[str, Any]) -> tuple[str, ...]:
     raw_created = delta.get("created")
-    raw_removed = delta.get("removed")
-    raw_changed = delta.get("changed")
-    raw_reasons = delta.get("reasons")
-    if delta.get("status") != "changed":
-        raise Issue323UploadWallReconcileBlocked(
-            f"Upload wall recovery requires a changed durable delta, observed {delta.get('status')!r}"
-        )
-    if not isinstance(raw_created, list) or any(not isinstance(value, str) for value in raw_created):
-        raise Issue323UploadWallReconcileBlocked("Upload wall delta created list is invalid")
-    if not isinstance(raw_removed, list) or any(not isinstance(value, str) for value in raw_removed):
-        raise Issue323UploadWallReconcileBlocked("Upload wall delta removed list is invalid")
-    if not isinstance(raw_changed, list) or any(not isinstance(value, str) for value in raw_changed):
-        raise Issue323UploadWallReconcileBlocked("Upload wall delta changed list is invalid")
-    if not isinstance(raw_reasons, list) or any(not isinstance(value, str) for value in raw_reasons):
-        raise Issue323UploadWallReconcileBlocked("Upload wall delta reasons list is invalid")
-    if raw_reasons:
-        raise Issue323UploadWallReconcileBlocked(f"Upload wall delta is incomplete: {raw_reasons}")
+    assert isinstance(raw_created, list)
     return tuple(sorted(value.removeprefix("published:") for value in raw_created if value.startswith("published:")))
 
 
@@ -119,19 +117,11 @@ def _exact_video(post: Mapping[str, Any]) -> tuple[int, int]:
 def _absent_exact(post: Mapping[str, Any] | None, *, post_id: int) -> bool:
     if post is None:
         return True
-    return (
-        post.get("is_deleted") is True
-        and post.get("owner_id") == MILOVI_OWNER_ID
-        and post.get("id") == post_id
-    )
+    return post.get("is_deleted") is True and post.get("owner_id") == MILOVI_OWNER_ID and post.get("id") == post_id
 
 
 def _remove_fingerprint(snapshot: VkWallSnapshot, remote_id: str) -> VkWallSnapshot:
-    kept = tuple(
-        post
-        for post in snapshot.posts
-        if not (post.surface is VkWallSurface.PUBLISHED and post.remote_id == remote_id)
-    )
+    kept = tuple(post for post in snapshot.posts if not (post.surface is VkWallSurface.PUBLISHED and post.remote_id == remote_id))
     if len(kept) != len(snapshot.posts) - 1:
         raise Issue323UploadWallReconcileBlocked(
             f"Upload-created wall candidate does not occur exactly once on published surface: {remote_id}"
@@ -156,8 +146,37 @@ def _prove_historical_baseline(
     baseline = _resume_wall_baseline(record, effective, journal=journal)
     expected_sha = str(_wall_safety(record).get("before_snapshot_sha256") or "")
     if not expected_sha or baseline.snapshot_sha256 != expected_sha:
-        raise Issue323UploadWallReconcileBlocked("Recovered upload wall baseline does not match the durable pre-upload SHA")
+        raise Issue323UploadWallReconcileBlocked(
+            "Recovered upload wall baseline does not match the durable pre-upload SHA"
+        )
     return baseline, exact_read_ids
+
+
+def _unknown_created_ids(
+    *,
+    delta: Mapping[str, Any],
+    journal: Mapping[str, Any],
+) -> tuple[str, ...]:
+    prior_ids = _prior_rollout_wall_ids(journal)
+    return tuple(remote_id for remote_id in _created_published_ids(delta) if remote_id not in prior_ids)
+
+
+def _unknown_created_are_absent(
+    *,
+    writer: VkWallWriter,
+    remote_ids: tuple[str, ...],
+) -> bool:
+    for remote_id in remote_ids:
+        try:
+            owner_id, post_id = _parse_remote_id(remote_id)
+        except Exception:
+            return False
+        if owner_id != MILOVI_OWNER_ID or post_id <= 0:
+            return False
+        exact = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=post_id)
+        if not _absent_exact(exact, post_id=post_id):
+            return False
+    return True
 
 
 def _candidate_fingerprints(
@@ -167,18 +186,17 @@ def _candidate_fingerprints(
     journal: Mapping[str, Any],
     source_id: str,
     writer: VkWallWriter,
+    delta: Mapping[str, Any],
 ) -> list[tuple[VkWallPostFingerprint, VkWallSnapshot, tuple[str, ...]]]:
-    wall_safety = _wall_safety(record)
-    delta = _delta(wall_safety)
-    created_remote_ids = _created_published_ids(delta)
+    created_remote_ids = _unknown_created_ids(delta=delta, journal=journal)
     if not created_remote_ids:
-        raise Issue323UploadWallReconcileBlocked("Upload wall delta has no published created post to reconcile")
+        raise Issue323UploadWallReconcileBlocked("Upload wall delta has no unknown published created post to reconcile")
 
     ticket = ticket_from_record(record)
     if ticket.owner_id != MILOVI_OWNER_ID:
         raise Issue323UploadWallReconcileBlocked("Upload reservation left the exact Milovi owner")
     expected_attachment = f"video{ticket.remote_id}"
-    prior_wall_ids = _prior_rollout_wall_ids(journal)
+    wall_safety = _wall_safety(record)
     before_epoch = _timestamp(wall_safety.get("before_captured_at"), field="before_captured_at")
     after_epoch = _timestamp(wall_safety.get("after_captured_at"), field="after_captured_at")
     if after_epoch + _CAPTURE_WINDOW_SLOP_SECONDS < before_epoch:
@@ -190,7 +208,7 @@ def _candidate_fingerprints(
             owner_id, post_id = _parse_remote_id(created_remote_id)
         except Exception:
             continue
-        if owner_id != MILOVI_OWNER_ID or post_id <= 0 or created_remote_id in prior_wall_ids:
+        if owner_id != MILOVI_OWNER_ID or post_id <= 0:
             continue
         fingerprints = [
             post
@@ -201,9 +219,7 @@ def _candidate_fingerprints(
             continue
         fingerprint = fingerprints[0]
         video_attachments = [value for value in fingerprint.attachments if value.startswith("video")]
-        if video_attachments != [expected_attachment]:
-            continue
-        if fingerprint.publish_date is None:
+        if video_attachments != [expected_attachment] or fingerprint.publish_date is None:
             continue
         if not (
             before_epoch - _CAPTURE_WINDOW_SLOP_SECONDS
@@ -238,18 +254,16 @@ def reconcile_issue323_upload_wall_effect(
 ) -> tuple[VkWallSnapshot, VkWallSnapshot]:
     """Recover one already-dispatched Issue #323 upload without replay.
 
-    A normal scheduled-surface transition is accepted without mutation when the
-    current wall can already be reduced to the exact durable pre-upload SHA. For
-    sources 9-12 only, one provider-created *published* post may additionally be
-    deleted when it is durably listed in that upload's postflight delta, binds to
-    the exact reserved Clip, falls inside the upload capture window, and removing
-    only that post reconstructs the exact historical pre-upload wall. The delete
-    intent and dispatch boundary are durable; an ambiguous dispatch is never
-    retried blindly.
+    Normal scheduled-surface evolution is read-only. For sources 9-12 only,
+    exactly one provider-created published wall post may be deleted when the
+    durable postflight delta, exact reserved Clip, capture window and exact
+    historical pre-upload SHA all identify that single side effect.
     """
 
     if source_id not in ROLL_OUT_IDS:
-        raise Issue323UploadWallReconcileBlocked(f"Issue #323 recovery source is outside the exact rollout: {source_id}")
+        raise Issue323UploadWallReconcileBlocked(
+            f"Issue #323 recovery source is outside the exact rollout: {source_id}"
+        )
     if record.get("source_video_id") != source_id:
         raise Issue323UploadWallReconcileBlocked("Upload record source binding changed during wall recovery")
     if UploadStage(str(record.get("stage"))) is not UploadStage.UNKNOWN_REQUIRES_RECONCILIATION:
@@ -259,32 +273,39 @@ def reconcile_issue323_upload_wall_effect(
     if not current_wall.complete:
         raise Issue323UploadWallReconcileBlocked("Current wall snapshot is incomplete during upload wall recovery")
 
-    # First allow a purely read-only explanation such as a legitimate due
-    # postponed->published evolution of an earlier durable rollout mapping.
-    try:
-        baseline, exact_read_ids = _prove_historical_baseline(
-            record=record,
-            current=current_wall,
-            journal=journal,
-            writer=writer,
-            source_id=source_id,
-        )
-    except (UploadRecoveryRequired, MiloviTokenRolloutBlocked):
-        baseline = None
-    else:
-        record["issue323_upload_wall_reconcile"] = {
-            "schema_name": ISSUE323_UPLOAD_WALL_RECONCILE_SCHEMA,
-            "schema_version": 1,
-            "status": "normalized_without_delete",
-            "source_id": source_id,
-            "clip_remote_id": ticket_from_record(record).remote_id,
-            "preupload_snapshot_sha256": baseline.snapshot_sha256,
-            "actual_snapshot_sha256": current_wall.snapshot_sha256,
-            "exact_read_ids": list(exact_read_ids),
-            "delete_authorized": False,
-        }
-        persist()
-        return current_wall, baseline
+    wall_safety = _wall_safety(record)
+    delta = _delta(wall_safety)
+    unknown_created = _unknown_created_ids(delta=delta, journal=journal)
+
+    # A due postponed->published transition of an earlier durable mapping is a
+    # read-only explanation. Unknown created IDs are not silently normalized:
+    # they must already be exactly absent/tombstoned or enter the narrow delete
+    # path below.
+    if not unknown_created or _unknown_created_are_absent(writer=writer, remote_ids=unknown_created):
+        try:
+            normalized_baseline, exact_read_ids = _prove_historical_baseline(
+                record=record,
+                current=current_wall,
+                journal=journal,
+                writer=writer,
+                source_id=source_id,
+            )
+        except (UploadRecoveryRequired, MiloviTokenRolloutBlocked):
+            pass
+        else:
+            record["issue323_upload_wall_reconcile"] = {
+                "schema_name": ISSUE323_UPLOAD_WALL_RECONCILE_SCHEMA,
+                "schema_version": 1,
+                "status": "normalized_without_delete",
+                "source_id": source_id,
+                "clip_remote_id": ticket_from_record(record).remote_id,
+                "preupload_snapshot_sha256": normalized_baseline.snapshot_sha256,
+                "actual_snapshot_sha256": current_wall.snapshot_sha256,
+                "exact_read_ids": list(exact_read_ids),
+                "delete_authorized": False,
+            }
+            persist()
+            return current_wall, normalized_baseline
 
     if source_id not in ISSUE323_UPLOAD_WALL_RECOVERY_SOURCES:
         raise Issue323UploadWallReconcileBlocked(
@@ -297,6 +318,7 @@ def reconcile_issue323_upload_wall_effect(
         journal=journal,
         source_id=source_id,
         writer=writer,
+        delta=delta,
     )
     if len(matches) != 1:
         candidate_ids = sorted(post.remote_id for post, _baseline, _reads in matches)
@@ -320,7 +342,7 @@ def reconcile_issue323_upload_wall_effect(
             "preupload_snapshot_sha256": virtual_baseline.snapshot_sha256,
             "predelete_actual_snapshot_sha256": current_wall.snapshot_sha256,
             "virtual_exact_read_ids": list(virtual_exact_read_ids),
-            "original_wall_delta": dict(_delta(_wall_safety(record))),
+            "original_wall_delta": dict(delta),
             "delete_authorized": True,
             "delete_dispatch_started": False,
         }
@@ -381,7 +403,9 @@ def reconcile_issue323_upload_wall_effect(
     if _absent_exact(dispatch_read, post_id=candidate_post_id):
         state.update(
             status="verified_absent",
-            absence_evidence="wall.getById:none-predelete" if dispatch_read is None else "wall.getById:is_deleted_true-predelete",
+            absence_evidence="wall.getById:none-predelete"
+            if dispatch_read is None
+            else "wall.getById:is_deleted_true-predelete",
         )
         persist()
     else:
@@ -424,7 +448,9 @@ def reconcile_issue323_upload_wall_effect(
     )
     state.update(
         status="verified_absent",
-        absence_evidence="wall.getById:none-postdelete" if final_readback is None else "wall.getById:is_deleted_true-postdelete",
+        absence_evidence="wall.getById:none-postdelete"
+        if final_readback is None
+        else "wall.getById:is_deleted_true-postdelete",
         postdelete_actual_snapshot_sha256=postdelete.snapshot_sha256,
         postdelete_historical_snapshot_sha256=baseline_after.snapshot_sha256,
         postdelete_exact_read_ids=list(exact_read_ids_after),
