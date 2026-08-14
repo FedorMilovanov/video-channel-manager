@@ -92,6 +92,24 @@ def test_milovi_editorial_sequence_is_30_slots_and_matches_no_bts_mix() -> None:
             assert slot["media_ids"]
 
 
+def test_milovi_first_screen_has_variety_utility_collection_and_trust() -> None:
+    sequence = _load_json(SEQUENCE)
+    slots = sequence["slots"]
+    first_ten = slots[:10]
+
+    assert sum(slot["pillar"] == "milovi_school" for slot in first_ten) == 1
+    assert any(slot["pillar"] == "collection_poll" for slot in first_ten)
+    assert any(slot["launch_pack_ref"] == "MC-TG-003" for slot in first_ten)
+    assert any(slot["launch_pack_ref"] == "MC-TG-015" for slot in first_ten)
+    assert all(slot["pillar"] != "commercial" for slot in first_ten)
+
+    first_ten_media = [media_id for slot in first_ten for media_id in slot["media_ids"]]
+    assert len(set(first_ten_media)) >= 10
+
+    for previous, current in zip(first_ten, first_ten[1:], strict=True):
+        assert previous["media_ids"] != current["media_ids"] or not previous["media_ids"]
+
+
 def test_milovi_school_slots_have_exact_source_bindings() -> None:
     sequence = _load_json(SEQUENCE)
     shortlist = _load_json(SCHOOL_SOURCES)
