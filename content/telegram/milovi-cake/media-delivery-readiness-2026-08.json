@@ -1,0 +1,49 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-media-delivery-readiness",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "status": "provider_inert",
+  "reviewed_at_utc": "2026-08-14T23:00:00Z",
+  "telegram_bot_api_source": "https://core.telegram.org/bots/api",
+  "telegram_contract": {
+    "photo_multipart_max_bytes": 10485760,
+    "photo_url_max_bytes": 5242880,
+    "photo_width_plus_height_max": 10000,
+    "photo_aspect_ratio_max": 20,
+    "photo_caption_max_characters_after_entities": 1024,
+    "video_max_bytes": 52428800,
+    "native_video_client_format": "MPEG4",
+    "non_mpeg4_video_policy": "Treat current WebM gallery assets as not proven native-video-ready. Telegram documents that other formats may be sent as Document; do not silently downgrade a planned video post into a document."
+  },
+  "preferred_canary_transport": {
+    "operation": "sendPhoto",
+    "upload_mode": "multipart_exact_bytes",
+    "reason": "The first canary should exercise the smallest reviewed mutation surface. Exact source bytes are preferred over a drifting URL fetch, and a photo avoids the current WebM/native-video compatibility question.",
+    "url_fetch_selected": false
+  },
+  "candidate_media": {
+    "media_id": "p18",
+    "source_repository": "FedorMilovanov/Milovi_Cake",
+    "source_commit": "c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370",
+    "source_path": "img/gallery/gallery-18-hd.webp",
+    "source_blob_sha": "3574f726b233583a77b8a6db885f91b49e5189d8",
+    "byte_size": 195742,
+    "expected_media_type": "photo",
+    "expected_extension": ".webp",
+    "pixel_dimensions_verified": false,
+    "photo_size_limit_verified": true,
+    "transport_ready": false,
+    "blocking_checks": [
+      "materialize exact source blob bytes from the pinned Milovi_Cake commit",
+      "verify decoded width and height satisfy Bot API photo limits",
+      "verify decoded format is accepted as a photo by the selected upload path",
+      "compute and freeze a byte-level SHA-256 for the materialized canary file"
+    ]
+  },
+  "video_policy": {
+    "current_gallery_extension": ".webm",
+    "native_video_ready": false,
+    "required_next_step": "Create a separate deterministic video conversion/readiness lane before any WebM-backed slot is approved as a native Telegram video payload. Preserve the source media identity and verify the resulting MP4 dimensions, duration, codec, size and output digest."
+  },
+  "provider_write_authorized": false
+}
