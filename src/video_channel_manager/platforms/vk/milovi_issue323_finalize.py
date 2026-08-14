@@ -14,6 +14,7 @@ from video_channel_manager.platforms.vk import VkApiClient, VkTokenStore, local_
 from video_channel_manager.platforms.vk.milovi_daily_postponed_wall import load_or_create_daily_schedule
 from video_channel_manager.platforms.vk.milovi_immediate_wall import MILOVI_COMMUNITY_ID, MILOVI_OWNER_ID
 from video_channel_manager.platforms.vk.milovi_issue323_live_resume import (
+    _Issue323RecoveryWriter,
     _LiveClipWriter,
     _ensure_clip_live,
     _native_clip_assessment,
@@ -281,13 +282,36 @@ def _ensure_promoted_clip(
     current_wall = writer.capture_wall_snapshot(community_id=MILOVI_COMMUNITY_ID, max_posts_per_surface=10000)
     if not current_wall.complete:
         raise MiloviFinalizerBlocked("Complete wall baseline unavailable before upload/resume")
-    wall_before = _resume_wall_baseline(record, current_wall) if _has_provider_effect(record) else current_wall
+    had_provider_effect = _has_provider_effect(record)
+    operation_writer: Any = upload_writer
+    recovery_writer: _Issue323RecoveryWriter | None = None
+    if had_provider_effect:
+        wall_before = _resume_wall_baseline(record, current_wall, journal=journal)
+        raw_wall_safety = record.get("wall_safety")
+        if not isinstance(raw_wall_safety, Mapping):
+            raise UploadRecoveryRequired("Provider-dispatched promoted upload lost durable wall safety evidence")
+        recovery_writer = _Issue323RecoveryWriter(
+            upload_writer,
+            wall_safety=raw_wall_safety,
+            journal=journal,
+            source_id=asset.source_id,
+        )
+        operation_writer = recovery_writer
+        record["issue323_recovery_wall_view"] = {
+            "baseline_actual_snapshot_sha256": current_wall.snapshot_sha256,
+            "historical_before_snapshot_sha256": wall_before.snapshot_sha256,
+            "reservation_replay_authorized": False,
+            "binary_retransmission_authorized": False,
+        }
+        persist()
+    else:
+        wall_before = current_wall
     journal["provider_write_attempted"] = True
     item["status"] = "upload_in_progress"
     _save(journal_path, journal)
     execute_upload_operation(
         record,
-        writer=upload_writer,
+        writer=operation_writer,
         community_id=MILOVI_COMMUNITY_ID,
         title=asset.title,
         description=asset.description,
@@ -298,6 +322,15 @@ def _ensure_promoted_clip(
         wall_before_snapshot=wall_before,
         persist=persist,
     )
+    if recovery_writer is not None:
+        evidence = record.get("issue323_recovery_wall_view")
+        if isinstance(evidence, dict):
+            evidence.update(
+                postflight_actual_snapshot_sha256=recovery_writer.last_actual_snapshot_sha256,
+                postflight_historical_snapshot_sha256=recovery_writer.last_historical_snapshot_sha256,
+                postflight_reversed_surface_ids=list(recovery_writer.last_reversed_surface_ids),
+            )
+            persist()
     if UploadStage(str(record.get("stage"))) is not UploadStage.VERIFIED:
         raise MiloviFinalizerBlocked(f"Upload lifecycle did not verify {asset.source_id}")
     remote_id = _upload_remote_id(record)
@@ -305,7 +338,7 @@ def _ensure_promoted_clip(
     item.update(
         status="clip_verified",
         clip_remote_id=remote_id,
-        clip_origin="new_token_short_video_internal_promotion",
+        clip_origin="resumed_token_short_video_internal_promotion" if had_provider_effect else "new_token_short_video_internal_promotion",
     )
     _save(journal_path, journal)
     return remote_id
@@ -322,9 +355,7 @@ def _find_rollout_wall_raw(writer: VkWallWriter, post_id: int) -> tuple[VkWallSu
         if not complete:
             raise MiloviFinalizerBlocked(f"{surface.value} wall scan is incomplete")
         matches.extend(
-            (surface, item)
-            for item in items
-            if item.get("id") == post_id and item.get("owner_id") == MILOVI_OWNER_ID
+            (surface, item) for item in items if item.get("id") == post_id and item.get("owner_id") == MILOVI_OWNER_ID
         )
     if len(matches) > 1:
         raise MiloviFinalizerBlocked(f"Wall post {post_id} appears on multiple surfaces")
