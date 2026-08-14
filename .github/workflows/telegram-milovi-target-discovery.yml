@@ -22,10 +22,6 @@ jobs:
       BINDING_PATH: .runtime/milovi-cake-target-binding-candidate.json
       EXPECTED_BOT_ID: 8716602202
       EXPECTED_BOT_USERNAME: preaching_mp3_bot
-      # Repository architecture intentionally uses one shared Telegram posting bot.
-      # The existing secret name is legacy/project-specific; expose it only under
-      # the environment name required by the write-disabled Milovi profile.
-      MILOVI_CAKE_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
 
     steps:
       - name: Check out immutable current main
@@ -68,6 +64,12 @@ jobs:
 
       - name: Discover exact target without provider mutation
         shell: bash
+        env:
+          # Repository architecture intentionally uses one shared Telegram posting bot.
+          # The existing secret name is legacy/project-specific; expose the shared
+          # token only to the single read-only provider step and only under the
+          # environment name required by the write-disabled Milovi profile.
+          MILOVI_CAKE_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
         run: |
           set -euo pipefail
           mkdir -p .runtime
