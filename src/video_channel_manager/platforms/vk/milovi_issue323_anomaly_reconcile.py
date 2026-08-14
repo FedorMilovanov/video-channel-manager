@@ -59,9 +59,7 @@ def _strict_raw_anomaly(
         raise MiloviFinalizerBlocked("Wall 475 post type changed")
 
     post_source = post.get("post_source")
-    if not allow_provider_source_drift and (
-        not isinstance(post_source, Mapping) or post_source.get("type") != "vk"
-    ):
+    if not allow_provider_source_drift and (not isinstance(post_source, Mapping) or post_source.get("type") != "vk"):
         raise MiloviFinalizerBlocked("Wall 475 provider source changed")
 
     owner_id, video_id, expanded = _one_video_attachment(post)
