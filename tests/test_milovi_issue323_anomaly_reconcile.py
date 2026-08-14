@@ -13,13 +13,15 @@ from video_channel_manager.platforms.vk.milovi_issue323_anomaly_reconcile import
 )
 from video_channel_manager.platforms.vk.milovi_issue323_finalize import MiloviFinalizerBlocked
 
+_UNSET = object()
+
 
 def _post(
     *,
     text: str = "provider-rendered text",
-    post_source: object = None,
+    post_source: object = _UNSET,
 ) -> dict[str, Any]:
-    if post_source is None:
+    if post_source is _UNSET:
         post_source = {"type": "api"}
     return {
         "owner_id": -68859909,
