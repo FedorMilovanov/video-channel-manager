@@ -5,7 +5,8 @@ Operational documents are living sources of truth. They override chat history, s
 ## Start here
 
 - [`project-identity-registry.md`](project-identity-registry.md) — exact projects, one shared VK credential, channel-specific YouTube aliases, IDs, routes, and no-mixing rules.
-- [`current-state.md`](current-state.md) — final Waves 0–16 state and permanent safety boundaries.
+- [`current-state.md`](current-state.md) — concise current operational interpretation and permanent safety boundaries.
+- [`2026-08-14-milovi-issue-323-interim-postmortem.md`](2026-08-14-milovi-issue-323-interim-postmortem.md) — interim Milovi #323 failure analysis: monotonic recovery, identity vs provider projection, single mutation ownership, and live-closure boundary.
 - [`audit-register-v9-2026-08-05.json`](audit-register-v9-2026-08-05.json) — current CI/SQLite/MP3-identity machine state.
 - [`audit-register-v8-2026-08-05.json`](audit-register-v8-2026-08-05.json) — immutable Wave 15 predecessor.
 - [`audit-register-v7-2026-08-05.json`](audit-register-v7-2026-08-05.json) — immutable Wave 14 predecessor.

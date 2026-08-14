@@ -230,3 +230,34 @@ Durable evidence path:
 ```
 
 An agent may adapt the implementation, but it may not weaken these fields.
+
+## 13. Keep durable identity monotonic across provider projections
+
+A later read may describe the same provider object differently. Before turning any readback field into a guard, classify it as one of four things:
+
+1. **stable identity** — exact project/owner/object/source IDs or another field explicitly proven to identify the same object across phases;
+2. **authorized semantic invariant** — content or relationship the owning operation explicitly requires, such as one exact video attachment or a frozen publish date;
+3. **phase-local readiness** — a condition required only to complete a particular phase, such as processing completion or playability after a fresh upload;
+4. **provider projection** — presentation/derived state that may change without creating a different object.
+
+Do not promote phase-local readiness or provider projection into permanent identity merely because one snapshot contained it. Examples that require special caution include processing flags, blank/nonblank titles, player/playability projections, provider-rendered text or source metadata, provider-added non-video attachments, deleted-object tombstones, and scheduled objects moving between pending/published surfaces after their due time.
+
+Durable state must be monotonic: a child already proven `verified` must not become unverified solely because a later phase observes a weaker but identity-compatible projection. If a later operation genuinely requires a stronger state, make that a new phase/postcondition instead of rewriting the earlier success.
+
+Each provider mutation has one owning phase. Later phases consume the durable result and must not silently reacquire the same mutation authority. Recovery should expose the minimum capabilities needed for reconciliation; when replay would be unsafe, remove reservation/upload/delete capability rather than relying only on a conditional branch not to call it.
+
+If provider state must be normalized for historical comparison, normalization must be narrow, evidence-backed and deterministic. Apply the same interpretation to preflight and postflight, and require an exact reconstructed identity/hash rather than broadly ignoring drift.
+
+When diagnosing repeated STOPs, stop patching individual field mismatches after the same failure class recurs. Reconstruct the whole contract: stable identity, mutation ownership, provider-effect state, legitimate temporal transitions, recovery capabilities, and shared preflight/postflight semantics.
+
+For high-risk recovery decision records, add these fields when relevant:
+
+```text
+Stable identity:
+Authorized semantic invariants:
+Phase-local readiness:
+Mutable/provider projection:
+Legitimate time-driven transitions:
+Mutation owner:
+Recovery capabilities:
+```
