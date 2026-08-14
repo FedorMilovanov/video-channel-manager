@@ -775,7 +775,7 @@ def main() -> int:
         output_path=args.output,
         rollout_output_path=args.rollout_output,
         journal_path=args.journal,
-        finalizer_journal_path=finalizer_journal_path,
+        finalizer_journal_path=args.finalizer_journal,
         schedule_path=args.schedule,
         work_dir=args.work_dir,
         verify_timeout_seconds=args.verify_timeout,
