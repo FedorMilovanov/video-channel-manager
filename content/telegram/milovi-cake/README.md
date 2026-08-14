@@ -7,9 +7,14 @@ This directory contains **provider-inert editorial material only**. It is not a 
 Current artifacts:
 
 - `launch-pack-2026-08.md` — reviewed-source launch corpus for editorial preparation;
-- `editorial-asset-contract-2026-08.md` — current source-availability constraint for what the launch corpus may actually promise or show.
+- `editorial-asset-contract-2026-08.md` — current source-availability constraint for what the launch corpus may actually promise or show;
+- `media-source-map-2026-08.json` — machine-readable mirror of the verified 46-item Milovi Cake finished-work gallery source (30 photos + 16 videos), bound to its source blob;
+- `editorial-sequence-30-posts-2026-08.json` — provider-inert 30-slot launch sequence with exact finished-media IDs and a 0% production-BTS share;
+- `editorial-operating-plan-2026-08.md` — channel-quality, reuse, caption, cadence and acquisition rules while production footage is unavailable.
 
 The asset contract is authoritative when an older draft/example could be read as requiring kitchen, production or BTS footage. While the current contract is active, finished-cake photos/videos are the primary visual source and production BTS/kitchen content remains at 0% unless separately reviewed source footage exists.
+
+The older launch corpus contains one known ambiguous welcome phrase (`детали и процесс`). It must not be published as written while the current no-BTS contract is active. The exact safe replacement and interpretation rule live in `editorial-operating-plan-2026-08.md`.
 
 Live publication requires, in order:
 
@@ -20,4 +25,4 @@ Live publication requires, in order:
 5. one exact explicitly authorized canary;
 6. verified provider outcome before any subsequent post.
 
-Do not convert editorial drafts into a release queue merely because this directory exists.
+Do not convert editorial drafts, the media map or the editorial sequence into a release queue merely because these files exist.
