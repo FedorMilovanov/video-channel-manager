@@ -81,7 +81,9 @@ def test_durable_verified_clip_accepts_exact_promoted_binding() -> None:
 
 
 def test_durable_verified_clip_still_requires_exact_legacy_or_promoted_binding() -> None:
-    writer = _Writer(_durable_item(description=f"manual override still containing https://www.youtube.com/shorts/{SOURCE_ID}"))
+    writer = _Writer(
+        _durable_item(description=f"manual override still containing https://www.youtube.com/shorts/{SOURCE_ID}")
+    )
 
     with pytest.raises(MiloviFinalizerBlocked, match="neither exact reviewed legacy nor exact promoted"):
         _assert_native_clip(
