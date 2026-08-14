@@ -98,7 +98,12 @@ class _WallWriter:
 
 
 def _edit_asset() -> Any:
-    return SimpleNamespace(source_id=SOURCE_ID, title=TITLE, wall_message=PROMOTED_WALL)
+    return SimpleNamespace(
+        source_id=SOURCE_ID,
+        title=TITLE,
+        wall_message=PROMOTED_WALL,
+        legacy_wall_message=LEGACY_WALL,
+    )
 
 
 def test_published_scheduled_post_edit_preserves_surface_without_publish_date(
