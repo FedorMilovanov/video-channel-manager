@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -8,6 +9,7 @@ MILOVI = ROOT / "content/telegram/milovi-cake"
 MEDIA_MAP = MILOVI / "media-source-map-2026-08.json"
 READINESS = MILOVI / "media-delivery-readiness-2026-08.json"
 CANDIDATE = MILOVI / "canary-candidate-2026-08.json"
+REVIEW_LOCK = MILOVI / "canary-review-lock-2026-08.json"
 RUNBOOK = MILOVI / "canary-preparation-2026-08.md"
 
 
@@ -15,6 +17,12 @@ def _load_json(path: Path) -> dict[str, object]:
     value = json.loads(path.read_text(encoding="utf-8"))
     assert isinstance(value, dict)
     return value
+
+
+def _git_blob_sha1(path: Path) -> str:
+    data = path.read_bytes()
+    header = f"blob {len(data)}\0".encode()
+    return hashlib.sha1(header + data).hexdigest()
 
 
 def test_milovi_canary_is_exact_photo_candidate_but_not_executable() -> None:
@@ -121,6 +129,26 @@ def test_milovi_webm_video_lane_stays_blocked_from_native_video_assumption() -> 
     assert policy["native_video_ready"] is False
     assert "MP4" in policy["required_next_step"]
     assert "do not silently downgrade" in contract["non_mpeg4_video_policy"].lower()
+
+
+def test_milovi_canary_review_lock_matches_exact_candidate_and_readiness_bytes() -> None:
+    lock = _load_json(REVIEW_LOCK)
+
+    assert lock["schema_name"] == "video-channel-manager.milovi-telegram-canary-review-lock"
+    assert lock["project_key"] == "milovi-cake"
+    assert lock["publication_id"] == "milovi-cake-canary-001"
+    assert lock["status"] == "provider_inert_blocked"
+    assert lock["candidate_path"] == "content/telegram/milovi-cake/canary-candidate-2026-08.json"
+    assert lock["media_readiness_path"] == "content/telegram/milovi-cake/media-delivery-readiness-2026-08.json"
+    assert lock["candidate_git_blob_sha1"] == _git_blob_sha1(CANDIDATE)
+    assert lock["media_readiness_git_blob_sha1"] == _git_blob_sha1(READINESS)
+    assert lock["source_media"]["git_blob_sha1"] == "3574f726b233583a77b8a6db885f91b49e5189d8"
+    assert lock["caption_fact_source"]["git_blob_sha1"] == "a6ce3340bb0459657870605f0db09d9f99ac72a8"
+    assert lock["authorization_state"] == "blocked"
+    unresolved = lock["unresolved_authorization_inputs"]
+    assert unresolved["target_binding_sha256"] is None
+    assert unresolved["materialized_media_sha256"] is None
+    assert unresolved["explicit_authorization_reference"] is None
 
 
 def test_milovi_canary_cannot_become_ready_with_unresolved_media_or_target() -> None:
