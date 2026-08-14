@@ -541,8 +541,7 @@ def _historical_issue323_wall_view(
         video_attachments = tuple(value for value in post.attachments if value.startswith("video"))
         if len(video_attachments) != 1:
             raise UploadRecoveryRequired(
-                f"Earlier rollout wall must contain exactly one video during historical recovery: "
-                f"{logical_remote_id}"
+                f"Earlier rollout wall must contain exactly one video during historical recovery: {logical_remote_id}"
             )
         if video_attachments[0] != expected_attachment:
             raise UploadRecoveryRequired(f"Earlier rollout wall changed Clip binding: {logical_remote_id}")
