@@ -145,7 +145,12 @@ def _prove_historical_baseline(
         journal=journal,
         source_id=source_id,
     )
-    baseline = _resume_wall_baseline(record, effective, journal=journal)
+    baseline = _resume_wall_baseline(
+        record,
+        effective,
+        journal=journal,
+        successor_resolution_proven=True,
+    )
     expected_sha = str(_wall_safety(record).get("before_snapshot_sha256") or "")
     if not expected_sha or baseline.snapshot_sha256 != expected_sha:
         raise Issue323UploadWallReconcileBlocked(
