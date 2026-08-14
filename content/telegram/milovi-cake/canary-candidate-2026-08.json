@@ -1,0 +1,57 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-canary-candidate",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "status": "provider_inert_candidate",
+  "owning_issue": 353,
+  "publication_id": "milovi-cake-canary-001",
+  "publication_authorized": false,
+  "execution_ready": false,
+  "provider_mutation_allowed": false,
+  "operation": "sendPhoto",
+  "target": {
+    "channel_username": "@MiloviCake",
+    "chat_id": null,
+    "discovery_proof_sha256": null,
+    "target_binding_sha256": null,
+    "expected_bot_id": 8716602202,
+    "expected_bot_username": "preaching_mp3_bot"
+  },
+  "media": {
+    "media_id": "p18",
+    "source_repository": "FedorMilovanov/Milovi_Cake",
+    "source_commit": "c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370",
+    "source_path": "img/gallery/gallery-18-hd.webp",
+    "source_blob_sha": "3574f726b233583a77b8a6db885f91b49e5189d8",
+    "byte_size": 195742,
+    "delivery_mode": "multipart_exact_bytes",
+    "materialized_sha256": null,
+    "pixel_width": null,
+    "pixel_height": null
+  },
+  "caption": {
+    "text": "Milovi Cake — торты и десерты в Санкт-Петербурге.\n\nЗдесь — реальные работы Milovi Cake, красивые детали и подборки, полезные подсказки перед заказом и короткие истории французской кондитерской культуры из Milovi School.\n\nОснователь и кондитер — Виктория Милованова.\n\nhttps://milovicake.ru/",
+    "parse_mode": null,
+    "source_repository": "FedorMilovanov/Milovi_Cake",
+    "source_commit": "c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370",
+    "source_path": "llms.txt",
+    "source_blob_sha": "a6ce3340bb0459657870605f0db09d9f99ac72a8"
+  },
+  "post_actions": {
+    "pin_after_send": false,
+    "schedule": null,
+    "follow_up_post": null,
+    "invite_link_creation": false
+  },
+  "required_gates_before_authorization": [
+    "fresh read-only target discovery on current main succeeds",
+    "exact numeric chat_id resolves to @MiloviCake and is frozen into an immutable reviewed target binding",
+    "shared bot identity is exactly 8716602202 / @preaching_mp3_bot and has can_post_messages on that exact channel",
+    "cross-project fail-closed guards pass for the exact Milovi binding",
+    "exact p18 source bytes are materialized from the pinned Milovi_Cake commit and byte SHA-256 is frozen",
+    "photo dimensions and decoded media type satisfy the reviewed Bot API contract",
+    "caption factual source is freshness-checked and the exact caption is explicitly approved",
+    "one exact provider mutation is explicitly authorized; no broader publication scope is inferred"
+  ],
+  "outcome_rule": "After an explicitly authorized dispatch, verify the provider outcome before any pin, second post, schedule, retry or automation. Unknown provider outcome blocks replay."
+}
