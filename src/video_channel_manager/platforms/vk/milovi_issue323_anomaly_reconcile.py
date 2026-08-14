@@ -18,7 +18,6 @@ from video_channel_manager.platforms.vk.milovi_issue323_finalize import (
     _assert_native_clip,
     _legacy_marker_ok,
     _load_finalizer_journal,
-    _one_video_attachment,
     _promote_asset,
     _save_finalizer,
 )
@@ -36,7 +35,7 @@ from video_channel_manager.platforms.vk.wall import VkWallWriter
 
 EXECUTION_CONFIRMATION = "ISSUE_323_RECONCILE_TEXT_DRIFT_AND_CLEANUP_475"
 RESULT_SCHEMA = "video-manager.milovi-issue-323-anomaly-text-drift-reconcile"
-IDENTITY_CONTRACT = "milovi-wall-475-stable-identity-v1"
+IDENTITY_CONTRACT = "milovi-wall-475-stable-identity-v2"
 ANOMALY_CREATED_AT = 1786645941
 ANOMALY_CREATED_BY = 631487
 
@@ -45,12 +44,49 @@ def _sha256_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def _single_video_attachment(post: Mapping[str, Any]) -> tuple[int, int, Mapping[str, Any]]:
+    """Return the one video attachment without requiring it to be the only attachment.
+
+    Issue #323 authorizes cleanup when wall 475 has exactly one *video*
+    attachment bound to the protected Clip. VK may expose additional non-video
+    attachment projections on the same wall object; those do not become video
+    identity and must not cause the contract to reinterpret "one video" as
+    "one attachment total".
+    """
+
+    attachments = post.get("attachments")
+    if not isinstance(attachments, list):
+        raise MiloviFinalizerBlocked("Wall post attachments are unavailable")
+
+    videos: list[Mapping[str, Any]] = []
+    for index, attachment in enumerate(attachments):
+        if not isinstance(attachment, Mapping):
+            raise MiloviFinalizerBlocked(f"Wall attachment {index} is not an object")
+        if attachment.get("type") != "video":
+            continue
+        video = attachment.get("video")
+        if not isinstance(video, Mapping):
+            raise MiloviFinalizerBlocked("Wall video attachment has no expanded video object")
+        videos.append(video)
+
+    if len(videos) != 1:
+        raise MiloviFinalizerBlocked(f"Wall post must contain exactly one video attachment; observed {len(videos)}")
+
+    video = videos[0]
+    owner_id = video.get("owner_id")
+    video_id = video.get("id")
+    if type(owner_id) is not int or type(video_id) is not int:
+        raise MiloviFinalizerBlocked("Wall video attachment identity is invalid")
+    return owner_id, video_id, video
+
+
 def _validate_wall475_identity(post: Mapping[str, Any], source_id: str) -> None:
     """Prove the exact wall object using provider-stable identity fields only.
 
-    VK may re-project mutable presentation metadata such as wall text and
-    ``post_source`` between reads. Those fields are recorded as evidence, but
-    they are deliberately not part of the destructive identity predicate.
+    VK may re-project mutable presentation metadata such as wall text,
+    ``post_source`` and non-video attachment projections between reads. Those
+    values are recorded as evidence, but destructive identity is the exact wall
+    object plus its single exact video attachment.
     """
 
     if post.get("owner_id") != MILOVI_OWNER_ID or post.get("id") != ANOMALY_POST_ID:
@@ -65,7 +101,7 @@ def _validate_wall475_identity(post: Mapping[str, Any], source_id: str) -> None:
     if str(post.get("post_type") or "post") != "post":
         raise MiloviFinalizerBlocked("Wall 475 post type changed")
 
-    owner_id, video_id, expanded = _one_video_attachment(post)
+    owner_id, video_id, expanded = _single_video_attachment(post)
     expected_owner, expected_video = _parse_remote_id(ANOMALY_CLIP_REMOTE_ID)
     if (owner_id, video_id) != (expected_owner, expected_video):
         raise MiloviFinalizerBlocked("Wall 475 no longer attaches exact Clip 456239232")
@@ -76,10 +112,28 @@ def _validate_wall475_identity(post: Mapping[str, Any], source_id: str) -> None:
         raise MiloviFinalizerBlocked("Wall 475 attachment lost source marker o1WXIMupuws")
 
 
+def _attachment_projection(post: Mapping[str, Any]) -> tuple[int, int, list[str]]:
+    attachments = post.get("attachments")
+    if not isinstance(attachments, list):
+        return 0, 0, []
+    types: list[str] = []
+    video_count = 0
+    for attachment in attachments:
+        if not isinstance(attachment, Mapping):
+            types.append(f"<{type(attachment).__name__}>")
+            continue
+        attachment_type = str(attachment.get("type") or "<missing>")
+        types.append(attachment_type)
+        if attachment_type == "video":
+            video_count += 1
+    return len(attachments), video_count, types
+
+
 def _record_observed_projection(state: dict[str, Any], post: Mapping[str, Any]) -> None:
     raw_text = str(post.get("text") or "")
     raw_post_source = post.get("post_source")
     post_source_type = str(raw_post_source.get("type") or "") if isinstance(raw_post_source, Mapping) else ""
+    attachment_count, video_attachment_count, attachment_types = _attachment_projection(post)
     state.update(
         identity_contract=IDENTITY_CONTRACT,
         observed_provider_text_nonempty=bool(raw_text.strip()),
@@ -88,8 +142,14 @@ def _record_observed_projection(state: dict[str, Any], post: Mapping[str, Any]) 
         observed_post_source_sha256=_sha256_text(
             json.dumps(raw_post_source, sort_keys=True, ensure_ascii=False, default=str)
         ),
+        observed_attachment_count=attachment_count,
+        observed_video_attachment_count=video_attachment_count,
+        observed_attachment_types=attachment_types,
+        observed_attachments_sha256=_sha256_text(
+            json.dumps(post.get("attachments"), sort_keys=True, ensure_ascii=False, default=str)
+        ),
         observed_raw_post_sha256=_sha256_text(json.dumps(post, sort_keys=True, ensure_ascii=False, default=str)),
-        mutable_projection_fields=["text", "post_source"],
+        mutable_projection_fields=["text", "post_source", "non_video_attachments"],
     )
 
 
@@ -226,7 +286,11 @@ def run_reconcile(
                 "clip_remote_id": ANOMALY_CLIP_REMOTE_ID,
                 "source_id": ANOMALY_SOURCE_ID,
                 "identity_contract": IDENTITY_CONTRACT,
-                "mutable_projection_fields_not_used_for_identity": ["text", "post_source"],
+                "mutable_projection_fields_not_used_for_identity": [
+                    "text",
+                    "post_source",
+                    "non_video_attachments",
+                ],
                 # Backward-compatible result flags consumed by older operator wrappers.
                 "provider_text_drift_tolerated": True,
                 "provider_source_drift_tolerated_only_here": True,
