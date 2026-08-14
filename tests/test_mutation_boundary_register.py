@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import importlib
 import json
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -73,33 +74,62 @@ def _attribute_owner_name(node: ast.expr) -> str | None:
     return value.id if isinstance(value, ast.Name) else None
 
 
-def _scan_python_mutation_markers() -> set[str]:
-    markers: set[str] = set()
+class _MutationCallsiteVisitor(ast.NodeVisitor):
+    def __init__(self, source_file: str) -> None:
+        self.source_file = source_file
+        self.scope: list[str] = []
+        self.callsites: list[tuple[str, str, str]] = []
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        self.scope.append(node.name)
+        self.generic_visit(node)
+        self.scope.pop()
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        self.scope.append(node.name)
+        self.generic_visit(node)
+        self.scope.pop()
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        self.scope.append(node.name)
+        self.generic_visit(node)
+        self.scope.pop()
+
+    def visit_Call(self, node: ast.Call) -> None:
+        marker: str | None = None
+        name = _call_name(node.func)
+        if name == "_call" and node.args:
+            method = _constant_string(node.args[0])
+            if method and method not in _SAFE_VK_API_METHODS and not _is_true(_keyword(node, "retry_transient")):
+                marker = f"vk_api:{method}"
+        elif name == "execute_http_request":
+            operation = _keyword(node, "operation")
+            resource = _constant_string(_keyword(node, "resource"))
+            if isinstance(operation, ast.Attribute) and operation.attr == "AMBIGUOUS_MUTATION" and resource:
+                marker = f"http:{resource}"
+        elif name == "_request" and len(node.args) >= 2 and _is_true(_keyword(node, "require_write")):
+            method = _constant_string(node.args[0])
+            resource = _constant_string(node.args[1])
+            if method and resource:
+                marker = f"youtube:{method}:{resource}"
+        elif name == "execute" and _attribute_owner_name(node.func) == "adapter":
+            marker = "wave:adapter.execute"
+        elif name == "reconcile" and _attribute_owner_name(node.func) == "adapter":
+            marker = "wave:adapter.reconcile"
+        if marker is not None:
+            callable_name = ".".join(self.scope) if self.scope else "<module>"
+            self.callsites.append((marker, self.source_file, callable_name))
+        self.generic_visit(node)
+
+
+def _scan_python_mutation_callsites() -> list[tuple[str, str, str]]:
+    callsites: list[tuple[str, str, str]] = []
     for path in sorted((ROOT / "src").rglob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        for node in ast.walk(tree):
-            if not isinstance(node, ast.Call):
-                continue
-            name = _call_name(node.func)
-            if name == "_call" and node.args:
-                method = _constant_string(node.args[0])
-                if method and method not in _SAFE_VK_API_METHODS and not _is_true(_keyword(node, "retry_transient")):
-                    markers.add(f"vk_api:{method}")
-            if name == "execute_http_request":
-                operation = _keyword(node, "operation")
-                resource = _constant_string(_keyword(node, "resource"))
-                if isinstance(operation, ast.Attribute) and operation.attr == "AMBIGUOUS_MUTATION" and resource:
-                    markers.add(f"http:{resource}")
-            if name == "_request" and len(node.args) >= 2 and _is_true(_keyword(node, "require_write")):
-                method = _constant_string(node.args[0])
-                resource = _constant_string(node.args[1])
-                if method and resource:
-                    markers.add(f"youtube:{method}:{resource}")
-            if name == "execute" and _attribute_owner_name(node.func) == "adapter":
-                markers.add("wave:adapter.execute")
-            if name == "reconcile" and _attribute_owner_name(node.func) == "adapter":
-                markers.add("wave:adapter.reconcile")
-    return markers
+        visitor = _MutationCallsiteVisitor(path.relative_to(ROOT).as_posix())
+        visitor.visit(tree)
+        callsites.extend(visitor.callsites)
+    return callsites
 
 
 def test_register_schema_and_unique_boundaries() -> None:
@@ -112,9 +142,9 @@ def test_register_schema_and_unique_boundaries() -> None:
     boundaries = payload["boundaries"]
     assert isinstance(boundaries, list) and boundaries
     boundary_ids = [item["boundary_id"] for item in boundaries]
-    markers = [item["scanner_marker"] for item in boundaries]
+    callsite_keys = [(item["scanner_marker"], item["source_file"], item["callable"]) for item in boundaries]
     assert len(boundary_ids) == len(set(boundary_ids))
-    assert len(markers) == len(set(markers))
+    assert len(callsite_keys) == len(set(callsite_keys))
     for item in boundaries:
         assert set(item) == REQUIRED_BOUNDARY_FIELDS
         assert item["risk"] in {"P0", "P1"}
@@ -167,11 +197,15 @@ def test_ambiguous_boundaries_are_never_replayed() -> None:
 
 def test_ast_mutation_inventory_matches_registered_python_markers() -> None:
     payload = _load_register()
-    registered = {item["scanner_marker"] for item in payload["boundaries"] if item["language"] == "python"}
-    discovered = _scan_python_mutation_markers()
+    registered = Counter(
+        (item["scanner_marker"], item["source_file"], item["callable"])
+        for item in payload["boundaries"]
+        if item["language"] == "python"
+    )
+    discovered = Counter(_scan_python_mutation_callsites())
     assert discovered == registered, {
-        "unregistered": sorted(discovered - registered),
-        "stale_registry_entries": sorted(registered - discovered),
+        "unregistered": sorted((discovered - registered).elements()),
+        "stale_registry_entries": sorted((registered - discovered).elements()),
     }
 
 

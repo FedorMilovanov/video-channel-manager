@@ -162,13 +162,14 @@ def test_due_published_successor_is_edited_by_current_id_without_reschedule(
     assert params["post_id"] == 900
     assert "publish_date" not in params
     assert successor["text"] == asset.wall_message
-    assert operation == {
-        "status": "verified",
-        "journal_remote_id": OLD_WALL_ID,
-        "remote_id": SUCCESSOR_WALL_ID,
-        "surface": "published",
-        "resolution_mode": "published_successor",
-    }
+    assert operation["status"] == "verified"
+    assert operation["journal_remote_id"] == OLD_WALL_ID
+    assert operation["remote_id"] == SUCCESSOR_WALL_ID
+    assert operation["surface"] == "published"
+    assert operation["resolution_mode"] == "published_successor"
+    assert operation["dispatch_started"] is True
+    assert operation["before_message_sha256"] == finalize._sha256_text("legacy wall copy")
+    assert operation["target_message_sha256"] == finalize._sha256_text(asset.wall_message.strip())
 
 
 def test_future_missing_journaled_id_blocks_before_exact_read_or_mutation() -> None:
