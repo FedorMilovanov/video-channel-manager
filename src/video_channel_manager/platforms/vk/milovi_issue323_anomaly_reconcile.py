@@ -161,9 +161,7 @@ def _record_read_observation(state: dict[str, Any], post: Mapping[str, Any] | No
     state["last_read_from_id"] = post.get("from_id")
     state["last_read_created_by"] = post.get("created_by")
     state["last_read_post_type"] = post.get("post_type")
-    state["last_read_raw_post_sha256"] = _sha256_text(
-        json.dumps(post, sort_keys=True, ensure_ascii=False, default=str)
-    )
+    state["last_read_raw_post_sha256"] = _sha256_text(json.dumps(post, sort_keys=True, ensure_ascii=False, default=str))
 
 
 def _record_observed_projection(state: dict[str, Any], post: Mapping[str, Any]) -> None:
@@ -245,6 +243,7 @@ def _cleanup_exact_wall475(
         )
         return
 
+    assert post is not None
     _validate_wall475_identity(post, legacy_asset.source_id)
     _assert_native_clip(
         writer,
@@ -272,6 +271,7 @@ def _cleanup_exact_wall475(
             absence_evidence=evidence,
         )
         return
+    assert dispatch_post is not None
     _validate_wall475_identity(dispatch_post, legacy_asset.source_id)
 
     try:
