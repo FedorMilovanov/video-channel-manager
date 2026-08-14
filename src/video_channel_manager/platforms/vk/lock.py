@@ -149,21 +149,36 @@ def _release_owned_lock(path: Path, nonce: str) -> None:
 
 
 def community_vk_write_lock_path(data_dir: Path, *, community_id: int) -> Path:
-    """Return the one canonical local writer lock path for a VK community.
-
-    Operation-specific lock names are unsafe because two different executors can
-    otherwise mutate the same remote community concurrently. Every writer that
-    shares a ``data_dir`` and ``community_id`` must converge on this exact path.
-    """
+    """Return the one canonical local writer lock path for a VK community."""
 
     if community_id <= 0:
         raise ValueError("community_id must be positive")
     return Path(data_dir) / "locks" / f"vk-community-{community_id}.lock"
 
 
+def _canonicalize_requested_lock_path(path: Path, *, community_id: int) -> Path:
+    """Collapse operation-specific filenames into one community mutex.
+
+    Existing callers historically supplied names such as ``...-finalizer.lock``
+    and ``...-live-resume.lock``. Keeping those names as independent mutexes can
+    allow concurrent writes to the same remote community. The caller still
+    chooses the lock directory, but the filename is canonical and derived only
+    from the exact community identity.
+    """
+
+    if community_id <= 0:
+        raise ValueError("community_id must be positive")
+    return Path(path).parent / f"vk-community-{community_id}.lock"
+
+
 @contextmanager
 def local_vk_write_lock(path: Path, *, account: str, community_id: int, operation: str) -> Iterator[None]:
-    """Prevent two local processes from mutating the same VK community."""
+    """Prevent two local processes from mutating the same VK community.
+
+    The supplied path is treated as a lock-directory hint for backward
+    compatibility. Its filename is never an authority boundary: all operations
+    for one community converge on the same canonical filename.
+    """
 
     if community_id <= 0:
         raise ValueError("community_id must be positive")
@@ -172,6 +187,7 @@ def local_vk_write_lock(path: Path, *, account: str, community_id: int, operatio
     if not account or not operation:
         raise ValueError("account and operation cannot be blank")
 
+    path = _canonicalize_requested_lock_path(path, community_id=community_id)
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor: int | None = None
     nonce = uuid.uuid4().hex
