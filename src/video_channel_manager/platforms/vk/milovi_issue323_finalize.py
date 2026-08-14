@@ -278,7 +278,7 @@ def _ensure_promoted_clip(
 ) -> str:
     current = item.get("clip_remote_id")
     if isinstance(current, str) and current:
-        _assert_native_clip(writer, asset, current, description_mode="promoted", durable_verified=True)
+        _assert_native_clip(writer, asset, current, description_mode="legacy_or_promoted", durable_verified=True)
         return current
 
     raw_record = item.get("upload_record")
@@ -403,7 +403,7 @@ def _ensure_promoted_clip(
     if UploadStage(str(record.get("stage"))) is not UploadStage.VERIFIED:
         raise MiloviFinalizerBlocked(f"Upload lifecycle did not verify {asset.source_id}")
     remote_id = _upload_remote_id(record)
-    _assert_native_clip(writer, asset, remote_id, description_mode="promoted")
+    _assert_native_clip(writer, asset, remote_id, description_mode="legacy_or_promoted")
     item.update(
         status="clip_verified",
         clip_remote_id=remote_id,
@@ -593,35 +593,96 @@ def _edit_clip_description(
         description_mode="legacy_or_promoted",
         durable_verified=True,
     )
-    if str(raw.get("description") or "").strip() == asset.description.strip():
-        operation.update(status="verified", remote_id=remote_id)
+    target_description = asset.description.strip()
+    current_description = str(raw.get("description") or "").strip()
+    if current_description == target_description:
+        operation.update(
+            status="verified",
+            remote_id=remote_id,
+            dispatch_started=bool(operation.get("dispatch_started", False)),
+        )
         _save_finalizer(finalizer_path, finalizer)
         return
     if not _legacy_marker_ok(raw, asset.source_id):
         raise MiloviFinalizerBlocked(f"Refusing description edit: {remote_id} lost legacy source binding")
+
+    prior_status = str(operation.get("status") or "pending")
+    if operation.get("dispatch_started") is True or prior_status in {
+        "edit_dispatch_started",
+        "unknown_requires_reconciliation",
+    }:
+        raise MiloviFinalizerBlocked(
+            f"video.edit dispatch may already have occurred for {remote_id}; blind retry is forbidden"
+        )
+    if prior_status != "pending":
+        raise MiloviFinalizerBlocked(f"video.edit has unresolved durable state for {remote_id}: {prior_status}")
+
     owner_id, video_id = _parse_remote_id(remote_id)
     before_title = str(raw.get("title") or "")
-    operation.update(status="edit_intent", remote_id=remote_id)
+    operation.update(
+        status="edit_intent",
+        remote_id=remote_id,
+        before_description_sha256=_sha256_text(current_description),
+        target_description_sha256=_sha256_text(target_description),
+        dispatch_started=False,
+    )
     _save_finalizer(finalizer_path, finalizer)
     _prove_target(client)
-    try:
-        writer._call("video.edit", params={"owner_id": owner_id, "video_id": video_id, "desc": asset.description})
-    except Exception:
-        observed = writer.read_video(owner_id=owner_id, video_id=video_id)
-        if (
-            not isinstance(observed, Mapping)
-            or str(observed.get("description") or "").strip() != asset.description.strip()
-        ):
-            raise
-    after = _assert_native_clip(
+
+    dispatch_raw = _assert_native_clip(
         writer,
         asset,
         remote_id,
-        description_mode="promoted",
+        description_mode="legacy_or_promoted",
         durable_verified=True,
     )
+    dispatch_description = str(dispatch_raw.get("description") or "").strip()
+    if dispatch_description == target_description:
+        operation.update(status="verified", reconciled_before_dispatch=True)
+        _save_finalizer(finalizer_path, finalizer)
+        return
+    if _sha256_text(dispatch_description) != operation["before_description_sha256"]:
+        raise MiloviFinalizerBlocked(f"video.edit source description changed before dispatch: {remote_id}")
+
+    operation.update(status="edit_dispatch_started", dispatch_started=True)
+    _save_finalizer(finalizer_path, finalizer)
+    try:
+        writer._call(
+            "video.edit",
+            params={"owner_id": owner_id, "video_id": video_id, "desc": asset.description},
+        )
+    except Exception as exc:
+        try:
+            after = _assert_native_clip(
+                writer,
+                asset,
+                remote_id,
+                description_mode="promoted",
+                durable_verified=True,
+            )
+        except Exception as readback_exc:
+            operation["status"] = "unknown_requires_reconciliation"
+            _save_finalizer(finalizer_path, finalizer)
+            raise exc from readback_exc
+        operation["response_lost_reconciled"] = True
+    else:
+        try:
+            after = _assert_native_clip(
+                writer,
+                asset,
+                remote_id,
+                description_mode="promoted",
+                durable_verified=True,
+            )
+        except Exception:
+            operation["status"] = "unknown_requires_reconciliation"
+            _save_finalizer(finalizer_path, finalizer)
+            raise
+
     after_title = str(after.get("title") or "")
     if before_title and after_title and after_title != before_title:
+        operation["status"] = "unknown_requires_reconciliation"
+        _save_finalizer(finalizer_path, finalizer)
         raise MiloviFinalizerBlocked(f"video.edit unexpectedly changed title for {remote_id}")
     operation.update(status="verified", remote_id=remote_id)
     _save_finalizer(finalizer_path, finalizer)
@@ -649,42 +710,96 @@ def _edit_wall_message(
         clip_remote_id=clip_remote_id,
         publish_date=publish_date,
     )
-    if str(post.get("text") or "").strip() == asset.wall_message.strip():
+    target_message = asset.wall_message.strip()
+    current_message = str(post.get("text") or "").strip()
+    if current_message == target_message:
         operation.update(
             status="verified",
             journal_remote_id=wall_remote_id,
             remote_id=actual_remote_id,
             surface=surface.value,
             resolution_mode=resolution_mode,
+            dispatch_started=bool(operation.get("dispatch_started", False)),
         )
         _save_finalizer(finalizer_path, finalizer)
         return
-    _actual_owner, actual_post_id = _parse_remote_id(actual_remote_id)
+
+    prior_status = str(operation.get("status") or "pending")
+    if operation.get("dispatch_started") is True or prior_status in {
+        "edit_dispatch_started",
+        "unknown_requires_reconciliation",
+    }:
+        raise MiloviFinalizerBlocked(
+            f"wall.edit dispatch may already have occurred for {wall_remote_id}; blind retry is forbidden"
+        )
+    if prior_status != "pending":
+        raise MiloviFinalizerBlocked(f"wall.edit has unresolved durable state for {wall_remote_id}: {prior_status}")
+
+    before_message_sha256 = _sha256_text(current_message)
     operation.update(
         status="edit_intent",
         journal_remote_id=wall_remote_id,
         remote_id=actual_remote_id,
         surface=surface.value,
         resolution_mode=resolution_mode,
+        before_message_sha256=before_message_sha256,
+        target_message_sha256=_sha256_text(target_message),
+        dispatch_started=False,
     )
     _save_finalizer(finalizer_path, finalizer)
     _prove_target(client)
+
+    dispatch_snapshot = writer.capture_wall_snapshot(
+        community_id=MILOVI_COMMUNITY_ID,
+        max_posts_per_surface=10000,
+    )
+    dispatch_remote_id, dispatch_surface, dispatch_post, dispatch_mode = _resolve_wall_incarnation(
+        writer=writer,
+        snapshot=dispatch_snapshot,
+        journal=journal,
+        wall_remote_id=wall_remote_id,
+        clip_remote_id=clip_remote_id,
+        publish_date=publish_date,
+    )
+    dispatch_message = str(dispatch_post.get("text") or "").strip()
+    if dispatch_message == target_message:
+        operation.update(
+            status="verified",
+            remote_id=dispatch_remote_id,
+            surface=dispatch_surface.value,
+            resolution_mode=dispatch_mode,
+            reconciled_before_dispatch=True,
+        )
+        _save_finalizer(finalizer_path, finalizer)
+        return
+    if _sha256_text(dispatch_message) != before_message_sha256:
+        raise MiloviFinalizerBlocked(f"wall.edit source message changed before dispatch: {wall_remote_id}")
+
+    _dispatch_owner, dispatch_post_id = _parse_remote_id(dispatch_remote_id)
+    operation.update(
+        status="edit_dispatch_started",
+        remote_id=dispatch_remote_id,
+        surface=dispatch_surface.value,
+        resolution_mode=dispatch_mode,
+        dispatch_started=True,
+    )
+    _save_finalizer(finalizer_path, finalizer)
     params: dict[str, str | int | bool] = {
         "owner_id": MILOVI_OWNER_ID,
-        "post_id": actual_post_id,
+        "post_id": dispatch_post_id,
         "message": asset.wall_message,
         "attachments": f"video{clip_remote_id}",
     }
-    if surface is VkWallSurface.POSTPONED:
+    if dispatch_surface is VkWallSurface.POSTPONED:
         params["publish_date"] = publish_date
     try:
         writer._call("wall.edit", params=params)
-    except Exception:
+    except Exception as exc:
         observed_snapshot = writer.capture_wall_snapshot(
             community_id=MILOVI_COMMUNITY_ID,
             max_posts_per_surface=10000,
         )
-        _observed_id, _observed_surface, observed, _observed_mode = _resolve_wall_incarnation(
+        observed_id, observed_surface, observed, observed_mode = _resolve_wall_incarnation(
             writer=writer,
             snapshot=observed_snapshot,
             journal=journal,
@@ -692,8 +807,17 @@ def _edit_wall_message(
             clip_remote_id=clip_remote_id,
             publish_date=publish_date,
         )
-        if str(observed.get("text") or "").strip() != asset.wall_message.strip():
-            raise
+        if str(observed.get("text") or "").strip() != target_message:
+            operation["status"] = "unknown_requires_reconciliation"
+            _save_finalizer(finalizer_path, finalizer)
+            raise exc from None
+        operation.update(
+            response_lost_reconciled=True,
+            remote_id=observed_id,
+            surface=observed_surface.value,
+            resolution_mode=observed_mode,
+        )
+
     after_snapshot = writer.capture_wall_snapshot(community_id=MILOVI_COMMUNITY_ID, max_posts_per_surface=10000)
     after_remote_id, after_surface, after, after_mode = _resolve_wall_incarnation(
         writer=writer,
@@ -703,7 +827,9 @@ def _edit_wall_message(
         clip_remote_id=clip_remote_id,
         publish_date=publish_date,
     )
-    if str(after.get("text") or "").strip() != asset.wall_message.strip():
+    if str(after.get("text") or "").strip() != target_message:
+        operation["status"] = "unknown_requires_reconciliation"
+        _save_finalizer(finalizer_path, finalizer)
         raise MiloviFinalizerBlocked(f"Wall message failed verification: {wall_remote_id}")
     operation.update(
         status="verified",
@@ -814,7 +940,7 @@ def _complete_child(
         clip_id = str(item.get("clip_remote_id") or "")
         if not clip_id:
             raise MiloviFinalizerBlocked(f"clip_verified item lost remote ID: {source_id}")
-        mode = "legacy_or_promoted" if source_id == ANOMALY_SOURCE_ID else "promoted"
+        mode = "legacy_or_promoted"
         _assert_native_clip(
             writer,
             asset,

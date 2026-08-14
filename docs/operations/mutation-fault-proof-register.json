@@ -9,12 +9,16 @@
       "boundary_id": "vk.video.album.create",
       "proofs": [
         {
-          "stages": ["before_dispatch"],
+          "stages": [
+            "before_dispatch"
+          ],
           "test_id": "tests/test_mutation_boundary_predispatch.py::test_vk_album_create_rejects_invalid_input_before_dispatch",
           "claim": "invalid identity/title reaches zero provider calls"
         },
         {
-          "stages": ["after_dispatch_before_response"],
+          "stages": [
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/test_vk_mutation_fault_matrix.py::test_album_create_ambiguous_server_failure_is_attempted_once",
           "claim": "ambiguous HTTP failure is one attempt and non-retryable"
         }
@@ -24,17 +28,23 @@
       "boundary_id": "vk.video.album.add",
       "proofs": [
         {
-          "stages": ["before_dispatch"],
+          "stages": [
+            "before_dispatch"
+          ],
           "test_id": "tests/test_vk_writer.py::test_add_to_album_is_idempotent",
           "claim": "existing membership prevents mutation dispatch"
         },
         {
-          "stages": ["after_dispatch_before_response"],
+          "stages": [
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/test_vk_mutation_fault_matrix.py::test_album_membership_ambiguous_write_is_not_replayed",
           "claim": "ambiguous membership mutation is attempted once"
         },
         {
-          "stages": ["during_postflight"],
+          "stages": [
+            "during_postflight"
+          ],
           "test_id": "tests/test_vk_writer.py::test_add_to_album_uses_verified_membership_not_response_shape",
           "claim": "success depends on exact membership postflight"
         }
@@ -44,12 +54,16 @@
       "boundary_id": "vk.video.album.edit",
       "proofs": [
         {
-          "stages": ["before_dispatch"],
+          "stages": [
+            "before_dispatch"
+          ],
           "test_id": "tests/test_mutation_boundary_predispatch.py::test_vk_album_edit_rejects_invalid_target_before_dispatch",
           "claim": "invalid target reaches zero provider calls"
         },
         {
-          "stages": ["after_dispatch_before_response"],
+          "stages": [
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/test_vk_mutation_fault_matrix.py::test_album_edit_ambiguous_server_failure_is_attempted_once",
           "claim": "ambiguous edit is one attempt and non-retryable"
         }
@@ -70,7 +84,9 @@
           "claim": "all reservation crash boundaries preserve one-reservation replay barrier"
         },
         {
-          "stages": ["after_dispatch_before_response"],
+          "stages": [
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/test_vk_upload_lifecycle.py::test_ambiguous_reservation_failure_is_never_retried",
           "claim": "lost reservation response becomes unknown and never replays"
         }
@@ -80,17 +96,26 @@
       "boundary_id": "vk.video.upload.transfer",
       "proofs": [
         {
-          "stages": ["before_dispatch", "after_response_before_commit", "during_processing", "before_final_commit"],
+          "stages": [
+            "before_dispatch",
+            "after_response_before_commit",
+            "during_processing",
+            "before_final_commit"
+          ],
           "test_id": "tests/test_vk_upload_lifecycle.py::test_crash_boundaries_never_allow_second_reservation",
           "claim": "transfer lifecycle crash stages resume without a second reservation or retransmission"
         },
         {
-          "stages": ["after_dispatch_before_response"],
+          "stages": [
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/test_vk_upload_lifecycle.py::test_upload_transport_failure_is_unknown_and_never_retransmitted",
           "claim": "lost upload response becomes unknown and never retransmits"
         },
         {
-          "stages": ["during_postflight"],
+          "stages": [
+            "during_postflight"
+          ],
           "test_id": "tests/test_vk_upload_lifecycle.py::test_unexpected_wall_delta_blocks_verified_and_requires_reconciliation",
           "claim": "changed wall delta prevents verified final state"
         }
@@ -100,22 +125,30 @@
       "boundary_id": "vk.wall.post",
       "proofs": [
         {
-          "stages": ["before_dispatch"],
+          "stages": [
+            "before_dispatch"
+          ],
           "test_id": "tests/test_vk_wall.py::test_incomplete_wall_surface_blocks_before_mutation",
           "claim": "incomplete two-surface preflight prevents wall.post"
         },
         {
-          "stages": ["after_dispatch_before_response"],
+          "stages": [
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/test_vk_wall.py::test_wall_post_does_not_retry_ambiguous_failure_and_stays_unknown",
           "claim": "ambiguous wall.post is one attempt"
         },
         {
-          "stages": ["during_postflight"],
+          "stages": [
+            "during_postflight"
+          ],
           "test_id": "tests/test_vk_wall.py::test_ambiguous_wall_response_can_reconcile_exact_post_without_replay",
           "claim": "only one exact postponed delta reconciles lost response"
         },
         {
-          "stages": ["before_final_commit"],
+          "stages": [
+            "before_final_commit"
+          ],
           "test_id": "tests/test_vk_wall.py::test_wall_writer_posts_once_to_postponed_and_reconciles_exact_delta",
           "claim": "final result binds complete before/after snapshots and exact post"
         }
@@ -125,17 +158,24 @@
       "boundary_id": "vk.wall.postponed_text.edit",
       "proofs": [
         {
-          "stages": ["before_dispatch"],
+          "stages": [
+            "before_dispatch"
+          ],
           "test_id": "tests/test_vk_postponed_text_edit.py::test_publication_distance_is_rechecked_before_dispatch",
           "claim": "a target that crosses the publication-distance threshold stops before wall.edit dispatch"
         },
         {
-          "stages": ["after_dispatch_before_response", "during_postflight"],
+          "stages": [
+            "after_dispatch_before_response",
+            "during_postflight"
+          ],
           "test_id": "tests/test_vk_postponed_text_edit.py::test_post_dispatch_read_failure_stops_unknown_without_retry",
           "claim": "a lost mutation response followed by failed reconciliation becomes unknown after exactly one wall.edit and never blind-retries"
         },
         {
-          "stages": ["before_final_commit"],
+          "stages": [
+            "before_final_commit"
+          ],
           "test_id": "tests/test_vk_postponed_text_edit.py::test_non_target_mutation_fails_final_postcondition",
           "claim": "final success is blocked when any non-target postponed fingerprint changes"
         }
@@ -145,17 +185,23 @@
       "boundary_id": "vk.video.text.edit",
       "proofs": [
         {
-          "stages": ["before_dispatch"],
+          "stages": [
+            "before_dispatch"
+          ],
           "test_id": "tests/test_mutation_boundary_predispatch.py::test_vk_video_text_conflict_stops_before_mutation_dispatch",
           "claim": "reviewed-before conflict prevents video.edit"
         },
         {
-          "stages": ["after_dispatch_before_response"],
+          "stages": [
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/test_vk_mutation_fault_matrix.py::test_video_text_edit_ambiguous_server_failure_stops_after_one_write",
           "claim": "ambiguous video.edit is one attempt"
         },
         {
-          "stages": ["during_postflight"],
+          "stages": [
+            "during_postflight"
+          ],
           "test_id": "tests/test_vk_text_writer.py::test_replace_text_accepts_structured_success_and_verifies_live_state",
           "claim": "exact title/description postflight is required"
         }
@@ -165,12 +211,16 @@
       "boundary_id": "vk.thumbnail.upload",
       "proofs": [
         {
-          "stages": ["before_dispatch"],
+          "stages": [
+            "before_dispatch"
+          ],
           "test_id": "tests/test_vk_thumbnails.py::test_upload_image_rejects_empty_file",
           "claim": "empty image cannot reach upload server"
         },
         {
-          "stages": ["after_dispatch_before_response"],
+          "stages": [
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/test_vk_mutation_fault_matrix.py::test_thumbnail_upload_ambiguous_server_failure_is_attempted_once",
           "claim": "ambiguous thumbnail transfer is one attempt"
         }
@@ -180,12 +230,16 @@
       "boundary_id": "vk.thumbnail.commit",
       "proofs": [
         {
-          "stages": ["before_dispatch"],
+          "stages": [
+            "before_dispatch"
+          ],
           "test_id": "tests/test_mutation_boundary_predispatch.py::test_vk_thumbnail_commit_rejects_invalid_payload_before_dispatch",
           "claim": "invalid target/payload reaches zero provider calls"
         },
         {
-          "stages": ["after_dispatch_before_response"],
+          "stages": [
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/test_vk_thumbnails.py::test_save_uploaded_thumbnail_does_not_retry_ambiguous_failure",
           "claim": "ambiguous saveUploadedThumb is one attempt"
         }
@@ -195,17 +249,23 @@
       "boundary_id": "youtube.comment.create",
       "proofs": [
         {
-          "stages": ["before_dispatch"],
+          "stages": [
+            "before_dispatch"
+          ],
           "test_id": "tests/test_youtube_comments.py::test_create_refuses_a_different_existing_channel_comment",
           "claim": "owned conflicting comment prevents insert"
         },
         {
-          "stages": ["after_dispatch_before_response"],
+          "stages": [
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/test_youtube_comments.py::test_comment_mutation_timeout_is_attempted_once",
           "claim": "lost insert response is one attempt"
         },
         {
-          "stages": ["during_postflight"],
+          "stages": [
+            "during_postflight"
+          ],
           "test_id": "tests/test_youtube_comments.py::test_create_comment_is_verified_and_idempotent_with_contextual_direct_read",
           "claim": "created comment is verified and repeat is idempotent"
         }
@@ -215,17 +275,23 @@
       "boundary_id": "youtube.comment.update",
       "proofs": [
         {
-          "stages": ["before_dispatch"],
+          "stages": [
+            "before_dispatch"
+          ],
           "test_id": "tests/test_youtube_comments.py::test_update_requires_exact_reviewed_before_text",
           "claim": "reviewed-before mismatch prevents update"
         },
         {
-          "stages": ["after_dispatch_before_response"],
+          "stages": [
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/test_mutation_boundary_predispatch.py::test_youtube_comment_update_timeout_is_attempted_once",
           "claim": "lost update response is one attempt"
         },
         {
-          "stages": ["during_postflight"],
+          "stages": [
+            "during_postflight"
+          ],
           "test_id": "tests/test_youtube_comments.py::test_update_accepts_write_response_without_target_fields_and_verifies",
           "claim": "updated comment is re-read with exact target identity"
         }
@@ -235,17 +301,23 @@
       "boundary_id": "youtube.description.update",
       "proofs": [
         {
-          "stages": ["before_dispatch"],
+          "stages": [
+            "before_dispatch"
+          ],
           "test_id": "tests/test_youtube_writer.py::test_description_conflict_stops_before_put",
           "claim": "revision/text conflict prevents PUT"
         },
         {
-          "stages": ["after_dispatch_before_response"],
+          "stages": [
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/test_youtube_writer.py::test_description_mutation_server_error_is_not_retried",
           "claim": "ambiguous videos.update is one attempt"
         },
         {
-          "stages": ["during_postflight"],
+          "stages": [
+            "during_postflight"
+          ],
           "test_id": "tests/test_youtube_writer.py::test_verification_retries_eventually_consistent_get",
           "claim": "success requires bounded canonical-description postflight"
         }
@@ -289,27 +361,37 @@
       "boundary_id": "operator.native.child",
       "proofs": [
         {
-          "stages": ["before_dispatch"],
+          "stages": [
+            "before_dispatch"
+          ],
           "test_id": "tests/powershell/VideoManager.Operator.Tests.ps1::It::blocks apply mode in CI before a provider child can start",
           "claim": "CI mutation request stops before child dispatch"
         },
         {
-          "stages": ["after_dispatch_before_response"],
+          "stages": [
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::terminates an interrupted child at the reviewed timeout boundary",
           "claim": "bounded timeout kills child and returns exit 124 evidence"
         },
         {
-          "stages": ["after_dispatch_before_response"],
+          "stages": [
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::drains concurrent stdout and stderr without deadlock",
           "claim": "concurrent output cannot deadlock child completion"
         },
         {
-          "stages": ["after_response_before_commit"],
+          "stages": [
+            "after_response_before_commit"
+          ],
           "test_id": "tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::rejects missing and malformed structured result evidence",
           "claim": "missing or malformed result fails closed"
         },
         {
-          "stages": ["after_response_before_commit"],
+          "stages": [
+            "after_response_before_commit"
+          ],
           "test_id": "tests/powershell/VideoManager.Operator.Faults.Tests.ps1::It::rejects inconsistent unknown result semantics",
           "claim": "status/exit/retry/unknown contradictions fail closed"
         }
@@ -319,22 +401,30 @@
       "boundary_id": "vk.wall.photo.save",
       "proofs": [
         {
-          "stages": ["before_dispatch"],
+          "stages": [
+            "before_dispatch"
+          ],
           "test_id": "tests/test_vk_article_provider.py::test_exact_existing_post_is_adopted_but_schedule_collision_is_blocked",
           "claim": "exact duplicates and occupied postponed slots stop before photo-save dispatch"
         },
         {
-          "stages": ["after_dispatch_before_response"],
+          "stages": [
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/test_vk_article_provider.py::test_adapter_preserves_unknown_outcome_and_does_not_retry",
           "claim": "an ambiguous provider outcome is surfaced once and never replayed"
         },
         {
-          "stages": ["during_postflight"],
+          "stages": [
+            "during_postflight"
+          ],
           "test_id": "tests/test_vk_article_provider_postflight.py::test_schedule_postflight_mismatch_is_unknown_and_never_replayed",
           "claim": "a non-exact postponed postflight remains unknown after one photo save and one wall post"
         },
         {
-          "stages": ["before_final_commit"],
+          "stages": [
+            "before_final_commit"
+          ],
           "test_id": "tests/test_vk_article_provider_postflight.py::test_schedule_requires_exact_postflight_before_final_success",
           "claim": "success is returned only after exact text, date, URL, photo and one-post wall delta verification"
         }
@@ -344,37 +434,52 @@
       "boundary_id": "telegram.rich_message.send",
       "proofs": [
         {
-          "stages": ["before_dispatch"],
+          "stages": [
+            "before_dispatch"
+          ],
           "test_id": "tests/test_telegram_rich_provider.py::test_exact_bot_and_target_binding_failure_is_impossible_without_provider_call",
           "claim": "wrong exact bot or target binding fails as impossible before the provider is called"
         },
         {
-          "stages": ["before_dispatch"],
+          "stages": [
+            "before_dispatch"
+          ],
           "test_id": "tests/test_telegram_rich_provider.py::test_same_credential_get_me_must_match_exact_bot_before_mutation",
           "claim": "same-credential getMe mismatch is archived as impossible and reaches zero mutation calls"
         },
         {
-          "stages": ["after_dispatch_before_response"],
+          "stages": [
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/test_telegram_rich_provider.py::test_timeout_after_possible_mutation_is_may_exist_and_never_retried_or_fallen_back",
           "claim": "a timeout after possible dispatch remains may_exist and triggers neither retry nor sendMessage fallback"
         },
         {
-          "stages": ["after_response_before_commit"],
+          "stages": [
+            "after_response_before_commit"
+          ],
           "test_id": "tests/test_telegram_rich_provider.py::test_archive_digest_failure_blocks_state_mutation",
           "claim": "an invalid archive receipt blocks the state callback after exactly one provider request"
         },
         {
-          "stages": ["before_dispatch", "after_dispatch_before_response"],
+          "stages": [
+            "before_dispatch",
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/test_svodka_native_rich_canary.py::test_durable_intent_exists_before_mutation_and_outcome_archive",
           "claim": "the isolated durable canary intent exists before the only sendRichMessage call and provider evidence is archived before terminal state"
         },
         {
-          "stages": ["after_dispatch_before_response"],
+          "stages": [
+            "after_dispatch_before_response"
+          ],
           "test_id": "tests/test_svodka_native_rich_canary.py::test_ambiguous_timeout_is_may_exist_and_never_retried",
           "claim": "an ambiguous native rich canary timeout makes one mutation and remains permanently non-retryable"
         },
         {
-          "stages": ["after_response_before_commit"],
+          "stages": [
+            "after_response_before_commit"
+          ],
           "test_id": "tests/test_svodka_native_rich_canary.py::test_exact_success_requires_chat_message_rich_structure_and_media_then_finalizes",
           "claim": "durable verified state requires exact chat, positive message id, returned RichMessage, exact structure, exact inline media evidence, and an uploaded outcome artifact"
         }
@@ -384,14 +489,149 @@
       "boundary_id": "vk.wall.issue323.anomaly.delete",
       "proofs": [
         {
-          "stages": ["before_dispatch"],
+          "stages": [
+            "before_dispatch"
+          ],
           "test_id": "tests/test_milovi_issue323_anomaly_reconcile.py::test_cleanup_blocks_if_stable_identity_changes_between_intent_and_dispatch",
           "claim": "the phase-1 reconciler re-reads exact wall 475 immediately before dispatch and stable identity drift reaches zero wall.delete calls"
         },
         {
-          "stages": ["after_dispatch_before_response", "during_postflight", "before_final_commit"],
+          "stages": [
+            "after_dispatch_before_response",
+            "during_postflight",
+            "before_final_commit"
+          ],
           "test_id": "tests/test_milovi_issue323_anomaly_reconcile.py::test_cleanup_reconciles_response_loss_to_exact_deleted_tombstone_without_retry",
           "claim": "the sole phase-1 wall.delete owner reconciles a lost response by exact tombstone after one provider call and commits verified_absent only after postflight"
+        }
+      ]
+    },
+    {
+      "boundary_id": "vk.wall.issue323.upload_effect.delete",
+      "proofs": [
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_milovi_issue323_upload_wall_reconcile.py::test_wrong_clip_binding_blocks_without_delete",
+          "claim": "wrong exact upload-created Clip binding reaches zero wall.delete calls"
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response"
+          ],
+          "test_id": "tests/test_milovi_issue323_upload_wall_reconcile.py::test_live_post_after_committed_delete_dispatch_never_retries",
+          "claim": "durable delete_dispatch_started with a still-live exact post blocks any second wall.delete"
+        },
+        {
+          "stages": [
+            "during_postflight",
+            "before_final_commit"
+          ],
+          "test_id": "tests/test_milovi_issue323_upload_wall_reconcile.py::test_exact_upload_created_post_is_deleted_once_and_clip_is_preserved",
+          "claim": "one exact delete reaches verified_absent only after exact historical postdelete SHA and Clip preservation proof"
+        }
+      ]
+    },
+    {
+      "boundary_id": "vk.video.issue323.promotion.edit",
+      "proofs": [
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_milovi_issue323_promotion_faults.py::test_clip_promotion_rechecks_source_binding_before_dispatch",
+          "claim": "source binding drift after durable intent is re-read and blocks before video.edit"
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response",
+            "during_postflight",
+            "before_final_commit"
+          ],
+          "test_id": "tests/test_milovi_issue323_promotion_faults.py::test_clip_promotion_lost_response_reconciles_exact_target_once",
+          "claim": "a lost video.edit response is accepted only from exact promoted same-Clip readback after one call"
+        }
+      ]
+    },
+    {
+      "boundary_id": "vk.wall.issue323.promotion.edit",
+      "proofs": [
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_milovi_issue323_promotion_faults.py::test_wall_promotion_rechecks_logical_binding_before_dispatch",
+          "claim": "logical wall binding is successor-aware re-resolved after intent and drift blocks before wall.edit"
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response",
+            "during_postflight",
+            "before_final_commit"
+          ],
+          "test_id": "tests/test_milovi_issue323_promotion_faults.py::test_wall_promotion_lost_response_reconciles_exact_target_once",
+          "claim": "a lost wall.edit response is accepted only from exact promoted logical-mapping readback after one call"
+        }
+      ]
+    },
+    {
+      "boundary_id": "vk.wall.milovi.immediate.post",
+      "proofs": [
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_milovi_immediate_wall.py::test_immediate_wall_refuses_ordinary_video_before_mutation",
+          "claim": "non-short-video identity fails before any immediate wall.post"
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response"
+          ],
+          "test_id": "tests/test_milovi_immediate_wall.py::test_ambiguous_immediate_wall_without_exact_post_stops_without_replay",
+          "claim": "an ambiguous wall.post response is attempted once and stays blocking when exact reconciliation is absent"
+        },
+        {
+          "stages": [
+            "during_postflight",
+            "before_final_commit"
+          ],
+          "test_id": "tests/test_milovi_immediate_wall.py::test_immediate_wall_posts_without_publish_date_and_verifies_published_delta",
+          "claim": "success requires one exact published post and exact two-surface delta after the single immediate wall.post"
+        }
+      ]
+    },
+    {
+      "boundary_id": "vk.wall.article.post",
+      "proofs": [
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_vk_article_provider.py::test_exact_existing_post_is_adopted_but_schedule_collision_is_blocked",
+          "claim": "exact duplicate adoption and schedule collision prevent a second postponed wall.post"
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response"
+          ],
+          "test_id": "tests/test_vk_article_provider.py::test_adapter_preserves_unknown_outcome_and_does_not_retry",
+          "claim": "an ambiguous article provider mutation is surfaced once and never replayed by the adapter"
+        },
+        {
+          "stages": [
+            "during_postflight"
+          ],
+          "test_id": "tests/test_vk_article_provider_postflight.py::test_schedule_postflight_mismatch_is_unknown_and_never_replayed",
+          "claim": "a non-exact postponed wall postflight is unknown after the one article wall mutation path"
+        },
+        {
+          "stages": [
+            "before_final_commit"
+          ],
+          "test_id": "tests/test_vk_article_provider_postflight.py::test_schedule_requires_exact_postflight_before_final_success",
+          "claim": "article wall success is returned only after exact text/date/url/photo and one-created-post delta verification"
         }
       ]
     }
