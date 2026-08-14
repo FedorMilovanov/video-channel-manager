@@ -84,7 +84,15 @@ def _promote_asset(asset: SourceAsset) -> SourceAsset:
     wall_message = public_wall_message(asset.title)
     assert_internal_promotion_copy(description, title=asset.title)
     assert_internal_promotion_copy(wall_message, title=asset.title)
-    return replace(asset, description=description, wall_message=wall_message)
+    legacy_description = asset.legacy_description if asset.legacy_description is not None else asset.description
+    legacy_wall_message = asset.legacy_wall_message if asset.legacy_wall_message is not None else asset.wall_message
+    return replace(
+        asset,
+        description=description,
+        wall_message=wall_message,
+        legacy_description=legacy_description.strip(),
+        legacy_wall_message=legacy_wall_message.strip(),
+    )
 
 
 def _promotion_plan(assets: list[SourceAsset]) -> dict[str, dict[str, str]]:
@@ -145,10 +153,14 @@ def _legacy_marker_ok(item: Mapping[str, Any], source_id: str) -> bool:
 
 
 def _legacy_clip_description(asset: SourceAsset) -> str:
+    if asset.legacy_description is not None:
+        return asset.legacy_description.strip()
     return build_description(asset.title, asset.source_id).strip()
 
 
 def _legacy_wall_message(asset: SourceAsset) -> str:
+    if asset.legacy_wall_message is not None:
+        return asset.legacy_wall_message.strip()
     return build_wall_message(asset.title, asset.source_id).strip()
 
 
