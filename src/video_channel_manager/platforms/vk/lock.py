@@ -148,6 +148,19 @@ def _release_owned_lock(path: Path, nonce: str) -> None:
     path.unlink(missing_ok=True)
 
 
+def community_vk_write_lock_path(data_dir: Path, *, community_id: int) -> Path:
+    """Return the one canonical local writer lock path for a VK community.
+
+    Operation-specific lock names are unsafe because two different executors can
+    otherwise mutate the same remote community concurrently. Every writer that
+    shares a ``data_dir`` and ``community_id`` must converge on this exact path.
+    """
+
+    if community_id <= 0:
+        raise ValueError("community_id must be positive")
+    return Path(data_dir) / "locks" / f"vk-community-{community_id}.lock"
+
+
 @contextmanager
 def local_vk_write_lock(path: Path, *, account: str, community_id: int, operation: str) -> Iterator[None]:
     """Prevent two local processes from mutating the same VK community."""
@@ -215,4 +228,4 @@ def local_vk_write_lock(path: Path, *, account: str, community_id: int, operatio
             _release_owned_lock(path, nonce)
 
 
-__all__ = ["local_vk_write_lock"]
+__all__ = ["community_vk_write_lock_path", "local_vk_write_lock"]
