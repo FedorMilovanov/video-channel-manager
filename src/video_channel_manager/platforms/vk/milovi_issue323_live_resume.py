@@ -313,13 +313,19 @@ def _supplement_due_prior_wall_readbacks(
     source_id: str,
     now_epoch: int | None = None,
 ) -> tuple[VkWallSnapshot, tuple[str, ...]]:
-    """Backfill only due, exact journaled posts omitted by aggregate wall.get projection.
+    """Normalize only proven due postponed->published identity transitions.
 
-    A complete aggregate `wall.get` response can still omit an exact scheduled post
-    at the postponed->published boundary. That omission is not proof of deletion.
-    For already-due, durably `wall_verified` IDs only, use one exact `wall.getById`
-    read and require the immutable wall/date/Clip binding before allowing the
-    historical SHA solver to see the post. No write capability is added here.
+    VK may retire the timer object's ID when a postponed post is published and
+    expose the published incarnation under a new wall ID. Absence of the old ID
+    is therefore not deletion proof after the frozen slot. For each missing due,
+    durably ``wall_verified`` ID we first perform one exact read. A still-live old
+    object must retain its exact identity/date/Clip binding. If the old object is
+    absent or an exact tombstone, the current complete published surface must have
+    exactly one successor with the same owner, frozen publication date and exact
+    Clip attachment. We rewrite only that successor's post ID in the in-memory
+    recovery view; the existing historical snapshot SHA solver must still match
+    the durable pre-upload digest, which also proves text and attachment fidelity.
+    No provider write capability is added here.
     """
 
     if not current.complete:
@@ -332,59 +338,99 @@ def _supplement_due_prior_wall_readbacks(
 
     observed_now = int(time.time()) if now_epoch is None else now_epoch
     posts = list(current.posts)
-    supplemented: list[str] = []
+    exact_reads: list[str] = []
     for remote_id in missing_ids:
         expected_date, clip_remote_id = contract[remote_id]
         if observed_now + 60 < expected_date:
             raise UploadRecoveryRequired(
                 f"Earlier rollout wall mapping disappeared before its frozen slot: {remote_id}"
             )
+
         owner_id, post_id = _parse_remote_id(remote_id)
         raw = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=post_id)
-        if raw is None or raw.get("is_deleted") is True:
-            raise UploadRecoveryRequired(f"Earlier rollout wall mapping disappeared during exact readback: {remote_id}")
-        if raw.get("owner_id") != owner_id or raw.get("id") != post_id:
-            raise UploadRecoveryRequired(f"Earlier rollout wall exact readback changed identity: {remote_id}")
-        if raw.get("date") != expected_date:
-            raise UploadRecoveryRequired(
-                f"Earlier rollout wall date changed for {remote_id}: {raw.get('date')} != {expected_date}"
-            )
-
-        raw_attachments = raw.get("attachments")
-        if not isinstance(raw_attachments, list):
-            raise UploadRecoveryRequired(f"Earlier rollout wall exact readback lost attachments: {remote_id}")
-        video_payloads: list[Mapping[str, Any]] = []
-        for attachment in raw_attachments:
-            if not isinstance(attachment, Mapping):
+        exact_reads.append(remote_id)
+        if raw is not None and raw.get("is_deleted") is not True:
+            if raw.get("owner_id") != owner_id or raw.get("id") != post_id:
+                raise UploadRecoveryRequired(f"Earlier rollout wall exact readback changed identity: {remote_id}")
+            if raw.get("date") != expected_date:
                 raise UploadRecoveryRequired(
-                    f"Earlier rollout wall exact readback has malformed attachment: {remote_id}"
+                    f"Earlier rollout wall date changed for {remote_id}: {raw.get('date')} != {expected_date}"
                 )
-            if attachment.get("type") != "video":
-                continue
-            video = attachment.get("video")
-            if not isinstance(video, Mapping):
+
+            raw_attachments = raw.get("attachments")
+            if not isinstance(raw_attachments, list):
+                raise UploadRecoveryRequired(f"Earlier rollout wall exact readback lost attachments: {remote_id}")
+            video_payloads: list[Mapping[str, Any]] = []
+            for attachment in raw_attachments:
+                if not isinstance(attachment, Mapping):
+                    raise UploadRecoveryRequired(
+                        f"Earlier rollout wall exact readback has malformed attachment: {remote_id}"
+                    )
+                if attachment.get("type") != "video":
+                    continue
+                video = attachment.get("video")
+                if not isinstance(video, Mapping):
+                    raise UploadRecoveryRequired(
+                        f"Earlier rollout wall exact readback has malformed video attachment: {remote_id}"
+                    )
+                video_payloads.append(video)
+            if len(video_payloads) != 1:
                 raise UploadRecoveryRequired(
-                    f"Earlier rollout wall exact readback has malformed video attachment: {remote_id}"
+                    f"Earlier rollout wall exact readback must contain exactly one video: {remote_id}"
                 )
-            video_payloads.append(video)
-        if len(video_payloads) != 1:
-            raise UploadRecoveryRequired(
-                f"Earlier rollout wall exact readback must contain exactly one video: {remote_id}"
-            )
-        expected_clip_owner, expected_clip_id = _parse_remote_id(clip_remote_id)
-        video = video_payloads[0]
-        if video.get("owner_id") != expected_clip_owner or video.get("id") != expected_clip_id:
-            raise UploadRecoveryRequired(f"Earlier rollout wall exact readback changed Clip binding: {remote_id}")
+            expected_clip_owner, expected_clip_id = _parse_remote_id(clip_remote_id)
+            video = video_payloads[0]
+            if video.get("owner_id") != expected_clip_owner or video.get("id") != expected_clip_id:
+                raise UploadRecoveryRequired(f"Earlier rollout wall exact readback changed Clip binding: {remote_id}")
 
-        fingerprint = VkWallPostFingerprint.from_item(raw, surface=VkWallSurface.PUBLISHED)
-        if f"video{clip_remote_id}" not in fingerprint.attachments:
-            raise UploadRecoveryRequired(
-                f"Earlier rollout wall exact readback lost canonical Clip binding: {remote_id}"
-            )
-        posts.append(fingerprint)
-        supplemented.append(remote_id)
+            fingerprint = VkWallPostFingerprint.from_item(raw, surface=VkWallSurface.PUBLISHED)
+            if f"video{clip_remote_id}" not in fingerprint.attachments:
+                raise UploadRecoveryRequired(
+                    f"Earlier rollout wall exact readback lost canonical Clip binding: {remote_id}"
+                )
+            posts.append(fingerprint)
+            continue
 
-    return replace(current, posts=tuple(posts)), tuple(supplemented)
+        if raw is not None:
+            if raw.get("is_deleted") is not True:
+                raise UploadRecoveryRequired(f"Earlier rollout wall exact readback has ambiguous state: {remote_id}")
+            if raw.get("owner_id") != owner_id or raw.get("id") != post_id:
+                raise UploadRecoveryRequired(f"Earlier rollout wall tombstone changed identity: {remote_id}")
+            tombstone_date = raw.get("date")
+            if type(tombstone_date) is int and tombstone_date != expected_date:
+                raise UploadRecoveryRequired(
+                    f"Earlier rollout wall tombstone date changed for {remote_id}: {tombstone_date} != {expected_date}"
+                )
+
+        expected_attachment = f"video{clip_remote_id}"
+        successors = [
+            (index, post)
+            for index, post in enumerate(posts)
+            if post.surface is VkWallSurface.PUBLISHED
+            and post.owner_id == owner_id
+            and post.publish_date == expected_date
+            and expected_attachment in post.attachments
+            and post.remote_id != remote_id
+        ]
+        if not successors:
+            raise UploadRecoveryRequired(
+                f"Earlier rollout wall mapping disappeared during exact readback and no published successor exists: "
+                f"{remote_id}"
+            )
+        if len(successors) != 1:
+            successor_ids = sorted(post.remote_id for _index, post in successors)
+            raise UploadRecoveryRequired(
+                f"Earlier rollout wall published successor is ambiguous for {remote_id}: {successor_ids}"
+            )
+        successor_index, successor = successors[0]
+        if successor.remote_id in contract:
+            raise UploadRecoveryRequired(
+                f"Earlier rollout wall published successor collides with another journaled ID: "
+                f"{remote_id} -> {successor.remote_id}"
+            )
+        posts[successor_index] = replace(successor, post_id=post_id)
+
+    return replace(current, posts=tuple(posts)), tuple(exact_reads)
 
 
 def _historical_issue323_wall_view(
