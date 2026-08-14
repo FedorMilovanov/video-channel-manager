@@ -79,6 +79,7 @@ class _MutationCallsiteVisitor(ast.NodeVisitor):
         self.source_file = source_file
         self.scope: list[str] = []
         self.callsites: list[tuple[str, str, str]] = []
+        self.violations: list[tuple[str, str, str]] = []
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         self.scope.append(node.name)
@@ -98,10 +99,16 @@ class _MutationCallsiteVisitor(ast.NodeVisitor):
     def visit_Call(self, node: ast.Call) -> None:
         marker: str | None = None
         name = _call_name(node.func)
-        if name == "_call" and node.args:
-            method = _constant_string(node.args[0])
-            if method and method not in _SAFE_VK_API_METHODS and not _is_true(_keyword(node, "retry_transient")):
-                marker = f"vk_api:{method}"
+        callable_name = ".".join(self.scope) if self.scope else "<module>"
+        if name == "_call":
+            method = _constant_string(node.args[0]) if node.args else None
+            if method is None:
+                self.violations.append(("vk_api:dynamic_or_missing_method", self.source_file, callable_name))
+            elif method not in _SAFE_VK_API_METHODS:
+                if _is_true(_keyword(node, "retry_transient")):
+                    self.violations.append((f"vk_api:{method}:retry_transient", self.source_file, callable_name))
+                else:
+                    marker = f"vk_api:{method}"
         elif name == "execute_http_request":
             operation = _keyword(node, "operation")
             resource = _constant_string(_keyword(node, "resource"))
@@ -117,18 +124,20 @@ class _MutationCallsiteVisitor(ast.NodeVisitor):
         elif name == "reconcile" and _attribute_owner_name(node.func) == "adapter":
             marker = "wave:adapter.reconcile"
         if marker is not None:
-            callable_name = ".".join(self.scope) if self.scope else "<module>"
             self.callsites.append((marker, self.source_file, callable_name))
         self.generic_visit(node)
 
 
 def _scan_python_mutation_callsites() -> list[tuple[str, str, str]]:
     callsites: list[tuple[str, str, str]] = []
+    violations: list[tuple[str, str, str]] = []
     for path in sorted((ROOT / "src").rglob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         visitor = _MutationCallsiteVisitor(path.relative_to(ROOT).as_posix())
         visitor.visit(tree)
         callsites.extend(visitor.callsites)
+        violations.extend(visitor.violations)
+    assert not violations, {"unscannable_direct_vk_calls": sorted(violations)}
     return callsites
 
 
