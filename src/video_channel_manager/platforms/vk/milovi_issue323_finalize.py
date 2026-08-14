@@ -20,6 +20,9 @@ from video_channel_manager.platforms.vk.milovi_issue323_live_resume import (
     _native_clip_assessment,
     _resume_wall_baseline,
 )
+from video_channel_manager.platforms.vk.milovi_issue323_upload_wall_reconcile import (
+    reconcile_issue323_upload_wall_effect,
+)
 from video_channel_manager.platforms.vk.milovi_promotion import (
     PUBLIC_PROMOTION_URLS,
     assert_internal_promotion_copy,
@@ -251,6 +254,18 @@ def _cleanup_anomaly_475(
     _save_finalizer(finalizer_path, finalizer)
 
 
+def _needs_issue323_upload_wall_reconcile(record: Mapping[str, Any]) -> bool:
+    try:
+        stage = UploadStage(str(record.get("stage")))
+    except ValueError:
+        return False
+    if stage is not UploadStage.UNKNOWN_REQUIRES_RECONCILIATION:
+        return False
+    wall_safety = record.get("wall_safety")
+    delta = wall_safety.get("delta") if isinstance(wall_safety, Mapping) else None
+    return isinstance(delta, Mapping) and delta.get("status") == "changed"
+
+
 def _ensure_promoted_clip(
     asset: SourceAsset,
     artifact: Any,
@@ -288,24 +303,30 @@ def _ensure_promoted_clip(
         item["upload_record"] = record
         _save(journal_path, journal)
 
-    current_wall = writer.capture_wall_snapshot(community_id=MILOVI_COMMUNITY_ID, max_posts_per_surface=10000)
-    if not current_wall.complete:
-        raise MiloviFinalizerBlocked("Complete wall baseline unavailable before upload/resume")
-    had_provider_effect = _has_provider_effect(record)
-    operation_writer: Any = upload_writer
-    recovery_writer: _Issue323RecoveryWriter | None = None
-    if had_provider_effect:
-        wall_before = _resume_wall_baseline(record, current_wall, journal=journal)
+    def prepare_recovery(current_wall: Any) -> tuple[Any, _Issue323RecoveryWriter]:
+        if not current_wall.complete:
+            raise MiloviFinalizerBlocked("Complete wall snapshot unavailable during upload recovery")
+        if _needs_issue323_upload_wall_reconcile(record):
+            current_wall, wall_before = reconcile_issue323_upload_wall_effect(
+                record=record,
+                current_wall=current_wall,
+                journal=journal,
+                writer=writer,
+                client=upload_writer.client,
+                source_id=asset.source_id,
+                persist=persist,
+            )
+        else:
+            wall_before = _resume_wall_baseline(record, current_wall, journal=journal)
         raw_wall_safety = record.get("wall_safety")
         if not isinstance(raw_wall_safety, Mapping):
             raise UploadRecoveryRequired("Provider-dispatched promoted upload lost durable wall safety evidence")
-        recovery_writer = _Issue323RecoveryWriter(
+        recovery = _Issue323RecoveryWriter(
             upload_writer,
             wall_safety=raw_wall_safety,
             journal=journal,
             source_id=asset.source_id,
         )
-        operation_writer = recovery_writer
         record["issue323_recovery_wall_view"] = {
             "baseline_actual_snapshot_sha256": current_wall.snapshot_sha256,
             "historical_before_snapshot_sha256": wall_before.snapshot_sha256,
@@ -313,31 +334,71 @@ def _ensure_promoted_clip(
             "binary_retransmission_authorized": False,
         }
         persist()
+        return wall_before, recovery
+
+    current_wall = writer.capture_wall_snapshot(community_id=MILOVI_COMMUNITY_ID, max_posts_per_surface=10000)
+    if not current_wall.complete:
+        raise MiloviFinalizerBlocked("Complete wall baseline unavailable before upload/resume")
+    had_provider_effect = _has_provider_effect(record)
+    operation_writer: Any = upload_writer
+    recovery_writer: _Issue323RecoveryWriter | None = None
+    if had_provider_effect:
+        wall_before, recovery_writer = prepare_recovery(current_wall)
+        operation_writer = recovery_writer
     else:
         wall_before = current_wall
+
     journal["provider_write_attempted"] = True
     item["status"] = "upload_in_progress"
     _save(journal_path, journal)
-    execute_upload_operation(
-        record,
-        writer=operation_writer,
-        community_id=MILOVI_COMMUNITY_ID,
-        title=asset.title,
-        description=asset.description,
-        media_path=Path(asset.media_path),
-        media_artifact=artifact,
-        readiness=readiness,
-        processing_timeout=timeout,
-        wall_before_snapshot=wall_before,
-        persist=persist,
-    )
+
+    try:
+        execute_upload_operation(
+            record,
+            writer=operation_writer,
+            community_id=MILOVI_COMMUNITY_ID,
+            title=asset.title,
+            description=asset.description,
+            media_path=None if had_provider_effect else Path(asset.media_path),
+            media_artifact=None if had_provider_effect else artifact,
+            readiness=readiness,
+            processing_timeout=timeout,
+            wall_before_snapshot=wall_before,
+            persist=persist,
+        )
+    except UploadRecoveryRequired:
+        if had_provider_effect or not _needs_issue323_upload_wall_reconcile(record):
+            raise
+        current_after = writer.capture_wall_snapshot(
+            community_id=MILOVI_COMMUNITY_ID,
+            max_posts_per_surface=10000,
+        )
+        wall_before, recovery_writer = prepare_recovery(current_after)
+        operation_writer = recovery_writer
+        had_provider_effect = True
+        execute_upload_operation(
+            record,
+            writer=operation_writer,
+            community_id=MILOVI_COMMUNITY_ID,
+            title=asset.title,
+            description=asset.description,
+            media_path=None,
+            media_artifact=None,
+            readiness=readiness,
+            processing_timeout=timeout,
+            wall_before_snapshot=wall_before,
+            persist=persist,
+        )
+
     if recovery_writer is not None:
         evidence = record.get("issue323_recovery_wall_view")
         if isinstance(evidence, dict):
             evidence.update(
                 postflight_actual_snapshot_sha256=recovery_writer.last_actual_snapshot_sha256,
+                postflight_effective_snapshot_sha256=recovery_writer.last_effective_snapshot_sha256,
                 postflight_historical_snapshot_sha256=recovery_writer.last_historical_snapshot_sha256,
                 postflight_reversed_surface_ids=list(recovery_writer.last_reversed_surface_ids),
+                postflight_exact_read_ids=list(recovery_writer.last_exact_read_ids),
             )
             persist()
     if UploadStage(str(record.get("stage"))) is not UploadStage.VERIFIED:
