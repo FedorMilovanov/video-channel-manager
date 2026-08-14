@@ -55,6 +55,7 @@ from video_channel_manager.platforms.vk.upload_media import execute_upload_opera
 from video_channel_manager.platforms.vk.wall import VkWallWriter
 from video_channel_manager.platforms.vk.wall_safety import (
     DEFAULT_UPLOAD_WALL_POLICY,
+    VkWallPostFingerprint,
     VkWallSnapshot,
     VkWallSurface,
 )
@@ -188,6 +189,9 @@ class _LiveClipWriter:
     def read_video(self, *, owner_id: int, video_id: int) -> dict[str, Any] | None:
         return self.delegate.read_video(owner_id=owner_id, video_id=video_id)
 
+    def read_post(self, *, community_id: int, post_id: int) -> dict[str, Any] | None:
+        return self.delegate.read_post(community_id=community_id, post_id=post_id)
+
     def wait_until_available(
         self,
         ticket: Any,
@@ -265,15 +269,15 @@ def _assert_issue323_eighth_wall_history(record: Mapping[str, Any], wall_safety:
         )
 
 
-def _prior_verified_wall_contract(journal: Mapping[str, Any], source_id: str) -> dict[str, int]:
-    """Return exact earlier wall IDs/dates eligible for normal scheduled surface evolution."""
+def _prior_verified_wall_contract(journal: Mapping[str, Any], source_id: str) -> dict[str, tuple[int, str]]:
+    """Return exact earlier wall IDs/dates/Clips eligible for scheduled surface recovery."""
 
     if source_id not in ROLL_OUT_IDS:
         raise UploadRecoveryRequired(f"Issue #323 recovery source is outside the exact rollout: {source_id}")
     items = journal.get("items")
     if not isinstance(items, Mapping):
         raise UploadRecoveryRequired("Issue #323 journal has no item map for wall recovery")
-    result: dict[str, int] = {}
+    result: dict[str, tuple[int, str]] = {}
     for prior_source_id in ROLL_OUT_IDS[: ROLL_OUT_IDS.index(source_id)]:
         raw = items.get(prior_source_id)
         if not isinstance(raw, Mapping) or raw.get("status") != "wall_verified":
@@ -282,13 +286,105 @@ def _prior_verified_wall_contract(journal: Mapping[str, Any], source_id: str) ->
             )
         remote_id = raw.get("wall_remote_id")
         publish_date = raw.get("publish_date")
-        if not isinstance(remote_id, str) or not remote_id or type(publish_date) is not int:
+        clip_remote_id = raw.get("clip_remote_id")
+        if (
+            not isinstance(remote_id, str)
+            or not remote_id
+            or type(publish_date) is not int
+            or not isinstance(clip_remote_id, str)
+            or not clip_remote_id
+        ):
             raise UploadRecoveryRequired(f"Earlier rollout wall binding is incomplete: {prior_source_id}")
         owner_id, post_id = _parse_remote_id(remote_id)
+        clip_owner_id, clip_id = _parse_remote_id(clip_remote_id)
         if owner_id != MILOVI_OWNER_ID or post_id <= 0:
             raise UploadRecoveryRequired(f"Earlier rollout wall binding left Milovi: {prior_source_id}")
-        result[remote_id] = publish_date
+        if clip_owner_id != MILOVI_OWNER_ID or clip_id <= 0:
+            raise UploadRecoveryRequired(f"Earlier rollout Clip binding left Milovi: {prior_source_id}")
+        result[remote_id] = (publish_date, clip_remote_id)
     return result
+
+
+def _supplement_due_prior_wall_readbacks(
+    writer: VkWallWriter | _LiveClipWriter,
+    current: VkWallSnapshot,
+    *,
+    journal: Mapping[str, Any],
+    source_id: str,
+    now_epoch: int | None = None,
+) -> tuple[VkWallSnapshot, tuple[str, ...]]:
+    """Backfill only due, exact journaled posts omitted by aggregate wall.get projection.
+
+    A complete aggregate `wall.get` response can still omit an exact scheduled post
+    at the postponed->published boundary. That omission is not proof of deletion.
+    For already-due, durably `wall_verified` IDs only, use one exact `wall.getById`
+    read and require the immutable wall/date/Clip binding before allowing the
+    historical SHA solver to see the post. No write capability is added here.
+    """
+
+    if not current.complete:
+        raise UploadRecoveryRequired("Current wall snapshot is incomplete during Issue #323 exact readback")
+    contract = _prior_verified_wall_contract(journal, source_id)
+    present_ids = {post.remote_id for post in current.posts}
+    missing_ids = sorted(remote_id for remote_id in contract if remote_id not in present_ids)
+    if not missing_ids:
+        return current, ()
+
+    observed_now = int(time.time()) if now_epoch is None else now_epoch
+    posts = list(current.posts)
+    supplemented: list[str] = []
+    for remote_id in missing_ids:
+        expected_date, clip_remote_id = contract[remote_id]
+        if observed_now + 60 < expected_date:
+            raise UploadRecoveryRequired(
+                f"Earlier rollout wall mapping disappeared before its frozen slot: {remote_id}"
+            )
+        owner_id, post_id = _parse_remote_id(remote_id)
+        raw = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=post_id)
+        if raw is None or raw.get("is_deleted") is True:
+            raise UploadRecoveryRequired(
+                f"Earlier rollout wall mapping disappeared during exact readback: {remote_id}"
+            )
+        if raw.get("owner_id") != owner_id or raw.get("id") != post_id:
+            raise UploadRecoveryRequired(f"Earlier rollout wall exact readback changed identity: {remote_id}")
+        if raw.get("date") != expected_date:
+            raise UploadRecoveryRequired(
+                f"Earlier rollout wall date changed for {remote_id}: {raw.get('date')} != {expected_date}"
+            )
+
+        raw_attachments = raw.get("attachments")
+        if not isinstance(raw_attachments, list):
+            raise UploadRecoveryRequired(f"Earlier rollout wall exact readback lost attachments: {remote_id}")
+        video_payloads: list[Mapping[str, Any]] = []
+        for attachment in raw_attachments:
+            if not isinstance(attachment, Mapping):
+                raise UploadRecoveryRequired(
+                    f"Earlier rollout wall exact readback has malformed attachment: {remote_id}"
+                )
+            if attachment.get("type") != "video":
+                continue
+            video = attachment.get("video")
+            if not isinstance(video, Mapping):
+                raise UploadRecoveryRequired(
+                    f"Earlier rollout wall exact readback has malformed video attachment: {remote_id}"
+                )
+            video_payloads.append(video)
+        if len(video_payloads) != 1:
+            raise UploadRecoveryRequired(
+                f"Earlier rollout wall exact readback must contain exactly one video: {remote_id}"
+            )
+        expected_clip_owner, expected_clip_id = _parse_remote_id(clip_remote_id)
+        video = video_payloads[0]
+        if video.get("owner_id") != expected_clip_owner or video.get("id") != expected_clip_id:
+            raise UploadRecoveryRequired(f"Earlier rollout wall exact readback changed Clip binding: {remote_id}")
+
+        fingerprint = VkWallPostFingerprint.from_item(raw, surface=VkWallSurface.PUBLISHED)
+        if f"video{clip_remote_id}" not in fingerprint.attachments:
+            raise UploadRecoveryRequired(f"Earlier rollout wall exact readback lost canonical Clip binding: {remote_id}")
+        posts.append(fingerprint)
+        supplemented.append(remote_id)
+
+    return replace(current, posts=tuple(posts)), tuple(supplemented)
 
 
 def _historical_issue323_wall_view(
@@ -303,7 +399,7 @@ def _historical_issue323_wall_view(
 
     Current published prior rollout posts may either have already been published
     in the historical baseline or may have been postponed then. We do not guess.
-    We enumerate only those exact due prior IDs as possible published→postponed
+    We enumerate only those exact due prior IDs as possible published->postponed
     reversals and accept exactly one candidate whose complete snapshot hashes to
     the durable pre-upload SHA. Text, attachments, IDs, dates and every unrelated
     wall object remain untouched, so any other drift still fails closed.
@@ -316,9 +412,10 @@ def _historical_issue323_wall_view(
     seen_counts: dict[str, int] = {remote_id: 0 for remote_id in contract}
     flippable_indexes: list[int] = []
     for index, post in enumerate(current.posts):
-        expected_date = contract.get(post.remote_id)
-        if expected_date is None:
+        binding = contract.get(post.remote_id)
+        if binding is None:
             continue
+        expected_date, _clip_remote_id = binding
         seen_counts[post.remote_id] += 1
         if post.publish_date != expected_date:
             raise UploadRecoveryRequired(
@@ -421,8 +518,10 @@ class _Issue323RecoveryWriter:
         self.journal = journal
         self.source_id = source_id
         self.last_actual_snapshot_sha256: str | None = None
+        self.last_effective_snapshot_sha256: str | None = None
         self.last_historical_snapshot_sha256: str | None = None
         self.last_reversed_surface_ids: tuple[str, ...] = ()
+        self.last_exact_read_ids: tuple[str, ...] = ()
 
     def begin_upload(self, *, community_id: int, title: str, description: str, wall_policy: Any) -> Any:
         raise UploadRecoveryRequired("Issue #323 recovery adapter forbids a second upload reservation")
@@ -453,15 +552,23 @@ class _Issue323RecoveryWriter:
             community_id=community_id,
             max_posts_per_surface=max_posts_per_surface,
         )
-        historical, reversed_ids = _historical_issue323_wall_view(
+        effective, exact_read_ids = _supplement_due_prior_wall_readbacks(
+            self.delegate,
             actual,
+            journal=self.journal,
+            source_id=self.source_id,
+        )
+        historical, reversed_ids = _historical_issue323_wall_view(
+            effective,
             wall_safety=self.wall_safety,
             journal=self.journal,
             source_id=self.source_id,
         )
         self.last_actual_snapshot_sha256 = actual.snapshot_sha256
+        self.last_effective_snapshot_sha256 = effective.snapshot_sha256
         self.last_historical_snapshot_sha256 = historical.snapshot_sha256
         self.last_reversed_surface_ids = reversed_ids
+        self.last_exact_read_ids = exact_read_ids
         return historical
 
 
@@ -518,7 +625,13 @@ def _ensure_clip_live(
     operation_writer: Any = upload_writer
     recovery_writer: _Issue323RecoveryWriter | None = None
     if _has_provider_effect(record):
-        wall_before = _resume_wall_baseline(record, current_wall, journal=journal)
+        effective_wall, baseline_exact_read_ids = _supplement_due_prior_wall_readbacks(
+            writer,
+            current_wall,
+            journal=journal,
+            source_id=asset.source_id,
+        )
+        wall_before = _resume_wall_baseline(record, effective_wall, journal=journal)
         raw_wall_safety = record.get("wall_safety")
         if not isinstance(raw_wall_safety, Mapping):
             raise UploadRecoveryRequired("Provider-dispatched upload lost durable wall safety evidence")
@@ -531,7 +644,9 @@ def _ensure_clip_live(
         operation_writer = recovery_writer
         record["issue323_recovery_wall_view"] = {
             "baseline_actual_snapshot_sha256": current_wall.snapshot_sha256,
-            "historical_before_snapshot_sha256": wall_before.snapshot_sha256,
+            "baseline_effective_snapshot_sha256": effective_wall.snapshot_sha256,
+            "baseline_historical_snapshot_sha256": wall_before.snapshot_sha256,
+            "baseline_exact_read_ids": list(baseline_exact_read_ids),
             "reservation_replay_authorized": False,
             "binary_retransmission_authorized": False,
         }
@@ -560,8 +675,10 @@ def _ensure_clip_live(
         if isinstance(evidence, dict):
             evidence.update(
                 postflight_actual_snapshot_sha256=recovery_writer.last_actual_snapshot_sha256,
+                postflight_effective_snapshot_sha256=recovery_writer.last_effective_snapshot_sha256,
                 postflight_historical_snapshot_sha256=recovery_writer.last_historical_snapshot_sha256,
                 postflight_reversed_surface_ids=list(recovery_writer.last_reversed_surface_ids),
+                postflight_exact_read_ids=list(recovery_writer.last_exact_read_ids),
             )
             persist()
     if UploadStage(str(record.get("stage"))) is not UploadStage.VERIFIED:
