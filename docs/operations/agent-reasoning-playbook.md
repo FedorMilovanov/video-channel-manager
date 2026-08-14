@@ -252,6 +252,12 @@ If provider state must be normalized for historical comparison, normalization mu
 
 When diagnosing repeated STOPs, stop patching individual field mismatches after the same failure class recurs. Reconstruct the whole contract: stable identity, mutation ownership, provider-effect state, projection completeness, legitimate temporal transitions, recovery capabilities, and shared preflight/postflight semantics.
 
+Three additional cross-phase rules follow from the Issue #323 continuation:
+
+- **A phase may not require a postcondition that only a later phase is authorized to establish.** If child completion proves identity/source binding and promotion is a later owned mutation, the child may require the exact pre-promotion binding but not the later promoted copy. Final completion may still require the stronger promoted state.
+- **Mutation inventory is callsite inventory, not method-name inventory.** Governance must distinguish at least provider marker, source file and owning callable. Collapsing multiple direct calls such as `wall.delete` or `wall.edit` into a set can hide a new mutation owner behind an existing registered API method.
+- **Intent is not a replay barrier after possible dispatch.** For an ambiguous mutation, persist an exact intent, then persist `dispatch_started` immediately before the one call. On continuation, exact target readback may adopt a proven completed effect; otherwise a live pre-target state plus prior dispatch evidence must stop rather than replay.
+
 For high-risk recovery decision records, add these fields when relevant:
 
 ```text
