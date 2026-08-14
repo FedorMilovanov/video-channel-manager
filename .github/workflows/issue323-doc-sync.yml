@@ -1,0 +1,96 @@
+name: Issue323 operational docs sync
+
+on:
+  push:
+    branches:
+      - agent/issue-323-doc-sync-after-355
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out docs branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/issue-323-doc-sync-after-355
+          fetch-depth: 0
+      - name: Patch existing operational memory
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          current_path = Path('docs/operations/current-state.md')
+          current = current_path.read_text(encoding='utf-8')
+          replacement = '''Current retained safety interpretation through PR #355:\n\n- wall `-68859909_475` cleanup has one destructive owner only: `milovi_issue323_anomaly_reconcile.py` phase 1; the finalizer has no delete authority for that post;\n- latest recorded live evidence still accepts wall 475 only as exact absence/deleted-tombstone evidence and preserves exact eighth Clip `-68859909_456239232`; this checkpoint is not standing proof of later provider state;\n- already-dispatched recovery cannot reserve or retransmit the binary; recovery capability is narrower than fresh upload capability;\n- strict readiness remains required for a new/resumed upload, while an already-created exact native Clip may cross child completion with either the exact legacy source-bound description or the exact promoted description. Arbitrary descriptions still fail closed; promotion remains owned only by the finalizer;\n- the fresh continuation after PR #352 established source 9's exact native Clip `-68859909_456239233` and then exposed an impossible phase prerequisite: child completion demanded promoted copy before the only authorized promotion phase could establish it. PR #355 removes that ordering deadlock without granting recovery metadata-write authority;\n- final provider success still requires exact promoted Clip descriptions and wall messages. Legacy/source-bound copy is accepted only as a pre-promotion child binding, never as final completion;\n- promotion `video.edit` and successor-aware `wall.edit` now persist exact intent plus a durable `dispatch_started` barrier before the single mutation, re-read the exact target immediately before dispatch, reconcile a lost response only from exact target-state readback, and forbid blind replay when dispatch may already have occurred;\n- the logical scheduled wall mapping is durable, but a VK postponed timer `post_id` is not assumed durable across publication. Before its frozen slot, the journaled postponed ID must remain exact; after the slot, the current incarnation may be the old ID or one uniquely proven published successor;\n- aggregate omission is contextual evidence, not exact-object disappearance proof when a durable exact ID exists. Exact readback governs that object's live/tombstone state; complete aggregate snapshots still govern drift and historical-SHA reconstruction;\n- source 9–12 upload-side-effect cleanup remains one narrow exact `wall.delete` boundary only when the durable upload delta, exact reserved Clip, capture window, exact current candidate and exact historical pre-upload SHA all prove the one side effect. It does not authorize source 8/wall 475 cleanup, broad cleanup or upload replay;\n- recovery, metadata maintenance, ambiguous edit reconciliation and final postflight share the same logical source/Clip/frozen-slot/current-incarnation model;\n- mutation governance is now callsite-aware: the inventory binds provider marker + source file + callable, so a second direct `wall.delete`, `wall.edit`, `video.edit` or `wall.post` cannot disappear behind a method-name set entry;\n- Issue #323 is complete only after fresh live readback proves all 12 exact Clip mappings, all 12 logical scheduled wall mappings with legitimate current provider incarnations, authorized internal Milovi public copy with no YouTube public links, and a clean final provider postflight.\n\n'''
+          current, count = re.subn(
+              r'Current retained safety interpretation after PRs #342–#348:\n\n.*?\n\nCanonical incident analysis:',
+              replacement + 'Canonical incident analysis:',
+              current,
+              count=1,
+              flags=re.S,
+          )
+          if count != 1:
+              raise SystemExit(f'current-state Milovi section replacement count={count}')
+          current_path.write_text(current, encoding='utf-8')
+
+          playbook_path = Path('docs/operations/agent-reasoning-playbook.md')
+          playbook = playbook_path.read_text(encoding='utf-8')
+          anchor = 'For high-risk recovery decision records, add these fields when relevant:\n'
+          addition = '''Three additional cross-phase rules follow from the Issue #323 continuation:\n\n- **A phase may not require a postcondition that only a later phase is authorized to establish.** If child completion proves identity/source binding and promotion is a later owned mutation, the child may require the exact pre-promotion binding but not the later promoted copy. Final completion may still require the stronger promoted state.\n- **Mutation inventory is callsite inventory, not method-name inventory.** Governance must distinguish at least provider marker, source file and owning callable. Collapsing multiple direct calls such as `wall.delete` or `wall.edit` into a set can hide a new mutation owner behind an existing registered API method.\n- **Intent is not a replay barrier after possible dispatch.** For an ambiguous mutation, persist an exact intent, then persist `dispatch_started` immediately before the one call. On continuation, exact target readback may adopt a proven completed effect; otherwise a live pre-target state plus prior dispatch evidence must stop rather than replay.\n\n'''
+          if anchor not in playbook:
+              raise SystemExit('playbook insertion anchor missing')
+          playbook = playbook.replace(anchor, addition + anchor, 1)
+          playbook_path.write_text(playbook, encoding='utf-8')
+
+          post_path = Path('docs/operations/2026-08-14-milovi-issue-323-interim-postmortem.md')
+          post = post_path.read_text(encoding='utf-8')
+          anchor = '## What was not wrong\n'
+          additions = '''### 14. Upload-created side-effect recovery repeated the aggregate-omission mistake\n\nPR #349 added a narrow recovery boundary for sources 9–12 when a Clip upload was already provider-dispatched, the exact durable reservation existed, and the upload lifecycle stopped on a changed wall postflight. The first implementation correctly prohibited a second reservation or binary transfer, but candidate discovery still depended on current aggregate visibility. A durable exact created wall ID could therefore be live by `wall.getById` while omitted from the aggregate and collapse to a misleading empty candidate list.\n\nPR #351 makes exact readback authoritative for each durable unknown created wall ID. Aggregate presence now affects only virtual snapshot reconstruction; it is not an existence predicate. Wrong owner/Clip/date or malformed exact-live candidates fail closed, and exact absence/tombstone remains terminal non-destructive evidence.\n\nPermanent rule: **when durable state supplies an exact remote ID, exact-object readback governs that ID's current existence/identity; aggregate snapshots remain contextual drift/history evidence, not a substitute negative proof.**\n\n### 15. Historical identity must be reconstructed at capture time, not recovery time\n\nThe continuation after PR #351 showed that current successor proof and historical pre-upload identity are different questions. Source 9's durable pre-upload capture happened after an earlier scheduled slot was due, so historical state could legitimately contain a published old ID or an already-rekeyed published successor. Eagerly rewriting every proven successor back to the old postponed ID was valid for an earlier pre-slot capture but wrong as a universal historical rule.\n\nPR #352 separates current-incarnation proof from capture-time historical reconstruction. The durable `before_captured_at` plus exact pre-upload snapshot SHA chooses the historical incarnation, and only tightly bounded provider-added non-video projections on an already-proven logical mapping may be normalized when needed to reproduce that exact SHA. Zero or multiple historical matches remain blocking.\n\nPermanent rule: **temporal reconstruction must use the timestamp and digest of the state being reconstructed, not the state observed during later recovery.**\n\n### 16. A phase required a postcondition that only the next phase could create\n\nThe first fresh provider continuation after PR #352 advanced source 9 to exact native Clip `-68859909_456239233`, then stopped before promotion. The child path required `description_mode=promoted`, while the only authorized `video.edit` owner was the later promotion phase that runs after all children are complete. The state machine therefore required the future phase's postcondition as a prerequisite for entering that phase.\n\nPR #355 corrects the phase contract without weakening final success:\n\n- child/recovery completion accepts only exact legacy source-bound copy or exact already-promoted copy; arbitrary descriptions remain blocking;\n- recovery still has no metadata-edit authority;\n- promotion remains the sole `video.edit`/`wall.edit` owner;\n- final postflight still requires exact promoted public copy;\n- promotion mutations now persist `dispatch_started` before the one provider call, re-prove exact target state immediately before dispatch, reconcile lost responses only through exact readback, and forbid blind replay after possible dispatch;\n- mutation governance was changed from a method-name set to a callsite-aware inventory keyed by provider marker + source file + callable. That stronger scanner immediately exposed the Issue #323 upload-side-effect delete, both promotion edits, and two older direct `wall.post` callsites that had previously hidden behind existing method markers; all were registered with exact owned fault proofs.\n\nPermanent rules: **a phase cannot require a state that only a later mutation owner is authorized to establish; a mutation registry must enumerate callsites, not merely API method names; and durable intent without an explicit dispatch boundary is insufficient to prove no-replay semantics.**\n\n'''
+          if anchor not in post:
+              raise SystemExit('postmortem insertion anchor missing')
+          post = post.replace(anchor, additions + anchor, 1)
+          post = post.replace(
+              'The operational history across Issue #323 and PRs #328–#348 shows the progression:',
+              'The operational history across Issue #323 and PRs #328–#355 shows the progression:',
+              1,
+          )
+          timeline_anchor = '- PR #348 propagated the same successor-aware logical mapping/current-incarnation contract through wall metadata maintenance, ambiguous edit reconciliation and final postflight.\n'
+          timeline_add = '''- PR #349 added the sources-9–12-only upload-created wall-side-effect reconciler with structural no-upload replay capability;\n- the following run exposed exact-live upload-created wall IDs omitted from aggregate candidate discovery; PR #351 made exact-ID readback authoritative for those IDs;\n- the next historical-baseline failure showed current provider incarnation and capture-time historical incarnation had been conflated; PR #352 reconstructs history from durable capture time plus exact pre-upload SHA;\n- the fresh continuation after #352 advanced source 9 to exact native Clip `-68859909_456239233` and then exposed the impossible child-before-promotion prerequisite;\n- PR #355 corrected that phase ordering, added replay-safe promotion mutation boundaries and made the mutation inventory callsite-aware.\n'''
+          if timeline_anchor not in post:
+              raise SystemExit('postmortem timeline anchor missing')
+          post = post.replace(timeline_anchor, timeline_anchor + timeline_add, 1)
+          checkpoint_anchor = '- Issue #323 remains open because repository correctness is not the same as live 12/12 completion.\n'
+          checkpoint_add = '''- PR #349 merged the exact sources-9–12 upload-wall-side-effect recovery; PR #351 corrected exact-live aggregate omission; PR #352 corrected capture-time historical provider-incarnation reconstruction;\n- the first fresh live continuation after #352 established source 9 exact native Clip `-68859909_456239233` and then stopped safely on the phase-ordering/promotion prerequisite; no blind upload replay followed;\n- PR #355 merged as `f31b33103dc332f3d6c886dbe80db8a96324dcf1`, exact head `839c7de9c853b6bd52584c2dd9bf8d9cd13140f8`; CI #4369 succeeded 6/6. Python 3.11 reported `1757 passed, 1 xfailed`, Ruff correctness/formatting clean, mypy clean on 249 source files, dependency audit clean;\n'''
+          if checkpoint_anchor not in post:
+              raise SystemExit('postmortem checkpoint anchor missing')
+          post = post.replace(checkpoint_anchor, checkpoint_add + checkpoint_anchor, 1)
+          old_latest = 'Latest recorded live evidence remains the pre-#346 provider checkpoint:'
+          if old_latest in post:
+              start = post.index(old_latest)
+              end = post.index('\n\n## Do not reintroduce', start)
+              updated = '''Latest recorded live evidence is now the post-#352 continuation checkpoint: phase 1 again accepted exact wall-475 deleted-tombstone semantics and preserved Clip `-68859909_456239232`; source 8 remained the protected exact mapping; source 9 reached exact native Clip `-68859909_456239233` without a second binary upload, then the finalizer stopped on the now-fixed child/promotion ordering invariant. PR #355 hardens that transition and promotion replay model, but merged code still does not prove source 9 wall completion, sources 10–12, promotion or final provider postflight. The provider and durable journal must be read again at continuation start.'''
+              post = post[:start] + updated + post[end:]
+          post_path.write_text(post, encoding='utf-8')
+          PY
+      - name: Verify docs contain the new invariants
+        run: |
+          grep -F 'Current retained safety interpretation through PR #355' docs/operations/current-state.md
+          grep -F 'Mutation inventory is callsite inventory' docs/operations/agent-reasoning-playbook.md
+          grep -F 'A phase required a postcondition that only the next phase could create' docs/operations/2026-08-14-milovi-issue-323-interim-postmortem.md
+      - name: Commit docs and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/issue323-doc-sync.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Sync Issue #323 operational memory through PR #355'
+          git push origin HEAD:agent/issue-323-doc-sync-after-355
