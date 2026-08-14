@@ -104,11 +104,13 @@ def _cleanup_exact_wall475(
     finalizer: dict[str, Any],
     finalizer_path: Path,
 ) -> None:
-    """Delete only exact wall 475 after one fresh stable-identity proof.
+    """Delete only exact wall 475 after fresh stable-identity proofs.
 
-    The intent is persisted before the provider write. An ambiguous delete is
-    never replayed blindly: provider state is read back first. The protected
-    Clip is verified both before and after the wall deletion.
+    The intent is persisted before the provider write. Immediately before the
+    delete, Milovi target identity is re-proved and wall 475 is re-read through
+    the same stable identity contract. An ambiguous delete is never replayed
+    blindly: provider state is read back first. The protected Clip is verified
+    both before and after the wall deletion.
     """
 
     state = finalizer["cleanup_475"]
@@ -139,6 +141,19 @@ def _cleanup_exact_wall475(
     _save_finalizer(finalizer_path, finalizer)
 
     _prove_target(client)
+    dispatch_post = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
+    if dispatch_post is None:
+        _assert_native_clip(
+            writer,
+            promoted_asset,
+            ANOMALY_CLIP_REMOTE_ID,
+            description_mode="legacy_or_promoted",
+        )
+        state.update(status="verified_absent", identity_contract=IDENTITY_CONTRACT)
+        _save_finalizer(finalizer_path, finalizer)
+        return
+    _validate_wall475_identity(dispatch_post, legacy_asset.source_id)
+
     try:
         writer._call("wall.delete", params={"owner_id": MILOVI_OWNER_ID, "post_id": ANOMALY_POST_ID})
     except Exception:
