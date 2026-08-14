@@ -40,7 +40,12 @@ def _sha256_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
-def _strict_raw_anomaly(post: Mapping[str, Any], source_id: str) -> None:
+def _strict_raw_anomaly(
+    post: Mapping[str, Any],
+    source_id: str,
+    *,
+    allow_provider_source_drift: bool = False,
+) -> None:
     if post.get("owner_id") != MILOVI_OWNER_ID or post.get("id") != ANOMALY_POST_ID:
         raise MiloviFinalizerBlocked("Wall 475 identity changed")
     if post.get("date") != ANOMALY_CREATED_AT:
@@ -52,8 +57,9 @@ def _strict_raw_anomaly(post: Mapping[str, Any], source_id: str) -> None:
         raise MiloviFinalizerBlocked("Wall 475 creator identity changed")
     if str(post.get("post_type") or "post") != "post":
         raise MiloviFinalizerBlocked("Wall 475 post type changed")
+
     post_source = post.get("post_source")
-    if not isinstance(post_source, Mapping) or post_source.get("type") != "vk":
+    if not allow_provider_source_drift and (not isinstance(post_source, Mapping) or post_source.get("type") != "vk"):
         raise MiloviFinalizerBlocked("Wall 475 provider source changed")
 
     owner_id, video_id, expanded = _one_video_attachment(post)
@@ -68,9 +74,16 @@ def _strict_raw_anomaly(post: Mapping[str, Any], source_id: str) -> None:
 
 
 class _TextNormalizedAnomalyWriter:
-    def __init__(self, delegate: VkWallWriter, source_id: str) -> None:
+    def __init__(
+        self,
+        delegate: VkWallWriter,
+        source_id: str,
+        *,
+        allow_provider_source_drift: bool = False,
+    ) -> None:
         self._delegate = delegate
         self._source_id = source_id
+        self._allow_provider_source_drift = allow_provider_source_drift
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self._delegate, name)
@@ -81,7 +94,11 @@ class _TextNormalizedAnomalyWriter:
             return None
         if community_id != MILOVI_COMMUNITY_ID or post_id != ANOMALY_POST_ID:
             return post
-        _strict_raw_anomaly(post, self._source_id)
+        _strict_raw_anomaly(
+            post,
+            self._source_id,
+            allow_provider_source_drift=self._allow_provider_source_drift,
+        )
         normalized = dict(post)
         normalized["text"] = ""
         return normalized
@@ -109,7 +126,11 @@ def run_reconcile(
     store = VkTokenStore(settings.data_dir)
     alias, client = _resolve_account(store, settings.vk_api_version)
     writer = VkWallWriter(token_store=store, account_alias=alias, api_version=settings.vk_api_version)
-    normalized_writer = _TextNormalizedAnomalyWriter(writer, ANOMALY_SOURCE_ID)
+    normalized_writer = _TextNormalizedAnomalyWriter(
+        writer,
+        ANOMALY_SOURCE_ID,
+        allow_provider_source_drift=True,
+    )
     lock_path = settings.data_dir / "locks" / f"vk-{MILOVI_COMMUNITY_ID}-issue-323-finalizer.lock"
 
     try:
@@ -122,13 +143,27 @@ def run_reconcile(
             _prove_target(client)
             raw_post = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
             if raw_post is not None:
-                _strict_raw_anomaly(raw_post, ANOMALY_SOURCE_ID)
+                _strict_raw_anomaly(
+                    raw_post,
+                    ANOMALY_SOURCE_ID,
+                    allow_provider_source_drift=True,
+                )
                 raw_text = str(raw_post.get("text") or "")
+                raw_post_source = raw_post.get("post_source")
+                post_source_type = (
+                    str(raw_post_source.get("type") or "") if isinstance(raw_post_source, Mapping) else ""
+                )
                 state = finalizer["cleanup_475"]
                 state.update(
                     observed_provider_text_nonempty=bool(raw_text.strip()),
                     observed_provider_text_sha256=_sha256_text(raw_text),
-                    observed_raw_post_sha256=_sha256_text(json.dumps(raw_post, sort_keys=True, ensure_ascii=False)),
+                    observed_post_source_type=post_source_type,
+                    observed_post_source_sha256=_sha256_text(
+                        json.dumps(raw_post_source, sort_keys=True, ensure_ascii=False, default=str)
+                    ),
+                    observed_raw_post_sha256=_sha256_text(
+                        json.dumps(raw_post, sort_keys=True, ensure_ascii=False, default=str)
+                    ),
                 )
                 _save_finalizer(finalizer_journal_path, finalizer)
 
@@ -155,6 +190,7 @@ def run_reconcile(
                 "clip_remote_id": ANOMALY_CLIP_REMOTE_ID,
                 "source_id": ANOMALY_SOURCE_ID,
                 "provider_text_drift_tolerated": True,
+                "provider_source_drift_tolerated_only_here": True,
                 "cleanup_state": finalizer["cleanup_475"],
             }
             write_json_atomic(output_path, payload)
