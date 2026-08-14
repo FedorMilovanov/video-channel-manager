@@ -58,6 +58,8 @@ EXECUTION_CONFIRMATION = "ISSUE_323_RESUME_LIVE_SHORT_VIDEO_AND_FINISH"
 RESULT_SCHEMA = "video-manager.milovi-issue-323-live-resume"
 EXPECTED_CANARY_REMOTE_ID = "-68859909_456239225"
 MINIMUM_FUTURE_SECONDS = 300
+ISSUE323_EIGHTH_SOURCE_ID = "o1WXIMupuws"
+ISSUE323_RECONCILED_WALL_VIEW = "published:-68859909_475"
 
 
 def _native_clip_assessment(
@@ -223,12 +225,55 @@ class _LiveClipWriter:
         )
 
 
+def _assert_issue323_eighth_wall_history(record: Mapping[str, Any], wall_safety: Mapping[str, Any]) -> None:
+    """Allow only the already-observed wall-475 side effect for the interrupted eighth upload."""
+
+    if record.get("source_video_id") != ISSUE323_EIGHTH_SOURCE_ID:
+        return
+    raw_delta = wall_safety.get("delta")
+    if not isinstance(raw_delta, Mapping):
+        raise UploadRecoveryRequired("Eighth upload has no durable wall postflight delta")
+    if raw_delta.get("status") == "clean":
+        return
+    expected_lists = {
+        "created": [ISSUE323_RECONCILED_WALL_VIEW],
+        "removed": [],
+        "changed": [],
+        "reasons": [],
+    }
+    mismatches = {
+        key: {"expected": expected, "actual": raw_delta.get(key)}
+        for key, expected in expected_lists.items()
+        if raw_delta.get(key) != expected
+    }
+    if raw_delta.get("status") != "changed":
+        mismatches["status"] = {"expected": "changed", "actual": raw_delta.get("status")}
+    before_sha = wall_safety.get("before_snapshot_sha256")
+    after_sha = wall_safety.get("after_snapshot_sha256")
+    if not isinstance(before_sha, str) or raw_delta.get("before_sha256") != before_sha:
+        mismatches["before_sha256"] = {"expected": before_sha, "actual": raw_delta.get("before_sha256")}
+    if not isinstance(after_sha, str) or raw_delta.get("after_sha256") != after_sha:
+        mismatches["after_sha256"] = {"expected": after_sha, "actual": raw_delta.get("after_sha256")}
+    if mismatches:
+        raise UploadRecoveryRequired(
+            f"Eighth upload wall history is not the single authorized wall-475 side effect: {mismatches}"
+        )
+
+
 def _resume_wall_baseline(record: Mapping[str, Any], current: Any) -> Any:
-    """Bind a restarted provider-dispatched upload to its original wall content, not a fresh capture timestamp."""
+    """Bind a restarted provider-dispatched upload to its original exact wall content.
+
+    For the interrupted eighth Clip, the durable postflight may record one
+    historical side effect: published wall 475. Phase 1 is the sole destructive
+    owner of that post. After it is reconciled away, the current wall still has
+    to hash exactly to the original pre-upload baseline before generic recovery
+    is allowed to continue.
+    """
 
     raw = record.get("wall_safety")
     if not isinstance(raw, Mapping):
         raise UploadRecoveryRequired("Provider-dispatched upload has no durable wall baseline")
+    _assert_issue323_eighth_wall_history(record, raw)
     return normalize_current_wall_to_historical_capture(current, raw)
 
 
