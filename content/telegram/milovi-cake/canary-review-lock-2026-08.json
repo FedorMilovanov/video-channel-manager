@@ -1,0 +1,30 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-canary-review-lock",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "status": "provider_inert_blocked",
+  "publication_id": "milovi-cake-canary-001",
+  "candidate_path": "content/telegram/milovi-cake/canary-candidate-2026-08.json",
+  "candidate_git_blob_sha1": "6cc806b37d428f18f9c57cdc1e66d4e718ffc1ab",
+  "media_readiness_path": "content/telegram/milovi-cake/media-delivery-readiness-2026-08.json",
+  "media_readiness_git_blob_sha1": "a64f0162623fa6d96703fcf073d171b10df4a35d",
+  "source_media": {
+    "repository": "FedorMilovanov/Milovi_Cake",
+    "commit": "c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370",
+    "path": "img/gallery/gallery-18-hd.webp",
+    "git_blob_sha1": "3574f726b233583a77b8a6db885f91b49e5189d8"
+  },
+  "caption_fact_source": {
+    "repository": "FedorMilovanov/Milovi_Cake",
+    "commit": "c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370",
+    "path": "llms.txt",
+    "git_blob_sha1": "a6ce3340bb0459657870605f0db09d9f99ac72a8"
+  },
+  "unresolved_authorization_inputs": {
+    "target_binding_sha256": null,
+    "materialized_media_sha256": null,
+    "explicit_authorization_reference": null
+  },
+  "authorization_state": "blocked",
+  "rule": "Any change to the candidate or media-readiness bytes invalidates this review lock. A future authorization must identify the exact reviewed candidate identity plus the separately reviewed target binding and materialized-media SHA-256."
+}
