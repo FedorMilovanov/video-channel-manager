@@ -250,13 +250,12 @@ def test_eighth_source_never_gets_remaining_upload_delete_authority() -> None:
     source8 = ROLL_OUT_IDS[7]
     record = _record(source_id=source8, video_id=PRIOR_CLIP_IDS[7])
     writer = _Writer(exact_video_id=PRIOR_CLIP_IDS[7])
-    journal = _journal()
 
     with pytest.raises(UploadRecoveryRequired, match="sources 9-12"):
         reconcile.reconcile_issue323_upload_wall_effect(
             record=record,
             current_wall=_current_after(video_id=PRIOR_CLIP_IDS[7]),
-            journal=journal,
+            journal=_journal(),
             writer=writer,  # type: ignore[arg-type]
             client=object(),
             source_id=source8,
@@ -268,10 +267,9 @@ def test_eighth_source_never_gets_remaining_upload_delete_authority() -> None:
 
 def test_due_surface_only_change_normalizes_without_delete(monkeypatch: pytest.MonkeyPatch) -> None:
     before = _historical_before()
-    first_published = _wall_item(0)
     current = build_wall_snapshot(
         community_id=68859909,
-        published_items=[first_published],
+        published_items=[_wall_item(0)],
         postponed_items=[_wall_item(index) for index in range(1, 8)],
         published_pages=1,
         postponed_pages=1,
@@ -309,7 +307,9 @@ def test_due_surface_only_change_normalizes_without_delete(monkeypatch: pytest.M
     assert writer.delete_calls == []
 
 
-def test_finalizer_retries_same_fresh_clip_through_replay_proof_recovery(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+def test_finalizer_retries_same_fresh_clip_through_replay_proof_recovery(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
     asset = SimpleNamespace(
         source_id=SOURCE9,
         title="Cake",
@@ -348,12 +348,18 @@ def test_finalizer_retries_same_fresh_clip_through_replay_proof_recovery(monkeyp
 
     monkeypatch.setattr(finalize, "clip_readiness", lambda _asset: object())
     monkeypatch.setattr(finalize, "ensure_upload_record", lambda *_args, **_kwargs: (record, False))
-    monkeypatch.setattr(finalize, "_has_provider_effect", lambda current_record: current_record["stage"] != UploadStage.PLANNED.value)
+    monkeypatch.setattr(
+        finalize, "_has_provider_effect", lambda current_record: current_record["stage"] != UploadStage.PLANNED.value
+    )
     monkeypatch.setattr(finalize, "_save", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(finalize, "_Issue323RecoveryWriter", FakeRecoveryWriter)
     monkeypatch.setattr(finalize, "_assert_native_clip", lambda *_args, **_kwargs: {})
     monkeypatch.setattr(finalize, "_upload_remote_id", lambda _record: f"-68859909_{SOURCE9_CLIP_ID}")
-    monkeypatch.setattr(finalize, "_needs_issue323_upload_wall_reconcile", lambda current_record: current_record["stage"] == UploadStage.UNKNOWN_REQUIRES_RECONCILIATION.value)
+    monkeypatch.setattr(
+        finalize,
+        "_needs_issue323_upload_wall_reconcile",
+        lambda current_record: current_record["stage"] == UploadStage.UNKNOWN_REQUIRES_RECONCILIATION.value,
+    )
 
     reconcile_calls: list[str] = []
 
