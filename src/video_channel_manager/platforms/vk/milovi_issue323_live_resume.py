@@ -313,19 +313,20 @@ def _supplement_due_prior_wall_readbacks(
     source_id: str,
     now_epoch: int | None = None,
 ) -> tuple[VkWallSnapshot, tuple[str, ...]]:
-    """Normalize only proven due postponed->published identity transitions.
+    """Prove current incarnations for due prior mappings without rewriting history.
 
-    VK may retire the timer object's ID when a postponed post is published and
-    expose the published incarnation under a new wall ID. Absence of the old ID
-    is therefore not deletion proof after the frozen slot. For each missing due,
-    durably ``wall_verified`` ID we first perform one exact read. A still-live old
-    object must retain its exact identity/date/Clip binding. If the old object is
-    absent or an exact tombstone, the current complete published surface must have
-    exactly one successor with the same owner, frozen publication date and exact
-    Clip attachment. We rewrite only that successor's post ID in the in-memory
-    recovery view; the existing historical snapshot SHA solver must still match
-    the durable pre-upload digest, which also proves text and attachment fidelity.
-    No provider write capability is added here.
+    Aggregate omission never proves exact-object absence. For every missing due,
+    durably ``wall_verified`` ID we exact-read the journaled object. A still-live
+    old object is appended to the effective read-only snapshot only after exact
+    owner/date/Clip proof. If the old object is absent or its exact tombstone is
+    returned, the current complete published surface must contain exactly one
+    semantic successor with the same Milovi owner, frozen timestamp and exact Clip.
+
+    Crucially, a proven successor keeps its *current* provider ID here. Whether the
+    durable pre-upload capture saw the old postponed ID, the old published ID or
+    the successor published ID is a historical question resolved later from the
+    durable capture timestamp plus the exact pre-upload SHA. This function adds no
+    provider-write capability and never mutates journal history.
     """
 
     if not current.complete:
@@ -404,8 +405,8 @@ def _supplement_due_prior_wall_readbacks(
 
         expected_attachment = f"video{clip_remote_id}"
         successors = [
-            (index, post)
-            for index, post in enumerate(posts)
+            post
+            for post in posts
             if post.surface is VkWallSurface.PUBLISHED
             and post.owner_id == owner_id
             and post.publish_date == expected_date
@@ -418,17 +419,16 @@ def _supplement_due_prior_wall_readbacks(
                 f"{remote_id}"
             )
         if len(successors) != 1:
-            successor_ids = sorted(post.remote_id for _index, post in successors)
+            successor_ids = sorted(post.remote_id for post in successors)
             raise UploadRecoveryRequired(
                 f"Earlier rollout wall published successor is ambiguous for {remote_id}: {successor_ids}"
             )
-        successor_index, successor = successors[0]
+        successor = successors[0]
         if successor.remote_id in contract:
             raise UploadRecoveryRequired(
                 f"Earlier rollout wall published successor collides with another journaled ID: "
                 f"{remote_id} -> {successor.remote_id}"
             )
-        posts[successor_index] = replace(successor, post_id=post_id)
 
     return replace(current, posts=tuple(posts)), tuple(exact_reads)
 
@@ -439,18 +439,27 @@ def _historical_issue323_wall_view(
     wall_safety: Mapping[str, Any],
     journal: Mapping[str, Any],
     source_id: str,
+    successor_resolution_proven: bool = False,
     now_epoch: int | None = None,
 ) -> tuple[VkWallSnapshot, tuple[str, ...]]:
-    """Resolve the unique durable historical wall view from semantic Issue #323 identity.
+    """Resolve one durable historical wall view from Issue #323 logical identity.
 
-    The durable capture timestamp, not the current clock, determines whether each
-    exact prior rollout mapping was historically postponed or published. Current
-    provider state may contain canonical non-video projections that were never part
-    of the rollout mutation; for an exact prior owner/date/text/Clip mapping only,
-    the solver therefore considers both the current canonical attachments and the
-    original video-only semantic projection. It never changes text, the video
-    identity, dates, IDs or unrelated wall objects. The complete durable pre-upload
-    SHA remains the final and exact acceptance proof.
+    Current provider incarnation and historical provider incarnation are separate
+    concerns. Direct journaled IDs may be used without inference. A missing old ID
+    may be associated with a current published successor only after the caller has
+    performed the exact-read successor proof in
+    ``_supplement_due_prior_wall_readbacks`` and sets
+    ``successor_resolution_proven=True``.
+
+    The durable ``before_captured_at`` decides which surface/ID incarnations were
+    possible at the historical capture. Before the frozen slot only the old
+    postponed ID is possible. After the slot, a proven current successor may have
+    already existed at capture or the old ID may still have represented the same
+    published logical mapping; exact SHA chooses between those provider
+    incarnations. Exact text, frozen date, one exact video Clip and unrelated wall
+    objects are never changed. For the exact logical mapping only, canonical
+    provider-added non-video attachments may be removed in the candidate historical
+    view, again accepted solely by the exact durable pre-upload SHA.
     """
 
     if not current.complete:
@@ -474,45 +483,116 @@ def _historical_issue323_wall_view(
 
     contract = _prior_verified_wall_contract(journal, source_id)
     observed_now = int(time.time()) if now_epoch is None else now_epoch
-    seen_counts: dict[str, int] = {remote_id: 0 for remote_id in contract}
+    used_indexes: set[int] = set()
     variant_options: dict[int, tuple[tuple[VkWallPostFingerprint, bool], ...]] = {}
 
-    for index, post in enumerate(current.posts):
-        binding = contract.get(post.remote_id)
-        if binding is None:
-            continue
-        expected_date, clip_remote_id = binding
-        seen_counts[post.remote_id] += 1
+    for logical_remote_id, (expected_date, clip_remote_id) in contract.items():
+        direct = [
+            (index, post)
+            for index, post in enumerate(current.posts)
+            if index not in used_indexes and post.remote_id == logical_remote_id
+        ]
+        if len(direct) > 1:
+            raise UploadRecoveryRequired(
+                f"Earlier rollout wall mapping appears on multiple surfaces: {logical_remote_id}"
+            )
+
+        current_is_successor = False
+        if direct:
+            post_index, post = direct[0]
+        else:
+            if not successor_resolution_proven:
+                raise UploadRecoveryRequired(
+                    f"Earlier rollout wall mapping disappeared without exact successor proof: {logical_remote_id}"
+                )
+            owner_id, _old_post_id = _parse_remote_id(logical_remote_id)
+            expected_attachment = f"video{clip_remote_id}"
+            successors = [
+                (index, candidate)
+                for index, candidate in enumerate(current.posts)
+                if index not in used_indexes
+                and candidate.surface is VkWallSurface.PUBLISHED
+                and candidate.owner_id == owner_id
+                and candidate.publish_date == expected_date
+                and expected_attachment in candidate.attachments
+                and candidate.remote_id not in contract
+            ]
+            if not successors:
+                raise UploadRecoveryRequired(
+                    f"Earlier rollout wall mapping has no proven current successor in historical solver: "
+                    f"{logical_remote_id}"
+                )
+            if len(successors) != 1:
+                successor_ids = sorted(candidate.remote_id for _index, candidate in successors)
+                raise UploadRecoveryRequired(
+                    f"Earlier rollout wall current successor is ambiguous in historical solver for "
+                    f"{logical_remote_id}: {successor_ids}"
+                )
+            post_index, post = successors[0]
+            current_is_successor = True
+
+        used_indexes.add(post_index)
         if post.publish_date != expected_date:
             raise UploadRecoveryRequired(
-                f"Earlier rollout wall date changed for {post.remote_id}: {post.publish_date} != {expected_date}"
+                f"Earlier rollout wall date changed for {logical_remote_id}: {post.publish_date} != {expected_date}"
             )
 
         expected_attachment = f"video{clip_remote_id}"
         video_attachments = tuple(value for value in post.attachments if value.startswith("video"))
         if len(video_attachments) != 1:
             raise UploadRecoveryRequired(
-                f"Earlier rollout wall must contain exactly one video during historical recovery: {post.remote_id}"
+                f"Earlier rollout wall must contain exactly one video during historical recovery: "
+                f"{logical_remote_id}"
             )
         if video_attachments[0] != expected_attachment:
-            raise UploadRecoveryRequired(f"Earlier rollout wall changed Clip binding: {post.remote_id}")
+            raise UploadRecoveryRequired(f"Earlier rollout wall changed Clip binding: {logical_remote_id}")
 
         if post.surface is VkWallSurface.PUBLISHED and observed_now + 60 < expected_date:
-            raise UploadRecoveryRequired(f"Earlier rollout wall published before its slot: {post.remote_id}")
+            raise UploadRecoveryRequired(f"Earlier rollout wall published before its slot: {logical_remote_id}")
+        if current_is_successor and post.surface is not VkWallSurface.PUBLISHED:
+            raise UploadRecoveryRequired(f"Earlier rollout wall successor is not published: {logical_remote_id}")
 
-        if post.surface is VkWallSurface.POSTPONED:
+        logical_owner_id, logical_post_id = _parse_remote_id(logical_remote_id)
+        if logical_owner_id != post.owner_id:
+            raise UploadRecoveryRequired(f"Earlier rollout wall successor changed owner: {logical_remote_id}")
+
+        provider_states: list[tuple[int, VkWallSurface, bool]] = []
+        if current_is_successor:
+            if capture_epoch + 60 < expected_date:
+                provider_states.append((logical_post_id, VkWallSurface.POSTPONED, True))
+            elif capture_epoch - 60 > expected_date:
+                provider_states.extend(
+                    [
+                        (logical_post_id, VkWallSurface.PUBLISHED, False),
+                        (post.post_id, VkWallSurface.PUBLISHED, False),
+                    ]
+                )
+            else:
+                provider_states.extend(
+                    [
+                        (logical_post_id, VkWallSurface.POSTPONED, True),
+                        (logical_post_id, VkWallSurface.PUBLISHED, False),
+                        (post.post_id, VkWallSurface.PUBLISHED, False),
+                    ]
+                )
+        elif post.surface is VkWallSurface.POSTPONED:
             if capture_epoch - 60 > expected_date:
                 raise UploadRecoveryRequired(
                     f"Historical capture is after the frozen slot but the current mapping is still postponed: "
-                    f"{post.remote_id}"
+                    f"{logical_remote_id}"
                 )
-            historical_surfaces = (VkWallSurface.POSTPONED,)
+            provider_states.append((logical_post_id, VkWallSurface.POSTPONED, False))
         elif capture_epoch + 60 < expected_date:
-            historical_surfaces = (VkWallSurface.POSTPONED,)
+            provider_states.append((logical_post_id, VkWallSurface.POSTPONED, True))
         elif capture_epoch - 60 > expected_date:
-            historical_surfaces = (VkWallSurface.PUBLISHED,)
+            provider_states.append((logical_post_id, VkWallSurface.PUBLISHED, False))
         else:
-            historical_surfaces = (VkWallSurface.PUBLISHED, VkWallSurface.POSTPONED)
+            provider_states.extend(
+                [
+                    (logical_post_id, VkWallSurface.PUBLISHED, False),
+                    (logical_post_id, VkWallSurface.POSTPONED, True),
+                ]
+            )
 
         attachment_variants = [post.attachments]
         video_only = (expected_attachment,)
@@ -520,43 +600,48 @@ def _historical_issue323_wall_view(
             attachment_variants.append(video_only)
 
         options: list[tuple[VkWallPostFingerprint, bool]] = []
-        seen_option_keys: set[tuple[str, tuple[str, ...]]] = set()
-        for historical_surface in historical_surfaces:
+        seen_option_keys: set[tuple[int, str, tuple[str, ...]]] = set()
+        for historical_post_id, historical_surface, reversed_surface in provider_states:
             if post.surface is VkWallSurface.POSTPONED and historical_surface is VkWallSurface.PUBLISHED:
                 continue
             for attachments in attachment_variants:
-                key = (historical_surface.value, attachments)
+                key = (historical_post_id, historical_surface.value, attachments)
                 if key in seen_option_keys:
                     continue
                 seen_option_keys.add(key)
                 options.append(
                     (
-                        replace(post, surface=historical_surface, attachments=attachments),
-                        post.surface is VkWallSurface.PUBLISHED
-                        and historical_surface is VkWallSurface.POSTPONED,
+                        replace(
+                            post,
+                            post_id=historical_post_id,
+                            surface=historical_surface,
+                            attachments=attachments,
+                        ),
+                        reversed_surface,
                     )
                 )
         if not options:
-            raise UploadRecoveryRequired(f"Earlier rollout wall has no valid historical state: {post.remote_id}")
-        variant_options[index] = tuple(options)
-
-    duplicate = sorted(remote_id for remote_id, count in seen_counts.items() if count > 1)
-    if duplicate:
-        raise UploadRecoveryRequired(f"Earlier rollout wall mapping appears on multiple surfaces: {duplicate}")
-    missing = sorted(remote_id for remote_id, count in seen_counts.items() if count == 0)
-    if missing:
-        raise UploadRecoveryRequired(f"Earlier rollout wall mapping disappeared during recovery: {missing}")
+            raise UploadRecoveryRequired(f"Earlier rollout wall has no valid historical state: {logical_remote_id}")
+        variant_options[post_index] = tuple(options)
 
     states: list[tuple[list[VkWallPostFingerprint], tuple[str, ...]]] = [(list(current.posts), ())]
     for post_index in sorted(variant_options):
         expanded: list[tuple[list[VkWallPostFingerprint], tuple[str, ...]]] = []
+        logical_remote_id = next(
+            remote_id
+            for remote_id, (expected_date, clip_remote_id) in contract.items()
+            if any(
+                option.publish_date == expected_date and f"video{clip_remote_id}" in option.attachments
+                for option, _reversed in variant_options[post_index]
+            )
+        )
         for posts, reversed_ids in states:
             for variant, reversed_surface in variant_options[post_index]:
                 next_posts = list(posts)
                 next_posts[post_index] = variant
                 next_reversed = reversed_ids
                 if reversed_surface:
-                    next_reversed = tuple(sorted((*reversed_ids, variant.remote_id)))
+                    next_reversed = tuple(sorted((*reversed_ids, logical_remote_id)))
                 expanded.append((next_posts, next_reversed))
         states = expanded
 
@@ -574,11 +659,11 @@ def _historical_issue323_wall_view(
     if not matches:
         raise MiloviTokenRolloutBlocked(
             "Current Milovi wall cannot be reduced to the journaled pre-upload baseline using capture-time "
-            "Issue #323 surface semantics and exact semantic provider-projection normalization"
+            "Issue #323 provider-incarnation/surface semantics and exact semantic projection normalization"
         )
     if len(matches) != 1:
         raise UploadRecoveryRequired(
-            "Historical Issue #323 wall view is ambiguous after capture-time semantic normalization"
+            "Historical Issue #323 wall view is ambiguous after capture-time provider-incarnation normalization"
         )
     return matches[0]
 
@@ -588,6 +673,7 @@ def _resume_wall_baseline(
     current: VkWallSnapshot,
     *,
     journal: Mapping[str, Any] | None = None,
+    successor_resolution_proven: bool = False,
     now_epoch: int | None = None,
 ) -> VkWallSnapshot:
     """Bind restarted provider work to the unique exact historical wall view."""
@@ -604,6 +690,7 @@ def _resume_wall_baseline(
         wall_safety=raw,
         journal=journal,
         source_id=source_id,
+        successor_resolution_proven=successor_resolution_proven,
         now_epoch=now_epoch,
     )
     return historical
@@ -676,6 +763,7 @@ class _Issue323RecoveryWriter:
             wall_safety=self.wall_safety,
             journal=self.journal,
             source_id=self.source_id,
+            successor_resolution_proven=True,
         )
         self.last_actual_snapshot_sha256 = actual.snapshot_sha256
         self.last_effective_snapshot_sha256 = effective.snapshot_sha256
@@ -744,7 +832,12 @@ def _ensure_clip_live(
             journal=journal,
             source_id=asset.source_id,
         )
-        wall_before = _resume_wall_baseline(record, effective_wall, journal=journal)
+        wall_before = _resume_wall_baseline(
+            record,
+            effective_wall,
+            journal=journal,
+            successor_resolution_proven=True,
+        )
         raw_wall_safety = record.get("wall_safety")
         if not isinstance(raw_wall_safety, Mapping):
             raise UploadRecoveryRequired("Provider-dispatched upload lost durable wall safety evidence")
