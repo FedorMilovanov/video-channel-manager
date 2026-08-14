@@ -67,6 +67,7 @@ def _journal() -> dict[str, Any]:
         "items": {
             resume.ROLL_OUT_IDS[0]: {
                 "status": "wall_verified",
+                "clip_remote_id": "-68859909_456239225",
                 "wall_remote_id": "-68859909_468",
                 "publish_date": PUBLISH_DATE,
             },
