@@ -49,9 +49,10 @@ class _WallWriter:
         assert community_id == 68859909
         if post_id == 475:
             return {"owner_id": -68859909, "id": 475, "is_deleted": True}
-        for item in self.published:
-            if item["id"] == post_id:
-                return dict(item)
+        for items in (self.published, self.postponed):
+            for item in items:
+                if item["id"] == post_id:
+                    return dict(item)
         return None
 
     def _read_wall_surface(
@@ -105,6 +106,7 @@ def test_published_scheduled_post_edit_preserves_surface_without_publish_date(
         writer=writer,  # type: ignore[arg-type]
         client=object(),  # type: ignore[arg-type]
         asset=asset,  # type: ignore[arg-type]
+        journal=_journal(),
         wall_remote_id=WALL_REMOTE_ID,
         clip_remote_id=CLIP_REMOTE_ID,
         publish_date=PUBLISH_DATE,
@@ -141,6 +143,7 @@ def test_postponed_edit_keeps_exact_publish_date(
         writer=writer,  # type: ignore[arg-type]
         client=object(),  # type: ignore[arg-type]
         asset=asset,  # type: ignore[arg-type]
+        journal=_journal(),
         wall_remote_id=WALL_REMOTE_ID,
         clip_remote_id=CLIP_REMOTE_ID,
         publish_date=PUBLISH_DATE,
