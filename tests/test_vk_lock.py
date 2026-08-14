@@ -11,6 +11,7 @@ from video_channel_manager.platforms.vk.lock import (
     _pid_is_running,
     _stale,
     _windows_pid_is_running,
+    community_vk_write_lock_path,
     local_vk_write_lock,
 )
 from video_channel_manager.platforms.vk.writer import VkWriteError
@@ -37,6 +38,10 @@ class _FakeKernel32:
     def CloseHandle(self, handle: int) -> int:  # noqa: N802
         self.closed.append(handle)
         return 1
+
+
+def _canonical(tmp_path: Path, community_id: int) -> Path:
+    return community_vk_write_lock_path(tmp_path, community_id=community_id)
 
 
 def test_windows_pid_probe_reports_active_without_terminating_process() -> None:
@@ -77,19 +82,58 @@ def test_pid_dispatch_never_calls_os_kill_on_windows(monkeypatch: pytest.MonkeyP
     assert _pid_is_running(42) is True
 
 
-def test_nested_lock_is_rejected_and_owner_lock_survives(tmp_path: Path) -> None:
-    lock_path = tmp_path / "vk.lock"
+def test_community_lock_path_is_deterministic_and_identity_scoped(tmp_path: Path) -> None:
+    assert _canonical(tmp_path, 7) == tmp_path / "locks" / "vk-community-7.lock"
+    assert _canonical(tmp_path, 8) == tmp_path / "locks" / "vk-community-8.lock"
 
-    with local_vk_write_lock(lock_path, account="legendary-poet", community_id=7, operation="outer"):
+
+def test_nested_lock_is_rejected_and_owner_lock_survives(tmp_path: Path) -> None:
+    requested_path = tmp_path / "locks" / "outer-operation.lock"
+    lock_path = _canonical(tmp_path, 7)
+
+    with local_vk_write_lock(requested_path, account="legendary-poet", community_id=7, operation="outer"):
         payload = json.loads(lock_path.read_text(encoding="utf-8"))
         assert payload["pid"] == os.getpid()
         assert payload["nonce"]
         with pytest.raises(VkWriteError, match="Another local VK write process"):
-            with local_vk_write_lock(lock_path, account="legendary-poet", community_id=7, operation="inner"):
+            with local_vk_write_lock(
+                tmp_path / "locks" / "different-operation.lock",
+                account="legendary-poet",
+                community_id=7,
+                operation="inner",
+            ):
                 pass
         assert lock_path.exists()
+        assert not requested_path.exists()
 
     assert not lock_path.exists()
+
+
+def test_different_operation_names_cannot_bypass_same_community_mutex(tmp_path: Path) -> None:
+    first = tmp_path / "locks" / "issue-323-live-resume.lock"
+    second = tmp_path / "locks" / "issue-323-finalizer.lock"
+
+    with local_vk_write_lock(first, account="shared", community_id=68859909, operation="resume"):
+        with pytest.raises(VkWriteError, match="Another local VK write process"):
+            with local_vk_write_lock(second, account="shared", community_id=68859909, operation="finalizer"):
+                pass
+
+
+def test_different_communities_use_independent_mutexes(tmp_path: Path) -> None:
+    with local_vk_write_lock(
+        tmp_path / "locks" / "same-name.lock",
+        account="shared",
+        community_id=7,
+        operation="first",
+    ):
+        with local_vk_write_lock(
+            tmp_path / "locks" / "same-name.lock",
+            account="shared",
+            community_id=8,
+            operation="second",
+        ):
+            assert _canonical(tmp_path, 7).exists()
+            assert _canonical(tmp_path, 8).exists()
 
 
 def test_fresh_incomplete_lock_is_not_deleted(tmp_path: Path) -> None:
@@ -109,9 +153,10 @@ def test_old_incomplete_lock_is_stale(tmp_path: Path) -> None:
 
 
 def test_release_does_not_remove_replacement_lock(tmp_path: Path) -> None:
-    lock_path = tmp_path / "vk.lock"
+    requested_path = tmp_path / "locks" / "owner-operation.lock"
+    lock_path = _canonical(tmp_path, 7)
 
-    with local_vk_write_lock(lock_path, account="legendary-poet", community_id=7, operation="owner"):
+    with local_vk_write_lock(requested_path, account="legendary-poet", community_id=7, operation="owner"):
         lock_path.unlink()
         lock_path.write_text(
             json.dumps({"pid": os.getpid(), "nonce": "replacement", "hostname": "replacement-host"}),
