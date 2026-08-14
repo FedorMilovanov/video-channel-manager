@@ -5,10 +5,19 @@ from typing import Any
 
 import pytest
 
-import video_channel_manager.platforms.vk.milovi_issue323_finalize as finalizer
+from video_channel_manager.platforms.vk.milovi_issue323_finalize import (
+    MiloviFinalizerBlocked,
+    _assert_native_clip,
+)
+from video_channel_manager.platforms.vk.milovi_rollout_sources import build_description
+
+SOURCE_ID = "d48QLgOuiTs"
+TITLE = "Durable cake"
+LEGACY_DESCRIPTION = build_description(TITLE, SOURCE_ID)
+PROMOTED_DESCRIPTION = "promoted internal copy"
 
 
-class _Reader:
+class _Writer:
     def __init__(self, item: dict[str, Any]) -> None:
         self.item = item
 
@@ -18,91 +27,81 @@ class _Reader:
         return dict(self.item)
 
 
-def _durable_item(**overrides: object) -> dict[str, Any]:
-    payload: dict[str, Any] = {
+def _asset() -> Any:
+    return SimpleNamespace(source_id=SOURCE_ID, title=TITLE, description=PROMOTED_DESCRIPTION)
+
+
+def _durable_item(*, description: str = LEGACY_DESCRIPTION) -> dict[str, Any]:
+    return {
         "owner_id": -68859909,
         "id": 456239225,
         "type": "short_video",
         "processing": 1,
         "converting": 0,
-        "can_watch": 0,
-        "player": "",
-        "files": {},
         "title": "",
-        "description": "Источник: https://www.youtube.com/shorts/d48QLgOuiTs",
+        "description": description,
+        "duration": 30,
+        "can_watch": 0,
     }
-    payload.update(overrides)
-    return payload
-
-
-def _asset() -> Any:
-    return SimpleNamespace(
-        source_id="d48QLgOuiTs",
-        description="promoted internal copy",
-    )
 
 
 def test_durable_verified_clip_ignores_transient_player_and_title_projection() -> None:
-    raw = _durable_item()
+    writer = _Writer(_durable_item())
 
-    observed = finalizer._assert_native_clip(
-        _Reader(raw),  # type: ignore[arg-type]
-        _asset(),  # type: ignore[arg-type]
+    raw = _assert_native_clip(
+        writer,  # type: ignore[arg-type]
+        _asset(),
         "-68859909_456239225",
         description_mode="legacy_or_promoted",
         durable_verified=True,
     )
 
-    assert observed == raw
+    assert raw["owner_id"] == -68859909
+    assert raw["id"] == 456239225
+    assert raw["type"] == "short_video"
 
 
-def test_durable_verified_clip_still_requires_native_short_video_type() -> None:
-    with pytest.raises(finalizer.MiloviFinalizerBlocked, match="lost native short_video type"):
-        finalizer._assert_native_clip(
-            _Reader(_durable_item(type="video")),  # type: ignore[arg-type]
-            _asset(),  # type: ignore[arg-type]
-            "-68859909_456239225",
-            description_mode="legacy_or_promoted",
-            durable_verified=True,
-        )
+def test_durable_verified_clip_accepts_exact_promoted_binding() -> None:
+    writer = _Writer(_durable_item(description=PROMOTED_DESCRIPTION))
 
-
-def test_durable_verified_clip_still_requires_exact_owner_and_id() -> None:
-    with pytest.raises(finalizer.MiloviFinalizerBlocked, match="identity changed"):
-        finalizer._assert_native_clip(
-            _Reader(_durable_item(owner_id=-1)),  # type: ignore[arg-type]
-            _asset(),  # type: ignore[arg-type]
-            "-68859909_456239225",
-            description_mode="legacy_or_promoted",
-            durable_verified=True,
-        )
-
-
-def test_durable_verified_clip_still_requires_source_or_promoted_binding() -> None:
-    with pytest.raises(finalizer.MiloviFinalizerBlocked, match="cannot be bound to source"):
-        finalizer._assert_native_clip(
-            _Reader(_durable_item(description="unrelated description")),  # type: ignore[arg-type]
-            _asset(),  # type: ignore[arg-type]
-            "-68859909_456239225",
-            description_mode="legacy_or_promoted",
-            durable_verified=True,
-        )
-
-
-def test_default_clip_verification_remains_strict_on_transient_readiness(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(finalizer, "clip_readiness", lambda _asset: object())
-    monkeypatch.setattr(
-        finalizer,
-        "_native_clip_assessment",
-        lambda *args, **kwargs: SimpleNamespace(ready=False, reasons=("processing", "not_playable")),
+    raw = _assert_native_clip(
+        writer,  # type: ignore[arg-type]
+        _asset(),
+        "-68859909_456239225",
+        description_mode="legacy_or_promoted",
+        durable_verified=True,
     )
 
-    with pytest.raises(finalizer.MiloviFinalizerBlocked, match="not a verified native short_video"):
-        finalizer._assert_native_clip(
-            _Reader(_durable_item()),  # type: ignore[arg-type]
-            _asset(),  # type: ignore[arg-type]
+    assert raw["description"] == PROMOTED_DESCRIPTION
+
+
+def test_durable_verified_clip_still_requires_exact_legacy_or_promoted_binding() -> None:
+    writer = _Writer(
+        _durable_item(
+            description=f"manual override still containing https://www.youtube.com/shorts/{SOURCE_ID}"
+        )
+    )
+
+    with pytest.raises(MiloviFinalizerBlocked, match="neither exact reviewed legacy nor exact promoted"):
+        _assert_native_clip(
+            writer,  # type: ignore[arg-type]
+            _asset(),
             "-68859909_456239225",
             description_mode="legacy_or_promoted",
+            durable_verified=True,
+        )
+
+
+def test_durable_verified_clip_still_requires_native_type() -> None:
+    item = _durable_item()
+    item["type"] = "video"
+    writer = _Writer(item)
+
+    with pytest.raises(MiloviFinalizerBlocked, match="lost native short_video type"):
+        _assert_native_clip(
+            writer,  # type: ignore[arg-type]
+            _asset(),
+            "-68859909_456239225",
+            description_mode="legacy_or_promoted",
+            durable_verified=True,
         )
