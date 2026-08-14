@@ -1,0 +1,167 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-acquisition-registry",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "status": "provider_inert",
+  "channel_username": "@MiloviCake",
+  "public_route": "https://t.me/MiloviCake",
+  "provider_write_authorized": false,
+  "invite_link_creation_authorized": false,
+  "attribution_policy": {
+    "rule": "A measured acquisition placement gets one stable source_id and, only after separate authorization, one source-specific Telegram invite link. The generic public route may remain visible as an unmeasured social/profile link but must not be reused as the attribution mechanism for a measured experiment.",
+    "one_source_one_link": true,
+    "reuse_paid_link_across_placements": false,
+    "preserve_closed_source_history": true,
+    "join_request_default": false,
+    "paid_subscription_links_allowed": false
+  },
+  "provider_rights_policy": {
+    "shared_posting_bot_id": 8716602202,
+    "shared_posting_bot_username": "preaching_mp3_bot",
+    "automatic_invite_rights_escalation_allowed": false,
+    "preferred_invite_creation_actor": "manual_channel_admin_unless_a_separate_exact_provider_mutation_is_reviewed_and_authorized",
+    "rule": "Do not grant the shared posting bot can_invite_users or broader admin rights merely to automate attribution. Invite-link creation is a separate provider mutation and a separate permission decision from publishing."
+  },
+  "activation_prerequisites": [
+    "one exact canary has been explicitly authorized, dispatched and provider-verified",
+    "the channel has a useful native archive rather than only outbound cross-post links",
+    "the source-specific placement has a real continuation value for the visitor",
+    "the exact source_id exists in this registry or is instantiated from an approved dynamic namespace",
+    "the measurement method is declared before activation"
+  ],
+  "fixed_sources": [
+    {
+      "source_id": "tg-site-gallery",
+      "surface": "milovicake.ru",
+      "placement": "gallery-contextual-telegram-link",
+      "source_class": "owned_web",
+      "priority": 1,
+      "purpose": "Convert visitors already browsing real Milovi work into subscribers for future works, collections and useful guidance without interrupting the order path.",
+      "invite_link_name": "milovi:tg-site-gallery",
+      "invite_url": null,
+      "invite_link_fingerprint": null,
+      "qr_required": false,
+      "provider_state": "not_created",
+      "activation_authorized": false,
+      "measurement_method": null
+    },
+    {
+      "source_id": "tg-site-footer",
+      "surface": "milovicake.ru",
+      "placement": "footer-social-link",
+      "source_class": "owned_web",
+      "priority": 2,
+      "purpose": "Measure low-friction site-wide social discovery separately from the gallery-contextual placement.",
+      "invite_link_name": "milovi:tg-site-footer",
+      "invite_url": null,
+      "invite_link_fingerprint": null,
+      "qr_required": false,
+      "provider_state": "not_created",
+      "activation_authorized": false,
+      "measurement_method": null
+    },
+    {
+      "source_id": "tg-vk-organic",
+      "surface": "vk",
+      "placement": "organic-posts-and-clips-with-real-telegram-continuation",
+      "source_class": "owned_social",
+      "priority": 1,
+      "purpose": "Measure voluntary VK-to-Telegram migration only where Telegram adds a collection, poll, detail set or other native continuation; VK remains a sales surface.",
+      "invite_link_name": "milovi:tg-vk-organic",
+      "invite_url": null,
+      "invite_link_fingerprint": null,
+      "qr_required": false,
+      "provider_state": "not_created",
+      "activation_authorized": false,
+      "measurement_method": null
+    },
+    {
+      "source_id": "tg-youtube-organic",
+      "surface": "youtube",
+      "placement": "descriptions-or-pinned-comments-when-telegram-adds-value",
+      "source_class": "owned_social",
+      "priority": 3,
+      "purpose": "Measure Telegram joins attributable to Milovi video viewers without turning every video description into a redirect.",
+      "invite_link_name": "milovi:tg-youtube-organic",
+      "invite_url": null,
+      "invite_link_fingerprint": null,
+      "qr_required": false,
+      "provider_state": "not_created",
+      "activation_authorized": false,
+      "measurement_method": null
+    },
+    {
+      "source_id": "tg-dzen-organic",
+      "surface": "dzen",
+      "placement": "profile-or-content-continuation",
+      "source_class": "secondary_distribution",
+      "priority": 4,
+      "purpose": "Measure whether low-cost Dzen distribution produces any incremental Telegram audience before assigning meaningful manual editorial effort.",
+      "invite_link_name": "milovi:tg-dzen-organic",
+      "invite_url": null,
+      "invite_link_fingerprint": null,
+      "qr_required": false,
+      "provider_state": "not_created",
+      "activation_authorized": false,
+      "measurement_method": null
+    },
+    {
+      "source_id": "tg-box",
+      "surface": "physical_packaging",
+      "placement": "cake-box-or-insert-qr",
+      "source_class": "post_purchase",
+      "priority": 1,
+      "purpose": "Test retention acquisition from recipients who have already encountered the Milovi product; the QR proposition is future works and ideas, not a forced review or order step.",
+      "invite_link_name": "milovi:tg-box",
+      "invite_url": null,
+      "invite_link_fingerprint": null,
+      "qr_required": true,
+      "qr_artifact": null,
+      "provider_state": "not_created",
+      "activation_authorized": false,
+      "measurement_method": null
+    },
+    {
+      "source_id": "tg-client",
+      "surface": "existing_customer_follow_up",
+      "placement": "natural-post-purchase-or-service-follow-up-only",
+      "source_class": "post_purchase",
+      "priority": 2,
+      "purpose": "Measure opt-in subscriber acquisition from existing customers without spam, bulk DMs or making Telegram part of the required order flow.",
+      "invite_link_name": "milovi:tg-client",
+      "invite_url": null,
+      "invite_link_fingerprint": null,
+      "qr_required": false,
+      "provider_state": "not_created",
+      "activation_authorized": false,
+      "measurement_method": null
+    }
+  ],
+  "dynamic_source_namespaces": [
+    {
+      "pattern": "tg-partner-<slug>",
+      "source_class": "partner",
+      "rule": "Instantiate one source only for a named, reviewed partner. Never use one generic partner link across unrelated partners."
+    },
+    {
+      "pattern": "tg-placement-<slug>-<yyyymm>",
+      "source_class": "paid_placement",
+      "rule": "Instantiate one source for one paid placement test and period. Preserve it after closure; never recycle it for another channel or later buy."
+    }
+  ],
+  "required_measurement_fields": [
+    "experiment_id",
+    "source_id",
+    "measurement_method",
+    "started_at",
+    "ended_at",
+    "spend_rub",
+    "attributed_joins",
+    "retained_7d_if_measurable",
+    "retained_30d_if_measurable",
+    "attributed_enquiries_if_measurable",
+    "evidence_refs",
+    "decision"
+  ]
+}
