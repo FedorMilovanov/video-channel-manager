@@ -198,15 +198,9 @@ def _assert_wall475_absent(writer: VkWallWriter) -> str:
     post = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
     if post is None:
         return "wall.getById:none"
-    if (
-        post.get("is_deleted") is True
-        and post.get("owner_id") == MILOVI_OWNER_ID
-        and post.get("id") == ANOMALY_POST_ID
-    ):
+    if post.get("is_deleted") is True and post.get("owner_id") == MILOVI_OWNER_ID and post.get("id") == ANOMALY_POST_ID:
         return "wall.getById:is_deleted_true"
-    raise MiloviFinalizerBlocked(
-        "Wall 475 is live or its tombstone identity changed; phase 2 has no delete authority"
-    )
+    raise MiloviFinalizerBlocked("Wall 475 is live or its tombstone identity changed; phase 2 has no delete authority")
 
 
 def _cleanup_anomaly_475(
