@@ -57,6 +57,11 @@ def _journal() -> dict[str, Any]:
 def _historical_before(*, first_already_published: bool = False):
     published = [_wall_item(0)] if first_already_published else []
     postponed_start = 1 if first_already_published else 0
+    captured_at = (
+        datetime(2026, 8, 14, 17, 0, tzinfo=UTC)
+        if first_already_published
+        else datetime(2026, 8, 13, 18, 0, tzinfo=UTC)
+    )
     return build_wall_snapshot(
         community_id=68859909,
         published_items=published,
@@ -64,7 +69,7 @@ def _historical_before(*, first_already_published: bool = False):
         published_pages=1,
         postponed_pages=1,
         complete=True,
-        captured_at=datetime(2026, 8, 13, 18, 0, tzinfo=UTC),
+        captured_at=captured_at,
     )
 
 

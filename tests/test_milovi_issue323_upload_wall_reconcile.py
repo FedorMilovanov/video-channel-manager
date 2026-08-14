@@ -71,8 +71,8 @@ def _auto_post(*, video_id: int = SOURCE9_CLIP_ID, post_id: int = AUTO_POST_ID) 
 def _historical_before():
     return build_wall_snapshot(
         community_id=68859909,
-        published_items=[],
-        postponed_items=[_wall_item(index) for index in range(8)],
+        published_items=[_wall_item(0)],
+        postponed_items=[_wall_item(index) for index in range(1, 8)],
         published_pages=1,
         postponed_pages=1,
         complete=True,
@@ -80,12 +80,26 @@ def _historical_before():
     )
 
 
+def _historical_before_pre_slot():
+    return build_wall_snapshot(
+        community_id=68859909,
+        published_items=[],
+        postponed_items=[_wall_item(index) for index in range(8)],
+        published_pages=1,
+        postponed_pages=1,
+        complete=True,
+        captured_at=datetime.fromtimestamp(PRIOR_DATES[0] - 3600, UTC),
+    )
+
+
 def _current_after(*, video_id: int = SOURCE9_CLIP_ID, include_auto: bool = True):
-    published = [_auto_post(video_id=video_id)] if include_auto else []
+    published = [_wall_item(0)]
+    if include_auto:
+        published.append(_auto_post(video_id=video_id))
     return build_wall_snapshot(
         community_id=68859909,
         published_items=published,
-        postponed_items=[_wall_item(index) for index in range(8)],
+        postponed_items=[_wall_item(index) for index in range(1, 8)],
         published_pages=1,
         postponed_pages=1,
         complete=True,
@@ -266,7 +280,7 @@ def test_eighth_source_never_gets_remaining_upload_delete_authority() -> None:
 
 
 def test_due_surface_only_change_normalizes_without_delete(monkeypatch: pytest.MonkeyPatch) -> None:
-    before = _historical_before()
+    before = _historical_before_pre_slot()
     current = build_wall_snapshot(
         community_id=68859909,
         published_items=[_wall_item(0)],
@@ -274,11 +288,17 @@ def test_due_surface_only_change_normalizes_without_delete(monkeypatch: pytest.M
         published_pages=1,
         postponed_pages=1,
         complete=True,
-        captured_at=datetime.fromtimestamp(AUTO_POST_DATE + 30, UTC),
+        captured_at=datetime.fromtimestamp(PRIOR_DATES[0] + 3600, UTC),
     )
     record = _record()
+    record["wall_safety"]["before_snapshot_sha256"] = before.snapshot_sha256
+    record["wall_safety"]["before_captured_at"] = before.captured_at
+    record["wall_safety"]["before_published_pages"] = before.published_pages
+    record["wall_safety"]["before_postponed_pages"] = before.postponed_pages
     record["wall_safety"]["after_snapshot_sha256"] = current.snapshot_sha256
     record["wall_safety"]["after_captured_at"] = current.captured_at
+    record["wall_safety"]["after_published_pages"] = current.published_pages
+    record["wall_safety"]["after_postponed_pages"] = current.postponed_pages
     record["wall_safety"]["delta"] = {
         "status": "changed",
         "created": ["published:-68859909_468"],

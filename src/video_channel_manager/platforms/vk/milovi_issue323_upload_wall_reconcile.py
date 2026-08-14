@@ -145,7 +145,12 @@ def _prove_historical_baseline(
         journal=journal,
         source_id=source_id,
     )
-    baseline = _resume_wall_baseline(record, effective, journal=journal)
+    baseline = _resume_wall_baseline(
+        record,
+        effective,
+        journal=journal,
+        successor_resolution_proven=True,
+    )
     expected_sha = str(_wall_safety(record).get("before_snapshot_sha256") or "")
     if not expected_sha or baseline.snapshot_sha256 != expected_sha:
         raise Issue323UploadWallReconcileBlocked(
@@ -205,6 +210,7 @@ def _candidate_fingerprints(
         raise Issue323UploadWallReconcileBlocked("Upload wall capture window moved backwards")
 
     matches: list[tuple[VkWallPostFingerprint, VkWallSnapshot, tuple[str, ...]]] = []
+    baseline_rejections: list[str] = []
     for created_remote_id in created_remote_ids:
         try:
             owner_id, post_id = _parse_remote_id(created_remote_id)
@@ -271,9 +277,14 @@ def _candidate_fingerprints(
                 writer=writer,
                 source_id=source_id,
             )
-        except (UploadRecoveryRequired, MiloviTokenRolloutBlocked):
+        except (UploadRecoveryRequired, MiloviTokenRolloutBlocked) as exc:
+            baseline_rejections.append(f"{created_remote_id}: {type(exc).__name__}: {exc}")
             continue
         matches.append((exact_fingerprint, baseline, exact_read_ids))
+    if not matches and baseline_rejections:
+        raise Issue323UploadWallReconcileBlocked(
+            "Upload wall exact candidate(s) failed historical baseline: " + " | ".join(baseline_rejections)
+        )
     return matches
 
 
