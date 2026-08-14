@@ -121,7 +121,9 @@ def _absent_exact(post: Mapping[str, Any] | None, *, post_id: int) -> bool:
 
 
 def _remove_fingerprint(snapshot: VkWallSnapshot, remote_id: str) -> VkWallSnapshot:
-    kept = tuple(post for post in snapshot.posts if not (post.surface is VkWallSurface.PUBLISHED and post.remote_id == remote_id))
+    kept = tuple(
+        post for post in snapshot.posts if not (post.surface is VkWallSurface.PUBLISHED and post.remote_id == remote_id)
+    )
     if len(kept) != len(snapshot.posts) - 1:
         raise Issue323UploadWallReconcileBlocked(
             f"Upload-created wall candidate does not occur exactly once on published surface: {remote_id}"
