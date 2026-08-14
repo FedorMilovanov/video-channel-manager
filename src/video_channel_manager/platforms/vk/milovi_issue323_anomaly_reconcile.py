@@ -8,21 +8,25 @@ from pathlib import Path
 from typing import Any
 
 from video_channel_manager.config import get_settings
-from video_channel_manager.platforms.vk import VkTokenStore, local_vk_write_lock
+from video_channel_manager.platforms.vk import VkApiClient, VkTokenStore, local_vk_write_lock
 from video_channel_manager.platforms.vk.milovi_immediate_wall import MILOVI_COMMUNITY_ID, MILOVI_OWNER_ID
 from video_channel_manager.platforms.vk.milovi_issue323_finalize import (
     ANOMALY_CLIP_REMOTE_ID,
     ANOMALY_POST_ID,
     ANOMALY_SOURCE_ID,
     MiloviFinalizerBlocked,
-    _cleanup_anomaly_475,
+    _assert_native_clip,
     _legacy_marker_ok,
     _load_finalizer_journal,
     _one_video_attachment,
     _promote_asset,
     _save_finalizer,
 )
-from video_channel_manager.platforms.vk.milovi_rollout_sources import prepare_sources, write_json_atomic
+from video_channel_manager.platforms.vk.milovi_rollout_sources import (
+    SourceAsset,
+    prepare_sources,
+    write_json_atomic,
+)
 from video_channel_manager.platforms.vk.milovi_token_clip_rollout import (
     _parse_remote_id,
     _prove_target,
@@ -32,6 +36,7 @@ from video_channel_manager.platforms.vk.wall import VkWallWriter
 
 EXECUTION_CONFIRMATION = "ISSUE_323_RECONCILE_TEXT_DRIFT_AND_CLEANUP_475"
 RESULT_SCHEMA = "video-manager.milovi-issue-323-anomaly-text-drift-reconcile"
+IDENTITY_CONTRACT = "milovi-wall-475-stable-identity-v1"
 ANOMALY_CREATED_AT = 1786645941
 ANOMALY_CREATED_BY = 631487
 
@@ -40,12 +45,14 @@ def _sha256_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
-def _strict_raw_anomaly(
-    post: Mapping[str, Any],
-    source_id: str,
-    *,
-    allow_provider_source_drift: bool = False,
-) -> None:
+def _validate_wall475_identity(post: Mapping[str, Any], source_id: str) -> None:
+    """Prove the exact wall object using provider-stable identity fields only.
+
+    VK may re-project mutable presentation metadata such as wall text and
+    ``post_source`` between reads. Those fields are recorded as evidence, but
+    they are deliberately not part of the destructive identity predicate.
+    """
+
     if post.get("owner_id") != MILOVI_OWNER_ID or post.get("id") != ANOMALY_POST_ID:
         raise MiloviFinalizerBlocked("Wall 475 identity changed")
     if post.get("date") != ANOMALY_CREATED_AT:
@@ -58,10 +65,6 @@ def _strict_raw_anomaly(
     if str(post.get("post_type") or "post") != "post":
         raise MiloviFinalizerBlocked("Wall 475 post type changed")
 
-    post_source = post.get("post_source")
-    if not allow_provider_source_drift and (not isinstance(post_source, Mapping) or post_source.get("type") != "vk"):
-        raise MiloviFinalizerBlocked("Wall 475 provider source changed")
-
     owner_id, video_id, expanded = _one_video_attachment(post)
     expected_owner, expected_video = _parse_remote_id(ANOMALY_CLIP_REMOTE_ID)
     if (owner_id, video_id) != (expected_owner, expected_video):
@@ -73,35 +76,99 @@ def _strict_raw_anomaly(
         raise MiloviFinalizerBlocked("Wall 475 attachment lost source marker o1WXIMupuws")
 
 
-class _TextNormalizedAnomalyWriter:
-    def __init__(
-        self,
-        delegate: VkWallWriter,
-        source_id: str,
-        *,
-        allow_provider_source_drift: bool = False,
-    ) -> None:
-        self._delegate = delegate
-        self._source_id = source_id
-        self._allow_provider_source_drift = allow_provider_source_drift
+def _record_observed_projection(state: dict[str, Any], post: Mapping[str, Any]) -> None:
+    raw_text = str(post.get("text") or "")
+    raw_post_source = post.get("post_source")
+    post_source_type = str(raw_post_source.get("type") or "") if isinstance(raw_post_source, Mapping) else ""
+    state.update(
+        identity_contract=IDENTITY_CONTRACT,
+        observed_provider_text_nonempty=bool(raw_text.strip()),
+        observed_provider_text_sha256=_sha256_text(raw_text),
+        observed_post_source_type=post_source_type,
+        observed_post_source_sha256=_sha256_text(
+            json.dumps(raw_post_source, sort_keys=True, ensure_ascii=False, default=str)
+        ),
+        observed_raw_post_sha256=_sha256_text(json.dumps(post, sort_keys=True, ensure_ascii=False, default=str)),
+        mutable_projection_fields=["text", "post_source"],
+    )
 
-    def __getattr__(self, name: str) -> Any:
-        return getattr(self._delegate, name)
 
-    def read_post(self, *, community_id: int, post_id: int) -> dict[str, Any] | None:
-        post = self._delegate.read_post(community_id=community_id, post_id=post_id)
-        if post is None:
-            return None
-        if community_id != MILOVI_COMMUNITY_ID or post_id != ANOMALY_POST_ID:
-            return post
-        _strict_raw_anomaly(
-            post,
-            self._source_id,
-            allow_provider_source_drift=self._allow_provider_source_drift,
+def _cleanup_exact_wall475(
+    *,
+    writer: VkWallWriter,
+    client: VkApiClient,
+    legacy_asset: SourceAsset,
+    promoted_asset: SourceAsset,
+    finalizer: dict[str, Any],
+    finalizer_path: Path,
+) -> None:
+    """Delete only exact wall 475 after fresh stable-identity proofs.
+
+    The intent is persisted before the provider write. Immediately before the
+    delete, Milovi target identity is re-proved and wall 475 is re-read through
+    the same stable identity contract. An ambiguous delete is never replayed
+    blindly: provider state is read back first. The protected Clip is verified
+    both before and after the wall deletion.
+    """
+
+    state = finalizer["cleanup_475"]
+    post = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
+    if post is None:
+        _assert_native_clip(
+            writer,
+            promoted_asset,
+            ANOMALY_CLIP_REMOTE_ID,
+            description_mode="legacy_or_promoted",
         )
-        normalized = dict(post)
-        normalized["text"] = ""
-        return normalized
+        state.update(status="verified_absent", identity_contract=IDENTITY_CONTRACT)
+        _save_finalizer(finalizer_path, finalizer)
+        return
+
+    _validate_wall475_identity(post, legacy_asset.source_id)
+    _assert_native_clip(
+        writer,
+        promoted_asset,
+        ANOMALY_CLIP_REMOTE_ID,
+        description_mode="legacy_or_promoted",
+    )
+    _record_observed_projection(state, post)
+    state.update(
+        status="delete_intent",
+        predelete_post_sha256=_sha256_text(json.dumps(post, sort_keys=True, ensure_ascii=False, default=str)),
+    )
+    _save_finalizer(finalizer_path, finalizer)
+
+    _prove_target(client)
+    dispatch_post = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
+    if dispatch_post is None:
+        _assert_native_clip(
+            writer,
+            promoted_asset,
+            ANOMALY_CLIP_REMOTE_ID,
+            description_mode="legacy_or_promoted",
+        )
+        state.update(status="verified_absent", identity_contract=IDENTITY_CONTRACT)
+        _save_finalizer(finalizer_path, finalizer)
+        return
+    _validate_wall475_identity(dispatch_post, legacy_asset.source_id)
+
+    try:
+        writer._call("wall.delete", params={"owner_id": MILOVI_OWNER_ID, "post_id": ANOMALY_POST_ID})
+    except Exception:
+        if writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID) is not None:
+            raise
+
+    if writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID) is not None:
+        raise MiloviFinalizerBlocked("Exact anomaly wall 475 still exists after delete response")
+
+    _assert_native_clip(
+        writer,
+        promoted_asset,
+        ANOMALY_CLIP_REMOTE_ID,
+        description_mode="legacy_or_promoted",
+    )
+    state.update(status="verified_absent", identity_contract=IDENTITY_CONTRACT)
+    _save_finalizer(finalizer_path, finalizer)
 
 
 def run_reconcile(
@@ -126,11 +193,6 @@ def run_reconcile(
     store = VkTokenStore(settings.data_dir)
     alias, client = _resolve_account(store, settings.vk_api_version)
     writer = VkWallWriter(token_store=store, account_alias=alias, api_version=settings.vk_api_version)
-    normalized_writer = _TextNormalizedAnomalyWriter(
-        writer,
-        ANOMALY_SOURCE_ID,
-        allow_provider_source_drift=True,
-    )
     lock_path = settings.data_dir / "locks" / f"vk-{MILOVI_COMMUNITY_ID}-issue-323-finalizer.lock"
 
     try:
@@ -138,37 +200,11 @@ def run_reconcile(
             lock_path,
             account=alias,
             community_id=MILOVI_COMMUNITY_ID,
-            operation="milovi-issue-323-reconcile-wall-475-text-drift",
+            operation="milovi-issue-323-reconcile-wall-475-stable-identity",
         ):
             _prove_target(client)
-            raw_post = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
-            if raw_post is not None:
-                _strict_raw_anomaly(
-                    raw_post,
-                    ANOMALY_SOURCE_ID,
-                    allow_provider_source_drift=True,
-                )
-                raw_text = str(raw_post.get("text") or "")
-                raw_post_source = raw_post.get("post_source")
-                post_source_type = (
-                    str(raw_post_source.get("type") or "") if isinstance(raw_post_source, Mapping) else ""
-                )
-                state = finalizer["cleanup_475"]
-                state.update(
-                    observed_provider_text_nonempty=bool(raw_text.strip()),
-                    observed_provider_text_sha256=_sha256_text(raw_text),
-                    observed_post_source_type=post_source_type,
-                    observed_post_source_sha256=_sha256_text(
-                        json.dumps(raw_post_source, sort_keys=True, ensure_ascii=False, default=str)
-                    ),
-                    observed_raw_post_sha256=_sha256_text(
-                        json.dumps(raw_post, sort_keys=True, ensure_ascii=False, default=str)
-                    ),
-                )
-                _save_finalizer(finalizer_journal_path, finalizer)
-
-            _cleanup_anomaly_475(
-                writer=normalized_writer,  # type: ignore[arg-type]
+            _cleanup_exact_wall475(
+                writer=writer,
                 client=client,
                 legacy_asset=legacy_by_id[ANOMALY_SOURCE_ID],
                 promoted_asset=promoted_by_id[ANOMALY_SOURCE_ID],
@@ -189,6 +225,9 @@ def run_reconcile(
                 "wall_remote_id": f"{MILOVI_OWNER_ID}_{ANOMALY_POST_ID}",
                 "clip_remote_id": ANOMALY_CLIP_REMOTE_ID,
                 "source_id": ANOMALY_SOURCE_ID,
+                "identity_contract": IDENTITY_CONTRACT,
+                "mutable_projection_fields_not_used_for_identity": ["text", "post_source"],
+                # Backward-compatible result flags consumed by older operator wrappers.
                 "provider_text_drift_tolerated": True,
                 "provider_source_drift_tolerated_only_here": True,
                 "cleanup_state": finalizer["cleanup_475"],
@@ -203,6 +242,7 @@ def run_reconcile(
             "project_key": "milovi-cake",
             "community_id": MILOVI_COMMUNITY_ID,
             "owner_id": MILOVI_OWNER_ID,
+            "identity_contract": IDENTITY_CONTRACT,
             "error": {"type": type(exc).__name__, "message": str(exc)},
         }
         write_json_atomic(output_path, payload)
@@ -210,7 +250,7 @@ def run_reconcile(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Reconcile exact Issue #323 wall 475 after provider text drift")
+    parser = argparse.ArgumentParser(description="Reconcile exact Issue #323 wall 475 using provider-stable identity")
     parser.add_argument("--execute", required=True)
     parser.add_argument(
         "--output",
