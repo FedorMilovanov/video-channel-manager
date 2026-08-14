@@ -145,6 +145,7 @@ def _assert_native_clip(
     *,
     description_mode: str,
     preservation_only: bool = False,
+    durable_verified: bool = False,
 ) -> dict[str, Any]:
     owner_id, video_id = _parse_remote_id(remote_id)
     raw = writer.read_video(owner_id=owner_id, video_id=video_id)
@@ -154,16 +155,20 @@ def _assert_native_clip(
         raise MiloviFinalizerBlocked(f"VK Clip identity changed: {remote_id}")
     if preservation_only:
         return raw
-    assessment = _native_clip_assessment(
-        raw,
-        expected_owner_id=owner_id,
-        expected_video_id=video_id,
-        readiness=clip_readiness(asset),
-    )
-    if not assessment.ready:
-        raise MiloviFinalizerBlocked(
-            f"VK object {remote_id} is not a verified native short_video: {assessment.reasons}"
+    if durable_verified:
+        if str(raw.get("type") or "") != "short_video":
+            raise MiloviFinalizerBlocked(f"Durably verified VK Clip lost native short_video type: {remote_id}")
+    else:
+        assessment = _native_clip_assessment(
+            raw,
+            expected_owner_id=owner_id,
+            expected_video_id=video_id,
+            readiness=clip_readiness(asset),
         )
+        if not assessment.ready:
+            raise MiloviFinalizerBlocked(
+                f"VK object {remote_id} is not a verified native short_video: {assessment.reasons}"
+            )
     description = str(raw.get("description") or "").strip()
     if description_mode == "promoted":
         if description != asset.description.strip():
@@ -248,7 +253,7 @@ def _ensure_promoted_clip(
 ) -> str:
     current = item.get("clip_remote_id")
     if isinstance(current, str) and current:
-        _assert_native_clip(writer, asset, current, description_mode="promoted")
+        _assert_native_clip(writer, asset, current, description_mode="promoted", durable_verified=True)
         return current
 
     raw_record = item.get("upload_record")
@@ -345,7 +350,13 @@ def _edit_clip_description(
     finalizer: dict[str, Any],
     finalizer_path: Path,
 ) -> None:
-    raw = _assert_native_clip(writer, asset, remote_id, description_mode="legacy_or_promoted")
+    raw = _assert_native_clip(
+        writer,
+        asset,
+        remote_id,
+        description_mode="legacy_or_promoted",
+        durable_verified=True,
+    )
     if str(raw.get("description") or "").strip() == asset.description.strip():
         operation.update(status="verified", remote_id=remote_id)
         _save_finalizer(finalizer_path, finalizer)
@@ -366,7 +377,13 @@ def _edit_clip_description(
             or str(observed.get("description") or "").strip() != asset.description.strip()
         ):
             raise
-    after = _assert_native_clip(writer, asset, remote_id, description_mode="promoted")
+    after = _assert_native_clip(
+        writer,
+        asset,
+        remote_id,
+        description_mode="promoted",
+        durable_verified=True,
+    )
     after_title = str(after.get("title") or "")
     if before_title and after_title and after_title != before_title:
         raise MiloviFinalizerBlocked(f"video.edit unexpectedly changed title for {remote_id}")
@@ -445,7 +462,13 @@ def _final_postflight(writer: VkWallWriter, assets: list[SourceAsset], journal: 
             or type(publish_date) is not int
         ):
             raise MiloviFinalizerBlocked(f"Final durable mapping is incomplete: {asset.source_id}")
-        _assert_native_clip(writer, asset, clip_remote_id, description_mode="promoted")
+        _assert_native_clip(
+            writer,
+            asset,
+            clip_remote_id,
+            description_mode="promoted",
+            durable_verified=True,
+        )
         owner_id, video_id = _parse_remote_id(clip_remote_id)
         attachment = f"video{owner_id}_{video_id}"
         matches = [post for post in snapshot.posts if attachment in post.attachments]
@@ -515,7 +538,13 @@ def _complete_child(
         if not clip_id:
             raise MiloviFinalizerBlocked(f"clip_verified item lost remote ID: {source_id}")
         mode = "legacy_or_promoted" if source_id == ANOMALY_SOURCE_ID else "promoted"
-        _assert_native_clip(writer, asset, clip_id, description_mode=mode)
+        _assert_native_clip(
+            writer,
+            asset,
+            clip_id,
+            description_mode=mode,
+            durable_verified=True,
+        )
     else:
         clip_id = _ensure_promoted_clip(
             asset,
