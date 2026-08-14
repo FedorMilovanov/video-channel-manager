@@ -12,19 +12,19 @@ This document is operational memory, not provider-write authority. The current I
 
 ## Executive finding
 
-The repeated Issue #323 stops were not one VK error repeated many times. They exposed one architectural class of error: **the implementation repeatedly promoted mutable or incomplete provider projections into durable identity, negative existence proof, or phase authority**.
+The repeated Issue #323 stops were not one VK error repeated many times. They exposed one architectural class of error: **the implementation repeatedly promoted mutable, incomplete, or incarnation-local provider projections into durable identity, negative existence proof, or phase authority**.
 
-Fail-closed behavior was correct and prevented blind replay or broad deletion. The defect was that several guards were attached to facts that were not stable or complete enough to define the same remote object across time. As VK legitimately changed processing/readback/presentation state—or omitted an already-known due wall object from an aggregate projection—later phases interpreted the projection as identity loss or object disappearance.
+Fail-closed behavior was correct and prevented blind replay or broad deletion. The defect was that several guards were attached to facts that were not stable or complete enough to define the same logical remote operation across time. As VK legitimately changed processing/readback/presentation state, omitted an already-known due wall object from an aggregate projection, or retired one postponed wall ID while exposing the published incarnation under another ID, later phases interpreted normal provider lifecycle as identity loss or object disappearance.
 
 The corrected model is monotonic:
 
 - durable success is never reclassified as failure only because a later provider projection changes;
 - each destructive mutation has exactly one owning phase;
 - recovery has narrower capabilities than a fresh write path;
-- stable identity and authorized semantic invariants are separated from transient provider presentation/readiness fields;
-- omission from an aggregate projection is not automatically proof of absence when an exact durable ID is already known and an exact read is available under the recovery contract;
-- scheduled wall state is time-aware (`postponed -> published` after the frozen slot is normal, not drift);
-- ambiguous provider effects are reconciled from exact identity and durable evidence, never replayed blindly.
+- stable logical identity and authorized semantic invariants are separated from transient provider presentation/readiness fields and incarnation-local IDs;
+- omission from an aggregate projection is not automatically proof of absence when a stronger exact/readback contract exists;
+- scheduled wall state is time-aware, and a postponed timer ID is not assumed to remain the published incarnation's ID;
+- ambiguous provider effects are reconciled from durable bindings and exact evidence, never replayed blindly.
 
 ## What actually went wrong
 
@@ -82,17 +82,19 @@ Permanent rule: **provider terminal states may have a representation; absence is
 
 ### 6. Scheduled publication was treated as immutable wall surface
 
-The first verified rollout post (`468`) had a frozen slot of 2026-08-14 19:00 Europe/Moscow. After that time, `postponed -> published` is the intended provider transition. Historical wall recovery and final audit originally treated any surface change as drift.
+The first verified rollout post (`468`) had a frozen slot of 2026-08-14 19:00 Europe/Moscow. After that time, scheduled publication is the intended provider transition. Historical wall recovery and final audit originally treated any `postponed -> published` surface change as drift.
 
-PR #342 made recovery time-aware without ignoring wall content: only exact prior `wall_verified` IDs whose durable slot is due may be considered for surface reversal during historical comparison, and a candidate is accepted only when it reconstructs the exact historical pre-upload SHA. Early publication remains blocking.
+PR #342 made recovery time-aware without ignoring wall content: only exact prior `wall_verified` mappings whose durable slot is due may participate in historical normalization, and a candidate is accepted only when it reconstructs the exact historical pre-upload SHA. Early publication remains blocking.
 
-Permanent rule: **a durable state machine must model legitimate time-driven transitions explicitly.**
+PR #346 later showed that surface evolution was only half the lifecycle: the provider may also retire the postponed timer object's ID and expose the published incarnation under a new wall ID. Section 12 records that deeper correction.
+
+Permanent rule: **a durable state machine must model legitimate time-driven transitions explicitly, including provider identity/incarnation changes proven to be part of that transition.**
 
 ### 7. Historical preflight and lifecycle postflight used different interpretations
 
 Normalizing only the historical pre-upload snapshot would still fail later if generic lifecycle postflight compared against a different current wall view.
 
-The recovery writer now supplies the same uniquely solved historical view to the shared lifecycle postflight and separately records the actual provider snapshot and reversed surface IDs.
+The recovery writer supplies the same uniquely solved historical view to the shared lifecycle postflight and separately records the actual/effective provider snapshots and normalization evidence.
 
 Permanent rule: **preflight and postflight must reason over the same identity/normalization contract.**
 
@@ -116,7 +118,8 @@ Permanent rule: **green tests prove conformance to the tests, not conformance to
 
 Several early fixes were locally correct but too narrow: one provider field drifted, one predicate was relaxed, then the next layer failed on another projection. The better approach is to reconstruct:
 
-- stable identity;
+- stable logical identity;
+- provider object/incarnation identity;
 - phase ownership;
 - durable state transitions;
 - provider-effect/replay state;
@@ -125,40 +128,48 @@ Several early fixes were locally correct but too narrow: one provider field drif
 - preflight/postflight interpretation;
 - capability boundaries.
 
-The corrective PR #342 was effective because it addressed that full contract rather than the latest exception message.
+The corrective PR #342 was effective because it addressed most of that full contract rather than the latest exception message. PRs #344 and #346 then exposed two remaining assumptions about provider projection completeness and provider ID stability.
 
 ### 11. Aggregate projection omission was treated as proof of exact-object absence
 
 After PRs #342 and #343, live FINAL-v2 passed the exact wall-475 tombstone reconciliation and then stopped read-only while recovering the eighth Clip because earlier durable wall mapping `-68859909_468` was absent from the aggregate published/postponed `wall.get` snapshot.
 
-That STOP was safe, but the inference was too strong. The journal already contained exact wall ID `-68859909_468`, exact Clip `-68859909_456239225`, and frozen publish date `1786723200`; by then the slot was due. Absence from one aggregate projection did not by itself prove the exact known object had been deleted.
+That STOP was safe, but the inference was too strong. The journal already contained wall ID `-68859909_468`, exact Clip `-68859909_456239225`, and frozen publish date `1786723200`; by then the slot was due. Absence from one aggregate projection did not by itself prove that the scheduled publication had disappeared.
 
-PR #344 adds a deliberately narrow exact-read fallback:
+PR #344 added a deliberately narrow exact-read fallback for the old journaled ID. That was a correct improvement to negative proof, but the first version still assumed the old postponed ID itself had to remain the published object's ID. The next live run disproved that assumption and led to PR #346.
 
-- only earlier exact Issue #323 items already durably `wall_verified` are eligible;
-- only a missing mapping whose frozen slot is already due can trigger the read;
-- recovery performs one read-only exact `wall.getById` for the known post ID;
-- owner/post ID, frozen date, attachment structure, exactly one video, and exact journaled Clip owner/ID must match;
-- missing/deleted/wrong-ID/wrong-date/wrong-Clip exact readback still fails closed;
-- a future scheduled post omitted from aggregate projection fails before any exact fallback;
-- the supplemented in-memory view still has to solve uniquely to the exact durable historical pre-upload SHA;
-- no provider-write, reservation replay, or binary retransmission authority is added.
+Permanent rule: **an aggregate collection read can be a useful snapshot without being sufficient negative proof for a durable logical mapping. When the operation already owns stronger binding evidence, use the strongest applicable exact/readback reconciliation before declaring the mapping lost.**
 
-Permanent rule: **an aggregate collection read can be a useful snapshot without being sufficient negative proof for a specific durable ID. When the operation already owns an exact identity, prove disappearance with the strongest applicable exact read before converting omission into terminal absence.**
+### 12. The postponed timer ID was promoted into durable publication identity
 
-This is not permission to backfill arbitrary missing objects or ignore aggregate drift. Exact fallback is scoped by prior durable identity, phase, time, and postflight/hash proof.
+The live run after PR #344 exact-read old wall ID `-68859909_468` and received absence/deleted-object semantics after its frozen slot. Recovery still stopped because it treated the journaled postponed `post_id` as an identifier that had to survive publication forever.
+
+PR #346 established the missing lifecycle model: VK scheduled publication may retire the postponed timer object's ID and expose the published incarnation under a different wall ID. The durable object for Issue #323 is therefore the **logical scheduled mapping**, not an assumption that one provider `post_id` is immutable across the postponed→published transition.
+
+The successor-aware recovery contract is intentionally narrow:
+
+- only earlier Issue #323 items already durably `wall_verified` and already due are eligible;
+- first exact-read the old journaled ID;
+- if the old object is still live, exact owner/id/date/Clip checks still apply;
+- if it is `None` or an exact deleted tombstone, require the complete current published surface to contain exactly one successor with the same owner, frozen timestamp and exact journaled Clip attachment;
+- reject zero successors, multiple successors, wrong tombstone identity/date, wrong Clip binding, or successor collision with another journaled scheduled ID;
+- rewrite only the successor `post_id` in the **in-memory historical recovery view** back to the old journaled ID;
+- then require the existing historical pre-upload snapshot SHA solver to match exactly, so changed text, attachments, page counts or unrelated wall state still block;
+- add no wall write, delete, upload reservation or binary retransmission capability.
+
+Permanent rule: **do not assume a provider-assigned remote ID is durable across a lifecycle transition merely because it identified the object in the previous phase. Separate logical operation identity from provider incarnation identity, and require exact evidence before relating two incarnations.**
 
 ## What was not wrong
 
 Fail-closed behavior itself was not the defect. The stops prevented a second upload, broad wall deletion, or silent acceptance of an unknown wall effect. The repair is not to weaken safety globally; it is to attach safety checks to stable, authorized invariants.
 
-The generic `upload_lifecycle.py` was deliberately not weakened by PR #342 or #344. Issue-specific recovery adapts the historical provider state around it.
+The generic `upload_lifecycle.py` was deliberately not weakened by PR #342, #344, or #346. Issue-specific recovery adapts the historical provider state around it.
 
 The existence of a shared VK credential alias was also not target authority. Project/community/owner binding remains mandatory before writes. A faster historical browser flow is not evidence that it had a stronger target-binding model.
 
 ## Timeline of the failure class
 
-The operational history across Issue #323 and PRs #328–#344 shows the progression:
+The operational history across Issue #323 and PRs #328–#346 shows the progression:
 
 - source/media preparation and codec compatibility were hardened without re-downloading intact reviewed bytes;
 - canary and later child processing exposed transient `processing`, blank-title and playability projections;
@@ -170,20 +181,24 @@ The operational history across Issue #323 and PRs #328–#344 shows the progress
 - PR #342 replaced layered recovery with the single-owner monotonic model;
 - PR #343 removed the remaining one-total-attachment assumption from finalizer wall identity;
 - the next live run passed tombstone cleanup but exposed aggregate omission of due wall `468` during recovery;
-- PR #344 added exact read-only recovery for only that class of due, previously `wall_verified` omissions while retaining exact historical SHA proof.
+- PR #344 added exact read-only recovery for missing due, previously `wall_verified` IDs while retaining exact historical SHA proof;
+- the next live run showed the old postponed ID itself could be absent/tombstoned after publication even though the logical scheduled publication still existed;
+- PR #346 added successor-aware read-only reconciliation for that exact postponed-ID→published-ID transition and retained exact historical SHA proof.
 
 Do not use this timeline as live provider state. Read the durable Issue #323 journal and current provider surfaces before any continuation.
 
 ## Current repository checkpoint
 
-At the time of this interim postmortem:
+At the time of this interim postmortem update:
 
 - PR #342 merged as `cb192f3bce0e7adbc4b37ecea26bdba8c7a02a34`; exact head `0dca308c85b5e1a8d3803d74906ea05a27237a7e`; CI #4313 succeeded across Python 3.11/3.12/3.13 and PowerShell Windows 5.1 / Windows 7 / Linux 7;
 - PR #343 merged as `c828a76cfbe19afe8adbaf671bc7687c2dd4818e`; exact head `9962ab9671561e67b86ebe6e45ef1a53f085c34c`; CI #4315 succeeded across the same matrix;
-- PR #344 merged as `cac9d91bab509d2a512aef1df39e84daa783aa46`; exact head `834b44c190071a782de0c3ca231ac5ec6b6933a1`; CI #4319 succeeded 6/6 across Python 3.11/3.12/3.13 and PowerShell Windows 5.1 / Windows 7 / Linux 7; the observed Python 3.11 job reported `1714 passed, 1 xfailed`;
+- PR #344 merged as `cac9d91bab509d2a512aef1df39e84daa783aa46`; exact head `834b44c190071a782de0c3ca231ac5ec6b6933a1`; CI #4319 succeeded 6/6 across Python 3.11/3.12/3.13 and PowerShell Windows 5.1 / Windows 7 / Linux 7;
+- PR #345 merged as `488fad76d8674af666288062b651ad09e751ab5a` and synchronized this operational memory through the PR #344 state;
+- PR #346 merged as `2adad1275c4882da5dca1491bd75a0020fee4522`; exact head `a0bdeebbc52e559451f008e65d87fc550c32cf4a`; it implements postponed-ID→published-successor reconciliation without adding provider-write capability;
 - Issue #323 remains open because repository recovery correctness is not the same as live 12/12 completion.
 
-Latest recorded live evidence before this document: phase 1 verified wall `-68859909_475` absent via exact deleted tombstone and preserved Clip `-68859909_456239232`; phase 2 then stopped read-only because aggregate wall projection omitted due durable mapping `-68859909_468`. PR #344 addresses that exact recovery inference. The provider must be read again at operation start; merged code does not prove the next live run or 12/12 completion.
+Latest recorded live evidence before this update: phase 1 verified wall `-68859909_475` absent via exact deleted tombstone and preserved Clip `-68859909_456239232`; the following phase-2 run then proved that due old wall `-68859909_468` could disappear/tombstone across publication while requiring successor-aware reconciliation. PR #346 addresses that exact inference. The provider must be read again at operation start; merged code does not prove the next live run or 12/12 completion.
 
 ## Do not reintroduce
 
@@ -192,15 +207,17 @@ Latest recorded live evidence before this document: phase 1 verified wall `-6885
 - mutable provider text or `post_source` as exact object identity without explicit stable-authority evidence;
 - “one total attachment” where the semantic invariant is one exact video;
 - `None` as the only possible representation of deletion/absence;
-- an assumption that a scheduled post remains `postponed` forever;
-- treating omission from an aggregate collection projection as proven absence of a known exact durable object when a scoped exact read is required/available;
+- an assumption that a scheduled mapping remains `postponed` forever;
+- an assumption that a postponed timer `post_id` is necessarily the published incarnation's `post_id`;
+- treating aggregate omission, old-ID absence, or old-ID tombstone alone as proof that a due logical scheduled publication disappeared;
+- successor inference without unique owner/frozen-date/exact-Clip proof and historical SHA reconstruction;
 - historical preflight normalization that is not used consistently by postflight;
 - recovery writers with fresh reservation/binary-upload capability;
 - blind replay after a provider effect may exist;
-- tests that prove an obsolete phase ownership contract.
+- tests that prove an obsolete phase ownership or provider-ID permanence contract.
 
 ## Required closure before a final postmortem
 
-This document is intentionally not final. Issue #323 can move to final disposition only after a live read proves the exact intended 12 Clip mappings and their exact scheduled wall mappings, allowing legitimate due `published` surfaces, verifies the authorized Milovi internal public copy, and completes the final provider postflight with no unresolved provider effect.
+This document is intentionally not final. Issue #323 can move to final disposition only after a live read proves the exact intended 12 Clip mappings and their 12 logical scheduled wall mappings with each mapping's legitimate current provider incarnation, verifies the authorized Milovi internal public copy, and completes the final provider postflight with no unresolved provider effect.
 
 At that point, append a final outcome section or create a short final disposition document. Do not rewrite this incident history to make the path appear cleaner than it was.
