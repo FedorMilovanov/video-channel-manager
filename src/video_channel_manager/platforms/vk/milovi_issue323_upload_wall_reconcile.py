@@ -236,9 +236,7 @@ def _candidate_fingerprints(
                 f"Upload-created wall exact readback has no exact publication date: {created_remote_id}"
             )
         if not (
-            before_epoch - _CAPTURE_WINDOW_SLOP_SECONDS
-            <= exact_date
-            <= after_epoch + _CAPTURE_WINDOW_SLOP_SECONDS
+            before_epoch - _CAPTURE_WINDOW_SLOP_SECONDS <= exact_date <= after_epoch + _CAPTURE_WINDOW_SLOP_SECONDS
         ):
             raise Issue323UploadWallReconcileBlocked(
                 f"Upload-created wall exact readback is outside the durable capture window: {created_remote_id}"
