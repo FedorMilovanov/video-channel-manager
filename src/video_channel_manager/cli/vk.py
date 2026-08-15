@@ -386,3 +386,47 @@ def milovi_323_rollout(
         f"Result: {output} | Canary verified: {result['canary_verified']} | "
         f"Postponed authorized: {result['postponed_wall_authorized']}"
     )
+
+
+@vk_app.command("milovi-323-status")
+def milovi_323_status(
+    output: Annotated[
+        Path,
+        typer.Option("--output", help="Read-only Issue #323 status evidence JSON path"),
+    ] = Path("operator-output/milovi-cake-issue-323-readonly-status.json"),
+    journal: Annotated[
+        Path,
+        typer.Option("--journal", help="Existing durable Issue #323 rollout journal path"),
+    ] = Path("data/vk/milovi-cake/issue-323-token-daily-rollout-journal.json"),
+    schedule: Annotated[
+        Path,
+        typer.Option("--schedule", help="Existing frozen Issue #323 wall schedule path"),
+    ] = Path("data/vk/milovi-cake/issue-323-daily-wall-schedule.json"),
+    prepared_manifest: Annotated[
+        Path,
+        typer.Option("--prepared-manifest", help="Existing reviewed prepared-source metadata manifest path"),
+    ] = Path("operator-output/milovi-cake-issue-323-work/prepared-sources.json"),
+) -> None:
+    """Reconcile Milovi Issue #323 live state without provider mutation authority."""
+
+    from video_channel_manager.platforms.vk.milovi_issue323_status_probe import (
+        MiloviStatusProbeBlocked,
+        run_issue_323_status_probe,
+    )
+
+    try:
+        result = run_issue_323_status_probe(
+            output_path=output,
+            journal_path=journal,
+            schedule_path=schedule,
+            prepared_manifest_path=prepared_manifest,
+        )
+    except (MiloviStatusProbeBlocked, OSError, ValueError) as exc:
+        console.print(f"[red]STOP: {type(exc).__name__}: {exc}[/red]")
+        raise typer.Exit(code=3) from exc
+
+    console.print(
+        f"[green]Milovi #323 read-only status: {result['status']}[/green] | "
+        f"next={result['first_action_source_id']}:{result['first_safe_next_action']} | "
+        f"provider-writes=0 | result={output}"
+    )
