@@ -205,16 +205,16 @@ def test_vk_mutation_inventory_rejects_transient_retry_on_mutation() -> None:
 
 
 def test_vk_read_inventory_accepts_literal_retryable_getter() -> None:
-    visitor = _scan_snippet("def read(client):\n    client._call('video.getThumbUploadUrl', params={}, retry_transient=True)\n")
+    visitor = _scan_snippet(
+        "def read(client):\n    client._call('video.getThumbUploadUrl', params={}, retry_transient=True)\n"
+    )
     assert visitor.callsites == []
     assert visitor.violations == []
 
 
 def test_vk_read_inventory_resolves_module_level_method_constant() -> None:
     visitor = _scan_snippet(
-        "METHOD = 'shortVideo.getOwnerVideos'\n"
-        "def read(client):\n"
-        "    client._call(METHOD, params={})\n"
+        "METHOD = 'shortVideo.getOwnerVideos'\ndef read(client):\n    client._call(METHOD, params={})\n"
     )
     assert visitor.callsites == []
     assert visitor.violations == []
