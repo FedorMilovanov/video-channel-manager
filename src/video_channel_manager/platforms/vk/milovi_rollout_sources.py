@@ -162,7 +162,7 @@ def _hydrate_source(yt_dlp: str, source_id: str) -> dict[str, Any]:
     if duration <= 0 or duration > 180.5:
         raise MiloviSourceError(f"{source_id} duration is outside the reviewed Clip bound: {duration}")
     if not str(payload.get("title") or "").strip():
-        raise MiloviSourceError(f"{source_id} title is blank")
+        raise MiloviSourceError(f"YouTube title is blank for {source_id}")
     return payload
 
 
