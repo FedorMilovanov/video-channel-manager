@@ -69,6 +69,7 @@ ANOMALY_CLIP_REMOTE_ID = "-68859909_456239232"
 ANOMALY_POST_ID = 475
 ANOMALY_WALL_REMOTE_ID = f"{MILOVI_OWNER_ID}_{ANOMALY_POST_ID}"
 LEGACY_MARKER_PREFIX = "youtube.com/shorts/"
+_MIN_PROCESSING_COPY_PREFIX = 80
 
 
 class MiloviFinalizerBlocked(MiloviTokenRolloutBlocked):
@@ -172,6 +173,53 @@ def _copy_state(*, current: str, legacy: str, promoted: str, source_id: str, fie
     raise MiloviFinalizerBlocked(f"{field} for {source_id} is neither exact reviewed legacy nor exact promoted copy")
 
 
+def _processing_copy_prefix(current: str) -> str | None:
+    value = current.strip()
+    if value.endswith("…"):
+        prefix = value[:-1].rstrip()
+    else:
+        trailing_dots = len(value) - len(value.rstrip("."))
+        if trailing_dots < 2:
+            return None
+        prefix = value[:-trailing_dots].rstrip()
+    if len(prefix) < _MIN_PROCESSING_COPY_PREFIX:
+        return None
+    return prefix
+
+
+def _clip_copy_state(
+    *,
+    current: str,
+    legacy: str,
+    promoted: str,
+    source_id: str,
+    field: str,
+    provider_item: Mapping[str, Any],
+) -> str:
+    """Classify exact copy, or one fail-closed VK processing-time truncation projection."""
+
+    try:
+        return _copy_state(
+            current=current,
+            legacy=legacy,
+            promoted=promoted,
+            source_id=source_id,
+            field=field,
+        )
+    except MiloviFinalizerBlocked as exc:
+        provider_busy = bool(provider_item.get("processing")) or bool(provider_item.get("converting"))
+        if not provider_busy:
+            raise
+        prefix = _processing_copy_prefix(current)
+        if prefix is None:
+            raise
+        if promoted.startswith(prefix):
+            return "provider_processing_promoted_projection"
+        if legacy.startswith(prefix):
+            return "provider_processing_legacy_projection"
+        raise exc
+
+
 def _assert_native_clip(
     writer: VkWallWriter,
     asset: SourceAsset,
@@ -208,12 +256,13 @@ def _assert_native_clip(
         if description != asset.description.strip():
             raise MiloviFinalizerBlocked(f"VK Clip {remote_id} public description differs from promotion plan")
     elif description_mode == "legacy_or_promoted":
-        _copy_state(
+        _clip_copy_state(
             current=description,
             legacy=_legacy_clip_description(asset),
             promoted=asset.description.strip(),
             source_id=asset.source_id,
             field="Clip description",
+            provider_item=raw,
         )
     else:
         raise ValueError(f"Unknown description_mode: {description_mode}")
