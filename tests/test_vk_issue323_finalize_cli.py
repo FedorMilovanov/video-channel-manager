@@ -6,7 +6,7 @@ from typing import Any
 
 from typer.testing import CliRunner
 
-from video_channel_manager.cli.vk import vk_app
+from video_channel_manager.cli.app import app
 from video_channel_manager.platforms.vk import milovi_issue323_finalize as finalizer
 
 runner = CliRunner()
@@ -29,8 +29,9 @@ def test_milovi_323_finalize_calls_guarded_finalizer_with_exact_paths(monkeypatc
     monkeypatch.setattr(finalizer, "run_issue_323_finalizer", fake_run)
 
     result = runner.invoke(
-        vk_app,
+        app,
         [
+            "vk",
             "milovi-323-finalize",
             "--execute",
             finalizer.EXECUTION_CONFIRMATION,
@@ -67,7 +68,7 @@ def test_milovi_323_finalize_calls_guarded_finalizer_with_exact_paths(monkeypatc
 
 
 def test_milovi_323_finalize_help_exposes_explicit_write_confirmation() -> None:
-    result = runner.invoke(vk_app, ["milovi-323-finalize", "--help"])
+    result = runner.invoke(app, ["vk", "milovi-323-finalize", "--help"])
     plain_help = _ANSI_ESCAPE.sub("", result.output)
 
     assert result.exit_code == 0, result.output
@@ -86,8 +87,9 @@ def test_milovi_323_finalize_fails_closed(monkeypatch: Any, tmp_path: Path) -> N
     monkeypatch.setattr(finalizer, "run_issue_323_finalizer", blocked)
 
     result = runner.invoke(
-        vk_app,
+        app,
         [
+            "vk",
             "milovi-323-finalize",
             "--execute",
             finalizer.EXECUTION_CONFIRMATION,
