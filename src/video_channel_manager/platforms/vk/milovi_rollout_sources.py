@@ -30,6 +30,24 @@ ROLL_OUT_IDS = (
     "R0KjJvbxS8s",
 )
 
+_CANARY_SOURCE_ID = "d48QLgOuiTs"
+_CANARY_LATE_PREPARED_WALL = (
+    "Романтичный Торт с Бантом от #Milovi_Cake #ТортыНаЗаказ #Cake #Shorts #CakeDecorating\n\n"
+    "🌐 https://milovicake.ru/\n"
+    "Источник: https://www.youtube.com/shorts/d48QLgOuiTs"
+)
+_CANARY_HISTORICAL_WALL = (
+    "Романтичный Торт с Бантом от #Milovi_Cake #ТортыНаЗаказСПб #Cake #Shorts #CakeDecorating\n\n"
+    "🌐 https://milovicake.ru/"
+)
+_CANARY_LATE_PREPARED_WALL_SHA256 = "3a8ed916bd6e86ff924ed0ae6315ccbfad05fc972e2604ba98ec1171a0119fc0"
+_CANARY_HISTORICAL_WALL_SHA256 = "cddb2b01370b146708556779244c493f8e97f4a3da873cd914e121c97031e4b0"
+
+if hashlib.sha256(_CANARY_LATE_PREPARED_WALL.encode("utf-8")).hexdigest() != _CANARY_LATE_PREPARED_WALL_SHA256:
+    raise RuntimeError("Issue #323 canary prepared wall-copy constant changed")
+if hashlib.sha256(_CANARY_HISTORICAL_WALL.encode("utf-8")).hexdigest() != _CANARY_HISTORICAL_WALL_SHA256:
+    raise RuntimeError("Issue #323 canary historical wall-copy constant changed")
+
 
 class MiloviSourceError(RuntimeError):
     pass
@@ -53,6 +71,26 @@ class SourceAsset:
     wall_message: str
     legacy_description: str | None = None
     legacy_wall_message: str | None = None
+
+    def __post_init__(self) -> None:
+        """Restore the exact canary wall before-state that predates the late legacy freeze.
+
+        The durable Issue #323 canary mapping was created before ``legacy_wall_message``
+        existed on ``SourceAsset``. Its currently proven published successor retains the
+        earlier reviewed public copy, while the prepared manifest carries the later
+        YouTube-derived copy. Normalize only that exact prepared state; all other source
+        or copy variants remain untouched and therefore fail closed downstream.
+        """
+
+        if self.source_id != _CANARY_SOURCE_ID:
+            return
+        prepared_wall = self.wall_message.strip()
+        legacy_wall = self.legacy_wall_message.strip() if self.legacy_wall_message is not None else None
+        if prepared_wall != _CANARY_LATE_PREPARED_WALL:
+            return
+        if legacy_wall is not None and legacy_wall != _CANARY_LATE_PREPARED_WALL:
+            return
+        object.__setattr__(self, "legacy_wall_message", _CANARY_HISTORICAL_WALL)
 
 
 def _progress(message: str) -> None:
@@ -124,7 +162,7 @@ def _hydrate_source(yt_dlp: str, source_id: str) -> dict[str, Any]:
     if duration <= 0 or duration > 180.5:
         raise MiloviSourceError(f"{source_id} duration is outside the reviewed Clip bound: {duration}")
     if not str(payload.get("title") or "").strip():
-        raise MiloviSourceError(f"YouTube title is blank for {source_id}")
+        raise MiloviSourceError(f"{source_id} title is blank")
     return payload
 
 
