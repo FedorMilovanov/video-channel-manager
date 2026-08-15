@@ -1,0 +1,159 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-bootstrap-first-screen-candidates",
+  "schema_version": 2,
+  "project_key": "milovi-cake",
+  "status": "provider_inert_candidates",
+  "owning_issue": 353,
+  "purpose": "Prepare a ten-item native Telegram first-screen candidate set after a separately authorized and provider-verified canary, without depending on WebM conversion or production BTS.",
+  "publication_authorized": false,
+  "execution_ready": false,
+  "provider_mutation_allowed": false,
+  "sequence_size": 10,
+  "source_contract": {
+    "repository": "FedorMilovanov/Milovi_Cake",
+    "commit": "c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370",
+    "gallery_path": "js/gallery/data.js",
+    "gallery_blob_sha1": "e20e60c07479e8b20c1db700f1a40364b81eb669"
+  },
+  "dependency": {
+    "required_canary_publication_id": "milovi-cake-canary-001",
+    "required_canary_outcome": "provider_verified_success",
+    "current_canary_verified_success": false,
+    "target_binding_sha256": null,
+    "rule": "These candidates must not execute before the exact canary outcome is provider-verified and the same reviewed Milovi target binding plus exact materialized media digests are frozen into a separate rollout release."
+  },
+  "media_source_readiness": "content/telegram/milovi-cake/bootstrap-photo-source-readiness-2026-08.json",
+  "allowed_operations": ["sendPhoto", "sendMessage"],
+  "forbidden_operations": ["sendVideo", "sendMediaGroup", "sendPoll", "sendDocument", "pinChatMessage", "createChatInviteLink"],
+  "candidates": [
+    {
+      "sequence": 1,
+      "publication_id": "milovi-bootstrap-001",
+      "role": "finished_showcase",
+      "operation": "sendPhoto",
+      "media_id": "p04",
+      "transport_ready": false,
+      "execution_ready": false,
+      "caption": "3D-торт в прозрачном цилиндре\n\nОдна из реальных работ Milovi Cake: сложный торт с персонажем, шарами и прозрачной конструкцией. Здесь сама форма подачи становится частью композиции.\n\nБольше работ: https://milovicake.ru/gallery/",
+      "parse_mode": null,
+      "publication_authorized": false
+    },
+    {
+      "sequence": 2,
+      "publication_id": "milovi-bootstrap-002",
+      "role": "finished_showcase",
+      "operation": "sendPhoto",
+      "media_id": "p23",
+      "transport_ready": false,
+      "execution_ready": false,
+      "caption": "Бенто с романтичной надписью\n\nКомпактный формат, где персональное сообщение становится частью дизайна. Это реальная бенто-работа из галереи Milovi Cake.\n\nФорматы бенто: https://milovicake.ru/bento-torty/",
+      "parse_mode": null,
+      "publication_authorized": false
+    },
+    {
+      "sequence": 3,
+      "publication_id": "milovi-bootstrap-003",
+      "role": "finished_showcase",
+      "operation": "sendPhoto",
+      "media_id": "p11",
+      "transport_ready": false,
+      "execution_ready": false,
+      "caption": "Светлый свадебный торт\n\nВ галерее Milovi Cake эта работа описана как элегантный белый торт для камерной свадьбы. Светлая палитра и сдержанная композиция работают здесь без визуального перегруза.\n\nСвадебные торты: https://milovicake.ru/svadebnye-torty/",
+      "parse_mode": null,
+      "publication_authorized": false
+    },
+    {
+      "sequence": 4,
+      "publication_id": "milovi-bootstrap-004",
+      "role": "finished_showcase",
+      "operation": "sendPhoto",
+      "media_id": "p03",
+      "transport_ready": false,
+      "execution_ready": false,
+      "caption": "Детский торт с зайчиком\n\nРеальная работа Milovi Cake: праздничный торт с зайчиком, цветами и звёздами. Один узнаваемый персонаж задаёт тему всей композиции.\n\nДетские торты: https://milovicake.ru/detskie-torty/",
+      "parse_mode": null,
+      "publication_authorized": false
+    },
+    {
+      "sequence": 5,
+      "publication_id": "milovi-bootstrap-005",
+      "role": "finished_showcase",
+      "operation": "sendPhoto",
+      "media_id": "p16",
+      "transport_ready": false,
+      "execution_ready": false,
+      "caption": "Капкейки с кремовым декором\n\nНабор капкейков в палитре праздника — так эта работа описана в галерее Milovi Cake. Здесь цвет и кремовый декор собирают отдельные десерты в один цельный набор.\n\nБольше работ: https://milovicake.ru/gallery/",
+      "parse_mode": null,
+      "publication_authorized": false
+    },
+    {
+      "sequence": 6,
+      "publication_id": "milovi-bootstrap-006",
+      "role": "finished_showcase",
+      "operation": "sendPhoto",
+      "media_id": "p17",
+      "transport_ready": false,
+      "execution_ready": false,
+      "caption": "Павлова с ягодной начинкой\n\nЕщё один формат из реальной галереи Milovi Cake — Павлова с ягодной начинкой. Это отдельный праздничный десертный формат рядом с тортами и бенто.\n\nГалерея: https://milovicake.ru/gallery/",
+      "parse_mode": null,
+      "publication_authorized": false
+    },
+    {
+      "sequence": 7,
+      "publication_id": "milovi-bootstrap-007",
+      "role": "finished_showcase",
+      "operation": "sendPhoto",
+      "media_id": "p20",
+      "transport_ready": false,
+      "execution_ready": false,
+      "caption": "3D-торт в стиле Minecraft\n\nТематическая 3D-работа Milovi Cake из галереи. В таком формате форма и объёмный декор сразу задают узнаваемый сюжет праздника.\n\nБольше 3D-работ: https://milovicake.ru/gallery/",
+      "parse_mode": null,
+      "publication_authorized": false
+    },
+    {
+      "sequence": 8,
+      "publication_id": "milovi-bootstrap-008",
+      "role": "verified_social_proof",
+      "operation": "sendMessage",
+      "media_id": null,
+      "transport_ready": true,
+      "execution_ready": false,
+      "caption": "Проверенный отзыв с сайта Milovi Cake\n\nИрина Силантьева:\n\n«Спасибо за прекрасно выполненную работу к 40-летию свадьбы. И вкусовые качества, и дизайн, и упаковка — гости были в восторге.»\n\nОтзывы: https://milovicake.ru/otzyvy/",
+      "parse_mode": null,
+      "fact_source": {
+        "repository": "FedorMilovanov/Milovi_Cake",
+        "commit": "c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370",
+        "path": "otzyvy/index.html",
+        "git_blob_sha1": "cccfbc9c12d9d3724b0a27a481cbb1347f77716a",
+        "review_author": "Ирина Силантьева",
+        "date_published": "2024-05-01"
+      },
+      "publication_authorized": false
+    },
+    {
+      "sequence": 9,
+      "publication_id": "milovi-bootstrap-009",
+      "role": "finished_showcase",
+      "operation": "sendPhoto",
+      "media_id": "p25",
+      "transport_ready": false,
+      "execution_ready": false,
+      "caption": "Меренговые рулеты в коробке\n\nВ галерее Milovi Cake есть не только торты: здесь — меренговые рулеты в коробке. Отдельный десертный формат для тех случаев, когда большой торт не нужен.\n\nПодробнее: https://milovicake.ru/meringue-roll/",
+      "parse_mode": null,
+      "publication_authorized": false
+    },
+    {
+      "sequence": 10,
+      "publication_id": "milovi-bootstrap-010",
+      "role": "finished_showcase",
+      "operation": "sendPhoto",
+      "media_id": "p02",
+      "transport_ready": false,
+      "execution_ready": false,
+      "caption": "Розовый торт с цветами\n\nРеальная работа Milovi Cake: нежный торт на день рождения с цветочным декором. Понятная палитра и один ведущий декоративный мотив делают композицию цельной.\n\nЕщё работы: https://milovicake.ru/gallery/",
+      "parse_mode": null,
+      "publication_authorized": false
+    }
+  ],
+  "rollout_rule": "This file is an editorial/bootstrap candidate set only. A verified canary does not itself authorize these ten posts. A separate reviewed rollout release must bind the exact target, exact materialized photo SHA-256 digests and the selected subset/order before dispatch."
+}
