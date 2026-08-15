@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from click import unstyle
 from typer.testing import CliRunner
 
 from video_channel_manager.cli.vk import vk_app
@@ -93,11 +94,12 @@ def test_milovi_323_status_fails_closed(monkeypatch: Any, tmp_path: Path) -> Non
 
 def test_milovi_323_status_cli_exposes_no_write_confirmation_flags() -> None:
     result = runner.invoke(vk_app, ["milovi-323-status", "--help"])
+    plain_help = unstyle(result.output)
 
     assert result.exit_code == 0, result.output
-    assert "--execute" not in result.output
-    assert "--confirm" not in result.output
-    assert "--output" in result.output
-    assert "--journal" in result.output
-    assert "--schedule" in result.output
-    assert "--prepared-manifest" in result.output
+    assert "--execute" not in plain_help
+    assert "--confirm" not in plain_help
+    assert "--output" in plain_help
+    assert "--journal" in plain_help
+    assert "--schedule" in plain_help
+    assert "--prepared-manifest" in plain_help
