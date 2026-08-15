@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
-from click import unstyle
 from typer.testing import CliRunner
 
 from video_channel_manager.cli.vk import vk_app
 from video_channel_manager.platforms.vk import milovi_issue323_status_probe as status_probe
 
 runner = CliRunner()
+_ANSI_ESCAPE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 
 
 def test_milovi_323_status_calls_read_only_probe_with_exact_paths(monkeypatch: Any, tmp_path: Path) -> None:
@@ -94,7 +95,7 @@ def test_milovi_323_status_fails_closed(monkeypatch: Any, tmp_path: Path) -> Non
 
 def test_milovi_323_status_cli_exposes_no_write_confirmation_flags() -> None:
     result = runner.invoke(vk_app, ["milovi-323-status", "--help"])
-    plain_help = unstyle(result.output)
+    plain_help = _ANSI_ESCAPE.sub("", result.output)
 
     assert result.exit_code == 0, result.output
     assert "--execute" not in plain_help
