@@ -40,9 +40,9 @@ def milovi_323_finalize(
         typer.Option("--verify-timeout", min=60, max=7200, help="Seconds to reconcile each exact native Clip"),
     ] = 7200,
 ) -> None:
-    """Resume exact Issue #323 state, finish scheduled walls, and apply guarded promotion copy."""
+    """Resume exact Issue #323 state while preserving safe operator-owned Clip descriptions."""
 
-    from video_channel_manager.platforms.vk import milovi_issue323_finalize as finalizer
+    from video_channel_manager.platforms.vk import milovi_issue323_operator_finalizer as finalizer
 
     try:
         result = finalizer.run_issue_323_finalizer(
