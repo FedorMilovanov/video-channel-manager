@@ -18,6 +18,7 @@ from video_channel_manager.platforms.vk.milovi_immediate_wall import MILOVI_COMM
 from video_channel_manager.platforms.vk.milovi_issue323_finalize import (
     MiloviFinalizerBlocked,
     _assert_native_clip,
+    _clip_copy_state,
     _copy_state,
     _legacy_clip_description,
     _legacy_wall_message,
@@ -314,12 +315,13 @@ def _probe_batch(
                     durable_verified=durable_verified,
                 )
                 current_description = str(raw_clip.get("description") or "").strip()
-                clip_copy_state = _copy_state(
+                clip_copy_state = _clip_copy_state(
                     current=current_description,
                     legacy=_legacy_clip_description(asset),
                     promoted=asset.description.strip(),
                     source_id=source_id,
                     field="Clip description",
+                    provider_item=raw_clip,
                 )
                 row.update(
                     clip_remote_id=clip_remote_id,
