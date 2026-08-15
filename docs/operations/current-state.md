@@ -103,7 +103,6 @@ The reusable architecture target for future native-Clip projects is [`vk-native-
 Issue #323 is a separate exact live rollout scope and remains **open**. PR #359 is merged as repository hardening, while live 12/12 completion remains unproved. Read Issue #323 and its durable journal/provider state at operation start.
 
 Current retained safety interpretation after PR #359 merged:
-
 - wall `-68859909_475` cleanup has one destructive owner only: `milovi_issue323_anomaly_reconcile.py` phase 1; the finalizer has no delete authority for that post;
 - wall-475 phase 1 persists `delete_dispatch_started` before its one provider delete. A restart from historical `delete_intent`, dispatch-started or unknown state may reconcile exact absence/tombstone but never blindly delete again; once cleanup is durably `verified_absent`, automatic re-delete authority is consumed even if a live object later reappears;
 - latest recorded live evidence still accepts wall 475 only as exact absence/deleted-tombstone evidence and preserves exact eighth Clip `-68859909_456239232`; this checkpoint is not standing proof of later provider state;
