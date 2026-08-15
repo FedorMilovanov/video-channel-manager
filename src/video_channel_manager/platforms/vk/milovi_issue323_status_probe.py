@@ -6,7 +6,7 @@ import time
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from video_channel_manager.config import get_settings
 from video_channel_manager.platforms.vk import VkApiClient, VkTokenStore, local_vk_write_lock
@@ -38,7 +38,6 @@ from video_channel_manager.platforms.vk.milovi_token_clip_rollout import (
     _find_existing_clip,
     _has_provider_effect,
     _load_journal,
-    _parse_remote_id,
     _prove_target,
     _resolve_account,
     _upload_remote_id,
@@ -177,7 +176,7 @@ def _resolve_unjournaled_wall(
     if match.surface is VkWallSurface.PUBLISHED and now_epoch + 60 < publish_date:
         raise MiloviStatusProbeBlocked(f"Clip {clip_remote_id} wall mapping published before its frozen slot")
     raw = _read_exact_wall_incarnation(
-        provider,
+        cast(VkWallWriter, provider),
         remote_id=match.remote_id,
         clip_remote_id=clip_remote_id,
         publish_date=publish_date,
@@ -308,7 +307,7 @@ def _probe_batch(
                     upload_stage == UploadStage.VERIFIED.value
                 )
                 raw_clip = _assert_native_clip(
-                    provider,
+                    cast(VkWallWriter, provider),
                     asset,
                     clip_remote_id,
                     description_mode="legacy_or_promoted",
@@ -339,7 +338,7 @@ def _probe_batch(
             if clip_remote_id is not None:
                 if isinstance(journal_wall_remote_id, str) and journal_wall_remote_id:
                     resolved_wall = _resolve_wall_incarnation(
-                        writer=provider,
+                        writer=cast(VkWallWriter, provider),
                         snapshot=snapshot,
                         journal=journal,
                         wall_remote_id=journal_wall_remote_id,
@@ -394,8 +393,7 @@ def _probe_batch(
         evidence.append(row)
 
     phase_a_complete = all(
-        item["durable_status"] == "wall_verified" and item["current_wall_remote_id"] is not None
-        for item in evidence
+        item["durable_status"] == "wall_verified" and item["current_wall_remote_id"] is not None for item in evidence
     )
     first_action = next(
         (
