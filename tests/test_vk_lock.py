@@ -9,6 +9,7 @@ import pytest
 
 from video_channel_manager.platforms.vk.lock import (
     _pid_is_running,
+    _require_issue323_execution_identity,
     _stale,
     _windows_pid_is_running,
     community_vk_write_lock_path,
@@ -42,6 +43,25 @@ class _FakeKernel32:
 
 def _canonical(tmp_path: Path, community_id: int) -> Path:
     return community_vk_write_lock_path(tmp_path, community_id=community_id)
+
+
+def _exact_issue323_git(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, approved_sha: str) -> None:
+    monkeypatch.setenv("VCM_ISSUE323_APPROVED_MAIN_SHA", approved_sha)
+
+    def fake_git(args: tuple[str, ...], *, cwd: Path) -> str:
+        if args == ("rev-parse", "--show-toplevel"):
+            return str(tmp_path.resolve())
+        if args == ("branch", "--show-current"):
+            return "main"
+        if args == ("rev-parse", "HEAD"):
+            return approved_sha
+        if args == ("rev-parse", "--verify", "origin/main"):
+            return approved_sha
+        if args == ("status", "--porcelain=v1", "--untracked-files=normal"):
+            return ""
+        raise AssertionError(f"unexpected git invocation: {args} @ {cwd}")
+
+    monkeypatch.setattr("video_channel_manager.platforms.vk.lock._git_output", fake_git)
 
 
 def test_windows_pid_probe_reports_active_without_terminating_process() -> None:
@@ -85,6 +105,96 @@ def test_pid_dispatch_never_calls_os_kill_on_windows(monkeypatch: pytest.MonkeyP
 def test_community_lock_path_is_deterministic_and_identity_scoped(tmp_path: Path) -> None:
     assert _canonical(tmp_path, 7) == tmp_path / "locks" / "vk-community-7.lock"
     assert _canonical(tmp_path, 8) == tmp_path / "locks" / "vk-community-8.lock"
+
+
+def test_issue323_execution_identity_requires_exact_approved_sha(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("VCM_ISSUE323_APPROVED_MAIN_SHA", raising=False)
+
+    with pytest.raises(VkWriteError, match="VCM_ISSUE323_APPROVED_MAIN_SHA"):
+        _require_issue323_execution_identity(
+            community_id=68859909,
+            operation="milovi-issue-323-finalize-internal-promotion",
+        )
+
+
+def test_issue323_execution_identity_blocks_dirty_checkout(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    approved_sha = "a" * 40
+    _exact_issue323_git(monkeypatch, tmp_path, approved_sha)
+
+    def dirty_git(args: tuple[str, ...], *, cwd: Path) -> str:
+        if args == ("status", "--porcelain=v1", "--untracked-files=normal"):
+            return " M src/video_channel_manager/platforms/vk/lock.py"
+        if args == ("rev-parse", "--show-toplevel"):
+            return str(tmp_path.resolve())
+        if args == ("branch", "--show-current"):
+            return "main"
+        if args in {("rev-parse", "HEAD"), ("rev-parse", "--verify", "origin/main")}:
+            return approved_sha
+        raise AssertionError(f"unexpected git invocation: {args} @ {cwd}")
+
+    monkeypatch.setattr("video_channel_manager.platforms.vk.lock._git_output", dirty_git)
+    with pytest.raises(VkWriteError, match="worktree=dirty"):
+        _require_issue323_execution_identity(
+            community_id=68859909,
+            operation="milovi-issue-323-finalize-internal-promotion",
+        )
+
+
+def test_issue323_execution_identity_blocks_origin_main_mismatch(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    approved_sha = "a" * 40
+    _exact_issue323_git(monkeypatch, tmp_path, approved_sha)
+
+    def stale_origin_git(args: tuple[str, ...], *, cwd: Path) -> str:
+        if args == ("rev-parse", "--show-toplevel"):
+            return str(tmp_path.resolve())
+        if args == ("branch", "--show-current"):
+            return "main"
+        if args == ("rev-parse", "HEAD"):
+            return approved_sha
+        if args == ("rev-parse", "--verify", "origin/main"):
+            return "b" * 40
+        if args == ("status", "--porcelain=v1", "--untracked-files=normal"):
+            return ""
+        raise AssertionError(f"unexpected git invocation: {args} @ {cwd}")
+
+    monkeypatch.setattr("video_channel_manager.platforms.vk.lock._git_output", stale_origin_git)
+    with pytest.raises(VkWriteError, match="origin/main"):
+        _require_issue323_execution_identity(
+            community_id=68859909,
+            operation="milovi-issue-323-finalize-internal-promotion",
+        )
+
+
+def test_issue323_lock_records_exact_execution_identity(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    approved_sha = "c" * 40
+    _exact_issue323_git(monkeypatch, tmp_path, approved_sha)
+    requested = tmp_path / "locks" / "issue-323-finalizer.lock"
+    canonical = _canonical(tmp_path, 68859909)
+
+    with local_vk_write_lock(
+        requested,
+        account="legendary-poet",
+        community_id=68859909,
+        operation="milovi-issue-323-finalize-internal-promotion",
+    ):
+        payload = json.loads(canonical.read_text(encoding="utf-8"))
+        assert payload["execution_identity"] == {
+            "approved_main_sha": approved_sha,
+            "head_sha": approved_sha,
+            "origin_main_sha": approved_sha,
+            "branch": "main",
+            "repo_root": str(tmp_path.resolve()),
+            "worktree": "clean",
+        }
 
 
 def test_nested_lock_is_rejected_and_owner_lock_survives(tmp_path: Path) -> None:
