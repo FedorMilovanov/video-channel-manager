@@ -19,6 +19,7 @@ from video_channel_manager.platforms.vk.milovi_issue323_live_resume import (
     _ensure_clip_live,
     _native_clip_assessment,
     _resume_wall_baseline,
+    _supplement_due_prior_wall_readbacks,
 )
 from video_channel_manager.platforms.vk.milovi_issue323_upload_wall_reconcile import (
     reconcile_issue323_upload_wall_effect,
@@ -390,7 +391,8 @@ def _ensure_promoted_clip(
     def prepare_recovery(current_wall: VkWallSnapshot) -> tuple[VkWallSnapshot, _Issue323RecoveryWriter]:
         if not current_wall.complete:
             raise MiloviFinalizerBlocked("Complete wall snapshot unavailable during upload recovery")
-        if _needs_issue323_upload_wall_reconcile(record):
+        requires_wall_reconcile = _needs_issue323_upload_wall_reconcile(record)
+        if requires_wall_reconcile:
             current_wall, wall_before = reconcile_issue323_upload_wall_effect(
                 record=record,
                 current_wall=current_wall,
@@ -401,7 +403,18 @@ def _ensure_promoted_clip(
                 persist=persist,
             )
         else:
-            wall_before = _resume_wall_baseline(record, current_wall, journal=journal)
+            effective_wall, baseline_exact_read_ids = _supplement_due_prior_wall_readbacks(
+                writer,
+                current_wall,
+                journal=journal,
+                source_id=asset.source_id,
+            )
+            wall_before = _resume_wall_baseline(
+                record,
+                effective_wall,
+                journal=journal,
+                successor_resolution_proven=bool(baseline_exact_read_ids),
+            )
         raw_wall_safety = record.get("wall_safety")
         if not isinstance(raw_wall_safety, Mapping):
             raise UploadRecoveryRequired("Provider-dispatched promoted upload lost durable wall safety evidence")
@@ -411,12 +424,18 @@ def _ensure_promoted_clip(
             journal=journal,
             source_id=asset.source_id,
         )
-        record["issue323_recovery_wall_view"] = {
+        recovery_view: dict[str, Any] = {
             "baseline_actual_snapshot_sha256": current_wall.snapshot_sha256,
             "historical_before_snapshot_sha256": wall_before.snapshot_sha256,
             "reservation_replay_authorized": False,
             "binary_retransmission_authorized": False,
         }
+        if not requires_wall_reconcile:
+            recovery_view.update(
+                baseline_effective_snapshot_sha256=effective_wall.snapshot_sha256,
+                baseline_exact_read_ids=list(baseline_exact_read_ids),
+            )
+        record["issue323_recovery_wall_view"] = recovery_view
         persist()
         return wall_before, recovery
 
