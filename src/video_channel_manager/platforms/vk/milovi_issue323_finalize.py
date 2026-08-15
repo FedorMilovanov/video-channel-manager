@@ -19,6 +19,7 @@ from video_channel_manager.platforms.vk.milovi_issue323_live_resume import (
     _ensure_clip_live,
     _native_clip_assessment,
     _resume_wall_baseline,
+    _supplement_due_prior_wall_readbacks,
 )
 from video_channel_manager.platforms.vk.milovi_issue323_upload_wall_reconcile import (
     reconcile_issue323_upload_wall_effect,
@@ -401,7 +402,18 @@ def _ensure_promoted_clip(
                 persist=persist,
             )
         else:
-            wall_before = _resume_wall_baseline(record, current_wall, journal=journal)
+            current_wall, _exact_read_ids = _supplement_due_prior_wall_readbacks(
+                writer,
+                current_wall,
+                journal=journal,
+                source_id=asset.source_id,
+            )
+            wall_before = _resume_wall_baseline(
+                record,
+                current_wall,
+                journal=journal,
+                successor_resolution_proven=True,
+            )
         raw_wall_safety = record.get("wall_safety")
         if not isinstance(raw_wall_safety, Mapping):
             raise UploadRecoveryRequired("Provider-dispatched promoted upload lost durable wall safety evidence")
