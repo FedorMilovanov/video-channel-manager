@@ -32,9 +32,20 @@ REQUIRED_BOUNDARY_FIELDS = {
 }
 REQUIRED_HIGH_RISK_STAGES = {"before_dispatch", "after_dispatch_before_response"}
 _SAFE_VK_API_METHODS = {
+    "groups.get",
     "groups.getById",
     "users.get",
     "video.get",
+    "video.getAlbums",
+    "video.getAlbumsByVideo",
+    "wall.get",
+    "wall.getById",
+}
+_SAFE_DYNAMIC_VK_CALLS = {
+    (
+        "src/video_channel_manager/platforms/vk/client.py",
+        "VkApiClient._list_offset",
+    ),
 }
 
 
@@ -100,15 +111,22 @@ class _MutationCallsiteVisitor(ast.NodeVisitor):
         marker: str | None = None
         name = _call_name(node.func)
         callable_name = ".".join(self.scope) if self.scope else "<module>"
+        callsite = (self.source_file, callable_name)
         if name == "_call":
             method = _constant_string(node.args[0]) if node.args else None
             if method is None:
-                self.violations.append(("vk_api:dynamic_or_missing_method", self.source_file, callable_name))
+                if callsite not in _SAFE_DYNAMIC_VK_CALLS:
+                    self.violations.append(("vk_api:dynamic_or_missing_method", self.source_file, callable_name))
             elif method not in _SAFE_VK_API_METHODS:
                 if _is_true(_keyword(node, "retry_transient")):
                     self.violations.append((f"vk_api:{method}:retry_transient", self.source_file, callable_name))
                 else:
                     marker = f"vk_api:{method}"
+        elif name == "_list_offset":
+            method = _constant_string(node.args[0]) if node.args else None
+            if method not in _SAFE_VK_API_METHODS:
+                rendered_method = method if method is not None else "dynamic_or_missing_method"
+                self.violations.append((f"vk_api:list_offset:{rendered_method}", self.source_file, callable_name))
         elif name == "execute_http_request":
             operation = _keyword(node, "operation")
             resource = _constant_string(_keyword(node, "resource"))
@@ -148,21 +166,21 @@ def _scan_snippet(source: str) -> _MutationCallsiteVisitor:
 
 
 def test_vk_mutation_inventory_rejects_dynamic_direct_call() -> None:
-    visitor = _scan_snippet(
-        "def mutate(writer, method):\n"
-        "    writer._call(method, params={})\n"
-    )
+    visitor = _scan_snippet("def mutate(writer, method):\n    writer._call(method, params={})\n")
     assert visitor.callsites == []
     assert visitor.violations == [("vk_api:dynamic_or_missing_method", "snippet.py", "mutate")]
 
 
 def test_vk_mutation_inventory_rejects_transient_retry_on_mutation() -> None:
-    visitor = _scan_snippet(
-        "def mutate(writer):\n"
-        "    writer._call('wall.delete', params={}, retry_transient=True)\n"
-    )
+    visitor = _scan_snippet("def mutate(writer):\n    writer._call('wall.delete', params={}, retry_transient=True)\n")
     assert visitor.callsites == []
     assert visitor.violations == [("vk_api:wall.delete:retry_transient", "snippet.py", "mutate")]
+
+
+def test_vk_read_inventory_rejects_dynamic_list_offset_dispatch() -> None:
+    visitor = _scan_snippet("def read(client, method):\n    client._list_offset(method, params={}, page_size=100)\n")
+    assert visitor.callsites == []
+    assert visitor.violations == [("vk_api:list_offset:dynamic_or_missing_method", "snippet.py", "read")]
 
 
 def test_register_schema_and_unique_boundaries() -> None:
