@@ -100,9 +100,9 @@ The reusable architecture target for future native-Clip projects is [`vk-native-
 
 ### Milovi Cake / Issue #323
 
-Issue #323 is a separate exact live rollout scope and remains **open**. Repository recovery/finalizer hardening may be merged while live 12/12 completion is still unproved. Read Issue #323 and its durable journal/provider state at operation start.
+Issue #323 is a separate exact live rollout scope and remains **open**. PR #359 is merged as repository hardening, while live 12/12 completion remains unproved. Read Issue #323 and its durable journal/provider state at operation start.
 
-Current retained safety interpretation through PR #359 once merged:
+Current retained safety interpretation after PR #359 merged:
 
 - wall `-68859909_475` cleanup has one destructive owner only: `milovi_issue323_anomaly_reconcile.py` phase 1; the finalizer has no delete authority for that post;
 - wall-475 phase 1 persists `delete_dispatch_started` before its one provider delete. A restart from historical `delete_intent`, dispatch-started or unknown state may reconcile exact absence/tombstone but never blindly delete again; once cleanup is durably `verified_absent`, automatic re-delete authority is consumed even if a live object later reappears;
@@ -115,6 +115,7 @@ Current retained safety interpretation through PR #359 once merged:
 - promotion `video.edit` and successor-aware `wall.edit` persist exact intent plus a durable `dispatch_started` barrier before the single mutation, re-read the exact target immediately before dispatch, reconcile a lost response only from exact target-state readback, and forbid blind replay when dispatch may already have occurred;
 - promotion target identity does not grant overwrite authority. `video.edit` may start only from exact reviewed legacy description; `wall.edit` may start only from exact reviewed legacy wall message. Any third text state blocks even when owner/date/Clip/source marker still look correct;
 - all local VK writers sharing a lock directory now converge on one canonical mutex per `community_id`; operation-specific filenames cannot allow rollout, resume, anomaly reconciliation or finalizer processes to mutate the same community concurrently;
+- every Milovi Issue #323 writer must pass execution-identity proof before that shared community lock is granted: `VCM_ISSUE323_APPROVED_MAIN_SHA` must contain the freshly reviewed 40-character current `main` SHA, the checkout branch must be exactly `main`, `HEAD` and local `origin/main` must both equal that approved SHA, and the worktree must be clean. Missing Git, an invalid/missing approved SHA, branch/SHA drift or a dirty tree blocks locally before the provider-write body starts. This is an execution-identity gate, not provider-write authorization, and the approved SHA must be resolved fresh for each continuation rather than copied from this document;
 - the logical scheduled wall mapping is durable, but a VK postponed timer `post_id` is not assumed durable across publication. Before its frozen slot, the journaled postponed ID must remain exact; after the slot, the current incarnation may be the old ID or one uniquely proven published successor;
 - unresolved `wall_intent` / `wall_may_exist` recovery is also time-aware: a uniquely bound published incarnation may be adopted after the frozen slot without replay, while publication before the slot, wrong date, duplicate mapping or multiple video attachments block;
 - aggregate omission is contextual evidence, not exact-object disappearance proof when a durable exact ID exists. Exact readback governs that object's live/tombstone state; complete aggregate snapshots still govern drift and historical-SHA reconstruction;
@@ -172,7 +173,7 @@ Unknown provider outcomes remain blocking until read-only reconciliation **unles
 1. Treat Issue #232 / PR #271 as repository implementation complete only: no future YouTube provider mutation is authorized without a new exact execution approval.
 2. Treat Lordchrist P0 / Issue #286 as closed: the exact historical research ambiguity is retired for legacy cross-track purposes, while the retired research release itself remains no-replay and no-successor.
 3. Keep Svodka inside Issue #235's current exact scope and read its durable state at operation start; do not infer live rollout status from this document.
-4. For Milovi #323, merge only an exact-current-main green hardening head; then read fresh durable/provider state before continuation. Do not infer 12/12 completion from PR #359, this document or historical checkpoints.
+4. For Milovi #323, PR #359 is repository-complete. Before any live continuation, resolve fresh current `main`, update local `main`/`origin/main`, require a clean checkout, set `VCM_ISSUE323_APPROVED_MAIN_SHA` to that exact reviewed current-main SHA, and perform fresh read-only durable/provider reconciliation. Do not infer 12/12 completion from PR #359, this document or historical checkpoints; provider mutation still requires its own exact current authorization.
 5. After exact live #323 completion, extract the shared native-Clip kernel behind compatibility tests according to `vk-native-clip-golden-path.md`; do not refactor the in-progress durable rollout merely for architectural cleanup.
 6. Treat production Telegram lock refreshes as explicit coherent supply-chain changes; routine bot maintenance must not edit that closure piecemeal.
 7. Treat GitHub governance evidence as observed state, not permanent truth: future changes require fresh read-only verification rather than assumptions.
