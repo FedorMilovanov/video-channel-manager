@@ -1,0 +1,98 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-video-conversion-contract",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "status": "provider_inert",
+  "owning_issue": 353,
+  "purpose": "Define a deterministic, reviewable source-WebM to Telegram-native MP4 preparation lane without changing source files or authorizing provider writes.",
+  "source_manifest": "content/telegram/milovi-cake/video-source-readiness-2026-08.json",
+  "provider_write_authorized": false,
+  "source_mutation_allowed": false,
+  "document_fallback_allowed": false,
+  "conversion_execution_ready": false,
+  "toolchain_lock": {
+    "ffmpeg_version": null,
+    "ffprobe_version": null,
+    "execution_environment_digest": null,
+    "rule": "The exact conversion toolchain must be recorded before outputs are accepted. Outputs produced by an unrecorded toolchain are not release candidates."
+  },
+  "probe_gate": {
+    "required": true,
+    "fields": [
+      "source_sha256",
+      "container",
+      "video_codec",
+      "pixel_format",
+      "width",
+      "height",
+      "avg_frame_rate",
+      "duration_seconds",
+      "audio_present",
+      "audio_codec"
+    ],
+    "rule": "Probe exact bytes from the pinned source commit. Do not infer codec, dimensions, duration, frame rate or audio presence from extension, poster or browser playback."
+  },
+  "output_policy": {
+    "container": "mp4",
+    "video_codec": "h264",
+    "encoder": "libx264",
+    "pixel_format": "yuv420p",
+    "movflags": "+faststart",
+    "metadata_policy": "strip nonessential source metadata; preserve no customer/private metadata by default",
+    "geometry_policy": "preserve source aspect ratio and orientation; never upscale; if scaling is required for compatibility or size, scale down only and produce even dimensions",
+    "frame_rate_policy": "preserve source timing/frame rate unless the exact source probe demonstrates a compatibility reason to change it; any change must be recorded per output",
+    "audio_policy": {
+      "if_source_has_no_audio": "produce no audio stream; never synthesize silence or music",
+      "if_source_has_audio": "encode a single AAC-LC track only after exact source audio is reviewed; do not invent, replace or mix audio",
+      "audio_bitrate_target": "128k",
+      "extra_audio_streams_allowed": false
+    },
+    "size_policy": {
+      "telegram_hard_max_bytes": 52428800,
+      "release_gate": "output byte size must be measured and recorded; being below the hard limit is necessary but not sufficient"
+    },
+    "output_name_template": "milovi-{media_id}.mp4",
+    "output_directory_logical": "artifacts/milovi-telegram/video/",
+    "overwrite_existing_output": false
+  },
+  "required_output_record": [
+    "media_id",
+    "source_git_blob_sha1",
+    "source_sha256",
+    "source_probe",
+    "ffmpeg_version",
+    "ffprobe_version",
+    "execution_environment_digest",
+    "conversion_command_argv",
+    "output_path",
+    "output_sha256",
+    "output_byte_size",
+    "output_container",
+    "output_video_codec",
+    "output_pixel_format",
+    "output_width",
+    "output_height",
+    "output_avg_frame_rate",
+    "output_duration_seconds",
+    "output_audio_present",
+    "output_audio_codec",
+    "poster",
+    "editorial_title"
+  ],
+  "acceptance_gates": [
+    "source bytes match the pinned source Git blob and frozen source SHA-256",
+    "source probe is complete",
+    "toolchain identity is frozen",
+    "conversion command argv is frozen and contains no unreviewed filters",
+    "output is MP4 with H.264 video and yuv420p pixel format",
+    "output dimensions are positive even integers and no larger than source dimensions unless an explicit reviewed exception exists",
+    "output aspect ratio is materially preserved",
+    "output duration does not materially diverge from source duration",
+    "audio policy matches exact source audio state",
+    "output byte size is below the reviewed Telegram hard limit",
+    "output SHA-256 is frozen",
+    "canonical editorial media identity remains unchanged, especially v04 = meringue roll",
+    "no provider upload/send is performed by conversion acceptance"
+  ],
+  "rollout_rule": "Conversion acceptance creates a transport-ready local artifact only. It does not authorize sendVideo, scheduling, posting, pinning, cross-posting or any other provider mutation."
+}

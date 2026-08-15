@@ -1,0 +1,50 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-acquisition-experiments",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "status": "provider_inert_empty_ledger",
+  "source_registry": "docs/operations/milovi-cake-telegram-acquisition-registry-2026-08-15.json",
+  "provider_write_authorized": false,
+  "baseline": {
+    "captured_at": null,
+    "subscriber_count": null,
+    "evidence_ref": null,
+    "rule": "Do not seed this ledger with remembered or approximate channel metrics. Capture a dated evidence-backed baseline when the first acquisition experiment is actually activated."
+  },
+  "measurement_rules": {
+    "raw_join_count_is_success": false,
+    "paid_source_requires_spend": true,
+    "measurement_method_required_before_activation": true,
+    "nullable_metric_rule": "Use null when a metric is not actually measurable from available evidence. Do not convert missing data to zero.",
+    "attribution_rule": "Record only joins/enquiries that the declared measurement method can support. Do not infer attribution from timing alone.",
+    "retention_rule": "Retention fields are optional evidence fields, not guaranteed provider metrics. Populate them only when a reviewed measurement method can support the cohort calculation.",
+    "decision_values": ["keep", "iterate", "stop", "inconclusive"],
+    "decision_requires_evidence": true
+  },
+  "experiment_schema": {
+    "experiment_id": "string, unique and immutable",
+    "source_id": "must exist in the source registry or be a reviewed instance of an approved dynamic namespace",
+    "status": "planned | active | closed",
+    "measurement_method": "declared method and evidence source; required before active",
+    "started_at": "ISO-8601 timestamp or null while planned",
+    "ended_at": "ISO-8601 timestamp or null",
+    "spend_rub": "number or null for non-paid source",
+    "attributed_joins": "integer or null",
+    "retained_7d_if_measurable": "integer or null",
+    "retained_30d_if_measurable": "integer or null",
+    "attributed_enquiries_if_measurable": "integer or null",
+    "qualified_order_signal_if_measurable": "integer or null",
+    "content_or_placement_ref": "exact post/page/QR/partner placement identifier or null while planned",
+    "evidence_refs": "array of immutable or dated evidence references",
+    "decision": "keep | iterate | stop | inconclusive | null before review",
+    "decision_reason": "string or null before review",
+    "notes": "string"
+  },
+  "review_windows": {
+    "early_read": "Use a short early read only to catch broken links, obvious mismatch or abuse; do not declare a source successful from a few hours of data.",
+    "retention_read": "Prefer a later cohort read when the measurement method supports it, especially for paid/local placement tests.",
+    "commercial_read": "Commercial attribution may lag acquisition; keep enquiry/order evidence separate from subscriber-count vanity metrics."
+  },
+  "experiments": []
+}
