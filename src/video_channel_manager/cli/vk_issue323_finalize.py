@@ -61,8 +61,7 @@ def milovi_323_finalize(
         raise typer.Exit(code=3) from exc
 
     console.print(
-        f"[green]Milovi #323 finalizer: {result['status']}[/green] | "
-        f"browser={result['browser_used']} | result={output}"
+        f"[green]Milovi #323 finalizer: {result['status']}[/green] | browser={result['browser_used']} | result={output}"
     )
 
 
