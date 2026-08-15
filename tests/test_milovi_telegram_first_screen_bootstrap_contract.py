@@ -13,15 +13,60 @@ SOURCE_TREE = "34b8df8087d85c077302475da0ece442cd4c37d4"
 GALLERY_BLOB = "e20e60c07479e8b20c1db700f1a40364b81eb669"
 
 EXPECTED_PHOTOS = {
-    "p02": ("Розовый торт с цветами", "img/gallery/gallery-02-hd.webp", "3a7813f643e4767d97a55478e4128258b0f88ed5", 88702),
-    "p03": ("Детский торт с зайчиком", "img/gallery/gallery-03-hd.webp", "5aa281e85a7d62a9e638ae657178d9b498a4636e", 104376),
-    "p04": ("3D-торт в прозрачном цилиндре", "img/gallery/gallery-04-hd.webp", "6a9cb1fa1ab747ba4deca74f0bd4b5be5a731523", 151396),
-    "p11": ("Светлый свадебный торт", "img/gallery/gallery-11-hd.webp", "53647470a15b3f7b2c7a2bc9f1b6047b0950e75e", 130526),
-    "p16": ("Капкейки с кремовым декором", "img/gallery/gallery-16-hd.webp", "94b153df857adb1f41ff902b46a8df159a04d479", 161712),
-    "p17": ("Павлова с ягодной начинкой", "img/gallery/gallery-17-hd.webp", "7936bd296ee601e298bbc4ada739024b77d37fc5", 137280),
-    "p20": ("3D-торт в стиле Minecraft", "img/gallery/gallery-20-hd.webp", "6ed782e0949096570a7fb77b2b47048e35955b5f", 159284),
-    "p23": ("Бенто с романтичной надписью", "img/gallery/gallery-23-hd.webp", "c39f99b65bf69a102091e25180121d5a3441d7ac", 108422),
-    "p25": ("Меренговые рулеты в коробке", "img/gallery/gallery-25-hd.webp", "9544a03c8a429e1fa7eba1d6678f91f2a0540b44", 133328),
+    "p02": (
+        "Розовый торт с цветами",
+        "img/gallery/gallery-02-hd.webp",
+        "3a7813f643e4767d97a55478e4128258b0f88ed5",
+        88702,
+    ),
+    "p03": (
+        "Детский торт с зайчиком",
+        "img/gallery/gallery-03-hd.webp",
+        "5aa281e85a7d62a9e638ae657178d9b498a4636e",
+        104376,
+    ),
+    "p04": (
+        "3D-торт в прозрачном цилиндре",
+        "img/gallery/gallery-04-hd.webp",
+        "6a9cb1fa1ab747ba4deca74f0bd4b5be5a731523",
+        151396,
+    ),
+    "p11": (
+        "Светлый свадебный торт",
+        "img/gallery/gallery-11-hd.webp",
+        "53647470a15b3f7b2c7a2bc9f1b6047b0950e75e",
+        130526,
+    ),
+    "p16": (
+        "Капкейки с кремовым декором",
+        "img/gallery/gallery-16-hd.webp",
+        "94b153df857adb1f41ff902b46a8df159a04d479",
+        161712,
+    ),
+    "p17": (
+        "Павлова с ягодной начинкой",
+        "img/gallery/gallery-17-hd.webp",
+        "7936bd296ee601e298bbc4ada739024b77d37fc5",
+        137280,
+    ),
+    "p20": (
+        "3D-торт в стиле Minecraft",
+        "img/gallery/gallery-20-hd.webp",
+        "6ed782e0949096570a7fb77b2b47048e35955b5f",
+        159284,
+    ),
+    "p23": (
+        "Бенто с романтичной надписью",
+        "img/gallery/gallery-23-hd.webp",
+        "c39f99b65bf69a102091e25180121d5a3441d7ac",
+        108422,
+    ),
+    "p25": (
+        "Меренговые рулеты в коробке",
+        "img/gallery/gallery-25-hd.webp",
+        "9544a03c8a429e1fa7eba1d6678f91f2a0540b44",
+        133328,
+    ),
 }
 
 
