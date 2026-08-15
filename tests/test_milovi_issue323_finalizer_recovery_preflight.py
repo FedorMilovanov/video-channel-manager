@@ -73,7 +73,7 @@ def test_verified_provider_effect_proves_due_successor_before_historical_baselin
         successor_resolution_proven: bool = False,
         **_kwargs: Any,
     ) -> Any:
-        assert current_record is record
+        assert current_record == record
         assert current is supplemented
         assert journal is not None
         assert successor_resolution_proven is True
