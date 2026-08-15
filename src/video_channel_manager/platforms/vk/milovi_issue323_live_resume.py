@@ -66,6 +66,12 @@ EXPECTED_CANARY_REMOTE_ID = "-68859909_456239225"
 MINIMUM_FUTURE_SECONDS = 300
 ISSUE323_EIGHTH_SOURCE_ID = "o1WXIMupuws"
 ISSUE323_RECONCILED_WALL_VIEW = "published:-68859909_475"
+ISSUE323_CANARY_JOURNALED_WALL_REMOTE_ID = "-68859909_468"
+ISSUE323_CANARY_PUBLISH_DATE = 1786723200
+ISSUE323_CANARY_LIVE_HISTORICAL_TEXT_SHA256 = (
+    "sha256:cddb2b01370b146708556779244c493f8e97f4a3da873cd914e121c97031e4b0"
+)
+ISSUE323_CANARY_CAPTURE_TEXT_SHA256 = "sha256:3a8ed916bd6e86ff924ed0ae6315ccbfad05fc972e2604ba98ec1171a0119fc0"
 
 
 def _native_clip_assessment(
@@ -456,10 +462,12 @@ def _historical_issue323_wall_view(
     postponed ID is possible. After the slot, a proven current successor may have
     already existed at capture or the old ID may still have represented the same
     published logical mapping; exact SHA chooses between those provider
-    incarnations. Exact text, frozen date, one exact video Clip and unrelated wall
-    objects are never changed. For the exact logical mapping only, canonical
-    provider-added non-video attachments may be removed in the candidate historical
-    view, again accepted solely by the exact durable pre-upload SHA.
+    incarnations. Text is strict except for the one exact canary capture-time copy
+    projection proved by the frozen wall/Clip/date/current-text identity below.
+    Frozen date, one exact video Clip and unrelated wall objects are never changed.
+    For the exact logical mapping only, canonical provider-added non-video attachments
+    may be removed in the candidate historical view, again accepted solely by the
+    exact durable pre-upload SHA.
     """
 
     if not current.complete:
@@ -598,27 +606,40 @@ def _historical_issue323_wall_view(
         if post.attachments != video_only:
             attachment_variants.append(video_only)
 
+        text_variants = [post.text_sha256]
+        if (
+            current_is_successor
+            and successor_resolution_proven
+            and logical_remote_id == ISSUE323_CANARY_JOURNALED_WALL_REMOTE_ID
+            and clip_remote_id == EXPECTED_CANARY_REMOTE_ID
+            and expected_date == ISSUE323_CANARY_PUBLISH_DATE
+            and post.text_sha256 == ISSUE323_CANARY_LIVE_HISTORICAL_TEXT_SHA256
+        ):
+            text_variants.append(ISSUE323_CANARY_CAPTURE_TEXT_SHA256)
+
         options: list[tuple[VkWallPostFingerprint, bool]] = []
-        seen_option_keys: set[tuple[int, str, tuple[str, ...]]] = set()
+        seen_option_keys: set[tuple[int, str, str, tuple[str, ...]]] = set()
         for historical_post_id, historical_surface, reversed_surface in provider_states:
             if post.surface is VkWallSurface.POSTPONED and historical_surface is VkWallSurface.PUBLISHED:
                 continue
-            for attachments in attachment_variants:
-                key = (historical_post_id, historical_surface.value, attachments)
-                if key in seen_option_keys:
-                    continue
-                seen_option_keys.add(key)
-                options.append(
-                    (
-                        replace(
-                            post,
-                            post_id=historical_post_id,
-                            surface=historical_surface,
-                            attachments=attachments,
-                        ),
-                        reversed_surface,
+            for text_sha256 in text_variants:
+                for attachments in attachment_variants:
+                    key = (historical_post_id, historical_surface.value, text_sha256, attachments)
+                    if key in seen_option_keys:
+                        continue
+                    seen_option_keys.add(key)
+                    options.append(
+                        (
+                            replace(
+                                post,
+                                post_id=historical_post_id,
+                                surface=historical_surface,
+                                text_sha256=text_sha256,
+                                attachments=attachments,
+                            ),
+                            reversed_surface,
+                        )
                     )
-                )
         if not options:
             raise UploadRecoveryRequired(f"Earlier rollout wall has no valid historical state: {logical_remote_id}")
         variant_options[post_index] = tuple(options)
