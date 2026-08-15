@@ -240,11 +240,7 @@ def _cleanup_exact_wall475(
             raise MiloviFinalizerBlocked(
                 "Wall 475 cleanup authority was already consumed but the post is live again; automatic re-delete is forbidden"
             )
-        evidence = (
-            "wall.getById:none-resume-verified"
-            if post is None
-            else "wall.getById:is_deleted_true-resume-verified"
-        )
+        evidence = "wall.getById:none-resume-verified" if post is None else "wall.getById:is_deleted_true-resume-verified"
         _mark_verified_absent(
             writer=writer,
             promoted_asset=promoted_asset,
