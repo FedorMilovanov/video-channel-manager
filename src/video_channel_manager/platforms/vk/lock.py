@@ -20,6 +20,7 @@ _WINDOWS_STILL_ACTIVE = 259
 _WINDOWS_ERROR_INVALID_PARAMETER = 87
 _ISSUE323_COMMUNITY_ID = 68859909
 _ISSUE323_OPERATION_PREFIX = "milovi-issue-323"
+_ISSUE323_PROVIDER_INERT_OPERATIONS = frozenset({"milovi-issue-323-readonly-status-probe"})
 _ISSUE323_APPROVED_MAIN_SHA_ENV = "VCM_ISSUE323_APPROVED_MAIN_SHA"
 _GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 
@@ -202,9 +203,16 @@ def _git_output(args: tuple[str, ...], *, cwd: Path) -> str:
 
 
 def _require_issue323_execution_identity(*, community_id: int, operation: str) -> dict[str, str] | None:
-    """Fail closed unless an Issue #323 writer runs from the exact approved main checkout."""
+    """Fail closed unless an Issue #323 writer runs from the exact approved main checkout.
+
+    The exact provider-inert status probe may share the community mutex so it
+    cannot race a writer, but acquiring that mutex must not grant or require
+    provider-write execution authority.
+    """
 
     if community_id != _ISSUE323_COMMUNITY_ID or not operation.startswith(_ISSUE323_OPERATION_PREFIX):
+        return None
+    if operation in _ISSUE323_PROVIDER_INERT_OPERATIONS:
         return None
 
     approved_sha = os.environ.get(_ISSUE323_APPROVED_MAIN_SHA_ENV, "").strip().lower()
