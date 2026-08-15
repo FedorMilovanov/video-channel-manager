@@ -83,9 +83,7 @@ def _snapshot(
 ):
     return build_wall_snapshot(
         community_id=68859909,
-        published_items=[
-            _wall_item(0, post_id=first_post_id, extra_photo_id=extra_photo_id, text=first_text)
-        ],
+        published_items=[_wall_item(0, post_id=first_post_id, extra_photo_id=extra_photo_id, text=first_text)],
         postponed_items=[_wall_item(index) for index in range(1, 8)],
         published_pages=1,
         postponed_pages=1,
