@@ -19,6 +19,7 @@ from video_channel_manager.cli.compare import compare_app
 from video_channel_manager.cli.content import content_app
 from video_channel_manager.cli.resi import resi_app
 from video_channel_manager.cli.vk import vk_app
+from video_channel_manager.cli.vk_issue323_finalize import register_issue323_finalize_cli
 from video_channel_manager.cli.youtube import youtube_app
 from video_channel_manager.config import get_settings
 from video_channel_manager.domain.enums import ChannelKind, CollectionKind, OperationType, PlatformName, RiskLevel
@@ -36,6 +37,7 @@ schema_app = typer.Typer(no_args_is_help=True, help="Versioned exchange schema c
 plan_app = typer.Typer(no_args_is_help=True, help="Validate and preview external change plans.")
 local_app = typer.Typer(no_args_is_help=True, help="Read-only local media inventory.")
 example_app = typer.Typer(no_args_is_help=True, help="Generate example exchange documents.")
+register_issue323_finalize_cli(vk_app)
 app.add_typer(db_app, name="db")
 app.add_typer(schema_app, name="schema")
 app.add_typer(plan_app, name="plan")
