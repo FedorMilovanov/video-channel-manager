@@ -1,0 +1,31 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
+  "publication_id": "lordchrist-edwards-god-highest-good",
+  "sequence": 26,
+  "intent_id": "ba9e319db8b56d36f005ea7ab2a21e90",
+  "workflow_run_id": "31870696981",
+  "workflow_run_attempt": "1",
+  "github_sha": "dc7e498d24cf2dcd565be63f37a8894465c14d50",
+  "github_workflow_sha": "dc7e498d24cf2dcd565be63f37a8894465c14d50",
+  "payload_sha256": "sha256:3e5fd5f8f85063dd04b93e180a65a0eaf76b8f65bfc45f26441917f72d87733d",
+  "text": "Бог есть высшее благо разумного творения, и наслаждение Им — единственное счастье, способное насытить наши души. Войти в Небо и полностью наслаждаться Богом бесконечно лучше самых приятных условий здесь.\n\nОтцы и матери, мужья, жёны, дети и общество земных друзей — лишь тени; наслаждение Богом — сущность. Они — рассеянные лучи; Бог — солнце. Они — потоки; Бог — источник. Они — капли; Бог — океан.\n\nПоэтому эту жизнь надлежит проводить лишь как путешествие к Небу, а поиск высшей цели и подлинного блага сделать главным делом жизни, подчинив ему все прочие заботы. Зачем трудиться ради чего-либо другого или привязывать к чему-либо другому сердце, кроме нашей истинной цели и настоящего счастья?\n\n© Джонатан Эдвардс, «Христианский путь на Небеса»\n\n#ДжонатанЭдвардс #Бог #Небеса #Вечность",
+  "dispatch_mode": "scheduled",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-08-15T06:56:58.542077Z"
+  },
+  "prepared_at_utc": "2026-08-15T06:56:59.741308Z"
+}
