@@ -426,7 +426,15 @@ def _ensure_clip(
     return remote_id
 
 
-def _read_wall_attachment(writer: VkWallWriter, clip_remote_id: str, publish_at: Any) -> str | None:
+def _read_wall_attachment(
+    writer: VkWallWriter,
+    clip_remote_id: str,
+    publish_at: Any,
+    *,
+    now_epoch: int | None = None,
+) -> str | None:
+    """Resolve one exact wall effect across its legitimate time-driven surface transition."""
+
     _owner, video_id = _parse_remote_id(clip_remote_id)
     snapshot = writer.capture_wall_snapshot(community_id=MILOVI_COMMUNITY_ID, max_posts_per_surface=10000)
     if not snapshot.complete:
@@ -438,9 +446,22 @@ def _read_wall_attachment(writer: VkWallWriter, clip_remote_id: str, publish_at:
     if not matches:
         return None
     match = matches[0]
-    if match.surface is not VkWallSurface.POSTPONED or match.publish_date != int(publish_at.timestamp()):
-        raise MiloviTokenRolloutBlocked(f"Clip {clip_remote_id} has unexpected wall state")
-    return match.remote_id
+    expected_publish_date = int(publish_at.timestamp())
+    if match.publish_date != expected_publish_date:
+        raise MiloviTokenRolloutBlocked(f"Clip {clip_remote_id} has unexpected wall date")
+    video_attachments = tuple(value for value in match.attachments if value.startswith("video"))
+    if video_attachments != (attachment,):
+        raise MiloviTokenRolloutBlocked(
+            f"Clip {clip_remote_id} wall mapping must contain exactly one exact video attachment"
+        )
+    if match.surface is VkWallSurface.POSTPONED:
+        return match.remote_id
+    if match.surface is VkWallSurface.PUBLISHED:
+        observed_now = int(time.time()) if now_epoch is None else now_epoch
+        if observed_now + 60 < expected_publish_date:
+            raise MiloviTokenRolloutBlocked(f"Clip {clip_remote_id} wall mapping published before its frozen slot")
+        return match.remote_id
+    raise MiloviTokenRolloutBlocked(f"Clip {clip_remote_id} has unexpected wall surface: {match.surface.value}")
 
 
 def _ensure_wall(
@@ -464,7 +485,13 @@ def _ensure_wall(
             raise MiloviTokenRolloutBlocked(
                 f"Prior wall effect unresolved for {asset.source_id}; blind replay forbidden"
             )
-        item.update(status="wall_verified", wall_remote_id=reconciled, wall_origin="reconciled")
+        item.update(
+            status="wall_verified",
+            wall_remote_id=reconciled,
+            wall_origin="reconciled",
+            publish_at=publish_at.isoformat(),
+            publish_date=int(publish_at.timestamp()),
+        )
         _save(journal_path, journal)
         return reconciled
 

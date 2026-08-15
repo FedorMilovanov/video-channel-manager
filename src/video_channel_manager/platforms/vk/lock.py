@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import socket
+import subprocess
 import time
 import uuid
 from contextlib import contextmanager
@@ -16,6 +18,10 @@ _INVALID_LOCK_GRACE_SECONDS = 30.0
 _WINDOWS_PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 _WINDOWS_STILL_ACTIVE = 259
 _WINDOWS_ERROR_INVALID_PARAMETER = 87
+_ISSUE323_COMMUNITY_ID = 68859909
+_ISSUE323_OPERATION_PREFIX = "milovi-issue-323"
+_ISSUE323_APPROVED_MAIN_SHA_ENV = "VCM_ISSUE323_APPROVED_MAIN_SHA"
+_GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 
 
 def _windows_pid_is_running(pid: int, *, kernel32: Any | None = None) -> bool:
@@ -148,9 +154,107 @@ def _release_owned_lock(path: Path, nonce: str) -> None:
     path.unlink(missing_ok=True)
 
 
+def community_vk_write_lock_path(data_dir: Path, *, community_id: int) -> Path:
+    """Return the one canonical local writer lock path for a VK community."""
+
+    if community_id <= 0:
+        raise ValueError("community_id must be positive")
+    return Path(data_dir) / "locks" / f"vk-community-{community_id}.lock"
+
+
+def _canonicalize_requested_lock_path(path: Path, *, community_id: int) -> Path:
+    """Collapse operation-specific filenames into one community mutex.
+
+    Existing callers historically supplied names such as ``...-finalizer.lock``
+    and ``...-live-resume.lock``. Keeping those names as independent mutexes can
+    allow concurrent writes to the same remote community. The caller still
+    chooses the lock directory, but the filename is canonical and derived only
+    from the exact community identity.
+    """
+
+    if community_id <= 0:
+        raise ValueError("community_id must be positive")
+    return Path(path).parent / f"vk-community-{community_id}.lock"
+
+
+def _git_output(args: tuple[str, ...], *, cwd: Path) -> str:
+    try:
+        completed = subprocess.run(
+            ["git", *args],
+            cwd=cwd,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        raise VkWriteError(
+            f"Cannot verify Issue #323 repository execution identity: git unavailable: {exc}",
+            method="local.execution_identity",
+        ) from exc
+    if completed.returncode != 0:
+        detail = completed.stderr.strip() or completed.stdout.strip() or f"exit {completed.returncode}"
+        raise VkWriteError(
+            f"Cannot verify Issue #323 repository execution identity: git {' '.join(args)} failed: {detail}",
+            method="local.execution_identity",
+        )
+    return completed.stdout.strip()
+
+
+def _require_issue323_execution_identity(*, community_id: int, operation: str) -> dict[str, str] | None:
+    """Fail closed unless an Issue #323 writer runs from the exact approved main checkout."""
+
+    if community_id != _ISSUE323_COMMUNITY_ID or not operation.startswith(_ISSUE323_OPERATION_PREFIX):
+        return None
+
+    approved_sha = os.environ.get(_ISSUE323_APPROVED_MAIN_SHA_ENV, "").strip().lower()
+    if not _GIT_SHA_RE.fullmatch(approved_sha):
+        raise VkWriteError(
+            f"Issue #323 requires {_ISSUE323_APPROVED_MAIN_SHA_ENV}=<exact 40-char approved main SHA>",
+            method="local.execution_identity",
+        )
+
+    start = Path.cwd()
+    root_text = _git_output(("rev-parse", "--show-toplevel"), cwd=start)
+    repo_root = Path(root_text).resolve()
+    branch = _git_output(("branch", "--show-current"), cwd=repo_root)
+    head_sha = _git_output(("rev-parse", "HEAD"), cwd=repo_root).lower()
+    origin_main_sha = _git_output(("rev-parse", "--verify", "origin/main"), cwd=repo_root).lower()
+    worktree = _git_output(("status", "--porcelain=v1", "--untracked-files=normal"), cwd=repo_root)
+
+    mismatches: list[str] = []
+    if branch != "main":
+        mismatches.append(f"branch={branch or '<detached>'}")
+    if head_sha != approved_sha:
+        mismatches.append(f"HEAD={head_sha}")
+    if origin_main_sha != approved_sha:
+        mismatches.append(f"origin/main={origin_main_sha}")
+    if worktree:
+        mismatches.append("worktree=dirty")
+    if mismatches:
+        raise VkWriteError(
+            "Issue #323 execution identity mismatch; provider access is blocked: " + ", ".join(mismatches),
+            method="local.execution_identity",
+        )
+
+    return {
+        "approved_main_sha": approved_sha,
+        "head_sha": head_sha,
+        "origin_main_sha": origin_main_sha,
+        "branch": branch,
+        "repo_root": str(repo_root),
+        "worktree": "clean",
+    }
+
+
 @contextmanager
 def local_vk_write_lock(path: Path, *, account: str, community_id: int, operation: str) -> Iterator[None]:
-    """Prevent two local processes from mutating the same VK community."""
+    """Prevent two local processes from mutating the same VK community.
+
+    The supplied path is treated as a lock-directory hint for backward
+    compatibility. Its filename is never an authority boundary: all operations
+    for one community converge on the same canonical filename.
+    """
 
     if community_id <= 0:
         raise ValueError("community_id must be positive")
@@ -159,6 +263,8 @@ def local_vk_write_lock(path: Path, *, account: str, community_id: int, operatio
     if not account or not operation:
         raise ValueError("account and operation cannot be blank")
 
+    execution_identity = _require_issue323_execution_identity(community_id=community_id, operation=operation)
+    path = _canonicalize_requested_lock_path(path, community_id=community_id)
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor: int | None = None
     nonce = uuid.uuid4().hex
@@ -187,6 +293,8 @@ def local_vk_write_lock(path: Path, *, account: str, community_id: int, operatio
                 "operation": operation,
                 "started_at": datetime.now(UTC).isoformat(),
             }
+            if execution_identity is not None:
+                payload["execution_identity"] = execution_identity
             encoded = (json.dumps(payload, ensure_ascii=False) + "\n").encode("utf-8")
             try:
                 written = 0
@@ -215,4 +323,4 @@ def local_vk_write_lock(path: Path, *, account: str, community_id: int, operatio
             _release_owned_lock(path, nonce)
 
 
-__all__ = ["local_vk_write_lock"]
+__all__ = ["community_vk_write_lock_path", "local_vk_write_lock"]

@@ -8,14 +8,19 @@ from typing import Any
 import pytest
 
 import video_channel_manager.platforms.vk.milovi_issue323_finalize as finalizer
+from video_channel_manager.platforms.vk.milovi_rollout_sources import build_wall_message
 from video_channel_manager.platforms.vk.wall_safety import VkWallSurface, build_wall_snapshot
 
 PUBLISH_DATE = 1786723200
 CLIP_REMOTE_ID = "-68859909_456239225"
 WALL_REMOTE_ID = "-68859909_468"
+SOURCE_ID = "d48QLgOuiTs"
+TITLE = "Cake"
+LEGACY_WALL = build_wall_message(TITLE, SOURCE_ID)
+PROMOTED_WALL = "new internal promotion"
 
 
-def _wall_item(*, text: str = "old", post_id: int = 468, publish_date: int = PUBLISH_DATE) -> dict[str, Any]:
+def _wall_item(*, text: str = LEGACY_WALL, post_id: int = 468, publish_date: int = PUBLISH_DATE) -> dict[str, Any]:
     return {
         "owner_id": -68859909,
         "id": post_id,
@@ -92,6 +97,15 @@ class _WallWriter:
         raise AssertionError(f"post not found: {post_id}")
 
 
+def _edit_asset() -> Any:
+    return SimpleNamespace(
+        source_id=SOURCE_ID,
+        title=TITLE,
+        wall_message=PROMOTED_WALL,
+        legacy_wall_message=LEGACY_WALL,
+    )
+
+
 def test_published_scheduled_post_edit_preserves_surface_without_publish_date(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -99,13 +113,12 @@ def test_published_scheduled_post_edit_preserves_surface_without_publish_date(
     writer = _WallWriter(published=[_wall_item()])
     monkeypatch.setattr(finalizer, "_prove_target", lambda _client: None)
     operation: dict[str, Any] = {"status": "pending"}
-    state = {"wall_message_edits": {"d48QLgOuiTs": operation}}
-    asset = SimpleNamespace(wall_message="new internal promotion")
+    state = {"wall_message_edits": {SOURCE_ID: operation}}
 
     finalizer._edit_wall_message(
         writer=writer,  # type: ignore[arg-type]
         client=object(),  # type: ignore[arg-type]
-        asset=asset,  # type: ignore[arg-type]
+        asset=_edit_asset(),  # type: ignore[arg-type]
         journal=_journal(),
         wall_remote_id=WALL_REMOTE_ID,
         clip_remote_id=CLIP_REMOTE_ID,
@@ -121,7 +134,7 @@ def test_published_scheduled_post_edit_preserves_surface_without_publish_date(
             {
                 "owner_id": -68859909,
                 "post_id": 468,
-                "message": "new internal promotion",
+                "message": PROMOTED_WALL,
                 "attachments": "video-68859909_456239225",
             },
         )
@@ -137,12 +150,11 @@ def test_postponed_edit_keeps_exact_publish_date(
     writer = _WallWriter(postponed=[_wall_item()])
     monkeypatch.setattr(finalizer, "_prove_target", lambda _client: None)
     operation: dict[str, Any] = {"status": "pending"}
-    asset = SimpleNamespace(wall_message="new internal promotion")
 
     finalizer._edit_wall_message(
         writer=writer,  # type: ignore[arg-type]
         client=object(),  # type: ignore[arg-type]
-        asset=asset,  # type: ignore[arg-type]
+        asset=_edit_asset(),  # type: ignore[arg-type]
         journal=_journal(),
         wall_remote_id=WALL_REMOTE_ID,
         clip_remote_id=CLIP_REMOTE_ID,
@@ -159,7 +171,7 @@ def test_postponed_edit_keeps_exact_publish_date(
 def _journal() -> dict[str, Any]:
     return {
         "items": {
-            "d48QLgOuiTs": {
+            SOURCE_ID: {
                 "status": "wall_verified",
                 "clip_remote_id": CLIP_REMOTE_ID,
                 "wall_remote_id": WALL_REMOTE_ID,
@@ -171,16 +183,17 @@ def _journal() -> dict[str, Any]:
 
 def _asset() -> Any:
     return SimpleNamespace(
-        source_id="d48QLgOuiTs",
+        source_id=SOURCE_ID,
+        title=TITLE,
         description="promoted clip description",
-        wall_message="new internal promotion",
+        wall_message=PROMOTED_WALL,
     )
 
 
 def test_final_postflight_accepts_due_post_after_normal_postponed_to_published_transition(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    writer = _WallWriter(published=[_wall_item(text="new internal promotion")])
+    writer = _WallWriter(published=[_wall_item(text=PROMOTED_WALL)])
     monkeypatch.setattr(finalizer, "_assert_native_clip", lambda *args, **kwargs: {})
     monkeypatch.setattr(finalizer.time, "time", lambda: PUBLISH_DATE + 3600)
 
@@ -191,7 +204,7 @@ def test_final_postflight_accepts_due_post_after_normal_postponed_to_published_t
 
 
 def test_final_postflight_rejects_future_post_that_published_early(monkeypatch: pytest.MonkeyPatch) -> None:
-    writer = _WallWriter(published=[_wall_item(text="new internal promotion")])
+    writer = _WallWriter(published=[_wall_item(text=PROMOTED_WALL)])
     monkeypatch.setattr(finalizer, "_assert_native_clip", lambda *args, **kwargs: {})
     monkeypatch.setattr(finalizer.time, "time", lambda: PUBLISH_DATE - 3600)
 

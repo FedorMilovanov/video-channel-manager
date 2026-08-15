@@ -1,12 +1,13 @@
 # Milovi Issue #323 interim rollout postmortem
 
 Date: 2026-08-14
+Updated: 2026-08-15
 Project: `milovi-cake`
 YouTube channel: `UCMDnxfGZiBqcDzgUV1zjFpw`
 VK community: `68859909`
 VK owner: `-68859909`
 Issue: #323
-Status: **interim** — recovery/finalizer architecture is merged; live 12/12 completion and final provider postflight are still pending.
+Status: **interim** — recovery/finalizer architecture is hardened; live 12/12 completion and final provider postflight are still pending.
 
 This document is operational memory, not provider-write authority. The current Issue #323 scope and durable journal remain the live operation authority/state. Do not infer current provider state from this document without fresh read-only verification.
 
@@ -25,7 +26,10 @@ The corrected model is monotonic and phase-consistent:
 - omission from an aggregate projection is not automatically proof of absence when a stronger exact/readback contract exists;
 - scheduled wall state is time-aware, and a postponed timer ID is not assumed to remain the published incarnation's ID;
 - recovery, metadata maintenance, ambiguous-write reconciliation and final postflight must use the **same logical mapping/current-incarnation contract**;
-- ambiguous provider effects are reconciled from durable bindings and exact evidence, never replayed blindly.
+- ambiguous provider effects are reconciled from durable bindings and exact evidence, never replayed blindly;
+- mutation overwrite authority requires an exact reviewed BEFORE state, not merely the right remote object or a recognizable source marker;
+- process serialization is keyed by the remote mutation domain (`community_id`), not by executor name;
+- deterministic batch conflicts are detected read-only before the first partial promotion mutation.
 
 ## What actually went wrong
 
@@ -208,7 +212,7 @@ The first fresh provider continuation after PR #352 advanced source 9 to exact n
 
 PR #355 corrects the phase contract without weakening final success:
 
-- child/recovery completion accepts only exact legacy source-bound copy or exact already-promoted copy; arbitrary descriptions remain blocking;
+- child/recovery completion accepts only legacy source-bound copy or exact already-promoted copy; arbitrary descriptions remain blocking;
 - recovery still has no metadata-edit authority;
 - promotion remains the sole `video.edit`/`wall.edit` owner;
 - final postflight still requires exact promoted public copy;
@@ -217,17 +221,60 @@ PR #355 corrects the phase contract without weakening final success:
 
 Permanent rules: **a phase cannot require a state that only a later mutation owner is authorized to establish; a mutation registry must enumerate callsites, not merely API method names; and durable intent without an explicit dispatch boundary is insufficient to prove no-replay semantics.**
 
+### 17. Source binding was weaker than mutation BEFORE-state authority
+
+After PR #355, child phase ordering was correct, but the legacy side of `legacy_or_promoted` still meant “the description contains the expected YouTube source marker”. That is sufficient supporting provenance evidence for some historical identity checks, but it is not sufficient permission to overwrite metadata. A human-edited or otherwise drifted description could retain the same source URL and still be silently replaced by promotion copy. The wall edit path was weaker still: exact logical wall identity did not prove that its current text was the reviewed legacy text.
+
+PR #359 separates object identity from overwrite authority:
+
+- pre-promotion Clip description must be byte-for-byte the reviewed legacy description or already the exact promoted description;
+- pre-promotion wall message must be byte-for-byte the reviewed legacy wall message or already the exact promoted message;
+- a correct source URL, owner, Clip, frozen date or wall incarnation does not authorize overwrite of a third text state;
+- preservation-only anomaly checks retain their narrower historical source-marker semantics and do not acquire metadata-write authority.
+
+Permanent rule: **the right target is necessary but not sufficient for mutation. A replacement mutation also needs an exact reviewed BEFORE state or an exact already-AFTER state; every third state is conflict.**
+
+### 18. Per-item promotion could discover deterministic conflicts only after partial mutation
+
+Promotion originally validated and edited one source at a time. A deterministic conflict on source 12 could therefore be discovered only after sources 1–11 had already been modified. Network/provider failures cannot be eliminated, but known read-only conflicts should not be deferred until after avoidable partial mutation.
+
+PR #359 adds a whole-batch promotion preflight before the first metadata write. It proves all 12 durable mappings, exact native Clips, current successor-aware wall incarnations and exact legacy/promoted copy states in one read-only phase. Tests place drift on the last source and require zero provider mutation calls.
+
+Permanent rule: **when a bounded batch has deterministic preconditions, prove the complete batch read-only before the first non-idempotent maintenance mutation.**
+
+### 19. Operation-specific lock filenames did not actually serialize one remote mutation domain
+
+`local_vk_write_lock()` promised to prevent two local processes from mutating the same VK community, but callers supplied the filesystem path. Issue #323 token rollout, live resume, anomaly reconciliation and finalizer used different filenames, so two executors could each acquire a different local lock while targeting the same community.
+
+PR #359 makes the lock filename canonical by exact `community_id`. The caller may still choose the lock directory for compatibility, but operation-specific filenames collapse to one `vk-community-<id>.lock`. Tests prove different operation names cannot bypass the mutex while different communities remain independent.
+
+Permanent rule: **a concurrency mutex is keyed by the shared remote mutation domain, not by the name of the code path performing the mutation.**
+
+### 20. Wall-475 intent was not a durable replay barrier, and unresolved wall intent retained an obsolete temporal model
+
+The historical wall-475 owner stored `delete_intent` before `wall.delete` but did not store a separate dispatch-started marker. A process crash after provider dispatch but before durable postflight could therefore leave state indistinguishable from a crash before dispatch. The same audit also found `_read_wall_attachment()` accepted only `POSTPONED`, so an unresolved `wall_intent`/`wall_may_exist` resumed after its frozen slot would reject a legitimate published incarnation and recreate the old temporal-model bug at a different consumer.
+
+PR #359 closes both edges:
+
+- fresh wall-475 cleanup persists `delete_dispatch_started=true` before the one provider call;
+- historical `delete_intent` from older code is conservatively treated as potentially already dispatched on restart;
+- exact absence/tombstone may reconcile that state, but a still-live post never grants a blind second delete;
+- once wall-475 cleanup is durably `verified_absent`, automatic delete authority is consumed and a later live reappearance blocks rather than re-deletes;
+- unresolved scheduled-wall recovery accepts a uniquely bound published incarnation after the frozen slot, rejects early publication, and still requires exactly one exact video attachment while tolerating non-video provider projections.
+
+Permanent rules: **intent is not dispatch evidence; legacy state that cannot distinguish pre/post-dispatch must be migrated fail-closed. Temporal transition semantics must be applied to every consumer of the logical wall mapping, including unresolved-intent recovery.**
+
 ## What was not wrong
 
 Fail-closed behavior itself was not the defect. The stops prevented a second upload, broad wall deletion, or silent acceptance of an unknown wall effect. The repair is not to weaken safety globally; it is to attach safety checks to stable, authorized invariants and propagate those invariants consistently.
 
-The generic `upload_lifecycle.py` was deliberately not weakened by PR #342, #344, #346, or #348. Issue-specific recovery/finalization adapts the historical provider state around it.
+The generic `upload_lifecycle.py` was deliberately not weakened by PR #342, #344, #346, #348, #355 or #359. Issue-specific recovery/finalization adapts the historical provider state around it.
 
 The existence of a shared VK credential alias was also not target authority. Project/community/owner binding remains mandatory before writes. A faster historical browser flow is not evidence that it had a stronger target-binding model.
 
 ## Timeline of the failure class
 
-The operational history across Issue #323 and PRs #328–#355 shows the progression:
+The operational history across Issue #323 and PRs #328–#359 shows the progression:
 
 - source/media preparation and codec compatibility were hardened without re-downloading intact reviewed bytes;
 - canary and later child processing exposed transient `processing`, blank-title and playability projections;
@@ -243,12 +290,14 @@ The operational history across Issue #323 and PRs #328–#355 shows the progress
 - the next live run showed the old postponed ID itself could be absent/tombstoned after publication even though the logical scheduled publication still existed;
 - PR #346 added successor-aware read-only reconciliation for that exact postponed-ID→published-ID transition and retained exact historical SHA proof;
 - post-#346 audit found finalizer promotion/final audit still depended on the stale historical ID;
-- PR #348 propagated the same successor-aware logical mapping/current-incarnation contract through wall metadata maintenance, ambiguous edit reconciliation and final postflight.
+- PR #348 propagated the same successor-aware logical mapping/current-incarnation contract through wall metadata maintenance, ambiguous edit reconciliation and final postflight;
 - PR #349 added the sources-9–12-only upload-created wall-side-effect reconciler with structural no-upload replay capability;
 - the following run exposed exact-live upload-created wall IDs omitted from aggregate candidate discovery; PR #351 made exact-ID readback authoritative for those IDs;
 - the next historical-baseline failure showed current provider incarnation and capture-time historical incarnation had been conflated; PR #352 reconstructs history from durable capture time plus exact pre-upload SHA;
 - the fresh continuation after #352 advanced source 9 to exact native Clip `-68859909_456239233` and then exposed the impossible child-before-promotion prerequisite;
-- PR #355 corrected that phase ordering, added replay-safe promotion mutation boundaries and made the mutation inventory callsite-aware.
+- PR #355 corrected that phase ordering, added replay-safe promotion mutation boundaries and made the mutation inventory callsite-aware;
+- the post-#355 audit found overwrite authority still weaker than reviewed BEFORE-state, promotion lacked a whole-batch preflight, local community serialization could be bypassed by different lock filenames, wall475 lacked a crash-persistent dispatch barrier, and unresolved wall intent still assumed postponed-only state;
+- PR #359 hardens those remaining deterministic classes without changing the generic upload lifecycle or replaying any provider mutation.
 
 Do not use this timeline as live provider state. Read the durable Issue #323 journal and current provider surfaces before any continuation.
 
@@ -266,18 +315,24 @@ At the time of this interim postmortem update:
 - PR #349 merged the exact sources-9–12 upload-wall-side-effect recovery; PR #351 corrected exact-live aggregate omission; PR #352 corrected capture-time historical provider-incarnation reconstruction;
 - the first fresh live continuation after #352 established source 9 exact native Clip `-68859909_456239233` and then stopped safely on the phase-ordering/promotion prerequisite; no blind upload replay followed;
 - PR #355 merged as `f31b33103dc332f3d6c886dbe80db8a96324dcf1`, exact head `839c7de9c853b6bd52584c2dd9bf8d9cd13140f8`; CI #4369 succeeded 6/6. Python 3.11 reported `1757 passed, 1 xfailed`, Ruff correctness/formatting clean, mypy clean on 249 source files, dependency audit clean;
+- PR #359 is the current repository-hardening candidate for exact promotion BEFORE-state, 12/12 read-only promotion preflight, community-scoped local writer serialization, wall475 crash/restart replay protection and time-aware unresolved-wall recovery. It performs no live VK provider writes;
 - Issue #323 remains open because repository correctness is not the same as live 12/12 completion.
 
-Latest recorded live evidence is now the post-#352 continuation checkpoint: phase 1 again accepted exact wall-475 deleted-tombstone semantics and preserved Clip `-68859909_456239232`; source 8 remained the protected exact mapping; source 9 reached exact native Clip `-68859909_456239233` without a second binary upload, then the finalizer stopped on the now-fixed child/promotion ordering invariant. PR #355 hardens that transition and promotion replay model, but merged code still does not prove source 9 wall completion, sources 10–12, promotion or final provider postflight. The provider and durable journal must be read again at continuation start.
+Latest recorded live evidence remains the post-#352 continuation checkpoint: phase 1 again accepted exact wall-475 deleted-tombstone semantics and preserved Clip `-68859909_456239232`; source 8 remained the protected exact mapping; source 9 reached exact native Clip `-68859909_456239233` without a second binary upload, then the finalizer stopped on the child/promotion ordering invariant later fixed in #355. Repository hardening after that checkpoint does not prove source 9 wall completion, sources 10–12, promotion or final provider postflight. The provider and durable journal must be read again at continuation start.
 
 ## Do not reintroduce
 
 - a wall-475 delete path in phase 2/finalizer;
 - fresh-upload player/title readiness as preservation or durable metadata identity;
 - mutable provider text or `post_source` as exact object identity without explicit stable-authority evidence;
+- a source marker/URL as sufficient metadata-overwrite BEFORE-state;
+- wall target identity as sufficient permission to overwrite unknown/custom wall text;
+- per-item promotion writes before a complete bounded-batch read-only preflight;
+- operation-specific lock filenames as independent mutexes for the same VK community;
+- durable intent without a separately persisted dispatch-started replay barrier for an ambiguous mutation;
 - “one total attachment” where the semantic invariant is one exact video;
 - `None` as the only possible representation of deletion/absence;
-- an assumption that a scheduled mapping remains `postponed` forever;
+- an assumption that a scheduled mapping remains `postponed` forever, including unresolved `wall_intent`/`wall_may_exist` recovery;
 - an assumption that a postponed timer `post_id` is necessarily the published incarnation's `post_id`;
 - treating aggregate omission, old-ID absence, or old-ID tombstone alone as proof that a due logical scheduled publication disappeared;
 - successor inference without unique owner/frozen-date/exact-Clip proof and historical SHA reconstruction;

@@ -135,7 +135,8 @@ def test_due_published_successor_is_edited_by_current_id_without_reschedule(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     asset = _promoted_asset()
-    successor = _wall(900, text="legacy wall copy")
+    legacy_wall = _legacy_asset().wall_message
+    successor = _wall(900, text=legacy_wall)
     tombstone = {"owner_id": -68859909, "id": 468, "date": PUBLISH_DATE, "is_deleted": True}
     writer = _Writer(published=[successor], old_exact=tombstone, asset=asset)
     operation: dict[str, Any] = {"status": "pending"}
@@ -168,7 +169,7 @@ def test_due_published_successor_is_edited_by_current_id_without_reschedule(
     assert operation["surface"] == "published"
     assert operation["resolution_mode"] == "published_successor"
     assert operation["dispatch_started"] is True
-    assert operation["before_message_sha256"] == finalize._sha256_text("legacy wall copy")
+    assert operation["before_message_sha256"] == finalize._sha256_text(legacy_wall)
     assert operation["target_message_sha256"] == finalize._sha256_text(asset.wall_message.strip())
 
 
@@ -214,7 +215,7 @@ def test_ambiguous_published_successor_blocks_before_mutation() -> None:
 
 
 def test_future_live_postponed_incarnation_keeps_journaled_id() -> None:
-    raw = _wall(468, text="legacy wall copy")
+    raw = _wall(468, text=_legacy_asset().wall_message)
     writer = _Writer(published=[], postponed=[raw], old_exact=raw)
     snapshot = writer.capture_wall_snapshot(community_id=68859909, max_posts_per_surface=10000)
 

@@ -51,6 +51,8 @@ class SourceAsset:
     height: int
     description: str
     wall_message: str
+    legacy_description: str | None = None
+    legacy_wall_message: str | None = None
 
 
 def _progress(message: str) -> None:
@@ -278,6 +280,8 @@ def _transcode_legacy_asset(ffmpeg: str, ffprobe: str, asset: SourceAsset, media
         height=height,
         description=asset.description,
         wall_message=asset.wall_message,
+        legacy_description=asset.legacy_description,
+        legacy_wall_message=asset.legacy_wall_message,
     )
 
 

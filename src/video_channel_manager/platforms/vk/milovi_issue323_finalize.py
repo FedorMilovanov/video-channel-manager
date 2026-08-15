@@ -32,6 +32,8 @@ from video_channel_manager.platforms.vk.milovi_promotion import (
 from video_channel_manager.platforms.vk.milovi_rollout_sources import (
     ROLL_OUT_IDS,
     SourceAsset,
+    build_description,
+    build_wall_message,
     prepare_sources,
     write_json_atomic,
 )
@@ -82,7 +84,15 @@ def _promote_asset(asset: SourceAsset) -> SourceAsset:
     wall_message = public_wall_message(asset.title)
     assert_internal_promotion_copy(description, title=asset.title)
     assert_internal_promotion_copy(wall_message, title=asset.title)
-    return replace(asset, description=description, wall_message=wall_message)
+    legacy_description = asset.legacy_description if asset.legacy_description is not None else asset.description
+    legacy_wall_message = asset.legacy_wall_message if asset.legacy_wall_message is not None else asset.wall_message
+    return replace(
+        asset,
+        description=description,
+        wall_message=wall_message,
+        legacy_description=legacy_description.strip(),
+        legacy_wall_message=legacy_wall_message.strip(),
+    )
 
 
 def _promotion_plan(assets: list[SourceAsset]) -> dict[str, dict[str, str]]:
@@ -142,6 +152,26 @@ def _legacy_marker_ok(item: Mapping[str, Any], source_id: str) -> bool:
     return marker in str(item.get("description") or "").casefold()
 
 
+def _legacy_clip_description(asset: SourceAsset) -> str:
+    if asset.legacy_description is not None:
+        return asset.legacy_description.strip()
+    return build_description(asset.title, asset.source_id).strip()
+
+
+def _legacy_wall_message(asset: SourceAsset) -> str:
+    if asset.legacy_wall_message is not None:
+        return asset.legacy_wall_message.strip()
+    return build_wall_message(asset.title, asset.source_id).strip()
+
+
+def _copy_state(*, current: str, legacy: str, promoted: str, source_id: str, field: str) -> str:
+    if current == promoted:
+        return "promoted"
+    if current == legacy:
+        return "legacy"
+    raise MiloviFinalizerBlocked(f"{field} for {source_id} is neither exact reviewed legacy nor exact promoted copy")
+
+
 def _assert_native_clip(
     writer: VkWallWriter,
     asset: SourceAsset,
@@ -178,8 +208,13 @@ def _assert_native_clip(
         if description != asset.description.strip():
             raise MiloviFinalizerBlocked(f"VK Clip {remote_id} public description differs from promotion plan")
     elif description_mode == "legacy_or_promoted":
-        if description != asset.description.strip() and not _legacy_marker_ok(raw, asset.source_id):
-            raise MiloviFinalizerBlocked(f"VK Clip {remote_id} cannot be bound to source {asset.source_id}")
+        _copy_state(
+            current=description,
+            legacy=_legacy_clip_description(asset),
+            promoted=asset.description.strip(),
+            source_id=asset.source_id,
+            field="Clip description",
+        )
     else:
         raise ValueError(f"Unknown description_mode: {description_mode}")
     return raw
@@ -576,6 +611,95 @@ def _resolve_wall_incarnation(
     return successor.remote_id, VkWallSurface.PUBLISHED, raw, "published_successor"
 
 
+def _promotion_preflight(
+    *,
+    writer: VkWallWriter,
+    assets: list[SourceAsset],
+    journal: dict[str, Any],
+    now_epoch: int | None = None,
+) -> dict[str, Any]:
+    """Read-only proof that all 12 mappings are safe before the first promotion write."""
+
+    _assert_wall475_absent(writer)
+    snapshot = writer.capture_wall_snapshot(community_id=MILOVI_COMMUNITY_ID, max_posts_per_surface=10000)
+    if not snapshot.complete:
+        raise MiloviFinalizerBlocked("Promotion preflight wall snapshot is incomplete")
+    observed_now = int(time.time()) if now_epoch is None else now_epoch
+    current_wall_ids: set[str] = set()
+    evidence: list[dict[str, Any]] = []
+    for asset in assets:
+        item = _item(journal, asset.source_id)
+        clip_remote_id = str(item.get("clip_remote_id") or "")
+        wall_remote_id = str(item.get("wall_remote_id") or "")
+        publish_date = item.get("publish_date")
+        if (
+            item.get("status") != "wall_verified"
+            or not clip_remote_id
+            or not wall_remote_id
+            or type(publish_date) is not int
+        ):
+            raise MiloviFinalizerBlocked(f"Promotion preflight durable mapping is incomplete: {asset.source_id}")
+
+        clip = _assert_native_clip(
+            writer,
+            asset,
+            clip_remote_id,
+            description_mode="legacy_or_promoted",
+            durable_verified=True,
+        )
+        clip_description = str(clip.get("description") or "").strip()
+        clip_state = _copy_state(
+            current=clip_description,
+            legacy=_legacy_clip_description(asset),
+            promoted=asset.description.strip(),
+            source_id=asset.source_id,
+            field="Clip description",
+        )
+        current_remote_id, surface, post, resolution_mode = _resolve_wall_incarnation(
+            writer=writer,
+            snapshot=snapshot,
+            journal=journal,
+            wall_remote_id=wall_remote_id,
+            clip_remote_id=clip_remote_id,
+            publish_date=publish_date,
+            now_epoch=observed_now,
+        )
+        if current_remote_id in current_wall_ids:
+            raise MiloviFinalizerBlocked(f"Promotion preflight current wall incarnation is reused: {current_remote_id}")
+        current_wall_ids.add(current_remote_id)
+        wall_text = str(post.get("text") or "").strip()
+        wall_state = _copy_state(
+            current=wall_text,
+            legacy=_legacy_wall_message(asset),
+            promoted=asset.wall_message.strip(),
+            source_id=asset.source_id,
+            field="Wall message",
+        )
+        evidence.append(
+            {
+                "source_id": asset.source_id,
+                "clip_remote_id": clip_remote_id,
+                "clip_copy_state": clip_state,
+                "clip_description_sha256": _sha256_text(clip_description),
+                "wall_remote_id": wall_remote_id,
+                "current_wall_remote_id": current_remote_id,
+                "wall_resolution_mode": resolution_mode,
+                "wall_surface": surface.value,
+                "wall_copy_state": wall_state,
+                "wall_message_sha256": _sha256_text(wall_text),
+                "publish_date": publish_date,
+            }
+        )
+    if tuple(item["source_id"] for item in evidence) != ROLL_OUT_IDS:
+        raise MiloviFinalizerBlocked("Promotion preflight source order differs from exact Issue #323 allowlist")
+    return {
+        "status": "verified",
+        "provider_write_authorized_by_preflight": False,
+        "wall_snapshot_sha256": snapshot.snapshot_sha256,
+        "items": evidence,
+    }
+
+
 def _edit_clip_description(
     *,
     writer: VkWallWriter,
@@ -603,8 +727,8 @@ def _edit_clip_description(
         )
         _save_finalizer(finalizer_path, finalizer)
         return
-    if not _legacy_marker_ok(raw, asset.source_id):
-        raise MiloviFinalizerBlocked(f"Refusing description edit: {remote_id} lost legacy source binding")
+    if current_description != _legacy_clip_description(asset):
+        raise MiloviFinalizerBlocked(f"Refusing description edit: {remote_id} is not exact reviewed legacy copy")
 
     prior_status = str(operation.get("status") or "pending")
     if operation.get("dispatch_started") is True or prior_status in {
@@ -723,6 +847,8 @@ def _edit_wall_message(
         )
         _save_finalizer(finalizer_path, finalizer)
         return
+    if current_message != _legacy_wall_message(asset):
+        raise MiloviFinalizerBlocked(f"Refusing wall edit: {wall_remote_id} is not exact reviewed legacy copy")
 
     prior_status = str(operation.get("status") or "pending")
     if operation.get("dispatch_started") is True or prior_status in {
@@ -940,12 +1066,11 @@ def _complete_child(
         clip_id = str(item.get("clip_remote_id") or "")
         if not clip_id:
             raise MiloviFinalizerBlocked(f"clip_verified item lost remote ID: {source_id}")
-        mode = "legacy_or_promoted"
         _assert_native_clip(
             writer,
             asset,
             clip_id,
-            description_mode=mode,
+            description_mode="legacy_or_promoted",
             durable_verified=True,
         )
     else:
@@ -1044,6 +1169,13 @@ def run_issue_323_finalizer(
             if incomplete:
                 raise MiloviFinalizerBlocked(f"Rollout child completion is incomplete: {incomplete}")
 
+            finalizer["promotion_preflight"] = _promotion_preflight(
+                writer=writer,
+                assets=promoted_list,
+                journal=journal,
+            )
+            _save_finalizer(finalizer_journal_path, finalizer)
+
             for asset in promoted_list:
                 item = _item(journal, asset.source_id)
                 clip_remote_id = str(item.get("clip_remote_id") or "")
@@ -1089,6 +1221,7 @@ def run_issue_323_finalizer(
                 "owner_id": MILOVI_OWNER_ID,
                 "browser_used": False,
                 "anomaly_cleanup": {"wall_remote_id": ANOMALY_WALL_REMOTE_ID, "status": "verified_absent"},
+                "promotion_preflight": finalizer["promotion_preflight"],
                 "youtube_public_links": False,
                 "canonical_promotion_urls": list(PUBLIC_PROMOTION_URLS),
                 "items": evidence,

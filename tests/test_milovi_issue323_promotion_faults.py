@@ -8,7 +8,11 @@ from typing import Any
 import pytest
 
 import video_channel_manager.platforms.vk.milovi_issue323_finalize as finalize
-from video_channel_manager.platforms.vk.milovi_rollout_sources import ROLL_OUT_IDS
+from video_channel_manager.platforms.vk.milovi_rollout_sources import (
+    ROLL_OUT_IDS,
+    build_description,
+    build_wall_message,
+)
 from video_channel_manager.platforms.vk.wall_safety import build_wall_snapshot
 
 SOURCE_ID = ROLL_OUT_IDS[8]
@@ -17,7 +21,8 @@ CLIP_REMOTE_ID = f"-68859909_{CLIP_ID}"
 WALL_ID = 900
 WALL_REMOTE_ID = f"-68859909_{WALL_ID}"
 PUBLISH_DATE = 1893456000
-LEGACY_DESCRIPTION = f"Cake source https://www.youtube.com/shorts/{SOURCE_ID}"
+LEGACY_DESCRIPTION = build_description("Cake", SOURCE_ID)
+LEGACY_WALL = build_wall_message("Cake", SOURCE_ID)
 PROMOTED_DESCRIPTION = "Milovi Cake promoted description"
 PROMOTED_WALL = "Milovi Cake promoted wall"
 
@@ -28,13 +33,15 @@ def _asset() -> Any:
         title="Cake",
         description=PROMOTED_DESCRIPTION,
         wall_message=PROMOTED_WALL,
+        legacy_description=LEGACY_DESCRIPTION,
+        legacy_wall_message=LEGACY_WALL,
         duration_seconds=30.0,
         media_path="unused.mp4",
     )
 
 
 class _PromotionWriter:
-    def __init__(self, *, description: str = LEGACY_DESCRIPTION, wall_text: str = "legacy wall") -> None:
+    def __init__(self, *, description: str = LEGACY_DESCRIPTION, wall_text: str = LEGACY_WALL) -> None:
         self.description = description
         self.wall_text = wall_text
         self.calls: list[tuple[str, dict[str, Any]]] = []
@@ -199,7 +206,7 @@ def test_recovered_child_rejects_unrelated_description_before_wall_mutation(
     journal = _journal(status="clip_verified")
     wall_calls: list[str] = []
     monkeypatch.setattr(finalize, "_ensure_wall", lambda *_args, **_kwargs: wall_calls.append("wall"))
-    with pytest.raises(finalize.MiloviFinalizerBlocked, match="cannot be bound to source"):
+    with pytest.raises(finalize.MiloviFinalizerBlocked, match="neither exact reviewed legacy nor exact promoted"):
         finalize._complete_child(
             SOURCE_ID,
             legacy_assets={SOURCE_ID: asset},
@@ -216,6 +223,51 @@ def test_recovered_child_rejects_unrelated_description_before_wall_mutation(
     assert wall_calls == []
 
 
+def test_clip_source_marker_alone_is_not_reviewed_before_state(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    writer = _PromotionWriter(description=f"manual override https://www.youtube.com/shorts/{SOURCE_ID}")
+    monkeypatch.setattr(finalize, "_prove_target", lambda _client: None)
+    operation: dict[str, Any] = {"status": "pending"}
+    state = {"clip_description_edits": {SOURCE_ID: operation}}
+
+    with pytest.raises(finalize.MiloviFinalizerBlocked, match="neither exact reviewed legacy nor exact promoted"):
+        finalize._edit_clip_description(
+            writer=writer,  # type: ignore[arg-type]
+            client=object(),  # type: ignore[arg-type]
+            asset=_asset(),
+            remote_id=CLIP_REMOTE_ID,
+            operation=operation,
+            finalizer=state,
+            finalizer_path=tmp_path / "finalizer.json",
+        )
+
+    assert writer.calls == []
+
+
+def test_wall_identity_alone_does_not_authorize_overwriting_custom_text(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    writer = _PromotionWriter(wall_text="manual custom wall text")
+    monkeypatch.setattr(finalize, "_prove_target", lambda _client: None)
+    operation: dict[str, Any] = {"status": "pending"}
+    state = {"wall_message_edits": {SOURCE_ID: operation}}
+
+    with pytest.raises(finalize.MiloviFinalizerBlocked, match="not exact reviewed legacy copy"):
+        finalize._edit_wall_message(
+            writer=writer,  # type: ignore[arg-type]
+            client=object(),  # type: ignore[arg-type]
+            asset=_asset(),
+            journal=_journal(),
+            wall_remote_id=WALL_REMOTE_ID,
+            clip_remote_id=CLIP_REMOTE_ID,
+            publish_date=PUBLISH_DATE,
+            operation=operation,
+            finalizer=state,
+            finalizer_path=tmp_path / "finalizer.json",
+        )
+
+    assert writer.calls == []
+
+
 def test_clip_promotion_rechecks_source_binding_before_dispatch(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -224,7 +276,7 @@ def test_clip_promotion_rechecks_source_binding_before_dispatch(
     monkeypatch.setattr(finalize, "_prove_target", lambda _client: None)
     operation: dict[str, Any] = {"status": "pending"}
     state = {"clip_description_edits": {SOURCE_ID: operation}}
-    with pytest.raises(finalize.MiloviFinalizerBlocked, match="cannot be bound to source"):
+    with pytest.raises(finalize.MiloviFinalizerBlocked, match="neither exact reviewed legacy nor exact promoted"):
         finalize._edit_clip_description(
             writer=writer,  # type: ignore[arg-type]
             client=object(),  # type: ignore[arg-type]
@@ -352,4 +404,125 @@ def test_wall_promotion_dispatch_started_old_copy_blocks_blind_replay(
             finalizer=state,
             finalizer_path=tmp_path / "finalizer.json",
         )
+    assert writer.calls == []
+
+
+class _BatchPreflightWriter:
+    def __init__(self, *, drift_source: str | None = None) -> None:
+        self.calls: list[tuple[str, dict[str, Any]]] = []
+        self.assets: list[Any] = []
+        self.items: dict[str, dict[str, Any]] = {}
+        self.clips: dict[int, dict[str, Any]] = {}
+        self.posts: dict[int, dict[str, Any]] = {}
+        for index, source_id in enumerate(ROLL_OUT_IDS):
+            title = f"Cake {index + 1}"
+            promoted_description = f"promoted description {source_id}"
+            promoted_wall = f"promoted wall {source_id}"
+            legacy_description = build_description(title, source_id)
+            legacy_wall = build_wall_message(title, source_id)
+            asset = SimpleNamespace(
+                source_id=source_id,
+                title=title,
+                description=promoted_description,
+                wall_message=promoted_wall,
+                legacy_description=legacy_description,
+                legacy_wall_message=legacy_wall,
+                duration_seconds=30.0,
+                media_path="unused.mp4",
+            )
+            self.assets.append(asset)
+            clip_id = 456240000 + index
+            wall_id = 1000 + index
+            publish_date = PUBLISH_DATE + index * 86400
+            description = legacy_description if index % 2 == 0 else promoted_description
+            wall_text = legacy_wall if index % 2 == 0 else promoted_wall
+            if source_id == drift_source:
+                description = f"manual drift https://www.youtube.com/shorts/{source_id}"
+            self.clips[clip_id] = {
+                "owner_id": -68859909,
+                "id": clip_id,
+                "type": "short_video",
+                "title": title,
+                "description": description,
+            }
+            self.posts[wall_id] = {
+                "owner_id": -68859909,
+                "id": wall_id,
+                "date": publish_date,
+                "text": wall_text,
+                "attachments": [
+                    {
+                        "type": "video",
+                        "video": {"owner_id": -68859909, "id": clip_id, "type": "short_video"},
+                    }
+                ],
+            }
+            self.items[source_id] = {
+                "status": "wall_verified",
+                "clip_remote_id": f"-68859909_{clip_id}",
+                "wall_remote_id": f"-68859909_{wall_id}",
+                "publish_date": publish_date,
+            }
+
+    @property
+    def journal(self) -> dict[str, Any]:
+        return {"items": self.items}
+
+    def read_video(self, *, owner_id: int, video_id: int) -> dict[str, Any] | None:
+        assert owner_id == -68859909
+        return dict(self.clips[video_id])
+
+    def read_post(self, *, community_id: int, post_id: int) -> dict[str, Any] | None:
+        assert community_id == 68859909
+        if post_id == 475:
+            return {"owner_id": -68859909, "id": 475, "is_deleted": True}
+        return dict(self.posts[post_id])
+
+    def capture_wall_snapshot(self, *, community_id: int, max_posts_per_surface: int = 10000):
+        assert community_id == 68859909
+        assert max_posts_per_surface == 10000
+        return build_wall_snapshot(
+            community_id=community_id,
+            published_items=[],
+            postponed_items=list(self.posts.values()),
+            published_pages=1,
+            postponed_pages=1,
+            complete=True,
+            captured_at=datetime(2026, 8, 15, 0, 0, tzinfo=UTC),
+        )
+
+    def _call(self, method: str, *, params: dict[str, Any]) -> object:
+        self.calls.append((method, dict(params)))
+        raise AssertionError("promotion preflight must be read-only")
+
+
+def test_promotion_preflight_proves_all_12_before_first_edit() -> None:
+    writer = _BatchPreflightWriter()
+
+    evidence = finalize._promotion_preflight(
+        writer=writer,  # type: ignore[arg-type]
+        assets=writer.assets,
+        journal=writer.journal,
+        now_epoch=1700000000,
+    )
+
+    assert evidence["status"] == "verified"
+    assert evidence["provider_write_authorized_by_preflight"] is False
+    assert [item["source_id"] for item in evidence["items"]] == list(ROLL_OUT_IDS)
+    assert {item["clip_copy_state"] for item in evidence["items"]} == {"legacy", "promoted"}
+    assert {item["wall_copy_state"] for item in evidence["items"]} == {"legacy", "promoted"}
+    assert writer.calls == []
+
+
+def test_promotion_preflight_rejects_late_batch_drift_before_any_write() -> None:
+    writer = _BatchPreflightWriter(drift_source=ROLL_OUT_IDS[-1])
+
+    with pytest.raises(finalize.MiloviFinalizerBlocked, match="neither exact reviewed legacy nor exact promoted"):
+        finalize._promotion_preflight(
+            writer=writer,  # type: ignore[arg-type]
+            assets=writer.assets,
+            journal=writer.journal,
+            now_epoch=1700000000,
+        )
+
     assert writer.calls == []

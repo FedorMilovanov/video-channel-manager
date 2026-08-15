@@ -6,6 +6,12 @@
 /src/video_channel_manager/telegram_*.py @FedorMilovanov
 /content/telegram/ @FedorMilovanov
 
+# VK mutation runtime and safety control plane
+/src/video_channel_manager/platforms/vk/ @FedorMilovanov
+/docs/operations/mutation-boundary-register.json @FedorMilovanov
+/docs/operations/mutation-fault-proof-register.json @FedorMilovanov
+/docs/operations/vk-native-clip-golden-path.md @FedorMilovanov
+
 # Operational proof and audit records
 /docs/lordchrist/ @FedorMilovanov
 /docs/research/ @FedorMilovanov

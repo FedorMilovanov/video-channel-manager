@@ -31,10 +31,15 @@ REQUIRED_BOUNDARY_FIELDS = {
     "owning_tests",
 }
 REQUIRED_HIGH_RISK_STAGES = {"before_dispatch", "after_dispatch_before_response"}
-_SAFE_VK_API_METHODS = {
-    "groups.getById",
-    "users.get",
-    "video.get",
+_SAFE_DYNAMIC_VK_CALLS = {
+    (
+        "src/video_channel_manager/platforms/vk/client.py",
+        "VkApiClient._list_offset",
+    ),
+}
+_SAFE_VK_EXACT_READ_METHODS = {
+    "groups.isMember",
+    "utils.resolveScreenName",
 }
 
 
@@ -52,8 +57,35 @@ def _call_name(node: ast.expr) -> str | None:
     return None
 
 
-def _constant_string(node: ast.expr | None) -> str | None:
-    return node.value if isinstance(node, ast.Constant) and isinstance(node.value, str) else None
+def _module_string_constants(tree: ast.Module) -> dict[str, str]:
+    constants: dict[str, str] = {}
+    for statement in tree.body:
+        target: ast.expr | None = None
+        value: ast.expr | None = None
+        if isinstance(statement, ast.Assign) and len(statement.targets) == 1:
+            target = statement.targets[0]
+            value = statement.value
+        elif isinstance(statement, ast.AnnAssign):
+            target = statement.target
+            value = statement.value
+        if isinstance(target, ast.Name) and isinstance(value, ast.Constant) and isinstance(value.value, str):
+            constants[target.id] = value.value
+    return constants
+
+
+def _constant_string(node: ast.expr | None, constants: dict[str, str]) -> str | None:
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    if isinstance(node, ast.Name):
+        return constants.get(node.id)
+    return None
+
+
+def _vk_method_is_read_only(method: str) -> bool:
+    if method in _SAFE_VK_EXACT_READ_METHODS:
+        return True
+    _separator, _dot, action = method.rpartition(".")
+    return bool(action) and (action.startswith("get") or action.startswith("search"))
 
 
 def _keyword(call: ast.Call, name: str) -> ast.expr | None:
@@ -75,10 +107,12 @@ def _attribute_owner_name(node: ast.expr) -> str | None:
 
 
 class _MutationCallsiteVisitor(ast.NodeVisitor):
-    def __init__(self, source_file: str) -> None:
+    def __init__(self, source_file: str, *, constants: dict[str, str] | None = None) -> None:
         self.source_file = source_file
+        self.constants = constants or {}
         self.scope: list[str] = []
         self.callsites: list[tuple[str, str, str]] = []
+        self.violations: list[tuple[str, str, str]] = []
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         self.scope.append(node.name)
@@ -98,18 +132,32 @@ class _MutationCallsiteVisitor(ast.NodeVisitor):
     def visit_Call(self, node: ast.Call) -> None:
         marker: str | None = None
         name = _call_name(node.func)
-        if name == "_call" and node.args:
-            method = _constant_string(node.args[0])
-            if method and method not in _SAFE_VK_API_METHODS and not _is_true(_keyword(node, "retry_transient")):
+        callable_name = ".".join(self.scope) if self.scope else "<module>"
+        callsite = (self.source_file, callable_name)
+        if name == "_call":
+            method = _constant_string(node.args[0], self.constants) if node.args else None
+            if method is None:
+                if callsite not in _SAFE_DYNAMIC_VK_CALLS:
+                    self.violations.append(("vk_api:dynamic_or_missing_method", self.source_file, callable_name))
+            elif _vk_method_is_read_only(method):
+                pass
+            elif _is_true(_keyword(node, "retry_transient")):
+                self.violations.append((f"vk_api:{method}:retry_transient", self.source_file, callable_name))
+            else:
                 marker = f"vk_api:{method}"
+        elif name == "_list_offset":
+            method = _constant_string(node.args[0], self.constants) if node.args else None
+            if method is None or not _vk_method_is_read_only(method):
+                rendered_method = method if method is not None else "dynamic_or_missing_method"
+                self.violations.append((f"vk_api:list_offset:{rendered_method}", self.source_file, callable_name))
         elif name == "execute_http_request":
             operation = _keyword(node, "operation")
-            resource = _constant_string(_keyword(node, "resource"))
+            resource = _constant_string(_keyword(node, "resource"), self.constants)
             if isinstance(operation, ast.Attribute) and operation.attr == "AMBIGUOUS_MUTATION" and resource:
                 marker = f"http:{resource}"
         elif name == "_request" and len(node.args) >= 2 and _is_true(_keyword(node, "require_write")):
-            method = _constant_string(node.args[0])
-            resource = _constant_string(node.args[1])
+            method = _constant_string(node.args[0], self.constants)
+            resource = _constant_string(node.args[1], self.constants)
             if method and resource:
                 marker = f"youtube:{method}:{resource}"
         elif name == "execute" and _attribute_owner_name(node.func) == "adapter":
@@ -117,19 +165,65 @@ class _MutationCallsiteVisitor(ast.NodeVisitor):
         elif name == "reconcile" and _attribute_owner_name(node.func) == "adapter":
             marker = "wave:adapter.reconcile"
         if marker is not None:
-            callable_name = ".".join(self.scope) if self.scope else "<module>"
             self.callsites.append((marker, self.source_file, callable_name))
         self.generic_visit(node)
 
 
 def _scan_python_mutation_callsites() -> list[tuple[str, str, str]]:
     callsites: list[tuple[str, str, str]] = []
+    violations: list[tuple[str, str, str]] = []
     for path in sorted((ROOT / "src").rglob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        visitor = _MutationCallsiteVisitor(path.relative_to(ROOT).as_posix())
+        visitor = _MutationCallsiteVisitor(
+            path.relative_to(ROOT).as_posix(),
+            constants=_module_string_constants(tree),
+        )
         visitor.visit(tree)
         callsites.extend(visitor.callsites)
+        violations.extend(visitor.violations)
+    assert not violations, {"unscannable_direct_vk_calls": sorted(violations)}
     return callsites
+
+
+def _scan_snippet(source: str) -> _MutationCallsiteVisitor:
+    tree = ast.parse(source, filename="snippet.py")
+    visitor = _MutationCallsiteVisitor("snippet.py", constants=_module_string_constants(tree))
+    visitor.visit(tree)
+    return visitor
+
+
+def test_vk_mutation_inventory_rejects_dynamic_direct_call() -> None:
+    visitor = _scan_snippet("def mutate(writer, method):\n    writer._call(method, params={})\n")
+    assert visitor.callsites == []
+    assert visitor.violations == [("vk_api:dynamic_or_missing_method", "snippet.py", "mutate")]
+
+
+def test_vk_mutation_inventory_rejects_transient_retry_on_mutation() -> None:
+    visitor = _scan_snippet("def mutate(writer):\n    writer._call('wall.delete', params={}, retry_transient=True)\n")
+    assert visitor.callsites == []
+    assert visitor.violations == [("vk_api:wall.delete:retry_transient", "snippet.py", "mutate")]
+
+
+def test_vk_read_inventory_accepts_literal_retryable_getter() -> None:
+    visitor = _scan_snippet(
+        "def read(client):\n    client._call('video.getThumbUploadUrl', params={}, retry_transient=True)\n"
+    )
+    assert visitor.callsites == []
+    assert visitor.violations == []
+
+
+def test_vk_read_inventory_resolves_module_level_method_constant() -> None:
+    visitor = _scan_snippet(
+        "METHOD = 'shortVideo.getOwnerVideos'\ndef read(client):\n    client._call(METHOD, params={})\n"
+    )
+    assert visitor.callsites == []
+    assert visitor.violations == []
+
+
+def test_vk_read_inventory_rejects_dynamic_list_offset_dispatch() -> None:
+    visitor = _scan_snippet("def read(client, method):\n    client._list_offset(method, params={}, page_size=100)\n")
+    assert visitor.callsites == []
+    assert visitor.violations == [("vk_api:list_offset:dynamic_or_missing_method", "snippet.py", "read")]
 
 
 def test_register_schema_and_unique_boundaries() -> None:
