@@ -1,11 +1,12 @@
 {
   "schema_name": "video-channel-manager.milovi-exact-canary-authorization",
   "schema_version": 1,
-  "authorization_id": "milovi-cake-canary-001-live-2026-08-16",
+  "authorization_id": "milovi-cake-canary-001-live-2026-08-16-successor-01",
+  "supersedes_authorization_id": "milovi-cake-canary-001-live-2026-08-16",
   "project_key": "milovi-cake",
   "publication_id": "milovi-cake-canary-001",
   "operation": "sendPhoto",
-  "expected_parent_main_sha": "f10f16c929b8fee567d05709e05fad18b2a068e5",
+  "expected_parent_main_sha": "4504ed2fe5f5f7ad5e22a76021bc5fc16bfa3f20",
   "provider_mutation_allowed": true,
   "dispatch_retries": 0,
   "chat_id": -1002215328390,
@@ -17,6 +18,6 @@
   "transport_sha256": "sha256:a9730cc62939845c61191f1a375b2bab35800122c968d6cc757f0ae4340771d5",
   "transport_byte_size": 580910,
   "caption_sha256": "sha256:fe4552e8cb78183f2f7f32d03792af4b9d4f65a18ec0811bfbced7fb424e0d1c",
-  "scope": "one exact canary only; no pin, schedule, retry, second post, invite link or broader rollout is authorized",
-  "authorized_at_utc": "2026-08-16T00:58:00Z"
+  "scope": "one exact successor canary only after fresh administrator + can_post_messages proof; no pin, schedule, retry, second post, invite link or broader rollout is authorized",
+  "authorized_at_utc": "2026-08-16T01:18:00Z"
 }
