@@ -1,0 +1,20 @@
+{
+  "schema_name": "video-channel-manager.milovi-exact-canary-dispatch-state",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "publication_id": "milovi-cake-canary-001",
+  "status": "dispatch_started",
+  "provider_effect": "may_exist_after_next_step",
+  "authorization_commit_sha": "d36d00de883062d0c0ea9b83a9bc1ab163eed54e",
+  "authorization_id": "milovi-cake-canary-001-live-2026-08-16",
+  "chat_id": -1002215328390,
+  "chat_username": "MiloviCake",
+  "bot_id": 8716602202,
+  "transport_sha256": "sha256:a9730cc62939845c61191f1a375b2bab35800122c968d6cc757f0ae4340771d5",
+  "caption_sha256": "sha256:fe4552e8cb78183f2f7f32d03792af4b9d4f65a18ec0811bfbced7fb424e0d1c",
+  "github_run_id": 31918457764,
+  "github_run_attempt": 1,
+  "dispatch_started_at_utc": "2026-08-16T00:57:54.541570+00:00",
+  "message_id": null,
+  "message_url": null
+}
