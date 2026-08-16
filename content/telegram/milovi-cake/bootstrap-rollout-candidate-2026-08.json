@@ -1,0 +1,49 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-bootstrap-rollout-candidate",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "release_id": "milovi-telegram-first-screen-2026-08",
+  "status": "provider_inert_frozen_candidate",
+  "chat_id": -1002215328390,
+  "chat_username": "MiloviCake",
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "source_candidates": "content/telegram/milovi-cake/bootstrap-first-screen-candidates-2026-08.json",
+  "transport_proof": "content/telegram/milovi-cake/bootstrap-photo-transport-proof-2026-08.json",
+  "editorial_boundary": "content/telegram/milovi-cake/editorial-brand-boundary-2026-08.md",
+  "publishing_window": "content/telegram/milovi-cake/publishing-window-2026-08.json",
+  "historical_transport_canary": {
+    "publication_id": "milovi-cake-canary-001",
+    "historical_message_id": 25,
+    "historical_provider_outcome": "verified",
+    "current_visibility": "operator_reported_deleted",
+    "exact_payload_republish_allowed": false
+  },
+  "rollout_policy": {
+    "timezone": "Europe/Moscow",
+    "not_before_local": "09:00",
+    "not_after_local": "21:00",
+    "planned_items_per_day": 2,
+    "planned_span_days": 5,
+    "blind_mutation_retries": 0,
+    "strict_next_only": true,
+    "unknown_outcome_blocks_successor": true,
+    "missed_slot_catchup_during_quiet_hours": false
+  },
+  "items": [
+    {"sequence":1,"publication_id":"milovi-bootstrap-001","operation":"sendPhoto","media_id":"p04","transport_sha256":"sha256:6243a8a0b12f31b7c8fdf6f4147bff125c27ce69417cec4d54d7016c702c13c1","transport_byte_size":516172,"caption_sha256":"sha256:5890373b0599337d78bc5d584c26610d234facfbc2b9042005391da06f57d7d5","planned_local":"2026-08-16T10:30:00+03:00"},
+    {"sequence":2,"publication_id":"milovi-bootstrap-002","operation":"sendPhoto","media_id":"p23","transport_sha256":"sha256:2367144d20f9500d167e0745c34d8111abbf602ab6472e8d53d36dee356d8bb0","transport_byte_size":405088,"caption_sha256":"sha256:69a7babb821c279e183c7984d03b2ccc4ecf3ab77d5631a3bab88310f30e5625","planned_local":"2026-08-16T20:00:00+03:00"},
+    {"sequence":3,"publication_id":"milovi-bootstrap-003","operation":"sendPhoto","media_id":"p11","transport_sha256":"sha256:8bb0956e44084265d7a3a14ce01f96eb1e4a9c327c780448de34e068f6cf6f10","transport_byte_size":412206,"caption_sha256":"sha256:4b515f86858e1c4e54d26d818b70114127ef918184b4af066d6a39bac53810a3","planned_local":"2026-08-17T10:30:00+03:00"},
+    {"sequence":4,"publication_id":"milovi-bootstrap-004","operation":"sendPhoto","media_id":"p03","transport_sha256":"sha256:d40b185ab813a46d29b66aa0da6f9300a13cad2bac0baf0ba71f1cd8e36a50a1","transport_byte_size":391620,"caption_sha256":"sha256:314dc74ca1afb83249fae87efa0506c8168df8b6441752dbbe0ba59a1505f9fd","planned_local":"2026-08-17T20:00:00+03:00"},
+    {"sequence":5,"publication_id":"milovi-bootstrap-005","operation":"sendPhoto","media_id":"p16","transport_sha256":"sha256:19ba49ed001ea0c7c79ad9f475be0ad4c4c41b5790ee195e363df7981cfb6b9e","transport_byte_size":506080,"caption_sha256":"sha256:af1be864e0dec625c431c8e66cb5da919d4dc25eb6ab18a0b62c89aa9cc2ebe3","planned_local":"2026-08-18T10:30:00+03:00"},
+    {"sequence":6,"publication_id":"milovi-bootstrap-006","operation":"sendPhoto","media_id":"p17","transport_sha256":"sha256:33975fa93f762e5734da766b6789fce9ea65ff98a4e997bbdb08d08ff696ba2a","transport_byte_size":443194,"caption_sha256":"sha256:042ddeb544b4a7eec7dba7307434d092bfae27056f80a7a7ad03d1ed4ceabb00","planned_local":"2026-08-18T20:00:00+03:00"},
+    {"sequence":7,"publication_id":"milovi-bootstrap-007","operation":"sendPhoto","media_id":"p20","transport_sha256":"sha256:93040be5e62176837a10461663ad9aff8be2aa82f9a82bd940d25a8f488828bf","transport_byte_size":576585,"caption_sha256":"sha256:ab771a4b28d0e2fcf55e0841c1ac13102df521334cc1346044f84b125d2376fa","planned_local":"2026-08-19T10:30:00+03:00"},
+    {"sequence":8,"publication_id":"milovi-bootstrap-008","operation":"sendMessage","media_id":null,"transport_sha256":null,"transport_byte_size":null,"caption_sha256":"sha256:c8b5a23ece4c220091d7a37b7b0420843e85a3e91a81e0054aa3c95e4241976c","planned_local":"2026-08-19T20:00:00+03:00"},
+    {"sequence":9,"publication_id":"milovi-bootstrap-009","operation":"sendPhoto","media_id":"p25","transport_sha256":"sha256:870ba5ef5e9c4d80ac71a4e3eddf97c6fd0bb8396807330a8785bde319b04278","transport_byte_size":363062,"caption_sha256":"sha256:38c2f101fb1b546962a6af605ec4aa367366828aa1a58619c25d55df1bb3c927","planned_local":"2026-08-20T10:30:00+03:00"},
+    {"sequence":10,"publication_id":"milovi-bootstrap-010","operation":"sendPhoto","media_id":"p02","transport_sha256":"sha256:25525ca18a41f568a3f30cbbf94d852b31be247a2c438a38ece46f12d9936bd2","transport_byte_size":349890,"caption_sha256":"sha256:af79145b33af3e13c2e236accd0442fc8367e50cd515a5f05348417b90aa1f2c","planned_local":"2026-08-20T20:00:00+03:00"}
+  ],
+  "execution_authorized": false,
+  "provider_mutation_allowed": false,
+  "rule": "This file freezes the intended first-screen identities only. It is not execution authority. A separate current-main reviewed rollout approval/runtime must re-prove target membership, enforce the daylight window before provider access, persist one strict-next intent before mutation, use zero blind retries and persist the exact message receipt before advancing."
+}
