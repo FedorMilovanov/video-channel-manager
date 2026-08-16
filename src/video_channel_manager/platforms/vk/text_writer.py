@@ -126,7 +126,11 @@ class VkVideoTextWriter(VkVideoWriter):
                 method="video.edit",
             )
         if expected_title is not None:
-            title_matches = current.title == expected_title if exact_description else vk_texts_equivalent(current.title, expected_title)
+            title_matches = (
+                current.title == expected_title
+                if exact_description
+                else vk_texts_equivalent(current.title, expected_title)
+            )
             if not title_matches:
                 raise VkWriteError(
                     f"VK video {current.remote_id} title no longer matches the reviewed before-state.",
@@ -138,7 +142,9 @@ class VkVideoTextWriter(VkVideoWriter):
         if not target_title:
             raise ValueError("VK video title cannot be blank")
 
-        title_changed = current.title != target_title if exact_description else not vk_texts_equivalent(current.title, target_title)
+        title_changed = (
+            current.title != target_title if exact_description else not vk_texts_equivalent(current.title, target_title)
+        )
         description_changed = (
             current.description != target_description
             if exact_description
