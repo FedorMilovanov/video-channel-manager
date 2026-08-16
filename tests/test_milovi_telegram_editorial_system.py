@@ -9,6 +9,8 @@ MILOVI = ROOT / "content/telegram/milovi-cake"
 MEDIA_MAP = MILOVI / "media-source-map-2026-08.json"
 SEQUENCE = MILOVI / "editorial-sequence-30-posts-2026-08.json"
 SCHOOL_SOURCES = MILOVI / "school-source-shortlist-2026-08.json"
+BOOTSTRAP = MILOVI / "bootstrap-first-screen-candidates-2026-08.json"
+BRAND_BOUNDARY = MILOVI / "editorial-brand-boundary-2026-08.md"
 ASSET_CONTRACT = MILOVI / "editorial-asset-contract-2026-08.md"
 OPERATING_PLAN = MILOVI / "editorial-operating-plan-2026-08.md"
 LAUNCH_PACK = MILOVI / "launch-pack-2026-08.md"
@@ -92,27 +94,27 @@ def test_milovi_editorial_sequence_is_30_slots_and_matches_no_bts_mix() -> None:
             assert slot["media_ids"]
 
 
-def test_milovi_first_screen_has_variety_utility_collection_and_trust() -> None:
-    sequence = _load_json(SEQUENCE)
-    slots = sequence["slots"]
-    first_ten = slots[:10]
+def test_canonical_first_screen_is_school_free_varied_and_trust_bearing() -> None:
+    bootstrap = _load_json(BOOTSTRAP)
+    items = bootstrap["candidates"]
 
-    assert sum(slot["pillar"] == "milovi_school" for slot in first_ten) == 1
-    assert any(slot["pillar"] == "collection_poll" for slot in first_ten)
-    assert any(slot["launch_pack_ref"] == "MC-TG-003" for slot in first_ten)
-    assert any(slot["launch_pack_ref"] == "MC-TG-015" for slot in first_ten)
-    assert all(slot["pillar"] != "commercial" for slot in first_ten)
+    assert bootstrap["school_items_in_first_screen"] == 0
+    assert len(items) == 10
+    assert all(item["role"] != "milovi_school" for item in items)
+    assert any(item["role"] == "verified_social_proof" for item in items)
+    assert any(item["role"] == "format_guide" for item in items)
+    assert any(item["role"] == "design_reference" for item in items)
+    assert all("Milovi School" not in item["caption"] for item in items)
+    assert all("француз" not in item["caption"].casefold() for item in items)
 
-    first_ten_media = [media_id for slot in first_ten for media_id in slot["media_ids"]]
-    assert len(set(first_ten_media)) >= 10
-
-    for previous, current in zip(first_ten[:-1], first_ten[1:], strict=True):
-        assert previous["media_ids"] != current["media_ids"] or not previous["media_ids"]
+    first_screen_media = [item["media_id"] for item in items if item["media_id"]]
+    assert len(set(first_screen_media)) == 9
 
 
-def test_milovi_school_slots_have_exact_source_bindings() -> None:
+def test_milovi_school_slots_have_exact_source_bindings_but_are_not_product_evidence() -> None:
     sequence = _load_json(SEQUENCE)
     shortlist = _load_json(SCHOOL_SOURCES)
+    boundary = BRAND_BOUNDARY.read_text(encoding="utf-8")
     slots = sequence["slots"]
     articles = shortlist["articles"]
 
@@ -147,33 +149,39 @@ def test_milovi_school_slots_have_exact_source_bindings() -> None:
         assert "revalid" in article["telegram_claim_boundary"].lower()
 
     assert "Metadata binding is not enough for live copy" in shortlist["publication_rule"]
+    assert "Milovi School is **not evidence**" in boundary
+    assert "makes its cakes from the School's recipes" in boundary
 
 
-def test_milovi_no_bts_contract_controls_older_launch_copy() -> None:
+def test_milovi_no_bts_and_school_boundaries_control_older_launch_copy() -> None:
     asset_contract = ASSET_CONTRACT.read_text(encoding="utf-8")
     operating_plan = OPERATING_PLAN.read_text(encoding="utf-8")
     launch_pack = LAUNCH_PACK.read_text(encoding="utf-8")
+    boundary = BRAND_BOUNDARY.read_text(encoding="utf-8")
 
     assert "Production BTS / kitchen share: **0%**" in asset_contract
     assert "production/kitchen/BTS footage is unavailable" in operating_plan
     assert "не пытайтесь" not in operating_plan  # keep neutral repository voice
 
-    safe_welcome = (
+    bad_french_welcome = (
         "Здесь — реальные работы Milovi Cake, красивые детали и подборки, полезные подсказки перед заказом "
         "и короткие истории французской кондитерской культуры из Milovi School."
     )
-    assert safe_welcome in operating_plan
+    assert bad_french_welcome not in operating_plan
+    assert "French-cuisine/French-pastry business" in operating_plan
+    assert "do-not-republish" in boundary
 
     unsafe_legacy_phrase = "Здесь — реальные работы Milovi Cake, детали и процесс"
     if unsafe_legacy_phrase in launch_pack:
-        assert "not publishable as written" in operating_plan
-        assert "детали и процесс" in operating_plan
+        assert "historical/provider-inert editorial corpus" in operating_plan
+        assert "not executable publication sources" in operating_plan
 
 
 def test_milovi_editorial_files_remain_provider_inert() -> None:
     media_map = _load_json(MEDIA_MAP)
     sequence = _load_json(SEQUENCE)
     shortlist = _load_json(SCHOOL_SOURCES)
+    bootstrap = _load_json(BOOTSTRAP)
     operating_plan = OPERATING_PLAN.read_text(encoding="utf-8")
 
     assert media_map["status"] == "provider_inert"
@@ -182,5 +190,9 @@ def test_milovi_editorial_files_remain_provider_inert() -> None:
     assert sequence["publication_authorized"] is False
     assert sequence["production_bts_share"] == 0
     assert shortlist["status"] == "provider_inert"
+    assert bootstrap["publication_authorized"] is False
+    assert bootstrap["execution_ready"] is False
+    assert bootstrap["provider_mutation_allowed"] is False
     assert "provider-inert" in operating_plan
-    assert "Live publication remains blocked" in operating_plan
+    assert "transport readiness only" in operating_plan
+    assert "does not authorize provider writes" in operating_plan
