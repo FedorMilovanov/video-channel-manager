@@ -26,7 +26,8 @@
     "reviews_page_path": "otzyvy/index.html",
     "reviews_page_blob_sha1": "cccfbc9c12d9d3724b0a27a481cbb1347f77716a",
     "school_pool_path": "content/telegram/milovi-cake/school-interest-reading-candidates-2026-08.json",
-    "school_pool_blob_sha1": "6cec8bc654968f9d35dfca66bfeb692c3b140644"
+    "school_pool_blob_sha1": "6cec8bc654968f9d35dfca66bfeb692c3b140644",
+    "follow_on_media_manifest_path": "content/telegram/milovi-cake/follow-on-photo-source-manifest-2026-08.json"
   },
   "pacing": {
     "total_items": 12,
@@ -77,7 +78,7 @@
       "content_role": "personalized_bento",
       "operation": "sendPhoto",
       "media_id": "p08",
-      "caption": "Иногда для подарка достаточно двух слов.\n\nНа фото — бенто «Горжусь тобой» из нашего портфолио. Для бенто на сайте отдельно предусмотрены короткие надписи: фраза, имя, дата, шутка или признание. Если текст получается длинным, его лучше заранее адаптировать под маленький формат.\n\nБенто Milovi Cake → https://milovicake.ru/bento-torty/",
+      "caption": "Иногда для подарка достаточно двух слов.\n\nНа фото — бенто «Горжусь тобой» из нашего портфолио. Для бенто на сайте отдельно предусмотрены короткие надписи: фраза, имя, дата, шутка или признание. Если текст длинный, подскажем, как красиво разместить.\n\nБенто Milovi Cake → https://milovicake.ru/bento-torty/",
       "must_reverify_before_operational_promotion": true
     },
     {
@@ -87,7 +88,7 @@
       "content_role": "verified_social_proof",
       "operation": "sendPhoto",
       "media_id": "p15",
-      "caption": "Из отзывов о Milovi Cake:\n\n«Спасибо за оперативность, внимательный подход, рекомендации по вкусам и вашу работу. Торт получился отличным, именинница довольна».\n\n— Жанель, 2 февраля 2026 года.\n\nОтдельно: на фото — подарочный десертный набор из нашего портфолио; отзыв не привязан к этой фотографии.\n\nОтзывы → https://milovicake.ru/otzyvy/",
+      "caption": "Из отзывов о Milovi Cake:\n\n«Спасибо за оперативность, внимательный подход, рекомендации по вкусам и вашу работу. Торт получился отличным, именинница довольна.»\n\n— Жанель, 2 февраля 2026 года.\n\nОтдельно: на фото — подарочный десертный набор из нашего портфолио; отзыв не привязан к этой фотографии.\n\nОтзывы → https://milovicake.ru/otzyvy/",
       "review_author": "Жанель",
       "review_date": "2026-02-02",
       "must_reverify_before_operational_promotion": false
