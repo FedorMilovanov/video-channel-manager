@@ -5,10 +5,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-CANDIDATES = (
-    ROOT
-    / "content/telegram/milovi-cake/school-interest-reading-candidates-2026-08.json"
-)
+CANDIDATES = ROOT / "content/telegram/milovi-cake/school-interest-reading-candidates-2026-08.json"
 BOUNDARY = ROOT / "content/telegram/milovi-cake/editorial-brand-boundary-2026-08.md"
 
 
@@ -47,8 +44,7 @@ def test_first_school_wave_has_twelve_distinct_history_led_candidates() -> None:
     assert all(item["open_loop"].strip() for item in candidates)
     assert all("Milovi School" in item["cta"] for item in candidates)
     assert all(
-        item["expected_article_url"]
-        == f"https://french.milovicake.ru/articles/{item['source_slug']}"
+        item["expected_article_url"] == f"https://french.milovicake.ru/articles/{item['source_slug']}"
         for item in candidates
     )
     assert all(item["expected_article_url"] in item["cta"] for item in candidates)
