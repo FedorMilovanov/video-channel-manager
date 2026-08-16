@@ -14,7 +14,11 @@ Do **not** describe Milovi Cake as a French-cuisine or French-pastry business me
 
 ## Milovi School is a separate editorial / educational project
 
-Milovi School is a separate educational and content project used for useful reading, editorial depth, SEO/discovery and brand-interest content. Its articles may be adapted only as separately labelled educational reading.
+Milovi School is **our separate editorial project for interesting reading**: researched stories, cultural context, people, history, terminology, myths, techniques and unusual facts. In the Telegram channel it must be presented as a project worth reading in its own right — not as a product rubric, not as a catalogue extension and not as a description of what Milovi Cake makes.
+
+A School post should work even for a reader who is not currently choosing or ordering a cake. Its job is to create curiosity, useful reading, editorial depth, SEO/discovery traffic and a reason to return to the channel. The preferred Telegram shape is: a strong factual hook → a short self-contained preview with one or two concrete details → an unanswered question or open loop → a clearly labelled link to the Milovi School article.
+
+Do **not** force a Milovi Cake product CTA into a School preview. Do **not** end a history/culture story with language such as “we make it this way”, “this is how our cakes are prepared” or “choose such a cake from us” unless a separate exact source explicitly proves that relationship and the product mention is editorially necessary.
 
 Milovi School content is **not evidence** that Milovi Cake:
 
@@ -32,10 +36,27 @@ The first ten launch posts for `@MiloviCake` contain **zero Milovi School posts*
 
 After the first screen, School material may appear occasionally only when:
 
-1. it is explicitly labelled as separate educational/article content;
+1. it is explicitly labelled as separate educational/article content from **our Milovi School project**;
 2. the copy does not imply that the article describes how Milovi Cake products are made;
-3. it is useful to a reader even without a purchase CTA;
-4. any quotation or factual product claim still has its own exact source.
+3. it is useful or interesting to a reader even without a purchase CTA;
+4. any quotation or factual claim still has its own exact source;
+5. it is not adjacent to another School link-post, so the Telegram channel does not turn into a link feed.
+
+For the first follow-on editorial wave, target roughly one School reading post per four to five total channel posts, never two School posts in a row. This is an editorial pacing target, not an authorization to publish.
+
+## School preview quality bar
+
+Prefer stories with an inherent narrative or surprise over generic recipe promotion. Strong candidates include:
+
+- myths that can be checked and corrected;
+- the origin of a famous name, shape or tradition;
+- an unexpected historical route of an ingredient or dessert;
+- people whose decisions changed pastry culture;
+- two things that look similar but have different histories;
+- technical facts that are understandable without professional training;
+- a concrete date, place, object or contradiction that creates a good opening sentence.
+
+Avoid empty hooks such as “Хотите узнать больше?”, “А вы знали?” without a concrete fact, generic SEO titles copied into Telegram, exaggerated clickbait, invented certainty, and recipe-first framing when the article contains a stronger cultural or historical story.
 
 ## Other hard editorial rules
 
