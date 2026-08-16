@@ -39,11 +39,7 @@ def _wall_incarnation(
         surface=surface,
         publish_date=publish_date if publish_date is not None else 1_700_000_000 + index,
         text_sha256=promotion_text_sha256(text),
-        attachments=(
-            attachments
-            if attachments is not None
-            else (f"video-68859909_{456239200 + index}",)
-        ),
+        attachments=(attachments if attachments is not None else (f"video-68859909_{456239200 + index}",)),
     )
 
 
