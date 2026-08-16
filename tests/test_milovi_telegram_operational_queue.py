@@ -44,9 +44,7 @@ def test_queue_is_exactly_ten_future_daylight_items_and_remains_provider_inert()
     assert isinstance(items, list)
     assert len(items) == 10
     assert [item["sequence"] for item in items] == list(range(1, 11))
-    assert [item["publication_id"] for item in items] == [
-        f"milovi-bootstrap-{index:03d}" for index in range(1, 11)
-    ]
+    assert [item["publication_id"] for item in items] == [f"milovi-bootstrap-{index:03d}" for index in range(1, 11)]
     assert "milovi-cake-canary-001" not in {item["publication_id"] for item in items}
 
     parsed = [datetime.fromisoformat(item["planned_local"]) for item in items]
@@ -54,22 +52,15 @@ def test_queue_is_exactly_ten_future_daylight_items_and_remains_provider_inert()
     assert parsed == sorted(parsed)
     assert parsed[0].isoformat() == "2026-08-17T10:30:00+03:00"
     assert parsed[-1].isoformat() == "2026-08-21T20:00:00+03:00"
-    assert all(
-        value.astimezone(ZONE).date().isoformat() >= "2026-08-17" for value in parsed
-    )
-    assert not any(
-        value.astimezone(ZONE).date().isoformat() == "2026-08-16" for value in parsed
-    )
+    assert all(value.astimezone(ZONE).date().isoformat() >= "2026-08-17" for value in parsed)
+    assert not any(value.astimezone(ZONE).date().isoformat() == "2026-08-16" for value in parsed)
     assert [value.astimezone(ZONE).time().replace(tzinfo=None) for value in parsed] == [
         time(10, 30),
         time(20, 0),
     ] * 5
     counts = Counter(value.astimezone(ZONE).date().isoformat() for value in parsed)
     assert sorted(counts.values()) == [2, 2, 2, 2, 2]
-    assert all(
-        time(9, 0) <= value.astimezone(ZONE).time().replace(tzinfo=None) <= time(21, 0)
-        for value in parsed
-    )
+    assert all(time(9, 0) <= value.astimezone(ZONE).time().replace(tzinfo=None) <= time(21, 0) for value in parsed)
 
 
 def test_queue_preserves_every_frozen_caption_operation_and_media_identity() -> None:
@@ -142,9 +133,7 @@ def test_queue_requires_fresh_release_canary_and_starts_with_no_provider_receipt
     assert gate["historical_canary_satisfies_gate"] is False
     assert gate["successor_dispatch_allowed_only_after_verified_receipt"] is True
     assert items[0]["queue_status"] == "awaiting_manual_release_canary"
-    assert all(
-        item["queue_status"] == "queued_waiting_for_release_canary" for item in items[1:]
-    )
+    assert all(item["queue_status"] == "queued_waiting_for_release_canary" for item in items[1:])
     assert all(item["message_id"] is None for item in items)
     assert all(item["sent_at"] is None for item in items)
     assert all(item["provider_outcome"] is None for item in items)
