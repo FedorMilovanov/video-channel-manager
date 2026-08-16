@@ -1,0 +1,170 @@
+{
+  "schema_name": "video-channel-manager.milovi-follow-on-wave-copy-candidates",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "status": "provider_inert_frozen_copy_candidate",
+  "execution_authorized": false,
+  "provider_mutation_allowed": false,
+  "becomes_operational_queue": false,
+  "timezone": "Europe/Moscow",
+  "prerequisites": {
+    "bootstrap_final_publication_id": "milovi-bootstrap-010",
+    "bootstrap_must_be_terminally_verified": true,
+    "all_service_or_availability_claims_must_be_reverified_before_operational_promotion": true,
+    "school_articles_must_be_reverified_before_operational_promotion": true
+  },
+  "source_bindings": {
+    "milovi_cake_repository": "FedorMilovanov/Milovi_Cake",
+    "milovi_cake_commit": "551866f1c34611406fc0a696bec8fc8fb4fd36d8",
+    "gallery_metadata_path": "js/gallery/data.js",
+    "gallery_metadata_blob_sha1": "e20e60c07479e8b20c1db700f1a40364b81eb669",
+    "order_page_path": "zakazat-tort-spb/index.html",
+    "order_page_blob_sha1": "e4e9df1e16569248ab2ddace494c2b0ac701ab40",
+    "bento_page_path": "bento-torty/index.html",
+    "bento_page_blob_sha1": "698601aa033cd0efbcfd43e3a3db0efbc8e37a03",
+    "reviews_page_path": "otzyvy/index.html",
+    "reviews_page_blob_sha1": "cccfbc9c12d9d3724b0a27a481cbb1347f77716a",
+    "school_pool_path": "content/telegram/milovi-cake/school-interest-reading-candidates-2026-08.json",
+    "school_pool_blob_sha1": "6cec8bc654968f9d35dfca66bfeb692c3b140644"
+  },
+  "pacing": {
+    "total_items": 12,
+    "cake_items": 9,
+    "school_items": 3,
+    "school_positions": [3, 7, 11],
+    "school_posts_may_not_be_consecutive": true,
+    "final_item_must_be_cake": true,
+    "dates_frozen": false
+  },
+  "items": [
+    {
+      "position": 1,
+      "publication_id": "milovi-follow-on-001",
+      "brand_stream": "milovi-cake",
+      "content_role": "finished_work_visual",
+      "operation": "sendPhoto",
+      "media_id": "p06",
+      "caption": "Чёрный и золото — сочетание, которому не нужен лишний шум.\n\nНа фото из нашего портфолио — чёрно-золотой торт с шарами. В галерее он зафиксирован как премиальный торт в чёрно-золотой гамме.\n\nЕщё работы Milovi Cake → https://milovicake.ru/gallery/",
+      "must_reverify_before_operational_promotion": false
+    },
+    {
+      "position": 2,
+      "publication_id": "milovi-follow-on-002",
+      "brand_stream": "milovi-cake",
+      "content_role": "customer_guidance",
+      "operation": "sendPhoto",
+      "media_id": "p30",
+      "caption": "Что написать в первом сообщении, чтобы быстрее подобрать формат торта?\n\nДостаточно четырёх вещей: повод, дата, примерный вес или количество гостей и пожелания по декору. По этим данным уже можно обсуждать подходящий формат и ориентир по стоимости.\n\nНа фото — подарочный бенто-торт из портфолио Milovi Cake.\n\nПодробнее о заказе → https://milovicake.ru/zakazat-tort-spb/",
+      "must_reverify_before_operational_promotion": true
+    },
+    {
+      "position": 3,
+      "publication_id": "milovi-follow-on-003",
+      "brand_stream": "milovi-school",
+      "content_role": "interest_reading",
+      "operation": "sendMessage",
+      "school_candidate_id": "school-read-002",
+      "source_slug": "laduree-1862",
+      "caption": "Сначала была булочная. Потом пожар. Потом женщина предложила чайный салон. А ещё позже внук добавил крем между двумя печеньями.\n\nТак в одной семейной истории сошлись четыре поворота, из которых вырос образ Ladurée: 1862 год, пожар, превращение булочной в кондитерскую и рождение парижского макарона.\n\nКак несколько решений одной семьи превратились в гастрономический символ Парижа?\n\nЧитать в нашем проекте Milovi School → https://french.milovicake.ru/articles/laduree-1862",
+      "product_cta_allowed": false,
+      "must_reverify_before_operational_promotion": true
+    },
+    {
+      "position": 4,
+      "publication_id": "milovi-follow-on-004",
+      "brand_stream": "milovi-cake",
+      "content_role": "personalized_bento",
+      "operation": "sendPhoto",
+      "media_id": "p08",
+      "caption": "Иногда для подарка достаточно двух слов.\n\nНа фото — бенто «Горжусь тобой» из нашего портфолио. Для бенто на сайте отдельно предусмотрены короткие надписи: фраза, имя, дата, шутка или признание. Если текст получается длинным, его лучше заранее адаптировать под маленький формат.\n\nБенто Milovi Cake → https://milovicake.ru/bento-torty/",
+      "must_reverify_before_operational_promotion": true
+    },
+    {
+      "position": 5,
+      "publication_id": "milovi-follow-on-005",
+      "brand_stream": "milovi-cake",
+      "content_role": "verified_social_proof",
+      "operation": "sendPhoto",
+      "media_id": "p15",
+      "caption": "Из отзывов о Milovi Cake:\n\n«Спасибо за оперативность, внимательный подход, рекомендации по вкусам и вашу работу. Торт получился отличным, именинница довольна».\n\n— Жанель, 2 февраля 2026 года.\n\nОтдельно: на фото — подарочный десертный набор из нашего портфолио; отзыв не привязан к этой фотографии.\n\nОтзывы → https://milovicake.ru/otzyvy/",
+      "review_author": "Жанель",
+      "review_date": "2026-02-02",
+      "must_reverify_before_operational_promotion": false
+    },
+    {
+      "position": 6,
+      "publication_id": "milovi-follow-on-006",
+      "brand_stream": "milovi-cake",
+      "content_role": "complex_3d_planning",
+      "operation": "sendPhoto",
+      "media_id": "p22",
+      "caption": "Сложный 3D-декор лучше согласовывать заранее.\n\nНа фото — шоколадный торт с объёмными фигурками собак из портфолио Milovi Cake. Для первого расчёта достаточно прислать повод, дату, примерный вес или количество гостей и пожелания по оформлению. Для сложных 3D-тортов на сайте отдельно рекомендуем закладывать больше времени на согласование.\n\nКак оформить заказ → https://milovicake.ru/zakazat-tort-spb/",
+      "must_reverify_before_operational_promotion": true
+    },
+    {
+      "position": 7,
+      "publication_id": "milovi-follow-on-007",
+      "brand_stream": "milovi-school",
+      "content_role": "interest_reading",
+      "operation": "sendMessage",
+      "school_candidate_id": "school-read-006",
+      "source_slug": "paris-brest-race-dessert",
+      "caption": "Одно из классических французских пирожных появилось как десерт для велогонки — поэтому оно и похоже на колесо.\n\nВ 1910 году Луи Дюран сделал Paris-Brest в честь гонки Париж–Брест. Почти век спустя Филипп Контисини снова изменил его конструкцию. Спортивное событие прошло, а десерт пережил первоначальный повод.\n\nПочему временная идея иногда оказывается долговечнее события, ради которого её придумали?\n\nЧитать в нашем проекте Milovi School → https://french.milovicake.ru/articles/paris-brest-race-dessert",
+      "product_cta_allowed": false,
+      "must_reverify_before_operational_promotion": true
+    },
+    {
+      "position": 8,
+      "publication_id": "milovi-follow-on-008",
+      "brand_stream": "milovi-cake",
+      "content_role": "finished_work_visual",
+      "operation": "sendPhoto",
+      "media_id": "p14",
+      "caption": "Фактура может работать сильнее, чем десяток мелких деталей.\n\nНа фото из портфолио Milovi Cake — фактурный торт с карамелью, объёмным декором и золотыми акцентами. Оставляем работу говорить за себя.\n\nГалерея → https://milovicake.ru/gallery/",
+      "must_reverify_before_operational_promotion": false
+    },
+    {
+      "position": 9,
+      "publication_id": "milovi-follow-on-009",
+      "brand_stream": "milovi-cake",
+      "content_role": "order_timing_guidance",
+      "operation": "sendPhoto",
+      "media_id": "p29",
+      "caption": "Когда лучше писать насчёт заказа?\n\nСейчас на странице заказа рекомендуем обычно обращаться за 2–3 дня, а сложные 3D- и свадебные торты согласовывать заранее. Срочные заказы обсуждаются индивидуально.\n\nНа фото — сиреневый торт с цветочным декором из портфолио.\n\nУсловия перед заказом → https://milovicake.ru/zakazat-tort-spb/",
+      "must_reverify_before_operational_promotion": true
+    },
+    {
+      "position": 10,
+      "publication_id": "milovi-follow-on-010",
+      "brand_stream": "milovi-cake",
+      "content_role": "dessert_showcase",
+      "operation": "sendPhoto",
+      "media_id": "p26",
+      "caption": "Не каждый праздничный десерт должен быть большим тортом.\n\nНа фото из портфолио Milovi Cake — мини-Павлова с кремом: порционный формат, где сама подача уже становится частью впечатления.\n\nБольше работ → https://milovicake.ru/gallery/",
+      "must_reverify_before_operational_promotion": false
+    },
+    {
+      "position": 11,
+      "publication_id": "milovi-follow-on-011",
+      "brand_stream": "milovi-school",
+      "content_role": "interest_reading",
+      "operation": "sendMessage",
+      "school_candidate_id": "school-read-003",
+      "source_slug": "careme-first-celebrity-chef",
+      "caption": "Его бросили ребёнком в Париже. Через годы он готовил для Наполеона, Александра I и английского принца-регента.\n\nАнтонен Карем прошёл путь от беспризорного подростка до человека, которого называли «королём шефов». Его история соединяет кухню, архитектуру, придворную политику и рождение новой профессиональной системы.\n\nПочему биография Карема больше похожа на роман XIX века, чем на обычную историю повара?\n\nЧитать в нашем проекте Milovi School → https://french.milovicake.ru/articles/careme-first-celebrity-chef",
+      "product_cta_allowed": false,
+      "must_reverify_before_operational_promotion": true
+    },
+    {
+      "position": 12,
+      "publication_id": "milovi-follow-on-012",
+      "brand_stream": "milovi-cake",
+      "content_role": "finished_work_visual",
+      "operation": "sendPhoto",
+      "media_id": "p01",
+      "caption": "Финал этой подборки — работа, где шоколадная гамма встречается с объёмным декором.\n\nНа фото из портфолио Milovi Cake — шоколадный праздничный торт с мишками. Без выдуманной истории заказа: просто одна из реальных работ, которую хочется рассмотреть ближе.\n\nГалерея → https://milovicake.ru/gallery/",
+      "must_reverify_before_operational_promotion": false
+    }
+  ]
+}
