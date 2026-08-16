@@ -27,6 +27,7 @@ from video_channel_manager.platforms.vk.milovi_issue323_promotion_spec import (
     promotion_text_sha256,
 )
 from video_channel_manager.platforms.vk.milovi_rollout_sources import ROLL_OUT_IDS
+from video_channel_manager.platforms.vk.wall_safety import VkWallPostFingerprint, VkWallSurface
 
 
 def _text(source_id: str, field: PromotionField) -> str:
@@ -38,6 +39,18 @@ def _remote_id(source_id: str, field: PromotionField) -> str:
     if field is PromotionField.CLIP_DESCRIPTION:
         return f"-68859909_{456239200 + index}"
     return f"-68859909_{500 + index}"
+
+
+def _wall_incarnation(source_id: str, text: str) -> VkWallPostFingerprint:
+    index = ROLL_OUT_IDS.index(source_id)
+    return VkWallPostFingerprint(
+        owner_id=-68859909,
+        post_id=500 + index,
+        surface=VkWallSurface.PUBLISHED,
+        publish_date=1_700_000_000 + index,
+        text_sha256=promotion_text_sha256(text),
+        attachments=(f"video-68859909_{456239200 + index}",),
+    )
 
 
 def _observation(
@@ -63,6 +76,9 @@ def _observation(
                         PromotionObservationEvidence.EXACT_CLIP_READ
                         if field is PromotionField.CLIP_DESCRIPTION
                         else PromotionObservationEvidence.EXACT_WALL_INCARNATION
+                    ),
+                    wall_incarnation=(
+                        None if field is PromotionField.CLIP_DESCRIPTION else _wall_incarnation(source_id, value)
                     ),
                 )
             )

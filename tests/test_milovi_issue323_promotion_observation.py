@@ -21,6 +21,26 @@ from video_channel_manager.platforms.vk.milovi_issue323_promotion_spec import (
     promotion_text_sha256,
 )
 from video_channel_manager.platforms.vk.milovi_rollout_sources import ROLL_OUT_IDS
+from video_channel_manager.platforms.vk.wall_safety import VkWallPostFingerprint, VkWallSurface
+
+
+def _wall_incarnation(
+    source_id: str,
+    text: str,
+    *,
+    surface: VkWallSurface = VkWallSurface.PUBLISHED,
+    publish_date: int | None = None,
+    attachments: tuple[str, ...] | None = None,
+) -> VkWallPostFingerprint:
+    index = ROLL_OUT_IDS.index(source_id)
+    return VkWallPostFingerprint(
+        owner_id=-68859909,
+        post_id=500 + index,
+        surface=surface,
+        publish_date=publish_date if publish_date is not None else 1_700_000_000 + index,
+        text_sha256=promotion_text_sha256(text),
+        attachments=(attachments if attachments is not None else (f"video-68859909_{456239200 + index}",)),
+    )
 
 
 def _observation(
@@ -29,6 +49,9 @@ def _observation(
     *,
     text: str | None = None,
     processing_projection: bool = False,
+    wall_surface: VkWallSurface = VkWallSurface.PUBLISHED,
+    wall_publish_date: int | None = None,
+    wall_attachments: tuple[str, ...] | None = None,
 ) -> PromotionFieldObservation:
     value = text if text is not None else f"manual current {source_id} {field.value}"
     return PromotionFieldObservation(
@@ -47,6 +70,17 @@ def _observation(
             else PromotionObservationEvidence.EXACT_WALL_INCARNATION
         ),
         processing_projection=processing_projection,
+        wall_incarnation=(
+            None
+            if field is PromotionField.CLIP_DESCRIPTION
+            else _wall_incarnation(
+                source_id,
+                value,
+                surface=wall_surface,
+                publish_date=wall_publish_date,
+                attachments=wall_attachments,
+            )
+        ),
     )
 
 
@@ -155,6 +189,32 @@ def test_observation_requires_field_specific_exact_provider_evidence_kind() -> N
             sha256=promotion_text_sha256(value),
             remote_id="-68859909_500",
             evidence=PromotionObservationEvidence.EXACT_CLIP_READ,
+            wall_incarnation=_wall_incarnation(ROLL_OUT_IDS[0], value),
+        )
+
+
+def test_wall_observation_requires_exact_incarnation_and_clip_forbids_it() -> None:
+    value = "exact wall text"
+    with pytest.raises(ValueError, match="requires exact wall incarnation"):
+        PromotionFieldObservation(
+            source_id=ROLL_OUT_IDS[0],
+            field=PromotionField.WALL_MESSAGE,
+            text=value,
+            sha256=promotion_text_sha256(value),
+            remote_id="-68859909_500",
+            evidence=PromotionObservationEvidence.EXACT_WALL_INCARNATION,
+        )
+
+    clip = _observation(ROLL_OUT_IDS[0], PromotionField.CLIP_DESCRIPTION)
+    with pytest.raises(ValueError, match="cannot carry wall incarnation"):
+        PromotionFieldObservation(
+            source_id=clip.source_id,
+            field=clip.field,
+            text=clip.text,
+            sha256=clip.sha256,
+            remote_id=clip.remote_id,
+            evidence=clip.evidence,
+            wall_incarnation=_wall_incarnation(ROLL_OUT_IDS[0], clip.text),
         )
 
 
@@ -239,6 +299,48 @@ def test_observation_digest_changes_with_manual_text_or_provider_identity() -> N
     assert first.digest != second.digest
 
 
+def test_provider_state_digest_binds_wall_surface_publish_date_and_attachments() -> None:
+    base = _batch()
+    source_id = ROLL_OUT_IDS[0]
+    wall_index = next(
+        index
+        for index, item in enumerate(base.fields)
+        if item.source_id == source_id and item.field is PromotionField.WALL_MESSAGE
+    )
+    text = base.fields[wall_index].text
+    variants = (
+        _observation(
+            source_id,
+            PromotionField.WALL_MESSAGE,
+            text=text,
+            wall_surface=VkWallSurface.POSTPONED,
+        ),
+        _observation(
+            source_id,
+            PromotionField.WALL_MESSAGE,
+            text=text,
+            wall_publish_date=1_700_000_999,
+        ),
+        _observation(
+            source_id,
+            PromotionField.WALL_MESSAGE,
+            text=text,
+            wall_attachments=("photo-68859909_1", "video-68859909_456239200"),
+        ),
+    )
+
+    for changed_wall in variants:
+        fields = list(base.fields)
+        fields[wall_index] = changed_wall
+        changed = PromotionObservationBatch(
+            source_snapshot_id=base.source_snapshot_id,
+            wall_snapshot_sha256=base.wall_snapshot_sha256,
+            captured_at=base.captured_at,
+            fields=tuple(fields),
+        )
+        assert changed.provider_state_digest != base.provider_state_digest
+
+
 def test_status_observation_payload_roundtrips_with_exact_digest() -> None:
     batch = _batch()
 
@@ -262,6 +364,34 @@ def test_observation_loader_rejects_tampered_text_sha_or_digest() -> None:
     payload = _status_payload(batch)
     payload["observation_digest"] = "sha256:" + "0" * 64
     with pytest.raises(ValueError, match="digest mismatch"):
+        promotion_observation_from_mapping(payload)
+
+
+def test_observation_loader_rejects_tampered_wall_incarnation() -> None:
+    batch = _batch()
+    payload = _status_payload(batch)
+    fields = list(payload["fields"])  # type: ignore[arg-type]
+    wall_index = next(index for index, item in enumerate(fields) if item["field"] == PromotionField.WALL_MESSAGE.value)
+    wall = dict(fields[wall_index])
+    incarnation = dict(wall["wall_incarnation"])
+    incarnation["surface"] = VkWallSurface.POSTPONED.value
+    wall["wall_incarnation"] = incarnation
+    fields[wall_index] = wall
+    payload["fields"] = fields
+    payload["observation_digest"] = None
+
+    restored = promotion_observation_from_mapping(payload)
+    assert restored.provider_state_digest != batch.provider_state_digest
+
+    payload = _status_payload(batch)
+    fields = list(payload["fields"])  # type: ignore[arg-type]
+    wall = dict(fields[wall_index])
+    incarnation = dict(wall["wall_incarnation"])
+    incarnation["hidden"] = "not-reviewed"
+    wall["wall_incarnation"] = incarnation
+    fields[wall_index] = wall
+    payload["fields"] = fields
+    with pytest.raises(ValueError, match="unknown keys"):
         promotion_observation_from_mapping(payload)
 
 

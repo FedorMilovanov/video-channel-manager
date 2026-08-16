@@ -285,7 +285,26 @@ def _build_promotion_observation(
 
         wall_remote_id = row.get("current_wall_remote_id")
         wall_text = row.get("wall_message_text")
-        if isinstance(wall_remote_id, str) and wall_remote_id and isinstance(wall_text, str):
+        wall_surface = row.get("wall_surface")
+        if (
+            isinstance(wall_remote_id, str)
+            and wall_remote_id
+            and isinstance(wall_text, str)
+            and isinstance(wall_surface, str)
+        ):
+            try:
+                surface = VkWallSurface(wall_surface)
+            except ValueError:
+                blockers.append(f"{source_id}: exact wall surface is invalid")
+                continue
+            wall_matches = tuple(
+                post for post in snapshot.posts if post.remote_id == wall_remote_id and post.surface is surface
+            )
+            if len(wall_matches) != 1:
+                blockers.append(
+                    f"{source_id}: exact wall incarnation fingerprint unavailable for {wall_remote_id}:{surface.value}"
+                )
+                continue
             fields.append(
                 PromotionFieldObservation(
                     source_id=source_id,
@@ -294,6 +313,7 @@ def _build_promotion_observation(
                     sha256=_sha256_text(wall_text),
                     remote_id=wall_remote_id,
                     evidence=PromotionObservationEvidence.EXACT_WALL_INCARNATION,
+                    wall_incarnation=wall_matches[0],
                 )
             )
         else:
@@ -460,7 +480,7 @@ def _probe_batch(
             current_wall_remote_id: str | None = None
             if resolved_wall is not None:
                 current_wall_remote_id, surface, raw_post, resolution_mode = resolved_wall
-                current_message = str(raw_post.get("text") or "").strip()
+                current_message = str(raw_post.get("text") or "")
                 wall_copy_state = classify_wall_copy_observation(
                     current=current_message,
                     legacy=_legacy_wall_message(asset),
