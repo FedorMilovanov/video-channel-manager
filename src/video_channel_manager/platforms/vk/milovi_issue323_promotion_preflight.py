@@ -19,7 +19,7 @@ from video_channel_manager.platforms.vk.milovi_issue323_promotion_spec import (
 from video_channel_manager.platforms.vk.milovi_rollout_sources import ROLL_OUT_IDS
 
 PROMOTION_PREFLIGHT_SCHEMA = "video-manager.milovi-issue-323-promotion-execution-preflight"
-PROMOTION_PREFLIGHT_VERSION = 2
+PROMOTION_PREFLIGHT_VERSION = 3
 
 
 class PromotionDispatchStatus(StrEnum):
@@ -100,6 +100,7 @@ class ExecutablePromotionMutation:
 class PromotionExecutionPreflight:
     spec_digest: str
     observation_digest: str
+    provider_state_digest: str
     operation_state_digest: str
     executable: bool
     planned_mutations: tuple[ExecutablePromotionMutation, ...]
@@ -109,13 +110,33 @@ class PromotionExecutionPreflight:
     def expected_provider_writes(self) -> int:
         return len(self.planned_mutations) if self.executable else 0
 
+    @property
+    def confirmation_digest(self) -> str:
+        """Stable operator-confirmation digest; excludes volatile capture timestamps and snapshot evidence IDs."""
+
+        payload = {
+            "schema_name": "video-manager.milovi-issue-323-promotion-preflight-confirmation",
+            "schema_version": 1,
+            "spec_digest": self.spec_digest,
+            "provider_state_digest": self.provider_state_digest,
+            "operation_state_digest": self.operation_state_digest,
+            "executable": self.executable,
+            "expected_provider_writes": self.expected_provider_writes,
+            "planned_mutations": [mutation.as_dict() for mutation in self.planned_mutations],
+            "blockers": list(self.blockers),
+        }
+        canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        return f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
+
     def as_dict(self) -> dict[str, object]:
         return {
             "schema_name": PROMOTION_PREFLIGHT_SCHEMA,
             "schema_version": PROMOTION_PREFLIGHT_VERSION,
             "spec_digest": self.spec_digest,
             "observation_digest": self.observation_digest,
+            "provider_state_digest": self.provider_state_digest,
             "operation_state_digest": self.operation_state_digest,
+            "confirmation_digest": self.confirmation_digest,
             "executable": self.executable,
             "provider_mutation_authorized": False,
             "confirmation_required": self.executable and bool(self.planned_mutations),
@@ -126,6 +147,8 @@ class PromotionExecutionPreflight:
 
     @property
     def digest(self) -> str:
+        """Volatile audit-artifact digest, retaining exact observation capture evidence."""
+
         canonical = json.dumps(self.as_dict(), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         return f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
 
@@ -192,6 +215,7 @@ def build_promotion_execution_preflight(
         return PromotionExecutionPreflight(
             spec_digest=spec.digest,
             observation_digest=observation.digest,
+            provider_state_digest=observation.provider_state_digest,
             operation_state_digest=state_digest,
             executable=False,
             planned_mutations=(),
@@ -210,6 +234,7 @@ def build_promotion_execution_preflight(
         return PromotionExecutionPreflight(
             spec_digest=spec.digest,
             observation_digest=observation.digest,
+            provider_state_digest=observation.provider_state_digest,
             operation_state_digest=state_digest,
             executable=False,
             planned_mutations=(),
@@ -224,6 +249,7 @@ def build_promotion_execution_preflight(
     return PromotionExecutionPreflight(
         spec_digest=spec.digest,
         observation_digest=observation.digest,
+        provider_state_digest=observation.provider_state_digest,
         operation_state_digest=state_digest,
         executable=True,
         planned_mutations=executable_mutations,
