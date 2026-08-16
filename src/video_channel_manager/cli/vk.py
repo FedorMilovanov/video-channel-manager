@@ -475,8 +475,15 @@ def milovi_323_continue(
             help="Exact local-journal initialization confirmation; this never authorizes provider mutation",
         ),
     ] = None,
+    confirm_preflight_digest: Annotated[
+        str | None,
+        typer.Option(
+            "--confirm-preflight-digest",
+            help="Exact fresh preflight sha256 digest confirmation; this never authorizes provider mutation",
+        ),
+    ] = None,
 ) -> None:
-    """Build the canonical Issue #323 continuation plan from one fresh read-only observation; execute zero writes."""
+    """Build or confirm the canonical Issue #323 continuation preflight; execute zero provider writes."""
 
     from video_channel_manager.platforms.vk.milovi_issue323_continue import run_issue_323_continue_preview
     from video_channel_manager.platforms.vk.milovi_issue323_status_probe import MiloviStatusProbeBlocked
@@ -491,17 +498,23 @@ def milovi_323_continue(
             promotion_spec_path=promotion_spec,
             promotion_journal_path=promotion_journal,
             journal_init_confirmation=confirm_journal_init,
+            preflight_digest_confirmation=confirm_preflight_digest,
         )
     except (MiloviStatusProbeBlocked, OSError, ValueError) as exc:
         console.print(f"[red]STOP: {type(exc).__name__}: {exc}[/red]")
         raise typer.Exit(code=3) from exc
 
     status = str(result["continuation_status"])
-    color = "green" if status == "ready_for_digest_confirmation" else "yellow"
+    successful_statuses = {
+        "ready_for_digest_confirmation",
+        "digest_confirmed_provider_execution_not_available",
+    }
+    color = "green" if status in successful_statuses else "yellow"
     console.print(
         f"[{color}]Milovi #323 continuation: {status}[/{color}] | "
         f"planned-writes={result.get('promotion_preflight', {}).get('expected_provider_writes', 0) if isinstance(result.get('promotion_preflight'), dict) else 0} | "
-        f"provider-writes-executed=0 | digest={result['promotion_preflight_digest']} | result={output}"
+        f"digest-confirmed={result['preflight_digest_confirmed']} | provider-writes-executed=0 | "
+        f"digest={result['promotion_preflight_digest']} | result={output}"
     )
-    if status != "ready_for_digest_confirmation":
+    if status not in successful_statuses:
         raise typer.Exit(code=3)
