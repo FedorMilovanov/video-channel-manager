@@ -1,0 +1,47 @@
+name: Milovi publisher wiring one-shot
+
+on:
+  push:
+    branches:
+      - agent/milovi-wire-first-screen-queue
+    paths:
+      - .github/workflows/milovi-wire-publisher-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/milovi-wire-first-screen-queue
+          fetch-depth: 0
+      - name: Replace publisher rollout path exactly once
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path(".github/workflows/milovi-telegram-bootstrap-publisher.yml")
+          old = "content/telegram/milovi-cake/bootstrap-rollout-candidate-2026-08.json"
+          new = "content/telegram/milovi-cake/queues/bootstrap-first-screen-queue-2026-08.json"
+          text = path.read_text(encoding="utf-8")
+          if text.count(old) != 1:
+              raise SystemExit(f"expected exactly one historical rollout path, found {text.count(old)}")
+          updated = text.replace(old, new)
+          if old in updated or updated.count(new) != 1:
+              raise SystemExit("publisher queue path replacement failed closed")
+          path.write_text(updated, encoding="utf-8")
+      - name: Commit publisher-only wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "milovi-queue-wiring[bot]"
+          git config user.email "milovi-queue-wiring@users.noreply.github.com"
+          git add -- .github/workflows/milovi-telegram-bootstrap-publisher.yml
+          git diff --cached --check
+          git commit -m "Wire Milovi publisher to operational first-screen queue [skip ci]"
+          git push origin HEAD:agent/milovi-wire-first-screen-queue
