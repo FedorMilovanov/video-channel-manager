@@ -1,0 +1,164 @@
+name: Milovi Telegram daylight bootstrap rollout
+
+on:
+  schedule:
+    - cron: "30 7 * * *"   # 10:30 Europe/Moscow
+    - cron: "0 17 * * *"   # 20:00 Europe/Moscow
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: milovi-telegram-publisher
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    outputs:
+      execute: ${{ steps.plan.outputs.execute }}
+      reason: ${{ steps.plan.outputs.reason }}
+      sequence: ${{ steps.plan.outputs.sequence }}
+    steps:
+      - name: Check out exact current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Require supported runtime baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = "refs/heads/main"
+          test "$(git branch --show-current)" = "" || test "$(git branch --show-current)" = "main"
+          test -z "$(git status --porcelain)"
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install provider-free planning runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -e .
+          python -m pip check
+
+      - name: Evaluate exact strict-next daylight plan without provider access
+        id: plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.milovi_telegram_bootstrap_rollout plan
+
+      - name: Manual runs are diagnostic only
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ steps.plan.outputs.execute }}" != "true" || {
+            echo "Manual diagnostics may observe a due slot but never enter the provider job."
+          }
+
+  publish-one:
+    needs: plan
+    if: github.event_name == 'schedule' && needs.plan.outputs.execute == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Reject reruns before provider access
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_RUN_ATTEMPT}" = "1"
+
+      - name: Check out exact scheduled revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install exact rollout dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: -e . Pillow==11.3.0
+          python -m pip check
+
+      - name: Re-evaluate daylight and strict-next gate before credential use
+        id: replan
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.milovi_telegram_bootstrap_rollout plan
+          test "${{ steps.plan.outputs.sequence }}" = "${{ needs.plan.outputs.sequence }}"
+
+      - name: Prepare exact payload and fresh Telegram membership proof
+        if: steps.replan.outputs.execute == 'true'
+        shell: bash
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.milovi_telegram_bootstrap_rollout prepare
+
+      - name: Persist strict-next dispatch-started barrier before provider mutation
+        if: steps.replan.outputs.execute == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add content/telegram/milovi-cake/live/bootstrap-rollout-state.json
+          git commit -m "Milovi Telegram: persist bootstrap dispatch-started intent"
+          git push origin HEAD:main
+
+      - name: Dispatch one exact strict-next Telegram item with zero retry
+        if: steps.replan.outputs.execute == 'true'
+        shell: bash
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.milovi_telegram_bootstrap_rollout send
+
+      - name: Persist terminal provider outcome when exact result is known
+        if: always() && steps.replan.outputs.execute == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          STATE=content/telegram/milovi-cake/live/bootstrap-rollout-state.json
+          if git diff --quiet -- "$STATE"; then
+            echo "No terminal state change. dispatch_started remains durable and blocks replay."
+            exit 0
+          fi
+          STATUS="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          state = json.loads(Path('content/telegram/milovi-cake/live/bootstrap-rollout-state.json').read_text(encoding='utf-8'))
+          print(state['items'][-1]['status'])
+          PY
+          )"
+          git add "$STATE"
+          git commit -m "Milovi Telegram: record bootstrap ${STATUS} outcome"
+          git push origin HEAD:main
+
+      - name: Retain exact local outcome evidence even if final state push fails
+        if: always() && steps.replan.outputs.execute == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: milovi-bootstrap-outcome-${{ github.run_id }}-${{ github.run_attempt }}
+          path: content/telegram/milovi-cake/live/bootstrap-rollout-state.json
+          if-no-files-found: error
+          retention-days: 30
