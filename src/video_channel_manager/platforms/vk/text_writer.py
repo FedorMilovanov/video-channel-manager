@@ -116,8 +116,13 @@ class VkVideoTextWriter(VkVideoWriter):
             else vk_texts_equivalent(current.description, expected_description)
         )
         if not description_matches:
+            detail = (
+                "does not equal the exact reviewed BEFORE state"
+                if exact_description
+                else "no longer matches the reviewed before-state"
+            )
             raise VkWriteError(
-                f"VK video {current.remote_id} description no longer matches the reviewed before-state.",
+                f"VK video {current.remote_id} description {detail}.",
                 method="video.edit",
             )
         if expected_title is not None:
