@@ -60,6 +60,9 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add content/telegram/milovi-cake/live/canary-dispatch-state.json
+          if [ -d content/telegram/milovi-cake/live/attempts ]; then
+            git add content/telegram/milovi-cake/live/attempts
+          fi
           git commit -m 'Milovi Telegram: persist canary dispatch-started barrier'
           git push origin HEAD:main
 
@@ -71,10 +74,23 @@ jobs:
           set -euo pipefail
           python -m video_channel_manager.milovi_telegram_live_canary send
 
-      - name: Persist verified Telegram receipt
+      - name: Persist terminal Telegram outcome when known
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
-          git add content/telegram/milovi-cake/live/canary-dispatch-state.json
-          git commit -m 'Milovi Telegram: record verified canary receipt'
+          STATE=content/telegram/milovi-cake/live/canary-dispatch-state.json
+          if git diff --quiet -- "$STATE"; then
+            echo 'No terminal state change to persist; unknown outcomes remain dispatch_started.'
+            exit 0
+          fi
+          STATUS="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          state = json.loads(Path('content/telegram/milovi-cake/live/canary-dispatch-state.json').read_text(encoding='utf-8'))
+          print(state['status'])
+          PY
+          )"
+          git add "$STATE"
+          git commit -m "Milovi Telegram: record canary ${STATUS} outcome"
           git push origin HEAD:main
