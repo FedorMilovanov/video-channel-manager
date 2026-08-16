@@ -21,6 +21,14 @@ from video_channel_manager.platforms.vk.milovi_issue323_live_resume import (
     _resume_wall_baseline,
     _supplement_due_prior_wall_readbacks,
 )
+from video_channel_manager.platforms.vk.milovi_issue323_planner import (
+    Issue323Capability,
+    Issue323ItemPlan,
+    Issue323ItemState,
+    Issue323PlanCapabilityError,
+    plan_issue323_item,
+    require_issue323_capability,
+)
 from video_channel_manager.platforms.vk.milovi_issue323_upload_wall_reconcile import (
     reconcile_issue323_upload_wall_effect,
 )
@@ -352,6 +360,64 @@ def _needs_issue323_upload_wall_reconcile(record: Mapping[str, Any]) -> bool:
     return isinstance(delta, Mapping) and delta.get("status") == "changed"
 
 
+def _executor_item_plan(
+    item: Mapping[str, Any],
+    record: Mapping[str, Any] | None,
+    *,
+    clip_remote_id: str | None = None,
+    clip_origin: str | None = None,
+    existing_clip_preflight_complete: bool,
+) -> Issue323ItemPlan:
+    upload_stage: UploadStage | None = None
+    provider_effect = False
+    if record is not None:
+        try:
+            upload_stage = UploadStage(str(record.get("stage")))
+        except ValueError as exc:
+            raise MiloviFinalizerBlocked(f"Upload record has invalid stage: {record.get('stage')!r}") from exc
+        provider_effect = _has_provider_effect(record)
+
+    resolved_clip_remote_id = clip_remote_id
+    resolved_clip_origin = clip_origin
+    if resolved_clip_remote_id is None and provider_effect and record is not None:
+        try:
+            resolved_clip_remote_id = _upload_remote_id(record)
+        except MiloviTokenRolloutBlocked:
+            resolved_clip_remote_id = None
+        if resolved_clip_remote_id is not None:
+            resolved_clip_origin = "upload_record"
+
+    raw_wall_remote_id = item.get("wall_remote_id")
+    wall_remote_id = raw_wall_remote_id if isinstance(raw_wall_remote_id, str) and raw_wall_remote_id else None
+    return plan_issue323_item(
+        Issue323ItemState(
+            durable_status=str(item.get("status") or ""),
+            upload_stage=upload_stage,
+            provider_effect_durable=provider_effect,
+            clip_remote_id=resolved_clip_remote_id,
+            clip_identity_origin=resolved_clip_origin,
+            wall_remote_id=wall_remote_id,
+            clip_copy_state=None,
+            wall_copy_state=None,
+            existing_clip_preflight_complete=existing_clip_preflight_complete,
+        )
+    )
+
+
+def _bind_executor_plan(item: dict[str, Any], key: str, plan: Issue323ItemPlan) -> None:
+    item[key] = {
+        "plan": plan.as_dict(),
+        "plan_digest": plan.digest,
+    }
+
+
+def _require_executor_capability(plan: Issue323ItemPlan, capability: Issue323Capability) -> None:
+    try:
+        require_issue323_capability(plan, capability)
+    except Issue323PlanCapabilityError as exc:
+        raise MiloviFinalizerBlocked(str(exc)) from exc
+
+
 def _ensure_promoted_clip(
     asset: SourceAsset,
     artifact: Any,
@@ -362,16 +428,74 @@ def _ensure_promoted_clip(
     upload_writer: _LiveClipWriter,
     timeout: int,
 ) -> str:
+    raw_record = item.get("upload_record")
+    record = dict(raw_record) if isinstance(raw_record, Mapping) else None
     current = item.get("clip_remote_id")
     if isinstance(current, str) and current:
+        plan = _executor_item_plan(
+            item,
+            record,
+            clip_remote_id=current,
+            clip_origin="journal",
+            existing_clip_preflight_complete=True,
+        )
+        _bind_executor_plan(item, "clip_execution_plan", plan)
+        _save(journal_path, journal)
         _assert_native_clip(writer, asset, current, description_mode="legacy_or_promoted", durable_verified=True)
         return current
 
-    raw_record = item.get("upload_record")
-    record = dict(raw_record) if isinstance(raw_record, Mapping) else None
-    if record is None or not _has_provider_effect(record):
+    provider_effect = record is not None and _has_provider_effect(record)
+    operation_plan: Issue323ItemPlan
+    if provider_effect:
+        operation_plan = _executor_item_plan(
+            item,
+            record,
+            existing_clip_preflight_complete=False,
+        )
+        upload_stage = UploadStage(str(record.get("stage"))) if record is not None else None
+        if upload_stage is UploadStage.VERIFIED:
+            remote_id = _upload_remote_id(record)
+            _require_executor_capability(operation_plan, Issue323Capability.ADOPT_DURABLE_CLIP)
+            _bind_executor_plan(item, "clip_execution_plan", operation_plan)
+            _save(journal_path, journal)
+            _assert_native_clip(
+                writer,
+                asset,
+                remote_id,
+                description_mode="legacy_or_promoted",
+                durable_verified=True,
+            )
+            item.update(
+                status="clip_verified",
+                clip_remote_id=remote_id,
+                clip_origin="resumed_token_short_video_internal_promotion",
+            )
+            _save(journal_path, journal)
+            return remote_id
+        _require_executor_capability(operation_plan, Issue323Capability.RECONCILE_PROVIDER_EFFECT)
+        _bind_executor_plan(item, "clip_execution_plan", operation_plan)
+        _save(journal_path, journal)
+    else:
+        preflight_plan = _executor_item_plan(
+            item,
+            record,
+            existing_clip_preflight_complete=False,
+        )
+        _require_executor_capability(preflight_plan, Issue323Capability.READ_PROVIDER_STATE)
+        _bind_executor_plan(item, "clip_execution_plan", preflight_plan)
+        _save(journal_path, journal)
         existing = _find_existing_clip(upload_writer.client, asset)
         if existing:
+            adoption_plan = _executor_item_plan(
+                item,
+                record,
+                clip_remote_id=existing,
+                clip_origin="inventory",
+                existing_clip_preflight_complete=True,
+            )
+            _require_executor_capability(adoption_plan, Issue323Capability.ADOPT_DURABLE_CLIP)
+            _bind_executor_plan(item, "clip_execution_plan", adoption_plan)
+            _save(journal_path, journal)
             _assert_native_clip(writer, asset, existing, description_mode="legacy_or_promoted")
             item.update(
                 status="clip_verified",
@@ -380,6 +504,14 @@ def _ensure_promoted_clip(
             )
             _save(journal_path, journal)
             return existing
+        operation_plan = _executor_item_plan(
+            item,
+            record,
+            existing_clip_preflight_complete=True,
+        )
+        _require_executor_capability(operation_plan, Issue323Capability.CREATE_CLIP)
+        _bind_executor_plan(item, "clip_execution_plan", operation_plan)
+        _save(journal_path, journal)
 
     readiness = clip_readiness(asset)
     record, _ = ensure_upload_record(
@@ -459,9 +591,18 @@ def _ensure_promoted_clip(
     operation_writer: Any = upload_writer
     recovery_writer: _Issue323RecoveryWriter | None = None
     if had_provider_effect:
+        recovery_plan = _executor_item_plan(
+            item,
+            record,
+            existing_clip_preflight_complete=False,
+        )
+        _require_executor_capability(recovery_plan, Issue323Capability.RECONCILE_PROVIDER_EFFECT)
+        _bind_executor_plan(item, "clip_execution_plan", recovery_plan)
+        persist()
         wall_before, recovery_writer = prepare_recovery(current_wall)
         operation_writer = recovery_writer
     else:
+        _require_executor_capability(operation_plan, Issue323Capability.CREATE_CLIP)
         wall_before = current_wall
     journal["provider_write_attempted"] = True
     item["status"] = "upload_in_progress"
@@ -488,6 +629,14 @@ def _ensure_promoted_clip(
             community_id=MILOVI_COMMUNITY_ID,
             max_posts_per_surface=10000,
         )
+        recovery_plan = _executor_item_plan(
+            item,
+            record,
+            existing_clip_preflight_complete=False,
+        )
+        _require_executor_capability(recovery_plan, Issue323Capability.RECONCILE_PROVIDER_EFFECT)
+        _bind_executor_plan(item, "clip_execution_plan", recovery_plan)
+        persist()
         wall_before, recovery_writer = prepare_recovery(current_after)
         operation_writer = recovery_writer
         had_provider_effect = True
@@ -1117,6 +1266,34 @@ def _final_postflight(
     return evidence
 
 
+def _authorize_wall_continuation(
+    item: dict[str, Any],
+    journal: dict[str, Any],
+    journal_path: Path,
+    clip_remote_id: str,
+) -> Issue323ItemPlan:
+    raw_record = item.get("upload_record")
+    record = dict(raw_record) if isinstance(raw_record, Mapping) else None
+    plan = _executor_item_plan(
+        item,
+        record,
+        clip_remote_id=clip_remote_id,
+        clip_origin="journal",
+        existing_clip_preflight_complete=True,
+    )
+    if Issue323Capability.CREATE_WALL in plan.required_capabilities:
+        _require_executor_capability(plan, Issue323Capability.CREATE_WALL)
+    elif Issue323Capability.RECONCILE_PROVIDER_EFFECT in plan.required_capabilities:
+        _require_executor_capability(plan, Issue323Capability.RECONCILE_PROVIDER_EFFECT)
+    else:
+        raise MiloviFinalizerBlocked(
+            f"Issue #323 plan {plan.digest} action={plan.action.value} grants no wall continuation authority"
+        )
+    _bind_executor_plan(item, "wall_execution_plan", plan)
+    _save(journal_path, journal)
+    return plan
+
+
 def _complete_child(
     source_id: str,
     *,
@@ -1173,6 +1350,7 @@ def _complete_child(
         )
     if source_id == ANOMALY_SOURCE_ID and clip_id != ANOMALY_CLIP_REMOTE_ID:
         raise MiloviFinalizerBlocked("Eighth Clip identity changed")
+    _authorize_wall_continuation(item, journal, journal_path, clip_id)
     _ensure_wall(asset, clip_id, slots[source_id], item, journal, journal_path, writer, client)
 
 
