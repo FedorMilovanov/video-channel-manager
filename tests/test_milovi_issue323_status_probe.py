@@ -20,12 +20,21 @@ from video_channel_manager.platforms.vk.milovi_rollout_sources import (
     build_wall_message,
 )
 from video_channel_manager.platforms.vk.upload_lifecycle import UploadStage
-from video_channel_manager.platforms.vk.wall_safety import VkWallSnapshot
+from video_channel_manager.platforms.vk.wall_safety import (
+    VkWallPostFingerprint,
+    VkWallSnapshot,
+    VkWallSurface,
+)
 
 
 class _ReadOnlyFakeProvider:
-    def __init__(self, videos: dict[str, dict[str, Any]]) -> None:
+    def __init__(
+        self,
+        videos: dict[str, dict[str, Any]],
+        posts: dict[int, dict[str, Any]] | None = None,
+    ) -> None:
         self.videos = videos
+        self.posts = posts or {}
         self.read_video_calls: list[str] = []
         self.read_post_calls: list[int] = []
 
@@ -37,7 +46,8 @@ class _ReadOnlyFakeProvider:
 
     def read_post(self, *, community_id: int, post_id: int) -> dict[str, Any] | None:
         self.read_post_calls.append(post_id)
-        return None
+        value = self.posts.get(post_id)
+        return dict(value) if value is not None else None
 
 
 def _assets() -> list[SourceAsset]:
@@ -127,6 +137,8 @@ def test_clean_status_item_completes_inventory_preflight_before_create_clip_plan
     assert payload["plan_schema_version"] == 1
     assert payload["provider_mutation_authorized"] is False
     assert payload["journal_mutation_authorized"] is False
+    assert payload["promotion_observation"]["provider_mutation_authorized"] is False
+    assert payload["promotion_observation"]["complete"] is False
     assert lookups == list(ROLL_OUT_IDS)
 
 
@@ -172,6 +184,7 @@ def test_verified_upload_record_is_protected_from_reupload() -> None:
     assert row["upload_stage"] == UploadStage.VERIFIED.value
     assert row["provider_effect_durable"] is True
     assert row["clip_copy_state"] == "legacy"
+    assert row["clip_description_text"] == asset.description
     assert row["safe_next_action"] == "resume_from_verified_clip_without_reupload_then_wall"
     assert row["plan"]["action"] == row["safe_next_action"]
     assert "create_clip" not in row["plan"]["required_capabilities"]
@@ -181,11 +194,12 @@ def test_verified_upload_record_is_protected_from_reupload() -> None:
     assert provider.read_video_calls == [remote_id]
 
 
-def test_unreviewed_clip_copy_blocks_instead_of_overwriting() -> None:
+def test_unreviewed_clip_copy_is_captured_then_blocks_creation_authority() -> None:
     assets = _assets()
     journal = _journal()
     source_id = ROLL_OUT_IDS[8]
     remote_id = "-68859909_456239233"
+    manual_text = "operator-edited third state"
     journal["items"][source_id] = {
         "status": "upload_in_progress",
         "upload_record": {
@@ -199,7 +213,7 @@ def test_unreviewed_clip_copy_blocks_instead_of_overwriting() -> None:
                 "owner_id": -68859909,
                 "id": 456239233,
                 "type": "short_video",
-                "description": "operator-edited third state",
+                "description": manual_text,
             }
         }
     )
@@ -217,14 +231,109 @@ def test_unreviewed_clip_copy_blocks_instead_of_overwriting() -> None:
 
     row = payload["items"][8]
     assert payload["status"] == "blocked"
+    assert row["clip_copy_state"] == "unreviewed_exact"
+    assert row["clip_description_text"] == manual_text
     assert row["safe_next_action"] == "stop_conflict"
     assert row["plan"]["action"] == "stop_conflict"
     assert row["plan"]["required_capabilities"] == []
     assert row["plan"]["forbids_reupload"] is True
     assert row["plan"]["forbids_repost"] is True
-    assert "neither exact reviewed legacy nor exact promoted copy" in row["stop_reason"]
+    assert "observation-only" in row["stop_reason"]
     assert row["reupload_authorized_by_probe"] is False
     assert row["repost_authorized_by_probe"] is False
+    observed = next(
+        item
+        for item in payload["promotion_observation"]["fields"]
+        if item["source_id"] == source_id and item["field"] == "clip_description"
+    )
+    assert observed["text"] == manual_text
+    assert observed["remote_id"] == remote_id
+    assert observed["processing_projection"] is False
+    assert provider.read_video_calls == [remote_id]
+
+
+def test_wall_verified_manual_copy_is_review_evidence_not_phase_a_mutation_stop() -> None:
+    assets = _assets()
+    slots = _slots()
+    journal = _journal()
+    source_id = ROLL_OUT_IDS[0]
+    clip_remote_id = "-68859909_456239240"
+    wall_remote_id = "-68859909_500"
+    clip_manual = "operator reviewed candidate clip text"
+    wall_manual = "operator reviewed candidate wall text"
+    publish_date = int(slots[source_id].timestamp())
+    journal["items"][source_id] = {
+        "status": "wall_verified",
+        "clip_remote_id": clip_remote_id,
+        "wall_remote_id": wall_remote_id,
+        "publish_date": publish_date,
+    }
+    provider = _ReadOnlyFakeProvider(
+        {
+            clip_remote_id: {
+                "owner_id": -68859909,
+                "id": 456239240,
+                "type": "short_video",
+                "description": clip_manual,
+            }
+        },
+        posts={
+            500: {
+                "owner_id": -68859909,
+                "id": 500,
+                "date": publish_date,
+                "text": wall_manual,
+                "attachments": [
+                    {
+                        "type": "video",
+                        "video": {"owner_id": -68859909, "id": 456239240},
+                    }
+                ],
+            }
+        },
+    )
+    snapshot = VkWallSnapshot(
+        community_id=68859909,
+        captured_at="2026-08-15T02:00:00+00:00",
+        complete=True,
+        published_pages=1,
+        postponed_pages=1,
+        posts=(
+            VkWallPostFingerprint(
+                owner_id=-68859909,
+                post_id=500,
+                surface=VkWallSurface.POSTPONED,
+                publish_date=publish_date,
+                text_sha256="sha256:" + "0" * 64,
+                attachments=(f"video{clip_remote_id}",),
+            ),
+        ),
+    )
+
+    payload = _probe_batch(
+        assets=assets,
+        journal=journal,
+        slots=slots,
+        provider=provider,  # type: ignore[arg-type]
+        client=object(),  # type: ignore[arg-type]
+        snapshot=snapshot,
+        existing_clip_lookup=lambda _client, _asset: None,
+        now_epoch=1786759200,
+    )
+
+    row = payload["items"][0]
+    assert row["clip_copy_state"] == "unreviewed_exact"
+    assert row["wall_copy_state"] == "unreviewed_exact"
+    assert row["clip_description_text"] == clip_manual
+    assert row["wall_message_text"] == wall_manual
+    assert row["safe_next_action"] == "phase_a_complete_promotion_pending"
+    assert row["stop_reason"] is None
+    assert row["plan"]["required_capabilities"] == []
+    fields = {(item["source_id"], item["field"]): item for item in payload["promotion_observation"]["fields"]}
+    assert fields[(source_id, "clip_description")]["text"] == clip_manual
+    assert fields[(source_id, "wall_message")]["text"] == wall_manual
+    assert fields[(source_id, "wall_message")]["remote_id"] == wall_remote_id
+    assert payload["promotion_observation"]["provider_mutation_authorized"] is False
 
 
 def test_provider_facade_exposes_no_mutation_methods() -> None:
