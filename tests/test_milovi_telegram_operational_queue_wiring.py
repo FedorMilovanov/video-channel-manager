@@ -7,10 +7,19 @@ ROOT = Path(__file__).resolve().parents[1]
 PUBLISHER = ROOT / ".github/workflows/milovi-telegram-bootstrap-publisher.yml"
 QUALITY = ROOT / ".github/workflows/milovi-telegram-bootstrap-quality.yml"
 PROFILE = ROOT / "content/telegram/channels/milovi-cake.json"
-QUEUE = ROOT / "content/telegram/milovi-cake/queues/bootstrap-first-screen-queue-2026-08.json"
-HISTORICAL_ROLLOUT = "content/telegram/milovi-cake/bootstrap-rollout-candidate-2026-08.json"
-OPERATIONAL_QUEUE = "content/telegram/milovi-cake/queues/bootstrap-first-screen-queue-2026-08.json"
-AUTHORIZED_RELEASE = ROOT / "content/telegram/milovi-cake/bootstrap-authorized-release-2026-08.json"
+QUEUE = (
+    ROOT
+    / "content/telegram/milovi-cake/queues/bootstrap-first-screen-queue-2026-08.json"
+)
+HISTORICAL_ROLLOUT = (
+    "content/telegram/milovi-cake/bootstrap-rollout-candidate-2026-08.json"
+)
+OPERATIONAL_QUEUE = (
+    "content/telegram/milovi-cake/queues/bootstrap-first-screen-queue-2026-08.json"
+)
+AUTHORIZED_RELEASE = (
+    ROOT / "content/telegram/milovi-cake/bootstrap-authorized-release-2026-08.json"
+)
 TARGET_BINDING = ROOT / "content/telegram/channels/milovi-cake-target-binding.json"
 
 
