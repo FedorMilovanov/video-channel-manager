@@ -544,9 +544,7 @@ def promotion_journal_from_mapping(payload: Mapping[str, object]) -> PromotionJo
         if intent_preflight_digest is not None and not isinstance(intent_preflight_digest, str):
             raise ValueError(f"Promotion journal operation {index} intent_preflight_digest must be a string or null")
         if intent_confirmation_digest is not None and not isinstance(intent_confirmation_digest, str):
-            raise ValueError(
-                f"Promotion journal operation {index} intent_confirmation_digest must be a string or null"
-            )
+            raise ValueError(f"Promotion journal operation {index} intent_confirmation_digest must be a string or null")
         if intent_remote_id is not None and not isinstance(intent_remote_id, str):
             raise ValueError(f"Promotion journal operation {index} intent_remote_id must be a string or null")
         try:
