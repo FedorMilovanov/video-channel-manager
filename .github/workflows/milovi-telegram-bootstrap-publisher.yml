@@ -182,6 +182,7 @@ jobs:
 
       - name: Check out isolated durable Milovi state branch
         if: steps.activation.outputs.active == 'true'
+        continue-on-error: true
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: state/milovi-cake-telegram
@@ -197,7 +198,7 @@ jobs:
           set -euo pipefail
           if [[ ! -f "$LEDGER_PATH" ]]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "reason=ledger_missing" >> "$GITHUB_OUTPUT"
+            echo "reason=state_branch_or_ledger_missing" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           python -m video_channel_manager.telegram_multichannel_cli validate-ledger \
