@@ -207,7 +207,13 @@ def test_ensure_promoted_clip_reuses_durable_verified_identity_during_transient_
     assert item["clip_remote_id"] == REMOTE_ID
     assert item["clip_origin"] == "resumed_token_short_video_internal_promotion"
     assert item["clip_execution_plan"]["plan"]["action"] == "resume_from_verified_clip_without_reupload_then_wall"
-    assert item["clip_execution_plan"]["plan"]["required_capabilities"] == ["adopt_durable_clip", "create_wall"]
+    assert item["clip_execution_plan"]["plan"]["required_capabilities"] == [
+        "adopt_durable_clip",
+        "read_provider_state",
+        "reconcile_provider_effect",
+        "create_wall",
+    ]
+    assert "create_clip" not in item["clip_execution_plan"]["plan"]["required_capabilities"]
     assert item["clip_execution_plan"]["plan_digest"].startswith("sha256:")
     assert writer.read_calls == 1
 
