@@ -12,10 +12,19 @@ from video_channel_manager.platforms.vk.milovi_issue323_promotion_spec import (
     promotion_text_sha256,
 )
 from video_channel_manager.platforms.vk.milovi_rollout_sources import ROLL_OUT_IDS
+from video_channel_manager.platforms.vk.wall_safety import VkWallPostFingerprint
 
 PROMOTION_OBSERVATION_SCHEMA = "video-manager.milovi-issue-323-promotion-observation"
-PROMOTION_OBSERVATION_VERSION = 1
+PROMOTION_OBSERVATION_VERSION = 2
 _MIN_PROCESSING_COPY_PREFIX = 80
+_WALL_INCARNATION_KEYS = {
+    "owner_id",
+    "post_id",
+    "surface",
+    "publish_date",
+    "text_sha256",
+    "attachments",
+}
 
 
 class PromotionObservationEvidence(StrEnum):
@@ -107,6 +116,7 @@ class PromotionFieldObservation:
     remote_id: str
     evidence: PromotionObservationEvidence
     processing_projection: bool = False
+    wall_incarnation: VkWallPostFingerprint | None = None
 
     def __post_init__(self) -> None:
         if self.source_id not in ROLL_OUT_IDS:
@@ -117,8 +127,23 @@ class PromotionFieldObservation:
             raise ValueError(f"Promotion observation SHA mismatch: {self.source_id}:{self.field.value}")
         if self.field is PromotionField.CLIP_DESCRIPTION:
             expected_evidence = PromotionObservationEvidence.EXACT_CLIP_READ
+            if self.wall_incarnation is not None:
+                raise ValueError("Clip promotion observation cannot carry wall incarnation evidence")
         else:
             expected_evidence = PromotionObservationEvidence.EXACT_WALL_INCARNATION
+            if self.wall_incarnation is None:
+                raise ValueError("Wall promotion observation requires exact wall incarnation evidence")
+            if self.wall_incarnation.remote_id != self.remote_id:
+                raise ValueError(
+                    f"Wall promotion observation identity mismatch: {self.source_id}:{self.field.value}"
+                )
+            if self.wall_incarnation.text_sha256 != self.sha256:
+                raise ValueError(
+                    f"Wall promotion observation text digest differs from wall incarnation: "
+                    f"{self.source_id}:{self.field.value}"
+                )
+            if self.wall_incarnation.attachments != tuple(sorted(self.wall_incarnation.attachments)):
+                raise ValueError("Wall promotion observation attachments must be canonical and sorted")
         if self.evidence is not expected_evidence:
             raise ValueError(
                 f"Promotion observation evidence kind mismatches field: {self.source_id}:{self.field.value}"
@@ -143,6 +168,7 @@ class PromotionFieldObservation:
             "remote_id": self.remote_id,
             "evidence": self.evidence.value,
             "processing_projection": self.processing_projection,
+            "wall_incarnation": self.wall_incarnation.as_dict() if self.wall_incarnation is not None else None,
         }
 
 
@@ -227,7 +253,7 @@ class PromotionObservationBatch:
 
         payload = {
             "schema_name": "video-manager.milovi-issue-323-promotion-provider-state",
-            "schema_version": 1,
+            "schema_version": 2,
             "source_snapshot_id": self.source_snapshot_id,
             "complete": self.complete,
             "reviewable": self.reviewable,
@@ -242,6 +268,29 @@ def _exact_keys(payload: Mapping[str, object], allowed: set[str], *, label: str)
     extra = sorted(set(payload) - allowed)
     if extra:
         raise ValueError(f"{label} contains unknown keys: {extra}")
+
+
+def _require_exact_keys(payload: Mapping[str, object], expected: set[str], *, label: str) -> None:
+    _exact_keys(payload, expected, label=label)
+    missing = sorted(expected - set(payload))
+    if missing:
+        raise ValueError(f"{label} is missing required keys: {missing}")
+
+
+def _wall_incarnation_from_mapping(raw: object, *, index: int) -> VkWallPostFingerprint | None:
+    if raw is None:
+        return None
+    if not isinstance(raw, Mapping):
+        raise ValueError(f"Promotion observation field {index} wall_incarnation must be an object or null")
+    _require_exact_keys(
+        raw,
+        _WALL_INCARNATION_KEYS,
+        label=f"Promotion observation field {index} wall_incarnation",
+    )
+    try:
+        return VkWallPostFingerprint.from_mapping(raw)
+    except ValueError as exc:
+        raise ValueError(f"Promotion observation field {index} has invalid wall incarnation evidence: {exc}") from exc
 
 
 def promotion_observation_from_mapping(payload: Mapping[str, object]) -> PromotionObservationBatch:
@@ -296,11 +345,12 @@ def promotion_observation_from_mapping(payload: Mapping[str, object]) -> Promoti
         "remote_id",
         "evidence",
         "processing_projection",
+        "wall_incarnation",
     }
     for index, raw in enumerate(raw_fields):
         if not isinstance(raw, Mapping):
             raise ValueError(f"Promotion observation field {index} must be an object")
-        _exact_keys(raw, allowed_field_keys, label=f"Promotion observation field {index}")
+        _require_exact_keys(raw, allowed_field_keys, label=f"Promotion observation field {index}")
         source_id = raw.get("source_id")
         field = raw.get("field")
         text = raw.get("text")
@@ -308,6 +358,7 @@ def promotion_observation_from_mapping(payload: Mapping[str, object]) -> Promoti
         remote_id = raw.get("remote_id")
         evidence = raw.get("evidence")
         processing_projection = raw.get("processing_projection")
+        wall_incarnation = _wall_incarnation_from_mapping(raw.get("wall_incarnation"), index=index)
         if not isinstance(source_id, str):
             raise ValueError(f"Promotion observation field {index} source_id must be a string")
         if not isinstance(field, str):
@@ -336,6 +387,7 @@ def promotion_observation_from_mapping(payload: Mapping[str, object]) -> Promoti
                 remote_id=remote_id,
                 evidence=parsed_evidence,
                 processing_projection=processing_projection,
+                wall_incarnation=wall_incarnation,
             )
         )
 
