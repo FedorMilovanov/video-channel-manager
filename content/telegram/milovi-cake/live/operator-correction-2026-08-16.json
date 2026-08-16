@@ -1,0 +1,20 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-operator-correction",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "publication_id": "milovi-cake-canary-001",
+  "authorization_id": "milovi-cake-canary-001-live-2026-08-16-successor-01",
+  "historical_dispatch_status": "verified",
+  "historical_message_id": 25,
+  "historical_message_url": "https://t.me/MiloviCake/25",
+  "historical_caption_sha256": "sha256:fe4552e8cb78183f2f7f32d03792af4b9d4f65a18ec0811bfbced7fb424e0d1c",
+  "operator_reported_current_visibility": "deleted",
+  "provider_absence_readback_performed": false,
+  "reason": "Channel owner deleted the canary after identifying misleading editorial framing that could imply a direct French-cuisine / production relationship between Milovi Cake and the separate Milovi School educational/SEO content project.",
+  "correction_policy": "Preserve the historical verified dispatch as evidence, but treat the exact historical payload as superseded and do-not-republish. Future copy must obey editorial-brand-boundary-2026-08.md.",
+  "do_not_republish_exact_payload": true,
+  "public_rollout_paused_until_daylight_window": true,
+  "recorded_from_operator_report": true,
+  "provider_mutation_allowed_by_this_record": false
+}

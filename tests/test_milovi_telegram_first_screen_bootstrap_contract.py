@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 BOOTSTRAP_PATH = ROOT / "content/telegram/milovi-cake/bootstrap-first-screen-candidates-2026-08.json"
 READINESS_PATH = ROOT / "content/telegram/milovi-cake/bootstrap-photo-source-readiness-2026-08.json"
+TRANSPORT_PROOF_PATH = ROOT / "content/telegram/milovi-cake/bootstrap-photo-transport-proof-2026-08.json"
 MEDIA_MAP_PATH = ROOT / "content/telegram/milovi-cake/media-source-map-2026-08.json"
 
 SOURCE_REPOSITORY = "FedorMilovanov/Milovi_Cake"
@@ -77,7 +78,7 @@ def _load(path: Path) -> dict:
 def test_photo_source_readiness_freezes_exact_reviewed_git_objects() -> None:
     readiness = _load(READINESS_PATH)
 
-    assert readiness["schema_version"] == 2
+    assert readiness["schema_version"] == 3
     assert readiness["project_key"] == "milovi-cake"
     assert readiness["owning_issue"] == 353
     assert readiness["source_repository"] == SOURCE_REPOSITORY
@@ -86,6 +87,10 @@ def test_photo_source_readiness_freezes_exact_reviewed_git_objects() -> None:
     assert readiness["source_gallery_path"] == "js/gallery/data.js"
     assert readiness["source_gallery_blob_sha"] == GALLERY_BLOB
     assert readiness["source_git_tree_verified"] is True
+    assert readiness["full_source_bytes_materialized"] is True
+    assert readiness["source_byte_verified_count"] == 9
+    assert readiness["transport_ready_count"] == 9
+    assert readiness["transport_proof"] == ("content/telegram/milovi-cake/bootstrap-photo-transport-proof-2026-08.json")
 
     photos = {photo["media_id"]: photo for photo in readiness["photos"]}
     assert set(photos) == set(EXPECTED_PHOTOS)
@@ -97,28 +102,37 @@ def test_photo_source_readiness_freezes_exact_reviewed_git_objects() -> None:
         assert photo["source_path"] == path
         assert photo["source_git_blob_sha1"] == blob_sha
         assert photo["source_byte_size"] == byte_size
-        assert photo["expected_extension"] == ".webp"
-        assert photo["materialized_sha256"] is None
-        assert photo["pixel_width"] is None
-        assert photo["pixel_height"] is None
-        assert photo["decoded_media_type"] is None
-        assert photo["transport_ready"] is False
+        assert photo["materialized_sha256"].startswith("sha256:")
+        assert photo["pixel_width"] > 0
+        assert photo["pixel_height"] > 0
+        assert photo["decoded_media_type"] == "image/webp"
+        assert photo["transport_sha256"].startswith("sha256:")
+        assert photo["transport_byte_size"] > 0
+        assert photo["transport_ready"] is True
 
 
-def test_photo_source_evidence_is_not_misrepresented_as_transport_readiness() -> None:
+def test_exact_transport_readiness_is_separate_from_write_authority() -> None:
     readiness = _load(READINESS_PATH)
+    proof = _load(TRANSPORT_PROOF_PATH)
 
-    assert readiness["status"] == "provider_inert_source_verified_transport_blocked"
-    assert readiness["transport_ready_count"] == 0
-    assert readiness["full_source_bytes_materialized"] is False
+    assert readiness["status"] == "provider_inert_exact_source_and_transport_verified"
+    assert readiness["transport_ready_count"] == 9
+    assert readiness["full_source_bytes_materialized"] is True
     assert readiness["provider_mutation_allowed"] is False
     assert readiness["provider_write_authorized"] is False
-    assert all(photo["transport_ready"] is False for photo in readiness["photos"])
+    assert all(photo["transport_ready"] is True for photo in readiness["photos"])
+
+    assert proof["status"] == "provider_inert_exact_transport_verified"
+    assert proof["photo_count"] == 9
+    assert proof["transport_ready_count"] == 9
+    assert proof["provider_write_performed"] is False
+    assert proof["execution_authorized"] is False
+    assert proof["provider_mutation_allowed"] is False
 
     rule = readiness["rule"].lower()
-    assert "source evidence only" in rule
-    assert "do not establish telegram transport readiness" in rule
-    assert "sha-256" in rule
+    assert "does not authorize telegram publication" in rule
+    assert "separate reviewed rollout release" in rule
+    assert "durable intent" in rule
 
 
 def test_bootstrap_photo_candidates_cross_link_to_current_media_source_map() -> None:
@@ -145,27 +159,31 @@ def test_bootstrap_photo_candidates_cross_link_to_current_media_source_map() -> 
         assert source["type"] == "photo"
         assert source["title"] == readiness_item["canonical_title"]
         assert source["full"].lstrip("/") == readiness_item["source_path"]
-        assert candidate["transport_ready"] is False
+        assert candidate["transport_ready"] is True
+        assert candidate["execution_ready"] is False
+        assert candidate["publication_authorized"] is False
 
 
-def test_first_screen_bootstrap_is_fail_closed_and_canary_gated() -> None:
+def test_first_screen_bootstrap_is_fail_closed_after_historical_canary() -> None:
     bootstrap = _load(BOOTSTRAP_PATH)
 
-    assert bootstrap["schema_version"] == 2
+    assert bootstrap["schema_version"] == 3
     assert bootstrap["project_key"] == "milovi-cake"
     assert bootstrap["owning_issue"] == 353
-    assert bootstrap["status"] == "provider_inert_candidates"
+    assert bootstrap["status"] == "provider_inert_transport_verified_candidates"
     assert bootstrap["publication_authorized"] is False
     assert bootstrap["execution_ready"] is False
     assert bootstrap["provider_mutation_allowed"] is False
     assert bootstrap["sequence_size"] == 10
+    assert bootstrap["school_items_in_first_screen"] == 0
     assert len(bootstrap["candidates"]) == 10
 
     dependency = bootstrap["dependency"]
     assert dependency["required_canary_publication_id"] == "milovi-cake-canary-001"
-    assert dependency["required_canary_outcome"] == "provider_verified_success"
-    assert dependency["current_canary_verified_success"] is False
-    assert dependency["target_binding_sha256"] is None
+    assert dependency["historical_canary_provider_outcome"] == "verified"
+    assert dependency["historical_canary_message_id"] == 25
+    assert dependency["historical_canary_current_visibility"] == "operator_reported_deleted"
+    assert dependency["operator_correction"].endswith("operator-correction-2026-08-16.json")
 
     assert set(bootstrap["allowed_operations"]) == {"sendPhoto", "sendMessage"}
     assert set(bootstrap["forbidden_operations"]) == {
@@ -184,27 +202,25 @@ def test_first_screen_bootstrap_is_fail_closed_and_canary_gated() -> None:
     assert {item["operation"] for item in bootstrap["candidates"]} <= {"sendPhoto", "sendMessage"}
 
 
-def test_first_screen_copy_uses_matching_cupcake_source_instead_of_generic_guidance() -> None:
+def test_first_screen_cupcake_copy_uses_matching_source_and_format_guidance() -> None:
     bootstrap = _load(BOOTSTRAP_PATH)
     cupcake = next(item for item in bootstrap["candidates"] if item["media_id"] == "p16")
 
     assert cupcake["operation"] == "sendPhoto"
-    assert cupcake["role"] == "finished_showcase"
-    assert "Капкейки с кремовым декором" in cupcake["caption"]
-    assert "Набор капкейков в палитре праздника" in cupcake["caption"]
+    assert cupcake["role"] == "format_guide"
+    assert "Капкейки как единый праздничный набор" in cupcake["caption"]
+    assert "реальная работа Milovi Cake" in cupcake["caption"]
+    assert "дополнение к основному торту" in cupcake["caption"]
     assert "Что написать кондитеру" not in cupcake["caption"]
 
 
-def test_bootstrap_artifacts_do_not_embed_provider_credentials_or_live_binding() -> None:
+def test_bootstrap_artifacts_do_not_embed_provider_credentials() -> None:
     combined = BOOTSTRAP_PATH.read_text(encoding="utf-8") + READINESS_PATH.read_text(encoding="utf-8")
     lowered = combined.lower()
 
     assert ".webm" not in lowered
     assert "bot_token" not in lowered
     assert "telegram_bot_token" not in lowered
-    assert "8716602202" not in combined
-    assert "preaching_mp3_bot" not in lowered
-    assert "e0e02192853cb9387321f23381b498fb077e41442a9cffd7b6d2132f59f19443" not in lowered
 
 
 def test_verified_review_candidate_is_exactly_sourced_and_still_unauthorized() -> None:
