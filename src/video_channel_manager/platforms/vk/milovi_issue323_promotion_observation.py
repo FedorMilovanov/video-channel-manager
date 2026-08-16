@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import StrEnum
 
 from video_channel_manager.platforms.vk.milovi_issue323_promotion_spec import (
@@ -131,18 +131,21 @@ class PromotionFieldObservation:
                 raise ValueError("Clip promotion observation cannot carry wall incarnation evidence")
         else:
             expected_evidence = PromotionObservationEvidence.EXACT_WALL_INCARNATION
-            if self.wall_incarnation is None:
+            wall_incarnation = self.wall_incarnation
+            if wall_incarnation is None:
                 raise ValueError("Wall promotion observation requires exact wall incarnation evidence")
-            if self.wall_incarnation.remote_id != self.remote_id:
-                raise ValueError(
-                    f"Wall promotion observation identity mismatch: {self.source_id}:{self.field.value}"
-                )
-            if self.wall_incarnation.text_sha256 != self.sha256:
+            if wall_incarnation.remote_id != self.remote_id:
+                raise ValueError(f"Wall promotion observation identity mismatch: {self.source_id}:{self.field.value}")
+            canonical_wall_sha256 = f"sha256:{self.sha256}"
+            if wall_incarnation.text_sha256 == self.sha256:
+                wall_incarnation = replace(wall_incarnation, text_sha256=canonical_wall_sha256)
+                object.__setattr__(self, "wall_incarnation", wall_incarnation)
+            if wall_incarnation.text_sha256 != canonical_wall_sha256:
                 raise ValueError(
                     f"Wall promotion observation text digest differs from wall incarnation: "
                     f"{self.source_id}:{self.field.value}"
                 )
-            if self.wall_incarnation.attachments != tuple(sorted(self.wall_incarnation.attachments)):
+            if wall_incarnation.attachments != tuple(sorted(wall_incarnation.attachments)):
                 raise ValueError("Wall promotion observation attachments must be canonical and sorted")
         if self.evidence is not expected_evidence:
             raise ValueError(
