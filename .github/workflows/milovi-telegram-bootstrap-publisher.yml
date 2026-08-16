@@ -1,0 +1,450 @@
+name: Milovi Cake Telegram bootstrap publisher
+
+on:
+  schedule:
+    # Europe/Moscow is UTC+3 year-round: 10:30 and 20:00 local.
+    - cron: "30 7 * * *"
+    - cron: "0 17 * * *"
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type PUBLISH:@MiloviCake to allow an already-authorized fresh strict-next item
+        required: false
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: milovi-cake-telegram-publisher
+  cancel-in-progress: false
+
+jobs:
+  publish-strict-next:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: src
+      PROFILE_PATH: content/telegram/channels/milovi-cake.json
+      ROLLOUT_PATH: content/telegram/milovi-cake/bootstrap-rollout-candidate-2026-08.json
+      CANDIDATES_PATH: content/telegram/milovi-cake/bootstrap-first-screen-candidates-2026-08.json
+      TRANSPORT_PROOF_PATH: content/telegram/milovi-cake/bootstrap-photo-transport-proof-2026-08.json
+      WINDOW_PATH: content/telegram/milovi-cake/publishing-window-2026-08.json
+      AUTHORIZED_RELEASE_PATH: content/telegram/milovi-cake/bootstrap-authorized-release-2026-08.json
+      EXPECTED_CANDIDATE_PATH: .runtime/milovi-bootstrap-expected-release.json
+      STATE_BRANCH: state/milovi-cake-telegram
+      STATE_DIR: .state/milovi-cake
+      LEDGER_RELATIVE_PATH: content/telegram/milovi-cake/publication-ledger.json
+      LEDGER_PATH: .state/milovi-cake/content/telegram/milovi-cake/publication-ledger.json
+      TARGET_PROOF_PATH: .runtime/milovi-bootstrap-target-proof.json
+      ENVELOPE_PATH: .runtime/milovi-bootstrap-dispatch.json
+      OUTCOME_PATH: .runtime/milovi-bootstrap-outcome.json
+      MAX_PUBLICATION_LAG_MINUTES: 120
+
+    steps:
+      - name: Check out immutable current-main runtime
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+
+      - name: Compile exact provider-inert bootstrap expectation
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.milovi_telegram_bootstrap validate \
+            --profile "$PROFILE_PATH" \
+            --rollout "$ROLLOUT_PATH" \
+            --candidates "$CANDIDATES_PATH" \
+            --transport-proof "$TRANSPORT_PROOF_PATH" \
+            --publishing-window "$WINDOW_PATH"
+          python -m video_channel_manager.milovi_telegram_bootstrap build-release \
+            --profile "$PROFILE_PATH" \
+            --rollout "$ROLLOUT_PATH" \
+            --candidates "$CANDIDATES_PATH" \
+            --transport-proof "$TRANSPORT_PROOF_PATH" \
+            --publishing-window "$WINDOW_PATH" \
+            --output "$EXPECTED_CANDIDATE_PATH"
+
+      - name: Resolve fail-closed activation and daylight gate
+        id: activation
+        shell: bash
+        env:
+          MANUAL_CONFIRM: ${{ inputs.confirm || '' }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          import os
+          from datetime import datetime, time
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+
+          from video_channel_manager.telegram_channel_profile import load_channel_profile
+          from video_channel_manager.telegram_multichannel_release import load_release
+
+          profile = load_channel_profile(Path(os.environ["PROFILE_PATH"]))
+          rollout = json.loads(Path(os.environ["ROLLOUT_PATH"]).read_text(encoding="utf-8"))
+          expected = load_release(Path(os.environ["EXPECTED_CANDIDATE_PATH"]))
+          authorized_path = Path(os.environ["AUTHORIZED_RELEASE_PATH"])
+          blockers: list[str] = []
+
+          if profile.project_key != "milovi-cake" or profile.channel_username.casefold() != "@milovicake":
+              raise SystemExit("selected profile is not exact Milovi Cake target")
+          if profile.daily_verified_limit != 2:
+              raise SystemExit("Milovi profile does not preserve the reviewed two-items/day cap")
+          if profile.publication_id_prefix != "milovi-":
+              raise SystemExit("Milovi publication prefix no longer accepts the frozen bootstrap identities")
+          if not profile.provider_writes_authorized:
+              blockers.append("profile_write_gate_disabled")
+          if rollout.get("execution_authorized") is not True:
+              blockers.append("rollout_execution_not_authorized")
+          if rollout.get("provider_mutation_allowed") is not True:
+              blockers.append("rollout_provider_mutation_disabled")
+
+          now = datetime.now(ZoneInfo("Europe/Moscow"))
+          clock = now.timetz().replace(tzinfo=None)
+          if not (time(9, 0) <= clock <= time(21, 0)):
+              blockers.append("outside_09_00_21_00_moscow_window")
+
+          if os.environ["EVENT_NAME"] == "workflow_dispatch" and os.environ["MANUAL_CONFIRM"] != "PUBLISH:@MiloviCake":
+              blockers.append("manual_confirmation_missing")
+
+          authorized = None
+          if not authorized_path.exists():
+              blockers.append("authorized_release_missing")
+          else:
+              authorized = load_release(authorized_path)
+              if not authorized.release_authorized:
+                  blockers.append("release_not_authorized")
+              if (
+                  authorized.release_id != expected.release_id
+                  or authorized.project_key != expected.project_key
+                  or authorized.channel_username.casefold() != expected.channel_username.casefold()
+                  or authorized.profile_sha256 != expected.profile_sha256
+                  or authorized.timezone != expected.timezone
+                  or authorized.daily_verified_limit != expected.daily_verified_limit
+                  or authorized.items != expected.items
+              ):
+                  blockers.append("authorized_release_payload_or_schedule_drift")
+              if (
+                  authorized.chat_id != -1002215328390
+                  or authorized.bot_id != 8716602202
+                  or (authorized.bot_username or "").casefold() != "preaching_mp3_bot"
+                  or authorized.target_binding_sha256 is None
+              ):
+                  blockers.append("authorized_release_target_binding_drift")
+
+          active = not blockers
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"active={'true' if active else 'false'}\n")
+              handle.write(f"reason={','.join(blockers) if blockers else 'activated'}\n")
+          print(json.dumps({
+              "active": active,
+              "reason": blockers,
+              "moscow_now": now.isoformat(),
+              "provider_access_performed": False,
+          }, ensure_ascii=False))
+          PY
+
+      - name: Report inactive bootstrap scheduler
+        if: steps.activation.outputs.active != 'true'
+        run: echo "Milovi bootstrap publisher is inert — ${{ steps.activation.outputs.reason }}. No Telegram read or write was attempted."
+
+      - name: Require current-main exact bootstrap quality proofs
+        if: steps.activation.outputs.active == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow milovi-telegram-bootstrap-quality.yml \
+            --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow milovi-telegram-bootstrap-media-proof.yml \
+            --sha "$GITHUB_SHA"
+
+      - name: Check out isolated durable Milovi state branch
+        if: steps.activation.outputs.active == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/milovi-cake-telegram
+          path: .state/milovi-cake
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Require existing exact publication ledger
+        if: steps.activation.outputs.active == 'true'
+        id: ledger
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f "$LEDGER_PATH" ]]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "reason=ledger_missing" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python -m video_channel_manager.telegram_multichannel_cli validate-ledger \
+            --release "$AUTHORIZED_RELEASE_PATH" \
+            --ledger "$LEDGER_PATH"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "reason=ledger_valid" >> "$GITHUB_OUTPUT"
+
+      - name: Report missing live-state ledger
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready != 'true'
+        run: echo "Milovi bootstrap is activation-approved but state is not initialized — ${{ steps.ledger.outputs.reason }}. No Telegram access was attempted."
+
+      - name: Skip stale predecessors before any Telegram access
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_multichannel_cli skip-expired \
+            --release "$AUTHORIZED_RELEASE_PATH" \
+            --ledger "$LEDGER_PATH"
+
+          if git -C "$STATE_DIR" diff --quiet -- "$LEDGER_RELATIVE_PATH"; then
+            echo "No stale Milovi bootstrap predecessor needed a durable skip."
+            exit 0
+          fi
+
+          git -C "$STATE_DIR" config user.name "milovi-telegram-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "milovi-telegram-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH"
+          git -C "$STATE_DIR" commit -m "Skip stale Milovi Telegram bootstrap slot [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "remote state branch does not contain exact stale-slot recovery" >&2
+            exit 3
+          }
+
+      - name: Require fresh strict-next slot before Telegram access
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true'
+        id: freshness
+        shell: bash
+        run: |
+          set +e
+          python -m video_channel_manager.telegram_publication_freshness next \
+            --release "$AUTHORIZED_RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --max-lag-minutes "$MAX_PUBLICATION_LAG_MINUTES"
+          status=$?
+          set -e
+          if [[ "$status" == "3" ]]; then
+            echo "fresh=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          [[ "$status" == "0" ]] || exit "$status"
+          echo "fresh=true" >> "$GITHUB_OUTPUT"
+
+      - name: Report no fresh strict-next item
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.freshness.outputs.fresh != 'true'
+        run: echo "No fresh Milovi bootstrap item is eligible. No Telegram access was attempted and no catch-up send will be made."
+
+      - name: Fresh exact target preflight
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.freshness.outputs.fresh == 'true'
+        env:
+          MILOVI_CAKE_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_channel_cli preflight \
+            --profile "$PROFILE_PATH" \
+            --expected-chat-id -1002215328390 \
+            --expected-bot-id 8716602202 \
+            --expected-bot-username preaching_mp3_bot \
+            --output "$TARGET_PROOF_PATH"
+
+      - name: Prepare one durable strict-next intent
+        if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.freshness.outputs.fresh == 'true'
+        id: prepare
+        shell: bash
+        run: |
+          set +e
+          python -m video_channel_manager.telegram_multichannel_cli prepare \
+            --profile "$PROFILE_PATH" \
+            --release "$AUTHORIZED_RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --target-proof "$TARGET_PROOF_PATH" \
+            --mode scheduled \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --github-sha "$GITHUB_SHA" \
+            --github-workflow-sha "${{ github.workflow_sha }}" \
+            --envelope-output "$ENVELOPE_PATH"
+          status=$?
+          set -e
+          if [[ "$status" == "3" ]]; then
+            echo "prepared=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          [[ "$status" == "0" ]] || exit "$status"
+          echo "prepared=true" >> "$GITHUB_OUTPUT"
+
+      - name: Persist intent and target proof before provider mutation
+        if: steps.prepare.outputs.prepared == 'true'
+        id: persist_intent
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_rel_dir="content/telegram/milovi-cake/dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          evidence_abs_dir="$STATE_DIR/$evidence_rel_dir"
+          mkdir -p "$evidence_abs_dir"
+          cp -- "$ENVELOPE_PATH" "$evidence_abs_dir/dispatch.json"
+          cp -- "$TARGET_PROOF_PATH" "$evidence_abs_dir/target-proof.json"
+
+          git -C "$STATE_DIR" config user.name "milovi-telegram-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "milovi-telegram-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel_dir"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo "prepared Milovi bootstrap item produced no durable state delta" >&2
+            exit 3
+          }
+          git -C "$STATE_DIR" commit -m "Record Milovi Telegram intent for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "remote state branch does not contain exact Milovi dispatch intent" >&2
+            exit 3
+          }
+          git -C "$STATE_DIR" fetch --no-tags origin "$STATE_BRANCH"
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$LEDGER_RELATIVE_PATH" > .runtime/remote-ledger.json
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$evidence_rel_dir/dispatch.json" > .runtime/remote-dispatch.json
+          python -m video_channel_manager.telegram_multichannel_cli verify-intent \
+            --release "$AUTHORIZED_RELEASE_PATH" \
+            --ledger .runtime/remote-ledger.json \
+            --envelope .runtime/remote-dispatch.json
+          echo "evidence_rel_dir=$evidence_rel_dir" >> "$GITHUB_OUTPUT"
+
+      - name: Re-prove current-main quality immediately before provider mutation
+        if: steps.prepare.outputs.prepared == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow milovi-telegram-bootstrap-quality.yml \
+            --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow milovi-telegram-bootstrap-media-proof.yml \
+            --sha "$GITHUB_SHA"
+
+      - name: Materialize exact reviewed photo bytes when required
+        if: steps.prepare.outputs.prepared == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: Pillow==11.3.0
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          import os
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          from video_channel_manager.milovi_telegram_bootstrap import materialize_exact_photo
+          from video_channel_manager.telegram_multichannel_release import load_release
+          from video_channel_manager.telegram_multichannel_state import GenericDispatchEnvelope
+          from video_channel_manager.telegram_multichannel_transport import GenericPhotoPayload
+
+          release = load_release(Path(os.environ["AUTHORIZED_RELEASE_PATH"]))
+          envelope = GenericDispatchEnvelope.model_validate_json(Path(os.environ["ENVELOPE_PATH"]).read_text(encoding="utf-8"))
+          item = next(item for item in release.items if item.publication_id == envelope.publication_id)
+          if not isinstance(item.payload, GenericPhotoPayload):
+              print(json.dumps({"photo_required": False, "publication_id": envelope.publication_id}))
+              raise SystemExit(0)
+
+          proof = json.loads(Path(os.environ["TRANSPORT_PROOF_PATH"]).read_text(encoding="utf-8"))
+          media_id = Path(item.payload.media_filename).stem
+          media = next(candidate for candidate in proof["photos"] if candidate["media_id"] == media_id)
+          safe_path = "/".join(urllib.parse.quote(part, safe="") for part in media["source_path"].split("/"))
+          url = f"https://raw.githubusercontent.com/{proof['source_repository']}/{proof['source_commit']}/{safe_path}"
+          request = urllib.request.Request(url, headers={"User-Agent": "video-channel-manager-milovi-bootstrap-publisher/1"})
+          source_path = Path(".runtime/milovi-bootstrap-source.webp")
+          with urllib.request.urlopen(request, timeout=30) as response:
+              source_path.write_bytes(response.read())
+          result = materialize_exact_photo(
+              transport_proof_path=Path(os.environ["TRANSPORT_PROOF_PATH"]),
+              media_id=media_id,
+              source_path=source_path,
+              output_path=Path(item.payload.media_path),
+          )
+          print(json.dumps({"photo_required": True, **result}, ensure_ascii=False))
+          PY
+
+      - name: Send exactly once through generic Telegram runtime
+        if: steps.prepare.outputs.prepared == 'true'
+        id: send
+        env:
+          MILOVI_CAKE_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        shell: bash
+        run: |
+          set +e
+          python -m video_channel_manager.telegram_multichannel_cli send-once \
+            --profile "$PROFILE_PATH" \
+            --release "$AUTHORIZED_RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --envelope "$ENVELOPE_PATH" \
+            --outcome-output "$OUTCOME_PATH"
+          status=$?
+          set -e
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          [[ -f "$OUTCOME_PATH" ]] || {
+            echo "provider runtime did not persist an outcome; durable intent remains non-replayable" >&2
+            exit 5
+          }
+
+      - name: Apply provider outcome and persist final state
+        if: steps.prepare.outputs.prepared == 'true' && always() && steps.send.outputs.status != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_multichannel_cli apply-outcome \
+            --release "$AUTHORIZED_RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --envelope "$ENVELOPE_PATH" \
+            --outcome "$OUTCOME_PATH"
+
+          evidence_rel_dir="${{ steps.persist_intent.outputs.evidence_rel_dir }}"
+          evidence_abs_dir="$STATE_DIR/$evidence_rel_dir"
+          cp -- "$OUTCOME_PATH" "$evidence_abs_dir/outcome.json"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel_dir/outcome.json"
+          git -C "$STATE_DIR" commit -m "Record Milovi Telegram outcome for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "remote state branch does not contain exact Milovi provider outcome" >&2
+            exit 3
+          }
+
+          status="${{ steps.send.outputs.status }}"
+          if [[ "$status" != "0" ]]; then
+            echo "Telegram send was not verified; exact outcome is durable and blind replay is blocked." >&2
+            exit "$status"
+          fi
