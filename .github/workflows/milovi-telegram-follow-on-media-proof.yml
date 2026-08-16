@@ -1,0 +1,154 @@
+name: Milovi Telegram follow-on media proof
+
+on:
+  pull_request:
+    paths:
+      - "content/telegram/milovi-cake/follow-on-photo-source-manifest-2026-08.json"
+      - "content/telegram/milovi-cake/follow-on-wave-candidates-2026-08.json"
+      - ".github/workflows/milovi-telegram-follow-on-media-proof.yml"
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prove-follow-on-media:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install exact image dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: Pillow==11.3.0
+
+      - name: Materialize exact sources and calculate deterministic transports
+        shell: python
+        run: |
+          from __future__ import annotations
+
+          import hashlib
+          import io
+          import json
+          import pathlib
+          import urllib.parse
+          import urllib.request
+
+          from PIL import Image
+
+          root = pathlib.Path.cwd()
+          manifest_path = root / "content/telegram/milovi-cake/follow-on-photo-source-manifest-2026-08.json"
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          source_repo = manifest["source_repository"]
+          source_commit = manifest["source_commit"]
+          photos = manifest["photos"]
+
+          if manifest["provider_mutation_allowed"] is not False or manifest["execution_authorized"] is not False:
+              raise SystemExit("follow-on source manifest must remain provider-inert")
+          if manifest["photo_count"] != 9 or len(photos) != 9:
+              raise SystemExit("expected exactly nine follow-on photos")
+
+          results = []
+          for item in photos:
+              source_path = item["source_path"]
+              safe_path = "/".join(urllib.parse.quote(part, safe="") for part in source_path.split("/"))
+              request = urllib.request.Request(
+                  f"https://raw.githubusercontent.com/{source_repo}/{source_commit}/{safe_path}",
+                  headers={"User-Agent": "video-channel-manager-milovi-follow-on-proof/1"},
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  source = response.read()
+
+              if len(source) != int(item["source_byte_size"]):
+                  raise SystemExit(f"{item['media_id']}: source size mismatch")
+              git_blob = hashlib.sha1(
+                  f"blob {len(source)}\0".encode("ascii") + source,
+                  usedforsecurity=False,
+              ).hexdigest()
+              if git_blob != item["source_git_blob_sha1"]:
+                  raise SystemExit(f"{item['media_id']}: source Git blob mismatch")
+
+              source_sha256 = "sha256:" + hashlib.sha256(source).hexdigest()
+              if item.get("source_sha256") not in (None, source_sha256):
+                  raise SystemExit(f"{item['media_id']}: frozen source SHA-256 mismatch")
+
+              with Image.open(io.BytesIO(source)) as image:
+                  image.load()
+                  if image.format != "WEBP":
+                      raise SystemExit(f"{item['media_id']}: source is not WebP")
+                  width, height = image.size
+                  if item.get("pixel_width") not in (None, width):
+                      raise SystemExit(f"{item['media_id']}: frozen width mismatch")
+                  if item.get("pixel_height") not in (None, height):
+                      raise SystemExit(f"{item['media_id']}: frozen height mismatch")
+                  rgb = image.convert("RGB")
+
+              encoded = io.BytesIO()
+              rgb.save(
+                  encoded,
+                  format="JPEG",
+                  quality=95,
+                  subsampling=0,
+                  optimize=False,
+                  progressive=False,
+                  exif=b"",
+              )
+              jpeg = encoded.getvalue()
+              transport_sha256 = "sha256:" + hashlib.sha256(jpeg).hexdigest()
+              if item.get("transport_byte_size") not in (None, len(jpeg)):
+                  raise SystemExit(f"{item['media_id']}: frozen JPEG size mismatch")
+              if item.get("transport_sha256") not in (None, transport_sha256):
+                  raise SystemExit(f"{item['media_id']}: frozen JPEG SHA-256 mismatch")
+
+              results.append({
+                  "media_id": item["media_id"],
+                  "source_path": source_path,
+                  "source_git_blob_sha1": git_blob,
+                  "source_byte_size": len(source),
+                  "source_sha256": source_sha256,
+                  "pixel_width": width,
+                  "pixel_height": height,
+                  "transport_format": "image/jpeg",
+                  "transport_byte_size": len(jpeg),
+                  "transport_sha256": transport_sha256,
+                  "verified": True,
+              })
+
+          if len({item["media_id"] for item in results}) != 9:
+              raise SystemExit("duplicate media id in follow-on proof")
+
+          out = root / "test-results" / "milovi-follow-on-media-proof"
+          out.mkdir(parents=True, exist_ok=True)
+          report = {
+              "schema_name": "video-channel-manager.milovi-follow-on-media-proof-run",
+              "schema_version": 1,
+              "source_repository": source_repo,
+              "source_commit": source_commit,
+              "photo_count": 9,
+              "provider_write_performed": False,
+              "results": results,
+          }
+          (out / "report.json").write_text(
+              json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps({"verified": True, "photo_count": 9, "provider_write_performed": False}))
+
+      - name: Upload follow-on exact media proof report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: milovi-follow-on-media-proof-${{ github.sha }}
+          path: test-results/milovi-follow-on-media-proof/report.json
+          if-no-files-found: error
+          retention-days: 14
