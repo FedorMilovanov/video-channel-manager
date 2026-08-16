@@ -66,9 +66,7 @@ def _blocked_payload(
 
 
 def _single_unstarted_intent(journal: PromotionJournal) -> PromotionJournalOperation | None:
-    intents = tuple(
-        item for item in journal.operations if item.status is PromotionDispatchStatus.EDIT_INTENT
-    )
+    intents = tuple(item for item in journal.operations if item.status is PromotionDispatchStatus.EDIT_INTENT)
     if len(intents) > 1:
         raise PromotionRecoveryRequired(
             "Promotion journal contains multiple unstarted edit intents; do not infer a dispatch order"
