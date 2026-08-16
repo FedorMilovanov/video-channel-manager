@@ -81,15 +81,13 @@ def test_generic_preflight_resolves_svodka_exactly_without_lordchrist_hardcoding
                 "title": "СВОДКА",
                 "type": "channel",
             }
-        elif method == "getChatAdministrators":
-            assert payload == {"chat_id": -1001234567890, "return_bots": True}
-            result = [
-                {
-                    "status": "administrator",
-                    "can_post_messages": True,
-                    "user": {"id": 42, "is_bot": True, "username": "svodka_test_bot"},
-                }
-            ]
+        elif method == "getChatMember":
+            assert payload == {"chat_id": -1001234567890, "user_id": 42}
+            result = {
+                "status": "administrator",
+                "can_post_messages": True,
+                "user": {"id": 42, "is_bot": True, "username": "svodka_test_bot"},
+            }
         else:
             raise AssertionError(method)
         return httpx.Response(200, json={"ok": True, "result": result})
@@ -110,7 +108,7 @@ def test_generic_preflight_resolves_svodka_exactly_without_lordchrist_hardcoding
     assert proof.channel_username == "@deep_info_life"
     assert proof.chat_username == "deep_info_life"
     assert proof.can_post_messages is True
-    assert calls == ["getMe", "getChat", "getChat", "getChatAdministrators"]
+    assert calls == ["getMe", "getChat", "getChat", "getChatMember"]
 
 
 def test_explicitly_disabled_profile_blocks_poll_write_before_transport() -> None:

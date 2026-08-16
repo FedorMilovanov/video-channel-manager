@@ -1,0 +1,117 @@
+name: Milovi Telegram bootstrap quality
+
+on:
+  pull_request:
+    paths:
+      - "content/telegram/channels/milovi-cake.json"
+      - "content/telegram/milovi-cake/**"
+      - "src/video_channel_manager/milovi_telegram_bootstrap.py"
+      - "src/video_channel_manager/telegram_multichannel_*.py"
+      - "src/video_channel_manager/telegram_target_binding.py"
+      - "tests/test_milovi_telegram_bootstrap.py"
+      - "tests/test_milovi_telegram_bootstrap_workflow.py"
+      - "tests/test_telegram_multichannel_photo_transport.py"
+      - ".github/workflows/milovi-telegram-bootstrap-publisher.yml"
+      - ".github/workflows/milovi-telegram-bootstrap-quality.yml"
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: milovi-telegram-bootstrap-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frozen-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      PROFILE_PATH: content/telegram/channels/milovi-cake.json
+      ROLLOUT_PATH: content/telegram/milovi-cake/bootstrap-rollout-candidate-2026-08.json
+      CANDIDATES_PATH: content/telegram/milovi-cake/bootstrap-first-screen-candidates-2026-08.json
+      TRANSPORT_PROOF_PATH: content/telegram/milovi-cake/bootstrap-photo-transport-proof-2026-08.json
+      WINDOW_PATH: content/telegram/milovi-cake/publishing-window-2026-08.json
+      RELEASE_PATH: .runtime/milovi-bootstrap-release-candidate.json
+
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+
+      - name: Validate frozen first-screen bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.milovi_telegram_bootstrap validate \
+            --profile "$PROFILE_PATH" \
+            --rollout "$ROLLOUT_PATH" \
+            --candidates "$CANDIDATES_PATH" \
+            --transport-proof "$TRANSPORT_PROOF_PATH" \
+            --publishing-window "$WINDOW_PATH"
+
+      - name: Compile provider-inert generic release candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.milovi_telegram_bootstrap build-release \
+            --profile "$PROFILE_PATH" \
+            --rollout "$ROLLOUT_PATH" \
+            --candidates "$CANDIDATES_PATH" \
+            --transport-proof "$TRANSPORT_PROOF_PATH" \
+            --publishing-window "$WINDOW_PATH" \
+            --output "$RELEASE_PATH"
+
+      - name: Prove candidate remains inert and exact
+        shell: python
+        run: |
+          import json
+          import os
+          from pathlib import Path
+
+          release = json.loads(Path(os.environ["RELEASE_PATH"]).read_text(encoding="utf-8"))
+          if release["project_key"] != "milovi-cake":
+              raise SystemExit("compiled release resolved to the wrong project")
+          if str(release["channel_username"]).casefold() != "@milovicake":
+              raise SystemExit("compiled release resolved to the wrong channel")
+          if release["daily_verified_limit"] != 2:
+              raise SystemExit("compiled release does not preserve two verified items/day")
+          if release["release_authorized"] is not False:
+              raise SystemExit("quality build unexpectedly authorized a provider release")
+          if any(release[key] is not None for key in ("target_binding_sha256", "chat_id", "bot_id", "bot_username")):
+              raise SystemExit("provider-inert candidate unexpectedly claims a fresh target binding")
+          if len(release["items"]) != 10:
+              raise SystemExit("compiled release does not contain ten strict-next items")
+          photo_count = sum(item["payload"]["schema_name"].endswith("photo-payload") for item in release["items"])
+          message_count = sum(item["payload"]["schema_name"].endswith("message-payload") for item in release["items"])
+          if (photo_count, message_count) != (9, 1):
+              raise SystemExit("compiled release must contain nine photos and one message")
+          if [item["scheduled_at"][11:16] for item in release["items"]] != ["10:30", "20:00"] * 5:
+              raise SystemExit("compiled release schedule drifted from the frozen slot grid")
+          print(json.dumps({"verified": True, "photos": 9, "messages": 1, "provider_access_performed": False}, ensure_ascii=False))
+
+      - name: Upload compiled inert release evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: milovi-bootstrap-release-candidate-${{ github.sha }}
+          path: ${{ env.RELEASE_PATH }}
+          if-no-files-found: error
+          retention-days: 14

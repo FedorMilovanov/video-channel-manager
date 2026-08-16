@@ -7,6 +7,9 @@ on:
       - "content/telegram/milovi-cake/bootstrap-photo-source-readiness-2026-08.json"
       - "content/telegram/milovi-cake/bootstrap-first-screen-candidates-2026-08.json"
       - ".github/workflows/milovi-telegram-bootstrap-media-proof.yml"
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -119,21 +122,21 @@ jobs:
               "schema_version": 1,
               "source_repository": source_repo,
               "source_commit": source_commit,
-              "verified_count": 9,
-              "provider_access_performed": False,
+              "photo_count": 9,
+              "transport_ready_count": 9,
               "provider_write_performed": False,
-              "photos": results,
+              "results": results,
           }
           (out / "report.json").write_text(
               json.dumps(report, ensure_ascii=False, indent=2) + "\n",
               encoding="utf-8",
           )
-          print(json.dumps(report, ensure_ascii=False, indent=2))
+          print(json.dumps({"verified": True, "photo_count": 9, "provider_write_performed": False}))
 
-      - name: Upload reproducible proof report
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - name: Upload exact media proof report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: milovi-bootstrap-media-proof-${{ github.run_id }}-${{ github.run_attempt }}
+          name: milovi-bootstrap-media-proof-${{ github.sha }}
           path: test-results/milovi-bootstrap-media-proof/report.json
           if-no-files-found: error
           retention-days: 14

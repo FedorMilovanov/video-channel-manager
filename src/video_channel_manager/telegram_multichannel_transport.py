@@ -4,6 +4,7 @@ import hashlib
 import json
 import re
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any, Literal, cast
 
 import httpx
@@ -16,7 +17,7 @@ from video_channel_manager.telegram_html_entities import (
     parse_telegram_html,
 )
 from video_channel_manager.telegram_models import DEFAULT_API_BASE, ProviderEffect
-from video_channel_manager.telegram_transport import TelegramApiError, _api_call, _result_dict, _result_list
+from video_channel_manager.telegram_transport import TelegramApiError, _api_call, _result_dict
 
 READ_ONLY_TRANSPORT_RETRIES = 2
 MUTATION_TRANSPORT_RETRIES = 0
@@ -101,6 +102,31 @@ class GenericPollPayload(BaseModel):
                 raise ValueError("quiz with multiple correct answers must allow multiple answers")
         elif self.correct_option_ids is not None or self.explanation is not None:
             raise ValueError("regular poll must not include quiz-only fields")
+        return self
+
+
+class GenericPhotoPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.telegram-generic-photo-payload"]
+    schema_version: Literal[1]
+    project_key: str
+    channel_username: str
+    publication_id: str
+    profile_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    provider_payload_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    caption: str = Field(min_length=1, max_length=1024)
+    media_path: str = Field(min_length=1, max_length=500)
+    media_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    media_byte_size: int = Field(gt=0, le=10_000_000)
+    media_filename: str = Field(min_length=5, max_length=128, pattern=r"^[A-Za-z0-9._-]+$")
+    media_mime_type: Literal["image/jpeg"] = "image/jpeg"
+
+    @model_validator(mode="after")
+    def validate_media_path(self) -> "GenericPhotoPayload":
+        path = Path(self.media_path)
+        if path.is_absolute() or ".." in path.parts:
+            raise ValueError("photo media_path must be repository-relative without parent traversal")
         return self
 
 
@@ -228,6 +254,46 @@ def render_poll_payload(
     )
 
 
+def render_photo_payload(
+    profile: TelegramChannelProfile,
+    *,
+    publication_id: str,
+    caption: str,
+    media_path: str,
+    media_sha256: str,
+    media_byte_size: int,
+    media_filename: str,
+) -> GenericPhotoPayload:
+    _validate_publication_id(profile, publication_id)
+    digest_input: dict[str, Any] = {
+        "kind": "photo",
+        "project_key": profile.project_key,
+        "channel_username": profile.channel_username,
+        "publication_id": publication_id,
+        "profile_sha256": profile.digest,
+        "caption": caption,
+        "media_path": media_path,
+        "media_sha256": media_sha256,
+        "media_byte_size": media_byte_size,
+        "media_filename": media_filename,
+        "media_mime_type": "image/jpeg",
+    }
+    return GenericPhotoPayload(
+        schema_name="video-channel-manager.telegram-generic-photo-payload",
+        schema_version=1,
+        project_key=profile.project_key,
+        channel_username=profile.channel_username,
+        publication_id=publication_id,
+        profile_sha256=profile.digest,
+        provider_payload_sha256=_sha256_payload(digest_input),
+        caption=caption,
+        media_path=media_path,
+        media_sha256=media_sha256,
+        media_byte_size=media_byte_size,
+        media_filename=media_filename,
+    )
+
+
 def _validate_channel_record(
     chat: dict[str, Any],
     *,
@@ -321,39 +387,38 @@ def preflight_channel(
         )
         _validate_channel_record(alias_chat, profile=profile, expected_chat_id=expected_chat_id)
 
-        administrators = _result_list(
+        membership = _result_dict(
             _api_call(
                 http_client,
                 api_base=api_base,
                 token=token,
-                method="getChatAdministrators",
-                payload={"chat_id": actual_chat_id, "return_bots": True},
+                method="getChatMember",
+                payload={"chat_id": actual_chat_id, "user_id": bot_id},
                 mutation=False,
             ),
-            method="getChatAdministrators",
+            method="getChatMember",
+            provider_effect="not_dispatched",
         )
-        matching_member: dict[str, Any] | None = None
-        for candidate in administrators:
-            if not isinstance(candidate, dict):
-                continue
-            user = candidate.get("user")
-            if not isinstance(user, dict):
-                continue
-            try:
-                candidate_id = int(user.get("id", 0))
-            except (TypeError, ValueError):
-                continue
-            if candidate_id == bot_id:
-                matching_member = candidate
-                break
-        if matching_member is None:
+        member_user = membership.get("user")
+        if not isinstance(member_user, dict):
+            raise TelegramApiError("posting membership proof has no bot identity", provider_effect="not_dispatched")
+        try:
+            member_user_id = int(member_user["id"])
+        except (KeyError, TypeError, ValueError) as exc:
             raise TelegramApiError(
-                "posting bot is absent from the channel administrator list", provider_effect="not_dispatched"
+                "posting membership proof has invalid bot id", provider_effect="not_dispatched"
+            ) from exc
+        member_username = str(member_user.get("username") or "")
+        if member_user_id != bot_id or member_user.get("is_bot") is not True:
+            raise TelegramApiError(
+                "posting membership proof resolved a different bot", provider_effect="not_dispatched"
             )
-        status = str(matching_member.get("status") or "")
+        if member_username.casefold() != bot_username.casefold():
+            raise TelegramApiError("posting membership proof bot username mismatch", provider_effect="not_dispatched")
+        status = str(membership.get("status") or "")
         if status not in {"administrator", "creator"}:
             raise TelegramApiError("posting bot is not a channel administrator", provider_effect="not_dispatched")
-        can_post = status == "creator" or matching_member.get("can_post_messages") is True
+        can_post = status == "creator" or membership.get("can_post_messages") is True
         if not can_post:
             raise TelegramApiError("posting bot lacks can_post_messages", provider_effect="not_dispatched")
         member_status = cast(Literal["administrator", "creator"], status)
@@ -460,6 +525,35 @@ def _verify_returned_link_preview(message: dict[str, Any], payload: GenericMessa
             "Telegram returned link-preview semantics that differ from the exact provider payload",
             provider_effect="may_exist",
         )
+
+
+class _PhotoMultipartClient:
+    def __init__(self, client: httpx.Client, payload: GenericPhotoPayload, media: bytes) -> None:
+        self._client = client
+        self._payload = payload
+        self._media = media
+
+    def post(self, url: str, *, json: dict[str, Any]) -> httpx.Response:
+        if int(json.get("chat_id", 0)) == 0 or str(json.get("caption") or "") != self._payload.caption:
+            raise ValueError("photo adapter received a provider payload that differs from the exact photo payload")
+        return self._client.post(
+            url,
+            data={"chat_id": str(json["chat_id"]), "caption": self._payload.caption},
+            files={"photo": (self._payload.media_filename, self._media, self._payload.media_mime_type)},
+        )
+
+
+def _read_exact_photo_media(payload: GenericPhotoPayload) -> bytes:
+    try:
+        media = Path(payload.media_path).read_bytes()
+    except OSError as exc:
+        raise ValueError(f"unable to read exact Telegram photo media: {payload.media_path}") from exc
+    if len(media) != payload.media_byte_size:
+        raise ValueError("Telegram photo media byte-size differs from reviewed payload")
+    actual_sha256 = "sha256:" + hashlib.sha256(media).hexdigest()
+    if actual_sha256 != payload.media_sha256:
+        raise ValueError("Telegram photo media SHA-256 differs from reviewed payload")
+    return media
 
 
 def send_message_once(
@@ -652,8 +746,71 @@ def send_poll_once(
             http_client.close()
 
 
+def send_photo_once(
+    profile: TelegramChannelProfile,
+    target: GenericTargetProof,
+    payload: GenericPhotoPayload,
+    *,
+    token: str,
+    api_base: str = DEFAULT_API_BASE,
+    client: httpx.Client | None = None,
+    now: datetime | None = None,
+) -> GenericSendReceipt:
+    _require_provider_write_authorized(profile)
+    target_check_now = now or datetime.now(tz=UTC)
+    _verified_target(profile, target, target_check_now)
+    if payload.project_key != profile.project_key or payload.profile_sha256 != profile.digest:
+        raise ValueError("photo payload is not bound to the selected channel profile")
+    if payload.channel_username.casefold() != profile.channel_username.casefold():
+        raise ValueError("photo payload target differs from selected channel profile")
+    media = _read_exact_photo_media(payload)
+
+    own_client = client is None
+    http_client = client or httpx.Client(
+        timeout=httpx.Timeout(connect=15, read=45, write=45, pool=15),
+        transport=httpx.HTTPTransport(retries=MUTATION_TRANSPORT_RETRIES),
+        trust_env=False,
+    )
+    adapter = _PhotoMultipartClient(http_client, payload, media)
+    try:
+        message = _result_dict(
+            _api_call(
+                cast(httpx.Client, adapter),
+                api_base=api_base,
+                token=token,
+                method="sendPhoto",
+                payload={"chat_id": target.chat_id, "caption": payload.caption},
+                mutation=True,
+            ),
+            method="sendPhoto",
+            provider_effect="may_exist",
+        )
+        _verify_returned_chat(message, target)
+        if str(message.get("caption") or "") != payload.caption:
+            raise TelegramApiError(
+                "Telegram returned a caption that differs from the exact photo payload",
+                provider_effect="may_exist",
+            )
+        photos = message.get("photo")
+        if not isinstance(photos, list) or not photos:
+            raise TelegramApiError("Telegram returned a photo message without photo data", provider_effect="may_exist")
+        message_id = _message_id(message)
+        return _receipt(
+            profile,
+            publication_id=payload.publication_id,
+            payload_sha256=payload.provider_payload_sha256,
+            target=target,
+            message_id=message_id,
+            now=now or datetime.now(tz=UTC),
+        )
+    finally:
+        if own_client:
+            http_client.close()
+
+
 __all__ = [
     "GenericMessagePayload",
+    "GenericPhotoPayload",
     "GenericPollPayload",
     "GenericSendReceipt",
     "GenericTargetProof",
@@ -661,7 +818,9 @@ __all__ = [
     "TelegramApiError",
     "preflight_channel",
     "render_message_payload",
+    "render_photo_payload",
     "render_poll_payload",
     "send_message_once",
+    "send_photo_once",
     "send_poll_once",
 ]
