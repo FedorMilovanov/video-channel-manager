@@ -33,7 +33,7 @@ jobs:
       PYTHONPATH: src
       PROFILE_PATH: content/telegram/channels/milovi-cake.json
       BINDING_PATH: content/telegram/channels/milovi-cake-target-binding.json
-      ROLLOUT_PATH: content/telegram/milovi-cake/bootstrap-rollout-candidate-2026-08.json
+      ROLLOUT_PATH: content/telegram/milovi-cake/queues/bootstrap-first-screen-queue-2026-08.json
       CANDIDATES_PATH: content/telegram/milovi-cake/bootstrap-first-screen-candidates-2026-08.json
       TRANSPORT_PROOF_PATH: content/telegram/milovi-cake/bootstrap-photo-transport-proof-2026-08.json
       WINDOW_PATH: content/telegram/milovi-cake/publishing-window-2026-08.json
