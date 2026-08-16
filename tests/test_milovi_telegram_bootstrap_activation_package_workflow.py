@@ -19,11 +19,31 @@ def _text() -> str:
     return WORKFLOW.read_text(encoding="utf-8")
 
 
-def test_activation_package_is_manual_current_main_and_read_only() -> None:
+def test_activation_package_runs_on_relevant_current_main_changes_and_stays_read_only() -> None:
     text = _text()
     assert "workflow_dispatch:" in text
+    assert "  push:" in text
+    assert "    branches:\n      - main" in text
+    for path in (
+        '.github/workflows/milovi-telegram-bootstrap-activation-package.yml',
+        'requirements/telegram-publisher.txt',
+        'src/video_channel_manager/milovi_telegram_bootstrap.py',
+        'src/video_channel_manager/telegram_channel_cli.py',
+        'src/video_channel_manager/telegram_channel_profile.py',
+        'src/video_channel_manager/telegram_target_binding.py',
+        'src/video_channel_manager/telegram_target_binding_cli.py',
+        'src/video_channel_manager/telegram_release_binding.py',
+        'src/video_channel_manager/telegram_release_binding_cli.py',
+        'src/video_channel_manager/telegram_multichannel_release.py',
+        'src/video_channel_manager/telegram_multichannel_transport.py',
+        'content/telegram/channels/milovi-cake.json',
+        'content/telegram/milovi-cake/bootstrap-rollout-candidate-2026-08.json',
+        'content/telegram/milovi-cake/bootstrap-first-screen-candidates-2026-08.json',
+        'content/telegram/milovi-cake/bootstrap-photo-transport-proof-2026-08.json',
+        'content/telegram/milovi-cake/publishing-window-2026-08.json',
+    ):
+        assert f'      - "{path}"' in text
     assert "schedule:" not in text
-    assert "push:" not in text
     assert "pull_request:" not in text
     assert "contents: read" in text
     assert "contents: write" not in text
