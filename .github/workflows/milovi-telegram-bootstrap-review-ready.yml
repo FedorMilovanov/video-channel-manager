@@ -1,0 +1,220 @@
+name: Milovi Cake Telegram bootstrap review-ready handoff
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_run_id:
+        description: "Exact successful activation-package workflow run id"
+        required: true
+        type: string
+      expected_main_sha:
+        description: "Exact 40-hex current main SHA used by the package"
+        required: true
+        type: string
+      expected_target_binding_sha256:
+        description: "Exact target binding digest reviewed from the package summary"
+        required: true
+        type: string
+      expected_bound_candidate_sha256:
+        description: "Exact target-bound unauthorized candidate digest to verify"
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: milovi-cake-telegram-bootstrap-review-ready
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/main' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      PROFILE_PATH: content/telegram/channels/milovi-cake.json
+      DOWNLOAD_DIR: .runtime/milovi-bootstrap-review-source
+      RECEIPT_DIR: .runtime/milovi-bootstrap-review-ready
+      RECEIPT_PATH: .runtime/milovi-bootstrap-review-ready/receipt.json
+      SOURCE_METADATA_PATH: .runtime/milovi-bootstrap-review-ready/source-package-metadata.json
+      EXPECTED_MAIN_SHA: ${{ inputs.expected_main_sha }}
+      EXPECTED_TARGET_BINDING_SHA256: ${{ inputs.expected_target_binding_sha256 }}
+      EXPECTED_BOUND_CANDIDATE_SHA256: ${{ inputs.expected_bound_candidate_sha256 }}
+      PACKAGE_RUN_ID: ${{ inputs.package_run_id }}
+
+    steps:
+      - name: Check out immutable current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Validate immutable review inputs
+        shell: python
+        run: |
+          import os
+          import re
+
+          sha40 = re.compile(r'^[0-9a-f]{40}$')
+          sha256 = re.compile(r'^sha256:[0-9a-f]{64}$')
+          expected_main = os.environ['EXPECTED_MAIN_SHA']
+          if not sha40.fullmatch(expected_main):
+              raise SystemExit('expected_main_sha must be exact lowercase 40-hex')
+          if expected_main != os.environ['GITHUB_SHA']:
+              raise SystemExit('review-ready handoff only accepts a package from exact current main')
+          for name in ('EXPECTED_TARGET_BINDING_SHA256', 'EXPECTED_BOUND_CANDIDATE_SHA256'):
+              if not sha256.fullmatch(os.environ[name]):
+                  raise SystemExit(f'{name} must be exact sha256')
+          try:
+              run_id = int(os.environ['PACKAGE_RUN_ID'])
+          except ValueError as exc:
+              raise SystemExit('package_run_id must be an integer') from exc
+          if run_id <= 0:
+              raise SystemExit('package_run_id must be positive')
+
+      - name: Prove source package run and artifact identity
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: python
+        run: |
+          import json
+          import os
+          import urllib.request
+          from pathlib import Path
+
+          repo = os.environ['GITHUB_REPOSITORY']
+          run_id = int(os.environ['PACKAGE_RUN_ID'])
+          expected_sha = os.environ['EXPECTED_MAIN_SHA']
+          expected_name = f'milovi-bootstrap-activation-package-{expected_sha}'
+          headers = {
+              'Accept': 'application/vnd.github+json',
+              'Authorization': f"Bearer {os.environ['GH_TOKEN']}",
+              'User-Agent': 'video-channel-manager-milovi-review-ready/1',
+              'X-GitHub-Api-Version': '2022-11-28',
+          }
+
+          def get_json(url: str) -> dict:
+              request = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  payload = json.load(response)
+              if not isinstance(payload, dict):
+                  raise SystemExit(f'unexpected GitHub API response for {url}')
+              return payload
+
+          run = get_json(f'https://api.github.com/repos/{repo}/actions/runs/{run_id}')
+          if run.get('event') != 'workflow_dispatch':
+              raise SystemExit('source package run was not a manual workflow_dispatch')
+          if run.get('head_branch') != 'main' or run.get('head_sha') != expected_sha:
+              raise SystemExit('source package run is not from exact expected main')
+          if run.get('path') != '.github/workflows/milovi-telegram-bootstrap-activation-package.yml':
+              raise SystemExit('source run is not the Milovi activation-package workflow')
+          if run.get('status') != 'completed' or run.get('conclusion') != 'success':
+              raise SystemExit('source activation-package run is not terminally successful')
+          if int(run.get('run_attempt') or 0) != 1:
+              raise SystemExit('source activation-package GitHub reruns are not reviewable')
+
+          artifacts = get_json(f'https://api.github.com/repos/{repo}/actions/runs/{run_id}/artifacts?per_page=100')
+          matches = [item for item in artifacts.get('artifacts', []) if item.get('name') == expected_name]
+          if len(matches) != 1:
+              raise SystemExit('source run does not contain exactly one expected activation-package artifact')
+          artifact = matches[0]
+          if artifact.get('expired') is not False:
+              raise SystemExit('source activation-package artifact is expired')
+          artifact_id = int(artifact.get('id') or 0)
+          artifact_digest = str(artifact.get('digest') or '')
+          if artifact_id <= 0 or not artifact_digest.startswith('sha256:') or len(artifact_digest) != 71:
+              raise SystemExit('source activation-package artifact lacks immutable id/digest')
+
+          metadata_path = Path(os.environ['SOURCE_METADATA_PATH'])
+          metadata_path.parent.mkdir(parents=True, exist_ok=True)
+          metadata_path.write_text(
+              json.dumps(
+                  {
+                      'source_run_id': run_id,
+                      'source_run_attempt': 1,
+                      'source_main_sha': expected_sha,
+                      'source_artifact_id': artifact_id,
+                      'source_artifact_name': expected_name,
+                      'source_artifact_digest': artifact_digest,
+                  },
+                  ensure_ascii=False,
+                  indent=2,
+              ) + '\n',
+              encoding='utf-8',
+          )
+          with Path(os.environ['GITHUB_OUTPUT']).open('a', encoding='utf-8') as output:
+              output.write(f'artifact_id={artifact_id}\n')
+              output.write(f'artifact_digest={artifact_digest}\n')
+              output.write(f'artifact_name={expected_name}\n')
+
+      - name: Download exact source activation package
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ steps.source.outputs.artifact_name }}
+          path: ${{ env.DOWNLOAD_DIR }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.package_run_id }}
+          digest-mismatch: error
+
+      - name: Resolve exact package directory
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          direct="$DOWNLOAD_DIR"
+          nested="$DOWNLOAD_DIR/.runtime/milovi-bootstrap-activation-package"
+          if [[ -f "$direct/summary.json" && -f "$direct/bootstrap-bound-unauthorized.json" ]]; then
+            package_dir="$direct"
+          elif [[ -f "$nested/summary.json" && -f "$nested/bootstrap-bound-unauthorized.json" ]]; then
+            package_dir="$nested"
+          else
+            echo "downloaded artifact does not contain the expected Milovi activation package" >&2
+            exit 1
+          fi
+          printf 'package_dir=%s\n' "$package_dir" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal provider-free review runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+
+      - name: Verify exact package is review-ready without authorization
+        env:
+          PACKAGE_DIR_RESOLVED: ${{ steps.package.outputs.package_dir }}
+          SOURCE_ARTIFACT_ID: ${{ steps.source.outputs.artifact_id }}
+          SOURCE_ARTIFACT_DIGEST: ${{ steps.source.outputs.artifact_digest }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          checked_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          python -m video_channel_manager.milovi_telegram_activation_review \
+            --profile "$PROFILE_PATH" \
+            --package-dir "$PACKAGE_DIR_RESOLVED" \
+            --expected-main-sha "$EXPECTED_MAIN_SHA" \
+            --expected-target-binding-sha256 "$EXPECTED_TARGET_BINDING_SHA256" \
+            --expected-bound-candidate-sha256 "$EXPECTED_BOUND_CANDIDATE_SHA256" \
+            --source-run-id "$PACKAGE_RUN_ID" \
+            --source-artifact-id "$SOURCE_ARTIFACT_ID" \
+            --source-artifact-digest "$SOURCE_ARTIFACT_DIGEST" \
+            --checked-at "$checked_at" \
+            --output "$RECEIPT_PATH"
+
+      - name: Upload short-lived review-ready receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: milovi-bootstrap-review-ready-${{ github.sha }}-${{ inputs.package_run_id }}
+          path: ${{ env.RECEIPT_DIR }}
+          if-no-files-found: error
+          retention-days: 7
