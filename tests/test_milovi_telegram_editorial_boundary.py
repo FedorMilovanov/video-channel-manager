@@ -37,7 +37,7 @@ def test_first_screen_has_no_school_or_french_positioning() -> None:
 
 def test_brand_boundary_explicitly_separates_cake_and_school() -> None:
     text = (MILOVI / "editorial-brand-boundary-2026-08.md").read_text(encoding="utf-8").casefold()
-    assert "milovi school is a separate educational / content project" in text
+    assert "milovi school is a separate educational and content project" in text
     assert "not evidence" in text
     assert "makes its cakes from the school's recipes" in text
     assert "french kitchen" in text
@@ -103,9 +103,7 @@ def test_bootstrap_transport_proof_is_complete_and_matches_candidates() -> None:
     items = candidates["candidates"]
     assert isinstance(items, list)
     candidate_photo_ids = {
-        str(item["media_id"])
-        for item in items
-        if isinstance(item, dict) and item.get("operation") == "sendPhoto"
+        str(item["media_id"]) for item in items if isinstance(item, dict) and item.get("operation") == "sendPhoto"
     }
     assert candidate_photo_ids == photo_ids
 
@@ -116,7 +114,10 @@ def test_exact_review_remains_exact_and_sourced() -> None:
     assert isinstance(items, list)
     review = next(item for item in items if isinstance(item, dict) and item["publication_id"] == "milovi-bootstrap-008")
     caption = str(review["caption"])
-    exact_quote = "Спасибо за прекрасно выполненную работу к 40-летию свадьбы. И вкусовые качества, и дизайн, и упаковка — гости были в восторге."
+    exact_quote = (
+        "Спасибо за прекрасно выполненную работу к 40-летию свадьбы. "
+        "И вкусовые качества, и дизайн, и упаковка — гости были в восторге."
+    )
     assert exact_quote in caption
     source = review["fact_source"]
     assert isinstance(source, dict)
