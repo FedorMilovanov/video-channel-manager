@@ -90,14 +90,15 @@ def test_render_is_self_contained_provenance_bound_and_not_chat_escaped() -> Non
 
     assert script.startswith("param(\n")
     assert '[string]$RepositoryRoot = "C:\\Users\\Fedor\\Projects\\video-channel-manager"' in script
+    assert '[string]$DownloadsRoot = "C:\\Users\\Fedor\\Downloads"' in script
     assert '$ErrorActionPreference = "Stop"' in script
     assert "$Repo = $RepositoryRoot" in script
     assert "$OperatorOutput =" in script
-    assert "$Master =" in script
-    assert "$SourceReceipt =" in script
-    assert "$Result =" in script
-    assert "$Clip =" in script
-    assert "$Downloads" not in script
+    assert '$Master = Join-Path $DownloadsRoot ($Title + " - FULL.mp4")' in script
+    assert '$SourceReceipt = Join-Path $OperatorOutput ($Title + " - FULL.source.json")' in script
+    assert '$Result = Join-Path $OperatorOutput ($Title + " - result.json")' in script
+    assert '$Clip = Join-Path $OperatorOutput ($Title + ".mp4")' in script
+    assert '$Master = Join-Path $OperatorOutput' not in script
     assert "$Work" not in script
     assert "bestvideo+bestaudio/best" in script
     assert "--retries 10 --fragment-retries 10" in script
@@ -132,6 +133,9 @@ def test_render_download_only_keeps_hashes_and_receipts_master() -> None:
     assert "video-manager.resi-source-receipt" in script
     assert 'mode = "download_only"' in script
     assert "$Clip" not in script
+    assert "C:\\Users\\Fedor\\Downloads" in script
+    assert '$Master = Join-Path $DownloadsRoot ($Title + " - FULL.mp4")' in script
+    assert '$SourceReceipt = Join-Path $OperatorOutput ($Title + " - FULL.source.json")' in script
     assert "operator-output" in script
 
 
