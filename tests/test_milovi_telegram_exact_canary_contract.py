@@ -24,7 +24,9 @@ def test_exact_canary_send_has_zero_mutation_retry_and_no_fallback_operation() -
     assert "HTTPTransport(retries=retries)" in runtime
     assert "sendDocument" not in runtime
     assert "sendMessage" not in runtime
-    assert "dispatch_started barrier remains" in runtime
+    assert '"last_durable_stage": "dispatch_started"' in runtime
+    assert '"retry_policy": "never_replay"' in runtime
+    assert '"provider_write_may_have_occurred": True' in runtime
 
 
 def test_exact_canary_is_bound_to_recovered_target_transport_and_membership() -> None:
@@ -49,12 +51,14 @@ def test_rejected_canary_requires_explicit_new_successor_authorization() -> None
     assert "prior_state_archive" in runtime
 
 
-def test_terminal_provider_rejection_is_persisted_but_unknown_outcome_is_not_replayed() -> None:
+def test_terminal_provider_rejection_and_unknown_outcome_are_both_durably_persisted() -> None:
     workflow = WORKFLOW.read_text(encoding="utf-8")
     runtime = RUNTIME.read_text(encoding="utf-8")
     assert "if: always()" in workflow
-    assert "No terminal state change to persist; unknown outcomes remain dispatch_started." in workflow
+    assert "Persist post-barrier Telegram outcome evidence" in workflow
+    assert "No post-barrier state change to persist; provider dispatch was not durably marked started." in workflow
     assert "400 <= status < 500" in runtime
     assert '"provider_effect": "rejected_before_message_creation"' in runtime
+    assert '"status": "unknown_requires_reconciliation"' in runtime
+    assert '"required_next_action": "read_reconcile_exact_message_identity"' in runtime
     assert '"automatic_replay_allowed": False' in runtime
-    assert "outcome treated as unknown; no automatic replay" in runtime
