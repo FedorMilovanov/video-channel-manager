@@ -15,7 +15,7 @@ from video_channel_manager.telegram_multichannel_transport import GenericTargetP
 DiscoveryMethod = Literal[
     "getMe + getChat(@username) + getChat(numeric id) + getChatAdministrators",
     "getMe + getChat(numeric id) + getChat(@username) + getChatAdministrators",
-    "getMe + getChat(numeric id) + getChat(@username) + getChatMember(bot id)",
+    "getMe + getChat(public/numeric exact pair) + getChatMember(bot id)",
 ]
 
 
@@ -99,7 +99,7 @@ def target_binding_from_proof(
         bot_id=proof.bot_id,
         bot_username=proof.bot_username,
         checked_at_utc=proof.checked_at_utc,
-        discovery_method="getMe + getChat(numeric id) + getChat(@username) + getChatMember(bot id)",
+        discovery_method="getMe + getChat(public/numeric exact pair) + getChatMember(bot id)",
     )
 
 
