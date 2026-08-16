@@ -28,6 +28,7 @@ jobs:
     env:
       PYTHONPATH: src
       PROFILE_PATH: content/telegram/channels/milovi-cake.json
+      BINDING_PATH: content/telegram/channels/milovi-cake-target-binding.json
       ROLLOUT_PATH: content/telegram/milovi-cake/bootstrap-rollout-candidate-2026-08.json
       CANDIDATES_PATH: content/telegram/milovi-cake/bootstrap-first-screen-candidates-2026-08.json
       TRANSPORT_PROOF_PATH: content/telegram/milovi-cake/bootstrap-photo-transport-proof-2026-08.json
@@ -100,10 +101,12 @@ jobs:
 
           from video_channel_manager.telegram_channel_profile import load_channel_profile
           from video_channel_manager.telegram_multichannel_release import load_release
+          from video_channel_manager.telegram_target_binding import load_target_binding
 
           profile = load_channel_profile(Path(os.environ["PROFILE_PATH"]))
           rollout = json.loads(Path(os.environ["ROLLOUT_PATH"]).read_text(encoding="utf-8"))
           expected = load_release(Path(os.environ["EXPECTED_CANDIDATE_PATH"]))
+          binding_path = Path(os.environ["BINDING_PATH"])
           authorized_path = Path(os.environ["AUTHORIZED_RELEASE_PATH"])
           blockers: list[str] = []
 
@@ -126,6 +129,18 @@ jobs:
           if os.environ["EVENT_NAME"] == "workflow_dispatch" and os.environ["MANUAL_CONFIRM"] != "PUBLISH:@MiloviCake":
               blockers.append("manual_confirmation_missing")
 
+          binding = None
+          if not binding_path.exists():
+              blockers.append("target_binding_missing")
+          else:
+              binding = load_target_binding(binding_path, profile)
+              if (
+                  binding.chat_id != -1002215328390
+                  or binding.bot_id != 8716602202
+                  or binding.bot_username.casefold() != "preaching_mp3_bot"
+              ):
+                  blockers.append("target_binding_identity_drift")
+
           if not authorized_path.exists():
               blockers.append("authorized_release_missing")
           else:
@@ -147,6 +162,13 @@ jobs:
                   or authorized.bot_id != 8716602202
                   or (authorized.bot_username or "").casefold() != "preaching_mp3_bot"
                   or authorized.target_binding_sha256 is None
+              ):
+                  blockers.append("authorized_release_target_identity_drift")
+              if binding is not None and (
+                  authorized.target_binding_sha256 != binding.digest
+                  or authorized.chat_id != binding.chat_id
+                  or authorized.bot_id != binding.bot_id
+                  or (authorized.bot_username or "").casefold() != binding.bot_username.casefold()
               ):
                   blockers.append("authorized_release_target_binding_drift")
 
