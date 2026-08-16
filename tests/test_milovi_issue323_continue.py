@@ -256,7 +256,7 @@ def test_exact_confirmation_persists_only_local_intent_across_fresh_capture(
         preflight_digest_confirmation=preview["promotion_preflight_digest"],
     )
 
-    assert confirmed["continuation_status"] == "intent_persisted_provider_dispatch_not_available"
+    assert confirmed["continuation_status"] == "intent_persisted_requires_separate_provider_dispatch_confirmation"
     assert confirmed["promotion_observation_digest"] != preview["promotion_observation_digest"]
     assert confirmed["promotion_provider_state_digest"] == preview["promotion_provider_state_digest"]
     assert confirmed["promotion_preflight_evidence_digest"] != preview["promotion_preflight_evidence_digest"]
@@ -271,6 +271,7 @@ def test_exact_confirmation_persists_only_local_intent_across_fresh_capture(
     assert confirmed["promotion_intent"]["dispatch_started"] is False
     assert confirmed["promotion_intent"]["intent_remote_id"] == _remote_id(*key)
     assert confirmed["promotion_intent"]["intent_preflight_digest"] == confirmed["promotion_preflight_evidence_digest"]
+    assert confirmed["provider_dispatch_confirmation_digest"] == preview["promotion_preflight_digest"]
     assert confirmed["provider_mutation_authorized"] is False
     assert confirmed["provider_writes_executed"] == 0
     assert paths["promotion_journal_path"].read_text(encoding="utf-8") != journal_before
@@ -278,7 +279,7 @@ def test_exact_confirmation_persists_only_local_intent_across_fresh_capture(
     assert operation == confirmed["promotion_intent"]
 
 
-def test_existing_unstarted_intent_is_reconciled_before_confirmation_can_be_reused(
+def test_existing_unstarted_intent_remains_durable_until_provider_dispatch_confirmation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -313,18 +314,20 @@ def test_existing_unstarted_intent_is_reconciled_before_confirmation_can_be_reus
         preflight_digest_confirmation=preview["promotion_preflight_digest"],
     )
 
-    assert recovered["continuation_status"] == "intent_reconciled_ready_for_digest_confirmation"
+    assert recovered["continuation_status"] == "intent_ready_for_provider_dispatch_confirmation"
     assert recovered["promotion_intent_persisted"] is False
-    assert recovered["promotion_intent_reconciled"] is True
+    assert recovered["promotion_intent_reconciled"] is False
     assert recovered["preflight_digest_confirmation_supplied"] is True
     assert recovered["preflight_digest_confirmed"] is False
+    assert recovered["provider_dispatch_confirmation_digest"] == preview["promotion_preflight_digest"]
     assert recovered["provider_mutation_authorized"] is False
     assert recovered["provider_writes_executed"] == 0
     operation = _journal_operation(paths["promotion_journal_path"], key)
-    assert operation["status"] == "pending"
+    assert operation["status"] == "edit_intent"
     assert operation["dispatch_started"] is False
-    assert operation["intent_preflight_digest"] is None
-    assert operation["intent_remote_id"] is None
+    assert operation["intent_preflight_digest"] is not None
+    assert operation["intent_confirmation_digest"] == preview["promotion_preflight_digest"]
+    assert operation["intent_remote_id"] == _remote_id(*key)
 
 
 def test_unstarted_intent_with_provider_drift_blocks_and_remains_durable(
@@ -367,7 +370,8 @@ def test_unstarted_intent_with_provider_drift_blocks_and_remains_durable(
     assert blocked["promotion_intent_reconciled"] is False
     assert blocked["provider_mutation_authorized"] is False
     assert blocked["provider_writes_executed"] == 0
-    assert "requires recovery" in blocked["blockers"][0]
+    assert "cannot build a fresh exact dispatch envelope" in blocked["blockers"][0]
+    assert "current text is neither exact reviewed BEFORE nor exact reviewed AFTER" in blocked["blockers"][0]
     assert paths["promotion_journal_path"].read_text(encoding="utf-8") == journal_with_intent
     assert _journal_operation(paths["promotion_journal_path"], key)["status"] == "edit_intent"
 
