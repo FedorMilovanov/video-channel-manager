@@ -33,7 +33,10 @@ def test_follow_on_copy_is_exactly_nine_cake_three_school_and_provider_inert() -
     assert len(school) == 3
     assert [item["position"] for item in school] == [3, 7, 11]
     assert items[-1]["brand_stream"] == "milovi-cake"
-    assert all(left["brand_stream"] != "milovi-school" or right["brand_stream"] != "milovi-school" for left, right in zip(items, items[1:], strict=False))
+    assert all(
+        left["brand_stream"] != "milovi-school" or right["brand_stream"] != "milovi-school"
+        for left, right in zip(items, items[1:], strict=False)
+    )
 
 
 def test_follow_on_cake_media_is_unique_and_does_not_repeat_launch_screen() -> None:
