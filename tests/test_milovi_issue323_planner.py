@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from video_channel_manager.platforms.vk.milovi_issue323_planner import (
     Issue323Capability,
     Issue323ItemState,
