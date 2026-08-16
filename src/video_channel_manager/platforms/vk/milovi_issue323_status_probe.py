@@ -20,12 +20,12 @@ from video_channel_manager.platforms.vk.milovi_issue323_finalize import (
     _assert_native_clip,
     _legacy_clip_description,
     _legacy_wall_message,
-    _native_clip_assessment,
     _promote_asset,
     _read_exact_wall_incarnation,
     _resolve_wall_incarnation,
     _sha256_text,
 )
+from video_channel_manager.platforms.vk.milovi_issue323_live_resume import _native_clip_assessment
 from video_channel_manager.platforms.vk.milovi_issue323_planner import (
     PLAN_SCHEMA_VERSION,
     Issue323Capability,
@@ -252,7 +252,7 @@ def _review_sensitive_creation_reason(
     if not any(state.requires_review for state in states):
         return None
     return (
-        "Unreviewed or processing-projected public copy is observation-only; "
+        "Unreviewed exact public copy or unknown processing projection is observation-only; "
         "provider creation capability requires reviewed exact copy policy"
     )
 
