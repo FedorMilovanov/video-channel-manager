@@ -11,10 +11,9 @@ import sys
 import urllib.parse
 import urllib.request
 from datetime import UTC, datetime
-from typing import Any, cast
+from typing import Any, NoReturn, cast
 
 import httpx
-from PIL import Image  # type: ignore[import-not-found]
 
 AUTH_PATH = pathlib.Path("content/telegram/milovi-cake/live/canary-authorization.json")
 STATE_PATH = pathlib.Path("content/telegram/milovi-cake/live/canary-dispatch-state.json")
@@ -149,6 +148,8 @@ def _validate_authorization(auth: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def _materialize_payload() -> tuple[bytes, str]:
+    from PIL import Image  # type: ignore[import-not-found]
+
     candidate = _json_object(CANDIDATE_PATH)
     if candidate.get("publication_id") != "milovi-cake-canary-001" or candidate.get("operation") != "sendPhoto":
         raise SystemExit("candidate identity mismatch")
@@ -337,7 +338,7 @@ def _stop_unknown(
     last_durable_stage: str,
     exit_code: int = 75,
     http_status: int | None = None,
-) -> None:
+) -> NoReturn:
     _record_unknown_outcome(
         state,
         failure_type=failure_type,
