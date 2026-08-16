@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -59,6 +61,11 @@ class Issue323ItemPlan:
             "forbids_reupload": self.forbids_reupload,
             "forbids_repost": self.forbids_repost,
         }
+
+    @property
+    def digest(self) -> str:
+        canonical = json.dumps(self.as_dict(), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        return f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
 
 
 def _plan(
