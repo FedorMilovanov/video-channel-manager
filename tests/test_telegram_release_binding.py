@@ -82,7 +82,7 @@ def test_binding_rejects_digest_profile_binding_and_rebind_drift() -> None:
     with pytest.raises(ValueError, match="selected Telegram channel profile"):
         bind(changed_profile, binding, candidate)
 
-    changed_binding = binding.model_copy(update={"chat_id": binding.chat_id - 1})
+    changed_binding = binding.model_copy(update={"profile_sha256": "sha256:" + "0" * 64})
     changed_binding = TelegramTargetBinding.model_validate(changed_binding.model_dump(mode="json"))
     with pytest.raises(ValueError, match="selected Telegram channel profile"):
         bind(profile, changed_binding, candidate)
