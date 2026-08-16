@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from typing import Any, cast
 
 import httpx
-from PIL import Image
+from PIL import Image  # type: ignore[import-not-found]
 
 AUTH_PATH = pathlib.Path("content/telegram/milovi-cake/live/canary-authorization.json")
 STATE_PATH = pathlib.Path("content/telegram/milovi-cake/live/canary-dispatch-state.json")
