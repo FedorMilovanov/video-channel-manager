@@ -19,7 +19,7 @@ from video_channel_manager.platforms.vk.milovi_issue323_promotion_spec import (
 from video_channel_manager.platforms.vk.milovi_rollout_sources import ROLL_OUT_IDS
 
 PROMOTION_PREFLIGHT_SCHEMA = "video-manager.milovi-issue-323-promotion-execution-preflight"
-PROMOTION_PREFLIGHT_VERSION = 1
+PROMOTION_PREFLIGHT_VERSION = 2
 
 
 class PromotionDispatchStatus(StrEnum):
@@ -44,20 +44,26 @@ class PromotionOperationState:
             raise ValueError(
                 f"Pending promotion operation cannot have dispatch_started=true: {self.source_id}:{self.field.value}"
             )
-        if self.status is PromotionDispatchStatus.EDIT_DISPATCH_STARTED and not self.dispatch_started:
+        if self.status is PromotionDispatchStatus.EDIT_INTENT and self.dispatch_started:
             raise ValueError(
-                f"edit_dispatch_started must carry dispatch_started=true: {self.source_id}:{self.field.value}"
+                f"edit_intent cannot have dispatch_started=true: {self.source_id}:{self.field.value}"
+            )
+        if self.status in {
+            PromotionDispatchStatus.EDIT_DISPATCH_STARTED,
+            PromotionDispatchStatus.UNKNOWN_REQUIRES_RECONCILIATION,
+            PromotionDispatchStatus.VERIFIED,
+        } and not self.dispatch_started:
+            raise ValueError(
+                f"{self.status.value} must carry dispatch_started=true: {self.source_id}:{self.field.value}"
             )
 
     @property
     def unresolved_dispatch(self) -> bool:
-        if self.status in {
+        return self.status in {
             PromotionDispatchStatus.EDIT_INTENT,
             PromotionDispatchStatus.EDIT_DISPATCH_STARTED,
             PromotionDispatchStatus.UNKNOWN_REQUIRES_RECONCILIATION,
-        }:
-            return True
-        return self.dispatch_started and self.status is not PromotionDispatchStatus.VERIFIED
+        }
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -92,6 +98,7 @@ class ExecutablePromotionMutation:
 class PromotionExecutionPreflight:
     spec_digest: str
     observation_digest: str
+    operation_state_digest: str
     executable: bool
     planned_mutations: tuple[ExecutablePromotionMutation, ...]
     blockers: tuple[str, ...]
@@ -106,6 +113,7 @@ class PromotionExecutionPreflight:
             "schema_version": PROMOTION_PREFLIGHT_VERSION,
             "spec_digest": self.spec_digest,
             "observation_digest": self.observation_digest,
+            "operation_state_digest": self.operation_state_digest,
             "executable": self.executable,
             "provider_mutation_authorized": False,
             "confirmation_required": self.executable and bool(self.planned_mutations),
@@ -141,6 +149,19 @@ def _operation_state_map(
     return states
 
 
+def promotion_operation_state_digest(
+    states: Mapping[tuple[str, PromotionField], PromotionOperationState],
+) -> str:
+    validated = _operation_state_map(states)
+    ordered = [
+        validated[(source_id, field)].as_dict()
+        for source_id in ROLL_OUT_IDS
+        for field in PromotionField
+    ]
+    canonical = json.dumps(ordered, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
+
+
 def _dispatch_blocker(state: PromotionOperationState, decision: PromotionDecisionAction) -> str | None:
     if state.unresolved_dispatch:
         return (
@@ -166,12 +187,14 @@ def build_promotion_execution_preflight(
     """Build one provider-inert all-or-nothing promotion execution plan."""
 
     states = _operation_state_map(operation_states)
+    state_digest = promotion_operation_state_digest(states)
     try:
         observed_fields = observation.as_observed_fields()
     except ValueError as exc:
         return PromotionExecutionPreflight(
             spec_digest=spec.digest,
             observation_digest=observation.digest,
+            operation_state_digest=state_digest,
             executable=False,
             planned_mutations=(),
             blockers=(str(exc),),
@@ -189,6 +212,7 @@ def build_promotion_execution_preflight(
         return PromotionExecutionPreflight(
             spec_digest=spec.digest,
             observation_digest=observation.digest,
+            operation_state_digest=state_digest,
             executable=False,
             planned_mutations=(),
             blockers=tuple(blockers),
@@ -202,6 +226,7 @@ def build_promotion_execution_preflight(
     return PromotionExecutionPreflight(
         spec_digest=spec.digest,
         observation_digest=observation.digest,
+        operation_state_digest=state_digest,
         executable=True,
         planned_mutations=executable_mutations,
         blockers=(),
@@ -231,4 +256,5 @@ __all__ = [
     "PromotionExecutionPreflight",
     "PromotionOperationState",
     "build_promotion_execution_preflight",
+    "promotion_operation_state_digest",
 ]
