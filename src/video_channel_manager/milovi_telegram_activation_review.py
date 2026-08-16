@@ -65,7 +65,11 @@ def _require_binding(binding: TelegramTargetBinding) -> None:
 def _require_unauthorized_release(release: GenericReleaseQueue, label: str) -> None:
     if release.release_authorized:
         raise ValueError(f"{label} must remain unauthorized")
-    if release.reviewed_candidate_sha256 is not None or release.reviewed_by is not None or release.reviewed_at is not None:
+    if (
+        release.reviewed_candidate_sha256 is not None
+        or release.reviewed_by is not None
+        or release.reviewed_at is not None
+    ):
         raise ValueError(f"{label} must not contain completed review metadata")
     if len(release.items) != EXPECTED_BOOTSTRAP_COUNT:
         raise ValueError(f"{label} must contain exactly ten bootstrap items")
