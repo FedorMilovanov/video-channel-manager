@@ -131,6 +131,15 @@ def _paths(tmp_path: Path) -> dict[str, Path]:
     }
 
 
+def _journal_operation(path: Path, key: tuple[str, PromotionField]) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return next(
+        item
+        for item in payload["operations"]
+        if item["source_id"] == key[0] and item["field"] == key[1].value
+    )
+
+
 def test_missing_promotion_journal_stops_after_one_readonly_status_probe(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -153,6 +162,7 @@ def test_missing_promotion_journal_stops_after_one_readonly_status_probe(
     assert result["provider_mutation_authorized"] is False
     assert result["provider_writes_executed"] == 0
     assert result["promotion_preflight"] is None
+    assert result["promotion_intent_persisted"] is False
     assert result["preflight_digest_confirmation_supplied"] is False
     assert result["preflight_digest_confirmed"] is False
     assert not paths["promotion_journal_path"].exists()
@@ -188,6 +198,7 @@ def test_explicit_journal_init_builds_digest_bound_plan_but_executes_zero_provid
     assert result["provider_mutation_authorized"] is False
     assert result["provider_writes_executed"] == 0
     assert result["promotion_journal_initialized"] is True
+    assert result["promotion_intent_persisted"] is False
     assert result["promotion_spec_digest"] == spec.digest
     assert result["promotion_observation_digest"] == observation.digest
     assert result["promotion_provider_state_digest"] == observation.provider_state_digest
@@ -200,7 +211,7 @@ def test_explicit_journal_init_builds_digest_bound_plan_but_executes_zero_provid
     assert paths["promotion_journal_path"].is_file()
 
 
-def test_exact_preflight_confirmation_survives_fresh_capture_time_and_snapshot_digest(
+def test_exact_confirmation_persists_only_local_intent_across_fresh_capture(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -214,8 +225,6 @@ def test_exact_preflight_confirmation_survives_fresh_capture_time_and_snapshot_d
         captured_at="2026-08-16T10:01:00+00:00",
         wall_snapshot_sha256="sha256:second-capture-wall-snapshot",
     )
-    assert first_observation.digest != second_observation.digest
-    assert first_observation.provider_state_digest == second_observation.provider_state_digest
     _write_spec(paths["promotion_spec_path"], _spec(managed_key=key))
     observations = iter((first_observation, second_observation))
     monkeypatch.setattr(
@@ -235,16 +244,120 @@ def test_exact_preflight_confirmation_survives_fresh_capture_time_and_snapshot_d
         preflight_digest_confirmation=preview["promotion_preflight_digest"],
     )
 
-    assert confirmed["continuation_status"] == "digest_confirmed_provider_execution_not_available"
+    assert confirmed["continuation_status"] == "intent_persisted_provider_dispatch_not_available"
     assert confirmed["promotion_observation_digest"] != preview["promotion_observation_digest"]
     assert confirmed["promotion_provider_state_digest"] == preview["promotion_provider_state_digest"]
     assert confirmed["promotion_preflight_evidence_digest"] != preview["promotion_preflight_evidence_digest"]
     assert confirmed["promotion_preflight_digest"] == preview["promotion_preflight_digest"]
     assert confirmed["preflight_digest_confirmation_supplied"] is True
     assert confirmed["preflight_digest_confirmed"] is True
+    assert confirmed["promotion_intent_persisted"] is True
+    assert confirmed["promotion_intent_reconciled"] is False
+    assert confirmed["promotion_intent"]["source_id"] == key[0]
+    assert confirmed["promotion_intent"]["field"] == key[1].value
+    assert confirmed["promotion_intent"]["status"] == "edit_intent"
+    assert confirmed["promotion_intent"]["dispatch_started"] is False
+    assert confirmed["promotion_intent"]["intent_remote_id"] == _remote_id(*key)
+    assert confirmed["promotion_intent"]["intent_preflight_digest"] == confirmed["promotion_preflight_evidence_digest"]
     assert confirmed["provider_mutation_authorized"] is False
     assert confirmed["provider_writes_executed"] == 0
-    assert paths["promotion_journal_path"].read_text(encoding="utf-8") == journal_before
+    assert paths["promotion_journal_path"].read_text(encoding="utf-8") != journal_before
+    operation = _journal_operation(paths["promotion_journal_path"], key)
+    assert operation == confirmed["promotion_intent"]
+
+
+def test_existing_unstarted_intent_is_reconciled_before_confirmation_can_be_reused(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    paths = _paths(tmp_path)
+    key = (ROLL_OUT_IDS[0], PromotionField.CLIP_DESCRIPTION)
+    observations = iter(
+        (
+            _observation(captured_at="2026-08-16T10:00:00+00:00"),
+            _observation(captured_at="2026-08-16T10:01:00+00:00"),
+            _observation(captured_at="2026-08-16T10:02:00+00:00"),
+        )
+    )
+    _write_spec(paths["promotion_spec_path"], _spec(managed_key=key))
+    monkeypatch.setattr(
+        continue_module,
+        "run_issue_323_status_probe",
+        lambda **_kwargs: _status_payload(next(observations)),
+    )
+    preview = run_issue_323_continue_preview(
+        **paths,
+        journal_init_confirmation=PROMOTION_JOURNAL_INIT_CONFIRMATION,
+        journal_created_at="2026-08-16T10:05:00+00:00",
+    )
+    persisted = run_issue_323_continue_preview(
+        **paths,
+        preflight_digest_confirmation=preview["promotion_preflight_digest"],
+    )
+    assert persisted["promotion_intent_persisted"] is True
+
+    recovered = run_issue_323_continue_preview(
+        **paths,
+        preflight_digest_confirmation=preview["promotion_preflight_digest"],
+    )
+
+    assert recovered["continuation_status"] == "intent_reconciled_ready_for_digest_confirmation"
+    assert recovered["promotion_intent_persisted"] is False
+    assert recovered["promotion_intent_reconciled"] is True
+    assert recovered["preflight_digest_confirmation_supplied"] is True
+    assert recovered["preflight_digest_confirmed"] is False
+    assert recovered["provider_mutation_authorized"] is False
+    assert recovered["provider_writes_executed"] == 0
+    operation = _journal_operation(paths["promotion_journal_path"], key)
+    assert operation["status"] == "pending"
+    assert operation["dispatch_started"] is False
+    assert operation["intent_preflight_digest"] is None
+    assert operation["intent_remote_id"] is None
+
+
+def test_unstarted_intent_with_provider_drift_blocks_and_remains_durable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    paths = _paths(tmp_path)
+    key = (ROLL_OUT_IDS[0], PromotionField.CLIP_DESCRIPTION)
+    observations = iter(
+        (
+            _observation(captured_at="2026-08-16T10:00:00+00:00"),
+            _observation(captured_at="2026-08-16T10:01:00+00:00"),
+            _observation(
+                override=(*key, "manual drift after confirmed intent"),
+                captured_at="2026-08-16T10:02:00+00:00",
+            ),
+        )
+    )
+    _write_spec(paths["promotion_spec_path"], _spec(managed_key=key))
+    monkeypatch.setattr(
+        continue_module,
+        "run_issue_323_status_probe",
+        lambda **_kwargs: _status_payload(next(observations)),
+    )
+    preview = run_issue_323_continue_preview(
+        **paths,
+        journal_init_confirmation=PROMOTION_JOURNAL_INIT_CONFIRMATION,
+        journal_created_at="2026-08-16T10:05:00+00:00",
+    )
+    run_issue_323_continue_preview(
+        **paths,
+        preflight_digest_confirmation=preview["promotion_preflight_digest"],
+    )
+    journal_with_intent = paths["promotion_journal_path"].read_text(encoding="utf-8")
+
+    blocked = run_issue_323_continue_preview(**paths)
+
+    assert blocked["continuation_status"] == "blocked"
+    assert blocked["promotion_intent_persisted"] is False
+    assert blocked["promotion_intent_reconciled"] is False
+    assert blocked["provider_mutation_authorized"] is False
+    assert blocked["provider_writes_executed"] == 0
+    assert "requires recovery" in blocked["blockers"][0]
+    assert paths["promotion_journal_path"].read_text(encoding="utf-8") == journal_with_intent
+    assert _journal_operation(paths["promotion_journal_path"], key)["status"] == "edit_intent"
 
 
 def test_wrong_or_stale_preflight_digest_confirmation_blocks_without_journal_mutation(
@@ -276,6 +389,7 @@ def test_wrong_or_stale_preflight_digest_confirmation_blocks_without_journal_mut
     assert blocked["continuation_status"] == "blocked"
     assert blocked["preflight_digest_confirmation_supplied"] is True
     assert blocked["preflight_digest_confirmed"] is False
+    assert blocked["promotion_intent_persisted"] is False
     assert blocked["provider_mutation_authorized"] is False
     assert blocked["provider_writes_executed"] == 0
     assert "does not match" in blocked["blockers"][0]
