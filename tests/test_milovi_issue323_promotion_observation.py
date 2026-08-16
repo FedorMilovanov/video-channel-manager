@@ -9,6 +9,7 @@ from video_channel_manager.platforms.vk.milovi_issue323_promotion_observation im
     PromotionObservedCopyState,
     classify_clip_copy_observation,
     classify_wall_copy_observation,
+    promotion_observation_from_mapping,
 )
 from video_channel_manager.platforms.vk.milovi_issue323_promotion_spec import (
     PromotionDecisionAction,
@@ -65,6 +66,12 @@ def _batch(*, projection_key: tuple[str, PromotionField] | None = None) -> Promo
         captured_at="2026-08-16T09:40:00+00:00",
         fields=fields,
     )
+
+
+def _status_payload(batch: PromotionObservationBatch) -> dict[str, object]:
+    payload = batch.as_dict()
+    payload["observation_digest"] = batch.digest
+    return payload
 
 
 def _adopt_spec(batch: PromotionObservationBatch) -> PromotionSpec:
@@ -230,3 +237,55 @@ def test_observation_digest_changes_with_manual_text_or_provider_identity() -> N
     )
 
     assert first.digest != second.digest
+
+
+def test_status_observation_payload_roundtrips_with_exact_digest() -> None:
+    batch = _batch()
+
+    restored = promotion_observation_from_mapping(_status_payload(batch))
+
+    assert restored == batch
+    assert restored.digest == batch.digest
+
+
+def test_observation_loader_rejects_tampered_text_sha_or_digest() -> None:
+    batch = _batch()
+    payload = _status_payload(batch)
+    fields = list(payload["fields"])  # type: ignore[arg-type]
+    first = dict(fields[0])
+    first["text"] = "tampered after capture"
+    fields[0] = first
+    payload["fields"] = fields
+    with pytest.raises(ValueError, match="SHA mismatch"):
+        promotion_observation_from_mapping(payload)
+
+    payload = _status_payload(batch)
+    payload["observation_digest"] = "sha256:" + "0" * 64
+    with pytest.raises(ValueError, match="digest mismatch"):
+        promotion_observation_from_mapping(payload)
+
+
+def test_observation_loader_rejects_hidden_keys_or_write_authority() -> None:
+    batch = _batch()
+    payload = _status_payload(batch)
+    payload["unexpected"] = "hidden"
+    with pytest.raises(ValueError, match="unknown keys"):
+        promotion_observation_from_mapping(payload)
+
+    payload = _status_payload(batch)
+    payload["provider_mutation_authorized"] = True
+    with pytest.raises(ValueError, match="must never carry"):
+        promotion_observation_from_mapping(payload)
+
+
+def test_observation_loader_rejects_forged_derived_flags() -> None:
+    batch = _batch()
+    payload = _status_payload(batch)
+    payload["complete"] = False
+    with pytest.raises(ValueError, match="complete flag"):
+        promotion_observation_from_mapping(payload)
+
+    payload = _status_payload(batch)
+    payload["reviewable"] = False
+    with pytest.raises(ValueError, match="reviewable flag"):
+        promotion_observation_from_mapping(payload)
