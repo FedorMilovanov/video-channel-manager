@@ -14,7 +14,11 @@ def _spec(first_text: str) -> PromotionSpec:
     fields = []
     for source_id in ROLL_OUT_IDS:
         for field in PromotionField:
-            text = first_text if (source_id, field) == (ROLL_OUT_IDS[0], PromotionField.CLIP_DESCRIPTION) else f"reviewed {source_id} {field.value}"
+            text = (
+                first_text
+                if (source_id, field) == (ROLL_OUT_IDS[0], PromotionField.CLIP_DESCRIPTION)
+                else f"reviewed {source_id} {field.value}"
+            )
             fields.append(
                 ReviewedPromotionField(
                     source_id=source_id,
