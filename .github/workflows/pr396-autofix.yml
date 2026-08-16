@@ -1,0 +1,122 @@
+name: PR396 one-shot autofix
+
+on:
+  push:
+    branches:
+      - agent/milovi-daylight-strict-next
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pr396-one-shot-autofix
+  cancel-in-progress: false
+
+jobs:
+  autofix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: agent/milovi-daylight-strict-next
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.11'
+      - name: Apply exact CI fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              file = Path(path)
+              text = file.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"expected exactly one replacement in {path}, found {count}: {old!r}")
+              file.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          bootstrap = "src/video_channel_manager/milovi_telegram_bootstrap.py"
+          replace_once(
+              bootstrap,
+              "from video_channel_manager.telegram_multichannel_release import GenericReleaseItem, GenericReleaseQueue, save_release",
+              "from video_channel_manager.telegram_multichannel_release import (\n    GenericProviderPayload,\n    GenericReleaseItem,\n    GenericReleaseQueue,\n    save_release,\n)",
+          )
+          replace_once(
+              bootstrap,
+              "        if rollout_item[\"operation\"] == \"sendPhoto\":\n",
+              "        payload: GenericProviderPayload\n        if rollout_item[\"operation\"] == \"sendPhoto\":\n",
+          )
+          replace_once(
+              bootstrap,
+              "        from PIL import Image\n",
+              "        from PIL import Image  # type: ignore[import-not-found]\n",
+          )
+
+          inventory = "tests/test_http_client_inventory.py"
+          replace_once(
+              inventory,
+              '        "src/video_channel_manager/telegram_multichannel_transport.py": 3,',
+              '        "src/video_channel_manager/telegram_multichannel_transport.py": 4,',
+          )
+
+          multichannel_test = "tests/test_telegram_multichannel.py"
+          replace_once(
+              multichannel_test,
+              '''        elif method == "getChatAdministrators":
+            assert payload == {"chat_id": -1001234567890, "return_bots": True}
+            result = [
+                {
+                    "status": "administrator",
+                    "can_post_messages": True,
+                    "user": {"id": 42, "is_bot": True, "username": "svodka_test_bot"},
+                }
+            ]
+''',
+              '''        elif method == "getChatMember":
+            assert payload == {"chat_id": -1001234567890, "user_id": 42}
+            result = {
+                "status": "administrator",
+                "can_post_messages": True,
+                "user": {"id": 42, "is_bot": True, "username": "svodka_test_bot"},
+            }
+''',
+          )
+          replace_once(
+              multichannel_test,
+              '    assert calls == ["getMe", "getChat", "getChat", "getChatAdministrators"]',
+              '    assert calls == ["getMe", "getChat", "getChat", "getChatMember"]',
+          )
+          PY
+
+          python -m pip install --disable-pip-version-check 'ruff==0.16.3'
+          ruff format \
+            src/video_channel_manager/milovi_telegram_bootstrap.py \
+            src/video_channel_manager/telegram_multichannel_transport.py \
+            tests/test_milovi_telegram_bootstrap.py \
+            tests/test_telegram_multichannel_photo_transport.py \
+            tests/test_http_client_inventory.py \
+            tests/test_telegram_multichannel.py
+
+          rm .github/workflows/pr396-autofix.yml
+
+      - name: Commit exact fixes and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            src/video_channel_manager/milovi_telegram_bootstrap.py \
+            src/video_channel_manager/telegram_multichannel_transport.py \
+            tests/test_milovi_telegram_bootstrap.py \
+            tests/test_telegram_multichannel_photo_transport.py \
+            tests/test_http_client_inventory.py \
+            tests/test_telegram_multichannel.py \
+            .github/workflows/pr396-autofix.yml
+          git diff --cached --check
+          git commit -m 'fix: satisfy Milovi Telegram quality gates'
+          git push origin HEAD:agent/milovi-daylight-strict-next
