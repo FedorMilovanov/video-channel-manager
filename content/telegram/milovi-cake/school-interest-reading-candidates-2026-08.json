@@ -1,0 +1,160 @@
+{
+  "schema_name": "video-channel-manager.milovi-school-interest-reading-candidates",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "status": "provider_inert_editorial_candidate_pool",
+  "provider_mutation_allowed": false,
+  "execution_authorized": false,
+  "school_project": {
+    "name": "Milovi School",
+    "source_repository": "FedorMilovanov/Milovi_School",
+    "source_repository_head_reviewed": "aa82176012b93a50ccfcfb90293d496618e50b61",
+    "positioning": "our separate editorial project for interesting reading",
+    "not_product_rubric": true,
+    "not_evidence_of_milovi_cake_production": true
+  },
+  "editorial_policy": {
+    "first_screen_school_items": 0,
+    "eligible_only_after_bootstrap_first_screen": true,
+    "target_share_after_first_screen": "roughly one School post per four to five total channel posts",
+    "school_posts_may_not_be_consecutive": true,
+    "product_cta_required": false,
+    "product_cta_default": "forbidden",
+    "preferred_shape": [
+      "concrete factual hook",
+      "short self-contained preview with one or two details",
+      "open loop or unresolved question",
+      "clearly labelled link to our Milovi School project"
+    ],
+    "forbidden_implications": [
+      "Milovi Cake uses the School article recipe",
+      "Milovi Cake uses the School article technique",
+      "Milovi Cake is a French-cuisine or French-pastry business because School covers French material",
+      "the School article describes Milovi Cake production"
+    ]
+  },
+  "candidates": [
+    {
+      "candidate_id": "school-read-001",
+      "source_slug": "croissant-history",
+      "source_evidence_commit": "d17adf90a87f0cc3686939704e278da8ff48904b",
+      "angle": "myth_busting_history",
+      "hook": "Круассан придумала Мария-Антуанетта? Красивый миф — но история уводит совсем в другую сторону.",
+      "preview": "До французского круассана был австрийский кипферль, а один из ключевых поворотов связан с венцем Августом Цангом и Парижем 1838–1840 годов. В нашем проекте Milovi School разобрали, где заканчивается легенда и начинается документируемая история — и как слоёное тесто стало частью уже французской версии.",
+      "open_loop": "Почему знакомая сегодня форма ещё не означает знакомую сегодня технологию?",
+      "cta": "Читать в нашем проекте Milovi School → [verified article URL before scheduling]"
+    },
+    {
+      "candidate_id": "school-read-002",
+      "source_slug": "conticini-praline",
+      "source_evidence_commit": "d17adf90a87f0cc3686939704e278da8ff48904b",
+      "angle": "name_and_origin",
+      "hook": "Пралине, пралин и джандуйя — три похожих слова, за которыми скрываются разные вещи и несколько веков истории.",
+      "preview": "В истории пралине всплывают имя Плесси-Пралена и 1649 год, а позднее — Монтаржи XIX века. Milovi School собрал в одном материале происхождение терминов и то, почему современное praliné — не просто «орехи с сахаром» в любом виде.",
+      "open_loop": "В какой момент придворная история превратилась в самостоятельную кондитерскую категорию?",
+      "cta": "Читать в нашем проекте Milovi School → [verified article URL before scheduling]"
+    },
+    {
+      "candidate_id": "school-read-003",
+      "source_slug": "recipe-creme-brulee",
+      "source_evidence_commit": "d17adf90a87f0cc3686939704e278da8ff48904b",
+      "angle": "old_text_and_food_history",
+      "hook": "У крем-брюле есть печатный след XVII века — и спор о том, где заканчивается один десерт и начинается другой.",
+      "preview": "В Milovi School разбираем рецепт Франсуа Массиало 1691 года, позднейшую французскую традицию и различия между crème brûlée и crème catalane. Это история не только о корочке сахара, но и о том, как похожие десерты получают разные культурные биографии.",
+      "open_loop": "Почему два внешне близких десерта до сих пор спорят за право считаться «тем самым»?",
+      "cta": "Читать в нашем проекте Milovi School → [verified article URL before scheduling]"
+    },
+    {
+      "candidate_id": "school-read-004",
+      "source_slug": "lignac-far-breton",
+      "source_evidence_commit": "d17adf90a87f0cc3686939704e278da8ff48904b",
+      "angle": "trade_route_history",
+      "hook": "Как чернослив оказался в бретонском десерте, если сливы Ажена растут совсем не в Бретани?",
+      "preview": "История far breton неожиданно упирается не только в сельскую кухню, но и в морскую торговлю: чернослив связывают с путями бретонских моряков и торговлей треской. В Milovi School собрали эту линию вместе с более старой семьёй блюд farz.",
+      "open_loop": "Как морские маршруты меняют то, что спустя века считают региональной классикой?",
+      "cta": "Читать в нашем проекте Milovi School → [verified article URL before scheduling]"
+    },
+    {
+      "candidate_id": "school-read-005",
+      "source_slug": "recipe-saint-honore",
+      "source_evidence_commit": "f1b0fec4fda7ecb2a945deadcbb254b7a838b1cf",
+      "angle": "paris_name_history",
+      "hook": "Почему один из самых узнаваемых французских тортов носит имя святого — и причём здесь крем Шибуст?",
+      "preview": "Saint-Honoré связывает в одной истории парижское имя, XIX век и крем Chiboust, появившийся примерно в 1840-х. В Milovi School разбираем, как отдельные элементы сложились в десерт, который позже стал почти символом классической pâtisserie.",
+      "open_loop": "Что в Saint-Honoré было изначальным, а что закрепилось уже позднее?",
+      "cta": "Читать в нашем проекте Milovi School → [verified article URL before scheduling]"
+    },
+    {
+      "candidate_id": "school-read-006",
+      "source_slug": "recipe-mont-blanc",
+      "source_evidence_commit": "f1b0fec4fda7ecb2a945deadcbb254b7a838b1cf",
+      "angle": "iconic_shape_and_place",
+      "hook": "Почему десерт «Монблан» выглядит как клубок тонких нитей — и как парижская Angelina сделала этот образ знаменитым?",
+      "preview": "Каштановое пюре, меренга и сливки существовали не ради красивого названия, но именно образ заснеженной горы сделал композицию узнаваемой. В Milovi School рассказываем о Mont-Blanc и о роли Angelina, где десерт закрепился как фирменная классика в начале XX века.",
+      "open_loop": "Как внешний вид превращает обычное сочетание ингредиентов в культурный символ?",
+      "cta": "Читать в нашем проекте Milovi School → [verified article URL before scheduling]"
+    },
+    {
+      "candidate_id": "school-read-007",
+      "source_slug": "recipe-tarte-bourdaloue",
+      "source_evidence_commit": "f1b0fec4fda7ecb2a945deadcbb254b7a838b1cf",
+      "angle": "street_name_story",
+      "hook": "У пирога Bourdaloue название не от груши и не от крема — оно ведёт к конкретной парижской улице.",
+      "preview": "Груши и миндальный крем стали классической парой, но имя десерта связано с rue Bourdaloue и парижской кондитерской историей. Milovi School разбирает, как городская география иногда навсегда остаётся в названии еды.",
+      "open_loop": "Сколько известных десертов на самом деле являются маленькими картами старого Парижа?",
+      "cta": "Читать в нашем проекте Milovi School → [verified article URL before scheduling]"
+    },
+    {
+      "candidate_id": "school-read-008",
+      "source_slug": "recipe-kouglof",
+      "source_evidence_commit": "f1b0fec4fda7ecb2a945deadcbb254b7a838b1cf",
+      "angle": "regional_object_history",
+      "hook": "Куглоф узнают по форме раньше, чем по вкусу. Почему именно высокая рифлёная форма стала частью его идентичности?",
+      "preview": "Эльзасская традиция kouglof — это не только сдобное тесто и изюм, но и особая керамическая форма, связанная в том числе с Сюффленаймом. В Milovi School смотрим на десерт как на вещь, где рецепт, регион и предметная культура существуют вместе.",
+      "open_loop": "Может ли форма для выпечки быть такой же важной частью традиции, как сам состав?",
+      "cta": "Читать в нашем проекте Milovi School → [verified article URL before scheduling]"
+    },
+    {
+      "candidate_id": "school-read-009",
+      "source_slug": "felder-fraisier",
+      "source_evidence_commit": "d17adf90a87f0cc3686939704e278da8ff48904b",
+      "angle": "dessert_evolution",
+      "hook": "Фрезье кажется вечной классикой, но знакомый нам образ складывался постепенно — и в XX веке ещё менялся.",
+      "preview": "В материале Milovi School прослеживаем линию от ранних упоминаний у Эскофье и Лакама до версии Lenôtre «Bagatelle» 1966 года. Заодно разбираемся, почему сорт клубники и выбор крема меняют не только вкус, но и сам характер десерта.",
+      "open_loop": "Когда традиционный десерт перестаёт быть одной фиксированной формулой и становится семейством версий?",
+      "cta": "Читать в нашем проекте Milovi School → [verified article URL before scheduling]"
+    },
+    {
+      "candidate_id": "school-read-010",
+      "source_slug": "recipe-charlotte-fraises",
+      "source_evidence_commit": "f1b0fec4fda7ecb2a945deadcbb254b7a838b1cf",
+      "angle": "chef_and_invention_history",
+      "hook": "Почему французский десерт называется «шарлоткой», а одна из ключевых версий ещё и «русской»?",
+      "preview": "Charlotte russe связывают с Антоненом Каремом — поваром, который превратил высокую кухню в почти архитектурную систему. В Milovi School рассказываем, как название, баварский крем и бисквиты cuillère сошлись в одной исторической конструкции.",
+      "open_loop": "Откуда в названии французской классики появилась «Россия» — и насколько однозначен этот ответ?",
+      "cta": "Читать в нашем проекте Milovi School → [verified article URL before scheduling]"
+    },
+    {
+      "candidate_id": "school-read-011",
+      "source_slug": "recipe-gateau-basque",
+      "source_evidence_commit": "f1b0fec4fda7ecb2a945deadcbb254b7a838b1cf",
+      "angle": "regional_identity",
+      "hook": "У баскского пирога нет одной-единственной начинки: крем или чёрная вишня — и оба варианта считают своими.",
+      "preview": "Gâteau basque показывает, как региональная еда живёт не одной канонической формулой, а несколькими локальными традициями. В Milovi School разбираем кремовую версию, вариант с чёрной вишней Itxassou и то, почему спор о «правильной» начинке здесь сам является частью культуры.",
+      "open_loop": "Нужен ли региональному десерту единственный канон, чтобы оставаться узнаваемым?",
+      "cta": "Читать в нашем проекте Milovi School → [verified article URL before scheduling]"
+    },
+    {
+      "candidate_id": "school-read-012",
+      "source_slug": "genin-ganache-craft",
+      "source_evidence_commit": "d17adf90a87f0cc3686939704e278da8ff48904b",
+      "angle": "person_and_craft",
+      "hook": "Жак Женен называет себя не просто шоколатье, а «fondeur en chocolat» — буквально человеком, который плавит и отливает шоколад.",
+      "preview": "В Milovi School есть большой материал о пути Жака Женина: от Сен-Дье и работы с La Maison du Chocolat до собственного подхода к ганашам, карамели и pâtes de fruits. Это история ремесла через одного человека, а не список рецептов.",
+      "open_loop": "Почему некоторые мастера сознательно выбирают более узкое слово для профессии, хотя бренд уже известен во всём мире?",
+      "cta": "Читать в нашем проекте Milovi School → [verified article URL before scheduling]"
+    }
+  ],
+  "selection_note": "These are editorial candidates only. Before a candidate enters an operational Telegram queue, verify the exact current Milovi School article URL and current article metadata at the pinned or reviewed source head, preserve the source evidence, and review the final Telegram preview for factual drift."
+}
