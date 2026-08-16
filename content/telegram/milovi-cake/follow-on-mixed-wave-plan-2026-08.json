@@ -1,0 +1,133 @@
+{
+  "schema_name": "video-channel-manager.milovi-follow-on-mixed-editorial-wave",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "status": "provider_inert_editorial_plan_only",
+  "execution_authorized": false,
+  "provider_mutation_allowed": false,
+  "becomes_operational_queue": false,
+  "purpose": "Plan the first post-launch mixed editorial wave after the ten-post Milovi Cake first screen, while keeping Milovi School as our separate project for interesting reading rather than a product rubric.",
+  "prerequisites": {
+    "bootstrap_queue_path": "content/telegram/milovi-cake/queues/bootstrap-first-screen-queue-2026-08.json",
+    "bootstrap_final_publication_id": "milovi-bootstrap-010",
+    "bootstrap_must_be_terminally_verified_before_this_wave": true,
+    "school_candidate_pool_path": "content/telegram/milovi-cake/school-interest-reading-candidates-2026-08.json",
+    "school_candidates_must_be_reverified_before_operational_promotion": true
+  },
+  "pacing": {
+    "planned_total_items": 12,
+    "planned_cake_items": 9,
+    "planned_school_items": 3,
+    "school_share": "1 in 4",
+    "school_positions": [3, 7, 11],
+    "school_posts_may_not_be_consecutive": true,
+    "cake_and_school_need_not_share_a_topic": true,
+    "default_daylight_cadence_if_later_approved": "up to two total posts per day inside the existing Europe/Moscow public window",
+    "dates_frozen_now": false
+  },
+  "cross_brand_boundary": {
+    "school_is_product_rubric": false,
+    "school_is_our_separate_interest_reading_project": true,
+    "school_article_may_describe_milovi_cake_production": false,
+    "school_article_may_be_used_as_evidence_of_milovi_cake_recipe_or_technique": false,
+    "forced_product_cta_in_school_post": false,
+    "adjacent_cake_post_may_imply_school_article_explains_its_production": false
+  },
+  "items": [
+    {
+      "position": 1,
+      "brand_stream": "milovi-cake",
+      "content_role": "finished_work_visual",
+      "state": "cake_copy_and_exact_media_not_yet_frozen",
+      "source_requirement": "verified Milovi Cake finished-work source only"
+    },
+    {
+      "position": 2,
+      "brand_stream": "milovi-cake",
+      "content_role": "customer_guidance",
+      "state": "cake_copy_not_yet_frozen",
+      "source_requirement": "practical guidance supported by Milovi Cake sources; no invented price, availability, delivery or production claims"
+    },
+    {
+      "position": 3,
+      "brand_stream": "milovi-school",
+      "content_role": "interest_reading",
+      "school_candidate_id": "school-read-002",
+      "source_slug": "laduree-1862",
+      "story_angle": "business_history_with_turns",
+      "state": "selected_from_verified_candidate_pool_not_yet_operationally_frozen",
+      "product_cta_allowed": false
+    },
+    {
+      "position": 4,
+      "brand_stream": "milovi-cake",
+      "content_role": "finished_work_visual",
+      "state": "cake_copy_and_exact_media_not_yet_frozen",
+      "source_requirement": "verified Milovi Cake finished-work source only"
+    },
+    {
+      "position": 5,
+      "brand_stream": "milovi-cake",
+      "content_role": "verified_social_proof",
+      "state": "cake_copy_not_yet_frozen",
+      "source_requirement": "exact published Milovi Cake review or other exact social proof with immutable source evidence"
+    },
+    {
+      "position": 6,
+      "brand_stream": "milovi-cake",
+      "content_role": "selection_or_format_guidance",
+      "state": "cake_copy_not_yet_frozen",
+      "source_requirement": "customer-useful comparison grounded in documented Milovi Cake formats"
+    },
+    {
+      "position": 7,
+      "brand_stream": "milovi-school",
+      "content_role": "interest_reading",
+      "school_candidate_id": "school-read-006",
+      "source_slug": "paris-brest-race-dessert",
+      "story_angle": "sport_created_dessert",
+      "state": "selected_from_verified_candidate_pool_not_yet_operationally_frozen",
+      "product_cta_allowed": false
+    },
+    {
+      "position": 8,
+      "brand_stream": "milovi-cake",
+      "content_role": "finished_work_visual",
+      "state": "cake_copy_and_exact_media_not_yet_frozen",
+      "source_requirement": "verified Milovi Cake finished-work source only"
+    },
+    {
+      "position": 9,
+      "brand_stream": "milovi-cake",
+      "content_role": "format_comparison_or_planning_help",
+      "state": "cake_copy_not_yet_frozen",
+      "source_requirement": "useful planning content supported by Milovi Cake sources"
+    },
+    {
+      "position": 10,
+      "brand_stream": "milovi-cake",
+      "content_role": "verified_social_proof_or_customer_faq",
+      "state": "cake_copy_not_yet_frozen",
+      "source_requirement": "exact review evidence or source-backed FAQ answer"
+    },
+    {
+      "position": 11,
+      "brand_stream": "milovi-school",
+      "content_role": "interest_reading",
+      "school_candidate_id": "school-read-003",
+      "source_slug": "careme-first-celebrity-chef",
+      "story_angle": "biography_rise",
+      "state": "selected_from_verified_candidate_pool_not_yet_operationally_frozen",
+      "product_cta_allowed": false
+    },
+    {
+      "position": 12,
+      "brand_stream": "milovi-cake",
+      "content_role": "finished_work_visual_or_channel_navigation",
+      "state": "cake_copy_not_yet_frozen",
+      "source_requirement": "verified Milovi Cake source; close the wave on the product brand rather than a School link"
+    }
+  ],
+  "promotion_rule": "This file is not a publishing queue. To promote it later, freeze every Cake copy/media identity, re-verify each selected School article URL and metadata, freeze exact School preview text and hashes, assign future daylight slots only after the bootstrap queue is terminally verified, and pass normal release/target/state authorization gates."
+}
