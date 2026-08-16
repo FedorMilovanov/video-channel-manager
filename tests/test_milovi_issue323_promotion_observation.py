@@ -6,6 +6,9 @@ from video_channel_manager.platforms.vk.milovi_issue323_promotion_observation im
     PromotionFieldObservation,
     PromotionObservationBatch,
     PromotionObservationEvidence,
+    PromotionObservedCopyState,
+    classify_clip_copy_observation,
+    classify_wall_copy_observation,
 )
 from video_channel_manager.platforms.vk.milovi_issue323_promotion_spec import (
     PromotionDecisionAction,
@@ -59,6 +62,7 @@ def _batch(*, projection_key: tuple[str, PromotionField] | None = None) -> Promo
     return PromotionObservationBatch(
         source_snapshot_id="issue323-reviewed-snapshot",
         wall_snapshot_sha256="sha256:wall-snapshot",
+        captured_at="2026-08-16T09:40:00+00:00",
         fields=fields,
     )
 
@@ -84,6 +88,37 @@ def test_arbitrary_manual_copy_is_valid_exact_observation_evidence() -> None:
     assert observed.text == value
     assert observed.sha256 == promotion_text_sha256(value)
     assert observed.processing_projection is False
+
+
+def test_manual_copy_classifies_as_unreviewed_exact_instead_of_error() -> None:
+    state = classify_clip_copy_observation(
+        current="operator-edited third state",
+        legacy="legacy exact",
+        promoted="promoted exact",
+        provider_item={"processing": 0, "converting": 0},
+    )
+
+    assert state is PromotionObservedCopyState.UNREVIEWED_EXACT
+    assert state.requires_review is True
+    assert state.processing_projection is False
+    assert classify_wall_copy_observation(
+        current="manual wall text",
+        legacy="legacy wall",
+        promoted="promoted wall",
+    ) is PromotionObservedCopyState.UNREVIEWED_EXACT
+
+
+def test_busy_unknown_copy_is_processing_projection_not_exact_manual_authority() -> None:
+    state = classify_clip_copy_observation(
+        current="provider projected unknown text",
+        legacy="L" * 120,
+        promoted="P" * 120,
+        provider_item={"processing": 1},
+    )
+
+    assert state is PromotionObservedCopyState.PROCESSING_UNREVIEWED_PROJECTION
+    assert state.requires_review is True
+    assert state.processing_projection is True
 
 
 def test_observation_requires_field_specific_exact_provider_evidence_kind() -> None:
@@ -136,6 +171,7 @@ def test_partial_observation_is_preserved_but_cannot_feed_batch_planner() -> Non
     batch = PromotionObservationBatch(
         source_snapshot_id="issue323-reviewed-snapshot",
         wall_snapshot_sha256="sha256:wall-snapshot",
+        captured_at="2026-08-16T09:40:00+00:00",
         fields=(_observation(ROLL_OUT_IDS[0], PromotionField.CLIP_DESCRIPTION),),
     )
 
@@ -151,6 +187,7 @@ def test_provider_identity_blocker_prevents_planner_conversion_even_with_24_fiel
     blocked = PromotionObservationBatch(
         source_snapshot_id=base.source_snapshot_id,
         wall_snapshot_sha256=base.wall_snapshot_sha256,
+        captured_at=base.captured_at,
         fields=base.fields,
         blockers=("source: exact wall identity unresolved",),
     )
@@ -171,6 +208,7 @@ def test_observation_digest_changes_with_manual_text_or_provider_identity() -> N
     second = PromotionObservationBatch(
         source_snapshot_id=first.source_snapshot_id,
         wall_snapshot_sha256=first.wall_snapshot_sha256,
+        captured_at=first.captured_at,
         fields=(changed_field, *first.fields[1:]),
     )
 
