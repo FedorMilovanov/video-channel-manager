@@ -61,23 +61,45 @@ def _photo_payload(profile, media_path: Path, media: bytes):
     )
 
 
-def _photo_result(payload, *, caption: str | None = None, photo: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+def _photo_result(
+    payload,
+    *,
+    caption: str | None = None,
+    photo: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     return {
         "ok": True,
         "result": {
             "message_id": 91,
             "chat": {"id": CHAT_ID, "username": "deep_info_life", "type": "channel"},
             "caption": payload.caption if caption is None else caption,
-            "photo": [{"file_id": "exact-provider-photo", "width": 100, "height": 100}] if photo is None else photo,
+            "photo": (
+                [{"file_id": "exact-provider-photo", "width": 100, "height": 100}]
+                if photo is None
+                else photo
+            ),
         },
     }
 
 
-def test_render_photo_payload_binds_exact_media_identity(tmp_path: Path) -> None:
+def _write_relative_media(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    media: bytes,
+) -> Path:
+    monkeypatch.chdir(tmp_path)
+    media_path = Path("proof.jpg")
+    media_path.write_bytes(media)
+    return media_path
+
+
+def test_render_photo_payload_binds_exact_media_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     profile = _profile()
     media = b"exact-jpeg-bytes-for-contract"
-    media_path = tmp_path / "proof.jpg"
-    media_path.write_bytes(media)
+    media_path = _write_relative_media(tmp_path, monkeypatch, media)
     payload = _photo_payload(profile, media_path, media)
 
     changed = render_photo_payload(
@@ -93,12 +115,14 @@ def test_render_photo_payload_binds_exact_media_identity(tmp_path: Path) -> None
     assert payload.media_sha256.endswith(hashlib.sha256(media).hexdigest())
 
 
-def test_send_photo_once_uses_single_multipart_mutation_with_exact_bytes(tmp_path: Path) -> None:
+def test_send_photo_once_uses_single_multipart_mutation_with_exact_bytes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     profile = _profile()
     target = _target(profile)
     media = b"exact-jpeg-bytes-for-send"
-    media_path = tmp_path / "proof.jpg"
-    media_path.write_bytes(media)
+    media_path = _write_relative_media(tmp_path, monkeypatch, media)
     payload = _photo_payload(profile, media_path, media)
     captured: list[httpx.Request] = []
 
@@ -122,12 +146,14 @@ def test_send_photo_once_uses_single_multipart_mutation_with_exact_bytes(tmp_pat
     assert receipt.provider_effect == "verified"
 
 
-def test_send_photo_once_rejects_local_media_drift_before_http(tmp_path: Path) -> None:
+def test_send_photo_once_rejects_local_media_drift_before_http(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     profile = _profile()
     target = _target(profile)
     reviewed = b"reviewed-media"
-    media_path = tmp_path / "proof.jpg"
-    media_path.write_bytes(reviewed)
+    media_path = _write_relative_media(tmp_path, monkeypatch, reviewed)
     payload = _photo_payload(profile, media_path, reviewed)
     media_path.write_bytes(b"mutated-media")
     calls = 0
@@ -143,12 +169,14 @@ def test_send_photo_once_rejects_local_media_drift_before_http(tmp_path: Path) -
     assert calls == 0
 
 
-def test_send_photo_once_marks_returned_caption_drift_as_ambiguous(tmp_path: Path) -> None:
+def test_send_photo_once_marks_returned_caption_drift_as_ambiguous(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     profile = _profile()
     target = _target(profile)
     media = b"media"
-    media_path = tmp_path / "proof.jpg"
-    media_path.write_bytes(media)
+    media_path = _write_relative_media(tmp_path, monkeypatch, media)
     payload = _photo_payload(profile, media_path, media)
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -160,12 +188,14 @@ def test_send_photo_once_marks_returned_caption_drift_as_ambiguous(tmp_path: Pat
     assert exc_info.value.provider_effect == "may_exist"
 
 
-def test_send_photo_once_marks_missing_photo_echo_as_ambiguous(tmp_path: Path) -> None:
+def test_send_photo_once_marks_missing_photo_echo_as_ambiguous(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     profile = _profile()
     target = _target(profile)
     media = b"media"
-    media_path = tmp_path / "proof.jpg"
-    media_path.write_bytes(media)
+    media_path = _write_relative_media(tmp_path, monkeypatch, media)
     payload = _photo_payload(profile, media_path, media)
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -177,19 +207,25 @@ def test_send_photo_once_marks_missing_photo_echo_as_ambiguous(tmp_path: Path) -
     assert exc_info.value.provider_effect == "may_exist"
 
 
-def test_send_photo_once_does_not_retry_telegram_5xx(tmp_path: Path) -> None:
+def test_send_photo_once_does_not_retry_telegram_5xx(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     profile = _profile()
     target = _target(profile)
     media = b"media"
-    media_path = tmp_path / "proof.jpg"
-    media_path.write_bytes(media)
+    media_path = _write_relative_media(tmp_path, monkeypatch, media)
     payload = _photo_payload(profile, media_path, media)
     calls = 0
 
     def handler(request: httpx.Request) -> httpx.Response:
         nonlocal calls
         calls += 1
-        return httpx.Response(503, json={"ok": False, "error_code": 503, "description": "upstream"}, request=request)
+        return httpx.Response(
+            503,
+            json={"ok": False, "error_code": 503, "description": "upstream"},
+            request=request,
+        )
 
     with httpx.Client(transport=httpx.MockTransport(handler)) as client:
         with pytest.raises(TelegramApiError) as exc_info:
@@ -211,7 +247,15 @@ def test_preflight_uses_exact_get_chat_member_for_configured_bot() -> None:
             body = {"ok": True, "result": {"id": BOT_ID, "is_bot": True, "username": BOT_USERNAME}}
         elif method == "getChat":
             assert payload["chat_id"] in {CHAT_ID, "@deep_info_life"}
-            body = {"ok": True, "result": {"id": CHAT_ID, "username": "deep_info_life", "title": "СВОДКА", "type": "channel"}}
+            body = {
+                "ok": True,
+                "result": {
+                    "id": CHAT_ID,
+                    "username": "deep_info_life",
+                    "title": "СВОДКА",
+                    "type": "channel",
+                },
+            }
         elif method == "getChatMember":
             assert payload == {"chat_id": CHAT_ID, "user_id": BOT_ID}
             body = {
@@ -251,7 +295,15 @@ def test_preflight_rejects_get_chat_member_identity_drift() -> None:
         if method == "getMe":
             body = {"ok": True, "result": {"id": BOT_ID, "is_bot": True, "username": BOT_USERNAME}}
         elif method == "getChat":
-            body = {"ok": True, "result": {"id": CHAT_ID, "username": "deep_info_life", "title": "СВОДКА", "type": "channel"}}
+            body = {
+                "ok": True,
+                "result": {
+                    "id": CHAT_ID,
+                    "username": "deep_info_life",
+                    "title": "СВОДКА",
+                    "type": "channel",
+                },
+            }
         else:
             body = {
                 "ok": True,
