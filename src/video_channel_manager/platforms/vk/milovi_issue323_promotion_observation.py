@@ -216,7 +216,25 @@ class PromotionObservationBatch:
 
     @property
     def digest(self) -> str:
+        """Volatile capture-evidence digest, including capture time and wall snapshot identity."""
+
         canonical = json.dumps(self.as_dict(), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        return f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
+
+    @property
+    def provider_state_digest(self) -> str:
+        """Stable exact target-state digest for two-step confirmation across fresh read-only probes."""
+
+        payload = {
+            "schema_name": "video-manager.milovi-issue-323-promotion-provider-state",
+            "schema_version": 1,
+            "source_snapshot_id": self.source_snapshot_id,
+            "complete": self.complete,
+            "reviewable": self.reviewable,
+            "fields": [item.as_dict() for item in self.ordered_fields()],
+            "blockers": list(self.blockers),
+        }
+        canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         return f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
 
 
