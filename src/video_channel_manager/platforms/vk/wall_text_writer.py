@@ -39,9 +39,7 @@ def _exact_snapshot_post(snapshot: VkWallSnapshot, expected: VkWallPostFingerpri
     if not snapshot.complete:
         raise VkWriteError("VK wall snapshot is incomplete", method="wall.get")
     matches = tuple(
-        post
-        for post in snapshot.posts
-        if post.remote_id == expected.remote_id and post.surface is expected.surface
+        post for post in snapshot.posts if post.remote_id == expected.remote_id and post.surface is expected.surface
     )
     if len(matches) != 1:
         raise VkWriteError(
