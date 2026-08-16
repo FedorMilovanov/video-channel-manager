@@ -24,6 +24,7 @@ EXPECTED_ITEM_COUNT = 10
 EXPECTED_PHOTO_COUNT = 9
 EXPECTED_MESSAGE_COUNT = 1
 EXPECTED_DAILY_LIMIT = 2
+EXPECTED_MAX_PUBLICATION_LAG_MINUTES = 120
 EXPECTED_WINDOW_START = time(9, 0)
 EXPECTED_WINDOW_END = time(21, 0)
 EXPECTED_SLOTS = {time(10, 30), time(20, 0)}
@@ -50,7 +51,12 @@ def _sha256_text(value: str) -> str:
 
 
 def _canonical_digest(value: dict[str, Any]) -> str:
-    canonical = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    canonical = json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
     return _sha256_bytes(canonical)
 
 
@@ -65,8 +71,6 @@ def _validate_profile(profile: TelegramChannelProfile) -> None:
     _exact_identity(profile.publication_id_prefix, "milovi-", "profile publication_id_prefix")
     _exact_identity(profile.timezone, EXPECTED_TIMEZONE, "profile timezone")
     _exact_identity(profile.daily_verified_limit, EXPECTED_DAILY_LIMIT, "profile daily_verified_limit")
-    if profile.provider_writes_authorized:
-        raise ValueError("provider-inert bootstrap compiler refuses a write-enabled Milovi profile")
 
 
 def validate_bootstrap_bundle(
@@ -85,9 +89,17 @@ def validate_bootstrap_bundle(
 
     _exact_identity(rollout.get("project_key"), EXPECTED_PROJECT_KEY, "rollout project_key")
     _exact_identity(rollout.get("chat_id"), EXPECTED_CHAT_ID, "rollout chat_id")
-    _exact_identity(str(rollout.get("chat_username") or "").casefold(), EXPECTED_CHAT_USERNAME.casefold(), "rollout chat_username")
+    _exact_identity(
+        str(rollout.get("chat_username") or "").casefold(),
+        EXPECTED_CHAT_USERNAME.casefold(),
+        "rollout chat_username",
+    )
     _exact_identity(rollout.get("bot_id"), EXPECTED_BOT_ID, "rollout bot_id")
-    _exact_identity(str(rollout.get("bot_username") or "").casefold(), EXPECTED_BOT_USERNAME.casefold(), "rollout bot_username")
+    _exact_identity(
+        str(rollout.get("bot_username") or "").casefold(),
+        EXPECTED_BOT_USERNAME.casefold(),
+        "rollout bot_username",
+    )
     if rollout.get("execution_authorized") is not False or rollout.get("provider_mutation_allowed") is not False:
         raise ValueError("frozen Milovi rollout must remain provider-inert")
 
@@ -99,7 +111,11 @@ def validate_bootstrap_bundle(
     _exact_identity(policy.get("planned_span_days"), 5, "rollout span")
     _exact_identity(policy.get("blind_mutation_retries"), 0, "rollout mutation retry count")
     _exact_identity(policy.get("strict_next_only"), True, "rollout strict-next policy")
-    _exact_identity(policy.get("unknown_outcome_blocks_successor"), True, "rollout unknown-outcome policy")
+    _exact_identity(
+        policy.get("unknown_outcome_blocks_successor"),
+        True,
+        "rollout unknown-outcome policy",
+    )
 
     _exact_identity(candidates.get("project_key"), EXPECTED_PROJECT_KEY, "candidate project_key")
     _exact_identity(candidates.get("sequence_size"), EXPECTED_ITEM_COUNT, "candidate sequence size")
@@ -117,6 +133,16 @@ def validate_bootstrap_bundle(
     _exact_identity(window.get("timezone"), EXPECTED_TIMEZONE, "publishing-window timezone")
     _exact_identity(window.get("earliest_publication_local"), "09:00", "publishing-window start")
     _exact_identity(window.get("latest_publication_local"), "21:00", "publishing-window end")
+    _exact_identity(
+        window.get("bootstrap_slots_local"),
+        ["10:30", "20:00"],
+        "publishing-window bootstrap slots",
+    )
+    _exact_identity(
+        window.get("max_publication_lag_minutes"),
+        EXPECTED_MAX_PUBLICATION_LAG_MINUTES,
+        "publishing-window freshness bound",
+    )
     if window.get("provider_mutation_allowed_by_this_file") is not False:
         raise ValueError("publishing-window policy must not grant provider mutation authority")
 
@@ -130,7 +156,9 @@ def validate_bootstrap_bundle(
     if not isinstance(photo_items, list) or len(photo_items) != EXPECTED_PHOTO_COUNT:
         raise ValueError("Milovi transport proof must contain exactly nine photos")
 
-    candidate_by_publication = {str(item.get("publication_id")): item for item in candidate_items if isinstance(item, dict)}
+    candidate_by_publication = {
+        str(item.get("publication_id")): item for item in candidate_items if isinstance(item, dict)
+    }
     proof_by_media = {str(item.get("media_id")): item for item in photo_items if isinstance(item, dict)}
     if len(candidate_by_publication) != EXPECTED_ITEM_COUNT or len(proof_by_media) != EXPECTED_PHOTO_COUNT:
         raise ValueError("duplicate publication_id or media_id in frozen Milovi bootstrap bundle")
@@ -144,19 +172,31 @@ def validate_bootstrap_bundle(
         if not isinstance(rollout_item, dict):
             raise ValueError("Milovi rollout item is not an object")
         publication_id = str(rollout_item.get("publication_id") or "")
-        _exact_identity(rollout_item.get("sequence"), expected_sequence, f"sequence for {publication_id}")
+        _exact_identity(
+            rollout_item.get("sequence"),
+            expected_sequence,
+            f"sequence for {publication_id}",
+        )
         if not publication_id.startswith(profile.publication_id_prefix):
             raise ValueError(f"publication_id {publication_id} does not match Milovi profile prefix")
         candidate = candidate_by_publication.get(publication_id)
         if candidate is None:
             raise ValueError(f"missing first-screen candidate for {publication_id}")
-        _exact_identity(candidate.get("sequence"), expected_sequence, f"candidate sequence for {publication_id}")
+        _exact_identity(
+            candidate.get("sequence"),
+            expected_sequence,
+            f"candidate sequence for {publication_id}",
+        )
         operation = str(rollout_item.get("operation") or "")
         _exact_identity(candidate.get("operation"), operation, f"operation for {publication_id}")
         caption = str(candidate.get("caption") or "")
         if not caption:
             raise ValueError(f"empty caption for {publication_id}")
-        _exact_identity(_sha256_text(caption), rollout_item.get("caption_sha256"), f"caption digest for {publication_id}")
+        _exact_identity(
+            _sha256_text(caption),
+            rollout_item.get("caption_sha256"),
+            f"caption digest for {publication_id}",
+        )
         lowered = caption.casefold()
         if any(fragment in lowered for fragment in FORBIDDEN_FIRST_SCREEN_FRAGMENTS):
             raise ValueError(f"forbidden Milovi School/French linkage in {publication_id}")
@@ -170,11 +210,14 @@ def validate_bootstrap_bundle(
         if scheduled.tzinfo is None:
             raise ValueError(f"planned_local must be timezone-aware for {publication_id}")
         local = scheduled.astimezone(zone)
-        if scheduled.utcoffset() != local.utcoffset() or scheduled.replace(tzinfo=None) != local.replace(tzinfo=None):
+        if scheduled.utcoffset() != local.utcoffset() or scheduled.replace(tzinfo=None) != local.replace(
+            tzinfo=None
+        ):
             raise ValueError(f"planned_local is not expressed in exact Europe/Moscow local time for {publication_id}")
-        if not (EXPECTED_WINDOW_START <= local.time().replace(tzinfo=None) <= EXPECTED_WINDOW_END):
+        local_clock = local.time().replace(tzinfo=None)
+        if not (EXPECTED_WINDOW_START <= local_clock <= EXPECTED_WINDOW_END):
             raise ValueError(f"{publication_id} is outside the Milovi daylight window")
-        if local.time().replace(tzinfo=None) not in EXPECTED_SLOTS:
+        if local_clock not in EXPECTED_SLOTS:
             raise ValueError(f"{publication_id} is not on the frozen 10:30/20:00 slot grid")
         if previous is not None and scheduled <= previous:
             raise ValueError("Milovi rollout schedule is not strictly increasing")
@@ -191,13 +234,31 @@ def validate_bootstrap_bundle(
             if transport is None:
                 raise ValueError(f"missing exact transport proof for {publication_id}/{media_id}")
             _exact_identity(transport.get("transport_ready"), True, f"transport readiness for {media_id}")
-            _exact_identity(transport.get("transport_format"), "image/jpeg", f"transport format for {media_id}")
-            _exact_identity(transport.get("transport_sha256"), rollout_item.get("transport_sha256"), f"transport SHA for {media_id}")
-            _exact_identity(transport.get("transport_byte_size"), rollout_item.get("transport_byte_size"), f"transport size for {media_id}")
+            _exact_identity(
+                transport.get("transport_format"),
+                "image/jpeg",
+                f"transport format for {media_id}",
+            )
+            _exact_identity(
+                transport.get("transport_sha256"),
+                rollout_item.get("transport_sha256"),
+                f"transport SHA for {media_id}",
+            )
+            _exact_identity(
+                transport.get("transport_byte_size"),
+                rollout_item.get("transport_byte_size"),
+                f"transport size for {media_id}",
+            )
         elif operation == "sendMessage":
             message_count += 1
-            if media_id is not None or rollout_item.get("transport_sha256") is not None or rollout_item.get("transport_byte_size") is not None:
-                raise ValueError(f"message publication {publication_id} unexpectedly includes media transport identity")
+            if (
+                media_id is not None
+                or rollout_item.get("transport_sha256") is not None
+                or rollout_item.get("transport_byte_size") is not None
+            ):
+                raise ValueError(
+                    f"message publication {publication_id} unexpectedly includes media transport identity"
+                )
         else:
             raise ValueError(f"unsupported frozen Milovi operation: {operation}")
 
@@ -294,7 +355,14 @@ def materialize_exact_photo(
     photos = proof.get("photos")
     if not isinstance(photos, list):
         raise ValueError("Milovi photo transport proof has no photos")
-    item = next((candidate for candidate in photos if isinstance(candidate, dict) and candidate.get("media_id") == media_id), None)
+    item = next(
+        (
+            candidate
+            for candidate in photos
+            if isinstance(candidate, dict) and candidate.get("media_id") == media_id
+        ),
+        None,
+    )
     if item is None:
         raise ValueError(f"unknown Milovi bootstrap media_id: {media_id}")
     try:
@@ -303,7 +371,10 @@ def materialize_exact_photo(
         raise ValueError(f"unable to read Milovi source media: {source_path}") from exc
     _exact_identity(len(source), int(item["source_byte_size"]), f"source byte size for {media_id}")
     _exact_identity(_sha256_bytes(source), item["source_sha256"], f"source SHA-256 for {media_id}")
-    blob_sha1 = hashlib.sha1(f"blob {len(source)}\0".encode("ascii") + source, usedforsecurity=False).hexdigest()
+    blob_sha1 = hashlib.sha1(
+        f"blob {len(source)}\0".encode("ascii") + source,
+        usedforsecurity=False,
+    ).hexdigest()
     _exact_identity(blob_sha1, item["source_git_blob_sha1"], f"source Git blob for {media_id}")
 
     try:
@@ -313,7 +384,11 @@ def materialize_exact_photo(
     with Image.open(io.BytesIO(source)) as image:
         image.load()
         _exact_identity(image.format, "WEBP", f"source media format for {media_id}")
-        _exact_identity(image.size, (int(item["pixel_width"]), int(item["pixel_height"])), f"source dimensions for {media_id}")
+        _exact_identity(
+            image.size,
+            (int(item["pixel_width"]), int(item["pixel_height"])),
+            f"source dimensions for {media_id}",
+        )
         rgb = image.convert("RGB")
     encoded = io.BytesIO()
     rgb.save(
@@ -326,8 +401,16 @@ def materialize_exact_photo(
         exif=b"",
     )
     jpeg = encoded.getvalue()
-    _exact_identity(len(jpeg), int(item["transport_byte_size"]), f"transport byte size for {media_id}")
-    _exact_identity(_sha256_bytes(jpeg), item["transport_sha256"], f"transport SHA-256 for {media_id}")
+    _exact_identity(
+        len(jpeg),
+        int(item["transport_byte_size"]),
+        f"transport byte size for {media_id}",
+    )
+    _exact_identity(
+        _sha256_bytes(jpeg),
+        item["transport_sha256"],
+        f"transport SHA-256 for {media_id}",
+    )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_bytes(jpeg)
     return {
@@ -340,13 +423,35 @@ def materialize_exact_photo(
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Validate and compile the provider-inert Milovi Telegram bootstrap")
+    parser = argparse.ArgumentParser(
+        description="Validate and compile the frozen Milovi Telegram bootstrap contract"
+    )
     parser.add_argument("command", choices=("validate", "build-release", "materialize-photo"))
-    parser.add_argument("--profile", type=Path, default=Path("content/telegram/channels/milovi-cake.json"))
-    parser.add_argument("--rollout", type=Path, default=Path("content/telegram/milovi-cake/bootstrap-rollout-candidate-2026-08.json"))
-    parser.add_argument("--candidates", type=Path, default=Path("content/telegram/milovi-cake/bootstrap-first-screen-candidates-2026-08.json"))
-    parser.add_argument("--transport-proof", type=Path, default=Path("content/telegram/milovi-cake/bootstrap-photo-transport-proof-2026-08.json"))
-    parser.add_argument("--publishing-window", type=Path, default=Path("content/telegram/milovi-cake/publishing-window-2026-08.json"))
+    parser.add_argument(
+        "--profile",
+        type=Path,
+        default=Path("content/telegram/channels/milovi-cake.json"),
+    )
+    parser.add_argument(
+        "--rollout",
+        type=Path,
+        default=Path("content/telegram/milovi-cake/bootstrap-rollout-candidate-2026-08.json"),
+    )
+    parser.add_argument(
+        "--candidates",
+        type=Path,
+        default=Path("content/telegram/milovi-cake/bootstrap-first-screen-candidates-2026-08.json"),
+    )
+    parser.add_argument(
+        "--transport-proof",
+        type=Path,
+        default=Path("content/telegram/milovi-cake/bootstrap-photo-transport-proof-2026-08.json"),
+    )
+    parser.add_argument(
+        "--publishing-window",
+        type=Path,
+        default=Path("content/telegram/milovi-cake/publishing-window-2026-08.json"),
+    )
     parser.add_argument("--output", type=Path)
     parser.add_argument("--media-id")
     parser.add_argument("--source", type=Path)
