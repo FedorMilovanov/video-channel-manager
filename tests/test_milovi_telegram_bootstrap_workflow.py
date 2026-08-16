@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/milovi-telegram-bootstrap-publisher.yml"
 MEDIA_PROOF_WORKFLOW = ROOT / ".github/workflows/milovi-telegram-bootstrap-media-proof.yml"
 PROFILE = ROOT / "content/telegram/channels/milovi-cake.json"
+TARGET_BINDING = ROOT / "content/telegram/channels/milovi-cake-target-binding.json"
 AUTHORIZED_RELEASE = ROOT / "content/telegram/milovi-cake/bootstrap-authorized-release-2026-08.json"
 
 
@@ -27,7 +28,18 @@ def test_activation_gate_precedes_any_telegram_secret_or_provider_access() -> No
     assert activation < first_preflight
     assert "profile_write_gate_disabled" in text
     assert "authorized_release_missing" in text
+    assert "target_binding_missing" in text
     assert "outside_09_00_21_00_moscow_window" in text
+
+
+def test_authorization_requires_real_pinned_target_binding_digest() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+    assert "BINDING_PATH: content/telegram/channels/milovi-cake-target-binding.json" in text
+    assert "load_target_binding" in text
+    assert "authorized.target_binding_sha256 != binding.digest" in text
+    assert "authorized.chat_id != binding.chat_id" in text
+    assert "authorized.bot_id != binding.bot_id" in text
+    assert "authorized_release_target_binding_drift" in text
 
 
 def test_current_main_quality_proofs_run_before_state_or_telegram_access() -> None:
@@ -75,9 +87,10 @@ def test_scheduler_persists_no_catch_up_and_intent_barriers_before_send() -> Non
     assert "blind replay is blocked" in text
 
 
-def test_current_branch_remains_provider_inert_without_authorized_release() -> None:
+def test_current_branch_remains_provider_inert_without_binding_or_authorized_release() -> None:
     profile = PROFILE.read_text(encoding="utf-8")
     assert '"provider_writes_authorized": false' in profile
+    assert not TARGET_BINDING.exists()
     assert not AUTHORIZED_RELEASE.exists()
 
 
