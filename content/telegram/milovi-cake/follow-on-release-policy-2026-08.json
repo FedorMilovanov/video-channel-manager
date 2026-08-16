@@ -1,0 +1,43 @@
+{
+  "schema_name": "video-channel-manager.milovi-follow-on-release-policy",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "status": "provider_inert_release_compiler_policy",
+  "release_id": "milovi-follow-on-2026-08",
+  "timezone": "Europe/Moscow",
+  "daily_verified_limit": 2,
+  "allowed_slots_local": ["10:30", "20:00"],
+  "public_window_local": {
+    "start": "09:00",
+    "end": "21:00"
+  },
+  "strict_next_only": true,
+  "no_catch_up": true,
+  "first_slot_must_be_strictly_after_anchor": true,
+  "anchor_is_max_of": [
+    "compile_now",
+    "bootstrap_final_verified_at",
+    "source_revalidated_at"
+  ],
+  "required_bootstrap_final_publication_id": "milovi-bootstrap-010",
+  "required_bootstrap_terminal_status": "verified",
+  "readiness_receipt_max_age_minutes": 60,
+  "readiness_receipt_future_clock_skew_minutes": 5,
+  "candidate_path": "content/telegram/milovi-cake/follow-on-wave-candidates-2026-08.json",
+  "transport_manifest_path": "content/telegram/milovi-cake/follow-on-photo-source-manifest-2026-08.json",
+  "required_revalidation_publication_ids": [
+    "milovi-follow-on-002",
+    "milovi-follow-on-003",
+    "milovi-follow-on-004",
+    "milovi-follow-on-006",
+    "milovi-follow-on-007",
+    "milovi-follow-on-009",
+    "milovi-follow-on-011"
+  ],
+  "target_binding_required_to_compile_candidate": false,
+  "release_authorized": false,
+  "execution_authorized": false,
+  "provider_mutation_allowed": false,
+  "compiler_may_access_telegram_provider": false
+}
