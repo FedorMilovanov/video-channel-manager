@@ -2,6 +2,19 @@ name: Milovi Telegram follow-on readiness
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/milovi-telegram-follow-on-readiness.yml"
+      - "src/video_channel_manager/milovi_telegram_follow_on.py"
+      - "src/video_channel_manager/milovi_telegram_follow_on_readiness.py"
+      - "content/telegram/channels/milovi-cake.json"
+      - "content/telegram/milovi-cake/bootstrap-authorized-release-2026-08.json"
+      - "content/telegram/milovi-cake/follow-on-wave-candidates-2026-08.json"
+      - "content/telegram/milovi-cake/follow-on-photo-source-manifest-2026-08.json"
+      - "content/telegram/milovi-cake/follow-on-release-policy-2026-08.json"
+      - "content/telegram/milovi-cake/school-interest-reading-candidates-2026-08.json"
 
 permissions:
   contents: read
