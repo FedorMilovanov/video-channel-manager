@@ -26,7 +26,7 @@ from video_channel_manager.platforms.vk.milovi_issue323_promotion_spec import (
 from video_channel_manager.platforms.vk.milovi_rollout_sources import ROLL_OUT_IDS
 
 PROMOTION_JOURNAL_SCHEMA = "video-manager.milovi-issue-323-promotion-journal"
-PROMOTION_JOURNAL_VERSION = 2
+PROMOTION_JOURNAL_VERSION = 3
 
 _ALLOWED_TRANSITIONS: Mapping[PromotionDispatchStatus, frozenset[PromotionDispatchStatus]] = {
     PromotionDispatchStatus.PENDING: frozenset({PromotionDispatchStatus.EDIT_INTENT}),
@@ -78,6 +78,7 @@ class PromotionJournalOperation:
     status: PromotionDispatchStatus
     dispatch_started: bool = False
     intent_preflight_digest: str | None = None
+    intent_confirmation_digest: str | None = None
     intent_remote_id: str | None = None
 
     def __post_init__(self) -> None:
@@ -88,18 +89,31 @@ class PromotionJournalOperation:
             dispatch_started=self.dispatch_started,
         )
         if self.status is PromotionDispatchStatus.PENDING:
-            if self.intent_preflight_digest is not None or self.intent_remote_id is not None:
+            if (
+                self.intent_preflight_digest is not None
+                or self.intent_confirmation_digest is not None
+                or self.intent_remote_id is not None
+            ):
                 raise ValueError(
                     f"Pending promotion operation must not retain intent binding: {self.source_id}:{self.field.value}"
                 )
             return
-        if self.intent_preflight_digest is None or self.intent_remote_id is None:
+        if (
+            self.intent_preflight_digest is None
+            or self.intent_confirmation_digest is None
+            or self.intent_remote_id is None
+        ):
             raise ValueError(
-                f"Non-pending promotion operation requires exact intent binding: {self.source_id}:{self.field.value}"
+                f"Non-pending promotion operation requires exact confirmed intent binding: "
+                f"{self.source_id}:{self.field.value}"
             )
         _require_digest(
             self.intent_preflight_digest,
             label=f"Promotion intent preflight digest {self.source_id}:{self.field.value}",
+        )
+        _require_digest(
+            self.intent_confirmation_digest,
+            label=f"Promotion intent confirmation digest {self.source_id}:{self.field.value}",
         )
         _require_remote_id(
             self.intent_remote_id,
@@ -121,6 +135,7 @@ class PromotionJournalOperation:
             "status": self.status.value,
             "dispatch_started": self.dispatch_started,
             "intent_preflight_digest": self.intent_preflight_digest,
+            "intent_confirmation_digest": self.intent_confirmation_digest,
             "intent_remote_id": self.intent_remote_id,
         }
 
@@ -253,6 +268,7 @@ def _transition_operation(
     field: PromotionField,
     target: PromotionDispatchStatus,
     intent_preflight_digest: str | None = None,
+    intent_confirmation_digest: str | None = None,
     intent_remote_id: str | None = None,
 ) -> PromotionJournal:
     current = _operation(journal, source_id, field)
@@ -278,6 +294,7 @@ def _transition_operation(
                 PromotionDispatchStatus.VERIFIED,
             },
             intent_preflight_digest=intent_preflight_digest or current.intent_preflight_digest,
+            intent_confirmation_digest=intent_confirmation_digest or current.intent_confirmation_digest,
             intent_remote_id=intent_remote_id or current.intent_remote_id,
         )
     return _replace_operation(journal, replacement)
@@ -290,7 +307,7 @@ def record_promotion_edit_intent(
     source_id: str,
     field: PromotionField,
 ) -> PromotionJournal:
-    """Persist exact intent before any provider edit boundary."""
+    """Persist exact operator-confirmed intent before any provider edit boundary."""
 
     if journal.spec_digest != preflight.spec_digest:
         raise ValueError("Promotion preflight is bound to a different reviewed PromotionSpec")
@@ -313,6 +330,7 @@ def record_promotion_edit_intent(
         field=field,
         target=PromotionDispatchStatus.EDIT_INTENT,
         intent_preflight_digest=preflight.digest,
+        intent_confirmation_digest=preflight.confirmation_digest,
         intent_remote_id=first.remote_id,
     )
 
@@ -331,6 +349,8 @@ def record_promotion_dispatch_started(
         raise RuntimeError(f"Promotion dispatch cannot start from {current.status.value}")
     if current.intent_preflight_digest != preflight_digest:
         raise ValueError("Promotion dispatch preflight digest differs from persisted intent")
+    if current.intent_confirmation_digest is None:
+        raise ValueError("Promotion dispatch has no durable operator confirmation digest")
     return _transition_operation(
         journal,
         source_id=source_id,
@@ -499,6 +519,7 @@ def promotion_journal_from_mapping(payload: Mapping[str, object]) -> PromotionJo
         "status",
         "dispatch_started",
         "intent_preflight_digest",
+        "intent_confirmation_digest",
         "intent_remote_id",
     }
     for index, raw in enumerate(raw_operations):
@@ -510,6 +531,7 @@ def promotion_journal_from_mapping(payload: Mapping[str, object]) -> PromotionJo
         status = raw.get("status")
         dispatch_started = raw.get("dispatch_started")
         intent_preflight_digest = raw.get("intent_preflight_digest")
+        intent_confirmation_digest = raw.get("intent_confirmation_digest")
         intent_remote_id = raw.get("intent_remote_id")
         if not isinstance(source_id, str):
             raise ValueError(f"Promotion journal operation {index} source_id must be a string")
@@ -521,6 +543,10 @@ def promotion_journal_from_mapping(payload: Mapping[str, object]) -> PromotionJo
             raise ValueError(f"Promotion journal operation {index} dispatch_started must be a boolean")
         if intent_preflight_digest is not None and not isinstance(intent_preflight_digest, str):
             raise ValueError(f"Promotion journal operation {index} intent_preflight_digest must be a string or null")
+        if intent_confirmation_digest is not None and not isinstance(intent_confirmation_digest, str):
+            raise ValueError(
+                f"Promotion journal operation {index} intent_confirmation_digest must be a string or null"
+            )
         if intent_remote_id is not None and not isinstance(intent_remote_id, str):
             raise ValueError(f"Promotion journal operation {index} intent_remote_id must be a string or null")
         try:
@@ -535,6 +561,7 @@ def promotion_journal_from_mapping(payload: Mapping[str, object]) -> PromotionJo
                 status=parsed_status,
                 dispatch_started=dispatch_started,
                 intent_preflight_digest=intent_preflight_digest,
+                intent_confirmation_digest=intent_confirmation_digest,
                 intent_remote_id=intent_remote_id,
             )
         )
