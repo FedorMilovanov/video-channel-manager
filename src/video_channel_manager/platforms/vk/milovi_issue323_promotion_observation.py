@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -14,11 +15,84 @@ from video_channel_manager.platforms.vk.milovi_rollout_sources import ROLL_OUT_I
 
 PROMOTION_OBSERVATION_SCHEMA = "video-manager.milovi-issue-323-promotion-observation"
 PROMOTION_OBSERVATION_VERSION = 1
+_MIN_PROCESSING_COPY_PREFIX = 80
 
 
 class PromotionObservationEvidence(StrEnum):
     EXACT_CLIP_READ = "exact_clip_read"
     EXACT_WALL_INCARNATION = "exact_wall_incarnation"
+
+
+class PromotionObservedCopyState(StrEnum):
+    LEGACY = "legacy"
+    PROMOTED = "promoted"
+    UNREVIEWED_EXACT = "unreviewed_exact"
+    PROCESSING_LEGACY_PROJECTION = "provider_processing_legacy_projection"
+    PROCESSING_PROMOTED_PROJECTION = "provider_processing_promoted_projection"
+    PROCESSING_UNREVIEWED_PROJECTION = "provider_processing_unreviewed_projection"
+
+    @property
+    def requires_review(self) -> bool:
+        return self not in {PromotionObservedCopyState.LEGACY, PromotionObservedCopyState.PROMOTED}
+
+    @property
+    def processing_projection(self) -> bool:
+        return self in {
+            PromotionObservedCopyState.PROCESSING_LEGACY_PROJECTION,
+            PromotionObservedCopyState.PROCESSING_PROMOTED_PROJECTION,
+            PromotionObservedCopyState.PROCESSING_UNREVIEWED_PROJECTION,
+        }
+
+
+def _processing_copy_prefix(current: str) -> str | None:
+    value = current.strip()
+    if value.endswith("…"):
+        prefix = value[:-1].rstrip()
+    else:
+        trailing_dots = len(value) - len(value.rstrip("."))
+        if trailing_dots < 2:
+            return None
+        prefix = value[:-trailing_dots].rstrip()
+    if len(prefix) < _MIN_PROCESSING_COPY_PREFIX:
+        return None
+    return prefix
+
+
+def classify_clip_copy_observation(
+    *,
+    current: str,
+    legacy: str,
+    promoted: str,
+    provider_item: Mapping[str, object],
+) -> PromotionObservedCopyState:
+    """Classify public Clip copy for observation only; never grant mutation authority."""
+
+    if current == promoted:
+        return PromotionObservedCopyState.PROMOTED
+    if current == legacy:
+        return PromotionObservedCopyState.LEGACY
+
+    provider_busy = bool(provider_item.get("processing")) or bool(provider_item.get("converting"))
+    if not provider_busy:
+        return PromotionObservedCopyState.UNREVIEWED_EXACT
+
+    prefix = _processing_copy_prefix(current)
+    if prefix is not None:
+        if promoted.startswith(prefix):
+            return PromotionObservedCopyState.PROCESSING_PROMOTED_PROJECTION
+        if legacy.startswith(prefix):
+            return PromotionObservedCopyState.PROCESSING_LEGACY_PROJECTION
+    return PromotionObservedCopyState.PROCESSING_UNREVIEWED_PROJECTION
+
+
+def classify_wall_copy_observation(*, current: str, legacy: str, promoted: str) -> PromotionObservedCopyState:
+    """Classify exact wall text without treating manual third-state copy as an error."""
+
+    if current == promoted:
+        return PromotionObservedCopyState.PROMOTED
+    if current == legacy:
+        return PromotionObservedCopyState.LEGACY
+    return PromotionObservedCopyState.UNREVIEWED_EXACT
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,6 +147,7 @@ class PromotionFieldObservation:
 class PromotionObservationBatch:
     source_snapshot_id: str
     wall_snapshot_sha256: str
+    captured_at: str
     fields: tuple[PromotionFieldObservation, ...]
     blockers: tuple[str, ...] = ()
 
@@ -81,6 +156,8 @@ class PromotionObservationBatch:
             raise ValueError("Promotion observation source_snapshot_id is required")
         if not self.wall_snapshot_sha256:
             raise ValueError("Promotion observation wall_snapshot_sha256 is required")
+        if not self.captured_at:
+            raise ValueError("Promotion observation captured_at is required")
         keys = [(item.source_id, item.field) for item in self.fields]
         if len(set(keys)) != len(keys):
             raise ValueError("Promotion observation contains duplicate source/field evidence")
@@ -129,6 +206,7 @@ class PromotionObservationBatch:
             "schema_version": PROMOTION_OBSERVATION_VERSION,
             "source_snapshot_id": self.source_snapshot_id,
             "wall_snapshot_sha256": self.wall_snapshot_sha256,
+            "captured_at": self.captured_at,
             "provider_mutation_authorized": False,
             "complete": self.complete,
             "reviewable": self.reviewable,
@@ -148,4 +226,7 @@ __all__ = [
     "PromotionFieldObservation",
     "PromotionObservationBatch",
     "PromotionObservationEvidence",
+    "PromotionObservedCopyState",
+    "classify_clip_copy_observation",
+    "classify_wall_copy_observation",
 ]
