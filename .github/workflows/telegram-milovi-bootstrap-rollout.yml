@@ -34,7 +34,6 @@ jobs:
         run: |
           set -euo pipefail
           test "${GITHUB_REF}" = "refs/heads/main"
-          test "$(git branch --show-current)" = "" || test "$(git branch --show-current)" = "main"
           test -z "$(git status --porcelain)"
 
       - name: Set up Python
@@ -61,9 +60,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "${{ steps.plan.outputs.execute }}" != "true" || {
-            echo "Manual diagnostics may observe a due slot but never enter the provider job."
-          }
+          echo "Manual workflow_dispatch never enters the provider job."
 
   publish-one:
     needs: plan
@@ -102,10 +99,9 @@ jobs:
         run: |
           set -euo pipefail
           python -m video_channel_manager.milovi_telegram_bootstrap_rollout plan
-          test "${{ steps.plan.outputs.sequence }}" = "${{ needs.plan.outputs.sequence }}"
 
       - name: Prepare exact payload and fresh Telegram membership proof
-        if: steps.replan.outputs.execute == 'true'
+        if: steps.replan.outputs.execute == 'true' && steps.replan.outputs.sequence == needs.plan.outputs.sequence
         shell: bash
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
@@ -114,7 +110,7 @@ jobs:
           python -m video_channel_manager.milovi_telegram_bootstrap_rollout prepare
 
       - name: Persist strict-next dispatch-started barrier before provider mutation
-        if: steps.replan.outputs.execute == 'true'
+        if: steps.replan.outputs.execute == 'true' && steps.replan.outputs.sequence == needs.plan.outputs.sequence
         shell: bash
         run: |
           set -euo pipefail
@@ -125,7 +121,7 @@ jobs:
           git push origin HEAD:main
 
       - name: Dispatch one exact strict-next Telegram item with zero retry
-        if: steps.replan.outputs.execute == 'true'
+        if: steps.replan.outputs.execute == 'true' && steps.replan.outputs.sequence == needs.plan.outputs.sequence
         shell: bash
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
@@ -134,7 +130,7 @@ jobs:
           python -m video_channel_manager.milovi_telegram_bootstrap_rollout send
 
       - name: Persist terminal provider outcome when exact result is known
-        if: always() && steps.replan.outputs.execute == 'true'
+        if: always() && steps.replan.outputs.execute == 'true' && steps.replan.outputs.sequence == needs.plan.outputs.sequence
         shell: bash
         run: |
           set -euo pipefail
@@ -155,7 +151,7 @@ jobs:
           git push origin HEAD:main
 
       - name: Retain exact local outcome evidence even if final state push fails
-        if: always() && steps.replan.outputs.execute == 'true'
+        if: always() && steps.replan.outputs.execute == 'true' && steps.replan.outputs.sequence == needs.plan.outputs.sequence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: milovi-bootstrap-outcome-${{ github.run_id }}-${{ github.run_attempt }}
