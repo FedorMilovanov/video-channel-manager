@@ -29,8 +29,8 @@ def test_milovi_target_discovery_uses_exact_reviewed_identity() -> None:
     assert "EXPECTED_BOT_ID: 8716602202" in text
     assert "EXPECTED_BOT_USERNAME: preaching_mp3_bot" in text
     assert "provider_writes_authorized') is not False" in text
-    assert "--expected-bot-id \"$EXPECTED_BOT_ID\"" in text
-    assert "--expected-bot-username \"$EXPECTED_BOT_USERNAME\"" in text
+    assert '--expected-bot-id "$EXPECTED_BOT_ID"' in text
+    assert '--expected-bot-username "$EXPECTED_BOT_USERNAME"' in text
 
 
 def test_milovi_target_discovery_reuses_shared_bot_secret_but_never_sends() -> None:
