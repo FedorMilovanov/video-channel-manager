@@ -11,7 +11,9 @@ from video_channel_manager.telegram_target_binding import target_binding_from_pr
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "milovi-telegram-bootstrap-activation-package.yml"
+PUBLISHER_WORKFLOW = ROOT / ".github" / "workflows" / "milovi-telegram-bootstrap-publisher.yml"
 MILOVI = ROOT / "content" / "telegram" / "milovi-cake"
+ACTIVE_ROLLOUT = "content/telegram/milovi-cake/queues/bootstrap-first-screen-queue-2026-08.json"
 PROFILE = ROOT / "content" / "telegram" / "channels" / "milovi-cake.json"
 
 
@@ -37,7 +39,7 @@ def test_activation_package_runs_on_relevant_current_main_changes_and_stays_read
         "src/video_channel_manager/telegram_multichannel_release.py",
         "src/video_channel_manager/telegram_multichannel_transport.py",
         "content/telegram/channels/milovi-cake.json",
-        "content/telegram/milovi-cake/bootstrap-rollout-candidate-2026-08.json",
+        ACTIVE_ROLLOUT,
         "content/telegram/milovi-cake/bootstrap-first-screen-candidates-2026-08.json",
         "content/telegram/milovi-cake/bootstrap-photo-transport-proof-2026-08.json",
         "content/telegram/milovi-cake/publishing-window-2026-08.json",
@@ -50,6 +52,18 @@ def test_activation_package_runs_on_relevant_current_main_changes_and_stays_read
     assert "github.ref == 'refs/heads/main'" in text
     assert "persist-credentials: false" in text
     assert "provider_writes_authorized') is not False" in text
+
+
+def test_activation_package_and_publisher_compile_same_operational_rollout() -> None:
+    package_text = _text()
+    publisher_text = PUBLISHER_WORKFLOW.read_text(encoding="utf-8")
+    rollout_env = f"ROLLOUT_PATH: {ACTIVE_ROLLOUT}"
+
+    assert rollout_env in package_text
+    assert rollout_env in publisher_text
+    assert '--rollout "$ROLLOUT_PATH"' in package_text
+    assert '--rollout "$ROLLOUT_PATH"' in publisher_text
+    assert "bootstrap-rollout-candidate-2026-08.json" not in package_text
 
 
 def test_activation_package_discovers_only_exact_reviewed_milovi_target() -> None:
@@ -107,7 +121,7 @@ def test_activation_package_is_ephemeral_and_preserves_exact_ten_items() -> None
     assert "retention-days: 7" in text
 
 
-def test_activation_package_pipeline_binds_real_frozen_bootstrap_without_authorizing() -> None:
+def test_activation_package_pipeline_binds_real_active_bootstrap_without_authorizing() -> None:
     profile = load_channel_profile(PROFILE)
     assert profile.provider_writes_authorized is False
 
@@ -132,7 +146,7 @@ def test_activation_package_pipeline_binds_real_frozen_bootstrap_without_authori
 
     unbound = build_release_candidate(
         profile,
-        rollout_path=MILOVI / "bootstrap-rollout-candidate-2026-08.json",
+        rollout_path=ROOT / ACTIVE_ROLLOUT,
         candidates_path=MILOVI / "bootstrap-first-screen-candidates-2026-08.json",
         transport_proof_path=MILOVI / "bootstrap-photo-transport-proof-2026-08.json",
         publishing_window_path=MILOVI / "publishing-window-2026-08.json",
@@ -140,6 +154,8 @@ def test_activation_package_pipeline_binds_real_frozen_bootstrap_without_authori
     assert len(unbound.items) == 10
     assert unbound.release_authorized is False
     assert unbound.target_binding_sha256 is None
+    assert unbound.items[0].scheduled_at.isoformat() == "2026-08-17T10:30:00+03:00"
+    assert unbound.items[-1].scheduled_at.isoformat() == "2026-08-21T20:00:00+03:00"
 
     bound = bind_release_candidate(
         unbound,
