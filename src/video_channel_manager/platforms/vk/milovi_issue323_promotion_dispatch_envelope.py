@@ -205,8 +205,7 @@ def build_confirmed_promotion_dispatch_envelope(
     )
     if not fresh_preflight.executable:
         raise PromotionDispatchEnvelopeBlocked(
-            "Fresh whole-batch preflight is not executable; "
-            f"blockers={list(fresh_preflight.blockers)}"
+            f"Fresh whole-batch preflight is not executable; blockers={list(fresh_preflight.blockers)}"
         )
     if not fresh_preflight.planned_mutations:
         raise PromotionDispatchEnvelopeBlocked("Fresh whole-batch preflight no longer contains an edit mutation")
@@ -225,7 +224,11 @@ def build_confirmed_promotion_dispatch_envelope(
         raise PromotionDispatchEnvelopeBlocked("Fresh provider identity differs from durable edit intent")
 
     reviewed = _reviewed_field(spec, source_id, field)
-    if reviewed.policy is not PromotionPolicy.MANAGED_EXACT or reviewed.after_text is None or reviewed.after_sha256 is None:
+    if (
+        reviewed.policy is not PromotionPolicy.MANAGED_EXACT
+        or reviewed.after_text is None
+        or reviewed.after_sha256 is None
+    ):
         raise PromotionDispatchEnvelopeBlocked("Durable edit intent no longer maps to a reviewed managed_exact target")
     observed = _observed_field(observation, source_id, field)
     if observed.processing_projection:
