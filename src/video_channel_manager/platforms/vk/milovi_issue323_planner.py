@@ -5,8 +5,11 @@ from enum import StrEnum
 
 from video_channel_manager.platforms.vk.upload_lifecycle import UploadStage
 
+PLAN_SCHEMA_VERSION = 1
+
 
 class Issue323NextAction(StrEnum):
+    STOP_CONFLICT = "stop_conflict"
     REQUIRE_EXISTING_CLIP_PREFLIGHT = "require_existing_clip_preflight"
     ELIGIBLE_FOR_SINGLE_UPLOAD = "eligible_for_single_upload_after_executor_existing_clip_preflight"
     RECONCILE_PROVIDER_EFFECT_WITHOUT_REPLAY = "reconcile_provider_effect_without_replay"
@@ -50,6 +53,7 @@ class Issue323ItemPlan:
 
     def as_dict(self) -> dict[str, object]:
         return {
+            "schema_version": PLAN_SCHEMA_VERSION,
             "action": self.action.value,
             "required_capabilities": [capability.value for capability in self.required_capabilities],
             "forbids_reupload": self.forbids_reupload,
@@ -68,6 +72,14 @@ def _plan(
         required_capabilities=tuple(capabilities),
         forbids_reupload=forbids_reupload,
         forbids_repost=forbids_repost,
+    )
+
+
+def blocked_issue323_item_plan() -> Issue323ItemPlan:
+    return _plan(
+        Issue323NextAction.STOP_CONFLICT,
+        forbids_reupload=True,
+        forbids_repost=True,
     )
 
 
