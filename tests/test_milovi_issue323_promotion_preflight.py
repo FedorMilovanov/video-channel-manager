@@ -101,11 +101,7 @@ def _observation(
                         else PromotionObservationEvidence.EXACT_WALL_INCARNATION
                     ),
                     processing_projection=projection_key == (source_id, field),
-                    wall_incarnation=(
-                        None
-                        if field is PromotionField.CLIP_DESCRIPTION
-                        else _wall_incarnation(source_id, value)
-                    ),
+                    wall_incarnation=(None if field is PromotionField.CLIP_DESCRIPTION else _wall_incarnation(source_id, value)),
                 )
             )
     return PromotionObservationBatch(
