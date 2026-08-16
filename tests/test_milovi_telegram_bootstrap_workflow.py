@@ -4,6 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/milovi-telegram-bootstrap-publisher.yml"
+MEDIA_PROOF_WORKFLOW = ROOT / ".github/workflows/milovi-telegram-bootstrap-media-proof.yml"
 PROFILE = ROOT / "content/telegram/channels/milovi-cake.json"
 AUTHORIZED_RELEASE = ROOT / "content/telegram/milovi-cake/bootstrap-authorized-release-2026-08.json"
 
@@ -27,6 +28,35 @@ def test_activation_gate_precedes_any_telegram_secret_or_provider_access() -> No
     assert "profile_write_gate_disabled" in text
     assert "authorized_release_missing" in text
     assert "outside_09_00_21_00_moscow_window" in text
+
+
+def test_current_main_quality_proofs_run_before_state_or_telegram_access() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+    quality = text.index("Require current-main exact bootstrap quality proofs")
+    state = text.index("Check out isolated durable Milovi state branch")
+    preflight = text.index("Fresh exact target preflight")
+    assert quality < state < preflight
+    assert "milovi-telegram-bootstrap-quality.yml" in text
+    assert "milovi-telegram-bootstrap-media-proof.yml" in text
+    assert '--sha "$GITHUB_SHA"' in text
+
+
+def test_exact_media_proof_runs_on_every_main_revision() -> None:
+    text = MEDIA_PROOF_WORKFLOW.read_text(encoding="utf-8")
+    assert "push:\n    branches:\n      - main" in text
+    assert "workflow_dispatch:" in text
+    assert "provider_write_performed" in text
+
+
+def test_missing_state_branch_is_a_fail_closed_non_provider_condition() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+    checkout = text.index("Check out isolated durable Milovi state branch")
+    ledger = text.index("Require existing exact publication ledger")
+    preflight = text.index("Fresh exact target preflight")
+    checkout_block = text[checkout:ledger]
+    assert "continue-on-error: true" in checkout_block
+    assert "state_branch_or_ledger_missing" in text
+    assert checkout < ledger < preflight
 
 
 def test_scheduler_persists_no_catch_up_and_intent_barriers_before_send() -> None:
