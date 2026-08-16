@@ -3,12 +3,13 @@
   "schema_version": 1,
   "project_key": "milovi-cake",
   "owning_issue": 353,
-  "status": "provider_inert_exact_source_bound_pending_transport_proof",
+  "status": "provider_inert_exact_transport_verified",
   "source_repository": "FedorMilovanov/Milovi_Cake",
   "source_commit": "551866f1c34611406fc0a696bec8fc8fb4fd36d8",
   "gallery_metadata_path": "js/gallery/data.js",
   "gallery_metadata_blob_sha1": "e20e60c07479e8b20c1db700f1a40364b81eb669",
   "photo_count": 9,
+  "transport_ready_count": 9,
   "provider_write_performed": false,
   "execution_authorized": false,
   "provider_mutation_allowed": false,
@@ -30,11 +31,11 @@
       "source_byte_size": 207190,
       "gallery_title": "Чёрно-золотой торт с шарами",
       "gallery_description": "Премиальный торт в чёрно-золотой гамме",
-      "source_sha256": null,
-      "pixel_width": null,
-      "pixel_height": null,
-      "transport_byte_size": null,
-      "transport_sha256": null
+      "source_sha256": "sha256:6ca82d87ab4c4ac869e1363df7758bef47aa8eccbcc5e2f5be70a402ce459fcc",
+      "pixel_width": 1024,
+      "pixel_height": 1536,
+      "transport_byte_size": 537768,
+      "transport_sha256": "sha256:e8a48c819550a7e914f81fe7f7f30d27d9412d72744dc1d93c109989ab86770a"
     },
     {
       "media_id": "p30",
@@ -43,11 +44,11 @@
       "source_byte_size": 108234,
       "gallery_title": "Подарочный бенто-торт",
       "gallery_description": "Мини-торт в коробке с праздничным оформлением",
-      "source_sha256": null,
-      "pixel_width": null,
-      "pixel_height": null,
-      "transport_byte_size": null,
-      "transport_sha256": null
+      "source_sha256": "sha256:23b0d2f657eb8aedcd3941aa64380eaf48e6fdf37197c755f373d091683b693b",
+      "pixel_width": 1280,
+      "pixel_height": 1280,
+      "transport_byte_size": 349888,
+      "transport_sha256": "sha256:dff8c171a78c95b90645294d320eb2dec04baf5b4c129e4fc4d9e6e8a51801c2"
     },
     {
       "media_id": "p08",
@@ -56,11 +57,11 @@
       "source_byte_size": 226208,
       "gallery_title": "Бенто «Горжусь тобой»",
       "gallery_description": "Мини-торт с персональной надписью",
-      "source_sha256": null,
-      "pixel_width": null,
-      "pixel_height": null,
-      "transport_byte_size": null,
-      "transport_sha256": null
+      "source_sha256": "sha256:a3f60c3bae54f6cd6934d74ffd744886b2f5a8c63d83a3428230905b31209661",
+      "pixel_width": 1024,
+      "pixel_height": 1536,
+      "transport_byte_size": 560300,
+      "transport_sha256": "sha256:5c6fd12308017c82500dfe4295c0228f0bbf9be709e0e41bb22b738f9fbb4ae6"
     },
     {
       "media_id": "p15",
@@ -69,11 +70,11 @@
       "source_byte_size": 231694,
       "gallery_title": "Подарочный десертный набор",
       "gallery_description": "Набор сладостей в подарочной упаковке",
-      "source_sha256": null,
-      "pixel_width": null,
-      "pixel_height": null,
-      "transport_byte_size": null,
-      "transport_sha256": null
+      "source_sha256": "sha256:2a88397e1536e43b38afed4c4eea2670d50392f941d9990d5b07a56b49cb8bbb",
+      "pixel_width": 1024,
+      "pixel_height": 1536,
+      "transport_byte_size": 600532,
+      "transport_sha256": "sha256:9a3d51564754a17d39399d3436ce5832e477d4e988e602eaf033fe7f3768a30e"
     },
     {
       "media_id": "p22",
@@ -82,11 +83,11 @@
       "source_byte_size": 114074,
       "gallery_title": "3D-торт с собаками",
       "gallery_description": "Шоколадный торт с объёмными фигурками собак",
-      "source_sha256": null,
-      "pixel_width": null,
-      "pixel_height": null,
-      "transport_byte_size": null,
-      "transport_sha256": null
+      "source_sha256": "sha256:34ede5e2aa00b3a4d444f2a1882e015f4e84edf973f09d89ed6279ae72e03099",
+      "pixel_width": 1536,
+      "pixel_height": 1024,
+      "transport_byte_size": 421734,
+      "transport_sha256": "sha256:8855630bc5622a1fbfd4d6f041f1f357e58105fe8e413aec19f91d78552247ff"
     },
     {
       "media_id": "p14",
@@ -95,11 +96,11 @@
       "source_byte_size": 120782,
       "gallery_title": "Фактурный торт с карамелью",
       "gallery_description": "Авторский торт с объёмным декором и золотом",
-      "source_sha256": null,
-      "pixel_width": null,
-      "pixel_height": null,
-      "transport_byte_size": null,
-      "transport_sha256": null
+      "source_sha256": "sha256:7761a04892e3b9da4ebb6618476841fb596b84da70b52cfca84227f092ccb36c",
+      "pixel_width": 1024,
+      "pixel_height": 1536,
+      "transport_byte_size": 409831,
+      "transport_sha256": "sha256:27f9306361e0f4e3df1f6b32511fa4450a527492b953ca39952ab0bc8e539d35"
     },
     {
       "media_id": "p29",
@@ -108,11 +109,11 @@
       "source_byte_size": 137122,
       "gallery_title": "Торт к 8 Марта",
       "gallery_description": "Нежный сиреневый торт с цветочным декором",
-      "source_sha256": null,
-      "pixel_width": null,
-      "pixel_height": null,
-      "transport_byte_size": null,
-      "transport_sha256": null
+      "source_sha256": "sha256:34be62553e2afdc721053c76741ab42b9c775791f1ec6c17920f68b3daed4758",
+      "pixel_width": 1280,
+      "pixel_height": 720,
+      "transport_byte_size": 355324,
+      "transport_sha256": "sha256:22ee91b6e70158de17fb77e061fa9e4b6e7e6297ebe18792f1b34974cfe43cf1"
     },
     {
       "media_id": "p26",
@@ -121,11 +122,11 @@
       "source_byte_size": 126642,
       "gallery_title": "Мини Павлова с кремом",
       "gallery_description": "Порционные десерты Павлова с нежным кремом",
-      "source_sha256": null,
-      "pixel_width": null,
-      "pixel_height": null,
-      "transport_byte_size": null,
-      "transport_sha256": null
+      "source_sha256": "sha256:96a2f23e386e8e75f61a1f1c337421ecefd6aec7da2637b605f55d7305ecc232",
+      "pixel_width": 1536,
+      "pixel_height": 1024,
+      "transport_byte_size": 411178,
+      "transport_sha256": "sha256:7806c495e6ba28f0cd32a63a87e7d2b4ca6cc0cc725f90708893b169658c8d58"
     },
     {
       "media_id": "p01",
@@ -134,11 +135,11 @@
       "source_byte_size": 70252,
       "gallery_title": "Шоколадный торт с мишками",
       "gallery_description": "Шоколадный праздничный торт с объёмным декором",
-      "source_sha256": null,
-      "pixel_width": null,
-      "pixel_height": null,
-      "transport_byte_size": null,
-      "transport_sha256": null
+      "source_sha256": "sha256:71049078659d11404a53cde385e66a1620805870a1cb6767b886c8fa8c19c10b",
+      "pixel_width": 1024,
+      "pixel_height": 1536,
+      "transport_byte_size": 299954,
+      "transport_sha256": "sha256:7747afeac92c49c1bfcd4b2af196bf61d1150c4b996b0c084de642aa9d2027c2"
     }
   ]
 }
