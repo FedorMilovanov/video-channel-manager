@@ -4,6 +4,7 @@ import hashlib
 import json
 import pathlib
 import re
+from datetime import datetime
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 MILOVI = ROOT / "content" / "telegram" / "milovi-cake"
@@ -136,3 +137,49 @@ def test_historical_bad_canary_caption_is_not_reused_by_first_screen() -> None:
     items = candidates["candidates"]
     assert isinstance(items, list)
     assert historical_caption not in {str(item["caption"]) for item in items if isinstance(item, dict)}
+
+
+def test_rollout_candidate_freezes_exact_captions_media_and_daylight_slots() -> None:
+    candidates = _load_json("bootstrap-first-screen-candidates-2026-08.json")
+    proof = _load_json("bootstrap-photo-transport-proof-2026-08.json")
+    rollout = _load_json("bootstrap-rollout-candidate-2026-08.json")
+
+    assert rollout["status"] == "provider_inert_frozen_candidate"
+    assert rollout["execution_authorized"] is False
+    assert rollout["provider_mutation_allowed"] is False
+    assert rollout["chat_id"] == -1002215328390
+    assert rollout["bot_id"] == 8716602202
+
+    candidate_items = candidates["candidates"]
+    rollout_items = rollout["items"]
+    photos = proof["photos"]
+    assert isinstance(candidate_items, list)
+    assert isinstance(rollout_items, list)
+    assert isinstance(photos, list)
+    assert len(candidate_items) == len(rollout_items) == 10
+
+    photo_by_id = {str(item["media_id"]): item for item in photos if isinstance(item, dict)}
+    for candidate, frozen in zip(candidate_items, rollout_items, strict=True):
+        assert isinstance(candidate, dict)
+        assert isinstance(frozen, dict)
+        assert frozen["sequence"] == candidate["sequence"]
+        assert frozen["publication_id"] == candidate["publication_id"]
+        assert frozen["operation"] == candidate["operation"]
+        caption = str(candidate["caption"])
+        assert frozen["caption_sha256"] == "sha256:" + hashlib.sha256(caption.encode("utf-8")).hexdigest()
+
+        scheduled = datetime.fromisoformat(str(frozen["planned_local"]))
+        assert scheduled.utcoffset() is not None
+        assert scheduled.utcoffset().total_seconds() == 3 * 3600
+        minute_of_day = scheduled.hour * 60 + scheduled.minute
+        assert 9 * 60 <= minute_of_day <= 21 * 60
+
+        if frozen["operation"] == "sendPhoto":
+            media_id = str(frozen["media_id"])
+            media = photo_by_id[media_id]
+            assert frozen["transport_sha256"] == media["transport_sha256"]
+            assert frozen["transport_byte_size"] == media["transport_byte_size"]
+        else:
+            assert frozen["media_id"] is None
+            assert frozen["transport_sha256"] is None
+            assert frozen["transport_byte_size"] is None
