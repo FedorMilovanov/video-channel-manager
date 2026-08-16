@@ -40,7 +40,12 @@ def _remote_id(source_id: str, field: PromotionField) -> str:
     return f"-68859909_{500 + index}"
 
 
-def _observation(*, override: tuple[str, PromotionField, str] | None = None) -> PromotionObservationBatch:
+def _observation(
+    *,
+    override: tuple[str, PromotionField, str] | None = None,
+    captured_at: str = "2026-08-16T10:00:00+00:00",
+    wall_snapshot_sha256: str = "sha256:exact-wall-snapshot",
+) -> PromotionObservationBatch:
     fields: list[PromotionFieldObservation] = []
     for source_id in ROLL_OUT_IDS:
         for field in PromotionField:
@@ -63,8 +68,8 @@ def _observation(*, override: tuple[str, PromotionField, str] | None = None) -> 
             )
     return PromotionObservationBatch(
         source_snapshot_id="issue323-reviewed-snapshot",
-        wall_snapshot_sha256="sha256:exact-wall-snapshot",
-        captured_at="2026-08-16T10:00:00+00:00",
+        wall_snapshot_sha256=wall_snapshot_sha256,
+        captured_at=captured_at,
         fields=tuple(fields),
     )
 
@@ -185,26 +190,38 @@ def test_explicit_journal_init_builds_digest_bound_plan_but_executes_zero_provid
     assert result["promotion_journal_initialized"] is True
     assert result["promotion_spec_digest"] == spec.digest
     assert result["promotion_observation_digest"] == observation.digest
+    assert result["promotion_provider_state_digest"] == observation.provider_state_digest
     assert result["promotion_preflight"]["expected_provider_writes"] == 1
     assert result["promotion_preflight"]["provider_mutation_authorized"] is False
-    assert result["promotion_preflight_digest"].startswith("sha256:")
+    assert result["promotion_preflight_digest"] == result["promotion_preflight_confirmation_digest"]
+    assert result["promotion_preflight_evidence_digest"] != result["promotion_preflight_digest"]
     assert result["preflight_digest_confirmation_supplied"] is False
     assert result["preflight_digest_confirmed"] is False
     assert paths["promotion_journal_path"].is_file()
 
 
-def test_exact_preflight_digest_confirmation_is_ephemeral_and_still_executes_zero_writes(
+def test_exact_preflight_confirmation_survives_fresh_capture_time_and_snapshot_digest(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     paths = _paths(tmp_path)
     key = (ROLL_OUT_IDS[0], PromotionField.CLIP_DESCRIPTION)
-    observation = _observation()
+    first_observation = _observation(
+        captured_at="2026-08-16T10:00:00+00:00",
+        wall_snapshot_sha256="sha256:first-capture-wall-snapshot",
+    )
+    second_observation = _observation(
+        captured_at="2026-08-16T10:01:00+00:00",
+        wall_snapshot_sha256="sha256:second-capture-wall-snapshot",
+    )
+    assert first_observation.digest != second_observation.digest
+    assert first_observation.provider_state_digest == second_observation.provider_state_digest
     _write_spec(paths["promotion_spec_path"], _spec(managed_key=key))
+    observations = iter((first_observation, second_observation))
     monkeypatch.setattr(
         continue_module,
         "run_issue_323_status_probe",
-        lambda **_kwargs: _status_payload(observation),
+        lambda **_kwargs: _status_payload(next(observations)),
     )
     preview = run_issue_323_continue_preview(
         **paths,
@@ -219,6 +236,9 @@ def test_exact_preflight_digest_confirmation_is_ephemeral_and_still_executes_zer
     )
 
     assert confirmed["continuation_status"] == "digest_confirmed_provider_execution_not_available"
+    assert confirmed["promotion_observation_digest"] != preview["promotion_observation_digest"]
+    assert confirmed["promotion_provider_state_digest"] == preview["promotion_provider_state_digest"]
+    assert confirmed["promotion_preflight_evidence_digest"] != preview["promotion_preflight_evidence_digest"]
     assert confirmed["promotion_preflight_digest"] == preview["promotion_preflight_digest"]
     assert confirmed["preflight_digest_confirmation_supplied"] is True
     assert confirmed["preflight_digest_confirmed"] is True
