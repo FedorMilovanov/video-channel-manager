@@ -103,6 +103,33 @@ def test_prepared_manifest_loader_is_metadata_only(tmp_path: Path) -> None:
     assert all(not Path(asset.media_path).exists() for asset in loaded)
 
 
+def test_clean_status_item_completes_inventory_preflight_before_create_clip_plan() -> None:
+    lookups: list[str] = []
+
+    payload = _probe_batch(
+        assets=_assets(),
+        journal=_journal(),
+        slots=_slots(),
+        provider=_ReadOnlyFakeProvider({}),  # type: ignore[arg-type]
+        client=object(),  # type: ignore[arg-type]
+        snapshot=_empty_snapshot(),
+        existing_clip_lookup=lambda _client, asset: lookups.append(asset.source_id) or None,
+        now_epoch=1786759200,
+    )
+
+    row = payload["items"][0]
+    assert row["existing_clip_preflight_complete"] is True
+    assert row["safe_next_action"] == "eligible_for_single_upload_after_executor_existing_clip_preflight"
+    assert row["plan"]["action"] == row["safe_next_action"]
+    assert row["plan"]["required_capabilities"] == ["create_clip"]
+    assert row["plan"]["forbids_reupload"] is False
+    assert row["plan_digest"].startswith("sha256:")
+    assert payload["plan_schema_version"] == 1
+    assert payload["provider_mutation_authorized"] is False
+    assert payload["journal_mutation_authorized"] is False
+    assert lookups == list(ROLL_OUT_IDS)
+
+
 def test_verified_upload_record_is_protected_from_reupload() -> None:
     assets = _assets()
     journal = _journal()
@@ -146,6 +173,9 @@ def test_verified_upload_record_is_protected_from_reupload() -> None:
     assert row["provider_effect_durable"] is True
     assert row["clip_copy_state"] == "legacy"
     assert row["safe_next_action"] == "resume_from_verified_clip_without_reupload_then_wall"
+    assert row["plan"]["action"] == row["safe_next_action"]
+    assert "create_clip" not in row["plan"]["required_capabilities"]
+    assert row["plan"]["forbids_reupload"] is True
     assert row["reupload_authorized_by_probe"] is False
     assert source_id in payload["protected_no_reupload_source_ids"]
     assert provider.read_video_calls == [remote_id]
@@ -188,6 +218,10 @@ def test_unreviewed_clip_copy_blocks_instead_of_overwriting() -> None:
     row = payload["items"][8]
     assert payload["status"] == "blocked"
     assert row["safe_next_action"] == "stop_conflict"
+    assert row["plan"]["action"] == "stop_conflict"
+    assert row["plan"]["required_capabilities"] == []
+    assert row["plan"]["forbids_reupload"] is True
+    assert row["plan"]["forbids_repost"] is True
     assert "neither exact reviewed legacy nor exact promoted copy" in row["stop_reason"]
     assert row["reupload_authorized_by_probe"] is False
     assert row["repost_authorized_by_probe"] is False

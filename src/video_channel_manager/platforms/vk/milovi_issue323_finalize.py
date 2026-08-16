@@ -41,6 +41,7 @@ from video_channel_manager.platforms.vk.milovi_rollout_sources import (
 from video_channel_manager.platforms.vk.milovi_token_clip_rollout import (
     MiloviTokenRolloutBlocked,
     _ensure_wall,
+    _find_existing_clip,
     _has_provider_effect,
     _item,
     _load_journal,
@@ -368,6 +369,18 @@ def _ensure_promoted_clip(
 
     raw_record = item.get("upload_record")
     record = dict(raw_record) if isinstance(raw_record, Mapping) else None
+    if record is None or not _has_provider_effect(record):
+        existing = _find_existing_clip(upload_writer.client, asset)
+        if existing:
+            _assert_native_clip(writer, asset, existing, description_mode="legacy_or_promoted")
+            item.update(
+                status="clip_verified",
+                clip_remote_id=existing,
+                clip_origin="adopted_existing_internal_promotion",
+            )
+            _save(journal_path, journal)
+            return existing
+
     readiness = clip_readiness(asset)
     record, _ = ensure_upload_record(
         record,

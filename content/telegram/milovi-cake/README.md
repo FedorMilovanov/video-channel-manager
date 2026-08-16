@@ -2,47 +2,64 @@
 
 Owning issue: #353.
 
-This directory contains **provider-inert editorial, canary-preparation and media-readiness material only**. It is not a scheduler queue and is not consumed by the Telegram publisher runtime.
+This directory is the canonical Milovi Cake Telegram editorial/readiness area. Editorial approval, transport readiness and provider execution authority are separate gates.
 
-Current artifacts:
+## Current truth
 
-- `launch-pack-2026-08.md` — reviewed-source launch corpus for editorial preparation;
-- `editorial-asset-contract-2026-08.md` — current source-availability constraint for what the launch corpus may actually promise or show;
-- `media-source-map-2026-08.json` — machine-readable mirror of the verified 46-item Milovi Cake finished-work gallery source (30 photos + 16 videos), bound to its source blob;
-- `school-source-shortlist-2026-08.json` — exact Milovi School catalog/deep-content binding for the three educational launch topics, with conservative Telegram claim boundaries and mandatory pre-publication revalidation;
-- `editorial-sequence-30-posts-2026-08.json` — provider-inert 30-slot launch sequence with exact finished-media IDs, exact School article IDs and a 0% production-BTS share;
-- `editorial-operating-plan-2026-08.md` — channel-quality, reuse, caption, cadence and acquisition rules while production footage is unavailable;
-- `media-delivery-readiness-2026-08.json` — reviewed Telegram photo/video transport constraints and current fail-closed readiness state;
-- `canary-candidate-2026-08.json` — one exact future `sendPhoto` candidate with unresolved target/binding and provider authorization explicitly false;
-- `canary-review-lock-2026-08.json` — exact Git-blob identities for the reviewed candidate/readiness bytes plus unresolved authorization inputs;
-- `canary-preparation-2026-08.md` — human-readable pre-dispatch, target, media, authorization and outcome-verification boundaries for that exact candidate;
-- `video-source-readiness-2026-08.json` — exact 16-item WebM source manifest pinned to one Milovi Cake commit, with canonical titles/posters, exact Git blobs/sizes and unresolved probe fields;
-- `video-conversion-contract-2026-08.json` — deterministic MP4/H.264/yuv420p conversion and acceptance contract, with toolchain/probe/output gates and no document fallback;
-- `video-output-records-2026-08.json` — one-to-one blocked output evidence records for `v01`–`v16`; all output/probe fields remain unresolved and accepted output count is zero;
-- `video-conversion-readiness-2026-08.md` — human-readable source-probe, geometry, timing, audio, conversion and acceptance rules for the native-video lane.
+- Exact Telegram target: `@MiloviCake`, chat id `-1002215328390`.
+- Exact shared publisher bot: `8716602202 / @preaching_mp3_bot`.
+- The bot is now proved as a channel administrator with `can_post_messages=true`.
+- One exact `sendPhoto` canary was provider-verified as message `25`; the channel owner later deleted that post because its caption used misleading Milovi School/French-culture framing. The historical dispatch remains evidence, but that exact payload is superseded and must not be republished.
+- Public rollout is paused during quiet hours. Milovi audience time is `Europe/Moscow`; ordinary provider mutation may start only in the inclusive `09:00–21:00` local window.
+- Nine first-screen photo sources are exact-byte/materialization verified and have deterministic JPEG transport SHA-256 values. This readiness still does not authorize publication.
 
-The asset contract is authoritative when an older draft/example could be read as requiring kitchen, production or BTS footage. While the current contract is active, finished-cake photos/videos are the primary visual source and production BTS/kitchen content remains at 0% unless separately reviewed source footage exists.
+## Cake vs School: hard editorial boundary
 
-The older launch corpus contains one known ambiguous welcome phrase (`детали и процесс`). It must not be published as written while the current no-BTS contract is active. The exact safe replacement and interpretation rule live in `editorial-operating-plan-2026-08.md`.
+**Milovi Cake is the cake and dessert business. Milovi School is a separate educational/editorial/SEO content project.**
 
-The School shortlist is a source binding, not permission to copy metadata claims straight into a live post. The exact article/deep content and its source trail must be re-read before a School draft becomes a live payload.
+Milovi School is not evidence of how Milovi Cake products are made. Do not infer or claim from School content that Milovi Cake uses a School recipe or technique, operates a French kitchen, has French culinary lineage, trains production through School, or derives a product from a School article.
 
-The canary candidate is deliberately **not executable**. Its numeric `chat_id`, discovery proof, immutable target-binding digest, materialized media SHA-256 and decoded dimensions are unresolved; `publication_authorized=false`, `execution_ready=false`, and `provider_mutation_allowed=false`. Do not fill those fields by inference or by copying a value from another Telegram project.
+The first ten Telegram launch posts contain **zero Milovi School items**. Later School material may be adapted only as separately labelled educational reading and must not imply a production/product relationship without a separate exact source.
 
-The canary review lock protects the exact candidate/readiness bytes. Any change that produces a different Git blob invalidates the lock and requires a new review identity before authorization can even be considered.
+Canonical rule: `editorial-brand-boundary-2026-08.md`.
 
-Current WebM gallery videos are editorial source assets, not proven Telegram-native video payloads. The video-readiness lane now freezes all 16 source identities and defines a deterministic MP4 conversion contract, but **accepted native-video outputs remain 0 / 16**. Source files being small enough for Telegram's video byte ceiling does not make them native-video-ready. Exact source probe, toolchain identity, conversion argv, output probe and output SHA-256 are required first.
+## Current artifacts
 
-Do not silently send WebM or a failed MP4 as `sendDocument`. Conversion acceptance creates only a transport-ready local artifact; it never creates a Telegram release authorization.
+- `editorial-brand-boundary-2026-08.md` — hard Cake/School editorial separation and do-not-republish rule for the bad historical canary wording;
+- `publishing-window-2026-08.json` — hard audience-local quiet-hours policy;
+- `live/operator-correction-2026-08-16.json` — owner-reported deletion/correction for historical message 25 without rewriting the historical dispatch receipt;
+- `bootstrap-first-screen-candidates-2026-08.json` — revised ten-item first screen, School-free and provider-inert;
+- `bootstrap-photo-source-readiness-2026-08.json` — 9/9 exact source-byte and deterministic JPEG readiness;
+- `bootstrap-photo-transport-proof-2026-08.json` — exact source SHA-256, dimensions and JPEG transport SHA-256/byte sizes for all nine first-screen photos;
+- `launch-pack-2026-08.md` — historical/provider-inert editorial corpus. It contains superseded examples and is **not an executable publication source**;
+- `editorial-asset-contract-2026-08.md` — current source-availability constraint; production/kitchen/BTS footage remains 0% until separately reviewed source footage exists;
+- `media-source-map-2026-08.json` — verified 46-item finished-work source map (30 photos + 16 videos);
+- `school-source-shortlist-2026-08.json` — source evidence for optional future educational reading only; it does not prove a Cake production relationship;
+- `editorial-sequence-30-posts-2026-08.json` — long-horizon provider-inert editorial planning, not an execution queue;
+- `editorial-operating-plan-2026-08.md` — current channel-quality, reuse, cadence and acquisition rules;
+- `video-source-readiness-2026-08.json`, `video-conversion-contract-2026-08.json`, `video-output-records-2026-08.json`, `video-conversion-readiness-2026-08.md` — native-video lane; accepted MP4 outputs remain 0/16 until exact conversion evidence exists.
 
-Live publication requires, in order:
+The exact historical `canary-candidate-2026-08.json` must remain immutable enough to explain what was actually sent. Do not “fix” its old caption in place and thereby falsify the retained SHA-256 evidence. Correct future copy through a new candidate/release.
 
-1. write-disabled Milovi identity profile;
-2. fresh read-only exact target proof on current `main`;
-3. separately reviewed immutable target binding;
-4. cross-project fail-closed guards;
-5. materialized/verified exact media bytes for the selected candidate;
-6. one exact explicitly authorized canary tied to the reviewed candidate identity;
-7. verified provider outcome before any subsequent post, pin, schedule or automation.
+## Finished-work source policy
 
-Do not convert editorial drafts, the media map, editorial sequence, canary-preparation files or media-readiness records into a release queue merely because these files exist.
+The current reviewed visual source is finished Milovi Cake work. Production/kitchen/BTS content remains 0% until separate reviewed footage exists. A final-cake photo/video may support showcase, visible-detail analysis, comparison, collection or buyer guidance, but must never be captioned as production footage or as evidence of an unseen process.
+
+## Live execution boundary
+
+A verified historical canary proves target/sendPhoto capability; it is not standing authority for a batch.
+
+Any rollout must separately bind:
+
+1. exact current `main` and owning issue;
+2. exact target/bot identity and fresh administrator/posting-right proof;
+3. exact selected publication ids/order;
+4. exact caption digests;
+5. exact materialized JPEG transport SHA-256 values;
+6. hard `09:00–21:00 Europe/Moscow` execution window before provider access and before durable intent;
+7. one durable intent/barrier per item before `sendPhoto`/`sendMessage`;
+8. zero blind mutation retries;
+9. exact returned `message_id`/chat verification before advancing to the next item;
+10. fail-closed handling of unknown outcomes.
+
+Do not convert the historical launch pack, media map, editorial sequence, School shortlist, canary files or readiness records into a live queue merely because they exist.
