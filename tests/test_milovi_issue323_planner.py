@@ -4,6 +4,7 @@ from video_channel_manager.platforms.vk.milovi_issue323_planner import (
     Issue323Capability,
     Issue323ItemState,
     Issue323NextAction,
+    blocked_issue323_item_plan,
     plan_issue323_item,
 )
 from video_channel_manager.platforms.vk.upload_lifecycle import UploadStage
@@ -157,6 +158,15 @@ def test_completed_legacy_mapping_is_promotion_pending_without_phase_a_write_cap
     assert plan.forbids_repost is True
 
 
+def test_blocked_plan_grants_no_capability() -> None:
+    plan = blocked_issue323_item_plan()
+
+    assert plan.action is Issue323NextAction.STOP_CONFLICT
+    assert plan.required_capabilities == ()
+    assert plan.forbids_reupload is True
+    assert plan.forbids_repost is True
+
+
 def test_plan_serialization_is_deterministic_and_string_stable() -> None:
     state = _state(
         durable_status="clip_verified",
@@ -169,6 +179,7 @@ def test_plan_serialization_is_deterministic_and_string_stable() -> None:
 
     assert first == second
     assert first == {
+        "schema_version": 1,
         "action": "resume_wall_only_without_reupload",
         "required_capabilities": ["create_wall"],
         "forbids_reupload": True,
