@@ -221,7 +221,9 @@ def validate_follow_on_bundle(
                 raise ValueError(f"Cake photo caption exceeds Telegram limit: {publication_id}")
             lowered = caption.casefold()
             if "milovi school" in lowered or "french.milovicake.ru" in lowered or "француз" in lowered:
-                raise ValueError(f"Cake caption improperly links production to School/French positioning: {publication_id}")
+                raise ValueError(
+                    f"Cake caption improperly links production to School/French positioning: {publication_id}"
+                )
             for field in (
                 "source_git_blob_sha1",
                 "source_sha256",
