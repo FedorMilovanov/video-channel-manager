@@ -7,6 +7,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 from video_channel_manager.platforms.vk.milovi_issue323_promotion_observation import (
+    PromotionFieldObservation,
     PromotionObservationBatch,
 )
 from video_channel_manager.platforms.vk.milovi_issue323_promotion_preflight import (
@@ -21,7 +22,6 @@ from video_channel_manager.platforms.vk.milovi_issue323_promotion_spec import (
     PromotionPolicy,
     PromotionSpec,
     ReviewedPromotionField,
-    promotion_text_sha256,
 )
 from video_channel_manager.platforms.vk.milovi_rollout_sources import ROLL_OUT_IDS
 
@@ -155,10 +155,7 @@ class PromotionJournal:
         return tuple(by_key[(source_id, field)] for source_id in ROLL_OUT_IDS for field in PromotionField)
 
     def operation_state_map(self) -> dict[tuple[str, PromotionField], PromotionOperationState]:
-        return {
-            (item.source_id, item.field): item.as_planner_state()
-            for item in self.ordered_operations()
-        }
+        return {(item.source_id, item.field): item.as_planner_state() for item in self.ordered_operations()}
 
     @property
     def operation_state_digest(self) -> str:
@@ -243,9 +240,7 @@ def _replace_operation(journal: PromotionJournal, replacement: PromotionJournalO
     return replace(
         journal,
         operations=tuple(
-            replacement
-            if item.source_id == replacement.source_id and item.field is replacement.field
-            else item
+            replacement if item.source_id == replacement.source_id and item.field is replacement.field else item
             for item in journal.operations
         ),
     )
@@ -375,7 +370,7 @@ def _observed_field(
     observation: PromotionObservationBatch,
     source_id: str,
     field: PromotionField,
-):
+) -> PromotionFieldObservation:
     for item in observation.ordered_fields():
         if item.source_id == source_id and item.field is field:
             return item
