@@ -33,6 +33,10 @@ class Issue323Capability(StrEnum):
     RECONCILE_PROVIDER_EFFECT = "reconcile_provider_effect"
 
 
+class Issue323PlanCapabilityError(RuntimeError):
+    pass
+
+
 @dataclass(frozen=True, slots=True)
 class Issue323ItemState:
     durable_status: str
@@ -66,6 +70,15 @@ class Issue323ItemPlan:
     def digest(self) -> str:
         canonical = json.dumps(self.as_dict(), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         return f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
+
+
+def require_issue323_capability(plan: Issue323ItemPlan, capability: Issue323Capability) -> None:
+    """Fail closed unless the exact plan requires the requested executor capability."""
+
+    if capability not in plan.required_capabilities:
+        raise Issue323PlanCapabilityError(
+            f"Issue #323 plan {plan.digest} action={plan.action.value} does not allow {capability.value}"
+        )
 
 
 def _plan(
