@@ -329,10 +329,7 @@ def test_wall_verified_manual_copy_is_review_evidence_not_phase_a_mutation_stop(
     assert row["safe_next_action"] == "phase_a_complete_promotion_pending"
     assert row["stop_reason"] is None
     assert row["plan"]["required_capabilities"] == []
-    fields = {
-        (item["source_id"], item["field"]): item
-        for item in payload["promotion_observation"]["fields"]
-    }
+    fields = {(item["source_id"], item["field"]): item for item in payload["promotion_observation"]["fields"]}
     assert fields[(source_id, "clip_description")]["text"] == clip_manual
     assert fields[(source_id, "wall_message")]["text"] == wall_manual
     assert fields[(source_id, "wall_message")]["remote_id"] == wall_remote_id
