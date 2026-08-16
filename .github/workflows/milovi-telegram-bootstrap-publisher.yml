@@ -62,7 +62,7 @@ jobs:
           python -m pip install --disable-pip-version-check --only-binary=:all: \
             -r requirements/telegram-publisher.txt
 
-      - name: Compile exact provider-inert bootstrap expectation
+      - name: Compile exact frozen bootstrap expectation
         shell: bash
         run: |
           set -euo pipefail
@@ -113,12 +113,10 @@ jobs:
               raise SystemExit("Milovi profile does not preserve the reviewed two-items/day cap")
           if profile.publication_id_prefix != "milovi-":
               raise SystemExit("Milovi publication prefix no longer accepts the frozen bootstrap identities")
+          if rollout.get("execution_authorized") is not False or rollout.get("provider_mutation_allowed") is not False:
+              raise SystemExit("frozen Milovi rollout identity unexpectedly grants provider authority")
           if not profile.provider_writes_authorized:
               blockers.append("profile_write_gate_disabled")
-          if rollout.get("execution_authorized") is not True:
-              blockers.append("rollout_execution_not_authorized")
-          if rollout.get("provider_mutation_allowed") is not True:
-              blockers.append("rollout_provider_mutation_disabled")
 
           now = datetime.now(ZoneInfo("Europe/Moscow"))
           clock = now.timetz().replace(tzinfo=None)
@@ -128,7 +126,6 @@ jobs:
           if os.environ["EVENT_NAME"] == "workflow_dispatch" and os.environ["MANUAL_CONFIRM"] != "PUBLISH:@MiloviCake":
               blockers.append("manual_confirmation_missing")
 
-          authorized = None
           if not authorized_path.exists():
               blockers.append("authorized_release_missing")
           else:
