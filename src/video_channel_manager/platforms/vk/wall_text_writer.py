@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from typing import Any, Mapping
 
@@ -77,6 +78,7 @@ class VkWallTextWriter(VkWallWriter):
         before_text: str,
         after_text: str,
         max_posts_per_surface: int = 10000,
+        before_dispatch: Callable[[], None] | None = None,
     ) -> VkWallTextEditResult:
         if expected.owner_id >= 0:
             raise ValueError("Exact wall text edit requires a community-owned post")
@@ -116,6 +118,9 @@ class VkWallTextWriter(VkWallWriter):
             if expected.publish_date is None or expected.publish_date <= 0:
                 raise ValueError("Postponed wall edit requires the exact positive publish_date")
             params["publish_date"] = expected.publish_date
+
+        if before_dispatch is not None:
+            before_dispatch()
 
         try:
             self._call("wall.edit", params=params, retry_transient=False)
