@@ -27,6 +27,12 @@ from video_channel_manager.platforms.vk.milovi_issue323_finalize import (
     _resolve_wall_incarnation,
     _sha256_text,
 )
+from video_channel_manager.platforms.vk.milovi_issue323_planner import (
+    PLAN_SCHEMA_VERSION,
+    Issue323ItemState,
+    blocked_issue323_item_plan,
+    plan_issue323_item,
+)
 from video_channel_manager.platforms.vk.milovi_rollout_sources import (
     PREPARED_SCHEMA,
     ROLL_OUT_IDS,
@@ -185,38 +191,6 @@ def _resolve_unjournaled_wall(
     return match.remote_id, match.surface, raw, "unjournaled_exact_mapping"
 
 
-def _safe_next_action(
-    *,
-    durable_status: str,
-    upload_stage: str | None,
-    provider_effect: bool,
-    clip_remote_id: str | None,
-    clip_origin: str | None,
-    wall_remote_id: str | None,
-    clip_copy_state: str | None,
-    wall_copy_state: str | None,
-) -> str:
-    if wall_remote_id is not None:
-        if durable_status != "wall_verified":
-            return "reconcile_existing_wall_without_repost"
-        if clip_copy_state == "promoted" and wall_copy_state == "promoted":
-            return "phase_a_complete_promoted"
-        return "phase_a_complete_promotion_pending"
-    if clip_remote_id is not None:
-        if provider_effect and upload_stage == UploadStage.VERIFIED.value and clip_origin == "upload_record":
-            return "resume_from_verified_clip_without_reupload_then_wall"
-        if durable_status == "clip_verified":
-            return "resume_wall_only_without_reupload"
-        if clip_origin == "inventory":
-            return "adopt_existing_clip_without_reupload_then_wall"
-        if provider_effect:
-            return "reconcile_provider_effect_without_reupload_then_wall"
-        return "resume_wall_without_reupload"
-    if provider_effect:
-        return "reconcile_provider_effect_without_replay"
-    return "eligible_for_single_upload_after_executor_existing_clip_preflight"
-
-
 def _probe_batch(
     *,
     assets: list[SourceAsset],
@@ -280,6 +254,7 @@ def _probe_batch(
             "clip_description_sha256": None,
             "upload_stage": None,
             "provider_effect_durable": False,
+            "existing_clip_preflight_complete": False,
             "wall_remote_id": item.get("wall_remote_id"),
             "current_wall_remote_id": None,
             "wall_resolution_mode": None,
@@ -287,6 +262,8 @@ def _probe_batch(
             "wall_copy_state": None,
             "wall_message_sha256": None,
             "safe_next_action": None,
+            "plan": None,
+            "plan_digest": None,
             "reupload_authorized_by_probe": False,
             "repost_authorized_by_probe": False,
             "stop_reason": None,
@@ -296,9 +273,12 @@ def _probe_batch(
             clip_remote_id, clip_origin, upload_stage, provider_effect = _durable_clip_candidate(item)
             row["upload_stage"] = upload_stage
             row["provider_effect_durable"] = provider_effect
+            existing_clip_preflight_complete = False
 
             if clip_remote_id is None and not provider_effect:
                 clip_remote_id = existing_clip_lookup(client, legacy_asset)
+                existing_clip_preflight_complete = True
+                row["existing_clip_preflight_complete"] = True
                 if clip_remote_id is not None:
                     clip_origin = "inventory"
 
@@ -377,18 +357,27 @@ def _probe_batch(
                     wall_message_sha256=_sha256_text(current_message),
                 )
 
-            row["safe_next_action"] = _safe_next_action(
-                durable_status=durable_status,
-                upload_stage=upload_stage,
-                provider_effect=provider_effect,
-                clip_remote_id=clip_remote_id,
-                clip_origin=clip_origin,
-                wall_remote_id=current_wall_remote_id,
-                clip_copy_state=clip_copy_state,
-                wall_copy_state=wall_copy_state,
+            plan = plan_issue323_item(
+                Issue323ItemState(
+                    durable_status=durable_status,
+                    upload_stage=UploadStage(upload_stage) if upload_stage is not None else None,
+                    provider_effect_durable=provider_effect,
+                    clip_remote_id=clip_remote_id,
+                    clip_identity_origin=clip_origin,
+                    wall_remote_id=current_wall_remote_id,
+                    clip_copy_state=clip_copy_state,
+                    wall_copy_state=wall_copy_state,
+                    existing_clip_preflight_complete=existing_clip_preflight_complete,
+                )
             )
+            row["safe_next_action"] = plan.action.value
+            row["plan"] = plan.as_dict()
+            row["plan_digest"] = plan.digest
         except (MiloviStatusProbeBlocked, MiloviFinalizerBlocked, MiloviTokenRolloutBlocked) as exc:
-            row["safe_next_action"] = "stop_conflict"
+            plan = blocked_issue323_item_plan()
+            row["safe_next_action"] = plan.action.value
+            row["plan"] = plan.as_dict()
+            row["plan_digest"] = plan.digest
             row["stop_reason"] = str(exc)
             blockers.append({"source_id": source_id, "reason": str(exc)})
 
@@ -413,6 +402,7 @@ def _probe_batch(
     return {
         "schema_name": STATUS_SCHEMA,
         "schema_version": STATUS_VERSION,
+        "plan_schema_version": PLAN_SCHEMA_VERSION,
         "status": "blocked" if blockers else "verified_read_only",
         "project_key": "milovi-cake",
         "community_id": MILOVI_COMMUNITY_ID,
