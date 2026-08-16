@@ -18,10 +18,9 @@ from video_channel_manager.platforms.vk.milovi_immediate_wall import MILOVI_COMM
 from video_channel_manager.platforms.vk.milovi_issue323_finalize import (
     MiloviFinalizerBlocked,
     _assert_native_clip,
-    _clip_copy_state,
-    _copy_state,
     _legacy_clip_description,
     _legacy_wall_message,
+    _native_clip_assessment,
     _promote_asset,
     _read_exact_wall_incarnation,
     _resolve_wall_incarnation,
@@ -29,10 +28,20 @@ from video_channel_manager.platforms.vk.milovi_issue323_finalize import (
 )
 from video_channel_manager.platforms.vk.milovi_issue323_planner import (
     PLAN_SCHEMA_VERSION,
+    Issue323Capability,
     Issue323ItemState,
     blocked_issue323_item_plan,
     plan_issue323_item,
 )
+from video_channel_manager.platforms.vk.milovi_issue323_promotion_observation import (
+    PromotionFieldObservation,
+    PromotionObservationBatch,
+    PromotionObservationEvidence,
+    PromotionObservedCopyState,
+    classify_clip_copy_observation,
+    classify_wall_copy_observation,
+)
+from video_channel_manager.platforms.vk.milovi_issue323_promotion_spec import PromotionField
 from video_channel_manager.platforms.vk.milovi_rollout_sources import (
     PREPARED_SCHEMA,
     ROLL_OUT_IDS,
@@ -45,9 +54,11 @@ from video_channel_manager.platforms.vk.milovi_token_clip_rollout import (
     _find_existing_clip,
     _has_provider_effect,
     _load_journal,
+    _parse_remote_id,
     _prove_target,
     _resolve_account,
     _upload_remote_id,
+    clip_readiness,
 )
 from video_channel_manager.platforms.vk.upload_lifecycle import UploadStage
 from video_channel_manager.platforms.vk.wall import VkWallWriter
@@ -191,6 +202,112 @@ def _resolve_unjournaled_wall(
     return match.remote_id, match.surface, raw, "unjournaled_exact_mapping"
 
 
+def _read_native_clip_observation(
+    *,
+    provider: _ReadOnlyVkProvider,
+    asset: SourceAsset,
+    remote_id: str,
+    durable_verified: bool,
+) -> dict[str, Any]:
+    """Read one exact Clip while keeping durable identity separate from public-copy policy."""
+
+    raw = _assert_native_clip(
+        cast(VkWallWriter, provider),
+        asset,
+        remote_id,
+        description_mode="legacy_or_promoted",
+        preservation_only=True,
+    )
+    if durable_verified:
+        if str(raw.get("type") or "") != "short_video":
+            raise MiloviStatusProbeBlocked(f"Durably verified VK Clip lost native short_video type: {remote_id}")
+        return raw
+
+    owner_id, video_id = _parse_remote_id(remote_id)
+    assessment = _native_clip_assessment(
+        raw,
+        expected_owner_id=owner_id,
+        expected_video_id=video_id,
+        readiness=clip_readiness(asset),
+    )
+    if not assessment.ready:
+        raise MiloviStatusProbeBlocked(
+            f"VK object {remote_id} is not a verified native short_video: {assessment.reasons}"
+        )
+    return raw
+
+
+def _review_sensitive_creation_reason(
+    *,
+    plan_capabilities: tuple[Issue323Capability, ...],
+    clip_copy_state: PromotionObservedCopyState | None,
+    wall_copy_state: PromotionObservedCopyState | None,
+) -> str | None:
+    if not any(
+        capability in plan_capabilities
+        for capability in (Issue323Capability.CREATE_CLIP, Issue323Capability.CREATE_WALL)
+    ):
+        return None
+    states = tuple(state for state in (clip_copy_state, wall_copy_state) if state is not None)
+    if not any(state.requires_review for state in states):
+        return None
+    return (
+        "Unreviewed or processing-projected public copy is observation-only; "
+        "provider creation capability requires reviewed exact copy policy"
+    )
+
+
+def _build_promotion_observation(
+    *,
+    evidence: list[dict[str, Any]],
+    snapshot: VkWallSnapshot,
+) -> PromotionObservationBatch:
+    fields: list[PromotionFieldObservation] = []
+    blockers: list[str] = []
+    for row in evidence:
+        source_id = str(row["source_id"])
+        clip_remote_id = row.get("clip_remote_id")
+        clip_text = row.get("clip_description_text")
+        if isinstance(clip_remote_id, str) and clip_remote_id and isinstance(clip_text, str):
+            fields.append(
+                PromotionFieldObservation(
+                    source_id=source_id,
+                    field=PromotionField.CLIP_DESCRIPTION,
+                    text=clip_text,
+                    sha256=_sha256_text(clip_text),
+                    remote_id=clip_remote_id,
+                    evidence=PromotionObservationEvidence.EXACT_CLIP_READ,
+                    processing_projection=bool(row.get("clip_processing_projection")),
+                )
+            )
+        else:
+            blockers.append(f"{source_id}: exact Clip description observation unavailable")
+
+        wall_remote_id = row.get("current_wall_remote_id")
+        wall_text = row.get("wall_message_text")
+        if isinstance(wall_remote_id, str) and wall_remote_id and isinstance(wall_text, str):
+            fields.append(
+                PromotionFieldObservation(
+                    source_id=source_id,
+                    field=PromotionField.WALL_MESSAGE,
+                    text=wall_text,
+                    sha256=_sha256_text(wall_text),
+                    remote_id=wall_remote_id,
+                    evidence=PromotionObservationEvidence.EXACT_WALL_INCARNATION,
+                )
+            )
+        else:
+            blockers.append(f"{source_id}: exact current wall-message observation unavailable")
+
+    return PromotionObservationBatch(
+        source_snapshot_id=SOURCE_SNAPSHOT_ID,
+        wall_snapshot_sha256=snapshot.snapshot_sha256,
+        captured_at=snapshot.captured_at,
+        fields=tuple(fields),
+        blockers=tuple(blockers),
+    )
+
+
 def _probe_batch(
     *,
     assets: list[SourceAsset],
@@ -251,7 +368,9 @@ def _probe_batch(
             "clip_remote_id": None,
             "clip_identity_origin": None,
             "clip_copy_state": None,
+            "clip_description_text": None,
             "clip_description_sha256": None,
+            "clip_processing_projection": False,
             "upload_stage": None,
             "provider_effect_durable": False,
             "existing_clip_preflight_complete": False,
@@ -260,6 +379,7 @@ def _probe_batch(
             "wall_resolution_mode": None,
             "wall_surface": None,
             "wall_copy_state": None,
+            "wall_message_text": None,
             "wall_message_sha256": None,
             "safe_next_action": None,
             "plan": None,
@@ -282,32 +402,31 @@ def _probe_batch(
                 if clip_remote_id is not None:
                     clip_origin = "inventory"
 
-            clip_copy_state: str | None = None
+            clip_copy_state: PromotionObservedCopyState | None = None
             if clip_remote_id is not None:
                 durable_verified = durable_status in {"clip_verified", "wall_verified"} or (
                     upload_stage == UploadStage.VERIFIED.value
                 )
-                raw_clip = _assert_native_clip(
-                    cast(VkWallWriter, provider),
-                    asset,
-                    clip_remote_id,
-                    description_mode="legacy_or_promoted",
+                raw_clip = _read_native_clip_observation(
+                    provider=provider,
+                    asset=asset,
+                    remote_id=clip_remote_id,
                     durable_verified=durable_verified,
                 )
                 current_description = str(raw_clip.get("description") or "").strip()
-                clip_copy_state = _clip_copy_state(
+                clip_copy_state = classify_clip_copy_observation(
                     current=current_description,
                     legacy=_legacy_clip_description(asset),
                     promoted=asset.description.strip(),
-                    source_id=source_id,
-                    field="Clip description",
                     provider_item=raw_clip,
                 )
                 row.update(
                     clip_remote_id=clip_remote_id,
                     clip_identity_origin=clip_origin,
-                    clip_copy_state=clip_copy_state,
+                    clip_copy_state=clip_copy_state.value,
+                    clip_description_text=current_description,
                     clip_description_sha256=_sha256_text(current_description),
+                    clip_processing_projection=clip_copy_state.processing_projection,
                 )
 
             journal_wall_remote_id = item.get("wall_remote_id")
@@ -337,23 +456,22 @@ def _probe_batch(
                         now_epoch=observed_now,
                     )
 
-            wall_copy_state: str | None = None
+            wall_copy_state: PromotionObservedCopyState | None = None
             current_wall_remote_id: str | None = None
             if resolved_wall is not None:
                 current_wall_remote_id, surface, raw_post, resolution_mode = resolved_wall
                 current_message = str(raw_post.get("text") or "").strip()
-                wall_copy_state = _copy_state(
+                wall_copy_state = classify_wall_copy_observation(
                     current=current_message,
                     legacy=_legacy_wall_message(asset),
                     promoted=asset.wall_message.strip(),
-                    source_id=source_id,
-                    field="Wall message",
                 )
                 row.update(
                     current_wall_remote_id=current_wall_remote_id,
                     wall_resolution_mode=resolution_mode,
                     wall_surface=surface.value,
-                    wall_copy_state=wall_copy_state,
+                    wall_copy_state=wall_copy_state.value,
+                    wall_message_text=current_message,
                     wall_message_sha256=_sha256_text(current_message),
                 )
 
@@ -365,11 +483,20 @@ def _probe_batch(
                     clip_remote_id=clip_remote_id,
                     clip_identity_origin=clip_origin,
                     wall_remote_id=current_wall_remote_id,
-                    clip_copy_state=clip_copy_state,
-                    wall_copy_state=wall_copy_state,
+                    clip_copy_state=clip_copy_state.value if clip_copy_state is not None else None,
+                    wall_copy_state=wall_copy_state.value if wall_copy_state is not None else None,
                     existing_clip_preflight_complete=existing_clip_preflight_complete,
                 )
             )
+            review_reason = _review_sensitive_creation_reason(
+                plan_capabilities=plan.required_capabilities,
+                clip_copy_state=clip_copy_state,
+                wall_copy_state=wall_copy_state,
+            )
+            if review_reason is not None:
+                plan = blocked_issue323_item_plan()
+                row["stop_reason"] = review_reason
+                blockers.append({"source_id": source_id, "reason": review_reason})
             row["safe_next_action"] = plan.action.value
             row["plan"] = plan.as_dict()
             row["plan_digest"] = plan.digest
@@ -399,6 +526,9 @@ def _probe_batch(
         for item in evidence
         if item["clip_remote_id"] is not None or item["provider_effect_durable"] is True
     ]
+    promotion_observation = _build_promotion_observation(evidence=evidence, snapshot=snapshot)
+    promotion_observation_payload = promotion_observation.as_dict()
+    promotion_observation_payload["observation_digest"] = promotion_observation.digest
     return {
         "schema_name": STATUS_SCHEMA,
         "schema_version": STATUS_VERSION,
@@ -417,6 +547,7 @@ def _probe_batch(
         "first_action_source_id": first_action["source_id"] if first_action is not None else None,
         "first_safe_next_action": first_action["safe_next_action"] if first_action is not None else None,
         "protected_no_reupload_source_ids": protected_no_reupload,
+        "promotion_observation": promotion_observation_payload,
         "blockers": blockers,
         "items": evidence,
     }
