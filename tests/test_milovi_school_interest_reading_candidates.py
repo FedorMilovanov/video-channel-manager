@@ -31,18 +31,27 @@ def test_school_candidate_pool_is_provider_inert_and_separate_from_product_brand
     assert school["not_evidence_of_milovi_cake_production"] is True
 
 
-def test_first_school_wave_has_twelve_distinct_story_led_candidates() -> None:
+def test_first_school_wave_has_twelve_distinct_history_led_candidates() -> None:
     data = _load_json(CANDIDATES)
     candidates = data["candidates"]
 
     assert len(candidates) == 12
     assert len({item["candidate_id"] for item in candidates}) == 12
     assert len({item["source_slug"] for item in candidates}) == 12
+    assert all(item["source_category"] == "histoire-culinaire" for item in candidates)
+    assert all(not item["source_slug"].startswith("recipe-") for item in candidates)
+    assert all(item["source_title"].strip() for item in candidates)
+    assert all(item["source_excerpt"].strip() for item in candidates)
     assert all(item["hook"].strip() for item in candidates)
     assert all(item["preview"].strip() for item in candidates)
     assert all(item["open_loop"].strip() for item in candidates)
     assert all("Milovi School" in item["cta"] for item in candidates)
-    assert all("[verified article URL before scheduling]" in item["cta"] for item in candidates)
+    assert all(
+        item["expected_article_url"]
+        == f"https://french.milovicake.ru/articles/{item['source_slug']}"
+        for item in candidates
+    )
+    assert all(item["expected_article_url"] in item["cta"] for item in candidates)
 
 
 def test_school_previews_do_not_claim_milovi_cake_product_or_production_link() -> None:
@@ -84,6 +93,8 @@ def test_school_policy_is_interest_reading_not_product_rubric() -> None:
     assert policy["school_posts_may_not_be_consecutive"] is True
     assert policy["product_cta_required"] is False
     assert policy["product_cta_default"] == "forbidden"
+    assert policy["initial_pool_category"] == "histoire-culinaire"
+    assert policy["initial_pool_recipe_slugs_allowed"] is False
     assert "our separate editorial project for interesting reading" in boundary
     assert "not as a product rubric" in boundary
     assert "Do **not** force a Milovi Cake product CTA into a School preview" in boundary
