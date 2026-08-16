@@ -11,6 +11,7 @@ from video_channel_manager.platforms.vk.milovi_issue323_promotion_observation im
 )
 from video_channel_manager.platforms.vk.milovi_issue323_promotion_preflight import (
     PromotionDispatchStatus,
+    PromotionExecutionPreflight,
     PromotionOperationState,
     build_promotion_execution_preflight,
 )
@@ -126,7 +127,7 @@ def preflight_with_promotion_journal(
     spec: PromotionSpec,
     observation: PromotionObservationBatch,
     journal: PromotionJournal,
-):
+) -> PromotionExecutionPreflight:
     if journal.spec_digest != spec.digest:
         raise ValueError("Promotion journal is bound to a different reviewed PromotionSpec digest")
     return build_promotion_execution_preflight(
