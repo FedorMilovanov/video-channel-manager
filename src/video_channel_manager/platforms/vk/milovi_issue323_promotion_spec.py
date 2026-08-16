@@ -56,9 +56,7 @@ class ReviewedPromotionField:
 
         if self.policy is PromotionPolicy.MANAGED_EXACT:
             if self.after_text is None or self.after_sha256 is None:
-                raise ValueError(
-                    f"managed_exact requires reviewed AFTER text/SHA: {self.source_id}:{self.field.value}"
-                )
+                raise ValueError(f"managed_exact requires reviewed AFTER text/SHA: {self.source_id}:{self.field.value}")
             if not self.after_text:
                 raise ValueError(f"PromotionSpec reviewed AFTER text is blank: {self.source_id}:{self.field.value}")
             if promotion_text_sha256(self.after_text) != self.after_sha256:
@@ -241,8 +239,16 @@ def promotion_spec_from_mapping(payload: Mapping[str, object]) -> PromotionSpec:
         before_sha256 = raw.get("before_sha256")
         after_text = raw.get("after_text")
         after_sha256 = raw.get("after_sha256")
-        if not all(isinstance(value, str) for value in (source_id, field, policy, before_text, before_sha256)):
-            raise ValueError(f"PromotionSpec field {index} has invalid required scalar types")
+        if not isinstance(source_id, str):
+            raise ValueError(f"PromotionSpec field {index} source_id must be a string")
+        if not isinstance(field, str):
+            raise ValueError(f"PromotionSpec field {index} field must be a string")
+        if not isinstance(policy, str):
+            raise ValueError(f"PromotionSpec field {index} policy must be a string")
+        if not isinstance(before_text, str):
+            raise ValueError(f"PromotionSpec field {index} before_text must be a string")
+        if not isinstance(before_sha256, str):
+            raise ValueError(f"PromotionSpec field {index} before_sha256 must be a string")
         if after_text is not None and not isinstance(after_text, str):
             raise ValueError(f"PromotionSpec field {index} after_text must be a string or null")
         if after_sha256 is not None and not isinstance(after_sha256, str):
