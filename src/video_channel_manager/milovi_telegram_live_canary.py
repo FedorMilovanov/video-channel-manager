@@ -5,6 +5,7 @@ import io
 import json
 import os
 import pathlib
+import re
 import subprocess
 import sys
 import urllib.parse
@@ -17,6 +18,7 @@ from PIL import Image  # type: ignore[import-not-found]
 
 AUTH_PATH = pathlib.Path("content/telegram/milovi-cake/live/canary-authorization.json")
 STATE_PATH = pathlib.Path("content/telegram/milovi-cake/live/canary-dispatch-state.json")
+ATTEMPTS_DIR = pathlib.Path("content/telegram/milovi-cake/live/attempts")
 CANDIDATE_PATH = pathlib.Path("content/telegram/milovi-cake/canary-candidate-2026-08.json")
 RUNTIME_DIR = pathlib.Path(".runtime/milovi-canary")
 
@@ -34,6 +36,7 @@ SOURCE_SHA256 = "2fd0336e90d3d42ae70638b33fc51653c14ef3b4c08c1ce6fce7f5c818b65ac
 TRANSPORT_SHA256 = "a9730cc62939845c61191f1a375b2bab35800122c968d6cc757f0ae4340771d5"
 TRANSPORT_BYTE_SIZE = 580910
 CAPTION_SHA256 = "sha256:fe4552e8cb78183f2f7f32d03792af4b9d4f65a18ec0811bfbced7fb424e0d1c"
+AUTHORIZATION_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
 
 def _json_object(path: pathlib.Path) -> dict[str, Any]:
@@ -41,6 +44,13 @@ def _json_object(path: pathlib.Path) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise SystemExit(f"expected JSON object: {path}")
     return cast(dict[str, Any], payload)
+
+
+def _authorization_id(payload: dict[str, Any], *, field: str = "authorization_id") -> str:
+    value = str(payload.get(field) or "")
+    if not AUTHORIZATION_ID_PATTERN.fullmatch(value):
+        raise SystemExit(f"invalid {field}")
+    return value
 
 
 def _telegram_call(
@@ -82,7 +92,7 @@ def _read_result(token: str, method: str, payload: dict[str, object]) -> dict[st
     return cast(dict[str, Any], result)
 
 
-def _validate_authorization(auth: dict[str, Any]) -> None:
+def _validate_authorization(auth: dict[str, Any]) -> dict[str, Any] | None:
     required: dict[str, object] = {
         "schema_name": "video-channel-manager.milovi-exact-canary-authorization",
         "schema_version": 1,
@@ -105,15 +115,33 @@ def _validate_authorization(auth: dict[str, Any]) -> None:
         if auth.get(key) != expected:
             raise SystemExit(f"authorization mismatch: {key}")
 
+    new_authorization_id = _authorization_id(auth)
     parent = subprocess.check_output(["git", "rev-parse", "HEAD^"], text=True).strip()
     if parent != auth.get("expected_parent_main_sha"):
         raise SystemExit("authorization parent differs from reviewed main")
     changed = subprocess.check_output(["git", "diff", "--name-only", "HEAD^", "HEAD"], text=True).splitlines()
     if changed != [AUTH_PATH.as_posix()]:
         raise SystemExit(f"authorization commit contains unexpected files: {changed}")
-    if STATE_PATH.exists():
-        state = _json_object(STATE_PATH)
-        raise SystemExit(f"canary state already exists; replay forbidden: {state.get('status')}")
+
+    if not STATE_PATH.exists():
+        if auth.get("supersedes_authorization_id") not in {None, ""}:
+            raise SystemExit("first canary authorization cannot supersede another authorization")
+        return None
+
+    prior = _json_object(STATE_PATH)
+    prior_authorization_id = _authorization_id(prior)
+    if prior_authorization_id == new_authorization_id:
+        raise SystemExit("same canary authorization cannot be replayed")
+    if (
+        prior.get("status") != "provider_rejected"
+        or prior.get("provider_effect") != "rejected_before_message_creation"
+        or prior.get("message_id") is not None
+        or prior.get("automatic_replay_allowed") is not False
+    ):
+        raise SystemExit(f"existing canary state is not successor-safe: {prior.get('status')}")
+    if auth.get("supersedes_authorization_id") != prior_authorization_id:
+        raise SystemExit("successor authorization must explicitly bind the rejected authorization it supersedes")
+    return prior
 
 
 def _materialize_payload() -> tuple[bytes, str]:
@@ -132,7 +160,7 @@ def _materialize_payload() -> tuple[bytes, str]:
     safe_path = "/".join(urllib.parse.quote(part, safe="") for part in SOURCE_PATH.split("/"))
     request = urllib.request.Request(
         f"https://raw.githubusercontent.com/{SOURCE_REPO}/{SOURCE_COMMIT}/{safe_path}",
-        headers={"User-Agent": "video-channel-manager-milovi-exact-canary/1"},
+        headers={"User-Agent": "video-channel-manager-milovi-exact-canary/2"},
     )
     with urllib.request.urlopen(request, timeout=30) as response:
         source = response.read()
@@ -181,15 +209,43 @@ def _fresh_target_preflight(token: str) -> None:
         if str(chat.get("username") or "").casefold() != CHAT_USERNAME.casefold():
             raise SystemExit("fresh target username mismatch")
 
+    membership = _read_result(token, "getChatMember", {"chat_id": CHAT_ID, "user_id": BOT_ID})
+    member_user = membership.get("user")
+    if not isinstance(member_user, dict):
+        raise SystemExit("fresh membership proof has no user identity")
+    if int(member_user["id"]) != BOT_ID or member_user.get("is_bot") is not True:
+        raise SystemExit("fresh membership proof resolved a different identity")
+    member_username = str(member_user.get("username") or "")
+    if member_username and member_username.casefold() != BOT_USERNAME.casefold():
+        raise SystemExit("fresh membership proof bot username mismatch")
+    member_status = str(membership.get("status") or "")
+    can_post = member_status == "creator" or membership.get("can_post_messages") is True
+    if member_status not in {"administrator", "creator"} or not can_post:
+        raise SystemExit("fresh membership proof lacks channel posting authority")
+
+
+def _archive_prior_rejection(prior: dict[str, Any] | None) -> str | None:
+    if prior is None:
+        return None
+    authorization_id = _authorization_id(prior)
+    ATTEMPTS_DIR.mkdir(parents=True, exist_ok=True)
+    archive_path = ATTEMPTS_DIR / f"{authorization_id}.json"
+    archive_bytes = json.dumps(prior, ensure_ascii=False, indent=2).encode("utf-8") + b"\n"
+    if archive_path.exists() and archive_path.read_bytes() != archive_bytes:
+        raise SystemExit("existing rejected-attempt archive disagrees with canonical prior state")
+    archive_path.write_bytes(archive_bytes)
+    return archive_path.as_posix()
+
 
 def prepare() -> int:
     if os.environ.get("GITHUB_RUN_ATTEMPT") != "1":
         raise SystemExit("GitHub rerun forbidden for exact canary")
     auth = _json_object(AUTH_PATH)
-    _validate_authorization(auth)
+    prior = _validate_authorization(auth)
     jpeg, caption = _materialize_payload()
     token = os.environ["TELEGRAM_BOT_TOKEN"]
     _fresh_target_preflight(token)
+    prior_archive = _archive_prior_rejection(prior)
 
     RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
     (RUNTIME_DIR / "p18.jpg").write_bytes(jpeg)
@@ -203,10 +259,14 @@ def prepare() -> int:
         "status": "dispatch_started",
         "provider_effect": "may_exist_after_next_step",
         "authorization_commit_sha": os.environ["GITHUB_SHA"],
-        "authorization_id": auth["authorization_id"],
+        "authorization_id": _authorization_id(auth),
+        "supersedes_authorization_id": auth.get("supersedes_authorization_id"),
+        "prior_state_archive": prior_archive,
         "chat_id": CHAT_ID,
         "chat_username": CHAT_USERNAME,
         "bot_id": BOT_ID,
+        "bot_username": BOT_USERNAME,
+        "membership_preflight": "administrator_with_can_post_messages_proved",
         "transport_sha256": f"sha256:{TRANSPORT_SHA256}",
         "caption_sha256": CAPTION_SHA256,
         "github_run_id": int(os.environ["GITHUB_RUN_ID"]),
@@ -218,6 +278,22 @@ def prepare() -> int:
     STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"status": "prepared", "chat_id": CHAT_ID, "provider_write_performed": False}))
     return 0
+
+
+def _record_deterministic_rejection(state: dict[str, Any], status: int, description: str) -> None:
+    state.update(
+        {
+            "status": "provider_rejected",
+            "provider_effect": "rejected_before_message_creation",
+            "provider_response_at_utc": datetime.now(tz=UTC).isoformat(),
+            "provider_http_status": status,
+            "provider_description": description,
+            "message_id": None,
+            "message_url": None,
+            "automatic_replay_allowed": False,
+        }
+    )
+    STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def send() -> int:
@@ -249,11 +325,18 @@ def send() -> int:
 
     if status != 200 or body.get("ok") is not True:
         description = str(body.get("description") or "")
+        if 400 <= status < 500 and body.get("ok") is False:
+            _record_deterministic_rejection(state, status, description)
+            print(
+                f"Telegram rejected exact canary HTTP={status} description={description}; no automatic replay",
+                file=sys.stderr,
+            )
+            raise SystemExit(76)
         print(
-            f"Telegram rejected exact canary HTTP={status} description={description}; no automatic replay",
+            f"Telegram returned non-terminal failure HTTP={status}; outcome treated as unknown; no automatic replay",
             file=sys.stderr,
         )
-        raise SystemExit(76)
+        raise SystemExit(75)
 
     message = body.get("result")
     if not isinstance(message, dict):
@@ -284,6 +367,7 @@ def send() -> int:
             "returned_chat_id": int(chat["id"]),
             "returned_chat_username": str(chat.get("username") or ""),
             "returned_photo_count": len(photos),
+            "automatic_replay_allowed": False,
         }
     )
     STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
