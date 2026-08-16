@@ -76,7 +76,10 @@ def test_current_state_is_a_live_index_not_a_commit_ledger() -> None:
     assert "SBOM REST export is verified unavailable through both documented generation surfaces" in text
     assert "blanket `UNVERIFIED` item" in text
     assert "retained `<TITLE> - FULL.mp4` master goes to canonical Windows Downloads" in text
-    assert "generated handoff/watcher control files and exact-trim outputs remain under repository `operator-output`" in text
+    assert (
+        "generated handoff/watcher control files and exact-trim outputs remain under repository `operator-output`"
+        in text
+    )
 
 
 def test_dependabot_maintenance_is_atomic_and_bounded() -> None:
