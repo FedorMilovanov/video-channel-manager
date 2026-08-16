@@ -450,7 +450,7 @@ def milovi_323_continue(
     ],
     output: Annotated[
         Path,
-        typer.Option("--output", help="Canonical read-only continuation plan/evidence JSON path"),
+        typer.Option("--output", help="Canonical continuation plan/evidence JSON path"),
     ] = Path("operator-output/milovi-cake-issue-323-continue-preview.json"),
     status_output: Annotated[
         Path,
@@ -479,17 +479,27 @@ def milovi_323_continue(
         str | None,
         typer.Option(
             "--confirm-preflight-digest",
-            help="Exact fresh preflight sha256 digest confirmation; this never authorizes provider mutation",
+            help="Exact fresh stable preflight sha256 digest; persists EDIT_INTENT only and never writes VK",
+        ),
+    ] = None,
+    confirm_provider_dispatch: Annotated[
+        str | None,
+        typer.Option(
+            "--confirm-provider-dispatch",
+            help=(
+                "Exact durable stable confirmation digest for a previously persisted EDIT_INTENT; "
+                "fresh whole-batch evidence must still match before one VK edit may run"
+            ),
         ),
     ] = None,
 ) -> None:
-    """Build or confirm the canonical Issue #323 continuation preflight; execute zero provider writes."""
+    """Advance one digest-bound Issue #323 continuation step; provider edits require separate confirmation."""
 
-    from video_channel_manager.platforms.vk.milovi_issue323_continue import run_issue_323_continue_preview
+    from video_channel_manager.platforms.vk.milovi_issue323_continue import run_issue_323_continue
     from video_channel_manager.platforms.vk.milovi_issue323_status_probe import MiloviStatusProbeBlocked
 
     try:
-        result = run_issue_323_continue_preview(
+        result = run_issue_323_continue(
             output_path=output,
             status_output_path=status_output,
             rollout_journal_path=journal,
@@ -499,6 +509,7 @@ def milovi_323_continue(
             promotion_journal_path=promotion_journal,
             journal_init_confirmation=confirm_journal_init,
             preflight_digest_confirmation=confirm_preflight_digest,
+            provider_dispatch_confirmation=confirm_provider_dispatch,
         )
     except (MiloviStatusProbeBlocked, OSError, ValueError) as exc:
         console.print(f"[red]STOP: {type(exc).__name__}: {exc}[/red]")
@@ -507,14 +518,22 @@ def milovi_323_continue(
     status = str(result["continuation_status"])
     successful_statuses = {
         "ready_for_digest_confirmation",
-        "digest_confirmed_provider_execution_not_available",
+        "intent_persisted_requires_separate_provider_dispatch_confirmation",
+        "intent_ready_for_provider_dispatch_confirmation",
+        "provider_dispatch_started_requires_fresh_reconciliation",
+        "dispatch_reconciled_verified_ready_for_next_plan",
+        "no_promotion_mutations_required",
     }
     color = "green" if status in successful_statuses else "yellow"
+    preflight = result.get("promotion_preflight")
+    planned_writes = preflight.get("expected_provider_writes", 0) if isinstance(preflight, dict) else 0
     console.print(
         f"[{color}]Milovi #323 continuation: {status}[/{color}] | "
-        f"planned-writes={result.get('promotion_preflight', {}).get('expected_provider_writes', 0) if isinstance(result.get('promotion_preflight'), dict) else 0} | "
-        f"digest-confirmed={result['preflight_digest_confirmed']} | provider-writes-executed=0 | "
-        f"digest={result['promotion_preflight_digest']} | result={output}"
+        f"planned-writes={planned_writes} | preflight-confirmed={result['preflight_digest_confirmed']} | "
+        f"dispatch-confirmed={result.get('provider_dispatch_confirmed', False)} | "
+        f"provider-writes-executed={result['provider_writes_executed']} | "
+        f"preflight-digest={result['promotion_preflight_digest']} | "
+        f"dispatch-digest={result.get('provider_dispatch_confirmation_digest')} | result={output}"
     )
     if status not in successful_statuses:
         raise typer.Exit(code=3)
