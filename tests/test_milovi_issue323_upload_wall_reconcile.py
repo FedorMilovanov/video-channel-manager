@@ -367,6 +367,7 @@ def test_finalizer_retries_same_fresh_clip_through_replay_proof_recovery(
             pass
 
     monkeypatch.setattr(finalize, "clip_readiness", lambda _asset: object())
+    monkeypatch.setattr(finalize, "_find_existing_clip", lambda _client, _asset: None)
     monkeypatch.setattr(finalize, "ensure_upload_record", lambda *_args, **_kwargs: (record, False))
     monkeypatch.setattr(
         finalize, "_has_provider_effect", lambda current_record: current_record["stage"] != UploadStage.PLANNED.value
