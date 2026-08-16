@@ -133,11 +133,7 @@ def _paths(tmp_path: Path) -> dict[str, Path]:
 
 def _journal_operation(path: Path, key: tuple[str, PromotionField]) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
-    return next(
-        item
-        for item in payload["operations"]
-        if item["source_id"] == key[0] and item["field"] == key[1].value
-    )
+    return next(item for item in payload["operations"] if item["source_id"] == key[0] and item["field"] == key[1].value)
 
 
 def test_missing_promotion_journal_stops_after_one_readonly_status_probe(
