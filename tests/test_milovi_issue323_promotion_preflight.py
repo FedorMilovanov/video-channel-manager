@@ -180,9 +180,7 @@ def test_one_unresolved_dispatch_zeroes_all_provider_writes() -> None:
     preflight = build_promotion_execution_preflight(
         spec=_spec(managed_key=managed_key),
         observation=_observation(),
-        operation_states=_states(
-            override=(*unresolved_key, PromotionDispatchStatus.EDIT_DISPATCH_STARTED, True)
-        ),
+        operation_states=_states(override=(*unresolved_key, PromotionDispatchStatus.EDIT_DISPATCH_STARTED, True)),
     )
 
     assert preflight.executable is False
