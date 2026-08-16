@@ -98,7 +98,7 @@ def test_render_is_self_contained_provenance_bound_and_not_chat_escaped() -> Non
     assert '$SourceReceipt = Join-Path $OperatorOutput ($Title + " - FULL.source.json")' in script
     assert '$Result = Join-Path $OperatorOutput ($Title + " - result.json")' in script
     assert '$Clip = Join-Path $OperatorOutput ($Title + ".mp4")' in script
-    assert '$Master = Join-Path $OperatorOutput' not in script
+    assert "$Master = Join-Path $OperatorOutput" not in script
     assert "$Work" not in script
     assert "bestvideo+bestaudio/best" in script
     assert "--retries 10 --fragment-retries 10" in script
