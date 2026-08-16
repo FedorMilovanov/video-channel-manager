@@ -33,7 +33,10 @@ class PromotionObservedCopyState(StrEnum):
 
     @property
     def requires_review(self) -> bool:
-        return self not in {PromotionObservedCopyState.LEGACY, PromotionObservedCopyState.PROMOTED}
+        return self in {
+            PromotionObservedCopyState.UNREVIEWED_EXACT,
+            PromotionObservedCopyState.PROCESSING_UNREVIEWED_PROJECTION,
+        }
 
     @property
     def processing_projection(self) -> bool:
@@ -195,10 +198,7 @@ class PromotionObservationBatch:
             raise ValueError(f"Promotion observation is incomplete; missing={missing}")
         if self.blockers:
             raise ValueError(f"Promotion observation has unresolved provider identity blockers: {list(self.blockers)}")
-        return {
-            (item.source_id, item.field): item.as_observed_field()
-            for item in self.ordered_fields()
-        }
+        return {(item.source_id, item.field): item.as_observed_field() for item in self.ordered_fields()}
 
     def as_dict(self) -> dict[str, object]:
         return {
