@@ -30,8 +30,7 @@ ORDER_TIMING = (
     "Срочные заказы обсуждаются индивидуально."
 )
 BENTO_INSCRIPTION = (
-    "Да, можно короткую фразу, имя, дату, шутку или признание. "
-    "Если текст длинный, подскажем как красиво разместить."
+    "Да, можно короткую фразу, имя, дату, шутку или признание. Если текст длинный, подскажем как красиво разместить."
 )
 SCHOOL_PUBLICATION_IDS = {
     "milovi-follow-on-003": "laduree-1862",
@@ -76,11 +75,7 @@ def _school_expected_titles(candidates: dict[str, Any]) -> dict[str, str]:
     titles: dict[str, str] = {}
     for publication_id, slug in SCHOOL_PUBLICATION_IDS.items():
         wave_item = next(
-            (
-                item
-                for item in items
-                if isinstance(item, dict) and item.get("publication_id") == publication_id
-            ),
+            (item for item in items if isinstance(item, dict) and item.get("publication_id") == publication_id),
             None,
         )
         if wave_item is None:
