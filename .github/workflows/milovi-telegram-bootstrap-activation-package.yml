@@ -69,26 +69,23 @@ jobs:
             -r requirements/telegram-publisher.txt
 
       - name: Require exact write-disabled Milovi profile
-        shell: bash
+        shell: python
         run: |
-          set -euo pipefail
-          mkdir -p "$PACKAGE_DIR"
-          python -m video_channel_manager.telegram_channel_cli validate-profile \
-            --profile "$PROFILE_PATH" > /tmp/profile.json
-          python - <<'PY'
-          import json
+          import os
           from pathlib import Path
 
-          profile = json.loads(Path('/tmp/profile.json').read_text(encoding='utf-8'))
-          if profile.get('project_key') != 'milovi-cake':
+          from video_channel_manager.telegram_channel_profile import load_channel_profile
+
+          Path(os.environ['PACKAGE_DIR']).mkdir(parents=True, exist_ok=True)
+          profile = load_channel_profile(Path(os.environ['PROFILE_PATH']))
+          if profile.project_key != 'milovi-cake':
               raise SystemExit('selected profile is not milovi-cake')
-          if str(profile.get('channel_username') or '').casefold() != '@milovicake':
+          if profile.channel_username.casefold() != '@milovicake':
               raise SystemExit('selected profile is not @MiloviCake')
-          if profile.get('provider_writes_authorized') is not False:
+          if profile.provider_writes_authorized is not False:
               raise SystemExit('activation package requires provider writes to remain disabled')
-          if profile.get('daily_verified_limit') != 2:
+          if profile.daily_verified_limit != 2:
               raise SystemExit('Milovi daily publication limit drifted from reviewed value 2')
-          PY
 
       - name: Discover exact target without provider mutation
         env:
