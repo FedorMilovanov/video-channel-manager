@@ -1,0 +1,225 @@
+name: Milovi Cake Telegram bootstrap activation package
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: milovi-cake-telegram-bootstrap-activation-package
+  cancel-in-progress: true
+
+jobs:
+  package:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      PROFILE_PATH: content/telegram/channels/milovi-cake.json
+      PACKAGE_DIR: .runtime/milovi-bootstrap-activation-package
+      TARGET_PROOF_PATH: .runtime/milovi-bootstrap-activation-package/target-proof.json
+      TARGET_BINDING_PATH: .runtime/milovi-bootstrap-activation-package/target-binding.json
+      UNBOUND_RELEASE_PATH: .runtime/milovi-bootstrap-activation-package/bootstrap-unbound.json
+      BOUND_RELEASE_PATH: .runtime/milovi-bootstrap-activation-package/bootstrap-bound-unauthorized.json
+      SUMMARY_PATH: .runtime/milovi-bootstrap-activation-package/summary.json
+      EXPECTED_CHAT_ID: -1002215328390
+      EXPECTED_BOT_ID: 8716602202
+      EXPECTED_BOT_USERNAME: preaching_mp3_bot
+
+    steps:
+      - name: Check out immutable current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal read-only Telegram runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+
+      - name: Require exact write-disabled Milovi profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$PACKAGE_DIR"
+          python -m video_channel_manager.telegram_channel_cli validate-profile \
+            --profile "$PROFILE_PATH" > /tmp/profile.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          profile = json.loads(Path('/tmp/profile.json').read_text(encoding='utf-8'))
+          if profile.get('project_key') != 'milovi-cake':
+              raise SystemExit('selected profile is not milovi-cake')
+          if str(profile.get('channel_username') or '').casefold() != '@milovicake':
+              raise SystemExit('selected profile is not @MiloviCake')
+          if profile.get('provider_writes_authorized') is not False:
+              raise SystemExit('activation package requires provider writes to remain disabled')
+          if profile.get('daily_verified_limit') != 2:
+              raise SystemExit('Milovi daily publication limit drifted from reviewed value 2')
+          PY
+
+      - name: Discover exact target without provider mutation
+        env:
+          MILOVI_CAKE_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_channel_cli discover-target \
+            --profile "$PROFILE_PATH" \
+            --expected-bot-id "$EXPECTED_BOT_ID" \
+            --expected-bot-username "$EXPECTED_BOT_USERNAME" \
+            --output "$TARGET_PROOF_PATH"
+
+      - name: Freeze exact target binding candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_target_binding_cli \
+            --profile "$PROFILE_PATH" \
+            --proof "$TARGET_PROOF_PATH" \
+            --output "$TARGET_BINDING_PATH" > /tmp/binding.json
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          binding = json.loads(Path('/tmp/binding.json').read_text(encoding='utf-8'))
+          if binding.get('provider_write_performed') is not False:
+              raise SystemExit('target binding unexpectedly claims provider mutation')
+          if binding.get('chat_id') != int(os.environ['EXPECTED_CHAT_ID']):
+              raise SystemExit('target binding chat id drifted from reviewed @MiloviCake identity')
+          if binding.get('bot_id') != int(os.environ['EXPECTED_BOT_ID']):
+              raise SystemExit('target binding bot id drifted from reviewed identity')
+          if str(binding.get('bot_username') or '').casefold() != os.environ['EXPECTED_BOT_USERNAME'].casefold():
+              raise SystemExit('target binding bot username drifted from reviewed identity')
+          PY
+
+      - name: Build exact frozen bootstrap release candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.milovi_telegram_bootstrap build-release \
+            --profile "$PROFILE_PATH" \
+            --output "$UNBOUND_RELEASE_PATH" > /tmp/bootstrap-build.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          built = json.loads(Path('/tmp/bootstrap-build.json').read_text(encoding='utf-8'))
+          if built.get('built') is not True or built.get('release_authorized') is not False:
+              raise SystemExit('bootstrap compiler did not produce the expected unauthorized candidate')
+          if built.get('items') != 10:
+              raise SystemExit('bootstrap compiler did not produce exactly ten items')
+          digest = str(built.get('candidate_digest') or '')
+          if not digest.startswith('sha256:') or len(digest) != 71:
+              raise SystemExit('bootstrap compiler did not produce an exact candidate digest')
+          Path('/tmp/unbound-candidate-sha256').write_text(digest, encoding='utf-8')
+          PY
+
+      - name: Bind bootstrap candidate to exact target without authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          unbound_digest="$(cat /tmp/unbound-candidate-sha256)"
+          python -m video_channel_manager.telegram_release_binding_cli \
+            --profile "$PROFILE_PATH" \
+            --binding "$TARGET_BINDING_PATH" \
+            --candidate "$UNBOUND_RELEASE_PATH" \
+            --expected-unbound-candidate-sha256 "$unbound_digest" \
+            --output "$BOUND_RELEASE_PATH" > /tmp/release-binding.json
+
+      - name: Verify complete package remains provider-inert and unauthorized
+        shell: python
+        run: |
+          import json
+          import os
+          from pathlib import Path
+
+          proof = json.loads(Path(os.environ['TARGET_PROOF_PATH']).read_text(encoding='utf-8'))
+          binding = json.loads(Path(os.environ['TARGET_BINDING_PATH']).read_text(encoding='utf-8'))
+          unbound = json.loads(Path(os.environ['UNBOUND_RELEASE_PATH']).read_text(encoding='utf-8'))
+          bound = json.loads(Path(os.environ['BOUND_RELEASE_PATH']).read_text(encoding='utf-8'))
+          bind_summary = json.loads(Path('/tmp/release-binding.json').read_text(encoding='utf-8'))
+
+          expected_chat_id = int(os.environ['EXPECTED_CHAT_ID'])
+          expected_bot_id = int(os.environ['EXPECTED_BOT_ID'])
+          expected_bot_username = os.environ['EXPECTED_BOT_USERNAME']
+
+          if proof.get('schema_name') != 'video-channel-manager.telegram-generic-target-proof':
+              raise SystemExit('fresh discovery artifact is not a generic target proof')
+          if proof.get('project_key') != 'milovi-cake' or str(proof.get('channel_username') or '').casefold() != '@milovicake':
+              raise SystemExit('fresh discovery proof differs from selected Milovi channel')
+          if proof.get('chat_id') != expected_chat_id or proof.get('bot_id') != expected_bot_id:
+              raise SystemExit('fresh discovery proof exact numeric identity mismatch')
+          if str(proof.get('bot_username') or '').casefold() != expected_bot_username.casefold():
+              raise SystemExit('fresh discovery proof bot username mismatch')
+          if proof.get('chat_type') != 'channel' or proof.get('can_post_messages') is not True:
+              raise SystemExit('fresh discovery proof does not prove writable channel membership')
+          if binding.get('provider_write_performed') is not False:
+              raise SystemExit('target binding unexpectedly claims provider mutation')
+          if unbound.get('release_authorized') is not False or bound.get('release_authorized') is not False:
+              raise SystemExit('activation package must not authorize a release')
+          for candidate in (unbound, bound):
+              if candidate.get('reviewed_candidate_sha256') is not None:
+                  raise SystemExit('activation package must not contain review approval metadata')
+              if candidate.get('reviewed_by') is not None or candidate.get('reviewed_at') is not None:
+                  raise SystemExit('activation package must not contain reviewer identity or timestamp')
+              if len(candidate.get('items') or []) != 10:
+                  raise SystemExit('activation package must preserve the exact ten-item bootstrap release')
+          if any(unbound.get(field) is not None for field in ('target_binding_sha256', 'chat_id', 'bot_id', 'bot_username')):
+              raise SystemExit('bootstrap compiler output unexpectedly arrived target-bound')
+          if bound.get('target_binding_sha256') != bind_summary.get('target_binding_sha256'):
+              raise SystemExit('bound release target-binding digest differs from binding summary')
+          if bound.get('chat_id') != expected_chat_id or bound.get('bot_id') != expected_bot_id:
+              raise SystemExit('bound release exact target identity mismatch')
+          if str(bound.get('bot_username') or '').casefold() != expected_bot_username.casefold():
+              raise SystemExit('bound release bot username mismatch')
+          if bind_summary.get('authorized') is not False or bind_summary.get('provider_write_performed') is not False:
+              raise SystemExit('release binding unexpectedly authorized or mutated provider state')
+          if unbound.get('items') != bound.get('items'):
+              raise SystemExit('target binding changed bootstrap release items')
+
+          summary = {
+              'schema_name': 'video-channel-manager.milovi-bootstrap-activation-package',
+              'schema_version': 1,
+              'project_key': 'milovi-cake',
+              'channel_username': '@MiloviCake',
+              'current_main_sha': os.environ['GITHUB_SHA'],
+              'provider_access_mode': 'read_only_target_discovery_only',
+              'provider_write_performed': False,
+              'release_authorized': False,
+              'profile_writes_required_to_remain_disabled': True,
+              'chat_id': expected_chat_id,
+              'bot_id': expected_bot_id,
+              'bot_username': expected_bot_username,
+              'target_binding_sha256': bind_summary['target_binding_sha256'],
+              'unbound_candidate_sha256': bind_summary['unbound_candidate_sha256'],
+              'bound_candidate_sha256': bind_summary['bound_candidate_sha256'],
+              'bound_release_sha256': bind_summary['bound_release_sha256'],
+              'bootstrap_items': 10,
+              'next_step': 'separate explicit human review of the exact bound candidate; this package itself cannot publish',
+          }
+          Path(os.environ['SUMMARY_PATH']).write_text(
+              json.dumps(summary, ensure_ascii=False, indent=2) + '\n',
+              encoding='utf-8',
+          )
+          print(json.dumps(summary, ensure_ascii=False))
+
+      - name: Upload short-lived provider-inert activation package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: milovi-bootstrap-activation-package-${{ github.sha }}
+          path: .runtime/milovi-bootstrap-activation-package/
+          if-no-files-found: error
+          retention-days: 7
