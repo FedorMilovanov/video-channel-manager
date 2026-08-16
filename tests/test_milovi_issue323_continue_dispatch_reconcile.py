@@ -223,9 +223,9 @@ def test_started_exact_after_is_verified_read_only_without_consuming_confirmatio
     operation = _operation(paths)
     assert operation["status"] == "verified"
     assert operation["dispatch_started"] is True
-    assert operation["intent_preflight_digest"] is None
-    assert operation["intent_confirmation_digest"] is None
-    assert operation["intent_remote_id"] is None
+    assert operation["intent_preflight_digest"] is not None
+    assert operation["intent_confirmation_digest"] == stale_confirmation
+    assert operation["intent_remote_id"] == _remote_id(*KEY)
 
 
 def test_started_without_exact_after_becomes_durable_unknown_and_never_replays(
