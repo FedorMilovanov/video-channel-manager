@@ -73,11 +73,7 @@ def _photo_result(
             "message_id": 91,
             "chat": {"id": CHAT_ID, "username": "deep_info_life", "type": "channel"},
             "caption": payload.caption if caption is None else caption,
-            "photo": (
-                [{"file_id": "exact-provider-photo", "width": 100, "height": 100}]
-                if photo is None
-                else photo
-            ),
+            "photo": ([{"file_id": "exact-provider-photo", "width": 100, "height": 100}] if photo is None else photo),
         },
     }
 

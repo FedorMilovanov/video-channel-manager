@@ -11,7 +11,12 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from video_channel_manager.telegram_channel_profile import TelegramChannelProfile, load_channel_profile
-from video_channel_manager.telegram_multichannel_release import GenericReleaseItem, GenericReleaseQueue, save_release
+from video_channel_manager.telegram_multichannel_release import (
+    GenericProviderPayload,
+    GenericReleaseItem,
+    GenericReleaseQueue,
+    save_release,
+)
 from video_channel_manager.telegram_multichannel_transport import render_message_payload, render_photo_payload
 
 EXPECTED_PROJECT_KEY = "milovi-cake"
@@ -120,7 +125,10 @@ def validate_bootstrap_bundle(
     _exact_identity(candidates.get("project_key"), EXPECTED_PROJECT_KEY, "candidate project_key")
     _exact_identity(candidates.get("sequence_size"), EXPECTED_ITEM_COUNT, "candidate sequence size")
     _exact_identity(candidates.get("school_items_in_first_screen"), 0, "candidate School item count")
-    if candidates.get("publication_authorized") is not False or candidates.get("provider_mutation_allowed") is not False:
+    if (
+        candidates.get("publication_authorized") is not False
+        or candidates.get("provider_mutation_allowed") is not False
+    ):
         raise ValueError("Milovi first-screen candidate set must remain provider-inert")
 
     _exact_identity(proof.get("project_key"), EXPECTED_PROJECT_KEY, "transport proof project_key")
@@ -210,9 +218,7 @@ def validate_bootstrap_bundle(
         if scheduled.tzinfo is None:
             raise ValueError(f"planned_local must be timezone-aware for {publication_id}")
         local = scheduled.astimezone(zone)
-        if scheduled.utcoffset() != local.utcoffset() or scheduled.replace(tzinfo=None) != local.replace(
-            tzinfo=None
-        ):
+        if scheduled.utcoffset() != local.utcoffset() or scheduled.replace(tzinfo=None) != local.replace(tzinfo=None):
             raise ValueError(f"planned_local is not expressed in exact Europe/Moscow local time for {publication_id}")
         local_clock = local.time().replace(tzinfo=None)
         if not (EXPECTED_WINDOW_START <= local_clock <= EXPECTED_WINDOW_END):
@@ -256,9 +262,7 @@ def validate_bootstrap_bundle(
                 or rollout_item.get("transport_sha256") is not None
                 or rollout_item.get("transport_byte_size") is not None
             ):
-                raise ValueError(
-                    f"message publication {publication_id} unexpectedly includes media transport identity"
-                )
+                raise ValueError(f"message publication {publication_id} unexpectedly includes media transport identity")
         else:
             raise ValueError(f"unsupported frozen Milovi operation: {operation}")
 
@@ -300,6 +304,7 @@ def build_release_candidate(
             "transport_byte_size": rollout_item["transport_byte_size"],
             "planned_local": rollout_item["planned_local"],
         }
+        payload: GenericProviderPayload
         if rollout_item["operation"] == "sendPhoto":
             transport = proof_by_media[rollout_item["media_id"]]
             media_id = rollout_item["media_id"]
@@ -356,11 +361,7 @@ def materialize_exact_photo(
     if not isinstance(photos, list):
         raise ValueError("Milovi photo transport proof has no photos")
     item = next(
-        (
-            candidate
-            for candidate in photos
-            if isinstance(candidate, dict) and candidate.get("media_id") == media_id
-        ),
+        (candidate for candidate in photos if isinstance(candidate, dict) and candidate.get("media_id") == media_id),
         None,
     )
     if item is None:
@@ -378,7 +379,7 @@ def materialize_exact_photo(
     _exact_identity(blob_sha1, item["source_git_blob_sha1"], f"source Git blob for {media_id}")
 
     try:
-        from PIL import Image
+        from PIL import Image  # type: ignore[import-not-found]
     except ImportError as exc:
         raise ValueError("Pillow is required to materialize exact Milovi JPEG transport bytes") from exc
     with Image.open(io.BytesIO(source)) as image:
@@ -423,9 +424,7 @@ def materialize_exact_photo(
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="Validate and compile the frozen Milovi Telegram bootstrap contract"
-    )
+    parser = argparse.ArgumentParser(description="Validate and compile the frozen Milovi Telegram bootstrap contract")
     parser.add_argument("command", choices=("validate", "build-release", "materialize-photo"))
     parser.add_argument(
         "--profile",

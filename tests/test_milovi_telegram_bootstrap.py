@@ -84,9 +84,7 @@ def test_frozen_bundle_validates_exact_two_by_five_daylight_grid() -> None:
 def test_release_candidate_contains_nine_exact_photos_and_one_message_and_is_unauthorized() -> None:
     release = _build()
     photos = [item.payload for item in release.items if isinstance(item.payload, GenericPhotoPayload)]
-    messages = [
-        item.payload for item in release.items if isinstance(item.payload, GenericMessagePayload)
-    ]
+    messages = [item.payload for item in release.items if isinstance(item.payload, GenericMessagePayload)]
     assert len(release.items) == 10
     assert len(photos) == EXPECTED_PHOTO_COUNT
     assert len(messages) == EXPECTED_MESSAGE_COUNT
@@ -97,10 +95,7 @@ def test_release_candidate_contains_nine_exact_photos_and_one_message_and_is_una
     assert release.bot_id is None
     assert release.bot_username is None
     assert photos[0].publication_id == "milovi-bootstrap-001"
-    assert (
-        photos[0].media_sha256
-        == "sha256:6243a8a0b12f31b7c8fdf6f4147bff125c27ce69417cec4d54d7016c702c13c1"
-    )
+    assert photos[0].media_sha256 == "sha256:6243a8a0b12f31b7c8fdf6f4147bff125c27ce69417cec4d54d7016c702c13c1"
     assert photos[0].media_byte_size == 516172
     assert messages[0].publication_id == "milovi-bootstrap-008"
 

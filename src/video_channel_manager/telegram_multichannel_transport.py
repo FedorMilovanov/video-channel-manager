@@ -405,10 +405,14 @@ def preflight_channel(
         try:
             member_user_id = int(member_user["id"])
         except (KeyError, TypeError, ValueError) as exc:
-            raise TelegramApiError("posting membership proof has invalid bot id", provider_effect="not_dispatched") from exc
+            raise TelegramApiError(
+                "posting membership proof has invalid bot id", provider_effect="not_dispatched"
+            ) from exc
         member_username = str(member_user.get("username") or "")
         if member_user_id != bot_id or member_user.get("is_bot") is not True:
-            raise TelegramApiError("posting membership proof resolved a different bot", provider_effect="not_dispatched")
+            raise TelegramApiError(
+                "posting membership proof resolved a different bot", provider_effect="not_dispatched"
+            )
         if member_username.casefold() != bot_username.casefold():
             raise TelegramApiError("posting membership proof bot username mismatch", provider_effect="not_dispatched")
         status = str(membership.get("status") or "")
