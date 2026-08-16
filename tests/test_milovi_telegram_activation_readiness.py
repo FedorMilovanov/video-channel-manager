@@ -68,7 +68,9 @@ def test_readiness_lists_every_live_gate_before_manual_canary() -> None:
     joined = "\n".join(str(item) for item in order)
     assert joined.index("fresh exact target binding") < joined.index("exact authorized release")
     assert joined.index("exact authorized release") < joined.index("initialize isolated durable ledger")
-    assert joined.index("initialize isolated durable ledger") < joined.index("enable the Milovi profile provider write gate")
+    assert joined.index("initialize isolated durable ledger") < joined.index(
+        "enable the Milovi profile provider write gate"
+    )
     assert joined.index("enable the Milovi profile provider write gate") < joined.index("milovi-bootstrap-001")
 
 
