@@ -44,11 +44,7 @@ def _after_text(source_id: str, field: PromotionField) -> str:
 
 def _remote_id(source_id: str, field: PromotionField) -> str:
     index = ROLL_OUT_IDS.index(source_id)
-    return (
-        f"-68859909_{456239200 + index}"
-        if field is PromotionField.CLIP_DESCRIPTION
-        else f"-68859909_{700 + index}"
-    )
+    return f"-68859909_{456239200 + index}" if field is PromotionField.CLIP_DESCRIPTION else f"-68859909_{700 + index}"
 
 
 def _observation(*, target_after: bool, captured_at: str) -> PromotionObservationBatch:
@@ -188,11 +184,7 @@ def _prepare_dispatched_journal(paths: dict[str, Path], *, unknown: bool) -> str
 
 def _operation(paths: dict[str, Path]) -> dict[str, Any]:
     payload = json.loads(paths["promotion_journal_path"].read_text(encoding="utf-8"))
-    return next(
-        item
-        for item in payload["operations"]
-        if item["source_id"] == KEY[0] and item["field"] == KEY[1].value
-    )
+    return next(item for item in payload["operations"] if item["source_id"] == KEY[0] and item["field"] == KEY[1].value)
 
 
 def test_started_exact_after_is_verified_read_only_without_consuming_confirmation(
