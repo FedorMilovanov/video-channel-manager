@@ -1,0 +1,17 @@
+{
+  "schema_name": "video-manager.milovi-issue-323-reviewed-promotion-spec",
+  "schema_version": 1,
+  "review_id": "EXAMPLE-ONLY-NOT-LIVE-AUTHORITY",
+  "fields": [
+    {
+      "source_id": "d48QLgOuiTs",
+      "field": "clip_description",
+      "policy": "managed_exact",
+      "before_text": "EXAMPLE reviewed current text",
+      "before_sha256": "EXAMPLE compute SHA-256 from exact before_text",
+      "after_text": "EXAMPLE reviewed target text",
+      "after_sha256": "EXAMPLE compute SHA-256 from exact after_text"
+    }
+  ],
+  "note": "Illustrative shape only. This intentionally incomplete example must not pass the strict 12x2 loader and is not live authority."
+}
