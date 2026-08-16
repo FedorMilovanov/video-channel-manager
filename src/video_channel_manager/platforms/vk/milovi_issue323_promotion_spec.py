@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Mapping
+from pathlib import Path
 
 from video_channel_manager.platforms.vk.milovi_rollout_sources import ROLL_OUT_IDS
 
@@ -140,7 +141,7 @@ class PromotionFieldDecision:
     observed_sha256: str
     before_sha256: str
     after_sha256: str | None
-    mutation_authorized: bool
+    edit_required: bool
     reason: str | None = None
 
     def as_dict(self) -> dict[str, object]:
@@ -152,7 +153,7 @@ class PromotionFieldDecision:
             "observed_sha256": self.observed_sha256,
             "before_sha256": self.before_sha256,
             "after_sha256": self.after_sha256,
-            "mutation_authorized": self.mutation_authorized,
+            "edit_required": self.edit_required,
             "reason": self.reason,
         }
 
@@ -187,6 +188,8 @@ class PromotionBatchPlan:
         return {
             "spec_digest": self.spec_digest,
             "executable": self.executable,
+            "provider_mutation_authorized": False,
+            "confirmation_required": bool(self.mutations),
             "decisions": [decision.as_dict() for decision in self.decisions],
             "mutations": [mutation.as_dict() for mutation in self.mutations],
             "blockers": list(self.blockers),
@@ -196,6 +199,81 @@ class PromotionBatchPlan:
     def digest(self) -> str:
         canonical = json.dumps(self.as_dict(), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         return f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
+
+
+def _exact_keys(payload: Mapping[str, object], allowed: set[str], *, label: str) -> None:
+    extra = sorted(set(payload) - allowed)
+    if extra:
+        raise ValueError(f"{label} contains unreviewed keys: {extra}")
+
+
+def promotion_spec_from_mapping(payload: Mapping[str, object]) -> PromotionSpec:
+    _exact_keys(payload, {"schema_name", "schema_version", "review_id", "fields"}, label="PromotionSpec")
+    if payload.get("schema_name") != PROMOTION_SPEC_SCHEMA:
+        raise ValueError("PromotionSpec schema_name mismatch")
+    if payload.get("schema_version") != PROMOTION_SPEC_VERSION:
+        raise ValueError("PromotionSpec schema_version mismatch")
+    review_id = payload.get("review_id")
+    if not isinstance(review_id, str):
+        raise ValueError("PromotionSpec review_id must be a string")
+    raw_fields = payload.get("fields")
+    if not isinstance(raw_fields, list):
+        raise ValueError("PromotionSpec fields must be a list")
+
+    fields: list[ReviewedPromotionField] = []
+    allowed_field_keys = {
+        "source_id",
+        "field",
+        "policy",
+        "before_text",
+        "before_sha256",
+        "after_text",
+        "after_sha256",
+    }
+    for index, raw in enumerate(raw_fields):
+        if not isinstance(raw, Mapping):
+            raise ValueError(f"PromotionSpec field {index} must be an object")
+        _exact_keys(raw, allowed_field_keys, label=f"PromotionSpec field {index}")
+        source_id = raw.get("source_id")
+        field = raw.get("field")
+        policy = raw.get("policy")
+        before_text = raw.get("before_text")
+        before_sha256 = raw.get("before_sha256")
+        after_text = raw.get("after_text")
+        after_sha256 = raw.get("after_sha256")
+        if not all(isinstance(value, str) for value in (source_id, field, policy, before_text, before_sha256)):
+            raise ValueError(f"PromotionSpec field {index} has invalid required scalar types")
+        if after_text is not None and not isinstance(after_text, str):
+            raise ValueError(f"PromotionSpec field {index} after_text must be a string or null")
+        if after_sha256 is not None and not isinstance(after_sha256, str):
+            raise ValueError(f"PromotionSpec field {index} after_sha256 must be a string or null")
+        try:
+            parsed_field = PromotionField(field)
+            parsed_policy = PromotionPolicy(policy)
+        except ValueError as exc:
+            raise ValueError(f"PromotionSpec field {index} has unknown field/policy") from exc
+        fields.append(
+            ReviewedPromotionField(
+                source_id=source_id,
+                field=parsed_field,
+                policy=parsed_policy,
+                before_text=before_text,
+                before_sha256=before_sha256,
+                after_text=after_text,
+                after_sha256=after_sha256,
+            )
+        )
+    return PromotionSpec(review_id=review_id, fields=tuple(fields))
+
+
+def load_reviewed_promotion_spec(path: Path) -> PromotionSpec:
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ValueError(f"PromotionSpec is unreadable: {path}") from exc
+    if not isinstance(raw, Mapping):
+        raise ValueError("PromotionSpec root must be an object")
+    return promotion_spec_from_mapping(raw)
 
 
 def decide_promotion_field(
@@ -214,7 +292,7 @@ def decide_promotion_field(
             observed_sha256=observed.sha256,
             before_sha256=reviewed.before_sha256,
             after_sha256=reviewed.after_sha256,
-            mutation_authorized=False,
+            edit_required=False,
             reason="processing projection is read evidence only and cannot grant edit authority",
         )
 
@@ -229,7 +307,7 @@ def decide_promotion_field(
                 observed_sha256=observed.sha256,
                 before_sha256=reviewed.before_sha256,
                 after_sha256=reviewed.after_sha256,
-                mutation_authorized=True,
+                edit_required=True,
             )
         if (
             reviewed.after_text is not None
@@ -245,7 +323,7 @@ def decide_promotion_field(
                 observed_sha256=observed.sha256,
                 before_sha256=reviewed.before_sha256,
                 after_sha256=reviewed.after_sha256,
-                mutation_authorized=False,
+                edit_required=False,
             )
         reason = "current text is neither exact reviewed BEFORE nor exact reviewed AFTER"
     elif observed.sha256 == reviewed.before_sha256 and observed.text == reviewed.before_text:
@@ -262,7 +340,7 @@ def decide_promotion_field(
             observed_sha256=observed.sha256,
             before_sha256=reviewed.before_sha256,
             after_sha256=None,
-            mutation_authorized=False,
+            edit_required=False,
         )
     else:
         reason = "current text differs from exact reviewed preserved text"
@@ -275,7 +353,7 @@ def decide_promotion_field(
         observed_sha256=observed.sha256,
         before_sha256=reviewed.before_sha256,
         after_sha256=reviewed.after_sha256,
-        mutation_authorized=False,
+        edit_required=False,
         reason=reason,
     )
 
@@ -285,9 +363,10 @@ def plan_reviewed_promotion_batch(
     observed_fields: Mapping[tuple[str, PromotionField], ObservedPromotionField],
 ) -> PromotionBatchPlan:
     expected = {(source_id, field) for source_id in ROLL_OUT_IDS for field in PromotionField}
-    if set(observed_fields) != expected:
-        missing = sorted(f"{source}:{field.value}" for source, field in expected - set(observed_fields))
-        extra = sorted(f"{source}:{field.value}" for source, field in set(observed_fields) - expected)
+    observed_keys = set(observed_fields)
+    if observed_keys != expected:
+        missing = sorted(f"{source}:{field.value}" for source, field in expected - observed_keys)
+        extra = sorted(f"{source}:{field.value}" for source, field in observed_keys - expected)
         raise ValueError(f"Observed promotion batch must cover exact 12x2 field set; missing={missing}, extra={extra}")
 
     decisions = tuple(
@@ -311,7 +390,7 @@ def plan_reviewed_promotion_batch(
     reviewed_by_key = {(item.source_id, item.field): item for item in spec.ordered_fields()}
     mutations: list[PlannedPromotionMutation] = []
     for decision in decisions:
-        if decision.action is not PromotionDecisionAction.EDIT:
+        if not decision.edit_required:
             continue
         reviewed = reviewed_by_key[(decision.source_id, decision.field)]
         assert reviewed.after_sha256 is not None
@@ -347,6 +426,8 @@ __all__ = [
     "PromotionSpec",
     "ReviewedPromotionField",
     "decide_promotion_field",
+    "load_reviewed_promotion_spec",
     "plan_reviewed_promotion_batch",
+    "promotion_spec_from_mapping",
     "promotion_text_sha256",
 ]
