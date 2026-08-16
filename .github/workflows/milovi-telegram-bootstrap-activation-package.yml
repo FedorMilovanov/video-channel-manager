@@ -156,8 +156,16 @@ jobs:
           expected_bot_id = int(os.environ['EXPECTED_BOT_ID'])
           expected_bot_username = os.environ['EXPECTED_BOT_USERNAME']
 
-          if proof.get('provider_write_performed') is not False:
-              raise SystemExit('fresh discovery proof unexpectedly claims provider mutation')
+          if proof.get('schema_name') != 'video-channel-manager.telegram-generic-target-proof':
+              raise SystemExit('fresh discovery artifact is not a generic target proof')
+          if proof.get('project_key') != 'milovi-cake' or str(proof.get('channel_username') or '').casefold() != '@milovicake':
+              raise SystemExit('fresh discovery proof differs from selected Milovi channel')
+          if proof.get('chat_id') != expected_chat_id or proof.get('bot_id') != expected_bot_id:
+              raise SystemExit('fresh discovery proof exact numeric identity mismatch')
+          if str(proof.get('bot_username') or '').casefold() != expected_bot_username.casefold():
+              raise SystemExit('fresh discovery proof bot username mismatch')
+          if proof.get('chat_type') != 'channel' or proof.get('can_post_messages') is not True:
+              raise SystemExit('fresh discovery proof does not prove writable channel membership')
           if binding.get('provider_write_performed') is not False:
               raise SystemExit('target binding unexpectedly claims provider mutation')
           if unbound.get('release_authorized') is not False or bound.get('release_authorized') is not False:
