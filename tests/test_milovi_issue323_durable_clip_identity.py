@@ -207,3 +207,54 @@ def test_ensure_promoted_clip_reuses_durable_verified_identity_during_transient_
     assert item["clip_remote_id"] == REMOTE_ID
     assert item["clip_origin"] == "resumed_token_short_video_internal_promotion"
     assert writer.read_calls == 1
+
+
+def test_ensure_promoted_clip_adopts_existing_inventory_clip_before_upload_lifecycle(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    item: dict[str, Any] = {"status": "pending"}
+    journal: dict[str, Any] = {
+        "source_snapshot_id": "issue323-reviewed-snapshot",
+        "provider_write_attempted": False,
+        "items": {SOURCE_ID: item},
+    }
+    saved: list[dict[str, Any]] = []
+    asserted: list[tuple[str, str]] = []
+
+    monkeypatch.setattr(finalize, "_find_existing_clip", lambda client, asset: REMOTE_ID)
+    monkeypatch.setattr(
+        finalize,
+        "_assert_native_clip",
+        lambda _writer, _asset, remote_id, *, description_mode, **_kwargs: asserted.append(
+            (remote_id, description_mode)
+        ),
+    )
+    monkeypatch.setattr(finalize, "_save", lambda _path, current: saved.append(dict(current)))
+
+    def lifecycle_forbidden(*_args: Any, **_kwargs: Any) -> Any:
+        raise AssertionError("existing-Clip preflight must complete before upload lifecycle is created")
+
+    monkeypatch.setattr(finalize, "ensure_upload_record", lifecycle_forbidden)
+    monkeypatch.setattr(finalize, "execute_upload_operation", lifecycle_forbidden)
+
+    remote_id = finalize._ensure_promoted_clip(
+        _asset(),
+        object(),
+        item,
+        journal,
+        tmp_path / "rollout.json",
+        object(),  # type: ignore[arg-type]
+        SimpleNamespace(client=object()),  # type: ignore[arg-type]
+        60,
+    )
+
+    assert remote_id == REMOTE_ID
+    assert item == {
+        "status": "clip_verified",
+        "clip_remote_id": REMOTE_ID,
+        "clip_origin": "adopted_existing_internal_promotion",
+    }
+    assert asserted == [(REMOTE_ID, "legacy_or_promoted")]
+    assert saved
+    assert journal["provider_write_attempted"] is False
