@@ -68,7 +68,7 @@ class VkVideoDescriptionWriter(VkVideoTextWriter):
             if not dispatch_started:
                 raise
             raise VkVideoDescriptionRecoveryRequired(
-                "video.edit outcome requires exact read reconciliation; blind retry is forbidden",
+                "video.edit response/postflight requires exact read reconciliation; blind retry is forbidden",
                 method="video.edit",
                 retryable=False,
             ) from exc
