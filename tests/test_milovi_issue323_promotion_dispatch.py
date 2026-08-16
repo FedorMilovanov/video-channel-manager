@@ -104,9 +104,7 @@ def _envelope(field: PromotionField) -> PromotionDispatchEnvelope:
 def _journal_status(path: Path, field: PromotionField) -> str:
     payload = json.loads(path.read_text(encoding="utf-8"))
     operation = next(
-        item
-        for item in payload["operations"]
-        if item["source_id"] == SOURCE_ID and item["field"] == field.value
+        item for item in payload["operations"] if item["source_id"] == SOURCE_ID and item["field"] == field.value
     )
     return str(operation["status"])
 
