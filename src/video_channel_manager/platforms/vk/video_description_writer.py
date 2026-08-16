@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -65,6 +66,7 @@ class VkVideoDescriptionWriter(VkVideoWriter):
         new_description: str,
         verification_attempts: int = 5,
         verification_delay_seconds: float = 0.5,
+        before_dispatch: Callable[[], None] | None = None,
     ) -> VkVideoDescriptionEditResult:
         if owner_id == 0 or video_id <= 0:
             raise ValueError("owner_id cannot be zero and video_id must be positive")
@@ -86,6 +88,9 @@ class VkVideoDescriptionWriter(VkVideoWriter):
                 f"VK Clip {owner_id}_{video_id} description no longer equals the exact reviewed BEFORE state",
                 method="video.get",
             )
+
+        if before_dispatch is not None:
+            before_dispatch()
 
         try:
             self._call(
