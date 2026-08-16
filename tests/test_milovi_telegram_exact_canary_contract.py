@@ -27,11 +27,34 @@ def test_exact_canary_send_has_zero_mutation_retry_and_no_fallback_operation() -
     assert "dispatch_started barrier remains" in runtime
 
 
-def test_exact_canary_is_bound_to_recovered_target_and_transport() -> None:
+def test_exact_canary_is_bound_to_recovered_target_transport_and_membership() -> None:
     runtime = RUNTIME.read_text(encoding="utf-8")
     assert "CHAT_ID = -1002215328390" in runtime
     assert "BOT_ID = 8716602202" in runtime
     assert "a9730cc62939845c61191f1a375b2bab35800122c968d6cc757f0ae4340771d5" in runtime
     assert "d712ca06f2503bbb7e483f6c8d0fe3f0067b37b834536f7f7861bb38415fa580" in runtime
     assert "changed != [AUTH_PATH.as_posix()]" in runtime
-    assert "STATE_PATH.exists()" in runtime
+    assert '"getChatMember"' in runtime
+    assert 'membership.get("can_post_messages") is True' in runtime
+    assert "fresh membership proof lacks channel posting authority" in runtime
+
+
+def test_rejected_canary_requires_explicit_new_successor_authorization() -> None:
+    runtime = RUNTIME.read_text(encoding="utf-8")
+    assert 'prior.get("status") != "provider_rejected"' in runtime
+    assert 'prior.get("provider_effect") != "rejected_before_message_creation"' in runtime
+    assert "same canary authorization cannot be replayed" in runtime
+    assert "successor authorization must explicitly bind the rejected authorization it supersedes" in runtime
+    assert "ATTEMPTS_DIR" in runtime
+    assert "prior_state_archive" in runtime
+
+
+def test_terminal_provider_rejection_is_persisted_but_unknown_outcome_is_not_replayed() -> None:
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    runtime = RUNTIME.read_text(encoding="utf-8")
+    assert "if: always()" in workflow
+    assert "No terminal state change to persist; unknown outcomes remain dispatch_started." in workflow
+    assert "400 <= status < 500" in runtime
+    assert '"provider_effect": "rejected_before_message_creation"' in runtime
+    assert '"automatic_replay_allowed": False' in runtime
+    assert "outcome treated as unknown; no automatic replay" in runtime
