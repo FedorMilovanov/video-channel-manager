@@ -506,7 +506,13 @@ def _ensure_promoted_clip(
     if UploadStage(str(record.get("stage"))) is not UploadStage.VERIFIED:
         raise MiloviFinalizerBlocked(f"Upload lifecycle did not verify {asset.source_id}")
     remote_id = _upload_remote_id(record)
-    _assert_native_clip(writer, asset, remote_id, description_mode="legacy_or_promoted")
+    _assert_native_clip(
+        writer,
+        asset,
+        remote_id,
+        description_mode="legacy_or_promoted",
+        durable_verified=True,
+    )
     item.update(
         status="clip_verified",
         clip_remote_id=remote_id,
