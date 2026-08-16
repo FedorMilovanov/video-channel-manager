@@ -28,6 +28,7 @@ def _state(**overrides: object) -> Issue323ItemState:
 
 def test_clean_state_requires_existing_clip_preflight_before_upload_capability() -> None:
     plan = plan_issue323_item(_state())
+
     assert plan.action is Issue323NextAction.REQUIRE_EXISTING_CLIP_PREFLIGHT
     assert plan.required_capabilities == (Issue323Capability.READ_PROVIDER_STATE,)
     assert plan.forbids_reupload is True
@@ -35,6 +36,7 @@ def test_clean_state_requires_existing_clip_preflight_before_upload_capability()
 
 def test_clean_state_after_empty_inventory_preflight_can_plan_one_clip_creation() -> None:
     plan = plan_issue323_item(_state(existing_clip_preflight_complete=True))
+
     assert plan.action is Issue323NextAction.ELIGIBLE_FOR_SINGLE_UPLOAD
     assert plan.required_capabilities == (Issue323Capability.CREATE_CLIP,)
     assert plan.forbids_reupload is False
@@ -49,6 +51,7 @@ def test_inventory_hit_is_adopted_and_never_reuploaded() -> None:
             existing_clip_preflight_complete=True,
         )
     )
+
     assert plan.action is Issue323NextAction.ADOPT_EXISTING_CLIP
     assert plan.required_capabilities == (
         Issue323Capability.ADOPT_DURABLE_CLIP,
@@ -68,8 +71,13 @@ def test_durable_verified_upload_record_is_adopted_without_reupload() -> None:
         )
     )
     assert plan.action is Issue323NextAction.RESUME_FROM_VERIFIED_CLIP
+    assert plan.required_capabilities == (
+        Issue323Capability.ADOPT_DURABLE_CLIP,
+        Issue323Capability.READ_PROVIDER_STATE,
+        Issue323Capability.RECONCILE_PROVIDER_EFFECT,
+        Issue323Capability.CREATE_WALL,
+    )
     assert Issue323Capability.CREATE_CLIP not in plan.required_capabilities
-    assert Issue323Capability.ADOPT_DURABLE_CLIP in plan.required_capabilities
     assert plan.forbids_reupload is True
 
 
@@ -151,6 +159,7 @@ def test_completed_legacy_mapping_is_promotion_pending_without_phase_a_write_cap
 
 def test_blocked_plan_grants_no_capability() -> None:
     plan = blocked_issue323_item_plan()
+
     assert plan.action is Issue323NextAction.STOP_CONFLICT
     assert plan.required_capabilities == ()
     assert plan.forbids_reupload is True
@@ -163,8 +172,10 @@ def test_plan_serialization_is_deterministic_and_string_stable() -> None:
         clip_remote_id="-68859909_456239240",
         clip_identity_origin="journal",
     )
+
     first = plan_issue323_item(state).as_dict()
     second = plan_issue323_item(state).as_dict()
+
     assert first == second
     assert first == {
         "schema_version": 1,
