@@ -139,10 +139,34 @@ def test_exact_reviewed_batch_binds_one_edit_to_exact_remote_identity() -> None:
     assert mutation.remote_id == _remote_id(*key)
     assert preflight.spec_digest == spec.digest
     assert preflight.observation_digest == observation.digest
+    assert preflight.operation_state_digest.startswith("sha256:")
     payload = preflight.as_dict()
     assert payload["provider_mutation_authorized"] is False
     assert payload["confirmation_required"] is True
     assert preflight.digest.startswith("sha256:")
+
+
+def test_preflight_digest_changes_when_only_durable_operation_state_changes() -> None:
+    key = (ROLL_OUT_IDS[0], PromotionField.CLIP_DESCRIPTION)
+    spec = _spec(managed_key=key)
+    observation = _observation()
+    pending = build_promotion_execution_preflight(
+        spec=spec,
+        observation=observation,
+        operation_states=_states(),
+    )
+    unresolved = build_promotion_execution_preflight(
+        spec=spec,
+        observation=observation,
+        operation_states=_states(override=(*key, PromotionDispatchStatus.EDIT_DISPATCH_STARTED, True)),
+    )
+
+    assert pending.spec_digest == unresolved.spec_digest
+    assert pending.observation_digest == unresolved.observation_digest
+    assert pending.operation_state_digest != unresolved.operation_state_digest
+    assert pending.digest != unresolved.digest
+    assert unresolved.executable is False
+    assert unresolved.expected_provider_writes == 0
 
 
 def test_one_copy_drift_zeroes_all_provider_writes() -> None:
