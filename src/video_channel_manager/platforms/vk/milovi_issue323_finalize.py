@@ -447,31 +447,16 @@ def _ensure_promoted_clip(
     provider_effect = record is not None and _has_provider_effect(record)
     operation_plan: Issue323ItemPlan
     if provider_effect:
+        if record is None:
+            raise MiloviFinalizerBlocked("Provider effect requires a durable upload record")
         operation_plan = _executor_item_plan(
             item,
             record,
             existing_clip_preflight_complete=False,
         )
-        upload_stage = UploadStage(str(record.get("stage"))) if record is not None else None
+        upload_stage = UploadStage(str(record.get("stage")))
         if upload_stage is UploadStage.VERIFIED:
-            remote_id = _upload_remote_id(record)
             _require_executor_capability(operation_plan, Issue323Capability.ADOPT_DURABLE_CLIP)
-            _bind_executor_plan(item, "clip_execution_plan", operation_plan)
-            _save(journal_path, journal)
-            _assert_native_clip(
-                writer,
-                asset,
-                remote_id,
-                description_mode="legacy_or_promoted",
-                durable_verified=True,
-            )
-            item.update(
-                status="clip_verified",
-                clip_remote_id=remote_id,
-                clip_origin="resumed_token_short_video_internal_promotion",
-            )
-            _save(journal_path, journal)
-            return remote_id
         _require_executor_capability(operation_plan, Issue323Capability.RECONCILE_PROVIDER_EFFECT)
         _bind_executor_plan(item, "clip_execution_plan", operation_plan)
         _save(journal_path, journal)
