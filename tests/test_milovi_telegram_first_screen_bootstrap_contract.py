@@ -90,9 +90,7 @@ def test_photo_source_readiness_freezes_exact_reviewed_git_objects() -> None:
     assert readiness["full_source_bytes_materialized"] is True
     assert readiness["source_byte_verified_count"] == 9
     assert readiness["transport_ready_count"] == 9
-    assert readiness["transport_proof"] == (
-        "content/telegram/milovi-cake/bootstrap-photo-transport-proof-2026-08.json"
-    )
+    assert readiness["transport_proof"] == ("content/telegram/milovi-cake/bootstrap-photo-transport-proof-2026-08.json")
 
     photos = {photo["media_id"]: photo for photo in readiness["photos"]}
     assert set(photos) == set(EXPECTED_PHOTOS)
