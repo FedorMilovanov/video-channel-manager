@@ -149,7 +149,7 @@ def test_milovi_school_slots_have_exact_source_bindings_but_are_not_product_evid
         assert "revalid" in article["telegram_claim_boundary"].lower()
 
     assert "Metadata binding is not enough for live copy" in shortlist["publication_rule"]
-    assert "Milovi School is **not evidence**" in boundary
+    assert "Milovi School content is **not evidence**" in boundary
     assert "makes its cakes from the School's recipes" in boundary
 
 
@@ -173,7 +173,7 @@ def test_milovi_no_bts_and_school_boundaries_control_older_launch_copy() -> None
 
     unsafe_legacy_phrase = "Здесь — реальные работы Milovi Cake, детали и процесс"
     if unsafe_legacy_phrase in launch_pack:
-        assert "historical/provider-inert editorial corpus" in operating_plan
+        assert "research/editorial history" in operating_plan
         assert "not executable publication sources" in operating_plan
 
 
