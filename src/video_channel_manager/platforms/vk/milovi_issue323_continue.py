@@ -18,7 +18,7 @@ from video_channel_manager.platforms.vk.milovi_issue323_status_probe import run_
 from video_channel_manager.platforms.vk.milovi_rollout_sources import write_json_atomic
 
 CONTINUE_PREVIEW_SCHEMA = "video-manager.milovi-issue-323-continue-preview"
-CONTINUE_PREVIEW_VERSION = 2
+CONTINUE_PREVIEW_VERSION = 3
 PROMOTION_JOURNAL_INIT_CONFIRMATION = "INITIALIZE_REVIEWED_PROMOTION_JOURNAL"
 
 
@@ -29,6 +29,7 @@ def _blocked_payload(
     blocker: str,
     spec_digest: str | None = None,
     observation_digest: str | None = None,
+    provider_state_digest: str | None = None,
     supplied_preflight_digest_confirmation: str | None = None,
 ) -> dict[str, Any]:
     return {
@@ -41,10 +42,12 @@ def _blocked_payload(
         "status_probe_status": status_payload.get("status"),
         "promotion_spec_digest": spec_digest,
         "promotion_observation_digest": observation_digest,
+        "promotion_provider_state_digest": provider_state_digest,
         "promotion_journal_digest": None,
         "promotion_journal_initialized": False,
         "promotion_preflight": None,
         "promotion_preflight_digest": None,
+        "promotion_preflight_confirmation_digest": None,
         "preflight_digest_confirmation_supplied": supplied_preflight_digest_confirmation is not None,
         "preflight_digest_confirmed": False,
         "blockers": [blocker],
@@ -105,6 +108,7 @@ def run_issue_323_continue_preview(
                 blocker="Promotion journal already exists; initialization confirmation is not accepted for an existing journal",
                 spec_digest=spec.digest,
                 observation_digest=observation.digest,
+                provider_state_digest=observation.provider_state_digest,
                 supplied_preflight_digest_confirmation=preflight_digest_confirmation,
             )
             write_json_atomic(output_path, payload)
@@ -118,6 +122,7 @@ def run_issue_323_continue_preview(
                 blocker=f"Promotion journal is invalid: {exc}",
                 spec_digest=spec.digest,
                 observation_digest=observation.digest,
+                provider_state_digest=observation.provider_state_digest,
                 supplied_preflight_digest_confirmation=preflight_digest_confirmation,
             )
             write_json_atomic(output_path, payload)
@@ -133,6 +138,7 @@ def run_issue_323_continue_preview(
                 ),
                 spec_digest=spec.digest,
                 observation_digest=observation.digest,
+                provider_state_digest=observation.provider_state_digest,
                 supplied_preflight_digest_confirmation=preflight_digest_confirmation,
             )
             write_json_atomic(output_path, payload)
@@ -150,6 +156,7 @@ def run_issue_323_continue_preview(
                 blocker=f"Promotion journal initialization refused: {exc}",
                 spec_digest=spec.digest,
                 observation_digest=observation.digest,
+                provider_state_digest=observation.provider_state_digest,
                 supplied_preflight_digest_confirmation=preflight_digest_confirmation,
             )
             write_json_atomic(output_path, payload)
@@ -170,6 +177,7 @@ def run_issue_323_continue_preview(
             blocker=f"Promotion journal/spec binding is invalid: {exc}",
             spec_digest=spec.digest,
             observation_digest=observation.digest,
+            provider_state_digest=observation.provider_state_digest,
             supplied_preflight_digest_confirmation=preflight_digest_confirmation,
         )
         write_json_atomic(output_path, payload)
@@ -179,11 +187,11 @@ def run_issue_323_continue_preview(
     digest_confirmed = False
     blockers = list(preflight.blockers)
     if preflight.executable and preflight_digest_confirmation is not None:
-        if preflight_digest_confirmation == preflight.digest:
+        if preflight_digest_confirmation == preflight.confirmation_digest:
             digest_confirmed = True
         else:
             blockers.append(
-                "Supplied preflight digest confirmation does not match this fresh exact continuation preflight"
+                "Supplied preflight confirmation digest does not match the fresh exact provider state and plan"
             )
 
     if blockers:
@@ -203,10 +211,12 @@ def run_issue_323_continue_preview(
         "status_probe_status": status_payload.get("status"),
         "promotion_spec_digest": spec.digest,
         "promotion_observation_digest": observation.digest,
+        "promotion_provider_state_digest": observation.provider_state_digest,
         "promotion_journal_digest": journal.digest,
         "promotion_journal_initialized": journal_initialized,
         "promotion_preflight": preflight_payload,
         "promotion_preflight_digest": preflight.digest,
+        "promotion_preflight_confirmation_digest": preflight.confirmation_digest,
         "preflight_digest_confirmation_supplied": preflight_digest_confirmation is not None,
         "preflight_digest_confirmed": digest_confirmed,
         "blockers": blockers,
