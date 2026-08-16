@@ -76,7 +76,9 @@ def _validate_binding(*, journal: PromotionJournal, envelope: PromotionDispatchE
     if operation.intent_preflight_digest != envelope.intent_preflight_digest:
         raise PromotionDispatchBlockedBeforeProvider("Frozen envelope audit preflight differs from durable intent")
     if operation.intent_confirmation_digest != envelope.confirmation_digest:
-        raise PromotionDispatchBlockedBeforeProvider("Frozen envelope confirmation differs from durable operator intent")
+        raise PromotionDispatchBlockedBeforeProvider(
+            "Frozen envelope confirmation differs from durable operator intent"
+        )
     if operation.intent_remote_id != envelope.remote_id:
         raise PromotionDispatchBlockedBeforeProvider("Frozen envelope provider identity differs from durable intent")
     return operation
@@ -132,42 +134,46 @@ def execute_confirmed_promotion_dispatch(
             if clip_writer is None or wall_writer is not None:
                 raise PromotionDispatchBlockedBeforeProvider("Clip dispatch requires only the exact Clip writer")
             owner_id, video_id = _parse_video_remote_id(envelope.remote_id)
-            result = clip_writer.replace_description_if_current(
+            clip_result = clip_writer.replace_description_if_current(
                 owner_id=owner_id,
                 video_id=video_id,
                 expected_description=envelope.before_text,
                 new_description=envelope.after_text,
                 before_dispatch=persist_dispatch_started,
             )
-            result_before_sha = result.before_text_sha256
-            result_after_sha = result.after_text_sha256
+            result_remote_id = clip_result.remote_id
+            result_provider_writes = clip_result.provider_writes_executed
+            result_before_sha = clip_result.before_text_sha256
+            result_after_sha = clip_result.after_text_sha256
         else:
             if wall_writer is None or clip_writer is not None:
                 raise PromotionDispatchBlockedBeforeProvider("Wall dispatch requires only the exact wall writer")
             if envelope.wall_incarnation is None:
                 raise PromotionDispatchBlockedBeforeProvider("Wall dispatch envelope lost exact wall incarnation")
-            result = wall_writer.replace_message_if_current(
+            wall_result = wall_writer.replace_message_if_current(
                 expected=envelope.wall_incarnation,
                 before_text=envelope.before_text,
                 after_text=envelope.after_text,
                 before_dispatch=persist_dispatch_started,
             )
-            result_before_sha = result.before_text_sha256
-            result_after_sha = result.after_text_sha256
+            result_remote_id = wall_result.remote_id
+            result_provider_writes = wall_result.provider_writes_executed
+            result_before_sha = wall_result.before_text_sha256
+            result_after_sha = wall_result.after_text_sha256
 
         if started_journal is None:
             raise PromotionDispatchUnknown("Exact provider primitive returned without committing dispatch_started")
-        if result.remote_id != envelope.remote_id or result.provider_writes_executed != 1:
+        if result_remote_id != envelope.remote_id or result_provider_writes != 1:
             raise PromotionDispatchUnknown("Exact provider primitive returned inconsistent mutation evidence")
         if result_before_sha != f"sha256:{envelope.before_sha256}":
             raise PromotionDispatchUnknown("Exact provider primitive BEFORE digest differs from frozen envelope")
         if result_after_sha != f"sha256:{envelope.after_sha256}":
             raise PromotionDispatchUnknown("Exact provider primitive AFTER digest differs from frozen envelope")
-    except PromotionDispatchBlockedBeforeProvider:
+    except PromotionDispatchBlockedBeforeProvider as exc:
         if started_journal is not None:
             raise PromotionDispatchUnknown(
                 "Dispatch was durably started before a later provider-bound validation failed; reconcile only"
-            )
+            ) from exc
         raise
     except Exception as exc:
         if started_journal is None:
