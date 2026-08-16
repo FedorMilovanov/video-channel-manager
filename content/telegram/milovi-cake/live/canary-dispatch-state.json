@@ -3,8 +3,8 @@
   "schema_version": 1,
   "project_key": "milovi-cake",
   "publication_id": "milovi-cake-canary-001",
-  "status": "dispatch_started",
-  "provider_effect": "may_exist_after_next_step",
+  "status": "verified",
+  "provider_effect": "verified",
   "authorization_commit_sha": "aa6e61075ca48123dee370a843ed60d3c91a67d5",
   "authorization_id": "milovi-cake-canary-001-live-2026-08-16-successor-01",
   "supersedes_authorization_id": "milovi-cake-canary-001-live-2026-08-16",
@@ -19,6 +19,11 @@
   "github_run_id": 31919309221,
   "github_run_attempt": 1,
   "dispatch_started_at_utc": "2026-08-16T01:19:49.775231+00:00",
-  "message_id": null,
-  "message_url": null
+  "message_id": 25,
+  "message_url": "https://t.me/MiloviCake/25",
+  "verified_at_utc": "2026-08-16T01:19:51.999008+00:00",
+  "returned_chat_id": -1002215328390,
+  "returned_chat_username": "MiloviCake",
+  "returned_photo_count": 5,
+  "automatic_replay_allowed": false
 }
