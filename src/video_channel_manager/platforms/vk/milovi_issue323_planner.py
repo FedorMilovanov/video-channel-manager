@@ -103,18 +103,28 @@ def blocked_issue323_item_plan() -> Issue323ItemPlan:
     )
 
 
+def _wall_reconcile_plan() -> Issue323ItemPlan:
+    return _plan(
+        Issue323NextAction.RECONCILE_EXISTING_WALL,
+        Issue323Capability.READ_PROVIDER_STATE,
+        Issue323Capability.RECONCILE_PROVIDER_EFFECT,
+        forbids_reupload=True,
+        forbids_repost=True,
+    )
+
+
 def plan_issue323_item(state: Issue323ItemState) -> Issue323ItemPlan:
     """Reduce normalized durable/provider evidence into one provider-inert continuation plan."""
 
+    if state.durable_status == "wall_verified" and state.wall_remote_id is None:
+        return blocked_issue323_item_plan()
+
+    if state.durable_status in {"wall_intent", "wall_may_exist"}:
+        return _wall_reconcile_plan()
+
     if state.wall_remote_id is not None:
         if state.durable_status != "wall_verified":
-            return _plan(
-                Issue323NextAction.RECONCILE_EXISTING_WALL,
-                Issue323Capability.READ_PROVIDER_STATE,
-                Issue323Capability.RECONCILE_PROVIDER_EFFECT,
-                forbids_reupload=True,
-                forbids_repost=True,
-            )
+            return _wall_reconcile_plan()
         if state.clip_copy_state == "promoted" and state.wall_copy_state == "promoted":
             return _plan(
                 Issue323NextAction.PHASE_A_COMPLETE_PROMOTED,
@@ -136,6 +146,8 @@ def plan_issue323_item(state: Issue323ItemState) -> Issue323ItemPlan:
             return _plan(
                 Issue323NextAction.RESUME_FROM_VERIFIED_CLIP,
                 Issue323Capability.ADOPT_DURABLE_CLIP,
+                Issue323Capability.READ_PROVIDER_STATE,
+                Issue323Capability.RECONCILE_PROVIDER_EFFECT,
                 Issue323Capability.CREATE_WALL,
                 forbids_reupload=True,
                 forbids_repost=False,
