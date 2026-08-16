@@ -1,0 +1,111 @@
+name: Milovi Cake Telegram target discovery
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: milovi-cake-telegram-target-discovery
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      PROFILE_PATH: content/telegram/channels/milovi-cake.json
+      PROOF_PATH: .runtime/milovi-cake-generic-target-proof.json
+      BINDING_PATH: .runtime/milovi-cake-target-binding.json
+      EXPECTED_CHAT_ID: -1002215328390
+      EXPECTED_BOT_ID: 8716602202
+      EXPECTED_BOT_USERNAME: preaching_mp3_bot
+
+    steps:
+      - name: Check out immutable current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal read-only Telegram runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+
+      - name: Require write-disabled exact Milovi profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_channel_cli validate-profile \
+            --profile "$PROFILE_PATH" > /tmp/profile.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path('/tmp/profile.json').read_text(encoding='utf-8'))
+          if payload.get('project_key') != 'milovi-cake':
+              raise SystemExit('selected profile is not Milovi Cake')
+          if str(payload.get('channel_username') or '').casefold() != '@milovicake':
+              raise SystemExit('selected profile is not @MiloviCake')
+          if payload.get('provider_writes_authorized') is not False:
+              raise SystemExit('Milovi profile must remain provider-write-disabled during target discovery')
+          PY
+
+      - name: Discover exact target without provider mutation
+        env:
+          MILOVI_CAKE_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.telegram_channel_cli discover-target \
+            --profile "$PROFILE_PATH" \
+            --expected-bot-id "$EXPECTED_BOT_ID" \
+            --expected-bot-username "$EXPECTED_BOT_USERNAME" \
+            --output "$PROOF_PATH"
+
+      - name: Freeze proof as immutable target binding candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_target_binding_cli \
+            --profile "$PROFILE_PATH" \
+            --proof "$PROOF_PATH" \
+            --output "$BINDING_PATH" > /tmp/binding-summary.json
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          summary = json.loads(Path('/tmp/binding-summary.json').read_text(encoding='utf-8'))
+          if summary.get('provider_write_performed') is not False:
+              raise SystemExit('target discovery unexpectedly claimed a provider write')
+          if summary.get('chat_id') != int(os.environ['EXPECTED_CHAT_ID']):
+              raise SystemExit('discovered @MiloviCake numeric chat id differs from reviewed identity')
+          if summary.get('bot_id') != int(os.environ['EXPECTED_BOT_ID']):
+              raise SystemExit('discovered bot id differs from expected identity')
+          if str(summary.get('bot_username') or '').casefold() != os.environ['EXPECTED_BOT_USERNAME'].casefold():
+              raise SystemExit('discovered bot username differs from expected identity')
+          print(json.dumps(summary, ensure_ascii=False))
+          PY
+
+      - name: Upload read-only target proof and binding candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: milovi-cake-target-binding-${{ github.sha }}
+          path: |
+            .runtime/milovi-cake-generic-target-proof.json
+            .runtime/milovi-cake-target-binding.json
+          if-no-files-found: error
+          retention-days: 7
