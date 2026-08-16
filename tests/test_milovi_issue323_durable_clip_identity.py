@@ -206,6 +206,9 @@ def test_ensure_promoted_clip_reuses_durable_verified_identity_during_transient_
     assert item["status"] == "clip_verified"
     assert item["clip_remote_id"] == REMOTE_ID
     assert item["clip_origin"] == "resumed_token_short_video_internal_promotion"
+    assert item["clip_execution_plan"]["plan"]["action"] == "resume_from_verified_clip_without_reupload_then_wall"
+    assert item["clip_execution_plan"]["plan"]["required_capabilities"] == ["adopt_durable_clip", "create_wall"]
+    assert item["clip_execution_plan"]["plan_digest"].startswith("sha256:")
     assert writer.read_calls == 1
 
 
@@ -222,7 +225,12 @@ def test_ensure_promoted_clip_adopts_existing_inventory_clip_before_upload_lifec
     saved: list[dict[str, Any]] = []
     asserted: list[tuple[str, str]] = []
 
-    monkeypatch.setattr(finalize, "_find_existing_clip", lambda client, asset: REMOTE_ID)
+    def find_existing(_client: Any, _asset: Any) -> str:
+        assert item["clip_execution_plan"]["plan"]["action"] == "require_existing_clip_preflight"
+        assert item["clip_execution_plan"]["plan"]["required_capabilities"] == ["read_provider_state"]
+        return REMOTE_ID
+
+    monkeypatch.setattr(finalize, "_find_existing_clip", find_existing)
     monkeypatch.setattr(
         finalize,
         "_assert_native_clip",
@@ -250,11 +258,58 @@ def test_ensure_promoted_clip_adopts_existing_inventory_clip_before_upload_lifec
     )
 
     assert remote_id == REMOTE_ID
-    assert item == {
-        "status": "clip_verified",
-        "clip_remote_id": REMOTE_ID,
-        "clip_origin": "adopted_existing_internal_promotion",
-    }
+    assert item["status"] == "clip_verified"
+    assert item["clip_remote_id"] == REMOTE_ID
+    assert item["clip_origin"] == "adopted_existing_internal_promotion"
+    assert item["clip_execution_plan"]["plan"]["action"] == "adopt_existing_clip_without_reupload_then_wall"
+    assert item["clip_execution_plan"]["plan"]["required_capabilities"] == ["adopt_durable_clip", "create_wall"]
+    assert item["clip_execution_plan"]["plan_digest"].startswith("sha256:")
     assert asserted == [(REMOTE_ID, "legacy_or_promoted")]
     assert saved
+    assert journal["provider_write_attempted"] is False
+
+
+def test_fresh_clip_lifecycle_is_unreachable_until_empty_inventory_grants_create_clip(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    item: dict[str, Any] = {"status": "pending"}
+    journal: dict[str, Any] = {
+        "source_snapshot_id": "issue323-reviewed-snapshot",
+        "provider_write_attempted": False,
+        "items": {SOURCE_ID: item},
+    }
+
+    def no_existing(_client: Any, _asset: Any) -> None:
+        assert item["clip_execution_plan"]["plan"]["action"] == "require_existing_clip_preflight"
+        assert item["clip_execution_plan"]["plan"]["required_capabilities"] == ["read_provider_state"]
+        return None
+
+    class StopAfterCreateCapability(RuntimeError):
+        pass
+
+    def inspect_upload_record(_current: Any, **_kwargs: Any) -> Any:
+        assert item["clip_execution_plan"]["plan"]["action"] == (
+            "eligible_for_single_upload_after_executor_existing_clip_preflight"
+        )
+        assert item["clip_execution_plan"]["plan"]["required_capabilities"] == ["create_clip"]
+        assert item["clip_execution_plan"]["plan_digest"].startswith("sha256:")
+        raise StopAfterCreateCapability
+
+    monkeypatch.setattr(finalize, "_find_existing_clip", no_existing)
+    monkeypatch.setattr(finalize, "ensure_upload_record", inspect_upload_record)
+    monkeypatch.setattr(finalize, "_save", lambda *_args, **_kwargs: None)
+
+    with pytest.raises(StopAfterCreateCapability):
+        finalize._ensure_promoted_clip(
+            _asset(),
+            object(),
+            item,
+            journal,
+            tmp_path / "rollout.json",
+            object(),  # type: ignore[arg-type]
+            SimpleNamespace(client=object()),  # type: ignore[arg-type]
+            60,
+        )
+
     assert journal["provider_write_attempted"] is False
