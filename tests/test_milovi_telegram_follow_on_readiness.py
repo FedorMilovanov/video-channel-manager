@@ -205,7 +205,9 @@ def test_current_order_source_drift_blocks_receipt(tmp_path: Path) -> None:
 
 def test_current_school_title_drift_blocks_receipt(tmp_path: Path) -> None:
     order, bento, school = _source_snapshots(tmp_path)
-    school.write_text(school.read_text(encoding="utf-8").replace("Ladurée 1862", "Ladurée changed", 1), encoding="utf-8")
+    school.write_text(
+        school.read_text(encoding="utf-8").replace("Ladurée 1862", "Ladurée changed", 1), encoding="utf-8"
+    )
     release_path, ledger_path = _authorized_bootstrap(tmp_path)
     report, receipt = _run(
         tmp_path,
