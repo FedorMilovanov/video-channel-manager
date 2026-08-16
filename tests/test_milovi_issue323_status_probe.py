@@ -298,7 +298,7 @@ def test_wall_verified_manual_copy_is_review_evidence_not_phase_a_mutation_stop(
         post_id=500,
         surface=VkWallSurface.POSTPONED,
         publish_date=publish_date,
-        text_sha256=promotion_text_sha256(wall_manual),
+        text_sha256=f"sha256:{promotion_text_sha256(wall_manual)}",
         attachments=(f"video{clip_remote_id}",),
     )
     snapshot = VkWallSnapshot(
