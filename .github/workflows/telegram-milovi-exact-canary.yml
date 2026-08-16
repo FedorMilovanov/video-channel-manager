@@ -74,14 +74,14 @@ jobs:
           set -euo pipefail
           python -m video_channel_manager.milovi_telegram_live_canary send
 
-      - name: Persist terminal Telegram outcome when known
+      - name: Persist post-barrier Telegram outcome evidence
         if: always()
         shell: bash
         run: |
           set -euo pipefail
           STATE=content/telegram/milovi-cake/live/canary-dispatch-state.json
           if git diff --quiet -- "$STATE"; then
-            echo 'No terminal state change to persist; unknown outcomes remain dispatch_started.'
+            echo 'No post-barrier state change to persist; provider dispatch was not durably marked started.'
             exit 0
           fi
           STATUS="$(python - <<'PY'
