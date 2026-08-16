@@ -1,5 +1,5 @@
 # Current operational state
-Updated: 2026-08-15
+Updated: 2026-08-17
 
 This file is the concise current operational interpretation. It does **not** authorize provider mutation. Historical audits/PRs/issues are evidence only.
 
@@ -137,7 +137,7 @@ It does not authorize ID3 rewrite, rename/transcode, browser automation, remote 
 
 Supported local-only capability is `video-manager resi handoff` (with `video-manager-resi` retained as a focused alias) for ordinary HTTP(S) DASH `Manifest.mpd` sources.
 
-It uses structured format evidence, deterministic source receipts, SHA-256 and ffprobe QC, source-aware exact trimming, NVENC detection / CPU fallback, and user-facing outputs under canonical `operator-output`.
+It uses structured format evidence, deterministic source receipts, SHA-256 and ffprobe QC, source-aware exact trimming, and NVENC detection / CPU fallback. The retained `<TITLE> - FULL.mp4` master goes to canonical Windows Downloads (`C:\Users\Fedor\Downloads`); source receipt/result JSON, generated handoff/watcher control files and exact-trim outputs remain under repository `operator-output` unless the user explicitly selects another destination.
 
 This capability has provider effect `impossible`. It does not bypass DRM/access controls, infer rights/permission, upload media, or authorize any provider mutation. The canonical runbook is [`resi-dash-local-handoff.md`](resi-dash-local-handoff.md).
 
