@@ -58,9 +58,7 @@ class PromotionJournal:
         if observed != expected:
             missing = sorted(f"{source}:{field.value}" for source, field in expected - observed)
             extra = sorted(f"{source}:{field.value}" for source, field in observed - expected)
-            raise ValueError(
-                f"Promotion journal must cover exact 12x2 field set; missing={missing}, extra={extra}"
-            )
+            raise ValueError(f"Promotion journal must cover exact 12x2 field set; missing={missing}, extra={extra}")
 
     def ordered_operations(self) -> tuple[PromotionOperationState, ...]:
         by_key = {(item.source_id, item.field): item for item in self.operations}
