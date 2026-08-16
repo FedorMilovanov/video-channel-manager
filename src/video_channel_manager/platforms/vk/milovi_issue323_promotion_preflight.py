@@ -41,7 +41,9 @@ class PromotionOperationState:
         if self.source_id not in ROLL_OUT_IDS:
             raise ValueError(f"Promotion operation source is outside Issue #323 allowlist: {self.source_id!r}")
         if self.status is PromotionDispatchStatus.PENDING and self.dispatch_started:
-            raise ValueError(f"Pending promotion operation cannot have dispatch_started=true: {self.source_id}:{self.field.value}")
+            raise ValueError(
+                f"Pending promotion operation cannot have dispatch_started=true: {self.source_id}:{self.field.value}"
+            )
         if self.status is PromotionDispatchStatus.EDIT_DISPATCH_STARTED and not self.dispatch_started:
             raise ValueError(
                 f"edit_dispatch_started must carry dispatch_started=true: {self.source_id}:{self.field.value}"
@@ -130,7 +132,9 @@ def _operation_state_map(
     if observed != expected:
         missing = sorted(f"{source}:{field.value}" for source, field in expected - observed)
         extra = sorted(f"{source}:{field.value}" for source, field in observed - expected)
-        raise ValueError(f"Promotion operation states must cover exact 12x2 field set; missing={missing}, extra={extra}")
+        raise ValueError(
+            f"Promotion operation states must cover exact 12x2 field set; missing={missing}, extra={extra}"
+        )
     for key, state in states.items():
         if key != (state.source_id, state.field):
             raise ValueError(f"Promotion operation state key differs from payload identity: {key!r}")
@@ -144,16 +148,12 @@ def _dispatch_blocker(state: PromotionOperationState, decision: PromotionDecisio
             "read-reconcile before any promotion write"
         )
     if state.status is PromotionDispatchStatus.VERIFIED and decision is PromotionDecisionAction.EDIT:
-        return (
-            f"{state.source_id}:{state.field.value}: durable operation says verified but provider still exposes reviewed BEFORE"
-        )
+        return f"{state.source_id}:{state.field.value}: durable operation says verified but provider still exposes reviewed BEFORE"
     if state.status is PromotionDispatchStatus.VERIFIED and decision in {
         PromotionDecisionAction.ADOPT,
         PromotionDecisionAction.PRESERVE,
     }:
-        return (
-            f"{state.source_id}:{state.field.value}: durable edit history conflicts with no-edit reviewed policy"
-        )
+        return f"{state.source_id}:{state.field.value}: durable edit history conflicts with no-edit reviewed policy"
     return None
 
 
@@ -210,7 +210,9 @@ def build_promotion_execution_preflight(
 
 def _bind_mutation_identity(mutation: PlannedPromotionMutation, remote_id: str) -> ExecutablePromotionMutation:
     if not remote_id:
-        raise ValueError(f"Promotion mutation lost exact provider identity: {mutation.source_id}:{mutation.field.value}")
+        raise ValueError(
+            f"Promotion mutation lost exact provider identity: {mutation.source_id}:{mutation.field.value}"
+        )
     return ExecutablePromotionMutation(
         source_id=mutation.source_id,
         field=mutation.field,
