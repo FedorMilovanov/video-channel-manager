@@ -14,5 +14,6 @@ def test_milovi_323_continue_cli_is_preview_only() -> None:
     assert "--promotion-spec" in plain
     assert "--promotion-journal" in plain
     assert "--confirm-journal-init" in plain
+    assert "--confirm-preflight-digest" in plain
     assert "--execute" not in plain
-    assert "execute zero writes" in plain
+    assert "execute zero provider writes" in plain
