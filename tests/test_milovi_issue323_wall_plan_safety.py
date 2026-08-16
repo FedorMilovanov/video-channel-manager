@@ -48,9 +48,7 @@ def test_wall_verified_without_remote_identity_fails_closed() -> None:
 
 
 def test_existing_nonverified_wall_identity_requires_reconciliation() -> None:
-    plan = plan_issue323_item(
-        _state(durable_status="pending", wall_remote_id="-68859909_480")
-    )
+    plan = plan_issue323_item(_state(durable_status="pending", wall_remote_id="-68859909_480"))
 
     assert plan.action is Issue323NextAction.RECONCILE_EXISTING_WALL
     assert Issue323Capability.CREATE_WALL not in plan.required_capabilities
