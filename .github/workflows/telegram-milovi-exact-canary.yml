@@ -35,14 +35,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install exact canary dependencies
         shell: bash
         run: |
           set -euo pipefail
           python -m pip install --disable-pip-version-check --only-binary=:all: \
-            httpx==0.28.1 Pillow==11.3.0
+            -e . Pillow==11.3.0
           python -m pip check
 
       - name: Prepare exact payload and dispatch-started barrier
@@ -51,7 +51,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
         run: |
           set -euo pipefail
-          python scripts/milovi_telegram_canary_prepare.py
+          python -m video_channel_manager.milovi_telegram_live_canary prepare
 
       - name: Persist dispatch-started barrier before sendPhoto
         shell: bash
@@ -69,7 +69,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
         run: |
           set -euo pipefail
-          python scripts/milovi_telegram_canary_send.py
+          python -m video_channel_manager.milovi_telegram_live_canary send
 
       - name: Persist verified Telegram receipt
         shell: bash
