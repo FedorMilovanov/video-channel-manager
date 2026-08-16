@@ -216,6 +216,7 @@ def build_readiness_result(
     if not ready:
         return report, None
 
+    assert bootstrap_verified_at is not None
     receipt = dict(template)
     receipt.update(
         {
