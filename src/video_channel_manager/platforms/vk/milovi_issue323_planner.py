@@ -146,6 +146,8 @@ def plan_issue323_item(state: Issue323ItemState) -> Issue323ItemPlan:
             return _plan(
                 Issue323NextAction.RESUME_FROM_VERIFIED_CLIP,
                 Issue323Capability.ADOPT_DURABLE_CLIP,
+                Issue323Capability.READ_PROVIDER_STATE,
+                Issue323Capability.RECONCILE_PROVIDER_EFFECT,
                 Issue323Capability.CREATE_WALL,
                 forbids_reupload=True,
                 forbids_repost=False,
