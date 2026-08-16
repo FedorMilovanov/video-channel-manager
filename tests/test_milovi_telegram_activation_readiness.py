@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 READINESS = ROOT / "content/telegram/milovi-cake/live/activation-readiness-2026-08-16.json"
@@ -12,7 +13,7 @@ TARGET_BINDING = ROOT / "content/telegram/channels/milovi-cake-target-binding.js
 AUTHORIZED_RELEASE = ROOT / "content/telegram/milovi-cake/bootstrap-authorized-release-2026-08.json"
 
 
-def _load(path: Path) -> dict[str, object]:
+def _load(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"))
     assert isinstance(value, dict)
     return value
