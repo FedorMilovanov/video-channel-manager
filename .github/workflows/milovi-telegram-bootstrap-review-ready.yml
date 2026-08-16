@@ -37,7 +37,9 @@ jobs:
       PYTHONPATH: src
       PROFILE_PATH: content/telegram/channels/milovi-cake.json
       DOWNLOAD_DIR: .runtime/milovi-bootstrap-review-source
+      RECEIPT_DIR: .runtime/milovi-bootstrap-review-ready
       RECEIPT_PATH: .runtime/milovi-bootstrap-review-ready/receipt.json
+      SOURCE_METADATA_PATH: .runtime/milovi-bootstrap-review-ready/source-package-metadata.json
       EXPECTED_MAIN_SHA: ${{ inputs.expected_main_sha }}
       EXPECTED_TARGET_BINDING_SHA256: ${{ inputs.expected_target_binding_sha256 }}
       EXPECTED_BOUND_CANDIDATE_SHA256: ${{ inputs.expected_bound_candidate_sha256 }}
@@ -127,7 +129,9 @@ jobs:
           if artifact_id <= 0 or not artifact_digest.startswith('sha256:') or len(artifact_digest) != 71:
               raise SystemExit('source activation-package artifact lacks immutable id/digest')
 
-          Path('/tmp/source-package-metadata.json').write_text(
+          metadata_path = Path(os.environ['SOURCE_METADATA_PATH'])
+          metadata_path.parent.mkdir(parents=True, exist_ok=True)
+          metadata_path.write_text(
               json.dumps(
                   {
                       'source_run_id': run_id,
@@ -211,8 +215,6 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: milovi-bootstrap-review-ready-${{ github.sha }}-${{ inputs.package_run_id }}
-          path: |
-            ${{ env.RECEIPT_PATH }}
-            /tmp/source-package-metadata.json
+          path: ${{ env.RECEIPT_DIR }}
           if-no-files-found: error
           retention-days: 7
