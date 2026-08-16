@@ -28,7 +28,10 @@ from video_channel_manager.platforms.vk.clips_owner_probe import (
 )
 
 console = Console()
-vk_app = typer.Typer(no_args_is_help=True, help="Read-only VK community, video, and album inventory.")
+vk_app = typer.Typer(
+    no_args_is_help=True,
+    help="VK read-only inventory plus explicitly guarded provider mutation workflows.",
+)
 
 
 def _components(account: str) -> tuple[VkTokenStore, VkApiClient]:
@@ -106,7 +109,10 @@ def login(
         raise typer.Exit(code=2) from exc
 
     console.print(f"[green]Validated VK user account '{user.display_name}' as alias '{account}'.[/green]")
-    console.print("The token is used only for read-only API calls by this version.")
+    console.print(
+        "This token supports read-only inventory and explicitly guarded mutation commands; "
+        "provider writes require command-specific confirmation."
+    )
     table = Table(title="Managed VK communities")
     table.add_column("Title")
     table.add_column("Community ID")
