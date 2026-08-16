@@ -13,7 +13,9 @@ from video_channel_manager.platforms.vk.milovi_issue323_promotion_journal import
     load_promotion_journal,
     preflight_with_promotion_journal,
     reconcile_promotion_intent_before_dispatch,
+    record_promotion_dispatch_unknown,
     record_promotion_edit_intent,
+    verify_promotion_dispatch_from_observation,
 )
 from video_channel_manager.platforms.vk.milovi_issue323_promotion_observation import (
     promotion_observation_from_mapping,
@@ -24,7 +26,7 @@ from video_channel_manager.platforms.vk.milovi_issue323_status_probe import run_
 from video_channel_manager.platforms.vk.milovi_rollout_sources import write_json_atomic
 
 CONTINUE_PREVIEW_SCHEMA = "video-manager.milovi-issue-323-continue-preview"
-CONTINUE_PREVIEW_VERSION = 4
+CONTINUE_PREVIEW_VERSION = 5
 PROMOTION_JOURNAL_INIT_CONFIRMATION = "INITIALIZE_REVIEWED_PROMOTION_JOURNAL"
 
 
@@ -54,6 +56,8 @@ def _blocked_payload(
         "promotion_journal_initialized": False,
         "promotion_intent_persisted": False,
         "promotion_intent_reconciled": False,
+        "promotion_dispatch_reconciled": False,
+        "promotion_dispatch_unknown": False,
         "promotion_intent": None,
         "promotion_preflight": None,
         "promotion_preflight_digest": None,
@@ -63,6 +67,27 @@ def _blocked_payload(
         "preflight_digest_confirmed": False,
         "blockers": [blocker],
     }
+
+
+def _single_unresolved_dispatch(journal: PromotionJournal) -> PromotionJournalOperation | None:
+    unresolved = tuple(
+        item
+        for item in journal.operations
+        if item.status
+        in {
+            PromotionDispatchStatus.EDIT_DISPATCH_STARTED,
+            PromotionDispatchStatus.UNKNOWN_REQUIRES_RECONCILIATION,
+        }
+    )
+    if len(unresolved) > 1:
+        raise PromotionRecoveryRequired(
+            "Promotion journal contains multiple unresolved provider dispatches; do not infer a recovery order"
+        )
+    if unresolved and any(item.status is PromotionDispatchStatus.EDIT_INTENT for item in journal.operations):
+        raise PromotionRecoveryRequired(
+            "Promotion journal contains both unresolved dispatch and unstarted intent; do not infer a write order"
+        )
+    return unresolved[0] if unresolved else None
 
 
 def _single_unstarted_intent(journal: PromotionJournal) -> PromotionJournalOperation | None:
@@ -89,6 +114,8 @@ def _result_payload(
     digest_confirmed: bool,
     intent_persisted: bool = False,
     intent_reconciled: bool = False,
+    dispatch_reconciled: bool = False,
+    dispatch_unknown: bool = False,
     intent: PromotionJournalOperation | None = None,
     blockers: list[str] | None = None,
 ) -> dict[str, Any]:
@@ -107,6 +134,8 @@ def _result_payload(
         "promotion_journal_initialized": journal_initialized,
         "promotion_intent_persisted": intent_persisted,
         "promotion_intent_reconciled": intent_reconciled,
+        "promotion_dispatch_reconciled": dispatch_reconciled,
+        "promotion_dispatch_unknown": dispatch_unknown,
         "promotion_intent": intent.as_dict() if intent is not None else None,
         "promotion_preflight": preflight.as_dict(),
         "promotion_preflight_digest": preflight.confirmation_digest,
@@ -131,7 +160,7 @@ def run_issue_323_continue_preview(
     journal_created_at: str | None = None,
     preflight_digest_confirmation: str | None = None,
 ) -> dict[str, Any]:
-    """Build or persist one confirmed local intent; never cross the provider mutation boundary."""
+    """Build, reconcile, or persist local promotion state; never mutate the provider."""
 
     status_payload = run_issue_323_status_probe(
         output_path=status_output_path,
@@ -227,6 +256,125 @@ def run_issue_323_continue_preview(
             return payload
         write_json_atomic(promotion_journal_path, journal.as_dict())
         journal_initialized = True
+
+    try:
+        unresolved_dispatch = _single_unresolved_dispatch(journal)
+    except PromotionRecoveryRequired as exc:
+        payload = _blocked_payload(
+            status_output_path=status_output_path,
+            status_payload=status_payload,
+            blocker=str(exc),
+            spec_digest=spec.digest,
+            observation_digest=observation.digest,
+            provider_state_digest=observation.provider_state_digest,
+            supplied_preflight_digest_confirmation=preflight_digest_confirmation,
+            journal_digest=journal.digest,
+        )
+        write_json_atomic(output_path, payload)
+        return payload
+
+    if unresolved_dispatch is not None:
+        assert unresolved_dispatch.intent_preflight_digest is not None
+        previous_status = unresolved_dispatch.status
+        try:
+            journal = verify_promotion_dispatch_from_observation(
+                journal=journal,
+                spec=spec,
+                observation=observation,
+                source_id=unresolved_dispatch.source_id,
+                field=unresolved_dispatch.field,
+                preflight_digest=unresolved_dispatch.intent_preflight_digest,
+            )
+        except PromotionRecoveryRequired as exc:
+            if previous_status is PromotionDispatchStatus.EDIT_DISPATCH_STARTED:
+                try:
+                    journal = record_promotion_dispatch_unknown(
+                        journal=journal,
+                        source_id=unresolved_dispatch.source_id,
+                        field=unresolved_dispatch.field,
+                        preflight_digest=unresolved_dispatch.intent_preflight_digest,
+                    )
+                    write_json_atomic(promotion_journal_path, journal.as_dict())
+                except (OSError, RuntimeError, ValueError) as persist_exc:
+                    payload = _blocked_payload(
+                        status_output_path=status_output_path,
+                        status_payload=status_payload,
+                        blocker=(
+                            "Fresh dispatch reconciliation could not prove exact AFTER and UNKNOWN persistence failed; "
+                            "durable STARTED remains the no-replay barrier: "
+                            f"{persist_exc}"
+                        ),
+                        spec_digest=spec.digest,
+                        observation_digest=observation.digest,
+                        provider_state_digest=observation.provider_state_digest,
+                        supplied_preflight_digest_confirmation=preflight_digest_confirmation,
+                        journal_digest=journal.digest,
+                    )
+                    write_json_atomic(output_path, payload)
+                    return payload
+            preflight = preflight_with_promotion_journal(
+                spec=spec,
+                observation=observation,
+                journal=journal,
+            )
+            payload = _result_payload(
+                status_output_path=status_output_path,
+                status_payload=status_payload,
+                spec_digest=spec.digest,
+                observation_digest=observation.digest,
+                provider_state_digest=observation.provider_state_digest,
+                journal=journal,
+                journal_initialized=journal_initialized,
+                preflight=preflight,
+                continuation_status="dispatch_unknown_requires_reconciliation",
+                digest_confirmation_supplied=preflight_digest_confirmation is not None,
+                digest_confirmed=False,
+                dispatch_unknown=True,
+                intent=next(
+                    item
+                    for item in journal.operations
+                    if item.source_id == unresolved_dispatch.source_id and item.field is unresolved_dispatch.field
+                ),
+                blockers=[f"Persisted promotion dispatch remains unresolved: {exc}", *preflight.blockers],
+            )
+            write_json_atomic(output_path, payload)
+            return payload
+        except (RuntimeError, ValueError) as exc:
+            payload = _blocked_payload(
+                status_output_path=status_output_path,
+                status_payload=status_payload,
+                blocker=f"Persisted promotion dispatch is internally inconsistent: {exc}",
+                spec_digest=spec.digest,
+                observation_digest=observation.digest,
+                provider_state_digest=observation.provider_state_digest,
+                supplied_preflight_digest_confirmation=preflight_digest_confirmation,
+                journal_digest=journal.digest,
+            )
+            write_json_atomic(output_path, payload)
+            return payload
+
+        write_json_atomic(promotion_journal_path, journal.as_dict())
+        preflight = preflight_with_promotion_journal(
+            spec=spec,
+            observation=observation,
+            journal=journal,
+        )
+        payload = _result_payload(
+            status_output_path=status_output_path,
+            status_payload=status_payload,
+            spec_digest=spec.digest,
+            observation_digest=observation.digest,
+            provider_state_digest=observation.provider_state_digest,
+            journal=journal,
+            journal_initialized=journal_initialized,
+            preflight=preflight,
+            continuation_status="dispatch_reconciled_verified_ready_for_next_plan",
+            digest_confirmation_supplied=preflight_digest_confirmation is not None,
+            digest_confirmed=False,
+            dispatch_reconciled=True,
+        )
+        write_json_atomic(output_path, payload)
+        return payload
 
     try:
         unstarted_intent = _single_unstarted_intent(journal)
