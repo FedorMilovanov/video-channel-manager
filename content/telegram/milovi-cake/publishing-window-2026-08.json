@@ -8,8 +8,10 @@
   "earliest_publication_local": "09:00",
   "latest_publication_local": "21:00",
   "preferred_slots_local": ["10:30", "13:30", "17:00", "20:00"],
+  "bootstrap_slots_local": ["10:30", "20:00"],
+  "max_publication_lag_minutes": 120,
   "quiet_hours_rule": "No Milovi Cake Telegram provider mutation may start outside the inclusive 09:00-21:00 local audience window. The gate must run before Telegram provider access and before durable dispatch intent is created.",
-  "missed_slot_rule": "Do not catch up a missed post during quiet hours. Leave it pending for the next allowed slot.",
+  "missed_slot_rule": "A frozen bootstrap item older than max_publication_lag_minutes is skipped durably and must never be caught up at a later slot. A later strict-next item may proceed only at its own eligible slot after the stale predecessor is recorded skipped.",
   "manual_authorization_rule": "A release or authorization created during quiet hours does not override this window unless a future separately reviewed emergency operation explicitly changes this policy.",
   "provider_mutation_allowed_by_this_file": false
 }

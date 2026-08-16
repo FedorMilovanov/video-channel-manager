@@ -29,10 +29,12 @@ from video_channel_manager.telegram_multichannel_state import (
 )
 from video_channel_manager.telegram_multichannel_transport import (
     GenericMessagePayload,
+    GenericPhotoPayload,
     GenericPollPayload,
     GenericTargetProof,
     TelegramApiError,
     send_message_once,
+    send_photo_once,
     send_poll_once,
 )
 from video_channel_manager.telegram_publication_freshness import (
@@ -251,6 +253,8 @@ def _send_exact_payload(
             receipt = send_message_once(profile, envelope.target, item.payload, token=token, now=now)
         elif isinstance(item.payload, GenericPollPayload):
             receipt = send_poll_once(profile, envelope.target, item.payload, token=token, now=now)
+        elif isinstance(item.payload, GenericPhotoPayload):
+            receipt = send_photo_once(profile, envelope.target, item.payload, token=token, now=now)
         else:
             raise ValueError("unsupported generic Telegram provider payload")
     except TelegramApiError as exc:
