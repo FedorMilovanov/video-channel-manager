@@ -45,14 +45,16 @@ class PromotionOperationState:
                 f"Pending promotion operation cannot have dispatch_started=true: {self.source_id}:{self.field.value}"
             )
         if self.status is PromotionDispatchStatus.EDIT_INTENT and self.dispatch_started:
-            raise ValueError(
-                f"edit_intent cannot have dispatch_started=true: {self.source_id}:{self.field.value}"
-            )
-        if self.status in {
-            PromotionDispatchStatus.EDIT_DISPATCH_STARTED,
-            PromotionDispatchStatus.UNKNOWN_REQUIRES_RECONCILIATION,
-            PromotionDispatchStatus.VERIFIED,
-        } and not self.dispatch_started:
+            raise ValueError(f"edit_intent cannot have dispatch_started=true: {self.source_id}:{self.field.value}")
+        if (
+            self.status
+            in {
+                PromotionDispatchStatus.EDIT_DISPATCH_STARTED,
+                PromotionDispatchStatus.UNKNOWN_REQUIRES_RECONCILIATION,
+                PromotionDispatchStatus.VERIFIED,
+            }
+            and not self.dispatch_started
+        ):
             raise ValueError(
                 f"{self.status.value} must carry dispatch_started=true: {self.source_id}:{self.field.value}"
             )
@@ -153,11 +155,7 @@ def promotion_operation_state_digest(
     states: Mapping[tuple[str, PromotionField], PromotionOperationState],
 ) -> str:
     validated = _operation_state_map(states)
-    ordered = [
-        validated[(source_id, field)].as_dict()
-        for source_id in ROLL_OUT_IDS
-        for field in PromotionField
-    ]
+    ordered = [validated[(source_id, field)].as_dict() for source_id in ROLL_OUT_IDS for field in PromotionField]
     canonical = json.dumps(ordered, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
 
