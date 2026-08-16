@@ -9,7 +9,9 @@ on:
       - "src/video_channel_manager/telegram_multichannel_*.py"
       - "src/video_channel_manager/telegram_target_binding.py"
       - "tests/test_milovi_telegram_bootstrap.py"
+      - "tests/test_milovi_telegram_bootstrap_workflow.py"
       - "tests/test_telegram_multichannel_photo_transport.py"
+      - ".github/workflows/milovi-telegram-bootstrap-publisher.yml"
       - ".github/workflows/milovi-telegram-bootstrap-quality.yml"
   push:
     branches:
