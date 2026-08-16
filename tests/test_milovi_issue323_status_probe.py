@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from video_channel_manager.platforms.vk.milovi_issue323_promotion_spec import promotion_text_sha256
 from video_channel_manager.platforms.vk.milovi_issue323_status_probe import (
     _ReadOnlyVkProvider,
     _load_prepared_assets,
@@ -292,22 +293,21 @@ def test_wall_verified_manual_copy_is_review_evidence_not_phase_a_mutation_stop(
             }
         },
     )
+    wall_fingerprint = VkWallPostFingerprint(
+        owner_id=-68859909,
+        post_id=500,
+        surface=VkWallSurface.POSTPONED,
+        publish_date=publish_date,
+        text_sha256=promotion_text_sha256(wall_manual),
+        attachments=(f"video{clip_remote_id}",),
+    )
     snapshot = VkWallSnapshot(
         community_id=68859909,
         captured_at="2026-08-15T02:00:00+00:00",
         complete=True,
         published_pages=1,
         postponed_pages=1,
-        posts=(
-            VkWallPostFingerprint(
-                owner_id=-68859909,
-                post_id=500,
-                surface=VkWallSurface.POSTPONED,
-                publish_date=publish_date,
-                text_sha256="sha256:" + "0" * 64,
-                attachments=(f"video{clip_remote_id}",),
-            ),
-        ),
+        posts=(wall_fingerprint,),
     )
 
     payload = _probe_batch(
@@ -333,7 +333,9 @@ def test_wall_verified_manual_copy_is_review_evidence_not_phase_a_mutation_stop(
     assert fields[(source_id, "clip_description")]["text"] == clip_manual
     assert fields[(source_id, "wall_message")]["text"] == wall_manual
     assert fields[(source_id, "wall_message")]["remote_id"] == wall_remote_id
+    assert fields[(source_id, "wall_message")]["wall_incarnation"] == wall_fingerprint.as_dict()
     assert payload["promotion_observation"]["provider_mutation_authorized"] is False
+    assert provider.read_post_calls == [500]
 
 
 def test_provider_facade_exposes_no_mutation_methods() -> None:
