@@ -14,7 +14,7 @@ Do **not** describe Milovi Cake as a French-cuisine or French-pastry business me
 
 ## Milovi School is a separate editorial / educational project
 
-Milovi School is **our separate editorial project for interesting reading**: researched stories, cultural context, people, history, terminology, myths, techniques and unusual facts. In the Telegram channel it must be presented as a project worth reading in its own right — not as a product rubric, not as a catalogue extension and not as a description of what Milovi Cake makes.
+Milovi School is a separate educational and content project. It is **our separate editorial project for interesting reading**: researched stories, cultural context, people, history, terminology, myths, techniques and unusual facts. In the Telegram channel it must be presented as a project worth reading in its own right — not as a product rubric, not as a catalogue extension and not as a description of what Milovi Cake makes.
 
 A School post should work even for a reader who is not currently choosing or ordering a cake. Its job is to create curiosity, useful reading, editorial depth, SEO/discovery traffic and a reason to return to the channel. The preferred Telegram shape is: a strong factual hook → a short self-contained preview with one or two concrete details → an unanswered question or open loop → a clearly labelled link to the Milovi School article.
 
