@@ -9,11 +9,11 @@ import pytest
 from video_channel_manager.milovi_telegram_activation_review import verify_review_ready_package
 from video_channel_manager.milovi_telegram_bootstrap import build_release_candidate
 from video_channel_manager.telegram_channel_profile import load_channel_profile
-from video_channel_manager.telegram_multichannel_release import save_release
+from video_channel_manager.telegram_multichannel_release import load_release, save_release
 from video_channel_manager.telegram_multichannel_transport import GenericTargetProof
 from video_channel_manager.telegram_release_binding import bind_release_candidate
 from video_channel_manager.telegram_release_review import authorize_release_candidate
-from video_channel_manager.telegram_target_binding import target_binding_from_proof
+from video_channel_manager.telegram_target_binding import load_target_binding, target_binding_from_proof
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "content" / "telegram" / "channels" / "milovi-cake.json"
@@ -143,9 +143,6 @@ def test_review_ready_rejects_explicit_digest_or_main_drift(tmp_path: Path) -> N
 def test_review_ready_rejects_already_authorized_release(tmp_path: Path) -> None:
     package, binding_digest, bound_digest = _package(tmp_path)
     profile = load_channel_profile(PROFILE)
-    from video_channel_manager.telegram_multichannel_release import load_release
-    from video_channel_manager.telegram_target_binding import load_target_binding
-
     binding = load_target_binding(package / "target-binding.json", profile)
     bound = load_release(package / "bootstrap-bound-unauthorized.json")
     authorized = authorize_release_candidate(
