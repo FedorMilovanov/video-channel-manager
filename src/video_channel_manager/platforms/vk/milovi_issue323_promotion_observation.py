@@ -220,6 +220,127 @@ class PromotionObservationBatch:
         return f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
 
 
+def _exact_keys(payload: Mapping[str, object], allowed: set[str], *, label: str) -> None:
+    extra = sorted(set(payload) - allowed)
+    if extra:
+        raise ValueError(f"{label} contains unknown keys: {extra}")
+
+
+def promotion_observation_from_mapping(payload: Mapping[str, object]) -> PromotionObservationBatch:
+    """Rehydrate exactly one status-produced observation without another provider read."""
+
+    _exact_keys(
+        payload,
+        {
+            "schema_name",
+            "schema_version",
+            "source_snapshot_id",
+            "wall_snapshot_sha256",
+            "captured_at",
+            "provider_mutation_authorized",
+            "complete",
+            "reviewable",
+            "fields",
+            "blockers",
+            "observation_digest",
+        },
+        label="Promotion observation",
+    )
+    if payload.get("schema_name") != PROMOTION_OBSERVATION_SCHEMA:
+        raise ValueError("Promotion observation schema_name mismatch")
+    if payload.get("schema_version") != PROMOTION_OBSERVATION_VERSION:
+        raise ValueError("Promotion observation schema_version mismatch")
+    if payload.get("provider_mutation_authorized") is not False:
+        raise ValueError("Promotion observation must never carry provider mutation authority")
+
+    source_snapshot_id = payload.get("source_snapshot_id")
+    wall_snapshot_sha256 = payload.get("wall_snapshot_sha256")
+    captured_at = payload.get("captured_at")
+    raw_fields = payload.get("fields")
+    raw_blockers = payload.get("blockers")
+    if not isinstance(source_snapshot_id, str):
+        raise ValueError("Promotion observation source_snapshot_id must be a string")
+    if not isinstance(wall_snapshot_sha256, str):
+        raise ValueError("Promotion observation wall_snapshot_sha256 must be a string")
+    if not isinstance(captured_at, str):
+        raise ValueError("Promotion observation captured_at must be a string")
+    if not isinstance(raw_fields, list):
+        raise ValueError("Promotion observation fields must be a list")
+    if not isinstance(raw_blockers, list) or any(not isinstance(item, str) for item in raw_blockers):
+        raise ValueError("Promotion observation blockers must be a list of strings")
+
+    fields: list[PromotionFieldObservation] = []
+    allowed_field_keys = {
+        "source_id",
+        "field",
+        "text",
+        "sha256",
+        "remote_id",
+        "evidence",
+        "processing_projection",
+    }
+    for index, raw in enumerate(raw_fields):
+        if not isinstance(raw, Mapping):
+            raise ValueError(f"Promotion observation field {index} must be an object")
+        _exact_keys(raw, allowed_field_keys, label=f"Promotion observation field {index}")
+        source_id = raw.get("source_id")
+        field = raw.get("field")
+        text = raw.get("text")
+        sha256 = raw.get("sha256")
+        remote_id = raw.get("remote_id")
+        evidence = raw.get("evidence")
+        processing_projection = raw.get("processing_projection")
+        if not isinstance(source_id, str):
+            raise ValueError(f"Promotion observation field {index} source_id must be a string")
+        if not isinstance(field, str):
+            raise ValueError(f"Promotion observation field {index} field must be a string")
+        if not isinstance(text, str):
+            raise ValueError(f"Promotion observation field {index} text must be a string")
+        if not isinstance(sha256, str):
+            raise ValueError(f"Promotion observation field {index} sha256 must be a string")
+        if not isinstance(remote_id, str):
+            raise ValueError(f"Promotion observation field {index} remote_id must be a string")
+        if not isinstance(evidence, str):
+            raise ValueError(f"Promotion observation field {index} evidence must be a string")
+        if type(processing_projection) is not bool:
+            raise ValueError(f"Promotion observation field {index} processing_projection must be a boolean")
+        try:
+            parsed_field = PromotionField(field)
+            parsed_evidence = PromotionObservationEvidence(evidence)
+        except ValueError as exc:
+            raise ValueError(f"Promotion observation field {index} has unknown field/evidence") from exc
+        fields.append(
+            PromotionFieldObservation(
+                source_id=source_id,
+                field=parsed_field,
+                text=text,
+                sha256=sha256,
+                remote_id=remote_id,
+                evidence=parsed_evidence,
+                processing_projection=processing_projection,
+            )
+        )
+
+    observation = PromotionObservationBatch(
+        source_snapshot_id=source_snapshot_id,
+        wall_snapshot_sha256=wall_snapshot_sha256,
+        captured_at=captured_at,
+        fields=tuple(fields),
+        blockers=tuple(raw_blockers),
+    )
+    complete = payload.get("complete")
+    reviewable = payload.get("reviewable")
+    if type(complete) is not bool or complete is not observation.complete:
+        raise ValueError("Promotion observation complete flag differs from derived evidence")
+    if type(reviewable) is not bool or reviewable is not observation.reviewable:
+        raise ValueError("Promotion observation reviewable flag differs from derived evidence")
+    supplied_digest = payload.get("observation_digest")
+    if supplied_digest is not None:
+        if not isinstance(supplied_digest, str) or supplied_digest != observation.digest:
+            raise ValueError("Promotion observation digest mismatch")
+    return observation
+
+
 __all__ = [
     "PROMOTION_OBSERVATION_SCHEMA",
     "PROMOTION_OBSERVATION_VERSION",
@@ -229,4 +350,5 @@ __all__ = [
     "PromotionObservedCopyState",
     "classify_clip_copy_observation",
     "classify_wall_copy_observation",
+    "promotion_observation_from_mapping",
 ]

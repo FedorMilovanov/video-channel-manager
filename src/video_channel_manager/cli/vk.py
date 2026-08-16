@@ -436,3 +436,72 @@ def milovi_323_status(
         f"next={result['first_action_source_id']}:{result['first_safe_next_action']} | "
         f"provider-writes=0 | result={output}"
     )
+
+
+@vk_app.command("milovi-323-continue")
+def milovi_323_continue(
+    promotion_spec: Annotated[
+        Path,
+        typer.Option("--promotion-spec", help="Exact reviewed 12x2 PromotionSpec JSON path"),
+    ],
+    promotion_journal: Annotated[
+        Path,
+        typer.Option("--promotion-journal", help="Durable promotion operation journal JSON path"),
+    ],
+    output: Annotated[
+        Path,
+        typer.Option("--output", help="Canonical read-only continuation plan/evidence JSON path"),
+    ] = Path("operator-output/milovi-cake-issue-323-continue-preview.json"),
+    status_output: Annotated[
+        Path,
+        typer.Option("--status-output", help="Fresh read-only provider observation JSON path"),
+    ] = Path("operator-output/milovi-cake-issue-323-readonly-status.json"),
+    journal: Annotated[
+        Path,
+        typer.Option("--journal", help="Existing durable Issue #323 rollout journal path"),
+    ] = Path("data/vk/milovi-cake/issue-323-token-daily-rollout-journal.json"),
+    schedule: Annotated[
+        Path,
+        typer.Option("--schedule", help="Existing frozen Issue #323 wall schedule path"),
+    ] = Path("data/vk/milovi-cake/issue-323-daily-wall-schedule.json"),
+    prepared_manifest: Annotated[
+        Path,
+        typer.Option("--prepared-manifest", help="Existing reviewed prepared-source metadata manifest path"),
+    ] = Path("operator-output/milovi-cake-issue-323-work/prepared-sources.json"),
+    confirm_journal_init: Annotated[
+        str | None,
+        typer.Option(
+            "--confirm-journal-init",
+            help="Exact local-journal initialization confirmation; this never authorizes provider mutation",
+        ),
+    ] = None,
+) -> None:
+    """Build the canonical Issue #323 continuation plan from one fresh read-only observation; execute zero writes."""
+
+    from video_channel_manager.platforms.vk.milovi_issue323_continue import run_issue_323_continue_preview
+    from video_channel_manager.platforms.vk.milovi_issue323_status_probe import MiloviStatusProbeBlocked
+
+    try:
+        result = run_issue_323_continue_preview(
+            output_path=output,
+            status_output_path=status_output,
+            rollout_journal_path=journal,
+            schedule_path=schedule,
+            prepared_manifest_path=prepared_manifest,
+            promotion_spec_path=promotion_spec,
+            promotion_journal_path=promotion_journal,
+            journal_init_confirmation=confirm_journal_init,
+        )
+    except (MiloviStatusProbeBlocked, OSError, ValueError) as exc:
+        console.print(f"[red]STOP: {type(exc).__name__}: {exc}[/red]")
+        raise typer.Exit(code=3) from exc
+
+    status = str(result["continuation_status"])
+    color = "green" if status == "ready_for_digest_confirmation" else "yellow"
+    console.print(
+        f"[{color}]Milovi #323 continuation: {status}[/{color}] | "
+        f"planned-writes={result.get('promotion_preflight', {}).get('expected_provider_writes', 0) if isinstance(result.get('promotion_preflight'), dict) else 0} | "
+        f"provider-writes-executed=0 | digest={result['promotion_preflight_digest']} | result={output}"
+    )
+    if status != "ready_for_digest_confirmation":
+        raise typer.Exit(code=3)
