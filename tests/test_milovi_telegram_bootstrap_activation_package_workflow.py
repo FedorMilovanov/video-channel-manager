@@ -51,7 +51,20 @@ def test_activation_package_runs_on_relevant_current_main_changes_and_stays_read
     assert "contents: write" not in text
     assert "github.ref == 'refs/heads/main'" in text
     assert "persist-credentials: false" in text
-    assert "provider_writes_authorized') is not False" in text
+    assert "profile.provider_writes_authorized is not False" in text
+
+
+def test_activation_profile_gate_reads_canonical_profile_model_not_cli_summary() -> None:
+    text = _text()
+
+    assert "from video_channel_manager.telegram_channel_profile import load_channel_profile" in text
+    assert "profile = load_channel_profile(Path(os.environ['PROFILE_PATH']))" in text
+    assert "profile.project_key != 'milovi-cake'" in text
+    assert "profile.channel_username.casefold() != '@milovicake'" in text
+    assert "profile.provider_writes_authorized is not False" in text
+    assert "profile.daily_verified_limit != 2" in text
+    assert "telegram_channel_cli validate-profile" not in text
+    assert "/tmp/profile.json" not in text
 
 
 def test_activation_package_and_publisher_compile_same_operational_rollout() -> None:
