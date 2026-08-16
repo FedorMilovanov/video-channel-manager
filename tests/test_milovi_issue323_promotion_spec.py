@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 
 from video_channel_manager.platforms.vk.milovi_issue323_promotion_spec import (
@@ -9,7 +12,9 @@ from video_channel_manager.platforms.vk.milovi_issue323_promotion_spec import (
     PromotionPolicy,
     PromotionSpec,
     ReviewedPromotionField,
+    load_reviewed_promotion_spec,
     plan_reviewed_promotion_batch,
+    promotion_spec_from_mapping,
     promotion_text_sha256,
 )
 from video_channel_manager.platforms.vk.milovi_rollout_sources import ROLL_OUT_IDS
@@ -42,7 +47,11 @@ def _spec(*, managed_key: tuple[str, PromotionField] | None = None) -> Promotion
     fields = []
     for source_id in ROLL_OUT_IDS:
         for field in PromotionField:
-            policy = PromotionPolicy.MANAGED_EXACT if managed_key == (source_id, field) else PromotionPolicy.ADOPT_REVIEWED_EXACT
+            policy = (
+                PromotionPolicy.MANAGED_EXACT
+                if managed_key == (source_id, field)
+                else PromotionPolicy.ADOPT_REVIEWED_EXACT
+            )
             fields.append(_reviewed(source_id, field, policy=policy))
     return PromotionSpec(review_id="manual-review-2026-08-16", fields=tuple(reversed(fields)))
 
@@ -102,7 +111,22 @@ def test_spec_digest_and_serialization_are_deterministic_in_allowlist_order() ->
     assert ordered[0]["field"] == PromotionField.CLIP_DESCRIPTION.value
 
 
-def test_managed_exact_before_authorizes_only_exact_reviewed_after() -> None:
+def test_strict_artifact_roundtrip_rejects_unreviewed_keys(tmp_path: Path) -> None:
+    spec = _spec(managed_key=(ROLL_OUT_IDS[0], PromotionField.CLIP_DESCRIPTION))
+    path = tmp_path / "reviewed-promotion-spec.json"
+    path.write_text(json.dumps(spec.as_dict(), ensure_ascii=False), encoding="utf-8")
+
+    loaded = load_reviewed_promotion_spec(path)
+
+    assert loaded.as_dict() == spec.as_dict()
+    assert loaded.digest == spec.digest
+    payload = dict(spec.as_dict())
+    payload["generated_from_title"] = True
+    with pytest.raises(ValueError, match="unreviewed keys"):
+        promotion_spec_from_mapping(payload)
+
+
+def test_managed_exact_before_plans_only_exact_reviewed_after() -> None:
     key = (ROLL_OUT_IDS[0], PromotionField.CLIP_DESCRIPTION)
     spec = _spec(managed_key=key)
     observed = _observed(spec)
@@ -118,6 +142,8 @@ def test_managed_exact_before_authorizes_only_exact_reviewed_after() -> None:
     assert mutation.before_sha256 == reviewed.before_sha256
     assert mutation.after_sha256 == reviewed.after_sha256
     assert mutation.after_text == reviewed.after_text
+    assert plan.as_dict()["provider_mutation_authorized"] is False
+    assert plan.as_dict()["confirmation_required"] is True
 
 
 def test_exact_reviewed_after_is_already_applied_not_reedited() -> None:
@@ -134,7 +160,8 @@ def test_exact_reviewed_after_is_already_applied_not_reedited() -> None:
     assert plan.mutations == ()
     decision = next(item for item in plan.decisions if (item.source_id, item.field) == key)
     assert decision.action is PromotionDecisionAction.ALREADY_APPLIED
-    assert decision.mutation_authorized is False
+    assert decision.edit_required is False
+    assert plan.as_dict()["confirmation_required"] is False
 
 
 def test_adopt_and_preserve_are_exact_and_never_edit() -> None:
@@ -142,7 +169,11 @@ def test_adopt_and_preserve_are_exact_and_never_edit() -> None:
     preserve_key = (ROLL_OUT_IDS[1], PromotionField.WALL_MESSAGE)
     for source_id in ROLL_OUT_IDS:
         for field in PromotionField:
-            policy = PromotionPolicy.PRESERVE_EXTERNAL if (source_id, field) == preserve_key else PromotionPolicy.ADOPT_REVIEWED_EXACT
+            policy = (
+                PromotionPolicy.PRESERVE_EXTERNAL
+                if (source_id, field) == preserve_key
+                else PromotionPolicy.ADOPT_REVIEWED_EXACT
+            )
             fields.append(_reviewed(source_id, field, policy=policy))
     spec = PromotionSpec(review_id="reviewed-manual-copy", fields=tuple(fields))
 
@@ -154,7 +185,7 @@ def test_adopt_and_preserve_are_exact_and_never_edit() -> None:
         PromotionDecisionAction.ADOPT,
         PromotionDecisionAction.PRESERVE,
     }
-    assert all(decision.mutation_authorized is False for decision in plan.decisions)
+    assert all(decision.edit_required is False for decision in plan.decisions)
 
 
 def test_one_manual_drift_blocks_whole_batch_and_zeroes_all_mutations() -> None:
@@ -176,7 +207,8 @@ def test_one_manual_drift_blocks_whole_batch_and_zeroes_all_mutations() -> None:
     assert drift_key[0] in plan.blockers[0]
     managed = next(item for item in plan.decisions if (item.source_id, item.field) == managed_key)
     assert managed.action is PromotionDecisionAction.EDIT
-    assert managed.mutation_authorized is True
+    assert managed.edit_required is True
+    assert plan.as_dict()["provider_mutation_authorized"] is False
 
 
 def test_processing_projection_never_grants_edit_authority_and_blocks_batch() -> None:
@@ -197,7 +229,7 @@ def test_processing_projection_never_grants_edit_authority_and_blocks_batch() ->
     assert plan.mutations == ()
     decision = next(item for item in plan.decisions if (item.source_id, item.field) == key)
     assert decision.action is PromotionDecisionAction.STOP
-    assert decision.mutation_authorized is False
+    assert decision.edit_required is False
     assert "processing projection" in str(decision.reason)
 
 
