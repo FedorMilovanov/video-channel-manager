@@ -41,11 +41,7 @@ BIBLE_TRAINER_LINKS_BY_PLATFORM: Mapping[str, frozenset[str]] = MappingProxyType
 )
 
 BIBLE_TRAINER_URL_TO_PLATFORM: Mapping[str, str] = MappingProxyType(
-    {
-        url: platform
-        for platform, urls in BIBLE_TRAINER_LINKS_BY_PLATFORM.items()
-        for url in urls
-    }
+    {url: platform for platform, urls in BIBLE_TRAINER_LINKS_BY_PLATFORM.items() for url in urls}
 )
 BIBLE_TRAINER_LINKS = frozenset(BIBLE_TRAINER_URL_TO_PLATFORM)
 
