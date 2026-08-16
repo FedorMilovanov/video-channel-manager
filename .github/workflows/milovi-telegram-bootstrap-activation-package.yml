@@ -2,6 +2,26 @@ name: Milovi Cake Telegram bootstrap activation package
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/milovi-telegram-bootstrap-activation-package.yml"
+      - "requirements/telegram-publisher.txt"
+      - "src/video_channel_manager/milovi_telegram_bootstrap.py"
+      - "src/video_channel_manager/telegram_channel_cli.py"
+      - "src/video_channel_manager/telegram_channel_profile.py"
+      - "src/video_channel_manager/telegram_target_binding.py"
+      - "src/video_channel_manager/telegram_target_binding_cli.py"
+      - "src/video_channel_manager/telegram_release_binding.py"
+      - "src/video_channel_manager/telegram_release_binding_cli.py"
+      - "src/video_channel_manager/telegram_multichannel_release.py"
+      - "src/video_channel_manager/telegram_multichannel_transport.py"
+      - "content/telegram/channels/milovi-cake.json"
+      - "content/telegram/milovi-cake/queues/bootstrap-first-screen-queue-2026-08.json"
+      - "content/telegram/milovi-cake/bootstrap-first-screen-candidates-2026-08.json"
+      - "content/telegram/milovi-cake/bootstrap-photo-transport-proof-2026-08.json"
+      - "content/telegram/milovi-cake/publishing-window-2026-08.json"
 
 permissions:
   contents: read
@@ -18,6 +38,7 @@ jobs:
     env:
       PYTHONPATH: src
       PROFILE_PATH: content/telegram/channels/milovi-cake.json
+      ROLLOUT_PATH: content/telegram/milovi-cake/queues/bootstrap-first-screen-queue-2026-08.json
       PACKAGE_DIR: .runtime/milovi-bootstrap-activation-package
       TARGET_PROOF_PATH: .runtime/milovi-bootstrap-activation-package/target-proof.json
       TARGET_BINDING_PATH: .runtime/milovi-bootstrap-activation-package/target-binding.json
@@ -105,12 +126,13 @@ jobs:
               raise SystemExit('target binding bot username drifted from reviewed identity')
           PY
 
-      - name: Build exact frozen bootstrap release candidate
+      - name: Build exact active bootstrap release candidate
         shell: bash
         run: |
           set -euo pipefail
           python -m video_channel_manager.milovi_telegram_bootstrap build-release \
             --profile "$PROFILE_PATH" \
+            --rollout "$ROLLOUT_PATH" \
             --output "$UNBOUND_RELEASE_PATH" > /tmp/bootstrap-build.json
           python - <<'PY'
           import json
@@ -196,6 +218,7 @@ jobs:
               'project_key': 'milovi-cake',
               'channel_username': '@MiloviCake',
               'current_main_sha': os.environ['GITHUB_SHA'],
+              'rollout_path': os.environ['ROLLOUT_PATH'],
               'provider_access_mode': 'read_only_target_discovery_only',
               'provider_write_performed': False,
               'release_authorized': False,
@@ -208,6 +231,8 @@ jobs:
               'bound_candidate_sha256': bind_summary['bound_candidate_sha256'],
               'bound_release_sha256': bind_summary['bound_release_sha256'],
               'bootstrap_items': 10,
+              'bootstrap_first_scheduled_at': unbound['items'][0]['scheduled_at'],
+              'bootstrap_last_scheduled_at': unbound['items'][-1]['scheduled_at'],
               'next_step': 'separate explicit human review of the exact bound candidate; this package itself cannot publish',
           }
           Path(os.environ['SUMMARY_PATH']).write_text(
