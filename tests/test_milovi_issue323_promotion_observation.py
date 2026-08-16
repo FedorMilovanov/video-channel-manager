@@ -101,11 +101,28 @@ def test_manual_copy_classifies_as_unreviewed_exact_instead_of_error() -> None:
     assert state is PromotionObservedCopyState.UNREVIEWED_EXACT
     assert state.requires_review is True
     assert state.processing_projection is False
-    assert classify_wall_copy_observation(
-        current="manual wall text",
-        legacy="legacy wall",
-        promoted="promoted wall",
-    ) is PromotionObservedCopyState.UNREVIEWED_EXACT
+    assert (
+        classify_wall_copy_observation(
+            current="manual wall text",
+            legacy="legacy wall",
+            promoted="promoted wall",
+        )
+        is PromotionObservedCopyState.UNREVIEWED_EXACT
+    )
+
+
+def test_known_processing_projection_does_not_regress_phase_continuation_authority() -> None:
+    promoted = "P" * 120
+    state = classify_clip_copy_observation(
+        current=f"{promoted[:100]}…",
+        legacy="L" * 120,
+        promoted=promoted,
+        provider_item={"processing": 1},
+    )
+
+    assert state is PromotionObservedCopyState.PROCESSING_PROMOTED_PROJECTION
+    assert state.requires_review is False
+    assert state.processing_projection is True
 
 
 def test_busy_unknown_copy_is_processing_projection_not_exact_manual_authority() -> None:
