@@ -19,6 +19,18 @@ def test_scheduler_cron_and_concurrency_match_frozen_moscow_slots() -> None:
     assert "MAX_PUBLICATION_LAG_MINUTES: 120" in text
 
 
+def test_manual_canary_requires_exact_frozen_publication_identity() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+    assert "publication_id:" in text
+    assert "PUBLISH:@MiloviCake:<publication_id>" in text
+    assert "manual_publication_id_not_frozen" in text
+    assert 'expected_confirm = f"PUBLISH:@MiloviCake:{manual_publication_id}"' in text
+    assert "manual_confirmation_missing_or_mismatched" in text
+    assert '--publication-id "$MANUAL_PUBLICATION_ID"' in text
+    assert "--mode manual" in text
+    assert "--mode scheduled" in text
+
+
 def test_activation_gate_precedes_any_telegram_secret_or_provider_access() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
     activation = text.index("Resolve fail-closed activation and daylight gate")
@@ -71,18 +83,31 @@ def test_missing_state_branch_is_a_fail_closed_non_provider_condition() -> None:
     assert checkout < ledger < preflight
 
 
+def test_scheduled_provider_access_waits_for_verified_release_manual_canary() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+    canary = text.index("Resolve release canary gate before Telegram access")
+    freshness = text.index("Require fresh exact strict-next slot before Telegram access")
+    preflight = text.index("Fresh exact target preflight")
+    assert canary < freshness < preflight
+    assert 'entry.dispatch_mode == "manual"' in text
+    assert 'entry.provider_effect == "verified"' in text
+    assert "waiting_for_release_manual_canary" in text
+    assert "No Telegram access was attempted" in text
+
+
 def test_scheduler_persists_no_catch_up_and_intent_barriers_before_send() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
     stale_skip = text.index("Skip stale predecessors before any Telegram access")
-    freshness = text.index("Require fresh strict-next slot before Telegram access")
+    canary = text.index("Resolve release canary gate before Telegram access")
+    freshness = text.index("Require fresh exact strict-next slot before Telegram access")
     preflight = text.index("Fresh exact target preflight")
-    prepare = text.index("Prepare one durable strict-next intent")
+    prepare = text.index("Prepare one durable exact strict-next intent")
     persist = text.index("Persist intent and target proof before provider mutation")
     materialize = text.index("Materialize exact reviewed photo bytes when required")
     send = text.index("Send exactly once through generic Telegram runtime")
     outcome = text.index("Apply provider outcome and persist final state")
-    assert stale_skip < freshness < preflight < prepare < persist < materialize < send < outcome
-    assert "No catch-up send will be made" in text
+    assert stale_skip < canary < freshness < preflight < prepare < persist < materialize < send < outcome
+    assert "no catch-up send will be made" in text
     assert "durable intent remains non-replayable" in text
     assert "blind replay is blocked" in text
 
