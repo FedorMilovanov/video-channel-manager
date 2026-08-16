@@ -1,0 +1,75 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-activation-readiness",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "snapshot_date": "2026-08-16",
+  "baseline_main_sha": "8444252b63e6a091149b1a3ef89521696b36a4be",
+  "status": "blocked_before_live_activation",
+  "provider_access_performed": false,
+  "public_write_performed": false,
+  "queue": {
+    "path": "content/telegram/milovi-cake/queues/bootstrap-first-screen-queue-2026-08.json",
+    "queue_id": "milovi-first-screen-2026-08-17",
+    "first_publication_id": "milovi-bootstrap-001",
+    "first_planned_local": "2026-08-17T10:30:00+03:00",
+    "last_publication_id": "milovi-bootstrap-010",
+    "last_planned_local": "2026-08-21T20:00:00+03:00",
+    "timezone": "Europe/Moscow",
+    "slots_local": ["10:30", "20:00"],
+    "items": 10,
+    "fresh_release_manual_canary_required": true
+  },
+  "current_blockers": [
+    {
+      "gate": "profile_write_gate",
+      "state": "blocked",
+      "evidence": "content/telegram/channels/milovi-cake.json",
+      "required_future_state": "provider_writes_authorized=true only in a separately reviewed activation change"
+    },
+    {
+      "gate": "fresh_target_binding",
+      "state": "missing",
+      "evidence": "content/telegram/channels/milovi-cake-target-binding.json",
+      "required_future_state": "fresh exact read-only proof for chat -1002215328390 and bot 8716602202/preaching_mp3_bot during the allowed daylight activation window"
+    },
+    {
+      "gate": "authorized_release",
+      "state": "missing",
+      "evidence": "content/telegram/milovi-cake/bootstrap-authorized-release-2026-08.json",
+      "required_future_state": "reviewed release_authorized=true object that exactly binds the operational queue and fresh target binding"
+    },
+    {
+      "gate": "durable_state_ledger",
+      "state": "missing",
+      "evidence": "state/milovi-cake-telegram:content/telegram/milovi-cake/publication-ledger.json",
+      "required_future_state": "ledger initialized from the exact authorized release before any provider mutation"
+    },
+    {
+      "gate": "fresh_release_manual_canary",
+      "state": "not_verified",
+      "evidence": "milovi-bootstrap-001",
+      "required_future_state": "one verified manual receipt in this release ledger; the deleted historical canary never satisfies this gate"
+    }
+  ],
+  "activation_order": [
+    "enter 09:00-21:00 Europe/Moscow daylight activation window",
+    "create and review fresh exact target binding using read-only Telegram preflight",
+    "create and review exact authorized release bound to the operational queue and fresh target binding",
+    "initialize isolated durable ledger on state/milovi-cake-telegram from that authorized release",
+    "enable the Milovi profile provider write gate in a separately reviewed change",
+    "wait for current-main Milovi bootstrap quality and exact media proof to be green",
+    "manually dispatch exact strict-next milovi-bootstrap-001 with matching confirmation and zero provider retries",
+    "persist and verify its exact Telegram receipt before scheduled successors become eligible"
+  ],
+  "non_negotiable_guards": [
+    "never rerun workflow run 31918457764",
+    "never reuse authorization id milovi-cake-canary-001-live-2026-08-16",
+    "never republish the deleted historical canary payload",
+    "never use the historical canary as the fresh release canary",
+    "never catch up missed items at night",
+    "never blind-retry an ambiguous provider outcome",
+    "never add Milovi School or French-cuisine linkage to the first-screen queue"
+  ],
+  "rule": "This snapshot records what is still deliberately blocked after queue/runtime/wiring merge. It grants no provider authority and must not be treated as a live Telegram target proof or release authorization."
+}
