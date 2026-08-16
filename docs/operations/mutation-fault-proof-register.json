@@ -634,6 +634,39 @@
           "claim": "article wall success is returned only after exact text/date/url/photo and one-created-post delta verification"
         }
       ]
+    },
+    {
+      "boundary_id": "vk.wall.text.edit.exact",
+      "proofs": [
+        {
+          "stages": [
+            "before_dispatch"
+          ],
+          "test_id": "tests/test_vk_wall_text_writer.py::test_preflight_wall_incarnation_drift_blocks_before_provider_write",
+          "claim": "reviewed wall-incarnation drift blocks before the exact wall.edit provider call"
+        },
+        {
+          "stages": [
+            "after_dispatch_before_response"
+          ],
+          "test_id": "tests/test_vk_wall_text_writer.py::test_ambiguous_wall_edit_response_requires_reconciliation_without_replay",
+          "claim": "a lost wall.edit response becomes recovery-required after exactly one dispatch with no replay"
+        },
+        {
+          "stages": [
+            "during_postflight"
+          ],
+          "test_id": "tests/test_vk_wall_text_writer.py::test_postflight_surface_drift_requires_reconciliation_without_retry",
+          "claim": "surface drift during exact postflight blocks success after one wall.edit and never retries"
+        },
+        {
+          "stages": [
+            "before_final_commit"
+          ],
+          "test_id": "tests/test_vk_wall_text_writer.py::test_postflight_attachment_order_change_requires_reconciliation",
+          "claim": "raw attachment-order drift is detected after canonical snapshot verification and blocks the final result"
+        }
+      ]
     }
   ],
   "cross_cutting_proofs": [
