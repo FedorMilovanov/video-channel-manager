@@ -29,6 +29,15 @@ def test_exact_canary_send_has_zero_mutation_retry_and_no_fallback_operation() -
     assert '"provider_write_may_have_occurred": True' in runtime
 
 
+def test_canary_import_does_not_require_pillow_before_payload_materialization() -> None:
+    runtime = RUNTIME.read_text(encoding="utf-8")
+    materialize_offset = runtime.index("def _materialize_payload")
+    pillow_offset = runtime.index("from PIL import Image")
+
+    assert pillow_offset > materialize_offset
+    assert "from PIL import Image" not in runtime[:materialize_offset]
+
+
 def test_exact_canary_is_bound_to_recovered_target_transport_and_membership() -> None:
     runtime = RUNTIME.read_text(encoding="utf-8")
     assert "CHAT_ID = -1002215328390" in runtime
