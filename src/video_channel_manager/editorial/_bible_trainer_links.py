@@ -3,14 +3,18 @@ from __future__ import annotations
 from types import MappingProxyType
 from typing import Mapping
 
+from video_channel_manager.application.identity import canonicalize_public_url
+
 BIBLE_TRAINER_BOT_USERNAME = "milovanovaibot"
 
 
 def _launch_url(source: str, destination: str) -> str:
-    return f"https://t.me/{BIBLE_TRAINER_BOT_USERNAME}?startapp=v1_{source}__{destination}"
+    raw = f"https://t.me/{BIBLE_TRAINER_BOT_USERNAME}?startapp=v1_{source}__{destination}"
+    return canonicalize_public_url(raw).canonical
 
 
 # This is intentionally an exact allow-list rather than a bot/profile wildcard.
+# Store the same canonical URL identity that validate_links() compares against.
 # Chapter 1 is deliberately absent: the Mini App exposes several distinct
 # chapter-1 course keys, so a generic ``chapter1`` destination would be fake.
 BIBLE_TRAINER_LINKS_BY_PLATFORM: Mapping[str, frozenset[str]] = MappingProxyType(
