@@ -82,9 +82,11 @@ class _FakeWallWriter:
         *,
         snapshots: tuple[VkWallSnapshot, ...],
         posts: tuple[dict[str, object] | None, ...],
+        call_error: VkWriteError | None = None,
     ) -> None:
         self._snapshots = iter(snapshots)
         self._posts = iter(posts)
+        self._call_error = call_error
         self.calls: list[tuple[str, dict[str, Any], bool]] = []
 
     def capture_wall_snapshot(self, *, community_id: int, max_posts_per_surface: int) -> VkWallSnapshot:
@@ -100,6 +102,8 @@ class _FakeWallWriter:
 
     def _call(self, method: str, *, params: Mapping[str, Any], retry_transient: bool) -> int:
         self.calls.append((method, dict(params), retry_transient))
+        if self._call_error is not None:
+            raise self._call_error
         return 1
 
 
@@ -248,6 +252,32 @@ def test_unstable_raw_attachment_identity_blocks_before_provider_write() -> None
         _run(writer, expected=expected, before_text=before_text, after_text="after exact")
 
     assert writer.calls == []
+
+
+def test_ambiguous_wall_edit_response_requires_reconciliation_without_replay() -> None:
+    before_text = "before exact"
+    after_text = "after exact"
+    raw_order = ("video-68859909_456239240",)
+    expected = _fingerprint(text=before_text, attachments=raw_order)
+    writer = _FakeWallWriter(
+        snapshots=(_snapshot(expected),),
+        posts=(
+            _raw_post(
+                post_id=expected.post_id,
+                text=before_text,
+                publish_date=expected.publish_date or 0,
+                attachments=raw_order,
+            ),
+        ),
+        call_error=VkWriteError("lost wall.edit response", method="wall.edit"),
+    )
+
+    with pytest.raises(VkWallRecoveryRequired, match="blind retry is forbidden"):
+        _run(writer, expected=expected, before_text=before_text, after_text=after_text)
+
+    assert len(writer.calls) == 1
+    assert writer.calls[0][0] == "wall.edit"
+    assert writer.calls[0][2] is False
 
 
 def test_postflight_surface_drift_requires_reconciliation_without_retry() -> None:
