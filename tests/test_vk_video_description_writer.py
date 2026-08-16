@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any
 
 import pytest
@@ -66,6 +66,7 @@ def _run(
     before: str,
     after: str,
     verification_attempts: int = 1,
+    before_dispatch: Callable[[], None] | None = None,
 ):
     return VkVideoDescriptionWriter.replace_description_if_current(  # type: ignore[arg-type]
         writer,
@@ -75,6 +76,7 @@ def _run(
         new_description=after,
         verification_attempts=verification_attempts,
         verification_delay_seconds=0,
+        before_dispatch=before_dispatch,
     )
 
 
@@ -100,6 +102,19 @@ def test_exact_clip_description_edit_preserves_target_text_without_normalization
             False,
         )
     ]
+
+
+def test_durability_hook_failure_blocks_before_video_edit() -> None:
+    before = "reviewed BEFORE"
+    writer = _FakeVideoDescriptionWriter(reads=(_clip(before),))
+
+    def fail_persist() -> None:
+        raise OSError("durable journal write failed")
+
+    with pytest.raises(OSError, match="durable journal write failed"):
+        _run(writer, before=before, after="reviewed AFTER", before_dispatch=fail_persist)
+
+    assert writer.calls == []
 
 
 def test_whitespace_drift_in_before_description_blocks_before_write() -> None:
