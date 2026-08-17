@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       expected_main_sha:
-        description: "Exact 40-hex current main SHA used by the package"
+        description: "Exact 40-hex immutable main SHA used by the source package"
         required: true
         type: string
       expected_target_binding_sha256:
@@ -46,10 +46,10 @@ jobs:
       PACKAGE_RUN_ID: ${{ inputs.package_run_id }}
 
     steps:
-      - name: Check out immutable current main
+      - name: Check out current main for package-lineage proof
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Validate immutable review inputs
@@ -63,8 +63,6 @@ jobs:
           expected_main = os.environ['EXPECTED_MAIN_SHA']
           if not sha40.fullmatch(expected_main):
               raise SystemExit('expected_main_sha must be exact lowercase 40-hex')
-          if expected_main != os.environ['GITHUB_SHA']:
-              raise SystemExit('review-ready handoff only accepts a package from exact current main')
           for name in ('EXPECTED_TARGET_BINDING_SHA256', 'EXPECTED_BOUND_CANDIDATE_SHA256'):
               if not sha256.fullmatch(os.environ[name]):
                   raise SystemExit(f'{name} must be exact sha256')
@@ -74,6 +72,52 @@ jobs:
               raise SystemExit('package_run_id must be an integer') from exc
           if run_id <= 0:
               raise SystemExit('package_run_id must be positive')
+
+      - name: Prove source package revision remains review-eligible
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git cat-file -e "$EXPECTED_MAIN_SHA^{commit}" || {
+            echo "source package revision is not available as a commit" >&2
+            exit 1
+          }
+          git merge-base --is-ancestor "$EXPECTED_MAIN_SHA" "$GITHUB_SHA" || {
+            echo "source package revision is not an ancestor of current main" >&2
+            exit 1
+          }
+
+          changed="$({
+            git diff --name-only "$EXPECTED_MAIN_SHA" "$GITHUB_SHA" -- \
+              '.github/workflows/milovi-telegram-bootstrap-activation-package.yml' \
+              'requirements/telegram-publisher.txt' \
+              'src/video_channel_manager/milovi_telegram_bootstrap.py' \
+              'src/video_channel_manager/milovi_telegram_activation_review.py' \
+              'src/video_channel_manager/telegram_channel_profile.py' \
+              'src/video_channel_manager/telegram_target_binding.py' \
+              'src/video_channel_manager/telegram_target_discovery.py' \
+              'src/video_channel_manager/telegram_multichannel_release.py' \
+              'content/telegram/channels/milovi-cake.json' \
+              'content/telegram/channels/milovi-cake-target-binding.json' \
+              'content/telegram/milovi-cake/queues/bootstrap-first-screen-queue-2026-08.json' \
+              'content/telegram/milovi-cake/bootstrap-first-screen-candidates-2026-08.json' \
+              'content/telegram/milovi-cake/bootstrap-photo-transport-proof-2026-08.json' \
+              'content/telegram/milovi-cake/publishing-window-2026-08.json'
+          } || true)"
+          if [[ -n "$changed" ]]; then
+            echo "Milovi-critical files changed after source package revision:" >&2
+            printf '%s\n' "$changed" >&2
+            exit 1
+          fi
+
+          echo "Source package revision remains review-eligible: only non-critical repository changes followed it."
+
+      - name: Check out immutable source package revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.expected_main_sha }}
+          fetch-depth: 1
+          persist-credentials: false
 
       - name: Prove source package run and artifact identity
         id: source
@@ -93,7 +137,7 @@ jobs:
           headers = {
               'Accept': 'application/vnd.github+json',
               'Authorization': f"Bearer {os.environ['GH_TOKEN']}",
-              'User-Agent': 'video-channel-manager-milovi-review-ready/1',
+              'User-Agent': 'video-channel-manager-milovi-review-ready/2',
               'X-GitHub-Api-Version': '2022-11-28',
           }
 
@@ -139,6 +183,7 @@ jobs:
                       'source_run_attempt': 1,
                       'source_run_event': source_event,
                       'source_main_sha': expected_sha,
+                      'review_trigger_main_sha': os.environ['GITHUB_SHA'],
                       'source_artifact_id': artifact_id,
                       'source_artifact_name': expected_name,
                       'source_artifact_digest': artifact_digest,
@@ -216,7 +261,7 @@ jobs:
       - name: Upload short-lived review-ready receipt
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: milovi-bootstrap-review-ready-${{ github.sha }}-${{ inputs.package_run_id }}
+          name: milovi-bootstrap-review-ready-${{ inputs.expected_main_sha }}-${{ inputs.package_run_id }}
           path: ${{ env.RECEIPT_DIR }}
           if-no-files-found: error
           retention-days: 7
