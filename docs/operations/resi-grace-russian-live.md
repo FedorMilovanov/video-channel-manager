@@ -73,6 +73,7 @@ Watcher state is bound to the exact target page so an English/other Resi watch c
 If a legacy state exists, preserve its last manifest through `latest-resi-manifest.txt`, then delete **only** the legacy state file before the first new run. Do not delete the latest manifest baseline.
 
 ```powershell
+$ErrorActionPreference = "Stop"
 $Repo = "C:\Users\Fedor\Projects\video-channel-manager"
 $State = Join-Path $Repo "operator-output\resi-watch-state.json"
 $Latest = Join-Path $Repo "operator-output\latest-resi-manifest.txt"
@@ -155,7 +156,7 @@ $Source = (Get-Content -LiteralPath $Latest -Raw).Trim()
 if ($LASTEXITCODE -ne 0) { throw "Resi language sample preflight failed" }
 ```
 
-Default sample points are 00:30:00, 00:50:00, 01:10:00, and 01:30:00; each is 45 seconds and audio-only. Use them only when those positions already exist in the captured/live source. If the service is still earlier, choose already-existing sermon speech with repeated `--at`, or wait until suitable speech exists.
+Default sample points are 00:30:00, 00:50:00, 01:10:00, and 01:30:00; each is 45 seconds and audio-only. Use them only when those positions already exist in the captured/live source. If the service is still earlier, choose already-existing sermon speech with repeated `--at`, or wait until suitable speech exists. A missing, empty, or header-only sample fails closed instead of being reported as ready.
 
 Before sampling, `resi sample` uses ffprobe and requires **exactly one audio stream at sample time**. If multiple audio streams are present, stop: explicit audio-format selection must be implemented/reviewed before language confirmation or FULL download.
 
@@ -182,7 +183,7 @@ video-manager resi sample <MANIFEST> --at 40:00 --at 60:00 --at 80:00 --duration
 
 ## Explicit FULL download only after language confirmation
 
-For Grace Russian language-confirmed work, generate the existing repository-owned handoff with `--require-single-audio`. This injects a second single-audio ffprobe gate **inside the generated handoff immediately before a new remote FULL download**, closing the gap where a live MPD could change after sampling.
+For Grace Russian language-confirmed work, generate the existing repository-owned handoff with `--require-single-audio`. This injects a second single-audio ffprobe gate **inside the generated handoff immediately before a new remote FULL download**, closing the gap where a live MPD could change after sampling. The remote ffprobe check uses a bounded I/O timeout; it must fail rather than hang indefinitely.
 
 ```powershell
 $ErrorActionPreference = "Stop"
