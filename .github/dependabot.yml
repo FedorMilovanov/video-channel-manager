@@ -33,8 +33,6 @@ updates:
       - dependency-name: pydantic-core
       - dependency-name: typing-extensions
       - dependency-name: typing-inspection
-    labels:
-      - dependencies
     commit-message:
       prefix: deps
 
@@ -55,7 +53,5 @@ updates:
           - major
           - minor
           - patch
-    labels:
-      - dependencies
     commit-message:
       prefix: actions
