@@ -1,7 +1,7 @@
 {
   "schema_name": "video-manager.retirement-registry",
   "schema_version": 1,
-  "updated_at": "2026-08-09T18:33:00+03:00",
+  "updated_at": "2026-08-17T02:52:00+03:00",
   "repository": "FedorMilovanov/video-channel-manager",
   "execution_authority": false,
   "provider_writes_authorized": false,
@@ -113,6 +113,28 @@
       "execution_prohibited": true,
       "replacement": "PR #214 current-main source-first YouTube copy workflow",
       "reason": "PR #197 was rebuilt and superseded by #214. Its historical v3 description execution is evidence only; future metadata work must use current-main canonical inputs and fresh provider readback."
+    },
+    {
+      "id": "milovi-telegram-exact-canary-legacy",
+      "kind": "repository_provider_executor_family",
+      "issues": [
+        353
+      ],
+      "status": "retired_non_executable",
+      "execution_prohibited": true,
+      "replacement": ".github/workflows/milovi-telegram-bootstrap-publisher.yml",
+      "reason": "The legacy exact-canary workflow/runtime and active authorization trigger formed a second Telegram provider-write authority and mutated main directly. The canonical bootstrap publisher is the sole supported Milovi Telegram write path; historical verified dispatch state is retained as inert evidence only."
+    },
+    {
+      "id": "milovi-telegram-target-discovery-legacy",
+      "kind": "repository_read_only_workflow",
+      "issues": [
+        353
+      ],
+      "status": "retired_non_executable",
+      "execution_prohibited": true,
+      "replacement": ".github/workflows/milovi-telegram-target-discovery.yml",
+      "reason": "The weaker duplicate Milovi discovery workflow is retired so one exact chat/bot-bound read-only discovery contract remains canonical."
     }
   ],
   "history_archives": [
@@ -128,8 +150,8 @@
     {
       "id": "lord-god-strength-vk-audio-2026-08-03-04",
       "path": "docs/history/operational-attempts/lord-god-strength-vk-audio-2026-08-03-04",
-      "source_pr": 85,
       "source_head": "84761c0eca19483e9c64044fd03c1d769aeb199e",
+      "source_pr": 85,
       "current_main_import_commit": "86a3a0f9cf45fe674eb28602d1d86cb8bc2f079c",
       "status": "documentation_only_non_executable",
       "execution_prohibited": true
