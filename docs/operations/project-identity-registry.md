@@ -1,6 +1,6 @@
 # Project identity registry
 
-Updated: 2026-08-15
+Updated: 2026-08-17
 
 This repository operates three separate media projects owned by Fedor Milovanov. They are never aliases of one project and must not be mixed in descriptions, comments, playlists, manifests, API writes, reports, ledgers, results, or public footer links.
 
@@ -24,6 +24,10 @@ Every scan or write verifies the exact returned channel ID. Reauthorizing one al
 
 VK uses one user access token for all managed communities. The current local token alias is `legendary-poet`, but that alias only names the stored credential belonging to user `Федор Милованов`. It is not a project selector and does not mean each group needs a separate token.
 
+The same rule applies to browser authentication. The same already-authorized VK browser profile/session may be reused across all VK communities currently registered in this repository because they are managed by the same owner/admin account. In particular, a working VK session previously used for The Legendary Poet may also be used for Milovi Cake; a separate browser profile is not required merely to isolate projects.
+
+A browser profile/session is authentication context, not target identity. Prefer reusing a known-working authorized profile instead of creating another profile or forcing another VK login. Before any `browser_ui_write`, still prove the exact `project_key`, `community_id`, and `owner_id` in the active target surface before file selection or any provider mutation. If the session lacks management rights or exact target proof fails, stop before the write.
+
 Project isolation requires exact:
 
 - `project_key`;
@@ -32,7 +36,7 @@ Project isolation requires exact:
 - project link profile;
 - manifest, plan, journal, result, and postflight.
 
-Never select a community by VK alias, display order, remembered context, or vanity route alone.
+Never select a community by VK alias, browser profile, display order, remembered context, or vanity route alone.
 
 ## Project 1: Господь Бог — Сила Моя
 
@@ -137,6 +141,8 @@ The read-only provider snapshot returned channel title `Milovi Cake`, `customUrl
 
 The shared VK credential is only authentication. The target is selected by `project_key=milovi-cake`, `community_id=68859909`, and `owner_id=-68859909`.
 
+The same VK browser session used for the other registered Fedor-managed communities is valid for Milovi Cake when that session has the required admin rights. Do not require a Milovi-specific browser login/profile solely because the target project is Milovi; prove the exact Milovi target immediately before any UI mutation instead.
+
 ### Other registered links
 
 - Website: https://milovicake.ru/
@@ -149,16 +155,17 @@ Only cake content belongs to Milovi cake-transfer queues. Personal/family/non-ca
 
 1. Every plan, journal, report, backup, and manifest includes `project_key`.
 2. Every YouTube operation binds exact expected channel ID, not only alias/title.
-3. Every VK operation binds exact community and owner IDs, not token alias or vanity URL.
+3. Every VK operation binds exact community and owner IDs, not token alias, browser profile, or vanity URL.
 4. Each plan uses only the selected project's registered link profile.
 5. Cross-project promotion is forbidden by default and requires an explicit per-operation exception.
 6. Unknown links, handles, routes, or IDs fail closed.
 7. Preflight prints resolved project, YouTube channel, OAuth alias, VK community/owner, and link profile.
-8. The shared VK alias `legendary-poet` never determines the project.
+8. The shared VK alias `legendary-poet` and any shared VK browser session never determine the project.
 9. Public and admin routes remain distinct.
 10. Source-code profiles and validators stay synchronized with this registry; documentation alone never authorizes writes.
 11. Only one exact project-bound owning issue may authorize the next operation.
 12. Milovi Cake read-only reconciliation is owned by Issue #257; that issue does not authorize provider writes or deletion.
+13. Reuse of an already-authorized VK browser profile is preferred over creating per-project browser profiles; exact target proof remains mandatory before every browser write.
 
 ## Required identity checks
 
@@ -192,4 +199,4 @@ VK community ID: 68859909
 VK owner ID: -68859909
 ```
 
-One shared VK token may resolve all three communities; exact numeric IDs and `project_key` decide the target. Any mismatch stops without scanning or writing.
+One shared VK token and one shared authorized VK browser session may serve all three registered communities; exact numeric IDs and `project_key` decide the target. Any mismatch stops without scanning or writing.

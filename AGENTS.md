@@ -71,6 +71,8 @@ Upload, processing/visibility, metadata, thumbnail, playlist creation, membershi
 ## Runtime and state writers
 
 - One provider account/browser profile/state branch/concurrency namespace has one write owner at a time.
+- A single already-authorized VK browser profile/session may be reused across multiple registered project communities when the same VK user manages them; a browser profile is authentication context, not project identity.
+- Do not create a new per-project VK browser profile merely for isolation when a known-working authorized profile already exists. Before every `browser_ui_write`, prove the exact `project_key`, `community_id`, and `owner_id` on the active target surface before file selection or mutation.
 - Parallel agents may work read-only or in disjoint scopes; do not open competing mutation/hardening branches against the same shared runtime.
 - Every state writer sharing a durable ledger namespace must share compatible serialization/concurrency rules and be covered by discovery-based regressions where possible.
 - A timeout or failed final state push after a provider response is an incident to reconcile, not permission to send again.
