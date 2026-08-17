@@ -22,8 +22,18 @@ MAIN_SHA = "a" * 40
 ARTIFACT_DIGEST = "sha256:" + "b" * 64
 
 
+def _write_inert_profile(tmp_path: Path) -> Path:
+    payload = json.loads(PROFILE.read_text(encoding="utf-8"))
+    assert payload["provider_writes_authorized"] is True
+    payload["provider_writes_authorized"] = False
+    path = tmp_path / "write-disabled-milovi-profile.json"
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
 def _package(tmp_path: Path) -> tuple[Path, str, str]:
-    profile = load_channel_profile(PROFILE)
+    profile_path = _write_inert_profile(tmp_path)
+    profile = load_channel_profile(profile_path)
     proof = GenericTargetProof(
         schema_name="video-channel-manager.telegram-generic-target-proof",
         schema_version=1,
@@ -57,6 +67,7 @@ def _package(tmp_path: Path) -> tuple[Path, str, str]:
 
     package = tmp_path / "package"
     package.mkdir()
+    (package / "profile.json").write_text(profile_path.read_text(encoding="utf-8"), encoding="utf-8")
     (package / "target-binding.json").write_text(binding.model_dump_json(indent=2) + "\n", encoding="utf-8")
     save_release(package / "bootstrap-unbound.json", unbound)
     save_release(package / "bootstrap-bound-unauthorized.json", bound)
@@ -88,7 +99,7 @@ def _package(tmp_path: Path) -> tuple[Path, str, str]:
 
 def _verify(package: Path, binding_digest: str, bound_digest: str) -> dict[str, object]:
     return verify_review_ready_package(
-        profile_path=PROFILE,
+        profile_path=package / "profile.json",
         package_dir=package,
         expected_main_sha=MAIN_SHA,
         expected_target_binding_sha256=binding_digest,
@@ -121,7 +132,7 @@ def test_review_ready_rejects_explicit_digest_or_main_drift(tmp_path: Path) -> N
 
     with pytest.raises(ValueError, match="explicitly reviewed digest"):
         verify_review_ready_package(
-            profile_path=PROFILE,
+            profile_path=package / "profile.json",
             package_dir=package,
             expected_main_sha=MAIN_SHA,
             expected_target_binding_sha256=binding_digest,
@@ -142,7 +153,7 @@ def test_review_ready_rejects_explicit_digest_or_main_drift(tmp_path: Path) -> N
 
 def test_review_ready_rejects_already_authorized_release(tmp_path: Path) -> None:
     package, binding_digest, bound_digest = _package(tmp_path)
-    profile = load_channel_profile(PROFILE)
+    profile = load_channel_profile(package / "profile.json")
     binding = load_target_binding(package / "target-binding.json", profile)
     bound = load_release(package / "bootstrap-bound-unauthorized.json")
     authorized = authorize_release_candidate(
