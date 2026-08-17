@@ -53,6 +53,7 @@ ALLOWED_LINK_KINDS = frozenset(
         "original_work",
         "full_version",
         "article",
+        "bible_trainer",
     }
 )
 ALLOWED_SURFACES = {

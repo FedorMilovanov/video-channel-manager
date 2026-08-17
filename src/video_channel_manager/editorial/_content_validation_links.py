@@ -6,6 +6,10 @@ from video_channel_manager.application.identity import (
     canonicalize_project_url,
     canonicalize_public_url,
 )
+from video_channel_manager.editorial._bible_trainer_links import (
+    BIBLE_TRAINER_LINKS,
+    approved_bible_trainer_platform,
+)
 from video_channel_manager.editorial._content_types import (
     ALLOWED_LINK_KINDS,
     ALLOWED_SURFACES,
@@ -20,6 +24,7 @@ from video_channel_manager.editorial._content_validation_support import (
     _validate_string_list,
 )
 from video_channel_manager.editorial._project_profiles import (
+    LORD_GOD_STRENGTH,
     PROJECT_LINK_PROFILES,
     resolve_project_key,
 )
@@ -85,7 +90,12 @@ def validate_links(payload: dict[str, Any], *, source_urls: set[str]) -> list[st
         except ValueError as exc:
             errors.append(f"{location}.url: {exc}")
             canonical_url = ""
-        if canonical_url and kind in {"site", "vk"}:
+        if canonical_url and kind == "bible_trainer":
+            if project_key != LORD_GOD_STRENGTH:
+                errors.append(f"{location}.url Bible trainer is only approved for project {LORD_GOD_STRENGTH}")
+            if canonical_url not in BIBLE_TRAINER_LINKS:
+                errors.append(f"{location}.url is not an approved Bible trainer deep link: {canonical_url}")
+        elif canonical_url and kind in {"site", "vk"}:
             if project_key is None:
                 errors.append(f"{location}.url is not approved for project unresolved: {canonical_url}")
             else:
@@ -142,6 +152,12 @@ def validate_links(payload: dict[str, Any], *, source_urls: set[str]) -> list[st
             if unknown_surfaces:
                 errors.append(
                     f"{location}.surfaces contains unsupported {platform} surfaces: {', '.join(unknown_surfaces)}"
+                )
+        if kind == "bible_trainer" and canonical_url:
+            approved_platform = approved_bible_trainer_platform(canonical_url)
+            if approved_platform is not None and platforms != [approved_platform]:
+                errors.append(
+                    f"{location}.platforms must be exactly [{approved_platform}] for attributed Bible trainer link"
                 )
     if len(link_kinds) != len(set(link_kinds)):
         errors.append("links cannot repeat the same kind")
