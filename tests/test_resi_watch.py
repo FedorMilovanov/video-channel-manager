@@ -452,7 +452,7 @@ def test_language_confirmed_handoff_injects_single_audio_gate_only_when_requeste
 
 
 def test_resi_cli_registers_watch_sample_and_handoff() -> None:
-    result = CliRunner().invoke(resi_app, ["--help"])
+    result = CliRunner().invoke(resi_app, ["--help"], color=False)
     assert result.exit_code == 0
     assert "watch" in result.stdout
     assert "sample" in result.stdout
@@ -460,13 +460,13 @@ def test_resi_cli_registers_watch_sample_and_handoff() -> None:
 
 
 def test_resi_watch_help_exposes_unattended_controls() -> None:
-    result = CliRunner().invoke(resi_app, ["watch", "--help"])
+    result = CliRunner().invoke(resi_app, ["watch", "--help"], color=False)
     assert result.exit_code == 0
     assert "--background" in result.stdout
     assert "--max-consecutive-probe-errors" in result.stdout
 
 
 def test_resi_handoff_help_exposes_language_audio_gate() -> None:
-    result = CliRunner().invoke(resi_app, ["handoff", "--help"])
+    result = CliRunner().invoke(resi_app, ["handoff", "--help"], color=False)
     assert result.exit_code == 0
     assert "--require-single-audio" in result.stdout
