@@ -113,11 +113,12 @@ def test_no_source_or_regression_test_imports_retired_execution_modules() -> Non
     assert offenders == []
 
 
-def test_mutation_registers_do_not_advertise_retired_promotion_writers() -> None:
+def test_mutation_registers_do_not_advertise_retired_issue323_writers() -> None:
     retired = {
         "vk.video.issue323.promotion.edit",
         "vk.wall.issue323.promotion.edit",
         "vk.wall.issue323.anomaly.delete",
+        "vk.wall.issue323.upload_effect.delete",
     }
     for relative in (
         "docs/operations/mutation-boundary-register.json",
