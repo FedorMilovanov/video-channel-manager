@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from importlib import import_module
 from pathlib import Path
 from typing import Any, Callable, Iterator
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlparse, urlunparse
 
 from video_channel_manager.resi_handoff import (
     ResiHandoffSpec,
@@ -58,6 +58,14 @@ def source_fingerprint(url: str) -> str:
     return "sha256:" + hashlib.sha256(identity.encode("utf-8")).hexdigest()
 
 
+def canonical_page_identity(value: str) -> str:
+    parsed = urlparse(value)
+    if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("page URL must be an absolute http(s) URL")
+    path = parsed.path or "/"
+    return urlunparse((parsed.scheme.lower(), parsed.netloc.lower(), path, "", parsed.query, ""))
+
+
 def is_resi_manifest_url(url: str) -> bool:
     parsed = urlparse(url)
     host = (parsed.hostname or "").lower()
@@ -93,6 +101,7 @@ def _observation(page_url: str, final_page_url: str, manifest_url: str, frame_ur
 
 
 def probe_page(page_url: str, wait_seconds: float) -> PageProbeResult:
+    canonical_page_identity(page_url)
     if wait_seconds <= 0:
         raise ValueError("wait_seconds must be positive")
     try:
@@ -118,7 +127,10 @@ def probe_page(page_url: str, wait_seconds: float) -> PageProbeResult:
                 frame_url = str(request.frame.url)
             except Exception:
                 frame_url = None
-            found.setdefault(canonical_source_identity(manifest_url), (manifest_url, frame_url))
+            identity = canonical_source_identity(manifest_url)
+            existing = found.get(identity)
+            if existing is None or (existing[1] is None and frame_url is not None):
+                found[identity] = (manifest_url, frame_url)
 
         context.on("request", inspect)
         try:
@@ -141,13 +153,27 @@ def _atomic_write_text(path: Path, text: str) -> None:
     os.replace(temporary, path)
 
 
-def _read_last_identity(state_path: Path) -> str | None:
+def _read_last_identity(state_path: Path, *, expected_page_url: str) -> str | None:
     if not state_path.is_file():
         return None
     try:
         payload = json.loads(state_path.read_text(encoding="utf-8-sig"))
     except (OSError, json.JSONDecodeError) as exc:
         raise RuntimeError(f"Watcher state is unreadable; refusing duplicate-prone restart: {state_path}") from exc
+
+    state_page_identity = payload.get("target_page_identity")
+    if not isinstance(state_page_identity, str) or not state_page_identity:
+        raise RuntimeError(
+            f"Watcher state is legacy/unscoped and cannot be safely reused across pages: {state_path}. "
+            "Preserve the last manifest as --known-manifest, then remove or replace this state file."
+        )
+    expected_identity = canonical_page_identity(expected_page_url)
+    if state_page_identity != expected_identity:
+        raise RuntimeError(
+            "Watcher state belongs to a different target page; refusing cross-page baseline reuse. "
+            f"state={state_page_identity!r}, requested={expected_identity!r}, path={state_path}"
+        )
+
     value = payload.get("last_source_identity")
     if not isinstance(value, str) or not value:
         raise RuntimeError(f"Watcher state is missing last_source_identity: {state_path}")
@@ -170,6 +196,7 @@ def watch_for_new_manifest(
     timeout_seconds: float,
     poll_seconds: float,
     probe_wait_seconds: float,
+    max_consecutive_probe_errors: int = 10,
     latest_txt: Path,
     latest_json: Path,
     state_path: Path,
@@ -177,19 +204,24 @@ def watch_for_new_manifest(
     monotonic: Callable[[], float] = time.monotonic,
     sleeper: Callable[[float], None] = time.sleep,
 ) -> dict[str, Any]:
+    target_page_identity = canonical_page_identity(page_url)
+    if compare_page is not None:
+        canonical_page_identity(compare_page)
     if timeout_seconds <= 0:
         raise ValueError("timeout_seconds must be positive")
     if poll_seconds <= 0:
         raise ValueError("poll_seconds must be positive")
     if probe_wait_seconds <= 0:
         raise ValueError("probe_wait_seconds must be positive")
+    if max_consecutive_probe_errors <= 0:
+        raise ValueError("max_consecutive_probe_errors must be positive")
 
     ignored: set[str] = set()
     if known_manifest is not None:
         if not is_resi_manifest_url(known_manifest):
             raise ValueError("known_manifest must be an HTTPS resi.media Manifest.mpd URL")
         ignored.add(canonical_source_identity(known_manifest))
-    persisted_identity = _read_last_identity(state_path)
+    persisted_identity = _read_last_identity(state_path, expected_page_url=page_url)
     if persisted_identity:
         ignored.add(persisted_identity)
 
@@ -208,8 +240,10 @@ def watch_for_new_manifest(
             target = None
             consecutive_probe_errors += 1
             last_error = f"{type(exc).__name__}: {exc}"
-            if consecutive_probe_errors >= 3:
-                raise RuntimeError(f"Three consecutive Resi page probes failed. Last error: {last_error}") from exc
+            if consecutive_probe_errors >= max_consecutive_probe_errors:
+                raise RuntimeError(
+                    f"{consecutive_probe_errors} consecutive Resi page probes failed. Last error: {last_error}"
+                ) from exc
 
         if target is not None and target.source_identity not in ignored:
             compare_payload: dict[str, Any] | None = None
@@ -231,8 +265,9 @@ def watch_for_new_manifest(
             captured_at = datetime.now(UTC).isoformat()
             payload: dict[str, Any] = {
                 "schema_name": "video-manager.resi-watch-capture",
-                "schema_version": 1,
+                "schema_version": 2,
                 "captured_at": captured_at,
+                "target_page_identity": target_page_identity,
                 "target": asdict(target),
                 "compare": compare_payload,
                 "language_claim": "unverified",
@@ -240,8 +275,10 @@ def watch_for_new_manifest(
             }
             state_payload = {
                 "schema_name": "video-manager.resi-watch-state",
-                "schema_version": 1,
+                "schema_version": 2,
                 "updated_at": captured_at,
+                "target_page_url": page_url,
+                "target_page_identity": target_page_identity,
                 "last_source_identity": target.source_identity,
                 "last_manifest_url": target.manifest_url,
                 "last_capture_path": str(latest_json),
@@ -266,14 +303,60 @@ def keep_system_awake() -> Iterator[None]:
         return
 
     kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
+    set_execution_state = kernel32.SetThreadExecutionState
+    set_execution_state.argtypes = [ctypes.c_uint32]
+    set_execution_state.restype = ctypes.c_uint32
+
     es_continuous = 0x80000000
     es_system_required = 0x00000001
-    if kernel32.SetThreadExecutionState(es_continuous | es_system_required) == 0:
+    if set_execution_state(es_continuous | es_system_required) == 0:
         raise OSError("SetThreadExecutionState failed")
     try:
         yield
     finally:
-        kernel32.SetThreadExecutionState(es_continuous)
+        set_execution_state(es_continuous)
+
+
+def build_audio_probe_command(manifest_url: str) -> list[str]:
+    ResiHandoffSpec(manifest_url)
+    return [
+        "ffprobe",
+        "-v",
+        "error",
+        "-select_streams",
+        "a",
+        "-show_entries",
+        "stream=index",
+        "-of",
+        "json",
+        manifest_url,
+    ]
+
+
+def probe_audio_stream_count(manifest_url: str) -> int:
+    command = build_audio_probe_command(manifest_url)
+    try:
+        completed = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=90,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError("ffprobe audio-stream preflight timed out after 90 seconds") from exc
+    if completed.returncode != 0:
+        detail = completed.stderr.strip()
+        suffix = f": {detail}" if detail else ""
+        raise RuntimeError(f"ffprobe audio-stream preflight failed with exit code {completed.returncode}{suffix}")
+    try:
+        payload = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("ffprobe audio-stream preflight returned invalid JSON") from exc
+    streams = payload.get("streams")
+    if not isinstance(streams, list):
+        raise RuntimeError("ffprobe audio-stream preflight did not return a streams list")
+    return len(streams)
 
 
 def build_audio_sample_command(
@@ -322,8 +405,17 @@ def create_audio_samples(
     spec = ResiHandoffSpec(manifest_url)
     if shutil.which("ffmpeg") is None:
         raise RuntimeError("ffmpeg is required for resi sample")
+    if shutil.which("ffprobe") is None:
+        raise RuntimeError("ffprobe is required for resi sample")
     if not points:
         raise ValueError("at least one sample point is required")
+
+    audio_stream_count = probe_audio_stream_count(manifest_url)
+    if audio_stream_count != 1:
+        raise RuntimeError(
+            "Language preflight requires exactly one audio stream so the sampled speech is bound to the FULL "
+            f"download's audio selection; found {audio_stream_count}. Stop and add explicit audio selection before FULL."
+        )
 
     output_dir.mkdir(parents=True, exist_ok=True)
     outputs: list[Path] = []
@@ -356,11 +448,13 @@ def create_audio_samples(
 
     index = {
         "schema_name": "video-manager.resi-language-samples",
-        "schema_version": 1,
+        "schema_version": 2,
         "created_at": datetime.now(UTC).isoformat(),
         "manifest_url": manifest_url,
         "source_identity": canonical_source_identity(manifest_url),
         "source_fingerprint": spec.source_fingerprint,
+        "audio_stream_count": audio_stream_count,
+        "audio_selection_contract": "single_audio_stream_only",
         "language_claim": "unverified_operator_listen_required",
         "samples": index_samples,
     }
