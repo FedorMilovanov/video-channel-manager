@@ -19,8 +19,12 @@ Describe "Resi/DASH generated handoff" {
         $Content = Get-Content -Raw -LiteralPath $Output
         $TrimStartPattern = [regex]::Escape('$TrimStart = ''00:50:12''')
         $TrimDurationPattern = [regex]::Escape('$TrimDuration = ''00:59:40''')
+        $DownloadsPattern = [regex]::Escape('[string]$DownloadsRoot = "C:\Users\Fedor\Downloads"')
+        $MasterPattern = [regex]::Escape('$Master = Join-Path $DownloadsRoot ($Title + " - FULL.mp4")')
         $Content | Should -Match $TrimStartPattern
         $Content | Should -Match $TrimDurationPattern
+        $Content | Should -Match $DownloadsPattern
+        $Content | Should -Match $MasterPattern
         $Content | Should -Not -Match "--retries infinite"
         $Content | Should -Match "video-manager\.resi-result"
     }
@@ -30,6 +34,7 @@ Describe "Resi/DASH generated handoff" {
         $Url = "https://resi.media/GiHDtf/9aa9ac24-fb79-4ca9-95ef-a3253afdf63f/Manifest.mpd?src=emb"
         $ToolDir = Join-Path $TestDrive "fake-tools"
         $StateDir = Join-Path $TestDrive "fake-state"
+        $DownloadsRoot = Join-Path $TestDrive "Downloads"
         New-Item -ItemType Directory -Force -Path $ToolDir, $StateDir | Out-Null
 
         $FakeTool = Join-Path $ToolDir "fake-tools.py"
@@ -147,15 +152,16 @@ exec python "`$(dirname "`$0")/fake-tools.py" $Tool "`$@"
             & video-manager resi handoff $Url --title "Fixture" --start "50:12" --end "1:49:52" --output $Output
             $LASTEXITCODE | Should -Be 0
 
-            & $Output -RepositoryRoot $TestDrive
+            & $Output -RepositoryRoot $TestDrive -DownloadsRoot $DownloadsRoot
 
             $Outbox = Join-Path $TestDrive "operator-output"
-            $Master = Join-Path $Outbox "Fixture - FULL.mp4"
+            $Master = Join-Path $DownloadsRoot "Fixture - FULL.mp4"
             $ReceiptPath = Join-Path $Outbox "Fixture - FULL.source.json"
             $Clip = Join-Path $Outbox "Fixture.mp4"
             $ResultPath = Join-Path $Outbox "Fixture - result.json"
 
             Test-Path -LiteralPath $Master -PathType Leaf | Should -BeTrue
+            Test-Path -LiteralPath (Join-Path $Outbox "Fixture - FULL.mp4") | Should -BeFalse
             Test-Path -LiteralPath $ReceiptPath -PathType Leaf | Should -BeTrue
             Test-Path -LiteralPath $Clip -PathType Leaf | Should -BeTrue
             Test-Path -LiteralPath $ResultPath -PathType Leaf | Should -BeTrue
@@ -166,9 +172,11 @@ exec python "`$(dirname "`$0")/fake-tools.py" $Tool "`$@"
             $Receipt = Get-Content -Raw -LiteralPath $ReceiptPath | ConvertFrom-Json
             $Result = Get-Content -Raw -LiteralPath $ResultPath | ConvertFrom-Json
             $Receipt.schema_name | Should -Be "video-manager.resi-source-receipt"
+            $Receipt.master_path | Should -Be $Master
             $Receipt.master_sha256 | Should -Match "^sha256:[0-9a-f]{64}$"
             $Result.schema_name | Should -Be "video-manager.resi-result"
             $Result.mode | Should -Be "exact_trim"
+            $Result.master_path | Should -Be $Master
             $Result.master_sha256 | Should -Be $Receipt.master_sha256
             $Result.clip_sha256 | Should -Match "^sha256:[0-9a-f]{64}$"
             $Result.trim_start | Should -Be "00:50:12"
@@ -176,7 +184,7 @@ exec python "`$(dirname "`$0")/fake-tools.py" $Tool "`$@"
             [double]$Result.actual_duration_seconds | Should -Be 3580
             $Result.encoder | Should -Be "cpu"
 
-            & $Output -RepositoryRoot $TestDrive
+            & $Output -RepositoryRoot $TestDrive -DownloadsRoot $DownloadsRoot
             (Get-Content -Raw -LiteralPath (Join-Path $StateDir "inspect.count")) | Should -Be "1"
             (Get-Content -Raw -LiteralPath (Join-Path $StateDir "download.count")) | Should -Be "1"
             (Get-Content -Raw -LiteralPath (Join-Path $StateDir "trim.count")) | Should -Be "2"

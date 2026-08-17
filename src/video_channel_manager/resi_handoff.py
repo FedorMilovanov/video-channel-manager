@@ -174,7 +174,8 @@ def render_powershell_handoff(spec: ResiHandoffSpec) -> str:
     encoder = _ps_single_quote(spec.encoder)
     lines = [
         "param(",
-        '    [string]$RepositoryRoot = "C:\\Users\\Fedor\\Projects\\video-channel-manager"',
+        '    [string]$RepositoryRoot = "C:\\Users\\Fedor\\Projects\\video-channel-manager",',
+        '    [string]$DownloadsRoot = "C:\\Users\\Fedor\\Downloads"',
         ")",
         "",
         '$ErrorActionPreference = "Stop"',
@@ -185,7 +186,7 @@ def render_powershell_handoff(spec: ResiHandoffSpec) -> str:
         f"$EncoderPreference = {encoder}",
         "$Repo = $RepositoryRoot",
         '$OperatorOutput = Join-Path $Repo "operator-output"',
-        '$Master = Join-Path $OperatorOutput ($Title + " - FULL.mp4")',
+        '$Master = Join-Path $DownloadsRoot ($Title + " - FULL.mp4")',
         '$SourceReceipt = Join-Path $OperatorOutput ($Title + " - FULL.source.json")',
         '$Result = Join-Path $OperatorOutput ($Title + " - result.json")',
     ]
@@ -195,6 +196,7 @@ def render_powershell_handoff(spec: ResiHandoffSpec) -> str:
         [
             "",
             "New-Item -ItemType Directory -Force -Path $OperatorOutput | Out-Null",
+            "New-Item -ItemType Directory -Force -Path $DownloadsRoot | Out-Null",
             'foreach ($Tool in @("yt-dlp", "ffmpeg", "ffprobe")) {',
             "    if (-not (Get-Command $Tool -ErrorAction SilentlyContinue)) {",
             '        throw "Required tool not found in PATH: $Tool"',

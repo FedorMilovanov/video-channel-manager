@@ -32,7 +32,7 @@ concurrency:
 
 jobs:
   package:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.run_attempt == 1
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
@@ -50,7 +50,7 @@ jobs:
       EXPECTED_BOT_USERNAME: preaching_mp3_bot
 
     steps:
-      - name: Check out immutable current main
+      - name: Check out immutable triggering SHA
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1

@@ -16,6 +16,7 @@ def test_root_agent_contract_stays_concise_and_nonvolatile() -> None:
     assert "docs/operations/project-identity-registry.md" in text
     assert "docs/operations/operational-artifact-standard.md" in text
     assert ".github/copilot-instructions.md" in text
+    assert "completed Resi/DASH `<TITLE> - FULL.mp4` master goes to `C:\\Users\\Fedor\\Downloads`" in text
 
     for stale_pattern in (
         "Current production code baseline:",
@@ -74,6 +75,11 @@ def test_current_state_is_a_live_index_not_a_commit_ledger() -> None:
     assert "Dependency Graph itself is policy-enabled for this public repository" in text
     assert "SBOM REST export is verified unavailable through both documented generation surfaces" in text
     assert "blanket `UNVERIFIED` item" in text
+    assert "retained `<TITLE> - FULL.mp4` master goes to canonical Windows Downloads" in text
+    assert (
+        "generated handoff/watcher control files and exact-trim outputs remain under repository `operator-output`"
+        in text
+    )
 
 
 def test_dependabot_maintenance_is_atomic_and_bounded() -> None:
@@ -114,6 +120,8 @@ def test_windows_copilot_file_only_adds_handoff_rules() -> None:
     assert len(text.splitlines()) <= 130
     assert "`AGENTS.md` is the repository operating contract" in text
     assert "C:\\Users\\Fedor\\Projects\\video-channel-manager\\operator-output" in text
+    assert "C:\\Users\\Fedor\\Downloads" in text
+    assert "Resi/DASH has one explicit split-destination exception" in text
     assert "LastWriteTime" in text
     assert "Historical Wave" not in text
     assert "Current production code baseline" not in text

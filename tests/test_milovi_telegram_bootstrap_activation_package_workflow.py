@@ -49,9 +49,21 @@ def test_activation_package_runs_on_relevant_current_main_changes_and_stays_read
     assert "pull_request:" not in text
     assert "contents: read" in text
     assert "contents: write" not in text
-    assert "github.ref == 'refs/heads/main'" in text
+    assert "github.ref == 'refs/heads/main' && github.run_attempt == 1" in text
     assert "persist-credentials: false" in text
     assert "profile.provider_writes_authorized is not False" in text
+
+
+def test_activation_manual_dispatch_binds_to_immutable_trigger_sha_without_manual_sha_input() -> None:
+    text = _text()
+
+    assert "workflow_dispatch:" in text
+    assert "expected_main_sha" not in text
+    assert "Require exact manual current-main binding" not in text
+    assert "Check out immutable triggering SHA" in text
+    assert "ref: main" not in text
+    assert "'current_main_sha': os.environ['GITHUB_SHA']" in text
+    assert "milovi-bootstrap-activation-package-${{ github.sha }}" in text
 
 
 def test_activation_profile_gate_reads_canonical_profile_model_not_cli_summary() -> None:

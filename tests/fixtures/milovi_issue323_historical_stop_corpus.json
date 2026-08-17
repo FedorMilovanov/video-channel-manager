@@ -1,0 +1,22 @@
+{
+  "schema_name": "video-manager.milovi-issue-323-historical-stop-corpus",
+  "schema_version": 1,
+  "issue": 375,
+  "provider_writes_authorized": false,
+  "cases": [
+    {"case_id":"source1_exact_legacy_copy","public_surface":"run_issue_323_status_probe","incident_class":"source1 exact historical copy projection","invariant":"exact reviewed legacy copy remains promotion-pending evidence and grants no write authority"},
+    {"case_id":"provider_added_non_video_wall_projection","public_surface":"run_issue_323_status_probe","incident_class":"provider-added non-video wall projection","invariant":"one exact video binding survives unrelated provider-added attachments"},
+    {"case_id":"aggregate_omission_exact_old_live","public_surface":"run_issue_323_status_probe","incident_class":"aggregate omission versus exact-read live object","invariant":"aggregate omission never becomes exact absence when the durable ID reads live"},
+    {"case_id":"tombstoned_old_id_unique_successor","public_surface":"run_issue_323_status_probe","incident_class":"postponed old ID to published successor","invariant":"one exact due successor is adopted without repost and historical ID is preserved"},
+    {"case_id":"ambiguous_published_successor","public_surface":"run_issue_323_status_probe","incident_class":"ambiguous published successor","invariant":"multiple logical successors STOP and grant no repost authority"},
+    {"case_id":"future_missing_wall_before_slot","public_surface":"run_issue_323_status_probe","incident_class":"capture-time old-ID/successor boundary before frozen slot","invariant":"missing future journaled wall STOPs before exact fallback or repost"},
+    {"case_id":"upload_created_immediate_wall_side_effect","public_surface":"run_issue_323_status_probe","incident_class":"upload-created immediate wall side effect","invariant":"exact unjournaled wall is reconciled and never blindly reposted"},
+    {"case_id":"verified_clip_processing_projection_no_reupload","public_surface":"run_issue_323_status_probe","incident_class":"durable VERIFIED Clip with transient processing/not-playable projection","invariant":"durable Clip identity survives transient readiness and cannot authorize a second upload"},
+    {"case_id":"manual_clip_copy_drift_blocks_creation","public_surface":"run_issue_323_status_probe","incident_class":"manual copy drift","invariant":"unreviewed third-state copy is observation-only and blocks creation authority"},
+    {"case_id":"multiple_video_wall_projection_blocks","public_surface":"run_issue_323_status_probe","incident_class":"wall projection changes exact video cardinality","invariant":"a second video attachment STOPs instead of weakening identity"},
+    {"case_id":"dispatch_started_before_visible_after_no_replay","public_surface":"run_issue_323_continue_preview","incident_class":"ambiguous edit response with exact BEFORE still visible","invariant":"dispatch_started becomes durable UNKNOWN and never blind-retries"},
+    {"case_id":"dispatch_unknown_exact_after_reconciles_without_replay","public_surface":"run_issue_323_continue_preview","incident_class":"lost edit response followed by exact AFTER readback","invariant":"exact same-identity AFTER reconciles VERIFIED with zero replay"},
+    {"case_id":"processing_projection_never_grants_edit_authority","public_surface":"run_issue_323_continue_preview","incident_class":"processing copy projection during dispatched edit recovery","invariant":"processing projection cannot prove exact AFTER or authorize another edit"},
+    {"case_id":"wall475_tombstone_after_possible_delete_no_second_delete","public_surface":"run_reconcile","incident_class":"exact wall-475 tombstone after potentially dispatched delete","invariant":"tombstone reconciles verified_absent while destructive authority remains consumed"}
+  ]
+}

@@ -16,6 +16,10 @@ Operator output: C:\Users\Fedor\Projects\video-channel-manager\operator-output
 
 Do not assume a downloaded or generated file is in the current shell directory.
 
+Resi/DASH has one explicit split-destination exception: the completed `<TITLE> - FULL.mp4` master belongs in `C:\Users\Fedor\Downloads`; source receipt/result JSON, generated handoff/watcher control files, logs/state, language-preflight samples, and exact-trim output remain in repository `operator-output` unless the user chooses another location.
+
+For Grace Russian live capture, the durable sequence is `video-manager resi watch` -> `video-manager resi sample` -> explicit guarded `video-manager resi handoff`. Overnight Windows capture uses repository-owned `resi watch --background`; the detached child owns keep-awake while active. A returned PID proves startup only, not later liveness or capture success, so use the background log and durable capture JSON/latest-manifest files as evidence. Watcher state is scoped to the exact target page and must not cross Russian/English routes. A Russian page/player is routing evidence only; never report Russian interpretation as present until sermon speech samples are checked. If language matters, multiple audio streams are a stop condition and the FULL handoff uses `--require-single-audio` to repeat the gate immediately before a new remote download. Do not recreate a hidden PowerShell/Python watcher pair from chat once the supported command is available.
+
 ## Self-contained PowerShell
 
 Every copy-paste block must work from an arbitrary current directory.
@@ -27,8 +31,9 @@ Every copy-paste block must work from an arbitrary current directory.
 - Invoke the exact full entrypoint path. Repository scripts resolve siblings from `$PSScriptRoot`.
 - Never choose an artifact by `LastWriteTime`, newest ZIP, or broad wildcard. If discovery is unavoidable, require exactly one match and fail on zero/multiple matches.
 - For ZIP handoffs, show exact extraction root, exact inner package root, and exact entrypoint.
-- On success, print every exact output path. If one human-inspected file is the next action, place it in `operator-output` and select that exact file in Explorer.
+- On success, print every exact output path. If one human-inspected file is the next action, place it in the contract-defined destination and select that exact file in Explorer.
 - Do not open Explorer or select a stale artifact after failure.
+- Never place unconditional `WATCHER RUNNING`, `SUCCESS`, or equivalent lines after a failure branch that can `throw`. A pasted block must make it impossible for later individually executed lines to print false success after an earlier failure.
 
 Undefined inherited variables such as `$wave`, `$package`, `$zip`, or `$out` are prohibited.
 
@@ -61,7 +66,7 @@ The default human-facing destination is:
 C:\Users\Fedor\Projects\video-channel-manager\operator-output
 ```
 
-Prefer flat descriptive filenames. Internal journals/state stay in their contract-defined locations; only the artifact intended for inspection/upload/return belongs in the outbox.
+Prefer flat descriptive filenames. Internal journals/state stay in their contract-defined locations; only the artifact intended for inspection/upload/return belongs in the outbox. The Resi `FULL.mp4` exception above is deliberate: the potentially multi-gigabyte retained master stays in Downloads while its compact provenance/control artifacts stay in the outbox.
 
 A successful single-file handoff should end with the equivalent of:
 

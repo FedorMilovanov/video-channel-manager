@@ -1,20 +1,15 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
-from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
-import video_channel_manager.platforms.vk.milovi_issue323_finalize as finalize
-from video_channel_manager.platforms.vk.milovi_issue323_finalize import (
-    MiloviFinalizerBlocked,
+from video_channel_manager.platforms.vk.milovi_issue323_read_model import (
+    MiloviIssue323ReadModelBlocked,
     _assert_native_clip,
 )
 from video_channel_manager.platforms.vk.milovi_rollout_sources import build_description
-from video_channel_manager.platforms.vk.upload_lifecycle import UploadStage
-from video_channel_manager.platforms.vk.wall_safety import build_wall_snapshot
 
 SOURCE_ID = "d48QLgOuiTs"
 TITLE = "Durable cake"
@@ -95,7 +90,7 @@ def test_durable_verified_clip_still_requires_exact_legacy_or_promoted_binding()
         _durable_item(description=f"manual override still containing https://www.youtube.com/shorts/{SOURCE_ID}")
     )
 
-    with pytest.raises(MiloviFinalizerBlocked, match="neither exact reviewed legacy nor exact promoted"):
+    with pytest.raises(MiloviIssue323ReadModelBlocked, match="neither exact reviewed legacy nor exact promoted"):
         _assert_native_clip(
             writer,  # type: ignore[arg-type]
             _asset(),
@@ -110,7 +105,7 @@ def test_durable_verified_clip_still_requires_native_type() -> None:
     item["type"] = "video"
     writer = _Writer(item)
 
-    with pytest.raises(MiloviFinalizerBlocked, match="lost native short_video type"):
+    with pytest.raises(MiloviIssue323ReadModelBlocked, match="lost native short_video type"):
         _assert_native_clip(
             writer,  # type: ignore[arg-type]
             _asset(),
@@ -118,204 +113,3 @@ def test_durable_verified_clip_still_requires_native_type() -> None:
             description_mode="legacy_or_promoted",
             durable_verified=True,
         )
-
-
-def test_ensure_promoted_clip_reuses_durable_verified_identity_during_transient_processing(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    """VERIFIED is a durable barrier: transient player state must not reopen upload readiness."""
-
-    writer = _Writer(_durable_item())
-    wall = build_wall_snapshot(
-        community_id=68859909,
-        published_items=[],
-        postponed_items=[],
-        published_pages=1,
-        postponed_pages=1,
-        complete=True,
-        captured_at=datetime(2026, 8, 16, 1, 0, tzinfo=UTC),
-    )
-
-    def capture_wall_snapshot(*, community_id: int, max_posts_per_surface: int = 10000):
-        assert community_id == 68859909
-        assert max_posts_per_surface == 10000
-        return wall
-
-    writer.capture_wall_snapshot = capture_wall_snapshot  # type: ignore[attr-defined]
-    record: dict[str, Any] = {
-        "stage": UploadStage.VERIFIED.value,
-        "wall_policy": finalize.DEFAULT_UPLOAD_WALL_POLICY.as_dict(),
-        "wall_safety": {
-            "before_snapshot_sha256": wall.snapshot_sha256,
-            "before_captured_at": wall.captured_at,
-            "before_published_pages": wall.published_pages,
-            "before_postponed_pages": wall.postponed_pages,
-            "delta": {"status": "clean"},
-        },
-        "reservation": {"remote_id": REMOTE_ID},
-    }
-    item: dict[str, Any] = {"status": "upload_in_progress", "upload_record": record}
-    journal: dict[str, Any] = {
-        "source_snapshot_id": "issue323-reviewed-snapshot",
-        "provider_write_attempted": True,
-        "items": {SOURCE_ID: item},
-    }
-
-    monkeypatch.setattr(finalize, "ensure_upload_record", lambda current, **_kwargs: (current, False))
-    monkeypatch.setattr(finalize, "_save", lambda *_args, **_kwargs: None)
-    monkeypatch.setattr(
-        finalize,
-        "_supplement_due_prior_wall_readbacks",
-        lambda _writer, current, **_kwargs: (current, ()),
-    )
-    monkeypatch.setattr(
-        finalize,
-        "_resume_wall_baseline",
-        lambda _record, effective, **_kwargs: effective,
-    )
-
-    class NoReplayRecoveryWriter:
-        def __init__(self, _delegate: Any, **_kwargs: Any) -> None:
-            self.last_actual_snapshot_sha256 = None
-            self.last_effective_snapshot_sha256 = None
-            self.last_historical_snapshot_sha256 = None
-            self.last_reversed_surface_ids: tuple[str, ...] = ()
-            self.last_exact_read_ids: tuple[str, ...] = ()
-
-        def begin_upload(self, **_kwargs: Any) -> Any:
-            raise AssertionError("durable VERIFIED recovery must not reserve another VK object")
-
-        def upload_file(self, *_args: Any, **_kwargs: Any) -> Any:
-            raise AssertionError("durable VERIFIED recovery must not retransmit media")
-
-    monkeypatch.setattr(finalize, "_Issue323RecoveryWriter", NoReplayRecoveryWriter)
-
-    remote_id = finalize._ensure_promoted_clip(
-        _asset(),
-        object(),
-        item,
-        journal,
-        tmp_path / "rollout.json",
-        writer,  # type: ignore[arg-type]
-        SimpleNamespace(client=object()),  # type: ignore[arg-type]
-        60,
-    )
-
-    assert remote_id == REMOTE_ID
-    assert item["status"] == "clip_verified"
-    assert item["clip_remote_id"] == REMOTE_ID
-    assert item["clip_origin"] == "resumed_token_short_video_internal_promotion"
-    assert item["clip_execution_plan"]["plan"]["action"] == "resume_from_verified_clip_without_reupload_then_wall"
-    assert item["clip_execution_plan"]["plan"]["required_capabilities"] == [
-        "adopt_durable_clip",
-        "read_provider_state",
-        "reconcile_provider_effect",
-        "create_wall",
-    ]
-    assert "create_clip" not in item["clip_execution_plan"]["plan"]["required_capabilities"]
-    assert item["clip_execution_plan"]["plan_digest"].startswith("sha256:")
-    assert writer.read_calls == 1
-
-
-def test_ensure_promoted_clip_adopts_existing_inventory_clip_before_upload_lifecycle(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    item: dict[str, Any] = {"status": "pending"}
-    journal: dict[str, Any] = {
-        "source_snapshot_id": "issue323-reviewed-snapshot",
-        "provider_write_attempted": False,
-        "items": {SOURCE_ID: item},
-    }
-    saved: list[dict[str, Any]] = []
-    asserted: list[tuple[str, str]] = []
-
-    def find_existing(_client: Any, _asset: Any) -> str:
-        assert item["clip_execution_plan"]["plan"]["action"] == "require_existing_clip_preflight"
-        assert item["clip_execution_plan"]["plan"]["required_capabilities"] == ["read_provider_state"]
-        return REMOTE_ID
-
-    monkeypatch.setattr(finalize, "_find_existing_clip", find_existing)
-    monkeypatch.setattr(
-        finalize,
-        "_assert_native_clip",
-        lambda _writer, _asset, remote_id, *, description_mode, **_kwargs: asserted.append(
-            (remote_id, description_mode)
-        ),
-    )
-    monkeypatch.setattr(finalize, "_save", lambda _path, current: saved.append(dict(current)))
-
-    def lifecycle_forbidden(*_args: Any, **_kwargs: Any) -> Any:
-        raise AssertionError("existing-Clip preflight must complete before upload lifecycle is created")
-
-    monkeypatch.setattr(finalize, "ensure_upload_record", lifecycle_forbidden)
-    monkeypatch.setattr(finalize, "execute_upload_operation", lifecycle_forbidden)
-
-    remote_id = finalize._ensure_promoted_clip(
-        _asset(),
-        object(),
-        item,
-        journal,
-        tmp_path / "rollout.json",
-        object(),  # type: ignore[arg-type]
-        SimpleNamespace(client=object()),  # type: ignore[arg-type]
-        60,
-    )
-
-    assert remote_id == REMOTE_ID
-    assert item["status"] == "clip_verified"
-    assert item["clip_remote_id"] == REMOTE_ID
-    assert item["clip_origin"] == "adopted_existing_internal_promotion"
-    assert item["clip_execution_plan"]["plan"]["action"] == "adopt_existing_clip_without_reupload_then_wall"
-    assert item["clip_execution_plan"]["plan"]["required_capabilities"] == ["adopt_durable_clip", "create_wall"]
-    assert item["clip_execution_plan"]["plan_digest"].startswith("sha256:")
-    assert asserted == [(REMOTE_ID, "legacy_or_promoted")]
-    assert saved
-    assert journal["provider_write_attempted"] is False
-
-
-def test_fresh_clip_lifecycle_is_unreachable_until_empty_inventory_grants_create_clip(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    item: dict[str, Any] = {"status": "pending"}
-    journal: dict[str, Any] = {
-        "source_snapshot_id": "issue323-reviewed-snapshot",
-        "provider_write_attempted": False,
-        "items": {SOURCE_ID: item},
-    }
-
-    def no_existing(_client: Any, _asset: Any) -> None:
-        assert item["clip_execution_plan"]["plan"]["action"] == "require_existing_clip_preflight"
-        assert item["clip_execution_plan"]["plan"]["required_capabilities"] == ["read_provider_state"]
-        return None
-
-    class StopAfterCreateCapability(RuntimeError):
-        pass
-
-    def inspect_upload_record(_current: Any, **_kwargs: Any) -> Any:
-        assert item["clip_execution_plan"]["plan"]["action"] == (
-            "eligible_for_single_upload_after_executor_existing_clip_preflight"
-        )
-        assert item["clip_execution_plan"]["plan"]["required_capabilities"] == ["create_clip"]
-        assert item["clip_execution_plan"]["plan_digest"].startswith("sha256:")
-        raise StopAfterCreateCapability
-
-    monkeypatch.setattr(finalize, "_find_existing_clip", no_existing)
-    monkeypatch.setattr(finalize, "ensure_upload_record", inspect_upload_record)
-    monkeypatch.setattr(finalize, "_save", lambda *_args, **_kwargs: None)
-
-    with pytest.raises(StopAfterCreateCapability):
-        finalize._ensure_promoted_clip(
-            _asset(),
-            object(),
-            item,
-            journal,
-            tmp_path / "rollout.json",
-            object(),  # type: ignore[arg-type]
-            SimpleNamespace(client=object()),  # type: ignore[arg-type]
-            60,
-        )
-
-    assert journal["provider_write_attempted"] is False

@@ -14,6 +14,7 @@ Before changing provider-facing, workflow, state, release, or artifact code, rea
    - `docs/operations/operational-package-acceptance.md`
    - `docs/operations/retirement-registry-v1.json`
    - `docs/operations/operator-output-handoff-rule.md`
+   - `docs/operations/resi-dash-local-handoff.md` and `docs/operations/resi-grace-russian-live.md` for Resi live/capture work.
 5. Historical audits only when provenance or a past defect must be understood.
 6. `.github/copilot-instructions.md` for Windows/operator handoff details.
 
@@ -89,11 +90,15 @@ For browser UI work, bind the active page/modal root, prove visibility/hit testi
 
 PowerShell and shell wrappers orchestrate one repository-owned implementation. They must not become a second provider client or duplicate retry, pagination, upload, publication, or postflight logic. Do not create generated `executor.py` files or v2/v3/v4 ZIP families as a shortcut; fix repository code and regress the defect.
 
+For Grace/Resi live capture, use the repository-owned `video-manager resi watch` / `resi sample` / guarded `resi handoff` sequence and the canonical Grace Russian runbook. A Russian-labelled page/player proves routing only, not that an interpreter is actually speaking. Never infer spoken language from the page query, player ID, manifest path, or filename; sample sermon speech first. For unattended Windows capture use supported `resi watch --background`; its PID proves startup only, while durable capture JSON/latest-manifest evidence proves success. Watcher state is target-page scoped and must never be reused across Russian/English pages. If language matters, multiple audio streams are a stop condition until explicit selection exists, and the FULL handoff must use `--require-single-audio`. `resi watch` must not auto-dispatch a multi-gigabyte FULL download. Keep ad-hoc watcher scripts as historical/operator evidence only after the supported command is available.
+
 Retired executors/packages never become runnable again merely because their files still exist. Consult `docs/operations/retirement-registry-v1.json`.
 
 ## Artifact and operator handoff
 
 Local/operator artifacts require exact filenames, paths, hashes and success markers. User-facing outputs go to the repository `operator-output` contract unless the user chooses another location. A handoff that requires the operator to search for the produced file is a workflow defect.
+
+Explicit Resi exception: the completed Resi/DASH `<TITLE> - FULL.mp4` master goes to `C:\Users\Fedor\Downloads`; Resi receipts, result JSON, generated handoff/watcher control files and exact-trim outputs remain in repository `operator-output` unless the user explicitly selects another location.
 
 For local media/artifact completion, require the evidence demanded by the owning contract (for example SHA-256, ffprobe/QC, timing/package hashes and exact accepted master bindings). Do not call an artifact-level issue complete from code tests alone.
 

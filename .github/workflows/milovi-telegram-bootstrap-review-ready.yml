@@ -106,8 +106,9 @@ jobs:
               return payload
 
           run = get_json(f'https://api.github.com/repos/{repo}/actions/runs/{run_id}')
-          if run.get('event') != 'workflow_dispatch':
-              raise SystemExit('source package run was not a manual workflow_dispatch')
+          source_event = str(run.get('event') or '')
+          if source_event not in {'push', 'workflow_dispatch'}:
+              raise SystemExit('source package run event is not an allowed provider-inert activation trigger')
           if run.get('head_branch') != 'main' or run.get('head_sha') != expected_sha:
               raise SystemExit('source package run is not from exact expected main')
           if run.get('path') != '.github/workflows/milovi-telegram-bootstrap-activation-package.yml':
@@ -136,6 +137,7 @@ jobs:
                   {
                       'source_run_id': run_id,
                       'source_run_attempt': 1,
+                      'source_run_event': source_event,
                       'source_main_sha': expected_sha,
                       'source_artifact_id': artifact_id,
                       'source_artifact_name': expected_name,

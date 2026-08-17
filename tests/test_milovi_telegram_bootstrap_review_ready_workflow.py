@@ -29,7 +29,8 @@ def test_review_ready_workflow_is_manual_current_main_attempt_one_and_read_only(
 
 def test_review_ready_workflow_pins_exact_source_run_and_artifact() -> None:
     text = _text()
-    assert "run.get('event') != 'workflow_dispatch'" in text
+    assert "source_event not in {'push', 'workflow_dispatch'}" in text
+    assert "'source_run_event': source_event" in text
     assert "run.get('head_branch') != 'main'" in text
     assert "run.get('head_sha') != expected_sha" in text
     assert "milovi-telegram-bootstrap-activation-package.yml" in text
