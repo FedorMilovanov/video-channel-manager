@@ -5,8 +5,8 @@ from typing import Any
 
 import pytest
 
-from video_channel_manager.platforms.vk.milovi_issue323_finalize import (
-    MiloviFinalizerBlocked,
+from video_channel_manager.platforms.vk.milovi_issue323_read_model import (
+    MiloviIssue323ReadModelBlocked,
     _assert_native_clip,
     _clip_copy_state,
     _copy_state,
@@ -97,7 +97,7 @@ def test_processing_promoted_prefix_is_classified_but_exact_copy_gate_stays_stri
         == "provider_processing_promoted_projection"
     )
 
-    with pytest.raises(MiloviFinalizerBlocked, match="neither exact reviewed legacy nor exact promoted copy"):
+    with pytest.raises(MiloviIssue323ReadModelBlocked, match="neither exact reviewed legacy nor exact promoted copy"):
         _copy_state(
             current=current,
             legacy=legacy,
@@ -108,7 +108,7 @@ def test_processing_promoted_prefix_is_classified_but_exact_copy_gate_stays_stri
 
 
 def test_processing_flag_does_not_excuse_unrelated_third_copy() -> None:
-    with pytest.raises(MiloviFinalizerBlocked, match="neither exact reviewed legacy nor exact promoted copy"):
+    with pytest.raises(MiloviIssue323ReadModelBlocked, match="neither exact reviewed legacy nor exact promoted copy"):
         _clip_copy_state(
             current="operator-edited unrelated text " * 5 + "..",
             legacy="legacy reviewed copy " * 10,
@@ -122,7 +122,7 @@ def test_processing_flag_does_not_excuse_unrelated_third_copy() -> None:
 def test_projection_requires_provider_busy_flag() -> None:
     promoted = "P" * 200
     current = _projection(promoted)
-    with pytest.raises(MiloviFinalizerBlocked, match="neither exact reviewed legacy nor exact promoted copy"):
+    with pytest.raises(MiloviIssue323ReadModelBlocked, match="neither exact reviewed legacy nor exact promoted copy"):
         _clip_copy_state(
             current=current,
             legacy="L" * 200,
@@ -145,7 +145,7 @@ def test_promoted_mode_remains_exact_even_for_processing_projection() -> None:
         }
     )
 
-    with pytest.raises(MiloviFinalizerBlocked, match="public description differs from promotion plan"):
+    with pytest.raises(MiloviIssue323ReadModelBlocked, match="public description differs from promotion plan"):
         _assert_native_clip(  # type: ignore[arg-type]
             provider,
             asset,

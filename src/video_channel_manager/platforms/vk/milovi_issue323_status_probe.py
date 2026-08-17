@@ -15,8 +15,8 @@ from video_channel_manager.platforms.vk.milovi_daily_postponed_wall import (
     _validate_schedule_payload,
 )
 from video_channel_manager.platforms.vk.milovi_immediate_wall import MILOVI_COMMUNITY_ID, MILOVI_OWNER_ID
-from video_channel_manager.platforms.vk.milovi_issue323_finalize import (
-    MiloviFinalizerBlocked,
+from video_channel_manager.platforms.vk.milovi_issue323_read_model import (
+    MiloviIssue323ReadModelBlocked,
     _assert_native_clip,
     _legacy_clip_description,
     _legacy_wall_message,
@@ -520,7 +520,7 @@ def _probe_batch(
             row["safe_next_action"] = plan.action.value
             row["plan"] = plan.as_dict()
             row["plan_digest"] = plan.digest
-        except (MiloviStatusProbeBlocked, MiloviFinalizerBlocked, MiloviTokenRolloutBlocked) as exc:
+        except (MiloviStatusProbeBlocked, MiloviIssue323ReadModelBlocked, MiloviTokenRolloutBlocked) as exc:
             plan = blocked_issue323_item_plan()
             row["safe_next_action"] = plan.action.value
             row["plan"] = plan.as_dict()
@@ -661,7 +661,13 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
-    except (MiloviStatusProbeBlocked, MiloviTokenRolloutBlocked, MiloviFinalizerBlocked, OSError, ValueError) as exc:
+    except (
+        MiloviStatusProbeBlocked,
+        MiloviTokenRolloutBlocked,
+        MiloviIssue323ReadModelBlocked,
+        OSError,
+        ValueError,
+    ) as exc:
         print(f"STOP: {type(exc).__name__}: {exc}")
         raise SystemExit(3) from exc
 

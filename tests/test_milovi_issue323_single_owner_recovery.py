@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import inspect
 from datetime import UTC, datetime
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
-import video_channel_manager.platforms.vk.milovi_issue323_finalize as finalizer
+import video_channel_manager.platforms.vk.milovi_issue323_read_model as read_model
 import video_channel_manager.platforms.vk.milovi_issue323_live_resume as resume
 from video_channel_manager.platforms.vk.upload_lifecycle import UploadRecoveryRequired
 from video_channel_manager.platforms.vk.wall_safety import build_wall_snapshot
@@ -45,10 +44,10 @@ def test_preservation_only_check_does_not_require_clip_readiness() -> None:
     writer = _ClipReader(raw)
     asset = SimpleNamespace(source_id="o1WXIMupuws", description="promoted")
 
-    observed = finalizer._assert_native_clip(
+    observed = read_model._assert_native_clip(
         writer,  # type: ignore[arg-type]
         asset,  # type: ignore[arg-type]
-        finalizer.ANOMALY_CLIP_REMOTE_ID,
+        "-68859909_456239232",
         description_mode="legacy_or_promoted",
         preservation_only=True,
     )
@@ -59,61 +58,20 @@ def test_preservation_only_check_does_not_require_clip_readiness() -> None:
 def test_default_native_clip_check_remains_strict(monkeypatch: pytest.MonkeyPatch) -> None:
     writer = _ClipReader(_protected_projection())
     asset = SimpleNamespace(source_id="o1WXIMupuws", description="promoted")
-    monkeypatch.setattr(finalizer, "clip_readiness", lambda _asset: object())
+    monkeypatch.setattr(read_model, "clip_readiness", lambda _asset: object())
     monkeypatch.setattr(
-        finalizer,
+        read_model,
         "_native_clip_assessment",
         lambda *args, **kwargs: SimpleNamespace(ready=False, reasons=("not_playable",)),
     )
 
-    with pytest.raises(finalizer.MiloviFinalizerBlocked, match="not a verified native short_video"):
-        finalizer._assert_native_clip(
+    with pytest.raises(read_model.MiloviIssue323ReadModelBlocked, match="not a verified native short_video"):
+        read_model._assert_native_clip(
             writer,  # type: ignore[arg-type]
             asset,  # type: ignore[arg-type]
-            finalizer.ANOMALY_CLIP_REMOTE_ID,
+            "-68859909_456239232",
             description_mode="legacy_or_promoted",
         )
-
-
-def test_phase2_accepts_exact_tombstone_without_delete(tmp_path: Any) -> None:
-    writer = _ClipReader(
-        _protected_projection(),
-        {"owner_id": -68859909, "id": 475, "is_deleted": True},
-    )
-    state: dict[str, Any] = {"cleanup_475": {"status": "verified_absent"}}
-    asset = SimpleNamespace(source_id="o1WXIMupuws", description="promoted")
-
-    finalizer._cleanup_anomaly_475(
-        writer=writer,  # type: ignore[arg-type]
-        promoted_asset=asset,  # type: ignore[arg-type]
-        finalizer=state,
-        finalizer_path=tmp_path / "finalizer.json",
-    )
-
-    cleanup = state["cleanup_475"]
-    assert cleanup["status"] == "verified_absent"
-    assert cleanup["phase2_delete_authority"] is False
-    assert cleanup["phase2_absence_evidence"] == "wall.getById:is_deleted_true"
-    assert cleanup["protected_clip_preserved"] is True
-
-
-def test_phase2_rejects_live_wall475_and_has_no_delete_path(tmp_path: Any) -> None:
-    writer = _ClipReader(
-        _protected_projection(),
-        {"owner_id": -68859909, "id": 475, "is_deleted": False},
-    )
-    state: dict[str, Any] = {"cleanup_475": {"status": "verified_absent"}}
-    asset = SimpleNamespace(source_id="o1WXIMupuws", description="promoted")
-
-    with pytest.raises(finalizer.MiloviFinalizerBlocked, match="phase 2 has no delete authority"):
-        finalizer._cleanup_anomaly_475(
-            writer=writer,  # type: ignore[arg-type]
-            promoted_asset=asset,  # type: ignore[arg-type]
-            finalizer=state,
-            finalizer_path=tmp_path / "finalizer.json",
-        )
-
-    assert '"wall.delete"' not in inspect.getsource(finalizer)
 
 
 def _wall_safety_with_delta(*, created: list[str]) -> dict[str, Any]:
