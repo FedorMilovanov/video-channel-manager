@@ -14,6 +14,7 @@ Before changing provider-facing, workflow, state, release, or artifact code, rea
    - `docs/operations/operational-package-acceptance.md`
    - `docs/operations/retirement-registry-v1.json`
    - `docs/operations/operator-output-handoff-rule.md`
+   - `docs/operations/resi-dash-local-handoff.md` and `docs/operations/resi-grace-russian-live.md` for Resi live/capture work.
 5. Historical audits only when provenance or a past defect must be understood.
 6. `.github/copilot-instructions.md` for Windows/operator handoff details.
 
@@ -88,6 +89,8 @@ Upload, processing/visibility, metadata, thumbnail, playlist creation, membershi
 For browser UI work, bind the active page/modal root, prove visibility/hit testing and ownership of the control, capture before-state, perform one action, then verify the exact transition/postcondition. Playback, selection, modal closure, or matching visible text are not substitutes for separate-field readback.
 
 PowerShell and shell wrappers orchestrate one repository-owned implementation. They must not become a second provider client or duplicate retry, pagination, upload, publication, or postflight logic. Do not create generated `executor.py` files or v2/v3/v4 ZIP families as a shortcut; fix repository code and regress the defect.
+
+For Grace/Resi live capture, use the repository-owned `video-manager resi watch` / `resi sample` / `resi handoff` sequence and the canonical Grace Russian runbook. A Russian-labelled page/player proves routing only, not that an interpreter is actually speaking. Never infer spoken language from the page query, player ID, manifest path, or filename; sample sermon speech first. `resi watch` must not auto-dispatch a multi-gigabyte FULL download. Keep ad-hoc watcher scripts as historical/operator evidence only after the supported command is available.
 
 Retired executors/packages never become runnable again merely because their files still exist. Consult `docs/operations/retirement-registry-v1.json`.
 
