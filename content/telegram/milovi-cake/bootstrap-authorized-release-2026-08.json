@@ -1,0 +1,19 @@
+{
+  "schema_name": "video-channel-manager.telegram-release-queue",
+  "schema_version": 1,
+  "release_id": "milovi-telegram-first-screen-2026-08",
+  "project_key": "milovi-cake",
+  "channel_username": "@MiloviCake",
+  "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+  "timezone": "Europe/Moscow",
+  "daily_verified_limit": 2,
+  "target_binding_sha256": "sha256:741a8b4b54d785976236c6f15ed5d82cc9ad46aeb96a80cf372f22c421ba047c",
+  "chat_id": -1002215328390,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "release_authorized": true,
+  "reviewed_candidate_sha256": "sha256:d2d574e7480d6e5d76c9e5fad15bc00cdd0af04703d0039059f7705a828cf9dc",
+  "reviewed_by": "FedorMilovanov — explicit chat authorization",
+  "reviewed_at": "2026-08-18T00:12:00+03:00",
+  "items": []
+}
