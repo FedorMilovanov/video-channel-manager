@@ -32,8 +32,8 @@ def test_canonical_milovi_publisher_and_discovery_remain_the_supported_paths() -
     assert "8716602202" in publisher
 
     assert "Milovi Cake Telegram target discovery" in discovery
-    assert 'EXPECTED_CHAT_ID: "-1002215328390"' in discovery
-    assert 'EXPECTED_BOT_ID: "8716602202"' in discovery
+    assert "EXPECTED_CHAT_ID: -1002215328390" in discovery
+    assert "EXPECTED_BOT_ID: 8716602202" in discovery
     assert "provider_writes_authorized" in discovery
 
 
