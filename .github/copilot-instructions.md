@@ -16,7 +16,9 @@ Operator output: C:\Users\Fedor\Projects\video-channel-manager\operator-output
 
 Do not assume a downloaded or generated file is in the current shell directory.
 
-Resi/DASH has one explicit split-destination exception: the completed `<TITLE> - FULL.mp4` master belongs in `C:\Users\Fedor\Downloads`; source receipt/result JSON, generated handoff/watcher control files, logs/state, and exact-trim output remain in repository `operator-output` unless the user chooses another location.
+Resi/DASH has one explicit split-destination exception: the completed `<TITLE> - FULL.mp4` master belongs in `C:\Users\Fedor\Downloads`; source receipt/result JSON, generated handoff/watcher control files, logs/state, language-preflight samples, and exact-trim output remain in repository `operator-output` unless the user chooses another location.
+
+For Grace Russian live capture, the durable sequence is `video-manager resi watch` -> `video-manager resi sample` -> explicit `video-manager resi handoff`. The watcher itself owns Windows keep-awake while active. Do not recreate a hidden PowerShell/Python watcher pair from chat once the supported command is available. A Russian page/player is routing evidence only; never report Russian interpretation as present until sermon speech samples are actually checked.
 
 ## Self-contained PowerShell
 
@@ -31,6 +33,7 @@ Every copy-paste block must work from an arbitrary current directory.
 - For ZIP handoffs, show exact extraction root, exact inner package root, and exact entrypoint.
 - On success, print every exact output path. If one human-inspected file is the next action, place it in the contract-defined destination and select that exact file in Explorer.
 - Do not open Explorer or select a stale artifact after failure.
+- Never place unconditional `WATCHER RUNNING`, `SUCCESS`, or equivalent lines after a failure branch that can `throw`. A pasted block must make it impossible for later individually executed lines to print false success after an earlier failure.
 
 Undefined inherited variables such as `$wave`, `$package`, `$zip`, or `$out` are prohibited.
 
