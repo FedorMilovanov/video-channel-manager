@@ -8,8 +8,6 @@ from rich.console import Console
 
 from video_channel_manager.resi_handoff import ResiHandoffSpec, default_handoff_path, render_powershell_handoff
 from video_channel_manager.resi_watch import (
-    ResiWatchAmbiguous,
-    ResiWatchTimeout,
     create_audio_samples,
     default_sample_dir,
     keep_system_awake,
@@ -86,7 +84,7 @@ def watch(
                 latest_json=capture_json,
                 state_path=state,
             )
-    except (ValueError, RuntimeError, OSError, ResiWatchTimeout, ResiWatchAmbiguous) as exc:
+    except (ValueError, RuntimeError, OSError) as exc:
         console.print(f"[red]Resi watch failed:[/red] {exc}")
         raise typer.Exit(code=2) from exc
     except KeyboardInterrupt as exc:
