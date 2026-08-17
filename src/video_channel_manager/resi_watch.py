@@ -32,6 +32,10 @@ class ResiWatchAmbiguous(RuntimeError):
     pass
 
 
+class ResiWatchDependencyError(RuntimeError):
+    pass
+
+
 @dataclass(frozen=True)
 class ManifestObservation:
     page_url: str
@@ -107,7 +111,7 @@ def probe_page(page_url: str, wait_seconds: float) -> PageProbeResult:
     try:
         sync_playwright = import_module("playwright.sync_api").sync_playwright
     except ModuleNotFoundError as exc:
-        raise RuntimeError(
+        raise ResiWatchDependencyError(
             "Playwright is required for resi watch; install the browser-read extra and Chromium: "
             "python -m pip install -e '.[browser-read]' && python -m playwright install chromium"
         ) from exc
@@ -234,7 +238,7 @@ def watch_for_new_manifest(
             target = _single_observation(target_result, label="target page")
             last_error = None
             consecutive_probe_errors = 0
-        except ResiWatchAmbiguous:
+        except (ResiWatchAmbiguous, ResiWatchDependencyError):
             raise
         except Exception as exc:
             target = None
