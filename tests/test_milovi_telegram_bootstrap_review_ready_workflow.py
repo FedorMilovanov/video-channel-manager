@@ -10,7 +10,7 @@ def _text() -> str:
     return WORKFLOW.read_text(encoding="utf-8")
 
 
-def test_review_ready_workflow_is_manual_current_main_attempt_one_and_read_only() -> None:
+def test_review_ready_workflow_is_manual_attempt_one_and_read_only() -> None:
     text = _text()
     assert "workflow_dispatch:" in text
     assert "package_run_id:" in text
@@ -25,6 +25,45 @@ def test_review_ready_workflow_is_manual_current_main_attempt_one_and_read_only(
     assert "schedule:" not in text
     assert "push:" not in text
     assert "pull_request:" not in text
+
+
+def test_review_ready_workflow_accepts_immutable_ancestor_only_when_milovi_critical_paths_are_unchanged() -> None:
+    text = _text()
+
+    assert "Check out current main for package-lineage proof" in text
+    assert "fetch-depth: 0" in text
+    assert 'git merge-base --is-ancestor "$EXPECTED_MAIN_SHA" "$GITHUB_SHA"' in text
+    assert "source package revision is not an ancestor of current main" in text
+    assert "Milovi-critical files changed after source package revision" in text
+    assert "review-ready handoff only accepts a package from exact current main" not in text
+
+    for critical_path in (
+        ".github/workflows/milovi-telegram-bootstrap-activation-package.yml",
+        "requirements/telegram-publisher.txt",
+        "src/video_channel_manager/milovi_telegram_bootstrap.py",
+        "src/video_channel_manager/milovi_telegram_activation_review.py",
+        "src/video_channel_manager/telegram_channel_profile.py",
+        "src/video_channel_manager/telegram_target_binding.py",
+        "src/video_channel_manager/telegram_target_discovery.py",
+        "src/video_channel_manager/telegram_multichannel_release.py",
+        "content/telegram/channels/milovi-cake.json",
+        "content/telegram/channels/milovi-cake-target-binding.json",
+        "content/telegram/milovi-cake/queues/bootstrap-first-screen-queue-2026-08.json",
+        "content/telegram/milovi-cake/bootstrap-first-screen-candidates-2026-08.json",
+        "content/telegram/milovi-cake/bootstrap-photo-transport-proof-2026-08.json",
+        "content/telegram/milovi-cake/publishing-window-2026-08.json",
+    ):
+        assert critical_path in text
+
+    # The review workflow itself is intentionally not a critical package input: this
+    # provider-inert repair must be able to review an older immutable package.
+    lineage_block = text.split("Prove source package revision remains review-eligible", 1)[1].split(
+        "Check out immutable source package revision", 1
+    )[0]
+    assert ".github/workflows/milovi-telegram-bootstrap-review-ready.yml" not in lineage_block
+
+    assert "Check out immutable source package revision" in text
+    assert "ref: ${{ inputs.expected_main_sha }}" in text
 
 
 def test_review_ready_workflow_pins_exact_source_run_and_artifact() -> None:
@@ -42,6 +81,7 @@ def test_review_ready_workflow_pins_exact_source_run_and_artifact() -> None:
     assert "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c" in text
     assert "run-id: ${{ inputs.package_run_id }}" in text
     assert "digest-mismatch: error" in text
+    assert "milovi-bootstrap-review-ready-${{ inputs.expected_main_sha }}-${{ inputs.package_run_id }}" in text
 
 
 def test_review_ready_workflow_never_discovers_target_authorizes_or_mutates_provider() -> None:
