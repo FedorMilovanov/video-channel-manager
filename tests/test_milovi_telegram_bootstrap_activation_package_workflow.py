@@ -51,12 +51,24 @@ def test_activation_package_runs_on_relevant_current_main_changes_and_stays_read
     assert "contents: write" not in text
     assert "github.ref == 'refs/heads/main' && github.run_attempt == 1" in text
     assert "persist-credentials: false" in text
-    assert "profile.provider_writes_authorized is not False" in text
+    assert "eligible = not profile.provider_writes_authorized" in text
+
+
+def test_activation_package_becomes_provider_free_noop_after_write_activation() -> None:
+    text = _text()
+    eligibility = text.index("Resolve provider-inert package eligibility")
+    inactive = text.index("Report already-activated Milovi profile")
+    discovery = text.index("Discover exact target without provider mutation")
+    assert eligibility < inactive < discovery
+    assert "steps.eligibility.outputs.eligible != 'true'" in text
+    assert "steps.eligibility.outputs.eligible == 'true'" in text
+    assert "No Telegram access was attempted" in text
+    assert "provider_access_performed': False" in text
+    assert "provider_write_performed': False" in text
 
 
 def test_activation_manual_dispatch_binds_to_immutable_trigger_sha_without_manual_sha_input() -> None:
     text = _text()
-
     assert "workflow_dispatch:" in text
     assert "expected_main_sha" not in text
     assert "Require exact manual current-main binding" not in text
@@ -68,12 +80,11 @@ def test_activation_manual_dispatch_binds_to_immutable_trigger_sha_without_manua
 
 def test_activation_profile_gate_reads_canonical_profile_model_not_cli_summary() -> None:
     text = _text()
-
     assert "from video_channel_manager.telegram_channel_profile import load_channel_profile" in text
     assert "profile = load_channel_profile(Path(os.environ['PROFILE_PATH']))" in text
     assert "profile.project_key != 'milovi-cake'" in text
     assert "profile.channel_username.casefold() != '@milovicake'" in text
-    assert "profile.provider_writes_authorized is not False" in text
+    assert "eligible = not profile.provider_writes_authorized" in text
     assert "profile.daily_verified_limit != 2" in text
     assert "telegram_channel_cli validate-profile" not in text
     assert "/tmp/profile.json" not in text
@@ -83,7 +94,6 @@ def test_activation_package_and_publisher_compile_same_operational_rollout() -> 
     package_text = _text()
     publisher_text = PUBLISHER_WORKFLOW.read_text(encoding="utf-8")
     rollout_env = f"ROLLOUT_PATH: {ACTIVE_ROLLOUT}"
-
     assert rollout_env in package_text
     assert rollout_env in publisher_text
     assert '--rollout "$ROLLOUT_PATH"' in package_text
@@ -146,9 +156,11 @@ def test_activation_package_is_ephemeral_and_preserves_exact_ten_items() -> None
     assert "retention-days: 7" in text
 
 
-def test_activation_package_pipeline_binds_real_active_bootstrap_without_authorizing() -> None:
-    profile = load_channel_profile(PROFILE)
-    assert profile.provider_writes_authorized is False
+def test_activation_package_pipeline_remains_testable_with_write_disabled_profile_fixture() -> None:
+    active_profile = load_channel_profile(PROFILE)
+    assert active_profile.provider_writes_authorized is True
+    profile = active_profile.model_copy(update={"provider_writes_authorized": False})
+    assert profile.digest == active_profile.digest
 
     proof = GenericTargetProof(
         schema_name="video-channel-manager.telegram-generic-target-proof",
