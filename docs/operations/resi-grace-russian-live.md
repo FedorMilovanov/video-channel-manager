@@ -68,7 +68,7 @@ Do not create a second ad-hoc watcher Python/PowerShell implementation after the
 
 ## Legacy state migration after Issue #440
 
-Watcher state is now bound to the exact target page so an English/other Resi watch cannot silently become the Russian baseline. A pre-#440 `resi-watch-state.json` has no page owner and is deliberately rejected.
+Watcher state is bound to the exact target page so an English/other Resi watch cannot silently become the Russian baseline. A pre-#440 `resi-watch-state.json` has no page owner and is deliberately rejected.
 
 If a legacy state exists, preserve its last manifest through `latest-resi-manifest.txt`, then delete **only** the legacy state file before the first new run. Do not delete the latest manifest baseline.
 
@@ -92,7 +92,7 @@ if (Test-Path -LiteralPath $State -PathType Leaf) {
 
 For an overnight/unattended Windows run use the repository-owned `--background` mode. It launches a detached child watcher; that child owns Windows keep-awake while active, so the launching PowerShell window may be closed after the launch command returns.
 
-A returned PID proves **launch only**. It is not proof that the watcher is still alive or that capture succeeded. Durable success is `latest-resi-manifest.json` / `latest-resi-manifest.txt`; diagnose the background log on failure.
+The parent waits through a short startup grace check before reporting success. A returned PID therefore proves that the child launched and survived that initial check, but it still does **not** prove later liveness or capture success. Durable success is `latest-resi-manifest.json` / `latest-resi-manifest.txt`; diagnose the background log on failure.
 
 ```powershell
 $ErrorActionPreference = "Stop"
@@ -157,7 +157,7 @@ if ($LASTEXITCODE -ne 0) { throw "Resi language sample preflight failed" }
 
 Default sample points are 00:30:00, 00:50:00, 01:10:00, and 01:30:00; each is 45 seconds and audio-only. Use them only when those positions already exist in the captured/live source. If the service is still earlier, choose already-existing sermon speech with repeated `--at`, or wait until suitable speech exists.
 
-Before sampling, `resi sample` now uses ffprobe and requires **exactly one audio stream**. That binds the manually verified sample to the current FULL downloader's audio choice. If multiple audio streams are present, stop: explicit audio-format selection must be implemented/reviewed before language confirmation or FULL download.
+Before sampling, `resi sample` uses ffprobe and requires **exactly one audio stream at sample time**. If multiple audio streams are present, stop: explicit audio-format selection must be implemented/reviewed before language confirmation or FULL download.
 
 Samples and `samples.json` stay under:
 
@@ -169,7 +169,7 @@ Listen to several points during sermon speech. The command deliberately does not
 
 Decision:
 
-- Russian interpretation confirmed -> proceed to explicit `resi handoff` full download.
+- Russian interpretation confirmed -> proceed to the guarded explicit handoff below.
 - sermon samples remain English -> record `Russian player / no Russian interpretation detected` and stop; do not download another multi-GB copy looking for a nonexistent second track.
 - samples are only music/hymns -> choose additional `--at` points during spoken sermon before deciding.
 - multiple audio streams -> stop; do not assume `0:a:0` and `bestaudio` mean the same thing.
@@ -182,9 +182,25 @@ video-manager resi sample <MANIFEST> --at 40:00 --at 60:00 --at 80:00 --duration
 
 ## Explicit FULL download only after language confirmation
 
-Use the existing repository-owned handoff. Do not replace it with hand-written `ffmpeg -i Manifest.mpd` or a second downloader.
+For Grace Russian language-confirmed work, generate the existing repository-owned handoff with `--require-single-audio`. This injects a second single-audio ffprobe gate **inside the generated handoff immediately before a new remote FULL download**, closing the gap where a live MPD could change after sampling.
 
-The generated handoff prints `yt-dlp -F` evidence, downloads `bestvideo+bestaudio/best` with bounded fragment retries, performs ffprobe A/V/duration QC, calculates SHA-256, writes source/result receipts, and keeps the retained master in `C:\Users\Fedor\Downloads`. The watcher and sampler never auto-execute this step.
+```powershell
+$ErrorActionPreference = "Stop"
+$Repo = "C:\Users\Fedor\Projects\video-channel-manager"
+$VM = Join-Path $Repo ".venv\Scripts\video-manager.exe"
+$Latest = Join-Path $Repo "operator-output\latest-resi-manifest.txt"
+$Handoff = Join-Path $Repo "operator-output\grace-russian-latest-handoff.ps1"
+if (-not (Test-Path -LiteralPath $Latest -PathType Leaf)) { throw "No captured Resi manifest" }
+$Source = (Get-Content -LiteralPath $Latest -Raw).Trim()
+& $VM resi handoff $Source --require-single-audio --output $Handoff
+if ($LASTEXITCODE -ne 0) { throw "Resi guarded handoff generation failed" }
+& $Handoff
+if ($LASTEXITCODE -ne 0) { throw "Resi guarded FULL download failed" }
+```
+
+The single-audio gate runs only before a **new remote download**; verified source-bound master reuse remains offline-safe. The generated handoff still prints `yt-dlp -F` evidence, downloads `bestvideo+bestaudio/best` with bounded fragment retries, performs ffprobe A/V/duration QC, calculates SHA-256, writes source/result receipts, and keeps the retained master in `C:\Users\Fedor\Downloads`. The watcher and sampler never auto-execute this step.
+
+For generic Resi/DASH work where language identity is irrelevant, ordinary `resi handoff` remains unchanged and does not require the single-audio option.
 
 ## GPU clarification
 
@@ -192,8 +208,8 @@ Downloading DASH fragments is primarily network/server/storage work. GPU acceler
 
 ## Stop conditions
 
-Stop instead of improvising when the page is not the exact intended Grace language route; target capture has multiple distinct manifests; watcher state is corrupt, legacy-unscoped, or belongs to another page; the background child exits and its log shows an error; sermon samples do not confirm the desired language; multiple audio streams exist without an explicit selection contract; access requires DRM/access-control bypass; or a FULL download is proposed before language preflight merely because the page says Russian.
+Stop instead of improvising when the page is not the exact intended Grace language route; target capture has multiple distinct manifests; watcher state is corrupt, legacy-unscoped, or belongs to another page; the background child exits and its log shows an error; sermon samples do not confirm the desired language; multiple audio streams exist without an explicit selection contract; the guarded handoff's immediate pre-download single-audio check fails; access requires DRM/access-control bypass; or a FULL download is proposed before language preflight merely because the page says Russian.
 
 ## Agent handoff rule
 
-A future agent must read this runbook plus Issues #425 and #440 before Resi live work. Chat history is supporting incident evidence, not the executable source of truth. The supported sequence is `watch -> sample -> explicit handoff`, never `watch -> automatic multi-GB download`. For unattended Windows work use repository-owned `resi watch --background`, not a recreated hidden watcher pair.
+A future agent must read this runbook plus Issues #425 and #440 before Resi live work. Chat history is supporting incident evidence, not the executable source of truth. The supported sequence is `watch -> sample -> explicit guarded handoff`, never `watch -> automatic multi-GB download`. For unattended Windows work use repository-owned `resi watch --background`, not a recreated hidden watcher pair.
