@@ -288,34 +288,55 @@ jobs:
           from pathlib import Path
 
           from video_channel_manager.telegram_multichannel_release import load_release
-          from video_channel_manager.telegram_multichannel_state import load_ledger
+          from video_channel_manager.telegram_multichannel_state import GenericDispatchEnvelope, load_ledger
 
           release = load_release(Path(os.environ["AUTHORIZED_RELEASE_PATH"]))
           ledger = load_ledger(Path(os.environ["LEDGER_PATH"]), release)
           manual_event = os.environ["EVENT_NAME"] == "workflow_dispatch"
-          verified_manual_canary = any(
-              entry.state == "published"
-              and entry.provider_effect == "verified"
-              and entry.dispatch_mode == "manual"
-              and entry.actual_chat_id == release.chat_id
-              and entry.bot_id == release.bot_id
-              for entry in ledger.entries.values()
-          )
-          ready = manual_event or verified_manual_canary
-          if manual_event:
-              reason = "exact_manual_canary_attempt"
-          elif verified_manual_canary:
-              reason = "verified_release_manual_canary_present"
+
+          evidence_root = Path(os.environ["STATE_DIR"]) / "content/telegram/milovi-cake/dispatches"
+          prior_manual_intents = []
+          if evidence_root.is_dir():
+              for dispatch_path in evidence_root.glob("*/dispatch.json"):
+                  try:
+                      envelope = GenericDispatchEnvelope.model_validate_json(
+                          dispatch_path.read_text(encoding="utf-8")
+                      )
+                  except Exception as exc:
+                      raise SystemExit(f"invalid durable Milovi dispatch evidence {dispatch_path}: {exc}") from exc
+                  if (
+                      envelope.release_digest == release.digest
+                      and envelope.project_key == release.project_key
+                      and envelope.channel_username.casefold() == release.channel_username.casefold()
+                      and envelope.dispatch_mode == "manual"
+                      and envelope.target.chat_id == release.chat_id
+                      and envelope.target.bot_id == release.bot_id
+                  ):
+                      prior_manual_intents.append(envelope.publication_id)
+
+          if manual_event and not prior_manual_intents:
+              ready = True
+              reason = "exact_single_manual_canary_attempt"
+          elif manual_event:
+              ready = False
+              reason = "manual_canary_intent_already_recorded_hard_stop"
           else:
-              reason = "waiting_for_release_manual_canary"
+              ready = False
+              reason = "single_canary_gate_blocks_scheduler_until_separate_rollout_authorization"
+
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
               handle.write(f"ready={'true' if ready else 'false'}\n")
               handle.write(f"reason={reason}\n")
+          print({
+              "ready": ready,
+              "reason": reason,
+              "prior_manual_intents": sorted(prior_manual_intents),
+          })
           PY
 
-      - name: Report scheduler waiting for release manual canary
+      - name: Report scheduler waiting for separate rollout authorization
         if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.canary.outputs.ready != 'true'
-        run: echo "Milovi scheduled bootstrap is waiting for one verified frozen manual item. No Telegram access was attempted."
+        run: echo "Milovi bootstrap hard-stop is active — ${{ steps.canary.outputs.reason }}. No Telegram access was attempted."
 
       - name: Require fresh exact strict-next slot before Telegram access
         if: steps.activation.outputs.active == 'true' && steps.ledger.outputs.ready == 'true' && steps.canary.outputs.ready == 'true'

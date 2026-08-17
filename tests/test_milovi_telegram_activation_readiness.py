@@ -98,4 +98,5 @@ def test_publisher_still_uses_operational_queue_and_daylight_activation_gate() -
     assert "target_binding_missing" in publisher
     assert "authorized_release_missing" in publisher
     assert "state_branch_or_ledger_missing" in publisher
-    assert "waiting_for_release_manual_canary" in publisher
+    assert "manual_canary_intent_already_recorded_hard_stop" in publisher
+    assert "single_canary_gate_blocks_scheduler_until_separate_rollout_authorization" in publisher
