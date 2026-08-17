@@ -131,19 +131,13 @@ Supported capability remains `local_only_read_only_intake_and_manifest`: inspect
 It does not authorize ID3 rewrite, rename/transcode, browser automation, remote upload, metadata mutation, playlist changes, or wall publication.
 
 ## Local video / Resi DASH
-
 Supported local-only Resi capability is the repository-owned three-stage flow:
-
 1. `video-manager resi watch <PAGE_URL>` — bounded read-only Playwright network observation that captures a fresh Resi `Manifest.mpd`, exact page/player/frame evidence, optional comparison-page evidence, and durable restart state. It keeps Windows awake while active and **never** auto-dispatches a multi-gigabyte FULL download.
 2. `video-manager resi sample <MANIFEST_URL>` — bounded audio-only ffmpeg language preflight. Default samples are 45 seconds at 30:00, 50:00, 70:00, and 90:00; the command records evidence but does not claim to classify the spoken language.
 3. `video-manager resi handoff <MANIFEST_URL>` — the explicit full DASH download/QC path, used only after the operator confirms the desired spoken language when language matters.
-
 For Grace Russian work, the canonical target is `https://www.gracechurch.org/live?language=russian`, with `https://www.gracechurch.org/live?language=english` as the comparison page when practical. A Russian-labelled page, distinct Resi player, or distinct manifest proves routing only; it is **not** proof that a Russian interpreter is actually speaking in that service. Sample sermon speech before deciding to download the FULL master. If sermon samples stay English, record `Russian player / no Russian interpretation detected` and do not invent a hidden second audio track or download another multi-GB copy blindly.
-
 The retained `<TITLE> - FULL.mp4` master goes to canonical Windows Downloads (`C:\Users\Fedor\Downloads`); source receipt/result JSON, generated handoff/watcher capture/state files, language-preflight samples, and exact-trim outputs remain under repository `operator-output` unless the user explicitly selects another destination.
-
 DASH downloading is network/server/storage-bound and does not materially accelerate by selecting the GPU. `--encoder auto` applies to exact video trim/re-encode only: usable NVIDIA selects `h264_nvenc`, otherwise the workflow falls back to CPU `libx264`. Plain download/remux / stream copy does not use GPU transcoding.
-
 This capability has provider effect `impossible`. It does not bypass DRM/access controls, infer rights/permission, upload media, or authorize any provider mutation. Canonical runbooks are [`resi-dash-local-handoff.md`](resi-dash-local-handoff.md) and [`resi-grace-russian-live.md`](resi-grace-russian-live.md).
 
 ## GitHub governance and external state
