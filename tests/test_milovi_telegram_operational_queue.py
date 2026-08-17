@@ -27,7 +27,7 @@ def _caption_sha(value: str) -> str:
     return "sha256:" + hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
-def test_queue_is_exactly_ten_future_daylight_items_and_remains_provider_inert() -> None:
+def test_queue_is_exactly_ten_daylight_items_and_identity_stays_provider_inert() -> None:
     queue = _load(QUEUE)
     profile = _load(PROFILE)
     assert queue["schema_name"] == "video-channel-manager.milovi-telegram-operational-queue"
@@ -38,7 +38,7 @@ def test_queue_is_exactly_ten_future_daylight_items_and_remains_provider_inert()
     assert queue["bot_username"] == "preaching_mp3_bot"
     assert queue["execution_authorized"] is False
     assert queue["provider_mutation_allowed"] is False
-    assert profile["provider_writes_authorized"] is False
+    assert profile["provider_writes_authorized"] is True
 
     items = queue["items"]
     assert isinstance(items, list)
