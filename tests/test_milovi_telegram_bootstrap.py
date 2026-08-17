@@ -40,23 +40,23 @@ def _build(profile=None):
     )
 
 
-def test_profile_matches_frozen_bootstrap_without_enabling_provider_writes() -> None:
+def test_profile_matches_exact_canary_activation_contract() -> None:
     profile = _profile()
     assert profile.publication_id_prefix == "milovi-"
     assert profile.daily_verified_limit == 2
     assert profile.state_branch == "state/milovi-cake-telegram"
     assert profile.concurrency_group == "milovi-cake-telegram-publisher"
-    assert profile.provider_writes_authorized is False
+    assert profile.provider_writes_authorized is True
 
 
 def test_provider_write_gate_does_not_change_reviewed_channel_or_payload_identity() -> None:
-    inert_profile = _profile()
-    active_profile = inert_profile.model_copy(update={"provider_writes_authorized": True})
+    active_profile = _profile()
+    inert_profile = active_profile.model_copy(update={"provider_writes_authorized": False})
 
     assert inert_profile.digest == active_profile.digest
     inert_release = _build(inert_profile)
     active_release = _build(active_profile)
-    assert inert_release.profile_sha256 == active_release.profile_sha256 == inert_profile.digest
+    assert inert_release.profile_sha256 == active_release.profile_sha256 == active_profile.digest
     assert inert_release.items == active_release.items
     assert active_release.release_authorized is False
 
