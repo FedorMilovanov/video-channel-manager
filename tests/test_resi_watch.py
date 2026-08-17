@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -39,6 +40,11 @@ RU_PAGE = "https://www.gracechurch.org/live?language=russian"
 EN_PAGE = "https://www.gracechurch.org/live?language=english"
 RU_FRAME = "https://control.resi.io/webplayer/video.html?id=52260827-f6e9-4a2e-8978-aed53dbf1413"
 EN_FRAME = "https://control.resi.io/webplayer/video.html?id=8fd0d098-1c9e-4580-9f8a-3c8cc57d1624"
+ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+
+
+def plain_help(value: str) -> str:
+    return ANSI_RE.sub("", value)
 
 
 def observation(page: str, manifest: str, frame: str) -> ManifestObservation:
@@ -272,7 +278,7 @@ def test_watch_fails_closed_when_target_page_exposes_multiple_distinct_manifests
         ),
     )
 
-    with pytest.raises(ResiWatchAmbiguous, match="multiple distinct Resi manifests"):
+    with pytest.raises(ResiWatchAmbiguous, match="multiple distinct new Resi manifests"):
         watch_for_new_manifest(
             RU_PAGE,
             known_manifest=RU_OLD,
@@ -475,20 +481,23 @@ def test_language_confirmed_handoff_injects_single_audio_gate_only_when_requeste
 
 def test_resi_cli_registers_watch_sample_and_handoff() -> None:
     result = CliRunner().invoke(resi_app, ["--help"], color=False)
+    output = plain_help(result.stdout)
     assert result.exit_code == 0
-    assert "watch" in result.stdout
-    assert "sample" in result.stdout
-    assert "handoff" in result.stdout
+    assert "watch" in output
+    assert "sample" in output
+    assert "handoff" in output
 
 
 def test_resi_watch_help_exposes_unattended_controls() -> None:
     result = CliRunner().invoke(resi_app, ["watch", "--help"], color=False)
+    output = plain_help(result.stdout)
     assert result.exit_code == 0
-    assert "--background" in result.stdout
-    assert "--max-consecutive-probe-errors" in result.stdout
+    assert "--background" in output
+    assert "--max-consecutive-probe-errors" in output
 
 
 def test_resi_handoff_help_exposes_language_audio_gate() -> None:
     result = CliRunner().invoke(resi_app, ["handoff", "--help"], color=False)
+    output = plain_help(result.stdout)
     assert result.exit_code == 0
-    assert "--require-single-audio" in result.stdout
+    assert "--require-single-audio" in output
