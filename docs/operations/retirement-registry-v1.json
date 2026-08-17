@@ -150,8 +150,8 @@
     {
       "id": "lord-god-strength-vk-audio-2026-08-03-04",
       "path": "docs/history/operational-attempts/lord-god-strength-vk-audio-2026-08-03-04",
-      "source_head": "84761c0eca19483e9c64044fd03c1d769aeb199e",
       "source_pr": 85,
+      "source_head": "84761c0eca19483e9c64044fd03c1d769aeb199e",
       "current_main_import_commit": "86a3a0f9cf45fe674eb28602d1d86cb8bc2f079c",
       "status": "documentation_only_non_executable",
       "execution_prohibited": true
