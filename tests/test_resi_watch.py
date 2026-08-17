@@ -489,7 +489,7 @@ def test_resi_cli_registers_watch_sample_and_handoff() -> None:
 
 
 def test_resi_watch_help_exposes_unattended_controls() -> None:
-    result = CliRunner().invoke(resi_app, ["watch", "--help"], color=False)
+    result = CliRunner().invoke(resi_app, ["watch", "--help"], color=False, terminal_width=200)
     output = plain_help(result.stdout)
     assert result.exit_code == 0
     assert "--background" in output
