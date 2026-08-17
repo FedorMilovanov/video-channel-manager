@@ -223,20 +223,20 @@ def _find_existing_clip(client: VkApiClient, asset: SourceAsset) -> str | None:
         if marker in str(record.description or "").casefold()
         and (record.duration_seconds is None or abs(int(record.duration_seconds) - asset.duration_seconds) <= 4)
     ]
-    clips = [
-        record
-        for record in matching
-        if str((record.metadata if isinstance(record.metadata, dict) else {}).get("vk_video_type") or "")
-        == "short_video"
-    ]
-    ordinary = [record for record in matching if record not in clips]
-    if len(clips) > 1:
-        raise MiloviTokenRolloutBlocked(f"Multiple native Clips match {asset.source_id}")
-    if not clips and ordinary:
+    if len(matching) > 1:
+        remote_ids = sorted(str(record.ref.remote_id) for record in matching)
         raise MiloviTokenRolloutBlocked(
-            f"Source marker for {asset.source_id} already belongs to ordinary VK video(s); duplicate upload forbidden"
+            f"Multiple VK objects match {asset.source_id}; exact Clip cardinality is ambiguous: {remote_ids}"
         )
-    return str(clips[0].ref.remote_id) if clips else None
+    if not matching:
+        return None
+    candidate = matching[0]
+    video_type = str((candidate.metadata if isinstance(candidate.metadata, dict) else {}).get("vk_video_type") or "")
+    if video_type != "short_video":
+        raise MiloviTokenRolloutBlocked(
+            f"Source marker for {asset.source_id} belongs to ordinary VK video; duplicate upload forbidden"
+        )
+    return str(candidate.ref.remote_id)
 
 
 def _parse_remote_id(remote_id: str) -> tuple[int, int]:
