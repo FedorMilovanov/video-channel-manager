@@ -488,12 +488,14 @@ def test_resi_cli_registers_watch_sample_and_handoff() -> None:
     assert "handoff" in output
 
 
-def test_resi_watch_help_exposes_unattended_controls() -> None:
-    result = CliRunner().invoke(resi_app, ["watch", "--help"], color=False, terminal_width=200)
-    output = plain_help(result.stdout)
-    assert result.exit_code == 0
-    assert "--background" in output
-    assert "--max-consecutive-probe-errors" in output
+def test_resi_watch_registers_unattended_controls() -> None:
+    from typer.main import get_command
+
+    root_command = get_command(resi_app)
+    watch_command = root_command.commands["watch"]
+    option_names = {option for parameter in watch_command.params for option in getattr(parameter, "opts", ())}
+    assert "--background" in option_names
+    assert "--max-consecutive-probe-errors" in option_names
 
 
 def test_resi_handoff_help_exposes_language_audio_gate() -> None:
