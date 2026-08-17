@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any, Callable
 
 import typer
 from rich.console import Console
@@ -72,8 +72,11 @@ def _start_background_watch(
     repository_root: Path,
     log_path: Path,
     pid_path: Path,
+    platform_name: str | None = None,
+    popen_factory: Callable[..., Any] = subprocess.Popen,
 ) -> int:
-    if os.name != "nt":
+    current_platform = os.name if platform_name is None else platform_name
+    if current_platform != "nt":
         raise RuntimeError("--background is currently supported only on Windows")
     log_path.parent.mkdir(parents=True, exist_ok=True)
     pid_path.parent.mkdir(parents=True, exist_ok=True)
@@ -81,7 +84,7 @@ def _start_background_watch(
         getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
     )
     with log_path.open("ab") as log_handle:
-        process = subprocess.Popen(
+        process = popen_factory(
             command,
             cwd=repository_root,
             stdin=subprocess.DEVNULL,
@@ -90,7 +93,7 @@ def _start_background_watch(
             creationflags=creationflags,
         )
     pid_path.write_text(str(process.pid) + "\n", encoding="utf-8")
-    return process.pid
+    return int(process.pid)
 
 
 @resi_app.callback()
