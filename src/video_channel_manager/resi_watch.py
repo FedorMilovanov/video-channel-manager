@@ -73,9 +73,7 @@ def canonical_page_identity(value: str) -> str:
 def _require_browser_executable(executable_path: str) -> None:
     if Path(executable_path).is_file():
         return
-    raise ResiWatchDependencyError(
-        "Playwright Chromium is not installed; run: python -m playwright install chromium"
-    )
+    raise ResiWatchDependencyError("Playwright Chromium is not installed; run: python -m playwright install chromium")
 
 
 def is_resi_manifest_url(url: str) -> bool:
