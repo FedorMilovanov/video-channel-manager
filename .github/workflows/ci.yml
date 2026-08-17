@@ -30,7 +30,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
       - name: Upgrade packaging toolchain
-        run: python -m pip install --upgrade "pip>=25" "setuptools>=83,<84" wheel
+        run: python -m pip install --upgrade "pip>=25" "setuptools>=83,<85" wheel
       - name: Install project
         run: pip install -e ".[dev]"
       - name: Validate installed dependency graph
