@@ -41,6 +41,7 @@ def _background_watch_command(
 ) -> list[str]:
     command = [
         sys.executable,
+        "-u",
         "-m",
         "video_channel_manager.cli.resi",
         "watch",
@@ -116,7 +117,7 @@ def _render_handoff(spec: ResiHandoffSpec, *, require_single_audio: bool) -> str
     gate = "\n".join(
         [
             '    Write-Host "Verifying source has exactly one audio stream..."',
-            "    $SourceAudioProbeJson = (& ffprobe -v error -select_streams a -show_entries stream=index -of json $SourceUrl | Out-String)",
+            "    $SourceAudioProbeJson = (& ffprobe -v error -rw_timeout 30000000 -select_streams a -show_entries stream=index -of json $SourceUrl | Out-String)",
             '    if ($LASTEXITCODE -ne 0) { throw "ffprobe source audio preflight failed" }',
             "    $SourceAudioProbe = $SourceAudioProbeJson | ConvertFrom-Json",
             "    $SourceAudioStreams = @($SourceAudioProbe.streams)",
