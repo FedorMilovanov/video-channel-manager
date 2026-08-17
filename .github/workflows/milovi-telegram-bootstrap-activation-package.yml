@@ -2,6 +2,11 @@ name: Milovi Cake Telegram bootstrap activation package
 
 on:
   workflow_dispatch:
+    inputs:
+      expected_main_sha:
+        description: Exact current main SHA approved for provider-inert activation package generation
+        required: true
+        type: string
   push:
     branches:
       - main
@@ -32,7 +37,7 @@ concurrency:
 
 jobs:
   package:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.run_attempt == 1
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
@@ -55,6 +60,23 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
+
+      - name: Require exact manual current-main binding
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          EXPECTED_MAIN_SHA: ${{ inputs.expected_main_sha }}
+          ACTUAL_MAIN_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$EXPECTED_MAIN_SHA" || {
+            echo "expected_main_sha is required for manual activation package generation" >&2
+            exit 1
+          }
+          test "$EXPECTED_MAIN_SHA" = "$ACTUAL_MAIN_SHA" || {
+            echo "expected_main_sha must match the exact checked-out current main SHA" >&2
+            exit 1
+          }
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
