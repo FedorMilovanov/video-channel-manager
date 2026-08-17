@@ -112,10 +112,10 @@ def test_scheduler_persists_no_catch_up_and_intent_barriers_before_send() -> Non
     assert "blind replay is blocked" in text
 
 
-def test_current_branch_remains_provider_inert_without_binding_or_authorized_release() -> None:
+def test_current_branch_remains_provider_inert_with_reviewed_binding_and_without_authorized_release() -> None:
     profile = PROFILE.read_text(encoding="utf-8")
     assert '"provider_writes_authorized": false' in profile
-    assert not TARGET_BINDING.exists()
+    assert TARGET_BINDING.exists()
     assert not AUTHORIZED_RELEASE.exists()
 
 

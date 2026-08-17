@@ -31,7 +31,8 @@ def test_readiness_snapshot_matches_merged_operational_queue_and_stays_inert() -
     assert profile["provider_writes_authorized"] is False
     assert queue["execution_authorized"] is False
     assert queue["provider_mutation_allowed"] is False
-    assert not TARGET_BINDING.exists()
+    assert TARGET_BINDING.exists()
+    assert _load(TARGET_BINDING)["provider_write_performed"] is False
     assert not AUTHORIZED_RELEASE.exists()
 
     queue_ref = readiness["queue"]
