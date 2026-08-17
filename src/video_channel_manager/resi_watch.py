@@ -436,6 +436,10 @@ def create_audio_samples(
             raise RuntimeError(f"ffmpeg sample failed at {point} with exit code {completed.returncode}")
         if not output_path.is_file():
             raise RuntimeError(f"ffmpeg reported success but sample is missing: {output_path}")
+        if output_path.stat().st_size < 4096:
+            raise RuntimeError(
+                f"ffmpeg sample is empty or too small at {point}; the requested position may not exist yet: {output_path}"
+            )
         outputs.append(output_path)
         index_samples.append(
             {
