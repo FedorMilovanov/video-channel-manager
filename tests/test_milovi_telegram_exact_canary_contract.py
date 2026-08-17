@@ -41,7 +41,8 @@ def test_review_ready_accepts_only_legitimate_activation_package_events_without_
     workflow = REVIEW_READY.read_text(encoding="utf-8")
 
     assert "source_event not in {'push', 'workflow_dispatch'}" in workflow
-    assert "expected_main != os.environ['GITHUB_SHA']" in workflow
+    assert 'git merge-base --is-ancestor "$EXPECTED_MAIN_SHA" "$GITHUB_SHA"' in workflow
+    assert "Milovi-critical files changed after source package revision" in workflow
     assert "run.get('head_branch') != 'main' or run.get('head_sha') != expected_sha" in workflow
     assert "run.get('path') != '.github/workflows/milovi-telegram-bootstrap-activation-package.yml'" in workflow
     assert "run.get('status') != 'completed' or run.get('conclusion') != 'success'" in workflow
