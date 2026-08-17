@@ -148,7 +148,7 @@ At those historical probe points:
 - `GET /rulesets` returned HTTP 200 with repository ruleset count `0`;
 - Dependency Graph itself is policy-enabled for this public repository;
 - GitHub SBOM REST export is verified unavailable through both documented generation surfaces at the probe points;
-- this is scoped observed REST status, not permanent truth.
+- this is a scoped observed REST status, not a blanket `UNVERIFIED` item and not permanent truth.
 
 A fresh read during the Issue #375 hardening marathon on 2026-08-17 again observed `main` with `protected=false` and repository ruleset count `0`. `.github/CODEOWNERS` remains repository policy only; it must not be presented as branch protection. Green CI likewise does not create GitHub protection by itself.
 
