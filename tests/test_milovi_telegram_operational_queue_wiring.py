@@ -27,12 +27,13 @@ def test_publisher_and_quality_compile_the_same_operational_queue() -> None:
 def test_wiring_change_does_not_activate_provider_writes() -> None:
     profile = json.loads(PROFILE.read_text(encoding="utf-8"))
     queue = json.loads(QUEUE.read_text(encoding="utf-8"))
+    binding = json.loads(TARGET_BINDING.read_text(encoding="utf-8"))
 
     assert profile["provider_writes_authorized"] is False
     assert queue["execution_authorized"] is False
     assert queue["provider_mutation_allowed"] is False
+    assert binding["provider_write_performed"] is False
     assert not AUTHORIZED_RELEASE.exists()
-    assert not TARGET_BINDING.exists()
 
 
 def test_publisher_still_gates_before_telegram_secret_usage() -> None:

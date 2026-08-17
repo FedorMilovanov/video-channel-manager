@@ -1,0 +1,15 @@
+{
+  "schema_name": "video-channel-manager.telegram-target-binding",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "channel_username": "@MiloviCake",
+  "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+  "chat_id": -1002215328390,
+  "chat_username": "MiloviCake",
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "can_post_messages": true,
+  "discovered_at_utc": "2026-08-17T12:26:38.498412Z",
+  "discovery_method": "getMe + getChat(public/numeric exact pair) + getChatMember(bot id)",
+  "provider_write_performed": false
+}
