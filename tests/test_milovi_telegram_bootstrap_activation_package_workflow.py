@@ -54,20 +54,16 @@ def test_activation_package_runs_on_relevant_current_main_changes_and_stays_read
     assert "profile.provider_writes_authorized is not False" in text
 
 
-def test_activation_manual_dispatch_is_bound_to_exact_current_main_sha() -> None:
+def test_activation_manual_dispatch_binds_to_immutable_trigger_sha_without_manual_sha_input() -> None:
     text = _text()
 
-    assert "expected_main_sha:" in text
-    assert "Exact current main SHA approved for provider-inert activation package generation" in text
-    assert "required: true" in text
-    assert "type: string" in text
-    assert "- name: Require exact manual current-main binding" in text
-    assert "if: github.event_name == 'workflow_dispatch'" in text
-    assert "EXPECTED_MAIN_SHA: ${{ inputs.expected_main_sha }}" in text
-    assert "ACTUAL_MAIN_SHA: ${{ github.sha }}" in text
-    assert 'test -n "$EXPECTED_MAIN_SHA"' in text
-    assert 'test "$EXPECTED_MAIN_SHA" = "$ACTUAL_MAIN_SHA"' in text
-    assert "expected_main_sha must match the exact checked-out current main SHA" in text
+    assert "workflow_dispatch:" in text
+    assert "expected_main_sha" not in text
+    assert "Require exact manual current-main binding" not in text
+    assert "Check out immutable triggering SHA" in text
+    assert "ref: main" not in text
+    assert "'current_main_sha': os.environ['GITHUB_SHA']" in text
+    assert "milovi-bootstrap-activation-package-${{ github.sha }}" in text
 
 
 def test_activation_profile_gate_reads_canonical_profile_model_not_cli_summary() -> None:
