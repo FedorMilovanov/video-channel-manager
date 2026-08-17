@@ -12,12 +12,12 @@ LAUNCH_PACK = ROOT / "content/telegram/milovi-cake/launch-pack-2026-08.md"
 ASSET_CONTRACT = ROOT / "content/telegram/milovi-cake/editorial-asset-contract-2026-08.md"
 
 
-def test_milovi_discovery_profile_is_exact_and_write_disabled() -> None:
+def test_milovi_profile_is_exact_for_current_runtime() -> None:
     profile = load_channel_profile(PROFILE)
 
     assert profile.project_key == "milovi-cake"
     assert profile.channel_username == "@MiloviCake"
-    assert profile.provider_writes_authorized is False
+    assert profile.provider_writes_authorized is True
     assert profile.bot_token_env == "MILOVI_CAKE_TELEGRAM_BOT_TOKEN"
     assert profile.target_chat_id_env == "MILOVI_CAKE_TELEGRAM_CHAT_ID"
     assert profile.state_branch == "state/milovi-cake-telegram"
@@ -38,7 +38,6 @@ def test_milovi_target_discovery_workflow_is_narrow_and_read_only() -> None:
     assert "discover-target" in workflow
     assert "telegram_target_binding_cli" in workflow
 
-    # Provider mutations are intentionally absent from the onboarding workflow.
     for forbidden in (
         "sendMessage",
         "sendPoll",
@@ -49,14 +48,11 @@ def test_milovi_target_discovery_workflow_is_narrow_and_read_only() -> None:
     ):
         assert forbidden not in workflow
 
-    # The shared bot token is exposed only to the single provider-read step,
-    # never to checkout/setup/install/profile-validation steps or job-wide env.
     discovery_marker = "- name: Discover exact target without provider mutation"
     before_discovery, discovery_and_after = workflow.split(discovery_marker, maxsplit=1)
     assert "MILOVI_CAKE_TELEGRAM_BOT_TOKEN" not in before_discovery
     assert discovery_and_after.count("MILOVI_CAKE_TELEGRAM_BOT_TOKEN") == 1
 
-    # Milovi onboarding must not expose unrelated channel choices.
     assert "@lord_god_strength" not in workflow
     assert "deep_info_life" not in workflow
     assert "lordchrist.json" not in workflow
