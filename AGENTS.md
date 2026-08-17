@@ -95,6 +95,8 @@ Retired executors/packages never become runnable again merely because their file
 
 Local/operator artifacts require exact filenames, paths, hashes and success markers. User-facing outputs go to the repository `operator-output` contract unless the user chooses another location. A handoff that requires the operator to search for the produced file is a workflow defect.
 
+Explicit Resi exception: the completed Resi/DASH `<TITLE> - FULL.mp4` master goes to `C:\Users\Fedor\Downloads`; Resi receipts, result JSON, generated handoff/watcher control files and exact-trim outputs remain in repository `operator-output` unless the user explicitly selects another location.
+
 For local media/artifact completion, require the evidence demanded by the owning contract (for example SHA-256, ffprobe/QC, timing/package hashes and exact accepted master bindings). Do not call an artifact-level issue complete from code tests alone.
 
 ## CI and merge discipline

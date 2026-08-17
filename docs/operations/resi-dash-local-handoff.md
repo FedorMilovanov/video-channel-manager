@@ -1,7 +1,7 @@
 # Resi / DASH local media handoff
 
 Status: supported local-only operator workflow  
-Owning implementation issues: #258, #262  
+Owning implementation issues: #258, #262, #427  
 Provider effect: `impossible`
 
 This workflow exists so a future operator or AI does not reconstruct `yt-dlp` / FFmpeg / PowerShell syntax from chat memory when given a Resi/DASH `Manifest.mpd` URL.
@@ -17,13 +17,14 @@ When the user supplies a Resi/DASH `.mpd` URL and says to study the repository:
 3. Accept ordinary operator timestamps such as `50:12` and `1:49:52`; normalize them deterministically. Do not ask the user to add a leading `00:` or calculate `-t`.
 4. Start/end are an atomic pair. If both are supplied, generate exact-trim processing.
 5. If no encoder is explicitly requested, use `--encoder auto`: runtime-probe `h264_nvenc`, otherwise fall back to CPU `libx264`.
-6. Preserve the full downloaded master. A trim creates a second file and never destroys the source.
-7. Never trust an existing final master from filename alone. Reuse requires a matching source receipt and current master SHA-256.
-8. Once that provenance is proved, reuse is **offline-safe**: do not require the original manifest to remain reachable merely to re-trim the retained master.
-9. Return at most one executable PowerShell block for one operator action. It must define every variable inside the block and work from an arbitrary current directory.
-10. Never emit chat-escape defects such as `0\:v\:0`, `h264\_nvenc`, `-c\:v`, or depend on `$out` defined in a previous shell/message.
-11. Do not put Markdown link syntax in a PowerShell variable. The source value must be the raw URL.
-12. Do not claim the local artifact is publication-authorized; rights/provider publication are separate scopes.
+6. Preserve the full downloaded master in canonical Windows Downloads: `C:\Users\Fedor\Downloads\<TITLE> - FULL.mp4`. A trim creates a second file and never destroys the source.
+7. Keep Resi provenance/control artifacts in repository `operator-output`: source receipt JSON, result JSON, generated handoff/watcher files, logs/state, and exact-trim output unless the user explicitly requests another destination.
+8. Never trust an existing final master from filename alone. Reuse requires a matching source receipt and current master SHA-256.
+9. Once that provenance is proved, reuse is **offline-safe**: do not require the original manifest to remain reachable merely to re-trim the retained master.
+10. Return at most one executable PowerShell block for one operator action. It must define every variable inside the block and work from an arbitrary current directory.
+11. Never emit chat-escape defects such as `0\:v\:0`, `h264\_nvenc`, `-c\:v`, or depend on `$out` defined in a previous shell/message.
+12. Do not put Markdown link syntax in a PowerShell variable. The source value must be the raw URL.
+13. Do not claim the local artifact is publication-authorized; rights/provider publication are separate scopes.
 
 ## Repository entrypoint
 
@@ -50,10 +51,11 @@ Because `video-manager` is the established editable-install entrypoint, adding t
 The generator writes a UTF-8-BOM `.ps1` handoff into canonical `operator-output`. The generated PowerShell script defaults to:
 
 ```text
-C:\Users\Fedor\Projects\video-channel-manager
+Repository root: C:\Users\Fedor\Projects\video-channel-manager
+Downloads root:  C:\Users\Fedor\Downloads
 ```
 
-as its repository root. For CI/testing or an intentionally different checkout, the generated handoff also accepts an optional `-RepositoryRoot`; ordinary operator use does not need to pass it.
+For CI/testing or an intentionally different checkout/destination, the generated handoff accepts optional `-RepositoryRoot` and `-DownloadsRoot`; ordinary operator use does not need to pass either one.
 
 If `--title` is omitted, the CLI derives a deterministic source-specific title from the manifest path instead of using collision-prone `Resi Download`.
 
@@ -80,23 +82,26 @@ For download-only work, omit `--start` and `--end`.
 
 ## Generated files
 
-For `<TITLE>`:
+For `<TITLE>` on the canonical Windows machine:
 
 ```text
-operator-output\<TITLE> - FULL.mp4
+C:\Users\Fedor\Downloads\<TITLE> - FULL.mp4
 operator-output\<TITLE> - FULL.source.json
 operator-output\<TITLE> - result.json
 operator-output\<TITLE>.mp4                 # exact trim only
 ```
 
+This split is deliberate: the potentially multi-gigabyte retained master belongs in Downloads, while compact provenance/control evidence stays with repository operator output. Generated watcher scripts, manifest capture state and logs also stay in `operator-output`.
+
 The source receipt binds the retained master to:
 
+- exact master path (including the Downloads destination);
 - source fingerprint;
 - exact current master SHA-256;
 - positive master duration;
 - observed video/audio stream counts.
 
-The result JSON always binds the operation to the exact master SHA-256. Exact-trim results additionally record clip SHA-256, normalized start/end, expected/actual duration, and selected encoder.
+The result JSON always binds the operation to the exact master path and SHA-256. Exact-trim results additionally record clip SHA-256, normalized start/end, expected/actual duration, and selected encoder.
 
 ## Source identity policy
 
@@ -117,6 +122,7 @@ The source identity is stored only as SHA-256 in the receipt/result; it is not a
 
 When no proven reusable master exists, the generated handoff:
 
+- creates/uses the selected Downloads root for the retained master and repository `operator-output` for provenance/control files;
 - verifies `yt-dlp`, `ffmpeg`, and `ffprobe` are available;
 - prints `yt-dlp -F` evidence;
 - downloads `bestvideo+bestaudio/best`;
@@ -133,12 +139,12 @@ A dead or expired source eventually fails clearly instead of leaving an unattend
 
 ## Existing-master reuse
 
-If `<TITLE> - FULL.mp4` already exists, the handoff does **not** let `yt-dlp` decide cache identity from the filename.
+If `<DownloadsRoot>\<TITLE> - FULL.mp4` already exists, the handoff does **not** let `yt-dlp` decide cache identity from the filename.
 
-It first requires `<TITLE> - FULL.source.json`, then checks:
+It first requires `operator-output\<TITLE> - FULL.source.json`, then checks:
 
 1. receipt source fingerprint equals the handoff source fingerprint;
-2. current master SHA-256 equals the receipt master SHA-256.
+2. current Downloads master SHA-256 equals the receipt master SHA-256.
 
 Missing/mismatched evidence fails closed. A proven master is then re-probed and re-hashed before result production.
 
@@ -208,11 +214,12 @@ Pester CI:
 - generates the actual UTF-8-BOM handoff through `video-manager resi handoff`;
 - parses it with `System.Management.Automation.Language.Parser`;
 - executes the generated script end-to-end against provider-free `yt-dlp`/`ffmpeg`/`ffprobe` tool doubles;
-- proves first-download master creation;
-- proves master/clip SHA evidence and JSON receipts;
+- injects an isolated Downloads root and proves the full master is created there, not in `operator-output`;
+- proves source receipt, result JSON and exact trim remain in `operator-output`;
+- proves master/clip SHA evidence and JSON receipts bind the actual split paths;
 - proves exact `50:12 -> 1:49:52` normalization/result duration;
 - proves CPU fallback control flow;
-- runs the handoff a second time and proves the verified master is reused without another remote inspection/download.
+- runs the handoff a second time and proves the verified Downloads master is reused without another remote inspection/download.
 
 The repository's PowerShell matrix runs these tests in Windows PowerShell 5.1, PowerShell 7 on Windows, and PowerShell 7 on Linux. Python CI additionally covers timestamp validation, source identity, title safety, CLI integration, rendering and provenance guards.
 
@@ -228,6 +235,7 @@ Observed/reviewed failure classes now covered include:
 - generic `Resi Download` filename collisions;
 - same-name stale master reuse;
 - master without A/V proof;
+- accidental accumulation of multi-gigabyte retained `FULL.mp4` masters inside repository `operator-output`;
 - unbounded retry on dead manifest;
 - compile-time-only NVENC detection;
 - loss of bitrate ceiling when stream-level bitrate is absent;

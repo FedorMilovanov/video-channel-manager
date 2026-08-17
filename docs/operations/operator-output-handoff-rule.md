@@ -33,6 +33,19 @@ Examples:
 - generated handoff TXT/README files;
 - final local packages intended for manual upload or inspection.
 
+### Explicit Resi retained-master exception
+
+For the supported Resi/DASH handoff, the operator has chosen a durable split destination:
+
+```text
+Retained FULL master: C:\Users\Fedor\Downloads\<TITLE> - FULL.mp4
+Control/evidence:     C:\Users\Fedor\Projects\video-channel-manager\operator-output\...
+```
+
+The potentially multi-gigabyte retained `FULL.mp4` is therefore **not** an `operator-output` file. Resi source receipt/result JSON, generated handoff/watcher files, logs/state, and exact-trim output stay in `operator-output` unless the operator explicitly chooses another location. Receipt/result evidence must record the exact Downloads master path and SHA-256, and reuse must remain source-fingerprint + hash bound after the split.
+
+This is a narrow Resi exception, not permission for unrelated workflows to scatter user-facing artifacts outside the outbox.
+
 Internal durable state may remain in `data/`, `logs/`, journals, caches, databases, or build directories when those locations are part of the runtime contract. Do not duplicate an authoritative mutable ledger merely for convenience. Instead, place the operator-facing summary/result or an immutable exported copy in `operator-output`.
 
 ## Flat, obvious filenames
@@ -59,12 +72,12 @@ For every interactive operator-facing command or wrapper that creates a file:
 
 1. define `$Repo` and `$OperatorOutput` in the same PowerShell block;
 2. create the outbox if missing;
-3. pass an explicit output path under the outbox whenever the CLI supports `--output`, `--result-output`, `--backup-output`, or equivalent;
+3. pass an explicit contract-defined output path whenever the CLI supports `--output`, `--result-output`, `--backup-output`, or equivalent; the Resi retained master uses the explicit Downloads exception above;
 4. never depend on the shell's current directory for the output destination;
 5. after success, verify the exact file with `Test-Path -LiteralPath`;
 6. print an unmistakable final line with the absolute path, for example `OPEN/SEND THIS FILE: C:\...`;
 7. when the next operator action is to inspect or send one local file, select that exact file in Explorer after successful creation unless the user asked for non-interactive behavior;
-8. if several files are required, open the outbox folder once and print the exact filenames;
+8. if several files are required, open the contract-defined folder once and print the exact filenames;
 9. on failure, do not open stale output from an earlier run;
 10. never make the operator search for a file that the script itself can name exactly.
 
@@ -113,4 +126,4 @@ After an accepted provider mutation, an empty or stale immediate readback is not
 
 When an agent asks Fedor to run a command and then return a generated file, the agent must provide the output path itself. The agent must not require Fedor to infer repository location, search `data/`, inspect timestamps, or discover filenames manually.
 
-If a tool lacks an explicit output option, the repository-owned wrapper should be improved so that a deterministic user-facing result can be placed in the outbox. Repeated manual searching is treated as a workflow defect, not as an operator task.
+If a tool lacks an explicit output option, the repository-owned wrapper should be improved so that a deterministic user-facing result can be placed in the contract-defined destination. Repeated manual searching is treated as a workflow defect, not as an operator task.
