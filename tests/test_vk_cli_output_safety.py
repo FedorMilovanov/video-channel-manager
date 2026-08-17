@@ -19,4 +19,4 @@ def test_vk_cli_does_not_claim_read_only_capability_when_mutation_routes_exist()
     assert "provider writes require command-specific confirmation." in text
     assert "Read-only VK community, video, and album inventory." not in text
     assert "The token is used only for read-only API calls by this version." not in text
-    assert '@vk_app.command("milovi-323-rollout")' in text
+    assert '@vk_app.command("milovi-323-continue")' in text
