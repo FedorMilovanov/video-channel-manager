@@ -101,9 +101,7 @@ def _start_background_watch(
         return_code = process.poll()
     if return_code is not None:
         pid_path.unlink(missing_ok=True)
-        raise RuntimeError(
-            f"background watcher exited during startup with code {return_code}; inspect log: {log_path}"
-        )
+        raise RuntimeError(f"background watcher exited during startup with code {return_code}; inspect log: {log_path}")
     pid_path.write_text(str(process.pid) + "\n", encoding="utf-8")
     return int(process.pid)
 
@@ -226,7 +224,9 @@ def watch(
         console.print(f"Log: {background_log.resolve()}")
         console.print(f"PID evidence: {background_pid.resolve()}")
         console.print(f"Capture evidence on success: {capture_json.resolve()}")
-        console.print("The child survived the startup grace check; PID still does not prove later liveness or capture success.")
+        console.print(
+            "The child survived the startup grace check; PID still does not prove later liveness or capture success."
+        )
         console.print("Provider effect: impossible. Full download dispatched: false.")
         return
 
