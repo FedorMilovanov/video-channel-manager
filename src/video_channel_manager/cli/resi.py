@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
 from pathlib import Path
 from typing import Annotated
 
@@ -20,6 +23,74 @@ resi_app = typer.Typer(no_args_is_help=True, help="Local-only Resi/DASH capture,
 
 def _repository_root() -> Path:
     return Path(__file__).resolve().parents[3]
+
+
+def _background_watch_command(
+    *,
+    page_url: str,
+    known_manifest: str | None,
+    compare_page: str | None,
+    timeout_seconds: float,
+    poll_seconds: float,
+    probe_wait_seconds: float,
+    max_consecutive_probe_errors: int,
+    latest_txt: Path,
+    capture_json: Path,
+    state: Path,
+) -> list[str]:
+    command = [
+        sys.executable,
+        "-m",
+        "video_channel_manager.cli.resi",
+        "watch",
+        page_url,
+        "--timeout-seconds",
+        str(timeout_seconds),
+        "--poll-seconds",
+        str(poll_seconds),
+        "--probe-wait-seconds",
+        str(probe_wait_seconds),
+        "--max-consecutive-probe-errors",
+        str(max_consecutive_probe_errors),
+        "--latest-txt",
+        str(latest_txt),
+        "--capture-json",
+        str(capture_json),
+        "--state",
+        str(state),
+    ]
+    if known_manifest:
+        command.extend(["--known-manifest", known_manifest])
+    if compare_page:
+        command.extend(["--compare-page", compare_page])
+    return command
+
+
+def _start_background_watch(
+    command: list[str],
+    *,
+    repository_root: Path,
+    log_path: Path,
+    pid_path: Path,
+) -> int:
+    if os.name != "nt":
+        raise RuntimeError("--background is currently supported only on Windows")
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    pid_path.parent.mkdir(parents=True, exist_ok=True)
+    creationflags = int(getattr(subprocess, "DETACHED_PROCESS", 0)) | int(
+        getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+    )
+    with log_path.open("ab") as log_handle:
+        process = subprocess.Popen(
+            command,
+            cwd=repository_root,
+            stdin=subprocess.DEVNULL,
+            stdout=log_handle,
+            stderr=subprocess.STDOUT,
+            creationflags=creationflags,
+        )
+    pid_path.write_text(str(process.pid) + "\n", encoding="utf-8")
+    return process.pid
 
 
 @resi_app.callback()
@@ -50,6 +121,14 @@ def watch(
         float,
         typer.Option("--probe-wait-seconds", min=1, help="Network observation time per page probe"),
     ] = 12,
+    max_consecutive_probe_errors: Annotated[
+        int,
+        typer.Option(
+            "--max-consecutive-probe-errors",
+            min=1,
+            help="Transient target-page probe errors tolerated before fail-closed abort",
+        ),
+    ] = 10,
     latest_txt: Annotated[
         Path | None,
         typer.Option("--latest-txt", help="Simple latest-manifest text output"),
@@ -62,6 +141,18 @@ def watch(
         Path | None,
         typer.Option("--state", help="Durable watcher state path"),
     ] = None,
+    background: Annotated[
+        bool,
+        typer.Option("--background", help="Windows: detach the supported watcher so the launching shell may close"),
+    ] = False,
+    background_log: Annotated[
+        Path | None,
+        typer.Option("--background-log", help="Background watcher stdout/stderr log path"),
+    ] = None,
+    background_pid: Annotated[
+        Path | None,
+        typer.Option("--background-pid", help="Advisory last-launched background watcher PID file"),
+    ] = None,
 ) -> None:
     """Watch a live page for a new Resi manifest without starting a full download."""
 
@@ -70,7 +161,42 @@ def watch(
     latest_txt = latest_txt or operator_output / "latest-resi-manifest.txt"
     capture_json = capture_json or operator_output / "latest-resi-manifest.json"
     state = state or operator_output / "resi-watch-state.json"
+    background_log = background_log or operator_output / "resi-watch-background.log"
+    background_pid = background_pid or operator_output / "resi-watch-background.pid"
 
+    if background:
+        command = _background_watch_command(
+            page_url=page_url,
+            known_manifest=known_manifest,
+            compare_page=compare_page,
+            timeout_seconds=timeout_seconds,
+            poll_seconds=poll_seconds,
+            probe_wait_seconds=probe_wait_seconds,
+            max_consecutive_probe_errors=max_consecutive_probe_errors,
+            latest_txt=latest_txt,
+            capture_json=capture_json,
+            state=state,
+        )
+        try:
+            pid = _start_background_watch(
+                command,
+                repository_root=repository_root,
+                log_path=background_log,
+                pid_path=background_pid,
+            )
+        except (OSError, RuntimeError) as exc:
+            console.print(f"[red]Resi background watch failed to start:[/red] {exc}")
+            raise typer.Exit(code=2) from exc
+        console.print(f"[green]RESI BACKGROUND WATCH STARTED:[/green] PID {pid}")
+        console.print(f"Log: {background_log.resolve()}")
+        console.print(f"PID evidence: {background_pid.resolve()}")
+        console.print(f"Capture evidence on success: {capture_json.resolve()}")
+        console.print("The PID proves launch only, not continued liveness or capture success.")
+        console.print("Provider effect: impossible. Full download dispatched: false.")
+        return
+
+    console.print(f"RESI WATCH STARTED: {page_url}")
+    console.print(f"State: {state.resolve()}")
     try:
         with keep_system_awake():
             payload = watch_for_new_manifest(
@@ -80,6 +206,7 @@ def watch(
                 timeout_seconds=timeout_seconds,
                 poll_seconds=poll_seconds,
                 probe_wait_seconds=probe_wait_seconds,
+                max_consecutive_probe_errors=max_consecutive_probe_errors,
                 latest_txt=latest_txt,
                 latest_json=capture_json,
                 state_path=state,
@@ -136,6 +263,7 @@ def sample(
     console.print(f"[green]Language preflight samples ready:[/green] {output_dir.resolve()}")
     for output in outputs:
         console.print(str(output.resolve()))
+    console.print("Audio contract: exactly one source audio stream was verified before sampling.")
     console.print("Language claim remains UNVERIFIED until the operator listens to sermon speech samples.")
     console.print("No FULL master was downloaded by this command.")
 
