@@ -24,16 +24,23 @@ def test_publisher_and_quality_compile_the_same_operational_queue() -> None:
     assert HISTORICAL_ROLLOUT not in quality
 
 
-def test_wiring_change_does_not_activate_provider_writes() -> None:
+def test_operational_queue_stays_inert_while_separate_release_gate_is_exact() -> None:
     profile = json.loads(PROFILE.read_text(encoding="utf-8"))
     queue = json.loads(QUEUE.read_text(encoding="utf-8"))
     binding = json.loads(TARGET_BINDING.read_text(encoding="utf-8"))
+    release = json.loads(AUTHORIZED_RELEASE.read_text(encoding="utf-8"))
 
-    assert profile["provider_writes_authorized"] is False
+    assert profile["provider_writes_authorized"] is True
     assert queue["execution_authorized"] is False
     assert queue["provider_mutation_allowed"] is False
     assert binding["provider_write_performed"] is False
-    assert not AUTHORIZED_RELEASE.exists()
+    assert release["release_authorized"] is True
+    assert release["target_binding_sha256"] == (
+        "sha256:741a8b4b54d785976236c6f15ed5d82cc9ad46aeb96a80cf372f22c421ba047c"
+    )
+    assert release["reviewed_candidate_sha256"] == (
+        "sha256:d2d574e7480d6e5d76c9e5fad15bc00cdd0af04703d0039059f7705a828cf9dc"
+    )
 
 
 def test_publisher_still_gates_before_telegram_secret_usage() -> None:
