@@ -146,10 +146,12 @@ def _read_last_identity(state_path: Path) -> str | None:
         return None
     try:
         payload = json.loads(state_path.read_text(encoding="utf-8-sig"))
-    except (OSError, json.JSONDecodeError):
-        return None
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"Watcher state is unreadable; refusing duplicate-prone restart: {state_path}") from exc
     value = payload.get("last_source_identity")
-    return value if isinstance(value, str) and value else None
+    if not isinstance(value, str) or not value:
+        raise RuntimeError(f"Watcher state is missing last_source_identity: {state_path}")
+    return value
 
 
 def _single_observation(result: PageProbeResult, *, label: str) -> ManifestObservation | None:
@@ -193,16 +195,21 @@ def watch_for_new_manifest(
 
     deadline = monotonic() + timeout_seconds
     last_error: str | None = None
+    consecutive_probe_errors = 0
     while True:
         try:
             target_result = probe(page_url, probe_wait_seconds)
             target = _single_observation(target_result, label="target page")
             last_error = None
+            consecutive_probe_errors = 0
         except ResiWatchAmbiguous:
             raise
         except Exception as exc:
             target = None
+            consecutive_probe_errors += 1
             last_error = f"{type(exc).__name__}: {exc}"
+            if consecutive_probe_errors >= 3:
+                raise RuntimeError(f"Three consecutive Resi page probes failed. Last error: {last_error}") from exc
 
         if target is not None and target.source_identity not in ignored:
             compare_payload: dict[str, Any] | None = None
@@ -311,7 +318,6 @@ def create_audio_samples(
     points: list[str],
     duration_seconds: int,
     output_dir: Path,
-    runner: Callable[..., subprocess.CompletedProcess[bytes]] = subprocess.run,
 ) -> list[Path]:
     spec = ResiHandoffSpec(manifest_url)
     if shutil.which("ffmpeg") is None:
@@ -333,7 +339,7 @@ def create_audio_samples(
             duration_seconds=duration_seconds,
             output_path=output_path,
         )
-        completed = runner(command, check=False)
+        completed = subprocess.run(command, check=False)
         if completed.returncode != 0:
             raise RuntimeError(f"ffmpeg sample failed at {point} with exit code {completed.returncode}")
         if not output_path.is_file():
