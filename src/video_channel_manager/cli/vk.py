@@ -127,7 +127,7 @@ def login(
         )
     console.print(table)
     if not communities:
-        console.print("[yellow]No managed communities were returned.[/yellow]")
+        console.print("[yellow]No managed VK communities were returned for this user token.[/yellow]")
 
 
 @vk_app.command("accounts")
