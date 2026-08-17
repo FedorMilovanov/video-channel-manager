@@ -19,33 +19,48 @@ def _load(path: Path) -> dict[str, Any]:
     return value
 
 
-def test_readiness_snapshot_matches_merged_operational_queue_and_stays_inert() -> None:
+def test_historical_readiness_snapshot_stays_inert_while_current_canary_activation_is_explicit() -> None:
     readiness = _load(READINESS)
     profile = _load(PROFILE)
     queue = _load(QUEUE)
+    binding = _load(TARGET_BINDING)
+    release = _load(AUTHORIZED_RELEASE)
 
+    # This file is a dated pre-activation snapshot and must remain historical evidence.
     assert readiness["schema_name"] == "video-channel-manager.milovi-telegram-activation-readiness"
+    assert readiness["snapshot_date"] == "2026-08-16"
     assert readiness["status"] == "blocked_before_live_activation"
     assert readiness["provider_access_performed"] is False
     assert readiness["public_write_performed"] is False
-    assert profile["provider_writes_authorized"] is False
+
+    # Current authority is carried separately by the exact profile + reviewed release.
+    assert profile["provider_writes_authorized"] is True
     assert queue["execution_authorized"] is False
     assert queue["provider_mutation_allowed"] is False
-    assert TARGET_BINDING.exists()
-    assert _load(TARGET_BINDING)["provider_write_performed"] is False
-    assert not AUTHORIZED_RELEASE.exists()
+    assert binding["provider_write_performed"] is False
+    assert binding["chat_id"] == -1002215328390
+    assert binding["bot_id"] == 8716602202
+    assert release["release_authorized"] is True
+    assert release["reviewed_candidate_sha256"] == (
+        "sha256:d2d574e7480d6e5d76c9e5fad15bc00cdd0af04703d0039059f7705a828cf9dc"
+    )
+    assert release["target_binding_sha256"] == (
+        "sha256:741a8b4b54d785976236c6f15ed5d82cc9ad46aeb96a80cf372f22c421ba047c"
+    )
+    assert release["items"][2]["publication_id"] == "milovi-bootstrap-003"
+    assert release["items"][2]["payload"]["media_sha256"] == (
+        "sha256:8bb0956e44084265d7a3a14ce01f96eb1e4a9c327c780448de34e068f6cf6f10"
+    )
 
     queue_ref = readiness["queue"]
     assert isinstance(queue_ref, dict)
     assert queue_ref["path"] == "content/telegram/milovi-cake/queues/bootstrap-first-screen-queue-2026-08.json"
     assert queue_ref["queue_id"] == queue["queue_id"] == "milovi-first-screen-2026-08-17"
     assert queue_ref["first_publication_id"] == queue["items"][0]["publication_id"] == "milovi-bootstrap-001"
-    assert queue_ref["first_planned_local"] == queue["items"][0]["planned_local"] == "2026-08-17T10:30:00+03:00"
     assert queue_ref["last_publication_id"] == queue["items"][-1]["publication_id"] == "milovi-bootstrap-010"
-    assert queue_ref["last_planned_local"] == queue["items"][-1]["planned_local"] == "2026-08-21T20:00:00+03:00"
 
 
-def test_readiness_lists_every_live_gate_before_manual_canary() -> None:
+def test_historical_readiness_preserves_pre_activation_gate_order() -> None:
     readiness = _load(READINESS)
     blockers = readiness["current_blockers"]
     assert isinstance(blockers, list)
@@ -72,7 +87,6 @@ def test_readiness_lists_every_live_gate_before_manual_canary() -> None:
     assert joined.index("initialize isolated durable ledger") < joined.index(
         "enable the Milovi profile provider write gate"
     )
-    assert joined.index("enable the Milovi profile provider write gate") < joined.index("milovi-bootstrap-001")
 
 
 def test_readiness_preserves_historical_canary_and_editorial_no_go_rules() -> None:
@@ -90,7 +104,7 @@ def test_readiness_preserves_historical_canary_and_editorial_no_go_rules() -> No
     assert "French-cuisine linkage" in joined
 
 
-def test_publisher_still_uses_operational_queue_and_daylight_activation_gate() -> None:
+def test_publisher_enforces_daylight_and_single_canary_hard_stop() -> None:
     publisher = PUBLISHER.read_text(encoding="utf-8")
     assert "ROLLOUT_PATH: content/telegram/milovi-cake/queues/bootstrap-first-screen-queue-2026-08.json" in publisher
     assert "profile_write_gate_disabled" in publisher
