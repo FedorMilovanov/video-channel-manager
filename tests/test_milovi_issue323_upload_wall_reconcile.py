@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
-import video_channel_manager.platforms.vk.milovi_issue323_finalize as finalize
 import video_channel_manager.platforms.vk.milovi_issue323_upload_wall_reconcile as reconcile
 from video_channel_manager.platforms.vk.milovi_rollout_sources import ROLL_OUT_IDS
 from video_channel_manager.platforms.vk.upload_lifecycle import UploadRecoveryRequired, UploadStage
@@ -325,99 +323,3 @@ def test_due_surface_only_change_normalizes_without_delete(monkeypatch: pytest.M
     assert baseline.snapshot_sha256 == before.snapshot_sha256
     assert record["issue323_upload_wall_reconcile"]["status"] == "normalized_without_delete"
     assert writer.delete_calls == []
-
-
-def test_finalizer_retries_same_fresh_clip_through_replay_proof_recovery(
-    monkeypatch: pytest.MonkeyPatch, tmp_path
-) -> None:
-    asset = SimpleNamespace(
-        source_id=SOURCE9,
-        title="Cake",
-        description="Promoted",
-        duration_seconds=30.0,
-        media_path=str(tmp_path / "source.mp4"),
-    )
-    item: dict[str, Any] = {"status": "pending"}
-    journal: dict[str, Any] = {"source_snapshot_id": "snapshot", "items": {SOURCE9: item}}
-    record: dict[str, Any] = {
-        "stage": UploadStage.PLANNED.value,
-        "source_video_id": SOURCE9,
-    }
-    current = SimpleNamespace(complete=True, snapshot_sha256="sha256:current")
-    historical = SimpleNamespace(snapshot_sha256="sha256:before")
-    capture_calls = 0
-
-    class FakeWriter:
-        def capture_wall_snapshot(self, *, community_id: int, max_posts_per_surface: int = 10000):
-            nonlocal capture_calls
-            capture_calls += 1
-            return current
-
-    class FakeUploadWriter:
-        client = object()
-
-    class FakeRecoveryWriter:
-        last_actual_snapshot_sha256 = "sha256:actual"
-        last_effective_snapshot_sha256 = "sha256:effective"
-        last_historical_snapshot_sha256 = "sha256:before"
-        last_reversed_surface_ids = ()
-        last_exact_read_ids = ()
-
-        def __init__(self, *_args, **_kwargs) -> None:
-            pass
-
-    monkeypatch.setattr(finalize, "clip_readiness", lambda _asset: object())
-    monkeypatch.setattr(finalize, "_find_existing_clip", lambda _client, _asset: None)
-    monkeypatch.setattr(finalize, "ensure_upload_record", lambda *_args, **_kwargs: (record, False))
-    monkeypatch.setattr(
-        finalize, "_has_provider_effect", lambda current_record: current_record["stage"] != UploadStage.PLANNED.value
-    )
-    monkeypatch.setattr(finalize, "_save", lambda *_args, **_kwargs: None)
-    monkeypatch.setattr(finalize, "_Issue323RecoveryWriter", FakeRecoveryWriter)
-    monkeypatch.setattr(finalize, "_assert_native_clip", lambda *_args, **_kwargs: {})
-    monkeypatch.setattr(finalize, "_upload_remote_id", lambda _record: f"-68859909_{SOURCE9_CLIP_ID}")
-    monkeypatch.setattr(
-        finalize,
-        "_needs_issue323_upload_wall_reconcile",
-        lambda current_record: current_record["stage"] == UploadStage.UNKNOWN_REQUIRES_RECONCILIATION.value,
-    )
-
-    reconcile_calls: list[str] = []
-
-    def fake_reconcile(**kwargs):
-        reconcile_calls.append(kwargs["source_id"])
-        return current, historical
-
-    monkeypatch.setattr(finalize, "reconcile_issue323_upload_wall_effect", fake_reconcile)
-    execute_calls: list[dict[str, Any]] = []
-
-    def fake_execute(current_record: dict[str, Any], **kwargs):
-        execute_calls.append(kwargs)
-        if len(execute_calls) == 1:
-            current_record["stage"] = UploadStage.UNKNOWN_REQUIRES_RECONCILIATION.value
-            current_record["wall_safety"] = {"delta": {"status": "changed"}}
-            raise UploadRecoveryRequired("Upload wall postflight is changed; wall reconciliation is required")
-        current_record["stage"] = UploadStage.VERIFIED.value
-
-    monkeypatch.setattr(finalize, "execute_upload_operation", fake_execute)
-
-    remote_id = finalize._ensure_promoted_clip(
-        asset,  # type: ignore[arg-type]
-        object(),
-        item,
-        journal,
-        tmp_path / "journal.json",
-        FakeWriter(),  # type: ignore[arg-type]
-        FakeUploadWriter(),  # type: ignore[arg-type]
-        60,
-    )
-
-    assert remote_id == f"-68859909_{SOURCE9_CLIP_ID}"
-    assert len(execute_calls) == 2
-    assert execute_calls[0]["media_path"] == tmp_path / "source.mp4"
-    assert execute_calls[1]["media_path"] is None
-    assert execute_calls[1]["media_artifact"] is None
-    assert reconcile_calls == [SOURCE9]
-    assert capture_calls == 2
-    assert item["status"] == "clip_verified"
-    assert item["clip_origin"] == "resumed_token_short_video_internal_promotion"

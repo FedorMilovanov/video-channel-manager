@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-import video_channel_manager.platforms.vk.milovi_issue323_finalize as finalizer
+import video_channel_manager.platforms.vk.milovi_issue323_read_model as read_model
 
 
 def _video_attachment(video_id: int = 456239225) -> dict[str, Any]:
@@ -39,7 +39,7 @@ def test_rollout_wall_shape_allows_provider_projected_non_video_attachment() -> 
         }
     )
 
-    finalizer._assert_post_shape(
+    read_model._assert_post_shape(
         post,
         clip_remote_id="-68859909_456239225",
         publish_date=1786723200,
@@ -55,8 +55,8 @@ def test_rollout_wall_shape_rejects_second_video_even_with_non_video_projection(
         ]
     )
 
-    with pytest.raises(finalizer.MiloviFinalizerBlocked, match="exactly one video attachment; observed 2"):
-        finalizer._assert_post_shape(
+    with pytest.raises(read_model.MiloviIssue323ReadModelBlocked, match="exactly one video attachment; observed 2"):
+        read_model._assert_post_shape(
             post,
             clip_remote_id="-68859909_456239225",
             publish_date=1786723200,
@@ -67,8 +67,8 @@ def test_rollout_wall_shape_rejects_missing_video() -> None:
     post = _post()
     post["attachments"] = [{"type": "link", "link": {"url": "https://milovicake.ru/"}}]
 
-    with pytest.raises(finalizer.MiloviFinalizerBlocked, match="exactly one video attachment; observed 0"):
-        finalizer._assert_post_shape(
+    with pytest.raises(read_model.MiloviIssue323ReadModelBlocked, match="exactly one video attachment; observed 0"):
+        read_model._assert_post_shape(
             post,
             clip_remote_id="-68859909_456239225",
             publish_date=1786723200,
@@ -79,8 +79,8 @@ def test_rollout_wall_shape_rejects_malformed_non_video_projection() -> None:
     post = _post()
     post["attachments"].append("not-an-object")
 
-    with pytest.raises(finalizer.MiloviFinalizerBlocked, match="attachment 1 is not an object"):
-        finalizer._assert_post_shape(
+    with pytest.raises(read_model.MiloviIssue323ReadModelBlocked, match="attachment 1 is not an object"):
+        read_model._assert_post_shape(
             post,
             clip_remote_id="-68859909_456239225",
             publish_date=1786723200,

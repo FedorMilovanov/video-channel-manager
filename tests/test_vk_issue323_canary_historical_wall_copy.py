@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 
-from video_channel_manager.platforms.vk.milovi_issue323_finalize import (
+from video_channel_manager.platforms.vk.milovi_issue323_read_model import (
     _copy_state,
     _legacy_wall_message,
     _promote_asset,

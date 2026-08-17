@@ -10,16 +10,18 @@ from typing import Any
 from video_channel_manager.config import get_settings
 from video_channel_manager.platforms.vk import VkApiClient, VkTokenStore, local_vk_write_lock
 from video_channel_manager.platforms.vk.milovi_immediate_wall import MILOVI_COMMUNITY_ID, MILOVI_OWNER_ID
-from video_channel_manager.platforms.vk.milovi_issue323_finalize import (
+from video_channel_manager.platforms.vk.milovi_issue323_anomaly_state import (
     ANOMALY_CLIP_REMOTE_ID,
     ANOMALY_POST_ID,
     ANOMALY_SOURCE_ID,
-    MiloviFinalizerBlocked,
+    MiloviIssue323AnomalyBlocked,
+    legacy_source_marker_ok,
+    load_anomaly_cleanup_state,
+    save_anomaly_cleanup_state,
+)
+from video_channel_manager.platforms.vk.milovi_issue323_read_model import (
+    MiloviIssue323ReadModelBlocked,
     _assert_native_clip,
-    _legacy_marker_ok,
-    _load_finalizer_journal,
-    _promote_asset,
-    _save_finalizer,
 )
 from video_channel_manager.platforms.vk.milovi_rollout_sources import (
     SourceAsset,
@@ -56,27 +58,29 @@ def _single_video_attachment(post: Mapping[str, Any]) -> tuple[int, int, Mapping
 
     attachments = post.get("attachments")
     if not isinstance(attachments, list):
-        raise MiloviFinalizerBlocked("Wall post attachments are unavailable")
+        raise MiloviIssue323AnomalyBlocked("Wall post attachments are unavailable")
 
     videos: list[Mapping[str, Any]] = []
     for index, attachment in enumerate(attachments):
         if not isinstance(attachment, Mapping):
-            raise MiloviFinalizerBlocked(f"Wall attachment {index} is not an object")
+            raise MiloviIssue323AnomalyBlocked(f"Wall attachment {index} is not an object")
         if attachment.get("type") != "video":
             continue
         video = attachment.get("video")
         if not isinstance(video, Mapping):
-            raise MiloviFinalizerBlocked("Wall video attachment has no expanded video object")
+            raise MiloviIssue323AnomalyBlocked("Wall video attachment has no expanded video object")
         videos.append(video)
 
     if len(videos) != 1:
-        raise MiloviFinalizerBlocked(f"Wall post must contain exactly one video attachment; observed {len(videos)}")
+        raise MiloviIssue323AnomalyBlocked(
+            f"Wall post must contain exactly one video attachment; observed {len(videos)}"
+        )
 
     video = videos[0]
     owner_id = video.get("owner_id")
     video_id = video.get("id")
     if type(owner_id) is not int or type(video_id) is not int:
-        raise MiloviFinalizerBlocked("Wall video attachment identity is invalid")
+        raise MiloviIssue323AnomalyBlocked("Wall video attachment identity is invalid")
     return owner_id, video_id, video
 
 
@@ -84,37 +88,37 @@ def _validate_wall475_identity(post: Mapping[str, Any], source_id: str) -> None:
     """Prove the exact live wall object using provider-stable identity fields."""
 
     if post.get("is_deleted") is True:
-        raise MiloviFinalizerBlocked("Wall 475 live identity cannot be proved from a deleted tombstone")
+        raise MiloviIssue323AnomalyBlocked("Wall 475 live identity cannot be proved from a deleted tombstone")
     if post.get("owner_id") != MILOVI_OWNER_ID or post.get("id") != ANOMALY_POST_ID:
-        raise MiloviFinalizerBlocked("Wall 475 identity changed")
+        raise MiloviIssue323AnomalyBlocked("Wall 475 identity changed")
     if post.get("date") != ANOMALY_CREATED_AT:
-        raise MiloviFinalizerBlocked("Wall 475 original timestamp changed")
+        raise MiloviIssue323AnomalyBlocked("Wall 475 original timestamp changed")
     if post.get("from_id") != MILOVI_OWNER_ID:
-        raise MiloviFinalizerBlocked("Wall 475 author identity changed")
+        raise MiloviIssue323AnomalyBlocked("Wall 475 author identity changed")
     created_by = post.get("created_by")
     if created_by is not None and created_by != ANOMALY_CREATED_BY:
-        raise MiloviFinalizerBlocked("Wall 475 creator identity changed")
+        raise MiloviIssue323AnomalyBlocked("Wall 475 creator identity changed")
     if str(post.get("post_type") or "post") != "post":
-        raise MiloviFinalizerBlocked("Wall 475 post type changed")
+        raise MiloviIssue323AnomalyBlocked("Wall 475 post type changed")
 
     owner_id, video_id, expanded = _single_video_attachment(post)
     expected_owner, expected_video = _parse_remote_id(ANOMALY_CLIP_REMOTE_ID)
     if (owner_id, video_id) != (expected_owner, expected_video):
-        raise MiloviFinalizerBlocked("Wall 475 no longer attaches exact Clip 456239232")
+        raise MiloviIssue323AnomalyBlocked("Wall 475 no longer attaches exact Clip 456239232")
     observed_type = str(expanded.get("type") or "")
     if observed_type and observed_type != "short_video":
-        raise MiloviFinalizerBlocked("Wall 475 attachment is not native short_video")
-    if not _legacy_marker_ok(expanded, source_id):
-        raise MiloviFinalizerBlocked("Wall 475 attachment lost source marker o1WXIMupuws")
+        raise MiloviIssue323AnomalyBlocked("Wall 475 attachment is not native short_video")
+    if not legacy_source_marker_ok(expanded, source_id):
+        raise MiloviIssue323AnomalyBlocked("Wall 475 attachment lost source marker o1WXIMupuws")
 
 
 def _validate_deleted_wall475_tombstone(post: Mapping[str, Any]) -> None:
     """Accept only VK's exact deleted-object tombstone for the authorized post."""
 
     if post.get("is_deleted") is not True:
-        raise MiloviFinalizerBlocked("Wall 475 readback is not an exact deleted tombstone")
+        raise MiloviIssue323AnomalyBlocked("Wall 475 readback is not an exact deleted tombstone")
     if post.get("owner_id") != MILOVI_OWNER_ID or post.get("id") != ANOMALY_POST_ID:
-        raise MiloviFinalizerBlocked("Deleted wall 475 tombstone identity changed")
+        raise MiloviIssue323AnomalyBlocked("Deleted wall 475 tombstone identity changed")
 
 
 def _wall475_is_absent(post: Mapping[str, Any] | None) -> bool:
@@ -208,8 +212,9 @@ def _mark_verified_absent(
         status="verified_absent",
         identity_contract=IDENTITY_CONTRACT,
         absence_evidence=absence_evidence,
+        delete_authority=False,
     )
-    _save_finalizer(finalizer_path, finalizer)
+    save_anomaly_cleanup_state(finalizer_path, finalizer)
 
 
 def _cleanup_exact_wall475(
@@ -221,23 +226,24 @@ def _cleanup_exact_wall475(
     finalizer: dict[str, Any],
     finalizer_path: Path,
 ) -> None:
-    """Delete only exact live wall 475; adopt terminal state without replay.
+    """Reconcile the consumed wall-475 cleanup authority without any delete path.
 
-    Historical versions persisted ``delete_intent`` but did not persist a
-    dispatch-started barrier. Therefore any durable intent from a prior process
-    is treated as possibly dispatched: absence/tombstone may reconcile it, but a
-    still-live post never grants a blind second delete. Fresh dispatch persists
-    ``delete_dispatch_started`` before the one provider call.
+    Issue #375 freezes this destructive authority as permanently consumed.  This
+    function may prove absence/tombstone and persist that reconciliation, but a
+    live wall 475 can never re-grant ``wall.delete`` regardless of legacy journal
+    status.  The ``client`` argument is retained only for call-shape compatibility
+    with historical tests/operator code; it is intentionally unused.
     """
 
+    del client
     state = finalizer["cleanup_475"]
-    prior_status = str(state.get("status") or "pending")
+    prior_status = str(state.get("status") or "uninitialized_no_delete_authority")
     post = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
     _record_read_observation(state, post, stage="initial")
 
     if prior_status == "verified_absent":
         if not _wall475_is_absent(post):
-            raise MiloviFinalizerBlocked(
+            raise MiloviIssue323AnomalyBlocked(
                 "Wall 475 cleanup authority was already consumed but the post is live again; automatic re-delete is forbidden"
             )
         evidence = (
@@ -257,25 +263,11 @@ def _cleanup_exact_wall475(
         "delete_dispatch_started",
         "unknown_requires_reconciliation",
     }
-    if prior_may_have_dispatched:
-        if _wall475_is_absent(post):
-            evidence = "wall.getById:none-resume" if post is None else "wall.getById:is_deleted_true-resume"
-            _mark_verified_absent(
-                writer=writer,
-                promoted_asset=promoted_asset,
-                finalizer=finalizer,
-                finalizer_path=finalizer_path,
-                absence_evidence=evidence,
-            )
-            return
-        assert post is not None
-        _validate_wall475_identity(post, legacy_asset.source_id)
-        raise MiloviFinalizerBlocked(
-            "Wall 475 delete may already have been dispatched by a prior process; blind retry is forbidden"
-        )
-
     if _wall475_is_absent(post):
-        evidence = "wall.getById:none" if post is None else "wall.getById:is_deleted_true"
+        if prior_may_have_dispatched:
+            evidence = "wall.getById:none-resume" if post is None else "wall.getById:is_deleted_true-resume"
+        else:
+            evidence = "wall.getById:none" if post is None else "wall.getById:is_deleted_true"
         _mark_verified_absent(
             writer=writer,
             promoted_asset=promoted_asset,
@@ -295,55 +287,18 @@ def _cleanup_exact_wall475(
         preservation_only=True,
     )
     _record_observed_projection(state, post)
-    state.update(
-        status="delete_intent",
-        predelete_post_sha256=_sha256_text(json.dumps(post, sort_keys=True, ensure_ascii=False, default=str)),
-        delete_dispatch_started=False,
-    )
-    _save_finalizer(finalizer_path, finalizer)
-
-    _prove_target(client)
-    dispatch_post = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
-    _record_read_observation(state, dispatch_post, stage="predelete")
-    if _wall475_is_absent(dispatch_post):
-        evidence = "wall.getById:none-predelete" if dispatch_post is None else "wall.getById:is_deleted_true-predelete"
-        _mark_verified_absent(
-            writer=writer,
-            promoted_asset=promoted_asset,
-            finalizer=finalizer,
-            finalizer_path=finalizer_path,
-            absence_evidence=evidence,
-        )
-        return
-    assert dispatch_post is not None
-    _validate_wall475_identity(dispatch_post, legacy_asset.source_id)
-
-    state.update(status="delete_dispatch_started", delete_dispatch_started=True)
-    _save_finalizer(finalizer_path, finalizer)
-    try:
-        writer._call("wall.delete", params={"owner_id": MILOVI_OWNER_ID, "post_id": ANOMALY_POST_ID})
-    except Exception:
-        ambiguous_readback = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
-        _record_read_observation(state, ambiguous_readback, stage="delete-exception-readback")
-        if not _wall475_is_absent(ambiguous_readback):
-            state["status"] = "unknown_requires_reconciliation"
-            _save_finalizer(finalizer_path, finalizer)
-            raise
-
-    final_readback = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
-    _record_read_observation(state, final_readback, stage="postdelete")
-    if not _wall475_is_absent(final_readback):
+    state["delete_authority"] = False
+    if prior_may_have_dispatched:
         state["status"] = "unknown_requires_reconciliation"
-        _save_finalizer(finalizer_path, finalizer)
-        raise MiloviFinalizerBlocked("Exact anomaly wall 475 still exists after delete response")
+        save_anomaly_cleanup_state(finalizer_path, finalizer)
+        raise MiloviIssue323AnomalyBlocked(
+            "Wall 475 delete may already have been dispatched by a prior process; blind retry is forbidden"
+        )
 
-    evidence = "wall.getById:none-postdelete" if final_readback is None else "wall.getById:is_deleted_true-postdelete"
-    _mark_verified_absent(
-        writer=writer,
-        promoted_asset=promoted_asset,
-        finalizer=finalizer,
-        finalizer_path=finalizer_path,
-        absence_evidence=evidence,
+    state["status"] = "live_requires_manual_review"
+    save_anomaly_cleanup_state(finalizer_path, finalizer)
+    raise MiloviIssue323AnomalyBlocked(
+        "Wall 475 is live but Issue #375 permanently retired automatic cleanup authority; no wall.delete is authorized"
     )
 
 
@@ -355,16 +310,14 @@ def run_reconcile(
     work_dir: Path,
 ) -> dict[str, Any]:
     if confirmation != EXECUTION_CONFIRMATION:
-        raise MiloviFinalizerBlocked(f"Exact confirmation required: {EXECUTION_CONFIRMATION}")
+        raise MiloviIssue323AnomalyBlocked(f"Exact confirmation required: {EXECUTION_CONFIRMATION}")
 
     legacy_assets = prepare_sources(work_dir)
     legacy_by_id = {asset.source_id: asset for asset in legacy_assets}
-    promoted_assets = [_promote_asset(asset) for asset in legacy_assets]
-    promoted_by_id = {asset.source_id: asset for asset in promoted_assets}
     if ANOMALY_SOURCE_ID not in legacy_by_id:
-        raise MiloviFinalizerBlocked("Exact anomaly source is absent from reviewed source set")
+        raise MiloviIssue323AnomalyBlocked("Exact anomaly source is absent from reviewed source set")
 
-    finalizer = _load_finalizer_journal(finalizer_journal_path, promoted_assets)
+    finalizer = load_anomaly_cleanup_state(finalizer_journal_path)
     settings = get_settings()
     store = VkTokenStore(settings.data_dir)
     alias, client = _resolve_account(store, settings.vk_api_version)
@@ -383,7 +336,7 @@ def run_reconcile(
                 writer=writer,
                 client=client,
                 legacy_asset=legacy_by_id[ANOMALY_SOURCE_ID],
-                promoted_asset=promoted_by_id[ANOMALY_SOURCE_ID],
+                promoted_asset=legacy_by_id[ANOMALY_SOURCE_ID],
                 finalizer=finalizer,
                 finalizer_path=finalizer_journal_path,
             )
@@ -391,7 +344,7 @@ def run_reconcile(
             final_post = writer.read_post(community_id=MILOVI_COMMUNITY_ID, post_id=ANOMALY_POST_ID)
             _record_read_observation(finalizer["cleanup_475"], final_post, stage="reconcile-postflight")
             if not _wall475_is_absent(final_post):
-                raise MiloviFinalizerBlocked("Exact anomaly wall 475 still exists after reconciliation")
+                raise MiloviIssue323AnomalyBlocked("Exact anomaly wall 475 still exists after reconciliation")
 
             payload = {
                 "schema_name": RESULT_SCHEMA,
@@ -460,6 +413,6 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
-    except (MiloviFinalizerBlocked, OSError, ValueError) as exc:
+    except (MiloviIssue323AnomalyBlocked, MiloviIssue323ReadModelBlocked, OSError, ValueError) as exc:
         print(f"STOP: {type(exc).__name__}: {exc}")
         raise SystemExit(3) from exc
