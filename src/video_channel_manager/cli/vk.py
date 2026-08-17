@@ -127,7 +127,7 @@ def login(
         )
     console.print(table)
     if not communities:
-        console.print("[yellow]No managed VK communities were returned for this user token.[/yellow]")
+        console.print("[yellow]No managed communities were returned.[/yellow]")
 
 
 @vk_app.command("accounts")
@@ -356,41 +356,6 @@ def clips_owner_probe(
         )
     console.print(
         "[yellow]Do not derive upload/delete actions from this probe until it is reconciled against independently observed wall Clips.[/yellow]"
-    )
-
-
-@vk_app.command("milovi-323-rollout")
-def milovi_323_rollout(
-    execute: Annotated[str, typer.Option("--execute", help="Exact Issue #323 execution confirmation")],
-    output: Annotated[Path, typer.Option("--output", help="Exact rollout result JSON path")],
-    journal: Annotated[Path, typer.Option("--journal", help="Exact durable rollout journal path")],
-    work_dir: Annotated[Path, typer.Option("--work-dir", help="Exact source-freeze/work directory")],
-    verify_timeout: Annotated[
-        int,
-        typer.Option("--verify-timeout", min=60, max=7200, help="Seconds to recover each exact native Clip"),
-    ] = 1800,
-) -> None:
-    """Run the exact Issue #323 native-Clip canary/batch and immediate-wall rollout."""
-
-    from video_channel_manager.platforms.vk.milovi_native_clip_rollout import run_issue_323_rollout
-
-    try:
-        result = run_issue_323_rollout(
-            confirmation=execute,
-            output_path=output,
-            journal_path=journal,
-            work_dir=work_dir,
-            verify_timeout_seconds=verify_timeout,
-        )
-    except Exception as exc:
-        console.print(f"[red]Milovi Issue #323 rollout stopped:[/red] {exc}")
-        console.print(f"[yellow]Structured evidence: {output}[/yellow]")
-        raise typer.Exit(code=3) from exc
-
-    console.print(
-        f"[green]Milovi Issue #323 rollout status: {result['status']}[/green]\n"
-        f"Result: {output} | Canary verified: {result['canary_verified']} | "
-        f"Postponed authorized: {result['postponed_wall_authorized']}"
     )
 
 
