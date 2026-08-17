@@ -486,33 +486,6 @@
       ]
     },
     {
-      "boundary_id": "vk.wall.issue323.upload_effect.delete",
-      "proofs": [
-        {
-          "stages": [
-            "before_dispatch"
-          ],
-          "test_id": "tests/test_milovi_issue323_upload_wall_reconcile.py::test_wrong_clip_binding_blocks_without_delete",
-          "claim": "wrong exact upload-created Clip binding reaches zero wall.delete calls"
-        },
-        {
-          "stages": [
-            "after_dispatch_before_response"
-          ],
-          "test_id": "tests/test_milovi_issue323_upload_wall_reconcile.py::test_live_post_after_committed_delete_dispatch_never_retries",
-          "claim": "durable delete_dispatch_started with a still-live exact post blocks any second wall.delete"
-        },
-        {
-          "stages": [
-            "during_postflight",
-            "before_final_commit"
-          ],
-          "test_id": "tests/test_milovi_issue323_upload_wall_reconcile.py::test_exact_upload_created_post_is_deleted_once_and_clip_is_preserved",
-          "claim": "one exact delete reaches verified_absent only after exact historical postdelete SHA and Clip preservation proof"
-        }
-      ]
-    },
-    {
       "boundary_id": "vk.wall.milovi.immediate.post",
       "proofs": [
         {
