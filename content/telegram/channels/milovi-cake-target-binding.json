@@ -9,7 +9,7 @@
   "bot_id": 8716602202,
   "bot_username": "preaching_mp3_bot",
   "can_post_messages": true,
-  "discovered_at_utc": "2026-08-17T12:26:38.498412Z",
+  "discovered_at_utc": "2026-08-17T20:45:30.628066Z",
   "discovery_method": "getMe + getChat(public/numeric exact pair) + getChatMember(bot id)",
   "provider_write_performed": false
 }

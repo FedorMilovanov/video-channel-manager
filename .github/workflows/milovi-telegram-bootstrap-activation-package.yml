@@ -68,7 +68,8 @@ jobs:
           python -m pip install --disable-pip-version-check --only-binary=:all: \
             -r requirements/telegram-publisher.txt
 
-      - name: Require exact write-disabled Milovi profile
+      - name: Resolve provider-inert package eligibility
+        id: eligibility
         shell: python
         run: |
           import os
@@ -76,18 +77,31 @@ jobs:
 
           from video_channel_manager.telegram_channel_profile import load_channel_profile
 
-          Path(os.environ['PACKAGE_DIR']).mkdir(parents=True, exist_ok=True)
           profile = load_channel_profile(Path(os.environ['PROFILE_PATH']))
           if profile.project_key != 'milovi-cake':
               raise SystemExit('selected profile is not milovi-cake')
           if profile.channel_username.casefold() != '@milovicake':
               raise SystemExit('selected profile is not @MiloviCake')
-          if profile.provider_writes_authorized is not False:
-              raise SystemExit('activation package requires provider writes to remain disabled')
           if profile.daily_verified_limit != 2:
               raise SystemExit('Milovi daily publication limit drifted from reviewed value 2')
 
+          eligible = not profile.provider_writes_authorized
+          with Path(os.environ['GITHUB_OUTPUT']).open('a', encoding='utf-8') as output:
+              output.write(f"eligible={'true' if eligible else 'false'}\n")
+          if eligible:
+              Path(os.environ['PACKAGE_DIR']).mkdir(parents=True, exist_ok=True)
+          print({
+              'eligible': eligible,
+              'provider_access_performed': False,
+              'provider_write_performed': False,
+          })
+
+      - name: Report already-activated Milovi profile
+        if: steps.eligibility.outputs.eligible != 'true'
+        run: echo "Milovi activation package is intentionally inactive after provider-write activation. No Telegram access was attempted."
+
       - name: Discover exact target without provider mutation
+        if: steps.eligibility.outputs.eligible == 'true'
         env:
           MILOVI_CAKE_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
         shell: bash
@@ -100,6 +114,7 @@ jobs:
             --output "$TARGET_PROOF_PATH"
 
       - name: Freeze exact target binding candidate
+        if: steps.eligibility.outputs.eligible == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -124,6 +139,7 @@ jobs:
           PY
 
       - name: Build exact active bootstrap release candidate
+        if: steps.eligibility.outputs.eligible == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -147,6 +163,7 @@ jobs:
           PY
 
       - name: Bind bootstrap candidate to exact target without authorization
+        if: steps.eligibility.outputs.eligible == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -159,6 +176,7 @@ jobs:
             --output "$BOUND_RELEASE_PATH" > /tmp/release-binding.json
 
       - name: Verify complete package remains provider-inert and unauthorized
+        if: steps.eligibility.outputs.eligible == 'true'
         shell: python
         run: |
           import json
@@ -239,6 +257,7 @@ jobs:
           print(json.dumps(summary, ensure_ascii=False))
 
       - name: Upload short-lived provider-inert activation package
+        if: steps.eligibility.outputs.eligible == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: milovi-bootstrap-activation-package-${{ github.sha }}

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -113,11 +114,26 @@ def test_scheduler_persists_no_catch_up_and_intent_barriers_before_send() -> Non
     assert "blind replay is blocked" in text
 
 
-def test_current_branch_remains_provider_inert_with_reviewed_binding_and_without_authorized_release() -> None:
-    profile = PROFILE.read_text(encoding="utf-8")
-    assert '"provider_writes_authorized": false' in profile
-    assert TARGET_BINDING.exists()
-    assert not AUTHORIZED_RELEASE.exists()
+def test_current_branch_contains_exact_reviewed_one_canary_activation() -> None:
+    profile = json.loads(PROFILE.read_text(encoding="utf-8"))
+    binding = json.loads(TARGET_BINDING.read_text(encoding="utf-8"))
+    release = json.loads(AUTHORIZED_RELEASE.read_text(encoding="utf-8"))
+
+    assert profile["provider_writes_authorized"] is True
+    assert binding["provider_write_performed"] is False
+    assert binding["chat_id"] == -1002215328390
+    assert binding["bot_id"] == 8716602202
+    assert release["release_authorized"] is True
+    assert release["reviewed_candidate_sha256"] == (
+        "sha256:d2d574e7480d6e5d76c9e5fad15bc00cdd0af04703d0039059f7705a828cf9dc"
+    )
+    assert release["target_binding_sha256"] == (
+        "sha256:741a8b4b54d785976236c6f15ed5d82cc9ad46aeb96a80cf372f22c421ba047c"
+    )
+    assert release["items"][2]["publication_id"] == "milovi-bootstrap-003"
+    assert release["items"][2]["payload"]["provider_payload_sha256"] == (
+        "sha256:8c4efbd9817af78086f00947623f4d642144d1a387288cc2bb61bbce2a0fa88a"
+    )
 
 
 def test_deleted_historical_canary_is_not_a_scheduler_identity() -> None:

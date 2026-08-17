@@ -15,7 +15,7 @@ SVODKA_PROFILE_PATH = REPOSITORY_ROOT / "content/telegram/channels/svodka.json"
 LORDCHRIST_PROFILE_PATH = REPOSITORY_ROOT / "content/telegram/channels/lordchrist.json"
 
 
-def test_committed_milovi_binding_matches_reviewed_exact_identity() -> None:
+def test_committed_milovi_binding_matches_fresh_reviewed_exact_identity() -> None:
     profile = load_channel_profile(MILOVI_PROFILE_PATH)
     binding = load_target_binding(MILOVI_BINDING_PATH, profile)
 
@@ -27,9 +27,9 @@ def test_committed_milovi_binding_matches_reviewed_exact_identity() -> None:
     assert binding.bot_id == 8716602202
     assert binding.bot_username == "preaching_mp3_bot"
     assert binding.can_post_messages is True
-    assert binding.discovered_at_utc == datetime(2026, 8, 17, 12, 26, 38, 498412, tzinfo=UTC)
+    assert binding.discovered_at_utc == datetime(2026, 8, 17, 20, 45, 30, 628066, tzinfo=UTC)
     assert binding.discovery_method == "getMe + getChat(public/numeric exact pair) + getChatMember(bot id)"
-    assert binding.digest == "sha256:9c2e9842b9ea38b61c75331ea88919039b1c29b3af957eafa46f9cbd5bdb5758"
+    assert binding.digest == "sha256:741a8b4b54d785976236c6f15ed5d82cc9ad46aeb96a80cf372f22c421ba047c"
     assert binding.provider_write_performed is False
 
 
