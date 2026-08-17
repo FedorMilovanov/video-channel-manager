@@ -10,6 +10,7 @@ import time
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
+from importlib import import_module
 from pathlib import Path
 from typing import Any, Callable, Iterator
 from urllib.parse import parse_qs, urlparse
@@ -95,7 +96,7 @@ def probe_page(page_url: str, wait_seconds: float) -> PageProbeResult:
     if wait_seconds <= 0:
         raise ValueError("wait_seconds must be positive")
     try:
-        from playwright.sync_api import sync_playwright
+        sync_playwright = import_module("playwright.sync_api").sync_playwright
     except ModuleNotFoundError as exc:
         raise RuntimeError(
             "Playwright is required for resi watch; install the browser-read extra and Chromium: "
