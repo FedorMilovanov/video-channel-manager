@@ -341,7 +341,7 @@ def test_create_audio_samples_persists_single_audio_contract(tmp_path: Path, mon
 
     def fake_run(command: list[str], *, check: bool) -> subprocess.CompletedProcess[str]:
         assert check is False
-        Path(command[-1]).write_bytes(b"sample")
+        Path(command[-1]).write_bytes(b"x" * 5000)
         return subprocess.CompletedProcess(args=command, returncode=0)
 
     monkeypatch.setattr(resi_watch_module.subprocess, "run", fake_run)
@@ -360,6 +360,27 @@ def test_create_audio_samples_persists_single_audio_contract(tmp_path: Path, mon
     assert index["audio_selection_contract"] == "single_audio_stream_only"
 
 
+def test_create_audio_samples_rejects_header_only_or_premature_sample(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(resi_watch_module.shutil, "which", lambda _tool: "tool.exe")
+    monkeypatch.setattr(resi_watch_module, "probe_audio_stream_count", lambda _url: 1)
+
+    def fake_run(command: list[str], *, check: bool) -> subprocess.CompletedProcess[str]:
+        assert check is False
+        Path(command[-1]).write_bytes(b"tiny")
+        return subprocess.CompletedProcess(args=command, returncode=0)
+
+    monkeypatch.setattr(resi_watch_module.subprocess, "run", fake_run)
+    with pytest.raises(RuntimeError, match="empty or too small"):
+        create_audio_samples(
+            RU_NEW,
+            points=["90:00"],
+            duration_seconds=45,
+            output_dir=tmp_path / "samples",
+        )
+
+
 def test_background_watch_command_does_not_recurse_and_preserves_inputs(tmp_path: Path) -> None:
     command = _background_watch_command(
         page_url=RU_PAGE,
@@ -374,7 +395,7 @@ def test_background_watch_command_does_not_recurse_and_preserves_inputs(tmp_path
         state=tmp_path / "state.json",
     )
 
-    assert command[:4] == [command[0], "-m", "video_channel_manager.cli.resi", "watch"]
+    assert command[:5] == [command[0], "-u", "-m", "video_channel_manager.cli.resi", "watch"]
     assert "--background" not in command
     assert RU_PAGE in command
     assert RU_OLD in command
@@ -447,6 +468,7 @@ def test_language_confirmed_handoff_injects_single_audio_gate_only_when_requeste
 
     assert "Language-confirmed FULL download requires exactly one source audio stream" not in ordinary
     assert "Language-confirmed FULL download requires exactly one source audio stream" in guarded
+    assert "-rw_timeout 30000000" in guarded
     assert guarded.index("Verifying source has exactly one audio stream") < guarded.index("Available DASH formats")
     assert guarded.index("Available DASH formats") < guarded.index("Downloading best video + best audio")
 
