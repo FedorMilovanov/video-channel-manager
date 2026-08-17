@@ -139,7 +139,7 @@ operator-output\resi-watch-state.json
 
 Capture/state JSON records target page identity, exact manifest, normalized source identity/fingerprint, Resi frame/player ID when observable, capture time, optional English comparison evidence, `language_claim=unverified`, and `full_download_dispatched=false`.
 
-If the target page exposes multiple distinct Resi manifests in one probe, the watcher fails closed instead of guessing. If state belongs to another page or is corrupt/unscoped, the watcher fails closed. The finite three-hour timeout remains authoritative; the transient probe-error budget only prevents a short browser/network wobble from killing the whole watch immediately.
+During a normal live switch, one explicitly known old baseline and exactly one new manifest may appear in the same probe; the watcher ignores the known baseline and captures the unique new source. If more than one **new** source remains after known baselines are filtered, the watcher fails closed instead of guessing. If state belongs to another page or is corrupt/unscoped, the watcher fails closed. The finite three-hour timeout remains authoritative; the transient probe-error budget only prevents a short browser/network wobble from killing the whole watch immediately. Missing Playwright or missing Playwright Chromium is a dependency failure and aborts immediately rather than consuming the transient retry budget.
 
 ## Language preflight before FULL download
 
@@ -209,7 +209,7 @@ Downloading DASH fragments is primarily network/server/storage work. GPU acceler
 
 ## Stop conditions
 
-Stop instead of improvising when the page is not the exact intended Grace language route; target capture has multiple distinct manifests; watcher state is corrupt, legacy-unscoped, or belongs to another page; the background child exits and its log shows an error; sermon samples do not confirm the desired language; multiple audio streams exist without an explicit selection contract; the guarded handoff's immediate pre-download single-audio check fails; access requires DRM/access-control bypass; or a FULL download is proposed before language preflight merely because the page says Russian.
+Stop instead of improvising when the page is not the exact intended Grace language route; more than one new target manifest remains after known baselines are filtered; watcher state is corrupt, legacy-unscoped, or belongs to another page; Playwright/browser dependencies cannot start; the background child exits and its log shows an error; sermon samples do not confirm the desired language; multiple audio streams exist without an explicit selection contract; the guarded handoff's immediate pre-download single-audio check fails; access requires DRM/access-control bypass; or a FULL download is proposed before language preflight merely because the page says Russian.
 
 ## Agent handoff rule
 
