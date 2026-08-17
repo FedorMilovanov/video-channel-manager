@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Provider-inert Clip readiness helper retained for Issue #323 read models."""
+
+from __future__ import annotations
 
 from collections.abc import Mapping
 from typing import Any
