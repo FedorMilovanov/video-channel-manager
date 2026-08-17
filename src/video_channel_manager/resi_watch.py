@@ -70,6 +70,14 @@ def canonical_page_identity(value: str) -> str:
     return urlunparse((parsed.scheme.lower(), parsed.netloc.lower(), path, "", parsed.query, ""))
 
 
+def _require_browser_executable(executable_path: str) -> None:
+    if Path(executable_path).is_file():
+        return
+    raise ResiWatchDependencyError(
+        "Playwright Chromium is not installed; run: python -m playwright install chromium"
+    )
+
+
 def is_resi_manifest_url(url: str) -> bool:
     parsed = urlparse(url)
     host = (parsed.hostname or "").lower()
@@ -118,6 +126,7 @@ def probe_page(page_url: str, wait_seconds: float) -> PageProbeResult:
 
     found: dict[str, tuple[str, str | None]] = {}
     with sync_playwright() as playwright:
+        _require_browser_executable(str(playwright.chromium.executable_path))
         browser = playwright.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
