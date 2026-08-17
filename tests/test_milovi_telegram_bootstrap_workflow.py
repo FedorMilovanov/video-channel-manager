@@ -83,15 +83,16 @@ def test_missing_state_branch_is_a_fail_closed_non_provider_condition() -> None:
     assert checkout < ledger < preflight
 
 
-def test_scheduled_provider_access_waits_for_verified_release_manual_canary() -> None:
+def test_scheduled_provider_access_is_hard_stopped_after_single_manual_canary_intent() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
     canary = text.index("Resolve release canary gate before Telegram access")
     freshness = text.index("Require fresh exact strict-next slot before Telegram access")
     preflight = text.index("Fresh exact target preflight")
     assert canary < freshness < preflight
-    assert 'entry.dispatch_mode == "manual"' in text
-    assert 'entry.provider_effect == "verified"' in text
-    assert "waiting_for_release_manual_canary" in text
+    assert 'envelope.dispatch_mode == "manual"' in text
+    assert "prior_manual_intents" in text
+    assert "manual_canary_intent_already_recorded_hard_stop" in text
+    assert "single_canary_gate_blocks_scheduler_until_separate_rollout_authorization" in text
     assert "No Telegram access was attempted" in text
 
 
