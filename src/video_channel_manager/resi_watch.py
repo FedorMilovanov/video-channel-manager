@@ -129,8 +129,7 @@ def probe_page(page_url: str, wait_seconds: float) -> PageProbeResult:
             browser.close()
 
     observations = tuple(
-        _observation(page_url, final_page_url, manifest_url, frame_url)
-        for manifest_url, frame_url in found.values()
+        _observation(page_url, final_page_url, manifest_url, frame_url) for manifest_url, frame_url in found.values()
     )
     return PageProbeResult(page_url=page_url, final_page_url=final_page_url, observations=observations)
 
@@ -266,7 +265,7 @@ def keep_system_awake() -> Iterator[None]:
         yield
         return
 
-    kernel32 = getattr(ctypes, "windll").kernel32
+    kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
     es_continuous = 0x80000000
     es_system_required = 0x00000001
     if kernel32.SetThreadExecutionState(es_continuous | es_system_required) == 0:
