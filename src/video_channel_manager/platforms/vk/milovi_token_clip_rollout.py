@@ -1,12 +1,12 @@
-from __future__ import annotations
-
 """Provider-inert Issue #323 state/read helpers retained for canonical status/continue.
 
 This module intentionally has no upload/wall writer composition, execution
-confirmation, command runner, ``main()``, or ``__main__`` surface.  The historic
+confirmation, command runner, ``main()``, or ``__main__`` surface. The historic
 token rollout authority is retired; only deterministic parsing, inventory
 cardinality, journal interpretation, and target proof helpers remain.
 """
+
+from __future__ import annotations
 
 import json
 from collections.abc import Mapping
