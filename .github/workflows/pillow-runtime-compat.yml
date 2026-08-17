@@ -1,0 +1,59 @@
+name: Pillow runtime compatibility
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pillow-runtime-compat-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  milovi-gap-read:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install current Milovi image runtime range
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --upgrade "pip>=25"
+          python -m pip install --disable-pip-version-check -e ".[milovi-gap-read]"
+          python -m pip check
+          python -m pip show Pillow
+
+      - name: Exercise real Milovi perceptual hash path
+        shell: python
+        run: |
+          from __future__ import annotations
+
+          import PIL
+
+          from video_channel_manager.platforms.vk import milovi_gap_thumbnail_evidence as gap
+
+          # Portable graymap keeps the smoke fixture dependency-free while still
+          # forcing Pillow to decode, load, convert, resize with LANCZOS and read pixels.
+          pixels = bytes((index * 7) % 256 for index in range(10 * 8))
+          image = b"P5\n10 8\n255\n" + pixels
+          evidence = gap._dhash(image, "memory://pillow-runtime-compat")
+
+          assert evidence.width == 10
+          assert evidence.height == 8
+          assert len(evidence.sha256) == 64
+          assert len(evidence.dhash_hex) == 16
+          assert evidence.safe_source == "memory://pillow-runtime-compat"
+          print({"pillow_version": PIL.__version__, "dhash": evidence.dhash_hex})
