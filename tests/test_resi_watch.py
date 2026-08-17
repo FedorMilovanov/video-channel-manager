@@ -11,10 +11,11 @@ from typer.testing import CliRunner
 import video_channel_manager.resi_watch as resi_watch_module
 from video_channel_manager.cli.resi import (
     _background_watch_command,
+    _render_handoff,
     _start_background_watch,
     resi_app,
 )
-from video_channel_manager.resi_handoff import canonical_source_identity
+from video_channel_manager.resi_handoff import ResiHandoffSpec, canonical_source_identity
 from video_channel_manager.resi_watch import (
     ManifestObservation,
     PageProbeResult,
@@ -381,11 +382,15 @@ def test_background_watch_command_does_not_recurse_and_preserves_inputs(tmp_path
     assert "--max-consecutive-probe-errors" in command
 
 
-def test_background_launcher_writes_pid_and_redirects_log(tmp_path: Path) -> None:
+def test_background_launcher_survives_startup_then_writes_pid(tmp_path: Path) -> None:
     calls: list[dict[str, Any]] = []
+    sleeps: list[float] = []
 
     class FakeProcess:
         pid = 4242
+
+        def poll(self) -> None:
+            return None
 
     def fake_popen(command: list[str], **kwargs: Any) -> FakeProcess:
         calls.append({"command": command, **kwargs})
@@ -400,14 +405,50 @@ def test_background_launcher_writes_pid_and_redirects_log(tmp_path: Path) -> Non
         pid_path=pid_path,
         platform_name="nt",
         popen_factory=fake_popen,
+        startup_wait_seconds=1.25,
+        sleeper=sleeps.append,
     )
 
     assert pid == 4242
+    assert sleeps == [1.25]
     assert pid_path.read_text(encoding="utf-8").strip() == "4242"
     assert log_path.is_file()
     assert calls[0]["stdin"] is subprocess.DEVNULL
     assert calls[0]["stderr"] == subprocess.STDOUT
     assert calls[0]["cwd"] == tmp_path
+
+
+def test_background_launcher_fails_if_child_exits_during_startup(tmp_path: Path) -> None:
+    class ExitedProcess:
+        pid = 5151
+
+        def poll(self) -> int:
+            return 2
+
+    with pytest.raises(RuntimeError, match="exited during startup with code 2"):
+        _start_background_watch(
+            ["python", "watch"],
+            repository_root=tmp_path,
+            log_path=tmp_path / "watch.log",
+            pid_path=tmp_path / "watch.pid",
+            platform_name="nt",
+            popen_factory=lambda *args, **kwargs: ExitedProcess(),
+            startup_wait_seconds=0,
+            sleeper=lambda _seconds: None,
+        )
+
+    assert not (tmp_path / "watch.pid").exists()
+
+
+def test_language_confirmed_handoff_injects_single_audio_gate_only_when_requested() -> None:
+    spec = ResiHandoffSpec(RU_NEW)
+    ordinary = _render_handoff(spec, require_single_audio=False)
+    guarded = _render_handoff(spec, require_single_audio=True)
+
+    assert "Language-confirmed FULL download requires exactly one source audio stream" not in ordinary
+    assert "Language-confirmed FULL download requires exactly one source audio stream" in guarded
+    assert guarded.index("Verifying source has exactly one audio stream") < guarded.index("Available DASH formats")
+    assert guarded.index("Available DASH formats") < guarded.index("Downloading best video + best audio")
 
 
 def test_resi_cli_registers_watch_sample_and_handoff() -> None:
@@ -423,3 +464,9 @@ def test_resi_watch_help_exposes_unattended_controls() -> None:
     assert result.exit_code == 0
     assert "--background" in result.stdout
     assert "--max-consecutive-probe-errors" in result.stdout
+
+
+def test_resi_handoff_help_exposes_language_audio_gate() -> None:
+    result = CliRunner().invoke(resi_app, ["handoff", "--help"])
+    assert result.exit_code == 0
+    assert "--require-single-audio" in result.stdout
