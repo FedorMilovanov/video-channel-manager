@@ -192,6 +192,16 @@ def _single_observation(result: PageProbeResult, *, label: str) -> ManifestObser
     return next(iter(by_identity.values()), None)
 
 
+def _select_new_target(result: PageProbeResult, *, ignored: set[str]) -> ManifestObservation | None:
+    new_by_identity = {
+        item.source_identity: item for item in result.observations if item.source_identity not in ignored
+    }
+    if len(new_by_identity) > 1:
+        identities = ", ".join(sorted(new_by_identity))
+        raise ResiWatchAmbiguous(f"target page exposed multiple distinct new Resi manifests: {identities}")
+    return next(iter(new_by_identity.values()), None)
+
+
 def watch_for_new_manifest(
     page_url: str,
     *,
@@ -235,7 +245,7 @@ def watch_for_new_manifest(
     while True:
         try:
             target_result = probe(page_url, probe_wait_seconds)
-            target = _single_observation(target_result, label="target page")
+            target = _select_new_target(target_result, ignored=ignored)
             last_error = None
             consecutive_probe_errors = 0
         except (ResiWatchAmbiguous, ResiWatchDependencyError):
@@ -249,7 +259,7 @@ def watch_for_new_manifest(
                     f"{consecutive_probe_errors} consecutive Resi page probes failed. Last error: {last_error}"
                 ) from exc
 
-        if target is not None and target.source_identity not in ignored:
+        if target is not None:
             compare_payload: dict[str, Any] | None = None
             if compare_page:
                 try:
