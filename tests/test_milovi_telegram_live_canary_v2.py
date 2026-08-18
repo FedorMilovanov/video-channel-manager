@@ -40,9 +40,7 @@ def test_live_canary_v2_release_is_exact_and_recomputed() -> None:
     assert item.payload.provider_payload_sha256 == (
         "sha256:d60f503934fb209429606b235622ab0d27a1179978c9fa78574cf517d321b07a"
     )
-    assert item.payload.media_sha256 == (
-        "sha256:8bb0956e44084265d7a3a14ce01f96eb1e4a9c327c780448de34e068f6cf6f10"
-    )
+    assert item.payload.media_sha256 == ("sha256:8bb0956e44084265d7a3a14ce01f96eb1e4a9c327c780448de34e068f6cf6f10")
 
     recomputed = render_photo_payload(
         profile,
@@ -94,7 +92,7 @@ def test_v2_provider_is_workflow_dispatch_only_and_intent_precedes_send() -> Non
     assert "group: milovi-cake-telegram-publisher" in text
     assert "cancel-in-progress: false" in text
     assert "--mode manual" in text
-    assert "--publication-id \"$PUBLICATION_ID\"" in text
+    assert '--publication-id "$PUBLICATION_ID"' in text
 
     activation = text.index("Resolve exact live canary v2 execution authorization before provider access")
     quality = text.index("Require exact current-main live canary v2 quality and media proofs")
