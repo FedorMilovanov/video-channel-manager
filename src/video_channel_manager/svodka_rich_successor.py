@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal, Sequence, cast
 
+import httpx
+
 from video_channel_manager import svodka_rich_production as legacy
+from video_channel_manager.platforms.http import HttpClientOwner, HttpOperationClass, RetryPolicy, execute_http_request
 from video_channel_manager.svodka_rich_loader import load_svodka_rich_article
 from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_rich_provider import (
@@ -19,6 +23,10 @@ from video_channel_manager.telegram_rich_renderer import render_rich_document
 
 RELEASE_ID = "svodka-rich-v2-successor-2026-08"
 EXPECTED_ITEM_COUNT = 2
+MEDIA_USER_AGENT = (
+    "video-channel-manager-svodka-rich-bot/2 "
+    "(+https://github.com/FedorMilovanov/video-channel-manager)"
+)
 
 
 def load_release(path: Path, root: Path) -> dict[str, Any]:
@@ -166,11 +174,90 @@ def _item(release: dict[str, Any], publication_id: str) -> dict[str, Any]:
     raise ValueError(f"unknown successor publication id: {publication_id}")
 
 
+class _SuccessorMediaReader(HttpClientOwner):
+    def __init__(self) -> None:
+        self._initialize_http_client(
+            None,
+            timeout=httpx.Timeout(connect=15, read=30, write=15, pool=15),
+            follow_redirects=False,
+            trust_env=False,
+        )
+
+    def fetch(self, url: str) -> tuple[int, str, bytes]:
+        result = execute_http_request(
+            lambda: self._http_client.get(url, headers={"User-Agent": MEDIA_USER_AGENT}),
+            provider="https-media",
+            operation=HttpOperationClass.SAFE_READ,
+            method="GET",
+            resource="svodka-rich-successor-media",
+            retry_policy=RetryPolicy(max_attempts=2),
+        )
+        response = result.response
+        return (
+            response.status_code,
+            response.headers.get("content-type", "").split(";", 1)[0].strip().lower(),
+            response.content,
+        )
+
+
 def media_proof(
     root: Path, release: dict[str, Any], item: dict[str, Any], expected: dict[str, Any] | None = None
 ) -> dict[str, Any]:
-    # Media evidence is independent of the entity-detection rendering choice.
-    return legacy.media_proof(root, release, item, expected)
+    _document, _render, article = build_document(root, release, item)
+    mime = {
+        str(raw["asset_id"]): str(raw["expected_mime"])
+        for raw in legacy._assets(root, release, str(item["article_id"]))
+    }
+    reader = _SuccessorMediaReader()
+    evidence: list[dict[str, Any]] = []
+    try:
+        for media in article.media:
+            status, content_type, content = reader.fetch(media.uri)
+            expected_content_type = mime[media.media_id]
+            if (
+                status != 200
+                or content_type != expected_content_type
+                or not content
+                or len(content) > 10_000_000
+            ):
+                raise ValueError(
+                    f"media proof failed: {media.media_id} "
+                    f"(status={status}, content_type={content_type!r}, "
+                    f"expected_content_type={expected_content_type!r}, content_length={len(content)})"
+                )
+            signature_ok = (
+                content.startswith(b"\xff\xd8\xff")
+                if content_type == "image/jpeg"
+                else content.startswith(b"\x89PNG\r\n\x1a\n")
+            )
+            if not signature_ok:
+                raise ValueError(
+                    f"media signature failed: {media.media_id} "
+                    f"(content_type={content_type!r}, content_length={len(content)})"
+                )
+            evidence.append(
+                {
+                    "media_id": media.media_id,
+                    "url": media.uri,
+                    "content_type": content_type,
+                    "content_length": len(content),
+                    "content_sha256": "sha256:" + hashlib.sha256(content).hexdigest(),
+                }
+            )
+    finally:
+        reader.close()
+    proof = {
+        "schema_name": "video-channel-manager.svodka-rich-production-media-proof",
+        "schema_version": 1,
+        "release_sha256": release_digest(release),
+        "publication_id": item["publication_id"],
+        "checked_at_utc": datetime.now(tz=UTC).isoformat(),
+        "items": evidence,
+        "provider_write_performed": False,
+    }
+    if expected is not None and expected.get("items") != proof["items"]:
+        raise ValueError("media bytes changed after durable intent")
+    return proof
 
 
 def prepare(
