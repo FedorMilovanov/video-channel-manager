@@ -64,6 +64,7 @@ def _rich_message() -> dict[str, object]:
 def test_live_canary_release_is_one_exact_issue_bound_publication() -> None:
     release = load_release(RELEASE_PATH, Path("."))
     assert release["release_id"] == RELEASE_ID
+    assert release["revision"] == "v2-pre-provider-refresh"
     assert release["owning_issue"] == OWNING_ISSUE == 473
     assert release["publication_id"] == PUBLICATION_ID == "lordchrist-rich-sermons-survive-century"
     assert release["approved"] is True
@@ -188,12 +189,12 @@ def test_rich_outcome_archiver_rejects_wrong_digest_before_terminal_commit(tmp_p
 
 def test_live_canary_window_is_exact_and_expires_fail_closed() -> None:
     release = load_release(RELEASE_PATH, Path("."))
-    require_live_window(release, datetime.fromisoformat("2026-08-18T22:15:00+03:00"))
-    require_live_window(release, datetime.fromisoformat("2026-08-18T23:59:59+03:00"))
+    require_live_window(release, datetime.fromisoformat("2026-08-18T23:30:00+03:00"))
+    require_live_window(release, datetime.fromisoformat("2026-08-19T01:30:00+03:00"))
     with pytest.raises(ValueError, match="authorization window"):
-        require_live_window(release, datetime.fromisoformat("2026-08-18T22:14:59+03:00"))
+        require_live_window(release, datetime.fromisoformat("2026-08-18T23:29:59+03:00"))
     with pytest.raises(ValueError, match="authorization window"):
-        require_live_window(release, datetime.fromisoformat("2026-08-19T00:00:00+03:00"))
+        require_live_window(release, datetime.fromisoformat("2026-08-19T01:30:01+03:00"))
 
 
 def test_new_live_canary_ledger_is_pending_and_non_retryable_states_are_named() -> None:
