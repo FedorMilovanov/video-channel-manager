@@ -54,3 +54,18 @@ def test_successor_workflow_has_one_mutation_path_and_self_dispatch_after_canary
     assert "Trigger second successor item after verified canary" in workflow
     assert "gh workflow run svodka-rich-successor.yml" in workflow
     assert "Close successor rollout after verified second item" in workflow
+
+
+def test_successor_persists_preintent_diagnostics_before_any_provider_boundary() -> None:
+    workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+    assert workflow.count("continue-on-error: true") == 3
+    assert 'provider_write_performed": False' in workflow
+    assert "rich-successor-preintent/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/diagnostic.json" in workflow
+    assert "Stop before provider boundary if pre-intent proof failed" in workflow
+
+    diagnostic = workflow.index("Persist pre-intent diagnostics before provider boundary")
+    diagnostic_commit = workflow.index("Commit durable pre-intent diagnostic")
+    stop = workflow.index("Stop before provider boundary if pre-intent proof failed")
+    intent = workflow.index("Persist intent before Telegram mutation")
+    send = workflow.index("Send exactly one successor Rich Message")
+    assert diagnostic < diagnostic_commit < stop < intent < send
