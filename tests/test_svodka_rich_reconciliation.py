@@ -165,13 +165,5 @@ def test_reconciliation_refuses_non_exact_media_even_when_text_matches() -> None
         reconcile_archived(ROOT, release, ledger, fixture, outcome, authorization)
 
 
-def test_reconciliation_workflow_has_no_telegram_or_secret_surface() -> None:
-    workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
-    assert "secrets." not in workflow
-    assert "SVODKA_TELEGRAM_BOT_TOKEN" not in workflow
-    assert "sendRichMessage" not in workflow
-    assert "provider_access_performed'] is False" in workflow
-    assert "provider_write_performed'] is False" in workflow
-    assert "replay_performed'] is False" in workflow
-    assert "EXPECTED_INTENT_BLOB" in workflow
-    assert "EXPECTED_OUTCOME_BLOB" in workflow
+def test_completed_message_28_reconciliation_workflow_is_retired() -> None:
+    assert not WORKFLOW_PATH.exists()

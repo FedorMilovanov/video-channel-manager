@@ -55,31 +55,5 @@ def test_historical_v2_selection_remains_reproducible_but_is_not_the_active_writ
     assert second_mode == "scheduled"
 
 
-def test_active_successor_workflow_is_fresh_v4_one_mutation_path_without_self_dispatch() -> None:
-    workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
-    assert "successor-v4-cdn-finalizer-2026-08.json" in workflow
-    assert "video_channel_manager.svodka_rich_successor_v4 send" in workflow
-    assert "video_channel_manager.svodka_rich_successor_v3 send" not in workflow
-    assert "video_channel_manager.svodka_rich_successor send" not in workflow
-    assert "telegram_multichannel_cli send-once" not in workflow
-    assert "/sendMessage" not in workflow
-    assert "Require verified predecessor canary message 28" in workflow
-    assert "Require exact v3 confirmed-absent terminal state" in workflow
-    assert "Persist intent before Telegram mutation" in workflow
-    assert "Send exactly one successor Rich Message" in workflow
-    assert "gh workflow run svodka-rich-successor.yml" not in workflow
-
-
-def test_active_successor_persists_v4_preintent_diagnostics_before_any_provider_boundary() -> None:
-    workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
-    assert workflow.count("continue-on-error: true") == 3
-    assert "'provider_write_performed': False" in workflow
-    assert "rich-successor-v4-preintent/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/diagnostic.json" in workflow
-    assert "Stop before provider boundary if v4 pre-intent proof failed" in workflow
-
-    diagnostic = workflow.index("Persist v4 pre-intent diagnostics before provider boundary")
-    diagnostic_commit = workflow.index("Commit durable v4 pre-intent diagnostic")
-    stop = workflow.index("Stop before provider boundary if v4 pre-intent proof failed")
-    intent = workflow.index("Persist intent before Telegram mutation")
-    send = workflow.index("Send exactly one successor Rich Message")
-    assert diagnostic < diagnostic_commit < stop < intent < send
+def test_verified_v4_successor_workflow_is_retired_after_terminal_publication() -> None:
+    assert not WORKFLOW_PATH.exists()
