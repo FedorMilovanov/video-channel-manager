@@ -1,0 +1,46 @@
+{
+  "schema_name": "video-channel-manager.rich-article-document",
+  "schema_version": 1,
+  "document_id": "lordchrist-rich-three-expository-patterns",
+  "project_key": "lord-god-strength",
+  "metadata": {
+    "title": "Один текст — разные способы проповедовать",
+    "language": "ru",
+    "summary": "Кальвин, Сперджен и МакАртур стремились строить проповедь из Писания, но делали это разными способами.",
+    "author": "Господь Бог",
+    "tags": ["Писание", "проповедь", "Кальвин", "Сперджен", "МакАртур"],
+    "created_at": "2026-08-10",
+    "updated_at": "2026-08-18"
+  },
+  "blocks": [
+    {"type": "heading", "block_id": "h-title", "text": "📚 Один текст — разные способы проповедовать", "size": 1},
+    {"type": "paragraph", "block_id": "p-lead", "text": "Жана Кальвина, Чарльза Сперджена и Джона МакАртура объединяло стремление строить проповедь из библейского текста. Но сама форма этого труда у них заметно различалась."},
+    {"type": "heading", "block_id": "h-calvin", "text": "📖 Жан Кальвин — последовательное чтение", "size": 2},
+    {"type": "paragraph", "block_id": "b-calvin-1", "text": ["Обычную женевскую практику Кальвина описывают как ", {"type": "italic", "text": "lectio continua"}, ": библейскую книгу проходили от начала к концу. В будние дни он преимущественно проповедовал по Ветхому Завету, по воскресеньям — по Новому Завету и Псалмам."]},
+    {"type": "paragraph", "block_id": "b-calvin-2", "text": "Такой порядок дисциплинировал самого проповедника: следующий отрывок задавался ходом книги, а не только личным выбором темы. При этом исследования его проповедей показывают, что объяснение текста у Кальвина было тесно связано с его усвоением и применением к жизни слушателей."},
+    {"type": "heading", "block_id": "h-spurgeon", "text": "🕯 Чарльз Сперджен — выбранный текст", "size": 2},
+    {"type": "paragraph", "block_id": "b-spurgeon-1", "text": "Сперджен обычно строил проповедь вокруг выбранного отрывка — иногда одного стиха или даже его части — и раскрывал его смысл и применение. Последовательное прохождение целой книги не было для него единственной формой экспозиции."},
+    {"type": "paragraph", "block_id": "b-spurgeon-2", "text": "Он писал и говорил о серьёзности выбора текста: это не случайная отправная точка, а часть ответственности проповедника перед Писанием и людьми, которые будут слушать."},
+    {"type": "heading", "block_id": "h-macarthur", "text": "🎙 Джон МакАртур — многолетние последовательности", "size": 2},
+    {"type": "paragraph", "block_id": "b-macarthur-1", "text": ["Первая пасторская проповедь МакАртура в Grace Community Church датирована ", {"type": "bold", "text": "9 февраля 1969 года"}, ". ", {"type": "bold", "text": "5 июня 2011 года"}, ", проповедуя заключительный отрывок Евангелия от Марка, он завершил многолетнее прохождение Нового Завета."]},
+    {"type": "paragraph", "block_id": "b-macarthur-2", "text": "Сам МакАртур, сравнивая свой подход со Спердженом, высоко оценивал его творческую силу, но объяснял, почему для собственного служения предпочитал последовательное движение стих за стихом."},
+    {"type": "paragraph", "block_id": "p-boundary", "text": "Эти различия не требуют ранжирования. Они скорее показывают несколько способов поставить проповедника под ответственность перед текстом: не обходить неудобные места, внимательно раскрывать конкретный отрывок, долго и последовательно следовать ходу книги."},
+    {"type": "paragraph", "block_id": "p-takeaway", "text": {"type": "italic", "text": "✦ Мы можем благодарить Бога за разнообразие даров и служений, не превращая один исторический метод в меру духовного величия. Важнее другое: чтобы форма служила Слову, а не заслоняла его, и чтобы человек за кафедрой сам оставался под властью того Писания, которое объясняет другим."}}
+  ],
+  "media": [],
+  "sources": [],
+  "media_slots": [
+    {"slot_id": "media-calvin", "placement": {"after": "calvin"}, "depicts": "Портрет Жана Кальвина", "purpose": "Визуально отделить первую историческую модель проповеди.", "preferred_source_type": "public domain historical portrait", "copyright_provenance": "Wikimedia Commons public-domain file page reviewed 2026-08-18.", "caption": "Жан Кальвин. Портрет — public domain, Wikimedia Commons."},
+    {"slot_id": "media-spurgeon", "placement": {"after": "spurgeon"}, "depicts": "Исторический портрет Чарльза Сперджена", "purpose": "Визуально отделить вторую историческую модель проповеди.", "preferred_source_type": "public domain historical photograph", "copyright_provenance": "National Library of Wales / Wikimedia Commons public-domain file page reviewed 2026-08-18.", "caption": "Чарльз Сперджен, 1870-е. National Library of Wales / Wikimedia Commons, public domain."},
+    {"slot_id": "media-grace", "placement": {"after": "macarthur"}, "depicts": "Богослужение в Grace Community Church", "purpose": "Показать современную церковную среду, в которой развивалась многолетняя последовательная экспозиция МакАртура, без использования спорного портретного файла.", "preferred_source_type": "public domain documentary photograph", "copyright_provenance": "Wikimedia Commons public-domain file page reviewed 2026-08-18.", "caption": "Богослужение в Grace Community Church, Sun Valley. Фото: Lukasinla, public domain."}
+  ],
+  "predecessor": {
+    "publication_id": "lordchrist-research-v3-three-expository-patterns",
+    "source_file": "content/telegram/lordchrist/research-posts-v3/three-expository-patterns.html",
+    "source_file_sha256": "9e8f7dff2c5369e36d31bf923ec0cffaecb839213f21086b3f6485bcc8ff6c55",
+    "release_id": "research-v3-restrained-rich-telegram",
+    "source_format": "html"
+  },
+  "footer": null,
+  "revision": "rich-v1"
+}
