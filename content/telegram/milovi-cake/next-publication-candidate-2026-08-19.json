@@ -1,0 +1,36 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-next-publication-candidate",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "status": "provider_inert_exact_candidate",
+  "publication_authorized": false,
+  "execution_authorized": false,
+  "provider_mutation_allowed": false,
+  "publication_id": "milovi-feed-20260819-001",
+  "scheduled_at": "2026-08-19T10:30:00+03:00",
+  "timezone": "Europe/Moscow",
+  "operation": "sendPhoto",
+  "media": {
+    "media_id": "p03",
+    "source_path": "img/gallery/gallery-03-hd.webp",
+    "source_git_blob_sha1": "5aa281e85a7d62a9e638ae657178d9b498a4636e",
+    "source_sha256": "sha256:31b92f3835bcda789c3e8c66b4058c34a12c09402ec47979951fa3240f75e3b9",
+    "transport_format": "image/jpeg",
+    "transport_byte_size": 391620,
+    "transport_sha256": "sha256:d40b185ab813a46d29b66aa0da6f9300a13cad2bac0baf0ba71f1cd8e36a50a1",
+    "pixel_width": 1024,
+    "pixel_height": 1536
+  },
+  "caption_sha256": "sha256:e4549b91102cad61a94f2faadc0100de23716c54e48d27552e21b92eb71cf918",
+  "caption": "🐰 Детский торт с зайчиком\n\nМягкая пастельная палитра, зайчик как главный персонаж, цветы и небольшие звёздные акценты. Композиция остаётся цельной: один сюжет, спокойные детали и достаточно воздуха вокруг декора.\n\nПри обсуждении оформления можно отталкиваться от любимого персонажа, возраста, имени и цветовой палитры праздника.\n\n🎂 Milovi Cake — торты и десерты на заказ\n📍 Санкт-Петербург\n\n🌐 Сайт: https://milovicake.ru/\n💬 ВКонтакте: https://vk.ru/milovi_cake\n▶️ YouTube: https://www.youtube.com/@milovi_cake\n📖 Дзен: https://dzen.ru/milovicake.ru\n\n#детскийторт #тортспб #milovicake",
+  "editorial_guards": {
+    "brand_authorship_is_implicit": true,
+    "contains_service_language": false,
+    "contains_process_or_bts_claim": false,
+    "contains_milovi_school_claim": false,
+    "contains_unverified_price_or_availability_claim": false,
+    "resource_footer_present": true
+  },
+  "execution_note": "This file freezes content only. A fresh exact release and execution authorization are still required before any Telegram provider access or mutation."
+}
