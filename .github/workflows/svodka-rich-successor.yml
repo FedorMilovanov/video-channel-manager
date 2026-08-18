@@ -200,12 +200,11 @@ jobs:
           PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
           PUBLICATION_ID: ${{ steps.select.outputs.publication_id }}
           DISPATCH_MODE: ${{ steps.select.outputs.dispatch_mode }}
+          DIAGNOSTIC_ABS: ${{ env.STATE_DIR }}/content/telegram/svodka/rich-successor-preintent/${{ github.run_id }}-${{ github.run_attempt }}/diagnostic.json
         shell: bash
         run: |
           set -euo pipefail
-          diagnostic_rel="content/telegram/svodka/rich-successor-preintent/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/diagnostic.json"
-          diagnostic_abs="$STATE_DIR/$diagnostic_rel"
-          mkdir -p "$(dirname "$diagnostic_abs")"
+          mkdir -p "$(dirname "$DIAGNOSTIC_ABS")"
           python - <<'PY'
           import json
           import os
@@ -241,14 +240,7 @@ jobs:
               encoding="utf-8",
           )
           PY
-        env:
-          TARGET_OUTCOME: ${{ steps.target.outcome }}
-          MEDIA_OUTCOME: ${{ steps.media.outcome }}
-          PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
-          PUBLICATION_ID: ${{ steps.select.outputs.publication_id }}
-          DISPATCH_MODE: ${{ steps.select.outputs.dispatch_mode }}
-          DIAGNOSTIC_ABS: ${{ env.STATE_DIR }}/content/telegram/svodka/rich-successor-preintent/${{ github.run_id }}-${{ github.run_attempt }}/diagnostic.json
-        
+
       - name: Commit durable pre-intent diagnostic
         if: always() && steps.select.outputs.eligible == 'true'
         shell: bash
