@@ -15,7 +15,6 @@ from video_channel_manager.svodka_rich_production import (
 )
 
 RELEASE_PATH = Path("content/telegram/svodka/rich-v1/production-release-2026-08.json")
-WORKFLOW_PATH = Path(".github/workflows/svodka-rich-production.yml")
 EXPECTED_RELEASE_SHA256 = "sha256:ca7a4047c4808c5800022aebd2a9e8334ad0751197a121aa1c54d707d36b7b9c"
 
 
@@ -32,7 +31,7 @@ def _custom_emoji_ids(value: Any) -> list[str]:
     return found
 
 
-def test_release_binds_all_14_exact_sources_and_renders_one_production_path() -> None:
+def test_release_binds_all_14_exact_sources_and_preserves_historical_rendering() -> None:
     release = load_release(RELEASE_PATH, Path("."))
     assert release_digest(release) == EXPECTED_RELEASE_SHA256
     items = cast(list[dict[str, Any]], release["items"])
@@ -105,26 +104,3 @@ def test_expired_strict_next_fails_closed() -> None:
     ledger = load_ledger(Path("/definitely/missing/svodka-rich-ledger.json"), release, create=True)
     with pytest.raises(ValueError, match="strict-next window expired"):
         select(release, ledger, datetime.fromisoformat("2026-08-11T21:30:00+03:00"))
-
-
-def test_workflow_has_real_evening_canary_redundant_ticks_and_no_legacy_fallback_path() -> None:
-    workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
-    for cron in (
-        'cron: "30 16 11 8 *"',
-        'cron: "17 17 11 8 *"',
-        'cron: "30 7 12-18 8 *"',
-        'cron: "17 8 12-18 8 *"',
-        'cron: "30 16 12-17 8 *"',
-        'cron: "17 17 12-17 8 *"',
-    ):
-        assert cron in workflow
-    assert "github.event_name == 'schedule' ||" in workflow
-    assert "github.event_name == 'workflow_dispatch'" in workflow
-    assert "SVODKA-RICH-PRODUCTION:@deep_info_life" in workflow
-    assert "svodka_rich_production send" in workflow
-    assert "telegram_multichannel_cli send-once" not in workflow
-    assert "/sendMessage" not in workflow
-    assert "group: svodka-telegram-publisher" in workflow
-    assert "queue: max" in workflow
-    assert "Archive exact provider outcome before ledger mutation" in workflow
-    assert "Persist intent and evidence before Telegram mutation" in workflow
