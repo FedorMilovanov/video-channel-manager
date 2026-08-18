@@ -130,40 +130,154 @@ jobs:
           PY
 
       - name: Fresh exact Telegram target proof
+        id: target
         if: steps.select.outputs.eligible == 'true'
+        continue-on-error: true
         env:
           SVODKA_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        shell: bash
         run: |
-          set -euo pipefail
+          set +e
           python -m video_channel_manager.telegram_channel_cli preflight \
             --profile "$PROFILE_PATH" \
             --expected-chat-id "$EXPECTED_CHAT_ID" \
             --expected-bot-id "$EXPECTED_BOT_ID" \
             --expected-bot-username "$EXPECTED_BOT_USERNAME" \
-            --output "$TARGET_PROOF_PATH"
+            --output "$TARGET_PROOF_PATH" \
+            > .runtime/target-preflight.stdout 2> .runtime/target-preflight.stderr
+          status=$?
+          set -e
+          cat .runtime/target-preflight.stdout
+          cat .runtime/target-preflight.stderr >&2
+          exit "$status"
 
       - name: Prove exact media bytes read-only
+        id: media
         if: steps.select.outputs.eligible == 'true'
+        continue-on-error: true
+        shell: bash
         run: |
-          set -euo pipefail
+          set +e
           python -m video_channel_manager.svodka_rich_successor media-proof \
             --release "$RELEASE_PATH" --root . \
             --publication-id "${{ steps.select.outputs.publication_id }}" \
-            --output "$MEDIA_PROOF_PATH"
+            --output "$MEDIA_PROOF_PATH" \
+            > .runtime/media-proof.stdout 2> .runtime/media-proof.stderr
+          status=$?
+          set -e
+          cat .runtime/media-proof.stdout
+          cat .runtime/media-proof.stderr >&2
+          exit "$status"
 
       - name: Prepare durable successor intent
-        if: steps.select.outputs.eligible == 'true'
+        id: prepare
+        if: >-
+          steps.select.outputs.eligible == 'true' &&
+          steps.target.outcome == 'success' &&
+          steps.media.outcome == 'success'
+        continue-on-error: true
+        shell: bash
         run: |
-          set -euo pipefail
+          set +e
           python -m video_channel_manager.svodka_rich_successor prepare \
             --release "$RELEASE_PATH" --root . --ledger "$LEDGER_PATH" \
             --target-proof "$TARGET_PROOF_PATH" --media-proof "$MEDIA_PROOF_PATH" \
             --github-repository "$GITHUB_REPOSITORY" --github-sha "$GITHUB_SHA" \
             --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" \
-            --intent-output "$INTENT_PATH"
+            --intent-output "$INTENT_PATH" \
+            > .runtime/prepare.stdout 2> .runtime/prepare.stderr
+          status=$?
+          set -e
+          cat .runtime/prepare.stdout
+          cat .runtime/prepare.stderr >&2
+          exit "$status"
+
+      - name: Persist pre-intent diagnostics before provider boundary
+        if: always() && steps.select.outputs.eligible == 'true'
+        env:
+          TARGET_OUTCOME: ${{ steps.target.outcome }}
+          MEDIA_OUTCOME: ${{ steps.media.outcome }}
+          PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
+          PUBLICATION_ID: ${{ steps.select.outputs.publication_id }}
+          DISPATCH_MODE: ${{ steps.select.outputs.dispatch_mode }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          diagnostic_rel="content/telegram/svodka/rich-successor-preintent/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/diagnostic.json"
+          diagnostic_abs="$STATE_DIR/$diagnostic_rel"
+          mkdir -p "$(dirname "$diagnostic_abs")"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          def text(path: str) -> str:
+              value = Path(path)
+              if not value.exists():
+                  return ""
+              return value.read_text(encoding="utf-8", errors="replace")[-6000:]
+
+          payload = {
+              "schema_name": "video-channel-manager.svodka-rich-successor-preintent-diagnostic",
+              "schema_version": 1,
+              "workflow_run_id": os.environ["GITHUB_RUN_ID"],
+              "workflow_run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "github_sha": os.environ["GITHUB_SHA"],
+              "publication_id": os.environ["PUBLICATION_ID"],
+              "dispatch_mode": os.environ["DISPATCH_MODE"],
+              "target_outcome": os.environ["TARGET_OUTCOME"],
+              "media_outcome": os.environ["MEDIA_OUTCOME"],
+              "prepare_outcome": os.environ["PREPARE_OUTCOME"],
+              "target_stdout": text(".runtime/target-preflight.stdout"),
+              "target_stderr": text(".runtime/target-preflight.stderr"),
+              "media_stdout": text(".runtime/media-proof.stdout"),
+              "media_stderr": text(".runtime/media-proof.stderr"),
+              "prepare_stdout": text(".runtime/prepare.stdout"),
+              "prepare_stderr": text(".runtime/prepare.stderr"),
+              "provider_write_performed": False,
+          }
+          Path(os.environ["DIAGNOSTIC_ABS"]).write_text(
+              json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+        env:
+          TARGET_OUTCOME: ${{ steps.target.outcome }}
+          MEDIA_OUTCOME: ${{ steps.media.outcome }}
+          PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
+          PUBLICATION_ID: ${{ steps.select.outputs.publication_id }}
+          DISPATCH_MODE: ${{ steps.select.outputs.dispatch_mode }}
+          DIAGNOSTIC_ABS: ${{ env.STATE_DIR }}/content/telegram/svodka/rich-successor-preintent/${{ github.run_id }}-${{ github.run_attempt }}/diagnostic.json
+        
+      - name: Commit durable pre-intent diagnostic
+        if: always() && steps.select.outputs.eligible == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          diagnostic_rel="content/telegram/svodka/rich-successor-preintent/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/diagnostic.json"
+          git -C "$STATE_DIR" config user.name 'svodka-publisher[bot]'
+          git -C "$STATE_DIR" config user.email 'svodka-publisher@users.noreply.github.com'
+          git -C "$STATE_DIR" add -- "$diagnostic_rel"
+          git -C "$STATE_DIR" diff --cached --quiet && { echo 'Pre-intent diagnostic produced no durable delta.' >&2; exit 3; }
+          git -C "$STATE_DIR" commit -m "Record Svodka pre-intent diagnostic $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+
+      - name: Stop before provider boundary if pre-intent proof failed
+        if: >-
+          always() && steps.select.outputs.eligible == 'true' &&
+          (steps.target.outcome != 'success' ||
+           steps.media.outcome != 'success' ||
+           steps.prepare.outcome != 'success')
+        run: |
+          echo "Pre-intent proof failed; durable diagnostic was recorded and no Telegram mutation is authorized." >&2
+          exit 1
 
       - name: Persist intent before Telegram mutation
-        if: steps.select.outputs.eligible == 'true'
+        if: >-
+          steps.select.outputs.eligible == 'true' &&
+          steps.target.outcome == 'success' &&
+          steps.media.outcome == 'success' &&
+          steps.prepare.outcome == 'success'
         run: |
           set -euo pipefail
           evidence_rel="content/telegram/svodka/rich-successor-dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
