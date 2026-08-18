@@ -1,0 +1,53 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-public-footer",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "status": "provider_inert_editorial_standard",
+  "publication_authorized": false,
+  "provider_mutation_allowed": false,
+  "brand_line": "🎂 Milovi Cake — торты и десерты на заказ",
+  "location_line": "📍 Санкт-Петербург",
+  "links": [
+    {
+      "label": "Сайт",
+      "url": "https://milovicake.ru/"
+    },
+    {
+      "label": "ВКонтакте",
+      "url": "https://vk.ru/milovi_cake"
+    },
+    {
+      "label": "YouTube",
+      "url": "https://www.youtube.com/@milovi_cake"
+    },
+    {
+      "label": "Дзен",
+      "url": "https://dzen.ru/milovicake.ru"
+    }
+  ],
+  "rendered_footer": "🎂 Milovi Cake — торты и десерты на заказ\n📍 Санкт-Петербург\n\n🌐 Сайт: https://milovicake.ru/\n💬 ВКонтакте: https://vk.ru/milovi_cake\n▶️ YouTube: https://www.youtube.com/@milovi_cake\n📖 Дзен: https://dzen.ru/milovicake.ru",
+  "editorial_rules": {
+    "brand_authorship_is_implicit": true,
+    "forbidden_service_phrases": [
+      "реальная работа Milovi Cake",
+      "реальная работа",
+      "наша реальная работа",
+      "хороший референс",
+      "вот пример торта",
+      "на фото — реальная работа",
+      "из нашей галереи"
+    ],
+    "default_caption_order": [
+      "human_title",
+      "visual_or_useful_observation",
+      "optional_adaptation_or_selection_context",
+      "public_resource_footer",
+      "small_topical_hashtag_set"
+    ],
+    "max_hashtags": 4,
+    "avoid_external_link_dump_in_body": true,
+    "footer_is_the_default_resource_location": true,
+    "telegram_self_link_required": false
+  }
+}
