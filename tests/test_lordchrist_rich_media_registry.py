@@ -4,8 +4,14 @@ import json
 from pathlib import Path
 from typing import Any, cast
 
+from video_channel_manager.telegram_channel_profile import load_channel_profile
+from video_channel_manager.telegram_target_binding import load_target_binding
+
 REGISTRY_PATH = Path("content/telegram/lordchrist/rich-v1/media/media-registry.json")
 ARTICLE_DIR = Path("content/telegram/lordchrist/rich-v1/articles")
+RICH_PROFILE_PATH = Path("content/telegram/channels/lordchrist-rich.json")
+RICH_BINDING_PATH = Path("content/telegram/channels/lordchrist-rich-target-binding.json")
+LEGACY_BINDING_PATH = Path("content/telegram/channels/lordchrist-target-binding.json")
 ARTICLE_IDS = (
     "lordchrist-rich-sermons-survive-century",
     "lordchrist-rich-three-expository-patterns",
@@ -91,3 +97,22 @@ def test_first_article_uses_tape_and_second_uses_grace_worship_without_macarthur
     assert any("Reel-to-reel" in asset["canonical_source_page_url"] for asset in first)
     assert any("Grace_Community_Church_Worship" in asset["canonical_source_page_url"] for asset in second)
     assert not any("MacArthur" in asset["canonical_source_page_url"] for asset in assets)
+
+
+def test_rich_profile_has_its_own_binding_to_the_same_historical_exact_target() -> None:
+    profile = load_channel_profile(RICH_PROFILE_PATH)
+    binding = load_target_binding(RICH_BINDING_PATH, profile)
+    legacy = _read(LEGACY_BINDING_PATH)
+
+    assert profile.provider_writes_authorized is True
+    assert binding.profile_sha256 == profile.digest
+    assert binding.profile_sha256 == "sha256:a02f33ce5166adb01a7869f6be9becdd46bfb180f80c7143a10c7bbd37a0b173"
+    assert binding.project_key == legacy["project_key"]
+    assert binding.channel_username == legacy["channel_username"]
+    assert binding.chat_id == legacy["chat_id"] == -1001295216957
+    assert binding.chat_username == legacy["chat_username"] == "lordchrist"
+    assert binding.bot_id == legacy["bot_id"] == 8716602202
+    assert binding.bot_username == legacy["bot_username"] == "preaching_mp3_bot"
+    assert binding.can_post_messages is True
+    assert binding.discovered_at_utc.isoformat() == "2026-08-08T07:13:09.125496+00:00"
+    assert binding.provider_write_performed is False
