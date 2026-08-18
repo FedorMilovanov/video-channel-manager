@@ -11,13 +11,14 @@ from video_channel_manager.lordchrist_rich_live_canary import (
     OWNING_ISSUE,
     PUBLICATION_ID,
     RELEASE_ID,
+    _Archiver,
     _LordChristMultipartProvider,
     build_document,
     load_release,
     new_ledger,
     require_live_window,
 )
-from video_channel_manager.telegram_rich_provider import TelegramRichRequestTimeout
+from video_channel_manager.telegram_rich_provider import TelegramRichProviderTimeout, TelegramRichRequestTimeout
 
 RELEASE_PATH = Path("content/telegram/lordchrist/rich-v1/live-canary-release-2026-08-18.json")
 MODULE_PATH = Path("src/video_channel_manager/lordchrist_rich_live_canary.py")
@@ -40,6 +41,24 @@ def _input_media_identities(value: object) -> list[str]:
 
     walk(value)
     return identities
+
+
+def _attachments() -> dict[str, tuple[str, bytes, str]]:
+    return {
+        "lc_calvin": ("john-calvin.jpg", b"\xff\xd8\xffCALVIN_BYTES", "image/jpeg"),
+        "lc_spurgeon": ("charles-spurgeon.jpg", b"\xff\xd8\xffSPURGEON_BYTES", "image/jpeg"),
+        "lc_tape": ("reel-to-reel.jpg", b"\xff\xd8\xffTAPE_BYTES", "image/jpeg"),
+    }
+
+
+def _rich_message() -> dict[str, object]:
+    return {
+        "blocks": [
+            {"type": "photo", "photo": {"type": "photo", "media": "attach://lc_calvin"}},
+            {"type": "photo", "photo": {"type": "photo", "media": "attach://lc_spurgeon"}},
+            {"type": "photo", "photo": {"type": "photo", "media": "attach://lc_tape"}},
+        ]
+    }
 
 
 def test_live_canary_release_is_one_exact_issue_bound_publication() -> None:
@@ -96,26 +115,11 @@ def test_multipart_provider_sends_exact_three_attachments_in_one_request() -> No
         return httpx.Response(400, json={"ok": False, "error_code": 400, "description": "test rejection"})
 
     client = httpx.Client(transport=httpx.MockTransport(handler))
-    provider = _LordChristMultipartProvider(
-        token="test-token",
-        http_client=client,
-        attachments={
-            "lc_calvin": ("john-calvin.jpg", b"\xff\xd8\xffCALVIN_BYTES", "image/jpeg"),
-            "lc_spurgeon": ("charles-spurgeon.jpg", b"\xff\xd8\xffSPURGEON_BYTES", "image/jpeg"),
-            "lc_tape": ("reel-to-reel.jpg", b"\xff\xd8\xffTAPE_BYTES", "image/jpeg"),
-        },
-    )
-    rich_message = {
-        "blocks": [
-            {"type": "photo", "photo": {"type": "photo", "media": "attach://lc_calvin"}},
-            {"type": "photo", "photo": {"type": "photo", "media": "attach://lc_spurgeon"}},
-            {"type": "photo", "photo": {"type": "photo", "media": "attach://lc_tape"}},
-        ]
-    }
+    provider = _LordChristMultipartProvider(token="test-token", http_client=client, attachments=_attachments())
     try:
         response = provider.send_rich_message(
             chat_id=-1001295216957,
-            rich_message=rich_message,
+            rich_message=_rich_message(),
             timeout=TelegramRichRequestTimeout(),
         )
     finally:
@@ -123,6 +127,63 @@ def test_multipart_provider_sends_exact_three_attachments_in_one_request() -> No
     assert response.status_code == 400
     assert response.body == {"ok": False, "error_code": 400, "description": "test rejection"}
     assert len(observed) == 1
+
+
+def test_multipart_provider_rejects_wrong_attachment_reference_before_dispatch() -> None:
+    observed: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        observed.append(request)
+        return httpx.Response(200, json={"ok": True})
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    provider = _LordChristMultipartProvider(token="test-token", http_client=client, attachments=_attachments())
+    wrong = _rich_message()
+    blocks = wrong["blocks"]
+    assert isinstance(blocks, list)
+    photo = blocks[-1]
+    assert isinstance(photo, dict)
+    media = photo["photo"]
+    assert isinstance(media, dict)
+    media["media"] = "attach://wrong_tape"
+    try:
+        with pytest.raises(ValueError, match="attachment references"):
+            provider.send_rich_message(
+                chat_id=-1001295216957,
+                rich_message=wrong,
+                timeout=TelegramRichRequestTimeout(),
+            )
+    finally:
+        provider.close()
+    assert observed == []
+
+
+def test_multipart_provider_read_timeout_is_ambiguous_and_single_attempt() -> None:
+    observed: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        observed.append(request)
+        raise httpx.ReadTimeout("response lost after dispatch", request=request)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    provider = _LordChristMultipartProvider(token="test-token", http_client=client, attachments=_attachments())
+    try:
+        with pytest.raises(TelegramRichProviderTimeout) as exc_info:
+            provider.send_rich_message(
+                chat_id=-1001295216957,
+                rich_message=_rich_message(),
+                timeout=TelegramRichRequestTimeout(),
+            )
+    finally:
+        provider.close()
+    assert exc_info.value.request_may_have_been_dispatched is True
+    assert len(observed) == 1
+
+
+def test_rich_outcome_archiver_rejects_wrong_digest_before_terminal_commit(tmp_path: Path) -> None:
+    archiver = _Archiver(tmp_path / "provider-outcome.json")
+    with pytest.raises(ValueError, match="archive digest mismatch"):
+        archiver.archive(b'{"provider_effect":"verified"}', outcome_sha256="sha256:" + "0" * 64)
 
 
 def test_live_canary_window_is_exact_and_expires_fail_closed() -> None:
