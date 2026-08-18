@@ -1,0 +1,85 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-first-screen-continuation-copy",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "status": "provider_inert_editorial_candidates",
+  "publication_authorized": false,
+  "provider_mutation_allowed": false,
+  "source_candidates": "content/telegram/milovi-cake/bootstrap-first-screen-candidates-2026-08.json",
+  "footer_standard": "content/telegram/milovi-cake/editorial-public-footer-2026-08.json",
+  "note": "These are new publication identities and revised copy. Historical bootstrap payload digests remain untouched. Brand authorship is implicit; captions do not say 'real work' or 'good reference'.",
+  "items": [
+    {
+      "position": 1,
+      "supersedes_editorial_publication_id": "milovi-bootstrap-004",
+      "publication_id": "milovi-feed-20260819-001",
+      "operation": "sendPhoto",
+      "media_id": "p03",
+      "role": "finished_showcase",
+      "caption": "🐰 Детский торт с зайчиком\n\nМягкая пастельная палитра, зайчик как главный персонаж, цветы и небольшие звёздные акценты. Композиция остаётся цельной: один сюжет, спокойные детали и достаточно воздуха вокруг декора.\n\nПри обсуждении оформления можно отталкиваться от любимого персонажа, возраста, имени и цветовой палитры праздника.\n\n🎂 Milovi Cake — торты и десерты на заказ\n📍 Санкт-Петербург\n\n🌐 Сайт: https://milovicake.ru/\n💬 ВКонтакте: https://vk.ru/milovi_cake\n▶️ YouTube: https://www.youtube.com/@milovi_cake\n📖 Дзен: https://dzen.ru/milovicake.ru\n\n#детскийторт #тортспб #milovicake"
+    },
+    {
+      "position": 2,
+      "supersedes_editorial_publication_id": "milovi-bootstrap-005",
+      "publication_id": "milovi-feed-20260820-001",
+      "operation": "sendPhoto",
+      "media_id": "p16",
+      "role": "format_guide",
+      "caption": "🧁 Капкейки в единой праздничной палитре\n\nПовторяющиеся оттенки и кремовый декор объединяют отдельные десерты в одну композицию. Такой набор выглядит цельно на праздничном столе и при этом сохраняет удобный порционный формат.\n\nКапкейки можно рассматривать как самостоятельный десертный набор или как дополнение к основному торту.\n\n🎂 Milovi Cake — торты и десерты на заказ\n📍 Санкт-Петербург\n\n🌐 Сайт: https://milovicake.ru/\n💬 ВКонтакте: https://vk.ru/milovi_cake\n▶️ YouTube: https://www.youtube.com/@milovi_cake\n📖 Дзен: https://dzen.ru/milovicake.ru\n\n#капкейки #десертыспб #milovicake"
+    },
+    {
+      "position": 3,
+      "supersedes_editorial_publication_id": "milovi-bootstrap-006",
+      "publication_id": "milovi-feed-20260821-001",
+      "operation": "sendPhoto",
+      "media_id": "p17",
+      "role": "dessert_showcase",
+      "caption": "🍓 Павлова с ягодами\n\nЛёгкая подача, выразительная форма и ягодные акценты делают Павлову самостоятельным праздничным десертом — без необходимости превращать каждый повод в большой торт.\n\nХороший вариант, когда хочется красивой подачи и более камерного формата для стола.\n\n🎂 Milovi Cake — торты и десерты на заказ\n📍 Санкт-Петербург\n\n🌐 Сайт: https://milovicake.ru/\n💬 ВКонтакте: https://vk.ru/milovi_cake\n▶️ YouTube: https://www.youtube.com/@milovi_cake\n📖 Дзен: https://dzen.ru/milovicake.ru\n\n#павлова #десертыспб #milovicake"
+    },
+    {
+      "position": 4,
+      "supersedes_editorial_publication_id": "milovi-bootstrap-007",
+      "publication_id": "milovi-feed-20260822-001",
+      "operation": "sendPhoto",
+      "media_id": "p20",
+      "role": "theme_reference",
+      "caption": "🎮 3D-торт в стиле Minecraft\n\nВ тематическом 3D-дизайне сам силуэт торта и объёмный декор сразу задают узнаваемый сюжет. Здесь работает не множество случайных деталей, а одна понятная игровая тема.\n\nДля персонального оформления можно отталкиваться от любимой игры, персонажа, цветов и имени именинника.\n\n🎂 Milovi Cake — торты и десерты на заказ\n📍 Санкт-Петербург\n\n🌐 Сайт: https://milovicake.ru/\n💬 ВКонтакте: https://vk.ru/milovi_cake\n▶️ YouTube: https://www.youtube.com/@milovi_cake\n📖 Дзен: https://dzen.ru/milovicake.ru\n\n#minecraftторт #детскийторт #тортспб #milovicake"
+    },
+    {
+      "position": 5,
+      "supersedes_editorial_publication_id": "milovi-bootstrap-008",
+      "publication_id": "milovi-feed-20260823-001",
+      "operation": "sendMessage",
+      "media_id": null,
+      "role": "verified_social_proof",
+      "caption": "💬 Когда важны и вкус, и оформление\n\nИрина Силантьева:\n\n«Спасибо за прекрасно выполненную работу к 40-летию свадьбы. И вкусовые качества, и дизайн, и упаковка — гости были в восторге.»\n\nОтзыв опубликован на сайте Milovi Cake.\n\n🎂 Milovi Cake — торты и десерты на заказ\n📍 Санкт-Петербург\n\n🌐 Сайт: https://milovicake.ru/\n💬 ВКонтакте: https://vk.ru/milovi_cake\n▶️ YouTube: https://www.youtube.com/@milovi_cake\n📖 Дзен: https://dzen.ru/milovicake.ru\n\n#отзывы #тортспб #milovicake",
+      "fact_source": {
+        "repository": "FedorMilovanov/Milovi_Cake",
+        "commit": "c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370",
+        "path": "otzyvy/index.html",
+        "git_blob_sha1": "cccfbc9c12d9d3724b0a27a481cbb1347f77716a",
+        "review_author": "Ирина Силантьева",
+        "date_published": "2024-05-01"
+      }
+    },
+    {
+      "position": 6,
+      "supersedes_editorial_publication_id": "milovi-bootstrap-009",
+      "publication_id": "milovi-feed-20260824-001",
+      "operation": "sendPhoto",
+      "media_id": "p25",
+      "role": "dessert_showcase",
+      "caption": "🎁 Меренговые рулеты в подарочной коробке\n\nАккуратная подача превращает десерт в готовый подарочный формат. Здесь важны не только сами рулеты, но и то, как они собраны в единую композицию.\n\nТакой вариант можно рассматривать, когда большой праздничный торт не нужен, а хочется красивого десерта для встречи или подарка.\n\n🎂 Milovi Cake — торты и десерты на заказ\n📍 Санкт-Петербург\n\n🌐 Сайт: https://milovicake.ru/\n💬 ВКонтакте: https://vk.ru/milovi_cake\n▶️ YouTube: https://www.youtube.com/@milovi_cake\n📖 Дзен: https://dzen.ru/milovicake.ru\n\n#меренговыйрулет #десертыспб #milovicake"
+    },
+    {
+      "position": 7,
+      "supersedes_editorial_publication_id": "milovi-bootstrap-010",
+      "publication_id": "milovi-feed-20260825-001",
+      "operation": "sendPhoto",
+      "media_id": "p02",
+      "role": "design_reference",
+      "caption": "🌸 Розовый торт с цветочным декором\n\nОдна цветовая палитра и один ведущий декоративный мотив делают композицию спокойной и собранной. Цветы дают объём, а оттенки остаются в едином настроении.\n\nПри выборе оформления удобно сначала определить палитру и характер праздника, а уже потом добавлять персональные детали.\n\n🎂 Milovi Cake — торты и десерты на заказ\n📍 Санкт-Петербург\n\n🌐 Сайт: https://milovicake.ru/\n💬 ВКонтакте: https://vk.ru/milovi_cake\n▶️ YouTube: https://www.youtube.com/@milovi_cake\n📖 Дзен: https://dzen.ru/milovicake.ru\n\n#тортсцветами #тортспб #milovicake"
+    }
+  ]
+}
