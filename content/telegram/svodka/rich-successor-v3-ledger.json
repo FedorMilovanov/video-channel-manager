@@ -9,15 +9,15 @@
     "svodka-rich-wombat-cubic-poop": {
       "publication_id": "svodka-rich-wombat-cubic-poop",
       "scheduled_at": "2026-08-18T20:30:00+03:00",
-      "state": "intent",
-      "provider_effect": "impossible",
+      "state": "failed_no_effect",
+      "provider_effect": "confirmed_absent",
       "dispatch_mode": "scheduled",
       "workflow_run_id": "32168865064",
       "workflow_run_attempt": "1",
       "document_sha256": "sha256:ad60cde8deb05e3dd94e1f90fb4c577ed2a668054a4cd634d323c32599a6edec",
       "message_id": null,
       "message_url": null,
-      "error": null
+      "error": "Telegram rejected sendRichMessage: Bad Request: failed to get HTTP URL content"
     }
   }
 }
