@@ -1,0 +1,22 @@
+{
+  "schema_name": "video-channel-manager.telegram-generic-provider-outcome",
+  "schema_version": 1,
+  "publication_id": "milovi-canary-20260818-002",
+  "provider_payload_sha256": "sha256:d60f503934fb209429606b235622ab0d27a1179978c9fa78574cf517d321b07a",
+  "provider_effect": "verified",
+  "retryable": false,
+  "error": null,
+  "receipt": {
+    "schema_name": "video-channel-manager.telegram-generic-send-receipt",
+    "schema_version": 1,
+    "project_key": "milovi-cake",
+    "publication_id": "milovi-canary-20260818-002",
+    "provider_payload_sha256": "sha256:d60f503934fb209429606b235622ab0d27a1179978c9fa78574cf517d321b07a",
+    "chat_id": -1002215328390,
+    "chat_username": "MiloviCake",
+    "message_id": 26,
+    "message_url": "https://t.me/MiloviCake/26",
+    "verified_at_utc": "2026-08-18T19:02:24.797327Z",
+    "provider_effect": "verified"
+  }
+}
