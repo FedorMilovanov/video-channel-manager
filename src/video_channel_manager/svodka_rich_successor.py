@@ -9,7 +9,12 @@ from typing import Any, Literal, Sequence, cast
 
 from video_channel_manager import svodka_rich_production as legacy
 from video_channel_manager.svodka_rich_loader import load_svodka_rich_article
-from video_channel_manager.telegram_rich_provider import TelegramRichProviderOutcome
+from video_channel_manager.telegram_channel_profile import load_channel_profile
+from video_channel_manager.telegram_rich_provider import (
+    HttpxTelegramRichMutationProvider,
+    TelegramRichProviderOutcome,
+    publish_rich_once,
+)
 from video_channel_manager.telegram_rich_renderer import render_rich_document
 
 RELEASE_ID = "svodka-rich-v2-successor-2026-08"
@@ -249,10 +254,10 @@ def send(
     legacy._require_proof(proof, document)
     if legacy._sha(proof.model_dump(mode="json")) != intent.get("target_proof_sha256"):
         raise ValueError("successor target proof changed after durable intent")
-    profile = legacy.load_channel_profile(legacy._verify(root, cast(dict[str, Any], release["profile"])))
-    provider = legacy.HttpxTelegramRichMutationProvider(token=token)
+    profile = load_channel_profile(legacy._verify(root, cast(dict[str, Any], release["profile"])))
+    provider = HttpxTelegramRichMutationProvider(token=token)
     try:
-        archived = legacy.publish_rich_once(
+        archived = publish_rich_once(
             document,
             proof,
             provider,
@@ -317,7 +322,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "media_count": len(article.media),
                 }
             )
-        print(json.dumps({"release_sha256": release_digest(release), "items": items, "provider_write_performed": False}, ensure_ascii=False))
+        print(
+            json.dumps(
+                {"release_sha256": release_digest(release), "items": items, "provider_write_performed": False},
+                ensure_ascii=False,
+            )
+        )
         return 0
     if args.cmd == "ensure-ledger":
         ledger = load_ledger(args.ledger, release, create=True)
@@ -330,13 +340,30 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(json.dumps({"eligible": False, "provider_write_performed": False}))
             return 3
         item, mode = chosen
-        print(json.dumps({"eligible": True, "publication_id": item["publication_id"], "dispatch_mode": mode, "provider_write_performed": False}))
+        print(
+            json.dumps(
+                {
+                    "eligible": True,
+                    "publication_id": item["publication_id"],
+                    "dispatch_mode": mode,
+                    "provider_write_performed": False,
+                }
+            )
+        )
         return 0
     if args.cmd == "media-proof":
         expected = legacy._read(args.expected) if args.expected else None
         value = media_proof(args.root, release, _item(release, args.publication_id), expected)
         legacy._write(args.output, value)
-        print(json.dumps({"publication_id": args.publication_id, "media_count": len(value["items"]), "provider_write_performed": False}))
+        print(
+            json.dumps(
+                {
+                    "publication_id": args.publication_id,
+                    "media_count": len(value["items"]),
+                    "provider_write_performed": False,
+                }
+            )
+        )
         return 0
     if args.cmd == "prepare":
         ledger = load_ledger(args.ledger, release)
@@ -353,7 +380,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         legacy._write(args.ledger, ledger)
         legacy._write(args.intent_output, intent)
-        print(json.dumps({"publication_id": intent["publication_id"], "dispatch_mode": intent["dispatch_mode"], "provider_write_performed": False}))
+        print(
+            json.dumps(
+                {
+                    "publication_id": intent["publication_id"],
+                    "dispatch_mode": intent["dispatch_mode"],
+                    "provider_write_performed": False,
+                }
+            )
+        )
         return 0
     if args.cmd == "send":
         intent = legacy._read(args.intent)
@@ -366,7 +401,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.outcome,
             os.environ["SVODKA_TELEGRAM_BOT_TOKEN"],
         )
-        print(json.dumps({"publication_id": intent["publication_id"], "provider_effect": outcome.provider_effect, "message_id": outcome.message_id}, ensure_ascii=False))
+        print(
+            json.dumps(
+                {
+                    "publication_id": intent["publication_id"],
+                    "provider_effect": outcome.provider_effect,
+                    "message_id": outcome.message_id,
+                },
+                ensure_ascii=False,
+            )
+        )
         return 0 if outcome.provider_effect == "verified" else 4
     if args.cmd == "apply":
         ledger = load_ledger(args.ledger, release)
@@ -375,7 +419,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         ledger = apply(ledger, intent, outcome)
         legacy._write(args.ledger, ledger)
         state = cast(dict[str, dict[str, Any]], ledger["entries"])[str(intent["publication_id"])]["state"]
-        print(json.dumps({"publication_id": intent["publication_id"], "state": state, "provider_effect": outcome.provider_effect}))
+        print(
+            json.dumps(
+                {"publication_id": intent["publication_id"], "state": state, "provider_effect": outcome.provider_effect}
+            )
+        )
         return 0 if state == "published" else 4
 
     ledger = load_ledger(args.ledger, release)
