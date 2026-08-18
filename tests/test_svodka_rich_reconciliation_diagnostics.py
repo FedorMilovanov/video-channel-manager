@@ -10,9 +10,9 @@ def test_reconciliation_persists_diagnostic_before_hard_stop_or_state_proof() ->
     assert "continue-on-error: true" in workflow
     assert "Persist provider-free reconciliation diagnostic" in workflow
     assert "reconciliation-diagnostics/${{ github.run_id }}-${{ github.run_attempt }}.json" in workflow
-    assert "provider_access_performed\": False" in workflow
-    assert "provider_write_performed\": False" in workflow
-    assert "replay_performed\": False" in workflow
+    assert 'provider_access_performed": False' in workflow
+    assert 'provider_write_performed": False' in workflow
+    assert 'replay_performed": False' in workflow
     assert "Stop after durable diagnostic if reconciliation failed" in workflow
 
     reconcile = workflow.index("Reconcile archived message 28 without provider access")
