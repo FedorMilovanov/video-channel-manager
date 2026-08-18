@@ -74,8 +74,11 @@ jobs:
           test "$(git -C "$STATE_DIR" rev-parse "HEAD:$OUTCOME_REL")" = "$EXPECTED_OUTCOME_BLOB"
 
       - name: Reconcile archived message 28 without provider access
+        id: reconcile
+        continue-on-error: true
+        shell: bash
         run: |
-          set -euo pipefail
+          set +e
           python -m video_channel_manager.svodka_rich_reconciliation \
             --release "$RELEASE_PATH" \
             --root . \
@@ -84,7 +87,73 @@ jobs:
             --outcome "$STATE_DIR/$OUTCOME_REL" \
             --authorization "$AUTH_PATH" \
             --proof-output "$STATE_DIR/$PROOF_REL" \
-            > .reconciliation-result.json
+            > .reconciliation-result.json 2> .reconciliation-stderr.txt
+          status=$?
+          set -e
+          cat .reconciliation-result.json
+          cat .reconciliation-stderr.txt >&2
+          exit "$status"
+
+      - name: Persist provider-free reconciliation diagnostic
+        if: always()
+        env:
+          RECONCILE_OUTCOME: ${{ steps.reconcile.outcome }}
+          DIAGNOSTIC_REL: content/telegram/svodka/rich-successor-dispatches/32147454449-1/reconciliation-diagnostics/${{ github.run_id }}-${{ github.run_attempt }}.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          diagnostic_abs="$STATE_DIR/$DIAGNOSTIC_REL"
+          mkdir -p "$(dirname "$diagnostic_abs")"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          def text(path: str) -> str:
+              value = Path(path)
+              if not value.exists():
+                  return ""
+              return value.read_text(encoding="utf-8", errors="replace")[-12000:]
+
+          payload = {
+              "schema_name": "video-channel-manager.svodka-rich-successor-reconciliation-diagnostic",
+              "schema_version": 1,
+              "workflow_run_id": os.environ["GITHUB_RUN_ID"],
+              "workflow_run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "github_sha": os.environ["GITHUB_SHA"],
+              "reconcile_outcome": os.environ["RECONCILE_OUTCOME"],
+              "stdout": text(".reconciliation-result.json"),
+              "stderr": text(".reconciliation-stderr.txt"),
+              "provider_access_performed": False,
+              "provider_write_performed": False,
+              "replay_performed": False,
+          }
+          Path(os.environ["DIAGNOSTIC_ABS"]).write_text(
+              json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          git -C "$STATE_DIR" config user.name 'svodka-publisher[bot]'
+          git -C "$STATE_DIR" config user.email 'svodka-publisher@users.noreply.github.com'
+          git -C "$STATE_DIR" add -- "$DIAGNOSTIC_REL"
+          git -C "$STATE_DIR" diff --cached --quiet && { echo 'Reconciliation diagnostic produced no durable delta.' >&2; exit 3; }
+          git -C "$STATE_DIR" commit -m "Record Svodka reconciliation diagnostic $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+        env:
+          RECONCILE_OUTCOME: ${{ steps.reconcile.outcome }}
+          DIAGNOSTIC_REL: content/telegram/svodka/rich-successor-dispatches/32147454449-1/reconciliation-diagnostics/${{ github.run_id }}-${{ github.run_attempt }}.json
+          DIAGNOSTIC_ABS: ${{ env.STATE_DIR }}/content/telegram/svodka/rich-successor-dispatches/32147454449-1/reconciliation-diagnostics/${{ github.run_id }}-${{ github.run_attempt }}.json
+
+      - name: Stop after durable diagnostic if reconciliation failed
+        if: always() && steps.reconcile.outcome != 'success'
+        run: |
+          echo 'Provider-free reconciliation failed; durable diagnostic was recorded. No Telegram access or replay occurred.' >&2
+          exit 1
+
+      - name: Persist only reconciled ledger and proof
+        if: steps.reconcile.outcome == 'success'
+        run: |
+          set -euo pipefail
           python - <<'PY'
           import json
           result = json.load(open('.reconciliation-result.json', encoding='utf-8'))
@@ -93,10 +162,6 @@ jobs:
           assert result['provider_write_performed'] is False
           assert result['replay_performed'] is False
           PY
-
-      - name: Persist only reconciled ledger and proof
-        run: |
-          set -euo pipefail
           git -C "$STATE_DIR" config user.name 'svodka-publisher[bot]'
           git -C "$STATE_DIR" config user.email 'svodka-publisher@users.noreply.github.com'
           git -C "$STATE_DIR" add -- "$LEDGER_REL" "$PROOF_REL"
@@ -105,6 +170,7 @@ jobs:
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
 
       - name: Record provider-free reconciliation on owning issue
+        if: steps.reconcile.outcome == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
