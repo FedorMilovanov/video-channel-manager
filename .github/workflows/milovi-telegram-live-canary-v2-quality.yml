@@ -1,0 +1,137 @@
+name: Milovi Telegram live canary v2 quality
+
+on:
+  pull_request:
+    paths:
+      - "content/telegram/milovi-cake/oneoff-canary-authorized-release-2026-08-18-v2.json"
+      - "content/telegram/milovi-cake/oneoff-canary-execution-authorization-2026-08-18-v2.json"
+      - ".github/workflows/milovi-telegram-live-canary-v2*.yml"
+      - "tests/test_milovi_telegram_live_canary_v2.py"
+  push:
+    branches:
+      - main
+    paths:
+      - "content/telegram/milovi-cake/oneoff-canary-authorized-release-2026-08-18-v2.json"
+      - "content/telegram/milovi-cake/oneoff-canary-execution-authorization-2026-08-18-v2.json"
+      - ".github/workflows/milovi-telegram-live-canary-v2*.yml"
+      - "tests/test_milovi_telegram_live_canary_v2.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: milovi-telegram-live-canary-v2-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  exact-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      PROFILE_PATH: content/telegram/channels/milovi-cake.json
+      BINDING_PATH: content/telegram/channels/milovi-cake-target-binding.json
+      RELEASE_PATH: content/telegram/milovi-cake/oneoff-canary-authorized-release-2026-08-18-v2.json
+      EXECUTION_AUTH_PATH: content/telegram/milovi-cake/oneoff-canary-execution-authorization-2026-08-18-v2.json
+
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+
+      - name: Validate exact fresh live canary contract
+        shell: python
+        run: |
+          import json
+          import os
+          from datetime import datetime
+          from pathlib import Path
+
+          from video_channel_manager.telegram_channel_profile import load_channel_profile
+          from video_channel_manager.telegram_multichannel_release import load_release
+          from video_channel_manager.telegram_multichannel_transport import GenericPhotoPayload, render_photo_payload
+          from video_channel_manager.telegram_target_binding import load_target_binding
+
+          profile = load_channel_profile(Path(os.environ["PROFILE_PATH"]))
+          binding = load_target_binding(Path(os.environ["BINDING_PATH"]), profile)
+          release = load_release(Path(os.environ["RELEASE_PATH"]))
+          authorization = json.loads(Path(os.environ["EXECUTION_AUTH_PATH"]).read_text(encoding="utf-8"))
+
+          assert profile.project_key == "milovi-cake"
+          assert profile.channel_username == "@MiloviCake"
+          assert profile.provider_writes_authorized is True
+          assert profile.daily_verified_limit == 2
+          assert binding.chat_id == -1002215328390
+          assert binding.bot_id == 8716602202
+          assert binding.bot_username == "preaching_mp3_bot"
+
+          assert release.release_authorized is True
+          assert release.release_id == "milovi-oneoff-canary-2026-08-18-v2"
+          assert release.digest == "sha256:7d85bad0c335a4c6a8dd745226661aba8867cc103b5e16bf9ffe4c063b7e2eae"
+          assert release.reviewed_candidate_sha256 == "sha256:357fad009dbeedebc4af61390d3603bb9fd959a5617e9e367b3a0ee0b2d77f08"
+          assert release.target_binding_sha256 == binding.digest
+          assert len(release.items) == 1
+
+          item = release.items[0]
+          assert item.publication_id == "milovi-canary-20260818-002"
+          assert item.scheduled_at.isoformat() == "2026-08-18T21:50:00+03:00"
+          assert isinstance(item.payload, GenericPhotoPayload)
+          assert item.payload.provider_payload_sha256 == "sha256:d60f503934fb209429606b235622ab0d27a1179978c9fa78574cf517d321b07a"
+          assert item.payload.media_sha256 == "sha256:8bb0956e44084265d7a3a14ce01f96eb1e4a9c327c780448de34e068f6cf6f10"
+          assert item.payload.media_byte_size == 412206
+          assert item.payload.media_filename == "p11.jpg"
+
+          recomputed = render_photo_payload(
+              profile,
+              publication_id=item.publication_id,
+              caption=item.payload.caption,
+              media_path=item.payload.media_path,
+              media_sha256=item.payload.media_sha256,
+              media_byte_size=item.payload.media_byte_size,
+              media_filename=item.payload.media_filename,
+          )
+          assert recomputed.provider_payload_sha256 == item.payload.provider_payload_sha256
+
+          assert authorization["schema_name"] == "video-channel-manager.telegram-oneoff-execution-authorization"
+          assert authorization["release_id"] == release.release_id
+          assert authorization["release_digest"] == release.digest
+          assert authorization["publication_id"] == item.publication_id
+          assert authorization["provider_payload_sha256"] == item.payload.provider_payload_sha256
+          assert authorization["media_sha256"] == item.payload.media_sha256
+          assert authorization["target_binding_sha256"] == binding.digest
+          assert authorization["chat_id"] == binding.chat_id
+          assert authorization["bot_id"] == binding.bot_id
+          assert authorization["bot_username"] == binding.bot_username
+          assert authorization["execution_authorized"] is True
+          assert authorization["automatic_dispatch_authorized"] is True
+          assert authorization["max_provider_attempts"] == 1
+          assert authorization["blind_mutation_retries"] == 0
+          assert authorization["supersedes_publication_id"] == "milovi-canary-20260818-001"
+          assert authorization["supersedes_only_if_prior_intent_absent"] is True
+          not_before = datetime.fromisoformat(authorization["execute_not_before"])
+          not_after = datetime.fromisoformat(authorization["execute_not_after"])
+          assert not_before.isoformat() == "2026-08-18T21:50:00+03:00"
+          assert not_after.isoformat() == "2026-08-18T23:50:00+03:00"
+          assert not_before < not_after
+
+          print(json.dumps({
+              "verified": True,
+              "release_digest": release.digest,
+              "publication_id": item.publication_id,
+              "provider_access_performed": False,
+              "provider_write_performed": False,
+          }, ensure_ascii=False))
