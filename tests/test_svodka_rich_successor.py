@@ -55,31 +55,31 @@ def test_historical_v2_selection_remains_reproducible_but_is_not_the_active_writ
     assert second_mode == "scheduled"
 
 
-def test_active_successor_workflow_is_fresh_v3_one_mutation_path_without_self_dispatch() -> None:
+def test_active_successor_workflow_is_fresh_v4_one_mutation_path_without_self_dispatch() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
-    assert "successor-v3-finalizer-2026-08.json" in workflow
-    assert "video_channel_manager.svodka_rich_successor_v3 send" in workflow
+    assert "successor-v4-cdn-finalizer-2026-08.json" in workflow
+    assert "video_channel_manager.svodka_rich_successor_v4 send" in workflow
+    assert "video_channel_manager.svodka_rich_successor_v3 send" not in workflow
     assert "video_channel_manager.svodka_rich_successor send" not in workflow
     assert "telegram_multichannel_cli send-once" not in workflow
     assert "/sendMessage" not in workflow
     assert "Require verified predecessor canary message 28" in workflow
+    assert "Require exact v3 confirmed-absent terminal state" in workflow
     assert "Persist intent before Telegram mutation" in workflow
     assert "Send exactly one successor Rich Message" in workflow
-    assert "Trigger second successor item after verified canary" not in workflow
     assert "gh workflow run svodka-rich-successor.yml" not in workflow
-    assert "Close successor rollout after verified second item" not in workflow
 
 
-def test_active_successor_persists_v3_preintent_diagnostics_before_any_provider_boundary() -> None:
+def test_active_successor_persists_v4_preintent_diagnostics_before_any_provider_boundary() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
     assert workflow.count("continue-on-error: true") == 3
     assert "'provider_write_performed': False" in workflow
-    assert "rich-successor-v3-preintent/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/diagnostic.json" in workflow
-    assert "Stop before provider boundary if v3 pre-intent proof failed" in workflow
+    assert "rich-successor-v4-preintent/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/diagnostic.json" in workflow
+    assert "Stop before provider boundary if v4 pre-intent proof failed" in workflow
 
-    diagnostic = workflow.index("Persist v3 pre-intent diagnostics before provider boundary")
-    diagnostic_commit = workflow.index("Commit durable v3 pre-intent diagnostic")
-    stop = workflow.index("Stop before provider boundary if v3 pre-intent proof failed")
+    diagnostic = workflow.index("Persist v4 pre-intent diagnostics before provider boundary")
+    diagnostic_commit = workflow.index("Commit durable v4 pre-intent diagnostic")
+    stop = workflow.index("Stop before provider boundary if v4 pre-intent proof failed")
     intent = workflow.index("Persist intent before Telegram mutation")
     send = workflow.index("Send exactly one successor Rich Message")
     assert diagnostic < diagnostic_commit < stop < intent < send
