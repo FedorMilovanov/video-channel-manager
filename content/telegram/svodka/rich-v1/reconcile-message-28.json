@@ -1,0 +1,17 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-successor-reconciliation-authorization",
+  "schema_version": 1,
+  "release_id": "svodka-rich-v2-successor-2026-08",
+  "release_sha256": "sha256:4a76be3fd8c5ba492ba39a9b2f04c9237e7795768cc269cb048225a7e634763b",
+  "publication_id": "svodka-rich-goldfish-three-second-memory-myth",
+  "workflow_run_id": "32147454449",
+  "workflow_run_attempt": "1",
+  "observed_message_id": 28,
+  "intent_git_blob_sha": "c644b71a6f59a2faf761d6cd914eb737099a3a3f",
+  "outcome_git_blob_sha": "a1641011b80eb6b709cbaa00ff065ce8895925d5",
+  "approved": true,
+  "provider_access_authorized": false,
+  "provider_write_authorized": false,
+  "replay_authorized": false,
+  "approval_basis": "Archived run 32147454449/1 returned HTTP 200, exact channel identity, observed message 28 and exact media. Reconcile only the reviewed Telegram normalization that coalesced adjacent plain-string RichText fragments; no provider access or replay is authorized."
+}
