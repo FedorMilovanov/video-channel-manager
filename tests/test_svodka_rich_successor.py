@@ -4,7 +4,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
 
-from video_channel_manager.svodka_rich_successor import build_document, load_ledger, load_release, select
+from video_channel_manager.svodka_rich_successor import (
+    MEDIA_USER_AGENT,
+    build_document,
+    load_ledger,
+    load_release,
+    select,
+)
 
 RELEASE_PATH = Path("content/telegram/svodka/rich-v1/successor-release-2026-08.json")
 WORKFLOW_PATH = Path(".github/workflows/svodka-rich-successor.yml")
@@ -23,6 +29,12 @@ def test_successor_is_two_item_guarded_release_with_entity_detection_enabled() -
         assert document.legacy_fallback is None
         assert len(document.provider_assigned_media_paths) == len(article.media)
         assert rendered.provider_assigned_media == tuple(media.media_id for media in article.media)
+
+
+def test_successor_media_reader_identifies_bot_and_operator() -> None:
+    assert "bot" in MEDIA_USER_AGENT.casefold()
+    assert "video-channel-manager" in MEDIA_USER_AGENT
+    assert "https://github.com/FedorMilovanov/video-channel-manager" in MEDIA_USER_AGENT
 
 
 def test_successor_canary_then_automatic_continuation_selection(tmp_path: Path) -> None:
