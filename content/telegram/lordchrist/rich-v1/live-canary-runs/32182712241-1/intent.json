@@ -1,0 +1,58 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-rich-live-canary-intent",
+  "schema_version": 1,
+  "release_sha256": "sha256:66eebd193d264a2d3b1e65fd4430fc1753a5fb9eb3db875a62deb6ea94e3de6f",
+  "owning_issue": 473,
+  "publication_id": "lordchrist-rich-sermons-survive-century",
+  "delivery_mode": "multipart-attach",
+  "github_repository": "FedorMilovanov/video-channel-manager",
+  "github_sha": "8f48d27c7a840f60bb2b21bb43b1ea48df60e5e9",
+  "workflow_run_id": "32182712241",
+  "workflow_run_attempt": "1",
+  "document_sha256": "sha256:93d77337c049daaf3785b08ebf3744cae2e1c01fc798763dc2e17c0e7dcce0a8",
+  "render_sha256": "sha256:b7f9c51dbfa0e5bfdffb50dbc51986a338dfe63eeda80e460779010104f2b89b",
+  "target_proof_sha256": "sha256:59cec5492f4f59ff755b448e37a18b963bb445c876bb3eddd7d66b2567483a6a",
+  "media_proof": {
+    "schema_name": "video-channel-manager.lordchrist-rich-live-media-proof",
+    "schema_version": 1,
+    "release_sha256": "sha256:66eebd193d264a2d3b1e65fd4430fc1753a5fb9eb3db875a62deb6ea94e3de6f",
+    "publication_id": "lordchrist-rich-sermons-survive-century",
+    "delivery_mode": "multipart-attach",
+    "checked_at_utc": "2026-08-18T20:31:51.938225+00:00",
+    "items": [
+      {
+        "media_id": "media-calvin",
+        "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/bc/Portrait_john_calvin.jpg",
+        "attachment_name": "lc_calvin",
+        "filename": "john-calvin.jpg",
+        "content_type": "image/jpeg",
+        "content_length": 30691,
+        "content_sha256": "sha256:5eb847ad06cf44e95bc2f2eb8a64949e287b394861f5469c68295b1afc3bc9c3"
+      },
+      {
+        "media_id": "media-spurgeon",
+        "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c5/Portrait_of_C._H._Spurgeon_%284671161%29.jpg",
+        "attachment_name": "lc_spurgeon",
+        "filename": "charles-spurgeon.jpg",
+        "content_type": "image/jpeg",
+        "content_length": 264910,
+        "content_sha256": "sha256:a7cdc68b7b09e57133faed8b33641057e0c0c18ac4436b3064d4fab405847be9"
+      },
+      {
+        "media_id": "media-tape",
+        "source_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d2/Reel-to-reel_tape_recorder_and_player%2C_c._1943%2C_manufacturer_unknown_-_Museum_of_Science_and_Industry_%28Chicago%29_-_DSC06663.JPG/1280px-Reel-to-reel_tape_recorder_and_player%2C_c._1943%2C_manufacturer_unknown_-_Museum_of_Science_and_Industry_%28Chicago%29_-_DSC06663.JPG",
+        "attachment_name": "lc_tape",
+        "filename": "reel-to-reel.jpg",
+        "content_type": "image/jpeg",
+        "content_length": 217743,
+        "content_sha256": "sha256:a6e62cb3c05e3d4a1bec61442ebc48ade891f355832bce84b9a700cc7363a37c"
+      }
+    ],
+    "provider_write_performed": false
+  },
+  "created_at_utc": "2026-08-18T20:31:52.480306+00:00",
+  "mutation_request_limit": 1,
+  "automatic_retry_allowed": false,
+  "blind_retry_allowed": false,
+  "fallback_allowed": false
+}
