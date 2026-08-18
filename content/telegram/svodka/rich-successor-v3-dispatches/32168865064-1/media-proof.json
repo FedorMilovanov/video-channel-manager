@@ -1,0 +1,17 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-production-media-proof",
+  "schema_version": 1,
+  "release_sha256": "sha256:4d92af8029b5a25c392376c6eac9e2dd4676ae0e0dabfd82ab3fdcda01f2b029",
+  "publication_id": "svodka-rich-wombat-cubic-poop",
+  "checked_at_utc": "2026-08-18T18:05:16.944265+00:00",
+  "items": [
+    {
+      "media_id": "asset-wombat-cubic-poop-media-01",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/3/3c/Common_wombat_%28Vombatus_ursinus_tasmaniensis%29_Maria_Island_2.jpg",
+      "content_type": "image/jpeg",
+      "content_length": 7406425,
+      "content_sha256": "sha256:12360cd961bcff11238bae9be5f0685993488180ca702b8b4a8c92b74456103b"
+    }
+  ],
+  "provider_write_performed": false
+}
