@@ -64,82 +64,18 @@ def test_canonical_research_and_profile_remain_inert() -> None:
     assert research.live_eligible is False
 
 
-def test_workflow_is_canary_first_same_writer_and_bounded() -> None:
-    workflow = WORKFLOW.read_text(encoding="utf-8")
+def test_research_v2_provider_workflow_is_retired_without_restoring_a_writer() -> None:
+    assert not WORKFLOW.exists()
+    assert LEGACY.exists()
     legacy = LEGACY.read_text(encoding="utf-8")
-    assert 'cron: "0 15 10-18 8 *"' in workflow
-    assert 'cron: "47 15 10-18 8 *"' in workflow
-    assert workflow.count("timezone: Europe/Moscow") == 2
-    assert "group: lordchrist-telegram-publisher" in workflow
     assert "group: lordchrist-telegram-publisher" in legacy
-    assert "cancel-in-progress: false" in workflow
-    assert "queue: max" in workflow
-    assert "FIRST_CANARY_PUBLICATION_ID: lordchrist-research-three-preachers-numbers" in workflow
-    assert "phase = 'canary'" in workflow
-    assert "phase = 'scheduled'" in workflow
-    assert "MAX_PUBLICATION_LAG_MINUTES: 120" in workflow
-    assert "LEDGER_RELATIVE_PATH: content/telegram/lordchrist/research-v2/publication-ledger.json" in workflow
-    assert "LEGACY_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json" in workflow
 
 
-def test_cross_track_quota_is_explicit_and_precedes_telegram_access() -> None:
+def test_historical_cross_track_limits_remain_frozen_in_approval() -> None:
     approval = load_lordchrist_research_rollout_approval(APPROVAL)
-    workflow = WORKFLOW.read_text(encoding="utf-8")
     assert approval.per_track_daily_verified_limit == 1
     assert approval.cross_track_daily_verified_limit == 2
     assert approval.cross_track_guard_issue == 246
-    quota = workflow.index("Enforce explicit legacy plus research daily ceiling")
-    preflight = workflow.index("Fresh read-only exact target preflight")
-    prepare = workflow.index("Prepare exactly one strict research dispatch")
-    assert quota < preflight < prepare
-    assert "lordchrist_research_cross_track_guard" in workflow
-    assert "steps.cross_track_quota.outputs.capacity == 'true'" in workflow
-
-
-def test_preflight_materializes_exact_target_inside_same_shell_step() -> None:
-    workflow = WORKFLOW.read_text(encoding="utf-8")
-    preflight = workflow.split("      - name: Fresh read-only exact target preflight\n", 1)[1].split(
-        "      - name: Prepare exactly one strict research dispatch\n", 1
-    )[0]
-    assert "GITHUB_ENV" not in preflight
-    assert (
-        "IFS=$'\\t' read -r LORDCHRIST_RESEARCH_CHAT_ID LORDCHRIST_RESEARCH_BOT_ID "
-        "LORDCHRIST_RESEARCH_BOT_USERNAME" in preflight
-    )
-    assert 'print(f"{binding.chat_id}\\t{binding.bot_id}\\t{binding.bot_username}")' in preflight
-    assert '--expected-chat-id "$LORDCHRIST_RESEARCH_CHAT_ID"' in preflight
-    assert '--expected-bot-id "$LORDCHRIST_RESEARCH_BOT_ID"' in preflight
-    assert '--expected-bot-username "$LORDCHRIST_RESEARCH_BOT_USERNAME"' in preflight
-
-
-def test_final_ci_failure_is_resolved_before_send_and_never_replayed_blindly() -> None:
-    workflow = WORKFLOW.read_text(encoding="utf-8")
-    persist = workflow.index("Persist research intent before Telegram mutation")
-    reproof = workflow.index("Re-prove current-main CI immediately before Telegram mutation")
-    resolve = workflow.index("Resolve blocked research pre-send intent as confirmed absent")
-    fail = workflow.index("Fail run after durable provider-free pre-send recovery")
-    send = workflow.index("Send exactly one research payload")
-    assert persist < reproof < resolve < fail < send
-    assert "id: pre_send_quality" in workflow
-    assert "continue-on-error: true" in workflow
-    assert "telegram_multichannel_recovery" in workflow
-    assert "steps.pre_send_quality.outcome != 'success'" in workflow
-    assert "steps.pre_send_quality.outcome == 'success'" in workflow
-    assert "confirmed-absent state was persisted" in workflow
-
-
-def test_workflow_orders_durable_intent_before_provider_and_outcome_before_state() -> None:
-    workflow = WORKFLOW.read_text(encoding="utf-8")
-    persist = workflow.index("Persist research intent before Telegram mutation")
-    reproof = workflow.index("Re-prove current-main CI immediately before Telegram mutation")
-    send = workflow.index("Send exactly one research payload")
-    archive = workflow.index("Archive exact research provider outcome before state mutation")
-    apply = workflow.index("Apply and persist exact research provider outcome")
-    assert persist < reproof < send < archive < apply
-    assert workflow.count("GH_TOKEN:") == 3
-    assert "if-no-files-found: error" in workflow
-    assert "retention-days: 30" in workflow
-    assert "!cancelled()" in workflow
 
 
 def test_approval_binds_issue_and_today_start() -> None:

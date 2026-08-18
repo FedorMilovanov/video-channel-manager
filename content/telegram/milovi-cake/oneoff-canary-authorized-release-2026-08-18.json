@@ -1,0 +1,41 @@
+{
+  "schema_name": "video-channel-manager.telegram-release-queue",
+  "schema_version": 1,
+  "release_id": "milovi-oneoff-canary-2026-08-18",
+  "project_key": "milovi-cake",
+  "channel_username": "@MiloviCake",
+  "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+  "timezone": "Europe/Moscow",
+  "daily_verified_limit": 2,
+  "target_binding_sha256": "sha256:741a8b4b54d785976236c6f15ed5d82cc9ad46aeb96a80cf372f22c421ba047c",
+  "chat_id": -1002215328390,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "release_authorized": true,
+  "reviewed_candidate_sha256": "sha256:c83ae0f172341f2c247dcd3a150e7da8e6dcd423b026002b81d45b4d0963b39b",
+  "reviewed_by": "FedorMilovanov — explicit chat authorization for one-off canary",
+  "reviewed_at": "2026-08-18T15:36:00+03:00",
+  "items": [
+    {
+      "sequence": 1,
+      "publication_id": "milovi-canary-20260818-001",
+      "scheduled_at": "2026-08-18T16:10:00+03:00",
+      "source_sha256": "sha256:c58f84f484e2d7b63a26130b14a62fd7e2acb4cca202a1379a34c551d4f66d1e",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-photo-payload",
+        "schema_version": 1,
+        "project_key": "milovi-cake",
+        "channel_username": "@MiloviCake",
+        "publication_id": "milovi-canary-20260818-001",
+        "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+        "provider_payload_sha256": "sha256:60ba1bdd1e9a05d6bb7620951a5861140c253477c533be25d3aabe362c96cdef",
+        "caption": "Светлый свадебный торт\n\nРеальная работа Milovi Cake для камерной свадьбы: светлая палитра, чистая форма и сдержанный декор без визуального перегруза.\n\nХороший референс, если хочется торжественного, но спокойного дизайна.",
+        "media_path": ".runtime/milovi-telegram-bootstrap/media/p11.jpg",
+        "media_sha256": "sha256:8bb0956e44084265d7a3a14ce01f96eb1e4a9c327c780448de34e068f6cf6f10",
+        "media_byte_size": 412206,
+        "media_filename": "p11.jpg",
+        "media_mime_type": "image/jpeg"
+      }
+    }
+  ]
+}

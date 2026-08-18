@@ -1,0 +1,133 @@
+name: Milovi Cake one-off canary dispatch controller
+
+on:
+  schedule:
+    # 16:10–17:00 Europe/Moscow on the authorized date; exact date/time is re-checked below.
+    - cron: "10,20,30,40,50 13 * * *"
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: milovi-cake-oneoff-canary-controller
+  cancel-in-progress: false
+
+jobs:
+  dispatch-exact-once:
+    if: github.event_name == 'schedule' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      PROVIDER_WORKFLOW: milovi-telegram-oneoff-canary.yml
+      PUBLICATION_ID: milovi-canary-20260818-001
+      CONFIRM: PUBLISH:@MiloviCake:milovi-canary-20260818-001
+
+    steps:
+      - name: Check out exact current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+
+      - name: Resolve exact date and bounded controller window
+        id: window
+        shell: python
+        run: |
+          from datetime import datetime, time
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+          import os
+
+          now = datetime.now(ZoneInfo("Europe/Moscow"))
+          active = (
+              now.date().isoformat() == "2026-08-18"
+              and time(16, 10) <= now.time().replace(tzinfo=None) <= time(17, 5)
+          )
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write(f"active={'true' if active else 'false'}\n")
+          print({
+              "active": active,
+              "moscow_now": now.isoformat(),
+              "provider_access_performed": False,
+              "provider_write_performed": False,
+          })
+
+      - name: Require exact current-main one-off quality and media proofs
+        if: steps.window.outputs.active == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow ci.yml \
+            --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow milovi-telegram-oneoff-canary-quality.yml \
+            --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow milovi-telegram-bootstrap-media-proof.yml \
+            --sha "$GITHUB_SHA"
+
+      - name: Check whether exact provider workflow was already dispatched
+        if: steps.window.outputs.active == 'true'
+        id: prior
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api \
+            "/repos/$GITHUB_REPOSITORY/actions/workflows/$PROVIDER_WORKFLOW/runs?event=workflow_dispatch&branch=main&per_page=20" \
+            > /tmp/milovi-oneoff-runs.json
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          runs = json.loads(Path("/tmp/milovi-oneoff-runs.json").read_text(encoding="utf-8")).get("workflow_runs", [])
+          exact = [
+              run for run in runs
+              if run.get("head_sha") == os.environ["GITHUB_SHA"]
+              and str(run.get("created_at") or "") >= "2026-08-18T13:00:00Z"
+          ]
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write(f"already={'true' if exact else 'false'}\n")
+          print({"prior_exact_dispatch_runs": [run.get("id") for run in exact]})
+          PY
+
+      - name: Dispatch exact pre-authorized provider workflow once
+        if: steps.window.outputs.active == 'true' && steps.prior.outputs.already != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' > /tmp/milovi-oneoff-dispatch.json
+          import json
+          import os
+          print(json.dumps({
+              "ref": "main",
+              "inputs": {"confirm": os.environ["CONFIRM"]},
+          }))
+          PY
+          gh api \
+            --method POST \
+            "/repos/$GITHUB_REPOSITORY/actions/workflows/$PROVIDER_WORKFLOW/dispatches" \
+            --input /tmp/milovi-oneoff-dispatch.json
+          echo "Exact Milovi one-off canary provider workflow dispatched. This controller performs no Telegram access."
