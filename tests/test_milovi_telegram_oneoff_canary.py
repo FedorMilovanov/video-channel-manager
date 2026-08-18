@@ -38,9 +38,7 @@ def test_oneoff_release_is_exact_and_separate_from_stale_bootstrap_identity() ->
     assert item.payload.provider_payload_sha256 == (
         "sha256:60ba1bdd1e9a05d6bb7620951a5861140c253477c533be25d3aabe362c96cdef"
     )
-    assert item.payload.media_sha256 == (
-        "sha256:8bb0956e44084265d7a3a14ce01f96eb1e4a9c327c780448de34e068f6cf6f10"
-    )
+    assert item.payload.media_sha256 == ("sha256:8bb0956e44084265d7a3a14ce01f96eb1e4a9c327c780448de34e068f6cf6f10")
 
 
 def test_execution_authorization_is_one_operation_and_zero_blind_retries() -> None:
