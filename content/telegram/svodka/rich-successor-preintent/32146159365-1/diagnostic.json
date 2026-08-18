@@ -1,0 +1,19 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-successor-preintent-diagnostic",
+  "schema_version": 1,
+  "workflow_run_id": "32146159365",
+  "workflow_run_attempt": "1",
+  "github_sha": "71e3b499f3a6d12f6f4028dc27d460a4b024f9f1",
+  "publication_id": "svodka-rich-goldfish-three-second-memory-myth",
+  "dispatch_mode": "canary",
+  "target_outcome": "success",
+  "media_outcome": "failure",
+  "prepare_outcome": "skipped",
+  "target_stdout": "{\"preflight\": true, \"project_key\": \"svodka\", \"channel_username\": \"@deep_info_life\", \"chat_id\": -1003527567039, \"chat_username\": \"deep_info_life\", \"bot_id\": 8716602202, \"bot_username\": \"preaching_mp3_bot\", \"can_post_messages\": true, \"profile_sha256\": \"sha256:bbfd1a0b354a3ba874595a6397477498ba28f5dd5bdc2de298b1ef23649575d9\"}\n",
+  "target_stderr": "",
+  "media_stdout": "",
+  "media_stderr": "Traceback (most recent call last):\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/home/runner/work/video-channel-manager/video-channel-manager/src/video_channel_manager/svodka_rich_successor.py\", line 438, in <module>\n    raise SystemExit(main())\n                     ^^^^^^\n  File \"/home/runner/work/video-channel-manager/video-channel-manager/src/video_channel_manager/svodka_rich_successor.py\", line 356, in main\n    value = media_proof(args.root, release, _item(release, args.publication_id), expected)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/video-channel-manager/video-channel-manager/src/video_channel_manager/svodka_rich_successor.py\", line 173, in media_proof\n    return legacy.media_proof(root, release, item, expected)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/video-channel-manager/video-channel-manager/src/video_channel_manager/svodka_rich_production.py\", line 304, in media_proof\n    raise ValueError(f\"media proof failed: {media.media_id}\")\nValueError: media proof failed: asset-goldfish-three-second-memory-myth-media-01\n",
+  "prepare_stdout": "",
+  "prepare_stderr": "",
+  "provider_write_performed": false
+}
