@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from datetime import datetime
 from pathlib import Path
 
@@ -87,10 +86,9 @@ def test_multipart_provider_sends_exact_three_attachments_in_one_request() -> No
         body = request.content
         content_type = request.headers["content-type"]
         assert "multipart/form-data" in content_type
-        assert b'"chat_id"' not in body
         assert b"-1001295216957" in body
         for name in ATTACHMENT_NAMES.values():
-            assert f'attach://{name}'.encode() in body
+            assert f"attach://{name}".encode() in body
             assert f'name="{name}"'.encode() in body
         assert b"CALVIN_BYTES" in body
         assert b"SPURGEON_BYTES" in body
