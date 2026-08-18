@@ -274,15 +274,30 @@ def test_archived_outcome_recovery_uses_exact_release_but_no_new_provider_or_qua
     assert "SVODKA_TELEGRAM_BOT_TOKEN" not in workflow
 
 
-def test_only_reviewed_svodka_successor_may_be_push_triggered_and_write_capable() -> None:
+def test_only_reviewed_svodka_push_state_writers_exist_and_reconciliation_is_provider_free() -> None:
     workflows_dir = REPOSITORY_ROOT / ".github/workflows"
     assert sorted(path.name for path in workflows_dir.glob("svodka-*-once.yml")) == []
-    push_writers = {
+    push_state_writers = {
         path.name
         for path in workflows_dir.glob("svodka-*.yml")
         if "push:" in _workflow(path) and "contents: write" in _workflow(path)
     }
-    assert push_writers == {"svodka-rich-successor.yml"}
+    assert push_state_writers == {"svodka-rich-successor.yml", "svodka-rich-reconcile-message-28.yml"}
+
+    provider_writer = _workflow(workflows_dir / "svodka-rich-successor.yml")
+    assert "SVODKA_TELEGRAM_BOT_TOKEN" in provider_writer
+    assert "Send exactly one successor Rich Message" in provider_writer
+
+    reconciliation = _workflow(workflows_dir / "svodka-rich-reconcile-message-28.yml")
+    assert "secrets." not in reconciliation
+    assert "SVODKA_TELEGRAM_BOT_TOKEN" not in reconciliation
+    assert "sendRichMessage" not in reconciliation
+    assert "sendMessage" not in reconciliation
+    assert "provider_access_performed'] is False" in reconciliation
+    assert "provider_write_performed'] is False" in reconciliation
+    assert "replay_performed'] is False" in reconciliation
+    assert "EXPECTED_INTENT_BLOB" in reconciliation
+    assert "EXPECTED_OUTCOME_BLOB" in reconciliation
 
 
 def test_all_svodka_workflows_pin_supported_runner_image() -> None:
