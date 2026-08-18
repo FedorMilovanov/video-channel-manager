@@ -1,0 +1,136 @@
+name: Milovi canary forensic evidence 2026-08-18
+
+on:
+  push:
+    branches:
+      - agent/milovi-canary-forensics-20260818
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FORENSIC_PR: "466"
+    steps:
+      - name: Capture exact historical Actions evidence
+        shell: python
+        run: |
+          from __future__ import annotations
+
+          import json
+          import os
+          import urllib.parse
+          import urllib.request
+
+          repository = os.environ["GITHUB_REPOSITORY"]
+          token = os.environ["GH_TOKEN"]
+          start = "2026-08-18T13:15:00Z"
+          end = "2026-08-18T14:10:00Z"
+          workflows = (
+              "milovi-telegram-oneoff-canary-dispatch.yml",
+              "milovi-telegram-oneoff-canary.yml",
+              "ci.yml",
+              "milovi-telegram-oneoff-canary-quality.yml",
+              "milovi-telegram-bootstrap-media-proof.yml",
+          )
+
+          def request_json(url: str, *, method: str = "GET", body: dict | None = None) -> dict:
+              data = None if body is None else json.dumps(body).encode()
+              request = urllib.request.Request(
+                  url,
+                  data=data,
+                  method=method,
+                  headers={
+                      "Accept": "application/vnd.github+json",
+                      "Authorization": f"Bearer {token}",
+                      "Content-Type": "application/json",
+                      "User-Agent": "video-channel-manager-milovi-forensics",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                  },
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
+                  payload = json.load(response)
+              return payload if isinstance(payload, dict) else {"value": payload}
+
+          evidence: dict[str, object] = {
+              "window_utc": [start, end],
+              "provider_access_performed": False,
+              "provider_write_performed": False,
+              "workflows": [],
+          }
+          workflow_evidence: list[dict[str, object]] = []
+
+          for workflow in workflows:
+              encoded = urllib.parse.quote(workflow, safe="")
+              url = (
+                  f"https://api.github.com/repos/{repository}/actions/workflows/{encoded}/runs"
+                  "?per_page=100"
+              )
+              payload = request_json(url)
+              selected: list[dict[str, object]] = []
+              for run in payload.get("workflow_runs", []):
+                  created = str(run.get("created_at") or "")
+                  if not (start <= created <= end):
+                      continue
+                  run_view: dict[str, object] = {
+                      "id": run.get("id"),
+                      "run_number": run.get("run_number"),
+                      "event": run.get("event"),
+                      "status": run.get("status"),
+                      "conclusion": run.get("conclusion"),
+                      "head_sha": run.get("head_sha"),
+                      "head_branch": run.get("head_branch"),
+                      "created_at": created,
+                      "updated_at": run.get("updated_at"),
+                  }
+                  if workflow in {
+                      "milovi-telegram-oneoff-canary-dispatch.yml",
+                      "milovi-telegram-oneoff-canary.yml",
+                  }:
+                      jobs_payload = request_json(str(run.get("jobs_url")))
+                      run_view["jobs"] = [
+                          {
+                              "id": job.get("id"),
+                              "name": job.get("name"),
+                              "status": job.get("status"),
+                              "conclusion": job.get("conclusion"),
+                              "started_at": job.get("started_at"),
+                              "completed_at": job.get("completed_at"),
+                              "steps": [
+                                  {
+                                      "name": step.get("name"),
+                                      "status": step.get("status"),
+                                      "conclusion": step.get("conclusion"),
+                                      "number": step.get("number"),
+                                  }
+                                  for step in job.get("steps", [])
+                              ],
+                          }
+                          for job in jobs_payload.get("jobs", [])
+                      ]
+                  selected.append(run_view)
+              workflow_evidence.append({"workflow": workflow, "runs": selected})
+
+          evidence["workflows"] = workflow_evidence
+          pretty = json.dumps(evidence, ensure_ascii=False, indent=2, sort_keys=True)
+          print(pretty)
+
+          comment = (
+              "## Provider-free Milovi canary forensic evidence\n\n"
+              "Exact historical Actions metadata for 2026-08-18 16:15–17:10 MSK. "
+              "This probe performed no Telegram access and no provider write.\n\n"
+              "```json\n"
+              + pretty
+              + "\n```"
+          )
+          request_json(
+              f"https://api.github.com/repos/{repository}/issues/{os.environ['FORENSIC_PR']}/comments",
+              method="POST",
+              body={"body": comment},
+          )
