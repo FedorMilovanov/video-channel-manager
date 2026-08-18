@@ -1,0 +1,15 @@
+{
+  "schema_name": "video-channel-manager.telegram-target-binding",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "profile_sha256": "sha256:a02f33ce5166adb01a7869f6be9becdd46bfb180f80c7143a10c7bbd37a0b173",
+  "chat_id": -1001295216957,
+  "chat_username": "lordchrist",
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "can_post_messages": true,
+  "discovered_at_utc": "2026-08-08T07:13:09.125496Z",
+  "discovery_method": "getMe + getChat(numeric id) + getChat(@username) + getChatAdministrators",
+  "provider_write_performed": false
+}
