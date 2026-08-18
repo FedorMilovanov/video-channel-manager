@@ -1,0 +1,16 @@
+{
+  "schema_name": "video-channel-manager.telegram-generic-target-proof",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "channel_username": "@MiloviCake",
+  "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "chat_id": -1002215328390,
+  "chat_username": "MiloviCake",
+  "chat_title": "Milovi Cake",
+  "chat_type": "channel",
+  "member_status": "administrator",
+  "can_post_messages": true,
+  "checked_at_utc": "2026-08-18T19:02:17.150837Z"
+}
