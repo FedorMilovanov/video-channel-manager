@@ -11,34 +11,37 @@ from video_channel_manager.telegram_multichannel_release import load_release
 from video_channel_manager.telegram_target_binding import load_target_binding
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-LEDGER_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-ledger-init.yml"
-CANARY_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-canary.yml"
-CUSTOM_EMOJI_CANARY_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-custom-emoji-capability-canary.yml"
-NATIVE_RICH_CANARY_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-native-rich-message-canary.yml"
-RICH_PRODUCTION_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-rich-production.yml"
-RICH_SUCCESSOR_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-rich-successor.yml"
-RICH_MESSAGE_28_RECONCILIATION_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-rich-reconcile-message-28.yml"
-SKIP_EXPIRED_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-skip-expired.yml"
-SCHEDULED_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-scheduled-publisher.yml"
-RECONCILE_SKIPPED_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-reconcile-skipped-send.yml"
-RECONCILE_OUTCOME_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-reconcile-provider-outcome.yml"
+WORKFLOWS_DIR = REPOSITORY_ROOT / ".github/workflows"
+SKIP_EXPIRED_WORKFLOW = WORKFLOWS_DIR / "svodka-skip-expired.yml"
+PREFLIGHT_WORKFLOW = WORKFLOWS_DIR / "svodka-telegram-preflight.yml"
+QUALITY_WORKFLOW = WORKFLOWS_DIR / "svodka-quality.yml"
+APPROVED_RELEASE_QUALITY_WORKFLOW = WORKFLOWS_DIR / "svodka-approved-release-quality.yml"
+ROLLOUT_CANDIDATE_WORKFLOW = WORKFLOWS_DIR / "svodka-rollout-candidate.yml"
 PROFILE_PATH = REPOSITORY_ROOT / "content/telegram/channels/svodka.json"
 BINDING_PATH = REPOSITORY_ROOT / "content/telegram/channels/svodka-target-binding.json"
 QUEUE_PATH = REPOSITORY_ROOT / "content/telegram/svodka/draft-14-posts-2026-08.json"
 APPROVAL_PATH = REPOSITORY_ROOT / "content/telegram/svodka/release-approval-2026-08.json"
 
-RELEASE_STATE_WRITER_WORKFLOWS = (
-    LEDGER_WORKFLOW,
-    SKIP_EXPIRED_WORKFLOW,
-    CANARY_WORKFLOW,
-    SCHEDULED_WORKFLOW,
-    RECONCILE_SKIPPED_WORKFLOW,
-    RECONCILE_OUTCOME_WORKFLOW,
-)
-STATE_WRITER_WORKFLOWS = RELEASE_STATE_WRITER_WORKFLOWS + (
-    CUSTOM_EMOJI_CANARY_WORKFLOW,
-    NATIVE_RICH_CANARY_WORKFLOW,
-)
+RETIRED_WORKFLOW_NAMES = {
+    "svodka-canary.yml",
+    "svodka-custom-emoji-capability-canary.yml",
+    "svodka-custom-emoji-harvest.yml",
+    "svodka-ledger-init.yml",
+    "svodka-native-rich-message-canary.yml",
+    "svodka-reconcile-provider-outcome.yml",
+    "svodka-reconcile-skipped-send.yml",
+    "svodka-rich-production.yml",
+    "svodka-rich-reconcile-message-28.yml",
+    "svodka-rich-successor.yml",
+    "svodka-scheduled-publisher.yml",
+}
+REMAINING_WORKFLOW_NAMES = {
+    "svodka-approved-release-quality.yml",
+    "svodka-quality.yml",
+    "svodka-rollout-candidate.yml",
+    "svodka-skip-expired.yml",
+    "svodka-telegram-preflight.yml",
+}
 
 
 def _workflow(path: Path) -> str:
@@ -58,143 +61,40 @@ def _assert_dual_current_main_quality(workflow: str) -> None:
     assert '--sha "$GITHUB_SHA"' in workflow
 
 
-def test_all_state_writers_share_lossless_serialization_contract() -> None:
+def test_post_rollout_profile_closes_provider_write_gate_without_changing_identity() -> None:
+    profile = load_channel_profile(PROFILE_PATH)
+    binding = load_target_binding(BINDING_PATH, profile)
+
+    assert profile.project_key == "svodka"
+    assert profile.channel_username == "@deep_info_life"
+    assert profile.provider_writes_authorized is False
+    assert profile.digest == "sha256:bbfd1a0b354a3ba874595a6397477498ba28f5dd5bdc2de298b1ef23649575d9"
+    assert binding.profile_sha256 == profile.digest
+
+
+def test_only_provider_free_skip_expired_remains_in_svodka_state_writer_namespace() -> None:
     profile = load_channel_profile(PROFILE_PATH)
     expected_group = f"group: {profile.concurrency_group}"
-    expected_names = {path.name for path in STATE_WRITER_WORKFLOWS}
-    workflows_dir = REPOSITORY_ROOT / ".github/workflows"
-    discovered = {path for path in workflows_dir.glob("*.yml") if expected_group in _workflow(path)}
+    discovered = {path for path in WORKFLOWS_DIR.glob("svodka-*.yml") if expected_group in _workflow(path)}
 
-    assert not RICH_PRODUCTION_WORKFLOW.exists()
-    assert not RICH_SUCCESSOR_WORKFLOW.exists()
-    assert not RICH_MESSAGE_28_RECONCILIATION_WORKFLOW.exists()
-    assert {path.name for path in discovered} == expected_names
-    assert discovered == set(STATE_WRITER_WORKFLOWS)
-    for path in discovered:
-        workflow = _workflow(path)
-        assert "cancel-in-progress: false" in workflow, path.name
-        assert "queue: max" in workflow, path.name
-        assert "runs-on: ubuntu-24.04" in workflow, path.name
-    for path in RELEASE_STATE_WRITER_WORKFLOWS:
-        _assert_materialized_release_contract(_workflow(path))
-
-
-def test_custom_emoji_capability_canary_is_manual_serialized_and_release_independent() -> None:
-    workflow = _workflow(CUSTOM_EMOJI_CANARY_WORKFLOW)
-
-    assert "workflow_dispatch:" in workflow
-    assert "schedule:" not in workflow
-    assert "push:" not in workflow
-    assert "CUSTOM-EMOJI-CANARY:@deep_info_life:ONE-POST" in workflow
-    assert "group: svodka-telegram-publisher" in workflow
+    assert discovered == {SKIP_EXPIRED_WORKFLOW}
+    workflow = _workflow(SKIP_EXPIRED_WORKFLOW)
     assert "cancel-in-progress: false" in workflow
     assert "queue: max" in workflow
-    _assert_dual_current_main_quality(workflow)
-    assert "release-approval-2026-08.json" not in workflow
-    assert "svodka_approval_cli" not in workflow
-    assert "Persist intent before Telegram mutation" in workflow
-    assert "Archive exact canary outcome before durable-state mutation" in workflow
-    assert "Persist exact canary outcome and block blind retry" in workflow
-    assert "Refuse any second capability-canary attempt" in workflow
-    assert "telegram_custom_emoji_canary send" in workflow
-    assert "sendMessage" not in workflow
-    assert "deleteMessage" not in workflow
-
-    persist_index = workflow.index("Persist intent before Telegram mutation")
-    reproof_index = workflow.index("Re-prove current-main quality immediately before Telegram mutation")
-    send_index = workflow.index("Send exactly one visible custom-emoji capability post")
-    archive_index = workflow.index("Archive exact canary outcome before durable-state mutation")
-    apply_index = workflow.index("Persist exact canary outcome and block blind retry")
-    assert persist_index < reproof_index < send_index < archive_index < apply_index
-
-
-def test_native_rich_canary_is_manual_main_only_serialized_and_release_independent() -> None:
-    workflow = _workflow(NATIVE_RICH_CANARY_WORKFLOW)
-
-    assert "workflow_dispatch:" in workflow
-    assert "schedule:" not in workflow
-    assert "push:" not in workflow
-    assert "RICH-CANARY:@deep_info_life:ONE-ARTICLE" in workflow
-    assert "if: github.ref == 'refs/heads/main'" in workflow
-    assert "group: svodka-telegram-publisher" in workflow
-    assert "cancel-in-progress: false" in workflow
-    assert "queue: max" in workflow
-    _assert_dual_current_main_quality(workflow)
-    assert "release-approval-2026-08.json" not in workflow
-    assert "publication-ledger.json" not in workflow
-    assert "svodka_approval_cli" not in workflow
-    assert "Refuse every second native Rich Message canary run" in workflow
-    assert "Persist durable intent before any Telegram mutation" in workflow
-    assert "Dispatch exactly one native sendRichMessage mutation" in workflow
-    assert "Archive exact provider outcome before durable outcome" in workflow
-    assert "Persist durable outcome and permanently block blind retry" in workflow
-    assert "sendMessage" not in workflow
-    assert "deleteMessage" not in workflow
-    assert "editMessageText" not in workflow
-
-    persist_index = workflow.index("Persist durable intent before any Telegram mutation")
-    reproof_index = workflow.index("Re-prove exact current-main quality immediately before mutation")
-    send_index = workflow.index("Dispatch exactly one native sendRichMessage mutation")
-    archive_index = workflow.index("Archive exact provider outcome before durable outcome")
-    apply_index = workflow.index("Persist durable outcome and permanently block blind retry")
-    assert persist_index < reproof_index < send_index < archive_index < apply_index
-
-
-def test_ledger_initialization_is_manual_exact_provider_free_and_dual_quality_proven() -> None:
-    workflow = _workflow(LEDGER_WORKFLOW)
-
-    assert "workflow_dispatch:" in workflow
-    assert "schedule:" not in workflow
-    assert "INITIALIZE:$REQUESTED_DIGEST" in workflow
-    assert "release.release_authorized" in workflow
-    assert "initialize-ledger" in workflow
-    _assert_materialized_release_contract(workflow)
-    _assert_dual_current_main_quality(workflow)
-    initialize_index = workflow.index("initialize-ledger")
-    reproof_index = workflow.index("telegram_github_quality_gate", initialize_index)
-    commit_index = workflow.index('git -C "$STATE_DIR" commit -m "Initialize Svodka publication ledger [skip ci]"')
-    assert initialize_index < reproof_index < commit_index
+    assert "runs-on: ubuntu-24.04" in workflow
+    assert "secrets." not in workflow
     assert "sendMessage" not in workflow
     assert "sendPoll" not in workflow
-    assert "send-once" not in workflow
-    assert "secrets." not in workflow
+    assert "sendRichMessage" not in workflow
 
 
-def test_canary_is_exact_fresh_manual_dispatch_with_durable_intent_first() -> None:
-    workflow = _workflow(CANARY_WORKFLOW)
-
-    assert "workflow_dispatch:" in workflow
-    assert "schedule:" not in workflow
-    assert "CANARY:$REQUESTED_PUBLICATION_ID:$REQUESTED_DIGEST" in workflow
-    _assert_materialized_release_contract(workflow)
-    _assert_dual_current_main_quality(workflow)
-    assert "MAX_PUBLICATION_LAG_MINUTES: 120" in workflow
-    assert "Require fresh strict-next canary window" in workflow
-    assert "telegram_publication_freshness next" in workflow
-    assert '--publication-id "$REQUESTED_PUBLICATION_ID"' in workflow
-    assert "profile.provider_writes_authorized" in workflow
-    assert "release.release_authorized" in workflow
-    assert "Fresh read-only target preflight" in workflow
-    assert "Persist intent before Telegram mutation" in workflow
-    assert "Re-prove current-main quality immediately before Telegram mutation" in workflow
-    assert "send-once" in workflow
-
-    persist_index = workflow.index("Persist intent before Telegram mutation")
-    reproof_index = workflow.index("Re-prove current-main quality immediately before Telegram mutation")
-    send_index = workflow.index("Send exactly one canary payload")
-    archive_index = workflow.index("Archive exact provider outcome before state mutation")
-    apply_index = workflow.index("Apply and persist exact provider outcome")
-    assert persist_index < reproof_index < send_index < archive_index < apply_index
-    assert "svodka-provider-outcome-${{ github.run_id }}-${{ github.run_attempt }}" in workflow
-    assert "if-no-files-found: error" in workflow
-    assert "retention-days: 30" in workflow
-    assert "include-hidden-files: true" in workflow
-    assert "if: always()" not in workflow
-    assert "!cancelled()" in workflow
-    assert "initialize-ledger" not in workflow
+def test_completed_and_expired_august_execution_workflows_are_retired() -> None:
+    existing = {path.name for path in WORKFLOWS_DIR.glob("svodka-*.yml")}
+    assert existing == REMAINING_WORKFLOW_NAMES
+    assert existing.isdisjoint(RETIRED_WORKFLOW_NAMES)
 
 
-def test_stale_slot_recovery_is_manual_state_only_and_dual_quality_proven() -> None:
+def test_skip_expired_is_manual_exact_state_only_and_quality_proven() -> None:
     workflow = _workflow(SKIP_EXPIRED_WORKFLOW)
 
     assert "workflow_dispatch:" in workflow
@@ -206,101 +106,26 @@ def test_stale_slot_recovery_is_manual_state_only_and_dual_quality_proven() -> N
     assert workflow.index("telegram_github_quality_gate") < workflow.index(
         'git -C "$STATE_DIR" commit -m "Skip expired Svodka publication windows [skip ci]"'
     )
-    assert "sendMessage" not in workflow
-    assert "sendPoll" not in workflow
-    assert "send-once" not in workflow
-    assert "secrets." not in workflow
-
-
-def test_legacy_scheduler_is_manual_recovery_only_and_still_fail_closed() -> None:
-    workflow = _workflow(SCHEDULED_WORKFLOW)
-
-    assert "schedule:" not in workflow
-    assert "workflow_dispatch:" in workflow
-    assert workflow.count("cron:") == 0
-    assert "SVODKA-LEGACY-RECOVERY:@deep_info_life" in workflow
-    assert "github.event_name == 'workflow_dispatch'" in workflow
-    assert "inputs.confirm == 'SVODKA-LEGACY-RECOVERY:@deep_info_life'" in workflow
-    assert "github.ref == 'refs/heads/main'" in workflow
-    _assert_materialized_release_contract(workflow)
-    _assert_dual_current_main_quality(workflow)
-    assert "Require verified manual canary before scheduler activity" in workflow
-    assert 'entry.dispatch_mode == "manual"' in workflow
-    assert 'entry.provider_effect == "verified"' in workflow
-    assert "steps.canary.outputs.ready == 'true'" in workflow
-    assert "MAX_PUBLICATION_LAG_MINUTES: 120" in workflow
-    assert "telegram_publication_freshness next" in workflow
-    assert "steps.freshness.outputs.fresh == 'true'" in workflow
-
-    canary_index = workflow.index("Require verified manual canary before scheduler activity")
-    skip_index = workflow.index("Skip expired windows before any provider operation")
-    freshness_index = workflow.index("Check strict-next publication freshness")
-    preflight_index = workflow.index("Fresh read-only target preflight")
-    persist_index = workflow.index("Persist scheduled intent before Telegram mutation")
-    reproof_index = workflow.index("Re-prove current-main quality immediately before Telegram mutation")
-    send_index = workflow.index("Send exactly one scheduled payload")
-    archive_index = workflow.index("Archive exact provider outcome before state mutation")
-    apply_index = workflow.index("Apply and persist exact scheduled provider outcome")
-    assert canary_index < skip_index < freshness_index < preflight_index < persist_index < reproof_index < send_index
-    assert send_index < archive_index < apply_index
-    assert "send-once" in workflow
-
-
-def test_skipped_send_reconciliation_is_provider_free_and_quality_proven() -> None:
-    workflow = _workflow(RECONCILE_SKIPPED_WORKFLOW)
-
-    assert "workflow_dispatch:" in workflow
-    assert "schedule:" not in workflow
-    assert "RECONCILE-SKIPPED:" in workflow
-    _assert_materialized_release_contract(workflow)
-    _assert_dual_current_main_quality(workflow)
-    assert "provider send step is not proven skipped; reconciliation is forbidden" in workflow
-    assert 'provider_effect="confirmed_absent"' in workflow
-    assert "retryable=True" in workflow
-    assert "sendMessage" not in workflow
-    assert "sendPoll" not in workflow
-    assert "send-once" not in workflow
-    assert "secrets." not in workflow
-
-
-def test_archived_outcome_recovery_uses_exact_release_but_no_new_provider_or_quality_dependency() -> None:
-    workflow = _workflow(RECONCILE_OUTCOME_WORKFLOW)
-
-    assert "workflow_dispatch:" in workflow
-    assert "schedule:" not in workflow
-    assert "RECONCILE-OUTCOME:" in workflow
-    _assert_materialized_release_contract(workflow)
-    assert "telegram_github_quality_gate" not in workflow
-    assert "recovery runtime SHA is no longer current main" in workflow
-    assert "sendMessage" not in workflow
-    assert "sendPoll" not in workflow
-    assert "send-once" not in workflow
     assert "SVODKA_TELEGRAM_BOT_TOKEN" not in workflow
+    assert "secrets." not in workflow
+    assert "sendMessage" not in workflow
+    assert "sendPoll" not in workflow
+    assert "sendRichMessage" not in workflow
+    assert "send-once" not in workflow
 
 
-def test_no_completed_svodka_push_state_writer_remains_replayable() -> None:
-    workflows_dir = REPOSITORY_ROOT / ".github/workflows"
-    assert sorted(path.name for path in workflows_dir.glob("svodka-*-once.yml")) == []
-    push_state_writers = {
-        path.name
-        for path in workflows_dir.glob("svodka-*.yml")
-        if "push:" in _workflow(path) and "contents: write" in _workflow(path)
-    }
-    assert push_state_writers == set()
-    assert not RICH_SUCCESSOR_WORKFLOW.exists()
-    assert not RICH_MESSAGE_28_RECONCILIATION_WORKFLOW.exists()
+def test_remaining_preflight_is_read_only_and_separate_from_state_writer_mutex() -> None:
+    workflow = _workflow(PREFLIGHT_WORKFLOW)
+    assert "contents: read" in workflow
+    assert "group: svodka-telegram-preflight" in workflow
+    assert "group: svodka-telegram-publisher" not in workflow
+    assert "telegram_channel_cli preflight" in workflow
+    assert "sendMessage" not in workflow
+    assert "sendPoll" not in workflow
+    assert "sendRichMessage" not in workflow
 
 
-def test_all_svodka_workflows_pin_supported_runner_image() -> None:
-    for path in (REPOSITORY_ROOT / ".github/workflows").glob("svodka-*.yml"):
-        workflow = _workflow(path)
-        runs_on = [line.strip() for line in workflow.splitlines() if line.lstrip().startswith("runs-on:")]
-        assert runs_on, path.name
-        assert set(runs_on) == {"runs-on: ubuntu-24.04"}, path.name
-        assert "ubuntu-latest" not in workflow, path.name
-
-
-def test_review_receipt_materializes_exact_authorized_release(tmp_path: Path) -> None:
+def test_review_receipt_still_materializes_exact_historical_release_with_write_gate_closed(tmp_path: Path) -> None:
     output = tmp_path / "approved-release.json"
     approval = load_svodka_release_approval(APPROVAL_PATH)
     candidate_digest, release_digest = materialize_svodka_approved_release(
@@ -314,14 +139,33 @@ def test_review_receipt_materializes_exact_authorized_release(tmp_path: Path) ->
     binding = load_target_binding(BINDING_PATH, profile)
     release = load_release(output)
 
+    assert profile.provider_writes_authorized is False
     assert candidate_digest == approval.candidate_sha256
     assert release_digest == approval.approved_release_sha256
     assert release.digest == approval.approved_release_sha256
     assert release.release_authorized is True
     assert release.project_key == profile.project_key
-    assert release.channel_username == profile.channel_username
     assert release.profile_sha256 == profile.digest
     assert release.target_binding_sha256 == binding.digest
     assert release.chat_id == binding.chat_id
     assert release.bot_id == binding.bot_id
     assert release.bot_username == binding.bot_username
+
+
+def test_remaining_svodka_workflows_pin_supported_runner_image() -> None:
+    for name in REMAINING_WORKFLOW_NAMES:
+        workflow = _workflow(WORKFLOWS_DIR / name)
+        runs_on = [line.strip() for line in workflow.splitlines() if line.lstrip().startswith("runs-on:")]
+        assert runs_on, name
+        assert set(runs_on) == {"runs-on: ubuntu-24.04"}, name
+        assert "ubuntu-latest" not in workflow, name
+
+
+def test_quality_and_rollout_candidate_surfaces_remain_provider_free() -> None:
+    for path in (QUALITY_WORKFLOW, APPROVED_RELEASE_QUALITY_WORKFLOW, ROLLOUT_CANDIDATE_WORKFLOW):
+        workflow = _workflow(path)
+        assert "contents: write" not in workflow, path.name
+        assert "SVODKA_TELEGRAM_BOT_TOKEN" not in workflow, path.name
+        assert "sendMessage" not in workflow, path.name
+        assert "sendPoll" not in workflow, path.name
+        assert "sendRichMessage" not in workflow, path.name
