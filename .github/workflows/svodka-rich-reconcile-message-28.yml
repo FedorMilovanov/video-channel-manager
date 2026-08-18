@@ -99,11 +99,11 @@ jobs:
         env:
           RECONCILE_OUTCOME: ${{ steps.reconcile.outcome }}
           DIAGNOSTIC_REL: content/telegram/svodka/rich-successor-dispatches/32147454449-1/reconciliation-diagnostics/${{ github.run_id }}-${{ github.run_attempt }}.json
+          DIAGNOSTIC_ABS: ${{ env.STATE_DIR }}/content/telegram/svodka/rich-successor-dispatches/32147454449-1/reconciliation-diagnostics/${{ github.run_id }}-${{ github.run_attempt }}.json
         shell: bash
         run: |
           set -euo pipefail
-          diagnostic_abs="$STATE_DIR/$DIAGNOSTIC_REL"
-          mkdir -p "$(dirname "$diagnostic_abs")"
+          mkdir -p "$(dirname "$DIAGNOSTIC_ABS")"
           python - <<'PY'
           import json
           import os
@@ -139,10 +139,6 @@ jobs:
           git -C "$STATE_DIR" diff --cached --quiet && { echo 'Reconciliation diagnostic produced no durable delta.' >&2; exit 3; }
           git -C "$STATE_DIR" commit -m "Record Svodka reconciliation diagnostic $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
-        env:
-          RECONCILE_OUTCOME: ${{ steps.reconcile.outcome }}
-          DIAGNOSTIC_REL: content/telegram/svodka/rich-successor-dispatches/32147454449-1/reconciliation-diagnostics/${{ github.run_id }}-${{ github.run_attempt }}.json
-          DIAGNOSTIC_ABS: ${{ env.STATE_DIR }}/content/telegram/svodka/rich-successor-dispatches/32147454449-1/reconciliation-diagnostics/${{ github.run_id }}-${{ github.run_attempt }}.json
 
       - name: Stop after durable diagnostic if reconciliation failed
         if: always() && steps.reconcile.outcome != 'success'
