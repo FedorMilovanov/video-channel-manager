@@ -6,9 +6,10 @@ WORKFLOWS_DIR = ROOT / ".github/workflows"
 WORKFLOW = WORKFLOWS_DIR / "lordchrist-telegram-poster.yml"
 RECOVERY_WORKFLOW = WORKFLOWS_DIR / "lordchrist-reconcile-provider-outcome.yml"
 RICH_CANARY_WORKFLOW = WORKFLOWS_DIR / "lordchrist-rich-live-canary.yml"
+RICH_CONTROLLER_WORKFLOW = WORKFLOWS_DIR / "lordchrist-rich-live-controller.yml"
 RESEARCH_WORKFLOW = WORKFLOWS_DIR / "lordchrist-research-v2-publisher.yml"
 WRITER_GROUP = "group: lordchrist-telegram-publisher"
-EXPECTED_WRITERS = {WORKFLOW, RECOVERY_WORKFLOW, RICH_CANARY_WORKFLOW}
+EXPECTED_WRITERS = {WORKFLOW, RECOVERY_WORKFLOW}
 
 
 def workflow_text() -> str:
@@ -19,6 +20,8 @@ def test_complete_lordchrist_writer_surface_uses_lossless_serialization_contract
     discovered = {path for path in WORKFLOWS_DIR.glob("*.yml") if WRITER_GROUP in path.read_text(encoding="utf-8")}
 
     assert not RESEARCH_WORKFLOW.exists()
+    assert not RICH_CANARY_WORKFLOW.exists()
+    assert not RICH_CONTROLLER_WORKFLOW.exists()
     assert discovered == EXPECTED_WRITERS
     for path in discovered:
         text = path.read_text(encoding="utf-8")
@@ -90,14 +93,6 @@ def test_lordchrist_archives_exact_provider_outcome_before_final_state_persisten
     assert "include-hidden-files: true" in text
 
 
-def test_rich_live_canary_is_manual_only_and_shares_the_exact_writer_mutex() -> None:
-    text = RICH_CANARY_WORKFLOW.read_text(encoding="utf-8")
-    assert "workflow_dispatch:" in text
-    assert "schedule:" not in text
-    assert WRITER_GROUP in text
-    assert "cancel-in-progress: false" in text
-    assert "queue: max" in text
-    assert text.count("telegram_github_quality_gate") == 2
-    assert text.count("lordchrist_rich_live_canary send") == 1
-    assert "PUBLISH:lordchrist-rich-sermons-survive-century" in text
-    assert "three-expository-patterns" not in text
+def test_completed_rich_live_surfaces_are_not_replayable_from_main() -> None:
+    assert not RICH_CANARY_WORKFLOW.exists()
+    assert not RICH_CONTROLLER_WORKFLOW.exists()
