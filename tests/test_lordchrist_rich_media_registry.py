@@ -11,6 +11,7 @@ REGISTRY_PATH = Path("content/telegram/lordchrist/rich-v1/media/media-registry.j
 ARTICLE_DIR = Path("content/telegram/lordchrist/rich-v1/articles")
 RICH_PROFILE_PATH = Path("content/telegram/channels/lordchrist-rich.json")
 RICH_BINDING_PATH = Path("content/telegram/channels/lordchrist-rich-target-binding.json")
+LEGACY_PROFILE_PATH = Path("content/telegram/channels/lordchrist.json")
 LEGACY_BINDING_PATH = Path("content/telegram/channels/lordchrist-target-binding.json")
 ARTICLE_IDS = (
     "lordchrist-rich-sermons-survive-century",
@@ -95,12 +96,15 @@ def test_first_article_uses_tape_and_second_uses_grace_worship_without_macarthur
 
 def test_rich_profile_has_its_own_binding_to_the_same_historical_exact_target() -> None:
     profile = load_channel_profile(RICH_PROFILE_PATH)
+    legacy_profile = load_channel_profile(LEGACY_PROFILE_PATH)
     binding = load_target_binding(RICH_BINDING_PATH, profile)
     legacy = _read(LEGACY_BINDING_PATH)
 
     assert profile.provider_writes_authorized is True
+    assert profile.daily_verified_limit == 1
+    assert profile.concurrency_group == legacy_profile.concurrency_group == "lordchrist-telegram-publisher"
     assert binding.profile_sha256 == profile.digest
-    assert binding.profile_sha256 == "sha256:a02f33ce5166adb01a7869f6be9becdd46bfb180f80c7143a10c7bbd37a0b173"
+    assert binding.profile_sha256 == "sha256:0de6ac7a664b4a7bfad6815f543357a2c78809b776f1c6a054cf2aaf9ef01ba6"
     assert binding.project_key == legacy["project_key"]
     assert binding.channel_username == legacy["channel_username"]
     assert binding.chat_id == legacy["chat_id"] == -1001295216957
