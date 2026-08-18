@@ -23,10 +23,7 @@ from video_channel_manager.telegram_rich_renderer import render_rich_document
 
 RELEASE_ID = "svodka-rich-v2-successor-2026-08"
 EXPECTED_ITEM_COUNT = 2
-MEDIA_USER_AGENT = (
-    "video-channel-manager-svodka-rich-bot/2 "
-    "(+https://github.com/FedorMilovanov/video-channel-manager)"
-)
+MEDIA_USER_AGENT = "video-channel-manager-svodka-rich-bot/2 (+https://github.com/FedorMilovanov/video-channel-manager)"
 
 
 def load_release(path: Path, root: Path) -> dict[str, Any]:
@@ -214,12 +211,7 @@ def media_proof(
         for media in article.media:
             status, content_type, content = reader.fetch(media.uri)
             expected_content_type = mime[media.media_id]
-            if (
-                status != 200
-                or content_type != expected_content_type
-                or not content
-                or len(content) > 10_000_000
-            ):
+            if status != 200 or content_type != expected_content_type or not content or len(content) > 10_000_000:
                 raise ValueError(
                     f"media proof failed: {media.media_id} "
                     f"(status={status}, content_type={content_type!r}, "
