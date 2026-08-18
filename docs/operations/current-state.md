@@ -26,7 +26,7 @@ Repository implementation, produced artifacts and live provider outcomes are sep
 
 The historical authorized rollout is complete. Public video `x-puy27S2qs` remains the collision guard for that exact project/channel/media identity. Processing, public visibility, custom thumbnail, playlist membership and the top-level comment were verified during the completed rollout.
 
-Do not regenerate or reupload the album merely to satisfy policy introduced after the published bytes were produced. No future YouTube upload, metadata edit, thumbnail change, playlist mutation, visibility change, comment mutation, deletion or replacement is authorized by this state.
+Issue #154 is closed as **completed**. Do not regenerate or reupload the album merely to satisfy policy introduced after the published bytes were produced. No future YouTube upload, metadata edit, thumbnail change, playlist mutation, visibility change, comment mutation, deletion or replacement is authorized by this state.
 
 ## Telegram / LordChrist
 
@@ -95,7 +95,7 @@ One durable state/concurrency namespace has one write owner at a time. Parallel 
 
 ## Local MP3 and Resi DASH
 
-Local MP3 intake remains read-only/provider-inert: inspect, probe, hash, tag inventory and deterministic manifests. It does not authorize ID3 rewrite, rename/transcode, remote upload, metadata mutation, playlist changes or wall publication.
+Supported Local MP3 capability remains `local_only_read_only_intake_and_manifest`: inspect, probe, hash, tag inventory and deterministic manifests. It does not authorize ID3 rewrite, rename/transcode, remote upload, metadata mutation, playlist changes or wall publication.
 
 Resi remains the repository-owned local three-stage flow: `watch` -> `sample` -> explicit `handoff`. The watcher never auto-dispatches a multi-gigabyte FULL download; language-sensitive work samples sermon speech before full handoff. This capability has provider effect `impossible` and does not bypass DRM/access controls or infer rights/permission. Canonical runbooks remain [`resi-dash-local-handoff.md`](resi-dash-local-handoff.md) and [`resi-grace-russian-live.md`](resi-grace-russian-live.md).
 
