@@ -87,10 +87,13 @@ def _canonicalize_plain_heading_runs(article: Any) -> Any:
 
     blocks: list[Any] = []
     for block in article.blocks:
-        if isinstance(block, RichBlockHeading) and isinstance(block.text, tuple) and all(
-            isinstance(node, str) for node in block.text
+        if (
+            isinstance(block, RichBlockHeading)
+            and isinstance(block.text, tuple)
+            and all(isinstance(node, str) for node in block.text)
         ):
-            block = block.model_copy(update={"text": "".join(block.text)})
+            text = "".join(cast(tuple[str, ...], block.text))
+            block = block.model_copy(update={"text": text})
         blocks.append(block)
     return article.model_copy(update={"blocks": tuple(blocks)})
 
