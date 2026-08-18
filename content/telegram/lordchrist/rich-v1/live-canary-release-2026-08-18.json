@@ -1,0 +1,39 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-rich-live-canary-release",
+  "schema_version": 1,
+  "release_id": "lordchrist-rich-live-canary-2026-08-18",
+  "owning_issue": 473,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "chat_id": -1001295216957,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "state_branch": "state/lordchrist-telegram",
+  "approved": true,
+  "approval_basis": "User-directed 2026-08-18 marathon closure. Exactly one reviewed LordChrist rich canary is authorized; no second article, no sendMessage fallback, no edit/delete/pin, and no automatic or blind retry.",
+  "execute_not_before_moscow": "2026-08-18T22:15:00+03:00",
+  "execute_not_after_moscow": "2026-08-18T23:59:59+03:00",
+  "max_combined_verified_per_day_moscow": 2,
+  "max_rich_verified_per_day_moscow": 1,
+  "publication_id": "lordchrist-rich-sermons-survive-century",
+  "profile": {
+    "path": "content/telegram/channels/lordchrist-rich.json",
+    "git_blob_sha": "d9aa04313825c11906e18a043267068feccb3c95"
+  },
+  "legacy_profile": {
+    "path": "content/telegram/channels/lordchrist.json",
+    "git_blob_sha": "cfc36d649373e5e4a93d79f73606b7547382bd23"
+  },
+  "target_binding": {
+    "path": "content/telegram/channels/lordchrist-rich-target-binding.json",
+    "git_blob_sha": "26efd9956ae634416f288e323e23f7bd2de32a3d"
+  },
+  "media_registry": {
+    "path": "content/telegram/lordchrist/rich-v1/media/media-registry.json",
+    "git_blob_sha": "e1f72a531db44c5993669308086500fdf39f36b0"
+  },
+  "article": {
+    "path": "content/telegram/lordchrist/rich-v1/articles/lordchrist-rich-sermons-survive-century.json",
+    "git_blob_sha": "f6eadb91740c9b6693205b654d3fd9e9221729d6"
+  }
+}
