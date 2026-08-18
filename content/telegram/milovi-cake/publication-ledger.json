@@ -73,7 +73,7 @@
     "milovi-bootstrap-004": {
       "publication_id": "milovi-bootstrap-004",
       "provider_payload_sha256": "sha256:80be48219cb58186a6ea2306e77e32e3c4f19734f307c5c24710800ca9b86ae0",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -89,12 +89,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "editorially superseded before dispatch by portfolio-first continuation publication milovi-feed-20260819-001; prior intent/provider effect absent"
     },
     "milovi-bootstrap-005": {
       "publication_id": "milovi-bootstrap-005",
       "provider_payload_sha256": "sha256:b45bd2afe25bc152579370719855a11b133265dc0dfa95b4c0dfba9b5d684e09",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -110,12 +110,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "editorially superseded before dispatch by portfolio-first continuation publication milovi-feed-20260820-001; prior intent/provider effect absent"
     },
     "milovi-bootstrap-006": {
       "publication_id": "milovi-bootstrap-006",
       "provider_payload_sha256": "sha256:fc3fd047ee49c531a52b9108189dc76c975d12e675e52b32ab280eb6b90ab2fd",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -131,12 +131,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "editorially superseded before dispatch by portfolio-first continuation publication milovi-feed-20260821-001; prior intent/provider effect absent"
     },
     "milovi-bootstrap-007": {
       "publication_id": "milovi-bootstrap-007",
       "provider_payload_sha256": "sha256:2df7006fb72c072c6858d857a0336e4a2595bc1e51636b5ac3689e3cbf225682",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -152,12 +152,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "editorially superseded before dispatch by portfolio-first continuation publication milovi-feed-20260822-001; prior intent/provider effect absent"
     },
     "milovi-bootstrap-008": {
       "publication_id": "milovi-bootstrap-008",
       "provider_payload_sha256": "sha256:07b133a8e79c2d001c8cb8ea97b082ff3e83ed5fa0272ebe2fd0ec53affdb119",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -173,12 +173,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "editorially superseded before dispatch by portfolio-first continuation publication milovi-feed-20260823-001; prior intent/provider effect absent"
     },
     "milovi-bootstrap-009": {
       "publication_id": "milovi-bootstrap-009",
       "provider_payload_sha256": "sha256:276b8e3dc5e3af1e240bea1a2a0e3ed0c658ceeb6a19351a11612d5a7ac87fec",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -194,12 +194,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "editorially superseded before dispatch by portfolio-first continuation publication milovi-feed-20260824-001; prior intent/provider effect absent"
     },
     "milovi-bootstrap-010": {
       "publication_id": "milovi-bootstrap-010",
       "provider_payload_sha256": "sha256:a0ebc562cca6c628158eec1a5e7f1fde8b11164de97d14905e649ce0d3084670",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -215,7 +215,7 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "editorially superseded before dispatch by portfolio-first continuation publication milovi-feed-20260825-001; prior intent/provider effect absent"
     }
   }
 }
