@@ -1,6 +1,6 @@
 {
   "schema_name": "video-channel-manager.svodka-rich-successor-v4-release",
-  "schema_version": 1,
+  "schema_version" : 1,
   "release_id": "svodka-rich-v4-cdn-finalizer-2026-08",
   "project_key": "svodka",
   "channel_username": "@deep_info_life",
