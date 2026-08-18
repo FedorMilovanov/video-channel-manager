@@ -64,7 +64,9 @@ def test_every_reviewed_article_media_slot_has_exactly_one_registry_binding() ->
         assert len(expected) == 3
         assert actual == expected
         for slot_id in expected:
-            matches = [asset for asset in assets if asset["article_id"] == article_id and asset["media_slot_id"] == slot_id]
+            matches = [
+                asset for asset in assets if asset["article_id"] == article_id and asset["media_slot_id"] == slot_id
+            ]
             assert len(matches) == 1
 
 
