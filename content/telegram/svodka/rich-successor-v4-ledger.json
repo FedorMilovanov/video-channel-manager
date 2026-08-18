@@ -9,14 +9,14 @@
     "svodka-rich-wombat-cubic-poop": {
       "publication_id": "svodka-rich-wombat-cubic-poop",
       "scheduled_at": "2026-08-18T21:10:00+03:00",
-      "state": "intent",
-      "provider_effect": "impossible",
+      "state": "published",
+      "provider_effect": "verified",
       "dispatch_mode": "scheduled",
       "workflow_run_id": "32170511047",
       "workflow_run_attempt": "1",
       "document_sha256": "sha256:781638c07dea9fc5fdcecb92d9296b9dfdcec022bce3930a3363f9903bbed6c1",
-      "message_id": null,
-      "message_url": null,
+      "message_id": 29,
+      "message_url": "https://t.me/deep_info_life/29",
       "error": null
     }
   }
