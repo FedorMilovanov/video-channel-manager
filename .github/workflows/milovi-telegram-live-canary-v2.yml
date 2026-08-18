@@ -1,0 +1,438 @@
+name: Milovi Cake Telegram live canary v2
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Exact live canary v2 execution confirmation
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: milovi-cake-telegram-publisher
+  cancel-in-progress: false
+
+jobs:
+  publish-live-canary-v2:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: src
+      PROFILE_PATH: content/telegram/channels/milovi-cake.json
+      BINDING_PATH: content/telegram/channels/milovi-cake-target-binding.json
+      RELEASE_PATH: content/telegram/milovi-cake/oneoff-canary-authorized-release-2026-08-18-v2.json
+      EXECUTION_AUTH_PATH: content/telegram/milovi-cake/oneoff-canary-execution-authorization-2026-08-18-v2.json
+      TRANSPORT_PROOF_PATH: content/telegram/milovi-cake/bootstrap-photo-transport-proof-2026-08.json
+      STATE_BRANCH: state/milovi-cake-telegram
+      STATE_DIR: .state/milovi-cake
+      LEDGER_RELATIVE_PATH: content/telegram/milovi-cake/oneoff-canary-2026-08-18-v2/publication-ledger.json
+      LEDGER_PATH: .state/milovi-cake/content/telegram/milovi-cake/oneoff-canary-2026-08-18-v2/publication-ledger.json
+      PREDECESSOR_LEDGER_PATH: .state/milovi-cake/content/telegram/milovi-cake/oneoff-canary-2026-08-18/publication-ledger.json
+      TARGET_PROOF_PATH: .runtime/milovi-live-canary-v2-target-proof.json
+      ENVELOPE_PATH: .runtime/milovi-live-canary-v2-dispatch.json
+      OUTCOME_PATH: .runtime/milovi-live-canary-v2-outcome.json
+      PUBLICATION_ID: milovi-canary-20260818-002
+      EXPECTED_CONFIRM: PUBLISH:@MiloviCake:milovi-canary-20260818-002
+      MAX_PUBLICATION_LAG_MINUTES: 120
+
+    steps:
+      - name: Check out immutable current-main runtime
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+
+      - name: Resolve exact live canary v2 execution authorization before provider access
+        id: activation
+        env:
+          MANUAL_CONFIRM: ${{ inputs.confirm }}
+          EVENT_NAME: ${{ github.event_name }}
+        shell: python
+        run: |
+          from __future__ import annotations
+
+          import json
+          import os
+          from datetime import datetime
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+
+          from video_channel_manager.telegram_channel_profile import load_channel_profile
+          from video_channel_manager.telegram_multichannel_release import load_release
+          from video_channel_manager.telegram_multichannel_transport import GenericPhotoPayload, render_photo_payload
+          from video_channel_manager.telegram_target_binding import load_target_binding
+
+          profile = load_channel_profile(Path(os.environ["PROFILE_PATH"]))
+          binding = load_target_binding(Path(os.environ["BINDING_PATH"]), profile)
+          release = load_release(Path(os.environ["RELEASE_PATH"]))
+          authorization = json.loads(Path(os.environ["EXECUTION_AUTH_PATH"]).read_text(encoding="utf-8"))
+          blockers: list[str] = []
+
+          if os.environ["EVENT_NAME"] != "workflow_dispatch":
+              blockers.append("provider_workflow_requires_workflow_dispatch")
+          if os.environ["MANUAL_CONFIRM"] != os.environ["EXPECTED_CONFIRM"]:
+              blockers.append("exact_confirmation_missing_or_mismatched")
+          if profile.project_key != "milovi-cake" or profile.channel_username.casefold() != "@milovicake":
+              blockers.append("profile_identity_drift")
+          if profile.provider_writes_authorized is not True:
+              blockers.append("profile_write_gate_disabled")
+          if profile.daily_verified_limit != 2:
+              blockers.append("daily_limit_drift")
+          if (
+              binding.chat_id != -1002215328390
+              or binding.bot_id != 8716602202
+              or binding.bot_username.casefold() != "preaching_mp3_bot"
+          ):
+              blockers.append("target_binding_identity_drift")
+
+          if release.release_authorized is not True:
+              blockers.append("release_not_authorized")
+          if release.release_id != "milovi-oneoff-canary-2026-08-18-v2" or len(release.items) != 1:
+              blockers.append("live_canary_v2_release_shape_drift")
+          if release.digest != "sha256:7d85bad0c335a4c6a8dd745226661aba8867cc103b5e16bf9ffe4c063b7e2eae":
+              blockers.append("live_canary_v2_release_digest_drift")
+          if release.reviewed_candidate_sha256 != "sha256:357fad009dbeedebc4af61390d3603bb9fd959a5617e9e367b3a0ee0b2d77f08":
+              blockers.append("live_canary_v2_review_digest_drift")
+
+          if len(release.items) == 1:
+              item = release.items[0]
+              if item.publication_id != os.environ["PUBLICATION_ID"]:
+                  blockers.append("live_canary_v2_publication_identity_drift")
+              if item.scheduled_at.isoformat() != "2026-08-18T21:50:00+03:00":
+                  blockers.append("live_canary_v2_schedule_drift")
+              if not isinstance(item.payload, GenericPhotoPayload):
+                  blockers.append("live_canary_v2_payload_is_not_photo")
+              else:
+                  if item.payload.provider_payload_sha256 != "sha256:d60f503934fb209429606b235622ab0d27a1179978c9fa78574cf517d321b07a":
+                      blockers.append("live_canary_v2_provider_payload_drift")
+                  if item.payload.media_sha256 != "sha256:8bb0956e44084265d7a3a14ce01f96eb1e4a9c327c780448de34e068f6cf6f10":
+                      blockers.append("live_canary_v2_media_drift")
+                  recomputed = render_photo_payload(
+                      profile,
+                      publication_id=item.publication_id,
+                      caption=item.payload.caption,
+                      media_path=item.payload.media_path,
+                      media_sha256=item.payload.media_sha256,
+                      media_byte_size=item.payload.media_byte_size,
+                      media_filename=item.payload.media_filename,
+                  )
+                  if recomputed.provider_payload_sha256 != item.payload.provider_payload_sha256:
+                      blockers.append("live_canary_v2_provider_payload_recompute_drift")
+
+          if (
+              release.target_binding_sha256 != binding.digest
+              or release.chat_id != binding.chat_id
+              or release.bot_id != binding.bot_id
+              or (release.bot_username or "").casefold() != binding.bot_username.casefold()
+          ):
+              blockers.append("release_target_binding_drift")
+
+          expected_auth = {
+              "schema_name": "video-channel-manager.telegram-oneoff-execution-authorization",
+              "schema_version": 1,
+              "project_key": "milovi-cake",
+              "channel_username": "@MiloviCake",
+              "release_id": release.release_id,
+              "release_digest": release.digest,
+              "publication_id": os.environ["PUBLICATION_ID"],
+              "provider_payload_sha256": "sha256:d60f503934fb209429606b235622ab0d27a1179978c9fa78574cf517d321b07a",
+              "media_sha256": "sha256:8bb0956e44084265d7a3a14ce01f96eb1e4a9c327c780448de34e068f6cf6f10",
+              "target_binding_sha256": binding.digest,
+              "chat_id": binding.chat_id,
+              "bot_id": binding.bot_id,
+              "bot_username": binding.bot_username,
+          }
+          for key, expected in expected_auth.items():
+              actual = authorization.get(key)
+              if isinstance(expected, str) and key in {"channel_username", "bot_username"}:
+                  matches = str(actual).casefold() == expected.casefold()
+              else:
+                  matches = actual == expected
+              if not matches:
+                  blockers.append(f"execution_authorization_{key}_drift")
+
+          if authorization.get("execution_authorized") is not True:
+              blockers.append("execution_not_authorized")
+          if authorization.get("automatic_dispatch_authorized") is not True:
+              blockers.append("automatic_dispatch_not_authorized")
+          if authorization.get("max_provider_attempts") != 1 or authorization.get("blind_mutation_retries") != 0:
+              blockers.append("attempt_or_retry_policy_drift")
+          if authorization.get("supersedes_publication_id") != "milovi-canary-20260818-001":
+              blockers.append("superseded_identity_drift")
+          if authorization.get("supersedes_only_if_prior_intent_absent") is not True:
+              blockers.append("supersede_safety_drift")
+
+          now = datetime.now(ZoneInfo("Europe/Moscow"))
+          try:
+              not_before = datetime.fromisoformat(authorization["execute_not_before"])
+              not_after = datetime.fromisoformat(authorization["execute_not_after"])
+          except Exception:
+              blockers.append("execution_window_invalid")
+          else:
+              if now < not_before:
+                  blockers.append("live_canary_v2_not_due")
+              if now >= not_after:
+                  blockers.append("live_canary_v2_too_stale")
+
+          active = not blockers
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write(f"active={'true' if active else 'false'}\n")
+              output.write(f"reason={','.join(blockers) if blockers else 'authorized'}\n")
+          print(json.dumps({
+              "active": active,
+              "reason": blockers,
+              "release_digest": release.digest,
+              "publication_id": os.environ["PUBLICATION_ID"],
+              "moscow_now": now.isoformat(),
+              "provider_access_performed": False,
+              "provider_write_performed": False,
+          }, ensure_ascii=False))
+
+      - name: Fail closed when live canary v2 is inactive
+        if: steps.activation.outputs.active != 'true'
+        shell: bash
+        run: |
+          echo "Milovi live canary v2 refused provider access: ${{ steps.activation.outputs.reason }}" >&2
+          exit 3
+
+      - name: Require exact current-main live canary v2 quality and media proofs
+        if: steps.activation.outputs.active == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate --workflow ci.yml --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate --workflow milovi-telegram-live-canary-v2-quality.yml --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate --workflow milovi-telegram-bootstrap-media-proof.yml --sha "$GITHUB_SHA"
+
+      - name: Check out isolated durable Milovi state branch
+        if: steps.activation.outputs.active == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/milovi-cake-telegram
+          path: .state/milovi-cake
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Require superseded v1 canary had no provider intent
+        if: steps.activation.outputs.active == 'true'
+        shell: python
+        run: |
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["PREDECESSOR_LEDGER_PATH"])
+          if not path.is_file():
+              raise SystemExit("superseded v1 canary ledger is missing")
+          ledger = json.loads(path.read_text(encoding="utf-8"))
+          entry = ledger["entries"]["milovi-canary-20260818-001"]
+          assert entry["state"] == "pending"
+          assert entry["provider_effect"] == "impossible"
+          assert entry["intent_id"] is None
+          assert entry["workflow_run_id"] is None
+          assert entry["attempted_at_utc"] is None
+          assert entry["message_id"] is None
+          assert entry["message_url"] is None
+          print(json.dumps({"superseded_v1_intent_absent": True, "provider_access_performed": False}))
+
+      - name: Require existing exact live canary v2 ledger
+        if: steps.activation.outputs.active == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -f "$LEDGER_PATH" ]] || { echo "live canary v2 ledger missing" >&2; exit 3; }
+          python -m video_channel_manager.telegram_multichannel_cli validate-ledger \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH"
+
+      - name: Require fresh exact live canary v2 slot before Telegram access
+        if: steps.activation.outputs.active == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_publication_freshness next \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --publication-id "$PUBLICATION_ID" \
+            --max-lag-minutes "$MAX_PUBLICATION_LAG_MINUTES"
+
+      - name: Fresh exact target preflight
+        if: steps.activation.outputs.active == 'true'
+        env:
+          MILOVI_CAKE_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.telegram_channel_cli preflight \
+            --profile "$PROFILE_PATH" \
+            --expected-chat-id -1002215328390 \
+            --expected-bot-id 8716602202 \
+            --expected-bot-username preaching_mp3_bot \
+            --output "$TARGET_PROOF_PATH"
+
+      - name: Prepare one durable exact live canary v2 intent
+        if: steps.activation.outputs.active == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_multichannel_cli prepare \
+            --profile "$PROFILE_PATH" \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --target-proof "$TARGET_PROOF_PATH" \
+            --mode manual \
+            --publication-id "$PUBLICATION_ID" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --github-sha "$GITHUB_SHA" \
+            --github-workflow-sha "${{ github.workflow_sha }}" \
+            --envelope-output "$ENVELOPE_PATH"
+
+      - name: Persist live canary v2 intent and target proof before provider mutation
+        id: persist_intent
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_rel_dir="content/telegram/milovi-cake/oneoff-canary-2026-08-18-v2/dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          evidence_abs_dir="$STATE_DIR/$evidence_rel_dir"
+          mkdir -p "$evidence_abs_dir"
+          cp -- "$ENVELOPE_PATH" "$evidence_abs_dir/dispatch.json"
+          cp -- "$TARGET_PROOF_PATH" "$evidence_abs_dir/target-proof.json"
+
+          git -C "$STATE_DIR" config user.name "milovi-telegram-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "milovi-telegram-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel_dir"
+          git -C "$STATE_DIR" diff --cached --quiet && { echo "prepared live canary v2 produced no durable state delta" >&2; exit 3; }
+          git -C "$STATE_DIR" commit -m "Record Milovi live canary v2 intent for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || { echo "remote state branch lacks exact live canary v2 intent" >&2; exit 3; }
+          git -C "$STATE_DIR" fetch --no-tags origin "$STATE_BRANCH"
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$LEDGER_RELATIVE_PATH" > .runtime/remote-live-canary-v2-ledger.json
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$evidence_rel_dir/dispatch.json" > .runtime/remote-live-canary-v2-dispatch.json
+          python -m video_channel_manager.telegram_multichannel_cli verify-intent \
+            --release "$RELEASE_PATH" \
+            --ledger .runtime/remote-live-canary-v2-ledger.json \
+            --envelope .runtime/remote-live-canary-v2-dispatch.json
+          echo "evidence_rel_dir=$evidence_rel_dir" >> "$GITHUB_OUTPUT"
+
+      - name: Re-prove exact current-main quality immediately before provider mutation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate --workflow ci.yml --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate --workflow milovi-telegram-live-canary-v2-quality.yml --sha "$GITHUB_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate --workflow milovi-telegram-bootstrap-media-proof.yml --sha "$GITHUB_SHA"
+
+      - name: Materialize exact reviewed photo bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: Pillow==11.3.0
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          import os
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          from video_channel_manager.milovi_telegram_bootstrap import materialize_exact_photo
+          from video_channel_manager.telegram_multichannel_release import load_release
+          from video_channel_manager.telegram_multichannel_state import GenericDispatchEnvelope
+          from video_channel_manager.telegram_multichannel_transport import GenericPhotoPayload
+
+          release = load_release(Path(os.environ["RELEASE_PATH"]))
+          envelope = GenericDispatchEnvelope.model_validate_json(Path(os.environ["ENVELOPE_PATH"]).read_text(encoding="utf-8"))
+          item = next(item for item in release.items if item.publication_id == envelope.publication_id)
+          if not isinstance(item.payload, GenericPhotoPayload):
+              raise SystemExit("live canary v2 payload is not a photo")
+
+          proof = json.loads(Path(os.environ["TRANSPORT_PROOF_PATH"]).read_text(encoding="utf-8"))
+          media_id = Path(item.payload.media_filename).stem
+          media = next(candidate for candidate in proof["photos"] if candidate["media_id"] == media_id)
+          safe_path = "/".join(urllib.parse.quote(part, safe="") for part in media["source_path"].split("/"))
+          url = f"https://raw.githubusercontent.com/{proof['source_repository']}/{proof['source_commit']}/{safe_path}"
+          request = urllib.request.Request(url, headers={"User-Agent": "video-channel-manager-milovi-live-canary-v2/1"})
+          source_path = Path(".runtime/milovi-live-canary-v2-source.webp")
+          with urllib.request.urlopen(request, timeout=30) as response:
+              source_path.write_bytes(response.read())
+          result = materialize_exact_photo(
+              transport_proof_path=Path(os.environ["TRANSPORT_PROOF_PATH"]),
+              media_id=media_id,
+              source_path=source_path,
+              output_path=Path(item.payload.media_path),
+          )
+          if result["transport_sha256"] != item.payload.media_sha256:
+              raise SystemExit("materialized live canary v2 media differs from authorized release")
+          print(json.dumps(result, ensure_ascii=False))
+          PY
+
+      - name: Send exactly once through generic Telegram runtime
+        id: send
+        env:
+          MILOVI_CAKE_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        shell: bash
+        run: |
+          set +e
+          python -m video_channel_manager.telegram_multichannel_cli send-once \
+            --profile "$PROFILE_PATH" \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --envelope "$ENVELOPE_PATH" \
+            --outcome-output "$OUTCOME_PATH"
+          status=$?
+          set -e
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          [[ -f "$OUTCOME_PATH" ]] || { echo "provider runtime did not persist an outcome; durable intent remains non-replayable" >&2; exit 5; }
+
+      - name: Apply provider outcome and persist final state
+        if: always() && steps.send.outputs.status != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_multichannel_cli apply-outcome \
+            --release "$RELEASE_PATH" \
+            --ledger "$LEDGER_PATH" \
+            --envelope "$ENVELOPE_PATH" \
+            --outcome "$OUTCOME_PATH"
+
+          evidence_rel_dir="${{ steps.persist_intent.outputs.evidence_rel_dir }}"
+          evidence_abs_dir="$STATE_DIR/$evidence_rel_dir"
+          cp -- "$OUTCOME_PATH" "$evidence_abs_dir/outcome.json"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel_dir/outcome.json"
+          git -C "$STATE_DIR" commit -m "Record Milovi live canary v2 outcome for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || { echo "remote state branch lacks exact live canary v2 outcome" >&2; exit 3; }
+
+          status="${{ steps.send.outputs.status }}"
+          if [[ "$status" != "0" ]]; then
+            echo "Telegram send was not verified; exact outcome is durable and blind replay is blocked." >&2
+            exit "$status"
+          fi
