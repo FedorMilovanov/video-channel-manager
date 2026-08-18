@@ -1,0 +1,19 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-successor-preintent-diagnostic",
+  "schema_version": 1,
+  "workflow_run_id": "32147454449",
+  "workflow_run_attempt": "1",
+  "github_sha": "d3bc66850ae7e924f3fcb2fbadc53a9e1407d20f",
+  "publication_id": "svodka-rich-goldfish-three-second-memory-myth",
+  "dispatch_mode": "canary",
+  "target_outcome": "success",
+  "media_outcome": "success",
+  "prepare_outcome": "success",
+  "target_stdout": "{\"preflight\": true, \"project_key\": \"svodka\", \"channel_username\": \"@deep_info_life\", \"chat_id\": -1003527567039, \"chat_username\": \"deep_info_life\", \"bot_id\": 8716602202, \"bot_username\": \"preaching_mp3_bot\", \"can_post_messages\": true, \"profile_sha256\": \"sha256:bbfd1a0b354a3ba874595a6397477498ba28f5dd5bdc2de298b1ef23649575d9\"}\n",
+  "target_stderr": "",
+  "media_stdout": "{\"publication_id\": \"svodka-rich-goldfish-three-second-memory-myth\", \"media_count\": 1, \"provider_write_performed\": false}\n",
+  "media_stderr": "",
+  "prepare_stdout": "{\"publication_id\": \"svodka-rich-goldfish-three-second-memory-myth\", \"dispatch_mode\": \"canary\", \"provider_write_performed\": false}\n",
+  "prepare_stderr": "",
+  "provider_write_performed": false
+}
