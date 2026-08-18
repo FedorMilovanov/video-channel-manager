@@ -35,35 +35,11 @@ def test_controller_authorization_is_exact_provider_free_and_one_shot() -> None:
     }
 
 
-def test_controller_workflow_has_no_telegram_provider_surface() -> None:
-    source = WORKFLOW.read_text(encoding="utf-8")
-    assert "on:\n  push:" in source
-    assert "workflow_dispatch:" not in source
-    assert "schedule:" not in source
-    assert "LORDCHRIST_TELEGRAM_BOT_TOKEN" not in source
-    assert "api.telegram.org" not in source
-    assert "sendRichMessage" not in source
-    assert "sendMessage" not in source
-    assert "provider-free" in source
-    assert "actions: write" in source
-    assert "issues: write" in source
-    assert "telegram_github_quality_gate" in source
-    assert "GITHUB_RUN_ATTEMPT" in source
-    assert "workflow dispatch returned HTTP" in source
-    assert source.count("/dispatches") == 1
-    assert "lordchrist-rich-live-canary.yml" in source
-    assert "PUBLISH:lordchrist-rich-sermons-survive-century" in source
-
-
-def test_controller_and_live_workflow_keep_provider_boundary_separate() -> None:
-    controller = WORKFLOW.read_text(encoding="utf-8")
-    live = LIVE_WORKFLOW.read_text(encoding="utf-8")
-    assert "group: lordchrist-rich-live-controller-v2" in controller
-    assert "group: lordchrist-telegram-publisher" in live
-    assert "LORDCHRIST_TELEGRAM_BOT_TOKEN" not in controller
-    assert "LORDCHRIST_TELEGRAM_BOT_TOKEN" in live
-    assert "lordchrist_rich_live_canary send" not in controller
-    assert live.count("lordchrist_rich_live_canary send") == 1
+def test_completed_rich_one_shot_workflows_are_retired_but_evidence_remains() -> None:
+    assert AUTH.exists()
+    assert RELEASE.exists()
+    assert not WORKFLOW.exists()
+    assert not LIVE_WORKFLOW.exists()
 
 
 def test_refreshed_release_digest_is_pre_provider_and_cross_midnight_only() -> None:
