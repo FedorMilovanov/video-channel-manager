@@ -76,19 +76,42 @@ def test_provider_workflow_keeps_intent_before_send_and_quality_before_provider(
     assert "schedule:" not in text.split("permissions:", 1)[0]
 
 
-def test_controller_is_exact_date_bounded_and_provider_inert() -> None:
+def test_controller_is_manual_exact_and_provider_inert() -> None:
     text = CONTROLLER.read_text(encoding="utf-8")
-    assert 'cron: "10,20,30,40,50 13 * * *"' in text
-    assert 'cron: "0 14 * * *"' in text
-    assert "github.event_name == 'schedule'" in text
-    assert 'now.date().isoformat() == "2026-08-18"' in text
-    assert "time(16, 10)" in text
-    assert "time(17, 5)" in text
+    trigger = text.split("permissions:", 1)[0]
+
+    assert "schedule:" not in trigger
+    assert "workflow_dispatch:" in trigger
+    assert "confirm:" in trigger
+    assert "Exact controller confirmation" in trigger
+    assert "github.event_name == 'workflow_dispatch'" in text
+    assert "EXPECTED_CONTROLLER_CONFIRM: DISPATCH:@MiloviCake:milovi-canary-20260818-001" in text
+    assert "PROVIDER_CONFIRM: PUBLISH:@MiloviCake:milovi-canary-20260818-001" in text
+    assert "EXECUTION_AUTH_PATH:" in text
+    assert 'authorization["execute_not_before"]' in text
+    assert 'authorization["execute_not_after"]' in text
+    assert "controller_dispatch_window_end" not in text
+    assert "Fail closed when controller dispatch is unauthorized or expired" in text
+    assert "Fail closed if provider workflow was already dispatched" in text
+    assert "Re-prove main did not move before provider dispatch" in text
+    assert "event=workflow_dispatch" in text
+    assert "per_page=100" in text
+    assert 'authorization["authorized_at"]' in text
+    assert 'current_main="$(gh api' in text
+    assert '[[ "$current_main" != "$GITHUB_SHA" ]]' in text
+    assert "exit 3" in text
     assert "ci.yml" in text
     assert "milovi-telegram-oneoff-canary-quality.yml" in text
     assert "milovi-telegram-bootstrap-media-proof.yml" in text
-    assert "event=workflow_dispatch" in text
-    assert "inputs" in text and "CONFIRM" in text
     assert "LORDCHRIST_TELEGRAM_BOT_TOKEN" not in text
     assert "telegram_channel_cli preflight" not in text
     assert "send-once" not in text
+
+
+def test_controller_does_not_mutate_historical_execution_authorization() -> None:
+    auth = json.loads(AUTH.read_text(encoding="utf-8"))
+    text = CONTROLLER.read_text(encoding="utf-8")
+
+    assert auth["controller_dispatch_window_end"] == "2026-08-18T17:05:00+03:00"
+    assert "controller_dispatch_window_end" not in text
+    assert auth["execute_not_after"] == "2026-08-18T18:10:00+03:00"
