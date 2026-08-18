@@ -1,0 +1,23 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-production-ledger",
+  "schema_version": 1,
+  "release_id": "svodka-rich-v4-cdn-finalizer-2026-08",
+  "release_sha256": "sha256:67bdf422b9f205484a4b5642373989448ca397124b89394009b333b472791ace",
+  "project_key": "svodka",
+  "channel_username": "@deep_info_life",
+  "entries": {
+    "svodka-rich-wombat-cubic-poop": {
+      "publication_id": "svodka-rich-wombat-cubic-poop",
+      "scheduled_at": "2026-08-18T21:10:00+03:00",
+      "state": "pending",
+      "provider_effect": "impossible",
+      "dispatch_mode": null,
+      "workflow_run_id": null,
+      "workflow_run_attempt": null,
+      "document_sha256": null,
+      "message_id": null,
+      "message_url": null,
+      "error": null
+    }
+  }
+}
