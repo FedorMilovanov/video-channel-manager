@@ -49,9 +49,7 @@ def test_v4_uses_exact_reviewed_unsplash_cdn_photo_and_telegram_heading_canonica
     assert override["canonical_source_page_url"] == (
         "https://unsplash.com/photos/a-wombat-stares-directly-at-the-camera-QvgZkCAfJdc"
     )
-    assert str(override["direct_media_url"]).startswith(
-        "https://images.unsplash.com/photo-1743938153060-7f6c4b1b9ba0?"
-    )
+    assert str(override["direct_media_url"]).startswith("https://images.unsplash.com/photo-1743938153060-7f6c4b1b9ba0?")
     assert override["licence"] == "Unsplash License"
     assert override["expected_mime"] == "image/jpeg"
     assert override["provider_upload_status"] == "not_uploaded"
