@@ -1,0 +1,73 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-successor-v4-release",
+  "schema_version": 1,
+  "release_id": "svodka-rich-v4-cdn-finalizer-2026-08",
+  "project_key": "svodka",
+  "channel_username": "@deep_info_life",
+  "chat_id": -1003527567039,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "state_branch": "state/svodka-telegram",
+  "approved": true,
+  "approval_basis": "Explicit 2026-08-18 marathon closure after v3 received an explicit Telegram no-effect rejection. This fresh v4 identity changes only the reviewed remote photo delivery host, preserves the article and target, and permits at most one guarded mutation with no blind retry.",
+  "publication_window_minutes": 120,
+  "max_verified_per_day_moscow": 2,
+  "verified_predecessor_canary": {
+    "release_id": "svodka-rich-v2-successor-2026-08",
+    "publication_id": "svodka-rich-goldfish-three-second-memory-myth",
+    "message_id": 28,
+    "required_state": "published",
+    "required_provider_effect": "verified"
+  },
+  "confirmed_absent_predecessor": {
+    "release_id": "svodka-rich-v3-finalizer-2026-08",
+    "publication_id": "svodka-rich-wombat-cubic-poop",
+    "required_state": "failed_no_effect",
+    "required_provider_effect": "confirmed_absent",
+    "required_error": "Telegram rejected sendRichMessage: Bad Request: failed to get HTTP URL content"
+  },
+  "profile": {
+    "path": "content/telegram/channels/svodka.json",
+    "git_blob_sha": "81bb5089dcc82a4acab9283dcb3aa8592911c4cc"
+  },
+  "target_binding": {
+    "path": "content/telegram/channels/svodka-target-binding.json",
+    "git_blob_sha": "5ecbb52d7187f7013baeba96e479285762f0b363"
+  },
+  "custom_emoji_catalog": {
+    "path": "content/telegram/svodka/custom-emoji-catalog.json",
+    "git_blob_sha": "a7cf960724a47d7fed15f0ed31882590ae5f6b99"
+  },
+  "media_override": {
+    "asset_id": "asset-wombat-cubic-poop-media-01-v4",
+    "article_id": "svodka-rich-wombat-cubic-poop",
+    "media_slot_id": "media-01",
+    "kind": "photo",
+    "canonical_source_page_url": "https://unsplash.com/photos/a-wombat-stares-directly-at-the-camera-QvgZkCAfJdc",
+    "direct_media_url": "https://images.unsplash.com/photo-1743938153060-7f6c4b1b9ba0?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=60&w=3000",
+    "creator": "pen_ash",
+    "institution": "Unsplash",
+    "licence": "Unsplash License",
+    "attribution_required": false,
+    "attribution_text": "Фото: pen_ash / Unsplash",
+    "depicts": "Дикий обыкновенный вомбат в штате Виктория, Австралия.",
+    "caption": "Обыкновенный вомбат. Фото: pen_ash / Unsplash.",
+    "expected_mime": "image/jpeg",
+    "remote_ready": true,
+    "provider_upload_status": "not_uploaded"
+  },
+  "items": [
+    {
+      "sequence": 1,
+      "publication_id": "svodka-rich-wombat-cubic-poop",
+      "article_id": "svodka-rich-wombat-cubic-poop",
+      "article": {
+        "path": "content/telegram/svodka/rich-v1/articles/svodka-rich-wombat-cubic-poop.json",
+        "git_blob_sha": "3f88e640709e2d4fa8115cd04c7ae7116d6b2729"
+      },
+      "scheduled_at": "2026-08-18T21:10:00+03:00",
+      "dispatch_mode": "scheduled",
+      "emoji_role": "science.microscope"
+    }
+  ]
+}
