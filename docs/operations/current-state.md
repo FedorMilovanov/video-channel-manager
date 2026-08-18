@@ -36,7 +36,7 @@ Issue #154 is closed as **completed**. The historical provenance gap predates th
 
 The legacy `@lordchrist` quote publisher remains a separate live content track with its own durable ledger and no-blind-retry contract.
 
-The historical research-v2 canary ambiguity is no longer a legacy blocker. Issue #286 / PR #287 introduced the exact `retired_no_replay` disposition. Every other `dispatching` or `may_exist` effect remains fail-closed. The retired August research release itself cannot resume, retry, or authorize a successor.
+The historical research-v2 canary ambiguity is no longer a legacy blocker. Issue #286 / PR #287 introduced the exact `retired_no_replay` disposition. For every unrelated ambiguity, every other `dispatching` or `may_exist` effect remains fail-closed. By contract, the retired August research release itself cannot resume, retry, or authorize a successor.
 
 Issue #168 is closed as repository implementation complete. The generic LordChrist profile remains `provider_writes_authorized=false`; any future research or rich provider mutation still requires a new exact scope and authorization.
 
@@ -53,7 +53,7 @@ Issue #473 is closed as completed. The second reviewed rich article remains prov
 
 ## Telegram / Svodka
 
-Issue #170 is closed as repository pipeline implementation complete. The historical August approval bound release `svodka-pilot-2026-08`. The historical profile used `provider_writes_authorized=true` only for the reviewed rollout gates; that phrase describes the reviewed rollout contract, not standing authority. The durable ledger now exists on `state/svodka-telegram`.
+Issue #170 is closed as repository pipeline implementation complete. The historical August approval bound release `svodka-pilot-2026-08`. The historical profile used `provider_writes_authorized=true` only for the reviewed rollout gates; that phrase describes the reviewed rollout contract, not standing authority. As historical rollout evidence, the durable ledger now exists on `state/svodka-telegram`.
 
 Issue #235 is closed as completed. The finished successor path has two durable verified publications:
 
