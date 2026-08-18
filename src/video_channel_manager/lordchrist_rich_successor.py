@@ -57,9 +57,7 @@ def _registry_assets(path: Path, article: RichArticleDocument) -> dict[str, dict
     if not isinstance(assets_raw, list):
         raise ValueError("LordChrist rich media registry has no assets")
     assets = [
-        asset
-        for asset in assets_raw
-        if isinstance(asset, dict) and asset.get("article_id") == article.document_id
+        asset for asset in assets_raw if isinstance(asset, dict) and asset.get("article_id") == article.document_id
     ]
     slots = {slot.slot_id for slot in article.media_slots}
     if len(assets) != len(slots):
