@@ -13,6 +13,7 @@ import httpx
 
 from video_channel_manager.lordchrist_cross_track_effect_guard import require_no_cross_track_unresolved_effects
 from video_channel_manager.lordchrist_rich_successor import build_provider_free_document
+from video_channel_manager.platforms.http import HttpClientOwner, HttpOperationClass, RetryPolicy, execute_http_request
 from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_multichannel_transport import GenericTargetProof, preflight_channel
 from video_channel_manager.telegram_rich_provider import (
@@ -32,6 +33,7 @@ REPOSITORY = "FedorMilovanov/video-channel-manager"
 RELEASE_ID = "lordchrist-rich-live-canary-2026-08-18"
 PUBLICATION_ID = "lordchrist-rich-sermons-survive-century"
 OWNING_ISSUE = 473
+MEDIA_USER_AGENT = "video-channel-manager-lordchrist-rich/1 (+https://github.com/FedorMilovanov/video-channel-manager)"
 MOSCOW = ZoneInfo("Europe/Moscow")
 
 
@@ -189,7 +191,10 @@ def _legacy_verified_today(legacy_ledger_path: Path, today_moscow: str) -> int:
         published = raw.get("published_at_utc")
         if not published:
             raise ValueError("verified legacy LordChrist entry lacks published_at_utc")
-        if datetime.fromisoformat(str(published).replace("Z", "+00:00")).astimezone(MOSCOW).date().isoformat() == today_moscow:
+        if (
+            datetime.fromisoformat(str(published).replace("Z", "+00:00")).astimezone(MOSCOW).date().isoformat()
+            == today_moscow
+        ):
             count += 1
     return count
 
@@ -284,6 +289,32 @@ def _registry_mime(root: Path, release: dict[str, Any]) -> dict[str, str]:
     return result
 
 
+class _LordChristMediaReader(HttpClientOwner):
+    def __init__(self) -> None:
+        self._initialize_http_client(
+            None,
+            timeout=httpx.Timeout(connect=15, read=30, write=15, pool=15),
+            follow_redirects=True,
+            trust_env=False,
+        )
+
+    def fetch(self, url: str) -> tuple[int, str, bytes]:
+        result = execute_http_request(
+            lambda: self._http_client.get(url, headers={"User-Agent": MEDIA_USER_AGENT}),
+            provider="https-media",
+            operation=HttpOperationClass.SAFE_READ,
+            method="GET",
+            resource="lordchrist-rich-live-canary-media",
+            retry_policy=RetryPolicy(max_attempts=2),
+        )
+        response = result.response
+        return (
+            response.status_code,
+            response.headers.get("content-type", "").split(";", 1)[0].strip().lower(),
+            response.content,
+        )
+
+
 def media_proof(
     root: Path,
     release: dict[str, Any],
@@ -294,19 +325,12 @@ def media_proof(
     _document, _render, article = build_document(root, release)
     mime = _registry_mime(root, release)
     evidence: list[dict[str, Any]] = []
-    with httpx.Client(
-        timeout=httpx.Timeout(connect=15, read=30, write=15, pool=15),
-        transport=httpx.HTTPTransport(retries=2),
-        follow_redirects=True,
-        trust_env=False,
-        headers={"User-Agent": "video-channel-manager-lordchrist-rich/1"},
-    ) as client:
+    reader = _LordChristMediaReader()
+    try:
         for media in article.media:
-            response = client.get(media.uri)
-            content_type = response.headers.get("content-type", "").split(";", 1)[0].strip().lower()
-            content = response.content
+            status, content_type, content = reader.fetch(media.uri)
             if (
-                response.status_code != 200
+                status != 200
                 or content_type != mime[media.media_id]
                 or not content
                 or len(content) > 10_000_000
@@ -314,7 +338,7 @@ def media_proof(
             ):
                 raise ValueError(
                     f"LordChrist rich media proof failed: {media.media_id} "
-                    f"status={response.status_code} content_type={content_type!r} bytes={len(content)}"
+                    f"status={status} content_type={content_type!r} bytes={len(content)}"
                 )
             evidence.append(
                 {
@@ -325,6 +349,8 @@ def media_proof(
                     "content_sha256": "sha256:" + hashlib.sha256(content).hexdigest(),
                 }
             )
+    finally:
+        reader.close()
     proof = {
         "schema_name": "video-channel-manager.lordchrist-rich-live-media-proof",
         "schema_version": 1,
@@ -567,15 +593,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps(guard_state(args.root, args.state_root, release, ledger), ensure_ascii=False))
         return 0
     if args.cmd == "preflight":
-        proof = run_preflight(args.root, release, token=os.environ["LORDCHRIST_TELEGRAM_BOT_TOKEN"])
-        _write(args.output, proof.model_dump(mode="json"))
-        print(proof.model_dump_json())
+        target_proof = run_preflight(args.root, release, token=os.environ["LORDCHRIST_TELEGRAM_BOT_TOKEN"])
+        _write(args.output, target_proof.model_dump(mode="json"))
+        print(target_proof.model_dump_json())
         return 0
     if args.cmd == "media-proof":
         expected = _read(args.expected) if args.expected else None
-        proof = media_proof(args.root, release, expected=expected)
-        _write(args.output, proof)
-        print(json.dumps(proof, ensure_ascii=False))
+        media_evidence = media_proof(args.root, release, expected=expected)
+        _write(args.output, media_evidence)
+        print(json.dumps(media_evidence, ensure_ascii=False))
         return 0
     if args.cmd == "prepare":
         ledger = load_ledger(args.ledger, release)
