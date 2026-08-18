@@ -52,7 +52,7 @@
     "milovi-bootstrap-003": {
       "publication_id": "milovi-bootstrap-003",
       "provider_payload_sha256": "sha256:8c4efbd9817af78086f00947623f4d642144d1a387288cc2bb61bbce2a0fa88a",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -68,7 +68,7 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "superseded before dispatch by explicitly authorized one-off canary milovi-canary-20260818-001; prior intent/provider effect absent"
     },
     "milovi-bootstrap-004": {
       "publication_id": "milovi-bootstrap-004",
