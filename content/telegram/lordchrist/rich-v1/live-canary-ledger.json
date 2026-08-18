@@ -9,16 +9,16 @@
   "entries": {
     "lordchrist-rich-sermons-survive-century": {
       "publication_id": "lordchrist-rich-sermons-survive-century",
-      "state": "intent",
-      "provider_effect": "impossible",
+      "state": "published",
+      "provider_effect": "verified",
       "workflow_run_id": "32182712241",
       "workflow_run_attempt": "1",
       "github_sha": "8f48d27c7a840f60bb2b21bb43b1ea48df60e5e9",
       "document_sha256": "sha256:93d77337c049daaf3785b08ebf3744cae2e1c01fc798763dc2e17c0e7dcce0a8",
       "intent_created_at_utc": "2026-08-18T20:31:52.480306+00:00",
-      "published_at_utc": null,
-      "message_id": null,
-      "message_url": null,
+      "published_at_utc": "2026-08-18T20:32:02.399858+00:00",
+      "message_id": 1484,
+      "message_url": "https://t.me/lordchrist/1484",
       "error": null
     }
   }
