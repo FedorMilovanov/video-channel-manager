@@ -11,7 +11,10 @@ from video_channel_manager.telegram_rich_models import (
     RichBlockMedia,
     RichMediaItem,
 )
-from video_channel_manager.telegram_rich_provider import TelegramRichMessageDocument, TelegramRichTargetBinding
+from video_channel_manager.telegram_rich_provider import (
+    TelegramRichMessageDocument,
+    TelegramRichTargetBinding,
+)
 from video_channel_manager.telegram_rich_renderer import RichRenderResult, render_rich_document
 from video_channel_manager.telegram_target_binding import load_target_binding
 
@@ -56,7 +59,11 @@ def _registry_assets(path: Path, article: RichArticleDocument) -> dict[str, dict
     assets_raw = registry.get("assets")
     if not isinstance(assets_raw, list):
         raise ValueError("LordChrist rich media registry has no assets")
-    assets = [asset for asset in assets_raw if isinstance(asset, dict) and asset.get("article_id") == article.document_id]
+    assets = [
+        asset
+        for asset in assets_raw
+        if isinstance(asset, dict) and asset.get("article_id") == article.document_id
+    ]
     slots = {slot.slot_id for slot in article.media_slots}
     if len(assets) != len(slots):
         raise ValueError("LordChrist rich article does not have one exact asset per media slot")
@@ -79,7 +86,9 @@ def _registry_assets(path: Path, article: RichArticleDocument) -> dict[str, dict
         source_url = asset.get("canonical_source_page_url")
         if not isinstance(direct_url, str) or not direct_url.startswith("https://upload.wikimedia.org/"):
             raise ValueError("LordChrist rich media URL is not an exact reviewed Wikimedia HTTPS asset")
-        if not isinstance(source_url, str) or not source_url.startswith("https://commons.wikimedia.org/wiki/File:"):
+        if not isinstance(source_url, str) or not source_url.startswith(
+            "https://commons.wikimedia.org/wiki/File:"
+        ):
             raise ValueError("LordChrist rich media provenance page is not an exact Wikimedia Commons file page")
         if not str(asset.get("caption") or "").strip() or not str(asset.get("depicts") or "").strip():
             raise ValueError("LordChrist rich media asset lacks caption or alt-text provenance")
