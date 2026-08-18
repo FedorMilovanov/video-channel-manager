@@ -34,7 +34,10 @@ def test_public_footer_uses_only_registered_milovi_resources() -> None:
 def test_continuation_copy_treats_brand_authorship_as_implicit() -> None:
     footer = _load(FOOTER)
     continuation = _load(CONTINUATION)
-    forbidden = [phrase.casefold() for phrase in footer["editorial_rules"]["forbidden_service_phrases"]]
+    forbidden = [
+        phrase.casefold()
+        for phrase in footer["editorial_rules"]["forbidden_service_phrases"]
+    ]
     assert len(continuation["items"]) == 7
     assert continuation["publication_authorized"] is False
     assert continuation["provider_mutation_allowed"] is False
@@ -86,7 +89,11 @@ def test_next_post_is_exact_provider_inert_and_transport_bound() -> None:
 
 def test_review_quote_remains_exact_and_is_not_bound_to_photo() -> None:
     continuation = _load(CONTINUATION)
-    review = next(item for item in continuation["items"] if item["role"] == "verified_social_proof")
+    review = next(
+        item
+        for item in continuation["items"]
+        if item["role"] == "verified_social_proof"
+    )
     assert review["operation"] == "sendMessage"
     assert review["media_id"] is None
     assert review["fact_source"]["review_author"] == "Ирина Силантьева"
