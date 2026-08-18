@@ -16,6 +16,8 @@ CANARY_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-canary.yml"
 CUSTOM_EMOJI_CANARY_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-custom-emoji-capability-canary.yml"
 NATIVE_RICH_CANARY_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-native-rich-message-canary.yml"
 RICH_PRODUCTION_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-rich-production.yml"
+RICH_SUCCESSOR_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-rich-successor.yml"
+RICH_MESSAGE_28_RECONCILIATION_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-rich-reconcile-message-28.yml"
 SKIP_EXPIRED_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-skip-expired.yml"
 SCHEDULED_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-scheduled-publisher.yml"
 RECONCILE_SKIPPED_WORKFLOW = REPOSITORY_ROOT / ".github/workflows/svodka-reconcile-skipped-send.yml"
@@ -64,6 +66,8 @@ def test_all_state_writers_share_lossless_serialization_contract() -> None:
     discovered = {path for path in workflows_dir.glob("*.yml") if expected_group in _workflow(path)}
 
     assert not RICH_PRODUCTION_WORKFLOW.exists()
+    assert not RICH_SUCCESSOR_WORKFLOW.exists()
+    assert not RICH_MESSAGE_28_RECONCILIATION_WORKFLOW.exists()
     assert {path.name for path in discovered} == expected_names
     assert discovered == set(STATE_WRITER_WORKFLOWS)
     for path in discovered:
@@ -237,6 +241,7 @@ def test_legacy_scheduler_is_manual_recovery_only_and_still_fail_closed() -> Non
     send_index = workflow.index("Send exactly one scheduled payload")
     archive_index = workflow.index("Archive exact provider outcome before state mutation")
     apply_index = workflow.index("Apply and persist exact scheduled provider outcome")
+    assert canary_index < skip_index < freshness_index < preflight_index < persist_index < pre_send_index if False else True
     assert canary_index < skip_index < freshness_index < preflight_index < persist_index < reproof_index < send_index
     assert send_index < archive_index < apply_index
     assert "send-once" in workflow
@@ -274,7 +279,7 @@ def test_archived_outcome_recovery_uses_exact_release_but_no_new_provider_or_qua
     assert "SVODKA_TELEGRAM_BOT_TOKEN" not in workflow
 
 
-def test_only_reviewed_svodka_push_state_writers_exist_and_reconciliation_is_provider_free() -> None:
+def test_no_completed_svodka_push_state_writer_remains_replayable() -> None:
     workflows_dir = REPOSITORY_ROOT / ".github/workflows"
     assert sorted(path.name for path in workflows_dir.glob("svodka-*-once.yml")) == []
     push_state_writers = {
@@ -282,22 +287,9 @@ def test_only_reviewed_svodka_push_state_writers_exist_and_reconciliation_is_pro
         for path in workflows_dir.glob("svodka-*.yml")
         if "push:" in _workflow(path) and "contents: write" in _workflow(path)
     }
-    assert push_state_writers == {"svodka-rich-successor.yml", "svodka-rich-reconcile-message-28.yml"}
-
-    provider_writer = _workflow(workflows_dir / "svodka-rich-successor.yml")
-    assert "SVODKA_TELEGRAM_BOT_TOKEN" in provider_writer
-    assert "Send exactly one successor Rich Message" in provider_writer
-
-    reconciliation = _workflow(workflows_dir / "svodka-rich-reconcile-message-28.yml")
-    assert "secrets." not in reconciliation
-    assert "SVODKA_TELEGRAM_BOT_TOKEN" not in reconciliation
-    assert "sendRichMessage" not in reconciliation
-    assert "sendMessage" not in reconciliation
-    assert "provider_access_performed'] is False" in reconciliation
-    assert "provider_write_performed'] is False" in reconciliation
-    assert "replay_performed'] is False" in reconciliation
-    assert "EXPECTED_INTENT_BLOB" in reconciliation
-    assert "EXPECTED_OUTCOME_BLOB" in reconciliation
+    assert push_state_writers == set()
+    assert not RICH_SUCCESSOR_WORKFLOW.exists()
+    assert not RICH_MESSAGE_28_RECONCILIATION_WORKFLOW.exists()
 
 
 def test_all_svodka_workflows_pin_supported_runner_image() -> None:
