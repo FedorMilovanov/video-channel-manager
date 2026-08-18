@@ -14,18 +14,18 @@ Never compensate for a shared credential by weakening target checks. Every provi
 
 Do not create a second bot, duplicate/rotate the shared token, or split credentials per channel merely for naming symmetry without an explicit reviewed migration.
 
-## Svodka provider-write invariants
+## Svodka post-rollout invariants
 
-For `@deep_info_life`, provider-capable workflows must remain stricter than read-only or state-only workflows:
+The exact August 2026 Svodka rollout is historical. Its completed rich publications and retired experiments are evidence, not standing provider-write authority.
 
-- `Svodka quality` runs on every push to `main`; do not reintroduce a `paths` filter. GitHub path filtering evaluates only a bounded diff and can skip a relevant change in a large audit wave.
-- Canary and scheduled publication require a successful completed `Svodka quality` run for their exact current `GITHUB_SHA` before any Telegram preflight, durable dispatch intent, or provider mutation.
-- A visible `workflow_dispatch` trigger on the scheduled publisher is diagnostic only. The publishing job must require `github.event_name == 'schedule'`; a manual Run workflow invocation must never become a scheduled provider mutation.
-- All Svodka state/provider writers share `svodka-telegram-publisher` with `cancel-in-progress: false`.
-- The automatic publication freshness limit is 120 minutes after the immutable `scheduled_at`. A stale item may not be backfilled automatically just because the broader generic state window is still open.
-- The manual canary must be both the strict next ledger item and inside the same 120-minute freshness window before any Telegram provider read.
-- The scheduled publisher checks strict-next freshness before Telegram preflight. If the item is too early, too stale, blocked, or absent, provider access is skipped.
-- Reconciliation of an abandoned intent is provider-free and may produce `confirmed_absent` only when the original GitHub run is completed, its workflow/event match the expected canary or schedule contract, the durable intent step succeeded, and the provider send step is proven `skipped` for the exact run attempt and head SHA.
+- `content/telegram/channels/svodka.json` is write-disabled after the completed rollout. The write gate is intentionally excluded from stable channel identity, so disabling it must not change the reviewed profile digest, target binding or historical release digest.
+- Do not restore the retired August manual canary, legacy publisher, ledger initializer, generic outcome-recovery writers, rich successor/finalizer, native Rich Message canary, custom-emoji capability canary, or custom-emoji harvest workflow as executable Actions surfaces merely because their source/evidence remains in the repository.
+- The historical custom-emoji capability attempt remains `unknown / provider_effect=may_exist`. That ambiguity is preserved honestly and is never retry authority. No second capability-canary send is permitted from that historical identity.
+- The verified native Rich Message canary and verified rich successor messages are terminal historical provider evidence; they are not replayable release authority.
+- While the legacy `svodka-pilot-2026-08` publication ledger still contains expired `pending / provider_effect=impossible` entries, `svodka-skip-expired.yml` may remain as the sole Svodka state-writer. It is provider-free: no Telegram credential, preflight or send call is permitted on that path.
+- `svodka-skip-expired.yml` must require the exact historical release digest plus explicit `SKIP-EXPIRED:<digest>` confirmation and exact-current-main Svodka quality proofs before committing only the stale-window state transition.
+- Svodka quality, approved-release quality, rollout-candidate checks and Telegram preflight are provider-free/read-only surfaces. They must not become a hidden provider mutation path.
+- Any later Svodka provider publication requires a new exact owning issue, fresh reviewed release/execution authority and current target proof. Do not reactivate the August workflows or infer authority from the old profile, approval, state branch, bot credential, message 28/29 success or historical issue #235.
 - Never weaken an exact-SHA quality failure, stale-window failure, or `may_exist` outcome into a retry path for availability.
 
 The production dependency surface includes the shared `telegram_models.py` / `telegram_transport.py` modules and `requirements/telegram-publisher.txt`; Svodka quality must continue to test those dependencies rather than only files whose names contain `svodka` or `multichannel`.
