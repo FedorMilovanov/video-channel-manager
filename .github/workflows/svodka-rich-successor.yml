@@ -1,10 +1,6 @@
 name: Svodka rich successor rollout
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "content/telegram/svodka/rich-v1/successor-release-2026-08.json"
   workflow_dispatch:
     inputs:
       confirm:
@@ -26,8 +22,8 @@ jobs:
   publish-one:
     if: >-
       github.ref == 'refs/heads/main' &&
-      (github.event_name == 'push' ||
-       (github.event_name == 'workflow_dispatch' && inputs.confirm == 'SVODKA-RICH-SUCCESSOR:@deep_info_life'))
+      github.event_name == 'workflow_dispatch' &&
+      inputs.confirm == 'SVODKA-RICH-SUCCESSOR:@deep_info_life'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
