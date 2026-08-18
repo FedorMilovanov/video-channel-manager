@@ -1,0 +1,19 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-v4-preintent-diagnostic",
+  "schema_version": 1,
+  "workflow_run_id": "32170511047",
+  "workflow_run_attempt": "1",
+  "github_sha": "9438c19dbf26a65dc0949dbed2cfff0dd1b1a073",
+  "publication_id": "svodka-rich-wombat-cubic-poop",
+  "dispatch_mode": "scheduled",
+  "target_outcome": "success",
+  "media_outcome": "success",
+  "prepare_outcome": "success",
+  "target_stdout": "{\"preflight\": true, \"project_key\": \"svodka\", \"channel_username\": \"@deep_info_life\", \"chat_id\": -1003527567039, \"chat_username\": \"deep_info_life\", \"bot_id\": 8716602202, \"bot_username\": \"preaching_mp3_bot\", \"can_post_messages\": true, \"profile_sha256\": \"sha256:bbfd1a0b354a3ba874595a6397477498ba28f5dd5bdc2de298b1ef23649575d9\"}\n",
+  "target_stderr": "",
+  "media_stdout": "{\"publication_id\": \"svodka-rich-wombat-cubic-poop\", \"media_count\": 1, \"provider_write_performed\": false}\n",
+  "media_stderr": "",
+  "prepare_stdout": "{\"publication_id\": \"svodka-rich-wombat-cubic-poop\", \"dispatch_mode\": \"scheduled\", \"provider_write_performed\": false}\n",
+  "prepare_stderr": "",
+  "provider_write_performed": false
+}
