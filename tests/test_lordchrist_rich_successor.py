@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from video_channel_manager.lordchrist_rich_successor import bind_reviewed_media, build_provider_free_document
+from video_channel_manager.telegram_rich_models import RichArticleDocument
 
 REGISTRY = Path("content/telegram/lordchrist/rich-v1/media/media-registry.json")
 PROFILE = Path("content/telegram/channels/lordchrist-rich.json")
@@ -11,8 +12,8 @@ ARTICLES = Path("content/telegram/lordchrist/rich-v1/articles")
 MODULE = Path("src/video_channel_manager/lordchrist_rich_successor.py")
 
 
-def _block_ids(article: object) -> list[str]:
-    return [block.block_id for block in article.blocks]  # type: ignore[attr-defined]
+def _block_ids(article: RichArticleDocument) -> list[str]:
+    return [block.block_id for block in article.blocks]
 
 
 def test_sermons_article_binds_three_documentary_photos_after_reviewed_sections() -> None:
