@@ -7,7 +7,7 @@ WORKFLOW = WORKFLOWS_DIR / "lordchrist-telegram-poster.yml"
 RECOVERY_WORKFLOW = WORKFLOWS_DIR / "lordchrist-reconcile-provider-outcome.yml"
 RESEARCH_WORKFLOW = WORKFLOWS_DIR / "lordchrist-research-v2-publisher.yml"
 WRITER_GROUP = "group: lordchrist-telegram-publisher"
-EXPECTED_WRITERS = {WORKFLOW, RECOVERY_WORKFLOW, RESEARCH_WORKFLOW}
+EXPECTED_WRITERS = {WORKFLOW, RECOVERY_WORKFLOW}
 
 
 def workflow_text() -> str:
@@ -17,6 +17,7 @@ def workflow_text() -> str:
 def test_complete_lordchrist_writer_surface_uses_lossless_serialization_contract() -> None:
     discovered = {path for path in WORKFLOWS_DIR.glob("*.yml") if WRITER_GROUP in path.read_text(encoding="utf-8")}
 
+    assert not RESEARCH_WORKFLOW.exists()
     assert discovered == EXPECTED_WRITERS
     for path in discovered:
         text = path.read_text(encoding="utf-8")

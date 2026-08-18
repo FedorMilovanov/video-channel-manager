@@ -36,7 +36,6 @@ RELEASE_STATE_WRITER_WORKFLOWS = (
 STATE_WRITER_WORKFLOWS = RELEASE_STATE_WRITER_WORKFLOWS + (
     CUSTOM_EMOJI_CANARY_WORKFLOW,
     NATIVE_RICH_CANARY_WORKFLOW,
-    RICH_PRODUCTION_WORKFLOW,
 )
 
 
@@ -64,6 +63,7 @@ def test_all_state_writers_share_lossless_serialization_contract() -> None:
     workflows_dir = REPOSITORY_ROOT / ".github/workflows"
     discovered = {path for path in workflows_dir.glob("*.yml") if expected_group in _workflow(path)}
 
+    assert not RICH_PRODUCTION_WORKFLOW.exists()
     assert {path.name for path in discovered} == expected_names
     assert discovered == set(STATE_WRITER_WORKFLOWS)
     for path in discovered:
