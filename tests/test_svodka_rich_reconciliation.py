@@ -70,9 +70,7 @@ def test_semantic_hash_keeps_entities_and_block_order_strict() -> None:
 def _fixture() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], SimpleNamespace]:
     release = load_release(RELEASE_PATH, ROOT)
     ledger = new_ledger(release)
-    item = next(
-        raw for raw in cast(list[dict[str, Any]], release["items"]) if raw["publication_id"] == PUBLICATION_ID
-    )
+    item = next(raw for raw in cast(list[dict[str, Any]], release["items"]) if raw["publication_id"] == PUBLICATION_ID)
     document, render, _article = build_document(ROOT, release, item)
     intent = {
         "release_sha256": release_digest(release),
