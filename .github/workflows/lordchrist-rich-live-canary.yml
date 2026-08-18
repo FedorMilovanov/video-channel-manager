@@ -1,0 +1,355 @@
+name: LordChrist guarded rich live canary
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type PUBLISH:lordchrist-rich-sermons-survive-century
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+  issues: read
+
+concurrency:
+  group: lordchrist-telegram-publisher
+  cancel-in-progress: false
+  queue: max
+
+env:
+  PYTHONPATH: src
+  RELEASE_PATH: content/telegram/lordchrist/rich-v1/live-canary-release-2026-08-18.json
+  STATE_BRANCH: state/lordchrist-telegram
+  STATE_DIR: .state/lordchrist
+  LEDGER_RELATIVE_PATH: content/telegram/lordchrist/rich-v1/live-canary-ledger.json
+  LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/rich-v1/live-canary-ledger.json
+  LEGACY_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json
+  RESEARCH_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/research-v2/publication-ledger.json
+  TARGET_PROOF_PATH: .runtime/lordchrist-rich-target-proof.json
+  MEDIA_PROOF_PATH: .runtime/lordchrist-rich-media-proof.json
+  MEDIA_RECHECK_PATH: .runtime/lordchrist-rich-media-recheck.json
+  INTENT_PATH: .runtime/lordchrist-rich-intent.json
+  OUTCOME_PATH: .runtime/lordchrist-rich-outcome.json
+  LORDCHRIST_TELEGRAM_CHAT_ID: ${{ vars.LORDCHRIST_TELEGRAM_CHAT_ID }}
+  LORDCHRIST_TELEGRAM_BOT_ID: ${{ vars.LORDCHRIST_TELEGRAM_BOT_ID }}
+  LORDCHRIST_TELEGRAM_BOT_USERNAME: ${{ vars.LORDCHRIST_TELEGRAM_BOT_USERNAME }}
+
+jobs:
+  publish-rich-canary:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact main revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install reviewed Telegram runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -e .
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+          python -m pip check
+
+      - name: Require exact issue-bound confirmation
+        shell: bash
+        env:
+          CONFIRMATION: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          expected='PUBLISH:lordchrist-rich-sermons-survive-century'
+          [[ "$CONFIRMATION" == "$expected" ]] || {
+            echo "Live rich canary requires exact confirmation: $expected" >&2
+            exit 2
+          }
+          [[ "$GITHUB_RUN_ATTEMPT" == "1" ]] || {
+            echo "Workflow re-runs are forbidden for this one-shot canary. Start no second attempt under the same provider identity." >&2
+            exit 2
+          }
+
+      - name: Validate exact provider-free release
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.lordchrist_rich_live_canary preview \
+            --release "$RELEASE_PATH" --root . > .runtime/preview.json
+          python - <<'PY'
+          import json
+          data = json.load(open('.runtime/preview.json', encoding='utf-8'))
+          assert data['owning_issue'] == 473
+          assert data['publication_id'] == 'lordchrist-rich-sermons-survive-century'
+          assert data['media_ids'] == ['media-calvin', 'media-spurgeon', 'media-tape']
+          assert data['media_count'] == 3
+          assert data['provider_write_performed'] is False
+          PY
+
+      - name: Check out isolated durable LordChrist state
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/lordchrist-telegram
+          path: .state/lordchrist
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Initialize or validate separate rich ledger provider-free
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.lordchrist_rich_live_canary ensure-ledger \
+            --release "$RELEASE_PATH" --root . --ledger "$LEDGER_PATH"
+          python -m video_channel_manager.lordchrist_rich_live_canary guard \
+            --release "$RELEASE_PATH" --root . --state-root "$STATE_DIR" --ledger "$LEDGER_PATH" \
+            > .runtime/state-guard.json
+
+      - name: Require current-main exact-SHA repository CI proof before provider access
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow ci.yml --sha "$GITHUB_SHA"
+
+      - name: Validate exact configured Telegram identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$LORDCHRIST_TELEGRAM_CHAT_ID" == "-1001295216957" ]] || {
+            echo "LORDCHRIST_TELEGRAM_CHAT_ID differs from the issue-bound target." >&2
+            exit 2
+          }
+          [[ "$LORDCHRIST_TELEGRAM_BOT_ID" == "8716602202" ]] || {
+            echo "LORDCHRIST_TELEGRAM_BOT_ID differs from the issue-bound bot." >&2
+            exit 2
+          }
+          [[ "${LORDCHRIST_TELEGRAM_BOT_USERNAME,,}" == "preaching_mp3_bot" ]] || {
+            echo "LORDCHRIST_TELEGRAM_BOT_USERNAME differs from the issue-bound bot." >&2
+            exit 2
+          }
+
+      - name: Fresh read-only Telegram target preflight
+        shell: bash
+        env:
+          LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.lordchrist_rich_live_canary preflight \
+            --release "$RELEASE_PATH" --root . --output "$TARGET_PROOF_PATH"
+
+      - name: Fetch and freeze exact three media byte proofs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.lordchrist_rich_live_canary media-proof \
+            --release "$RELEASE_PATH" --root . --output "$MEDIA_PROOF_PATH"
+
+      - name: Prepare exact durable rich intent
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.lordchrist_rich_live_canary prepare \
+            --release "$RELEASE_PATH" --root . --state-root "$STATE_DIR" --ledger "$LEDGER_PATH" \
+            --target-proof "$TARGET_PROOF_PATH" --media-proof "$MEDIA_PROOF_PATH" \
+            --github-repository "$GITHUB_REPOSITORY" --github-sha "$GITHUB_SHA" \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --intent-output "$INTENT_PATH"
+
+      - name: Persist and re-read exact intent before provider mutation
+        id: persist_intent
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          push_exact_state() {
+            local parent_sha="$1"
+            local local_sha="$2"
+            local remote_sha=""
+            local attempt
+            for attempt in 1 2 3; do
+              if git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"; then
+                return 0
+              fi
+              remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" 2>/dev/null | cut -f1 || true)"
+              if [[ "$remote_sha" == "$local_sha" ]]; then
+                return 0
+              fi
+              if [[ -n "$remote_sha" && "$remote_sha" != "$parent_sha" ]]; then
+                echo "LordChrist state branch moved unexpectedly from $parent_sha to $remote_sha." >&2
+                return 3
+              fi
+              sleep $((attempt * 2))
+            done
+            return 3
+          }
+
+          evidence_rel_dir="content/telegram/lordchrist/rich-v1/live-canary-runs/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          evidence_abs_dir="$STATE_DIR/$evidence_rel_dir"
+          mkdir -p "$evidence_abs_dir"
+          cp -- "$INTENT_PATH" "$evidence_abs_dir/intent.json"
+          cp -- "$TARGET_PROOF_PATH" "$evidence_abs_dir/target-proof.json"
+          cp -- "$MEDIA_PROOF_PATH" "$evidence_abs_dir/media-proof.json"
+
+          git -C "$STATE_DIR" config user.name "lordchrist-rich-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "lordchrist-rich-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel_dir"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo "Prepared rich intent produced no durable state delta." >&2
+            exit 3
+          }
+          parent_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" commit -m "Record LordChrist rich canary intent for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          push_exact_state "$parent_sha" "$local_sha" || exit 3
+
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "Remote LordChrist state does not contain the exact rich intent commit." >&2
+            exit 3
+          }
+          git -C "$STATE_DIR" fetch --no-tags origin "$STATE_BRANCH"
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$LEDGER_RELATIVE_PATH" > .runtime/remote-rich-ledger.json
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$evidence_rel_dir/intent.json" > .runtime/remote-rich-intent.json
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$evidence_rel_dir/target-proof.json" > .runtime/remote-rich-target-proof.json
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$evidence_rel_dir/media-proof.json" > .runtime/remote-rich-media-proof.json
+          cmp -s "$LEDGER_PATH" .runtime/remote-rich-ledger.json
+          cmp -s "$INTENT_PATH" .runtime/remote-rich-intent.json
+          cmp -s "$TARGET_PROOF_PATH" .runtime/remote-rich-target-proof.json
+          cmp -s "$MEDIA_PROOF_PATH" .runtime/remote-rich-media-proof.json
+          echo "evidence_rel_dir=$evidence_rel_dir" >> "$GITHUB_OUTPUT"
+          echo "persisted=true" >> "$GITHUB_OUTPUT"
+
+      - name: Re-prove current-main CI immediately before Telegram mutation
+        id: pre_send_quality
+        if: steps.persist_intent.outputs.persisted == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow ci.yml --sha "$GITHUB_SHA"
+
+      - name: Re-fetch exact media bytes immediately before Telegram mutation
+        id: media_recheck
+        if: steps.persist_intent.outputs.persisted == 'true' && steps.pre_send_quality.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.lordchrist_rich_live_canary media-proof \
+            --release "$RELEASE_PATH" --root . \
+            --expected "$MEDIA_PROOF_PATH" --output "$MEDIA_RECHECK_PATH"
+
+      - name: Send exactly one issue-bound rich message
+        id: send
+        if: >-
+          steps.persist_intent.outputs.persisted == 'true' &&
+          steps.pre_send_quality.outcome == 'success' &&
+          steps.media_recheck.outcome == 'success'
+        shell: bash
+        env:
+          LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          set +e
+          python -m video_channel_manager.lordchrist_rich_live_canary send \
+            --release "$RELEASE_PATH" --root . \
+            --intent "$INTENT_PATH" --target-proof "$TARGET_PROOF_PATH" \
+            --media-recheck "$MEDIA_RECHECK_PATH" --outcome "$OUTCOME_PATH"
+          status=$?
+          set -e
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          if [[ -f "$OUTCOME_PATH" ]]; then
+            echo "outcome_present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "outcome_present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Archive exact rich provider outcome before terminal state mutation
+        if: steps.send.outputs.outcome_present == 'true' && !cancelled()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lordchrist-rich-provider-outcome-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .runtime/lordchrist-rich-outcome.json
+          if-no-files-found: error
+          retention-days: 30
+          include-hidden-files: true
+
+      - name: Apply exact provider outcome to separate rich ledger
+        if: steps.send.outputs.outcome_present == 'true' && !cancelled()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.lordchrist_rich_live_canary apply \
+            --release "$RELEASE_PATH" --root . --ledger "$LEDGER_PATH" \
+            --intent "$INTENT_PATH" --outcome "$OUTCOME_PATH"
+
+      - name: Persist exact provider result and fail closed unless verified
+        if: steps.persist_intent.outputs.persisted == 'true' && always() && !cancelled()
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ steps.pre_send_quality.outcome }}" != "success" ]]; then
+            echo "Final current-main CI reproof failed before provider mutation. Durable intent remains blocking; no retry is authorized." >&2
+            exit 4
+          fi
+          if [[ "${{ steps.media_recheck.outcome }}" != "success" ]]; then
+            echo "Media byte recheck failed before provider mutation. Durable intent remains blocking; no retry is authorized." >&2
+            exit 4
+          fi
+          if [[ "${{ steps.send.outputs.outcome_present }}" != "true" ]]; then
+            echo "No archived rich provider outcome is available. Durable intent remains blocking; blind retry is forbidden." >&2
+            exit 4
+          fi
+
+          evidence_rel_dir="${{ steps.persist_intent.outputs.evidence_rel_dir }}"
+          evidence_abs_dir="$STATE_DIR/$evidence_rel_dir"
+          cp -- "$MEDIA_RECHECK_PATH" "$evidence_abs_dir/media-recheck.json"
+          cp -- "$OUTCOME_PATH" "$evidence_abs_dir/provider-outcome.json"
+
+          git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel_dir"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo "No terminal rich result was saved; durable intent remains blocking." >&2
+            exit 4
+          }
+          parent_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" commit -m "Record LordChrist rich canary result for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          if ! git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"; then
+            remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" 2>/dev/null | cut -f1 || true)"
+            [[ "$remote_sha" == "$local_sha" ]] || {
+              echo "Could not durably persist the exact LordChrist rich provider result." >&2
+              exit 4
+            }
+          fi
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$remote_sha" == "$local_sha" ]] || {
+            echo "Remote LordChrist rich terminal state verification failed." >&2
+            exit 4
+          }
+
+          python -m video_channel_manager.lordchrist_rich_live_canary status \
+            --release "$RELEASE_PATH" --root . --ledger "$LEDGER_PATH" > .runtime/final-status.json
+          python - <<'PY'
+          import json
+          data = json.load(open('.runtime/final-status.json', encoding='utf-8'))
+          assert data['state'] == 'published', data
+          assert data['provider_effect'] == 'verified', data
+          assert isinstance(data['message_id'], int) and data['message_id'] > 0, data
+          assert data['message_url'].startswith('https://t.me/lordchrist/'), data
+          print(json.dumps(data, ensure_ascii=False))
+          PY
