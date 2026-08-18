@@ -1,21 +1,21 @@
-name: Svodka rich successor rollout
+name: Svodka rich successor v3 finalizer
 
 on:
   push:
     branches: [main]
     paths:
-      - "content/telegram/svodka/rich-v1/successor-release-2026-08.json"
+      - "content/telegram/svodka/rich-v1/successor-v3-finalizer-2026-08.json"
   workflow_dispatch:
     inputs:
       confirm:
-        description: Type SVODKA-RICH-SUCCESSOR:@deep_info_life
+        description: Type SVODKA-RICH-V3:@deep_info_life:WOMBAT
         required: true
         type: string
 
 permissions:
   actions: write
   contents: write
-  issues: write
+  issues: read
 
 concurrency:
   group: svodka-rich-successor
@@ -27,22 +27,23 @@ jobs:
     if: >-
       github.ref == 'refs/heads/main' &&
       (github.event_name == 'push' ||
-       (github.event_name == 'workflow_dispatch' && inputs.confirm == 'SVODKA-RICH-SUCCESSOR:@deep_info_life'))
+       (github.event_name == 'workflow_dispatch' && inputs.confirm == 'SVODKA-RICH-V3:@deep_info_life:WOMBAT'))
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       PYTHONPATH: src
-      RELEASE_PATH: content/telegram/svodka/rich-v1/successor-release-2026-08.json
+      RELEASE_PATH: content/telegram/svodka/rich-v1/successor-v3-finalizer-2026-08.json
       PROFILE_PATH: content/telegram/channels/svodka.json
       STATE_BRANCH: state/svodka-telegram
       STATE_DIR: .state/svodka
-      LEDGER_RELATIVE_PATH: content/telegram/svodka/rich-successor-ledger.json
-      LEDGER_PATH: .state/svodka/content/telegram/svodka/rich-successor-ledger.json
-      TARGET_PROOF_PATH: .runtime/svodka-successor-target-proof.json
-      MEDIA_PROOF_PATH: .runtime/svodka-successor-media-proof.json
-      MEDIA_RECHECK_PATH: .runtime/svodka-successor-media-recheck.json
-      INTENT_PATH: .runtime/svodka-successor-intent.json
-      OUTCOME_PATH: .runtime/svodka-successor-outcome.json
+      PREDECESSOR_LEDGER_PATH: .state/svodka/content/telegram/svodka/rich-successor-ledger.json
+      LEDGER_RELATIVE_PATH: content/telegram/svodka/rich-successor-v3-ledger.json
+      LEDGER_PATH: .state/svodka/content/telegram/svodka/rich-successor-v3-ledger.json
+      TARGET_PROOF_PATH: .runtime/svodka-v3-target-proof.json
+      MEDIA_PROOF_PATH: .runtime/svodka-v3-media-proof.json
+      MEDIA_RECHECK_PATH: .runtime/svodka-v3-media-recheck.json
+      INTENT_PATH: .runtime/svodka-v3-intent.json
+      OUTCOME_PATH: .runtime/svodka-v3-outcome.json
       EXPECTED_CHAT_ID: -1003527567039
       EXPECTED_BOT_ID: 8716602202
       EXPECTED_BOT_USERNAME: preaching_mp3_bot
@@ -67,21 +68,31 @@ jobs:
           python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
           python -m pip check
 
-      - name: Validate successor release provider-free
+      - name: Validate fresh v3 release provider-free
         run: |
           set -euo pipefail
           mkdir -p .runtime
-          python -m video_channel_manager.svodka_rich_successor preview --release "$RELEASE_PATH" --root . > .runtime/preview.json
+          python -m video_channel_manager.svodka_rich_successor_v3 preview \
+            --release "$RELEASE_PATH" --root . > .runtime/preview.json
           python - <<'PY'
           import json
           data = json.load(open('.runtime/preview.json', encoding='utf-8'))
-          assert len(data['items']) == 2
+          assert len(data['items']) == 1
+          assert data['items'][0]['publication_id'] == 'svodka-rich-wombat-cubic-poop'
+          assert data['items'][0]['dispatch_mode'] == 'scheduled'
           assert data['provider_write_performed'] is False
           PY
-          ruff check src/video_channel_manager/svodka_rich_successor.py tests/test_svodka_rich_successor.py tests/test_svodka_rich_production.py
-          ruff format --check src/video_channel_manager/svodka_rich_successor.py tests/test_svodka_rich_successor.py tests/test_svodka_rich_production.py
-          mypy src/video_channel_manager/svodka_rich_successor.py --show-error-codes
-          python -m pytest -q tests/test_svodka_rich_successor.py tests/test_svodka_rich_production.py
+          ruff check \
+            src/video_channel_manager/svodka_rich_successor_v3.py \
+            tests/test_svodka_rich_successor_v3.py
+          ruff format --check \
+            src/video_channel_manager/svodka_rich_successor_v3.py \
+            tests/test_svodka_rich_successor_v3.py
+          mypy src/video_channel_manager/svodka_rich_successor_v3.py --show-error-codes
+          python -m pytest -q \
+            tests/test_svodka_rich_successor_v3.py \
+            tests/test_svodka_rich_successor.py \
+            tests/test_svodka_rich_reconciliation.py
 
       - name: Check out isolated durable Svodka state
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -91,27 +102,43 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Create or validate successor ledger
+      - name: Require verified predecessor canary message 28
         run: |
           set -euo pipefail
-          python -m video_channel_manager.svodka_rich_successor ensure-ledger \
+          python - <<'PY'
+          import json, os
+          ledger = json.load(open(os.environ['PREDECESSOR_LEDGER_PATH'], encoding='utf-8'))
+          assert ledger['release_id'] == 'svodka-rich-v2-successor-2026-08'
+          entry = ledger['entries']['svodka-rich-goldfish-three-second-memory-myth']
+          assert entry['state'] == 'published'
+          assert entry['provider_effect'] == 'verified'
+          assert entry['dispatch_mode'] == 'canary'
+          assert entry['message_id'] == 28
+          assert entry['message_url'] == 'https://t.me/deep_info_life/28'
+          assert entry['error'] is None
+          PY
+
+      - name: Create or validate fresh v3 ledger
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.svodka_rich_successor_v3 ensure-ledger \
             --release "$RELEASE_PATH" --root . --ledger "$LEDGER_PATH"
           if git -C "$STATE_DIR" diff --quiet -- "$LEDGER_RELATIVE_PATH" && git -C "$STATE_DIR" ls-files --error-unmatch "$LEDGER_RELATIVE_PATH" >/dev/null 2>&1; then
-            echo 'Exact successor ledger already exists.'
+            echo 'Exact v3 ledger already exists.'
           else
             git -C "$STATE_DIR" config user.name 'svodka-publisher[bot]'
             git -C "$STATE_DIR" config user.email 'svodka-publisher@users.noreply.github.com'
             git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH"
-            git -C "$STATE_DIR" commit -m "Initialize Svodka successor ledger [skip ci]"
+            git -C "$STATE_DIR" commit -m "Initialize Svodka v3 finalizer ledger [skip ci]"
             git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
           fi
 
-      - name: Select strict-next successor publication
+      - name: Select fresh scheduled wombat publication
         id: select
         shell: bash
         run: |
           set +e
-          python -m video_channel_manager.svodka_rich_successor select \
+          python -m video_channel_manager.svodka_rich_successor_v3 select \
             --release "$RELEASE_PATH" --root . --ledger "$LEDGER_PATH" > .runtime/selection.json
           status=$?
           set -e
@@ -123,6 +150,7 @@ jobs:
           python - <<'PY'
           import json, os
           data = json.load(open('.runtime/selection.json', encoding='utf-8'))
+          assert data['dispatch_mode'] == 'scheduled'
           with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as fh:
               fh.write('eligible=true\n')
               fh.write(f"publication_id={data['publication_id']}\n")
@@ -151,14 +179,14 @@ jobs:
           cat .runtime/target-preflight.stderr >&2
           exit "$status"
 
-      - name: Prove exact media bytes read-only
+      - name: Prove exact wombat media bytes read-only
         id: media
         if: steps.select.outputs.eligible == 'true'
         continue-on-error: true
         shell: bash
         run: |
           set +e
-          python -m video_channel_manager.svodka_rich_successor media-proof \
+          python -m video_channel_manager.svodka_rich_successor_v3 media-proof \
             --release "$RELEASE_PATH" --root . \
             --publication-id "${{ steps.select.outputs.publication_id }}" \
             --output "$MEDIA_PROOF_PATH" \
@@ -169,7 +197,7 @@ jobs:
           cat .runtime/media-proof.stderr >&2
           exit "$status"
 
-      - name: Prepare durable successor intent
+      - name: Prepare durable v3 intent
         id: prepare
         if: >-
           steps.select.outputs.eligible == 'true' &&
@@ -179,7 +207,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          python -m video_channel_manager.svodka_rich_successor prepare \
+          python -m video_channel_manager.svodka_rich_successor_v3 prepare \
             --release "$RELEASE_PATH" --root . --ledger "$LEDGER_PATH" \
             --target-proof "$TARGET_PROOF_PATH" --media-proof "$MEDIA_PROOF_PATH" \
             --github-repository "$GITHUB_REPOSITORY" --github-sha "$GITHUB_SHA" \
@@ -192,7 +220,7 @@ jobs:
           cat .runtime/prepare.stderr >&2
           exit "$status"
 
-      - name: Persist pre-intent diagnostics before provider boundary
+      - name: Persist v3 pre-intent diagnostics before provider boundary
         if: always() && steps.select.outputs.eligible == 'true'
         env:
           TARGET_OUTCOME: ${{ steps.target.outcome }}
@@ -200,7 +228,7 @@ jobs:
           PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
           PUBLICATION_ID: ${{ steps.select.outputs.publication_id }}
           DISPATCH_MODE: ${{ steps.select.outputs.dispatch_mode }}
-          DIAGNOSTIC_ABS: ${{ env.STATE_DIR }}/content/telegram/svodka/rich-successor-preintent/${{ github.run_id }}-${{ github.run_attempt }}/diagnostic.json
+          DIAGNOSTIC_ABS: ${{ env.STATE_DIR }}/content/telegram/svodka/rich-successor-v3-preintent/${{ github.run_id }}-${{ github.run_attempt }}/diagnostic.json
         shell: bash
         run: |
           set -euo pipefail
@@ -213,55 +241,54 @@ jobs:
           def text(path: str) -> str:
               value = Path(path)
               if not value.exists():
-                  return ""
-              return value.read_text(encoding="utf-8", errors="replace")[-6000:]
+                  return ''
+              return value.read_text(encoding='utf-8', errors='replace')[-6000:]
 
           payload = {
-              "schema_name": "video-channel-manager.svodka-rich-successor-preintent-diagnostic",
-              "schema_version": 1,
-              "workflow_run_id": os.environ["GITHUB_RUN_ID"],
-              "workflow_run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
-              "github_sha": os.environ["GITHUB_SHA"],
-              "publication_id": os.environ["PUBLICATION_ID"],
-              "dispatch_mode": os.environ["DISPATCH_MODE"],
-              "target_outcome": os.environ["TARGET_OUTCOME"],
-              "media_outcome": os.environ["MEDIA_OUTCOME"],
-              "prepare_outcome": os.environ["PREPARE_OUTCOME"],
-              "target_stdout": text(".runtime/target-preflight.stdout"),
-              "target_stderr": text(".runtime/target-preflight.stderr"),
-              "media_stdout": text(".runtime/media-proof.stdout"),
-              "media_stderr": text(".runtime/media-proof.stderr"),
-              "prepare_stdout": text(".runtime/prepare.stdout"),
-              "prepare_stderr": text(".runtime/prepare.stderr"),
-              "provider_write_performed": False,
+              'schema_name': 'video-channel-manager.svodka-rich-v3-preintent-diagnostic',
+              'schema_version': 1,
+              'workflow_run_id': os.environ['GITHUB_RUN_ID'],
+              'workflow_run_attempt': os.environ['GITHUB_RUN_ATTEMPT'],
+              'github_sha': os.environ['GITHUB_SHA'],
+              'publication_id': os.environ['PUBLICATION_ID'],
+              'dispatch_mode': os.environ['DISPATCH_MODE'],
+              'target_outcome': os.environ['TARGET_OUTCOME'],
+              'media_outcome': os.environ['MEDIA_OUTCOME'],
+              'prepare_outcome': os.environ['PREPARE_OUTCOME'],
+              'target_stdout': text('.runtime/target-preflight.stdout'),
+              'target_stderr': text('.runtime/target-preflight.stderr'),
+              'media_stdout': text('.runtime/media-proof.stdout'),
+              'media_stderr': text('.runtime/media-proof.stderr'),
+              'prepare_stdout': text('.runtime/prepare.stdout'),
+              'prepare_stderr': text('.runtime/prepare.stderr'),
+              'provider_write_performed': False,
           }
-          Path(os.environ["DIAGNOSTIC_ABS"]).write_text(
-              json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
-              encoding="utf-8",
+          Path(os.environ['DIAGNOSTIC_ABS']).write_text(
+              json.dumps(payload, ensure_ascii=False, indent=2) + '\n', encoding='utf-8'
           )
           PY
 
-      - name: Commit durable pre-intent diagnostic
+      - name: Commit durable v3 pre-intent diagnostic
         if: always() && steps.select.outputs.eligible == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          diagnostic_rel="content/telegram/svodka/rich-successor-preintent/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/diagnostic.json"
+          diagnostic_rel="content/telegram/svodka/rich-successor-v3-preintent/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/diagnostic.json"
           git -C "$STATE_DIR" config user.name 'svodka-publisher[bot]'
           git -C "$STATE_DIR" config user.email 'svodka-publisher@users.noreply.github.com'
           git -C "$STATE_DIR" add -- "$diagnostic_rel"
-          git -C "$STATE_DIR" diff --cached --quiet && { echo 'Pre-intent diagnostic produced no durable delta.' >&2; exit 3; }
-          git -C "$STATE_DIR" commit -m "Record Svodka pre-intent diagnostic $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          git -C "$STATE_DIR" diff --cached --quiet && { echo 'V3 pre-intent diagnostic produced no durable delta.' >&2; exit 3; }
+          git -C "$STATE_DIR" commit -m "Record Svodka v3 pre-intent diagnostic $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
 
-      - name: Stop before provider boundary if pre-intent proof failed
+      - name: Stop before provider boundary if v3 pre-intent proof failed
         if: >-
           always() && steps.select.outputs.eligible == 'true' &&
           (steps.target.outcome != 'success' ||
            steps.media.outcome != 'success' ||
            steps.prepare.outcome != 'success')
         run: |
-          echo "Pre-intent proof failed; durable diagnostic was recorded and no Telegram mutation is authorized." >&2
+          echo 'V3 pre-intent proof failed; durable diagnostic was recorded and no Telegram mutation is authorized.' >&2
           exit 1
 
       - name: Persist intent before Telegram mutation
@@ -272,7 +299,7 @@ jobs:
           steps.prepare.outcome == 'success'
         run: |
           set -euo pipefail
-          evidence_rel="content/telegram/svodka/rich-successor-dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          evidence_rel="content/telegram/svodka/rich-successor-v3-dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           evidence_abs="$STATE_DIR/$evidence_rel"
           mkdir -p "$evidence_abs"
           cp -- "$INTENT_PATH" "$evidence_abs/intent.json"
@@ -281,18 +308,19 @@ jobs:
           git -C "$STATE_DIR" config user.name 'svodka-publisher[bot]'
           git -C "$STATE_DIR" config user.email 'svodka-publisher@users.noreply.github.com'
           git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel"
-          git -C "$STATE_DIR" diff --cached --quiet && { echo 'Successor intent produced no durable delta.' >&2; exit 3; }
-          git -C "$STATE_DIR" commit -m "Record Svodka successor intent $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          git -C "$STATE_DIR" diff --cached --quiet && { echo 'V3 intent produced no durable delta.' >&2; exit 3; }
+          git -C "$STATE_DIR" commit -m "Record Svodka v3 intent $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
           git -C "$STATE_DIR" show "HEAD:$evidence_rel/intent.json" > .runtime/remote-intent.json
           git -C "$STATE_DIR" show "HEAD:$evidence_rel/media-proof.json" > .runtime/remote-media-proof.json
           cmp --silent "$INTENT_PATH" .runtime/remote-intent.json
+          cmp --silent "$MEDIA_PROOF_PATH" .runtime/remote-media-proof.json
 
       - name: Re-fetch identical media immediately before mutation
         if: steps.select.outputs.eligible == 'true'
         run: |
           set -euo pipefail
-          python -m video_channel_manager.svodka_rich_successor media-proof \
+          python -m video_channel_manager.svodka_rich_successor_v3 media-proof \
             --release "$RELEASE_PATH" --root . \
             --publication-id "${{ steps.select.outputs.publication_id }}" \
             --expected .runtime/remote-media-proof.json \
@@ -306,7 +334,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          python -m video_channel_manager.svodka_rich_successor send \
+          python -m video_channel_manager.svodka_rich_successor_v3 send \
             --release "$RELEASE_PATH" --root . \
             --intent .runtime/remote-intent.json \
             --target-proof "$TARGET_PROOF_PATH" \
@@ -317,57 +345,41 @@ jobs:
           echo "exit_code=$status" >> "$GITHUB_OUTPUT"
           exit 0
 
-      - name: Apply provider outcome and persist terminal state
+      - name: Apply provider outcome and persist terminal v3 state
         if: steps.select.outputs.eligible == 'true'
         id: apply
         shell: bash
         run: |
           set +e
-          python -m video_channel_manager.svodka_rich_successor apply \
+          python -m video_channel_manager.svodka_rich_successor_v3 apply \
             --release "$RELEASE_PATH" --root . --ledger "$LEDGER_PATH" \
             --intent .runtime/remote-intent.json --outcome "$OUTCOME_PATH"
           apply_status=$?
           set -e
-          evidence_rel="content/telegram/svodka/rich-successor-dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          evidence_rel="content/telegram/svodka/rich-successor-v3-dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           cp -- "$OUTCOME_PATH" "$STATE_DIR/$evidence_rel/outcome.json"
           git -C "$STATE_DIR" add -- "$LEDGER_RELATIVE_PATH" "$evidence_rel/outcome.json"
-          git -C "$STATE_DIR" commit -m "Record Svodka successor outcome $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          git -C "$STATE_DIR" commit -m "Record Svodka v3 outcome $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
           echo "exit_code=$apply_status" >> "$GITHUB_OUTPUT"
           [[ "${{ steps.send.outputs.exit_code }}" == '0' && "$apply_status" == '0' ]]
 
-      - name: Record verified successor publication
+      - name: Prove fresh v3 finalizer is terminal verified
         if: steps.select.outputs.eligible == 'true' && steps.apply.outputs.exit_code == '0'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          message_url="$(python -c "import json; print(json.load(open('$OUTCOME_PATH'))['message_url'])")"
-          gh issue comment 235 --repo "$GITHUB_REPOSITORY" --body "Verified Svodka successor ${{ steps.select.outputs.dispatch_mode }} publication: $message_url. Exact target/media and returned RichMessage verification passed; durable successor state recorded."
-
-      - name: Trigger second successor item after verified canary
-        if: steps.select.outputs.eligible == 'true' && steps.apply.outputs.exit_code == '0' && steps.select.outputs.dispatch_mode == 'canary'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          gh workflow run svodka-rich-successor.yml --repo "$GITHUB_REPOSITORY" --ref main \
-            -f confirm='SVODKA-RICH-SUCCESSOR:@deep_info_life'
-
-      - name: Close successor rollout after verified second item
-        if: steps.select.outputs.eligible == 'true' && steps.apply.outputs.exit_code == '0' && steps.select.outputs.dispatch_mode == 'scheduled'
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           python - <<'PY'
           import json, os
           ledger = json.load(open(os.environ['LEDGER_PATH'], encoding='utf-8'))
+          assert ledger['release_id'] == 'svodka-rich-v3-finalizer-2026-08'
           entries = list(ledger['entries'].values())
-          assert len(entries) == 2
-          assert all(e['state'] == 'published' and e['provider_effect'] == 'verified' for e in entries)
-          assert entries[0]['dispatch_mode'] == 'canary'
-          assert entries[1]['dispatch_mode'] == 'scheduled'
+          assert len(entries) == 1
+          entry = entries[0]
+          assert entry['publication_id'] == 'svodka-rich-wombat-cubic-poop'
+          assert entry['state'] == 'published'
+          assert entry['provider_effect'] == 'verified'
+          assert entry['dispatch_mode'] == 'scheduled'
+          assert isinstance(entry['message_id'], int) and entry['message_id'] > 0
+          assert entry['message_url'] == f"https://t.me/deep_info_life/{entry['message_id']}"
+          assert entry['error'] is None
           PY
-          gh issue close 235 --repo "$GITHUB_REPOSITORY" --reason completed \
-            --comment 'Svodka rich successor is live: verified canary + verified automatic continuation are both durably recorded. Historical messages 26/27 remain untouched; expired v1 publisher stays retired.'

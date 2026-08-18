@@ -1,0 +1,52 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-successor-v3-release",
+  "schema_version": 1,
+  "release_id": "svodka-rich-v3-finalizer-2026-08",
+  "project_key": "svodka",
+  "channel_username": "@deep_info_life",
+  "chat_id": -1003527567039,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "state_branch": "state/svodka-telegram",
+  "approved": true,
+  "approval_basis": "Explicit 2026-08-18 marathon closure. The predecessor goldfish canary is durably reconciled as published/verified message 28. The expired v2 wombat slot is not replayed; this is a fresh one-item scheduled successor identity with one mutation maximum and no blind retry.",
+  "publication_window_minutes": 120,
+  "max_verified_per_day_moscow": 2,
+  "verified_predecessor_canary": {
+    "release_id": "svodka-rich-v2-successor-2026-08",
+    "publication_id": "svodka-rich-goldfish-three-second-memory-myth",
+    "message_id": 28,
+    "required_state": "published",
+    "required_provider_effect": "verified"
+  },
+  "profile": {
+    "path": "content/telegram/channels/svodka.json",
+    "git_blob_sha": "81bb5089dcc82a4acab9283dcb3aa8592911c4cc"
+  },
+  "target_binding": {
+    "path": "content/telegram/channels/svodka-target-binding.json",
+    "git_blob_sha": "5ecbb52d7187f7013baeba96e479285762f0b363"
+  },
+  "media_registry": {
+    "path": "content/telegram/svodka/rich-v1/media/media-registry.json",
+    "git_blob_sha": "96436a46777004fbd67925d273390f16dd4a59cc"
+  },
+  "custom_emoji_catalog": {
+    "path": "content/telegram/svodka/custom-emoji-catalog.json",
+    "git_blob_sha": "a7cf960724a47d7fed15f0ed31882590ae5f6b99"
+  },
+  "items": [
+    {
+      "sequence": 1,
+      "publication_id": "svodka-rich-wombat-cubic-poop",
+      "article_id": "svodka-rich-wombat-cubic-poop",
+      "article": {
+        "path": "content/telegram/svodka/rich-v1/articles/svodka-rich-wombat-cubic-poop.json",
+        "git_blob_sha": "3f88e640709e2d4fa8115cd04c7ae7116d6b2729"
+      },
+      "scheduled_at": "2026-08-18T20:30:00+03:00",
+      "dispatch_mode": "scheduled",
+      "emoji_role": "science.microscope"
+    }
+  ]
+}
