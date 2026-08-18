@@ -59,7 +59,7 @@ def test_successor_workflow_has_one_mutation_path_and_self_dispatch_after_canary
 def test_successor_persists_preintent_diagnostics_before_any_provider_boundary() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
     assert workflow.count("continue-on-error: true") == 3
-    assert "provider_write_performed\": False" in workflow
+    assert 'provider_write_performed": False' in workflow
     assert "rich-successor-preintent/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/diagnostic.json" in workflow
     assert "Stop before provider boundary if pre-intent proof failed" in workflow
 
