@@ -241,7 +241,6 @@ def test_legacy_scheduler_is_manual_recovery_only_and_still_fail_closed() -> Non
     send_index = workflow.index("Send exactly one scheduled payload")
     archive_index = workflow.index("Archive exact provider outcome before state mutation")
     apply_index = workflow.index("Apply and persist exact scheduled provider outcome")
-    assert canary_index < skip_index < freshness_index < preflight_index < persist_index < pre_send_index if False else True
     assert canary_index < skip_index < freshness_index < preflight_index < persist_index < reproof_index < send_index
     assert send_index < archive_index < apply_index
     assert "send-once" in workflow
