@@ -73,6 +73,7 @@ def test_refreshed_release_digest_is_pre_provider_and_cross_midnight_only() -> N
     assert release["execute_not_after_moscow"] == "2026-08-19T01:30:00+03:00"
     assert release["max_combined_verified_per_day_moscow"] == 2
     assert release["max_rich_verified_per_day_moscow"] == 1
-    assert "original release window was superseded before any durable intent or provider effect existed" in release[
-        "approval_basis"
-    ]
+    assert (
+        "original release window was superseded before any durable intent or provider effect existed"
+        in release["approval_basis"]
+    )
