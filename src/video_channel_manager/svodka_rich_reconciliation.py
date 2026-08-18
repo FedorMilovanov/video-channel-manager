@@ -125,11 +125,7 @@ def reconcile_archived(
         raise ValueError("durable successor ledger is not the exact ambiguous canary state")
 
     item = next(
-        (
-            raw
-            for raw in cast(list[dict[str, Any]], release["items"])
-            if raw.get("publication_id") == publication_id
-        ),
+        (raw for raw in cast(list[dict[str, Any]], release["items"]) if raw.get("publication_id") == publication_id),
         None,
     )
     if item is None:
