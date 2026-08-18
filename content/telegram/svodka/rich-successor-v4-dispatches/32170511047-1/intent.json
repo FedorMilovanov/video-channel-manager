@@ -1,0 +1,35 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-production-intent",
+  "schema_version": 1,
+  "release_sha256": "sha256:67bdf422b9f205484a4b5642373989448ca397124b89394009b333b472791ace",
+  "publication_id": "svodka-rich-wombat-cubic-poop",
+  "dispatch_mode": "scheduled",
+  "github_repository": "FedorMilovanov/video-channel-manager",
+  "github_sha": "9438c19dbf26a65dc0949dbed2cfff0dd1b1a073",
+  "workflow_run_id": "32170511047",
+  "workflow_run_attempt": "1",
+  "document_sha256": "sha256:781638c07dea9fc5fdcecb92d9296b9dfdcec022bce3930a3363f9903bbed6c1",
+  "render_sha256": "sha256:895111dc662413f9a81a843c3281abb0be94d2c3aad0afbd4aa34d4d6b752453",
+  "target_proof_sha256": "sha256:d9e57d6c57146628fb3de0e7e3e8ee93fe45b06e6572ecd22686f348cf58f8a9",
+  "media_proof": {
+    "schema_name": "video-channel-manager.svodka-rich-production-media-proof",
+    "schema_version": 1,
+    "release_sha256": "sha256:67bdf422b9f205484a4b5642373989448ca397124b89394009b333b472791ace",
+    "publication_id": "svodka-rich-wombat-cubic-poop",
+    "checked_at_utc": "2026-08-18T18:21:51.217335+00:00",
+    "items": [
+      {
+        "media_id": "asset-wombat-cubic-poop-media-01-v4",
+        "url": "https://images.unsplash.com/photo-1743938153060-7f6c4b1b9ba0?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=60&w=3000",
+        "content_type": "image/jpeg",
+        "content_length": 726517,
+        "content_sha256": "sha256:e4b6362986417f3bf7f63aed84152c23c9dfb51c94bf966e0e0603b4ac2cb228"
+      }
+    ],
+    "provider_write_performed": false
+  },
+  "created_at_utc": "2026-08-18T18:21:51.770170+00:00",
+  "mutation_request_limit": 1,
+  "automatic_retry_allowed": false,
+  "blind_retry_allowed": false
+}
