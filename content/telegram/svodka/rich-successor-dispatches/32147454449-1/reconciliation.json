@@ -1,0 +1,23 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-successor-reconciliation",
+  "schema_version": 1,
+  "release_id": "svodka-rich-v2-successor-2026-08",
+  "release_sha256": "sha256:4a76be3fd8c5ba492ba39a9b2f04c9237e7795768cc269cb048225a7e634763b",
+  "publication_id": "svodka-rich-goldfish-three-second-memory-myth",
+  "workflow_run_id": "32147454449",
+  "workflow_run_attempt": "1",
+  "document_sha256": "sha256:c9859a93804d829aa0804bdeb0a6a26e06aae9b5f0b64204352e3568567e3046",
+  "archived_outcome_sha256": "sha256:4e0611b5191407cf80de634f249c09c78888dbb6dbfb9e1658298a5545f060c4",
+  "observed_message_id": 28,
+  "message_url": "https://t.me/deep_info_life/28",
+  "strict_expected_rich_structure_sha256": "sha256:01e9a329aeab799dfd2bddd52e8cc097a39845688ea7983c2dc9bf306adb0963",
+  "strict_returned_rich_structure_sha256": "sha256:0bfff9e7ba6e2be9af53576371753f9befb3f2255046544f922aa7e8688a5b2b",
+  "semantic_rich_structure_sha256": "sha256:5f2d37e0ce71ec8a1e4c85cad28541516bb1fc19b6678020b029e1325449b96e",
+  "media_sha256": "sha256:c359a77b90f3dd24364a79d5cecb8eb554374388638d1c3211f92cdc0d0676a2",
+  "normalization": "coalesce adjacent plain strings inside RichText fields only; entity dictionaries remain boundaries",
+  "target_verified": true,
+  "media_verified": true,
+  "provider_access_performed": false,
+  "provider_write_performed": false,
+  "replay_performed": false
+}
