@@ -1,0 +1,17 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-production-media-proof",
+  "schema_version": 1,
+  "release_sha256": "sha256:4a76be3fd8c5ba492ba39a9b2f04c9237e7795768cc269cb048225a7e634763b",
+  "publication_id": "svodka-rich-goldfish-three-second-memory-myth",
+  "checked_at_utc": "2026-08-18T14:18:17.937005+00:00",
+  "items": [
+    {
+      "media_id": "asset-goldfish-three-second-memory-myth-media-01",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/f/f7/Carassius_auratus_auratus_%28goldfish%29_2.jpg",
+      "content_type": "image/jpeg",
+      "content_length": 4313466,
+      "content_sha256": "sha256:3427b54661c9f4a36760fa86673eb5fa5c213629a535b295f071ae7b191bfc98"
+    }
+  ],
+  "provider_write_performed": false
+}

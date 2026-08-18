@@ -9,12 +9,12 @@
     "svodka-rich-goldfish-three-second-memory-myth": {
       "publication_id": "svodka-rich-goldfish-three-second-memory-myth",
       "scheduled_at": "2026-08-18T15:30:00+03:00",
-      "state": "pending",
+      "state": "intent",
       "provider_effect": "impossible",
-      "dispatch_mode": null,
-      "workflow_run_id": null,
-      "workflow_run_attempt": null,
-      "document_sha256": null,
+      "dispatch_mode": "canary",
+      "workflow_run_id": "32147454449",
+      "workflow_run_attempt": "1",
+      "document_sha256": "sha256:c9859a93804d829aa0804bdeb0a6a26e06aae9b5f0b64204352e3568567e3046",
       "message_id": null,
       "message_url": null,
       "error": null
