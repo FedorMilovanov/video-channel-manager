@@ -22,7 +22,7 @@
   },
   "legacy_profile": {
     "path": "content/telegram/channels/lordchrist.json",
-    "git_blob_sha": "cfc36d649373e5e4a93d79f73606b7547382bd23"
+    "git_blob_sha": "33ac149116a7d1c6862a1b8e2b8d39f09925f72d"
   },
   "target_binding": {
     "path": "content/telegram/channels/lordchrist-rich-target-binding.json",
