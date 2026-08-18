@@ -1,6 +1,6 @@
 {
   "schema_name": "video-channel-manager.svodka-rich-successor-reconciliation-authorization",
-  "schema_version": 1,
+  "schema_version" : 1,
   "release_id": "svodka-rich-v2-successor-2026-08",
   "release_sha256": "sha256:4a76be3fd8c5ba492ba39a9b2f04c9237e7795768cc269cb048225a7e634763b",
   "publication_id": "svodka-rich-goldfish-three-second-memory-myth",
