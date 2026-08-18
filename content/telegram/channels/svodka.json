@@ -13,5 +13,5 @@
   "target_chat_id_env": "SVODKA_TELEGRAM_CHAT_ID",
   "target_bot_id_env": "SVODKA_TELEGRAM_BOT_ID",
   "target_bot_username_env": "SVODKA_TELEGRAM_BOT_USERNAME",
-  "provider_writes_authorized": true
+  "provider_writes_authorized": false
 }
