@@ -1,0 +1,22 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-rich-live-controller",
+  "schema_version": 1,
+  "controller_id": "lordchrist-rich-live-controller-2026-08-18-v2",
+  "owning_issue": 473,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "chat_id": -1001295216957,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "publication_id": "lordchrist-rich-sermons-survive-century",
+  "release_path": "content/telegram/lordchrist/rich-v1/live-canary-release-2026-08-18.json",
+  "release_git_blob_sha": "f154548075690983dabd885701c2fbc3d80ecd6f",
+  "workflow": "lordchrist-rich-live-canary.yml",
+  "ref": "main",
+  "confirm": "PUBLISH:lordchrist-rich-sermons-survive-century",
+  "execute_not_before_moscow": "2026-08-18T23:30:00+03:00",
+  "execute_not_after_moscow": "2026-08-19T01:30:00+03:00",
+  "dispatch_once": true,
+  "provider_access_allowed": false,
+  "provider_write_performed": false
+}

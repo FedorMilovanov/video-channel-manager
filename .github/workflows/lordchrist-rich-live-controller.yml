@@ -1,0 +1,262 @@
+name: LordChrist provider-free rich live controller
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - content/telegram/lordchrist/rich-v1/live-canary-controller-2026-08-18.json
+
+permissions:
+  actions: write
+  contents: read
+  issues: write
+
+concurrency:
+  group: lordchrist-rich-live-controller-v2
+  cancel-in-progress: false
+  queue: max
+
+env:
+  PYTHONPATH: src
+  AUTH_PATH: content/telegram/lordchrist/rich-v1/live-canary-controller-2026-08-18.json
+  RELEASE_PATH: content/telegram/lordchrist/rich-v1/live-canary-release-2026-08-18.json
+
+jobs:
+  dispatch-reviewed-live-workflow:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact main revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install provider-free controller runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -e .
+          python -m pip check
+
+      - name: Validate exact one-shot controller authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_RUN_ATTEMPT" == "1" ]] || {
+            echo "Controller re-runs are forbidden; create a fresh authorization instead." >&2
+            exit 2
+          }
+          python - <<'PY'
+          import json
+          import subprocess
+          from datetime import datetime, timedelta
+          from pathlib import Path
+
+          auth = json.loads(Path("content/telegram/lordchrist/rich-v1/live-canary-controller-2026-08-18.json").read_text(encoding="utf-8"))
+          expected = {
+              "schema_name": "video-channel-manager.lordchrist-rich-live-controller",
+              "schema_version": 1,
+              "controller_id": "lordchrist-rich-live-controller-2026-08-18-v2",
+              "owning_issue": 473,
+              "project_key": "lord-god-strength",
+              "channel_username": "@lordchrist",
+              "chat_id": -1001295216957,
+              "bot_id": 8716602202,
+              "bot_username": "preaching_mp3_bot",
+              "publication_id": "lordchrist-rich-sermons-survive-century",
+              "release_path": "content/telegram/lordchrist/rich-v1/live-canary-release-2026-08-18.json",
+              "release_git_blob_sha": "f154548075690983dabd885701c2fbc3d80ecd6f",
+              "workflow": "lordchrist-rich-live-canary.yml",
+              "ref": "main",
+              "confirm": "PUBLISH:lordchrist-rich-sermons-survive-century",
+              "execute_not_before_moscow": "2026-08-18T23:30:00+03:00",
+              "execute_not_after_moscow": "2026-08-19T01:30:00+03:00",
+              "dispatch_once": True,
+              "provider_access_allowed": False,
+              "provider_write_performed": False,
+          }
+          assert auth == expected, auth
+          release_blob = subprocess.check_output(["git", "hash-object", auth["release_path"]], text=True).strip()
+          assert release_blob == auth["release_git_blob_sha"], (release_blob, auth["release_git_blob_sha"])
+          start = datetime.fromisoformat(auth["execute_not_before_moscow"])
+          end = datetime.fromisoformat(auth["execute_not_after_moscow"])
+          assert start.utcoffset() == timedelta(hours=3)
+          assert end.utcoffset() == timedelta(hours=3)
+          assert end > start
+          PY
+
+      - name: Prove this controller is executing exact current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_main="$(git ls-remote https://github.com/$GITHUB_REPOSITORY.git refs/heads/main | cut -f1)"
+          [[ "$remote_main" == "$GITHUB_SHA" ]] || {
+            echo "Controller SHA $GITHUB_SHA is not exact current main $remote_main." >&2
+            exit 2
+          }
+
+      - name: Wait only for exact release window and exact-main CI success
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import subprocess
+          import time
+          from datetime import UTC, datetime
+          from pathlib import Path
+
+          auth = json.loads(Path("content/telegram/lordchrist/rich-v1/live-canary-controller-2026-08-18.json").read_text(encoding="utf-8"))
+          start = datetime.fromisoformat(auth["execute_not_before_moscow"])
+          end = datetime.fromisoformat(auth["execute_not_after_moscow"])
+          deadline = time.monotonic() + 20 * 60
+          while True:
+              now = datetime.now(tz=UTC).astimezone(start.tzinfo)
+              if now > end:
+                  raise SystemExit("LordChrist controller authorization expired before dispatch")
+              if now < start:
+                  if time.monotonic() >= deadline:
+                      raise SystemExit("LordChrist controller exceeded bounded wait before the release window")
+                  time.sleep(min(15.0, max(1.0, (start - now).total_seconds())))
+                  continue
+              result = subprocess.run(
+                  [
+                      "python",
+                      "-m",
+                      "video_channel_manager.telegram_github_quality_gate",
+                      "--workflow",
+                      "ci.yml",
+                      "--sha",
+                      subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+                  ],
+                  text=True,
+                  capture_output=True,
+              )
+              if result.returncode == 0:
+                  print(result.stdout)
+                  break
+              if time.monotonic() >= deadline:
+                  print(result.stdout)
+                  print(result.stderr)
+                  raise SystemExit("Exact current-main CI did not become green inside the bounded controller wait")
+              time.sleep(15)
+          PY
+
+      - name: Re-prove exact current main immediately before dispatch
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_main="$(git ls-remote https://github.com/$GITHUB_REPOSITORY.git refs/heads/main | cut -f1)"
+          [[ "$remote_main" == "$GITHUB_SHA" ]] || {
+            echo "Main moved after CI proof; controller refuses stale dispatch." >&2
+            exit 2
+          }
+
+      - name: Dispatch exact manual rich canary workflow once
+        id: dispatch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+          from datetime import UTC, datetime
+          from pathlib import Path
+
+          auth = json.loads(Path("content/telegram/lordchrist/rich-v1/live-canary-controller-2026-08-18.json").read_text(encoding="utf-8"))
+          payload = json.dumps({"ref": auth["ref"], "inputs": {"confirm": auth["confirm"]}}).encode("utf-8")
+          url = f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}/actions/workflows/{auth['workflow']}/dispatches"
+          request = urllib.request.Request(
+              url,
+              data=payload,
+              method="POST",
+              headers={
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Accept": "application/vnd.github+json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "Content-Type": "application/json",
+                  "User-Agent": "video-channel-manager-lordchrist-controller/1",
+              },
+          )
+          with urllib.request.urlopen(request, timeout=30) as response:
+              if response.status != 204:
+                  raise SystemExit(f"workflow dispatch returned HTTP {response.status}")
+          Path(".dispatch-created-at.txt").write_text(datetime.now(tz=UTC).isoformat(), encoding="utf-8")
+          print("Exact LordChrist rich live workflow dispatch accepted by GitHub (HTTP 204).")
+          PY
+
+      - name: Discover dispatched run and record it on owning issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.parse
+          import urllib.request
+          from datetime import datetime
+          from pathlib import Path
+
+          created = datetime.fromisoformat(Path(".dispatch-created-at.txt").read_text(encoding="utf-8"))
+          repo = os.environ["GITHUB_REPOSITORY"]
+          token = os.environ["GH_TOKEN"]
+          workflow = "lordchrist-rich-live-canary.yml"
+          headers = {
+              "Authorization": f"Bearer {token}",
+              "Accept": "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+              "User-Agent": "video-channel-manager-lordchrist-controller/1",
+          }
+          run = None
+          for _ in range(12):
+              query = urllib.parse.urlencode({"event": "workflow_dispatch", "branch": "main", "per_page": 20})
+              url = f"https://api.github.com/repos/{repo}/actions/workflows/{workflow}/runs?{query}"
+              request = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  payload = json.load(response)
+              for candidate in payload.get("workflow_runs", []):
+                  candidate_created = datetime.fromisoformat(candidate["created_at"].replace("Z", "+00:00"))
+                  if candidate.get("head_sha") == os.environ["GITHUB_SHA"] and candidate_created >= created:
+                      run = candidate
+                      break
+              if run is not None:
+                  break
+              time.sleep(5)
+          if run is None:
+              raise SystemExit("Dispatch was accepted but exact live workflow run was not discoverable")
+
+          body = (
+              "Provider-free controller dispatched the exact guarded LordChrist rich canary.\n\n"
+              f"- live workflow run: `{run['id']}`\n"
+              f"- main SHA: `{run['head_sha']}`\n"
+              f"- URL: {run['html_url']}\n"
+              "- provider mutation still remains exclusively inside the guarded live workflow\n"
+          )
+          comment_url = f"https://api.github.com/repos/{repo}/issues/473/comments"
+          request = urllib.request.Request(
+              comment_url,
+              data=json.dumps({"body": body}).encode("utf-8"),
+              method="POST",
+              headers={**headers, "Content-Type": "application/json"},
+          )
+          with urllib.request.urlopen(request, timeout=30) as response:
+              if response.status != 201:
+                  raise SystemExit(f"issue comment returned HTTP {response.status}")
+          print(json.dumps({"run_id": run["id"], "run_url": run["html_url"]}))
+          PY
