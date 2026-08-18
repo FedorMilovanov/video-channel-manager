@@ -1,0 +1,36 @@
+{
+  "schema_name": "video-channel-manager.svodka-rich-production-ledger",
+  "schema_version": 1,
+  "release_id": "svodka-rich-v2-successor-2026-08",
+  "release_sha256": "sha256:4a76be3fd8c5ba492ba39a9b2f04c9237e7795768cc269cb048225a7e634763b",
+  "project_key": "svodka",
+  "channel_username": "@deep_info_life",
+  "entries": {
+    "svodka-rich-goldfish-three-second-memory-myth": {
+      "publication_id": "svodka-rich-goldfish-three-second-memory-myth",
+      "scheduled_at": "2026-08-18T15:30:00+03:00",
+      "state": "pending",
+      "provider_effect": "impossible",
+      "dispatch_mode": null,
+      "workflow_run_id": null,
+      "workflow_run_attempt": null,
+      "document_sha256": null,
+      "message_id": null,
+      "message_url": null,
+      "error": null
+    },
+    "svodka-rich-wombat-cubic-poop": {
+      "publication_id": "svodka-rich-wombat-cubic-poop",
+      "scheduled_at": "2026-08-18T15:31:00+03:00",
+      "state": "pending",
+      "provider_effect": "impossible",
+      "dispatch_mode": null,
+      "workflow_run_id": null,
+      "workflow_run_attempt": null,
+      "document_sha256": null,
+      "message_id": null,
+      "message_url": null,
+      "error": null
+    }
+  }
+}
