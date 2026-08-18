@@ -28,7 +28,7 @@ Ephemeral `work/`, `agent/` and `research/` refs are non-authoritative after the
 
 The historical authorized rollout is complete. Public video `x-puy27S2qs` remains the collision guard for that exact project/channel/media identity. Processing, public visibility, custom thumbnail, playlist membership and the top-level comment were verified during the completed rollout.
 
-Current `main` includes the guarded YouTube release executor; implementation completion does not itself authorize execution.
+The current `main` includes the guarded YouTube release executor; implementation completion does not itself authorize execution.
 
 Issue #154 is closed as **completed**. The historical provenance gap predates the later quality-master binding rule and is not required rework. Do not regenerate or reupload the album solely to satisfy policy introduced after the published bytes were produced. No future YouTube upload, metadata edit, thumbnail change, playlist mutation, visibility change, comment mutation, deletion or replacement is authorized by this state.
 
@@ -36,7 +36,7 @@ Issue #154 is closed as **completed**. The historical provenance gap predates th
 
 The legacy `@lordchrist` quote publisher remains a separate live content track with its own durable ledger and no-blind-retry contract.
 
-Historical research-v2 canary ambiguity is no longer a legacy blocker. Issue #286 / PR #287 introduced the exact `retired_no_replay` disposition. Every other `dispatching` or `may_exist` effect remains fail-closed. The retired August research release itself cannot resume, retry, or authorize a successor.
+The historical research-v2 canary ambiguity is no longer a legacy blocker. Issue #286 / PR #287 introduced the exact `retired_no_replay` disposition. Every other `dispatching` or `may_exist` effect remains fail-closed. The retired August research release itself cannot resume, retry, or authorize a successor.
 
 Issue #168 is closed as repository implementation complete. The generic LordChrist profile remains `provider_writes_authorized=false`; any future research or rich provider mutation still requires a new exact scope and authorization.
 
