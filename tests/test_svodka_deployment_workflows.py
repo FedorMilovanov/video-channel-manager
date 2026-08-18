@@ -274,13 +274,15 @@ def test_archived_outcome_recovery_uses_exact_release_but_no_new_provider_or_qua
     assert "SVODKA_TELEGRAM_BOT_TOKEN" not in workflow
 
 
-def test_no_push_triggered_write_capable_svodka_migration_workflows_remain() -> None:
+def test_only_reviewed_svodka_successor_may_be_push_triggered_and_write_capable() -> None:
     workflows_dir = REPOSITORY_ROOT / ".github/workflows"
     assert sorted(path.name for path in workflows_dir.glob("svodka-*-once.yml")) == []
-    for path in workflows_dir.glob("svodka-*.yml"):
-        workflow = _workflow(path)
-        if "push:" in workflow:
-            assert "contents: write" not in workflow, path.name
+    push_writers = {
+        path.name
+        for path in workflows_dir.glob("svodka-*.yml")
+        if "push:" in _workflow(path) and "contents: write" in _workflow(path)
+    }
+    assert push_writers == {"svodka-rich-successor.yml"}
 
 
 def test_all_svodka_workflows_pin_supported_runner_image() -> None:
