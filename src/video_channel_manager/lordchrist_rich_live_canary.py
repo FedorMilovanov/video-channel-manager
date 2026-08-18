@@ -231,11 +231,8 @@ class _AttachmentTelegramRichMessageDocument(TelegramRichMessageDocument):
         if len(selected_paths) != 3 or len(selected_paths) != len(set(selected_paths)):
             raise ValueError("LordChrist rich live canary requires exactly three unique provider media paths")
         input_records = {record["path"]: record for record in _media_records(self.input_rich_message)}
-        expected_records = {record["path"]: record for record in _media_records(self.expected_returned_rich_message)}
-        if set(input_records) != set(expected_records):
-            raise ValueError("LordChrist rich attachment input and expected media paths differ")
         if set(selected_paths) != set(input_records):
-            raise ValueError("LordChrist rich attachment paths must cover every media block exactly once")
+            raise ValueError("LordChrist rich attachment paths must cover every outgoing media block exactly once")
         if {record["type"] for record in input_records.values()} != {"photo"}:
             raise ValueError("LordChrist rich live canary supports photo attachments only")
         names = _attachment_names(self.input_rich_message)
@@ -259,7 +256,9 @@ class _AttachmentRenderEvidence:
 def _attached_article(source_article: RichArticleDocument) -> RichArticleDocument:
     if tuple(media.media_id for media in source_article.media) != MEDIA_IDS:
         raise ValueError("LordChrist source article media order differs from reviewed live canary order")
-    media = tuple(media.model_copy(update={"uri": _attachment_reference(media.media_id)}) for media in source_article.media)
+    media = tuple(
+        media.model_copy(update={"uri": _attachment_reference(media.media_id)}) for media in source_article.media
+    )
     return source_article.model_copy(update={"media": media})
 
 
