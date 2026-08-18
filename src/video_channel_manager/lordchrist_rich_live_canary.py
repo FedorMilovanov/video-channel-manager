@@ -1,25 +1,40 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import os
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Sequence, cast
 from zoneinfo import ZoneInfo
 
 import httpx
+from pydantic import model_validator
 
 from video_channel_manager.lordchrist_cross_track_effect_guard import require_no_cross_track_unresolved_effects
 from video_channel_manager.lordchrist_rich_successor import build_provider_free_document
-from video_channel_manager.platforms.http import HttpClientOwner, HttpOperationClass, RetryPolicy, execute_http_request
+from video_channel_manager.platforms.http import (
+    HttpClientOwner,
+    HttpOperationClass,
+    HttpTransportFailure,
+    RetryPolicy,
+    execute_http_request,
+)
 from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_multichannel_transport import GenericTargetProof, preflight_channel
+from video_channel_manager.telegram_rich_models import RichArticleDocument
 from video_channel_manager.telegram_rich_provider import (
     HttpxTelegramRichMutationProvider,
+    TelegramRichMessageDocument,
     TelegramRichOutcomeArchiveReceipt,
     TelegramRichProviderOutcome,
+    TelegramRichProviderResponse,
+    TelegramRichProviderTimeout,
+    TelegramRichProviderTransportError,
+    TelegramRichRequestTimeout,
     publish_rich_once,
 )
 
@@ -34,7 +49,20 @@ RELEASE_ID = "lordchrist-rich-live-canary-2026-08-18"
 PUBLICATION_ID = "lordchrist-rich-sermons-survive-century"
 OWNING_ISSUE = 473
 MEDIA_USER_AGENT = "video-channel-manager-lordchrist-rich/1 (+https://github.com/FedorMilovanov/video-channel-manager)"
+MEDIA_IDS = ("media-calvin", "media-spurgeon", "media-tape")
+ATTACHMENT_NAMES = {
+    "media-calvin": "lc_calvin",
+    "media-spurgeon": "lc_spurgeon",
+    "media-tape": "lc_tape",
+}
+ATTACHMENT_FILENAMES = {
+    "media-calvin": "john-calvin.jpg",
+    "media-spurgeon": "charles-spurgeon.jpg",
+    "media-tape": "reel-to-reel.jpg",
+}
 MOSCOW = ZoneInfo("Europe/Moscow")
+
+AttachmentBundle = dict[str, tuple[str, bytes, str]]
 
 
 def _canonical_json(value: Any) -> str:
@@ -113,19 +141,199 @@ def require_live_window(release: dict[str, Any], now: datetime | None = None) ->
         raise ValueError("LordChrist rich live canary authorization window is not active")
 
 
+def _attachment_reference(media_id: str) -> str:
+    try:
+        return f"attach://{ATTACHMENT_NAMES[media_id]}"
+    except KeyError as exc:
+        raise ValueError(f"unknown LordChrist live attachment media id: {media_id}") from exc
+
+
+def _media_records(value: Any) -> list[dict[str, str]]:
+    records: list[dict[str, str]] = []
+
+    def walk(candidate: Any, path: str) -> None:
+        if isinstance(candidate, dict):
+            block_type = candidate.get("type")
+            if block_type in {"photo", "video", "animation", "audio", "voice_note"}:
+                media_object = candidate.get(str(block_type))
+                if isinstance(media_object, dict):
+                    identity = media_object.get("media")
+                    if isinstance(identity, str):
+                        records.append({"path": path, "type": str(block_type), "media": identity})
+            for key, child in candidate.items():
+                walk(child, f"{path}/{key}")
+        elif isinstance(candidate, list):
+            for index, child in enumerate(candidate):
+                walk(child, f"{path}/{index}")
+
+    walk(value, "$")
+    return records
+
+
+def _attachment_names(value: Any) -> frozenset[str]:
+    names: set[str] = set()
+
+    def walk(candidate: Any) -> None:
+        if isinstance(candidate, dict):
+            identity = candidate.get("media")
+            if isinstance(identity, str) and identity.startswith("attach://"):
+                name = identity.removeprefix("attach://")
+                if not name:
+                    raise ValueError("empty LordChrist multipart attachment name")
+                names.add(name)
+            for child in candidate.values():
+                walk(child)
+        elif isinstance(candidate, list):
+            for child in candidate:
+                walk(child)
+
+    walk(value)
+    return frozenset(names)
+
+
+def _replace_source_urls_with_attachments(
+    value: dict[str, Any],
+    source_article: RichArticleDocument,
+) -> dict[str, Any]:
+    replacement = {media.uri: _attachment_reference(media.media_id) for media in source_article.media}
+    if set(replacement.values()) != {f"attach://{name}" for name in ATTACHMENT_NAMES.values()}:
+        raise ValueError("LordChrist source article does not map one-to-one onto the reviewed attachment set")
+    updated = copy.deepcopy(value)
+
+    def walk(candidate: Any) -> None:
+        if isinstance(candidate, dict):
+            identity = candidate.get("media")
+            if isinstance(identity, str) and identity in replacement:
+                candidate["media"] = replacement[identity]
+            for child in candidate.values():
+                walk(child)
+        elif isinstance(candidate, list):
+            for child in candidate:
+                walk(child)
+
+    walk(updated)
+    return updated
+
+
+class _AttachmentTelegramRichMessageDocument(TelegramRichMessageDocument):
+    """Issue-473 document variant for official multipart `attach://` InputMediaPhoto values.
+
+    The generic HTTPS-backed document is constructed and fully validated first.
+    `build_document()` then proves this object differs only by replacing the
+    three exact source media identities with their one-to-one attachment names.
+    """
+
+    @model_validator(mode="after")
+    def validate_document(self) -> "_AttachmentTelegramRichMessageDocument":
+        if self.legacy_fallback is not None:
+            raise ValueError("LordChrist rich live canary forbids legacy fallback")
+        selected_paths = self.provider_assigned_media_paths
+        if len(selected_paths) != 3 or len(selected_paths) != len(set(selected_paths)):
+            raise ValueError("LordChrist rich live canary requires exactly three unique provider media paths")
+        input_records = {record["path"]: record for record in _media_records(self.input_rich_message)}
+        expected_records = {record["path"]: record for record in _media_records(self.expected_returned_rich_message)}
+        if set(input_records) != set(expected_records):
+            raise ValueError("LordChrist rich attachment input and expected media paths differ")
+        if set(selected_paths) != set(input_records):
+            raise ValueError("LordChrist rich attachment paths must cover every media block exactly once")
+        if {record["type"] for record in input_records.values()} != {"photo"}:
+            raise ValueError("LordChrist rich live canary supports photo attachments only")
+        names = _attachment_names(self.input_rich_message)
+        if names != frozenset(ATTACHMENT_NAMES.values()):
+            raise ValueError("LordChrist rich document attachment names differ from the reviewed exact set")
+        if any(not record["media"].startswith("attach://") for record in input_records.values()):
+            raise ValueError("LordChrist rich provider media must be multipart attachments")
+        _canonical_json(self.input_rich_message)
+        _canonical_json(self.expected_returned_rich_message)
+        return self
+
+
+@dataclass(frozen=True)
+class _AttachmentRenderEvidence:
+    article_digest: str
+    visible_text: str
+    provider_assigned_media: tuple[str, ...]
+    render_sha256: str
+
+
+def _attached_article(source_article: RichArticleDocument) -> RichArticleDocument:
+    if tuple(media.media_id for media in source_article.media) != MEDIA_IDS:
+        raise ValueError("LordChrist source article media order differs from reviewed live canary order")
+    media = tuple(media.model_copy(update={"uri": _attachment_reference(media.media_id)}) for media in source_article.media)
+    return source_article.model_copy(update={"media": media})
+
+
+def _prove_only_media_identity_changed(
+    source_document: TelegramRichMessageDocument,
+    attached_document: _AttachmentTelegramRichMessageDocument,
+    source_article: RichArticleDocument,
+) -> None:
+    restored = copy.deepcopy(attached_document.input_rich_message)
+    reverse = {_attachment_reference(media.media_id): media.uri for media in source_article.media}
+
+    def walk(candidate: Any) -> None:
+        if isinstance(candidate, dict):
+            identity = candidate.get("media")
+            if isinstance(identity, str) and identity in reverse:
+                candidate["media"] = reverse[identity]
+            for child in candidate.values():
+                walk(child)
+        elif isinstance(candidate, list):
+            for child in candidate:
+                walk(child)
+
+    walk(restored)
+    if restored != source_document.input_rich_message:
+        raise ValueError("LordChrist attachment document differs from reviewed source by more than media identity")
+    if attached_document.expected_returned_rich_message != source_document.expected_returned_rich_message:
+        raise ValueError("LordChrist attachment document changed the reviewed expected RichMessage")
+    if attached_document.target != source_document.target:
+        raise ValueError("LordChrist attachment document changed the exact target binding")
+    if attached_document.provider_assigned_media_paths != source_document.provider_assigned_media_paths:
+        raise ValueError("LordChrist attachment document changed provider-assigned media paths")
+
+
 def build_document(root: Path, release: dict[str, Any]) -> tuple[Any, Any, Any]:
-    document, render, article = build_provider_free_document(
+    source_document, source_render, source_article = build_provider_free_document(
         _verify(root, cast(dict[str, Any], release["article"])),
         _verify(root, cast(dict[str, Any], release["media_registry"])),
         _verify(root, cast(dict[str, Any], release["profile"])),
         _verify(root, cast(dict[str, Any], release["target_binding"])),
     )
-    if article.document_id != PUBLICATION_ID or document.publication_id != PUBLICATION_ID:
-        raise ValueError("LordChrist live canary document identity mismatch")
-    if [media.media_id for media in article.media] != ["media-calvin", "media-spurgeon", "media-tape"]:
+    if source_article.document_id != PUBLICATION_ID or source_document.publication_id != PUBLICATION_ID:
+        raise ValueError("LordChrist live canary source document identity mismatch")
+    if tuple(media.media_id for media in source_article.media) != MEDIA_IDS:
         raise ValueError("LordChrist live canary must bind exactly the three reviewed media slots")
-    if len(document.provider_assigned_media_paths) != 3:
-        raise ValueError("LordChrist live canary must render exactly three provider-assigned media paths")
+    if len(source_document.provider_assigned_media_paths) != 3:
+        raise ValueError("LordChrist source document must render exactly three provider media paths")
+
+    article = _attached_article(source_article)
+    input_rich_message = _replace_source_urls_with_attachments(source_document.input_rich_message, source_article)
+    document = _AttachmentTelegramRichMessageDocument(
+        schema_name="video-channel-manager.telegram-rich-message-document",
+        schema_version=1,
+        publication_id=source_document.publication_id,
+        target=source_document.target,
+        input_rich_message=input_rich_message,
+        expected_returned_rich_message=copy.deepcopy(source_document.expected_returned_rich_message),
+        provider_assigned_media_paths=source_document.provider_assigned_media_paths,
+        legacy_fallback=None,
+    )
+    _prove_only_media_identity_changed(source_document, document, source_article)
+    render_payload = {
+        "article_digest": article.digest,
+        "input_rich_message": document.input_rich_message,
+        "expected_returned_rich_message": document.expected_returned_rich_message,
+        "visible_text": source_render.visible_text,
+        "provider_assigned_media": list(MEDIA_IDS),
+        "delivery_mode": "multipart-attach",
+    }
+    render = _AttachmentRenderEvidence(
+        article_digest=article.digest,
+        visible_text=source_render.visible_text,
+        provider_assigned_media=MEDIA_IDS,
+        render_sha256=_sha(render_payload),
+    )
     return document, render, article
 
 
@@ -272,21 +480,46 @@ def run_preflight(root: Path, release: dict[str, Any], *, token: str) -> Generic
     return proof
 
 
-def _registry_mime(root: Path, release: dict[str, Any]) -> dict[str, str]:
+def _source_assets(root: Path, release: dict[str, Any]) -> tuple[dict[str, str], ...]:
     registry = _read(_verify(root, cast(dict[str, Any], release["media_registry"])))
     raw_assets = registry.get("assets")
     if not isinstance(raw_assets, list):
         raise ValueError("LordChrist rich media registry has no assets")
-    result: dict[str, str] = {}
+    by_id: dict[str, dict[str, Any]] = {}
     for raw in raw_assets:
         if not isinstance(raw, dict) or raw.get("article_id") != PUBLICATION_ID:
             continue
-        slot_id = str(raw.get("media_slot_id") or "")
-        if slot_id in {"media-calvin", "media-spurgeon", "media-tape"}:
-            result[slot_id] = str(raw.get("expected_mime") or "")
-    if result != {"media-calvin": "image/jpeg", "media-spurgeon": "image/jpeg", "media-tape": "image/jpeg"}:
-        raise ValueError("LordChrist rich live canary media MIME registry mismatch")
-    return result
+        media_id = str(raw.get("media_slot_id") or "")
+        if media_id in MEDIA_IDS:
+            if media_id in by_id:
+                raise ValueError(f"duplicate LordChrist live source media slot: {media_id}")
+            by_id[media_id] = raw
+    if tuple(media_id for media_id in MEDIA_IDS if media_id in by_id) != MEDIA_IDS:
+        raise ValueError("LordChrist live source registry does not contain the exact three reviewed media slots")
+
+    result: list[dict[str, str]] = []
+    for media_id in MEDIA_IDS:
+        raw = by_id[media_id]
+        url = raw.get("direct_media_url")
+        mime = raw.get("expected_mime")
+        if (
+            not isinstance(url, str)
+            or not url.startswith("https://upload.wikimedia.org/")
+            or mime != "image/jpeg"
+            or raw.get("remote_ready") is not True
+            or raw.get("acquisition_status") != "source_and_license_reviewed"
+        ):
+            raise ValueError(f"LordChrist live source media is not exact reviewed Wikimedia JPEG: {media_id}")
+        result.append(
+            {
+                "media_id": media_id,
+                "url": url,
+                "content_type": "image/jpeg",
+                "attachment_name": ATTACHMENT_NAMES[media_id],
+                "filename": ATTACHMENT_FILENAMES[media_id],
+            }
+        )
+    return tuple(result)
 
 
 class _LordChristMediaReader(HttpClientOwner):
@@ -315,6 +548,44 @@ class _LordChristMediaReader(HttpClientOwner):
         )
 
 
+def _fetch_media_bundle(root: Path, release: dict[str, Any]) -> tuple[list[dict[str, Any]], AttachmentBundle]:
+    evidence: list[dict[str, Any]] = []
+    attachments: AttachmentBundle = {}
+    reader = _LordChristMediaReader()
+    try:
+        for source in _source_assets(root, release):
+            status, content_type, content = reader.fetch(source["url"])
+            if (
+                status != 200
+                or content_type != source["content_type"]
+                or not content
+                or len(content) > 10_000_000
+                or not content.startswith(b"\xff\xd8\xff")
+            ):
+                raise ValueError(
+                    f"LordChrist rich media proof failed: {source['media_id']} "
+                    f"status={status} content_type={content_type!r} bytes={len(content)}"
+                )
+            digest = "sha256:" + hashlib.sha256(content).hexdigest()
+            evidence.append(
+                {
+                    "media_id": source["media_id"],
+                    "source_url": source["url"],
+                    "attachment_name": source["attachment_name"],
+                    "filename": source["filename"],
+                    "content_type": content_type,
+                    "content_length": len(content),
+                    "content_sha256": digest,
+                }
+            )
+            attachments[source["attachment_name"]] = (source["filename"], content, content_type)
+    finally:
+        reader.close()
+    if set(attachments) != set(ATTACHMENT_NAMES.values()):
+        raise ValueError("LordChrist live attachment bundle differs from the exact reviewed set")
+    return evidence, attachments
+
+
 def media_proof(
     root: Path,
     release: dict[str, Any],
@@ -322,40 +593,13 @@ def media_proof(
     expected: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     require_live_window(release)
-    _document, _render, article = build_document(root, release)
-    mime = _registry_mime(root, release)
-    evidence: list[dict[str, Any]] = []
-    reader = _LordChristMediaReader()
-    try:
-        for media in article.media:
-            status, content_type, content = reader.fetch(media.uri)
-            if (
-                status != 200
-                or content_type != mime[media.media_id]
-                or not content
-                or len(content) > 10_000_000
-                or not content.startswith(b"\xff\xd8\xff")
-            ):
-                raise ValueError(
-                    f"LordChrist rich media proof failed: {media.media_id} "
-                    f"status={status} content_type={content_type!r} bytes={len(content)}"
-                )
-            evidence.append(
-                {
-                    "media_id": media.media_id,
-                    "url": media.uri,
-                    "content_type": content_type,
-                    "content_length": len(content),
-                    "content_sha256": "sha256:" + hashlib.sha256(content).hexdigest(),
-                }
-            )
-    finally:
-        reader.close()
+    evidence, _attachments = _fetch_media_bundle(root, release)
     proof = {
         "schema_name": "video-channel-manager.lordchrist-rich-live-media-proof",
         "schema_version": 1,
         "release_sha256": release_digest(release),
         "publication_id": PUBLICATION_ID,
+        "delivery_mode": "multipart-attach",
         "checked_at_utc": datetime.now(tz=UTC).isoformat(),
         "items": evidence,
         "provider_write_performed": False,
@@ -385,11 +629,15 @@ def prepare(
     document, render, _article = build_document(root, release)
     target = _target_proof(target_path)
     _require_target(target, document)
+    proof_items = proof_media.get("items")
     if (
         repository != REPOSITORY
         or proof_media.get("release_sha256") != release_digest(release)
         or proof_media.get("publication_id") != PUBLICATION_ID
-        or len(cast(list[Any], proof_media.get("items", []))) != 3
+        or proof_media.get("delivery_mode") != "multipart-attach"
+        or not isinstance(proof_items, list)
+        or len(proof_items) != 3
+        or [item.get("media_id") for item in proof_items if isinstance(item, dict)] != list(MEDIA_IDS)
     ):
         raise ValueError("LordChrist rich durable intent inputs differ from exact release")
     created_at = datetime.now(tz=UTC).isoformat()
@@ -399,6 +647,7 @@ def prepare(
         "release_sha256": release_digest(release),
         "owning_issue": OWNING_ISSUE,
         "publication_id": PUBLICATION_ID,
+        "delivery_mode": "multipart-attach",
         "github_repository": repository,
         "github_sha": sha,
         "workflow_run_id": run_id,
@@ -446,6 +695,55 @@ class _Archiver:
         )
 
 
+class _LordChristMultipartProvider(HttpxTelegramRichMutationProvider):
+    """One-request sendRichMessage adapter carrying exact reviewed JPEG bytes as attachments."""
+
+    def __init__(self, *, token: str, attachments: AttachmentBundle, http_client: httpx.Client | None = None) -> None:
+        super().__init__(token=token, http_client=http_client)
+        if set(attachments) != set(ATTACHMENT_NAMES.values()):
+            raise ValueError("LordChrist multipart provider attachment names differ from the reviewed exact set")
+        self._attachments = attachments
+
+    def send_rich_message(
+        self,
+        *,
+        chat_id: int,
+        rich_message: dict[str, Any],
+        timeout: TelegramRichRequestTimeout,
+    ) -> TelegramRichProviderResponse:
+        if _attachment_names(rich_message) != frozenset(self._attachments):
+            raise ValueError("LordChrist multipart request attachment references differ from the exact byte bundle")
+        files = {
+            name: (filename, content, content_type)
+            for name, (filename, content, content_type) in self._attachments.items()
+        }
+        try:
+            result = execute_http_request(
+                lambda: self._http_client.post(
+                    self._send_url,
+                    data={"chat_id": str(chat_id), "rich_message": _canonical_json(rich_message)},
+                    files=files,
+                    timeout=timeout.as_httpx(),
+                ),
+                provider="telegram",
+                operation=HttpOperationClass.AMBIGUOUS_MUTATION,
+                method="POST",
+                resource="sendRichMessage",
+                retry_policy=RetryPolicy(max_attempts=1),
+            )
+        except HttpTransportFailure as exc:
+            before_request = exc.cause_type in {"ConnectTimeout", "PoolTimeout", "ConnectError"}
+            if "Timeout" in exc.cause_type:
+                raise TelegramRichProviderTimeout(request_may_have_been_dispatched=not before_request) from exc
+            raise TelegramRichProviderTransportError(request_may_have_been_dispatched=not before_request) from exc
+        response = result.response
+        try:
+            body: Any = response.json()
+        except ValueError:
+            body = None
+        return TelegramRichProviderResponse(status_code=response.status_code, body=body)
+
+
 def send(
     root: Path,
     release: dict[str, Any],
@@ -462,6 +760,7 @@ def send(
         or intent.get("owning_issue") != OWNING_ISSUE
         or intent.get("github_repository") != REPOSITORY
         or intent.get("publication_id") != PUBLICATION_ID
+        or intent.get("delivery_mode") != "multipart-attach"
         or cast(dict[str, Any], intent.get("media_proof", {})).get("items") != recheck.get("items")
     ):
         raise ValueError("LordChrist rich durable intent/media recheck mismatch")
@@ -472,8 +771,15 @@ def send(
     _require_target(target, document)
     if _sha(target.model_dump(mode="json")) != intent.get("target_proof_sha256"):
         raise ValueError("LordChrist rich target proof changed after durable intent")
+
+    final_evidence, attachments = _fetch_media_bundle(root, release)
+    if final_evidence != recheck.get("items"):
+        raise ValueError("LordChrist exact attachment bytes changed after immediate media recheck")
+    if _attachment_names(document.input_rich_message) != frozenset(attachments):
+        raise ValueError("LordChrist exact document attachment identities differ from final byte bundle")
+
     profile = load_channel_profile(_verify(root, cast(dict[str, Any], release["profile"])))
-    provider = HttpxTelegramRichMutationProvider(token=token)
+    provider = _LordChristMultipartProvider(token=token, attachments=attachments)
     try:
         archived = publish_rich_once(
             document,
@@ -577,6 +883,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "render_sha256": render.render_sha256,
                     "media_ids": [media.media_id for media in article.media],
                     "media_count": len(article.media),
+                    "delivery_mode": "multipart-attach",
+                    "attachment_names": sorted(_attachment_names(document.input_rich_message)),
                     "provider_write_performed": False,
                 },
                 ensure_ascii=False,
