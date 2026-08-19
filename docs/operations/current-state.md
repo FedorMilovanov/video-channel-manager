@@ -20,7 +20,7 @@ Repository implementation, artifact production and provider rollout are separate
 
 Only `main` is a supported repository code/runtime execution baseline.
 
-`state/lordchrist-telegram` and `state/svodka-telegram` are durable state-only refs. `state/milovi-cake-telegram` is also a confirmed durable state-only ref. None of them is a runtime/code baseline.
+`state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs. None of them is a runtime/code baseline.
 
 Ephemeral `work/`, `agent/` and `research/` refs are non-authoritative after their scope closes. Preserve unique useful commits before cleanup; never rewrite a durable state ref as branch hygiene.
 
@@ -64,7 +64,7 @@ The intervening v3 wombat identity ended `failed_no_effect / confirmed_absent` w
 
 Historical messages `26` and `27` and expired v2/v3 mutation identities remain non-replayable evidence. The old August schedule is not a catch-up queue.
 
-The original 14-entry `svodka-pilot-2026-08` ledger on `state/svodka-telegram` still records its historical entries as `pending / provider_effect=impossible`, with no intent, workflow run or message id. That is state-only cleanup debt, **not** a publication backlog, provider uncertainty or retry authority. Terminalize those expired entries only through the exact provider-free `svodka-skip-expired.yml` path; do not replay Telegram and do not hand-edit the durable state ledger to manufacture closure.
+The original 14-entry `svodka-pilot-2026-08` ledger on `state/svodka-telegram` is now fully terminalized: all 14 historical entries are `skipped / provider_effect=impossible`, with no intent, workflow run, message id or provider effect. The provider-free stale-window cleanup debt is closed. These terminal records are historical no-replay evidence, not a publication backlog or execution authority.
 
 The completed message-28 reconciliation workflow and verified v4 successor workflow have been retired from executable `main`. Historical release/runtime/evidence and legacy provider-free/recovery contracts remain where required for reproducibility. No new Svodka Telegram mutation is authorized by this state.
 
@@ -82,7 +82,21 @@ Canonical historical analysis remains [`2026-08-14-milovi-issue-323-interim-post
 
 ## Telegram / Milovi Cake / Issue #353
 
-Issue #353 is a separate Milovi Telegram workstream and remains outside this audit/cleanup scope. This document does not modify it and does not grant or revoke provider authority for it.
+The live canary-v2 is completed historical evidence: it proved the exact `@MiloviCake` / chat `-1002215328390` / bot `8716602202` path with one durable intent, one provider mutation attempt, a verified message and no blind retry. That completed canary never grants authority to another publication.
+
+The permanent architecture is now a single feed control plane. `.github/workflows/milovi-telegram-feed-publisher.yml` is the only supported Milovi Telegram provider writer. It is manual-only, owns `state/milovi-cake-telegram` and concurrency group `milovi-cake-telegram-publisher`, and shares the repository generic Telegram prepare/send/apply runtime rather than introducing a second transport.
+
+Historical bootstrap, one-off canary, live-canary-v2, ledger-init, per-publication controller/quality/media-proof, and `follow-on-*` readiness/media-proof workflows are retired from executable `main`. Historical JSON, frozen manifests, provider receipts and durable evidence remain non-executable evidence. The only other Milovi Telegram workflow beside permanent publisher/quality is exact target discovery, which is read-only and must remain independent of technical write-capability state.
+
+Each new feed publication uses one immutable `milovi-feed-YYYYMMDD-NNN` bundle: exact runtime release, exact media binding where applicable, exact release ledger on the durable state branch, a channel-wide feed index, and a separate execution-authority object. Release/content authorization and provider execution authorization are separate gates. State initialization is explicit and provider-free after exact release authorization; missing state is never auto-created during publish.
+
+Before one provider attempt, the permanent writer requires exact current `main`, exact quality, exact initialized state, channel-wide duplicate-guard agreement, strict freshness, exact target preflight and fresh exact human execution authority. It persists durable intent before `send-once`, performs zero blind mutation retries, and persists verified or blocking outcome before completion.
+
+`milovi-feed-20260819-001` remains a provider-inert exact candidate. Its content, p03 transport bytes and target are frozen, but its runtime release remains `release_authorized=false`, its execution authority remains `execution_authorized=false`, and `provider_mutation_allowed=false`. This consolidation does not initialize its feed ledger and does not send it.
+
+The native-video lane is separate artifact work and remains `0 / 16` accepted Telegram-ready MP4 outputs. That does not reopen the photo-feed architecture, but it remains unfinished if Issue #353 is interpreted as complete media coverage rather than repository implementation alone.
+
+Canonical runbook: [`milovi-telegram-feed-control-plane.md`](milovi-telegram-feed-control-plane.md).
 
 ## Telegram runtime / supply chain
 
@@ -105,8 +119,9 @@ Repository policy files and green checks do not create branch protection by them
 ## Next safe work
 
 1. Do not reopen completed Svodka, LordChrist rich canary or Milovi Clips work because an older issue body or checkpoint says it was incomplete.
-2. Keep Milovi Telegram #353 separate from this audit/cleanup workstream.
-3. Continue branch hygiene only with exact unique-commit/PR-state proof; preserve all durable `state/*` refs.
-4. For any new provider-visible work, start with fresh current `main`, fresh durable state, exact target identity and a new explicit owning scope.
+2. Keep `milovi-feed-20260819-001` provider-inert until a separate exact release authorization and a separate fresh exact human execution authorization are deliberately created; this control-plane consolidation is not that authorization.
+3. Complete the separate Milovi native-video lane only from accepted Telegram-ready MP4/H.264 artifacts; current status remains `0 / 16` accepted outputs.
+4. Continue branch hygiene only with exact unique-commit/PR-state proof; preserve all durable `state/*` refs.
+5. For any new provider-visible work, start with fresh current `main`, fresh durable state, exact target identity and a new explicit owning scope.
 
 Nothing in this document is authorization for a provider mutation.

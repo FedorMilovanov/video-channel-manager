@@ -1,0 +1,374 @@
+name: Milovi Telegram feed publisher
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Provider-free validate, explicit durable state initialization, or one exact publication attempt
+        required: true
+        default: validate
+        type: choice
+        options:
+          - validate
+          - initialize-state
+          - publish
+      publication_id:
+        description: Exact permanent feed identity, for example milovi-feed-20260819-001
+        required: true
+        type: string
+      confirm:
+        description: INITIALIZE:@MiloviCake:<id> or PUBLISH:@MiloviCake:<id>; unused for validate
+        required: false
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: milovi-cake-telegram-publisher
+  cancel-in-progress: false
+
+jobs:
+  exact-control-plane:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: src
+      PROFILE_PATH: content/telegram/channels/milovi-cake.json
+      STATE_BRANCH: state/milovi-cake-telegram
+      STATE_DIR: .state/milovi
+      TARGET_PROOF_PATH: .runtime/milovi-feed-target-proof.json
+      ENVELOPE_PATH: .runtime/milovi-feed-dispatch.json
+      OUTCOME_PATH: .runtime/milovi-feed-outcome.json
+      MAX_PUBLICATION_LAG_MINUTES: 120
+
+    steps:
+      - name: Check out exact current-main runtime
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+
+      - name: Require exact current main before any state or provider work
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_main="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          [[ "$remote_main" == "$GITHUB_SHA" ]] || {
+            echo "main advanced after this run started; refusing stale control-plane execution" >&2
+            exit 3
+          }
+
+      - name: Resolve exact bundle paths and authority gate
+        id: gate
+        env:
+          OPERATION: ${{ inputs.operation }}
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+          CONFIRM: ${{ inputs.confirm || '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          case "$OPERATION" in
+            validate)
+              python -m video_channel_manager.milovi_telegram_feed validate \
+                --publication-id "$PUBLICATION_ID"
+              ;;
+            initialize-state)
+              [[ "$CONFIRM" == "INITIALIZE:@MiloviCake:$PUBLICATION_ID" ]] || {
+                echo "exact state initialization confirmation is missing" >&2
+                exit 3
+              }
+              python -m video_channel_manager.milovi_telegram_feed validate \
+                --publication-id "$PUBLICATION_ID" \
+                --require-release-authorized
+              ;;
+            publish)
+              [[ "$CONFIRM" == "PUBLISH:@MiloviCake:$PUBLICATION_ID" ]] || {
+                echo "exact publication confirmation is missing" >&2
+                exit 3
+              }
+              python -m video_channel_manager.milovi_telegram_feed validate \
+                --publication-id "$PUBLICATION_ID" \
+                --require-execution-authorized
+              ;;
+            *)
+              echo "unsupported control-plane operation" >&2
+              exit 3
+              ;;
+          esac
+          echo "release_path=content/telegram/milovi-cake/releases/$PUBLICATION_ID-runtime.json" >> "$GITHUB_OUTPUT"
+          echo "ledger_relative_path=content/telegram/milovi-cake/feed/$PUBLICATION_ID.json" >> "$GITHUB_OUTPUT"
+          echo "ledger_path=$STATE_DIR/content/telegram/milovi-cake/feed/$PUBLICATION_ID.json" >> "$GITHUB_OUTPUT"
+          echo "index_relative_path=content/telegram/milovi-cake/feed/index.json" >> "$GITHUB_OUTPUT"
+
+      - name: Provider-free validation complete
+        if: inputs.operation == 'validate'
+        run: echo "Exact Milovi bundle is valid. This operation had no provider access and created no execution authority."
+
+      - name: Require exact current-main feed quality before state/provider path
+        if: inputs.operation != 'validate'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow milovi-telegram-feed-quality.yml \
+            --sha "$GITHUB_SHA"
+
+      - name: Check out isolated durable Milovi feed state
+        if: inputs.operation != 'validate'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/milovi-cake-telegram
+          path: .state/milovi
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Initialize exact release state and channel-wide duplicate guard
+        if: inputs.operation == 'initialize-state'
+        env:
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.milovi_telegram_feed state-init \
+            --publication-id "$PUBLICATION_ID" \
+            --state-checkout "$STATE_DIR"
+
+          if git -C "$STATE_DIR" diff --quiet -- \
+            "${{ steps.gate.outputs.ledger_relative_path }}" \
+            "${{ steps.gate.outputs.index_relative_path }}" \
+            && [[ -z "$(git -C "$STATE_DIR" status --porcelain -- \
+              "${{ steps.gate.outputs.ledger_relative_path }}" \
+              "${{ steps.gate.outputs.index_relative_path }}")" ]]; then
+            echo "Exact Milovi feed state was already initialized with the same immutable identities."
+            exit 0
+          fi
+
+          git -C "$STATE_DIR" config user.name "milovi-telegram-feed[bot]"
+          git -C "$STATE_DIR" config user.email "milovi-telegram-feed@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- \
+            "${{ steps.gate.outputs.ledger_relative_path }}" \
+            "${{ steps.gate.outputs.index_relative_path }}"
+          git -C "$STATE_DIR" commit -m "Initialize exact Milovi feed state for $PUBLICATION_ID [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "durable Milovi state branch did not accept exact initialization" >&2
+            exit 3
+          }
+
+      - name: Require exact initialized publishable state before Telegram access
+        if: inputs.operation == 'publish'
+        env:
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.milovi_telegram_feed state-check \
+            --publication-id "$PUBLICATION_ID" \
+            --state-checkout "$STATE_DIR" \
+            --require-publishable
+          python -m video_channel_manager.telegram_publication_freshness next \
+            --release "${{ steps.gate.outputs.release_path }}" \
+            --ledger "${{ steps.gate.outputs.ledger_path }}" \
+            --publication-id "$PUBLICATION_ID" \
+            --max-lag-minutes "$MAX_PUBLICATION_LAG_MINUTES"
+
+      - name: Fresh exact target preflight
+        if: inputs.operation == 'publish'
+        env:
+          MILOVI_CAKE_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_channel_cli preflight \
+            --profile "$PROFILE_PATH" \
+            --expected-chat-id -1002215328390 \
+            --expected-bot-id 8716602202 \
+            --expected-bot-username preaching_mp3_bot \
+            --output "$TARGET_PROOF_PATH"
+
+      - name: Prepare exactly one durable feed intent
+        if: inputs.operation == 'publish'
+        env:
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_multichannel_cli prepare \
+            --profile "$PROFILE_PATH" \
+            --release "${{ steps.gate.outputs.release_path }}" \
+            --ledger "${{ steps.gate.outputs.ledger_path }}" \
+            --target-proof "$TARGET_PROOF_PATH" \
+            --mode manual \
+            --publication-id "$PUBLICATION_ID" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --github-sha "$GITHUB_SHA" \
+            --github-workflow-sha "${{ github.workflow_sha }}" \
+            --envelope-output "$ENVELOPE_PATH"
+
+      - name: Persist exact intent in release ledger and channel-wide index before mutation
+        if: inputs.operation == 'publish'
+        id: persist_intent
+        env:
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.milovi_telegram_feed sync-index \
+            --publication-id "$PUBLICATION_ID" \
+            --state-checkout "$STATE_DIR"
+
+          evidence_rel_dir="content/telegram/milovi-cake/feed-dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          evidence_abs_dir="$STATE_DIR/$evidence_rel_dir"
+          mkdir -p "$evidence_abs_dir"
+          cp -- "$ENVELOPE_PATH" "$evidence_abs_dir/dispatch.json"
+          cp -- "$TARGET_PROOF_PATH" "$evidence_abs_dir/target-proof.json"
+
+          git -C "$STATE_DIR" config user.name "milovi-telegram-feed[bot]"
+          git -C "$STATE_DIR" config user.email "milovi-telegram-feed@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- \
+            "${{ steps.gate.outputs.ledger_relative_path }}" \
+            "${{ steps.gate.outputs.index_relative_path }}" \
+            "$evidence_rel_dir"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo "prepared Milovi feed item produced no durable intent delta" >&2
+            exit 3
+          }
+          git -C "$STATE_DIR" commit -m "Record Milovi feed intent for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "remote state branch does not contain exact Milovi feed intent" >&2
+            exit 3
+          }
+          echo "evidence_rel_dir=$evidence_rel_dir" >> "$GITHUB_OUTPUT"
+
+      - name: Re-prove exact current main and quality immediately before mutation
+        if: inputs.operation == 'publish'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_main="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          [[ "$remote_main" == "$GITHUB_SHA" ]] || {
+            echo "main advanced after durable intent; do not send and do not replay this intent" >&2
+            exit 3
+          }
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow milovi-telegram-feed-quality.yml \
+            --sha "$GITHUB_SHA"
+
+      - name: Materialize exact reviewed photo bytes
+        if: inputs.operation == 'publish'
+        env:
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: Pillow==11.3.0
+          python - <<'PY'
+          import json
+          import os
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          publication_id = os.environ["PUBLICATION_ID"]
+          media_path = Path(f"content/telegram/milovi-cake/releases/{publication_id}-media.json")
+          media = json.loads(media_path.read_text(encoding="utf-8"))
+          source = media["source"]
+          safe_path = "/".join(urllib.parse.quote(part, safe="") for part in source["path"].split("/"))
+          url = f"https://raw.githubusercontent.com/{source['repository']}/{source['commit']}/{safe_path}"
+          request = urllib.request.Request(
+              url,
+              headers={"User-Agent": "video-channel-manager-milovi-feed-publisher/1"},
+          )
+          output = Path(".runtime/milovi-feed-source.webp")
+          with urllib.request.urlopen(request, timeout=30) as response:
+              output.write_bytes(response.read())
+          PY
+          python -m video_channel_manager.milovi_telegram_feed materialize-photo \
+            --publication-id "$PUBLICATION_ID" \
+            --source .runtime/milovi-feed-source.webp
+
+      - name: Send exactly once through the canonical generic Telegram runtime
+        if: inputs.operation == 'publish'
+        id: send
+        env:
+          MILOVI_CAKE_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        shell: bash
+        run: |
+          set +e
+          python -m video_channel_manager.telegram_multichannel_cli send-once \
+            --profile "$PROFILE_PATH" \
+            --release "${{ steps.gate.outputs.release_path }}" \
+            --ledger "${{ steps.gate.outputs.ledger_path }}" \
+            --envelope "$ENVELOPE_PATH" \
+            --outcome-output "$OUTCOME_PATH"
+          status=$?
+          set -e
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          [[ -f "$OUTCOME_PATH" ]] || {
+            echo "provider runtime produced no durable outcome artifact; this intent is non-replayable" >&2
+            exit 5
+          }
+
+      - name: Apply exact outcome and persist terminal or blocking state
+        if: inputs.operation == 'publish' && always() && steps.send.outputs.status != ''
+        env:
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_multichannel_cli apply-outcome \
+            --release "${{ steps.gate.outputs.release_path }}" \
+            --ledger "${{ steps.gate.outputs.ledger_path }}" \
+            --envelope "$ENVELOPE_PATH" \
+            --outcome "$OUTCOME_PATH"
+          python -m video_channel_manager.milovi_telegram_feed sync-index \
+            --publication-id "$PUBLICATION_ID" \
+            --state-checkout "$STATE_DIR"
+
+          evidence_rel_dir="${{ steps.persist_intent.outputs.evidence_rel_dir }}"
+          cp -- "$OUTCOME_PATH" "$STATE_DIR/$evidence_rel_dir/outcome.json"
+          git -C "$STATE_DIR" add -- \
+            "${{ steps.gate.outputs.ledger_relative_path }}" \
+            "${{ steps.gate.outputs.index_relative_path }}" \
+            "$evidence_rel_dir/outcome.json"
+          git -C "$STATE_DIR" commit -m "Record Milovi feed outcome for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$local_sha" == "$remote_sha" ]] || {
+            echo "remote state branch does not contain exact Milovi provider outcome" >&2
+            exit 3
+          }
+
+          status="${{ steps.send.outputs.status }}"
+          if [[ "$status" != "0" ]]; then
+            echo "Telegram send was not verified; exact outcome is durable and blind replay is blocked." >&2
+            exit "$status"
+          fi

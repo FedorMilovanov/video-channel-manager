@@ -8,7 +8,6 @@ ROOT = Path(__file__).resolve().parents[1]
 READINESS = ROOT / "content/telegram/milovi-cake/live/activation-readiness-2026-08-16.json"
 PROFILE = ROOT / "content/telegram/channels/milovi-cake.json"
 QUEUE = ROOT / "content/telegram/milovi-cake/queues/bootstrap-first-screen-queue-2026-08.json"
-PUBLISHER = ROOT / ".github/workflows/milovi-telegram-bootstrap-publisher.yml"
 TARGET_BINDING = ROOT / "content/telegram/channels/milovi-cake-target-binding.json"
 AUTHORIZED_RELEASE = ROOT / "content/telegram/milovi-cake/bootstrap-authorized-release-2026-08.json"
 
@@ -26,14 +25,12 @@ def test_historical_readiness_snapshot_stays_inert_while_current_canary_activati
     binding = _load(TARGET_BINDING)
     release = _load(AUTHORIZED_RELEASE)
 
-    # This file is a dated pre-activation snapshot and must remain historical evidence.
     assert readiness["schema_name"] == "video-channel-manager.milovi-telegram-activation-readiness"
     assert readiness["snapshot_date"] == "2026-08-16"
     assert readiness["status"] == "blocked_before_live_activation"
     assert readiness["provider_access_performed"] is False
     assert readiness["public_write_performed"] is False
 
-    # Current authority is carried separately by the exact profile + reviewed release.
     assert profile["provider_writes_authorized"] is True
     assert queue["execution_authorized"] is False
     assert queue["provider_mutation_allowed"] is False
@@ -102,15 +99,3 @@ def test_readiness_preserves_historical_canary_and_editorial_no_go_rules() -> No
     assert "blind-retry" in joined
     assert "Milovi School" in joined
     assert "French-cuisine linkage" in joined
-
-
-def test_publisher_enforces_daylight_and_single_canary_hard_stop() -> None:
-    publisher = PUBLISHER.read_text(encoding="utf-8")
-    assert "ROLLOUT_PATH: content/telegram/milovi-cake/queues/bootstrap-first-screen-queue-2026-08.json" in publisher
-    assert "profile_write_gate_disabled" in publisher
-    assert "outside_09_00_21_00_moscow_window" in publisher
-    assert "target_binding_missing" in publisher
-    assert "authorized_release_missing" in publisher
-    assert "state_branch_or_ledger_missing" in publisher
-    assert "manual_canary_intent_already_recorded_hard_stop" in publisher
-    assert "single_canary_gate_blocks_scheduler_until_separate_rollout_authorization" in publisher

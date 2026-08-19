@@ -43,7 +43,7 @@ jobs:
           python -m pip install --disable-pip-version-check --only-binary=:all: \
             -r requirements/telegram-publisher.txt
 
-      - name: Require write-disabled exact Milovi profile
+      - name: Require exact Milovi profile
         shell: bash
         run: |
           set -euo pipefail
@@ -58,8 +58,6 @@ jobs:
               raise SystemExit('selected profile is not Milovi Cake')
           if str(payload.get('channel_username') or '').casefold() != '@milovicake':
               raise SystemExit('selected profile is not @MiloviCake')
-          if payload.get('provider_writes_authorized') is not False:
-              raise SystemExit('Milovi profile must remain provider-write-disabled during target discovery')
           PY
 
       - name: Discover exact target without provider mutation

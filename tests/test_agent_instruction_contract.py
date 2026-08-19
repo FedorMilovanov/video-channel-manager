@@ -33,7 +33,7 @@ def test_root_agent_contract_stays_concise_and_nonvolatile() -> None:
         "A final artifact must consume the exact accepted upstream artifacts it claims",
         "one write owner at a time",
         "`main` is the only supported repository code/runtime execution baseline",
-        "`state/lordchrist-telegram` and `state/svodka-telegram` are durable state-only refs",
+        "`state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs",
         "align it to exact current `main`",
         "repository implementation complete",
         "artifact complete",
@@ -69,7 +69,10 @@ def test_current_state_is_a_live_index_not_a_commit_ledger() -> None:
     assert "every other `dispatching` or `may_exist` effect remains fail-closed" in text
     assert "the retired August research release itself cannot resume, retry, or authorize a successor" in text
     assert "Only `main` is a supported repository code/runtime execution baseline" in text
-    assert "`state/lordchrist-telegram` and `state/svodka-telegram` are durable state-only refs" in text
+    assert (
+        "`state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs"
+        in text
+    )
     assert "`protected=false`" in text
     assert "repository ruleset count `0`" in text
     assert "Dependency Graph itself is policy-enabled for this public repository" in text
