@@ -1,6 +1,6 @@
 # Milovi Telegram permanent feed control plane
 
-Updated: 2026-08-19
+Updated: 2026-08-20
 Owning workstream: Issue #353
 Provider target: `@MiloviCake`
 
@@ -68,24 +68,41 @@ A provider attempt requires:
 
 Mutation transport retries remain zero. A missing/ambiguous outcome is not permission to replay. `may_exist` or otherwise unknown provider effect remains blocking pending exact read-only reconciliation.
 
+## Stale predecessor — do not catch up
+
+`milovi-feed-20260819-001` remains immutable provider-inert history. Its frozen scheduled time is `2026-08-19T10:30:00+03:00`, which has passed. The timestamp is part of that publication identity; staleness must fail closed.
+
+Do **not** widen freshness, edit the old timestamp, transfer authorization, initialize it later as a catch-up publication, or reinterpret it as a 20-August send. No provider mutation was performed for that identity.
+
 ## Current exact candidate
 
-`milovi-feed-20260819-001` is currently provider-inert:
+`milovi-feed-20260820-001` is the next provider-inert publication candidate:
 
-- content candidate frozen: yes;
-- exact p03 transport binding: yes;
-- exact target binding: yes;
+- scheduled time: `2026-08-20T10:30:00+03:00`;
+- editorial source: position 2 of `first-screen-continuation-copy-2026-08.json`;
+- operation: `sendPhoto`;
+- exact media: `p16` / `img/gallery/gallery-16-hd.webp`;
+- exact source SHA-256: `sha256:51321ee2ef2c3ee1b91a9e449ade9d8886747f3cf3aae85f0cfe8e1bd1dcd6e7`;
+- deterministic JPEG: `506080` bytes, SHA-256 `sha256:19ba49ed001ea0c7c79ad9f475be0ad4c4c41b5790ee195e363df7981cfb6b9e`;
+- exact caption SHA-256: `sha256:40708552f2899f3c236b5ff63370d556e97701d7495ffe3b753229d69de1f587`;
 - runtime release present: yes;
 - `release_authorized=false`;
 - `execution_authorized=false`;
 - `provider_mutation_allowed=false`;
 - permanent feed ledger initialized: no;
-- Telegram mutation by this consolidation: no.
+- durable execution intent: no;
+- Telegram mutation by preparation: no.
 
-Its old scheduled time is part of the frozen candidate identity and may be stale by the time a future operator considers execution. Staleness must fail closed; do not widen freshness or reinterpret the old timestamp as catch-up authority.
+The bundle is readiness only. It may be merged provider-free during quiet hours, but a future provider operation still requires a fresh exact-current-main release review/execution authorization, daylight-window check, state initialization and the one-attempt publisher path.
 
 ## Video lane
 
-Native video readiness remains separate from the permanent photo/feed writer architecture. Current recorded status is `0 / 16` accepted Telegram-ready MP4 outputs. Materialize and verify H.264/Telegram-ready derivatives under the media contract before treating that lane as complete.
+PR #491 merged the hardened provider-free video artifact lane on `main` as `0c643aac244406acc1e17bef6885279b6e22e0d7` after exact-head CI, source-probe, feed-quality, Pillow and 16/16 conversion proof all passed.
+
+The post-merge `main` persistence run then completed the durable proof on content-addressed branch `agent/milovi-video-accepted-73c578eff825`. That branch is exactly one artifact commit ahead of `main` and adds only 16 MP4 outputs plus `content/telegram/milovi-cake/video-conversion-evidence-2026-08.json`.
+
+The durable evidence records `status=accepted_16_of_16`, `accepted_output_count=16`, `declared_video_count=16`, `provider_access_performed=false`, `provider_write_performed=false`, exact source commit `c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370`, and evidence digest `sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae`. Every accepted output is MP4/H.264/yuv420p with exactly one AAC 48 kHz stereo stream derived from the reviewed single Opus 48 kHz stereo source stream.
+
+The native-video readiness lane is therefore complete. This evidence grants no Telegram execution authority and does not authorize `sendVideo` or any other provider mutation.
 
 Nothing in this runbook authorizes Telegram mutation.

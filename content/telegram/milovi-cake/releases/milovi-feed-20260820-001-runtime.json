@@ -1,0 +1,41 @@
+{
+  "schema_name": "video-channel-manager.telegram-release-queue",
+  "schema_version": 1,
+  "release_id": "milovi-feed-20260820-001",
+  "project_key": "milovi-cake",
+  "channel_username": "@MiloviCake",
+  "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+  "timezone": "Europe/Moscow",
+  "daily_verified_limit": 2,
+  "target_binding_sha256": "sha256:741a8b4b54d785976236c6f15ed5d82cc9ad46aeb96a80cf372f22c421ba047c",
+  "chat_id": -1002215328390,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "release_authorized": false,
+  "reviewed_candidate_sha256": null,
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "items": [
+    {
+      "sequence": 1,
+      "publication_id": "milovi-feed-20260820-001",
+      "scheduled_at": "2026-08-20T10:30:00+03:00",
+      "source_sha256": "sha256:51321ee2ef2c3ee1b91a9e449ade9d8886747f3cf3aae85f0cfe8e1bd1dcd6e7",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-photo-payload",
+        "schema_version": 1,
+        "project_key": "milovi-cake",
+        "channel_username": "@MiloviCake",
+        "publication_id": "milovi-feed-20260820-001",
+        "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+        "provider_payload_sha256": "sha256:e495273ad04ec2b175b056e8bc6676eac23b676a3e3cc866a32da206a4ef26b8",
+        "caption": "🧁 Капкейки в единой праздничной палитре\n\nПовторяющиеся оттенки и кремовый декор объединяют отдельные десерты в одну композицию. Такой набор выглядит цельно на праздничном столе и при этом сохраняет удобный порционный формат.\n\nКапкейки можно рассматривать как самостоятельный десертный набор или как дополнение к основному торту.\n\n🎂 Milovi Cake — торты и десерты на заказ\n📍 Санкт-Петербург\n\n🌐 Сайт: https://milovicake.ru/\n💬 ВКонтакте: https://vk.ru/milovi_cake\n▶️ YouTube: https://www.youtube.com/@milovi_cake\n📖 Дзен: https://dzen.ru/milovicake.ru\n\n#капкейки #десертыспб #milovicake",
+        "media_path": ".runtime/milovi-telegram-feed/milovi-feed-20260820-001.jpg",
+        "media_sha256": "sha256:19ba49ed001ea0c7c79ad9f475be0ad4c4c41b5790ee195e363df7981cfb6b9e",
+        "media_byte_size": 506080,
+        "media_filename": "milovi-feed-20260820-001.jpg",
+        "media_mime_type": "image/jpeg"
+      }
+    }
+  ]
+}
