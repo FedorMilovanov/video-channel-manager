@@ -241,14 +241,5 @@ def test_final_bootstrap_target_identity_drift_blocks_receipt(tmp_path: Path) ->
     assert receipt is None
 
 
-def test_workflow_is_read_only_and_contains_no_telegram_provider_mutation_path() -> None:
-    text = WORKFLOW.read_text(encoding="utf-8")
-    assert "permissions:\n  contents: read" in text
-    assert "persist-credentials: false" in text
-    assert "TELEGRAM_BOT_TOKEN" not in text
-    assert "api.telegram.org" not in text
-    assert "sendPhoto" not in text
-    assert "sendMessage" not in text
-    assert "git push" not in text
-    assert "contents: write" not in text
-    assert "state_branch_write_performed" in text
+def test_follow_on_readiness_workflow_is_retired_from_executable_tree() -> None:
+    assert not WORKFLOW.exists()

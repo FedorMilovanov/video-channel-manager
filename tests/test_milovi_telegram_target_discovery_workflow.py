@@ -28,7 +28,8 @@ def test_milovi_target_discovery_uses_exact_reviewed_identity() -> None:
     assert "EXPECTED_CHAT_ID: -1002215328390" in text
     assert "EXPECTED_BOT_ID: 8716602202" in text
     assert "EXPECTED_BOT_USERNAME: preaching_mp3_bot" in text
-    assert "provider_writes_authorized') is not False" in text
+    assert "Require exact Milovi profile" in text
+    assert "provider_writes_authorized" not in text
     assert '--expected-bot-id "$EXPECTED_BOT_ID"' in text
     assert '--expected-bot-username "$EXPECTED_BOT_USERNAME"' in text
 
