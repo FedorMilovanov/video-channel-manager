@@ -47,6 +47,22 @@ def _build(audit: AuditPackage, **kwargs: Any) -> dict[str, Any]:
     )
 
 
+def _file_details(
+    *,
+    width: int,
+    height: int,
+    duration_ms: int,
+    creation_time: str = "2026-08-01T00:00:00Z",
+) -> dict[str, Any]:
+    return {
+        "fileDetails": {
+            "durationMs": str(duration_ms),
+            "creationTime": creation_time,
+            "videoStreams": [{"widthPixels": width, "heightPixels": height}],
+        }
+    }
+
+
 def test_build_intake_reconciles_current_new_and_historical_ids() -> None:
     audit = _audit(
         VideoRecord(
@@ -96,8 +112,11 @@ def test_build_intake_reconciles_current_new_and_historical_ids() -> None:
         "new_current_vs_frozen_mapping": 1,
         "historical_mapped_missing_from_current_snapshot": 1,
         "confirmed_short": 0,
-        "confirmed_longform": 0,
-        "format_unknown": 2,
+        "confirmed_longform": 1,
+        "format_unknown": 1,
+        "short_candidates": 0,
+        "file_details_available": 0,
+        "source_geometry_known": 0,
     }
     assert result["reconciliation"]["new_current_ids"] == ["CCCCCCCCCCC"]
     assert result["reconciliation"]["historical_mapped_missing_from_current_snapshot"] == ["BBBBBBBBBBB"]
@@ -109,18 +128,122 @@ def test_build_intake_reconciles_current_new_and_historical_ids() -> None:
     assert first["provider_writes_authorized"] is False
 
 
-def test_duration_never_promotes_video_to_confirmed_short_or_longform() -> None:
+def test_short_duration_alone_never_promotes_video_to_confirmed_short() -> None:
+    audit = _audit(VideoRecord(ref=_ref("AAAAAAAAAAA"), title="55 sec", duration_seconds=55, revision="a"))
+
+    result = _build(audit)
+
+    record = result["records"][0]
+    assert record["youtube_format_status"] == "unknown"
+    assert record["youtube_short_candidate"] is False
+    assert record["youtube_format_reason"] == "insufficient_exact_surface_evidence"
+    assert result["counts"]["confirmed_short"] == 0
+    assert result["counts"]["format_unknown"] == 1
+
+
+def test_duration_over_three_minutes_confirms_longform_without_geometry() -> None:
+    audit = _audit(VideoRecord(ref=_ref("AAAAAAAAAAA"), title="Long", duration_seconds=181, revision="a"))
+
+    result = _build(audit)
+
+    record = result["records"][0]
+    assert record["youtube_format_status"] == "longform"
+    assert record["youtube_format_reason"] == "duration_exceeds_current_three_minute_shorts_cap"
+    assert result["counts"]["confirmed_longform"] == 1
+
+
+def test_landscape_owner_file_details_confirm_longform_even_when_short_duration() -> None:
     audit = _audit(
-        VideoRecord(ref=_ref("AAAAAAAAAAA"), title="55 sec", duration_seconds=55, revision="a"),
-        VideoRecord(ref=_ref("BBBBBBBBBBB"), title="10 min", duration_seconds=600, revision="b"),
+        VideoRecord(
+            ref=_ref("AAAAAAAAAAA"),
+            title="Landscape",
+            duration_seconds=55,
+            revision="a",
+            metadata=_file_details(width=1920, height=1080, duration_ms=55_400),
+        )
     )
 
     result = _build(audit)
 
-    assert {record["youtube_format_status"] for record in result["records"]} == {"unknown"}
+    record = result["records"][0]
+    assert record["youtube_format_status"] == "longform"
+    assert record["youtube_format_reason"] == "owner_file_details_prove_landscape_source_geometry"
+    assert record["youtube_file_details_available"] is True
+    assert record["youtube_source_geometry"] == "landscape"
+    assert record["youtube_source_width_pixels"] == 1920
+    assert record["youtube_source_height_pixels"] == 1080
+    assert record["youtube_source_duration_ms"] == 55_400
+    assert record["youtube_source_creation_time"] == "2026-08-01T00:00:00Z"
+
+
+def test_vertical_under_three_minutes_is_candidate_not_confirmed_short() -> None:
+    audit = _audit(
+        VideoRecord(
+            ref=_ref("AAAAAAAAAAA"),
+            title="Vertical candidate",
+            duration_seconds=120,
+            revision="a",
+            metadata=_file_details(width=1080, height=1920, duration_ms=120_250),
+        )
+    )
+
+    result = _build(audit)
+
+    record = result["records"][0]
+    assert record["youtube_format_status"] == "unknown"
+    assert record["youtube_short_candidate"] is True
+    assert record["youtube_source_geometry"] == "square_or_vertical"
+    assert record["youtube_format_reason"] == (
+        "square_or_vertical_under_three_minutes_but_exact_shorts_surface_not_proved"
+    )
+    assert result["counts"]["short_candidates"] == 1
     assert result["counts"]["confirmed_short"] == 0
-    assert result["counts"]["confirmed_longform"] == 0
-    assert result["counts"]["format_unknown"] == 2
+
+
+def test_vertical_owner_duration_over_three_minutes_confirms_longform() -> None:
+    audit = _audit(
+        VideoRecord(
+            ref=_ref("AAAAAAAAAAA"),
+            title="Vertical long",
+            duration_seconds=181,
+            revision="a",
+            metadata=_file_details(width=1080, height=1920, duration_ms=181_001),
+        )
+    )
+
+    result = _build(audit)
+
+    assert result["records"][0]["youtube_format_status"] == "longform"
+    assert result["records"][0]["youtube_short_candidate"] is False
+
+
+def test_conflicting_owner_stream_orientations_stay_unknown() -> None:
+    audit = _audit(
+        VideoRecord(
+            ref=_ref("AAAAAAAAAAA"),
+            title="Ambiguous streams",
+            duration_seconds=120,
+            revision="a",
+            metadata={
+                "fileDetails": {
+                    "durationMs": "120000",
+                    "videoStreams": [
+                        {"widthPixels": 1080, "heightPixels": 1920},
+                        {"widthPixels": 1920, "heightPixels": 1080},
+                    ],
+                }
+            },
+        )
+    )
+
+    result = _build(audit)
+
+    record = result["records"][0]
+    assert record["youtube_source_geometry"] == "unknown"
+    assert record["youtube_source_width_pixels"] is None
+    assert record["youtube_source_height_pixels"] is None
+    assert record["youtube_format_status"] == "unknown"
+    assert record["youtube_short_candidate"] is False
 
 
 def test_project_channel_guard_is_fail_closed() -> None:
