@@ -33,8 +33,10 @@ def test_milovi_target_discovery_workflow_is_narrow_and_read_only() -> None:
     assert "EXPECTED_CHAT_ID: -1002215328390" in workflow
     assert "EXPECTED_BOT_ID: 8716602202" in workflow
     assert "EXPECTED_BOT_USERNAME: preaching_mp3_bot" in workflow
-    assert "Require write-disabled exact Milovi profile" in workflow
-    assert "Milovi profile must remain provider-write-disabled during target discovery" in workflow
+    assert "Require exact Milovi profile" in workflow
+    assert "selected profile is not Milovi Cake" in workflow
+    assert "selected profile is not @MiloviCake" in workflow
+    assert "provider_writes_authorized" not in workflow
     assert "discover-target" in workflow
     assert "telegram_target_binding_cli" in workflow
 
