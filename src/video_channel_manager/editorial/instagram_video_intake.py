@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 from collections.abc import Collection, Mapping
 from typing import Any
 
 from video_channel_manager.domain.enums import PlatformName
 from video_channel_manager.editorial._project_profiles import PROJECT_CHANNEL_IDS, PROJECT_KEYS
+from video_channel_manager.editorial.youtube_surface_classification import classify_youtube_surface
 from video_channel_manager.exchange.audit_package import AuditPackage
 from video_channel_manager.exchange.instagram_video import InstagramVideoIntakeArtifact
 
@@ -36,10 +38,11 @@ def build_instagram_video_intake(
 ) -> dict[str, Any]:
     """Build a provider-inert Instagram intake from one exact YouTube AuditPackage.
 
-    The function intentionally does not classify YouTube Shorts from duration. The
-    YouTube Data API snapshot used by AuditPackage proves duration and metadata but
-    not the Shorts surface/source aspect ratio needed by this project's fail-closed
-    media policy.
+    Owner-only YouTube ``fileDetails`` are used when present to prove source-file
+    geometry and millisecond duration. The intake may therefore confirm that a video
+    is long-form when the source is landscape or exceeds three minutes. It never
+    promotes a square/vertical short-duration upload to confirmed Short without an
+    exact Shorts-surface proof.
     """
 
     normalized_project = project_key.strip()
@@ -65,9 +68,19 @@ def build_instagram_video_intake(
     reviewed_ids = set(reviewed_video_ids)
     current_ids = {video.ref.remote_id for video in audit.videos}
 
+    surface_counts: Counter[str] = Counter()
+    short_candidates = 0
+    file_details_available = 0
+    source_geometry_known = 0
     records: list[dict[str, Any]] = []
     for video in audit.videos:
         video_id = video.ref.remote_id
+        classification = classify_youtube_surface(video)
+        source = classification.source
+        surface_counts[classification.status] += 1
+        short_candidates += int(classification.short_candidate)
+        file_details_available += int(source.file_details_available)
+        source_geometry_known += int(source.geometry != "unknown")
         records.append(
             {
                 "youtube_video_id": video_id,
@@ -83,8 +96,15 @@ def build_instagram_video_intake(
                 "reviewed_editorial_record": (
                     f"content/youtube-comments/{video_id}.json" if video_id in reviewed_ids else None
                 ),
-                "youtube_format_status": "unknown",
-                "source_aspect_ratio": None,
+                "youtube_format_status": classification.status,
+                "youtube_format_reason": classification.reason,
+                "youtube_short_candidate": classification.short_candidate,
+                "youtube_file_details_available": source.file_details_available,
+                "youtube_source_geometry": source.geometry,
+                "youtube_source_width_pixels": source.width_pixels,
+                "youtube_source_height_pixels": source.height_pixels,
+                "youtube_source_duration_ms": source.duration_ms,
+                "youtube_source_creation_time": source.creation_time,
                 "clean_master_status": "unbound",
                 "instagram_route": "source_binding_required",
                 "provider_writes_authorized": False,
@@ -109,9 +129,12 @@ def build_instagram_video_intake(
                 "current_also_in_frozen_mapping": len(current_ids & mapped_ids),
                 "new_current_vs_frozen_mapping": len(current_ids - mapped_ids),
                 "historical_mapped_missing_from_current_snapshot": len(mapped_ids - current_ids),
-                "confirmed_short": 0,
-                "confirmed_longform": 0,
-                "format_unknown": len(current_ids),
+                "confirmed_short": surface_counts["short"],
+                "confirmed_longform": surface_counts["longform"],
+                "format_unknown": surface_counts["unknown"],
+                "short_candidates": short_candidates,
+                "file_details_available": file_details_available,
+                "source_geometry_known": source_geometry_known,
             },
             "reconciliation": {
                 "new_current_ids": sorted(current_ids - mapped_ids),
@@ -119,8 +142,17 @@ def build_instagram_video_intake(
                 "reviewed_missing_from_current_snapshot": sorted(reviewed_ids - current_ids),
             },
             "classification_policy": {
-                "shorts": "fail-closed: duration alone is not accepted as Shorts proof",
-                "longform": "fail-closed until format/source geometry is bound",
+                "shorts": (
+                    "square/vertical at or below three minutes is only a Short candidate until exact "
+                    "Shorts-surface/upload evidence is bound"
+                ),
+                "longform": (
+                    "owner fileDetails may prove long-form by landscape source geometry; duration over "
+                    "three minutes also proves it cannot satisfy the current three-minute Shorts cap"
+                ),
+                "owner_file_details_used": True,
+                "published_at_is_not_upload_time": True,
+                "file_creation_time_is_not_upload_time": True,
                 "unknown_is_not_excluded": True,
                 "social_delivery_encoding_is_not_source_master": True,
             },
