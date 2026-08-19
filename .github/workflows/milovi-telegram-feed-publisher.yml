@@ -167,7 +167,7 @@ jobs:
           git -C "$STATE_DIR" add -- \
             "${{ steps.gate.outputs.ledger_relative_path }}" \
             "${{ steps.gate.outputs.index_relative_path }}"
-          git -C "$STATE_DIR" commit -m "Initialize exact Milovi feed state for $PUBLICATION_ID [skip ci]"
+          git -C "$STATE_DIR" commit -m "Initialize exact Milovi feed state for $PUBLICATION_ID"
           local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
           remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
@@ -255,7 +255,7 @@ jobs:
             echo "prepared Milovi feed item produced no durable intent delta" >&2
             exit 3
           }
-          git -C "$STATE_DIR" commit -m "Record Milovi feed intent for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          git -C "$STATE_DIR" commit -m "Record Milovi feed intent for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT"
           local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
           remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
@@ -358,7 +358,7 @@ jobs:
             "${{ steps.gate.outputs.ledger_relative_path }}" \
             "${{ steps.gate.outputs.index_relative_path }}" \
             "$evidence_rel_dir/outcome.json"
-          git -C "$STATE_DIR" commit -m "Record Milovi feed outcome for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          git -C "$STATE_DIR" commit -m "Record Milovi feed outcome for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT"
           local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
           git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
           remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"

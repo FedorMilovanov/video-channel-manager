@@ -54,6 +54,7 @@ def test_canonical_writer_owns_one_state_and_concurrency_namespace() -> None:
     assert text.index("telegram_multichannel_cli prepare") < text.index("telegram_multichannel_cli send-once")
     assert "schedule:" not in text
     assert "cron:" not in text
+    assert "[skip ci]" not in text.casefold()
 
 
 def test_read_only_target_discovery_does_not_become_a_second_writer() -> None:
