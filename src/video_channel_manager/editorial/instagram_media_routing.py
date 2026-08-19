@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Mapping
+from typing import Any
 
 from video_channel_manager.domain.enums import PlatformName
 from video_channel_manager.exchange.instagram_video import (
     InstagramMediaReview,
+    InstagramSourceGeometry,
     InstagramVideoIntakeArtifact,
     InstagramVideoIntakeRecord,
     InstagramVideoRouteArtifact,
@@ -79,7 +81,7 @@ def _validate_review(
         )
 
 
-def _geometry(evidence: MediaArtifactEvidence) -> str:
+def _geometry(evidence: MediaArtifactEvidence) -> InstagramSourceGeometry:
     width = evidence.probe.width
     height = evidence.probe.height
     if width is None or height is None:
@@ -91,16 +93,13 @@ def _rebuild_allowed(record: InstagramVideoIntakeRecord, review: InstagramMediaR
     return review.editorial_rebuild_authorized and record.reviewed_editorial_record is not None
 
 
-def _route_with_evidence(
+def _base_record_payload(
     *,
-    intake: InstagramVideoIntakeArtifact,
     record: InstagramVideoIntakeRecord,
     evidence: MediaArtifactEvidence,
-    review: InstagramMediaReview | None,
-) -> InstagramVideoRouteRecord:
-    _validate_media_identity(intake=intake, record=record, evidence=evidence)
-    geometry = _geometry(evidence)
-    common = {
+    geometry: InstagramSourceGeometry,
+) -> dict[str, Any]:
+    return {
         "youtube_video_id": record.youtube_video_id,
         "title": record.title,
         "source_geometry": geometry,
@@ -111,6 +110,18 @@ def _route_with_evidence(
         "acquisition_method": evidence.acquisition.method,
         "reviewed_editorial_record": record.reviewed_editorial_record,
     }
+
+
+def _route_with_evidence(
+    *,
+    intake: InstagramVideoIntakeArtifact,
+    record: InstagramVideoIntakeRecord,
+    evidence: MediaArtifactEvidence,
+    review: InstagramMediaReview | None,
+) -> InstagramVideoRouteRecord:
+    _validate_media_identity(intake=intake, record=record, evidence=evidence)
+    geometry = _geometry(evidence)
+    common = _base_record_payload(record=record, evidence=evidence, geometry=geometry)
 
     if review is None:
         return InstagramVideoRouteRecord(
