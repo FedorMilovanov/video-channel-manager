@@ -10,6 +10,7 @@ SOURCE_READINESS = MILOVI / "video-source-readiness-2026-08.json"
 CONVERSION_CONTRACT = MILOVI / "video-conversion-contract-2026-08.json"
 OUTPUT_RECORDS = MILOVI / "video-output-records-2026-08.json"
 RUNBOOK = MILOVI / "video-conversion-readiness-2026-08.md"
+VIDEO_ARTIFACT_WORKFLOW = ROOT / ".github/workflows/milovi-telegram-video-artifacts.yml"
 
 EXPECTED_SOURCE = {
     "v01": ("4d04ef09c0c62fd938ecf72a9e804ff2c3213f9e", 2587943),
@@ -140,7 +141,7 @@ def test_video_conversion_contract_is_deterministic_provider_inert_and_no_docume
     assert contract["provider_write_authorized"] is False
     assert contract["source_mutation_allowed"] is False
     assert contract["document_fallback_allowed"] is False
-    assert contract["conversion_execution_ready"] is False
+    assert contract["conversion_execution_ready"] is VIDEO_ARTIFACT_WORKFLOW.exists()
 
     assert toolchain["ffmpeg_version"] is None
     assert toolchain["ffprobe_version"] is None
