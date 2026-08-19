@@ -24,6 +24,8 @@ InstagramVideoRoute = Literal[
     "hold",
 ]
 InstagramSourceGeometry = Literal["vertical", "non_vertical", "unknown"]
+YouTubeSourceGeometry = Literal["square_or_vertical", "landscape", "unknown"]
+YouTubeSurfaceStatus = Literal["short", "longform", "unknown"]
 
 
 class InstagramFrozenModel(BaseModel):
@@ -52,16 +54,25 @@ class InstagramVideoIntakeCounts(InstagramFrozenModel):
     current_also_in_frozen_mapping: int = Field(ge=0)
     new_current_vs_frozen_mapping: int = Field(ge=0)
     historical_mapped_missing_from_current_snapshot: int = Field(ge=0)
-    confirmed_short: Literal[0] = 0
-    confirmed_longform: Literal[0] = 0
+    confirmed_short: int = Field(default=0, ge=0)
+    confirmed_longform: int = Field(default=0, ge=0)
     format_unknown: int = Field(ge=0)
+    short_candidates: int = Field(default=0, ge=0)
+    file_details_available: int = Field(default=0, ge=0)
+    source_geometry_known: int = Field(default=0, ge=0)
 
     @model_validator(mode="after")
     def validate_counts(self) -> InstagramVideoIntakeCounts:
         if self.current_also_in_frozen_mapping + self.new_current_vs_frozen_mapping != self.current_videos:
             raise ValueError("current intake counts do not partition the current video set")
-        if self.format_unknown != self.current_videos:
-            raise ValueError("v1 intake must keep every current video format fail-closed as unknown")
+        if self.confirmed_short + self.confirmed_longform + self.format_unknown != self.current_videos:
+            raise ValueError("surface-status counts do not partition the current video set")
+        if self.short_candidates > self.format_unknown:
+            raise ValueError("short_candidates cannot exceed format_unknown")
+        if self.file_details_available > self.current_videos:
+            raise ValueError("file_details_available cannot exceed current_videos")
+        if self.source_geometry_known > self.current_videos:
+            raise ValueError("source_geometry_known cannot exceed current_videos")
         return self
 
 
@@ -88,6 +99,9 @@ class InstagramVideoIntakeReconciliation(InstagramFrozenModel):
 class InstagramVideoClassificationPolicy(InstagramFrozenModel):
     shorts: str = Field(min_length=1)
     longform: str = Field(min_length=1)
+    owner_file_details_used: Literal[True] = True
+    published_at_is_not_upload_time: Literal[True] = True
+    file_creation_time_is_not_upload_time: Literal[True] = True
     unknown_is_not_excluded: Literal[True] = True
     social_delivery_encoding_is_not_source_master: Literal[True] = True
 
@@ -104,11 +118,46 @@ class InstagramVideoIntakeRecord(InstagramFrozenModel):
     present_in_frozen_mapping: bool
     exact_vk_video_id: str | None = None
     reviewed_editorial_record: str | None = None
-    youtube_format_status: Literal["unknown"] = "unknown"
-    source_aspect_ratio: None = None
+    youtube_format_status: YouTubeSurfaceStatus = "unknown"
+    youtube_format_reason: str = Field(min_length=1)
+    youtube_short_candidate: bool = False
+    youtube_file_details_available: bool = False
+    youtube_source_geometry: YouTubeSourceGeometry = "unknown"
+    youtube_source_width_pixels: int | None = Field(default=None, ge=1)
+    youtube_source_height_pixels: int | None = Field(default=None, ge=1)
+    youtube_source_duration_ms: int | None = Field(default=None, ge=1)
+    youtube_source_creation_time: datetime | None = None
     clean_master_status: Literal["unbound"] = "unbound"
     instagram_route: Literal["source_binding_required"] = "source_binding_required"
     provider_writes_authorized: Literal[False] = False
+
+    @model_validator(mode="after")
+    def validate_surface_evidence(self) -> InstagramVideoIntakeRecord:
+        if (self.youtube_source_width_pixels is None) != (self.youtube_source_height_pixels is None):
+            raise ValueError("YouTube source width and height must be present together")
+        if self.youtube_format_status == "longform" and self.youtube_short_candidate:
+            raise ValueError("a confirmed long-form video cannot remain a Short candidate")
+        if not self.youtube_file_details_available:
+            file_fields = (
+                self.youtube_source_width_pixels,
+                self.youtube_source_height_pixels,
+                self.youtube_source_duration_ms,
+                self.youtube_source_creation_time,
+            )
+            if any(value is not None for value in file_fields) or self.youtube_source_geometry != "unknown":
+                raise ValueError("source-file details cannot be populated when fileDetails are unavailable")
+        if self.youtube_source_creation_time is not None:
+            if self.youtube_source_creation_time.tzinfo is None or self.youtube_source_creation_time.utcoffset() is None:
+                raise ValueError("youtube_source_creation_time must be timezone-aware")
+        if self.youtube_source_width_pixels is not None and self.youtube_source_height_pixels is not None:
+            expected_geometry: YouTubeSourceGeometry = (
+                "square_or_vertical"
+                if self.youtube_source_width_pixels <= self.youtube_source_height_pixels
+                else "landscape"
+            )
+            if self.youtube_source_geometry != expected_geometry:
+                raise ValueError("YouTube source geometry conflicts with exact width/height")
+        return self
 
 
 class InstagramVideoIntakeArtifact(InstagramFrozenModel):
@@ -139,6 +188,31 @@ class InstagramVideoIntakeArtifact(InstagramFrozenModel):
         current = set(ids)
         if not set(self.reconciliation.new_current_ids).issubset(current):
             raise ValueError("new_current_ids must be present in current intake records")
+
+        actual_short = sum(record.youtube_format_status == "short" for record in self.records)
+        actual_longform = sum(record.youtube_format_status == "longform" for record in self.records)
+        actual_unknown = sum(record.youtube_format_status == "unknown" for record in self.records)
+        actual_candidates = sum(record.youtube_short_candidate for record in self.records)
+        actual_file_details = sum(record.youtube_file_details_available for record in self.records)
+        actual_geometry_known = sum(record.youtube_source_geometry != "unknown" for record in self.records)
+        expected = (
+            self.counts.confirmed_short,
+            self.counts.confirmed_longform,
+            self.counts.format_unknown,
+            self.counts.short_candidates,
+            self.counts.file_details_available,
+            self.counts.source_geometry_known,
+        )
+        actual = (
+            actual_short,
+            actual_longform,
+            actual_unknown,
+            actual_candidates,
+            actual_file_details,
+            actual_geometry_known,
+        )
+        if actual != expected:
+            raise ValueError(f"intake summary counts differ from records: expected={expected!r} actual={actual!r}")
         return self
 
 
