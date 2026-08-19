@@ -33,9 +33,7 @@ def test_instagram_intake_covers_exact_frozen_youtube_mapping() -> None:
 
 def test_reviewed_editorial_subset_is_exactly_the_current_comment_corpus() -> None:
     text = INTAKE.read_text(encoding="utf-8")
-    reviewed_section = text.split("## Reviewed editorial subset", 1)[1].split(
-        "## Full exact-ID intake floor", 1
-    )[0]
+    reviewed_section = text.split("## Reviewed editorial subset", 1)[1].split("## Full exact-ID intake floor", 1)[0]
     reviewed_ids = set(re.findall(r"`([A-Za-z0-9_-]{11})`", reviewed_section))
     comment_ids = {path.stem for path in COMMENTS.glob("*.json")}
 
