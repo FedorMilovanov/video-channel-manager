@@ -49,10 +49,11 @@ def _validate_media_identity(
             f"media identity mismatch for {record.youtube_video_id}: expected={expected!r} actual={actual!r}"
         )
     if record.duration_seconds is not None and source.expected_duration_seconds is not None:
-        if source.expected_duration_seconds != float(record.duration_seconds):
+        delta = abs(source.expected_duration_seconds - float(record.duration_seconds))
+        if delta > evidence.profile.duration_tolerance_seconds:
             raise InstagramMediaRoutingError(
                 f"media expected duration differs from intake for {record.youtube_video_id}: "
-                f"{source.expected_duration_seconds} != {record.duration_seconds}"
+                f"delta={delta} tolerance={evidence.profile.duration_tolerance_seconds}"
             )
 
 
