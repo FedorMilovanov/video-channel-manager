@@ -21,6 +21,11 @@ EXPECTED_PROJECT = "milovi-cake"
 EXPECTED_VIDEO_COUNT = 16
 EXPECTED_MEDIA_IDS = tuple(f"v{index:02d}" for index in range(1, EXPECTED_VIDEO_COUNT + 1))
 TELEGRAM_HARD_MAX_BYTES = 52_428_800
+EXPECTED_SOURCE_AUDIO_CODEC = "opus"
+EXPECTED_OUTPUT_AUDIO_CODEC = "aac"
+EXPECTED_AUDIO_SAMPLE_RATE_HZ = 48_000
+EXPECTED_AUDIO_CHANNELS = 2
+EXPECTED_AUDIO_BITRATE = "128k"
 
 
 def _json(path: Path) -> dict[str, Any]:
@@ -135,6 +140,13 @@ def _rate(value: Any) -> str:
     return text
 
 
+def _positive_int(value: Any, field: str) -> int:
+    parsed = int(value or 0)
+    if parsed <= 0:
+        raise ValueError(f"positive {field} is required")
+    return parsed
+
+
 def _normalized_probe(probe: dict[str, Any]) -> dict[str, Any]:
     videos = _stream_list(probe, "video")
     audios = _stream_list(probe, "audio")
@@ -143,13 +155,13 @@ def _normalized_probe(probe: dict[str, Any]) -> dict[str, Any]:
     if len(audios) > 1:
         raise ValueError(f"at most one audio stream is allowed, found {len(audios)}")
     video = videos[0]
-    width = int(video.get("width") or 0)
-    height = int(video.get("height") or 0)
-    if width <= 0 or height <= 0:
-        raise ValueError("positive source dimensions are required")
+    width = _positive_int(video.get("width"), "source width")
+    height = _positive_int(video.get("height"), "source height")
     format_obj = probe.get("format")
     if not isinstance(format_obj, dict):
         raise ValueError("ffprobe format object is missing")
+
+    audio = audios[0] if audios else None
     return {
         "container": str(format_obj.get("format_name") or ""),
         "video_codec": str(video.get("codec_name") or ""),
@@ -158,15 +170,16 @@ def _normalized_probe(probe: dict[str, Any]) -> dict[str, Any]:
         "height": height,
         "avg_frame_rate": _rate(video.get("avg_frame_rate")),
         "duration_seconds": _duration(probe, video),
+        "audio_stream_count": len(audios),
         "audio_present": bool(audios),
-        "audio_codec": str(audios[0].get("codec_name") or "") if audios else None,
+        "audio_codec": str(audio.get("codec_name") or "") if audio else None,
+        "audio_sample_rate_hz": _positive_int(audio.get("sample_rate"), "audio sample rate") if audio else None,
+        "audio_channels": _positive_int(audio.get("channels"), "audio channel count") if audio else None,
     }
 
 
 def conversion_argv(source: Path, output: Path, *, source_has_audio: bool) -> list[str]:
-    if source_has_audio:
-        raise ValueError("source audio requires a separate exact editorial review before conversion acceptance")
-    return [
+    argv = [
         "ffmpeg",
         "-hide_banner",
         "-nostdin",
@@ -176,29 +189,65 @@ def conversion_argv(source: Path, output: Path, *, source_has_audio: bool) -> li
         str(source),
         "-map",
         "0:v:0",
-        "-an",
-        "-map_metadata",
-        "-1",
-        "-map_chapters",
-        "-1",
-        "-vf",
-        "scale=trunc(iw/2)*2:trunc(ih/2)*2",
-        "-c:v",
-        "libx264",
-        "-preset",
-        "slow",
-        "-crf",
-        "20",
-        "-pix_fmt",
-        "yuv420p",
-        "-fps_mode",
-        "passthrough",
-        "-threads",
-        "1",
-        "-movflags",
-        "+faststart",
-        str(output),
     ]
+    if source_has_audio:
+        argv.extend(["-map", "0:a:0"])
+    else:
+        argv.append("-an")
+    argv.extend(
+        [
+            "-map_metadata",
+            "-1",
+            "-map_chapters",
+            "-1",
+            "-vf",
+            "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "slow",
+            "-crf",
+            "20",
+            "-pix_fmt",
+            "yuv420p",
+            "-fps_mode",
+            "passthrough",
+        ]
+    )
+    if source_has_audio:
+        argv.extend(
+            [
+                "-c:a",
+                EXPECTED_OUTPUT_AUDIO_CODEC,
+                "-b:a",
+                EXPECTED_AUDIO_BITRATE,
+                "-ar",
+                str(EXPECTED_AUDIO_SAMPLE_RATE_HZ),
+                "-ac",
+                str(EXPECTED_AUDIO_CHANNELS),
+            ]
+        )
+    argv.extend(
+        [
+            "-threads",
+            "1",
+            "-movflags",
+            "+faststart",
+            str(output),
+        ]
+    )
+    return argv
+
+
+def _validate_reviewed_source_audio(media_id: str, source: dict[str, Any]) -> None:
+    if source["audio_stream_count"] != 1:
+        raise ValueError(f"{media_id} must contain exactly one reviewed source audio stream")
+    if source["audio_codec"] != EXPECTED_SOURCE_AUDIO_CODEC:
+        raise ValueError(f"{media_id} source audio codec differs from reviewed Opus contract")
+    if source["audio_sample_rate_hz"] != EXPECTED_AUDIO_SAMPLE_RATE_HZ:
+        raise ValueError(f"{media_id} source audio sample rate differs from reviewed 48 kHz contract")
+    if source["audio_channels"] != EXPECTED_AUDIO_CHANNELS:
+        raise ValueError(f"{media_id} source audio channel count differs from reviewed stereo contract")
 
 
 def _validate_output(source: dict[str, Any], output: dict[str, Any], output_path: Path) -> None:
@@ -223,8 +272,19 @@ def _validate_output(source: dict[str, Any], output: dict[str, Any], output_path
     duration_tolerance = max(0.1, 2.0 / source_fps)
     if abs(output["duration_seconds"] - source["duration_seconds"]) > duration_tolerance:
         raise ValueError("output duration materially diverges from source")
-    if output["audio_present"]:
+
+    if source["audio_present"]:
+        if output["audio_stream_count"] != 1 or not output["audio_present"]:
+            raise ValueError("reviewed source audio must remain exactly one output stream")
+        if output["audio_codec"] != EXPECTED_OUTPUT_AUDIO_CODEC:
+            raise ValueError("output audio codec is not AAC")
+        if output["audio_sample_rate_hz"] != source["audio_sample_rate_hz"]:
+            raise ValueError("output audio sample rate does not preserve source shape")
+        if output["audio_channels"] != source["audio_channels"]:
+            raise ValueError("output audio channel count does not preserve source shape")
+    elif output["audio_present"] or output["audio_stream_count"] != 0:
         raise ValueError("silent-source acceptance must not introduce audio")
+
     size = output_path.stat().st_size
     if size <= 0 or size >= TELEGRAM_HARD_MAX_BYTES:
         raise ValueError("output size is outside reviewed Telegram native-video bounds")
@@ -235,9 +295,42 @@ def _validate_contract(contract: dict[str, Any]) -> None:
         raise ValueError("video conversion contract must remain provider-inert and source-read-only")
     if contract.get("document_fallback_allowed") is not False:
         raise ValueError("document fallback must remain forbidden")
+
+    audio_review = contract.get("source_audio_review")
+    if not isinstance(audio_review, dict):
+        raise ValueError("exact source audio review is missing")
+    if audio_review.get("status") != "exact_probe_reviewed_for_transport_preservation":
+        raise ValueError("source audio review is not accepted for transport preservation")
+    expected_audio_review = {
+        "reviewed_video_count": EXPECTED_VIDEO_COUNT,
+        "required_audio_stream_count_per_source": 1,
+        "required_source_audio_codec": EXPECTED_SOURCE_AUDIO_CODEC,
+        "required_source_audio_sample_rate_hz": EXPECTED_AUDIO_SAMPLE_RATE_HZ,
+        "required_source_audio_channels": EXPECTED_AUDIO_CHANNELS,
+    }
+    for key, expected in expected_audio_review.items():
+        if audio_review.get(key) != expected:
+            raise ValueError(f"video contract source audio review mismatch: {key}")
+
     output_policy = contract.get("output_policy")
     if not isinstance(output_policy, dict):
         raise ValueError("video output policy is missing")
+    audio_policy = output_policy.get("audio_policy")
+    if not isinstance(audio_policy, dict):
+        raise ValueError("video audio output policy is missing")
+    if audio_policy.get("source_audio_codec_reviewed") != EXPECTED_SOURCE_AUDIO_CODEC:
+        raise ValueError("video contract reviewed source audio codec differs from builder")
+    if audio_policy.get("output_audio_codec") != EXPECTED_OUTPUT_AUDIO_CODEC:
+        raise ValueError("video contract output audio codec differs from builder")
+    if audio_policy.get("audio_bitrate_target") != EXPECTED_AUDIO_BITRATE:
+        raise ValueError("video contract audio bitrate differs from builder")
+    if audio_policy.get("sample_rate_hz") != EXPECTED_AUDIO_SAMPLE_RATE_HZ:
+        raise ValueError("video contract audio sample rate differs from builder")
+    if audio_policy.get("channels") != EXPECTED_AUDIO_CHANNELS:
+        raise ValueError("video contract audio channels differ from builder")
+    if audio_policy.get("extra_audio_streams_allowed") is not False:
+        raise ValueError("video contract must forbid extra audio streams")
+
     size_policy = output_policy.get("size_policy")
     if not isinstance(size_policy, dict) or size_policy.get("telegram_hard_max_bytes") != TELEGRAM_HARD_MAX_BYTES:
         raise ValueError("video contract hard-size limit differs from builder")
@@ -301,13 +394,12 @@ def build_all(
         source_probe = _normalized_probe(_probe(source_path))
         if "webm" not in source_probe["container"].split(","):
             raise ValueError(f"{media_id} exact source container is not WebM")
-        if source_probe["audio_present"]:
-            raise ValueError(f"{media_id} contains audio; exact editorial audio review is required before acceptance")
+        _validate_reviewed_source_audio(media_id, source_probe)
 
         output_path = output_dir / f"milovi-{media_id}.mp4"
         if output_path.exists():
             raise ValueError(f"refusing to overwrite existing output: {output_path}")
-        argv = conversion_argv(source_path, output_path, source_has_audio=False)
+        argv = conversion_argv(source_path, output_path, source_has_audio=True)
         subprocess.run(argv, check=True)
         output_probe = _normalized_probe(_probe(output_path))
         _validate_output(source_probe, output_probe, output_path)
@@ -334,6 +426,8 @@ def build_all(
                 "output_duration_seconds": output_probe["duration_seconds"],
                 "output_audio_present": output_probe["audio_present"],
                 "output_audio_codec": output_probe["audio_codec"],
+                "output_audio_sample_rate_hz": output_probe["audio_sample_rate_hz"],
+                "output_audio_channels": output_probe["audio_channels"],
                 "poster": raw["poster"],
                 "editorial_title": raw["title"],
             }
@@ -351,6 +445,7 @@ def build_all(
         "source_commit": expected_commit,
         "source_manifest": SOURCE_MANIFEST.as_posix(),
         "conversion_contract": CONVERSION_CONTRACT.as_posix(),
+        "source_audio_review": contract["source_audio_review"],
         "accepted_output_count": len(records),
         "declared_video_count": EXPECTED_VIDEO_COUNT,
         "toolchain": environment,
