@@ -10,7 +10,7 @@
     "svodka-venus-day-longer-than-year": {
       "publication_id": "svodka-venus-day-longer-than-year",
       "provider_payload_sha256": "sha256:1500928d57d82f0722c440411ecc2e0e876134106b1a7ccc323372d8224c7d15",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -26,12 +26,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "publication freshness deadline expired at 2026-08-10T09:30:00+00:00 before dispatch"
     },
     "svodka-goldfish-three-second-memory-myth": {
       "publication_id": "svodka-goldfish-three-second-memory-myth",
       "provider_payload_sha256": "sha256:6e2d688e7124c362078d09940c3e804d0ecd22515f01b47517384ffc043c596f",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -47,12 +47,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "publication freshness deadline expired at 2026-08-10T18:30:00+00:00 before dispatch"
     },
     "svodka-wombat-cubic-poop": {
       "publication_id": "svodka-wombat-cubic-poop",
       "provider_payload_sha256": "sha256:f2710388805cc826587fd39bb8abf0c87dd0bb6a4b2cbc631c62b50a9bd4e368",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -68,12 +68,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "publication freshness deadline expired at 2026-08-11T09:30:00+00:00 before dispatch"
     },
     "svodka-moon-recedes-38-mm-year": {
       "publication_id": "svodka-moon-recedes-38-mm-year",
       "provider_payload_sha256": "sha256:4f07d4e8e99e3a22017c5100910675ee7504cb6c7ddff71f052cdbceaa838884",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -89,12 +89,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "publication freshness deadline expired at 2026-08-11T18:30:00+00:00 before dispatch"
     },
     "svodka-2026-august-total-solar-eclipse": {
       "publication_id": "svodka-2026-august-total-solar-eclipse",
       "provider_payload_sha256": "sha256:7f2347d3332d289b325b96c17c7e20a488810c0af3733840edfdd4653c8b1032",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -110,12 +110,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "publication freshness deadline expired at 2026-08-12T09:30:00+00:00 before dispatch"
     },
     "svodka-octopus-three-hearts-blue-blood": {
       "publication_id": "svodka-octopus-three-hearts-blue-blood",
       "provider_payload_sha256": "sha256:0caeb51fc9936af4f7d8010a342ab453812632cef3a6eee4158774fb8df0eddb",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -131,12 +131,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "publication freshness deadline expired at 2026-08-12T18:30:00+00:00 before dispatch"
     },
     "svodka-quiz-lightning-vs-sun": {
       "publication_id": "svodka-quiz-lightning-vs-sun",
       "provider_payload_sha256": "sha256:8dca635d183693553d4f2ede5d6ea1bdc6644757ed3003370025f0a050e188db",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -152,12 +152,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "publication freshness deadline expired at 2026-08-13T09:30:00+00:00 before dispatch"
     },
     "svodka-crows-remember-human-faces": {
       "publication_id": "svodka-crows-remember-human-faces",
       "provider_payload_sha256": "sha256:1239478d3f074fc00f3fa83cbbc8e4e9edafd1579528c639d15e2c934e74525e",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -173,12 +173,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "publication freshness deadline expired at 2026-08-13T18:30:00+00:00 before dispatch"
     },
     "svodka-sunflower-tracking-myth": {
       "publication_id": "svodka-sunflower-tracking-myth",
       "provider_payload_sha256": "sha256:42d4de31bd1d7facd94af5b0c99c704918dd7ac4cb776bce2a4628adc6dfbdd9",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -194,12 +194,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "publication freshness deadline expired at 2026-08-14T09:30:00+00:00 before dispatch"
     },
     "svodka-sharks-over-400-million-years": {
       "publication_id": "svodka-sharks-over-400-million-years",
       "provider_payload_sha256": "sha256:c12e87bfb600ad408063969b6aea771626cb7ef4ac1e27e7cdaf4ee9ee2f2096",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -215,12 +215,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "publication freshness deadline expired at 2026-08-14T18:30:00+00:00 before dispatch"
     },
     "svodka-tardigrades-survived-space-exposure": {
       "publication_id": "svodka-tardigrades-survived-space-exposure",
       "provider_payload_sha256": "sha256:1092787eac27b2d854efcd5a70c66edb9fb29b89518ecbcf3dc71b332c29199b",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -236,12 +236,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "publication freshness deadline expired at 2026-08-15T09:30:00+00:00 before dispatch"
     },
     "svodka-eiffel-thermal-expansion-movement": {
       "publication_id": "svodka-eiffel-thermal-expansion-movement",
       "provider_payload_sha256": "sha256:230cf4369020fa5a9c09df2b9aef2ab603ef3b5d3112c4330d2f935332a2af12",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -257,12 +257,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "publication freshness deadline expired at 2026-08-15T18:30:00+00:00 before dispatch"
     },
     "svodka-quiz-banana-is-berry": {
       "publication_id": "svodka-quiz-banana-is-berry",
       "provider_payload_sha256": "sha256:2eb974cdd971cec53283629623e07375da9ec89bbb70946a970e663021c6d96d",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -278,12 +278,12 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "publication freshness deadline expired at 2026-08-16T09:30:00+00:00 before dispatch"
     },
     "svodka-dolphins-social-memory-whistles": {
       "publication_id": "svodka-dolphins-social-memory-whistles",
       "provider_payload_sha256": "sha256:fdf7ebc9bf0aa31b2feb19805a64ea4a122d38582999bd859866af26f5107ab3",
-      "state": "pending",
+      "state": "skipped",
       "provider_effect": "impossible",
       "intent_id": null,
       "dispatch_mode": null,
@@ -299,7 +299,7 @@
       "actual_chat_username": null,
       "bot_id": null,
       "bot_username": null,
-      "last_error": null
+      "last_error": "publication freshness deadline expired at 2026-08-16T18:30:00+00:00 before dispatch"
     }
   }
 }
