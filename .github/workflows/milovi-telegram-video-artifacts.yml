@@ -1,0 +1,157 @@
+name: Milovi Telegram video artifacts
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - content/telegram/milovi-cake/video-source-readiness-2026-08.json
+      - content/telegram/milovi-cake/video-conversion-contract-2026-08.json
+      - src/video_channel_manager/milovi_telegram_video_artifacts.py
+      - .github/workflows/milovi-telegram-video-artifacts.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: milovi-telegram-video-artifacts
+  cancel-in-progress: false
+
+jobs:
+  build-provider-free-artifacts:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: src
+      SOURCE_COMMIT: c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370
+      OUTPUT_DIR: artifacts/milovi-telegram/video
+      EVIDENCE: content/telegram/milovi-cake/video-conversion-evidence-2026-08.json
+
+    steps:
+      - name: Check out exact current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Require exact current main before build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_main="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          [[ "$remote_main" == "$GITHUB_SHA" ]] || {
+            echo "main advanced before Milovi video artifact build" >&2
+            exit 3
+          }
+
+      - name: Require reviewed provider-free conversion execution gate
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          contract = json.loads(
+              Path("content/telegram/milovi-cake/video-conversion-contract-2026-08.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          if contract.get("conversion_execution_ready") is not True:
+              raise SystemExit("Milovi video conversion execution is not reviewed/ready")
+          if contract.get("provider_write_authorized") is not False:
+              raise SystemExit("Milovi video conversion contract must remain provider-inert")
+          if contract.get("source_mutation_allowed") is not False:
+              raise SystemExit("Milovi source mutation must remain forbidden")
+
+      - name: Check out exact pinned Milovi source bytes
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: FedorMilovanov/Milovi_Cake
+          ref: c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370
+          path: .source/milovi
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Build and prove exactly 16 Telegram-ready MP4 artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v ffmpeg >/dev/null
+          command -v ffprobe >/dev/null
+          python -m video_channel_manager.milovi_telegram_video_artifacts \
+            --source-checkout .source/milovi \
+            --output-dir "$OUTPUT_DIR" \
+            --evidence "$EVIDENCE"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          evidence = json.loads(Path("content/telegram/milovi-cake/video-conversion-evidence-2026-08.json").read_text(encoding="utf-8"))
+          assert evidence["status"] == "accepted_16_of_16"
+          assert evidence["accepted_output_count"] == evidence["declared_video_count"] == 16
+          assert evidence["provider_access_performed"] is False
+          assert evidence["provider_write_performed"] is False
+          outputs = evidence["outputs"]
+          assert len(outputs) == 16
+          assert len({item["media_id"] for item in outputs}) == 16
+          assert all(Path(item["output_path"]).is_file() for item in outputs)
+          print(evidence["evidence_sha256"])
+          PY
+
+      - name: Re-prove exact current main before publishing repository artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_main="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          [[ "$remote_main" == "$GITHUB_SHA" ]] || {
+            echo "main advanced during Milovi video artifact build; refusing stale artifact branch" >&2
+            exit 3
+          }
+
+      - name: Persist exact outputs on a content-addressed review branch
+        id: persist
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_sha="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          value = json.loads(Path("content/telegram/milovi-cake/video-conversion-evidence-2026-08.json").read_text(encoding="utf-8"))
+          print(value["evidence_sha256"].split(":", 1)[1])
+          PY
+          )"
+          branch="agent/milovi-video-accepted-${evidence_sha:0:12}"
+          if git ls-remote --exit-code origin "refs/heads/$branch" >/dev/null 2>&1; then
+            echo "content-addressed artifact branch already exists; refusing overwrite: $branch" >&2
+            exit 3
+          fi
+          git config user.name "milovi-video-artifacts[bot]"
+          git config user.email "milovi-video-artifacts@users.noreply.github.com"
+          git switch -c "$branch"
+          git add -- "$OUTPUT_DIR" "$EVIDENCE"
+          git commit -m "Materialize 16 exact Milovi Telegram video artifacts"
+          git push origin "HEAD:refs/heads/$branch"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "evidence_sha256=sha256:$evidence_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Publish review artifact bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: milovi-telegram-video-16of16-${{ github.sha }}
+          path: |
+            artifacts/milovi-telegram/video/*.mp4
+            content/telegram/milovi-cake/video-conversion-evidence-2026-08.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Provider boundary summary
+        shell: bash
+        run: |
+          echo "Generated branch: ${{ steps.persist.outputs.branch }}"
+          echo "Evidence: ${{ steps.persist.outputs.evidence_sha256 }}"
+          echo "Provider access: false"
+          echo "Provider write: false"

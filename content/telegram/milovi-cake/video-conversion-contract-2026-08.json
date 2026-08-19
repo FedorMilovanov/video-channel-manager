@@ -9,7 +9,7 @@
   "provider_write_authorized": false,
   "source_mutation_allowed": false,
   "document_fallback_allowed": false,
-  "conversion_execution_ready": false,
+  "conversion_execution_ready": true,
   "toolchain_lock": {
     "ffmpeg_version": null,
     "ffprobe_version": null,
