@@ -115,29 +115,49 @@ P18–P24 are not “fake YouTube seeds”. Their authority is the current proje
 | G08 | LG8 | pastoral collapse before scandal / Reel | `Разрушение начинается раньше большого скандала` | COPY-READY + ART-BRIEF-READY | media; no identifiable living-person accusation |
 | G09 | LG6 | spirits in prison certainty layers / carousel | `Что говорит текст — и что достраивается?` | COPY-READY + ART-BRIEF-READY | final confidence-label proof |
 
+---
+
+# F. Господь Бог — Сила Моя — Wave 2 breadth
+
+| Order | Wave ID | Subject / format | First-screen promise | State | Remaining gate |
+| --- | --- | --- | --- | --- | --- |
+| G10 | W2-G04 | intrusive thought vs consent / Reel | `Не всякая пришедшая мысль — уже выбор сердца` | COPY-READY + ART-BRIEF-READY | MEDIA-UNBOUND; avoid clinical claims |
+| G11 | W2-G09 | conscience 1919→1923 / carousel | `Юридическое окно → политический рычаг давления` | COPY-READY + ART-BRIEF-READY | exact date/name/art provenance proof |
+| G12 | W2-G02 | new heart / Reel | `Не улучшенная версия старого` | COPY-READY + ART-BRIEF-READY | MEDIA-UNBOUND + quote edition gate |
+| G13 | W2-G07 | Jude / Enoch / 4Q204 / carousel | `Оракул Еноха ≠ автоматическая канонизация всего корпуса` | COPY-READY + ART-BRIEF-READY | manuscript/transcription art provenance |
+| G14 | W2-G06 | Christ and the Father / Reel | `Сын не уговаривает более сурового Отца стать добрее` | COPY-READY + ART-BRIEF-READY | MEDIA-UNBOUND; Trinitarian wording QC |
+| G15 | W2-G10 | underground printing / Reel or carousel | `Подпольная печать как инфраструктура памяти` | COPY-READY + ART-BRIEF-READY | archive image provenance / reconstruction labels |
+| G16 | W2-G01 | Romans 7 / carousel | `“Верующий или неверующий?” — вопрос слишком узок` | COPY-READY + ART-BRIEF-READY | exact scholarly/source card proof |
+| G17 | W2-G03 | guarding the heart / Reel | `Стеречь источник, не только последствия` | COPY-READY + ART-BRIEF-READY | MEDIA-UNBOUND + quote gate |
+| G18 | W2-G08 | 1 Enoch as composite corpus / carousel | `Не один простой неизменный объект` | COPY-READY + ART-BRIEF-READY | manuscript/codex provenance |
+| G19 | W2-G05 | Jeremiah 17 / carousel | `Предупреждение и новое сердце нужно держать вместе` | COPY-READY + ART-BRIEF-READY | exact Scripture quote edition if used |
+| G20 | W2-G11 | Petersburg evangelical stream / carousel | `Почему Петербург помогает понять слово “евангельские”` | COPY-READY + ART-BRIEF-READY | historical image/source-card proof |
+
 ## Excluded Lord God sources
 
 These are **not** backlog items until current source status changes:
 
 - `anatomiya-padeniya-pyat-stadiy.mdx` — current source declares `contentStatus: draft`;
-- `cerkovnaya-disciplina-vlast-granicy-zashchita.mdx` — current source declares `contentStatus: draft`.
+- `cerkovnaya-disciplina-vlast-granicy-zashchita.mdx` — current source declares `contentStatus: draft`;
+- `kogda-uhodit-kogda-ostavatsya.mdx` — current source declares `contentStatus: draft`.
 
 Do not silently re-enter them because the frontmatter also contains another `draft: false` field.
 
 ---
 
-# F. Production batching
+# G. Production batching
 
 This is a workflow suggestion, not a social-platform cadence rule.
 
-## Batch 1 — copy/art only, no media dependency
+## Batch 1 — copy/art only, no video-media dependency
 
 Prioritize carousels and trust pieces whose claims are already source-bound:
 
 - P03, P05;
 - P12, P14, P16;
 - P19, P21, P22;
-- G03, G05, G07, G09.
+- G03, G05, G07, G09;
+- G11, G13, G16, G18, G19, G20.
 
 These can reach final artwork review without waiting for a vertical video master, subject to their quote/image provenance gates.
 
@@ -147,13 +167,15 @@ Once project-owned vertical/source media is inventoried:
 
 - P01, P02, P04, P06;
 - P10, P11, P13, P15, P17, P18, P20, P24;
-- G01, G02, G04, G06, G08.
+- G01, G02, G04, G06, G08;
+- G10, G12, G14, G17;
+- G15 when produced as Reel rather than carousel.
 
 For each Reel freeze:
 
 `candidate_id → source master → selected interval → edit version → output SHA-256 → caption version → cover version`.
 
-## Batch 3 — exact-text Reels
+## Batch 3 — exact-text Reels / quotation-heavy assets
 
 Only after edition/span binding:
 
@@ -172,7 +194,7 @@ Only after separate explicit review:
 
 ---
 
-# G. Definition of content-ready
+# H. Definition of content-ready
 
 A post is `CONTENT-READY` only when all applicable items are true:
 
