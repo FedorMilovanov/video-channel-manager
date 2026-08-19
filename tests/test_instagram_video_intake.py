@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 
@@ -36,7 +37,7 @@ def _audit(*videos: VideoRecord, channel_id: str = CHANNEL_ID) -> AuditPackage:
     )
 
 
-def _build(audit: AuditPackage, **kwargs: object) -> dict[str, object]:
+def _build(audit: AuditPackage, **kwargs: Any) -> dict[str, Any]:
     return build_instagram_video_intake(
         audit,
         project_key=LEGENDARY_POET,
