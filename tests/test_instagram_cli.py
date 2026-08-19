@@ -77,12 +77,8 @@ def test_video_intake_cli_builds_project_bound_hashed_artifact(tmp_path: Path) -
     assert payload["counts"]["current_videos"] == 1
     assert payload["counts"]["format_unknown"] == 1
     assert payload["records"][0]["exact_vk_video_id"] == "-235216998_1"
-    assert payload["source_evidence"]["audit_package_sha256"] == (
-        f"sha256:{hashlib.sha256(audit_raw).hexdigest()}"
-    )
-    assert payload["source_evidence"]["frozen_mapping_sha256"] == (
-        f"sha256:{hashlib.sha256(mapping_raw).hexdigest()}"
-    )
+    assert payload["source_evidence"]["audit_package_sha256"] == (f"sha256:{hashlib.sha256(audit_raw).hexdigest()}")
+    assert payload["source_evidence"]["frozen_mapping_sha256"] == (f"sha256:{hashlib.sha256(mapping_raw).hexdigest()}")
 
     corpus = hashlib.sha256()
     corpus.update(b"AAAAAAAAAAA.json")
@@ -146,5 +142,6 @@ def test_video_intake_cli_rejects_reviewed_record_filename_mismatch(tmp_path: Pa
     )
 
     assert result.exit_code == 2
-    assert "does not match filename" in result.output
+    assert "reviewed editorial video_id does not match" in result.output
+    assert "filename:" in result.output
     assert not output_path.exists()
