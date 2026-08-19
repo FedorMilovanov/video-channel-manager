@@ -68,24 +68,37 @@ A provider attempt requires:
 
 Mutation transport retries remain zero. A missing/ambiguous outcome is not permission to replay. `may_exist` or otherwise unknown provider effect remains blocking pending exact read-only reconciliation.
 
+## Stale predecessor — do not catch up
+
+`milovi-feed-20260819-001` remains immutable provider-inert history. Its frozen scheduled time is `2026-08-19T10:30:00+03:00`, which has passed. The timestamp is part of that publication identity; staleness must fail closed.
+
+Do **not** widen freshness, edit the old timestamp, transfer authorization, initialize it later as a catch-up publication, or reinterpret it as a 20-August send. No provider mutation was performed for that identity.
+
 ## Current exact candidate
 
-`milovi-feed-20260819-001` is currently provider-inert:
+`milovi-feed-20260820-001` is the next provider-inert publication candidate:
 
-- content candidate frozen: yes;
-- exact p03 transport binding: yes;
-- exact target binding: yes;
+- scheduled time: `2026-08-20T10:30:00+03:00`;
+- editorial source: position 2 of `first-screen-continuation-copy-2026-08.json`;
+- operation: `sendPhoto`;
+- exact media: `p16` / `img/gallery/gallery-16-hd.webp`;
+- exact source SHA-256: `sha256:51321ee2ef2c3ee1b91a9e449ade9d8886747f3cf3aae85f0cfe8e1bd1dcd6e7`;
+- deterministic JPEG: `506080` bytes, SHA-256 `sha256:19ba49ed001ea0c7c79ad9f475be0ad4c4c41b5790ee195e363df7981cfb6b9e`;
+- exact caption SHA-256: `sha256:40708552f2899f3c236b5ff63370d556e97701d7495ffe3b753229d69de1f587`;
 - runtime release present: yes;
 - `release_authorized=false`;
 - `execution_authorized=false`;
 - `provider_mutation_allowed=false`;
 - permanent feed ledger initialized: no;
-- Telegram mutation by this consolidation: no.
+- durable execution intent: no;
+- Telegram mutation by preparation: no.
 
-Its old scheduled time is part of the frozen candidate identity and may be stale by the time a future operator considers execution. Staleness must fail closed; do not widen freshness or reinterpret the old timestamp as catch-up authority.
+The bundle is readiness only. It may be merged provider-free during quiet hours, but a future provider operation still requires a fresh exact-current-main release review/execution authorization, daylight-window check, state initialization and the one-attempt publisher path.
 
 ## Video lane
 
-Native video readiness remains separate from the permanent photo/feed writer architecture. Current recorded status is `0 / 16` accepted Telegram-ready MP4 outputs. Materialize and verify H.264/Telegram-ready derivatives under the media contract before treating that lane as complete.
+PR #487 merged the permanent provider-free video artifact builder on `main` at `87c41dd6912ba4c83ed25b631df673daa7844c09`. The builder is designed to materialize and prove all 16 H.264/MP4 derivatives on a content-addressed review branch without Telegram access.
+
+Do not treat the builder merge itself as 16/16 completion. The video lane becomes complete only after a real main-push run produces and preserves exact accepted 16/16 conversion evidence. Until that evidence is observed, the previously recorded accepted-output state remains unconfirmed and must not be upgraded by assumption.
 
 Nothing in this runbook authorizes Telegram mutation.
