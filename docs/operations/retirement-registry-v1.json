@@ -1,7 +1,7 @@
 {
   "schema_name": "video-manager.retirement-registry",
   "schema_version": 1,
-  "updated_at": "2026-08-19T13:05:00+03:00",
+  "updated_at": "2026-08-19T13:51:00+03:00",
   "repository": "FedorMilovanov/video-channel-manager",
   "execution_authority": false,
   "provider_writes_authorized": false,
@@ -147,6 +147,15 @@
       "execution_prohibited": true,
       "replacement": ".github/workflows/milovi-telegram-target-discovery.yml",
       "reason": "The weaker duplicate Milovi discovery workflow is retired so one exact chat/bot-bound read-only discovery contract remains canonical."
+    },
+    {
+      "id": "milovi-telegram-follow-on-bootstrap-readiness",
+      "kind": "repository_read_only_bootstrap_workflow_family",
+      "issues": [353],
+      "status": "retired_non_executable",
+      "execution_prohibited": true,
+      "replacement": ".github/workflows/milovi-telegram-feed-quality.yml + .github/workflows/milovi-telegram-feed-publisher.yml",
+      "reason": "Follow-on readiness and media-proof workflows were provider-inert but still encoded the obsolete bootstrap/per-wave control model. Frozen source manifests and historical evidence remain; future feed items use the permanent feed quality and publisher lanes."
     }
   ],
   "history_archives": [
