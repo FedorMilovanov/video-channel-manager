@@ -270,7 +270,11 @@ def media_route(
 
     if output is None:
         settings = get_settings()
-        output = settings.data_dir / "reports" / f"instagram-{intake.project_key}-{intake.source_snapshot_id}-media-route.json"
+        output = (
+            settings.data_dir
+            / "reports"
+            / f"instagram-{intake.project_key}-{intake.source_snapshot_id}-media-route.json"
+        )
     _write_json(output, result.model_dump(mode="json"))
 
     counts = result.counts
