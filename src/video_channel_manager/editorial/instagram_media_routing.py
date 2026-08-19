@@ -13,7 +13,11 @@ from video_channel_manager.exchange.instagram_video import (
     InstagramVideoRouteArtifact,
     InstagramVideoRouteRecord,
 )
-from video_channel_manager.local_media import MediaArtifactEvidence, MediaArtifactError, validate_media_artifact_evidence
+from video_channel_manager.local_media import (
+    MediaArtifactError,
+    MediaArtifactEvidence,
+    validate_media_artifact_evidence,
+)
 
 
 class InstagramMediaRoutingError(ValueError):
