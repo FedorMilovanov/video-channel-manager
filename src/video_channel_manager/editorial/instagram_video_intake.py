@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Collection, Mapping
 from typing import Any
 
@@ -8,8 +9,18 @@ from video_channel_manager.editorial._project_profiles import PROJECT_CHANNEL_ID
 from video_channel_manager.exchange.audit_package import AuditPackage
 
 
+_SHA256_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+
+
 class InstagramVideoIntakeError(ValueError):
     pass
+
+
+def _require_sha256(value: str | None, *, field: str, allow_none: bool = False) -> None:
+    if value is None and allow_none:
+        return
+    if not isinstance(value, str) or _SHA256_RE.fullmatch(value) is None:
+        raise InstagramVideoIntakeError(f"{field} must use the exact sha256:<64 lowercase hex> form")
 
 
 def build_instagram_video_intake(
@@ -45,12 +56,9 @@ def build_instagram_video_intake(
             f"unexpected YouTube channel for {normalized_project}: {channel_ref.channel_id}; expected {expected}"
         )
 
-    if not source_audit_sha256.startswith("sha256:"):
-        raise InstagramVideoIntakeError("source_audit_sha256 must use the sha256:<hex> form")
-    if frozen_mapping_sha256 is not None and not frozen_mapping_sha256.startswith("sha256:"):
-        raise InstagramVideoIntakeError("frozen_mapping_sha256 must use the sha256:<hex> form")
-    if reviewed_corpus_sha256 is not None and not reviewed_corpus_sha256.startswith("sha256:"):
-        raise InstagramVideoIntakeError("reviewed_corpus_sha256 must use the sha256:<hex> form")
+    _require_sha256(source_audit_sha256, field="source_audit_sha256")
+    _require_sha256(frozen_mapping_sha256, field="frozen_mapping_sha256", allow_none=True)
+    _require_sha256(reviewed_corpus_sha256, field="reviewed_corpus_sha256", allow_none=True)
 
     mapped_ids = set(frozen_youtube_vk_mapping)
     reviewed_ids = set(reviewed_video_ids)
