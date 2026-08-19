@@ -1,6 +1,6 @@
 # Milovi Telegram permanent feed control plane
 
-Updated: 2026-08-19
+Updated: 2026-08-20
 Owning workstream: Issue #353
 Provider target: `@MiloviCake`
 
@@ -97,8 +97,12 @@ The bundle is readiness only. It may be merged provider-free during quiet hours,
 
 ## Video lane
 
-PR #487 merged the permanent provider-free video artifact builder on `main` at `87c41dd6912ba4c83ed25b631df673daa7844c09`. The builder is designed to materialize and prove all 16 H.264/MP4 derivatives on a content-addressed review branch without Telegram access.
+PR #491 merged the hardened provider-free video artifact lane on `main` as `0c643aac244406acc1e17bef6885279b6e22e0d7` after exact-head CI, source-probe, feed-quality, Pillow and 16/16 conversion proof all passed.
 
-Do not treat the builder merge itself as 16/16 completion. The video lane becomes complete only after a real main-push run produces and preserves exact accepted 16/16 conversion evidence. Until that evidence is observed, the previously recorded accepted-output state remains unconfirmed and must not be upgraded by assumption.
+The post-merge `main` persistence run then completed the durable proof on content-addressed branch `agent/milovi-video-accepted-73c578eff825`. That branch is exactly one artifact commit ahead of `main` and adds only 16 MP4 outputs plus `content/telegram/milovi-cake/video-conversion-evidence-2026-08.json`.
+
+The durable evidence records `status=accepted_16_of_16`, `accepted_output_count=16`, `declared_video_count=16`, `provider_access_performed=false`, `provider_write_performed=false`, exact source commit `c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370`, and evidence digest `sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae`. Every accepted output is MP4/H.264/yuv420p with exactly one AAC 48 kHz stereo stream derived from the reviewed single Opus 48 kHz stereo source stream.
+
+The native-video readiness lane is therefore complete. This evidence grants no Telegram execution authority and does not authorize `sendVideo` or any other provider mutation.
 
 Nothing in this runbook authorizes Telegram mutation.
