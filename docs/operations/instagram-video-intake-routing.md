@@ -4,18 +4,19 @@ Status: provider-inert
 Owner issue: #495  
 Scope: repository-owned preparation only; no Instagram/Meta provider mutation
 
-This runbook is the canonical operator path for turning an exact YouTube inventory into an Instagram/Reels production-routing artifact. It deliberately separates provider inventory, source-master evidence, rights/provenance review, and publication authorization.
+This runbook is the canonical operator path for turning an exact YouTube inventory into an Instagram/Reels production-routing artifact. It deliberately separates provider inventory, YouTube surface classification, source-master evidence, rights/provenance review, and publication authorization.
 
 ## Invariants
 
 1. YouTube inventory is acquired only through the existing read-only YouTube adapter.
 2. `project_key` is resolved against the canonical repository identity registry; a display name or vanity handle is never a target identity.
-3. Duration alone never proves that a YouTube video is a Short.
-4. `MediaArtifactEvidence` is the only technical media-evidence contract used by this lane. Do not create an Instagram-specific second ffprobe registry.
-5. A YouTube/VK/social delivery encoding is not a clean source master merely because it is downloadable.
-6. Technical compatibility does not prove reuse rights. Rights/provenance review is a separate exact-manifest record.
-7. Every generated intake/route artifact is provider-inert and carries `provider_writes_authorized=false`.
-8. No Reel cut timing is frozen until exact source bytes are bound.
+3. Duration, title, `#Shorts`, or `snippet.publishedAt` alone never proves that a YouTube video is a Short.
+4. Owner-only YouTube `fileDetails` may be used to prove uploaded-source geometry and exact file duration, but it is not a clean-master license or local-master proof.
+5. `MediaArtifactEvidence` is the only technical local-media evidence contract used by this lane. Do not create an Instagram-specific second ffprobe registry.
+6. A YouTube/VK/social delivery encoding is not a clean source master merely because it is downloadable.
+7. Technical compatibility does not prove reuse rights. Rights/provenance review is a separate exact-manifest record.
+8. Every generated intake/route artifact is provider-inert and carries `provider_writes_authorized=false`.
+9. No Reel cut timing is frozen until exact source bytes are bound.
 
 ## Stage 1 — fresh read-only YouTube snapshot
 
@@ -28,9 +29,11 @@ video-manager youtube scan `
   --output .\data\exports\legendary-poet-youtube-current.json
 ```
 
+The existing owner-authenticated scan requests `snippet,contentDetails,status,fileDetails` for the channel's videos. `fileDetails` is owner-only provider evidence and can retain the uploaded file's millisecond duration, video-stream dimensions, rotation and file creation time inside `VideoRecord.metadata` without downloading the media.
+
 The resulting `AuditPackage` is a read-only provider snapshot. Keep its exact bytes unchanged after review; the intake command hashes the actual input bytes.
 
-## Stage 2 — typed Instagram intake
+## Stage 2 — typed Instagram intake and YouTube surface classification
 
 ```powershell
 video-manager instagram video-intake `
@@ -52,11 +55,40 @@ The output validates against `InstagramVideoIntakeArtifact` and freezes:
 - SHA-256 of the historical mapping bytes;
 - deterministic SHA-256 of the ordered reviewed editorial corpus;
 - current/new/historical-missing reconciliation;
-- one record for every current upload.
+- one record for every current upload;
+- owner-backed source geometry/duration evidence when YouTube supplied `fileDetails`;
+- explicit `short`, `longform`, `short_candidate`, or unresolved classification state.
 
-V1 deliberately emits `youtube_format_status=unknown` for every current upload. That is not missing work: it is a fail-closed statement that the YouTube Data API metadata used by the snapshot does not itself prove Shorts-surface membership or clean-master geometry.
+### Surface-classification contract
 
-## Stage 3 — exact media evidence
+The classifier is deliberately asymmetric: it confirms only what current exact evidence proves.
+
+| Exact evidence | Result |
+| --- | --- |
+| source display geometry is landscape | confirmed `longform` |
+| exact/fallback duration is over 180 seconds | confirmed `longform` |
+| square/vertical, at most 180 seconds, and timezone-aware uploaded-file `creationTime` is on/after 2025-12-08 | confirmed `short` |
+| square/vertical and at most 180 seconds, but conservative post-cutoff proof is absent | `unknown` + `youtube_short_candidate=true` |
+| geometry/duration evidence is insufficient | `unknown` |
+
+The 2025-12-08 boundary is intentionally conservative: it is the later three-minute-Shorts rollout boundary needed for Official Artist Channels. Using the later date avoids guessing whether the project channel has that special channel type. A source file created on or after that date cannot have been uploaded before the file existed.
+
+`fileDetails.creationTime` is **file creation time, not upload time**. The classifier uses it only as a lower-bound proof when it is timezone-aware and falls after the conservative boundary. Date-only or timezone-naive values are not promoted into upload-time evidence.
+
+`snippet.publishedAt` is also **not** treated as upload time.
+
+YouTube stream `rotation` is applied before geometry is classified:
+
+- `none` / missing / `upsideDown` preserve width and height;
+- `clockwise` / `counterClockwise` swap display width and height;
+- unknown rotation values fail closed to unknown geometry;
+- conflicting orientations across reported video streams fail closed rather than picking one.
+
+This classification describes the YouTube upload surface. It does **not** prove that the same bytes are locally available, rights-cleared, or appropriate as an Instagram source master.
+
+Historical mappings or old prose audits may remain useful evidence, but they do not replace a fresh owner scan for current source-file classification.
+
+## Stage 3 — exact local source-master evidence
 
 Reuse the existing `MediaArtifactEvidence` implementation under `video_channel_manager.local_media`. A valid manifest binds one exact source identity to:
 
@@ -135,7 +167,7 @@ The routing table is deterministic:
 | cleared rights + clean project master + width >= height | `editorial_extract` |
 | clean-master provenance not proved | `hold`, or separately authorized source-led rebuild |
 
-`direct_remaster` means the source geometry is already vertical enough to stay in the direct-master lane. It does not authorize publication and does not mean the file has passed a future Instagram-provider-specific encoding preflight.
+`direct_remaster` means the local source-master geometry is already vertical enough to stay in the direct-master lane. It does not authorize publication and does not mean the file has passed a future Instagram-provider-specific encoding preflight.
 
 `editorial_extract` means the exact project master can be used as source material, but a vertical editorial cut/reframe still must be produced and reviewed. The router does not invent timestamps.
 
@@ -166,9 +198,10 @@ It does not:
 - create tokens or secrets;
 - download a social-platform copy as a convenience master;
 - infer rights from prior publication;
-- infer Shorts from duration;
+- infer Shorts from duration, title, hashtags, or `publishedAt` alone;
 - invent Reel cut points;
 - choose a provider account from a public handle;
+- turn YouTube `fileDetails` into local-master or rights proof;
 - turn a route artifact into provider-write authorization.
 
 The next execution layer, if separately reviewed and authorized later, must consume an exact reviewed Reel output, prove the Instagram Professional account ID, bind exact output bytes/SHA-256, run provider preflight, and verify postconditions after any write.
