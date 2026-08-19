@@ -1,0 +1,31 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
+  "publication_id": "lordchrist-owen-spirit-alone",
+  "sequence": 17,
+  "intent_id": "51ead21bd396998171059409d02e5943",
+  "workflow_run_id": "32226112524",
+  "workflow_run_attempt": "1",
+  "github_sha": "0db356e26434b2e94ec78a7983376bdf2b3ecbb1",
+  "github_workflow_sha": "0db356e26434b2e94ec78a7983376bdf2b3ecbb1",
+  "payload_sha256": "sha256:24788f2378dc00e4c5ab0cb629bba01077ad5a7ec38b21e905e14ee675d8e26b",
+  "text": "Главная действенная причина исполнения этой обязанности — Дух: «Если Духом». Здесь имеется в виду Дух Христов, Дух Божий, Который живёт в нас и оживотворяет нас; Дух усыновления, Который ходатайствует за нас.\n\nВсе иные способы умерщвления тщетны, все иные средства оставляют нас беспомощными: это должно совершаться Духом. Люди могут пытаться выполнить эту работу на иных основаниях и с помощью иных преимуществ, как делали прежде и делают ныне; но апостол говорит: «Это дело Духа; только Им оно должно быть совершено, и никакая другая сила не может осуществить его».\n\n© Джон Оуэн, «Об умерщвлении греха в верующих»\n\n#ДжонОуэн #СвятойДух #Освящение #Грех",
+  "dispatch_mode": "scheduled",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-08-19T07:04:17.410101Z"
+  },
+  "prepared_at_utc": "2026-08-19T07:04:18.781907Z"
+}
