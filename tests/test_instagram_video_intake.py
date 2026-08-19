@@ -6,6 +6,7 @@ import pytest
 
 from video_channel_manager.domain.enums import ChannelKind, PlatformName
 from video_channel_manager.domain.models import ChannelRecord, RemoteRef, VideoRecord
+from video_channel_manager.editorial._project_profiles import LEGENDARY_POET
 from video_channel_manager.editorial.instagram_video_intake import (
     InstagramVideoIntakeError,
     build_instagram_video_intake,
@@ -14,6 +15,9 @@ from video_channel_manager.exchange.audit_package import AuditPackage
 
 
 CHANNEL_ID = "UC-78ys2S3cQ3lpqgXfo-SvQ"
+AUDIT_SHA = "sha256:" + "a" * 64
+MAPPING_SHA = "sha256:" + "b" * 64
+REVIEWED_SHA = "sha256:" + "c" * 64
 
 
 def _ref(remote_id: str, *, channel_id: str = CHANNEL_ID) -> RemoteRef:
@@ -29,6 +33,16 @@ def _audit(*videos: VideoRecord, channel_id: str = CHANNEL_ID) -> AuditPackage:
             kind=ChannelKind.VIDEO_CHANNEL,
         ),
         videos=list(videos),
+    )
+
+
+def _build(audit: AuditPackage, **kwargs: object) -> dict[str, object]:
+    return build_instagram_video_intake(
+        audit,
+        project_key=LEGENDARY_POET,
+        frozen_youtube_vk_mapping={},
+        source_audit_sha256=AUDIT_SHA,
+        **kwargs,
     )
 
 
@@ -53,15 +67,26 @@ def test_build_intake_reconciles_current_new_and_historical_ids() -> None:
 
     result = build_instagram_video_intake(
         audit,
+        project_key=LEGENDARY_POET,
         frozen_youtube_vk_mapping={
             "AAAAAAAAAAA": "-235216998_1",
             "BBBBBBBBBBB": "-235216998_2",
         },
         reviewed_video_ids={"AAAAAAAAAAA"},
-        expected_channel_id=CHANNEL_ID,
+        source_audit_sha256=AUDIT_SHA,
+        frozen_mapping_sha256=MAPPING_SHA,
+        reviewed_corpus_sha256=REVIEWED_SHA,
     )
 
     assert result["status"] == "provider-inert"
+    assert result["provider_effect"] == "impossible"
+    assert result["provider_writes_authorized"] is False
+    assert result["project_key"] == LEGENDARY_POET
+    assert result["source_evidence"] == {
+        "audit_package_sha256": AUDIT_SHA,
+        "frozen_mapping_sha256": MAPPING_SHA,
+        "reviewed_corpus_sha256": REVIEWED_SHA,
+    }
     assert result["counts"] == {
         "current_videos": 2,
         "frozen_mapping_ids": 2,
@@ -74,9 +99,7 @@ def test_build_intake_reconciles_current_new_and_historical_ids() -> None:
         "format_unknown": 2,
     }
     assert result["reconciliation"]["new_current_ids"] == ["CCCCCCCCCCC"]
-    assert result["reconciliation"]["historical_mapped_missing_from_current_snapshot"] == [
-        "BBBBBBBBBBB"
-    ]
+    assert result["reconciliation"]["historical_mapped_missing_from_current_snapshot"] == ["BBBBBBBBBBB"]
 
     first = result["records"][0]
     assert first["exact_vk_video_id"] == "-235216998_1"
@@ -91,7 +114,7 @@ def test_duration_never_promotes_video_to_confirmed_short_or_longform() -> None:
         VideoRecord(ref=_ref("BBBBBBBBBBB"), title="10 min", duration_seconds=600, revision="b"),
     )
 
-    result = build_instagram_video_intake(audit, frozen_youtube_vk_mapping={})
+    result = _build(audit)
 
     assert {record["youtube_format_status"] for record in result["records"]} == {"unknown"}
     assert result["counts"]["confirmed_short"] == 0
@@ -99,12 +122,28 @@ def test_duration_never_promotes_video_to_confirmed_short_or_longform() -> None:
     assert result["counts"]["format_unknown"] == 2
 
 
-def test_expected_channel_guard_is_fail_closed() -> None:
+def test_project_channel_guard_is_fail_closed() -> None:
     audit = _audit(channel_id="UC_OTHER")
 
     with pytest.raises(InstagramVideoIntakeError, match="unexpected YouTube channel"):
+        _build(audit)
+
+
+def test_unknown_project_is_rejected() -> None:
+    with pytest.raises(InstagramVideoIntakeError, match="unknown project_key"):
         build_instagram_video_intake(
-            audit,
+            _audit(),
+            project_key="unknown-project",
             frozen_youtube_vk_mapping={},
-            expected_channel_id=CHANNEL_ID,
+            source_audit_sha256=AUDIT_SHA,
+        )
+
+
+def test_evidence_digest_must_be_exact_sha256() -> None:
+    with pytest.raises(InstagramVideoIntakeError, match="source_audit_sha256"):
+        build_instagram_video_intake(
+            _audit(),
+            project_key=LEGENDARY_POET,
+            frozen_youtube_vk_mapping={},
+            source_audit_sha256="sha256:not-a-digest",
         )
