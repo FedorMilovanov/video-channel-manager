@@ -1,0 +1,55 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-exact-one-item-state-contract",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "publication_id": "milovi-feed-20260820-001",
+  "status": "provider_inert_state_contract",
+  "state_branch": "state/milovi-cake-telegram",
+  "state_path": "content/telegram/milovi-cake/feed/milovi-feed-20260820-001.json",
+  "channel_wide_index_path": "content/telegram/milovi-cake/feed/index.json",
+  "durable_same_object_key": "milovi-feed-20260820-001",
+  "initial_state": {
+    "state": "pending",
+    "provider_effect": "impossible",
+    "intent_id": null,
+    "dispatch_started_at_utc": null,
+    "provider_attempt_count": 0,
+    "message_id": null,
+    "message_url": null,
+    "last_error": null
+  },
+  "preparation_rules": {
+    "create_execution_intent_during_provider_inert_preparation": false,
+    "write_state_branch_during_provider_inert_preparation": false,
+    "historical_bootstrap_entries_are_predecessor_authority": false,
+    "historical_canary_entries_are_predecessor_authority": false,
+    "state_must_be_explicitly_initialized_after_release_authorization": true
+  },
+  "execution_transition_rules": {
+    "fresh_exact_human_execution_authorization_required": true,
+    "durable_intent_must_precede_provider_dispatch": true,
+    "dispatch_started_must_be_persisted_before_provider_call": true,
+    "max_provider_attempts": 1,
+    "blind_mutation_retries": 0,
+    "ambiguous_provider_outcome_state": "may_exist",
+    "ambiguous_provider_outcome_blocks_replay": true,
+    "verified_provider_outcome_state": "verified",
+    "provider_readback_required_for_success": true,
+    "second_publication_forbidden": true,
+    "channel_wide_duplicate_guard_required": true
+  },
+  "identity_lock": {
+    "channel_username": "@MiloviCake",
+    "chat_id": -1002215328390,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "operation": "sendPhoto",
+    "media_id": "p16",
+    "transport_byte_size": 506080,
+    "transport_sha256": "sha256:19ba49ed001ea0c7c79ad9f475be0ad4c4c41b5790ee195e363df7981cfb6b9e",
+    "caption_sha256": "sha256:40708552f2899f3c236b5ff63370d556e97701d7495ffe3b753229d69de1f587"
+  },
+  "execution_authorized": false,
+  "provider_mutation_allowed": false
+}
