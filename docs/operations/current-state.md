@@ -64,7 +64,7 @@ The intervening v3 wombat identity ended `failed_no_effect / confirmed_absent` w
 
 Historical messages `26` and `27` and expired v2/v3 mutation identities remain non-replayable evidence. The old August schedule is not a catch-up queue.
 
-The original 14-entry `svodka-pilot-2026-08` ledger on `state/svodka-telegram` still records its historical entries as `pending / provider_effect=impossible`, with no intent, workflow run or message id. That is state-only cleanup debt, **not** a publication backlog, provider uncertainty or retry authority. Terminalize those expired entries only through the exact provider-free `svodka-skip-expired.yml` path; do not replay Telegram and do not hand-edit the durable state ledger to manufacture closure.
+The original 14-entry `svodka-pilot-2026-08` ledger on `state/svodka-telegram` is now fully terminalized: all 14 historical entries are `skipped / provider_effect=impossible`, with no intent, workflow run, message id or provider effect. The provider-free stale-window cleanup debt is closed. These terminal records are historical no-replay evidence, not a publication backlog or execution authority.
 
 The completed message-28 reconciliation workflow and verified v4 successor workflow have been retired from executable `main`. Historical release/runtime/evidence and legacy provider-free/recovery contracts remain where required for reproducibility. No new Svodka Telegram mutation is authorized by this state.
 
