@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MAPPING = ROOT / "content" / "mappings" / "youtube-vk-reviewed-20260727.json"
 INTAKE = ROOT / "content" / "instagram" / "legendary-poet-channel-video-intake.md"
+FACTORY = ROOT / "content" / "instagram" / "legendary-poet-reels-factory-plan.md"
 COMMENTS = ROOT / "content" / "youtube-comments"
 
 
@@ -50,3 +51,13 @@ def test_intake_remains_provider_inert_and_fail_closed_on_short_classification()
     assert "currently confirmed Shorts from frozen evidence | 0" in text
     assert "currently confirmed long-form from frozen evidence | 0" in text
     assert "video-manager youtube scan --account legendary-poet" in text
+
+
+def test_reels_factory_has_59_unique_editorial_jobs() -> None:
+    text = FACTORY.read_text(encoding="utf-8")
+    reel_ids = re.findall(r"^### ([A-Z]+-R\d{2})\b", text, flags=re.MULTILINE)
+
+    assert len(reel_ids) == 59
+    assert len(set(reel_ids)) == 59
+    assert "| **TOTAL** | **59** |" in text
+    assert "59 editorially distinct Reel slots" in text
