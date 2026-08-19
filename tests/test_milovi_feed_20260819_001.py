@@ -77,7 +77,7 @@ def test_controller_is_workflow_run_current_main_and_has_no_cron_or_telegram_sec
     assert "secrets." not in controller
     assert "MILOVI_CAKE_TELEGRAM_BOT_TOKEN" not in controller
     assert "sendPhoto" not in controller
-    assert "provider_write_performed\": False" in controller
+    assert 'provider_write_performed": False' in controller
     assert "fresh_exact_human_execution_authorization_missing" in controller
 
 
