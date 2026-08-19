@@ -44,7 +44,7 @@ jobs:
               result = validate_bundle(publication_id)
               print(publication_id, result["blockers"])
           PY
-      - name: Enforce one permanent Milovi provider writer
+      - name: Enforce permanent Milovi workflow topology
         shell: bash
         run: |
           set -euo pipefail
@@ -53,7 +53,9 @@ jobs:
 
           root = Path(".github/workflows")
           canonical = root / "milovi-telegram-feed-publisher.yml"
+          discovery = root / "milovi-telegram-target-discovery.yml"
           assert canonical.is_file()
+          assert discovery.is_file()
           retired = {
               "milovi-telegram-bootstrap-activation-package.yml",
               "milovi-telegram-bootstrap-media-proof.yml",
@@ -70,6 +72,8 @@ jobs:
               "milovi-feed-20260819-001-controller.yml",
               "milovi-feed-20260819-001-media-proof.yml",
               "milovi-feed-20260819-001-quality.yml",
+              "milovi-telegram-follow-on-media-proof.yml",
+              "milovi-telegram-follow-on-readiness.yml",
           }
           assert all(not (root / name).exists() for name in retired)
 
@@ -89,5 +93,28 @@ jobs:
           assert text.index("telegram_multichannel_cli prepare") < text.index("telegram_multichannel_cli send-once")
           assert "schedule:" not in text
           assert "cron:" not in text
-          print("single Milovi provider writer: OK")
+
+          discovery_text = discovery.read_text(encoding="utf-8")
+          assert "discover-target" in discovery_text
+          assert "provider_writes_authorized" not in discovery_text
+          assert mutation_marker not in discovery_text
+
+          implementation = Path(
+              "src/video_channel_manager/telegram_channel_discovery.py"
+          ).read_text(encoding="utf-8")
+          assert 'method="getMe"' in implementation
+          assert implementation.count('method="getChat"') == 4
+          assert 'method="getChatMember"' in implementation
+          assert implementation.count("mutation=False") == 4
+          assert "mutation=True" not in implementation
+          for forbidden_method in (
+              "sendMessage",
+              "sendPhoto",
+              "sendMediaGroup",
+              "editMessage",
+              "deleteMessage",
+          ):
+              assert forbidden_method not in implementation
+
+          print("permanent Milovi workflow topology: OK")
           PY
