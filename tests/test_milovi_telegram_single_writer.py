@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
 CANONICAL = "milovi-telegram-feed-publisher.yml"
-MUTATION_MARKER = "python -m video_channel_manager.telegram_multichannel_cli send-once"
+MUTATION_MARKER = "python -m video_channel_manager.telegram_multichannel_cli " + "send-once"
 RETIRED = {
     "milovi-telegram-bootstrap-activation-package.yml",
     "milovi-telegram-bootstrap-media-proof.yml",
