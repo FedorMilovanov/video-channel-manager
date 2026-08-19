@@ -1,0 +1,126 @@
+name: Milovi feed 20260819-001 current-main controller
+
+on:
+  workflow_run:
+    workflows:
+      - "Milovi feed 20260819-001 quality"
+      - "Milovi feed 20260819-001 media proof"
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: milovi-feed-20260819-001-readiness
+  cancel-in-progress: false
+
+jobs:
+  provider-inert-readiness:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Check out exact current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Resolve exact current-main SHA
+        id: main
+        shell: bash
+        run: |
+          set -euo pipefail
+          current_main_sha="$(git rev-parse HEAD)"
+          echo "sha=$current_main_sha" >> "$GITHUB_OUTPUT"
+          echo "Controller evaluates exact current main: $current_main_sha"
+
+      - name: Require both exact-current-main provider-free gates
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURRENT_MAIN_SHA: ${{ steps.main.outputs.sha }}
+          PYTHONPATH: src
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow milovi-feed-20260819-001-quality.yml \
+            --sha "$CURRENT_MAIN_SHA"
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow milovi-feed-20260819-001-media-proof.yml \
+            --sha "$CURRENT_MAIN_SHA"
+
+      - name: Emit provider-inert exact readiness receipt
+        env:
+          CURRENT_MAIN_SHA: ${{ steps.main.outputs.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("content/telegram/milovi-cake")
+          candidate = json.loads((root / "next-publication-candidate-2026-08-19.json").read_text(encoding="utf-8"))
+          release = json.loads((root / "releases/milovi-feed-20260819-001-review.json").read_text(encoding="utf-8"))
+          state = json.loads((root / "releases/milovi-feed-20260819-001-state-contract.json").read_text(encoding="utf-8"))
+          binding = json.loads(Path("content/telegram/channels/milovi-cake-target-binding.json").read_text(encoding="utf-8"))
+          profile = json.loads(Path("content/telegram/channels/milovi-cake.json").read_text(encoding="utf-8"))
+
+          current_main = os.environ["CURRENT_MAIN_SHA"]
+          assert candidate["publication_id"] == release["publication_id"] == state["publication_id"] == "milovi-feed-20260819-001"
+          assert candidate["execution_authorized"] is False
+          assert release["execution_authorized"] is False
+          assert state["execution_authorized"] is False
+          assert release["provider_mutation_allowed"] is False
+          assert state["provider_mutation_allowed"] is False
+          assert profile["daily_verified_limit"] == 2
+          assert binding["chat_id"] == -1002215328390
+          assert binding["bot_id"] == 8716602202
+          assert binding["bot_username"].casefold() == "preaching_mp3_bot"
+          assert release["execution_contract"]["max_provider_attempts"] == 1
+          assert release["execution_contract"]["blind_mutation_retries"] == 0
+
+          lock = {
+              "publication_id": candidate["publication_id"],
+              "current_main_sha": current_main,
+              "scheduled_at": candidate["scheduled_at"],
+              "timezone": candidate["timezone"],
+              "chat_id": binding["chat_id"],
+              "bot_id": binding["bot_id"],
+              "bot_username": binding["bot_username"],
+              "caption_sha256": candidate["caption_sha256"],
+              "transport_sha256": candidate["media"]["transport_sha256"],
+              "transport_byte_size": candidate["media"]["transport_byte_size"],
+              "max_provider_attempts": 1,
+              "blind_mutation_retries": 0,
+          }
+          canonical = json.dumps(lock, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+          receipt = {
+              "schema_name": "video-channel-manager.milovi-telegram-ready-to-authorize-receipt",
+              "schema_version": 1,
+              "status": "ready_to_authorize_provider_inert",
+              "authorization_fingerprint_sha256": "sha256:" + hashlib.sha256(canonical).hexdigest(),
+              "authorization_lock": lock,
+              "blocker": "fresh_exact_human_execution_authorization_missing",
+              "execution_authorized": False,
+              "provider_access_performed": False,
+              "provider_write_performed": False,
+              "state_branch_write_performed": False,
+          }
+          print(json.dumps(receipt, ensure_ascii=False, indent=2, sort_keys=True))
+          PY
+
+      - name: Explicit provider boundary
+        shell: bash
+        run: |
+          echo "Provider-inert readiness only. No Telegram credential is loaded, no Telegram API is called, no durable execution intent is written, and no provider mutation is possible in this workflow."
