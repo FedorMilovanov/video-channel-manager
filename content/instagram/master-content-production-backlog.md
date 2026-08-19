@@ -4,16 +4,31 @@ Status: provider-inert
 Owner issue: #495  
 Built: 2026-08-20
 
-This file is the operational reading order across the Instagram content files in this branch. It does **not** authorize provider publication.
+This is the operational control index for Instagram content work. It does **not** authorize provider publication.
+
+## Control-plane expansion
+
+The Legendary Poet backlog is no longer limited to individually hand-listed candidates.
+
+- `legendary-poet-channel-video-intake.md` makes all **111** exact frozen YouTube↔VK identities mandatory intake records.
+- `legendary-poet-reels-factory-plan.md` defines **59 editorially distinct Reel jobs** from the strongest already reviewed/site-owned source families.
+- `legendary-poet-site-media-surface-audit.md` records the exact site-owned media boundary: three local hashed audio masters and editorial/image sources, but no local MP4/WebM channel archive.
+- `legendary-poet-verified-youtube-seeds.json` remains the reviewed 15-video editorial seed layer.
+- `legendary-poet-wave2-content-plan.md` remains the detailed first production treatment for the strongest reviewed seeds.
+- `legendary-poet-site-derived-expansion.md` remains authority for Onegin/Lermontov/Mayakovsky site-derived work and the fail-closed Simonov gate.
+
+A fresh `video-manager youtube scan --account legendary-poet` is the required read-only step for current title/duration/status reconciliation. The old 111-ID mapping is an exact historical identity floor, **not** a claim that the current channel still contains exactly 111 uploads.
 
 ## State vocabulary
 
 - `COPY-READY` — source-bound caption/argument exists.
 - `ART-BRIEF-READY` — first-frame/slides/visual logic exists.
-- `MEDIA-UNBOUND` — exact clean project-owned media bytes are not frozen.
+- `AUDIO-BOUND` — exact clean audio bytes/hash are frozen.
+- `MEDIA-UNBOUND` — exact clean project-owned video/media bytes are not frozen.
 - `QUOTE-BLOCKED` — direct literary/Scripture quotation is not allowed until exact edition/span is frozen.
 - `RIGHTS-REVIEW` — exact reuse rights/provenance must be proved before execution.
 - `SOURCE-BLOCKED` — current project authority is insufficient to freeze final copy.
+- `FORMAT-UNKNOWN` — exact video identity exists but Short/long-form geometry/surface is not proved.
 - `PROVIDER-BLOCKED` — exact Instagram Professional account identity / executable plan is deliberately absent.
 
 Every row in this backlog is `PROVIDER-BLOCKED` by design.
@@ -22,179 +37,144 @@ Every row in this backlog is `PROVIDER-BLOCKED` by design.
 
 # A. The Legendary Poet — opening identity wave
 
-| Order | ID | Subject / format | Editorial job | Current state | Remaining gate |
-| --- | --- | --- | --- | --- | --- |
-| P01 | `ig-poet-001` | Есенин — «Я усталым таким ещё не был» / Reel | establish music + poetry identity | COPY-READY | MEDIA-UNBOUND + RIGHTS-REVIEW |
-| P02 | `ig-poet-002` | Пушкин — «Туча» / Reel | second author, different musical palette | COPY-READY | MEDIA-UNBOUND + RIGHTS-REVIEW |
-| P03 | `ig-poet-004` | text vs modern interpretation / carousel | trust/provenance | COPY-READY + ART-BRIEF-READY | final artwork; no unbound poem quote |
-| P04 | `ig-poet-003` | Блок — «Россия» / Reel | third canonical author | COPY-READY | MEDIA-UNBOUND + RIGHTS-REVIEW |
-| P05 | `ig-poet-005` | three published music works / carousel | make the catalog legible | COPY-READY + ART-BRIEF-READY | crop review / cover bytes |
-| P06 | `ig-poet-006` | why we do not say “the poet sings” / Reel | disclosure and trust | COPY-READY | media/voice bed |
-| P07 | `ig-poet-007` | Есенин exact-text visual / Reel | canonical text + music | QUOTE-BLOCKED | exact edition + span + media hash |
-| P08 | `ig-poet-008` | Пушкин exact-text visual / Reel | canonical text + music | QUOTE-BLOCKED | exact edition + span + media hash |
-| P09 | `ig-poet-009` | Блок exact-text visual / Reel | canonical text + music | QUOTE-BLOCKED | exact edition + span + media hash |
+| Order | ID | Subject / format | Current state | Remaining gate |
+| --- | --- | --- | --- | --- |
+| P01 | `ig-poet-001` | Есенин — «Я усталым таким ещё не был» / Reel | COPY-READY + AUDIO-BOUND | vertical render + selected exact timing |
+| P02 | `ig-poet-002` | Пушкин — «Туча» / Reel | COPY-READY + AUDIO-BOUND | vertical render + selected exact timing |
+| P03 | `ig-poet-004` | text vs modern interpretation / carousel | COPY-READY + ART-BRIEF-READY | final artwork; no unbound poem quote |
+| P04 | `ig-poet-003` | Блок — «Россия» / Reel | COPY-READY + AUDIO-BOUND | vertical render + selected exact timing |
+| P05 | `ig-poet-005` | three published music works / carousel | COPY-READY + ART-BRIEF-READY | crop/cover proof |
+| P06 | `ig-poet-006` | why we do not say “the poet sings” / Reel | COPY-READY | media/voice bed |
+| P07 | `ig-poet-007` | Есенин exact-text visual / Reel | QUOTE-BLOCKED | exact edition + span + media hash |
+| P08 | `ig-poet-008` | Пушкин exact-text visual / Reel | QUOTE-BLOCKED | exact edition + span + media hash |
+| P09 | `ig-poet-009` | Блок exact-text visual / Reel | QUOTE-BLOCKED | exact edition + span + media hash |
 
-### Opening-wave principle
-
-Do not wait for P07–P09 to unblock before producing P01–P06. The exact-text Reels are optional high-trust expansions, not a dependency of the account’s first coherent grid.
+The source site has exact local audio masters for P01/P02/P04, including duration and SHA-256. That proves audio identity, not finished vertical video identity.
 
 ---
 
-# B. The Legendary Poet — verified Wave 2
+# B. The Legendary Poet — reviewed video wave
 
-| Order | Seed | Subject / format | First-frame promise | State | Remaining gate |
-| --- | --- | --- | --- | --- | --- |
-| P10 | `mw-dYETmPIE` | `Чёрный человек` manuscript/publication / Reel | `Почему у поэмы есть разночтения?` | COPY-READY + ART-BRIEF-READY | MEDIA-UNBOUND + exact text if quoted |
-| P11 | `jkaayeq7q8g` | Фет, movement without verbs / Reel | `Стихотворение без глаголов — а ночь движется` | COPY-READY + ART-BRIEF-READY | MEDIA-UNBOUND |
-| P12 | `U4D40EQg10U` | `На поле Куликовом` / carousel | `5 частей — не один день` | COPY-READY + ART-BRIEF-READY | final date/art proof |
-| P13 | `mFsty3NOEMs` | `Отговорила роща золотая…` / Reel | `От Константинова до печати — несколько недель` | COPY-READY + ART-BRIEF-READY | MEDIA-UNBOUND |
-| P14 | `K-x6neQiyfs` | `Песнь о вещем Олеге` / carousel | `Летопись → баллада → первая печать` | COPY-READY + ART-BRIEF-READY | final source-card proof |
-| P15 | `lXwlZt1v97U` | Блок, three infinitives / typography Reel | `Три слова задают движение всему тексту` | COPY-READY + ART-BRIEF-READY | exact word proof + MEDIA-UNBOUND |
-| P16 | `RQIlUvFf1KQ` | Тютчев, two printed forms / carousel | `Одно стихотворение — две печатные формы` | COPY-READY + ART-BRIEF-READY | final source-card proof |
-| P17 | `3ZFf2PBEYrM` | Есенин, unresolved riddle / Reel | `Загадка не выдаёт ответ` | COPY-READY + ART-BRIEF-READY | MEDIA-UNBOUND; no invented creature |
+| Order | Seed | Subject | State | Reel factory |
+| --- | --- | --- | --- | --- |
+| P10 | `mw-dYETmPIE` | Есенин — `Чёрный человек` | COPY/ART-READY + MEDIA-UNBOUND | BM-R01…BM-R06 |
+| P11 | `jkaayeq7q8g` | Фет — `Шёпот, робкое дыханье…` | COPY/ART-READY + MEDIA-UNBOUND | FET-R01…FET-R04 |
+| P12 | `U4D40EQg10U` | Блок — `На поле Куликовом` | COPY/ART-READY + MEDIA-UNBOUND | KUL-R01…KUL-R05 |
+| P13 | `mFsty3NOEMs` | Есенин — `Отговорила роща золотая…` | COPY/ART-READY + MEDIA-UNBOUND | GROVE-R01…GROVE-R04 |
+| P14 | `K-x6neQiyfs` | Пушкин — `Песнь о вещем Олеге` | COPY/ART-READY + MEDIA-UNBOUND | OLEG-R01…OLEG-R04 |
+| P15 | `lXwlZt1v97U` | Блок — `О, я хочу безумно жить…` | COPY/ART-READY + MEDIA-UNBOUND | LIVE-R01…LIVE-R04 |
+| P16 | `RQIlUvFf1KQ` | Тютчев — `Как хорошо ты, о море ночное…` | COPY/ART-READY + MEDIA-UNBOUND | SEA-R01…SEA-R04 |
+| P17 | `3ZFf2PBEYrM` | Есенин — `Что это такое?` | COPY/ART-READY + MEDIA-UNBOUND | RIDDLE-R01…RIDDLE-R03 |
 
-### `Чёрный человек` subqueue
-
-After P10 and only after exact version timing/master binding:
-
-| ID | Format | State | Gate |
-| --- | --- | --- | --- |
-| BM01 | two-version contrast Reel | MEDIA-UNBOUND | exact versions + same/exact text span where possible + timing |
-| BM02 | mirror-motif carousel | COPY-READY in principle | label as editorial reading; final source copy |
-| BM03 | seven-version map | SOURCE-BLOCKED at execution level | freeze all seven version identities/timings; resolve current chapters placeholder |
-| BM04 | full-album bridge | MEDIA-UNBOUND | exact public full-album target + one CTA |
-
-Never release seven near-identical snippets as seven separate “content units” merely because seven versions exist.
+These eight reviewed sources expand to **34** distinct Reel jobs without arbitrary clip multiplication.
 
 ---
 
-# C. The Legendary Poet — site-derived expansion
+# C. The Legendary Poet — site-owned media / editorial factories
 
-| Order | Subject | Format | State | Why it is valuable | Remaining gate |
-| --- | --- | --- | --- | --- | --- |
-| P18 | Лермонтов, `Выхожу один я на дорогу…` myth vs source | Reel | COPY-READY + ART-BRIEF-READY | strong correction of unsupported “night before duel” legend | MEDIA-UNBOUND; exact quote binding if used |
-| P19 | `Евгений Онегин` 1823→1824–26→1830 | carousel | COPY-READY + ART-BRIEF-READY | shows long composition route, avoids “one Boldino burst” simplification | exact source-card + artwork |
-| P20 | Маяковский — not one label | Reel | COPY-READY + ART-BRIEF-READY | public futurism + ROSTA/LEF + vulnerable lyric | RIGHTS-REVIEW + MEDIA-UNBOUND |
-| P21 | Лермонтов 1841→1843 source chronology | carousel | COPY-READY + ART-BRIEF-READY | separates composition range from posthumous publication | final source-card / exact quotes if any |
-| P22 | Маяковский ROSTA→LEF→private lyric | carousel | COPY-READY + ART-BRIEF-READY | historical/creative map instead of biography cliché | RIGHTS-REVIEW + artwork |
-| P23 | `Евгений Онегин` musical Reel | Reel | SOURCE-READY / MEDIA-UNBOUND | bridges long-form/music line | exact current music/video master + audio provenance |
-| P24 | Маяковский 1930 anti-single-cause | Reel | COPY-READY | refuses sensational one-cause story | RIGHTS-REVIEW + final source review + media |
-| P25 | Симонов, `Сын артиллериста` | TBD | SOURCE-BLOCKED | potentially strong historical-literary line | project-owned source packet + exact text/video/media rights |
+| Source | Authority | Reel jobs | State |
+| --- | --- | ---: | --- |
+| Есенин — `Я усталым таким ещё не был` | site MP3 + exact SHA-256 | 4 | AUDIO-BOUND / VIDEO-UNBOUND |
+| Пушкин — `Туча` | site MP3 + exact SHA-256 | 4 | AUDIO-BOUND / VIDEO-UNBOUND |
+| Блок — `Россия` | site MP3 + exact SHA-256 | 4 | AUDIO-BOUND / VIDEO-UNBOUND |
+| Лермонтов — `Выхожу один я на дорогу…` | current site essay/library | 4 | COPY/ART SOURCE-READY |
+| Пушкин — `Евгений Онегин` | current site Pushkin library | 4 | COPY/ART SOURCE-READY; performance MEDIA-UNBOUND |
+| Маяковский multi-register/history | current site essays | 5 | COPY/ART SOURCE-READY; media/rights review where applicable |
 
-### Important distinction
-
-P18–P24 are not “fake YouTube seeds”. Their authority is the current project’s site/library content. The provider-video field remains unknown until separately proved.
+These contribute **25** more Reel jobs. Together with section B the explicit factory is **59 slots**.
 
 ---
 
-# D. The Legendary Poet — later / experimental / rights-heavy
+# D. Full 111-video intake
+
+The remaining channel estate is managed by `legendary-poet-channel-video-intake.md` rather than manually adding 96 vague rows here.
+
+| Metric | Count |
+| --- | ---: |
+| exact historical YouTube↔VK IDs | 111 |
+| reviewed editorial records | 15 |
+| exact IDs still needing fresh metadata/content triage | 96 |
+| confirmed Short classification from frozen mapping alone | 0 |
+| confirmed long-form classification from frozen mapping alone | 0 |
+| format unknown pending fresh scan/source geometry | 111 |
+
+The two zeroes are fail-closed evidence states, not claims that the channel lacks Shorts/full videos.
+
+After a fresh read-only scan, every video must receive one route:
+
+- `direct_remaster` — confirmed suitable vertical source + clean project-owned master;
+- `editorial_extract` — long-form/source master supports one or more distinct Reels;
+- `editorial_rebuild` — useful source identity but clean video master absent; rebuild from owned assets;
+- `hold` — rights, provenance, source or duplication failure.
+
+No record may disappear merely because its format is unknown.
+
+---
+
+# E. Rights-heavy reviewed subset
 
 | Seed | Subject | State | Disposition |
 | --- | --- | --- | --- |
-| `GVMafWIYPpI` | Блок `Россия` second creative | COPY-READY | later only; Wave 1 already represents the work |
-| `2GQ-T6dYH3E` | Ахматова `Я научилась просто, мудро жить…` | RIGHTS-REVIEW | strong publication-history carousel after territory/text/media review |
-| `BSJZ3BogD94` | English Esenin adaptation | RIGHTS-REVIEW | test only after Russian-language baseline |
-| `48WeOZPMaOA` | Yeltsin/Zinoviev `Apostrophes` rap reconstruction | RIGHTS-REVIEW | separate political/historical experiment, not poetry baseline |
-| `5CzAVKhsscA` | Tsoi `Перемен!` English adaptation | RIGHTS-REVIEW | do not schedule before song/adaptation/media review |
-| `m8sCb7VV0Y4` | Kino `Транквилизатор` adaptation | RIGHTS-REVIEW | do not schedule before song/media review |
-| `yaJNLxSSqZg` | Venya Drkin `Anno Domini` adaptation | RIGHTS-REVIEW | do not schedule before song/media review |
+| `2GQ-T6dYH3E` | Ахматова `Я научилась просто, мудро жить…` | RIGHTS-REVIEW | territory/text/media review before performance reuse |
+| `BSJZ3BogD94` | English Esenin adaptation | RIGHTS-REVIEW | translation/adaptation review |
+| `48WeOZPMaOA` | Yeltsin/Zinoviev reconstruction | RIGHTS-REVIEW | political/historical experiment, not baseline poetry feed |
+| `5CzAVKhsscA` | Tsoi `Перемен!` adaptation | RIGHTS-REVIEW | song/adaptation/media review |
+| `m8sCb7VV0Y4` | Kino `Транквилизатор` adaptation | RIGHTS-REVIEW | song/media review |
+| `yaJNLxSSqZg` | Venya Drkin `Anno Domini` adaptation | RIGHTS-REVIEW | song/media review |
+
+`GVMafWIYPpI` (Блок, `Россия`, second creative) remains useful after exact clean-master reconciliation and duplication review.
 
 ---
 
-# E. Господь Бог — Сила Моя — launch / production backlog
+# F. Site-derived high-value backlog
 
-| Order | ID | Subject / format | First-screen promise | State | Remaining gate |
-| --- | --- | --- | --- | --- | --- |
-| G01 | LG1 | what Scripture calls the heart / Reel | `Что Библия называет сердцем? Не только эмоции.` | COPY-READY + ART-BRIEF-READY | media; QUOTE-BLOCKED for direct verses |
-| G02 | LG3 | 1 Pet 4:5–6 / Reel | `Евангелие проповедовали уже умершим?` | COPY-READY + ART-BRIEF-READY | media; direct verse quote blocked |
-| G03 | LG9 | 1884 two congresses / carousel | `Два разных события, которые нельзя слить в одно` | COPY-READY + ART-BRIEF-READY | historical image provenance if used |
-| G04 | LG5 | 1 Pet 3:18–22 / Reel | `“Духи в темнице” — не главный герой отрывка` | COPY-READY + ART-BRIEF-READY | media; Christ-centered visual hierarchy |
-| G05 | LG2 | heart concept map / carousel | `Сердце — не только чувства` | COPY-READY + ART-BRIEF-READY | exact Bible edition for any verbatim verse |
-| G06 | LG7 | Jude 6–7 / Reel | `Что текст говорит прямо — без добавлений?` | COPY-READY + ART-BRIEF-READY | media; no sensational Nephilim imagery |
-| G07 | LG4 | absent `νῦν` / carousel | `В стихе нет отдельного слова “теперь”` | COPY-READY + ART-BRIEF-READY | Greek glyph/source proof + artwork |
-| G08 | LG8 | pastoral collapse before scandal / Reel | `Разрушение начинается раньше большого скандала` | COPY-READY + ART-BRIEF-READY | media; no identifiable living-person accusation |
-| G09 | LG6 | spirits in prison certainty layers / carousel | `Что говорит текст — и что достраивается?` | COPY-READY + ART-BRIEF-READY | final confidence-label proof |
+- Лермонтов myth-vs-source Reel;
+- Лермонтов 1841→1843 chronology Reel/carousel;
+- `Евгений Онегин` 1823→Mikhailovskoye→Boldino chronology;
+- current Onegin musical bridge after exact master binding;
+- Маяковский public futurist vs vulnerable lyric;
+- ROSTA / LEF media-work Reel;
+- Briks without “simple triangle” sensationalism;
+- 1930 anti-single-cause biography Reel;
+- Симонов / `Сын артиллериста` remains `SOURCE-BLOCKED` until a project-owned source packet and exact media identity exist.
 
 ---
 
-# F. Господь Бог — Сила Моя — Wave 2 breadth
+# G. Господь Бог — Сила Моя
 
-| Order | Wave ID | Subject / format | First-screen promise | State | Remaining gate |
-| --- | --- | --- | --- | --- | --- |
-| G10 | W2-G04 | intrusive thought vs consent / Reel | `Не всякая пришедшая мысль — уже выбор сердца` | COPY-READY + ART-BRIEF-READY | MEDIA-UNBOUND; avoid clinical claims |
-| G11 | W2-G09 | conscience 1919→1923 / carousel | `Юридическое окно → политический рычаг давления` | COPY-READY + ART-BRIEF-READY | exact date/name/art provenance proof |
-| G12 | W2-G02 | new heart / Reel | `Не улучшенная версия старого` | COPY-READY + ART-BRIEF-READY | MEDIA-UNBOUND + quote edition gate |
-| G13 | W2-G07 | Jude / Enoch / 4Q204 / carousel | `Оракул Еноха ≠ автоматическая канонизация всего корпуса` | COPY-READY + ART-BRIEF-READY | manuscript/transcription art provenance |
-| G14 | W2-G06 | Christ and the Father / Reel | `Сын не уговаривает более сурового Отца стать добрее` | COPY-READY + ART-BRIEF-READY | MEDIA-UNBOUND; Trinitarian wording QC |
-| G15 | W2-G10 | underground printing / Reel or carousel | `Подпольная печать как инфраструктура памяти` | COPY-READY + ART-BRIEF-READY | archive image provenance / reconstruction labels |
-| G16 | W2-G01 | Romans 7 / carousel | `“Верующий или неверующий?” — вопрос слишком узок` | COPY-READY + ART-BRIEF-READY | exact scholarly/source card proof |
-| G17 | W2-G03 | guarding the heart / Reel | `Стеречь источник, не только последствия` | COPY-READY + ART-BRIEF-READY | MEDIA-UNBOUND + quote gate |
-| G18 | W2-G08 | 1 Enoch as composite corpus / carousel | `Не один простой неизменный объект` | COPY-READY + ART-BRIEF-READY | manuscript/codex provenance |
-| G19 | W2-G05 | Jeremiah 17 / carousel | `Предупреждение и новое сердце нужно держать вместе` | COPY-READY + ART-BRIEF-READY | exact Scripture quote edition if used |
-| G20 | W2-G11 | Petersburg evangelical stream / carousel | `Почему Петербург помогает понять слово “евангельские”` | COPY-READY + ART-BRIEF-READY | historical image/source-card proof |
+The Lord God account retains its existing 9-item launch pack, detailed production pack and 11-item Wave 2 plan (`G10…G20`). Its content authority remains source-led and separate from Poet.
 
-## Excluded Lord God sources
+Excluded until source status changes:
 
-These are **not** backlog items until current source status changes:
+- `anatomiya-padeniya-pyat-stadiy.mdx` — `contentStatus: draft`;
+- `cerkovnaya-disciplina-vlast-granicy-zashchita.mdx` — `contentStatus: draft`;
+- `kogda-uhodit-kogda-ostavatsya.mdx` — `contentStatus: draft`.
 
-- `anatomiya-padeniya-pyat-stadiy.mdx` — current source declares `contentStatus: draft`;
-- `cerkovnaya-disciplina-vlast-granicy-zashchita.mdx` — current source declares `contentStatus: draft`;
-- `kogda-uhodit-kogda-ostavatsya.mdx` — current source declares `contentStatus: draft`.
-
-Do not silently re-enter them because the frontmatter also contains another `draft: false` field.
+Do not silently re-enter them because another frontmatter field says `draft: false`.
 
 ---
 
-# G. Production batching
+# H. Production batching
 
-This is a workflow suggestion, not a social-platform cadence rule.
+## Batch 1 — copy/art, no clean-video dependency
 
-## Batch 1 — copy/art only, no video-media dependency
+Start with source-led jobs such as BM-R01, KUL-R01/KUL-R02, FET-R01, OLEG-R01/OLEG-R02, GROVE-R01/GROVE-R02, SEA-R01, LIVE-R01, ROAD-R01/ROAD-R02, ONEGIN-R01/02/03 and MAY-R01/02/03.
 
-Prioritize carousels and trust pieces whose claims are already source-bound:
+## Batch 2 — exact site-audio renders
 
-- P03, P05;
-- P12, P14, P16;
-- P19, P21, P22;
-- G03, G05, G07, G09;
-- G11, G13, G16, G18, G19, G20.
+Use the three exact hashed site MP3s. Freeze selected timing only after listening/reviewing the exact master; then create vertical output, hash it and bind it to the candidate.
 
-These can reach final artwork review without waiting for a vertical video master, subject to their quote/image provenance gates.
+## Batch 3 — channel-wide expansion
 
-## Batch 2 — clean-master Reels
+Run fresh read-only YouTube scan, reconcile the current upload list against the 111-ID floor, bind titles/durations/source media and score all new/unreviewed records.
 
-Once project-owned vertical/source media is inventoried:
+## Batch 4 — rights-heavy material
 
-- P01, P02, P04, P06;
-- P10, P11, P13, P15, P17, P18, P20, P24;
-- G01, G02, G04, G06, G08;
-- G10, G12, G14, G17;
-- G15 when produced as Reel rather than carousel.
-
-For each Reel freeze:
-
-`candidate_id → source master → selected interval → edit version → output SHA-256 → caption version → cover version`.
-
-## Batch 3 — exact-text Reels / quotation-heavy assets
-
-Only after edition/span binding:
-
-- P07, P08, P09;
-- any Reel/carousel that adds direct Scripture quotations beyond passage references.
-
-## Batch 4 — rights-heavy experiments
-
-Only after separate explicit review:
-
-- Ahmatova;
-- modern song covers/adaptations;
-- English adaptation experiments;
-- historical/political reconstruction;
-- any 20th-century author/media surface whose reuse rights have not been frozen.
+Only after separate rights/context review.
 
 ---
 
-# H. Definition of content-ready
+# I. Definition of content-ready
 
 A post is `CONTENT-READY` only when all applicable items are true:
 
@@ -205,10 +185,11 @@ A post is `CONTENT-READY` only when all applicable items are true:
 5. first frame states the real subject, not generic clickbait;
 6. visual brief does not imply a stronger claim than the caption;
 7. one primary CTA at most;
-8. hashtags classify rather than stuff keywords;
-9. AI/provenance disclosure is present where required;
-10. no cross-project links or identity leakage;
-11. rights/media gates are recorded as unknown rather than silently assumed;
-12. provider publication remains a separate exact-ID operation.
+8. AI/provenance disclosure is present where required;
+9. no cross-project links or identity leakage;
+10. exact clean media master is bound or the item is explicitly art-only;
+11. selected timing is frozen against that exact master;
+12. rights/media gates are recorded as unknown rather than assumed;
+13. provider publication remains a separate exact-ID operation.
 
 This backlog tracks **content readiness**, not Instagram availability or permission to publish.
