@@ -1,0 +1,205 @@
+{
+  "schema_name": "video-manager.instagram-launch-pack",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "public_handle_hint": "@thelordgodismystrength",
+  "provider_account_id": null,
+  "provider_writes_authorized": false,
+  "approval_state": "candidate",
+  "generated_from": {
+    "video_channel_manager_base": "87c41dd6912ba4c83ed25b631df673daa7844c09",
+    "source_repository": "FedorMilovanov/gb-is-my-strength",
+    "source_commit": "bcb41e57d7f9c011ac597c51a240fba19152a908"
+  },
+  "source_ledger": [
+    {
+      "source_id": "heart-article",
+      "title": "Библейская кардиология: что Библия называет сердцем",
+      "blob_sha": "acc12804f5b2450efebbb6e0b2cabd31066ef48c",
+      "url": "https://gospod-bog.ru/articles/chto-bibliya-nazyvaet-serdcem/"
+    },
+    {
+      "source_id": "angels-jude-article",
+      "title": "Ангелы под мраком: Иуд. 6–7, 2 Петра 2 и Бытие 6",
+      "blob_sha": "1c9acc205e0fef0156e687662be721bd7e097355",
+      "url": "https://gospod-bog.ru/hard-texts/angely-pod-mrakom-iuda-6-7-2-petra-2/"
+    },
+    {
+      "source_id": "dead-1pet4-article",
+      "title": "Благовестие мёртвым: что означает 1 Петра 4:5–6",
+      "blob_sha": "c930684bafcd6284a954367e57264a659986a5a4",
+      "url": "https://gospod-bog.ru/hard-texts/blagovestie-mertvym-1-petra-4-5-6/"
+    },
+    {
+      "source_id": "spirits-prison-1pet3-article",
+      "title": "Духи в темнице, Ной и крещение: 1 Петра 3:18–22",
+      "blob_sha": "619c28a6aa4dd7aa2b9b517e810796ce2329bbd8",
+      "url": "https://gospod-bog.ru/hard-texts/duhi-v-temnice-noi-kreshchenie-pobeda/"
+    },
+    {
+      "source_id": "pastor-20-article",
+      "title": "20 антисоветов, как пастору разрушить своё служение",
+      "blob_sha": "3da61a46b5a2cfde5e91b227abf72a6c5befb881",
+      "url": "https://gospod-bog.ru/articles/20-antisovetov-pastoru/"
+    },
+    {
+      "source_id": "two-congresses-1884-article",
+      "title": "Петербург и Ново-Васильевка: две развилки 1884 года",
+      "blob_sha": "8a686aeadb71bdf9d287d53fb8ed987181e79b73",
+      "url": "https://gospod-bog.ru/baptisty-rossii/dva-sezda-1884/"
+    },
+    {
+      "source_id": "lord-god-site",
+      "title": "Господь Бог — Сила Моя",
+      "url": "https://gospod-bog.ru/"
+    }
+  ],
+  "excluded_current_sources": [
+    {
+      "path": "src/content/articles/anatomiya-padeniya-pyat-stadiy.mdx",
+      "reason": "current source explicitly declares contentStatus: draft"
+    },
+    {
+      "path": "src/content/articles/cerkovnaya-disciplina-vlast-granicy-zashchita.mdx",
+      "reason": "current source explicitly declares contentStatus: draft"
+    }
+  ],
+  "house_rules": {
+    "caption_language": "ru",
+    "default_hashtag_range": "3-6",
+    "max_primary_cta_count": 1,
+    "scripture_quote_requires_exact_bound_edition": true,
+    "disputed_reading_requires_epistemic_qualifier": true,
+    "engagement_as_faith_test_allowed": false,
+    "clean_master_required": true,
+    "foreign_platform_watermark_allowed": false
+  },
+  "candidates": [
+    {
+      "candidate_id": "ig-lord-001-heart-definition-reel",
+      "status": "candidate",
+      "surface": "reel",
+      "variation_key": "heart-whole-inner-person",
+      "source_ids": ["heart-article", "lord-god-site"],
+      "topic_line": "Что Библия называет сердцем?",
+      "caption_body": "В современной речи «сердце» часто сводят к чувствам. В библейском употреблении картина шире: речь идёт о внутреннем человеке перед Богом — мысли, воле, желаниях, доверии, совести, речи и поклонении.",
+      "cta": "Полный разбор и карта текстов Писания — по ссылке в профиле.",
+      "hashtags": ["#Библия", "#Писание", "#БиблейскоеБогословие", "#Сердце", "#Христианство"],
+      "media_intent": "Short explanatory Reel built from the published article; on-screen Scripture quotations are forbidden until exact edition and verse text are bound.",
+      "scripture_quote_state": "no_direct_quote_in_caption",
+      "blocking_unknowns": ["exact Instagram professional account ID", "exact selected media bytes and SHA-256"]
+    },
+    {
+      "candidate_id": "ig-lord-002-heart-not-only-emotions-carousel",
+      "status": "candidate",
+      "surface": "carousel",
+      "variation_key": "heart-not-only-emotions-map",
+      "source_ids": ["heart-article"],
+      "topic_line": "«Сердце» в Писании — не только эмоции.",
+      "caption_body": "Статья собирает библейскую карту понятия: сердце думает, желает, доверяет, говорит, поклоняется и связано с совестью. Карусель должна показать эту широту без сведения библейского языка к современному психологическому клише.",
+      "cta": "Сохраните как карту для дальнейшего чтения Писания.",
+      "hashtags": ["#Библия", "#Сердце", "#Богословие", "#ИзучениеБиблии", "#Христианство"],
+      "media_intent": "Six-slide concept map sourced from the published article. Any verse displayed verbatim requires separately frozen verse/edition evidence.",
+      "scripture_quote_state": "blocked_for_verbatim_slides_until_edition_bound",
+      "blocking_unknowns": ["exact verse edition for any verbatim slide text", "final carousel artwork bytes"]
+    },
+    {
+      "candidate_id": "ig-lord-003-1pet4-gospel-to-dead-reel",
+      "status": "candidate",
+      "surface": "reel",
+      "variation_key": "1pet4-who-heard-gospel",
+      "source_ids": ["dead-1pet4-article"],
+      "topic_line": "1 Петра 4:5–6: кому было благовествовано?",
+      "caption_body": "В тексте речь естественно идёт о физически умерших людях, но сам стих не сообщает, были ли они уже мертвы в момент благовестия. Разбор показывает, почему чтение «услышали Евангелие при жизни, а позднее умерли» хорошо объясняет контекст, не выдавая его за единственно мыслимое.",
+      "cta": "Полный грамматический и контекстуальный разбор — по ссылке в профиле.",
+      "hashtags": ["#1Петра", "#Библия", "#ТрудныеТексты", "#ТолкованиеБиблии", "#Христианство"],
+      "media_intent": "Text-led Reel with passage reference and one carefully qualified conclusion; no sensational afterlife imagery presented as exegesis.",
+      "scripture_quote_state": "no_direct_quote_in_caption",
+      "blocking_unknowns": ["exact selected media bytes and SHA-256", "exact Instagram professional account ID"]
+    },
+    {
+      "candidate_id": "ig-lord-004-1pet4-nun-carousel",
+      "status": "candidate",
+      "surface": "carousel",
+      "variation_key": "1pet4-no-nun-word",
+      "source_ids": ["dead-1pet4-article"],
+      "topic_line": "В греческом тексте 1 Петра 4:6 нет отдельного слова «теперь».",
+      "caption_body": "Перевод «тем, которые теперь мертвы» делает явным определённое понимание фразы, но отдельного νῦν («теперь») в греческом тексте нет. Это хороший пример того, почему перевод и толкование нужно различать.",
+      "cta": "В полном материале разобраны грамматика, контекст и основные варианты чтения.",
+      "hashtags": ["#1Петра", "#ГреческийНовыйЗавет", "#Библия", "#Экзегеза", "#ТрудныеТексты"],
+      "media_intent": "Four- to six-slide textual carousel. Greek forms must be copied from the bound source, never retyped from memory during asset generation.",
+      "scripture_quote_state": "source_term_only_no_full_verse_quote",
+      "blocking_unknowns": ["final slide copy proof against source", "final carousel artwork bytes"]
+    },
+    {
+      "candidate_id": "ig-lord-005-1pet3-main-theme-reel",
+      "status": "candidate",
+      "surface": "reel",
+      "variation_key": "1pet3-main-theme-christ-victory",
+      "source_ids": ["spirits-prison-1pet3-article"],
+      "topic_line": "1 Петра 3:18–22: о чём этот трудный отрывок в первую очередь?",
+      "caption_body": "Главная линия отрывка — путь Христа от несправедливого страдания через воскресение к небесному господству. Вопрос «духов в темнице» важен, но не должен заслонять центр аргумента Петра.",
+      "cta": "Полный разбор 1 Петра 3:18–22 — по ссылке в профиле.",
+      "hashtags": ["#1Петра", "#ИисусХристос", "#Библия", "#Воскресение", "#Экзегеза"],
+      "media_intent": "Christ-centered explanatory Reel; avoid speculative demon/underworld imagery that would visually overstate a disputed detail.",
+      "scripture_quote_state": "no_direct_quote_in_caption",
+      "blocking_unknowns": ["exact selected media bytes and SHA-256", "exact Instagram professional account ID"]
+    },
+    {
+      "candidate_id": "ig-lord-006-spirits-in-prison-carousel",
+      "status": "candidate",
+      "surface": "carousel",
+      "variation_key": "1pet3-spirits-probability-boundary",
+      "source_ids": ["spirits-prison-1pet3-article"],
+      "topic_line": "«Духи в темнице»: что можно сказать уверенно, а что остаётся выводом?",
+      "caption_body": "Разбор считает наиболее вероятным, что речь идёт о заключённых допотопных духовных существах. Но Пётр не называет их Стражами и не отождествляет с духами погибших исполинов. Карусель строится именно на этой границе между текстом и реконструкцией.",
+      "cta": "Полный разбор и источники — на сайте по ссылке в профиле.",
+      "hashtags": ["#1Петра", "#ДухиВТемнице", "#Библия", "#ТрудныеТексты", "#БиблейскоеБогословие"],
+      "media_intent": "What-the-text-says / what-it-does-not-say carousel with explicit confidence labels; no horror-clickbait visual language.",
+      "scripture_quote_state": "no_direct_quote_in_caption",
+      "blocking_unknowns": ["final slide copy proof against source", "final carousel artwork bytes"]
+    },
+    {
+      "candidate_id": "ig-lord-007-jude-angels-reel",
+      "status": "candidate",
+      "surface": "reel",
+      "variation_key": "jude6-angels-text-versus-enoch-background",
+      "source_ids": ["angels-jude-article"],
+      "topic_line": "Иуда 6–7: что текст прямо говорит о согрешивших ангелах?",
+      "caption_body": "Иуда говорит об ангелах, оставивших своё положение и обиталище и заключённых до суда. При этом он не описывает сам половой акт и не называет этих ангелов Стражами. Енохов фон может помогать читать контекст, но его нельзя превращать в слова канонического текста.",
+      "cta": "Полный разбор Иуд. 6–7, 2 Петра 2 и Бытия 6 — по ссылке в профиле.",
+      "hashtags": ["#ПосланиеИуды", "#2Петра", "#Бытие6", "#Библия", "#ТрудныеТексты"],
+      "media_intent": "Source-led Reel emphasizing textual limits; no sensationalized Nephilim/Watcher art presented as historical certainty.",
+      "scripture_quote_state": "no_direct_quote_in_caption",
+      "blocking_unknowns": ["exact selected media bytes and SHA-256", "exact Instagram professional account ID"]
+    },
+    {
+      "candidate_id": "ig-lord-008-pastor-20-anti-advice-reel",
+      "status": "candidate",
+      "surface": "reel",
+      "variation_key": "pastoral-power-small-compromises",
+      "source_ids": ["pastor-20-article"],
+      "topic_line": "Как пасторское служение начинает разрушаться — ещё до большого скандала?",
+      "caption_body": "Разбор «20 антисоветов» начинается не с образа сознательного злодея, а с постепенного смещения внутренних опор: самолюбию и статусу становится легче уступать, а давление авторитетом начинает казаться быстрее убеждения и служения.",
+      "cta": "Полная статья о пастырской власти, подотчётности и здоровой церковной культуре — по ссылке в профиле.",
+      "hashtags": ["#Пасторство", "#Церковь", "#ДуховнаяВласть", "#Подотчетность", "#Христианство"],
+      "media_intent": "Serious pastoral-health Reel; do not point at a current real pastor or imply an unsourced abuse allegation.",
+      "scripture_quote_state": "no_direct_quote_in_caption",
+      "blocking_unknowns": ["exact selected media bytes and SHA-256", "exact Instagram professional account ID"]
+    },
+    {
+      "candidate_id": "ig-lord-009-two-congresses-1884-carousel",
+      "status": "candidate",
+      "surface": "carousel",
+      "variation_key": "russian-baptists-1884-two-events",
+      "source_ids": ["two-congresses-1884-article"],
+      "topic_line": "1884 год: не один «первый съезд», а два разных события.",
+      "caption_body": "1–6 апреля в Петербурге прошло совещание Пашкова и Корфа; 30 апреля – 1 мая в Ново-Васильевке состоялся баптистский съезд. У этих встреч были разные участники, задачи и последствия — смешивать их в одно событие исторически неточно.",
+      "cta": "Полная статья с хронологией и источниками — по ссылке в профиле.",
+      "hashtags": ["#ИсторияЦеркви", "#БаптистыРоссии", "#ЕХБ", "#1884", "#ХристианскаяИстория"],
+      "media_intent": "Timeline carousel with two date/place columns and source card; dates/names must remain byte-for-byte aligned with the published article during final copy review.",
+      "scripture_quote_state": "not_applicable",
+      "blocking_unknowns": ["final carousel artwork bytes", "final historical copy proof against source"]
+    }
+  ]
+}
