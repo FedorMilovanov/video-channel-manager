@@ -73,7 +73,7 @@ jobs:
           }
           assert all(not (root / name).exists() for name in retired)
 
-          mutation_marker = "python -m video_channel_manager.telegram_multichannel_cli send-once"
+          mutation_marker = "python -m video_channel_manager.telegram_multichannel_cli " + "send-once"
           mutation_workflows = []
           for path in sorted(root.glob("*milovi*.yml")):
               text = path.read_text(encoding="utf-8")
