@@ -1,0 +1,58 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-exact-one-item-release-review",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "release_id": "milovi-feed-20260819-001-release-review-v1",
+  "publication_id": "milovi-feed-20260819-001",
+  "status": "provider_inert_ready_for_exact_authorization",
+  "release_authorized": false,
+  "execution_authorized": false,
+  "provider_mutation_allowed": false,
+  "current_main_at_preparation": "11d732e52d7447f7ef397ab402226afec07b9f8a",
+  "scheduled_at": "2026-08-19T10:30:00+03:00",
+  "timezone": "Europe/Moscow",
+  "allowed_execution_window": {
+    "start_local": "09:00:00",
+    "end_local": "21:00:00"
+  },
+  "target": {
+    "channel_username": "@MiloviCake",
+    "chat_id": -1002215328390,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "target_binding_path": "content/telegram/channels/milovi-cake-target-binding.json"
+  },
+  "item": {
+    "operation": "sendPhoto",
+    "candidate_path": "content/telegram/milovi-cake/next-publication-candidate-2026-08-19.json",
+    "caption_sha256": "sha256:e4549b91102cad61a94f2faadc0100de23716c54e48d27552e21b92eb71cf918",
+    "media_id": "p03",
+    "transport_format": "image/jpeg",
+    "transport_byte_size": 391620,
+    "transport_sha256": "sha256:d40b185ab813a46d29b66aa0da6f9300a13cad2bac0baf0ba71f1cd8e36a50a1",
+    "pixel_width": 1024,
+    "pixel_height": 1536
+  },
+  "execution_contract": {
+    "max_provider_attempts": 1,
+    "blind_mutation_retries": 0,
+    "publish_exactly_one_item": true,
+    "second_item_allowed": false,
+    "durable_intent_required_before_provider_call": true,
+    "exact_provider_readback_required": true,
+    "unknown_provider_effect_blocks_replay": true,
+    "fresh_exact_human_execution_authorization_required": true,
+    "automation_is_execution_authority": false,
+    "historical_canary_authorization_is_execution_authority": false
+  },
+  "preparation_evidence": {
+    "durable_publication_id_found": false,
+    "durable_intent_found": false,
+    "durable_provider_effect_found": false,
+    "daily_verified_count_for_2026_08_19_moscow": 0,
+    "daily_verified_limit": 2,
+    "provider_access_performed_during_preparation": false,
+    "provider_write_performed_during_preparation": false
+  }
+}
