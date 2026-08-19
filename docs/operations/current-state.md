@@ -86,7 +86,7 @@ The live canary-v2 is completed historical evidence: it proved the exact `@Milov
 
 The permanent architecture is now a single feed control plane. `.github/workflows/milovi-telegram-feed-publisher.yml` is the only supported Milovi Telegram provider writer. It is manual-only, owns `state/milovi-cake-telegram` and concurrency group `milovi-cake-telegram-publisher`, and shares the repository generic Telegram prepare/send/apply runtime rather than introducing a second transport.
 
-Historical bootstrap, one-off canary, live-canary-v2, ledger-init and per-publication controller/quality/media-proof workflows are retired from executable `main`. Historical JSON, provider receipts and durable evidence remain non-executable evidence.
+Historical bootstrap, one-off canary, live-canary-v2, ledger-init, per-publication controller/quality/media-proof, and `follow-on-*` readiness/media-proof workflows are retired from executable `main`. Historical JSON, frozen manifests, provider receipts and durable evidence remain non-executable evidence. The only other Milovi Telegram workflow beside permanent publisher/quality is exact target discovery, which is read-only and must remain independent of technical write-capability state.
 
 Each new feed publication uses one immutable `milovi-feed-YYYYMMDD-NNN` bundle: exact runtime release, exact media binding where applicable, exact release ledger on the durable state branch, a channel-wide feed index, and a separate execution-authority object. Release/content authorization and provider execution authorization are separate gates. State initialization is explicit and provider-free after exact release authorization; missing state is never auto-created during publish.
 

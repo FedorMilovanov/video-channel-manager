@@ -41,8 +41,8 @@ Milovi Telegram Issue #353 has one permanent provider-mutation path: `.github/wo
 - Release/content authorization and execution/provider authorization are separate gates. Old bootstrap or canary authorization, credentials, automation, a green workflow, or a profile with technical write capability never supplies fresh execution authority.
 - State initialization is explicit and provider-free. The publisher must not auto-create a missing release ledger during a `publish` operation.
 - `content/telegram/milovi-cake/feed/index.json` is the channel-wide duplicate guard. It must agree with the exact immutable release ledger before another provider attempt is eligible.
-- `.github/workflows/milovi-telegram-target-discovery.yml` is read-only target discovery and must never gain `send-once` or become a second writer.
-- Historical bootstrap, one-off canary, live-canary-v2, ledger-init and per-publication controller/quality/media-proof workflow families are retired from executable `main`. Their JSON, receipts and durable state remain evidence only.
+- `.github/workflows/milovi-telegram-target-discovery.yml` is read-only target discovery and must never gain `send-once` or become a second writer. Its validity depends on exact project/target identity and read-only transport semantics, not on whether the bot profile is technically capable of writes.
+- Historical bootstrap, one-off canary, live-canary-v2, ledger-init, per-publication controller/quality/media-proof, and `follow-on-*` readiness/media-proof workflow families are retired from executable `main`. Their JSON, frozen manifests, receipts and durable state remain evidence only; do not restore those workflows as helper/runtime surfaces.
 - The canonical writer prepares and durably persists one exact intent before `send-once`, performs zero blind mutation retries, writes the exact outcome, and leaves `may_exist`/unknown effects blocking.
 - `milovi-feed-20260819-001` remains provider-inert until a separate change explicitly authorizes its immutable release and a fresh exact human execution authority. This instruction file does not perform or authorize that change.
 
