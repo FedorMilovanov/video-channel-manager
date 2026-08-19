@@ -1,0 +1,152 @@
+name: Milovi Telegram video source probe
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - content/telegram/milovi-cake/video-source-readiness-2026-08.json
+      - .github/workflows/milovi-telegram-video-source-probe.yml
+      - .github/workflows/milovi-telegram-video-artifacts.yml
+      - src/video_channel_manager/milovi_telegram_video_artifacts.py
+
+permissions:
+  contents: read
+
+jobs:
+  probe-all-exact-sources:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      SOURCE_COMMIT: c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370
+      PROBE_OUTPUT: artifacts/milovi-telegram/video-source-probes.json
+
+    steps:
+      - name: Check out exact pull request revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check out exact pinned Milovi source bytes
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: FedorMilovanov/Milovi_Cake
+          ref: c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370
+          path: .source/milovi
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Install FFmpeg probe toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffprobe -version | head -n 1
+
+      - name: Probe all 16 exact sources without conversion
+        shell: python
+        run: |
+          import hashlib
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          manifest_path = Path("content/telegram/milovi-cake/video-source-readiness-2026-08.json")
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          source_root = Path(".source/milovi")
+          actual_commit = subprocess.run(
+              ["git", "rev-parse", "HEAD"],
+              cwd=source_root,
+              check=True,
+              capture_output=True,
+              text=True,
+          ).stdout.strip()
+          assert actual_commit == manifest["source_commit"] == os.environ["SOURCE_COMMIT"]
+
+          records = []
+          for item in manifest["videos"]:
+              media_id = item["id"]
+              rel = Path(item["source_path"])
+              path = source_root / rel
+              assert path.is_file(), (media_id, rel)
+              assert path.stat().st_size == item["source_byte_size"], media_id
+              blob = subprocess.run(
+                  ["git", "hash-object", "--no-filters", str(rel)],
+                  cwd=source_root,
+                  check=True,
+                  capture_output=True,
+                  text=True,
+              ).stdout.strip()
+              assert blob == item["source_git_blob_sha1"], media_id
+
+              digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              probe = json.loads(
+                  subprocess.run(
+                      [
+                          "ffprobe", "-v", "error", "-show_format", "-show_streams", "-of", "json", str(path)
+                      ],
+                      check=True,
+                      capture_output=True,
+                      text=True,
+                  ).stdout
+              )
+              streams = probe.get("streams", [])
+              videos = [stream for stream in streams if stream.get("codec_type") == "video"]
+              audios = [stream for stream in streams if stream.get("codec_type") == "audio"]
+              assert len(videos) == 1, (media_id, len(videos))
+              video = videos[0]
+              fmt = probe.get("format", {})
+              record = {
+                  "media_id": media_id,
+                  "title": item["title"],
+                  "source_path": item["source_path"],
+                  "source_git_blob_sha1": blob,
+                  "source_byte_size": path.stat().st_size,
+                  "source_sha256": "sha256:" + digest,
+                  "container": fmt.get("format_name"),
+                  "video_codec": video.get("codec_name"),
+                  "pixel_format": video.get("pix_fmt"),
+                  "width": video.get("width"),
+                  "height": video.get("height"),
+                  "avg_frame_rate": video.get("avg_frame_rate"),
+                  "duration_seconds": video.get("duration") or fmt.get("duration"),
+                  "audio_stream_count": len(audios),
+                  "audio_codecs": [stream.get("codec_name") for stream in audios],
+                  "audio_sample_rates": [stream.get("sample_rate") for stream in audios],
+                  "audio_channels": [stream.get("channels") for stream in audios],
+              }
+              records.append(record)
+              print(
+                  media_id,
+                  f"video={record['video_codec']} {record['width']}x{record['height']} fps={record['avg_frame_rate']}",
+                  f"duration={record['duration_seconds']}",
+                  f"audio_streams={record['audio_stream_count']} codecs={record['audio_codecs']}",
+              )
+
+          assert len(records) == 16
+          output = {
+              "schema_name": "video-channel-manager.milovi-telegram-video-source-probe-evidence",
+              "schema_version": 1,
+              "project_key": "milovi-cake",
+              "source_repository": manifest["source_repository"],
+              "source_commit": manifest["source_commit"],
+              "declared_video_count": 16,
+              "probed_video_count": len(records),
+              "provider_access_performed": False,
+              "provider_write_performed": False,
+              "records": records,
+          }
+          output_path = Path(os.environ["PROBE_OUTPUT"])
+          output_path.parent.mkdir(parents=True, exist_ok=True)
+          output_path.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+      - name: Upload exact source probe evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: milovi-telegram-video-source-probes-${{ github.sha }}
+          path: artifacts/milovi-telegram/video-source-probes.json
+          if-no-files-found: error
+          retention-days: 7
