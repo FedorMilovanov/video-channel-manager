@@ -2,6 +2,12 @@ name: Milovi Telegram video artifacts
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - content/telegram/milovi-cake/video-source-readiness-2026-08.json
+      - content/telegram/milovi-cake/video-conversion-contract-2026-08.json
+      - src/video_channel_manager/milovi_telegram_video_artifacts.py
+      - .github/workflows/milovi-telegram-video-artifacts.yml
   push:
     branches: [main]
     paths:
@@ -11,17 +17,129 @@ on:
       - .github/workflows/milovi-telegram-video-artifacts.yml
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: milovi-telegram-video-artifacts
-  cancel-in-progress: false
+  group: milovi-telegram-video-artifacts-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  build-provider-free-artifacts:
-    if: github.ref == 'refs/heads/main'
+  prove-provider-free-artifacts:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: src
+      SOURCE_COMMIT: c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370
+      OUTPUT_DIR: artifacts/milovi-telegram/video
+      EVIDENCE: content/telegram/milovi-cake/video-conversion-evidence-2026-08.json
+
+    steps:
+      - name: Check out exact pull request head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Require reviewed provider-free conversion execution gate
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          contract = json.loads(
+              Path("content/telegram/milovi-cake/video-conversion-contract-2026-08.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          if contract.get("conversion_execution_ready") is not True:
+              raise SystemExit("Milovi video conversion execution is not reviewed/ready")
+          if contract.get("provider_write_authorized") is not False:
+              raise SystemExit("Milovi video conversion contract must remain provider-inert")
+          if contract.get("source_mutation_allowed") is not False:
+              raise SystemExit("Milovi source mutation must remain forbidden")
+
+      - name: Check out exact pinned Milovi source bytes
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: FedorMilovanov/Milovi_Cake
+          ref: c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370
+          path: .source/milovi
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Install FFmpeg toolchain and expose exact identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f /etc/apt/apt-mirrors.txt ]]; then
+            printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          fi
+          sudo tee /etc/apt/apt.conf.d/99milovi-network >/dev/null <<'APT'
+          Acquire::Retries "3";
+          Acquire::http::Timeout "20";
+          Acquire::https::Timeout "20";
+          APT
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          command -v ffmpeg
+          command -v ffprobe
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+
+      - name: Build and prove exactly 16 Telegram-ready MP4 artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.milovi_telegram_video_artifacts \
+            --source-checkout .source/milovi \
+            --output-dir "$OUTPUT_DIR" \
+            --evidence "$EVIDENCE"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          evidence = json.loads(Path("content/telegram/milovi-cake/video-conversion-evidence-2026-08.json").read_text(encoding="utf-8"))
+          assert evidence["status"] == "accepted_16_of_16"
+          assert evidence["accepted_output_count"] == evidence["declared_video_count"] == 16
+          assert evidence["provider_access_performed"] is False
+          assert evidence["provider_write_performed"] is False
+          outputs = evidence["outputs"]
+          assert len(outputs) == 16
+          assert len({item["media_id"] for item in outputs}) == 16
+          assert all(Path(item["output_path"]).is_file() for item in outputs)
+          assert all(item["output_audio_present"] is True for item in outputs)
+          assert all(item["output_audio_codec"] == "aac" for item in outputs)
+          assert all(item["output_audio_sample_rate_hz"] == 48000 for item in outputs)
+          assert all(item["output_audio_channels"] == 2 for item in outputs)
+          print(evidence["evidence_sha256"])
+          PY
+
+      - name: Publish exact pull-request proof bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: milovi-telegram-video-pr-proof-${{ github.event.pull_request.head.sha }}
+          path: |
+            artifacts/milovi-telegram/video/*.mp4
+            content/telegram/milovi-cake/video-conversion-evidence-2026-08.json
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Provider boundary summary
+        shell: bash
+        run: |
+          echo "PR proof only"
+          echo "Repository write: false"
+          echo "Provider access: false"
+          echo "Provider write: false"
+
+  build-provider-free-artifacts:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
     env:
       PYTHONPATH: src
       SOURCE_COMMIT: c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370
@@ -74,12 +192,28 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Install FFmpeg toolchain and expose exact identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f /etc/apt/apt-mirrors.txt ]]; then
+            printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          fi
+          sudo tee /etc/apt/apt.conf.d/99milovi-network >/dev/null <<'APT'
+          Acquire::Retries "3";
+          Acquire::http::Timeout "20";
+          Acquire::https::Timeout "20";
+          APT
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          command -v ffmpeg
+          command -v ffprobe
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+
       - name: Build and prove exactly 16 Telegram-ready MP4 artifacts
         shell: bash
         run: |
           set -euo pipefail
-          command -v ffmpeg >/dev/null
-          command -v ffprobe >/dev/null
           python -m video_channel_manager.milovi_telegram_video_artifacts \
             --source-checkout .source/milovi \
             --output-dir "$OUTPUT_DIR" \
@@ -97,6 +231,10 @@ jobs:
           assert len(outputs) == 16
           assert len({item["media_id"] for item in outputs}) == 16
           assert all(Path(item["output_path"]).is_file() for item in outputs)
+          assert all(item["output_audio_present"] is True for item in outputs)
+          assert all(item["output_audio_codec"] == "aac" for item in outputs)
+          assert all(item["output_audio_sample_rate_hz"] == 48000 for item in outputs)
+          assert all(item["output_audio_channels"] == 2 for item in outputs)
           print(evidence["evidence_sha256"])
           PY
 

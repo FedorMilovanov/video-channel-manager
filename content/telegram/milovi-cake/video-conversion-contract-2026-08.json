@@ -10,6 +10,19 @@
   "source_mutation_allowed": false,
   "document_fallback_allowed": false,
   "conversion_execution_ready": true,
+  "source_audio_review": {
+    "status": "exact_probe_reviewed_for_transport_preservation",
+    "workflow_run_id": 32301057940,
+    "artifact_id": 9383216524,
+    "artifact_sha256": "sha256:969ad64334383460efac315f8f1dcf2cbb3ac19b963db58c55ee5acef125e128",
+    "source_commit": "c4eb3bf6ed6fd5c3c9e4c2d857e53d8bae093370",
+    "reviewed_video_count": 16,
+    "required_audio_stream_count_per_source": 1,
+    "required_source_audio_codec": "opus",
+    "required_source_audio_sample_rate_hz": 48000,
+    "required_source_audio_channels": 2,
+    "rule": "All 16 exact frozen WebM sources were independently probed from the pinned commit and each contains exactly one Opus 48 kHz stereo stream. Preserve that sole source stream by compatibility transcode only; never drop, replace, remix, synthesize or add audio. Any source-audio deviation fails closed."
+  },
   "toolchain_lock": {
     "ffmpeg_version": null,
     "ffprobe_version": null,
@@ -28,9 +41,11 @@
       "avg_frame_rate",
       "duration_seconds",
       "audio_present",
-      "audio_codec"
+      "audio_codec",
+      "audio_sample_rate_hz",
+      "audio_channels"
     ],
-    "rule": "Probe exact bytes from the pinned source commit. Do not infer codec, dimensions, duration, frame rate or audio presence from extension, poster or browser playback."
+    "rule": "Probe exact bytes from the pinned source commit. Do not infer codec, dimensions, duration, frame rate or audio state from extension, poster or browser playback."
   },
   "output_policy": {
     "container": "mp4",
@@ -43,8 +58,12 @@
     "frame_rate_policy": "preserve source timing/frame rate unless the exact source probe demonstrates a compatibility reason to change it; any change must be recorded per output",
     "audio_policy": {
       "if_source_has_no_audio": "produce no audio stream; never synthesize silence or music",
-      "if_source_has_audio": "encode a single AAC-LC track only after exact source audio is reviewed; do not invent, replace or mix audio",
+      "if_source_has_audio": "map exactly the sole reviewed source audio stream and transcode Opus to one AAC-LC stream for MP4 compatibility; preserve 48 kHz sample rate and stereo channel count; never drop, replace, remix, synthesize or add audio",
+      "source_audio_codec_reviewed": "opus",
+      "output_audio_codec": "aac",
       "audio_bitrate_target": "128k",
+      "sample_rate_hz": 48000,
+      "channels": 2,
       "extra_audio_streams_allowed": false
     },
     "size_policy": {
@@ -76,19 +95,22 @@
     "output_duration_seconds",
     "output_audio_present",
     "output_audio_codec",
+    "output_audio_sample_rate_hz",
+    "output_audio_channels",
     "poster",
     "editorial_title"
   ],
   "acceptance_gates": [
-    "source bytes match the pinned source Git blob and frozen source SHA-256",
+    "source bytes match the pinned source Git blob and frozen source identity",
     "source probe is complete",
+    "each exact frozen source has exactly one reviewed Opus 48 kHz stereo audio stream",
     "toolchain identity is frozen",
     "conversion command argv is frozen and contains no unreviewed filters",
     "output is MP4 with H.264 video and yuv420p pixel format",
     "output dimensions are positive even integers and no larger than source dimensions unless an explicit reviewed exception exists",
     "output aspect ratio is materially preserved",
     "output duration does not materially diverge from source duration",
-    "audio policy matches exact source audio state",
+    "output contains exactly one AAC audio stream preserving the source 48 kHz stereo shape",
     "output byte size is below the reviewed Telegram hard limit",
     "output SHA-256 is frozen",
     "canonical editorial media identity remains unchanged, especially v04 = meringue roll",
