@@ -1,7 +1,7 @@
 {
   "schema_name": "video-manager.retirement-registry",
   "schema_version": 1,
-  "updated_at": "2026-08-17T03:36:00+03:00",
+  "updated_at": "2026-08-19T13:05:00+03:00",
   "repository": "FedorMilovanov/video-channel-manager",
   "execution_authority": false,
   "provider_writes_authorized": false,
@@ -20,16 +20,21 @@
       "entrypoint": "scripts/operator/Invoke-VideoManager.ps1",
       "scope": "separately-reviewed-production-plans-only",
       "status": "supported_guarded_operator"
+    },
+    {
+      "id": "milovi-telegram-feed-publisher",
+      "entrypoint": ".github/workflows/milovi-telegram-feed-publisher.yml",
+      "scope": "milovi-cake-telegram-exact-feed-releases-only",
+      "state_branch": "state/milovi-cake-telegram",
+      "concurrency_group": "milovi-cake-telegram-publisher",
+      "status": "supported_guarded_single_writer"
     }
   ],
   "retired_families": [
     {
       "id": "legendary-poet-shorts-sync-v1-v4",
       "kind": "operational_package_family",
-      "issues": [
-        32,
-        38
-      ],
+      "issues": [32, 38],
       "status": "retired_non_executable",
       "execution_prohibited": true,
       "replacement": "video-manager-package-a",
@@ -38,10 +43,7 @@
     {
       "id": "legendary-poet-48-clips",
       "kind": "historical_queue_and_browser_workflow",
-      "issues": [
-        32,
-        38
-      ],
+      "issues": [32, 38],
       "status": "retired_non_executable",
       "execution_prohibited": true,
       "replacement": "fresh bounded evidence under issues #32 and #38",
@@ -50,9 +52,7 @@
     {
       "id": "lord-god-longform-old-launchers",
       "kind": "operational_launcher_family",
-      "issues": [
-        31
-      ],
+      "issues": [31],
       "status": "retired_non_executable",
       "execution_prohibited": true,
       "replacement": "video-manager-package-a for reconciliation; separately reviewed production operator for later writes",
@@ -70,9 +70,7 @@
     {
       "id": "direct-write-python-powershell-wrappers",
       "kind": "repository_executor_family",
-      "issues": [
-        64
-      ],
+      "issues": [64],
       "status": "retired_non_executable",
       "execution_prohibited": true,
       "replacement": "scripts/operator/Invoke-VideoManager.ps1",
@@ -81,10 +79,7 @@
     {
       "id": "lord-god-sermon-month-v1-v3",
       "kind": "external_operational_package_family",
-      "issues": [
-        31,
-        112
-      ],
+      "issues": [31, 112],
       "status": "retired_non_executable",
       "execution_prohibited": true,
       "replacement": "scripts/operator/Invoke-VideoManager.ps1 under a separately reviewed exact-ID plan",
@@ -93,10 +88,7 @@
     {
       "id": "black-man-youtube-upload-pr171",
       "kind": "superseded_youtube_provider_branch",
-      "issues": [
-        154,
-        171
-      ],
+      "issues": [154, 171],
       "status": "retired_non_executable",
       "execution_prohibited": true,
       "replacement": "PR #215 stable current-main upload identity guard plus a future separately reviewed current-main provider executor",
@@ -105,10 +97,7 @@
     {
       "id": "youtube-copy-apply-pr197",
       "kind": "superseded_youtube_metadata_branch",
-      "issues": [
-        154,
-        197
-      ],
+      "issues": [154, 197],
       "status": "retired_non_executable",
       "execution_prohibited": true,
       "replacement": "PR #214 current-main source-first YouTube copy workflow",
@@ -117,10 +106,7 @@
     {
       "id": "milovi-issue323-legacy-finalizer",
       "kind": "repository_provider_executor_family",
-      "issues": [
-        323,
-        375
-      ],
+      "issues": [323, 375],
       "status": "retired_non_executable",
       "execution_prohibited": true,
       "replacement": "video-manager vk milovi-323-continue -> shared Issue #323 planner/reviewed PromotionSpec -> durable promotion dispatcher and exact writers",
@@ -129,20 +115,34 @@
     {
       "id": "milovi-telegram-exact-canary-legacy",
       "kind": "repository_provider_executor_family",
-      "issues": [
-        353
-      ],
+      "issues": [353],
       "status": "retired_non_executable",
       "execution_prohibited": true,
-      "replacement": ".github/workflows/milovi-telegram-bootstrap-publisher.yml",
-      "reason": "The legacy exact-canary workflow/runtime and active authorization trigger formed a second Telegram provider-write authority and mutated main directly. The canonical bootstrap publisher is the sole supported Milovi Telegram write path; historical verified dispatch state is retained as inert evidence only."
+      "replacement": ".github/workflows/milovi-telegram-feed-publisher.yml",
+      "reason": "The historical exact-canary and live-canary-v2 workflows proved the path but are consumed evidence only. A successful canary never authorizes another publication; future writes use the permanent exact feed writer."
+    },
+    {
+      "id": "milovi-telegram-bootstrap-canary-control-surfaces",
+      "kind": "repository_provider_executor_and_control_family",
+      "issues": [353],
+      "status": "retired_non_executable",
+      "execution_prohibited": true,
+      "replacement": ".github/workflows/milovi-telegram-feed-publisher.yml",
+      "reason": "Bootstrap activation, bootstrap publisher/quality/media proof, ledger-init, one-off canary and live-canary-v2 executable surfaces were physically removed so no historical release or canary path can act as a second provider writer."
+    },
+    {
+      "id": "milovi-telegram-feed-20260819-oneoff-workflows",
+      "kind": "per_publication_workflow_family",
+      "issues": [353],
+      "status": "retired_non_executable",
+      "execution_prohibited": true,
+      "replacement": ".github/workflows/milovi-telegram-feed-quality.yml + .github/workflows/milovi-telegram-feed-publisher.yml",
+      "reason": "The first permanent feed candidate originally carried per-publication controller/quality/media-proof workflows. They were retired so future posts do not create another control plane per publication."
     },
     {
       "id": "milovi-telegram-target-discovery-legacy",
       "kind": "repository_read_only_workflow",
-      "issues": [
-        353
-      ],
+      "issues": [353],
       "status": "retired_non_executable",
       "execution_prohibited": true,
       "replacement": ".github/workflows/milovi-telegram-target-discovery.yml",
@@ -188,6 +188,8 @@
     "Editorial, preview, self-tested, canary-verified and batch-verified evidence levels are never collapsed.",
     "PowerShell orchestrates one repository-owned provider implementation and does not duplicate provider rules.",
     "Closed, unmerged, superseded or retired branches are evidence only and never become runtime sources again.",
-    "VK managed-community discovery uses groups.get(filter=moder, extended=1); exact project identity is verified separately."
+    "VK managed-community discovery uses groups.get(filter=moder, extended=1); exact project identity is verified separately.",
+    "Milovi Telegram has exactly one provider-mutation workflow and one durable state/concurrency namespace.",
+    "Milovi release/content authorization and fresh exact human execution authorization are separate; historical authorization never inherits."
   ]
 }

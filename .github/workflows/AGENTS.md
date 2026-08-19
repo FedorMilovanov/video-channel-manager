@@ -31,4 +31,19 @@ The August `@deep_info_life` rollout is historical completed work. Its exact rel
 
 The production dependency surface includes the shared `telegram_models.py` / `telegram_transport.py` modules and `requirements/telegram-publisher.txt`; Svodka quality must continue to test those dependencies rather than only files whose names contain `svodka` or `multichannel`.
 
-Nothing in this instruction file authorizes a new Svodka, LordChrist, or Milovi Telegram provider mutation. Milovi Telegram Issue #353 remains a separate owning workstream.
+## Milovi permanent feed invariants
+
+Milovi Telegram Issue #353 has one permanent provider-mutation path: `.github/workflows/milovi-telegram-feed-publisher.yml`.
+
+- The publisher remains `workflow_dispatch`-only. Do not add `schedule:` or `cron:` triggers. A reviewed schedule value in an immutable release is a freshness constraint, not standing autonomous execution authority.
+- All Milovi provider mutations share `state/milovi-cake-telegram` and concurrency group `milovi-cake-telegram-publisher` with `cancel-in-progress: false`.
+- The exact feed identity is `milovi-feed-YYYYMMDD-NNN`. Runtime release, media binding, durable ledger, execution authority and channel-wide index must all bind that exact identity and exact payload digest.
+- Release/content authorization and execution/provider authorization are separate gates. Old bootstrap or canary authorization, credentials, automation, a green workflow, or a profile with technical write capability never supplies fresh execution authority.
+- State initialization is explicit and provider-free. The publisher must not auto-create a missing release ledger during a `publish` operation.
+- `content/telegram/milovi-cake/feed/index.json` is the channel-wide duplicate guard. It must agree with the exact immutable release ledger before another provider attempt is eligible.
+- `.github/workflows/milovi-telegram-target-discovery.yml` is read-only target discovery and must never gain `send-once` or become a second writer.
+- Historical bootstrap, one-off canary, live-canary-v2, ledger-init and per-publication controller/quality/media-proof workflow families are retired from executable `main`. Their JSON, receipts and durable state remain evidence only.
+- The canonical writer prepares and durably persists one exact intent before `send-once`, performs zero blind mutation retries, writes the exact outcome, and leaves `may_exist`/unknown effects blocking.
+- `milovi-feed-20260819-001` remains provider-inert until a separate change explicitly authorizes its immutable release and a fresh exact human execution authority. This instruction file does not perform or authorize that change.
+
+Nothing in this instruction file authorizes a new Svodka, LordChrist, or Milovi Telegram provider mutation.
