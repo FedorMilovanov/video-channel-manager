@@ -1,0 +1,92 @@
+name: Milovi Telegram feed quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  permanent-feed-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+      - name: Install minimal Telegram runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+      - name: Validate every exact Milovi feed bundle
+        env:
+          PYTHONPATH: src
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          from video_channel_manager.milovi_telegram_feed import validate_bundle
+
+          releases = Path("content/telegram/milovi-cake/releases")
+          runtime_files = sorted(releases.glob("milovi-feed-*-runtime.json"))
+          assert runtime_files, "at least one exact Milovi feed runtime release is required"
+          for runtime in runtime_files:
+              publication_id = runtime.name.removesuffix("-runtime.json")
+              result = validate_bundle(publication_id)
+              print(publication_id, result["blockers"])
+          PY
+      - name: Enforce one permanent Milovi provider writer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          root = Path(".github/workflows")
+          canonical = root / "milovi-telegram-feed-publisher.yml"
+          assert canonical.is_file()
+          retired = {
+              "milovi-telegram-bootstrap-activation-package.yml",
+              "milovi-telegram-bootstrap-media-proof.yml",
+              "milovi-telegram-bootstrap-publisher.yml",
+              "milovi-telegram-bootstrap-quality.yml",
+              "milovi-telegram-bootstrap-review-ready.yml",
+              "milovi-telegram-ledger-init.yml",
+              "milovi-telegram-live-canary-v2-dispatch.yml",
+              "milovi-telegram-live-canary-v2-quality.yml",
+              "milovi-telegram-live-canary-v2.yml",
+              "milovi-telegram-oneoff-canary-dispatch.yml",
+              "milovi-telegram-oneoff-canary-quality.yml",
+              "milovi-telegram-oneoff-canary.yml",
+              "milovi-feed-20260819-001-controller.yml",
+              "milovi-feed-20260819-001-media-proof.yml",
+              "milovi-feed-20260819-001-quality.yml",
+          }
+          assert all(not (root / name).exists() for name in retired)
+
+          mutation_workflows = []
+          for path in sorted(root.glob("*milovi*.yml")):
+              text = path.read_text(encoding="utf-8")
+              if "telegram_multichannel_cli send-once" in text:
+                  mutation_workflows.append(path.name)
+          assert mutation_workflows == [canonical.name], mutation_workflows
+
+          text = canonical.read_text(encoding="utf-8")
+          assert "group: milovi-cake-telegram-publisher" in text
+          assert "state/milovi-cake-telegram" in text
+          assert "require-execution-authorized" in text
+          assert "telegram_multichannel_cli prepare" in text
+          assert text.index("telegram_multichannel_cli prepare") < text.index("telegram_multichannel_cli send-once")
+          assert "schedule:" not in text
+          assert "cron:" not in text
+          print("single Milovi provider writer: OK")
+          PY
