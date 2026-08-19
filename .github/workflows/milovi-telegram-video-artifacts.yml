@@ -27,7 +27,7 @@ jobs:
   prove-provider-free-artifacts:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 45
     permissions:
       contents: read
     env:
@@ -37,9 +37,10 @@ jobs:
       EVIDENCE: content/telegram/milovi-cake/video-conversion-evidence-2026-08.json
 
     steps:
-      - name: Check out exact pull request revision
+      - name: Check out exact pull request head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
 
       - name: Require reviewed provider-free conversion execution gate
@@ -73,7 +74,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update
+          if [[ -f /etc/apt/apt-mirrors.txt ]]; then
+            printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          fi
+          sudo tee /etc/apt/apt.conf.d/99milovi-network >/dev/null <<'APT'
+          Acquire::Retries "3";
+          Acquire::http::Timeout "20";
+          Acquire::https::Timeout "20";
+          APT
           sudo apt-get install -y --no-install-recommends ffmpeg
           command -v ffmpeg
           command -v ffprobe
@@ -111,7 +119,7 @@ jobs:
       - name: Publish exact pull-request proof bundle
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: milovi-telegram-video-pr-proof-${{ github.sha }}
+          name: milovi-telegram-video-pr-proof-${{ github.event.pull_request.head.sha }}
           path: |
             artifacts/milovi-telegram/video/*.mp4
             content/telegram/milovi-cake/video-conversion-evidence-2026-08.json
@@ -129,7 +137,7 @@ jobs:
   build-provider-free-artifacts:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 45
     permissions:
       contents: write
     env:
@@ -188,7 +196,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update
+          if [[ -f /etc/apt/apt-mirrors.txt ]]; then
+            printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          fi
+          sudo tee /etc/apt/apt.conf.d/99milovi-network >/dev/null <<'APT'
+          Acquire::Retries "3";
+          Acquire::http::Timeout "20";
+          Acquire::https::Timeout "20";
+          APT
           sudo apt-get install -y --no-install-recommends ffmpeg
           command -v ffmpeg
           command -v ffprobe
