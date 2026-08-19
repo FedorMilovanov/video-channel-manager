@@ -26,6 +26,11 @@ from video_channel_manager.domain.enums import ChannelKind, CollectionKind, Oper
 from video_channel_manager.domain.models import ChannelRecord, CollectionRecord, RemoteRef, VideoRecord
 from video_channel_manager.exchange.audit_package import AuditFinding, AuditPackage
 from video_channel_manager.exchange.change_plan import ChangeOperation, ChangePlan
+from video_channel_manager.exchange.instagram_video import (
+    InstagramMediaReview,
+    InstagramVideoIntakeArtifact,
+    InstagramVideoRouteArtifact,
+)
 from video_channel_manager.local_media import scan_local_media
 from video_channel_manager.persistence import Database
 from video_channel_manager.wave_engine.cli import schema_documents as wave_schema_documents
@@ -107,12 +112,15 @@ def db_init() -> None:
 def schema_export(
     output_dir: Annotated[Path, typer.Option("--output-dir", "-o")] = Path("schemas/generated"),
 ) -> None:
-    """Export JSON Schemas for AuditPackage and ChangePlan."""
+    """Export versioned exchange JSON Schemas."""
 
     output_dir.mkdir(parents=True, exist_ok=True)
     documents = {
         "audit-package-v1.schema.json": AuditPackage.model_json_schema(),
         "change-plan-v1.schema.json": ChangePlan.model_json_schema(),
+        "instagram-youtube-video-intake-v1.schema.json": InstagramVideoIntakeArtifact.model_json_schema(),
+        "instagram-media-review-v1.schema.json": InstagramMediaReview.model_json_schema(),
+        "instagram-video-route-v1.schema.json": InstagramVideoRouteArtifact.model_json_schema(),
         **wave_schema_documents(),
     }
     for filename, schema in documents.items():
