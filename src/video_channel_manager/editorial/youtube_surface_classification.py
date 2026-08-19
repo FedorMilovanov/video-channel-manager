@@ -91,6 +91,10 @@ def _display_dimensions(file_details: dict[str, Any]) -> tuple[set[tuple[int, in
     return dimensions, ambiguous_rotation
 
 
+def _geometry_for_dimensions(width: int, height: int) -> YouTubeSourceGeometry:
+    return "square_or_vertical" if width <= height else "landscape"
+
+
 def extract_youtube_source_file_evidence(video: VideoRecord) -> YouTubeSourceFileEvidence:
     """Extract owner-only source-file facts already retained in VideoRecord metadata."""
 
@@ -102,7 +106,7 @@ def extract_youtube_source_file_evidence(video: VideoRecord) -> YouTubeSourceFil
     height: int | None = None
     if dimensions and not ambiguous_rotation:
         orientations = {
-            "square_or_vertical" if candidate_width <= candidate_height else "landscape"
+            _geometry_for_dimensions(candidate_width, candidate_height)
             for candidate_width, candidate_height in dimensions
         }
         if len(orientations) == 1:
