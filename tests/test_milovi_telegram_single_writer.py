@@ -49,9 +49,7 @@ def test_canonical_writer_owns_one_state_and_concurrency_namespace() -> None:
     assert "telegram_multichannel_cli prepare" in text
     assert "sync-index" in text
     assert MUTATION_MARKER in text
-    assert text.index("telegram_multichannel_cli prepare") < text.index(
-        "telegram_multichannel_cli send-once"
-    )
+    assert text.index("telegram_multichannel_cli prepare") < text.index("telegram_multichannel_cli send-once")
     assert "schedule:" not in text
     assert "cron:" not in text
 

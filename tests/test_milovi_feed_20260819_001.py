@@ -92,9 +92,7 @@ def test_permanent_workflows_replace_oneoff_controller_surface() -> None:
     assert "state/milovi-cake-telegram" in publisher
     assert "telegram_multichannel_cli prepare" in publisher
     assert "telegram_multichannel_cli send-once" in publisher
-    assert publisher.index("telegram_multichannel_cli prepare") < publisher.index(
-        "telegram_multichannel_cli send-once"
-    )
+    assert publisher.index("telegram_multichannel_cli prepare") < publisher.index("telegram_multichannel_cli send-once")
 
 
 def test_new_exact_bundle_does_not_reference_historical_bootstrap_publications() -> None:

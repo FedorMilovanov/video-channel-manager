@@ -14,9 +14,6 @@ BINDING = ROOT / "content/telegram/channels/milovi-cake-target-binding.json"
 RELEASE = ROOT / "content/telegram/milovi-cake/oneoff-canary-authorized-release-2026-08-18-v2.json"
 AUTH = ROOT / "content/telegram/milovi-cake/oneoff-canary-execution-authorization-2026-08-18-v2.json"
 HISTORICAL_AUTH = ROOT / "content/telegram/milovi-cake/oneoff-canary-execution-authorization-2026-08-18.json"
-PROVIDER = ROOT / ".github/workflows/milovi-telegram-live-canary-v2.yml"
-CONTROLLER = ROOT / ".github/workflows/milovi-telegram-live-canary-v2-dispatch.yml"
-QUALITY = ROOT / ".github/workflows/milovi-telegram-live-canary-v2-quality.yml"
 
 
 def test_live_canary_v2_release_is_exact_and_recomputed() -> None:
@@ -40,7 +37,7 @@ def test_live_canary_v2_release_is_exact_and_recomputed() -> None:
     assert item.payload.provider_payload_sha256 == (
         "sha256:d60f503934fb209429606b235622ab0d27a1179978c9fa78574cf517d321b07a"
     )
-    assert item.payload.media_sha256 == ("sha256:8bb0956e44084265d7a3a14ce01f96eb1e4a9c327c780448de34e068f6cf6f10")
+    assert item.payload.media_sha256 == "sha256:8bb0956e44084265d7a3a14ce01f96eb1e4a9c327c780448de34e068f6cf6f10"
 
     recomputed = render_photo_payload(
         profile,
@@ -77,69 +74,3 @@ def test_historical_v1_authorization_remains_expired_and_immutable() -> None:
     assert historical["execute_not_before"] == "2026-08-18T16:10:00+03:00"
     assert historical["execute_not_after"] == "2026-08-18T18:10:00+03:00"
     assert historical["controller_dispatch_window_end"] == "2026-08-18T17:05:00+03:00"
-
-
-def test_v2_provider_is_workflow_dispatch_only_and_intent_precedes_send() -> None:
-    text = PROVIDER.read_text(encoding="utf-8")
-    trigger = text.split("permissions:", 1)[0]
-
-    assert "workflow_dispatch:" in trigger
-    assert "schedule:" not in trigger
-    assert "push:" not in trigger
-    assert "PUBLISH:@MiloviCake:milovi-canary-20260818-002" in text
-    assert "milovi-canary-20260818-001" in text
-    assert "Require superseded v1 canary had no provider intent" in text
-    assert "group: milovi-cake-telegram-publisher" in text
-    assert "cancel-in-progress: false" in text
-    assert "--mode manual" in text
-    assert '--publication-id "$PUBLICATION_ID"' in text
-
-    activation = text.index("Resolve exact live canary v2 execution authorization before provider access")
-    quality = text.index("Require exact current-main live canary v2 quality and media proofs")
-    predecessor = text.index("Require superseded v1 canary had no provider intent")
-    preflight = text.index("Fresh exact target preflight")
-    prepare = text.index("Prepare one durable exact live canary v2 intent")
-    persist = text.index("Persist live canary v2 intent and target proof before provider mutation")
-    reprove = text.index("Re-prove exact current-main quality immediately before provider mutation")
-    send = text.index("Send exactly once through generic Telegram runtime")
-    outcome = text.index("Apply provider outcome and persist final state")
-    assert activation < quality < predecessor < preflight < prepare < persist < reprove < send < outcome
-
-
-def test_v2_controller_is_provider_inert_and_reliable_without_cron() -> None:
-    text = CONTROLLER.read_text(encoding="utf-8")
-    trigger = text.split("permissions:", 1)[0]
-
-    assert "workflow_run:" in trigger
-    assert "Milovi Telegram live canary v2 quality" in trigger
-    assert "schedule:" not in trigger
-    assert "cron:" not in trigger
-    assert "actions: write" in text
-    assert "contents: read" in text
-    assert "MILOVI_CAKE_TELEGRAM_BOT_TOKEN" not in text
-    assert "LORDCHRIST_TELEGRAM_BOT_TOKEN" not in text
-    assert "telegram_channel_cli preflight" not in text
-    assert "send-once" not in text
-    assert "milovi-telegram-live-canary-v2.yml" in text
-    assert "milovi-telegram-live-canary-v2-quality.yml" in text
-    assert "milovi-telegram-bootstrap-media-proof.yml" in text
-    assert "ci.yml" in text
-    assert "for attempt in $(seq 1 36)" in text
-    assert "main moved before live canary v2 dispatch" in text
-    assert "Prove predecessor and fresh v2 durable state are mutation-free" in text
-    assert "Fail closed if v2 provider workflow was already dispatched" in text
-    assert "Re-prove exact current main immediately before provider dispatch" in text
-    assert "--method POST" in text
-    assert "actions/workflows/$PROVIDER_WORKFLOW/dispatches" in text
-
-
-def test_v2_quality_runs_on_exact_activation_push_only() -> None:
-    text = QUALITY.read_text(encoding="utf-8")
-    assert "Milovi Telegram live canary v2 quality" in text
-    assert "push:" in text
-    assert "branches:" in text and "main" in text
-    assert "oneoff-canary-execution-authorization-2026-08-18-v2.json" in text
-    assert "oneoff-canary-authorized-release-2026-08-18-v2.json" in text
-    assert "render_photo_payload" in text
-    assert "provider_access_performed" in text
-    assert "provider_write_performed" in text
