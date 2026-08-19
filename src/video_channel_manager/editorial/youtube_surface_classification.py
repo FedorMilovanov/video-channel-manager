@@ -66,32 +66,41 @@ def _file_details(video: VideoRecord) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
-def _stream_dimensions(file_details: dict[str, Any]) -> set[tuple[int, int]]:
+def _display_dimensions(file_details: dict[str, Any]) -> tuple[set[tuple[int, int]], bool]:
     streams = file_details.get("videoStreams")
     if not isinstance(streams, list):
-        return set()
+        return set(), False
 
     dimensions: set[tuple[int, int]] = set()
+    ambiguous_rotation = False
     for stream in streams:
         if not isinstance(stream, dict):
             continue
         width = _positive_int(stream.get("widthPixels"))
         height = _positive_int(stream.get("heightPixels"))
-        if width is not None and height is not None:
+        if width is None or height is None:
+            continue
+
+        rotation = stream.get("rotation")
+        if rotation in (None, "none", "upsideDown"):
             dimensions.add((width, height))
-    return dimensions
+        elif rotation in ("clockwise", "counterClockwise"):
+            dimensions.add((height, width))
+        else:
+            ambiguous_rotation = True
+    return dimensions, ambiguous_rotation
 
 
 def extract_youtube_source_file_evidence(video: VideoRecord) -> YouTubeSourceFileEvidence:
     """Extract owner-only source-file facts already retained in VideoRecord metadata."""
 
     details = _file_details(video)
-    dimensions = _stream_dimensions(details)
+    dimensions, ambiguous_rotation = _display_dimensions(details)
 
     geometry: YouTubeSourceGeometry = "unknown"
     width: int | None = None
     height: int | None = None
-    if dimensions:
+    if dimensions and not ambiguous_rotation:
         orientations = {
             "square_or_vertical" if candidate_width <= candidate_height else "landscape"
             for candidate_width, candidate_height in dimensions
@@ -121,7 +130,8 @@ def classify_youtube_surface(video: VideoRecord) -> YouTubeSurfaceClassification
     later boundary, the upload cannot predate the file. That gives a conservative
     channel-type-independent proof for otherwise eligible 2026-era Shorts.
 
-    ``snippet.publishedAt`` is never treated as upload time here.
+    ``snippet.publishedAt`` is never treated as upload time here. Stream rotation is
+    applied before source geometry is classified.
     """
 
     source = extract_youtube_source_file_evidence(video)
