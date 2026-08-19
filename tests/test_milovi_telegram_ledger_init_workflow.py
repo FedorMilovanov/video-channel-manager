@@ -76,7 +76,9 @@ def test_provider_steps_are_publish_only_and_exact_target_bound() -> None:
     assert preflight < prepare < persist < reprove < send < outcome
 
     for step in (preflight, prepare, persist, reprove, send, outcome):
-        block = text[step : text.find("\n      - name:", step + 1) if text.find("\n      - name:", step + 1) != -1 else None]
+        block = text[
+            step : text.find("\n      - name:", step + 1) if text.find("\n      - name:", step + 1) != -1 else None
+        ]
         assert "if: inputs.operation == 'publish'" in block or "inputs.operation == 'publish' && always()" in block
 
 
