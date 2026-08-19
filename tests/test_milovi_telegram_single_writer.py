@@ -64,11 +64,19 @@ def test_read_only_target_discovery_does_not_become_a_second_writer() -> None:
     assert "provider_writes_authorized" not in text
     assert MUTATION_MARKER not in text
 
-    implementation = (ROOT / "src" / "video_channel_manager" / "telegram_channel_discovery.py").read_text(encoding="utf-8")
+    implementation = (
+        ROOT / "src" / "video_channel_manager" / "telegram_channel_discovery.py"
+    ).read_text(encoding="utf-8")
     assert 'method="getMe"' in implementation
     assert implementation.count('method="getChat"') == 4
     assert 'method="getChatMember"' in implementation
     assert implementation.count("mutation=False") == 4
     assert "mutation=True" not in implementation
-    for forbidden_method in ("sendMessage", "sendPhoto", "sendMediaGroup", "editMessage", "deleteMessage"):
+    for forbidden_method in (
+        "sendMessage",
+        "sendPhoto",
+        "sendMediaGroup",
+        "editMessage",
+        "deleteMessage",
+    ):
         assert forbidden_method not in implementation
