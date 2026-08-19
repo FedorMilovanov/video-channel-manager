@@ -26,6 +26,7 @@ from video_channel_manager.domain.enums import ChannelKind, CollectionKind, Oper
 from video_channel_manager.domain.models import ChannelRecord, CollectionRecord, RemoteRef, VideoRecord
 from video_channel_manager.exchange.audit_package import AuditFinding, AuditPackage
 from video_channel_manager.exchange.change_plan import ChangeOperation, ChangePlan
+from video_channel_manager.exchange.instagram_reels import InstagramReelFactoryRegistry
 from video_channel_manager.exchange.instagram_video import (
     InstagramMediaReview,
     InstagramVideoIntakeArtifact,
@@ -121,6 +122,7 @@ def schema_export(
         "instagram-youtube-video-intake-v1.schema.json": InstagramVideoIntakeArtifact.model_json_schema(),
         "instagram-media-review-v1.schema.json": InstagramMediaReview.model_json_schema(),
         "instagram-video-route-v1.schema.json": InstagramVideoRouteArtifact.model_json_schema(),
+        "instagram-reel-factory-v1.schema.json": InstagramReelFactoryRegistry.model_json_schema(),
         **wave_schema_documents(),
     }
     for filename, schema in documents.items():
