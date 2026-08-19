@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from video_channel_manager.domain.models import VideoRecord
@@ -11,6 +11,10 @@ YouTubeSourceGeometry = Literal["square_or_vertical", "landscape", "unknown"]
 YouTubeSurfaceStatus = Literal["short", "longform", "unknown"]
 
 _MAX_THREE_MINUTE_SHORT_MS = 180_000
+# Conservative universal boundary: standard channels crossed the three-minute
+# Shorts boundary earlier, while Official Artist Channels use 2025-12-08.
+# Using the later date avoids needing to guess the channel's artist status.
+_UNIVERSAL_THREE_MINUTE_SHORTS_CUTOFF = datetime(2025, 12, 8, tzinfo=UTC)
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,7 +92,10 @@ def extract_youtube_source_file_evidence(video: VideoRecord) -> YouTubeSourceFil
     width: int | None = None
     height: int | None = None
     if dimensions:
-        orientations = {"square_or_vertical" if candidate_width <= candidate_height else "landscape" for candidate_width, candidate_height in dimensions}
+        orientations = {
+            "square_or_vertical" if candidate_width <= candidate_height else "landscape"
+            for candidate_width, candidate_height in dimensions
+        }
         if len(orientations) == 1:
             geometry = orientations.pop()
         if len(dimensions) == 1:
@@ -105,13 +112,16 @@ def extract_youtube_source_file_evidence(video: VideoRecord) -> YouTubeSourceFil
 
 
 def classify_youtube_surface(video: VideoRecord) -> YouTubeSurfaceClassification:
-    """Classify only what exact metadata proves; never infer Shorts from duration alone.
+    """Classify only what exact owner metadata proves.
 
-    A landscape source cannot satisfy YouTube's square/vertical Shorts geometry.
-    A source over three minutes cannot satisfy the current three-minute Shorts cap.
-    Square/vertical sources at or below three minutes remain candidates rather than
-    confirmed Shorts because neither ``snippet.publishedAt`` nor file creation time
-    is treated here as exact upload/surface proof.
+    YouTube's current policy categorizes square/vertical uploads up to three minutes
+    as Shorts after the applicable rollout date. Standard channels crossed that
+    boundary in 2024; Official Artist Channels use the later 2025-12-08 boundary.
+    If YouTube says the uploaded source file itself was created on or after that
+    later boundary, the upload cannot predate the file. That gives a conservative
+    channel-type-independent proof for otherwise eligible 2026-era Shorts.
+
+    ``snippet.publishedAt`` is never treated as upload time here.
     """
 
     source = extract_youtube_source_file_evidence(video)
@@ -135,11 +145,24 @@ def classify_youtube_surface(video: VideoRecord) -> YouTubeSurfaceClassification
             source=source,
         )
 
-    short_candidate = source.geometry == "square_or_vertical" and duration_ms is not None and duration_ms <= _MAX_THREE_MINUTE_SHORT_MS
+    short_candidate = (
+        source.geometry == "square_or_vertical"
+        and duration_ms is not None
+        and duration_ms <= _MAX_THREE_MINUTE_SHORT_MS
+    )
+    if short_candidate and source.creation_time is not None:
+        if source.creation_time >= _UNIVERSAL_THREE_MINUTE_SHORTS_CUTOFF:
+            return YouTubeSurfaceClassification(
+                status="short",
+                reason="owner_file_creation_time_proves_post_universal_three_minute_shorts_cutoff",
+                short_candidate=False,
+                source=source,
+            )
+
     if short_candidate:
         return YouTubeSurfaceClassification(
             status="unknown",
-            reason="square_or_vertical_under_three_minutes_but_exact_shorts_surface_not_proved",
+            reason="short_geometry_and_duration_proved_but_post_cutoff_upload_not_yet_proved",
             short_candidate=True,
             source=source,
         )
