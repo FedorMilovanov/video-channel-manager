@@ -69,12 +69,21 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Install FFmpeg toolchain and expose exact identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          command -v ffmpeg
+          command -v ffprobe
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+
       - name: Build and prove exactly 16 Telegram-ready MP4 artifacts
         shell: bash
         run: |
           set -euo pipefail
-          command -v ffmpeg >/dev/null
-          command -v ffprobe >/dev/null
           python -m video_channel_manager.milovi_telegram_video_artifacts \
             --source-checkout .source/milovi \
             --output-dir "$OUTPUT_DIR" \
@@ -171,12 +180,21 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Install FFmpeg toolchain and expose exact identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          command -v ffmpeg
+          command -v ffprobe
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+
       - name: Build and prove exactly 16 Telegram-ready MP4 artifacts
         shell: bash
         run: |
           set -euo pipefail
-          command -v ffmpeg >/dev/null
-          command -v ffprobe >/dev/null
           python -m video_channel_manager.milovi_telegram_video_artifacts \
             --source-checkout .source/milovi \
             --output-dir "$OUTPUT_DIR" \
