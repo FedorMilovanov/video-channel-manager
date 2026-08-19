@@ -11,11 +11,17 @@ from rich.console import Console
 
 from video_channel_manager.config import get_settings
 from video_channel_manager.editorial._project_profiles import LEGENDARY_POET, PROJECT_CHANNEL_IDS, PROJECT_KEYS
+from video_channel_manager.editorial.instagram_media_routing import (
+    InstagramMediaRoutingError,
+    build_instagram_video_routes,
+)
 from video_channel_manager.editorial.instagram_video_intake import (
     InstagramVideoIntakeError,
     build_instagram_video_intake,
 )
 from video_channel_manager.exchange.audit_package import AuditPackage
+from video_channel_manager.exchange.instagram_video import InstagramMediaReview, InstagramVideoIntakeArtifact
+from video_channel_manager.local_media import MediaArtifactError, MediaArtifactEvidence, load_media_artifact_manifest
 
 
 console = Console()
@@ -124,6 +130,52 @@ def _read_audit_package(path: Path) -> tuple[AuditPackage, str]:
     return audit, _sha256_bytes(raw)
 
 
+def _read_intake(path: Path) -> tuple[InstagramVideoIntakeArtifact, str]:
+    raw = _read_bytes(path)
+    try:
+        intake = InstagramVideoIntakeArtifact.model_validate_json(raw.decode("utf-8-sig"))
+    except (UnicodeDecodeError, ValidationError) as exc:
+        raise ValueError(f"invalid Instagram video intake {path}: {exc}") from exc
+    return intake, _sha256_bytes(raw)
+
+
+def _load_media_manifest_dir(path: Path | None) -> dict[str, MediaArtifactEvidence]:
+    if path is None:
+        return {}
+    if not path.is_dir():
+        raise ValueError(f"media manifest directory does not exist: {path}")
+
+    by_video_id: dict[str, MediaArtifactEvidence] = {}
+    for manifest_path in sorted(path.glob("*.json"), key=lambda item: item.name):
+        evidence = load_media_artifact_manifest(manifest_path)
+        video_id = evidence.source.source_id
+        if video_id in by_video_id:
+            raise ValueError(f"duplicate media evidence source_id: {video_id}")
+        by_video_id[video_id] = evidence
+    return by_video_id
+
+
+def _load_media_review_dir(path: Path | None) -> dict[str, InstagramMediaReview]:
+    if path is None:
+        return {}
+    if not path.is_dir():
+        raise ValueError(f"media review directory does not exist: {path}")
+
+    by_video_id: dict[str, InstagramMediaReview] = {}
+    for review_path in sorted(path.glob("*.json"), key=lambda item: item.name):
+        raw = _read_bytes(review_path)
+        try:
+            review = InstagramMediaReview.model_validate_json(raw.decode("utf-8-sig"))
+        except (UnicodeDecodeError, ValidationError) as exc:
+            raise ValueError(f"invalid Instagram media review {review_path}: {exc}") from exc
+        if review.youtube_video_id != review_path.stem:
+            raise ValueError(f"Instagram media review video ID does not match filename: {review_path}")
+        if review.youtube_video_id in by_video_id:
+            raise ValueError(f"duplicate Instagram media review video ID: {review.youtube_video_id}")
+        by_video_id[review.youtube_video_id] = review
+    return by_video_id
+
+
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
@@ -184,4 +236,47 @@ def video_intake(
         f"Project: {normalized_project} | Current: {counts['current_videos']} | "
         f"New vs mapping: {counts['new_current_vs_frozen_mapping']} | "
         f"Format unknown: {counts['format_unknown']}"
+    )
+
+
+@instagram_app.command("media-route")
+def media_route(
+    intake_path: Annotated[Path, typer.Argument(help="Exact Instagram video intake JSON")],
+    media_manifest_dir: Annotated[
+        Path | None,
+        typer.Option("--media-manifest-dir", help="Directory of exact MediaArtifactEvidence JSON manifests"),
+    ] = None,
+    media_review_dir: Annotated[
+        Path | None,
+        typer.Option("--media-review-dir", help="Directory of exact Instagram media-review JSON records"),
+    ] = None,
+    output: Annotated[Path | None, typer.Option("--output", "-o")] = None,
+) -> None:
+    """Route all intake videos from exact technical and rights/provenance evidence."""
+
+    try:
+        intake, intake_sha256 = _read_intake(intake_path)
+        media = _load_media_manifest_dir(media_manifest_dir)
+        reviews = _load_media_review_dir(media_review_dir)
+        result = build_instagram_video_routes(
+            intake,
+            source_intake_sha256=intake_sha256,
+            media_by_video_id=media,
+            reviews_by_video_id=reviews,
+        )
+    except (InstagramMediaRoutingError, MediaArtifactError, OSError, ValueError) as exc:
+        console.print(f"[red]Instagram media routing failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+    if output is None:
+        settings = get_settings()
+        output = settings.data_dir / "reports" / f"instagram-{intake.project_key}-{intake.source_snapshot_id}-media-route.json"
+    _write_json(output, result.model_dump(mode="json"))
+
+    counts = result.counts
+    console.print(
+        f"[green]Built provider-inert Instagram media routing → {output}[/green]\n"
+        f"Total: {counts.total} | Direct remaster: {counts.direct_remaster} | "
+        f"Editorial extract: {counts.editorial_extract} | Rebuild: {counts.editorial_rebuild} | "
+        f"Hold: {counts.hold} | Source binding required: {counts.source_binding_required}"
     )
