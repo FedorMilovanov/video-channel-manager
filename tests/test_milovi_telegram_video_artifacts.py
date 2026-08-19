@@ -93,6 +93,21 @@ def test_video_artifact_workflow_has_read_only_pr_proof_and_no_provider_writer_p
     assert "[skip ci]" not in text.casefold()
 
 
+def test_video_artifact_workflow_hardens_exact_head_and_runner_without_weakening_main() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+
+    assert "group: milovi-telegram-video-artifacts-${{ github.event_name }}-${{ github.ref }}" in text
+    assert "cancel-in-progress: ${{ github.event_name == 'pull_request' }}" in text
+    assert text.count("timeout-minutes: 45") == 2
+    assert "ref: ${{ github.event.pull_request.head.sha }}" in text
+    assert "milovi-telegram-video-pr-proof-${{ github.event.pull_request.head.sha }}" in text
+    assert text.count("https://archive.ubuntu.com/ubuntu/") == 2
+    assert text.count('Acquire::Retries "3";') == 2
+    assert text.count('Acquire::http::Timeout "20";') == 2
+    assert text.count('Acquire::https::Timeout "20";') == 2
+    assert "if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'" in text
+
+
 def test_video_artifact_workflow_installs_exact_toolchain_and_preserves_main_no_overwrite() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
 
@@ -121,3 +136,17 @@ def test_source_probe_workflow_proves_all_16_without_repository_or_provider_writ
     assert "provider_write_performed" in text
     assert "git push" not in text
     assert "TELEGRAM_BOT_TOKEN" not in text
+
+
+def test_source_probe_workflow_hardens_exact_head_and_cancels_only_stale_pr_probe() -> None:
+    text = SOURCE_PROBE_WORKFLOW.read_text(encoding="utf-8")
+
+    assert "group: milovi-telegram-video-source-probe-${{ github.event_name }}-${{ github.ref }}" in text
+    assert "cancel-in-progress: ${{ github.event_name == 'pull_request' }}" in text
+    assert "timeout-minutes: 30" in text
+    assert "ref: ${{ github.event.pull_request.head.sha }}" in text
+    assert "milovi-telegram-video-source-probes-${{ github.event.pull_request.head.sha || github.sha }}" in text
+    assert text.count("https://archive.ubuntu.com/ubuntu/") == 1
+    assert text.count('Acquire::Retries "3";') == 1
+    assert text.count('Acquire::http::Timeout "20";') == 1
+    assert text.count('Acquire::https::Timeout "20";') == 1
