@@ -92,7 +92,7 @@ Each new feed publication uses one immutable `milovi-feed-YYYYMMDD-NNN` bundle: 
 
 Before one provider attempt, the permanent writer requires exact current `main`, exact quality, exact initialized state, channel-wide duplicate-guard agreement, strict freshness, exact target preflight and fresh exact human execution authority. It persists durable intent before `send-once`, performs zero blind mutation retries, and persists verified or blocking outcome before completion.
 
-`milovi-feed-20260819-001` remains a provider-inert exact candidate. Its content, p03 transport bytes and target are frozen, but its runtime release remains `release_authorized=false`, its execution authority remains `execution_authorized=false`, and `provider_mutation_allowed=false`. This consolidation does not initialize its feed ledger and does not send it.
+`milovi-feed-20260819-001` is immutable stale provider-inert history and must not be caught up, retimed or reinterpreted as a successor. The current exact candidate is `milovi-feed-20260820-001`, scheduled for `2026-08-20T10:30:00+03:00` with frozen `p16` JPEG transport and caption. Its runtime release remains `release_authorized=false`, its execution authority remains `execution_authorized=false`, and `provider_mutation_allowed=false`; its permanent feed ledger is not initialized and no Telegram access or mutation has occurred.
 
 The native-video lane is now artifact-complete at `16 / 16` accepted Telegram-ready MP4/H.264 outputs. The exact provider-free build is durably preserved on content-addressed review branch `agent/milovi-video-accepted-73c578eff825` with evidence digest `sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae`; its accepted evidence records `provider_access_performed=false` and `provider_write_performed=false`. This artifact completion does not authorize Telegram publication, does not initialize feed state, and does not reopen or modify the photo-feed architecture.
 
@@ -119,7 +119,7 @@ Repository policy files and green checks do not create branch protection by them
 ## Next safe work
 
 1. Do not reopen completed Svodka, LordChrist rich canary or Milovi Clips work because an older issue body or checkpoint says it was incomplete.
-2. Keep `milovi-feed-20260819-001` provider-inert until a separate exact release authorization and a separate fresh exact human execution authorization are deliberately created; this control-plane consolidation is not that authorization.
+2. Keep `milovi-feed-20260820-001` provider-inert until a separate exact release authorization and a separate fresh exact human execution authorization are deliberately created; `milovi-feed-20260819-001` remains stale immutable no-catch-up history.
 3. Treat the Milovi native-video artifact lane as complete at `16 / 16`; preserve its content-addressed accepted branch/evidence as immutable artifact proof and do not infer any Telegram execution authority from it.
 4. Continue branch hygiene only with exact unique-commit/PR-state proof; preserve all durable `state/*` refs.
 5. For any new provider-visible work, start with fresh current `main`, fresh durable state, exact target identity and a new explicit owning scope.
