@@ -52,15 +52,15 @@ def _file_details(
     width: int,
     height: int,
     duration_ms: int,
-    creation_time: str = "2026-08-01T00:00:00Z",
+    creation_time: str | None = "2026-08-01T00:00:00Z",
 ) -> dict[str, Any]:
-    return {
-        "fileDetails": {
-            "durationMs": str(duration_ms),
-            "creationTime": creation_time,
-            "videoStreams": [{"widthPixels": width, "heightPixels": height}],
-        }
+    details: dict[str, Any] = {
+        "durationMs": str(duration_ms),
+        "videoStreams": [{"widthPixels": width, "heightPixels": height}],
     }
+    if creation_time is not None:
+        details["creationTime"] = creation_time
+    return {"fileDetails": details}
 
 
 def test_build_intake_reconciles_current_new_and_historical_ids() -> None:
@@ -176,11 +176,11 @@ def test_landscape_owner_file_details_confirm_longform_even_when_short_duration(
     assert record["youtube_source_creation_time"] == "2026-08-01T00:00:00Z"
 
 
-def test_vertical_under_three_minutes_is_candidate_not_confirmed_short() -> None:
+def test_post_universal_cutoff_vertical_under_three_minutes_is_confirmed_short() -> None:
     audit = _audit(
         VideoRecord(
             ref=_ref("AAAAAAAAAAA"),
-            title="Vertical candidate",
+            title="Confirmed Short",
             duration_seconds=120,
             revision="a",
             metadata=_file_details(width=1080, height=1920, duration_ms=120_250),
@@ -190,14 +190,60 @@ def test_vertical_under_three_minutes_is_candidate_not_confirmed_short() -> None
     result = _build(audit)
 
     record = result["records"][0]
-    assert record["youtube_format_status"] == "unknown"
-    assert record["youtube_short_candidate"] is True
+    assert record["youtube_format_status"] == "short"
+    assert record["youtube_short_candidate"] is False
     assert record["youtube_source_geometry"] == "square_or_vertical"
     assert record["youtube_format_reason"] == (
-        "square_or_vertical_under_three_minutes_but_exact_shorts_surface_not_proved"
+        "owner_file_creation_time_proves_post_universal_three_minute_shorts_cutoff"
+    )
+    assert result["counts"]["confirmed_short"] == 1
+    assert result["counts"]["format_unknown"] == 0
+
+
+def test_pre_universal_cutoff_vertical_under_three_minutes_remains_short_candidate() -> None:
+    audit = _audit(
+        VideoRecord(
+            ref=_ref("AAAAAAAAAAA"),
+            title="Candidate",
+            duration_seconds=120,
+            revision="a",
+            metadata=_file_details(
+                width=1080,
+                height=1920,
+                duration_ms=120_250,
+                creation_time="2025-01-01T00:00:00Z",
+            ),
+        )
+    )
+
+    result = _build(audit)
+
+    record = result["records"][0]
+    assert record["youtube_format_status"] == "unknown"
+    assert record["youtube_short_candidate"] is True
+    assert record["youtube_format_reason"] == (
+        "short_geometry_and_duration_proved_but_post_cutoff_upload_not_yet_proved"
     )
     assert result["counts"]["short_candidates"] == 1
     assert result["counts"]["confirmed_short"] == 0
+
+
+def test_missing_file_creation_time_keeps_vertical_under_three_minutes_as_candidate() -> None:
+    audit = _audit(
+        VideoRecord(
+            ref=_ref("AAAAAAAAAAA"),
+            title="Candidate without file creation time",
+            duration_seconds=120,
+            revision="a",
+            metadata=_file_details(width=1080, height=1920, duration_ms=120_250, creation_time=None),
+        )
+    )
+
+    result = _build(audit)
+
+    record = result["records"][0]
+    assert record["youtube_format_status"] == "unknown"
+    assert record["youtube_short_candidate"] is True
 
 
 def test_vertical_owner_duration_over_three_minutes_confirms_longform() -> None:
