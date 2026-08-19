@@ -1,0 +1,52 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-exact-one-item-state-contract",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "publication_id": "milovi-feed-20260819-001",
+  "status": "provider_inert_state_contract",
+  "state_branch": "state/milovi-cake-telegram",
+  "state_path": "content/telegram/milovi-cake/feed/milovi-feed-20260819-001.json",
+  "durable_same_object_key": "milovi-feed-20260819-001",
+  "initial_state": {
+    "state": "pending",
+    "provider_effect": "impossible",
+    "intent_id": null,
+    "dispatch_started_at_utc": null,
+    "provider_attempt_count": 0,
+    "message_id": null,
+    "message_url": null,
+    "last_error": null
+  },
+  "preparation_rules": {
+    "create_execution_intent_during_provider_inert_preparation": false,
+    "write_state_branch_during_provider_inert_preparation": false,
+    "historical_bootstrap_entries_are_predecessor_authority": false,
+    "historical_canary_entries_are_predecessor_authority": false
+  },
+  "execution_transition_rules": {
+    "fresh_exact_human_execution_authorization_required": true,
+    "durable_intent_must_precede_provider_dispatch": true,
+    "dispatch_started_must_be_persisted_before_provider_call": true,
+    "max_provider_attempts": 1,
+    "blind_mutation_retries": 0,
+    "ambiguous_provider_outcome_state": "may_exist",
+    "ambiguous_provider_outcome_blocks_replay": true,
+    "verified_provider_outcome_state": "verified",
+    "provider_readback_required_for_success": true,
+    "second_publication_forbidden": true
+  },
+  "identity_lock": {
+    "channel_username": "@MiloviCake",
+    "chat_id": -1002215328390,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "operation": "sendPhoto",
+    "media_id": "p03",
+    "transport_byte_size": 391620,
+    "transport_sha256": "sha256:d40b185ab813a46d29b66aa0da6f9300a13cad2bac0baf0ba71f1cd8e36a50a1",
+    "caption_sha256": "sha256:e4549b91102cad61a94f2faadc0100de23716c54e48d27552e21b92eb71cf918"
+  },
+  "execution_authorized": false,
+  "provider_mutation_allowed": false
+}
