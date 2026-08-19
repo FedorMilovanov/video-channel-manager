@@ -21,7 +21,7 @@ permissions:
 
 concurrency:
   group: milovi-telegram-video-artifacts-${{ github.event_name }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   prove-provider-free-artifacts:
@@ -101,6 +101,10 @@ jobs:
           assert len(outputs) == 16
           assert len({item["media_id"] for item in outputs}) == 16
           assert all(Path(item["output_path"]).is_file() for item in outputs)
+          assert all(item["output_audio_present"] is True for item in outputs)
+          assert all(item["output_audio_codec"] == "aac" for item in outputs)
+          assert all(item["output_audio_sample_rate_hz"] == 48000 for item in outputs)
+          assert all(item["output_audio_channels"] == 2 for item in outputs)
           print(evidence["evidence_sha256"])
           PY
 
@@ -212,6 +216,10 @@ jobs:
           assert len(outputs) == 16
           assert len({item["media_id"] for item in outputs}) == 16
           assert all(Path(item["output_path"]).is_file() for item in outputs)
+          assert all(item["output_audio_present"] is True for item in outputs)
+          assert all(item["output_audio_codec"] == "aac" for item in outputs)
+          assert all(item["output_audio_sample_rate_hz"] == 48000 for item in outputs)
+          assert all(item["output_audio_channels"] == 2 for item in outputs)
           print(evidence["evidence_sha256"])
           PY
 
