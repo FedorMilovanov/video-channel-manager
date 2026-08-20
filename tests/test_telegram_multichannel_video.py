@@ -134,7 +134,7 @@ def test_send_video_once_uses_one_exact_multipart_sendvideo_request(
     request = captured[0]
     assert request.url.path.endswith("/bottest-token/sendVideo")
     assert request.headers["content-type"].startswith("multipart/form-data;")
-    assert b'milovi-v01.mp4' in request.content
+    assert b"milovi-v01.mp4" in request.content
     assert media in request.content
     assert payload.caption.encode("utf-8") in request.content
     assert b'name="supports_streaming"' in request.content
