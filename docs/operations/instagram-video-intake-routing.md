@@ -1,7 +1,7 @@
 # Instagram video intake and media routing
 
 Status: provider-inert  
-Owner issue: #495  
+Owner issue: #492  
 Scope: repository-owned preparation only; no Instagram/Meta provider mutation
 
 This runbook is the canonical operator path for turning an exact YouTube inventory into an Instagram/Reels production-routing artifact. It deliberately separates provider inventory, YouTube surface classification, source-master evidence, rights/provenance review, and publication authorization.
@@ -185,7 +185,10 @@ This lane exports:
 
 - `instagram-youtube-video-intake-v1.schema.json`;
 - `instagram-media-review-v1.schema.json`;
-- `instagram-video-route-v1.schema.json`.
+- `instagram-video-route-v1.schema.json`;
+- `instagram-reel-factory-v1.schema.json`;
+- `instagram-reel-queue-v1.schema.json`;
+- `instagram-reel-factory-coverage-v1.schema.json`.
 
 Unknown fields are rejected by the Pydantic exchange models rather than silently accepted.
 
