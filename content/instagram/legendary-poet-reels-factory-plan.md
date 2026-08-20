@@ -2,7 +2,7 @@
 
 Status: **provider-inert / production planning**  
 Built: 2026-08-20  
-Owner issue: #495
+Owner issue: #492
 
 This plan expands the Instagram program from isolated posts into a repeatable Reel factory built from exact existing project sources. It defines **59 distinct Reel jobs** from the already reviewed poetry/video/site corpus. It does **not** claim that 59 finished media files already exist.
 
