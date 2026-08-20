@@ -15,7 +15,8 @@ from video_channel_manager.exchange.instagram_identity import (
 )
 
 
-DIGEST = "sha256:" + "a" * 64
+ACCOUNT_DIGEST = "sha256:" + "a" * 64
+SCOPE_DIGEST = "sha256:" + "b" * 64
 NOW = datetime(2026, 8, 20, 0, 30, tzinfo=UTC)
 
 
@@ -30,7 +31,8 @@ def _instagram_login_observation(*, account_id: str = "123456789012345", usernam
         facebook_page_id=None,
         granted_scopes=("instagram_business_basic",),
         observed_at=NOW,
-        raw_response_sha256=DIGEST,
+        account_response_sha256=ACCOUNT_DIGEST,
+        scope_evidence_sha256=SCOPE_DIGEST,
     )
 
 
@@ -40,7 +42,23 @@ def test_instagram_login_identity_proof_does_not_require_facebook_page_or_publis
     assert observation.instagram_professional_account_id == "123456789012345"
     assert observation.facebook_page_id is None
     assert observation.granted_scopes == ("instagram_business_basic",)
+    assert observation.account_response_sha256 == ACCOUNT_DIGEST
+    assert observation.scope_evidence_sha256 == SCOPE_DIGEST
     assert observation.provider_writes_authorized is False
+
+
+def test_identity_observation_requires_distinct_account_and_scope_evidence() -> None:
+    with pytest.raises(ValidationError, match="distinct provider-read artifacts"):
+        InstagramAccountObservation(
+            login_mode="instagram_login",
+            provider_host="graph.instagram.com",
+            api_version="v23.0",
+            instagram_professional_account_id="123456789012345",
+            granted_scopes=("instagram_business_basic",),
+            observed_at=NOW,
+            account_response_sha256=ACCOUNT_DIGEST,
+            scope_evidence_sha256=ACCOUNT_DIGEST,
+        )
 
 
 def test_instagram_login_rejects_wrong_host_or_missing_basic_scope() -> None:
@@ -52,7 +70,8 @@ def test_instagram_login_rejects_wrong_host_or_missing_basic_scope() -> None:
             instagram_professional_account_id="123456789012345",
             granted_scopes=("instagram_business_basic",),
             observed_at=NOW,
-            raw_response_sha256=DIGEST,
+            account_response_sha256=ACCOUNT_DIGEST,
+            scope_evidence_sha256=SCOPE_DIGEST,
         )
 
     with pytest.raises(ValidationError, match="instagram_business_basic"):
@@ -63,7 +82,8 @@ def test_instagram_login_rejects_wrong_host_or_missing_basic_scope() -> None:
             instagram_professional_account_id="123456789012345",
             granted_scopes=("instagram_business_content_publish",),
             observed_at=NOW,
-            raw_response_sha256=DIGEST,
+            account_response_sha256=ACCOUNT_DIGEST,
+            scope_evidence_sha256=SCOPE_DIGEST,
         )
 
 
@@ -78,7 +98,8 @@ def test_facebook_login_identity_proof_requires_linked_page_and_page_discovery_s
         facebook_page_id="112233445566778",
         granted_scopes=("instagram_basic", "pages_show_list"),
         observed_at=NOW,
-        raw_response_sha256=DIGEST,
+        account_response_sha256=ACCOUNT_DIGEST,
+        scope_evidence_sha256=SCOPE_DIGEST,
     )
 
     assert observation.facebook_page_id == "112233445566778"
@@ -92,7 +113,8 @@ def test_facebook_login_identity_proof_requires_linked_page_and_page_discovery_s
             facebook_page_id=None,
             granted_scopes=("instagram_basic", "pages_show_list"),
             observed_at=NOW,
-            raw_response_sha256=DIGEST,
+            account_response_sha256=ACCOUNT_DIGEST,
+            scope_evidence_sha256=SCOPE_DIGEST,
         )
 
 
@@ -101,7 +123,7 @@ def test_human_binding_uses_numeric_provider_id_not_username_as_identity() -> No
     binding = build_instagram_project_binding(
         observation,
         project_key="legendary-poet",
-        observation_sha256=DIGEST,
+        observation_sha256=ACCOUNT_DIGEST,
         approved_at=NOW,
         approved_by="Fedor Milovanov",
     )
@@ -118,7 +140,7 @@ def test_binding_rejects_unknown_project_and_registry_rejects_cross_project_prov
         build_instagram_project_binding(
             observation,
             project_key="legendary-poet-typo",
-            observation_sha256=DIGEST,
+            observation_sha256=ACCOUNT_DIGEST,
             approved_at=NOW,
             approved_by="reviewer",
         )
@@ -126,14 +148,14 @@ def test_binding_rejects_unknown_project_and_registry_rejects_cross_project_prov
     first = build_instagram_project_binding(
         observation,
         project_key="legendary-poet",
-        observation_sha256=DIGEST,
+        observation_sha256=ACCOUNT_DIGEST,
         approved_at=NOW,
         approved_by="reviewer",
     )
     second = build_instagram_project_binding(
         observation,
         project_key="lord-god-strength",
-        observation_sha256=DIGEST,
+        observation_sha256=ACCOUNT_DIGEST,
         approved_at=NOW,
         approved_by="reviewer",
     )
