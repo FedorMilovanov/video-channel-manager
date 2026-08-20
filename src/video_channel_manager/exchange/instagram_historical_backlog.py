@@ -57,7 +57,10 @@ class InstagramHistoricalBacklogCounts(HistoricalBacklogFrozenModel):
 
     @model_validator(mode="after")
     def validate_partition(self) -> InstagramHistoricalBacklogCounts:
-        if self.already_covered + self.design_reel_jobs + self.build_editorial_record != self.total_historical_floor_ids:
+        if (
+            self.already_covered + self.design_reel_jobs + self.build_editorial_record
+            != self.total_historical_floor_ids
+        ):
             raise ValueError("historical backlog actions do not partition the historical floor")
         return self
 
