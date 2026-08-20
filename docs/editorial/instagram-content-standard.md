@@ -1,7 +1,7 @@
 # Instagram Content Standard
 
 Status: provider-inert editorial policy  
-Owner issue: #495  
+Owner issue: #492  
 Last researched: 2026-08-20
 
 ## Purpose
@@ -16,9 +16,8 @@ AI-media disclosure. It never invents a fact, quotation, date, biographical deta
 theological conclusion or literary interpretation.
 
 This document is content policy only. It authorizes no Meta/Instagram provider write.
-The public handles supplied by the owner (`@the.legendary.poet` and
-`@thelordgodismystrength`) are discovery hints until exact professional-account IDs
-are proved and bound to project keys in a separate provider-facing scope.
+Public handles supplied by the owner are discovery hints until exact Professional
+account IDs are proved and bound to project keys in a separate provider-facing scope.
 
 ## Current Meta facts that constrain the policy
 
@@ -245,7 +244,7 @@ an account with quote cards merely to make a 3x3 grid look complete.
 `published-verified` → only after a separate provider executor returns and re-reads the
 exact remote media ID.
 
-No file in `content/instagram/` created under issue #495 is live-publication
+No file in `content/instagram/` created under issue #492 is live-publication
 authorization.
 
 ## Measurement contract
