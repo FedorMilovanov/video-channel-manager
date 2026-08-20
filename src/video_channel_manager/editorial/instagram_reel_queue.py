@@ -55,10 +55,7 @@ def _queue_record(
     source_by_id: dict[str, YouTubeReelSource | SiteAudioReelSource | SiteEditorialReelSource],
     youtube_routes: dict[str, InstagramVideoRouteRecord],
 ) -> InstagramReelQueueRecord:
-    states = {
-        source_id: _source_state(source_by_id[source_id], youtube_routes=youtube_routes)
-        for source_id in job.source_ids
-    }
+    states = {source_id: _source_state(source_by_id[source_id], youtube_routes=youtube_routes) for source_id in job.source_ids}
 
     blockers: list[str] = []
     if job.requires_clean_master:
@@ -137,11 +134,7 @@ def build_instagram_reel_queue(
                 f"media route project mismatch: {media_route.project_key} != {registry.project_key}"
             )
 
-        expected_channels = {
-            source.youtube_channel_id
-            for source in registry.sources
-            if isinstance(source, YouTubeReelSource)
-        }
+        expected_channels = {source.youtube_channel_id for source in registry.sources if isinstance(source, YouTubeReelSource)}
         if expected_channels and media_route.channel_id not in expected_channels:
             raise InstagramReelQueueError(
                 f"media route channel mismatch: {media_route.channel_id} not in {sorted(expected_channels)}"
@@ -150,8 +143,7 @@ def build_instagram_reel_queue(
     source_by_id = {source.source_id: source for source in registry.sources}
     youtube_routes = _youtube_route_map(media_route)
     records = tuple(
-        _queue_record(job, source_by_id=source_by_id, youtube_routes=youtube_routes)
-        for job in registry.jobs
+        _queue_record(job, source_by_id=source_by_id, youtube_routes=youtube_routes) for job in registry.jobs
     )
     dispositions = Counter(record.status for record in records)
 
