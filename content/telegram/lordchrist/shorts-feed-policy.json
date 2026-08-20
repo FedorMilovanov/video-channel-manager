@@ -14,7 +14,7 @@
   "telegram_provider_mutation_allowed": false,
   "telegram_stories_enabled": false,
   "timezone": "Europe/Moscow",
-  "slot_local_time": "18:17",
+  "slot_local_time": "17:17",
   "daily_short_limit": 1,
   "min_gap_from_editorial_hours": 4,
   "order": "oldest_first",
