@@ -51,6 +51,10 @@ The first rich successor publication is complete:
 
 Issue #473 is closed as completed. The second reviewed rich article remains provider-inert. The completed one-shot rich live canary/controller workflows have been retired from executable `main`; durable evidence and reusable runtime/source remain preserved.
 
+The LordChrist YouTube Shorts → Telegram native-video **repository implementation is complete and hardened** through PRs #502, #504 and #505. The provider-inert lane uses stable `lordchrist-short-<youtube_video_id>` publication identities, fresh owner-snapshot evidence, exact owner-media SHA-256/size bindings, immutable snapshot-bound candidate approval, complete durable-state proof, content-addressed release identities and a `17:17 Europe/Moscow` slot that preserves the configured four-hour gap from the `21:17` editorial catch-up slot. Issue #503 remains the current **artifact-level** scope until a fresh owner `video-manager youtube scan` AuditPackage and exact Google Takeout/local owner media are available and classified/prepared. Historical duration-only snapshots are reconciliation evidence only. No Telegram publication, Telegram Story, MTProto/user-session action, YouTube mutation, release authorization or execution authority is created by this implementation state.
+
+Canonical Shorts runbook: [`lordchrist-shorts-feed.md`](lordchrist-shorts-feed.md).
+
 ## Telegram / Svodka
 
 Issue #170 is closed as repository pipeline implementation complete. The historical August approval bound release `svodka-pilot-2026-08`. The historical profile used `provider_writes_authorized=true` only for the reviewed rollout gates; that phrase describes the reviewed rollout contract, not standing authority. As historical rollout evidence, the durable ledger now exists on `state/svodka-telegram`.
@@ -119,9 +123,10 @@ Repository policy files and green checks do not create branch protection by them
 ## Next safe work
 
 1. Do not reopen completed Svodka, LordChrist rich canary or Milovi Clips work because an older issue body or checkpoint says it was incomplete.
-2. Keep `milovi-feed-20260820-001` provider-inert until a separate exact release authorization and a separate fresh exact human execution authorization are deliberately created; `milovi-feed-20260819-001` remains stale immutable no-catch-up history.
-3. Treat the Milovi native-video artifact lane as complete at `16 / 16`; preserve its content-addressed accepted branch/evidence as immutable artifact proof and do not infer any Telegram execution authority from it.
-4. Continue branch hygiene only with exact unique-commit/PR-state proof; preserve all durable `state/*` refs.
-5. For any new provider-visible work, start with fresh current `main`, fresh durable state, exact target identity and a new explicit owning scope.
+2. Continue LordChrist Shorts Issue #503 only as `official_api_read` + `local_only` artifact work: obtain one fresh owner AuditPackage from the existing `fedor-milovanov` OAuth runtime, classify it through the merged readiness/inventory path, bind exact owner Takeout/local media, and keep every release preview provider-inert. Do not treat the historical 2026-07-29 package as current completion evidence.
+3. Keep `milovi-feed-20260820-001` provider-inert until a separate exact release authorization and a separate fresh exact human execution authorization are deliberately created; `milovi-feed-20260819-001` remains stale immutable no-catch-up history.
+4. Treat the Milovi native-video artifact lane as complete at `16 / 16`; preserve its content-addressed accepted branch/evidence as immutable artifact proof and do not infer any Telegram execution authority from it.
+5. Continue branch hygiene only with exact unique-commit/PR-state proof; preserve all durable `state/*` refs.
+6. For any new provider-visible work, start with fresh current `main`, fresh durable state, exact target identity and a new explicit owning scope.
 
 Nothing in this document is authorization for a provider mutation.
