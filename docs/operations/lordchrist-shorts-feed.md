@@ -1,6 +1,6 @@
 # LordChrist YouTube Shorts → Telegram native-video feed
 
-Owning scope: Issue #501.
+Repository implementation originated in Issue #501. The current read-only artifact/backlog wave is Issue #503.
 
 This runbook defines a **provider-inert** intake and artifact path for moving the owner’s YouTube Shorts from the canonical `lord-god-strength` YouTube channel into a future native-video queue for `@lordchrist`.
 
@@ -24,30 +24,20 @@ The source video ID is the durable cross-platform source identity. A Shorts publ
 
 Titles, filenames, timestamps, queue positions and generated captions never select source identity.
 
-## Why the feed uses native Telegram video
+## Native-video cadence
 
-The target presentation is one native Telegram `sendVideo` item per day rather than a YouTube-link-only post. The generic repository video payload already binds:
+The target presentation is one native Telegram `sendVideo` item per day rather than a YouTube-link-only post. The generic repository video payload binds exact project/channel profile, publication ID, MP4 path, SHA-256, byte size, filename and streaming mode.
 
-- exact project/channel profile;
-- exact publication ID;
-- reviewed MP4 path;
-- SHA-256;
-- byte size;
-- filename;
-- streaming mode.
-
-Issue #501 only prepares data compatible with that runtime. It never calls the provider transport.
-
-Default editorial cadence:
+Provider-inert default cadence:
 
 - one Short per day;
-- `18:17 Europe/Moscow`;
+- `17:17 Europe/Moscow`;
 - oldest confirmed Short first;
-- at least four hours of separation from the existing editorial/quote lane.
+- at least four hours from both existing quote/editorial slots (`09:17` primary and `21:17` catch-up).
 
-The policy is frozen in `content/telegram/lordchrist/shorts-feed-policy.json`.
+The Shorts policy is frozen in `content/telegram/lordchrist/shorts-feed-policy.json`. `validate-policy` also reads the canonical `content/telegram/lordchrist/production-schedule.json`; policy validation fails if the required gap is no longer true.
 
-## 1. Read-only YouTube inventory
+## 1. Fresh read-only YouTube inventory
 
 Use the existing owner OAuth account and exact channel ID:
 
@@ -58,34 +48,43 @@ video-manager youtube scan \
   --output operator-output/lordchrist-youtube-audit.json
 ```
 
-The existing YouTube client requests owner-visible `fileDetails`. The Shorts classifier uses exact geometry, duration, rotation and owner file creation-time evidence where available.
+The YouTube client enumerates the exact owner uploads playlist and requests `snippet,contentDetails,status,fileDetails`. If `videos.list` omits any ID that the uploads playlist enumerated, the scan fails closed instead of silently producing an incomplete channel inventory.
 
-Build the LordChrist Shorts inventory:
+A Shorts snapshot is accepted only when it is both sufficiently evidenced and fresh. Default maximum age is 48 hours. The standalone diagnostic command is:
+
+```bash
+python -m video_channel_manager.lordchrist_shorts_snapshot_readiness \
+  --audit operator-output/lordchrist-youtube-audit.json \
+  --max-age-hours 48
+```
+
+Build the exact inventory:
 
 ```bash
 python -m video_channel_manager.lordchrist_shorts inventory \
   --audit operator-output/lordchrist-youtube-audit.json \
+  --max-snapshot-age-hours 48 \
   --output operator-output/lordchrist-shorts-inventory.json
 ```
 
-The inventory has three relevant outcomes:
+The `inventory` command performs the readiness check itself. Running the standalone readiness command first is useful diagnostics, but it is not a bypassable safety dependency.
 
-1. `short` — exact owner metadata is sufficient for conservative Shorts classification;
-2. `candidate` — square/vertical duration evidence is compatible with Shorts but historical timing is insufficient for exact positive classification;
+Inventory outcomes:
+
+1. `short` — exact owner metadata proves the conservative Shorts classification;
+2. `candidate` — owner geometry/duration are compatible with Shorts, but historical timing does not prove the surface exactly;
 3. excluded — exact long-form evidence or insufficient candidate evidence.
-
-Historical `candidate` items are **not silently promoted**. They require exact owner review by video ID before a future release is built.
 
 `#Shorts`, title text, thumbnail geometry and guessed upload dates are not accepted as positive identity evidence.
 
-## 2. Obtain owner media
+## 2. Freeze exact owner media bindings
 
-For historical owner bytes, use either:
+Historical owner bytes may come only from:
 
 - Google Takeout export of the owner’s YouTube uploads; or
 - an existing local clean master owned by the project.
 
-Do not make the repository infer a file by title. Create an explicit binding manifest:
+Do not infer a file by title, newest-file ordering or wildcard. Before preparation, calculate the exact owner-file SHA-256 and byte size and freeze them with the exact YouTube video ID:
 
 ```json
 {
@@ -97,13 +96,15 @@ Do not make the repository infer a file by title. Create an explicit binding man
     {
       "youtube_video_id": "EXACT_VIDEO_ID",
       "source_kind": "google_takeout",
-      "source_path": "C:/Users/Fedor/Downloads/Takeout/YouTube/video-file.mp4"
+      "source_path": "C:/Users/Fedor/Downloads/Takeout/YouTube/video-file.mp4",
+      "expected_source_sha256": "sha256:EXACT_64_HEX_DIGEST",
+      "expected_source_byte_size": 12345678
     }
   ]
 }
 ```
 
-The binding is exact `youtube_video_id → owner file path`. There is no title-only, newest-file or wildcard fallback.
+Preparation rejects a size/hash mismatch before media work and re-hashes the source after copy/transcode. If source bytes change during preparation, the output is rejected rather than accepted under stale provenance.
 
 ## 3. Prepare Telegram-ready media
 
@@ -117,60 +118,73 @@ python -m video_channel_manager.lordchrist_shorts prepare-media \
   --output operator-output/lordchrist-shorts-media-acceptance.json
 ```
 
-Every source is read-only probed and hashed first.
-
-If the source is already Telegram-ready, the exact bytes are copied unchanged. Otherwise a local FFmpeg conversion creates an accepted derivative with:
+If source bytes are already Telegram-ready they are copied unchanged. Otherwise local FFmpeg creates an accepted derivative with:
 
 - MP4;
 - H.264;
 - `yuv420p`;
-- orientation baked into pixels, no retained rotation dependency;
-- AAC audio when audio exists;
+- orientation baked into pixels, with no retained rotation dependency;
+- AAC when audio exists;
 - `+faststart`;
 - even dimensions;
 - at most 50,000,000 bytes;
 - duration no greater than 180 seconds.
 
-The acceptance artifact records source SHA-256, accepted transport SHA-256, source/transport probe summaries, whether transcoding occurred, and FFmpeg/FFprobe provenance. Provider access/write flags are hard-coded false.
+Acceptance records source SHA-256, transport SHA-256, byte sizes, probe summaries, transcode status and FFmpeg/FFprobe provenance. Provider access/write flags are hard-coded false. Exact duplicate accepted bytes across different YouTube IDs are rejected.
 
-If exact duplicate accepted bytes are bound to different YouTube IDs, preparation fails instead of filling the channel with duplicate video.
+## 4. Historical candidate confirmation is an immutable artifact
 
-## 4. Historical candidate confirmation
+A historical `candidate` is never promoted by a transient CLI flag. If an exact owner review confirms a candidate belongs in the backlog, create a snapshot-bound approval artifact:
 
-A `candidate` may enter a release only by exact video ID:
-
-```text
---approve-candidate EXACT_VIDEO_ID
+```json
+{
+  "schema_name": "video-channel-manager.lordchrist-shorts-candidate-approval",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "youtube_channel_id": "UCeSJsC6go2c9pdJCuUI1BYA",
+  "inventory_snapshot_id": "EXACT_SNAPSHOT_UUID",
+  "approved_video_ids": ["EXACT_VIDEO_ID"],
+  "reviewed_by": "FedorMilovanov",
+  "reviewed_at": "2026-08-20T18:00:00+00:00"
+}
 ```
 
-Approval is scoped only to that inventory candidate. A typo, a non-candidate ID, or a title cannot authorize another item.
+The approval must match the exact inventory snapshot and may contain only IDs that are actually `candidate` records in that snapshot. This is source/editorial confirmation, **not** Telegram release or execution authority.
 
-This is an editorial/source classification decision, **not** Telegram execution authority.
+## 5. Materialize complete durable LordChrist state
 
-## 5. Build an unauthorized release preview
-
-Before release construction, materialize/read the durable LordChrist state branch and pass every active LordChrist ledger to the builder. The current legacy paths are:
+Release preview construction no longer accepts an optional hand-picked ledger list. Materialize the complete `content/telegram/lordchrist` tree from durable branch `state/lordchrist-telegram` into a local state root, for example:
 
 ```text
-content/telegram/lordchrist/publication-ledger.json
-content/telegram/lordchrist/research-v2/publication-ledger.json
+.state/lordchrist/content/telegram/lordchrist
 ```
 
-Example:
+The builder requires, at minimum, the canonical legacy ledger, research-v2 ledger + exact retirement disposition, and rich-v1 live-canary ledger. It recursively inspects provider-effect JSON under that root, including one-off state and any future ledger JSON.
+
+The historical research-v2 `retired_no_replay` disposition is honored only when its exact retirement artifact is present and says `provider_retry_forbidden=true`. Other `dispatching` / `provider_effect=may_exist` records remain channel-wide blockers.
+
+## 6. Build an unauthorized release preview
+
+Example without historical candidates:
 
 ```bash
 python -m video_channel_manager.lordchrist_shorts build-release \
   --inventory operator-output/lordchrist-shorts-inventory.json \
   --media operator-output/lordchrist-shorts-media-acceptance.json \
+  --state-root .state/lordchrist/content/telegram/lordchrist \
   --start-date 2026-08-21 \
-  --existing-ledger .state/lordchrist/content/telegram/lordchrist/publication-ledger.json \
-  --existing-ledger .state/lordchrist/content/telegram/lordchrist/research-v2/publication-ledger.json \
   --output operator-output/lordchrist-shorts-release-preview.json
 ```
 
-The result is the repository’s existing generic `telegram-release-queue` schema with `GenericVideoPayload` items, one item per day at 18:17 Moscow time.
+If reviewed historical candidates are included, add:
 
-By construction under Issue #501:
+```text
+--candidate-approval operator-output/lordchrist-shorts-candidate-approval.json
+```
+
+The result is the existing generic `telegram-release-queue` with `GenericVideoPayload` items, one item per day at 17:17 Moscow time. The release ID is content-addressed from the exact snapshot, selected ordered publication IDs, accepted media digests, profile, cadence and start date; two materially different previews on the same date do not share one release identity.
+
+By construction:
 
 ```text
 release_authorized = false
@@ -180,42 +194,38 @@ bot_id = null
 bot_username = null
 ```
 
-The canonical LordChrist profile itself is also required to remain `provider_writes_authorized=false`.
-
-Therefore the preview cannot be sent by the generic Telegram runtime.
+The canonical LordChrist profile must remain `provider_writes_authorized=false`. Therefore this preview is not a provider mutation artifact and cannot be treated as standing Telegram authority.
 
 ## Channel-wide safety
 
-The generalized LordChrist effect guard accepts any number of writer tracks. Before a future Shorts writer can mutate Telegram, all active LordChrist ledgers must satisfy:
+Before any future Shorts writer can mutate Telegram, the complete LordChrist state must prove:
 
-- no `dispatching` effect;
-- no `provider_effect=may_exist`;
-- no candidate publication ID already present in durable state.
+- no unresolved `dispatching` effect;
+- no unresolved `provider_effect=may_exist` except an exact terminal `retired_no_replay` disposition;
+- no selected Shorts `publication_id` already present in durable state.
 
-An ambiguous legacy/research/Shorts outcome blocks **all** LordChrist writers until read-only reconciliation or an exact terminal disposition resolves it.
+Missing state is not equivalent to empty state. An incomplete materialized state root fails closed.
 
-This extends the existing no-blind-replay principle rather than creating an independent Shorts publisher.
+## Stories and Telegram Scheduled Messages
 
-## Stories and Telegram “Scheduled Messages”
-
-They are intentionally outside Issue #501.
-
-Bot-based native-video publication can use the existing guarded Telegram transport, but server-side channel Scheduled Messages and ordinary channel Stories require a different Telegram authority model (MTProto/user session or another separately reviewed capability). That broader credential surface must not be introduced as a shortcut for this backlog.
+They remain outside this artifact scope. Bot-based native-video publication can reuse the guarded Telegram transport, but server-side channel Scheduled Messages and ordinary channel Stories require a different Telegram authority model such as a separately reviewed MTProto/user session. Do not introduce that credential surface as a shortcut for this backlog.
 
 If Stories are added later, they should be a secondary promotion lane for selected already-reviewed Shorts, not the canonical archive.
 
 ## Provider boundary
 
-Allowed under Issue #501:
+Allowed in the current artifact scope:
 
-- read-only YouTube inventory;
+- read-only owner YouTube inventory;
 - local/Takeout owner-file binding;
 - local FFprobe/FFmpeg;
 - hashing and exact-media acceptance;
+- immutable candidate-review artifacts;
+- complete durable-state readback/materialization;
 - provider-inert release preview;
 - GitHub CI/tests/docs.
 
-Forbidden:
+Forbidden without a new exact rollout scope and authorization:
 
 - Telegram send/edit/delete/pin;
 - Telegram Story publication;
@@ -225,4 +235,4 @@ Forbidden:
 - release/execution authorization;
 - live schedule activation.
 
-A future live rollout must get a new exact owning scope, fresh current-main proof, exact state reconciliation, target preflight, immutable reviewed release, separate human execution authority, durable intent before one provider attempt, and exact provider-visible postflight.
+A future live rollout requires a new exact owning scope, fresh current-main proof, fresh durable state, exact target preflight, immutable reviewed release, separate human execution authority, durable intent before one provider attempt, zero blind mutation retries and exact provider-visible postflight.
