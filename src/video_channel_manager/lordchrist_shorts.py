@@ -222,7 +222,9 @@ class AcceptedShortMedia(FrozenModel):
         if (transport.pixel_format or "").casefold() != "yuv420p":
             raise ValueError("accepted Telegram transport must use yuv420p")
         if transport.rotation_degrees != 0:
-            raise ValueError("accepted Telegram transport must bake orientation instead of relying on rotation metadata")
+            raise ValueError(
+                "accepted Telegram transport must bake orientation instead of relying on rotation metadata"
+            )
         if transport.width > transport.height:
             raise ValueError("accepted Telegram Short media must be square or vertical")
         if transport.audio_stream_count == 1 and (transport.audio_codec or "").casefold() != "aac":
@@ -588,7 +590,10 @@ def _validate_transport(inventory_item: ShortsInventoryItem, path: Path, summary
         raise ValueError(f"{inventory_item.youtube_video_id}: transport dimensions must be even")
     if summary.audio_stream_count == 1 and (summary.audio_codec or "").casefold() != "aac":
         raise ValueError(f"{inventory_item.youtube_video_id}: transport audio codec is not AAC")
-    if inventory_item.duration_seconds is not None and abs(summary.duration_seconds - inventory_item.duration_seconds) > 3.0:
+    if (
+        inventory_item.duration_seconds is not None
+        and abs(summary.duration_seconds - inventory_item.duration_seconds) > 3.0
+    ):
         raise ValueError(
             f"{inventory_item.youtube_video_id}: transport duration differs from YouTube inventory by over 3 seconds"
         )
@@ -723,7 +728,9 @@ def _validate_state_identity(path: Path, payload: dict[str, Any]) -> None:
     target = payload.get("target")
     if isinstance(target, dict):
         target_username = target.get("chat_username")
-        if target_username is not None and str(target_username).casefold().lstrip("@") != TELEGRAM_CHANNEL_USERNAME.casefold().lstrip("@"):
+        if target_username is not None and str(target_username).casefold().lstrip(
+            "@"
+        ) != TELEGRAM_CHANNEL_USERNAME.casefold().lstrip("@"):
             raise ValueError(f"LordChrist state target mismatch in {path}")
 
 
@@ -913,7 +920,10 @@ def build_provider_inert_release(
     existing_publication_ids: Iterable[str] = (),
     editorial_times: Sequence[str] = DEFAULT_EDITORIAL_TIMES,
 ) -> GenericReleaseQueue:
-    if profile.project_key != PROJECT_KEY or profile.channel_username.casefold() != TELEGRAM_CHANNEL_USERNAME.casefold():
+    if (
+        profile.project_key != PROJECT_KEY
+        or profile.channel_username.casefold() != TELEGRAM_CHANNEL_USERNAME.casefold()
+    ):
         raise ValueError("Telegram profile is not the canonical LordChrist profile")
     if profile.provider_writes_authorized:
         raise ValueError("Shorts release builder requires a write-disabled LordChrist profile")
