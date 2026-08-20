@@ -49,6 +49,7 @@ def _client(tmp_path: Path) -> YouTubeApiClient:
         if resource == "playlistItems" and params.get("playlistId") == "UU1":
             return httpx.Response(200, json={"items": [{"contentDetails": {"videoId": "VID1"}}]})
         if resource == "videos":
+            assert "fileDetails" in params.get("part", "")
             return httpx.Response(
                 200,
                 json={
@@ -64,6 +65,22 @@ def _client(tmp_path: Path) -> YouTubeApiClient:
                             },
                             "contentDetails": {"duration": "PT4M18S"},
                             "status": {"privacyStatus": "public"},
+                            "fileDetails": {
+                                "fileName": "poem-source.mp4",
+                                "fileSize": "123456789",
+                                "fileType": "video",
+                                "container": "mp4",
+                                "durationMs": "258241",
+                                "creationTime": "2026-01-01T20:00:00.000Z",
+                                "videoStreams": [
+                                    {
+                                        "widthPixels": 1080,
+                                        "heightPixels": 1920,
+                                        "frameRateFps": 30.0,
+                                        "codec": "h264",
+                                    }
+                                ],
+                            },
                         }
                     ]
                 },
@@ -114,6 +131,15 @@ def test_complete_inventory_package(tmp_path: Path) -> None:
     assert len(package.videos) == 1
     assert package.videos[0].duration_seconds == 258
     assert package.videos[0].revision.startswith("sha256:")
+    assert package.videos[0].metadata["fileDetails"]["durationMs"] == "258241"
+    assert package.videos[0].metadata["fileDetails"]["videoStreams"] == [
+        {
+            "widthPixels": 1080,
+            "heightPixels": 1920,
+            "frameRateFps": 30.0,
+            "codec": "h264",
+        }
+    ]
     assert len(package.collections) == 1
     assert len(package.memberships) == 1
     assert package.memberships[0].membership_id == "PLI1"

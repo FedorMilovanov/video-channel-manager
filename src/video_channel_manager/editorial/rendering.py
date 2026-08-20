@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Literal, Protocol
 if TYPE_CHECKING:
     from video_channel_manager.editorial.content import EditorialContentRecord
 
-PlatformName = Literal["youtube", "vk"]
-ContentSurface = Literal["comment", "description", "video_description", "post"]
+PlatformName = Literal["youtube", "vk", "instagram"]
+ContentSurface = Literal["comment", "description", "video_description", "post", "reel", "feed", "carousel"]
 IssueSeverity = Literal["warning", "error"]
 
 _URL_RE = re.compile(r"https?://[^\s<>]+", re.IGNORECASE)

@@ -6,6 +6,11 @@ from typing import Any
 
 from video_channel_manager.editorial.content import EditorialContentRecord, parse_content_record
 from video_channel_manager.editorial.rendering import ContentRenderer, ContentSurface, PlatformName, RenderedContent
+from video_channel_manager.platforms.instagram.renderers import (
+    InstagramCarouselCaptionRenderer,
+    InstagramFeedCaptionRenderer,
+    InstagramReelCaptionRenderer,
+)
 from video_channel_manager.platforms.vk.renderers import VKCommentRenderer, VKPostRenderer, VKVideoDescriptionRenderer
 from video_channel_manager.platforms.youtube.renderers import YouTubeCommentRenderer, YouTubeDescriptionRenderer
 
@@ -43,6 +48,14 @@ def renderer_for(platform: str, surface: str | None = None) -> ContentRenderer:
             return VKPostRenderer()
         if selected == "comment":
             return VKCommentRenderer()
+    if normalized_platform == "instagram":
+        selected = normalized_surface or "reel"
+        if selected == "reel":
+            return InstagramReelCaptionRenderer()
+        if selected == "feed":
+            return InstagramFeedCaptionRenderer()
+        if selected == "carousel":
+            return InstagramCarouselCaptionRenderer()
     raise ValueError(f"Unsupported platform/surface combination: {platform}.{surface or ''}")
 
 
