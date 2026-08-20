@@ -1,7 +1,7 @@
 # Господь Бог — Сила Моя — Instagram Wave 2
 
 Status: provider-inert editorial/creative plan  
-Owner issue: #495  
+Owner issue: #492  
 Built: 2026-08-20  
 Source repository snapshot: `FedorMilovanov/gb-is-my-strength@bcb41e57d7f9c011ac597c51a240fba19152a908`
 
