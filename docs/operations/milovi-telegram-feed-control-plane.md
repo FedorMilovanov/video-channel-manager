@@ -20,11 +20,25 @@ Every permanent feed publication uses identity `milovi-feed-YYYYMMDD-NNN` and an
 
 - `content/telegram/milovi-cake/releases/<id>-runtime.json` — immutable generic Telegram release;
 - `content/telegram/milovi-cake/releases/<id>-execution-authority.json` — separate exact execution gate;
-- `content/telegram/milovi-cake/releases/<id>-media.json` — exact source/transport binding for media publications;
+- `content/telegram/milovi-cake/releases/<id>-media.json` — exact source/transport binding for `sendPhoto` publications;
+- `content/telegram/milovi-cake/releases/<id>-message.json` — exact candidate/text binding for `sendMessage` publications;
 - `content/telegram/milovi-cake/feed/<id>.json` on the durable state branch — exact release ledger;
 - `content/telegram/milovi-cake/feed/index.json` on the durable state branch — channel-wide duplicate guard.
 
+A photo publication must not carry a message binding. A text publication must not carry a media binding. The permanent validator fails closed on an ambiguous dual binding.
+
 The frozen editorial/source candidate may remain a separate provenance object. It never becomes provider authority by itself.
+
+## Supported permanent-feed payloads
+
+The permanent writer supports two exact payload kinds through the same generic one-attempt runtime:
+
+- `sendPhoto` — candidate caption plus exact reviewed source/transport bytes; the workflow materializes the deterministic JPEG before `send-once`;
+- `sendMessage` — exact candidate text plus SHA-256 binding; no media file, Pillow install or media download is part of this path.
+
+Both payload kinds pass the same current-main gate, release/content authorization, separate execution authorization, state initialization, duplicate guard, freshness check, exact target preflight, durable intent-before-send, one-attempt mutation and outcome reconciliation. Supporting text does **not** create a second writer or standing authority.
+
+Poll/video payloads are not made publishable by this contract. The separate accepted-video artifact lane remains artifact readiness only until a separately reviewed permanent-feed video transport is implemented.
 
 ## Authority split
 
@@ -62,7 +76,7 @@ A provider attempt requires:
 8. fresh read-only exact target preflight;
 9. one durable prepared intent persisted to both release state and channel-wide index before mutation;
 10. current-main/quality reproof immediately before provider mutation;
-11. exact reviewed media materialization when applicable;
+11. exact reviewed photo materialization when the payload is `sendPhoto`; `sendMessage` has no media materialization step;
 12. one `telegram_multichannel_cli send-once` call;
 13. exact outcome applied to the ledger and channel-wide index.
 
@@ -94,6 +108,10 @@ Do **not** widen freshness, edit the old timestamp, transfer authorization, init
 - Telegram mutation by preparation: no.
 
 The bundle is readiness only. It may be merged provider-free during quiet hours, but a future provider operation still requires a fresh exact-current-main release review/execution authorization, daylight-window check, state initialization and the one-attempt publisher path.
+
+## Marathon editorial source
+
+`content/telegram/milovi-cake/marathon-wave-2026-08.json` is the canonical provider-inert 12-item Cake + School sequence consolidated by PR #497. Its School positions use `sendMessage`; the permanent message binding described above is the supported path for promoting one such item into a future exact `milovi-feed-*` publication. The marathon file itself does not freeze future dates, create release IDs or supply execution authority.
 
 ## Video lane
 
