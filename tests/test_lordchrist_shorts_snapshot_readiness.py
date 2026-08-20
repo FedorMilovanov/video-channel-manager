@@ -13,6 +13,8 @@ from video_channel_manager.lordchrist_shorts_snapshot_readiness import (
     summarize_snapshot_readiness,
 )
 
+AS_OF = datetime(2026, 8, 20, 18, 0, tzinfo=UTC)
+
 
 def _video(
     video_id: str,
@@ -48,7 +50,12 @@ def _video(
     )
 
 
-def _audit(videos: list[VideoRecord], *, channel_id: str = YOUTUBE_CHANNEL_ID) -> AuditPackage:
+def _audit(
+    videos: list[VideoRecord],
+    *,
+    channel_id: str = YOUTUBE_CHANNEL_ID,
+    generated_at: datetime = datetime(2026, 8, 20, 16, 0, tzinfo=UTC),
+) -> AuditPackage:
     channel = ChannelRecord(
         ref=RemoteRef(
             platform=PlatformName.YOUTUBE,
@@ -60,39 +67,45 @@ def _audit(videos: list[VideoRecord], *, channel_id: str = YOUTUBE_CHANNEL_ID) -
     )
     return AuditPackage(
         channel=channel,
-        generated_at=datetime(2026, 8, 20, 16, 0, tzinfo=UTC),
+        generated_at=generated_at,
         videos=videos,
     )
 
 
-def test_snapshot_readiness_accepts_fully_classifiable_owner_snapshot() -> None:
-    package = _audit(
-        [
-            _video(
-                "AbCdEf12345",
-                duration_seconds=60,
-                width=1080,
-                height=1920,
-                creation_time="2026-01-02T00:00:00Z",
-            ),
-            _video(
-                "QwErTy67890",
-                duration_seconds=45,
-                width=1080,
-                height=1920,
-                creation_time="2024-01-02T00:00:00Z",
-            ),
-            _video(
-                "LmNoPq13579",
-                duration_seconds=50,
-                width=1920,
-                height=1080,
-                creation_time="2026-01-02T00:00:00Z",
-            ),
-        ]
-    )
+def _fully_classifiable_videos() -> list[VideoRecord]:
+    return [
+        _video(
+            "AbCdEf12345",
+            duration_seconds=60,
+            width=1080,
+            height=1920,
+            creation_time="2026-01-02T00:00:00Z",
+        ),
+        _video(
+            "QwErTy67890",
+            duration_seconds=45,
+            width=1080,
+            height=1920,
+            creation_time="2024-01-02T00:00:00Z",
+        ),
+        _video(
+            "LmNoPq13579",
+            duration_seconds=50,
+            width=1920,
+            height=1080,
+            creation_time="2026-01-02T00:00:00Z",
+        ),
+    ]
 
-    summary = require_snapshot_ready(package)
+
+def test_snapshot_readiness_accepts_fresh_fully_classifiable_owner_snapshot() -> None:
+    package = _audit(_fully_classifiable_videos())
+
+    summary = require_snapshot_ready(package, as_of=AS_OF)
+    assert summary["generated_at"] == "2026-08-20T16:00:00+00:00"
+    assert summary["evaluated_at"] == "2026-08-20T18:00:00+00:00"
+    assert summary["snapshot_age_seconds"] == 7200
+    assert summary["fresh_enough"] is True
     assert summary["total_videos"] == 3
     assert summary["owner_file_details_count"] == 3
     assert summary["owner_creation_time_count"] == 3
@@ -116,7 +129,8 @@ def test_historical_duration_only_snapshot_fails_closed_instead_of_reporting_zer
         ]
     )
 
-    summary = summarize_snapshot_readiness(package)
+    summary = summarize_snapshot_readiness(package, as_of=AS_OF)
+    assert summary["fresh_enough"] is True
     assert summary["owner_file_details_count"] == 0
     assert summary["duration_le_180_count"] == 1
     assert summary["duration_le_180_known_geometry_count"] == 0
@@ -126,7 +140,31 @@ def test_historical_duration_only_snapshot_fails_closed_instead_of_reporting_zer
     assert summary["ready_for_exact_surface_inventory"] is False
 
     with pytest.raises(ValueError, match="fresh read-only video-manager youtube scan"):
-        require_snapshot_ready(package)
+        require_snapshot_ready(package, as_of=AS_OF)
+
+
+def test_fully_evidenced_but_stale_snapshot_fails_closed() -> None:
+    package = _audit(
+        _fully_classifiable_videos(),
+        generated_at=datetime(2026, 8, 17, 16, 0, tzinfo=UTC),
+    )
+    summary = summarize_snapshot_readiness(package, as_of=AS_OF, max_age_hours=48)
+    assert summary["unresolved_non_candidate_count"] == 0
+    assert summary["fresh_enough"] is False
+    assert summary["ready_for_exact_surface_inventory"] is False
+    with pytest.raises(ValueError, match="fresh_enough=False"):
+        require_snapshot_ready(package, as_of=AS_OF, max_age_hours=48)
+
+
+def test_future_dated_snapshot_fails_closed() -> None:
+    package = _audit(
+        _fully_classifiable_videos(),
+        generated_at=datetime(2026, 8, 20, 19, 0, tzinfo=UTC),
+    )
+    summary = summarize_snapshot_readiness(package, as_of=AS_OF)
+    assert summary["snapshot_age_seconds"] == -3600
+    assert summary["fresh_enough"] is False
+    assert summary["ready_for_exact_surface_inventory"] is False
 
 
 def test_snapshot_readiness_rejects_non_lordchrist_channel() -> None:
@@ -146,4 +184,10 @@ def test_snapshot_readiness_rejects_non_lordchrist_channel() -> None:
     )
 
     with pytest.raises(ValueError, match="AuditPackage channel mismatch"):
-        summarize_snapshot_readiness(package)
+        summarize_snapshot_readiness(package, as_of=AS_OF)
+
+
+def test_snapshot_readiness_rejects_non_positive_max_age() -> None:
+    package = _audit(_fully_classifiable_videos())
+    with pytest.raises(ValueError, match="max_age_hours must be positive"):
+        summarize_snapshot_readiness(package, as_of=AS_OF, max_age_hours=0)
