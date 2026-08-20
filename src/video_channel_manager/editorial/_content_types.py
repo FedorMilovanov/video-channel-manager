@@ -59,6 +59,7 @@ ALLOWED_LINK_KINDS = frozenset(
 ALLOWED_SURFACES = {
     "youtube": frozenset({"comment", "description"}),
     "vk": frozenset({"video_description", "post", "comment"}),
+    "instagram": frozenset({"reel", "feed", "carousel"}),
 }
 BANNED_CIRCLE_MARKERS = frozenset({"🔵", "🔴", "🟢", "🟡", "🟠", "🟣", "⚫", "⚪", "🟤"})
 DECORATIVE_MARKERS = ("📖", "📌", "🎧", "📚", "❄️", "⚔️", "🌊", "🎭", "📝", "🎼", "🕯️", "🗂️")

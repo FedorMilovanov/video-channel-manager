@@ -87,6 +87,37 @@ The literary or theological hierarchy is preserved through paragraph order, conc
 
 `VKCommentRenderer` intentionally keeps at most two relevant links. It emits a warning when it compacts a larger link set.
 
+## Instagram
+
+Instagram is a first-class canonical render target with the explicit surfaces `reel`, `feed`, and `carousel`. `InstagramReelCaptionRenderer`, `InstagramFeedCaptionRenderer`, and `InstagramCarouselCaptionRenderer` all use the same deterministic `render_instagram_caption` engine that also renders the repository launch packs. There is no second launch-pack-only caption implementation.
+
+The canonical Instagram caption order is:
+
+1. source-led topic line from the reviewed factual heading;
+2. source-led body;
+3. optional reviewed question;
+4. optional provenance/disclosure line;
+5. at most one reviewed CTA;
+6. restrained hashtags.
+
+Instagram-specific presentation metadata belongs under `rendering_metadata.instagram`. Supported fields are `provenance_line`, `cta`, `hashtags`, and `ai_audio_disclosure_required`. Wrong metadata types are blocking renderer errors rather than silently coerced values.
+
+The renderer enforces repository house rules rather than undocumented algorithm folklore:
+
+- 3–6 tightly relevant hashtags is the house readability default; more than six is an error and fewer than three is a warning;
+- duplicate hashtags ignoring case and malformed hashtag tokens are errors;
+- raw HTTP(S) URLs are rejected from caption copy; routing language belongs in a reviewed CTA/profile-link intent;
+- colored circle markers and known clickbait phrases are rejected;
+- `lord-god-strength` additionally rejects engagement-as-faith tests such as asking for a like or “Аминь” as proof of faith;
+- when realistic synthetic/generative audio is flagged for disclosure, a reviewed provenance line is required;
+- captions above 1,800 characters receive an internal mobile-readability warning. **1,800 is a repository review threshold, not a claimed Instagram provider limit.**
+
+Canonical `platform_targets` for Instagram are identity-sensitive. `instagram.reel`, `instagram.feed`, or `instagram.carousel` may contain only an exact numeric Instagram provider account ID. `@username`, vanity handles, public profile names, and other aliases are non-authoritative and fail validation.
+
+A canonical record is rendered only when its requested Instagram surface is explicitly present in `platform_suitability`. The legacy YouTube content migration defaults do not silently opt records into Instagram.
+
+All Instagram rendering and preview work in issue #492 is provider-inert. It authorizes no publication, profile edit, interaction, advertisement, token mutation, or other Meta write.
+
 ## Project link enforcement
 
 - `site` and `vk` link kinds must belong to `record.project_key`.
@@ -104,7 +135,8 @@ The common preview layer detects:
 - unusually long URL lines that may wrap badly;
 - forbidden colored circles;
 - unresolved platform markup;
-- platform length violations;
+- platform length/readability diagnostics;
 - duplicate rendered output in a batch;
 - project/channel identity mismatches;
-- links that belong to another project profile.
+- links that belong to another project profile;
+- Instagram surface eligibility and exact numeric target-identity violations.

@@ -36,13 +36,13 @@ def preview_command(
     ],
     platform: Annotated[
         str,
-        typer.Option("--platform", "-p", help="youtube or vk"),
+        typer.Option("--platform", "-p", help="youtube, vk, or instagram"),
     ],
     surface: Annotated[
         str | None,
         typer.Option(
             "--surface",
-            help="comment, description, video_description, post",
+            help="comment, description, video_description, post, reel, feed, or carousel",
         ),
     ] = None,
     json_output: Annotated[

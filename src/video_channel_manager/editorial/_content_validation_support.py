@@ -12,6 +12,7 @@ from video_channel_manager.editorial._content_types import (
 from video_channel_manager.editorial._content_urls import canonicalize_url
 
 _STABLE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{1,159}$")
+_INSTAGRAM_PROVIDER_ID_RE = re.compile(r"^[0-9]+$")
 
 
 def _string_list(value: object) -> list[str]:
@@ -259,6 +260,11 @@ def _validate_platform_metadata(payload: dict[str, Any], *, schema_is_canonical:
             if surface not in allowed_surfaces:
                 errors.append(f"unsupported platform target surface: {key}")
                 continue
+            if platform == "instagram" and _INSTAGRAM_PROVIDER_ID_RE.fullmatch(value) is None:
+                errors.append(
+                    f"platform target {key} must use an exact numeric Instagram provider account ID; "
+                    "usernames and public handles are non-authoritative"
+                )
             if schema_is_canonical and surface not in normalized_suitability.get(platform, set()):
                 errors.append(f"platform target {key} is not enabled by platform_suitability")
     return errors

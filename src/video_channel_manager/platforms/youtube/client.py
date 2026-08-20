@@ -251,7 +251,7 @@ class YouTubeApiClient(HttpClientOwner):
         payload = self._get(
             "videos",
             params={
-                "part": "snippet,contentDetails,status",
+                "part": "snippet,contentDetails,status,fileDetails",
                 "id": expected_id,
                 "maxResults": 1,
             },
@@ -302,7 +302,7 @@ class YouTubeApiClient(HttpClientOwner):
             payload = self._get(
                 "videos",
                 params={
-                    "part": "snippet,contentDetails,status",
+                    "part": "snippet,contentDetails,status,fileDetails",
                     "id": ",".join(batch),
                     "maxResults": 50,
                 },
