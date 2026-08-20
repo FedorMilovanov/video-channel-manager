@@ -31,6 +31,9 @@ def test_marathon_reuses_exact_merged_follow_on_work_without_reauthoring() -> No
         assert item["brand_stream"] == source["brand_stream"]
         assert item["content_role"] == source["content_role"]
         assert item["operation"] == source["operation"]
+        assert item["fresh_source_recheck_before_provider_promotion"] is source[
+            "must_reverify_before_operational_promotion"
+        ]
         if item["operation"] == "sendPhoto":
             assert item["media_id"] == source["media_id"]
         else:
@@ -50,7 +53,7 @@ def test_marathon_is_exact_nine_cake_three_school_nonconsecutive_mix() -> None:
     assert len(school) == 3
     assert [item["position"] for item in school] == [3, 7, 11]
     assert items[-1]["brand_stream"] == "milovi-cake"
-    assert all(b["position"] - a["position"] > 1 for a, b in zip(school, school[1:], strict=True))
+    assert all(b["position"] - a["position"] > 1 for a, b in zip(school, school[1:]))
 
 
 def test_every_photo_slot_has_existing_exact_transport_evidence() -> None:
