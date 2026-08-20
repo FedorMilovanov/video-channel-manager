@@ -147,7 +147,10 @@ class InstagramVideoIntakeRecord(InstagramFrozenModel):
             if any(value is not None for value in file_fields) or self.youtube_source_geometry != "unknown":
                 raise ValueError("source-file details cannot be populated when fileDetails are unavailable")
         if self.youtube_source_creation_time is not None:
-            if self.youtube_source_creation_time.tzinfo is None or self.youtube_source_creation_time.utcoffset() is None:
+            if (
+                self.youtube_source_creation_time.tzinfo is None
+                or self.youtube_source_creation_time.utcoffset() is None
+            ):
                 raise ValueError("youtube_source_creation_time must be timezone-aware")
         if self.youtube_source_width_pixels is not None and self.youtube_source_height_pixels is not None:
             expected_geometry: YouTubeSourceGeometry = (
