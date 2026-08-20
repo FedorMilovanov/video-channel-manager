@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping
 from pathlib import Path
-from typing import Iterable, Protocol
+from typing import Protocol
 
 from pydantic import ValidationError
 
@@ -39,25 +40,51 @@ def unresolved_provider_effect_ids(
     )
 
 
+def require_no_unresolved_provider_effects_across_tracks(
+    *,
+    tracks: Mapping[str, Iterable[EffectEntry]],
+    retired_publication_ids_by_track: Mapping[str, frozenset[str]] | None = None,
+) -> dict[str, tuple[str, ...]]:
+    """Fail closed when any LordChrist writer track has an unresolved provider effect.
+
+    Track names are diagnostic labels only; they do not select provider identity.
+    Every future LordChrist writer can use this helper to participate in one
+    channel-wide no-blind-replay barrier without teaching this module about each
+    new queue implementation.
+    """
+
+    retired_by_track = retired_publication_ids_by_track or {}
+    unresolved: dict[str, tuple[str, ...]] = {}
+    for track, entries in tracks.items():
+        if not track or any(character.isspace() for character in track):
+            raise ValueError("LordChrist effect-guard track names must be non-empty and whitespace-free")
+        unresolved[track] = unresolved_provider_effect_ids(
+            entries,
+            retired_publication_ids=retired_by_track.get(track),
+        )
+    blocked = [(track, ids) for track, ids in unresolved.items() if ids]
+    if blocked:
+        parts = [f"{track}=" + ",".join(ids) for track, ids in blocked]
+        raise ValueError("unresolved Lordchrist provider effect blocks all writers: " + " ".join(parts))
+    return unresolved
+
+
 def require_no_unresolved_provider_effects(
     *,
     legacy_entries: Iterable[EffectEntry],
     research_entries: Iterable[EffectEntry],
     retired_research_publication_ids: frozenset[str] | None = None,
 ) -> dict[str, tuple[str, ...]]:
-    legacy = unresolved_provider_effect_ids(legacy_entries)
-    research = unresolved_provider_effect_ids(
-        research_entries,
-        retired_publication_ids=retired_research_publication_ids,
+    result = require_no_unresolved_provider_effects_across_tracks(
+        tracks={
+            "legacy": legacy_entries,
+            "research": research_entries,
+        },
+        retired_publication_ids_by_track={
+            "research": retired_research_publication_ids or frozenset(),
+        },
     )
-    if legacy or research:
-        parts: list[str] = []
-        if legacy:
-            parts.append("legacy=" + ",".join(legacy))
-        if research:
-            parts.append("research=" + ",".join(research))
-        raise ValueError("unresolved Lordchrist provider effect blocks all writers: " + " ".join(parts))
-    return {"legacy": legacy, "research": research}
+    return {"legacy": result["legacy"], "research": result["research"]}
 
 
 def load_optional_research_ledger(

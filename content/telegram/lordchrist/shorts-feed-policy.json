@@ -1,0 +1,23 @@
+{
+  "schema_name": "video-channel-manager.lordchrist-shorts-policy",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "youtube_channel_id": "UCeSJsC6go2c9pdJCuUI1BYA",
+  "youtube_oauth_alias": "fedor-milovanov",
+  "telegram_channel_username": "@lordchrist",
+  "telegram_profile_path": "content/telegram/channels/lordchrist.json",
+  "owner_media_sources": [
+    "google_takeout",
+    "local_master"
+  ],
+  "automated_youtube_download_allowed": false,
+  "telegram_provider_mutation_allowed": false,
+  "telegram_stories_enabled": false,
+  "timezone": "Europe/Moscow",
+  "slot_local_time": "18:17",
+  "daily_short_limit": 1,
+  "min_gap_from_editorial_hours": 4,
+  "order": "oldest_first",
+  "max_video_bytes": 50000000,
+  "max_duration_seconds": 180
+}
