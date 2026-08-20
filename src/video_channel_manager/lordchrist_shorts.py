@@ -25,11 +25,13 @@ YOUTUBE_CHANNEL_ID = "UCeSJsC6go2c9pdJCuUI1BYA"
 YOUTUBE_OAUTH_ALIAS = "fedor-milovanov"
 TELEGRAM_CHANNEL_USERNAME = "@lordchrist"
 TELEGRAM_PROFILE_PATH = "content/telegram/channels/lordchrist.json"
+EDITORIAL_SCHEDULE_PATH = "content/telegram/lordchrist/production-schedule.json"
 MAX_TELEGRAM_VIDEO_BYTES = 50_000_000
 TRANSPORT_BUDGET_BYTES = 46_000_000
 MAX_SHORT_DURATION_SECONDS = 180.0
 DEFAULT_TIMEZONE = "Europe/Moscow"
-DEFAULT_SLOT_LOCAL_TIME = "18:17"
+DEFAULT_SLOT_LOCAL_TIME = "17:17"
+DEFAULT_EDITORIAL_TIMES = ("09:17", "21:17")
 AUDIO_BITRATE_BPS = 128_000
 MIN_VIDEO_BITRATE_BPS = 600_000
 MAX_VIDEO_BITRATE_BPS = 4_000_000
@@ -132,6 +134,14 @@ class OwnerMediaBinding(FrozenModel):
     youtube_video_id: str = Field(min_length=6, max_length=32)
     source_kind: Literal["google_takeout", "local_master"]
     source_path: str = Field(min_length=1)
+    expected_source_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    expected_source_byte_size: int = Field(gt=0)
+
+    @model_validator(mode="after")
+    def validate_binding(self) -> "OwnerMediaBinding":
+        if _YOUTUBE_ID_RE.fullmatch(self.youtube_video_id) is None:
+            raise ValueError("invalid YouTube video id in owner media binding")
+        return self
 
 
 class OwnerMediaBindingManifest(FrozenModel):
@@ -149,6 +159,28 @@ class OwnerMediaBindingManifest(FrozenModel):
             raise ValueError("owner media binding video ids must be unique")
         if len(paths) != len(set(paths)):
             raise ValueError("one owner file path cannot be bound to multiple YouTube video ids")
+        return self
+
+
+class CandidateApprovalManifest(FrozenModel):
+    schema_name: Literal["video-channel-manager.lordchrist-shorts-candidate-approval"]
+    schema_version: Literal[1]
+    project_key: Literal["lord-god-strength"]
+    youtube_channel_id: Literal["UCeSJsC6go2c9pdJCuUI1BYA"]
+    inventory_snapshot_id: str = Field(min_length=1)
+    approved_video_ids: tuple[str, ...]
+    reviewed_by: str = Field(min_length=1, max_length=200)
+    reviewed_at: datetime
+
+    @model_validator(mode="after")
+    def validate_approval(self) -> "CandidateApprovalManifest":
+        if self.reviewed_at.tzinfo is None or self.reviewed_at.utcoffset() is None:
+            raise ValueError("candidate approval reviewed_at must be timezone-aware")
+        normalized = [value.strip() for value in self.approved_video_ids]
+        if any(_YOUTUBE_ID_RE.fullmatch(value) is None for value in normalized):
+            raise ValueError("candidate approval contains an invalid YouTube video id")
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("candidate approval video ids must be unique")
         return self
 
 
@@ -190,9 +222,7 @@ class AcceptedShortMedia(FrozenModel):
         if (transport.pixel_format or "").casefold() != "yuv420p":
             raise ValueError("accepted Telegram transport must use yuv420p")
         if transport.rotation_degrees != 0:
-            raise ValueError(
-                "accepted Telegram transport must bake orientation instead of relying on rotation metadata"
-            )
+            raise ValueError("accepted Telegram transport must bake orientation instead of relying on rotation metadata")
         if transport.width > transport.height:
             raise ValueError("accepted Telegram Short media must be square or vertical")
         if transport.audio_stream_count == 1 and (transport.audio_codec or "").casefold() != "aac":
@@ -267,6 +297,10 @@ def load_inventory(path: Path) -> LordChristShortsInventory:
 
 def load_bindings(path: Path) -> OwnerMediaBindingManifest:
     return _read_model(path, OwnerMediaBindingManifest)
+
+
+def load_candidate_approval(path: Path) -> CandidateApprovalManifest:
+    return _read_model(path, CandidateApprovalManifest)
 
 
 def load_media_acceptance(path: Path) -> LordChristShortsMediaAcceptance:
@@ -345,12 +379,7 @@ def _sha256(path: Path) -> str:
 
 def _tool_version(tool: str) -> str:
     try:
-        completed = subprocess.run(
-            [tool, "-version"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
+        completed = subprocess.run([tool, "-version"], check=True, capture_output=True, text=True)
     except (OSError, subprocess.CalledProcessError) as exc:
         raise ValueError(f"required tool unavailable: {tool}") from exc
     first_line = completed.stdout.splitlines()
@@ -490,19 +519,11 @@ def is_telegram_ready(source_path: Path, summary: MediaProbeSummary) -> bool:
     )
 
 
-def conversion_argv(
-    source: Path,
-    output: Path,
-    *,
-    source_summary: MediaProbeSummary,
-) -> list[str]:
+def conversion_argv(source: Path, output: Path, *, source_summary: MediaProbeSummary) -> list[str]:
     duration = source_summary.duration_seconds
     audio_bps = AUDIO_BITRATE_BPS if source_summary.audio_stream_count else 0
     budget_bps = int((TRANSPORT_BUDGET_BYTES * 8) / duration)
-    video_bps = min(
-        MAX_VIDEO_BITRATE_BPS,
-        max(MIN_VIDEO_BITRATE_BPS, budget_bps - audio_bps - 100_000),
-    )
+    video_bps = min(MAX_VIDEO_BITRATE_BPS, max(MIN_VIDEO_BITRATE_BPS, budget_bps - audio_bps - 100_000))
     argv = [
         "ffmpeg",
         "-hide_banner",
@@ -549,11 +570,7 @@ def conversion_argv(
     return argv
 
 
-def _validate_transport(
-    inventory_item: ShortsInventoryItem,
-    path: Path,
-    summary: MediaProbeSummary,
-) -> None:
+def _validate_transport(inventory_item: ShortsInventoryItem, path: Path, summary: MediaProbeSummary) -> None:
     containers = {part.strip().casefold() for part in summary.container.split(",")}
     if "mp4" not in containers:
         raise ValueError(f"{inventory_item.youtube_video_id}: transport container is not MP4")
@@ -571,10 +588,7 @@ def _validate_transport(
         raise ValueError(f"{inventory_item.youtube_video_id}: transport dimensions must be even")
     if summary.audio_stream_count == 1 and (summary.audio_codec or "").casefold() != "aac":
         raise ValueError(f"{inventory_item.youtube_video_id}: transport audio codec is not AAC")
-    if (
-        inventory_item.duration_seconds is not None
-        and abs(summary.duration_seconds - inventory_item.duration_seconds) > 3.0
-    ):
+    if inventory_item.duration_seconds is not None and abs(summary.duration_seconds - inventory_item.duration_seconds) > 3.0:
         raise ValueError(
             f"{inventory_item.youtube_video_id}: transport duration differs from YouTube inventory by over 3 seconds"
         )
@@ -603,6 +617,16 @@ def prepare_owner_media(
         source = Path(binding.source_path).expanduser().resolve()
         if not source.is_file():
             raise ValueError(f"owner media file does not exist: {source}")
+
+        source_size_before = source.stat().st_size
+        source_sha256_before = _sha256(source)
+        if source_size_before != binding.expected_source_byte_size:
+            raise ValueError(f"{item.youtube_video_id}: owner media byte size differs from frozen binding")
+        if source_sha256_before != binding.expected_source_sha256:
+            raise ValueError(f"{item.youtube_video_id}: owner media SHA-256 differs from frozen binding")
+        if source.stat().st_size != source_size_before:
+            raise ValueError(f"{item.youtube_video_id}: owner media changed while hashing")
+
         source_probe = normalize_probe(probe_runner(source))
         if item.duration_seconds is not None and abs(source_probe.duration_seconds - item.duration_seconds) > 3.0:
             raise ValueError(
@@ -621,6 +645,12 @@ def prepare_owner_media(
         if not output.is_file():
             raise ValueError(f"prepared Telegram transport was not created: {output}")
 
+        source_size_after = source.stat().st_size
+        source_sha256_after = _sha256(source)
+        if source_size_after != source_size_before or source_sha256_after != source_sha256_before:
+            output.unlink(missing_ok=True)
+            raise ValueError(f"{item.youtube_video_id}: owner media changed during preparation")
+
         transport_probe = normalize_probe(probe_runner(output))
         _validate_transport(item, output, transport_probe)
         accepted.append(
@@ -629,8 +659,8 @@ def prepare_owner_media(
                 publication_id=item.publication_id,
                 source_kind=binding.source_kind,
                 source_path=str(source),
-                source_sha256=_sha256(source),
-                source_byte_size=source.stat().st_size,
+                source_sha256=source_sha256_before,
+                source_byte_size=source_size_before,
                 source_probe=source_probe,
                 transport_path=str(output.resolve()),
                 media_sha256=_sha256(output),
@@ -673,44 +703,203 @@ def render_short_caption(item: ShortsInventoryItem) -> str:
     return title + suffix
 
 
-def _load_effect_entries(path: Path) -> tuple[EffectSnapshot, ...]:
+def _read_json_object(path: Path) -> dict[str, Any]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        raise ValueError(f"cannot read LordChrist state ledger {path}: {exc}") from exc
+        raise ValueError(f"cannot read LordChrist state JSON {path}: {exc}") from exc
     if not isinstance(payload, dict):
-        raise ValueError(f"LordChrist state ledger must be an object: {path}")
+        raise ValueError(f"LordChrist state JSON must be an object: {path}")
+    return payload
+
+
+def _validate_state_identity(path: Path, payload: dict[str, Any]) -> None:
+    project_key = payload.get("project_key")
+    if project_key is not None and str(project_key) != PROJECT_KEY:
+        raise ValueError(f"LordChrist state project mismatch in {path}")
+    channel_username = payload.get("channel_username")
+    if channel_username is not None and str(channel_username).casefold() != TELEGRAM_CHANNEL_USERNAME.casefold():
+        raise ValueError(f"LordChrist state channel mismatch in {path}")
+    target = payload.get("target")
+    if isinstance(target, dict):
+        target_username = target.get("chat_username")
+        if target_username is not None and str(target_username).casefold().lstrip("@") != TELEGRAM_CHANNEL_USERNAME.casefold().lstrip("@"):
+            raise ValueError(f"LordChrist state target mismatch in {path}")
+
+
+def _effect_entries_from_payload(path: Path, payload: dict[str, Any]) -> tuple[EffectSnapshot, ...]:
+    _validate_state_identity(path, payload)
     entries = payload.get("entries")
-    if not isinstance(entries, dict):
-        raise ValueError(f"LordChrist state ledger has no entries object: {path}")
-    result: list[EffectSnapshot] = []
-    for publication_id, raw in entries.items():
-        if not isinstance(raw, dict):
-            raise ValueError(f"invalid ledger entry {publication_id!r} in {path}")
-        result.append(
-            EffectSnapshot(
-                publication_id=str(raw.get("publication_id") or publication_id),
-                state=str(raw.get("state") or ""),
-                provider_effect=str(raw.get("provider_effect") or ""),
+    if isinstance(entries, dict):
+        result: list[EffectSnapshot] = []
+        for publication_id, raw in entries.items():
+            if not isinstance(raw, dict):
+                raise ValueError(f"invalid ledger entry {publication_id!r} in {path}")
+            result.append(
+                EffectSnapshot(
+                    publication_id=str(raw.get("publication_id") or publication_id),
+                    state=str(raw.get("state") or ""),
+                    provider_effect=str(raw.get("provider_effect") or ""),
+                )
             )
+        return tuple(result)
+    if all(key in payload for key in ("publication_id", "state", "provider_effect")):
+        return (
+            EffectSnapshot(
+                publication_id=str(payload["publication_id"]),
+                state=str(payload["state"]),
+                provider_effect=str(payload["provider_effect"]),
+            ),
         )
-    return tuple(result)
+    return ()
 
 
-def require_existing_lordchrist_state_clear(paths: Sequence[Path]) -> set[str]:
+def _retired_publication_id(path: Path, payload: dict[str, Any]) -> str | None:
+    if payload.get("schema_name") != "video-channel-manager.lordchrist-research-retirement":
+        return None
+    _validate_state_identity(path, payload)
+    if payload.get("disposition") != "retired_no_replay" or payload.get("provider_retry_forbidden") is not True:
+        raise ValueError(f"invalid LordChrist retirement disposition in {path}")
+    publication_id = str(payload.get("publication_id") or "").strip()
+    if not publication_id:
+        raise ValueError(f"LordChrist retirement has no publication_id in {path}")
+    return publication_id
+
+
+def _require_effect_tracks_clear(
+    tracks: dict[str, tuple[EffectSnapshot, ...]],
+    *,
+    retired_publication_ids: frozenset[str] = frozenset(),
+) -> set[str]:
     from video_channel_manager.lordchrist_cross_track_effect_guard import (
         require_no_unresolved_provider_effects_across_tracks,
     )
 
-    tracks: dict[str, Iterable[EffectSnapshot]] = {}
-    existing_publication_ids: set[str] = set()
+    if not tracks:
+        raise ValueError("LordChrist durable state proof contains no provider-effect records")
+    retired_by_track = {track: retired_publication_ids for track in tracks}
+    require_no_unresolved_provider_effects_across_tracks(
+        tracks=tracks,
+        retired_publication_ids_by_track=retired_by_track,
+    )
+    return {entry.publication_id for entries in tracks.values() for entry in entries}
+
+
+def require_existing_lordchrist_state_clear(paths: Sequence[Path]) -> set[str]:
+    if not paths:
+        raise ValueError("at least one LordChrist durable state ledger is required")
+    tracks: dict[str, tuple[EffectSnapshot, ...]] = {}
+    retired: set[str] = set()
     for index, path in enumerate(paths):
-        entries = _load_effect_entries(path)
+        payload = _read_json_object(path)
+        entries = _effect_entries_from_payload(path, payload)
+        if not entries:
+            raise ValueError(f"LordChrist state file contains no provider-effect entries: {path}")
         tracks[f"ledger{index + 1}"] = entries
-        existing_publication_ids.update(entry.publication_id for entry in entries)
-    if tracks:
-        require_no_unresolved_provider_effects_across_tracks(tracks=tracks)
-    return existing_publication_ids
+        retirement_path = path.parent / "retirement.json"
+        if retirement_path.is_file():
+            retirement_payload = _read_json_object(retirement_path)
+            retired_id = _retired_publication_id(retirement_path, retirement_payload)
+            if retired_id is not None:
+                retired.add(retired_id)
+    return _require_effect_tracks_clear(tracks, retired_publication_ids=frozenset(retired))
+
+
+def require_lordchrist_state_root_clear(state_root: Path) -> set[str]:
+    root = state_root.expanduser().resolve()
+    if not root.is_dir():
+        raise ValueError(f"LordChrist durable state root does not exist: {root}")
+    required_relative = (
+        Path("publication-ledger.json"),
+        Path("research-v2/publication-ledger.json"),
+        Path("research-v2/retirement.json"),
+        Path("rich-v1/live-canary-ledger.json"),
+    )
+    missing = [str(relative) for relative in required_relative if not (root / relative).is_file()]
+    if missing:
+        raise ValueError("LordChrist durable state root is incomplete; missing: " + ", ".join(missing))
+
+    tracks: dict[str, tuple[EffectSnapshot, ...]] = {}
+    retired: set[str] = set()
+    for path in sorted(root.rglob("*.json")):
+        payload = _read_json_object(path)
+        retired_id = _retired_publication_id(path, payload)
+        if retired_id is not None:
+            retired.add(retired_id)
+        entries = _effect_entries_from_payload(path, payload)
+        if entries:
+            tracks[path.relative_to(root).as_posix()] = entries
+    return _require_effect_tracks_clear(tracks, retired_publication_ids=frozenset(retired))
+
+
+def _minutes_of_day(value: str) -> int:
+    try:
+        hour_text, minute_text = value.split(":", maxsplit=1)
+        hour = int(hour_text)
+        minute = int(minute_text)
+    except (ValueError, AttributeError) as exc:
+        raise ValueError(f"invalid local time: {value!r}") from exc
+    if not 0 <= hour <= 23 or not 0 <= minute <= 59:
+        raise ValueError(f"invalid local time: {value!r}")
+    return hour * 60 + minute
+
+
+def require_min_editorial_gap(policy: LordChristShortsPolicy, editorial_times: Sequence[str]) -> None:
+    short_minutes = _minutes_of_day(policy.slot_local_time)
+    required_gap = policy.min_gap_from_editorial_hours * 60
+    for editorial_time in editorial_times:
+        editorial_minutes = _minutes_of_day(editorial_time)
+        delta = abs(short_minutes - editorial_minutes)
+        circular_gap = min(delta, 24 * 60 - delta)
+        if circular_gap < required_gap:
+            raise ValueError(
+                f"Shorts slot {policy.slot_local_time} is only {circular_gap} minutes from editorial slot "
+                f"{editorial_time}; policy requires at least {required_gap} minutes"
+            )
+
+
+def load_and_validate_editorial_schedule(path: Path, policy: LordChristShortsPolicy) -> tuple[str, str]:
+    payload = _read_json_object(path)
+    if payload.get("project_key") != PROJECT_KEY:
+        raise ValueError("editorial schedule project differs from LordChrist")
+    if str(payload.get("channel_username") or "").casefold() != TELEGRAM_CHANNEL_USERNAME.casefold():
+        raise ValueError("editorial schedule channel differs from LordChrist")
+    if payload.get("timezone") != policy.timezone:
+        raise ValueError("editorial schedule timezone differs from Shorts policy")
+    primary = str(payload.get("primary_time") or "")
+    catchup = str(payload.get("catchup_time") or "")
+    require_min_editorial_gap(policy, (primary, catchup))
+    return primary, catchup
+
+
+def _release_identity(
+    inventory: LordChristShortsInventory,
+    selected: Sequence[ShortsInventoryItem],
+    media_by_id: dict[str, AcceptedShortMedia],
+    *,
+    start_date: date,
+    policy: LordChristShortsPolicy,
+    profile: TelegramChannelProfile,
+) -> str:
+    payload = {
+        "project_key": PROJECT_KEY,
+        "channel_username": TELEGRAM_CHANNEL_USERNAME,
+        "profile_sha256": profile.digest,
+        "inventory_snapshot_id": inventory.source_snapshot_id,
+        "start_date": start_date.isoformat(),
+        "timezone": policy.timezone,
+        "slot_local_time": policy.slot_local_time,
+        "items": [
+            {
+                "publication_id": item.publication_id,
+                "media_sha256": media_by_id[item.youtube_video_id].media_sha256,
+            }
+            for item in selected
+        ],
+    }
+    canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    suffix = hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:12]
+    return f"lordchrist-shorts-{start_date.isoformat()}-{suffix}"
 
 
 def build_provider_inert_release(
@@ -720,29 +909,32 @@ def build_provider_inert_release(
     profile: TelegramChannelProfile,
     policy: LordChristShortsPolicy,
     start_date: date,
-    approved_candidate_ids: Iterable[str] = (),
+    candidate_approval: CandidateApprovalManifest | None = None,
     existing_publication_ids: Iterable[str] = (),
+    editorial_times: Sequence[str] = DEFAULT_EDITORIAL_TIMES,
 ) -> GenericReleaseQueue:
-    if (
-        profile.project_key != PROJECT_KEY
-        or profile.channel_username.casefold() != TELEGRAM_CHANNEL_USERNAME.casefold()
-    ):
+    if profile.project_key != PROJECT_KEY or profile.channel_username.casefold() != TELEGRAM_CHANNEL_USERNAME.casefold():
         raise ValueError("Telegram profile is not the canonical LordChrist profile")
     if profile.provider_writes_authorized:
-        raise ValueError("Issue #501 release builder requires a write-disabled LordChrist profile")
+        raise ValueError("Shorts release builder requires a write-disabled LordChrist profile")
     if profile.timezone != policy.timezone or profile.daily_verified_limit != policy.daily_short_limit:
         raise ValueError("LordChrist profile and Shorts policy cadence disagree")
     if acceptance.inventory_snapshot_id != inventory.source_snapshot_id:
         raise ValueError("media acceptance belongs to a different YouTube inventory snapshot")
+    require_min_editorial_gap(policy, editorial_times)
 
     media_by_id = {item.youtube_video_id: item for item in acceptance.items}
-    approved = {value.strip() for value in approved_candidate_ids if value.strip()}
     candidates = {item.youtube_video_id for item in inventory.items if item.surface_status == "candidate"}
-    unknown_approvals = approved - candidates
-    if unknown_approvals:
-        raise ValueError(
-            "candidate approvals do not match candidate inventory ids: " + ", ".join(sorted(unknown_approvals))
-        )
+    approved: set[str] = set()
+    if candidate_approval is not None:
+        if candidate_approval.inventory_snapshot_id != inventory.source_snapshot_id:
+            raise ValueError("candidate approval belongs to a different YouTube inventory snapshot")
+        approved = {value.strip() for value in candidate_approval.approved_video_ids}
+        unknown_approvals = approved - candidates
+        if unknown_approvals:
+            raise ValueError(
+                "candidate approvals do not match candidate inventory ids: " + ", ".join(sorted(unknown_approvals))
+            )
 
     selected = [item for item in inventory.items if item.surface_status == "short" or item.youtube_video_id in approved]
     missing_media = [item.youtube_video_id for item in selected if item.youtube_video_id not in media_by_id]
@@ -785,7 +977,14 @@ def build_provider_inert_release(
     return GenericReleaseQueue(
         schema_name="video-channel-manager.telegram-release-queue",
         schema_version=1,
-        release_id=f"lordchrist-shorts-{start_date.isoformat()}",
+        release_id=_release_identity(
+            inventory,
+            selected,
+            media_by_id,
+            start_date=start_date,
+            policy=policy,
+            profile=profile,
+        ),
         project_key=PROJECT_KEY,
         channel_username=TELEGRAM_CHANNEL_USERNAME,
         profile_sha256=profile.digest,
@@ -818,11 +1017,13 @@ def parser() -> argparse.ArgumentParser:
 
     validate = sub.add_parser("validate-policy")
     validate.add_argument("--policy", type=Path, default=Path("content/telegram/lordchrist/shorts-feed-policy.json"))
+    validate.add_argument("--editorial-schedule", type=Path, default=Path(EDITORIAL_SCHEDULE_PATH))
 
     inventory = sub.add_parser("inventory")
     inventory.add_argument("--audit", type=Path, required=True)
     inventory.add_argument("--output", type=Path, required=True)
     inventory.add_argument("--exclude-candidates", action="store_true")
+    inventory.add_argument("--max-snapshot-age-hours", type=int, default=48)
 
     prepare = sub.add_parser("prepare-media")
     prepare.add_argument("--inventory", type=Path, required=True)
@@ -835,9 +1036,10 @@ def parser() -> argparse.ArgumentParser:
     release.add_argument("--media", type=Path, required=True)
     release.add_argument("--profile", type=Path, default=Path(TELEGRAM_PROFILE_PATH))
     release.add_argument("--policy", type=Path, default=Path("content/telegram/lordchrist/shorts-feed-policy.json"))
+    release.add_argument("--editorial-schedule", type=Path, default=Path(EDITORIAL_SCHEDULE_PATH))
     release.add_argument("--start-date", type=date.fromisoformat, required=True)
-    release.add_argument("--approve-candidate", action="append", default=[])
-    release.add_argument("--existing-ledger", type=Path, action="append", default=[])
+    release.add_argument("--candidate-approval", type=Path)
+    release.add_argument("--state-root", type=Path, required=True)
     release.add_argument("--output", type=Path, required=True)
     return root
 
@@ -847,10 +1049,15 @@ def main() -> int:
     try:
         if args.command == "validate-policy":
             policy = load_policy(args.policy)
+            load_and_validate_editorial_schedule(args.editorial_schedule, policy)
             print(policy.model_dump_json(indent=2))
             return 0
         if args.command == "inventory":
-            inventory_result = build_inventory(_load_audit(args.audit), include_candidates=not args.exclude_candidates)
+            from video_channel_manager.lordchrist_shorts_snapshot_readiness import require_snapshot_ready
+
+            package = _load_audit(args.audit)
+            require_snapshot_ready(package, max_age_hours=args.max_snapshot_age_hours)
+            inventory_result = build_inventory(package, include_candidates=not args.exclude_candidates)
             _write_model(args.output, inventory_result)
             print(
                 json.dumps(
@@ -888,15 +1095,20 @@ def main() -> int:
             )
             return 0
         if args.command == "build-release":
-            existing_ids = require_existing_lordchrist_state_clear(args.existing_ledger)
+            inventory_result = load_inventory(args.inventory)
+            policy = load_policy(args.policy)
+            editorial_times = load_and_validate_editorial_schedule(args.editorial_schedule, policy)
+            existing_ids = require_lordchrist_state_root_clear(args.state_root)
+            approval = load_candidate_approval(args.candidate_approval) if args.candidate_approval else None
             release_result = build_provider_inert_release(
-                load_inventory(args.inventory),
+                inventory_result,
                 load_media_acceptance(args.media),
                 profile=load_channel_profile(args.profile),
-                policy=load_policy(args.policy),
+                policy=policy,
                 start_date=args.start_date,
-                approved_candidate_ids=args.approve_candidate,
+                candidate_approval=approval,
                 existing_publication_ids=existing_ids,
+                editorial_times=editorial_times,
             )
             _write_model(args.output, release_result)
             print(
