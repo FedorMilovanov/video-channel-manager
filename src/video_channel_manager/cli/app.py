@@ -18,6 +18,7 @@ from video_channel_manager.cli.album import album_app
 from video_channel_manager.cli.compare import compare_app
 from video_channel_manager.cli.content import content_app
 from video_channel_manager.cli.instagram import instagram_app
+from video_channel_manager.cli.instagram_launch import launch_preview_command
 from video_channel_manager.cli.resi import resi_app
 from video_channel_manager.cli.vk import vk_app
 from video_channel_manager.cli.youtube import youtube_app
@@ -63,6 +64,7 @@ app.add_typer(example_app, name="example")
 app.add_typer(album_app, name="album")
 app.add_typer(compare_app, name="compare")
 app.add_typer(content_app, name="content")
+instagram_app.command("launch-preview")(launch_preview_command)
 app.add_typer(instagram_app, name="instagram")
 app.add_typer(resi_app, name="resi")
 app.add_typer(youtube_app, name="youtube")
