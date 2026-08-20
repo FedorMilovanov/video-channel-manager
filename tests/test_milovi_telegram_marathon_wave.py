@@ -31,9 +31,10 @@ def test_marathon_reuses_exact_merged_follow_on_work_without_reauthoring() -> No
         assert item["brand_stream"] == source["brand_stream"]
         assert item["content_role"] == source["content_role"]
         assert item["operation"] == source["operation"]
-        assert item["fresh_source_recheck_before_provider_promotion"] is source[
-            "must_reverify_before_operational_promotion"
-        ]
+        assert (
+            item["fresh_source_recheck_before_provider_promotion"]
+            is source["must_reverify_before_operational_promotion"]
+        )
         if item["operation"] == "sendPhoto":
             assert item["media_id"] == source["media_id"]
         else:
@@ -53,7 +54,7 @@ def test_marathon_is_exact_nine_cake_three_school_nonconsecutive_mix() -> None:
     assert len(school) == 3
     assert [item["position"] for item in school] == [3, 7, 11]
     assert items[-1]["brand_stream"] == "milovi-cake"
-    assert all(b["position"] - a["position"] > 1 for a, b in zip(school, school[1:]))
+    assert all(b["position"] - a["position"] > 1 for a, b in zip(school, school[1:], strict=False))
 
 
 def test_every_photo_slot_has_existing_exact_transport_evidence() -> None:
@@ -80,7 +81,9 @@ def test_every_school_slot_is_in_existing_reviewed_interest_reading_pool() -> No
     school_items = [item for item in marathon["items"] if item["operation"] == "sendMessage"]
 
     assert school_pool["status"] == "provider_inert_editorial_candidate_pool"
-    assert school_pool["school_project"]["source_repository_head_reviewed"] == "aa82176012b93a50ccfcfb90293d496618e50b61"
+    assert (
+        school_pool["school_project"]["source_repository_head_reviewed"] == "aa82176012b93a50ccfcfb90293d496618e50b61"
+    )
     assert len(school_items) == 3
     for item in school_items:
         candidate = by_id[item["school_candidate_id"]]
