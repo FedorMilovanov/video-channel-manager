@@ -48,12 +48,12 @@ def _video(
     )
 
 
-def _audit(videos: list[VideoRecord]) -> AuditPackage:
+def _audit(videos: list[VideoRecord], *, channel_id: str = YOUTUBE_CHANNEL_ID) -> AuditPackage:
     channel = ChannelRecord(
         ref=RemoteRef(
             platform=PlatformName.YOUTUBE,
-            channel_id=YOUTUBE_CHANNEL_ID,
-            remote_id=YOUTUBE_CHANNEL_ID,
+            channel_id=channel_id,
+            remote_id=channel_id,
         ),
         title="Fedor Milovanov",
         kind=ChannelKind.VIDEO_CHANNEL,
@@ -129,7 +129,8 @@ def test_historical_duration_only_snapshot_fails_closed_instead_of_reporting_zer
         require_snapshot_ready(package)
 
 
-def test_snapshot_readiness_rejects_cross_channel_records() -> None:
+def test_snapshot_readiness_rejects_non_lordchrist_channel() -> None:
+    wrong_channel = "UCWrongChannel0000000000"
     package = _audit(
         [
             _video(
@@ -138,10 +139,11 @@ def test_snapshot_readiness_rejects_cross_channel_records() -> None:
                 width=1080,
                 height=1920,
                 creation_time="2026-01-02T00:00:00Z",
-                channel_id="UCWrongChannel0000000000",
+                channel_id=wrong_channel,
             )
-        ]
+        ],
+        channel_id=wrong_channel,
     )
 
-    with pytest.raises(ValueError, match="cross-channel video"):
+    with pytest.raises(ValueError, match="AuditPackage channel mismatch"):
         summarize_snapshot_readiness(package)
