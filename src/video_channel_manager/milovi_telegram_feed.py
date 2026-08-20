@@ -178,9 +178,7 @@ class MiloviFeedVideoBinding(BaseModel):
     artifact_git_blob_sha1: str = Field(pattern=r"^[0-9a-f]{40}$")
     artifact_byte_size: int = Field(gt=0, le=50_000_000)
     artifact_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
-    evidence_sha256: Literal[
-        "sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae"
-    ]
+    evidence_sha256: Literal["sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae"]
     local_media_path: str = Field(min_length=1, max_length=500)
     filename: str = Field(min_length=5, max_length=128, pattern=r"^[A-Za-z0-9._-]+$")
     provider_write_performed: Literal[False]
@@ -378,8 +376,8 @@ def validate_bundle(
             raise ValueError("Milovi message candidate has no exact bound text")
         if _sha256_bytes(raw_text.encode("utf-8")) != message.text_sha256:
             raise ValueError("Milovi message candidate text digest differs from message binding")
-        expected_payload = render_message_payload(profile, publication_id=publication_id, html_text=raw_text)
-        if item.payload != expected_payload or item.source_sha256 != message.text_sha256:
+        expected_message_payload = render_message_payload(profile, publication_id=publication_id, html_text=raw_text)
+        if item.payload != expected_message_payload or item.source_sha256 != message.text_sha256:
             raise ValueError("Milovi release payload differs from exact content/message binding")
         payload_kind = "message"
     elif isinstance(item.payload, GenericVideoPayload):
@@ -400,7 +398,7 @@ def validate_bundle(
             or video.evidence_sha256 != VIDEO_EVIDENCE_SHA256
         ):
             raise ValueError("Milovi video binding differs from the accepted 16/16 artifact reservoir")
-        expected_payload = render_video_payload(
+        expected_video_payload = render_video_payload(
             profile,
             publication_id=publication_id,
             caption=caption,
@@ -409,7 +407,7 @@ def validate_bundle(
             media_byte_size=video.artifact_byte_size,
             media_filename=video.filename,
         )
-        if item.payload != expected_payload or item.source_sha256 != video.artifact_sha256:
+        if item.payload != expected_video_payload or item.source_sha256 != video.artifact_sha256:
             raise ValueError("Milovi release payload differs from exact content/video binding")
         payload_kind = "video"
     else:
@@ -608,7 +606,7 @@ def state_check(publication_id: str, *, state_checkout: Path, require_publishabl
 def sync_index(publication_id: str, *, state_checkout: Path) -> dict[str, Any]:
     paths = exact_paths(publication_id)
     release = load_release(paths["release"])
-    ledger = load_ledger(state_checkout / paths["ledger"], release)
+    ledger = load_ledger(state_checkout / paths["ledger"])
     index_path = state_checkout / paths["index"]
     index = _load_index(index_path)
     existing = index.entries.get(publication_id)
