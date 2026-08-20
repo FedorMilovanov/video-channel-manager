@@ -116,7 +116,7 @@ jobs:
           printf '%s\n' "$validation_json"
           payload_kind="$(python -c 'import json,sys; print(json.load(sys.stdin)["payload_kind"])' <<< "$validation_json")"
           case "$payload_kind" in
-            photo|message) ;;
+            photo|message|video) ;;
             *)
               echo "unsupported permanent Milovi feed payload kind: $payload_kind" >&2
               exit 3
@@ -313,10 +313,7 @@ jobs:
           source = media["source"]
           safe_path = "/".join(urllib.parse.quote(part, safe="") for part in source["path"].split("/"))
           url = f"https://raw.githubusercontent.com/{source['repository']}/{source['commit']}/{safe_path}"
-          request = urllib.request.Request(
-              url,
-              headers={"User-Agent": "video-channel-manager-milovi-feed-publisher/1"},
-          )
+          request = urllib.request.Request(url, headers={"User-Agent": "video-channel-manager-milovi-feed-publisher/1"})
           output = Path(".runtime/milovi-feed-source.webp")
           with urllib.request.urlopen(request, timeout=30) as response:
               output.write_bytes(response.read())
@@ -324,6 +321,35 @@ jobs:
           python -m video_channel_manager.milovi_telegram_feed materialize-photo \
             --publication-id "$PUBLICATION_ID" \
             --source .runtime/milovi-feed-source.webp
+
+      - name: Materialize exact accepted video bytes
+        if: inputs.operation == 'publish' && steps.gate.outputs.payload_kind == 'video'
+        env:
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          publication_id = os.environ["PUBLICATION_ID"]
+          binding_path = Path(f"content/telegram/milovi-cake/releases/{publication_id}-video.json")
+          binding = json.loads(binding_path.read_text(encoding="utf-8"))
+          safe_path = "/".join(urllib.parse.quote(part, safe="") for part in binding["artifact_path"].split("/"))
+          safe_ref = urllib.parse.quote(binding["artifact_ref"], safe="/")
+          url = f"https://raw.githubusercontent.com/{binding['artifact_repository']}/{safe_ref}/{safe_path}"
+          request = urllib.request.Request(url, headers={"User-Agent": "video-channel-manager-milovi-feed-publisher/1"})
+          output = Path(".runtime/milovi-feed-video.mp4")
+          with urllib.request.urlopen(request, timeout=60) as response:
+              output.write_bytes(response.read())
+          PY
+          python -m video_channel_manager.milovi_telegram_feed materialize-video \
+            --publication-id "$PUBLICATION_ID" \
+            --source .runtime/milovi-feed-video.mp4
 
       - name: Send exactly once through the canonical generic Telegram runtime
         if: inputs.operation == 'publish'
