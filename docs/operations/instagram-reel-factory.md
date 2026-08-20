@@ -1,7 +1,7 @@
 # Instagram Reel factory and whole-channel coverage
 
 Status: provider-inert  
-Owner issue: #495  
+Owner issue: #492  
 Project: `legendary-poet`
 
 This runbook starts after `docs/operations/instagram-video-intake-routing.md`. It turns exact source authority into a deterministic Reel production queue without allowing current uploads outside the reviewed factory to disappear silently.
