@@ -28,6 +28,11 @@ from video_channel_manager.exchange.audit_package import AuditFinding, AuditPack
 from video_channel_manager.exchange.change_plan import ChangeOperation, ChangePlan
 from video_channel_manager.exchange.instagram_factory_coverage import InstagramFactoryCoverageArtifact
 from video_channel_manager.exchange.instagram_historical_backlog import InstagramHistoricalBacklogArtifact
+from video_channel_manager.exchange.instagram_identity import (
+    InstagramAccountObservation,
+    InstagramProjectBinding,
+    InstagramProjectBindingRegistry,
+)
 from video_channel_manager.exchange.instagram_reels import InstagramReelFactoryRegistry, InstagramReelQueueArtifact
 from video_channel_manager.exchange.instagram_video import (
     InstagramMediaReview,
@@ -128,6 +133,9 @@ def schema_export(
         "instagram-reel-queue-v1.schema.json": InstagramReelQueueArtifact.model_json_schema(),
         "instagram-reel-factory-coverage-v1.schema.json": InstagramFactoryCoverageArtifact.model_json_schema(),
         "instagram-historical-factory-backlog-v1.schema.json": InstagramHistoricalBacklogArtifact.model_json_schema(),
+        "instagram-account-observation-v1.schema.json": InstagramAccountObservation.model_json_schema(),
+        "instagram-project-binding-v1.schema.json": InstagramProjectBinding.model_json_schema(),
+        "instagram-project-binding-registry-v1.schema.json": InstagramProjectBindingRegistry.model_json_schema(),
         **wave_schema_documents(),
     }
     for filename, schema in documents.items():
