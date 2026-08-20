@@ -11,16 +11,29 @@ from rich.console import Console
 
 from video_channel_manager.config import get_settings
 from video_channel_manager.editorial._project_profiles import LEGENDARY_POET, PROJECT_CHANNEL_IDS, PROJECT_KEYS
+from video_channel_manager.editorial.instagram_factory_coverage import (
+    InstagramFactoryCoverageError,
+    build_instagram_factory_coverage,
+)
 from video_channel_manager.editorial.instagram_media_routing import (
     InstagramMediaRoutingError,
     build_instagram_video_routes,
+)
+from video_channel_manager.editorial.instagram_reel_queue import (
+    InstagramReelQueueError,
+    build_instagram_reel_queue,
 )
 from video_channel_manager.editorial.instagram_video_intake import (
     InstagramVideoIntakeError,
     build_instagram_video_intake,
 )
 from video_channel_manager.exchange.audit_package import AuditPackage
-from video_channel_manager.exchange.instagram_video import InstagramMediaReview, InstagramVideoIntakeArtifact
+from video_channel_manager.exchange.instagram_reels import InstagramReelFactoryRegistry
+from video_channel_manager.exchange.instagram_video import (
+    InstagramMediaReview,
+    InstagramVideoIntakeArtifact,
+    InstagramVideoRouteArtifact,
+)
 from video_channel_manager.local_media import MediaArtifactError, MediaArtifactEvidence, load_media_artifact_manifest
 
 
@@ -137,6 +150,24 @@ def _read_intake(path: Path) -> tuple[InstagramVideoIntakeArtifact, str]:
     except (UnicodeDecodeError, ValidationError) as exc:
         raise ValueError(f"invalid Instagram video intake {path}: {exc}") from exc
     return intake, _sha256_bytes(raw)
+
+
+def _read_reel_registry(path: Path) -> tuple[InstagramReelFactoryRegistry, str]:
+    raw = _read_bytes(path)
+    try:
+        registry = InstagramReelFactoryRegistry.model_validate_json(raw.decode("utf-8-sig"))
+    except (UnicodeDecodeError, ValidationError) as exc:
+        raise ValueError(f"invalid Instagram Reel registry {path}: {exc}") from exc
+    return registry, _sha256_bytes(raw)
+
+
+def _read_media_route(path: Path) -> tuple[InstagramVideoRouteArtifact, str]:
+    raw = _read_bytes(path)
+    try:
+        route = InstagramVideoRouteArtifact.model_validate_json(raw.decode("utf-8-sig"))
+    except (UnicodeDecodeError, ValidationError) as exc:
+        raise ValueError(f"invalid Instagram media route {path}: {exc}") from exc
+    return route, _sha256_bytes(raw)
 
 
 def _load_media_manifest_dir(path: Path | None) -> dict[str, MediaArtifactEvidence]:
@@ -283,4 +314,89 @@ def media_route(
         f"Total: {counts.total} | Direct remaster: {counts.direct_remaster} | "
         f"Editorial extract: {counts.editorial_extract} | Rebuild: {counts.editorial_rebuild} | "
         f"Hold: {counts.hold} | Source binding required: {counts.source_binding_required}"
+    )
+
+
+@instagram_app.command("reel-queue")
+def reel_queue(
+    registry_path: Annotated[Path, typer.Argument(help="Exact Instagram Reel factory registry JSON")],
+    media_route_path: Annotated[
+        Path | None,
+        typer.Option("--media-route", help="Optional exact Instagram media-route artifact JSON"),
+    ] = None,
+    output: Annotated[Path | None, typer.Option("--output", "-o")] = None,
+) -> None:
+    """Build a deterministic provider-inert Reel production-readiness queue."""
+
+    try:
+        registry, registry_sha256 = _read_reel_registry(registry_path)
+        if media_route_path is None:
+            route = None
+            route_sha256 = None
+        else:
+            route, route_sha256 = _read_media_route(media_route_path)
+        result = build_instagram_reel_queue(
+            registry,
+            source_registry_sha256=registry_sha256,
+            media_route=route,
+            source_media_route_sha256=route_sha256,
+        )
+    except (InstagramReelQueueError, OSError, ValueError) as exc:
+        console.print(f"[red]Instagram Reel queue failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+    if output is None:
+        settings = get_settings()
+        output = settings.data_dir / "reports" / f"instagram-{registry.project_key}-reel-queue.json"
+    _write_json(output, result.model_dump(mode="json"))
+
+    counts = result.counts
+    console.print(
+        f"[green]Built provider-inert Instagram Reel queue → {output}[/green]\n"
+        f"Total: {counts.total} | Source-led ready: {counts.source_led_ready} | "
+        f"Text binding: {counts.exact_text_binding_required} | "
+        f"Source binding: {counts.source_binding_required} | "
+        f"Materialization: {counts.materialization_required} | "
+        f"Timing: {counts.timing_selection_required} | Media edit ready: {counts.media_edit_ready} | "
+        f"Rebuild: {counts.editorial_rebuild_required} | Hold: {counts.hold}"
+    )
+
+
+@instagram_app.command("factory-coverage")
+def factory_coverage(
+    intake_path: Annotated[Path, typer.Argument(help="Exact Instagram video intake JSON")],
+    registry_path: Annotated[Path, typer.Argument(help="Exact Instagram Reel factory registry JSON")],
+    output: Annotated[Path | None, typer.Option("--output", "-o")] = None,
+) -> None:
+    """Partition every current intake video by exact Reel-factory editorial coverage."""
+
+    try:
+        intake, intake_sha256 = _read_intake(intake_path)
+        registry, registry_sha256 = _read_reel_registry(registry_path)
+        result = build_instagram_factory_coverage(
+            intake,
+            registry,
+            source_intake_sha256=intake_sha256,
+            source_registry_sha256=registry_sha256,
+        )
+    except (InstagramFactoryCoverageError, OSError, ValueError) as exc:
+        console.print(f"[red]Instagram factory coverage failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+    if output is None:
+        settings = get_settings()
+        output = (
+            settings.data_dir
+            / "reports"
+            / f"instagram-{intake.project_key}-{intake.source_snapshot_id}-factory-coverage.json"
+        )
+    _write_json(output, result.model_dump(mode="json"))
+
+    counts = result.counts
+    console.print(
+        f"[green]Built provider-inert Instagram factory coverage → {output}[/green]\n"
+        f"Current: {counts.total_current_videos} | Covered: {counts.covered_by_factory} | "
+        f"Reviewed unexpanded: {counts.reviewed_unexpanded} | "
+        f"Editorial review required: {counts.editorial_review_required} | "
+        f"Factory sources missing current snapshot: {counts.factory_sources_missing_from_current_snapshot}"
     )
