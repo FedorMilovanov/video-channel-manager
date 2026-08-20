@@ -84,34 +84,45 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p .runtime
+          validation_json=""
           case "$OPERATION" in
             validate)
-              python -m video_channel_manager.milovi_telegram_feed validate \
-                --publication-id "$PUBLICATION_ID"
+              validation_json="$(python -m video_channel_manager.milovi_telegram_feed validate \
+                --publication-id "$PUBLICATION_ID")"
               ;;
             initialize-state)
               [[ "$CONFIRM" == "INITIALIZE:@MiloviCake:$PUBLICATION_ID" ]] || {
                 echo "exact state initialization confirmation is missing" >&2
                 exit 3
               }
-              python -m video_channel_manager.milovi_telegram_feed validate \
+              validation_json="$(python -m video_channel_manager.milovi_telegram_feed validate \
                 --publication-id "$PUBLICATION_ID" \
-                --require-release-authorized
+                --require-release-authorized)"
               ;;
             publish)
               [[ "$CONFIRM" == "PUBLISH:@MiloviCake:$PUBLICATION_ID" ]] || {
                 echo "exact publication confirmation is missing" >&2
                 exit 3
               }
-              python -m video_channel_manager.milovi_telegram_feed validate \
+              validation_json="$(python -m video_channel_manager.milovi_telegram_feed validate \
                 --publication-id "$PUBLICATION_ID" \
-                --require-execution-authorized
+                --require-execution-authorized)"
               ;;
             *)
               echo "unsupported control-plane operation" >&2
               exit 3
               ;;
           esac
+          printf '%s\n' "$validation_json"
+          payload_kind="$(python -c 'import json,sys; print(json.load(sys.stdin)["payload_kind"])' <<< "$validation_json")"
+          case "$payload_kind" in
+            photo|message) ;;
+            *)
+              echo "unsupported permanent Milovi feed payload kind: $payload_kind" >&2
+              exit 3
+              ;;
+          esac
+          echo "payload_kind=$payload_kind" >> "$GITHUB_OUTPUT"
           echo "release_path=content/telegram/milovi-cake/releases/$PUBLICATION_ID-runtime.json" >> "$GITHUB_OUTPUT"
           echo "ledger_relative_path=content/telegram/milovi-cake/feed/$PUBLICATION_ID.json" >> "$GITHUB_OUTPUT"
           echo "ledger_path=$STATE_DIR/content/telegram/milovi-cake/feed/$PUBLICATION_ID.json" >> "$GITHUB_OUTPUT"
@@ -282,7 +293,7 @@ jobs:
             --sha "$GITHUB_SHA"
 
       - name: Materialize exact reviewed photo bytes
-        if: inputs.operation == 'publish'
+        if: inputs.operation == 'publish' && steps.gate.outputs.payload_kind == 'photo'
         env:
           PUBLICATION_ID: ${{ inputs.publication_id }}
         shell: bash

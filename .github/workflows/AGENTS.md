@@ -37,7 +37,8 @@ Milovi Telegram Issue #353 has one permanent provider-mutation path: `.github/wo
 
 - The publisher remains `workflow_dispatch`-only. Do not add `schedule:` or `cron:` triggers. A reviewed schedule value in an immutable release is a freshness constraint, not standing autonomous execution authority.
 - All Milovi provider mutations share `state/milovi-cake-telegram` and concurrency group `milovi-cake-telegram-publisher` with `cancel-in-progress: false`.
-- The exact feed identity is `milovi-feed-YYYYMMDD-NNN`. Runtime release, media binding, durable ledger, execution authority and channel-wide index must all bind that exact identity and exact payload digest.
+- The exact feed identity is `milovi-feed-YYYYMMDD-NNN`. Runtime release, exact media-or-message binding, durable ledger, execution authority and channel-wide index must all bind that exact identity and exact payload digest.
+- `sendPhoto` uses the exact media/source/transport binding and deterministic materialization path. `sendMessage` uses an exact candidate/text SHA-256 binding and must not be forced through a fake media artifact. The two binding kinds are mutually exclusive for one publication.
 - Release/content authorization and execution/provider authorization are separate gates. Old bootstrap or canary authorization, credentials, automation, a green workflow, or a profile with technical write capability never supplies fresh execution authority.
 - State initialization is explicit and provider-free. The publisher must not auto-create a missing release ledger during a `publish` operation.
 - `content/telegram/milovi-cake/feed/index.json` is the channel-wide duplicate guard. It must agree with the exact immutable release ledger before another provider attempt is eligible.
