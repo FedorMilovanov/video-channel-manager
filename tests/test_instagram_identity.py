@@ -31,7 +31,7 @@ def _instagram_login_observation(*, account_id: str = "123456789012345", usernam
         facebook_page_id=None,
         granted_scopes=("instagram_business_basic",),
         observed_at=NOW,
-        account_response_sha256=ACCOUNT_DIGEST,
+        account_evidence_sha256=ACCOUNT_DIGEST,
         scope_evidence_sha256=SCOPE_DIGEST,
     )
 
@@ -42,7 +42,7 @@ def test_instagram_login_identity_proof_does_not_require_facebook_page_or_publis
     assert observation.instagram_professional_account_id == "123456789012345"
     assert observation.facebook_page_id is None
     assert observation.granted_scopes == ("instagram_business_basic",)
-    assert observation.account_response_sha256 == ACCOUNT_DIGEST
+    assert observation.account_evidence_sha256 == ACCOUNT_DIGEST
     assert observation.scope_evidence_sha256 == SCOPE_DIGEST
     assert observation.provider_writes_authorized is False
 
@@ -56,7 +56,7 @@ def test_identity_observation_requires_distinct_account_and_scope_evidence() -> 
             instagram_professional_account_id="123456789012345",
             granted_scopes=("instagram_business_basic",),
             observed_at=NOW,
-            account_response_sha256=ACCOUNT_DIGEST,
+            account_evidence_sha256=ACCOUNT_DIGEST,
             scope_evidence_sha256=ACCOUNT_DIGEST,
         )
 
@@ -70,7 +70,7 @@ def test_instagram_login_rejects_wrong_host_or_missing_basic_scope() -> None:
             instagram_professional_account_id="123456789012345",
             granted_scopes=("instagram_business_basic",),
             observed_at=NOW,
-            account_response_sha256=ACCOUNT_DIGEST,
+            account_evidence_sha256=ACCOUNT_DIGEST,
             scope_evidence_sha256=SCOPE_DIGEST,
         )
 
@@ -82,7 +82,7 @@ def test_instagram_login_rejects_wrong_host_or_missing_basic_scope() -> None:
             instagram_professional_account_id="123456789012345",
             granted_scopes=("instagram_business_content_publish",),
             observed_at=NOW,
-            account_response_sha256=ACCOUNT_DIGEST,
+            account_evidence_sha256=ACCOUNT_DIGEST,
             scope_evidence_sha256=SCOPE_DIGEST,
         )
 
@@ -98,7 +98,7 @@ def test_facebook_login_identity_proof_requires_linked_page_and_page_discovery_s
         facebook_page_id="112233445566778",
         granted_scopes=("instagram_basic", "pages_show_list"),
         observed_at=NOW,
-        account_response_sha256=ACCOUNT_DIGEST,
+        account_evidence_sha256=ACCOUNT_DIGEST,
         scope_evidence_sha256=SCOPE_DIGEST,
     )
 
@@ -113,7 +113,7 @@ def test_facebook_login_identity_proof_requires_linked_page_and_page_discovery_s
             facebook_page_id=None,
             granted_scopes=("instagram_basic", "pages_show_list"),
             observed_at=NOW,
-            account_response_sha256=ACCOUNT_DIGEST,
+            account_evidence_sha256=ACCOUNT_DIGEST,
             scope_evidence_sha256=SCOPE_DIGEST,
         )
 
