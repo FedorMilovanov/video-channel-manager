@@ -4,7 +4,7 @@ import json
 from copy import deepcopy
 from pathlib import Path
 
-from video_channel_manager.editorial.content import parse_content_record
+from video_channel_manager.editorial.content import parse_content_record, validate_content_record
 from video_channel_manager.editorial.preview import preview_payload, renderer_for
 from video_channel_manager.platforms.instagram.renderers import render_instagram_caption
 
@@ -50,6 +50,21 @@ def test_instagram_surface_allowlist_is_fail_closed() -> None:
 
     assert not rendered.is_valid
     assert any(issue.code == "platform_surface_not_suitable" for issue in rendered.issues)
+
+
+def test_instagram_platform_target_requires_exact_numeric_provider_id() -> None:
+    payload = _instagram_payload()
+    targets = payload["platform_targets"]
+    assert isinstance(targets, dict)
+    targets["instagram.reel"] = "@TheLegendaryPoOet"
+
+    errors = validate_content_record(payload)
+
+    assert any("exact numeric Instagram provider account ID" in error for error in errors)
+
+    targets["instagram.reel"] = "123456789012345"
+    errors = validate_content_record(payload)
+    assert not any("exact numeric Instagram provider account ID" in error for error in errors)
 
 
 def test_instagram_caption_rejects_spammy_hashtags_and_raw_urls() -> None:
