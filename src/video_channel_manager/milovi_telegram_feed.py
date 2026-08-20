@@ -18,7 +18,11 @@ from video_channel_manager.telegram_multichannel_state import (
     load_ledger,
     save_ledger,
 )
-from video_channel_manager.telegram_multichannel_transport import GenericPhotoPayload
+from video_channel_manager.telegram_multichannel_transport import (
+    GenericMessagePayload,
+    GenericPhotoPayload,
+    render_message_payload,
+)
 from video_channel_manager.telegram_target_binding import load_target_binding
 
 PROJECT_KEY = "milovi-cake"
@@ -55,6 +59,7 @@ def exact_paths(publication_id: str) -> dict[str, Path]:
         "release": RELEASE_ROOT / f"{publication_id}-runtime.json",
         "authority": RELEASE_ROOT / f"{publication_id}-execution-authority.json",
         "media": RELEASE_ROOT / f"{publication_id}-media.json",
+        "message": RELEASE_ROOT / f"{publication_id}-message.json",
         "ledger": STATE_ROOT / f"{publication_id}.json",
         "index": INDEX_RELATIVE_PATH,
     }
@@ -135,6 +140,19 @@ class MiloviFeedMediaBinding(BaseModel):
     provider_write_performed: Literal[False]
 
 
+class MiloviFeedMessageBinding(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.milovi-telegram-feed-message"]
+    schema_version: Literal[1]
+    project_key: Literal["milovi-cake"]
+    publication_id: str
+    candidate_path: str
+    text_field: Literal["text", "caption"]
+    text_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    provider_write_performed: Literal[False]
+
+
 FeedStateName = Literal["pending", "dispatching", "published", "unknown", "failed", "skipped"]
 FeedProviderEffect = Literal["impossible", "not_dispatched", "confirmed_absent", "may_exist", "verified"]
 
@@ -179,6 +197,13 @@ def _load_media(path: Path) -> MiloviFeedMediaBinding:
         raise ValueError(f"invalid Milovi feed media binding {path}: {exc}") from exc
 
 
+def _load_message(path: Path) -> MiloviFeedMessageBinding:
+    try:
+        return MiloviFeedMessageBinding.model_validate_json(path.read_text(encoding="utf-8"))
+    except (OSError, ValidationError) as exc:
+        raise ValueError(f"invalid Milovi feed message binding {path}: {exc}") from exc
+
+
 def _load_index(path: Path) -> MiloviFeedIndex:
     try:
         return MiloviFeedIndex.model_validate_json(path.read_text(encoding="utf-8"))
@@ -189,6 +214,17 @@ def _load_index(path: Path) -> MiloviFeedIndex:
 def _save_index(path: Path, index: MiloviFeedIndex) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(index.model_dump_json(indent=2) + "\n", encoding="utf-8")
+
+
+def _require_provider_inert_candidate(candidate: dict[str, Any], publication_id: str) -> None:
+    if (
+        candidate.get("publication_id") != publication_id
+        or candidate.get("project_key") != PROJECT_KEY
+        or candidate.get("publication_authorized") is not False
+        or candidate.get("execution_authorized") is not False
+        or candidate.get("provider_mutation_allowed") is not False
+    ):
+        raise ValueError("frozen Milovi content candidate must remain provider-inert")
 
 
 def validate_bundle(
@@ -240,43 +276,64 @@ def validate_bundle(
     ):
         raise ValueError("Milovi execution authority differs from exact release/payload")
 
-    media = _load_media(paths["media"])
-    if media.publication_id != publication_id:
-        raise ValueError("Milovi media binding publication_id differs from release")
-    candidate = _read_json(Path(media.candidate_path))
-    if (
-        candidate.get("publication_id") != publication_id
-        or candidate.get("project_key") != PROJECT_KEY
-        or candidate.get("publication_authorized") is not False
-        or candidate.get("execution_authorized") is not False
-        or candidate.get("provider_mutation_allowed") is not False
-    ):
-        raise ValueError("frozen Milovi content candidate must remain provider-inert")
-    caption = str(candidate.get("caption") or "")
-    if _sha256_bytes(caption.encode("utf-8")) != media.caption_sha256:
-        raise ValueError("Milovi candidate caption digest differs from media binding")
-    if not isinstance(item.payload, GenericPhotoPayload):
-        raise ValueError("current Milovi feed media binding requires a photo payload")
-    if (
-        item.payload.caption != caption
-        or item.payload.media_path != media.transport.media_path
-        or item.payload.media_sha256 != media.transport.sha256
-        or item.payload.media_byte_size != media.transport.byte_size
-        or item.payload.media_filename != media.transport.filename
-        or item.source_sha256 != media.source.sha256
-    ):
-        raise ValueError("Milovi release payload differs from exact content/media binding")
+    payload_kind: Literal["photo", "message"]
+    if isinstance(item.payload, GenericPhotoPayload):
+        if paths["message"].exists():
+            raise ValueError("photo Milovi feed bundle must not carry a message binding")
+        media = _load_media(paths["media"])
+        if media.publication_id != publication_id:
+            raise ValueError("Milovi media binding publication_id differs from release")
+        candidate = _read_json(Path(media.candidate_path))
+        _require_provider_inert_candidate(candidate, publication_id)
+        caption = str(candidate.get("caption") or "")
+        if _sha256_bytes(caption.encode("utf-8")) != media.caption_sha256:
+            raise ValueError("Milovi candidate caption digest differs from media binding")
+        if (
+            item.payload.caption != caption
+            or item.payload.media_path != media.transport.media_path
+            or item.payload.media_sha256 != media.transport.sha256
+            or item.payload.media_byte_size != media.transport.byte_size
+            or item.payload.media_filename != media.transport.filename
+            or item.source_sha256 != media.source.sha256
+        ):
+            raise ValueError("Milovi release payload differs from exact content/media binding")
 
-    candidate_media = candidate.get("media")
-    if not isinstance(candidate_media, dict) or (
-        candidate_media.get("media_id") != media.media_id
-        or candidate_media.get("source_path") != media.source.path
-        or candidate_media.get("source_git_blob_sha1") != media.source.git_blob_sha1
-        or candidate_media.get("source_sha256") != media.source.sha256
-        or candidate_media.get("transport_sha256") != media.transport.sha256
-        or candidate_media.get("transport_byte_size") != media.transport.byte_size
-    ):
-        raise ValueError("Milovi candidate media differs from exact feed media binding")
+        candidate_media = candidate.get("media")
+        if not isinstance(candidate_media, dict) or (
+            candidate_media.get("media_id") != media.media_id
+            or candidate_media.get("source_path") != media.source.path
+            or candidate_media.get("source_git_blob_sha1") != media.source.git_blob_sha1
+            or candidate_media.get("source_sha256") != media.source.sha256
+            or candidate_media.get("transport_sha256") != media.transport.sha256
+            or candidate_media.get("transport_byte_size") != media.transport.byte_size
+        ):
+            raise ValueError("Milovi candidate media differs from exact feed media binding")
+        payload_kind = "photo"
+    elif isinstance(item.payload, GenericMessagePayload):
+        if paths["media"].exists():
+            raise ValueError("message Milovi feed bundle must not carry a media binding")
+        message = _load_message(paths["message"])
+        if message.publication_id != publication_id:
+            raise ValueError("Milovi message binding publication_id differs from release")
+        candidate = _read_json(Path(message.candidate_path))
+        _require_provider_inert_candidate(candidate, publication_id)
+        if candidate.get("operation") != "sendMessage":
+            raise ValueError("Milovi message candidate operation must be sendMessage")
+        raw_text = candidate.get(message.text_field)
+        if not isinstance(raw_text, str) or not raw_text:
+            raise ValueError("Milovi message candidate has no exact bound text")
+        if _sha256_bytes(raw_text.encode("utf-8")) != message.text_sha256:
+            raise ValueError("Milovi message candidate text digest differs from message binding")
+        expected_payload = render_message_payload(
+            profile,
+            publication_id=publication_id,
+            html_text=raw_text,
+        )
+        if item.payload != expected_payload or item.source_sha256 != message.text_sha256:
+            raise ValueError("Milovi release payload differs from exact content/message binding")
+        payload_kind = "message"
+    else:
+        raise ValueError("permanent Milovi feed supports only exact photo or message payloads")
 
     if require_release_authorized and not release.release_authorized:
         raise ValueError("Milovi release is not freshly authorized")
@@ -298,6 +355,7 @@ def validate_bundle(
     return {
         "valid": True,
         "publication_id": publication_id,
+        "payload_kind": payload_kind,
         "release_digest": release.digest,
         "release_candidate_sha256": release.candidate_digest(),
         "provider_payload_sha256": item.payload.provider_payload_sha256,
