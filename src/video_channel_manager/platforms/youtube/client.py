@@ -312,11 +312,16 @@ class YouTubeApiClient(HttpClientOwner):
                 if item_id:
                     raw_by_id[item_id] = raw_item
 
+        missing_ids = [video_id for video_id in ordered_ids if video_id not in raw_by_id]
+        if missing_ids:
+            raise YouTubeApiError(
+                "YouTube videos.list omitted upload IDs from the owner uploads playlist: "
+                + ",".join(missing_ids)
+            )
+
         records: list[VideoRecord] = []
         for video_id in ordered_ids:
-            video_payload = raw_by_id.get(video_id)
-            if video_payload is None:
-                continue
+            video_payload = raw_by_id[video_id]
             snippet = _dict_field(video_payload, "snippet")
             details = _dict_field(video_payload, "contentDetails")
             status = _dict_field(video_payload, "status")
