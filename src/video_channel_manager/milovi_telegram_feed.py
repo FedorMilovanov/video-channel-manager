@@ -606,7 +606,7 @@ def state_check(publication_id: str, *, state_checkout: Path, require_publishabl
 def sync_index(publication_id: str, *, state_checkout: Path) -> dict[str, Any]:
     paths = exact_paths(publication_id)
     release = load_release(paths["release"])
-    ledger = load_ledger(state_checkout / paths["ledger"])
+    ledger = load_ledger(state_checkout / paths["ledger"], release)
     index_path = state_checkout / paths["index"]
     index = _load_index(index_path)
     existing = index.entries.get(publication_id)
