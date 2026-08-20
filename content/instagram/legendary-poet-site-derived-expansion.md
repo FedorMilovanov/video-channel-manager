@@ -1,7 +1,7 @@
 # The Legendary Poet — site-derived Instagram expansion
 
 Status: provider-inert editorial plan  
-Owner issue: #495  
+Owner issue: #492  
 Built: 2026-08-20
 
 ## Why this layer exists
