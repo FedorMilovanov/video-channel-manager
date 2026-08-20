@@ -46,7 +46,7 @@ class InstagramAccountObservation(InstagramIdentityFrozenModel):
     facebook_page_id: str | None = None
     granted_scopes: tuple[str, ...]
     observed_at: datetime
-    account_response_sha256: str
+    account_evidence_sha256: str
     scope_evidence_sha256: str
 
     @field_validator("api_version")
@@ -68,7 +68,7 @@ class InstagramAccountObservation(InstagramIdentityFrozenModel):
             return None
         return _validate_numeric_id(value, field_name="facebook_page_id")
 
-    @field_validator("account_response_sha256", "scope_evidence_sha256")
+    @field_validator("account_evidence_sha256", "scope_evidence_sha256")
     @classmethod
     def validate_evidence_sha256(cls, value: str) -> str:
         return _validate_sha256(value, field_name="evidence digest")
@@ -77,7 +77,7 @@ class InstagramAccountObservation(InstagramIdentityFrozenModel):
     def validate_observation(self) -> InstagramAccountObservation:
         if self.observed_at.tzinfo is None or self.observed_at.utcoffset() is None:
             raise ValueError("observed_at must be timezone-aware")
-        if self.account_response_sha256 == self.scope_evidence_sha256:
+        if self.account_evidence_sha256 == self.scope_evidence_sha256:
             raise ValueError("account and scope evidence must come from distinct provider-read artifacts")
         if not self.granted_scopes:
             raise ValueError("granted_scopes must not be empty")
