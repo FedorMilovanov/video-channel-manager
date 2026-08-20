@@ -17,6 +17,7 @@ from video_channel_manager.application.plan_preview import build_plan_preview
 from video_channel_manager.cli.album import album_app
 from video_channel_manager.cli.compare import compare_app
 from video_channel_manager.cli.content import content_app
+from video_channel_manager.cli.instagram import instagram_app
 from video_channel_manager.cli.resi import resi_app
 from video_channel_manager.cli.vk import vk_app
 from video_channel_manager.cli.youtube import youtube_app
@@ -25,6 +26,12 @@ from video_channel_manager.domain.enums import ChannelKind, CollectionKind, Oper
 from video_channel_manager.domain.models import ChannelRecord, CollectionRecord, RemoteRef, VideoRecord
 from video_channel_manager.exchange.audit_package import AuditFinding, AuditPackage
 from video_channel_manager.exchange.change_plan import ChangeOperation, ChangePlan
+from video_channel_manager.exchange.instagram_reels import InstagramReelFactoryRegistry
+from video_channel_manager.exchange.instagram_video import (
+    InstagramMediaReview,
+    InstagramVideoIntakeArtifact,
+    InstagramVideoRouteArtifact,
+)
 from video_channel_manager.local_media import scan_local_media
 from video_channel_manager.persistence import Database
 from video_channel_manager.wave_engine.cli import schema_documents as wave_schema_documents
@@ -44,6 +51,7 @@ app.add_typer(example_app, name="example")
 app.add_typer(album_app, name="album")
 app.add_typer(compare_app, name="compare")
 app.add_typer(content_app, name="content")
+app.add_typer(instagram_app, name="instagram")
 app.add_typer(resi_app, name="resi")
 app.add_typer(youtube_app, name="youtube")
 app.add_typer(vk_app, name="vk")
@@ -105,12 +113,16 @@ def db_init() -> None:
 def schema_export(
     output_dir: Annotated[Path, typer.Option("--output-dir", "-o")] = Path("schemas/generated"),
 ) -> None:
-    """Export JSON Schemas for AuditPackage and ChangePlan."""
+    """Export versioned exchange JSON Schemas."""
 
     output_dir.mkdir(parents=True, exist_ok=True)
     documents = {
         "audit-package-v1.schema.json": AuditPackage.model_json_schema(),
         "change-plan-v1.schema.json": ChangePlan.model_json_schema(),
+        "instagram-youtube-video-intake-v1.schema.json": InstagramVideoIntakeArtifact.model_json_schema(),
+        "instagram-media-review-v1.schema.json": InstagramMediaReview.model_json_schema(),
+        "instagram-video-route-v1.schema.json": InstagramVideoRouteArtifact.model_json_schema(),
+        "instagram-reel-factory-v1.schema.json": InstagramReelFactoryRegistry.model_json_schema(),
         **wave_schema_documents(),
     }
     for filename, schema in documents.items():
