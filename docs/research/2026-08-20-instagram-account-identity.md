@@ -60,7 +60,7 @@ Official Meta source:
 - Instagram API documentation / Facebook Login token and Page discovery flow:
   https://www.postman.com/meta/instagram/documentation/6yqw8pt/instagram-api
 
-The repository's eventual read-only discovery call should request only the identity fields it actually needs. The fact that Meta's example includes a Page access token does not make that token part of the identity evidence artifact.
+The repository's read-only discovery call requests only the identity fields it actually needs: `id,name,tasks,instagram_business_account`. The fact that Meta's example includes a Page access token does not make that token part of the identity evidence artifact, and the implementation deliberately does not request it.
 
 ## Access level
 
@@ -85,12 +85,14 @@ A provider-read evidence record only. It freezes:
 - linked Facebook Page ID only for the Facebook Login model;
 - exact granted scope names, but **never the token itself**;
 - observation timestamp;
-- `account_response_sha256`: SHA-256 of the exact provider response that proved the account identity;
+- `account_evidence_sha256`: SHA-256 of the deterministic provider-read corpus that proved the account identity;
 - `scope_evidence_sha256`: SHA-256 of a separate provider-backed token/scope evidence artifact.
 
-The account response and scope evidence are intentionally separate. The contract rejects identical digests: one payload cannot be presented simultaneously as independent account-discovery evidence and independent scope evidence.
+The account and scope evidence are intentionally separate. The contract rejects identical digests: one payload cannot be presented simultaneously as independent account-discovery evidence and independent scope evidence.
 
-The model rejects a cross-wired host/login combination and enforces the basic permission appropriate to that login model. The presence of a scope name in the typed observation is not enough by itself; the future provider client must derive the scope list from the separately hashed provider-backed scope evidence rather than accepting an operator-supplied list as proof.
+For Facebook Login Page discovery, account evidence may contain more than one provider response because `/me/accounts` is cursor-paginated. The implementation hashes the **complete ordered response corpus**, not only the first page: each exact raw response body is prefixed by its unsigned 8-byte big-endian byte length and appended to the SHA-256 stream in provider traversal order. This length framing makes the corpus digest unambiguous while retaining exact raw bytes as the evidence basis.
+
+The model rejects a cross-wired host/login combination and enforces the basic permission appropriate to that login model. The presence of a scope name in the typed observation is not enough by itself; the provider client derives the scope list from the separately hashed provider-backed scope evidence rather than accepting an operator-supplied list as proof.
 
 ### 2. `InstagramProjectBinding`
 
@@ -117,25 +119,28 @@ This is the cross-brand safety boundary required before any future write executo
 
 ## Provider-client boundary
 
-The eventual read-only Meta client must produce both evidence streams required by the observation:
+The repository now contains a read-only **Facebook Login identity reader** that produces both evidence streams required by the observation:
 
-1. account discovery/profile evidence that proves the numeric Professional account ID and any observed display metadata;
-2. independent provider-backed token/scope evidence that proves the granted scopes actually attached to the credential used for the read.
+1. `GET /debug_token` using a separate debug-authorization credential proves that the inspected Facebook User token is valid and supplies the actual granted scope names;
+2. cursor-paginated `GET /me/accounts` using the inspected Facebook User token discovers linked Page IDs and numeric `instagram_business_account.id` values.
 
-The repository already has a shared safe-read HTTP transport with retry/rate-limit/redaction semantics. A future Meta client should reuse that transport rather than introduce a second HTTP/retry implementation.
+Both operations are `SAFE_READ` through the existing shared `HttpClientOwner` transport, so retry/rate-limit behavior and redaction stay in one repository-wide implementation. Tokens are injected into the client and are never copied into observations. Page discovery sends the User token as a Bearer header and does not request the Page `access_token` field.
 
-For Facebook Login, the Page/account discovery path is documented. For Instagram Login, this ledger deliberately does **not** invent a self-ID discovery endpoint from memory: the client should be implemented only after the exact provider-supported self-ID acquisition path is confirmed from primary Meta documentation or supplied as an explicit OAuth result.
+The client fails closed on invalid scope evidence, missing required identity scopes, malformed IDs, repeated pagination cursors, duplicate Instagram Professional IDs, pagination exhaustion, provider errors and naive observation clocks.
+
+For Instagram Login, this ledger deliberately does **not** invent a self-ID discovery endpoint from memory: that client should be implemented only after the exact provider-supported self-ID acquisition path is confirmed from primary Meta documentation or supplied as an explicit OAuth result.
 
 ## Explicit non-goals
 
 This research/contract layer does not:
 
 - run OAuth;
-- store access tokens;
+- persist access tokens;
 - create a Meta app;
 - create or link Facebook Pages;
 - infer an account ID from a username;
 - accept a manually typed scope list as provider proof;
+- request or persist Page access tokens during identity discovery;
 - publish, edit, delete, like, comment, follow, message or advertise;
 - treat a successful identity read as `instagram_content_publish` authorization;
 - select between Instagram Login and Facebook Login merely because a Facebook Page happens to exist.
