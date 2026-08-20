@@ -1,7 +1,7 @@
 # Instagram launch sequence — August 2026
 
 Status: provider-inert candidate sequencing  
-Owner issue: #495
+Owner issue: #492
 
 This file orders the existing source-bound candidates. It is not a publication schedule
 and does not authorize provider writes. Timing/frequency is deliberately not encoded as
