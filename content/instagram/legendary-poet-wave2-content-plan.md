@@ -1,7 +1,7 @@
 # The Legendary Poet — Instagram Wave 2 content plan
 
 Status: provider-inert editorial plan  
-Owner issue: #495  
+Owner issue: #492  
 Built: 2026-08-20  
 Source registry: `content/instagram/legendary-poet-verified-youtube-seeds.json`
 
