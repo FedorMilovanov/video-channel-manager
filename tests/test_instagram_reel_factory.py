@@ -19,7 +19,7 @@ PLAN_PATH = ROOT / "content" / "instagram" / "legendary-poet-reels-factory-plan.
 MAPPING_PATH = ROOT / "content" / "mappings" / "youtube-vk-reviewed-20260727.json"
 COMMENTS_DIR = ROOT / "content" / "youtube-comments"
 CHANNEL_ID = "UC-78ys2S3cQ3lpqgXfo-SvQ"
-SITE_COMMIT = "d371d1a79cd49359cc24b5b8c7dfd5c92114b92c"
+SITE_COMMIT = "a3918bfd5364e4642fe41a613e89986526b4db37"
 
 
 def _registry() -> InstagramReelFactoryRegistry:
@@ -90,9 +90,7 @@ def test_site_sources_are_pinned_to_one_exact_current_site_commit() -> None:
     assert registry.source_site_repository == "FedorMilovanov/TheLegendaryPoet"
     assert registry.source_site_commit_sha == SITE_COMMIT
     site_sources = [
-        source
-        for source in registry.sources
-        if isinstance(source, (SiteAudioReelSource, SiteEditorialReelSource))
+        source for source in registry.sources if isinstance(source, (SiteAudioReelSource, SiteEditorialReelSource))
     ]
     assert len(site_sources) == 7
     assert {source.commit_sha for source in site_sources} == {SITE_COMMIT}
@@ -100,11 +98,7 @@ def test_site_sources_are_pinned_to_one_exact_current_site_commit() -> None:
 
 def test_site_audio_sources_freeze_exact_master_identity_from_site_catalog() -> None:
     registry = _registry()
-    audio_sources = {
-        source.source_id: source
-        for source in registry.sources
-        if isinstance(source, SiteAudioReelSource)
-    }
+    audio_sources = {source.source_id: source for source in registry.sources if isinstance(source, SiteAudioReelSource)}
 
     assert set(audio_sources) == {
         "site-audio:yesenin-ya-ustalym",
