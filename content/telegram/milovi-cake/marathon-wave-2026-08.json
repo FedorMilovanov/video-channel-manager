@@ -1,0 +1,80 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-marathon-wave",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "status": "provider_inert_editorially_fresh_marathon",
+  "purpose": "Canonical non-stale sequence over the already-merged frozen follow-on copy. This artifact reuses reviewed work; it does not invent a new editorial corpus and does not authorize provider execution.",
+  "publication_authorized": false,
+  "execution_authorized": false,
+  "provider_mutation_allowed": false,
+  "dates_frozen": false,
+  "publication_ids_frozen": false,
+  "provider_access_performed": false,
+  "provider_write_performed": false,
+  "source_contract": {
+    "frozen_copy_path": "content/telegram/milovi-cake/follow-on-wave-candidates-2026-08.json",
+    "frozen_copy_git_blob_sha1": "5f9ef57b80df664348da25705cfe93606fdcecbf",
+    "photo_manifest_path": "content/telegram/milovi-cake/follow-on-photo-source-manifest-2026-08.json",
+    "photo_manifest_git_blob_sha1": "c6b3ce108f6a47689653481ef0ba72a7dba39403",
+    "school_pool_path": "content/telegram/milovi-cake/school-interest-reading-candidates-2026-08.json",
+    "school_pool_git_blob_sha1": "6cec8bc654968f9d35dfca66bfeb692c3b140644",
+    "milovi_cake_reviewed_snapshot": "551866f1c34611406fc0a696bec8fc8fb4fd36d8",
+    "milovi_cake_current_head_verified": "80f071fa6e9ef3024006436cb78d4134c61787cc",
+    "milovi_cake_current_head_delta_from_reviewed_snapshot": [
+      "scripts/production_smoke.py"
+    ],
+    "milovi_cake_editorial_sources_changed_since_reviewed_snapshot": false,
+    "milovi_school_reviewed_snapshot": "aa82176012b93a50ccfcfb90293d496618e50b61",
+    "milovi_school_current_head_verified": "aa82176012b93a50ccfcfb90293d496618e50b61",
+    "milovi_school_editorial_sources_changed_since_reviewed_snapshot": false,
+    "freshness_verified_date": "2026-08-20"
+  },
+  "wave_contract": {
+    "total_items": 12,
+    "cake_items": 9,
+    "school_items": 3,
+    "school_positions": [3, 7, 11],
+    "school_posts_may_not_be_consecutive": true,
+    "final_item_must_be_cake": true,
+    "max_items_per_day_if_later_authorized": 2,
+    "preferred_daylight_grid_if_later_authorized": ["10:30", "20:00"],
+    "timezone": "Europe/Moscow",
+    "no_catch_up": true,
+    "strict_next_only": true,
+    "standing_execution_authority": false,
+    "permanent_writer_only": ".github/workflows/milovi-telegram-feed-publisher.yml"
+  },
+  "items": [
+    {"position": 1, "legacy_position": 1, "brand_stream": "milovi-cake", "content_role": "finished_work_visual", "operation": "sendPhoto", "media_id": "p06", "freshness_state": "editorially_fresh_exact_copy_exact_transport", "fresh_source_recheck_before_provider_promotion": false},
+    {"position": 2, "legacy_position": 2, "brand_stream": "milovi-cake", "content_role": "customer_guidance", "operation": "sendPhoto", "media_id": "p30", "freshness_state": "editorially_fresh_exact_copy_exact_transport", "fresh_source_recheck_before_provider_promotion": true},
+    {"position": 3, "legacy_position": 3, "brand_stream": "milovi-school", "content_role": "interest_reading", "operation": "sendMessage", "school_candidate_id": "school-read-002", "source_slug": "laduree-1862", "freshness_state": "editorially_fresh_exact_copy", "product_cta_allowed": false, "fresh_source_recheck_before_provider_promotion": true},
+    {"position": 4, "legacy_position": 4, "brand_stream": "milovi-cake", "content_role": "personalized_bento", "operation": "sendPhoto", "media_id": "p08", "freshness_state": "editorially_fresh_exact_copy_exact_transport", "fresh_source_recheck_before_provider_promotion": true},
+    {"position": 5, "legacy_position": 5, "brand_stream": "milovi-cake", "content_role": "verified_social_proof", "operation": "sendPhoto", "media_id": "p15", "freshness_state": "editorially_fresh_exact_copy_exact_transport", "fresh_source_recheck_before_provider_promotion": false},
+    {"position": 6, "legacy_position": 6, "brand_stream": "milovi-cake", "content_role": "complex_3d_planning", "operation": "sendPhoto", "media_id": "p22", "freshness_state": "editorially_fresh_exact_copy_exact_transport", "fresh_source_recheck_before_provider_promotion": true},
+    {"position": 7, "legacy_position": 7, "brand_stream": "milovi-school", "content_role": "interest_reading", "operation": "sendMessage", "school_candidate_id": "school-read-006", "source_slug": "paris-brest-race-dessert", "freshness_state": "editorially_fresh_exact_copy", "product_cta_allowed": false, "fresh_source_recheck_before_provider_promotion": true},
+    {"position": 8, "legacy_position": 8, "brand_stream": "milovi-cake", "content_role": "finished_work_visual", "operation": "sendPhoto", "media_id": "p14", "freshness_state": "editorially_fresh_exact_copy_exact_transport", "fresh_source_recheck_before_provider_promotion": false},
+    {"position": 9, "legacy_position": 9, "brand_stream": "milovi-cake", "content_role": "order_timing_guidance", "operation": "sendPhoto", "media_id": "p29", "freshness_state": "editorially_fresh_exact_copy_exact_transport", "fresh_source_recheck_before_provider_promotion": true},
+    {"position": 10, "legacy_position": 10, "brand_stream": "milovi-cake", "content_role": "dessert_showcase", "operation": "sendPhoto", "media_id": "p26", "freshness_state": "editorially_fresh_exact_copy_exact_transport", "fresh_source_recheck_before_provider_promotion": false},
+    {"position": 11, "legacy_position": 11, "brand_stream": "milovi-school", "content_role": "interest_reading", "operation": "sendMessage", "school_candidate_id": "school-read-003", "source_slug": "careme-first-celebrity-chef", "freshness_state": "editorially_fresh_exact_copy", "product_cta_allowed": false, "fresh_source_recheck_before_provider_promotion": true},
+    {"position": 12, "legacy_position": 12, "brand_stream": "milovi-cake", "content_role": "finished_work_visual", "operation": "sendPhoto", "media_id": "p01", "freshness_state": "editorially_fresh_exact_copy_exact_transport", "fresh_source_recheck_before_provider_promotion": false}
+  ],
+  "reserve": {
+    "school_candidate_pool_total": 12,
+    "school_candidates_used_in_this_wave": 3,
+    "school_candidates_remaining": 9,
+    "native_video_artifacts": {
+      "status": "accepted_16_of_16",
+      "accepted_output_count": 16,
+      "evidence_branch": "agent/milovi-video-accepted-73c578eff825",
+      "evidence_sha256": "sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae",
+      "included_in_this_wave": false,
+      "reason": "Artifact readiness is already complete, but this wave deliberately reuses the already-frozen 12-item Cake+School copy and does not create new video publication authority."
+    },
+    "life_or_bts": {
+      "included": false,
+      "reason": "No reviewed source corpus exists; do not invent or stage life/process/BTS claims."
+    }
+  },
+  "promotion_rule": "For a future provider-visible item, preserve this sequence, derive one fresh milovi-feed-YYYYMMDD-NNN identity only for the chosen strict-next daylight slot, re-check any item carrying fresh_source_recheck_before_provider_promotion=true, bind the exact frozen copy/source bytes, run current feed quality, and require separate fresh release and execution authorization. Historical follow-on executors remain retired."
+}
