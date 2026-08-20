@@ -236,7 +236,7 @@ def test_prepare_owner_media_rejects_binding_if_exact_bytes_changed(tmp_path: Pa
     source = tmp_path / "takeout.mp4"
     source.write_bytes(b"reviewed-owner-bytes")
     binding = _binding("AbCdEf12345", source)
-    source.write_bytes(b"different-owner-bytes")
+    source.write_bytes(b"tampered-owner-bytes")
 
     with pytest.raises(ValueError, match="SHA-256 differs from frozen binding"):
         prepare_owner_media(
