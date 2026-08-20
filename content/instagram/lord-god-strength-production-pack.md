@@ -1,7 +1,7 @@
 # Господь Бог — Сила Моя — Instagram production pack
 
 Status: provider-inert editorial/creative pack  
-Owner issue: #495  
+Owner issue: #492  
 Built: 2026-08-20  
 Candidate source: `content/instagram/lord-god-strength-launch-candidates.json`
 
