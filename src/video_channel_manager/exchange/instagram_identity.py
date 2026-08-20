@@ -32,9 +32,7 @@ def _validate_sha256(value: str, *, field_name: str) -> str:
 
 
 class InstagramAccountObservation(InstagramIdentityFrozenModel):
-    schema_name: Literal["video-manager.instagram-account-observation"] = (
-        "video-manager.instagram-account-observation"
-    )
+    schema_name: Literal["video-manager.instagram-account-observation"] = "video-manager.instagram-account-observation"
     schema_version: Literal[1] = 1
     status: Literal["provider-read-evidence"] = "provider-read-evidence"
     provider_effect: Literal["read_only"] = "read_only"
