@@ -14,8 +14,9 @@ from video_channel_manager.telegram_multichannel_transport import (
     GenericPhotoPayload,
     GenericPollPayload,
 )
+from video_channel_manager.telegram_multichannel_video import GenericVideoPayload
 
-GenericProviderPayload = GenericMessagePayload | GenericPollPayload | GenericPhotoPayload
+GenericProviderPayload = GenericMessagePayload | GenericPollPayload | GenericPhotoPayload | GenericVideoPayload
 
 
 class GenericReleaseItem(BaseModel):
