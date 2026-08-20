@@ -23,6 +23,7 @@ from video_channel_manager.telegram_multichannel_transport import (
     GenericPhotoPayload,
     render_message_payload,
 )
+from video_channel_manager.telegram_multichannel_video import GenericVideoPayload, render_video_payload
 from video_channel_manager.telegram_target_binding import load_target_binding
 
 PROJECT_KEY = "milovi-cake"
@@ -36,10 +37,17 @@ PUBLICATION_RE = re.compile(r"^milovi-feed-\d{8}-\d{3}$")
 RELEASE_ROOT = Path("content/telegram/milovi-cake/releases")
 STATE_ROOT = Path("content/telegram/milovi-cake/feed")
 INDEX_RELATIVE_PATH = STATE_ROOT / "index.json"
+VIDEO_ARTIFACT_REPOSITORY = "FedorMilovanov/video-channel-manager"
+VIDEO_ARTIFACT_REF = "agent/milovi-video-accepted-73c578eff825"
+VIDEO_EVIDENCE_SHA256 = "sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae"
 
 
 def _sha256_bytes(value: bytes) -> str:
     return "sha256:" + hashlib.sha256(value).hexdigest()
+
+
+def _git_blob_sha1(value: bytes) -> str:
+    return hashlib.sha1(f"blob {len(value)}\0".encode("ascii") + value, usedforsecurity=False).hexdigest()
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -60,6 +68,7 @@ def exact_paths(publication_id: str) -> dict[str, Path]:
         "authority": RELEASE_ROOT / f"{publication_id}-execution-authority.json",
         "media": RELEASE_ROOT / f"{publication_id}-media.json",
         "message": RELEASE_ROOT / f"{publication_id}-message.json",
+        "video": RELEASE_ROOT / f"{publication_id}-video.json",
         "ledger": STATE_ROOT / f"{publication_id}.json",
         "index": INDEX_RELATIVE_PATH,
     }
@@ -153,6 +162,40 @@ class MiloviFeedMessageBinding(BaseModel):
     provider_write_performed: Literal[False]
 
 
+class MiloviFeedVideoBinding(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.milovi-telegram-feed-video"]
+    schema_version: Literal[1]
+    project_key: Literal["milovi-cake"]
+    publication_id: str
+    media_id: str = Field(pattern=r"^v(?:0[1-9]|1[0-6])$")
+    candidate_path: str
+    caption_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    artifact_repository: Literal["FedorMilovanov/video-channel-manager"]
+    artifact_ref: Literal["agent/milovi-video-accepted-73c578eff825"]
+    artifact_path: str = Field(min_length=1, max_length=500)
+    artifact_git_blob_sha1: str = Field(pattern=r"^[0-9a-f]{40}$")
+    artifact_byte_size: int = Field(gt=0, le=50_000_000)
+    artifact_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    evidence_sha256: Literal[
+        "sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae"
+    ]
+    local_media_path: str = Field(min_length=1, max_length=500)
+    filename: str = Field(min_length=5, max_length=128, pattern=r"^[A-Za-z0-9._-]+$")
+    provider_write_performed: Literal[False]
+
+    @model_validator(mode="after")
+    def validate_artifact_identity(self) -> "MiloviFeedVideoBinding":
+        expected_name = f"milovi-{self.media_id}.mp4"
+        if Path(self.artifact_path).name != expected_name or self.filename != expected_name:
+            raise ValueError("Milovi video binding filename differs from accepted artifact identity")
+        local = Path(self.local_media_path)
+        if local.is_absolute() or ".." in local.parts or local.suffix.casefold() != ".mp4":
+            raise ValueError("Milovi video local path must be a repository-relative MP4 path")
+        return self
+
+
 FeedStateName = Literal["pending", "dispatching", "published", "unknown", "failed", "skipped"]
 FeedProviderEffect = Literal["impossible", "not_dispatched", "confirmed_absent", "may_exist", "verified"]
 
@@ -204,6 +247,13 @@ def _load_message(path: Path) -> MiloviFeedMessageBinding:
         raise ValueError(f"invalid Milovi feed message binding {path}: {exc}") from exc
 
 
+def _load_video(path: Path) -> MiloviFeedVideoBinding:
+    try:
+        return MiloviFeedVideoBinding.model_validate_json(path.read_text(encoding="utf-8"))
+    except (OSError, ValidationError) as exc:
+        raise ValueError(f"invalid Milovi feed video binding {path}: {exc}") from exc
+
+
 def _load_index(path: Path) -> MiloviFeedIndex:
     try:
         return MiloviFeedIndex.model_validate_json(path.read_text(encoding="utf-8"))
@@ -225,6 +275,12 @@ def _require_provider_inert_candidate(candidate: dict[str, Any], publication_id:
         or candidate.get("provider_mutation_allowed") is not False
     ):
         raise ValueError("frozen Milovi content candidate must remain provider-inert")
+
+
+def _require_only_binding(paths: dict[str, Path], allowed: str) -> None:
+    for binding_name in ("media", "message", "video"):
+        if binding_name != allowed and paths[binding_name].exists():
+            raise ValueError(f"{allowed} Milovi feed bundle must not carry a {binding_name} binding")
 
 
 def validate_bundle(
@@ -276,10 +332,9 @@ def validate_bundle(
     ):
         raise ValueError("Milovi execution authority differs from exact release/payload")
 
-    payload_kind: Literal["photo", "message"]
+    payload_kind: Literal["photo", "message", "video"]
     if isinstance(item.payload, GenericPhotoPayload):
-        if paths["message"].exists():
-            raise ValueError("photo Milovi feed bundle must not carry a message binding")
+        _require_only_binding(paths, "media")
         media = _load_media(paths["media"])
         if media.publication_id != publication_id:
             raise ValueError("Milovi media binding publication_id differs from release")
@@ -310,8 +365,7 @@ def validate_bundle(
             raise ValueError("Milovi candidate media differs from exact feed media binding")
         payload_kind = "photo"
     elif isinstance(item.payload, GenericMessagePayload):
-        if paths["media"].exists():
-            raise ValueError("message Milovi feed bundle must not carry a media binding")
+        _require_only_binding(paths, "message")
         message = _load_message(paths["message"])
         if message.publication_id != publication_id:
             raise ValueError("Milovi message binding publication_id differs from release")
@@ -324,16 +378,42 @@ def validate_bundle(
             raise ValueError("Milovi message candidate has no exact bound text")
         if _sha256_bytes(raw_text.encode("utf-8")) != message.text_sha256:
             raise ValueError("Milovi message candidate text digest differs from message binding")
-        expected_payload = render_message_payload(
-            profile,
-            publication_id=publication_id,
-            html_text=raw_text,
-        )
+        expected_payload = render_message_payload(profile, publication_id=publication_id, html_text=raw_text)
         if item.payload != expected_payload or item.source_sha256 != message.text_sha256:
             raise ValueError("Milovi release payload differs from exact content/message binding")
         payload_kind = "message"
+    elif isinstance(item.payload, GenericVideoPayload):
+        _require_only_binding(paths, "video")
+        video = _load_video(paths["video"])
+        if video.publication_id != publication_id:
+            raise ValueError("Milovi video binding publication_id differs from release")
+        candidate = _read_json(Path(video.candidate_path))
+        _require_provider_inert_candidate(candidate, publication_id)
+        if candidate.get("operation") != "sendVideo" or candidate.get("media_id") != video.media_id:
+            raise ValueError("Milovi video candidate differs from exact accepted media identity")
+        caption = str(candidate.get("caption") or "")
+        if _sha256_bytes(caption.encode("utf-8")) != video.caption_sha256:
+            raise ValueError("Milovi video candidate caption digest differs from video binding")
+        if (
+            video.artifact_repository != VIDEO_ARTIFACT_REPOSITORY
+            or video.artifact_ref != VIDEO_ARTIFACT_REF
+            or video.evidence_sha256 != VIDEO_EVIDENCE_SHA256
+        ):
+            raise ValueError("Milovi video binding differs from the accepted 16/16 artifact reservoir")
+        expected_payload = render_video_payload(
+            profile,
+            publication_id=publication_id,
+            caption=caption,
+            media_path=video.local_media_path,
+            media_sha256=video.artifact_sha256,
+            media_byte_size=video.artifact_byte_size,
+            media_filename=video.filename,
+        )
+        if item.payload != expected_payload or item.source_sha256 != video.artifact_sha256:
+            raise ValueError("Milovi release payload differs from exact content/video binding")
+        payload_kind = "video"
     else:
-        raise ValueError("permanent Milovi feed supports only exact photo or message payloads")
+        raise ValueError("permanent Milovi feed supports only exact photo, message or accepted-video payloads")
 
     if require_release_authorized and not release.release_authorized:
         raise ValueError("Milovi release is not freshly authorized")
@@ -373,11 +453,7 @@ def materialize_photo(publication_id: str, *, source_path: Path, output_path: Pa
     source = source_path.read_bytes()
     if len(source) != media.source.byte_size or _sha256_bytes(source) != media.source.sha256:
         raise ValueError("Milovi source bytes differ from exact feed media binding")
-    blob_sha1 = hashlib.sha1(
-        f"blob {len(source)}\0".encode("ascii") + source,
-        usedforsecurity=False,
-    ).hexdigest()
-    if blob_sha1 != media.source.git_blob_sha1:
+    if _git_blob_sha1(source) != media.source.git_blob_sha1:
         raise ValueError("Milovi source Git blob differs from exact feed media binding")
     try:
         from PIL import Image  # type: ignore[import-not-found]
@@ -389,15 +465,7 @@ def materialize_photo(publication_id: str, *, source_path: Path, output_path: Pa
             raise ValueError("Milovi source media type/dimensions differ from exact binding")
         rgb = image.convert("RGB")
     encoded = io.BytesIO()
-    rgb.save(
-        encoded,
-        format="JPEG",
-        quality=95,
-        subsampling=0,
-        optimize=False,
-        progressive=False,
-        exif=b"",
-    )
+    rgb.save(encoded, format="JPEG", quality=95, subsampling=0, optimize=False, progressive=False, exif=b"")
     jpeg = encoded.getvalue()
     if len(jpeg) != media.transport.byte_size or _sha256_bytes(jpeg) != media.transport.sha256:
         raise ValueError("Milovi generated JPEG differs from exact reviewed transport bytes")
@@ -412,6 +480,29 @@ def materialize_photo(publication_id: str, *, source_path: Path, output_path: Pa
         "output": str(effective_output),
         "transport_sha256": media.transport.sha256,
         "transport_byte_size": len(jpeg),
+        "provider_write_performed": False,
+    }
+
+
+def materialize_video(publication_id: str, *, source_path: Path, output_path: Path | None = None) -> dict[str, Any]:
+    paths = exact_paths(publication_id)
+    video = _load_video(paths["video"])
+    source = source_path.read_bytes()
+    if len(source) != video.artifact_byte_size or _sha256_bytes(source) != video.artifact_sha256:
+        raise ValueError("Milovi accepted video bytes differ from exact feed video binding")
+    if _git_blob_sha1(source) != video.artifact_git_blob_sha1:
+        raise ValueError("Milovi accepted video Git blob differs from exact feed video binding")
+    effective_output = output_path or Path(video.local_media_path)
+    if effective_output.as_posix() != video.local_media_path:
+        raise ValueError("Milovi video output path differs from exact release-bound media path")
+    effective_output.parent.mkdir(parents=True, exist_ok=True)
+    effective_output.write_bytes(source)
+    return {
+        "verified": True,
+        "publication_id": publication_id,
+        "output": str(effective_output),
+        "artifact_sha256": video.artifact_sha256,
+        "artifact_byte_size": len(source),
         "provider_write_performed": False,
     }
 
@@ -555,6 +646,11 @@ def _parser() -> argparse.ArgumentParser:
     materialize.add_argument("--source", type=Path, required=True)
     materialize.add_argument("--output", type=Path)
 
+    materialize_video_parser = sub.add_parser("materialize-video")
+    materialize_video_parser.add_argument("--publication-id", required=True)
+    materialize_video_parser.add_argument("--source", type=Path, required=True)
+    materialize_video_parser.add_argument("--output", type=Path)
+
     init = sub.add_parser("state-init")
     init.add_argument("--publication-id", required=True)
     init.add_argument("--state-checkout", type=Path, required=True)
@@ -580,6 +676,8 @@ def main() -> int:
         )
     elif args.command == "materialize-photo":
         result = materialize_photo(args.publication_id, source_path=args.source, output_path=args.output)
+    elif args.command == "materialize-video":
+        result = materialize_video(args.publication_id, source_path=args.source, output_path=args.output)
     elif args.command == "state-init":
         result = state_init(args.publication_id, state_checkout=args.state_checkout)
     elif args.command == "state-check":
