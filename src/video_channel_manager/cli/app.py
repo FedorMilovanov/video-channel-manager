@@ -26,6 +26,11 @@ from video_channel_manager.domain.enums import ChannelKind, CollectionKind, Oper
 from video_channel_manager.domain.models import ChannelRecord, CollectionRecord, RemoteRef, VideoRecord
 from video_channel_manager.exchange.audit_package import AuditFinding, AuditPackage
 from video_channel_manager.exchange.change_plan import ChangeOperation, ChangePlan
+from video_channel_manager.exchange.instagram_content import (
+    InstagramAnalyticsSnapshot,
+    InstagramLaunchPack,
+    InstagramLaunchPreviewArtifact,
+)
 from video_channel_manager.exchange.instagram_factory_coverage import InstagramFactoryCoverageArtifact
 from video_channel_manager.exchange.instagram_historical_backlog import InstagramHistoricalBacklogArtifact
 from video_channel_manager.exchange.instagram_identity import (
@@ -136,6 +141,9 @@ def schema_export(
         "instagram-account-observation-v1.schema.json": InstagramAccountObservation.model_json_schema(),
         "instagram-project-binding-v1.schema.json": InstagramProjectBinding.model_json_schema(),
         "instagram-project-binding-registry-v1.schema.json": InstagramProjectBindingRegistry.model_json_schema(),
+        "instagram-launch-pack-v1.schema.json": InstagramLaunchPack.model_json_schema(),
+        "instagram-launch-preview-v1.schema.json": InstagramLaunchPreviewArtifact.model_json_schema(),
+        "instagram-analytics-snapshot-v1.schema.json": InstagramAnalyticsSnapshot.model_json_schema(),
         **wave_schema_documents(),
     }
     for filename, schema in documents.items():
