@@ -9,14 +9,7 @@ from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
-from video_channel_manager.telegram_multichannel_transport import (
-    GenericMessagePayload,
-    GenericPhotoPayload,
-    GenericPollPayload,
-)
-from video_channel_manager.telegram_multichannel_video import GenericVideoPayload
-
-GenericProviderPayload = GenericMessagePayload | GenericPollPayload | GenericPhotoPayload | GenericVideoPayload
+from video_channel_manager.telegram_multichannel_payloads import GenericProviderPayload
 
 
 class GenericReleaseItem(BaseModel):
