@@ -55,13 +55,14 @@ class InstagramFactoryCoverageCounts(FactoryCoverageFrozenModel):
     @model_validator(mode="after")
     def validate_partition(self) -> InstagramFactoryCoverageCounts:
         if (
-            self.covered_by_factory
-            + self.reviewed_unexpanded
-            + self.editorial_review_required
+            self.covered_by_factory + self.reviewed_unexpanded + self.editorial_review_required
             != self.total_current_videos
         ):
             raise ValueError("factory coverage states do not partition current videos")
-        if self.current_factory_sources + self.factory_sources_missing_from_current_snapshot != self.factory_youtube_sources:
+        if (
+            self.current_factory_sources + self.factory_sources_missing_from_current_snapshot
+            != self.factory_youtube_sources
+        ):
             raise ValueError("factory source presence counts do not partition factory YouTube sources")
         return self
 
