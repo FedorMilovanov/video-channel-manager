@@ -1,0 +1,31 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
+  "publication_id": "lordchrist-watson-sin-rebellion",
+  "sequence": 22,
+  "intent_id": "6c2f3ae4b4749875d092335f884b01e6",
+  "workflow_run_id": "32342356455",
+  "workflow_run_attempt": "1",
+  "github_sha": "a7d0e6774e3e29c793230a1341186205b3d5a1d9",
+  "github_workflow_sha": "a7d0e6774e3e29c793230a1341186205b3d5a1d9",
+  "payload_sha256": "sha256:f05f0aa490b2c73a7eaeeba86c2745cf13c8e524ab6e142f2060a3b748387830",
+  "text": "Грех зол по самой своей природе, потому что является преступлением против Бога. Это нарушение Его царского закона: «Грех есть беззаконие». Это crimen laesae majestatis — государственная измена против Неба. Какое большее оскорбление можно нанести государю, чем попрать его царские указы? «Они отбросили закон Твой за хребет свой». Грех оскорбляет Бога, потому что означает поступать вопреки Ему. Еврейское слово, обозначающее грех, означает мятеж.\n\nГрех бросается Богу в лицо: «Он простирает против Бога руку свою». Нам не следовало бы поднимать против Бога даже мысль, тем более руку; но грешник делает и то и другое. Грех есть deicidium — убийство Бога: он желал бы не только свергнуть Бога с престола, но и перестать признавать Его Богом; если бы грех мог добиться своего, Бог более не был бы Богом.\n\n© Томас Уотсон, «Молитва Господня»\n\n#ТомасУотсон #Грех #Мятеж #СвятостьБога",
+  "dispatch_mode": "scheduled",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-08-20T07:05:04.313322Z"
+  },
+  "prepared_at_utc": "2026-08-20T07:05:05.414743Z"
+}
