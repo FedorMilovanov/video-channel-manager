@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
-from video_channel_manager.telegram_multichannel_payloads import GenericProviderPayload
+from video_channel_manager.telegram_multichannel_payloads import GenericProviderPayload as GenericProviderPayload
 
 
 class GenericReleaseItem(BaseModel):
