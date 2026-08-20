@@ -155,9 +155,7 @@ def test_facebook_identity_errors_and_shared_redaction_do_not_echo_tokens() -> N
         assert USER_TOKEN not in message
         assert DEBUG_TOKEN not in message
 
-        redacted = client.redacted_error_context(
-            f"Authorization: Bearer {USER_TOKEN} access_token={DEBUG_TOKEN}"
-        )
+        redacted = client.redacted_error_context(f"Authorization: Bearer {USER_TOKEN} access_token={DEBUG_TOKEN}")
         assert USER_TOKEN not in redacted
         assert DEBUG_TOKEN not in redacted
         assert "<redacted>" in redacted
