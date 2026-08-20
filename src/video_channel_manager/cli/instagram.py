@@ -15,6 +15,10 @@ from video_channel_manager.editorial.instagram_factory_coverage import (
     InstagramFactoryCoverageError,
     build_instagram_factory_coverage,
 )
+from video_channel_manager.editorial.instagram_historical_backlog import (
+    InstagramHistoricalBacklogError,
+    build_instagram_historical_backlog,
+)
 from video_channel_manager.editorial.instagram_media_routing import (
     InstagramMediaRoutingError,
     build_instagram_video_routes,
@@ -399,4 +403,63 @@ def factory_coverage(
         f"Reviewed unexpanded: {counts.reviewed_unexpanded} | "
         f"Editorial review required: {counts.editorial_review_required} | "
         f"Factory sources missing current snapshot: {counts.factory_sources_missing_from_current_snapshot}"
+    )
+
+
+@instagram_app.command("historical-backlog")
+def historical_backlog(
+    registry_path: Annotated[Path, typer.Argument(help="Exact Instagram Reel factory registry JSON")],
+    mapping: Annotated[
+        Path | None,
+        typer.Option("--mapping", help="Exact historical YouTube→provider identity mapping JSON"),
+    ] = None,
+    reviewed_dir: Annotated[
+        Path | None,
+        typer.Option("--reviewed-dir", help="Directory of reviewed YouTube editorial records"),
+    ] = None,
+    output: Annotated[Path | None, typer.Option("--output", "-o")] = None,
+) -> None:
+    """Build a historical identity backlog without claiming current provider state."""
+
+    try:
+        registry, registry_sha256 = _read_reel_registry(registry_path)
+        mapping_payload, mapping_sha256, reviewed_ids, reviewed_sha256 = _resolve_supporting_sources(
+            project_key=registry.project_key,
+            mapping_path=mapping,
+            reviewed_dir=reviewed_dir,
+        )
+        if mapping_sha256 is None or reviewed_sha256 is None:
+            raise ValueError("historical backlog requires exact mapping and reviewed-corpus evidence")
+        channels = PROJECT_CHANNEL_IDS.get(registry.project_key, frozenset())
+        if len(channels) != 1:
+            raise ValueError(
+                f"historical backlog requires exactly one canonical YouTube channel for {registry.project_key}"
+            )
+        channel_id = next(iter(channels))
+        result = build_instagram_historical_backlog(
+            registry,
+            historical_mapping=mapping_payload,
+            reviewed_video_ids=reviewed_ids,
+            youtube_channel_id=channel_id,
+            source_mapping_sha256=mapping_sha256,
+            source_reviewed_corpus_sha256=reviewed_sha256,
+            source_registry_sha256=registry_sha256,
+        )
+    except (InstagramHistoricalBacklogError, OSError, ValueError) as exc:
+        console.print(f"[red]Instagram historical backlog failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+    if output is None:
+        settings = get_settings()
+        output = settings.data_dir / "reports" / f"instagram-{registry.project_key}-historical-backlog.json"
+    _write_json(output, result.model_dump(mode="json"))
+
+    counts = result.counts
+    console.print(
+        f"[green]Built provider-inert Instagram historical backlog → {output}[/green]\n"
+        f"Historical floor: {counts.total_historical_floor_ids} | Covered: {counts.already_covered} | "
+        f"Design Reel jobs: {counts.design_reel_jobs} | "
+        f"Build editorial record: {counts.build_editorial_record} | "
+        f"Reviewed outside floor: {counts.reviewed_ids_outside_historical_floor} | "
+        f"Factory sources outside floor: {counts.factory_youtube_sources_outside_historical_floor}"
     )
