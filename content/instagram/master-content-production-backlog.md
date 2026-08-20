@@ -1,7 +1,7 @@
 # Instagram master content production backlog
 
 Status: provider-inert  
-Owner issue: #495  
+Owner issue: #492  
 Built: 2026-08-20
 
 This is the operational control index for Instagram content work. It does **not** authorize provider publication.
