@@ -190,7 +190,9 @@ class AcceptedShortMedia(FrozenModel):
         if (transport.pixel_format or "").casefold() != "yuv420p":
             raise ValueError("accepted Telegram transport must use yuv420p")
         if transport.rotation_degrees != 0:
-            raise ValueError("accepted Telegram transport must bake orientation instead of relying on rotation metadata")
+            raise ValueError(
+                "accepted Telegram transport must bake orientation instead of relying on rotation metadata"
+            )
         if transport.width > transport.height:
             raise ValueError("accepted Telegram Short media must be square or vertical")
         if transport.audio_stream_count == 1 and (transport.audio_codec or "").casefold() != "aac":
@@ -556,9 +558,7 @@ def _validate_transport(
     if "mp4" not in containers:
         raise ValueError(f"{inventory_item.youtube_video_id}: transport container is not MP4")
     if path.stat().st_size > MAX_TELEGRAM_VIDEO_BYTES:
-        raise ValueError(
-            f"{inventory_item.youtube_video_id}: transport exceeds {MAX_TELEGRAM_VIDEO_BYTES} bytes"
-        )
+        raise ValueError(f"{inventory_item.youtube_video_id}: transport exceeds {MAX_TELEGRAM_VIDEO_BYTES} bytes")
     if summary.video_codec.casefold() != "h264":
         raise ValueError(f"{inventory_item.youtube_video_id}: transport video codec is not H.264")
     if (summary.pixel_format or "").casefold() != "yuv420p":
@@ -604,10 +604,7 @@ def prepare_owner_media(
         if not source.is_file():
             raise ValueError(f"owner media file does not exist: {source}")
         source_probe = normalize_probe(probe_runner(source))
-        if (
-            item.duration_seconds is not None
-            and abs(source_probe.duration_seconds - item.duration_seconds) > 3.0
-        ):
+        if item.duration_seconds is not None and abs(source_probe.duration_seconds - item.duration_seconds) > 3.0:
             raise ValueError(
                 f"{item.youtube_video_id}: owner media duration differs from YouTube inventory by over 3 seconds"
             )
@@ -726,7 +723,10 @@ def build_provider_inert_release(
     approved_candidate_ids: Iterable[str] = (),
     existing_publication_ids: Iterable[str] = (),
 ) -> GenericReleaseQueue:
-    if profile.project_key != PROJECT_KEY or profile.channel_username.casefold() != TELEGRAM_CHANNEL_USERNAME.casefold():
+    if (
+        profile.project_key != PROJECT_KEY
+        or profile.channel_username.casefold() != TELEGRAM_CHANNEL_USERNAME.casefold()
+    ):
         raise ValueError("Telegram profile is not the canonical LordChrist profile")
     if profile.provider_writes_authorized:
         raise ValueError("Issue #501 release builder requires a write-disabled LordChrist profile")
@@ -740,13 +740,11 @@ def build_provider_inert_release(
     candidates = {item.youtube_video_id for item in inventory.items if item.surface_status == "candidate"}
     unknown_approvals = approved - candidates
     if unknown_approvals:
-        raise ValueError("candidate approvals do not match candidate inventory ids: " + ", ".join(sorted(unknown_approvals)))
+        raise ValueError(
+            "candidate approvals do not match candidate inventory ids: " + ", ".join(sorted(unknown_approvals))
+        )
 
-    selected = [
-        item
-        for item in inventory.items
-        if item.surface_status == "short" or item.youtube_video_id in approved
-    ]
+    selected = [item for item in inventory.items if item.surface_status == "short" or item.youtube_video_id in approved]
     missing_media = [item.youtube_video_id for item in selected if item.youtube_video_id not in media_by_id]
     if missing_media:
         raise ValueError("exact accepted owner media is missing for: " + ", ".join(missing_media))
@@ -852,16 +850,16 @@ def main() -> int:
             print(policy.model_dump_json(indent=2))
             return 0
         if args.command == "inventory":
-            result = build_inventory(_load_audit(args.audit), include_candidates=not args.exclude_candidates)
-            _write_model(args.output, result)
+            inventory_result = build_inventory(_load_audit(args.audit), include_candidates=not args.exclude_candidates)
+            _write_model(args.output, inventory_result)
             print(
                 json.dumps(
                     {
-                        "items": len(result.items),
-                        "exact_shorts": sum(item.surface_status == "short" for item in result.items),
-                        "candidates": sum(item.surface_status == "candidate" for item in result.items),
-                        "excluded_longform": result.excluded_longform_count,
-                        "unresolved_non_candidate": result.unresolved_non_candidate_count,
+                        "items": len(inventory_result.items),
+                        "exact_shorts": sum(item.surface_status == "short" for item in inventory_result.items),
+                        "candidates": sum(item.surface_status == "candidate" for item in inventory_result.items),
+                        "excluded_longform": inventory_result.excluded_longform_count,
+                        "unresolved_non_candidate": inventory_result.unresolved_non_candidate_count,
                         "output": str(args.output),
                         "provider_write_performed": False,
                     },
@@ -870,17 +868,17 @@ def main() -> int:
             )
             return 0
         if args.command == "prepare-media":
-            result = prepare_owner_media(
+            media_result = prepare_owner_media(
                 load_inventory(args.inventory),
                 load_bindings(args.bindings),
                 output_dir=args.output_dir,
             )
-            _write_model(args.output, result)
+            _write_model(args.output, media_result)
             print(
                 json.dumps(
                     {
-                        "accepted": len(result.items),
-                        "transcoded": sum(item.transcoded for item in result.items),
+                        "accepted": len(media_result.items),
+                        "transcoded": sum(item.transcoded for item in media_result.items),
                         "output": str(args.output),
                         "provider_access_performed": False,
                         "provider_write_performed": False,
@@ -891,7 +889,7 @@ def main() -> int:
             return 0
         if args.command == "build-release":
             existing_ids = require_existing_lordchrist_state_clear(args.existing_ledger)
-            result = build_provider_inert_release(
+            release_result = build_provider_inert_release(
                 load_inventory(args.inventory),
                 load_media_acceptance(args.media),
                 profile=load_channel_profile(args.profile),
@@ -900,13 +898,13 @@ def main() -> int:
                 approved_candidate_ids=args.approve_candidate,
                 existing_publication_ids=existing_ids,
             )
-            _write_model(args.output, result)
+            _write_model(args.output, release_result)
             print(
                 json.dumps(
                     {
-                        "release_id": result.release_id,
-                        "items": len(result.items),
-                        "release_authorized": result.release_authorized,
+                        "release_id": release_result.release_id,
+                        "items": len(release_result.items),
+                        "release_authorized": release_result.release_authorized,
                         "provider_write_performed": False,
                         "output": str(args.output),
                     },
