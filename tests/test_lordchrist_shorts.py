@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -16,17 +17,21 @@ from video_channel_manager.lordchrist_shorts import (
     PROJECT_KEY,
     TELEGRAM_CHANNEL_USERNAME,
     YOUTUBE_CHANNEL_ID,
+    CandidateApprovalManifest,
     EffectSnapshot,
     OwnerMediaBinding,
     OwnerMediaBindingManifest,
     build_inventory,
     build_provider_inert_release,
     conversion_argv,
+    load_and_validate_editorial_schedule,
     load_policy,
     normalize_probe,
     prepare_owner_media,
     publication_id_for,
     require_existing_lordchrist_state_clear,
+    require_lordchrist_state_root_clear,
+    require_min_editorial_gap,
 )
 from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_multichannel_video import GenericVideoPayload
@@ -34,6 +39,11 @@ from video_channel_manager.telegram_multichannel_video import GenericVideoPayloa
 ROOT = Path(__file__).resolve().parents[1]
 POLICY = ROOT / "content/telegram/lordchrist/shorts-feed-policy.json"
 PROFILE = ROOT / "content/telegram/channels/lordchrist.json"
+EDITORIAL_SCHEDULE = ROOT / "content/telegram/lordchrist/production-schedule.json"
+
+
+def _digest(data: bytes) -> str:
+    return "sha256:" + hashlib.sha256(data).hexdigest()
 
 
 def _video(
@@ -136,7 +146,41 @@ def _probe(duration: float = 60.0) -> dict[str, object]:
     }
 
 
-def test_policy_is_provider_inert_and_exactly_bound() -> None:
+def _binding(video_id: str, source: Path, *, source_kind: str = "google_takeout") -> OwnerMediaBinding:
+    data = source.read_bytes()
+    return OwnerMediaBinding(
+        youtube_video_id=video_id,
+        source_kind=source_kind,
+        source_path=str(source),
+        expected_source_sha256=_digest(data),
+        expected_source_byte_size=len(data),
+    )
+
+
+def _bindings(*items: OwnerMediaBinding) -> OwnerMediaBindingManifest:
+    return OwnerMediaBindingManifest(
+        schema_name="video-channel-manager.lordchrist-shorts-owner-media-bindings",
+        schema_version=1,
+        project_key=PROJECT_KEY,
+        youtube_channel_id=YOUTUBE_CHANNEL_ID,
+        items=items,
+    )
+
+
+def _approval(snapshot_id: str, *video_ids: str) -> CandidateApprovalManifest:
+    return CandidateApprovalManifest(
+        schema_name="video-channel-manager.lordchrist-shorts-candidate-approval",
+        schema_version=1,
+        project_key=PROJECT_KEY,
+        youtube_channel_id=YOUTUBE_CHANNEL_ID,
+        inventory_snapshot_id=snapshot_id,
+        approved_video_ids=video_ids,
+        reviewed_by="FedorMilovanov",
+        reviewed_at=datetime(2026, 8, 20, 18, 0, tzinfo=UTC),
+    )
+
+
+def test_policy_is_provider_inert_exactly_bound_and_respects_editorial_gap() -> None:
     policy = load_policy(POLICY)
     assert policy.project_key == PROJECT_KEY
     assert policy.youtube_channel_id == YOUTUBE_CHANNEL_ID
@@ -145,7 +189,12 @@ def test_policy_is_provider_inert_and_exactly_bound() -> None:
     assert policy.telegram_provider_mutation_allowed is False
     assert policy.telegram_stories_enabled is False
     assert policy.daily_short_limit == 1
-    assert policy.slot_local_time == "18:17"
+    assert policy.slot_local_time == "17:17"
+    assert load_and_validate_editorial_schedule(EDITORIAL_SCHEDULE, policy) == ("09:17", "21:17")
+
+    unsafe = policy.model_copy(update={"slot_local_time": "18:17"})
+    with pytest.raises(ValueError, match="only 180 minutes"):
+        require_min_editorial_gap(unsafe, ("09:17", "21:17"))
 
 
 def test_inventory_uses_exact_owner_metadata_and_keeps_historical_candidate() -> None:
@@ -160,27 +209,14 @@ def test_inventory_uses_exact_owner_metadata_and_keeps_historical_candidate() ->
     assert publication_id_for("AbCdEf12345") == "lordchrist-short-AbCdEf12345"
 
 
-def test_prepare_owner_media_preserves_already_ready_exact_bytes(tmp_path: Path) -> None:
+def test_prepare_owner_media_preserves_frozen_ready_bytes(tmp_path: Path) -> None:
     inventory = build_inventory(_audit())
     source = tmp_path / "takeout.mp4"
     source.write_bytes(b"owner-video-bytes-1")
-    bindings = OwnerMediaBindingManifest(
-        schema_name="video-channel-manager.lordchrist-shorts-owner-media-bindings",
-        schema_version=1,
-        project_key=PROJECT_KEY,
-        youtube_channel_id=YOUTUBE_CHANNEL_ID,
-        items=(
-            OwnerMediaBinding(
-                youtube_video_id="AbCdEf12345",
-                source_kind="google_takeout",
-                source_path=str(source),
-            ),
-        ),
-    )
 
     acceptance = prepare_owner_media(
         inventory,
-        bindings,
+        _bindings(_binding("AbCdEf12345", source)),
         output_dir=tmp_path / "prepared",
         probe_runner=lambda _path: _probe(60.0),
         ffprobe_version="ffprobe-test",
@@ -193,6 +229,23 @@ def test_prepare_owner_media_preserves_already_ready_exact_bytes(tmp_path: Path)
     assert item.transcoded is False
     assert item.source_sha256 == item.media_sha256
     assert Path(item.transport_path).read_bytes() == source.read_bytes()
+
+
+def test_prepare_owner_media_rejects_binding_if_exact_bytes_changed(tmp_path: Path) -> None:
+    inventory = build_inventory(_audit())
+    source = tmp_path / "takeout.mp4"
+    source.write_bytes(b"reviewed-owner-bytes")
+    binding = _binding("AbCdEf12345", source)
+    source.write_bytes(b"tampered-owner-bytes")
+
+    with pytest.raises(ValueError, match="SHA-256 differs from frozen binding"):
+        prepare_owner_media(
+            inventory,
+            _bindings(binding),
+            output_dir=tmp_path / "prepared",
+            probe_runner=lambda _path: _probe(60.0),
+            ffprobe_version="ffprobe-test",
+        )
 
 
 def test_conversion_contract_is_local_ffmpeg_only(tmp_path: Path) -> None:
@@ -211,37 +264,22 @@ def test_conversion_contract_is_local_ffmpeg_only(tmp_path: Path) -> None:
     assert "-movflags +faststart" in joined
 
 
-def test_release_is_unauthorized_one_per_day_and_reuses_generic_video_payload(tmp_path: Path) -> None:
+def test_release_is_unauthorized_one_per_day_and_candidate_approval_is_snapshot_bound(tmp_path: Path) -> None:
     inventory = build_inventory(_audit())
     exact_source = tmp_path / "exact.mp4"
     candidate_source = tmp_path / "candidate.mp4"
     exact_source.write_bytes(b"owner-video-bytes-exact")
     candidate_source.write_bytes(b"owner-video-bytes-candidate")
-    bindings = OwnerMediaBindingManifest(
-        schema_name="video-channel-manager.lordchrist-shorts-owner-media-bindings",
-        schema_version=1,
-        project_key=PROJECT_KEY,
-        youtube_channel_id=YOUTUBE_CHANNEL_ID,
-        items=(
-            OwnerMediaBinding(
-                youtube_video_id="AbCdEf12345",
-                source_kind="google_takeout",
-                source_path=str(exact_source),
-            ),
-            OwnerMediaBinding(
-                youtube_video_id="QwErTy67890",
-                source_kind="local_master",
-                source_path=str(candidate_source),
-            ),
-        ),
-    )
 
     def probe(path: Path) -> dict[str, object]:
         return _probe(45.0 if ("candidate" in path.name or "QwErTy67890" in path.name) else 60.0)
 
     acceptance = prepare_owner_media(
         inventory,
-        bindings,
+        _bindings(
+            _binding("AbCdEf12345", exact_source),
+            _binding("QwErTy67890", candidate_source, source_kind="local_master"),
+        ),
         output_dir=tmp_path / "prepared",
         probe_runner=probe,
         ffprobe_version="ffprobe-test",
@@ -252,54 +290,71 @@ def test_release_is_unauthorized_one_per_day_and_reuses_generic_video_payload(tm
         profile=load_channel_profile(PROFILE),
         policy=load_policy(POLICY),
         start_date=date(2026, 8, 21),
-        approved_candidate_ids=["QwErTy67890"],
+        candidate_approval=_approval(inventory.source_snapshot_id, "QwErTy67890"),
     )
 
     assert release.release_authorized is False
     assert release.target_binding_sha256 is None
     assert release.chat_id is None
     assert len(release.items) == 2
-    assert release.items[0].scheduled_at.hour == 18
+    assert release.items[0].scheduled_at.hour == 17
     assert release.items[0].scheduled_at.minute == 17
     assert (release.items[1].scheduled_at - release.items[0].scheduled_at).days == 1
     assert all(isinstance(item.payload, GenericVideoPayload) for item in release.items)
+    assert release.release_id.startswith("lordchrist-shorts-2026-08-21-")
     assert release.items[0].payload.caption.endswith(
         f"https://www.youtube.com/shorts/{release.items[0].publication_id.removeprefix('lordchrist-short-')}"
     )
 
+    wrong_snapshot = _approval("different-snapshot", "QwErTy67890")
+    with pytest.raises(ValueError, match="different YouTube inventory snapshot"):
+        build_provider_inert_release(
+            inventory,
+            acceptance,
+            profile=load_channel_profile(PROFILE),
+            policy=load_policy(POLICY),
+            start_date=date(2026, 8, 21),
+            candidate_approval=wrong_snapshot,
+        )
 
-def test_candidate_requires_exact_owner_approval(tmp_path: Path) -> None:
+
+def test_candidate_is_excluded_without_immutable_approval_and_release_identity_tracks_content(tmp_path: Path) -> None:
     inventory = build_inventory(_audit())
-    source = tmp_path / "exact.mp4"
-    source.write_bytes(b"owner-video-bytes")
-    bindings = OwnerMediaBindingManifest(
-        schema_name="video-channel-manager.lordchrist-shorts-owner-media-bindings",
-        schema_version=1,
-        project_key=PROJECT_KEY,
-        youtube_channel_id=YOUTUBE_CHANNEL_ID,
-        items=(
-            OwnerMediaBinding(
-                youtube_video_id="AbCdEf12345",
-                source_kind="google_takeout",
-                source_path=str(source),
-            ),
-        ),
-    )
+    exact_source = tmp_path / "exact.mp4"
+    candidate_source = tmp_path / "candidate.mp4"
+    exact_source.write_bytes(b"owner-video-bytes-exact")
+    candidate_source.write_bytes(b"owner-video-bytes-candidate")
+
+    def probe(path: Path) -> dict[str, object]:
+        return _probe(45.0 if ("candidate" in path.name or "QwErTy67890" in path.name) else 60.0)
+
     acceptance = prepare_owner_media(
         inventory,
-        bindings,
+        _bindings(
+            _binding("AbCdEf12345", exact_source),
+            _binding("QwErTy67890", candidate_source, source_kind="local_master"),
+        ),
         output_dir=tmp_path / "prepared",
-        probe_runner=lambda _path: _probe(60.0),
+        probe_runner=probe,
         ffprobe_version="ffprobe-test",
     )
-    release = build_provider_inert_release(
+    without_candidate = build_provider_inert_release(
         inventory,
         acceptance,
         profile=load_channel_profile(PROFILE),
         policy=load_policy(POLICY),
         start_date=date(2026, 8, 21),
     )
-    assert [item.publication_id for item in release.items] == ["lordchrist-short-AbCdEf12345"]
+    with_candidate = build_provider_inert_release(
+        inventory,
+        acceptance,
+        profile=load_channel_profile(PROFILE),
+        policy=load_policy(POLICY),
+        start_date=date(2026, 8, 21),
+        candidate_approval=_approval(inventory.source_snapshot_id, "QwErTy67890"),
+    )
+    assert [item.publication_id for item in without_candidate.items] == ["lordchrist-short-AbCdEf12345"]
+    assert without_candidate.release_id != with_candidate.release_id
 
     with pytest.raises(ValueError, match="candidate approvals do not match"):
         build_provider_inert_release(
@@ -308,7 +363,7 @@ def test_candidate_requires_exact_owner_approval(tmp_path: Path) -> None:
             profile=load_channel_profile(PROFILE),
             policy=load_policy(POLICY),
             start_date=date(2026, 8, 21),
-            approved_candidate_ids=["NotInInventory1"],
+            candidate_approval=_approval(inventory.source_snapshot_id, "NotInInventory1"),
         )
 
 
@@ -347,6 +402,100 @@ def test_existing_publication_and_unresolved_effects_block_future_short_release(
     )
     with pytest.raises(ValueError, match="blocks all writers"):
         require_existing_lordchrist_state_clear([unresolved])
+    with pytest.raises(ValueError, match="at least one LordChrist durable state ledger"):
+        require_existing_lordchrist_state_clear([])
+
+
+def test_state_root_discovers_all_tracks_and_honors_exact_retirement(tmp_path: Path) -> None:
+    root = tmp_path / "lordchrist-state"
+    (root / "research-v2").mkdir(parents=True)
+    (root / "rich-v1").mkdir(parents=True)
+    (root / "one-off-state").mkdir(parents=True)
+
+    (root / "publication-ledger.json").write_text(
+        json.dumps(
+            {
+                "project_key": PROJECT_KEY,
+                "channel_username": TELEGRAM_CHANNEL_USERNAME,
+                "entries": {
+                    "legacy-safe": {
+                        "publication_id": "legacy-safe",
+                        "state": "published",
+                        "provider_effect": "verified",
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (root / "research-v2" / "publication-ledger.json").write_text(
+        json.dumps(
+            {
+                "project_key": PROJECT_KEY,
+                "channel_username": TELEGRAM_CHANNEL_USERNAME,
+                "entries": {
+                    "retired-ambiguous": {
+                        "publication_id": "retired-ambiguous",
+                        "state": "unknown",
+                        "provider_effect": "may_exist",
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (root / "research-v2" / "retirement.json").write_text(
+        json.dumps(
+            {
+                "schema_name": "video-channel-manager.lordchrist-research-retirement",
+                "schema_version": 1,
+                "project_key": PROJECT_KEY,
+                "channel_username": TELEGRAM_CHANNEL_USERNAME,
+                "publication_id": "retired-ambiguous",
+                "disposition": "retired_no_replay",
+                "provider_retry_forbidden": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (root / "rich-v1" / "live-canary-ledger.json").write_text(
+        json.dumps(
+            {
+                "project_key": PROJECT_KEY,
+                "channel_username": TELEGRAM_CHANNEL_USERNAME,
+                "entries": {
+                    "rich-safe": {
+                        "publication_id": "rich-safe",
+                        "state": "published",
+                        "provider_effect": "verified",
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (root / "one-off-state" / "one-off.json").write_text(
+        json.dumps(
+            {
+                "publication_id": "one-off-safe",
+                "state": "published",
+                "provider_effect": "verified",
+                "target": {"chat_username": "lordchrist"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert require_lordchrist_state_root_clear(root) == {
+        "legacy-safe",
+        "retired-ambiguous",
+        "rich-safe",
+        "one-off-safe",
+    }
+
+    (root / "rich-v1" / "live-canary-ledger.json").unlink()
+    with pytest.raises(ValueError, match="durable state root is incomplete"):
+        require_lordchrist_state_root_clear(root)
 
 
 def test_generic_cross_track_guard_can_include_future_shorts_track() -> None:

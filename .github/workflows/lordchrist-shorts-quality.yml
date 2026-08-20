@@ -4,12 +4,15 @@ on:
   pull_request:
     paths:
       - content/telegram/lordchrist/shorts-feed-policy.json
+      - content/telegram/lordchrist/production-schedule.json
       - docs/operations/lordchrist-shorts-feed.md
       - src/video_channel_manager/lordchrist_shorts.py
       - src/video_channel_manager/lordchrist_shorts_snapshot_readiness.py
       - src/video_channel_manager/lordchrist_cross_track_effect_guard.py
+      - src/video_channel_manager/platforms/youtube/client.py
       - tests/test_lordchrist_shorts.py
       - tests/test_lordchrist_shorts_snapshot_readiness.py
+      - tests/test_lordchrist_shorts_youtube_inventory_guard.py
       - .github/workflows/lordchrist-shorts-quality.yml
   workflow_dispatch:
 
@@ -38,10 +41,11 @@ jobs:
       - name: Install project quality runtime
         run: python -m pip install --disable-pip-version-check -e ".[dev]"
 
-      - name: Validate provider-inert policy
+      - name: Validate provider-inert policy and editorial gap
         run: >-
           python -m video_channel_manager.lordchrist_shorts validate-policy
           --policy content/telegram/lordchrist/shorts-feed-policy.json
+          --editorial-schedule content/telegram/lordchrist/production-schedule.json
 
       - name: Lint focused implementation
         run: >-
@@ -49,14 +53,17 @@ jobs:
           src/video_channel_manager/lordchrist_shorts.py
           src/video_channel_manager/lordchrist_shorts_snapshot_readiness.py
           src/video_channel_manager/lordchrist_cross_track_effect_guard.py
+          src/video_channel_manager/platforms/youtube/client.py
           tests/test_lordchrist_shorts.py
           tests/test_lordchrist_shorts_snapshot_readiness.py
+          tests/test_lordchrist_shorts_youtube_inventory_guard.py
 
       - name: Run focused regressions
         run: >-
           pytest -q
           tests/test_lordchrist_shorts.py
           tests/test_lordchrist_shorts_snapshot_readiness.py
+          tests/test_lordchrist_shorts_youtube_inventory_guard.py
           tests/test_lordchrist_cross_track_effect_guard.py
 
       - name: Assert provider-inert policy flags
@@ -71,6 +78,8 @@ jobs:
           assert policy["automated_youtube_download_allowed"] is False
           assert policy["telegram_provider_mutation_allowed"] is False
           assert policy["telegram_stories_enabled"] is False
+          assert policy["slot_local_time"] == "17:17"
+          assert policy["min_gap_from_editorial_hours"] == 4
           workflow = Path(".github/workflows/lordchrist-shorts-quality.yml").read_text(encoding="utf-8")
           assert ("${{" + " secrets.") not in workflow
           print("provider writes performed by quality workflow: 0")
