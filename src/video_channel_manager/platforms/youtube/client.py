@@ -315,8 +315,7 @@ class YouTubeApiClient(HttpClientOwner):
         missing_ids = [video_id for video_id in ordered_ids if video_id not in raw_by_id]
         if missing_ids:
             raise YouTubeApiError(
-                "YouTube videos.list omitted upload IDs from the owner uploads playlist: "
-                + ",".join(missing_ids)
+                "YouTube videos.list omitted upload IDs from the owner uploads playlist: " + ",".join(missing_ids)
             )
 
         records: list[VideoRecord] = []
