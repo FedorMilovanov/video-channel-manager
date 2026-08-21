@@ -96,11 +96,15 @@ Each new feed publication uses one immutable `milovi-feed-YYYYMMDD-NNN` bundle: 
 
 Before one provider attempt, the permanent writer requires exact current `main`, exact quality, exact initialized state, channel-wide duplicate-guard agreement, strict freshness, exact target preflight and fresh exact human execution authority. It persists durable intent before `send-once`, performs zero blind mutation retries, and persists verified or blocking outcome before completion.
 
-`milovi-feed-20260819-001` is immutable stale provider-inert history and must not be caught up, retimed or reinterpreted as a successor. The current exact candidate is `milovi-feed-20260820-001`, scheduled for `2026-08-20T10:30:00+03:00` with frozen `p16` JPEG transport and caption. Its runtime release remains `release_authorized=false`, its execution authority remains `execution_authorized=false`, and `provider_mutation_allowed=false`; its permanent feed ledger is not initialized and no Telegram access or mutation has occurred.
+`milovi-feed-20260819-001` and unauthorized `milovi-feed-20260820-001` are immutable stale provider-inert history and must not be caught up, retimed or reinterpreted as successors. PR #500 then froze marathon position 1 as `milovi-feed-20260820-002` for `2026-08-20T20:00:00+03:00` with `release_authorized=true` and `execution_authorized=true`. That identity was never dispatched: the permanent publisher had no initialize-state or publish run, durable feed state was not initialized, and the 120-minute lag gate has expired. Do not publish, retime or catch up `milovi-feed-20260820-002`. There is currently no live dated Milovi feed candidate. A future item needs a fresh `milovi-feed-YYYYMMDD-NNN` identity plus separate release and execution authorization through the permanent writer only.
 
 The native-video lane is now artifact-complete at `16 / 16` accepted Telegram-ready MP4/H.264 outputs. The exact provider-free build is durably preserved on content-addressed review branch `agent/milovi-video-accepted-73c578eff825` with evidence digest `sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae`; its accepted evidence records `provider_access_performed=false` and `provider_write_performed=false`. This artifact completion does not authorize Telegram publication, does not initialize feed state, and does not reopen or modify the photo-feed architecture.
 
 Canonical runbook: [`milovi-telegram-feed-control-plane.md`](milovi-telegram-feed-control-plane.md).
+
+## Instagram / Legendary Poet and Lord God
+
+Issue #492 is closed as repository implementation complete (PR #493). Launch packs, Reel factory, caption rendering and a read-only Graph identity client exist. Exact Instagram Professional account IDs, hashed vertical masters and a Meta publisher do not. Provider publications remain 0. Public handles are not operational account IDs. Live Instagram rollout requires a new exact owning issue.
 
 ## Telegram runtime / supply chain
 
@@ -124,9 +128,10 @@ Repository policy files and green checks do not create branch protection by them
 
 1. Do not reopen completed Svodka, LordChrist rich canary or Milovi Clips work because an older issue body or checkpoint says it was incomplete.
 2. Continue LordChrist Shorts Issue #503 only as `official_api_read` + `local_only` artifact work: obtain one fresh owner AuditPackage from the existing `fedor-milovanov` OAuth runtime, classify it through the merged readiness/inventory path, bind exact owner Takeout/local media, and keep every release preview provider-inert. Do not treat the historical 2026-07-29 package as current completion evidence.
-3. Keep `milovi-feed-20260820-001` provider-inert until a separate exact release authorization and a separate fresh exact human execution authorization are deliberately created; `milovi-feed-20260819-001` remains stale immutable no-catch-up history.
+3. Do not catch up `milovi-feed-20260819-001`, `milovi-feed-20260820-001` or `milovi-feed-20260820-002`. A future `@MiloviCake` item needs a fresh identity and fresh dual authorization; this document does not create that identity.
 4. Treat the Milovi native-video artifact lane as complete at `16 / 16`; preserve its content-addressed accepted branch/evidence as immutable artifact proof and do not infer any Telegram execution authority from it.
-5. Continue branch hygiene only with exact unique-commit/PR-state proof; preserve all durable `state/*` refs.
-6. For any new provider-visible work, start with fresh current `main`, fresh durable state, exact target identity and a new explicit owning scope.
+5. Treat Instagram #492 as implementation-complete and provider-inert; do not infer live publication from closed content-system work.
+6. Continue branch hygiene only with exact unique-commit/PR-state proof; preserve all durable `state/*` refs.
+7. For any new provider-visible work, start with fresh current `main`, fresh durable state, exact target identity and a new explicit owning scope.
 
 Nothing in this document is authorization for a provider mutation.

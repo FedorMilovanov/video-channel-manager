@@ -74,3 +74,5 @@ def test_public_readme_does_not_hide_active_youtube_implementation_scope() -> No
     assert "Issue #232" in readme
     assert "x-puy27S2qs" in readme
     assert "не разрешает повторный upload" in readme
+    assert "остаётся artifact-level open" not in readme
+    assert "но не закрывает #154" not in readme

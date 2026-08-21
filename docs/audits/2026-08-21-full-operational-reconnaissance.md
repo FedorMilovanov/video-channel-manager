@@ -282,11 +282,11 @@ From current-state, postmortems and the last two weeks of PRs:
 
 | File | Drift |
 | --- | --- |
-| `docs/operations/current-state.md` | Milovi section still says current candidate is unauthorized `milovi-feed-20260820-001`. Live files say authorized-but-undispatched `…-002`, now stale. |
-| `README.md` | Status block still treats #154 as artifact-open and #232 as future executor owner. `current-state.md` says #154 completed and does not want album replay. |
-| `docs/operations/README.md` | Stops at Wave 16 / 2026-08-05. Does not index Telegram control planes, Instagram, or Shorts. |
-| `docs/roadmap.md` / `automation-backlog.md` | Closed August-5 program; later Telegram/Instagram work is invisible. |
-| `content/telegram/AGENTS.md` | August-8 Svodka overlay (`provider_writes_authorized=false`, scheduler inactive). Contradicts later completed Svodka rollout *and* the later retirement. |
+| `docs/operations/current-state.md` | Same-day follow-up: Milovi paragraph now records `20260820-002` authorized-never-dispatched and forbids catch-up; Instagram #492 recorded as implementation-complete with 0 publications. |
+| `README.md` | Same-day follow-up: status block no longer treats #154 as artifact-open. |
+| `docs/operations/README.md` | Same-day follow-up: start-here now points at this reconnaissance; Wave-16 registers remain historical. |
+| `docs/roadmap.md` / `automation-backlog.md` | Closed August-5 program; later Telegram/Instagram work is still invisible there on purpose. |
+| `content/telegram/AGENTS.md` | Same-day follow-up: overlay now defers to `current-state.md` and marks the August-8 Svodka activation block historical. |
 | `docs/operations/unified-integration-status.md` | 2026-07-25 draft PR #13 history. Archaeology only. |
 
 `AGENTS.md` read-order is still correct: `current-state.md` first — but that file now needs a small Milovi memory sync before it can be trusted on #353.
