@@ -1,8 +1,8 @@
 # Telegram content agent instructions
 
-These instructions apply to `content/telegram/**` and are the current overlay for active Telegram/Svodka work requested on 2026-08-08.
+Live Telegram interpretation is [`docs/operations/current-state.md`](../../docs/operations/current-state.md). This file is a historical overlay for Telegram/Svodka work requested on 2026-08-08. It does not reopen Svodka, authorize writes, or override current-state.
 
-For Svodka, read before changing content or activation artifacts:
+For historical Svodka provenance, read before changing content or activation artifacts:
 
 1. `../../docs/operations/svodka-readiness.md`
 2. `../../docs/operations/svodka-recovery.md`
@@ -11,7 +11,7 @@ For Svodka, read before changing content or activation artifacts:
 5. `../../docs/research/2026-08-08-svodka-second-pass-audit.md`
 6. `../../docs/research/2026-08-08-svodka-third-pass-audit.md`
 
-The older repository-wide statement that no provider continuation was pending predates this explicit Svodka project. It must not be used to discard, overwrite or reinterpret the newer Svodka-specific state above. Historical material remains evidence only.
+Do not use this overlay to reopen completed Svodka publications or to ignore `docs/operations/current-state.md`. Historical material remains evidence only.
 
 ## Shared Telegram bot is intentional
 
@@ -34,9 +34,11 @@ Exact channel isolation comes from all of the following together:
 - shared single-writer concurrency group for that channel's mutations;
 - fresh read-only preflight immediately before provider mutation.
 
-## Current Svodka activation state
+## Historical Svodka activation overlay (2026-08-08)
 
-At the time of this instruction:
+The August Svodka rollout later completed and was retired from executable `main`. Durable evidence lives on `state/svodka-telegram`. No new Svodka Telegram mutation is authorized here.
+
+Snapshot of this overlay at authoring time (not live authority):
 
 - channel: `@deep_info_life` / `СВОДКА`;
 - profile: `content/telegram/channels/svodka.json`;
@@ -44,12 +46,9 @@ At the time of this instruction:
 - pilot queue: `content/telegram/svodka/draft-14-posts-2026-08.json`;
 - canonical release id: `svodka-pilot-2026-08`;
 - state branch: `state/svodka-telegram`;
-- profile write gate: `provider_writes_authorized=false`;
-- approved release: intentionally absent until exact candidate review;
-- scheduler: installed but fail-closed and currently inactive;
-- provider mutation by the current audit: none.
+- shared bot isolation still applies: credential name is not a channel selector.
 
-Do not infer that the scheduler's existence authorizes publication. It remains blocked until the exact approved release, write gate, ledger and verified manual canary exist.
+Do not infer that a scheduler's existence authorizes publication. Missed windows stay `impossible`; never backfill.
 
 ## Content/release rules
 

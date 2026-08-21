@@ -83,6 +83,13 @@ def test_current_state_is_a_live_index_not_a_commit_ledger() -> None:
         "generated handoff/watcher control files and exact-trim outputs remain under repository `operator-output`"
         in text
     )
+    assert "The current exact candidate is `milovi-feed-20260820-001`" not in text
+    assert "`milovi-feed-20260820-002`" in text
+    assert "Do not publish, retime or catch up `milovi-feed-20260820-002`" in text
+    assert "The current exact publication is `milovi-feed-20260821-001`" in text
+    assert "There is currently no live dated Milovi feed candidate" not in text
+    assert "Issue #492 is closed as repository implementation complete" in text
+    assert "Provider publications remain 0" in text
 
 
 def test_dependabot_maintenance_is_atomic_and_bounded() -> None:

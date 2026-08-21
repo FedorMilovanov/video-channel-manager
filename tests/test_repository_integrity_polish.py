@@ -80,7 +80,7 @@ def test_public_entrypoints_state_the_current_authorization_boundary() -> None:
         "x-puy27S2qs",
         "artifact-level",
         "Исторические Waves 0–13 закрыты",
-        "Текущий точный residual разделён на два независимых owning scope",
+        "Живая очередь — только",
         "не разрешает повторный upload",
     ):
         assert statement in readme
@@ -93,6 +93,7 @@ def test_public_entrypoints_state_the_current_authorization_boundary() -> None:
         "Активного roadmap или backlog нет",
         "единственный активный owning issue #154",
         "Текущий repository-level backlog закрыт",
+        "Текущий точный residual разделён на два независимых owning scope",
     ):
         assert stale not in readme
 

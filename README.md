@@ -15,7 +15,7 @@
 - локальный media/image QC и SHA-256 fingerprints;
 - SQLAlchemy/Alembic foundation для будущего operation ledger.
 
-> **Текущий операционный статус:** текущие Telegram/YouTube hardening-контуры разделены по типу незавершённости. Issue #154 остаётся artifact-level open до физического rerender/verification «Чёрного человека» из семи accepted quality masters; отдельно Issue #232 владеет будущей repository-level реализацией current-main guarded YouTube release executor / existing-target adoption и сам по себе не авторизует provider writes. Исторический Black Man target `x-puy27S2qs` уже зафиксирован как verified public provider evidence, но это не превращает старые media bytes в current-policy artifact proof и не разрешает повторный upload. Канонический live-статус: [`docs/operations/current-state.md`](docs/operations/current-state.md). Исторические audit registers — evidence only.
+> **Текущий операционный статус:** канонический live-статус — [`docs/operations/current-state.md`](docs/operations/current-state.md). Issue #154 закрыт как completed: исторический Black Man target `x-puy27S2qs` остаётся collision guard и не разрешает повторный upload. Issue #232 — исторический owner guarded YouTube executor; наличие executor на `main` само по себе не авторизует provider writes. Instagram (#492) и LordChrist Shorts (#501) — repository implementation complete и provider-inert. Исторические audit registers — evidence only.
 >
 > Приведённые ниже write/dry-run/execute-команды документируют возможности и safety protocol кода, но сами по себе не разрешают запуск. Любая будущая provider mutation требует нового явного запроса пользователя, нового точного project-bound issue, свежего bounded preflight, reviewed immutable exact-ID plan и отдельной авторизации.
 
@@ -484,9 +484,7 @@ CI запускается на Python 3.11, 3.12 и 3.13. Blocking gates: depend
 
 # Текущий статус развития
 
-Исторические Waves 0–13 закрыты и остаются audit evidence. Текущий точный residual разделён на два независимых owning scope: #154 — artifact-level rerender/verification current-policy media из семи accepted quality masters; #232 — repository-level реализация будущего current-main guarded YouTube release executor с read-only existing-target adoption. Ни один из этих issue не является standing authorization для provider write.
-
-Provider rollout исторических Black Man bytes уже зафиксирован как verified public evidence для `x-puy27S2qs`; этот факт блокирует забывчивый повторный upload, но не закрывает #154. Новая provider-facing execution по #232 потребует отдельного явного запроса пользователя, свежего exact preflight/review и отдельной авторизации. Unattended remote writes, произвольные playlist mutations и исторические executors не являются допустимым «следующим этапом».
+Исторические Waves 0–13 закрыты и остаются audit evidence. Issue #154 закрыт как completed; исторический Black Man `x-puy27S2qs` блокирует забывчивый повторный upload и не является правом на новую YouTube mutation. Issue #232 больше не описывает открытый residual: guarded YouTube executor уже на `main`, но implementation completion не авторизует execution. Живая очередь — только [`docs/operations/current-state.md`](docs/operations/current-state.md): artifact-level LordChrist Shorts #503, рост `@MiloviCake` #353 без catch-up stale `milovi-feed-*` identities, и отдельный будущий Instagram write-scope. Unattended remote writes, произвольные playlist mutations и исторические executors не являются допустимым «следующим этапом».
 
 ## Вне текущего scope
 

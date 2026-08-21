@@ -1,6 +1,6 @@
 # Milovi Telegram permanent feed control plane
 
-Updated: 2026-08-20  
+Updated: 2026-08-21  
 Owning workstream: Issue #353  
 Provider target: `@MiloviCake`
 
@@ -97,17 +97,17 @@ A provider attempt requires:
 
 Mutation transport retries remain zero. A missing/ambiguous outcome is not permission to replay. `may_exist` or otherwise unknown provider effect remains blocking pending exact read-only reconciliation.
 
-## Stale predecessor — do not catch up
+## Stale dated identities — do not catch up
 
-`milovi-feed-20260819-001` remains immutable provider-inert history. Its frozen scheduled time is `2026-08-19T10:30:00+03:00`, which has passed. The timestamp is part of that publication identity; staleness must fail closed.
+These identities remain immutable history. The timestamp is part of each publication identity; staleness must fail closed. Do **not** widen freshness, edit an old timestamp, transfer authorization, initialize later as catch-up, or reinterpret any of them as a later send.
 
-Do **not** widen freshness, edit the old timestamp, transfer authorization, initialize it later as a catch-up publication, or reinterpret it as a later send. No provider mutation was performed for that identity.
+- `milovi-feed-20260819-001` — scheduled `2026-08-19T10:30:00+03:00`; never authorized; no provider mutation.
+- `milovi-feed-20260820-001` — scheduled `2026-08-20T10:30:00+03:00`; `release_authorized=false` / `execution_authorized=false`; frozen `p16` bytes only; no durable intent.
+- `milovi-feed-20260820-002` — scheduled `2026-08-20T20:00:00+03:00`; PR #500 set `release_authorized=true` and `execution_authorized=true` for marathon position 1 (`sendPhoto` / `p06`); the permanent publisher had no initialize-state or publish run; durable feed state was not initialized; the 120-minute lag gate has expired. Do not publish this identity now.
 
-## Existing exact photo candidate
+## Current exact photo publication
 
-`milovi-feed-20260820-001` remains a provider-inert photo candidate. Its exact source/transport/caption identities are already frozen, but `release_authorized=false`, `execution_authorized=false`, `provider_mutation_allowed=false`, permanent feed state is not initialized and there is no durable execution intent.
-
-This runbook does not authorize that publication or any successor.
+`milovi-feed-20260821-001` is the current exact photo publication: `2026-08-21T10:30:00+03:00`, marathon position 1, media `p06`, same reviewed source/transport as expired `20260820-002`, tighter public caption, no new claims. Runtime `release_authorized=true` and execution `execution_authorized=true` are bound to this identity only. The content candidate JSON remains provider-inert by contract. Publish is due only in the 10:30–12:30 Europe/Moscow window via `.github/workflows/milovi-telegram-feed-publisher.yml`. No successor identity is authorized here.
 
 ## Marathon editorial source
 
