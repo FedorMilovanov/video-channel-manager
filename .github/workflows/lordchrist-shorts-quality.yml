@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - content/telegram/lordchrist/shorts-feed-policy.json
+      - content/telegram/lordchrist/shorts-historical-duration-baseline-20260729.json
       - content/telegram/lordchrist/production-schedule.json
       - docs/operations/lordchrist-shorts-feed.md
       - src/video_channel_manager/lordchrist_shorts.py
@@ -11,6 +12,7 @@ on:
       - src/video_channel_manager/lordchrist_cross_track_effect_guard.py
       - src/video_channel_manager/platforms/youtube/client.py
       - tests/test_lordchrist_shorts.py
+      - tests/test_lordchrist_shorts_backlog.py
       - tests/test_lordchrist_shorts_snapshot_readiness.py
       - tests/test_lordchrist_shorts_youtube_inventory_guard.py
       - .github/workflows/lordchrist-shorts-quality.yml
@@ -55,6 +57,7 @@ jobs:
           src/video_channel_manager/lordchrist_cross_track_effect_guard.py
           src/video_channel_manager/platforms/youtube/client.py
           tests/test_lordchrist_shorts.py
+          tests/test_lordchrist_shorts_backlog.py
           tests/test_lordchrist_shorts_snapshot_readiness.py
           tests/test_lordchrist_shorts_youtube_inventory_guard.py
 
@@ -80,6 +83,16 @@ jobs:
           assert policy["telegram_stories_enabled"] is False
           assert policy["slot_local_time"] == "17:17"
           assert policy["min_gap_from_editorial_hours"] == 4
+          baseline = json.loads(
+              Path("content/telegram/lordchrist/shorts-historical-duration-baseline-20260729.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          assert baseline["source_snapshot_id"] == "5b994503-6107-4cbe-adc8-740b50562075"
+          assert baseline["owner_file_details_present"] is False
+          assert baseline["proven_shorts"] is False
+          assert baseline["provider_writes_authorized"] is False
+          assert len(baseline["items"]) == 25
           workflow = Path(".github/workflows/lordchrist-shorts-quality.yml").read_text(encoding="utf-8")
           assert ("${{" + " secrets.") not in workflow
           print("provider writes performed by quality workflow: 0")

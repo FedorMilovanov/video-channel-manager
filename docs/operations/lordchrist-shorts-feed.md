@@ -77,6 +77,19 @@ Inventory outcomes:
 
 `#Shorts`, title text, thumbnail geometry and guessed upload dates are not accepted as positive identity evidence.
 
+The 2026-07-29 owner catalog `5b994503-6107-4cbe-adc8-740b50562075` is frozen as duration-only reconciliation evidence in `content/telegram/lordchrist/shorts-historical-duration-baseline-20260729.json`. It contains the 25 post-cutoff `<=180s` IDs found in Issue #503. That file is **not** a current Shorts inventory: it has no `fileDetails`, and the inventory/readiness path refuses that exact snapshot id even if `--max-snapshot-age-hours` is raised.
+
+Compare a **fresh** owner snapshot to that frozen set:
+
+```bash
+python -m video_channel_manager.lordchrist_shorts reconcile-baseline \
+  --audit operator-output/lordchrist-youtube-audit.json \
+  --baseline content/telegram/lordchrist/shorts-historical-duration-baseline-20260729.json \
+  --output operator-output/lordchrist-shorts-baseline-reconciliation.json
+```
+
+Reconciliation is provider-inert. It cannot run against the frozen snapshot itself.
+
 ## 2. Freeze exact owner media bindings
 
 Historical owner bytes may come only from:
@@ -131,6 +144,24 @@ If source bytes are already Telegram-ready they are copied unchanged. Otherwise 
 - duration no greater than 180 seconds.
 
 Acceptance records source SHA-256, transport SHA-256, byte sizes, probe summaries, transcode status and FFmpeg/FFprobe provenance. Provider access/write flags are hard-coded false. Exact duplicate accepted bytes across different YouTube IDs are rejected.
+
+Record the complete Issue #503 backlog partition after inventory, and optionally after bindings/acceptance/candidate approval. Every inventory item receives exactly one of `accepted`, `media_missing`, or `candidate_unconfirmed`. Missing owner media is an explicit recorded state, not an implicit gap.
+
+```bash
+python -m video_channel_manager.lordchrist_shorts backlog-status \
+  --inventory operator-output/lordchrist-shorts-inventory.json \
+  --output operator-output/lordchrist-shorts-backlog-status.json
+```
+
+Optional exact inputs:
+
+```text
+--bindings operator-output/lordchrist-shorts-owner-media-bindings.json
+--media operator-output/lordchrist-shorts-media-acceptance.json
+--candidate-approval operator-output/lordchrist-shorts-candidate-approval.json
+```
+
+Unapproved candidates stay `candidate_unconfirmed` even if owner bytes are already bound. Proven shorts and approved candidates without accepted transport stay `media_missing`. The artifact is hard-coded `release_authorized=false` and performs no Telegram/YouTube mutation.
 
 ## 4. Historical candidate confirmation is an immutable artifact
 
@@ -217,6 +248,8 @@ If Stories are added later, they should be a secondary promotion lane for select
 Allowed in the current artifact scope:
 
 - read-only owner YouTube inventory;
+- reconciliation against the frozen 2026-07-29 duration-only baseline;
+- explicit `accepted` / `media_missing` / `candidate_unconfirmed` backlog recording;
 - local/Takeout owner-file binding;
 - local FFprobe/FFmpeg;
 - hashing and exact-media acceptance;

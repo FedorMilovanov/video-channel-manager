@@ -1,5 +1,5 @@
 # Current operational state
-Updated: 2026-08-20
+Updated: 2026-08-21
 
 This file is the concise current operational interpretation. It does **not** authorize provider mutation. Historical issues, comments, pull requests, CI runs, credentials and release receipts are evidence only; they are never standing execution authority.
 
@@ -51,7 +51,7 @@ The first rich successor publication is complete:
 
 Issue #473 is closed as completed. The second reviewed rich article remains provider-inert. The completed one-shot rich live canary/controller workflows have been retired from executable `main`; durable evidence and reusable runtime/source remain preserved.
 
-The LordChrist YouTube Shorts → Telegram native-video **repository implementation is complete and hardened** through PRs #502, #504 and #505. The provider-inert lane uses stable `lordchrist-short-<youtube_video_id>` publication identities, fresh owner-snapshot evidence, exact owner-media SHA-256/size bindings, immutable snapshot-bound candidate approval, complete durable-state proof, content-addressed release identities and a `17:17 Europe/Moscow` slot that preserves the configured four-hour gap from the `21:17` editorial catch-up slot. Issue #503 remains the current **artifact-level** scope until a fresh owner `video-manager youtube scan` AuditPackage and exact Google Takeout/local owner media are available and classified/prepared. Historical duration-only snapshots are reconciliation evidence only. No Telegram publication, Telegram Story, MTProto/user-session action, YouTube mutation, release authorization or execution authority is created by this implementation state.
+The LordChrist YouTube Shorts → Telegram native-video **repository implementation is complete and hardened** through PRs #502, #504 and #505. The provider-inert lane uses stable `lordchrist-short-<youtube_video_id>` publication identities, fresh owner-snapshot evidence, exact owner-media SHA-256/size bindings, immutable snapshot-bound candidate approval, complete durable-state proof, content-addressed release identities and a `17:17 Europe/Moscow` slot that preserves the configured four-hour gap from the `21:17` editorial catch-up slot. The 2026-07-29 duration-only catalog `5b994503-6107-4cbe-adc8-740b50562075` is now a frozen 25-ID reconciliation baseline; inventory/readiness refuse that snapshot id, and `reconcile-baseline` / `backlog-status` record fresh-versus-historical classification plus explicit `accepted` / `media_missing` / `candidate_unconfirmed` states. Issue #503 remains the current **artifact-level** scope until a fresh owner `video-manager youtube scan` AuditPackage is classified and every selected backlog item is either exact-owner-media accepted or explicitly recorded as media-missing/candidate-unconfirmed. Historical duration-only snapshots are reconciliation evidence only. No Telegram publication, Telegram Story, MTProto/user-session action, YouTube mutation, release authorization or execution authority is created by this implementation state.
 
 Canonical Shorts runbook: [`lordchrist-shorts-feed.md`](lordchrist-shorts-feed.md).
 

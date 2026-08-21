@@ -10,7 +10,7 @@ from pydantic import ValidationError
 
 from video_channel_manager.editorial.youtube_surface_classification import classify_youtube_surface
 from video_channel_manager.exchange.audit_package import AuditPackage
-from video_channel_manager.lordchrist_shorts import YOUTUBE_CHANNEL_ID
+from video_channel_manager.lordchrist_shorts import KNOWN_DURATION_ONLY_SNAPSHOT_ID, YOUTUBE_CHANNEL_ID
 
 _MAX_SHORT_DURATION_MS = 180_000
 DEFAULT_MAX_SNAPSHOT_AGE_HOURS = 48
@@ -36,6 +36,7 @@ class SnapshotReadiness(TypedDict):
     candidate_count: int
     longform_count: int
     unresolved_non_candidate_count: int
+    known_duration_only_snapshot: bool
     ready_for_exact_surface_inventory: bool
     provider_access_performed: bool
     provider_write_performed: bool
@@ -110,7 +111,13 @@ def summarize_snapshot_readiness(
             unresolved_non_candidate_count += 1
 
     duration_le_180_missing_geometry_count = duration_le_180_count - duration_le_180_known_geometry_count
-    ready = bool(package.videos) and unresolved_non_candidate_count == 0 and fresh_enough
+    known_duration_only_snapshot = str(package.snapshot_id) == KNOWN_DURATION_ONLY_SNAPSHOT_ID
+    ready = (
+        bool(package.videos)
+        and unresolved_non_candidate_count == 0
+        and fresh_enough
+        and not known_duration_only_snapshot
+    )
     return SnapshotReadiness(
         schema_name="video-channel-manager.lordchrist-shorts-snapshot-readiness",
         schema_version=1,
@@ -131,6 +138,7 @@ def summarize_snapshot_readiness(
         candidate_count=candidate_count,
         longform_count=longform_count,
         unresolved_non_candidate_count=unresolved_non_candidate_count,
+        known_duration_only_snapshot=known_duration_only_snapshot,
         ready_for_exact_surface_inventory=ready,
         provider_access_performed=False,
         provider_write_performed=False,
@@ -144,6 +152,12 @@ def require_snapshot_ready(
     max_age_hours: int = DEFAULT_MAX_SNAPSHOT_AGE_HOURS,
 ) -> SnapshotReadiness:
     summary = summarize_snapshot_readiness(package, as_of=as_of, max_age_hours=max_age_hours)
+    if summary["known_duration_only_snapshot"]:
+        raise ValueError(
+            f"AuditPackage snapshot {KNOWN_DURATION_ONLY_SNAPSHOT_ID} is the frozen 2026-07-29 "
+            "duration-only catalog; it is reconciliation evidence only and cannot be used as current "
+            "Shorts inventory. Run a fresh read-only video-manager youtube scan."
+        )
     if not summary["ready_for_exact_surface_inventory"]:
         raise ValueError(
             "AuditPackage is not ready for exact LordChrist Shorts surface inventory: "

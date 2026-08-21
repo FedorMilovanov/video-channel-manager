@@ -26,6 +26,10 @@ YOUTUBE_OAUTH_ALIAS = "fedor-milovanov"
 TELEGRAM_CHANNEL_USERNAME = "@lordchrist"
 TELEGRAM_PROFILE_PATH = "content/telegram/channels/lordchrist.json"
 EDITORIAL_SCHEDULE_PATH = "content/telegram/lordchrist/production-schedule.json"
+HISTORICAL_DURATION_BASELINE_PATH = Path(
+    "content/telegram/lordchrist/shorts-historical-duration-baseline-20260729.json"
+)
+KNOWN_DURATION_ONLY_SNAPSHOT_ID = "5b994503-6107-4cbe-adc8-740b50562075"
 MAX_TELEGRAM_VIDEO_BYTES = 50_000_000
 TRANSPORT_BUDGET_BYTES = 46_000_000
 MAX_SHORT_DURATION_SECONDS = 180.0
@@ -264,6 +268,186 @@ class LordChristShortsMediaAcceptance(FrozenModel):
         return self
 
 
+class HistoricalDurationBaselineItem(FrozenModel):
+    youtube_video_id: str = Field(min_length=6, max_length=32)
+    published_on: date
+    duration_seconds: int = Field(ge=1, le=180)
+
+    @model_validator(mode="after")
+    def validate_item(self) -> "HistoricalDurationBaselineItem":
+        if _YOUTUBE_ID_RE.fullmatch(self.youtube_video_id) is None:
+            raise ValueError("invalid YouTube video id in historical duration baseline")
+        return self
+
+
+class HistoricalDurationBaseline(FrozenModel):
+    schema_name: Literal["video-channel-manager.lordchrist-shorts-historical-duration-baseline"]
+    schema_version: Literal[1]
+    project_key: Literal["lord-god-strength"]
+    youtube_channel_id: Literal["UCeSJsC6go2c9pdJCuUI1BYA"]
+    youtube_oauth_alias: Literal["fedor-milovanov"]
+    evidence_scope: Literal["historical_duration_only_not_current_provider_state"]
+    provider_effect: Literal["impossible"]
+    provider_writes_authorized: Literal[False]
+    source_snapshot_id: str = Field(min_length=1)
+    source_generated_at: datetime
+    source_package_filename: str = Field(min_length=1)
+    source_record_count: int = Field(ge=1)
+    source_channel_video_count: int = Field(ge=1)
+    selection_rule: Literal["published_on_or_after_2025-12-08_and_duration_le_180s"]
+    owner_file_details_present: Literal[False]
+    proven_shorts: Literal[False]
+    items: tuple[HistoricalDurationBaselineItem, ...]
+
+    @model_validator(mode="after")
+    def validate_baseline(self) -> "HistoricalDurationBaseline":
+        if self.source_generated_at.tzinfo is None or self.source_generated_at.utcoffset() is None:
+            raise ValueError("historical baseline source_generated_at must be timezone-aware")
+        video_ids = [item.youtube_video_id for item in self.items]
+        if len(video_ids) != len(set(video_ids)):
+            raise ValueError("historical duration baseline YouTube video ids must be unique")
+        if not self.items:
+            raise ValueError("historical duration baseline must contain at least one item")
+        return self
+
+
+class BaselineReconciliationRecord(FrozenModel):
+    youtube_video_id: str = Field(min_length=6, max_length=32)
+    historical_published_on: date
+    historical_duration_seconds: int = Field(ge=1, le=180)
+    fresh_status: Literal[
+        "present_as_short",
+        "present_as_candidate",
+        "present_as_longform",
+        "present_unresolved",
+        "absent_from_snapshot",
+    ]
+    fresh_duration_seconds: int | None = Field(default=None, ge=0, le=3600)
+    duration_drift_seconds: int | None = None
+
+
+class BaselineReconciliationCounts(FrozenModel):
+    historical_item_count: int = Field(ge=0)
+    present_as_short: int = Field(ge=0)
+    present_as_candidate: int = Field(ge=0)
+    present_as_longform: int = Field(ge=0)
+    present_unresolved: int = Field(ge=0)
+    absent_from_snapshot: int = Field(ge=0)
+    new_shorts_not_in_baseline: int = Field(ge=0)
+    new_candidates_not_in_baseline: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def validate_counts(self) -> "BaselineReconciliationCounts":
+        partitioned = (
+            self.present_as_short
+            + self.present_as_candidate
+            + self.present_as_longform
+            + self.present_unresolved
+            + self.absent_from_snapshot
+        )
+        if partitioned != self.historical_item_count:
+            raise ValueError("historical baseline reconciliation counts do not partition the frozen ID set")
+        return self
+
+
+class BaselineReconciliationArtifact(FrozenModel):
+    schema_name: Literal["video-channel-manager.lordchrist-shorts-baseline-reconciliation"]
+    schema_version: Literal[1]
+    project_key: Literal["lord-god-strength"]
+    youtube_channel_id: Literal["UCeSJsC6go2c9pdJCuUI1BYA"]
+    evidence_scope: Literal["historical_duration_only_versus_fresh_owner_snapshot"]
+    provider_effect: Literal["impossible"]
+    provider_writes_authorized: Literal[False]
+    provider_access_performed: Literal[False]
+    provider_write_performed: Literal[False]
+    source_baseline_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    historical_snapshot_id: str = Field(min_length=1)
+    compared_snapshot_id: str = Field(min_length=1)
+    counts: BaselineReconciliationCounts
+    records: tuple[BaselineReconciliationRecord, ...]
+    new_short_video_ids: tuple[str, ...]
+    new_candidate_video_ids: tuple[str, ...]
+
+    @model_validator(mode="after")
+    def validate_artifact(self) -> "BaselineReconciliationArtifact":
+        if self.compared_snapshot_id == self.historical_snapshot_id:
+            raise ValueError("fresh snapshot id must differ from the frozen duration-only snapshot")
+        if len(self.records) != self.counts.historical_item_count:
+            raise ValueError("reconciliation record count differs from historical_item_count")
+        if len(self.new_short_video_ids) != self.counts.new_shorts_not_in_baseline:
+            raise ValueError("new short id count differs from counts")
+        if len(self.new_candidate_video_ids) != self.counts.new_candidates_not_in_baseline:
+            raise ValueError("new candidate id count differs from counts")
+        return self
+
+
+class ShortsBacklogStatusItem(FrozenModel):
+    youtube_video_id: str = Field(min_length=6, max_length=32)
+    publication_id: str = Field(min_length=20, max_length=96)
+    surface_status: Literal["short", "candidate"]
+    backlog_state: Literal["accepted", "media_missing", "candidate_unconfirmed"]
+    media_bound: bool
+    media_accepted: bool
+    candidate_approved: bool
+
+    @model_validator(mode="after")
+    def validate_status(self) -> "ShortsBacklogStatusItem":
+        if self.publication_id != publication_id_for(self.youtube_video_id):
+            raise ValueError("backlog publication_id must be derived from the exact YouTube video id")
+        selected = self.surface_status == "short" or self.candidate_approved
+        if self.surface_status == "candidate" and not self.candidate_approved:
+            if self.backlog_state != "candidate_unconfirmed":
+                raise ValueError("unapproved candidates must be recorded as candidate_unconfirmed")
+        elif selected and self.media_accepted:
+            if self.backlog_state != "accepted":
+                raise ValueError("selected items with accepted owner media must be recorded as accepted")
+        elif selected and not self.media_accepted:
+            if self.backlog_state != "media_missing":
+                raise ValueError("selected items without accepted owner media must be recorded as media_missing")
+        else:
+            raise ValueError("backlog state is not a valid combination of surface and approval")
+        if self.candidate_approved and self.surface_status != "candidate":
+            raise ValueError("only inventory candidates may be marked candidate_approved")
+        if self.media_accepted and not self.media_bound:
+            raise ValueError("accepted media requires a bound owner file")
+        return self
+
+
+class ShortsBacklogStatusCounts(FrozenModel):
+    inventory_item_count: int = Field(ge=0)
+    accepted: int = Field(ge=0)
+    media_missing: int = Field(ge=0)
+    candidate_unconfirmed: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def validate_counts(self) -> "ShortsBacklogStatusCounts":
+        if self.accepted + self.media_missing + self.candidate_unconfirmed != self.inventory_item_count:
+            raise ValueError("backlog status counts do not partition the inventory")
+        return self
+
+
+class LordChristShortsBacklogStatus(FrozenModel):
+    schema_name: Literal["video-channel-manager.lordchrist-shorts-backlog-status"]
+    schema_version: Literal[1]
+    project_key: Literal["lord-god-strength"]
+    youtube_channel_id: Literal["UCeSJsC6go2c9pdJCuUI1BYA"]
+    inventory_snapshot_id: str = Field(min_length=1)
+    provider_access_performed: Literal[False]
+    provider_write_performed: Literal[False]
+    release_authorized: Literal[False]
+    counts: ShortsBacklogStatusCounts
+    items: tuple[ShortsBacklogStatusItem, ...]
+
+    @model_validator(mode="after")
+    def validate_status(self) -> "LordChristShortsBacklogStatus":
+        video_ids = [item.youtube_video_id for item in self.items]
+        if len(video_ids) != len(set(video_ids)):
+            raise ValueError("backlog status YouTube video ids must be unique")
+        if len(self.items) != self.counts.inventory_item_count:
+            raise ValueError("backlog status item count differs from inventory_item_count")
+        return self
+
+
 class EffectSnapshot(FrozenModel):
     publication_id: str
     state: str
@@ -307,6 +491,239 @@ def load_candidate_approval(path: Path) -> CandidateApprovalManifest:
 
 def load_media_acceptance(path: Path) -> LordChristShortsMediaAcceptance:
     return _read_model(path, LordChristShortsMediaAcceptance)
+
+
+def load_historical_baseline(path: Path) -> tuple[HistoricalDurationBaseline, str]:
+    try:
+        raw = path.read_bytes()
+    except OSError as exc:
+        raise ValueError(f"cannot read historical duration baseline {path}: {exc}") from exc
+    digest = "sha256:" + hashlib.sha256(raw).hexdigest()
+    try:
+        baseline = HistoricalDurationBaseline.model_validate_json(raw)
+    except ValidationError as exc:
+        raise ValueError(f"invalid HistoricalDurationBaseline file {path}: {exc}") from exc
+    return baseline, digest
+
+
+def _fresh_status_for(
+    classification_status: str, short_candidate: bool
+) -> Literal[
+    "present_as_short",
+    "present_as_candidate",
+    "present_as_longform",
+    "present_unresolved",
+]:
+    if classification_status == "short":
+        return "present_as_short"
+    if classification_status == "longform":
+        return "present_as_longform"
+    if short_candidate:
+        return "present_as_candidate"
+    return "present_unresolved"
+
+
+def reconcile_historical_baseline(
+    package: AuditPackage,
+    baseline: HistoricalDurationBaseline,
+    *,
+    source_baseline_sha256: str,
+    as_of: datetime | None = None,
+    max_age_hours: int = 48,
+) -> BaselineReconciliationArtifact:
+    from video_channel_manager.lordchrist_shorts_snapshot_readiness import require_snapshot_ready
+
+    if package.channel.ref.channel_id != YOUTUBE_CHANNEL_ID:
+        raise ValueError(
+            f"AuditPackage channel mismatch: expected {YOUTUBE_CHANNEL_ID}, got {package.channel.ref.channel_id}"
+        )
+    if baseline.youtube_channel_id != YOUTUBE_CHANNEL_ID or baseline.project_key != PROJECT_KEY:
+        raise ValueError("historical duration baseline is not bound to lord-god-strength")
+    compared_snapshot_id = str(package.snapshot_id)
+    if compared_snapshot_id == baseline.source_snapshot_id:
+        raise ValueError(
+            "cannot reconcile the frozen 2026-07-29 duration-only snapshot against itself; "
+            "run a fresh read-only video-manager youtube scan"
+        )
+    require_snapshot_ready(package, as_of=as_of, max_age_hours=max_age_hours)
+
+    videos_by_id = {video.ref.remote_id: video for video in package.videos}
+    records: list[BaselineReconciliationRecord] = []
+    counts = {
+        "present_as_short": 0,
+        "present_as_candidate": 0,
+        "present_as_longform": 0,
+        "present_unresolved": 0,
+        "absent_from_snapshot": 0,
+    }
+    for item in baseline.items:
+        video = videos_by_id.get(item.youtube_video_id)
+        if video is None:
+            status: Literal[
+                "present_as_short",
+                "present_as_candidate",
+                "present_as_longform",
+                "present_unresolved",
+                "absent_from_snapshot",
+            ] = "absent_from_snapshot"
+            fresh_duration = None
+            drift = None
+        else:
+            classification = classify_youtube_surface(video)
+            status = _fresh_status_for(classification.status, classification.short_candidate)
+            fresh_duration = video.duration_seconds
+            drift = None if fresh_duration is None else abs(fresh_duration - item.duration_seconds)
+        counts[status] += 1
+        records.append(
+            BaselineReconciliationRecord(
+                youtube_video_id=item.youtube_video_id,
+                historical_published_on=item.published_on,
+                historical_duration_seconds=item.duration_seconds,
+                fresh_status=status,
+                fresh_duration_seconds=fresh_duration,
+                duration_drift_seconds=drift,
+            )
+        )
+
+    baseline_ids = {item.youtube_video_id for item in baseline.items}
+    new_shorts: list[str] = []
+    new_candidates: list[str] = []
+    for video in package.videos:
+        video_id = video.ref.remote_id
+        if video_id in baseline_ids:
+            continue
+        classification = classify_youtube_surface(video)
+        if classification.status == "short":
+            new_shorts.append(video_id)
+        elif classification.short_candidate:
+            new_candidates.append(video_id)
+    new_shorts.sort()
+    new_candidates.sort()
+
+    return BaselineReconciliationArtifact(
+        schema_name="video-channel-manager.lordchrist-shorts-baseline-reconciliation",
+        schema_version=1,
+        project_key=PROJECT_KEY,
+        youtube_channel_id=YOUTUBE_CHANNEL_ID,
+        evidence_scope="historical_duration_only_versus_fresh_owner_snapshot",
+        provider_effect="impossible",
+        provider_writes_authorized=False,
+        provider_access_performed=False,
+        provider_write_performed=False,
+        source_baseline_sha256=source_baseline_sha256,
+        historical_snapshot_id=baseline.source_snapshot_id,
+        compared_snapshot_id=compared_snapshot_id,
+        counts=BaselineReconciliationCounts(
+            historical_item_count=len(baseline.items),
+            present_as_short=counts["present_as_short"],
+            present_as_candidate=counts["present_as_candidate"],
+            present_as_longform=counts["present_as_longform"],
+            present_unresolved=counts["present_unresolved"],
+            absent_from_snapshot=counts["absent_from_snapshot"],
+            new_shorts_not_in_baseline=len(new_shorts),
+            new_candidates_not_in_baseline=len(new_candidates),
+        ),
+        records=tuple(records),
+        new_short_video_ids=tuple(new_shorts),
+        new_candidate_video_ids=tuple(new_candidates),
+    )
+
+
+def build_backlog_status(
+    inventory: LordChristShortsInventory,
+    *,
+    bindings: OwnerMediaBindingManifest | None = None,
+    acceptance: LordChristShortsMediaAcceptance | None = None,
+    candidate_approval: CandidateApprovalManifest | None = None,
+) -> LordChristShortsBacklogStatus:
+    if inventory.youtube_channel_id != YOUTUBE_CHANNEL_ID or inventory.project_key != PROJECT_KEY:
+        raise ValueError("inventory is not bound to lord-god-strength")
+
+    bound_ids: set[str] = set()
+    if bindings is not None:
+        if bindings.youtube_channel_id != YOUTUBE_CHANNEL_ID or bindings.project_key != PROJECT_KEY:
+            raise ValueError("owner media bindings are not bound to lord-god-strength")
+        inventory_ids = {item.youtube_video_id for item in inventory.items}
+        unknown_bindings = [
+            item.youtube_video_id for item in bindings.items if item.youtube_video_id not in inventory_ids
+        ]
+        if unknown_bindings:
+            raise ValueError(
+                "owner media binding references video outside the exact Shorts inventory: "
+                + ", ".join(unknown_bindings)
+            )
+        bound_ids = {item.youtube_video_id for item in bindings.items}
+
+    accepted_ids: set[str] = set()
+    if acceptance is not None:
+        if acceptance.inventory_snapshot_id != inventory.source_snapshot_id:
+            raise ValueError("media acceptance belongs to a different YouTube inventory snapshot")
+        inventory_ids = {item.youtube_video_id for item in inventory.items}
+        unknown_accepted = [
+            item.youtube_video_id for item in acceptance.items if item.youtube_video_id not in inventory_ids
+        ]
+        if unknown_accepted:
+            raise ValueError(
+                "accepted media references video outside the exact Shorts inventory: " + ", ".join(unknown_accepted)
+            )
+        accepted_ids = {item.youtube_video_id for item in acceptance.items}
+
+    approved_ids: set[str] = set()
+    if candidate_approval is not None:
+        if candidate_approval.inventory_snapshot_id != inventory.source_snapshot_id:
+            raise ValueError("candidate approval belongs to a different YouTube inventory snapshot")
+        candidates = {item.youtube_video_id for item in inventory.items if item.surface_status == "candidate"}
+        unknown_approvals = {value.strip() for value in candidate_approval.approved_video_ids} - candidates
+        if unknown_approvals:
+            raise ValueError(
+                "candidate approvals do not match candidate inventory ids: " + ", ".join(sorted(unknown_approvals))
+            )
+        approved_ids = {value.strip() for value in candidate_approval.approved_video_ids}
+
+    items: list[ShortsBacklogStatusItem] = []
+    for item in inventory.items:
+        media_bound = item.youtube_video_id in bound_ids
+        media_accepted = item.youtube_video_id in accepted_ids
+        candidate_approved = item.youtube_video_id in approved_ids
+        selected = item.surface_status == "short" or candidate_approved
+        if item.surface_status == "candidate" and not candidate_approved:
+            state: Literal["accepted", "media_missing", "candidate_unconfirmed"] = "candidate_unconfirmed"
+        elif selected and media_accepted:
+            state = "accepted"
+        else:
+            state = "media_missing"
+        items.append(
+            ShortsBacklogStatusItem(
+                youtube_video_id=item.youtube_video_id,
+                publication_id=item.publication_id,
+                surface_status=item.surface_status,
+                backlog_state=state,
+                media_bound=media_bound,
+                media_accepted=media_accepted,
+                candidate_approved=candidate_approved,
+            )
+        )
+
+    accepted_count = sum(item.backlog_state == "accepted" for item in items)
+    missing_count = sum(item.backlog_state == "media_missing" for item in items)
+    unconfirmed_count = sum(item.backlog_state == "candidate_unconfirmed" for item in items)
+    return LordChristShortsBacklogStatus(
+        schema_name="video-channel-manager.lordchrist-shorts-backlog-status",
+        schema_version=1,
+        project_key=PROJECT_KEY,
+        youtube_channel_id=YOUTUBE_CHANNEL_ID,
+        inventory_snapshot_id=inventory.source_snapshot_id,
+        provider_access_performed=False,
+        provider_write_performed=False,
+        release_authorized=False,
+        counts=ShortsBacklogStatusCounts(
+            inventory_item_count=len(items),
+            accepted=accepted_count,
+            media_missing=missing_count,
+            candidate_unconfirmed=unconfirmed_count,
+        ),
+        items=tuple(items),
+    )
 
 
 def build_inventory(package: AuditPackage, *, include_candidates: bool = True) -> LordChristShortsInventory:
@@ -1077,6 +1494,64 @@ def main() -> int:
                         "candidates": sum(item.surface_status == "candidate" for item in inventory_result.items),
                         "excluded_longform": inventory_result.excluded_longform_count,
                         "unresolved_non_candidate": inventory_result.unresolved_non_candidate_count,
+                        "output": str(args.output),
+                        "provider_write_performed": False,
+                    },
+                    ensure_ascii=False,
+                )
+            )
+            return 0
+        if args.command == "reconcile-baseline":
+            from video_channel_manager.lordchrist_shorts_snapshot_readiness import require_snapshot_ready
+
+            package = _load_audit(args.audit)
+            require_snapshot_ready(package, max_age_hours=args.max_snapshot_age_hours)
+            baseline, digest = load_historical_baseline(args.baseline)
+            reconciliation = reconcile_historical_baseline(
+                package,
+                baseline,
+                source_baseline_sha256=digest,
+                max_age_hours=args.max_snapshot_age_hours,
+            )
+            _write_model(args.output, reconciliation)
+            print(
+                json.dumps(
+                    {
+                        "historical_item_count": reconciliation.counts.historical_item_count,
+                        "present_as_short": reconciliation.counts.present_as_short,
+                        "present_as_candidate": reconciliation.counts.present_as_candidate,
+                        "present_as_longform": reconciliation.counts.present_as_longform,
+                        "present_unresolved": reconciliation.counts.present_unresolved,
+                        "absent_from_snapshot": reconciliation.counts.absent_from_snapshot,
+                        "new_shorts_not_in_baseline": reconciliation.counts.new_shorts_not_in_baseline,
+                        "new_candidates_not_in_baseline": reconciliation.counts.new_candidates_not_in_baseline,
+                        "compared_snapshot_id": reconciliation.compared_snapshot_id,
+                        "output": str(args.output),
+                        "provider_write_performed": False,
+                    },
+                    ensure_ascii=False,
+                )
+            )
+            return 0
+        if args.command == "backlog-status":
+            inventory_result = load_inventory(args.inventory)
+            status = build_backlog_status(
+                inventory_result,
+                bindings=load_bindings(args.bindings) if args.bindings else None,
+                acceptance=load_media_acceptance(args.media) if args.media else None,
+                candidate_approval=load_candidate_approval(args.candidate_approval)
+                if args.candidate_approval
+                else None,
+            )
+            _write_model(args.output, status)
+            print(
+                json.dumps(
+                    {
+                        "inventory_item_count": status.counts.inventory_item_count,
+                        "accepted": status.counts.accepted,
+                        "media_missing": status.counts.media_missing,
+                        "candidate_unconfirmed": status.counts.candidate_unconfirmed,
+                        "release_authorized": status.release_authorized,
                         "output": str(args.output),
                         "provider_write_performed": False,
                     },
