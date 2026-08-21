@@ -1,6 +1,6 @@
 # Milovi Telegram permanent feed control plane
 
-Updated: 2026-08-20  
+Updated: 2026-08-21  
 Owning workstream: Issue #353  
 Provider target: `@MiloviCake`
 
@@ -105,7 +105,11 @@ These identities remain immutable history. The timestamp is part of each publica
 - `milovi-feed-20260820-001` — scheduled `2026-08-20T10:30:00+03:00`; `release_authorized=false` / `execution_authorized=false`; frozen `p16` bytes only; no durable intent.
 - `milovi-feed-20260820-002` — scheduled `2026-08-20T20:00:00+03:00`; PR #500 set `release_authorized=true` and `execution_authorized=true` for marathon position 1 (`sendPhoto` / `p06`); the permanent publisher had no initialize-state or publish run; durable feed state was not initialized; the 120-minute lag gate has expired. Do not publish this identity now.
 
-There is currently no live dated Milovi feed candidate. A future item needs a fresh `milovi-feed-YYYYMMDD-NNN` identity. This runbook does not authorize that publication or any successor.
+## Current exact photo candidate
+
+`milovi-feed-20260821-001` is the current provider-inert photo candidate: `2026-08-21T10:30:00+03:00`, marathon position 1, media `p06`, same reviewed source/transport as the expired `20260820-002`, with a tighter public caption and no new factual claims. `release_authorized=false`, `execution_authorized=false`, `provider_mutation_allowed=false`. Permanent feed state is not initialized.
+
+This runbook does not authorize that publication or any successor.
 
 ## Marathon editorial source
 

@@ -1,0 +1,43 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-next-publication-candidate",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "owning_issue": 353,
+  "status": "provider_inert_exact_candidate",
+  "publication_authorized": false,
+  "execution_authorized": false,
+  "provider_mutation_allowed": false,
+  "publication_id": "milovi-feed-20260821-001",
+  "scheduled_at": "2026-08-21T10:30:00+03:00",
+  "timezone": "Europe/Moscow",
+  "operation": "sendPhoto",
+  "media": {
+    "media_id": "p06",
+    "source_path": "img/gallery/gallery-06-hd.webp",
+    "source_git_blob_sha1": "333c5ab3b42900e2e7c219514e0119eb9bf6a99c",
+    "source_sha256": "sha256:6ca82d87ab4c4ac869e1363df7758bef47aa8eccbcc5e2f5be70a402ce459fcc",
+    "transport_format": "image/jpeg",
+    "transport_byte_size": 537768,
+    "transport_sha256": "sha256:e8a48c819550a7e914f81fe7f7f30d27d9412d72744dc1d93c109989ab86770a",
+    "pixel_width": 1024,
+    "pixel_height": 1536
+  },
+  "caption_sha256": "sha256:152f9d5cd8490df1a31c7af2969acd682a6608c52339a99e5b2395fa95461d8c",
+  "caption": "Чёрный и золото — сочетание, которому не нужен лишний шум.\n\nЧёрно-золотой торт с шарами из портфолио Milovi Cake.\n\nЕщё работы → https://milovicake.ru/gallery/",
+  "editorial_guards": {
+    "brand_authorship_is_implicit": true,
+    "contains_service_language": false,
+    "contains_process_or_bts_claim": false,
+    "contains_milovi_school_claim": false,
+    "contains_unverified_price_or_availability_claim": false,
+    "resource_footer_present": true
+  },
+  "marathon_source": {
+    "wave_path": "content/telegram/milovi-cake/marathon-wave-2026-08.json",
+    "wave_position": 1,
+    "frozen_copy_path": "content/telegram/milovi-cake/follow-on-wave-candidates-2026-08.json",
+    "legacy_publication_id": "milovi-follow-on-001",
+    "stale_predecessor_publication_id": "milovi-feed-20260820-002"
+  },
+  "execution_note": "Voice pass of marathon position 1 on a fresh identity. Same p06 source/transport. Public copy drops ledger-speak without new claims. Provider execution is authorized separately."
+}
