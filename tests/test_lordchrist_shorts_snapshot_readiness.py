@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from uuid import UUID
 
 import pytest
 
 from video_channel_manager.domain.enums import ChannelKind, PlatformName
 from video_channel_manager.domain.models import ChannelRecord, RemoteRef, VideoRecord
 from video_channel_manager.exchange.audit_package import AuditPackage
-from video_channel_manager.lordchrist_shorts import YOUTUBE_CHANNEL_ID
+from video_channel_manager.lordchrist_shorts import KNOWN_DURATION_ONLY_SNAPSHOT_ID, YOUTUBE_CHANNEL_ID
 from video_channel_manager.lordchrist_shorts_snapshot_readiness import (
     require_snapshot_ready,
     summarize_snapshot_readiness,
@@ -55,6 +56,7 @@ def _audit(
     *,
     channel_id: str = YOUTUBE_CHANNEL_ID,
     generated_at: datetime = datetime(2026, 8, 20, 16, 0, tzinfo=UTC),
+    snapshot_id: UUID | None = None,
 ) -> AuditPackage:
     channel = ChannelRecord(
         ref=RemoteRef(
@@ -65,10 +67,13 @@ def _audit(
         title="Fedor Milovanov",
         kind=ChannelKind.VIDEO_CHANNEL,
     )
+    if snapshot_id is None:
+        return AuditPackage(channel=channel, generated_at=generated_at, videos=videos)
     return AuditPackage(
         channel=channel,
         generated_at=generated_at,
         videos=videos,
+        snapshot_id=snapshot_id,
     )
 
 
@@ -191,3 +196,17 @@ def test_snapshot_readiness_rejects_non_positive_max_age() -> None:
     package = _audit(_fully_classifiable_videos())
     with pytest.raises(ValueError, match="max_age_hours must be positive"):
         summarize_snapshot_readiness(package, as_of=AS_OF, max_age_hours=0)
+
+
+def test_known_duration_only_snapshot_id_fails_closed_even_when_otherwise_fresh() -> None:
+    package = _audit(
+        _fully_classifiable_videos(),
+        snapshot_id=UUID(KNOWN_DURATION_ONLY_SNAPSHOT_ID),
+    )
+    summary = summarize_snapshot_readiness(package, as_of=AS_OF)
+    assert summary["fresh_enough"] is True
+    assert summary["unresolved_non_candidate_count"] == 0
+    assert summary["known_duration_only_snapshot"] is True
+    assert summary["ready_for_exact_surface_inventory"] is False
+    with pytest.raises(ValueError, match="duration-only catalog"):
+        require_snapshot_ready(package, as_of=AS_OF)
