@@ -105,11 +105,9 @@ These identities remain immutable history. The timestamp is part of each publica
 - `milovi-feed-20260820-001` — scheduled `2026-08-20T10:30:00+03:00`; `release_authorized=false` / `execution_authorized=false`; frozen `p16` bytes only; no durable intent.
 - `milovi-feed-20260820-002` — scheduled `2026-08-20T20:00:00+03:00`; PR #500 set `release_authorized=true` and `execution_authorized=true` for marathon position 1 (`sendPhoto` / `p06`); the permanent publisher had no initialize-state or publish run; durable feed state was not initialized; the 120-minute lag gate has expired. Do not publish this identity now.
 
-## Current exact photo candidate
+## Current exact photo publication
 
-`milovi-feed-20260821-001` is the current provider-inert photo candidate: `2026-08-21T10:30:00+03:00`, marathon position 1, media `p06`, same reviewed source/transport as the expired `20260820-002`, with a tighter public caption and no new factual claims. `release_authorized=false`, `execution_authorized=false`, `provider_mutation_allowed=false`. Permanent feed state is not initialized.
-
-This runbook does not authorize that publication or any successor.
+`milovi-feed-20260821-001` is the current exact photo publication: `2026-08-21T10:30:00+03:00`, marathon position 1, media `p06`, same reviewed source/transport as expired `20260820-002`, tighter public caption, no new claims. Runtime `release_authorized=true` and execution `execution_authorized=true` are bound to this identity only. The content candidate JSON remains provider-inert by contract. Publish is due only in the 10:30–12:30 Europe/Moscow window via `.github/workflows/milovi-telegram-feed-publisher.yml`. No successor identity is authorized here.
 
 ## Marathon editorial source
 

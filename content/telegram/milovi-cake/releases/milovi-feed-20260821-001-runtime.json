@@ -11,10 +11,10 @@
   "chat_id": -1002215328390,
   "bot_id": 8716602202,
   "bot_username": "preaching_mp3_bot",
-  "release_authorized": false,
-  "reviewed_candidate_sha256": null,
-  "reviewed_by": null,
-  "reviewed_at": null,
+  "release_authorized": true,
+  "reviewed_candidate_sha256": "sha256:dfec2bc566c311ef792edf911f2a66e70915e2a051c178c27842bdaa0566158a",
+  "reviewed_by": "human user via Arena request 2026-08-21: да, публикуем milovi-feed-20260821-001",
+  "reviewed_at": "2026-08-21T03:50:00+03:00",
   "items": [
     {
       "sequence": 1,
