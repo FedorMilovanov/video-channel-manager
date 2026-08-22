@@ -1,0 +1,31 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
+  "publication_id": "lordchrist-gill-faithfulness-christ",
+  "sequence": 30,
+  "intent_id": "a2144efe94ebd10e39969b916f8fd169",
+  "workflow_run_id": "32558328332",
+  "workflow_run_attempt": "1",
+  "github_sha": "8c34305da1e8cdbee25725293873018ae1e2aa08",
+  "github_workflow_sha": "8c34305da1e8cdbee25725293873018ae1e2aa08",
+  "payload_sha256": "sha256:7314b937d4ac4d2fb2789e4412ecd3cda37c8590e070f1e499708e5d9cd044f0",
+  "text": "Верность Христа видна в исполнении великого доверия, возложенного на Него. Отец отдал всё в Его руку — всех избранных, чтобы Он хранил, сохранял и спасал их; и все они будут сохранены. Христос представит их Отцу и скажет: «Вот Я и дети, которых дал Мне Бог»; ни один не погибнет.\n\nХристу доверена полнота благодати для восполнения нужд Его народа. Отцу было угодно, чтобы она обитала в Нём для их пользы; Он вложил её в Христа, чтобы Тот сообщал её людям по мере нужды. И Христос верно делал это во все века и поколения, являясь для всех церквей и святых источником садов, колодцем живых вод и потоками с Ливана. Святые Ветхого и Нового Завета приняли от Его полноты благодать на благодать.\n\nВ Его руках вечная жизнь и счастье. Он имеет власть дать их всем, кого дал Ему Отец, и верно употребляет эту власть: даёт жизнь всем Своим овцам, так что ни одна из них не погибнет.\n\n© Джон Гилл, «Свод доктринального богословия»\n\n#ДжонГилл #ВерностьХриста #Благодать #Спасение",
+  "dispatch_mode": "scheduled",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-08-22T06:58:10.725988Z"
+  },
+  "prepared_at_utc": "2026-08-22T06:58:11.836573Z"
+}
