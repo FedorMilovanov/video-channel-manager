@@ -1,0 +1,31 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
+  "publication_id": "lordchrist-owen-unmortified-sin",
+  "sequence": 18,
+  "intent_id": "ce31f120bab3228dd6cc7a449823b5c3",
+  "workflow_run_id": "32820041105",
+  "workflow_run_attempt": "1",
+  "github_sha": "7b6545e731f6d0aa9245ada07b3cdbd513f4009e",
+  "github_workflow_sha": "7b6545e731f6d0aa9245ada07b3cdbd513f4009e",
+  "payload_sha256": "sha256:298170cc97eacad1526eef96ae4645eac8fcb55cb0acf96bb1aa0604dabab452",
+  "text": "Каждый неумерщвлённый грех непременно сделает две вещи: во-первых, ослабит душу и лишит её силы; во-вторых, омрачит душу и лишит её утешения и мира.\n\nОн ослабляет душу и отнимает у неё крепость. Когда Давид некоторое время укрывал в сердце неумерщвлённую похоть, она сокрушила все его кости и оставила без духовной силы; поэтому он жаловался, что болен, слаб, изранен и изнемогает: «Нет целого места во мне», «я изнемог и сокрушён чрезвычайно», «не могу даже взглянуть вверх».\n\nНеумерщвлённая похоть выпивает дух и всю силу души, делая её слабой для всякой обязанности. Она расстраивает само сердце, запутывая его привязанности; отвлекает сердце от духовного состояния, необходимого для живого общения с Богом; овладевает чувствами, делая свой предмет любимым и желанным и вытесняя любовь к Отцу. Страх, желание и надежда — избранные чувства души, которые должны быть наполнены Богом, — так или иначе оказываются ею связанными.\n\n© Джон Оуэн, «Об умерщвлении греха в верующих»\n\n#ДжонОуэн #Грех #ДуховнаяЖизнь #Бдительность",
+  "dispatch_mode": "scheduled",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-08-25T07:07:19.821485Z"
+  },
+  "prepared_at_utc": "2026-08-25T07:07:21.160641Z"
+}
