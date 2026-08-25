@@ -129,13 +129,16 @@ def classify_youtube_surface(video: VideoRecord) -> YouTubeSurfaceClassification
 
     YouTube's current policy categorizes square/vertical uploads up to three minutes
     as Shorts after the applicable rollout date. Standard channels crossed that
-    boundary in 2024; Official Artist Channels use the later 2025-12-08 boundary.
-    If YouTube says the uploaded source file itself was created on or after that
-    later boundary, the upload cannot predate the file. That gives a conservative
-    channel-type-independent proof for otherwise eligible 2026-era Shorts.
+    boundary earlier; Official Artist Channels use the later 2025-12-08 boundary.
+    A recorded source-file creation time after that boundary proves the upload cannot
+    predate it. Likewise, YouTube's public ``publishedAt`` timestamp is a safe lower
+    bound for upload time: a video cannot be published before it is uploaded. That is
+    enough to prove post-cutoff eligibility without pretending ``publishedAt`` is the
+    exact upload time.
 
-    ``snippet.publishedAt`` is never treated as upload time here. Stream rotation is
-    applied before source geometry is classified.
+    Missing geometry never becomes a confirmed Short. Duration-eligible records with
+    unknown geometry remain candidates so the exact owner-media acceptance step can
+    resolve them from the actual bytes later.
     """
 
     source = extract_youtube_source_file_evidence(video)
@@ -159,31 +162,43 @@ def classify_youtube_surface(video: VideoRecord) -> YouTubeSurfaceClassification
             source=source,
         )
 
-    short_candidate = (
-        source.geometry == "square_or_vertical"
-        and duration_ms is not None
-        and duration_ms <= _MAX_THREE_MINUTE_SHORT_MS
-    )
-    if short_candidate and source.creation_time is not None:
-        if source.creation_time >= _UNIVERSAL_THREE_MINUTE_SHORTS_CUTOFF:
-            return YouTubeSurfaceClassification(
-                status="short",
-                reason="owner_file_creation_time_proves_post_universal_three_minute_shorts_cutoff",
-                short_candidate=False,
-                source=source,
-            )
-
-    if short_candidate:
+    duration_eligible = duration_ms is not None and duration_ms <= _MAX_THREE_MINUTE_SHORT_MS
+    if not duration_eligible:
         return YouTubeSurfaceClassification(
             status="unknown",
-            reason="short_geometry_and_duration_proved_but_post_cutoff_upload_not_yet_proved",
+            reason="insufficient_exact_surface_evidence",
+            short_candidate=False,
+            source=source,
+        )
+
+    post_cutoff_proven = False
+    proof_reason = ""
+    if source.creation_time is not None and source.creation_time >= _UNIVERSAL_THREE_MINUTE_SHORTS_CUTOFF:
+        post_cutoff_proven = True
+        proof_reason = "owner_file_creation_time_proves_post_universal_three_minute_shorts_cutoff"
+    elif video.published_at is not None and video.published_at >= _UNIVERSAL_THREE_MINUTE_SHORTS_CUTOFF:
+        post_cutoff_proven = True
+        proof_reason = "owner_publication_time_proves_post_universal_three_minute_shorts_cutoff"
+
+    if source.geometry == "square_or_vertical" and post_cutoff_proven:
+        return YouTubeSurfaceClassification(
+            status="short",
+            reason=proof_reason,
+            short_candidate=False,
+            source=source,
+        )
+
+    if source.geometry == "unknown":
+        return YouTubeSurfaceClassification(
+            status="unknown",
+            reason="duration_eligible_but_owner_source_geometry_missing",
             short_candidate=True,
             source=source,
         )
 
     return YouTubeSurfaceClassification(
         status="unknown",
-        reason="insufficient_exact_surface_evidence",
-        short_candidate=False,
+        reason="short_geometry_and_duration_proved_but_post_cutoff_upload_not_yet_proved",
+        short_candidate=True,
         source=source,
     )
