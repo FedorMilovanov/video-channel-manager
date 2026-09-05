@@ -114,7 +114,7 @@ def test_build_intake_reconciles_current_new_and_historical_ids() -> None:
         "confirmed_short": 0,
         "confirmed_longform": 1,
         "format_unknown": 1,
-        "short_candidates": 0,
+        "short_candidates": 1,
         "file_details_available": 0,
         "source_geometry_known": 0,
     }
@@ -135,10 +135,11 @@ def test_short_duration_alone_never_promotes_video_to_confirmed_short() -> None:
 
     record = result["records"][0]
     assert record["youtube_format_status"] == "unknown"
-    assert record["youtube_short_candidate"] is False
-    assert record["youtube_format_reason"] == "insufficient_exact_surface_evidence"
+    assert record["youtube_short_candidate"] is True
+    assert record["youtube_format_reason"] == "duration_eligible_but_owner_source_geometry_missing"
     assert result["counts"]["confirmed_short"] == 0
     assert result["counts"]["format_unknown"] == 1
+    assert result["counts"]["short_candidates"] == 1
 
 
 def test_duration_over_three_minutes_confirms_longform_without_geometry() -> None:
@@ -289,7 +290,8 @@ def test_conflicting_owner_stream_orientations_stay_unknown() -> None:
     assert record["youtube_source_width_pixels"] is None
     assert record["youtube_source_height_pixels"] is None
     assert record["youtube_format_status"] == "unknown"
-    assert record["youtube_short_candidate"] is False
+    assert record["youtube_short_candidate"] is True
+    assert record["youtube_format_reason"] == "duration_eligible_but_owner_source_geometry_missing"
 
 
 def test_project_channel_guard_is_fail_closed() -> None:
