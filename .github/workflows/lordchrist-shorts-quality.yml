@@ -8,10 +8,12 @@ on:
       - content/telegram/lordchrist/production-schedule.json
       - docs/operations/lordchrist-shorts-feed.md
       - src/video_channel_manager/lordchrist_shorts.py
+      - src/video_channel_manager/lordchrist_shorts_artifacts.py
       - src/video_channel_manager/lordchrist_shorts_snapshot_readiness.py
       - src/video_channel_manager/lordchrist_cross_track_effect_guard.py
       - src/video_channel_manager/platforms/youtube/client.py
       - tests/test_lordchrist_shorts.py
+      - tests/test_lordchrist_shorts_artifacts.py
       - tests/test_lordchrist_shorts_backlog.py
       - tests/test_lordchrist_shorts_snapshot_readiness.py
       - tests/test_lordchrist_shorts_youtube_inventory_guard.py
@@ -53,10 +55,12 @@ jobs:
         run: >-
           ruff check
           src/video_channel_manager/lordchrist_shorts.py
+          src/video_channel_manager/lordchrist_shorts_artifacts.py
           src/video_channel_manager/lordchrist_shorts_snapshot_readiness.py
           src/video_channel_manager/lordchrist_cross_track_effect_guard.py
           src/video_channel_manager/platforms/youtube/client.py
           tests/test_lordchrist_shorts.py
+          tests/test_lordchrist_shorts_artifacts.py
           tests/test_lordchrist_shorts_backlog.py
           tests/test_lordchrist_shorts_snapshot_readiness.py
           tests/test_lordchrist_shorts_youtube_inventory_guard.py
@@ -65,6 +69,7 @@ jobs:
         run: >-
           pytest -q
           tests/test_lordchrist_shorts.py
+          tests/test_lordchrist_shorts_artifacts.py
           tests/test_lordchrist_shorts_snapshot_readiness.py
           tests/test_lordchrist_shorts_youtube_inventory_guard.py
           tests/test_lordchrist_cross_track_effect_guard.py
