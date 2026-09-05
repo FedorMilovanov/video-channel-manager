@@ -2,7 +2,7 @@
 
 Repository implementation originated in Issue #501. The current read-only artifact/backlog wave is Issue #503.
 
-This runbook defines a **provider-inert** intake and artifact path for moving the owner’s YouTube Shorts from the canonical `lord-god-strength` YouTube channel into a future native-video queue for `@lordchrist`.
+This runbook defines the **provider-inert** intake and artifact path for moving owner YouTube Shorts from the canonical `lord-god-strength` YouTube channel into a future native-video queue for `@lordchrist`.
 
 It does **not** authorize Telegram publication, Stories, MTProto/user-session use, YouTube mutation, or automated third-party YouTube downloading.
 
@@ -37,7 +37,7 @@ Provider-inert default cadence:
 
 The Shorts policy is frozen in `content/telegram/lordchrist/shorts-feed-policy.json`. `validate-policy` also reads the canonical `content/telegram/lordchrist/production-schedule.json`; policy validation fails if the required gap is no longer true.
 
-## 1. Fresh read-only YouTube inventory
+## 1. Capture one fresh read-only YouTube snapshot
 
 Use the existing owner OAuth account and exact channel ID:
 
@@ -50,26 +50,56 @@ video-manager youtube scan \
 
 The YouTube client enumerates the exact owner uploads playlist and requests `snippet,contentDetails,status,fileDetails`. If `videos.list` omits any ID that the uploads playlist enumerated, the scan fails closed instead of silently producing an incomplete channel inventory.
 
-A Shorts snapshot is accepted only when it is both sufficiently evidenced and fresh. Default maximum age is 48 hours. The standalone diagnostic command is:
+A Shorts snapshot is accepted only when it is sufficiently evidenced and fresh. The default maximum age is 48 hours.
+
+The 2026-07-29 owner catalog `5b994503-6107-4cbe-adc8-740b50562075` is frozen as duration-only reconciliation evidence in `content/telegram/lordchrist/shorts-historical-duration-baseline-20260729.json`. It is **not** a current Shorts inventory: it has no owner `fileDetails`, and the readiness path refuses that exact snapshot even if the age limit is raised.
+
+## 2. Build the canonical atomic evidence wave
+
+After the read-only scan, use `build-wave` as the canonical Issue #503 artifact handoff:
 
 ```bash
-python -m video_channel_manager.lordchrist_shorts_snapshot_readiness \
+python -m video_channel_manager.lordchrist_shorts_artifacts build-wave \
   --audit operator-output/lordchrist-youtube-audit.json \
-  --max-age-hours 48
+  --baseline content/telegram/lordchrist/shorts-historical-duration-baseline-20260729.json \
+  --output-dir operator-output/lordchrist-shorts-wave
 ```
 
-Build the exact inventory:
+`build-wave` is provider-inert. It performs no YouTube, Telegram or Dzen provider call and cannot authorize release.
 
-```bash
-python -m video_channel_manager.lordchrist_shorts inventory \
-  --audit operator-output/lordchrist-youtube-audit.json \
-  --max-snapshot-age-hours 48 \
-  --output operator-output/lordchrist-shorts-inventory.json
+Before publishing any output directory it:
+
+1. reads the exact AuditPackage and baseline bytes;
+2. validates their schemas;
+3. requires the snapshot to pass the strict freshness/evidence readiness gate;
+4. derives the inventory from that same frozen AuditPackage;
+5. reconciles the same snapshot against the frozen historical baseline;
+6. derives backlog status from the same inventory;
+7. calculates source and artifact SHA-256 provenance;
+8. writes the complete fixed artifact set into a sibling staging directory;
+9. publishes the completed directory with the final directory rename only after every calculation and validation succeeds.
+
+The destination must not already exist. A stale/incomplete snapshot, malformed baseline, invalid optional manifest, or pre-existing destination fails closed rather than partially refreshing evidence.
+
+The fixed output set is:
+
+```text
+snapshot-readiness.json
+shorts-inventory.json
+baseline-reconciliation.json
+backlog-status.json
+manifest.json
 ```
 
-The `inventory` command performs the readiness check itself. Running the standalone readiness command first is useful diagnostics, but it is not a bypassable safety dependency.
+`manifest.json` binds the source snapshot identity, source hashes, artifact hashes/byte sizes and counts. It keeps:
 
-Inventory outcomes:
+```text
+provider_access_performed = false
+provider_write_performed = false
+release_authorized = false
+```
+
+Inventory outcomes are:
 
 1. `short` — exact owner metadata proves the conservative Shorts classification;
 2. `candidate` — owner geometry/duration are compatible with Shorts, but historical timing does not prove the surface exactly;
@@ -77,20 +107,33 @@ Inventory outcomes:
 
 `#Shorts`, title text, thumbnail geometry and guessed upload dates are not accepted as positive identity evidence.
 
-The 2026-07-29 owner catalog `5b994503-6107-4cbe-adc8-740b50562075` is frozen as duration-only reconciliation evidence in `content/telegram/lordchrist/shorts-historical-duration-baseline-20260729.json`. It contains the 25 post-cutoff `<=180s` IDs found in Issue #503. That file is **not** a current Shorts inventory: it has no `fileDetails`, and the inventory/readiness path refuses that exact snapshot id even if `--max-snapshot-age-hours` is raised.
+### Diagnostic commands are not the canonical final handoff
 
-Compare a **fresh** owner snapshot to that frozen set:
+The standalone commands remain useful for diagnosis and focused investigation:
 
 ```bash
-python -m video_channel_manager.lordchrist_shorts reconcile-baseline \
+python -m video_channel_manager.lordchrist_shorts_snapshot_readiness \
+  --audit operator-output/lordchrist-youtube-audit.json \
+  --max-age-hours 48
+
+python -m video_channel_manager.lordchrist_shorts inventory \
+  --audit operator-output/lordchrist-youtube-audit.json \
+  --max-snapshot-age-hours 48 \
+  --output operator-output/lordchrist-shorts-inventory.json
+
+python -m video_channel_manager.lordchrist_shorts_artifacts reconcile-baseline \
   --audit operator-output/lordchrist-youtube-audit.json \
   --baseline content/telegram/lordchrist/shorts-historical-duration-baseline-20260729.json \
   --output operator-output/lordchrist-shorts-baseline-reconciliation.json
+
+python -m video_channel_manager.lordchrist_shorts_artifacts backlog-status \
+  --inventory operator-output/lordchrist-shorts-inventory.json \
+  --output operator-output/lordchrist-shorts-backlog-status.json
 ```
 
-Reconciliation is provider-inert. It cannot run against the frozen snapshot itself.
+Do not assemble the final Issue #503 evidence package by independently overwriting these outputs. `build-wave` is the canonical snapshot-bound handoff because readiness, inventory, reconciliation, backlog and provenance are published together.
 
-## 2. Freeze exact owner media bindings
+## 3. Freeze exact owner media bindings
 
 Historical owner bytes may come only from:
 
@@ -119,13 +162,13 @@ Do not infer a file by title, newest-file ordering or wildcard. Before preparati
 
 Preparation rejects a size/hash mismatch before media work and re-hashes the source after copy/transcode. If source bytes change during preparation, the output is rejected rather than accepted under stale provenance.
 
-## 3. Prepare Telegram-ready media
+## 4. Prepare Telegram-ready media locally
 
-Run:
+Use the inventory emitted by the evidence wave:
 
 ```bash
 python -m video_channel_manager.lordchrist_shorts prepare-media \
-  --inventory operator-output/lordchrist-shorts-inventory.json \
+  --inventory operator-output/lordchrist-shorts-wave/shorts-inventory.json \
   --bindings operator-output/lordchrist-shorts-owner-media-bindings.json \
   --output-dir operator-output/lordchrist-shorts-media \
   --output operator-output/lordchrist-shorts-media-acceptance.json
@@ -145,25 +188,9 @@ If source bytes are already Telegram-ready they are copied unchanged. Otherwise 
 
 Acceptance records source SHA-256, transport SHA-256, byte sizes, probe summaries, transcode status and FFmpeg/FFprobe provenance. Provider access/write flags are hard-coded false. Exact duplicate accepted bytes across different YouTube IDs are rejected.
 
-Record the complete Issue #503 backlog partition after inventory, and optionally after bindings/acceptance/candidate approval. Every inventory item receives exactly one of `accepted`, `media_missing`, or `candidate_unconfirmed`. Missing owner media is an explicit recorded state, not an implicit gap.
+Unapproved candidates stay `candidate_unconfirmed` even if owner bytes are already bound. Proven shorts and approved candidates without accepted transport stay `media_missing`.
 
-```bash
-python -m video_channel_manager.lordchrist_shorts backlog-status \
-  --inventory operator-output/lordchrist-shorts-inventory.json \
-  --output operator-output/lordchrist-shorts-backlog-status.json
-```
-
-Optional exact inputs:
-
-```text
---bindings operator-output/lordchrist-shorts-owner-media-bindings.json
---media operator-output/lordchrist-shorts-media-acceptance.json
---candidate-approval operator-output/lordchrist-shorts-candidate-approval.json
-```
-
-Unapproved candidates stay `candidate_unconfirmed` even if owner bytes are already bound. Proven shorts and approved candidates without accepted transport stay `media_missing`. The artifact is hard-coded `release_authorized=false` and performs no Telegram/YouTube mutation.
-
-## 4. Historical candidate confirmation is an immutable artifact
+## 5. Historical candidate confirmation is immutable
 
 A historical `candidate` is never promoted by a transient CLI flag. If an exact owner review confirms a candidate belongs in the backlog, create a snapshot-bound approval artifact:
 
@@ -182,25 +209,43 @@ A historical `candidate` is never promoted by a transient CLI flag. If an exact 
 
 The approval must match the exact inventory snapshot and may contain only IDs that are actually `candidate` records in that snapshot. This is source/editorial confirmation, **not** Telegram release or execution authority.
 
-## 5. Materialize complete durable LordChrist state
+## 6. Publish a new reconciled evidence wave after owner-media review
 
-Release preview construction no longer accepts an optional hand-picked ledger list. Materialize the complete `content/telegram/lordchrist` tree from durable branch `state/lordchrist-telegram` into a local state root, for example:
+Do not modify the original evidence-wave directory. Publish a new immutable destination and bind the reviewed optional artifacts:
+
+```bash
+python -m video_channel_manager.lordchrist_shorts_artifacts build-wave \
+  --audit operator-output/lordchrist-youtube-audit.json \
+  --baseline content/telegram/lordchrist/shorts-historical-duration-baseline-20260729.json \
+  --bindings operator-output/lordchrist-shorts-owner-media-bindings.json \
+  --media operator-output/lordchrist-shorts-media-acceptance.json \
+  --candidate-approval operator-output/lordchrist-shorts-candidate-approval.json \
+  --output-dir operator-output/lordchrist-shorts-wave-reviewed
+```
+
+Omit an optional flag when that artifact does not exist. The resulting backlog still partitions every inventory item exactly once as `accepted`, `media_missing`, or `candidate_unconfirmed`.
+
+Issue #503 is complete only when the source snapshot is still admissibly fresh and every selected backlog item has an explicit final backlog state. Repository code, a historical snapshot, CI success or an empty output directory is not evidence completion.
+
+## 7. Materialize complete durable LordChrist state
+
+Release preview construction does not accept an optional hand-picked ledger list. Materialize the complete `content/telegram/lordchrist` tree from durable branch `state/lordchrist-telegram` into a local state root, for example:
 
 ```text
 .state/lordchrist/content/telegram/lordchrist
 ```
 
-The builder requires, at minimum, the canonical legacy ledger, research-v2 ledger + exact retirement disposition, and rich-v1 live-canary ledger. It recursively inspects provider-effect JSON under that root, including one-off state and any future ledger JSON.
+The builder requires, at minimum, the canonical legacy ledger, research-v2 ledger plus exact retirement disposition, and rich-v1 live-canary ledger. It recursively inspects provider-effect JSON under that root, including one-off state and future ledger JSON.
 
 The historical research-v2 `retired_no_replay` disposition is honored only when its exact retirement artifact is present and says `provider_retry_forbidden=true`. Other `dispatching` / `provider_effect=may_exist` records remain channel-wide blockers.
 
-## 6. Build an unauthorized release preview
+## 8. Build an unauthorized release preview
 
 Example without historical candidates:
 
 ```bash
 python -m video_channel_manager.lordchrist_shorts build-release \
-  --inventory operator-output/lordchrist-shorts-inventory.json \
+  --inventory operator-output/lordchrist-shorts-wave-reviewed/shorts-inventory.json \
   --media operator-output/lordchrist-shorts-media-acceptance.json \
   --state-root .state/lordchrist/content/telegram/lordchrist \
   --start-date 2026-08-21 \
@@ -213,7 +258,7 @@ If reviewed historical candidates are included, add:
 --candidate-approval operator-output/lordchrist-shorts-candidate-approval.json
 ```
 
-The result is the existing generic `telegram-release-queue` with `GenericVideoPayload` items, one item per day at 17:17 Moscow time. The release ID is content-addressed from the exact snapshot, selected ordered publication IDs, accepted media digests, profile, cadence and start date; two materially different previews on the same date do not share one release identity.
+The result is the existing generic `telegram-release-queue` with `GenericVideoPayload` items, one item per day at 17:17 Moscow time. The release ID is content-addressed from the exact snapshot, selected ordered publication IDs, accepted media digests, profile, cadence and start date.
 
 By construction:
 
@@ -248,6 +293,7 @@ If Stories are added later, they should be a secondary promotion lane for select
 Allowed in the current artifact scope:
 
 - read-only owner YouTube inventory;
+- atomic snapshot-bound evidence-wave construction;
 - reconciliation against the frozen 2026-07-29 duration-only baseline;
 - explicit `accepted` / `media_missing` / `candidate_unconfirmed` backlog recording;
 - local/Takeout owner-file binding;
