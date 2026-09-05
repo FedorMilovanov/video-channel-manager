@@ -117,8 +117,8 @@ def test_snapshot_readiness_accepts_fresh_fully_classifiable_owner_snapshot() ->
     assert summary["duration_le_180_count"] == 3
     assert summary["duration_le_180_known_geometry_count"] == 3
     assert summary["duration_le_180_missing_geometry_count"] == 0
-    assert summary["proven_short_count"] == 1
-    assert summary["candidate_count"] == 1
+    assert summary["proven_short_count"] == 2
+    assert summary["candidate_count"] == 0
     assert summary["longform_count"] == 1
     assert summary["unresolved_non_candidate_count"] == 0
     assert summary["ready_for_exact_surface_inventory"] is True
@@ -126,7 +126,7 @@ def test_snapshot_readiness_accepts_fresh_fully_classifiable_owner_snapshot() ->
     assert summary["provider_write_performed"] is False
 
 
-def test_historical_duration_only_snapshot_fails_closed_instead_of_reporting_zero_shorts() -> None:
+def test_duration_only_snapshot_fails_closed_without_complete_owner_file_details() -> None:
     package = _audit(
         [
             _video("AbCdEf12345", duration_seconds=60),
@@ -140,11 +140,12 @@ def test_historical_duration_only_snapshot_fails_closed_instead_of_reporting_zer
     assert summary["duration_le_180_count"] == 1
     assert summary["duration_le_180_known_geometry_count"] == 0
     assert summary["duration_le_180_missing_geometry_count"] == 1
+    assert summary["candidate_count"] == 1
     assert summary["longform_count"] == 1
-    assert summary["unresolved_non_candidate_count"] == 1
+    assert summary["unresolved_non_candidate_count"] == 0
     assert summary["ready_for_exact_surface_inventory"] is False
 
-    with pytest.raises(ValueError, match="fresh read-only video-manager youtube scan"):
+    with pytest.raises(ValueError, match="owner_file_details_count=0/2"):
         require_snapshot_ready(package, as_of=AS_OF)
 
 
