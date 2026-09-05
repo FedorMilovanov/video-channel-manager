@@ -93,7 +93,8 @@ def test_unknown_rotation_fails_closed_instead_of_guessing_geometry() -> None:
     assert result.source.height_pixels is None
     assert result.source.geometry == "unknown"
     assert result.status == "unknown"
-    assert result.short_candidate is False
+    assert result.short_candidate is True
+    assert result.reason == "duration_eligible_but_owner_source_geometry_missing"
 
 
 def test_post_cutoff_published_at_is_a_conservative_lower_bound_for_short_eligibility() -> None:
@@ -113,9 +114,7 @@ def test_post_cutoff_published_at_is_a_conservative_lower_bound_for_short_eligib
 
 
 def test_duration_eligible_missing_geometry_is_kept_as_candidate() -> None:
-    result = classify_youtube_surface(
-        _video_without_geometry(published_at="2026-08-20T10:00:00Z")
-    )
+    result = classify_youtube_surface(_video_without_geometry(published_at="2026-08-20T10:00:00Z"))
 
     assert result.source.geometry == "unknown"
     assert result.status == "unknown"
