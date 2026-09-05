@@ -100,3 +100,7 @@ plugins = ["pydantic.mypy"]
 [[tool.mypy.overrides]]
 module = ["alembic.*"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["video_channel_manager.telegram_multichannel_cli"]
+disable_error_code = ["redundant-cast"]
