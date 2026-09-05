@@ -5,7 +5,7 @@ import json
 import os
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TypeVar, cast
+from typing import TypeVar
 
 from pydantic import BaseModel, ValidationError
 
@@ -198,7 +198,7 @@ def _safe_error(exc: Exception) -> str:
 def _provider_effect(exc: TelegramApiError) -> GenericSendProviderEffect:
     effect = exc.provider_effect
     if effect in {"not_dispatched", "confirmed_absent", "may_exist", "verified"}:
-        return cast(GenericSendProviderEffect, effect)
+        return effect
     return "may_exist"
 
 
