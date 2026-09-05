@@ -211,9 +211,7 @@ def build_wave(
         "provider_write_performed": False,
         "release_authorized": False,
         "sources": sources,
-        "artifacts": {
-            filename: _artifact_manifest_entry(data) for filename, data in artifact_bytes.items()
-        },
+        "artifacts": {filename: _artifact_manifest_entry(data) for filename, data in artifact_bytes.items()},
         "counts": {
             "inventory_item_count": backlog.counts.inventory_item_count,
             "accepted": backlog.counts.accepted,
