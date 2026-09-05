@@ -99,6 +99,7 @@ jobs:
           assert baseline["provider_writes_authorized"] is False
           assert len(baseline["items"]) == 25
           workflow = Path(".github/workflows/lordchrist-shorts-quality.yml").read_text(encoding="utf-8")
-          assert ("${{" + " secrets.") not in workflow
+          forbidden_secret_expression = "$" + "{" + "{" + " secrets."
+          assert forbidden_secret_expression not in workflow
           print("provider writes performed by quality workflow: 0")
           PY
