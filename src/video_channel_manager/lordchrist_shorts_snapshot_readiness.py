@@ -112,8 +112,10 @@ def summarize_snapshot_readiness(
 
     duration_le_180_missing_geometry_count = duration_le_180_count - duration_le_180_known_geometry_count
     known_duration_only_snapshot = str(package.snapshot_id) == KNOWN_DURATION_ONLY_SNAPSHOT_ID
+    complete_owner_file_details = owner_file_details_count == len(package.videos)
     ready = (
         bool(package.videos)
+        and complete_owner_file_details
         and unresolved_non_candidate_count == 0
         and fresh_enough
         and not known_duration_only_snapshot
@@ -163,6 +165,7 @@ def require_snapshot_ready(
             "AuditPackage is not ready for exact LordChrist Shorts surface inventory: "
             f"fresh_enough={summary['fresh_enough']}, "
             f"snapshot_age_seconds={summary['snapshot_age_seconds']}, "
+            f"owner_file_details_count={summary['owner_file_details_count']}/{summary['total_videos']}, "
             f"unresolved_non_candidate_count={summary['unresolved_non_candidate_count']}, "
             f"duration_le_180_missing_geometry_count={summary['duration_le_180_missing_geometry_count']}. "
             "Run a fresh read-only video-manager youtube scan so current owner fileDetails/videoStreams evidence is present."
