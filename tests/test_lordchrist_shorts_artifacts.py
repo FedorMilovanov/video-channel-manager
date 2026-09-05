@@ -38,6 +38,7 @@ def _video(
     width: int,
     height: int,
     creation_time: str,
+    published_at: datetime,
     with_file_details: bool = True,
 ) -> VideoRecord:
     metadata: dict[str, object] = {}
@@ -61,7 +62,7 @@ def _video(
         ),
         title=video_id,
         duration_seconds=duration_seconds,
-        published_at=datetime(2026, 1, 10, tzinfo=UTC),
+        published_at=published_at,
         revision=f"sha256:{video_id}",
         metadata=metadata,
     )
@@ -91,6 +92,7 @@ def _audit(
                 width=1080,
                 height=1920,
                 creation_time="2026-01-02T00:00:00Z",
+                published_at=datetime(2026, 1, 10, tzinfo=UTC),
                 with_file_details=complete_file_details,
             ),
             _video(
@@ -99,6 +101,7 @@ def _audit(
                 width=1080,
                 height=1920,
                 creation_time="2024-01-02T00:00:00Z",
+                published_at=datetime(2024, 1, 10, tzinfo=UTC),
             ),
             _video(
                 "LmNoPq13579",
@@ -106,6 +109,7 @@ def _audit(
                 width=1920,
                 height=1080,
                 creation_time="2026-01-02T00:00:00Z",
+                published_at=datetime(2026, 1, 11, tzinfo=UTC),
             ),
         ],
     )
@@ -131,9 +135,9 @@ def _baseline() -> HistoricalDurationBaseline:
         proven_shorts=False,
         items=(
             HistoricalDurationBaselineItem(
-                youtube_video_id="QwErTy67890",
+                youtube_video_id="AbCdEf12345",
                 published_on=date(2026, 1, 10),
-                duration_seconds=45,
+                duration_seconds=60,
             ),
         ),
     )
