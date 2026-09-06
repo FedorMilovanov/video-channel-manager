@@ -29,7 +29,7 @@ REDIRECT_CODES = {301, 302, 303, 307, 308}
 class ProviderWorkflowContract(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    event: str
+    events: tuple[str, ...]
     persist_step: str
     send_step: str
     archive_step: str
@@ -38,14 +38,14 @@ class ProviderWorkflowContract(BaseModel):
 
 PROVIDER_WORKFLOWS: dict[str, ProviderWorkflowContract] = {
     ".github/workflows/svodka-canary.yml": ProviderWorkflowContract(
-        event="workflow_dispatch",
+        events=("workflow_dispatch",),
         persist_step="Persist intent before Telegram mutation",
         send_step="Send exactly one canary payload",
         archive_step="Archive exact provider outcome before state mutation",
         final_state_step="Apply and persist exact provider outcome",
     ),
     ".github/workflows/svodka-scheduled-publisher.yml": ProviderWorkflowContract(
-        event="schedule",
+        events=("schedule", "workflow_dispatch"),
         persist_step="Persist scheduled intent before Telegram mutation",
         send_step="Send exactly one scheduled payload",
         archive_step="Archive exact provider outcome before state mutation",
@@ -211,7 +211,8 @@ def prove_provider_outcome_artifact(
     contract = PROVIDER_WORKFLOWS.get(workflow_path)
     if contract is None:
         raise ValueError(f"source run is not a recognized Svodka provider workflow: {workflow_path}")
-    if run_payload.get("event") != contract.event:
+    source_event = str(run_payload.get("event") or "")
+    if source_event not in contract.events:
         raise ValueError("source provider run event does not match workflow contract")
 
     if dispatch.workflow_run_id != source_run_id:
@@ -277,7 +278,7 @@ def prove_provider_outcome_artifact(
         source_run_id=source_run_id,
         source_run_attempt=source_run_attempt,
         workflow_path=workflow_path,
-        event=contract.event,
+        event=source_event,
         run_status="completed",
         run_conclusion=str(run_payload.get("conclusion")) if run_payload.get("conclusion") is not None else None,
         head_sha=head_sha,
