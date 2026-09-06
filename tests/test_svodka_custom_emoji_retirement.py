@@ -26,7 +26,8 @@ def test_custom_emoji_canary_is_retired_and_not_executable() -> None:
 
     registry = _load(REGISTRY)
     retired = {
-        item["id"]: item for item in registry["retired_families"]  # type: ignore[index]
+        item["id"]: item
+        for item in registry["retired_families"]  # type: ignore[index]
     }
     item = retired["svodka-custom-emoji-capability-canary-v1"]
 
