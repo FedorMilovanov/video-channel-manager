@@ -11,6 +11,7 @@ from video_channel_manager.telegram_historical_editorial import (
     HistoricalEditorialQueueV1,
     HistoricalSourceRegistry,
     TheologyProfile,
+    load_historical_editorial_queue,
 )
 from video_channel_manager.telegram_historical_workflow import (
     HistoricalCycleScaffoldV1,
@@ -259,7 +260,11 @@ def _write_bundle(tmp_path: Path) -> Path:
     return queue_path
 
 
-def _registry_scaffold(registry: HistoricalSourceRegistry, theology: TheologyProfile, cycle_id: str) -> HistoricalCycleScaffoldV1:
+def _registry_scaffold(
+    registry: HistoricalSourceRegistry,
+    theology: TheologyProfile,
+    cycle_id: str,
+) -> HistoricalCycleScaffoldV1:
     return build_cycle_scaffold(
         cycle_id=cycle_id,
         start_on=date(2026, 10, 1),
@@ -292,8 +297,29 @@ def test_scaffold_is_provider_inert_and_digest_stable() -> None:
     assert scaffold.provider_writes_authorized is False
     assert scaffold.local_time == "19:17"
     assert scaffold.source_binding_kind == "registry"
-    assert scaffold.source_binding_sha256 == scaffold.source_registry_sha256
+    assert scaffold.source_binding_sha256 == registry.digest
+    assert scaffold.source_registry_sha256 == registry.digest
     assert scaffold.digest == HistoricalCycleScaffoldV1.model_validate(scaffold.model_dump()).digest
+
+
+def test_scaffold_preserves_distinct_catalog_and_registry_digests() -> None:
+    registry = HistoricalSourceRegistry.model_validate(_registry_payload())
+    theology = TheologyProfile.model_validate(_theology_payload())
+    catalog_sha = "sha256:" + "1" * 64
+    scaffold = build_cycle_scaffold(
+        cycle_id="history-cycle-2026-10-catalog",
+        start_on=date(2026, 10, 1),
+        source_binding_kind="catalog",
+        source_binding_path="content/telegram/lordchrist/historical-editorial/v1/source-catalog.json",
+        source_binding_sha256=catalog_sha,
+        source_registry_sha256=registry.digest,
+        theology_profile_path="content/telegram/lordchrist/historical-editorial/v1/theology-profile.json",
+        theology_profile_sha256=theology.digest,
+    )
+
+    assert scaffold.source_binding_sha256 == catalog_sha
+    assert scaffold.source_registry_sha256 == registry.digest
+    assert scaffold.source_binding_sha256 != scaffold.source_registry_sha256
 
 
 def test_scaffold_writer_refuses_overwrite(tmp_path: Path) -> None:
@@ -304,6 +330,14 @@ def test_scaffold_writer_refuses_overwrite(tmp_path: Path) -> None:
     write_scaffold(target, scaffold)
     with pytest.raises(FileExistsError, match="refusing to overwrite"):
         write_scaffold(target, scaffold)
+
+
+def test_direct_queue_loader_uses_repo_root_and_verified_registry_binding(tmp_path: Path) -> None:
+    queue_path = _write_bundle(tmp_path)
+    queue = load_historical_editorial_queue(queue_path, repo_root=tmp_path)
+
+    assert queue.source_binding_kind == "registry"
+    assert queue.live_eligible is False
 
 
 def test_preflight_returns_machine_readable_proof_and_never_live_authorizes(tmp_path: Path) -> None:
@@ -321,12 +355,14 @@ def test_preflight_returns_machine_readable_proof_and_never_live_authorizes(tmp_
     assert report.backfill_policy == "none"
 
 
-def test_queue_rejects_registry_binding_digest_split(tmp_path: Path) -> None:
+def test_preflight_rejects_semantic_registry_digest_drift(tmp_path: Path) -> None:
     queue_path = _write_bundle(tmp_path)
     raw = json.loads(queue_path.read_text(encoding="utf-8"))
     raw["source_registry_sha256"] = "sha256:" + "0" * 64
-    with pytest.raises(ValidationError, match="direct registry binding digest"):
-        HistoricalEditorialQueueV1.model_validate(raw)
+    queue_path.write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="source registry digest mismatch"):
+        preflight_historical_bundle(queue_path, repo_root=tmp_path)
 
 
 def test_preflight_rejects_registry_artifact_drift(tmp_path: Path) -> None:
@@ -379,15 +415,6 @@ def test_scaffold_rejects_noncanonical_cadence() -> None:
     raw = _registry_scaffold(registry, theology, "history-cycle-2026-10-c").model_dump(mode="json")
     raw["iso_weekdays"] = [1, 4, 6]
     with pytest.raises(ValidationError, match="Monday/Wednesday/Saturday"):
-        HistoricalCycleScaffoldV1.model_validate(raw)
-
-
-def test_scaffold_rejects_registry_binding_digest_split() -> None:
-    registry = HistoricalSourceRegistry.model_validate(_registry_payload())
-    theology = TheologyProfile.model_validate(_theology_payload())
-    raw = _registry_scaffold(registry, theology, "history-cycle-2026-10-d").model_dump(mode="json")
-    raw["source_binding_sha256"] = "sha256:" + "0" * 64
-    with pytest.raises(ValidationError, match="direct registry binding digest"):
         HistoricalCycleScaffoldV1.model_validate(raw)
 
 
