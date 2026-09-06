@@ -71,24 +71,22 @@ Exact compare from each branch tip to the audit baseline proves that the followi
 
 | Branch | Exact tip | Compare result | Verdict |
 | --- | --- | --- | --- |
-| `audit/mypy2-ci-fix` | `03c0b46ea1087eb72831d761655253f2471ba040` | diverged; current `main` is ahead by 17, but the branch retains 5 commits outside `main` | KEEP pending supersession/evidence proof |
+| `audit/mypy2-ci-fix` | `03c0b46ea1087eb72831d761655253f2471ba040` | diverged; current `main` is ahead by 17, branch retains 5 commits outside `main` | KEEP pending supersession/evidence proof |
 | `agent/pester-psgallery-bootstrap` | `2cd5995a553a95a4117361a5746de453ae444d90` | diverged; current `main` is ahead by 12, branch retains 1 commit outside `main` | KEEP pending supersession/evidence proof |
 | `agent/milovi-post486-ci-repair` | `000efd66a3f160bb63f8badf60753b59e722e6c2` | diverged; current `main` is ahead by 60, branch retains 6 commits outside `main` | KEEP pending supersession/evidence proof |
-| `work/lordchrist-rich-media-binding` | `1017df9da690855579323df2df154860e3b86d0b` | diverged; current `main` is ahead by 95, branch retains 8 commits outside `main` | KEEP; likely historical rich-track evidence until inspected explicitly |
+| `work/lordchrist-rich-media-binding` | `1017df9da690855579323df2df154860e3b86d0b` | diverged; current `main` is ahead by 95, branch retains 8 commits outside `main` | KEEP; historical rich-track evidence until inspected explicitly |
+| `work/lordchrist-rich-media-binding-v2` | `4aa172ed12514a12ee7a5d7d72002e3c41022e49` | diverged; current `main` is ahead by 91, branch retains 5 commits outside `main` | KEEP; historical rich-track evidence until inspected explicitly |
+| `work/svodka-reconciliation-diagnostics` | `ccf6549ad9950d3981fb8b2521c6286818a5b212` | diverged; current `main` is ahead by 95, branch retains 4 commits outside `main` | KEEP pending supersession/evidence proof |
+| `work/svodka-retire-completed-rich-oneoffs` | `31d5091f18bc2eea7a46423d9530cb81e4380c32` | diverged; current `main` is ahead by 68, branch retains 3 commits outside `main` | KEEP pending supersession/evidence proof |
+| `work/svodka-retire-completed-rich-oneoffs-v2` | `263d80f03bf922929578e9fc09141bbacf4a55cf` | diverged; current `main` is ahead by 67, branch retains 15 commits outside `main` | KEEP pending supersession/evidence proof |
+| `work/svodka-rich-successor-activation` | `f45dfc2aafdb38aed8d1db74ecf0889383d95f11` | diverged; current `main` is ahead by 120, branch retains 6 commits outside `main` | KEEP pending supersession/evidence proof |
 
 A branch may be functionally superseded while still containing commits that are not ancestors of `main`. Such a ref must not be deleted until those commits are classified as intentionally abandoned/superseded or preserved elsewhere. Equivalent functionality in `main` is not by itself enough to pass the evidence-retention gate.
 
-## Remaining outlier tips — KEEP pending exact classification
+This first control pass therefore makes a real distinction between two classes that looked similar in a name-only branch list:
 
-The branch listing also contains additional refs outside the four large absorbed groups that still need exact compare + PR/evidence inspection, including:
-
-- `work/lordchrist-rich-media-binding-v2` → `4aa172ed12514a12ee7a5d7d72002e3c41022e49`;
-- `work/svodka-reconciliation-diagnostics` → `ccf6549ad9950d3981fb8b2521c6286818a5b212`;
-- `work/svodka-retire-completed-rich-oneoffs` → `31d5091f18bc2eea7a46423d9530cb81e4380c32`;
-- `work/svodka-retire-completed-rich-oneoffs-v2` → `263d80f03bf922929578e9fc09141bbacf4a55cf`;
-- `work/svodka-rich-successor-activation` → `f45dfc2aafdb38aed8d1db74ecf0889383d95f11`.
-
-These remain **KEEP pending exact compare + PR/evidence inspection**. No deletion verdict is inferred from age or prefix.
+- **absorbed refs** — no unique commits, eligible for the evidence/reference deletion check;
+- **divergent refs** — retain unique Git history and remain KEEP until that history receives an explicit disposition.
 
 ## Deletion execution boundary
 
@@ -100,7 +98,7 @@ Therefore this pass records exact deletion candidates and retention rules but do
 
 Before #531 may close:
 
-1. finish exact compare + evidence/PR role classification for every remaining outlier tip;
+1. finish evidence/PR/runbook role classification for absorbed branch names and explicit disposition of all divergent unique histories;
 2. reread every intended DELETE ref immediately before deletion;
 3. confirm no open PR head or active-agent scope uses it;
 4. delete only the exact approved refs using a real ref-deletion operation;
