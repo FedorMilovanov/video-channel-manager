@@ -24,6 +24,17 @@ Only `main` is a supported repository code/runtime execution baseline.
 
 Ephemeral `work/`, `agent/` and `research/` refs are non-authoritative after their scope closes. Preserve unique useful commits before cleanup; never rewrite a durable state ref as branch hygiene.
 
+### Late 2026-09-06 hardening checkpoint
+
+The exact repository checkpoint before this documentation sync is `main` `adf87c56f0836c931dc524cc41f3e0f64adaa209` (PR #544). Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
+
+The same-day hardening sequence materially changed the safety interpretation:
+
+- PR #532 added Milovi archive-before-terminal-state provider outcome capture plus exact provider-free recovery under the permanent writer concurrency contract;
+- PRs #536, #538 and #540 retired the ambiguous Svodka custom-emoji canary, the consumed native-rich canary and the consumed ledger bootstrap from executable `main`, preserving exact historical evidence and no-replay regressions;
+- PR #542 initially closed the Milovi exact-authorization gap, but PR #544 corrected that implementation: live Milovi release/execution gates now bind exact publication identity through structured `reviewed_publication_id` / `authorized_publication_id`, rather than substring-parsing free-text human provenance; legacy unstructured evidence remains readable but does not satisfy a fresh live authorization gate;
+- PR #533 added `milovi-feed-20260906-001` as a provider-inert 20:00 Europe/Moscow candidate. Its release and execution flags remained false, no durable ledger/index registration exists for that identity on `state/milovi-cake-telegram`, and its 120-minute freshness window ended at 22:00 Europe/Moscow. It is now stale evidence: do not initialize, publish, retime or catch it up. A future Milovi post requires a new publication identity and a new exact review/authorization cycle.
+
 ## YouTube / Legendary Poet / «Чёрный человек»
 
 The historical authorized rollout is complete. Public video `x-puy27S2qs` remains the collision guard for that exact project/channel/media identity. Processing, public visibility, custom thumbnail, playlist membership and the top-level comment were verified during the completed rollout.
@@ -70,7 +81,11 @@ Historical messages `26` and `27` and expired v2/v3 mutation identities remain n
 
 The original 14-entry `svodka-pilot-2026-08` ledger on `state/svodka-telegram` is now fully terminalized: all 14 historical entries are `skipped / provider_effect=impossible`, with no intent, workflow run, message id or provider effect. The provider-free stale-window cleanup debt is closed. These terminal records are historical no-replay evidence, not a publication backlog or execution authority.
 
-The completed message-28 reconciliation workflow and verified v4 successor workflow have been retired from executable `main`. Historical release/runtime/evidence and legacy provider-free/recovery contracts remain where required for reproducibility. No new Svodka Telegram mutation is authorized by this state.
+The completed message-28 reconciliation workflow and verified v4 successor workflow have been retired from executable `main`. Historical release/runtime/evidence and legacy provider-free/recovery contracts remain where required for reproducibility.
+
+The later Svodka executable-surface cleanup is also complete for three one-off/consumed paths: PR #536 preserved the exact custom-emoji canary outcome as `unknown / may_exist / message_id=null` and physically retired its provider-capable workflow; PR #538 retired the already-consumed native-rich canary after durable terminal success; PR #540 retired the consumed ledger bootstrap after the durable ledger already existed. Their retirement SSOT/regressions preserve evidence and forbid replay. None of those retirements created provider authority or changed `state/svodka-telegram`.
+
+No new Svodka Telegram mutation is authorized by this state.
 
 ## VK / Milovi Cake / Issue #323
 
@@ -94,9 +109,9 @@ Historical bootstrap, one-off canary, live-canary-v2, ledger-init, per-publicati
 
 Each new feed publication uses one immutable `milovi-feed-YYYYMMDD-NNN` bundle: exact runtime release, exact media binding where applicable, exact release ledger on the durable state branch, a channel-wide feed index, and a separate execution-authority object. Release/content authorization and provider execution authorization are separate gates. State initialization is explicit and provider-free after exact release authorization; missing state is never auto-created during publish.
 
-Before one provider attempt, the permanent writer requires exact current `main`, exact quality, exact initialized state, channel-wide duplicate-guard agreement, strict freshness, exact target preflight and fresh exact human execution authority. It persists durable intent before `send-once`, performs zero blind mutation retries, and persists verified or blocking outcome before completion.
+Before one provider attempt, the permanent writer requires exact current `main`, exact quality, exact initialized state, channel-wide duplicate-guard agreement, strict freshness, exact target preflight and fresh exact human execution authority. Active live release/execution provenance must bind the exact publication through structured publication-identity fields; free-text human provenance is descriptive evidence, not the identity gate. The writer persists durable intent before `send-once`, performs zero blind mutation retries, archives the exact provider outcome before terminal state mutation, and supports exact provider-free recovery of that archived outcome under the same concurrency contract if the runner fails in the post-provider/pre-state window.
 
-`milovi-feed-20260819-001`, `milovi-feed-20260820-001`, `milovi-feed-20260820-002` and `milovi-feed-20260821-001` are all historical identities now. The 2026-08-21 release/execution authorization and its `10:30–12:30 Europe/Moscow` freshness window are expired evidence, not current authority; do not initialize, publish, retime, catch up or reinterpret that identity as a successor. Issue #353 has no standing Telegram provider authority. Any future publication requires a fresh identity plus current source/release review, provider-free state initialization and a separate fresh human execution authorization for that exact operation.
+`milovi-feed-20260819-001`, `milovi-feed-20260820-001`, `milovi-feed-20260820-002`, `milovi-feed-20260821-001` and `milovi-feed-20260906-001` are all historical identities now. The 2026-08-21 release/execution authorization and its `10:30–12:30 Europe/Moscow` freshness window are expired evidence, not current authority. The September identity was merged provider-inert for the 20:00 slot, remained absent from the durable feed index/ledger, and expired at 22:00 Europe/Moscow without release or execution authorization. Do not initialize, publish, retime, catch up or reinterpret any of these identities as a successor. Issue #353 has no standing Telegram provider authority. Any future publication requires a fresh identity plus current source/release review, provider-free state initialization and a separate fresh human execution authorization for that exact operation.
 
 The native-video lane is artifact-complete at `16 / 16` accepted Telegram-ready MP4/H.264 outputs. The exact provider-free build is durably preserved on content-addressed review branch `agent/milovi-video-accepted-73c578eff825` with evidence digest `sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae`; its accepted evidence records `provider_access_performed=false` and `provider_write_performed=false`. This artifact completion does not authorize Telegram publication, does not initialize feed state, and does not reopen or modify the photo-feed architecture.
 
@@ -128,10 +143,10 @@ Repository policy files and green checks do not create branch protection by them
 
 1. Do not reopen completed Svodka, LordChrist rich canary or Milovi Clips work because an older issue body or checkpoint says it was incomplete.
 2. Continue LordChrist Shorts Issue #503 only as `official_api_read` + `local_only` artifact work: obtain one fresh owner AuditPackage from the existing `fedor-milovanov` OAuth runtime and run the canonical atomic `lordchrist_shorts_artifacts build-wave`; bind exact owner Takeout/local media and keep every release preview provider-inert. Do not treat the historical 2026-07-29 package as current completion evidence.
-3. Do not publish, initialize, retime or catch up any August Milovi feed identity. Issue #353 remains a growth/acquisition/Dzen and future-publication operations tracker with **no standing provider authority**. Any future Telegram publication requires a fresh publication-specific source check where needed, fresh release authorization, provider-free state initialization and a separate fresh human execution authorization.
+3. Do not publish, initialize, retime or catch up any historical Milovi feed identity, including the expired provider-inert `milovi-feed-20260906-001`. Issue #353 remains a growth/acquisition/Dzen and future-publication operations tracker with **no standing provider authority**. Any future Telegram publication requires a fresh publication identity, publication-specific source check where needed, fresh release authorization, provider-free state initialization and a separate fresh human execution authorization.
 4. Treat the Milovi native-video artifact lane as complete at `16 / 16`; preserve its content-addressed accepted branch/evidence as immutable artifact proof and do not infer any Telegram execution authority from it.
 5. Treat Instagram #492 as implementation-complete and provider-inert; do not infer live publication from closed content-system work.
-6. Continue branch hygiene only with exact unique-commit/PR-state proof; preserve all durable `state/*` refs and unique evidence refs.
+6. Continue branch hygiene only with exact unique-commit/PR-state/evidence-reference proof; preserve all durable `state/*` refs, active-agent refs and unique evidence refs. Do not replace deletion with force-moving obsolete refs to `main`.
 7. Treat absent GitHub `main` protection as an external repository-admin governance gap; do not simulate enforcement with workflow YAML or documentation.
 8. For any new provider-visible work, start with fresh current `main`, fresh durable state, exact target identity and a new explicit owning scope.
 
