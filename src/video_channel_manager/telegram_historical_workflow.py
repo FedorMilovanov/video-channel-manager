@@ -72,8 +72,6 @@ class HistoricalCycleScaffoldV1(BaseModel):
         for slot in self.slots:
             if slot.release_offset_days != (slot.scheduled_date - first).days:
                 raise ValueError("historical scaffold offsets must match scheduled dates")
-        if self.source_binding_kind == "registry" and self.source_binding_sha256 != self.source_registry_sha256:
-            raise ValueError("direct registry binding digest must equal materialized registry digest")
         return self
 
     @property
