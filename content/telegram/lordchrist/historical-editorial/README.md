@@ -57,6 +57,19 @@ For the first cycle:
 
 Those numbers must remain separate. Reviewed URLs measure research breadth; catalog size measures evidence that survived editorial acceptance.
 
+### Source binding identity
+
+A queue or scaffold records both the artifact that is physically bound and the semantic registry produced from it:
+
+- `source_binding_kind` is `registry` for a direct registry JSON or `catalog` for a sharded catalog manifest;
+- `source_binding_path` points to that exact bound artifact;
+- `source_binding_sha256` seals the canonical persisted JSON at that path;
+- `source_registry_sha256` seals the materialized `HistoricalSourceRegistry` used for claim validation.
+
+For a direct `registry` binding, the artifact and semantic registry digests must be identical. For a `catalog` binding they are deliberately separate: the catalog digest identifies the manifest and shard graph, while the registry digest identifies the fully materialized evidence set.
+
+Do not point a `source_binding_path` at a catalog and label it as a registry. Direct-registry preflight accepts only `source_binding_kind=registry`; catalog-bound cycles must go through `telegram_historical_bundle` so shard seals and the catalog seal are verified before the registry is materialized.
+
 ### Independence groups
 
 `independence_group` is an evidence-control field, not a domain-name counter.
@@ -148,6 +161,7 @@ Before opening a PR for a cycle:
 - [ ] controversy sides are represented honestly and limitations are explicit;
 - [ ] martyrdom testimony proximity is explicit;
 - [ ] theological description and editorial evaluation are separate;
+- [ ] source binding kind/path/artifact digest and semantic registry digest are consistent;
 - [ ] image rights/provenance are reviewed;
 - [ ] no image falsely claims transport readiness;
 - [ ] `provider_writes_authorized=false`;
