@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 from typing import Literal, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -20,6 +20,7 @@ class PublicationSlotConfig(BaseModel):
     cron: str = Field(min_length=5, max_length=64)
     time: str = Field(pattern=r"^(?:[01][0-9]|2[0-3]):[0-5][0-9]$")
     iso_weekdays: tuple[int, ...]
+    max_lateness_minutes: int = Field(ge=1, le=180)
 
     @field_validator("iso_weekdays")
     @classmethod
@@ -73,6 +74,8 @@ class ProductionSchedule(BaseModel):
             raise ValueError("morning slot cron differs from the release contract")
         if self.slots["evening"].cron != "17 21 * * 2,5,0":
             raise ValueError("evening slot cron differs from the release contract")
+        if any(slot.max_lateness_minutes != 120 for slot in self.slots.values()):
+            raise ValueError("all production slots must use the two-hour freshness window")
         return self
 
 
@@ -121,7 +124,7 @@ def decide_scheduled_slot(
     event_schedule: str,
     now: datetime | None = None,
 ) -> ScheduleDecision:
-    """Map one GitHub schedule event to one logical slot without catch-up/backfill."""
+    """Map one GitHub schedule event to one fresh logical slot without catch-up/backfill."""
 
     current = now or datetime.now(tz=UTC)
     if current.tzinfo is None:
@@ -144,4 +147,11 @@ def decide_scheduled_slot(
     slot = schedule.slots[slot_name]
     if local.isoweekday() not in slot.iso_weekdays:
         return ScheduleDecision(False, None, f"{slot_name} slot is not eligible on ISO weekday {local.isoweekday()}")
+
+    scheduled_local = datetime.combine(local.date(), time.fromisoformat(slot.time), tzinfo=zone)
+    if local < scheduled_local:
+        return ScheduleDecision(False, None, f"{slot_name} slot is not due yet")
+    deadline = scheduled_local + timedelta(minutes=slot.max_lateness_minutes)
+    if local >= deadline:
+        return ScheduleDecision(False, None, f"{slot_name} slot is too stale for safe publication")
     return ScheduleDecision(True, slot_name, f"{slot_name} slot active")
