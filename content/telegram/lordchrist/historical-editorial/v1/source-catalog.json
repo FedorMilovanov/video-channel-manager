@@ -1,0 +1,19 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-source-catalog",
+  "schema_version": 1,
+  "catalog_id": "history-source-catalog-lordchrist-v1",
+  "checked_on": "2026-09-07",
+  "total_sources": 52,
+  "registry_sha256": "sha256:dd4552fce9a0fd83120fbf6837089c93ac84d0e5b877ef29257bdf207dbb9566",
+  "shards": [
+    {"shard_id":"history-sources-calvin","path":"content/telegram/lordchrist/historical-editorial/v1/sources/calvin.json","sha256":"sha256:bbd419389b1ebc862baf8862ea251ac1ed7c6a439674d61ccfc7402e825e0023","source_count":6},
+    {"shard_id":"history-sources-spurgeon-core","path":"content/telegram/lordchrist/historical-editorial/v1/sources/spurgeon-core.json","sha256":"sha256:2daecba7d11df236d206457f7e202a6a4bce8c0c8de5ea3ffc0e46b715b9b125","source_count":9},
+    {"shard_id":"history-sources-macarthur","path":"content/telegram/lordchrist/historical-editorial/v1/sources/macarthur.json","sha256":"sha256:6a79d0210197c2f4549ee3182ffd1f69c0b7f28e5e7f891ae85ae60a238c2593","source_count":9},
+    {"shard_id":"history-sources-spurgeon-history","path":"content/telegram/lordchrist/historical-editorial/v1/sources/spurgeon-history.json","sha256":"sha256:9ff80d2d4883aeed41b732948f10ef7bb4996cb2257a4dce31af77bde338ff06","source_count":4},
+    {"shard_id":"history-sources-bunyan","path":"content/telegram/lordchrist/historical-editorial/v1/sources/bunyan.json","sha256":"sha256:563f3b0ac180b07e11085c68966d650509aa7aea4eaf0d730aaf675d844f04bb","source_count":5},
+    {"shard_id":"history-sources-judson","path":"content/telegram/lordchrist/historical-editorial/v1/sources/judson.json","sha256":"sha256:a174b877cd65f5c08de2f95ef750830e2235d7864c3d98057189343de9c537c2","source_count":4},
+    {"shard_id":"history-sources-baptist-mission","path":"content/telegram/lordchrist/historical-editorial/v1/sources/baptist-mission.json","sha256":"sha256:0882daa5d36a5255904727d05a63cb910fbeee99bee4797dc333d0c207ff42ff","source_count":8},
+    {"shard_id":"history-sources-tyndale","path":"content/telegram/lordchrist/historical-editorial/v1/sources/tyndale.json","sha256":"sha256:9f4697446b29c52132f2ca276adff1f2e997c009881f35b069974d2f026f4fee","source_count":3},
+    {"shard_id":"history-sources-stam-sattler","path":"content/telegram/lordchrist/historical-editorial/v1/sources/stam-sattler.json","sha256":"sha256:053238d27140428dbb05d4b96599a0ae68dc7e213cc8a887fd3fb1e9a647ec36","source_count":4}
+  ]
+}
