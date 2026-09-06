@@ -43,7 +43,8 @@ def test_lordchrist_scheduler_queues_pending_runs_without_cancelling_active_run(
 def test_lordchrist_scheduler_preserves_two_moscow_windows_and_pins_runner() -> None:
     text = workflow_text()
     assert 'cron: "17 9 * * *"' in text
-    assert 'cron: "17 21 * * *"' in text
+    assert 'cron: "17 21 * * 0,2,5"' in text
+    assert 'cron: "17 21 * * *"' not in text
     assert text.count("timezone: Europe/Moscow") >= 2
     assert "runs-on: ubuntu-24.04" in text
     assert "runs-on: ubuntu-latest" not in text
