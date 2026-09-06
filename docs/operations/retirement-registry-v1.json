@@ -1,7 +1,7 @@
 {
   "schema_name": "video-manager.retirement-registry",
   "schema_version": 1,
-  "updated_at": "2026-09-06T16:13:46Z",
+  "updated_at": "2026-09-06T16:49:24Z",
   "repository": "FedorMilovanov/video-channel-manager",
   "execution_authority": false,
   "provider_writes_authorized": false,
@@ -183,6 +183,18 @@
         "github-actions:run/31441659164/attempt/1"
       ],
       "reason": "The fixed one-shot native Rich Message canary completed successfully and durable state is terminal verified/provider_effect=verified. Its workflow explicitly forbids every second run, so the consumed provider-capable entrypoint has no legitimate future execution and is retired rather than retained as dormant mutation surface."
+    },
+    {
+      "id": "svodka-publication-ledger-bootstrap-v1",
+      "kind": "repository_state_bootstrap",
+      "issues": [539],
+      "status": "retired_non_executable",
+      "execution_prohibited": true,
+      "replacement": null,
+      "historical_evidence": [
+        "state/svodka-telegram@b7c060099036c2faf061209178c03d5b46c2edcf:content/telegram/svodka/publication-ledger.json"
+      ],
+      "reason": "The approved Svodka release ledger already exists durably and all 14 original entries are terminal skipped/provider_effect=impossible. The one-shot initialization role is consumed, so retaining a manual contents:write bootstrap would preserve an unnecessary state-writer surface with no legitimate future initialization path."
     }
   ],
   "history_archives": [
