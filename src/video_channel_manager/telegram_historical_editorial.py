@@ -262,7 +262,9 @@ class HistoricalPost(BaseModel):
             if self.opposing_primary_bound and "side_b" not in sides:
                 raise ValueError("bound opposing primary evidence must be represented as side_b")
             if not self.opposing_primary_bound and self.no_opposing_primary_note is None:
-                raise ValueError("controversy without bound opposing primary evidence requires an explicit limitation note")
+                raise ValueError(
+                    "controversy without bound opposing primary evidence requires an explicit limitation note"
+                )
         elif self.opposing_primary_bound or self.no_opposing_primary_note is not None:
             raise ValueError("opposing-primary fields are reserved for controversy posts")
         if self.topic_kind == "martyrdom" and not any(
@@ -388,9 +390,7 @@ def _validate_post_evidence(
         elif claim.voice != "editorial_evaluation":
             groups = {source.independence_group for source in bound}
             if len(groups) < 2:
-                raise ValueError(
-                    f"material historical claim {claim.claim_id} requires two independent evidence groups"
-                )
+                raise ValueError(f"material historical claim {claim.claim_id} requires two independent evidence groups")
             if not any(source.grade == "A" for source in bound):
                 raise ValueError(f"material historical claim {claim.claim_id} requires at least one grade A source")
         if claim.voice == "editorial_evaluation" and not post.theology_review.scripture_refs:
@@ -493,9 +493,7 @@ def build_historical_rich_document(
         RichMediaSlot(
             slot_id=image.asset_id,
             placement={
-                "after": "lead"
-                if index == 1
-                else post.sections[min(index - 2, len(post.sections) - 1)].section_id
+                "after": "lead" if index == 1 else post.sections[min(index - 2, len(post.sections) - 1)].section_id
             },
             depicts=image.depicts,
             purpose=image.purpose,
