@@ -92,7 +92,11 @@ def _theology_payload() -> dict[str, object]:
 
 
 def _claim(
-    claim_id: str, *, voice: str = "historical_fact", side: str = "none", proximity: str = "not_applicable"
+    claim_id: str,
+    *,
+    voice: str = "historical_fact",
+    side: str = "none",
+    proximity: str = "not_applicable",
 ) -> dict[str, object]:
     return {
         "claim_id": claim_id,
@@ -130,7 +134,10 @@ def _post(sequence: int) -> dict[str, object]:
         topic_kind = "controversy"
         claims[0] = _claim("claim-post-1-side-a", voice="participant_position", side="side_a")
         claims[1] = _claim("claim-post-1-synthesis", side="synthesis")
-        no_opposing_primary_note = "В этом цикле отдельный первичный документ противоположной стороны пока не связан; ограничение явно раскрыто."
+        no_opposing_primary_note = (
+            "В этом цикле отдельный первичный документ противоположной стороны пока не связан; "
+            "ограничение явно раскрыто."
+        )
     if sequence == 8:
         topic_kind = "martyrdom"
         claims[0] = _claim("claim-post-8-contemporary", proximity="contemporary")
@@ -140,29 +147,45 @@ def _post(sequence: int) -> dict[str, object]:
         "publication_id": f"lordchrist-history-fixture-post-{sequence}",
         "topic_kind": topic_kind,
         "title": f"Исторический материал номер {sequence}",
-        "lead": "Этот проверочный материал моделирует содержательную историческую публикацию, в которой факты, границы уверенности и богословская оценка разведены явно.",
+        "lead": (
+            "Этот проверочный материал моделирует содержательную историческую публикацию, в которой факты, "
+            "границы уверенности и богословская оценка разведены явно."
+        ),
         "sections": [
             {
                 "section_id": "context",
                 "heading": "Исторический контекст",
                 "paragraphs": [
-                    "Содержательный абзац исторического контекста с ясной редакционной структурой и без внутреннего машинного языка."
+                    "Содержательный абзац исторического контекста с ясной редакционной структурой и без "
+                    "внутреннего машинного языка."
                 ],
             },
             {
                 "section_id": "meaning",
                 "heading": "Почему это важно",
                 "paragraphs": [
-                    "Второй содержательный абзац связывает исторический материал с читательским выводом, не подменяя документированные факты богословской оценкой."
+                    "Второй содержательный абзац связывает исторический материал с читательским выводом, не "
+                    "подменяя документированные факты богословской оценкой."
                 ],
             },
         ],
-        "evidence_boundary": "Источники подтверждают перечисленные факты; интерпретационные выводы редакции вынесены отдельно и не выдаются за содержание первичных документов.",
+        "evidence_boundary": (
+            "Источники подтверждают перечисленные факты; интерпретационные выводы редакции вынесены отдельно "
+            "и не выдаются за содержание первичных документов."
+        ),
         "claims": claims,
         "theology_review": {
-            "historical_description": "Историческое описание ограничено тем, что можно подтвердить источниками и академической реконструкцией.",
-            "participant_position": "Позиция исторического участника передана отдельно от редакционного согласия или несогласия.",
-            "editorial_evaluation": "Редакция оценивает материал через достаточность Писания и ясное различение исторического свидетельства и богословского вывода.",
+            "historical_description": (
+                "Историческое описание ограничено тем, что можно подтвердить источниками и академической "
+                "реконструкцией."
+            ),
+            "participant_position": (
+                "Позиция исторического участника передана отдельно от редакционного согласия или несогласия."
+            ),
+            "editorial_evaluation": (
+                "Редакция оценивает материал через достаточность Писания и ясное различение исторического "
+                "свидетельства и богословского вывода."
+            ),
             "scripture_refs": ["2 Тим 3:16–17", "Еф 2:8–9"],
             "alignment": "mixed",
             "description_separated_from_evaluation": True,
@@ -179,7 +202,8 @@ def _post(sequence: int) -> dict[str, object]:
 
 
 def _write_bundle(tmp_path: Path) -> Path:
-    registry = HistoricalSourceRegistry.model_validate(_registry_payload())
+    registry_payload = _registry_payload()
+    registry = HistoricalSourceRegistry.model_validate(registry_payload)
     theology = TheologyProfile.model_validate(_theology_payload())
 
     data_dir = tmp_path / "content" / "telegram" / "lordchrist" / "historical-editorial" / "v1"
@@ -188,7 +212,7 @@ def _write_bundle(tmp_path: Path) -> Path:
     theology_rel = "content/telegram/lordchrist/historical-editorial/v1/theology-profile.json"
     queue_rel = "content/telegram/lordchrist/historical-editorial/v1/cycle-fixture.json"
     (tmp_path / registry_rel).write_text(
-        json.dumps(_registry_payload(), ensure_ascii=False, indent=2), encoding="utf-8"
+        json.dumps(registry_payload, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     (tmp_path / theology_rel).write_text(
         json.dumps(_theology_payload(), ensure_ascii=False, indent=2), encoding="utf-8"
@@ -221,7 +245,9 @@ def _write_bundle(tmp_path: Path) -> Path:
             "max_verified_per_day": 2,
             "backfill_policy": "none",
         },
-        "source_registry_path": registry_rel,
+        "source_binding_kind": "registry",
+        "source_binding_path": registry_rel,
+        "source_binding_sha256": registry.digest,
         "source_registry_sha256": registry.digest,
         "theology_profile_path": theology_rel,
         "theology_profile_sha256": theology.digest,
@@ -231,6 +257,19 @@ def _write_bundle(tmp_path: Path) -> Path:
     queue_path = tmp_path / queue_rel
     queue_path.write_text(json.dumps(queue_payload, ensure_ascii=False, indent=2), encoding="utf-8")
     return queue_path
+
+
+def _registry_scaffold(registry: HistoricalSourceRegistry, theology: TheologyProfile, cycle_id: str) -> HistoricalCycleScaffoldV1:
+    return build_cycle_scaffold(
+        cycle_id=cycle_id,
+        start_on=date(2026, 10, 1),
+        source_binding_kind="registry",
+        source_binding_path="content/telegram/lordchrist/historical-editorial/v1/source-registry.json",
+        source_binding_sha256=registry.digest,
+        source_registry_sha256=registry.digest,
+        theology_profile_path="content/telegram/lordchrist/historical-editorial/v1/theology-profile.json",
+        theology_profile_sha256=theology.digest,
+    )
 
 
 def test_next_cadence_dates_are_deterministic_monday_wednesday_saturday() -> None:
@@ -247,31 +286,20 @@ def test_scaffold_can_start_between_slots_without_backfill() -> None:
 def test_scaffold_is_provider_inert_and_digest_stable() -> None:
     registry = HistoricalSourceRegistry.model_validate(_registry_payload())
     theology = TheologyProfile.model_validate(_theology_payload())
-    scaffold = build_cycle_scaffold(
-        cycle_id="history-cycle-2026-10-a",
-        start_on=date(2026, 10, 1),
-        source_registry_path="content/telegram/lordchrist/historical-editorial/v1/source-registry.json",
-        source_registry_sha256=registry.digest,
-        theology_profile_path="content/telegram/lordchrist/historical-editorial/v1/theology-profile.json",
-        theology_profile_sha256=theology.digest,
-    )
+    scaffold = _registry_scaffold(registry, theology, "history-cycle-2026-10-a")
+
     assert scaffold.state == "draft_scaffold"
     assert scaffold.provider_writes_authorized is False
     assert scaffold.local_time == "19:17"
+    assert scaffold.source_binding_kind == "registry"
+    assert scaffold.source_binding_sha256 == scaffold.source_registry_sha256
     assert scaffold.digest == HistoricalCycleScaffoldV1.model_validate(scaffold.model_dump()).digest
 
 
 def test_scaffold_writer_refuses_overwrite(tmp_path: Path) -> None:
     registry = HistoricalSourceRegistry.model_validate(_registry_payload())
     theology = TheologyProfile.model_validate(_theology_payload())
-    scaffold = build_cycle_scaffold(
-        cycle_id="history-cycle-2026-10-b",
-        start_on=date(2026, 10, 1),
-        source_registry_path="content/telegram/lordchrist/historical-editorial/v1/source-registry.json",
-        source_registry_sha256=registry.digest,
-        theology_profile_path="content/telegram/lordchrist/historical-editorial/v1/theology-profile.json",
-        theology_profile_sha256=theology.digest,
-    )
+    scaffold = _registry_scaffold(registry, theology, "history-cycle-2026-10-b")
     target = tmp_path / "cycle.json"
     write_scaffold(target, scaffold)
     with pytest.raises(FileExistsError, match="refusing to overwrite"):
@@ -293,12 +321,22 @@ def test_preflight_returns_machine_readable_proof_and_never_live_authorizes(tmp_
     assert report.backfill_policy == "none"
 
 
-def test_preflight_rejects_registry_digest_drift(tmp_path: Path) -> None:
+def test_queue_rejects_registry_binding_digest_split(tmp_path: Path) -> None:
     queue_path = _write_bundle(tmp_path)
     raw = json.loads(queue_path.read_text(encoding="utf-8"))
     raw["source_registry_sha256"] = "sha256:" + "0" * 64
-    queue_path.write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
-    with pytest.raises(ValueError, match="source registry digest mismatch"):
+    with pytest.raises(ValidationError, match="direct registry binding digest"):
+        HistoricalEditorialQueueV1.model_validate(raw)
+
+
+def test_preflight_rejects_registry_artifact_drift(tmp_path: Path) -> None:
+    queue_path = _write_bundle(tmp_path)
+    registry_path = tmp_path / "content/telegram/lordchrist/historical-editorial/v1/source-registry.json"
+    registry_raw = json.loads(registry_path.read_text(encoding="utf-8"))
+    registry_raw["sources"][2]["title"] = "Changed after sealing"
+    registry_path.write_text(json.dumps(registry_raw, ensure_ascii=False), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="source binding digest mismatch"):
         preflight_historical_bundle(queue_path, repo_root=tmp_path)
 
 
@@ -311,9 +349,20 @@ def test_preflight_rejects_fake_independence(tmp_path: Path) -> None:
     registry_path.write_text(json.dumps(registry_raw, ensure_ascii=False), encoding="utf-8")
 
     queue_raw = json.loads(queue_path.read_text(encoding="utf-8"))
+    queue_raw["source_binding_sha256"] = changed_registry.digest
     queue_raw["source_registry_sha256"] = changed_registry.digest
     queue_path.write_text(json.dumps(queue_raw, ensure_ascii=False), encoding="utf-8")
     with pytest.raises(ValueError, match="two independent evidence groups"):
+        preflight_historical_bundle(queue_path, repo_root=tmp_path)
+
+
+def test_direct_preflight_rejects_catalog_bound_queue(tmp_path: Path) -> None:
+    queue_path = _write_bundle(tmp_path)
+    raw = json.loads(queue_path.read_text(encoding="utf-8"))
+    raw["source_binding_kind"] = "catalog"
+    queue_path.write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="require manifest preflight"):
         preflight_historical_bundle(queue_path, repo_root=tmp_path)
 
 
@@ -327,23 +376,25 @@ def test_registry_requires_fifty_sources() -> None:
 def test_scaffold_rejects_noncanonical_cadence() -> None:
     registry = HistoricalSourceRegistry.model_validate(_registry_payload())
     theology = TheologyProfile.model_validate(_theology_payload())
-    raw = build_cycle_scaffold(
-        cycle_id="history-cycle-2026-10-c",
-        start_on=date(2026, 10, 1),
-        source_registry_path="content/telegram/lordchrist/historical-editorial/v1/source-registry.json",
-        source_registry_sha256=registry.digest,
-        theology_profile_path="content/telegram/lordchrist/historical-editorial/v1/theology-profile.json",
-        theology_profile_sha256=theology.digest,
-    ).model_dump(mode="json")
+    raw = _registry_scaffold(registry, theology, "history-cycle-2026-10-c").model_dump(mode="json")
     raw["iso_weekdays"] = [1, 4, 6]
     with pytest.raises(ValidationError, match="Monday/Wednesday/Saturday"):
+        HistoricalCycleScaffoldV1.model_validate(raw)
+
+
+def test_scaffold_rejects_registry_binding_digest_split() -> None:
+    registry = HistoricalSourceRegistry.model_validate(_registry_payload())
+    theology = TheologyProfile.model_validate(_theology_payload())
+    raw = _registry_scaffold(registry, theology, "history-cycle-2026-10-d").model_dump(mode="json")
+    raw["source_binding_sha256"] = "sha256:" + "0" * 64
+    with pytest.raises(ValidationError, match="direct registry binding digest"):
         HistoricalCycleScaffoldV1.model_validate(raw)
 
 
 def test_preflight_rejects_repo_escape_path(tmp_path: Path) -> None:
     queue_path = _write_bundle(tmp_path)
     raw = json.loads(queue_path.read_text(encoding="utf-8"))
-    raw["source_registry_path"] = "../outside.json"
+    raw["source_binding_path"] = "../outside.json"
     queue_path.write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
     with pytest.raises(ValueError, match="escapes repository root"):
         preflight_historical_bundle(queue_path, repo_root=tmp_path)
