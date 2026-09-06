@@ -21,7 +21,7 @@ def test_autonomous_production_config_is_explicit_release_bound_and_future_gated
     policy = load_presentation_policy(POLICY_PATH)
 
     assert config["schema_name"] == "video-channel-manager.telegram-production-schedule"
-    assert config["schema_version"] == 2
+    assert config["schema_version"] == 3
     assert config["project_key"] == "lord-god-strength"
     assert config["channel_username"] == "@lordchrist"
     assert config["chat_id"] == EXPECTED_CHAT_ID
@@ -30,9 +30,28 @@ def test_autonomous_production_config_is_explicit_release_bound_and_future_gated
     assert config["enabled"] is True
     assert date.fromisoformat(config["not_before_moscow_date"]) == date(2026, 8, 8)
     assert config["timezone"] == "Europe/Moscow"
-    assert config["primary_time"] == "09:17"
-    assert config["catchup_time"] == "21:17"
-    assert config["daily_verified_limit"] == 1
+    assert config["max_publications_per_slot"] == 1
+    assert config["slots"] == {
+        "morning": {
+            "time": "09:17",
+            "weekdays": [
+                "monday",
+                "tuesday",
+                "wednesday",
+                "thursday",
+                "friday",
+                "saturday",
+                "sunday",
+            ],
+        },
+        "evening": {
+            "time": "21:17",
+            "weekdays": ["tuesday", "friday", "sunday"],
+        },
+    }
+    assert "primary_time" not in config
+    assert "catchup_time" not in config
+    assert "daily_verified_limit" not in config
     assert config["queue_digest"] == EXPECTED_DIGEST
     assert config["presentation_policy_id"] == policy.policy_id
     assert config["presentation_policy_sha256"] == policy.digest
@@ -52,7 +71,14 @@ def test_workflow_uses_version_controlled_schedule_gate_and_exact_release_identi
     assert "production schedule presentation policy digest mismatch" in workflow
     assert "LORDCHRIST_SCHEDULE_ENABLED is not true." not in workflow
     assert 'cron: "17 9 * * *"' in workflow
-    assert 'cron: "17 21 * * *"' in workflow
+    assert 'cron: "17 21 * * 0,2,5"' in workflow
+    assert 'cron: "17 21 * * *"' not in workflow
+    assert '"17 9 * * *": "morning"' in workflow
+    assert '"17 21 * * 0,2,5": "evening"' in workflow
+    assert "scheduled_moscow_date" in workflow
+    assert "scheduled_slot" in workflow
+    assert '--scheduled-moscow-date "${{ steps.intent.outputs.scheduled_moscow_date }}"' in workflow
+    assert '--scheduled-slot "${{ steps.intent.outputs.scheduled_slot }}"' in workflow
 
 
 def test_scheduled_gate_does_not_require_manual_posting_toggle() -> None:
@@ -64,6 +90,8 @@ def test_scheduled_gate_does_not_require_manual_posting_toggle() -> None:
     scheduled_branch, manual_branch = gate.split("          else\n", 1)
     assert "LORDCHRIST_POSTING_ENABLED" not in scheduled_branch
     assert "LORDCHRIST_POSTING_ENABLED" in manual_branch
+    assert "max_publications_per_slot" in scheduled_branch
+    assert "daily_verified_limit" not in scheduled_branch
 
 
 def test_send_step_bridges_only_a_valid_schedule_event_into_legacy_internal_gate() -> None:
