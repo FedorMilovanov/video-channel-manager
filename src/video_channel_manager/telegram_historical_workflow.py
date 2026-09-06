@@ -10,9 +10,6 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from video_channel_manager.telegram_historical_editorial import (
     HistoricalEditorialQueueV1,
-    HistoricalSourceRegistry,
-    TheologyProfile,
-    load_historical_editorial_queue,
     load_historical_source_registry,
     load_theology_profile,
 )
@@ -186,7 +183,6 @@ def preflight_historical_bundle(queue_path: Path, *, repo_root: Path = Path(".")
     registry = load_historical_source_registry(registry_path)
     theology = load_theology_profile(theology_path)
 
-    # Re-run the canonical loader from repository root without changing process cwd.
     if registry.digest != queue.source_registry_sha256:
         raise ValueError("historical source registry digest mismatch")
     if theology.digest != queue.theology_profile_sha256:
@@ -196,9 +192,6 @@ def preflight_historical_bundle(queue_path: Path, *, repo_root: Path = Path(".")
     if queue.verification.checked_on < registry.checked_on or queue.verification.checked_on < theology.checked_on:
         raise ValueError("historical verification cannot predate bound evidence")
 
-    # The canonical loader's cross-object evidence contract is cwd-relative.
-    # Create a temporary repository-relative validation path only when the caller
-    # already runs from repo root; otherwise validate the same rules explicitly.
     by_id = {source.source_id: source for source in registry.sources}
     for post in queue.posts:
         for claim in post.claims:
