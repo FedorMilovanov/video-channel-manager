@@ -73,7 +73,11 @@ def test_current_state_is_a_live_index_not_a_commit_ledger() -> None:
         "`state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs"
         in text
     )
-    assert "`protected=false`" in text
+    assert "`protected=true`" in text
+    assert "`protected=false`" not in text
+    assert "required-status enforcement level `everyone`" in text
+    assert "eight required GitHub Actions checks" in text
+    assert "GitHub Actions App ID `15368`" in text
     assert "repository ruleset count `0`" in text
     assert "Dependency Graph itself is policy-enabled for this public repository" in text
     assert "SBOM REST export is verified unavailable through both documented generation surfaces" in text
