@@ -13,12 +13,14 @@
     "morning": {
       "cron": "17 9 * * *",
       "time": "09:17",
-      "iso_weekdays": [1, 2, 3, 4, 5, 6, 7]
+      "iso_weekdays": [1, 2, 3, 4, 5, 6, 7],
+      "max_lateness_minutes": 120
     },
     "evening": {
       "cron": "17 21 * * 2,5,0",
       "time": "21:17",
-      "iso_weekdays": [2, 5, 7]
+      "iso_weekdays": [2, 5, 7],
+      "max_lateness_minutes": 120
     }
   },
   "max_verified_per_slot": 1,
@@ -27,5 +29,5 @@
   "queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
   "presentation_policy_id": "lordchrist-editorial-v2",
   "presentation_policy_sha256": "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8",
-  "activation_note": "Autonomous production enabled after verified manual canary 1470 and verified GitHub-hosted presentation test 1471. Slot policy v3 adds one daily morning slot plus Tuesday/Friday/Sunday evening slots, with no catch-up or backfill and exact Telegram identity, queue digest, and presentation policy release binding."
+  "activation_note": "Autonomous production enabled after verified manual canary 1470 and verified GitHub-hosted presentation test 1471. Slot policy v3 adds one daily morning slot plus Tuesday/Friday/Sunday evening slots, two-hour freshness windows, no catch-up or backfill, and exact Telegram identity, queue digest, and presentation policy release binding."
 }
