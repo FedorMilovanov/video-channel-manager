@@ -1,7 +1,7 @@
 {
   "schema_name": "video-manager.retirement-registry",
   "schema_version": 1,
-  "updated_at": "2026-08-19T13:51:00+03:00",
+  "updated_at": "2026-09-06T14:04:23Z",
   "repository": "FedorMilovanov/video-channel-manager",
   "execution_authority": false,
   "provider_writes_authorized": false,
@@ -156,6 +156,20 @@
       "execution_prohibited": true,
       "replacement": ".github/workflows/milovi-telegram-feed-quality.yml + .github/workflows/milovi-telegram-feed-publisher.yml",
       "reason": "Follow-on readiness and media-proof workflows were provider-inert but still encoded the obsolete bootstrap/per-wave control model. Frozen source manifests and historical evidence remain; future feed items use the permanent feed quality and publisher lanes."
+    },
+    {
+      "id": "svodka-custom-emoji-capability-canary-v1",
+      "kind": "repository_provider_executor",
+      "issues": [273, 534],
+      "status": "retired_non_executable",
+      "execution_prohibited": true,
+      "replacement": null,
+      "historical_evidence": [
+        "content/telegram/svodka/custom-emoji-canary/evidence/manifest-31421838994-1.json",
+        "content/telegram/svodka/custom-emoji-canary/evidence/svodka-custom-emoji-outcome-31421838994-1.json",
+        "state/svodka-telegram:content/telegram/svodka/custom-emoji-capability-canary.json"
+      ],
+      "reason": "The one-shot custom-emoji capability probe ended unknown/may_exist with no message id. Issue #273 is closed not_planned and Unicode fallback remains the production behavior. The historical provider effect must remain fail-closed and the canary must never be replayed."
     }
   ],
   "history_archives": [
