@@ -50,21 +50,22 @@ def test_reconciliation_requires_completed_matching_exact_github_attempt_and_pro
     assert "/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100" in workflow
     assert 'run.get("status") != "completed"' in workflow
     assert 'workflow_path = str(run.get("path") or "").split("@", 1)[0]' in workflow
-    assert '".github/workflows/svodka-canary.yml": (' in workflow
-    assert '"workflow_dispatch"' in workflow
-    assert '".github/workflows/svodka-scheduled-publisher.yml": (' in workflow
+    assert (
+        '".github/workflows/svodka-canary.yml": (\n'
+        '                  ("workflow_dispatch",),\n'
+        '                  "Persist intent before Telegram mutation",\n'
+        '                  "Send exactly one canary payload",\n'
+        "              ),"
+    ) in workflow
     assert (
         '".github/workflows/svodka-scheduled-publisher.yml": (\n'
-        '                  "workflow_dispatch",\n'
+        '                  ("schedule", "workflow_dispatch"),\n'
         '                  "Persist scheduled intent before Telegram mutation",\n'
         '                  "Send exactly one scheduled payload",\n'
         "              ),"
     ) in workflow
-    assert (
-        '"schedule",\n'
-        '                  "Persist scheduled intent before Telegram mutation"'
-    ) not in workflow
-    assert 'run.get("event") != expected_event' in workflow
+    assert "expected_events, persist_name, send_name = allowed[workflow_path]" in workflow
+    assert 'run.get("event") not in expected_events' in workflow
     assert 'persist_steps[0].get("conclusion") != "success"' in workflow
     assert 'send_steps[0].get("conclusion") != "skipped"' in workflow
     assert 'run.get("head_sha")' in workflow
