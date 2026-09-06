@@ -73,6 +73,7 @@ def parser() -> argparse.ArgumentParser:
 
     prepare = sub.add_parser("prepare")
     prepare.add_argument("--mode", choices=("manual", "scheduled"), required=True)
+    prepare.add_argument("--scheduled-slot", choices=("morning", "evening"))
     prepare.add_argument("--run-id", required=True)
     prepare.add_argument("--run-attempt", required=True)
     prepare.add_argument("--github-sha", required=True)
@@ -245,6 +246,10 @@ def main() -> int:
         return 0
 
     if args.command == "prepare":
+        if args.mode == "scheduled" and args.scheduled_slot is None:
+            raise RuntimeError("scheduled prepare requires exact --scheduled-slot morning|evening")
+        if args.mode == "manual" and args.scheduled_slot is not None:
+            raise RuntimeError("manual prepare must not carry --scheduled-slot")
         target = load_target_proof(args.target_proof)
         prepared = prepare_next(
             queue,
@@ -256,6 +261,7 @@ def main() -> int:
             mode=args.mode,
             target=target,
             expected_publication_id=args.expected_publication_id,
+            scheduled_slot=args.scheduled_slot,
         )
         if prepared.envelope is None:
             print(json.dumps({"prepared": False, "reason": prepared.reason}, ensure_ascii=False))
@@ -280,6 +286,7 @@ def main() -> int:
                     "workflow_run_id": prepared.envelope.workflow_run_id,
                     "workflow_run_attempt": prepared.envelope.workflow_run_attempt,
                     "github_sha": prepared.envelope.github_sha,
+                    "scheduled_slot": prepared.envelope.scheduled_slot,
                 },
                 ensure_ascii=False,
             )
@@ -321,6 +328,7 @@ def main() -> int:
                     "workflow_run_id": entry.workflow_run_id,
                     "workflow_run_attempt": entry.workflow_run_attempt,
                     "github_sha": entry.github_sha,
+                    "scheduled_slot": entry.scheduled_slot,
                 },
                 ensure_ascii=False,
             )
@@ -368,6 +376,7 @@ def main() -> int:
                     "provider_effect": entry.provider_effect,
                     "message_id": entry.message_id,
                     "message_url": entry.message_url,
+                    "scheduled_slot": entry.scheduled_slot,
                     "presentation_policy_sha256": rendered.presentation_policy_sha256,
                     "provider_payload_sha256": rendered.provider_payload_sha256,
                     "error": entry.last_error,
