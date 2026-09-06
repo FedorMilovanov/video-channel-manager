@@ -82,12 +82,13 @@ def _theology_payload() -> dict[str, object]:
         "source_commit": "69c0520bcac095576399cbb9e926f9f1280c7665",
         "checked_on": "2026-09-07",
         "commitments": [
-            "Богодухновенность Писания",
-            "Достаточность Писания",
-            "Спасение благодатью через веру во Христа",
-            "Грамматико-историческая герменевтика",
-            "Последовательно буквальное толкование",
-            "Премилленаризм",
+            "Богодухновенность Священного Писания",
+            "Достаточность Священного Писания",
+            "Спасение по благодати через веру в Иисуса Христа",
+            "Грамматико-исторический метод толкования",
+            "Последовательно-буквальное чтение текста, включая пророчество",
+            "Буквальное тысячелетнее царство",
+            "Различение Израиля и Церкви в Божьем замысле",
         ],
     }
 
@@ -407,6 +408,20 @@ def test_registry_requires_fifty_sources() -> None:
     raw["sources"] = raw["sources"][:49]
     with pytest.raises(ValidationError):
         HistoricalSourceRegistry.model_validate(raw)
+
+
+def test_theology_profile_requires_israel_church_distinction() -> None:
+    raw = _theology_payload()
+    commitments = raw["commitments"]
+    assert isinstance(commitments, list)
+    raw["commitments"] = [
+        commitment
+        for commitment in commitments
+        if commitment != "Различение Израиля и Церкви в Божьем замысле"
+    ]
+
+    with pytest.raises(ValidationError, match="missing required commitments"):
+        TheologyProfile.model_validate(raw)
 
 
 def test_scaffold_rejects_noncanonical_cadence() -> None:
