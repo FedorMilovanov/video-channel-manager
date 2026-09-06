@@ -36,6 +36,31 @@ jobs:
           python -m pip check
           python -m pip show Pillow
 
+      - name: Prove exact hash-locked Milovi photo publisher runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          runtime="$RUNNER_TEMP/milovi-photo-publisher-runtime"
+          python -m venv "$runtime"
+          "$runtime/bin/python" -m pip install --disable-pip-version-check \
+            -r requirements/milovi-photo-publisher.txt
+          "$runtime/bin/python" -m pip check
+          "$runtime/bin/python" - <<'PY'
+          import io
+
+          import PIL
+          from PIL import Image
+
+          assert PIL.__version__ == "12.3.0"
+          image = Image.new("RGB", (16, 12), (120, 80, 40))
+          output = io.BytesIO()
+          image.save(output, format="JPEG", quality=95)
+          encoded = output.getvalue()
+          assert encoded.startswith(b"\xff\xd8")
+          assert encoded.endswith(b"\xff\xd9")
+          print({"production_pillow_version": PIL.__version__, "jpeg_bytes": len(encoded)})
+          PY
+
       - name: Exercise real Milovi perceptual hash path
         shell: python
         run: |
