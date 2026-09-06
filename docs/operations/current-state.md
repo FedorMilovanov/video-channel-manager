@@ -26,14 +26,15 @@ Ephemeral `work/`, `agent/` and `research/` refs are non-authoritative after the
 
 ### Late 2026-09-06 hardening checkpoint
 
-The exact repository checkpoint before this documentation sync is `main` `adf87c56f0836c931dc524cc41f3e0f64adaa209` (PR #544). Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
+The exact repository checkpoint before this documentation sync is `main` `0e91100186632a29bd94b315315b465f04259abf` (PR #545). The immediately preceding hardening baseline was `adf87c56f0836c931dc524cc41f3e0f64adaa209` (PR #544). Resolve fresh `main` again before any later operation; these SHAs are evidence, not standing authority.
 
 The same-day hardening sequence materially changed the safety interpretation:
 
 - PR #532 added Milovi archive-before-terminal-state provider outcome capture plus exact provider-free recovery under the permanent writer concurrency contract;
 - PRs #536, #538 and #540 retired the ambiguous Svodka custom-emoji canary, the consumed native-rich canary and the consumed ledger bootstrap from executable `main`, preserving exact historical evidence and no-replay regressions;
 - PR #542 initially closed the Milovi exact-authorization gap, but PR #544 corrected that implementation: live Milovi release/execution gates now bind exact publication identity through structured `reviewed_publication_id` / `authorized_publication_id`, rather than substring-parsing free-text human provenance; legacy unstructured evidence remains readable but does not satisfy a fresh live authorization gate;
-- PR #533 added `milovi-feed-20260906-001` as a provider-inert 20:00 Europe/Moscow candidate. Its release and execution flags remained false, no durable ledger/index registration exists for that identity on `state/milovi-cake-telegram`, and its 120-minute freshness window ended at 22:00 Europe/Moscow. It is now stale evidence: do not initialize, publish, retime or catch it up. A future Milovi post requires a new publication identity and a new exact review/authorization cycle.
+- PR #533 added `milovi-feed-20260906-001` as a provider-inert 20:00 Europe/Moscow candidate. Its release and execution flags remained false, no durable ledger/index registration exists for that identity on `state/milovi-cake-telegram`, and its 120-minute freshness window ended at 22:00 Europe/Moscow. It is now stale evidence: do not initialize, publish, retime or catch it up. A future Milovi post requires a new publication identity and a new exact review/authorization cycle;
+- PR #545 recorded the exact branch-hygiene control audit on current `main`, including absorbed-tip evidence, KEEP/DELETE classifications, preservation of durable state/evidence refs, and the explicit prohibition on using force-move as a substitute for branch deletion.
 
 ## YouTube / Legendary Poet / «Чёрный человек»
 
