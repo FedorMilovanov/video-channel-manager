@@ -242,7 +242,7 @@ jobs:
                   "Send exactly one canary payload",
               ),
               ".github/workflows/svodka-scheduled-publisher.yml": (
-                  "schedule",
+                  "workflow_dispatch",
                   "Persist scheduled intent before Telegram mutation",
                   "Send exactly one scheduled payload",
               ),
