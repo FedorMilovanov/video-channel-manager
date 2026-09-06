@@ -58,8 +58,7 @@ def test_candidate_mixed_prose_cannot_leak_into_visible_quote() -> None:
     assert "Различие Лиц не превращает Троицу" in raw_augustine.candidate_quote_ru
     assert "Для Оуэна борьба с грехом" in raw_owen.candidate_quote_ru
     assert augustine.quote_ru == (
-        "Отец, Сын и Святой Дух являют Божественное единство одной и той же сущности "
-        "в нераздельном равенстве."
+        "Отец, Сын и Святой Дух являют Божественное единство одной и той же сущности в нераздельном равенстве."
     )
     assert owen.quote_ru == "Умерщвляй грех, иначе он будет умерщвлять тебя."
     assert augustine.quote_ru != raw_augustine.candidate_quote_ru
