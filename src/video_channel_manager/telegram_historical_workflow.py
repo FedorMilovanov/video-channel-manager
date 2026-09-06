@@ -175,7 +175,9 @@ def preflight_historical_bundle(queue_path: Path, *, repo_root: Path = Path(".")
     theology, rights, digest and provider-inert checks stay single-sourced.
     """
 
-    resolved_queue = queue_path if queue_path.is_absolute() else _resolve_repo_path(repo_root, str(queue_path))
+    resolved_queue = (
+        queue_path if queue_path.is_absolute() else _resolve_repo_path(repo_root, str(queue_path))
+    )
     raw = json.loads(resolved_queue.read_text(encoding="utf-8"))
     queue = HistoricalEditorialQueueV1.model_validate(raw)
     registry_path = _resolve_repo_path(repo_root, queue.source_registry_path)
@@ -189,7 +191,10 @@ def preflight_historical_bundle(queue_path: Path, *, repo_root: Path = Path(".")
         raise ValueError("historical theology profile digest mismatch")
     if queue.verification.reviewed_urls < len(registry.sources):
         raise ValueError("reviewed_urls cannot be lower than persisted source registry size")
-    if queue.verification.checked_on < registry.checked_on or queue.verification.checked_on < theology.checked_on:
+    if (
+        queue.verification.checked_on < registry.checked_on
+        or queue.verification.checked_on < theology.checked_on
+    ):
         raise ValueError("historical verification cannot predate bound evidence")
 
     by_id = {source.source_id: source for source in registry.sources}
@@ -202,14 +207,19 @@ def preflight_historical_bundle(queue_path: Path, *, repo_root: Path = Path(".")
             if claim.direct_quote:
                 if not any(
                     source.grade == "A"
-                    and source.evidence_role in {"primary_document", "critical_edition", "official_archive", "university_archive"}
+                    and source.evidence_role
+                    in {"primary_document", "critical_edition", "official_archive", "university_archive"}
                     for source in bound
                 ):
-                    raise ValueError(f"direct quotation {claim.claim_id} requires grade A primary/critical/archive evidence")
+                    raise ValueError(
+                        f"direct quotation {claim.claim_id} requires grade A primary/critical/archive evidence"
+                    )
             elif claim.voice != "editorial_evaluation":
                 groups = {source.independence_group for source in bound}
                 if len(groups) < 2:
-                    raise ValueError(f"material historical claim {claim.claim_id} requires two independent evidence groups")
+                    raise ValueError(
+                        f"material historical claim {claim.claim_id} requires two independent evidence groups"
+                    )
                 if not any(source.grade == "A" for source in bound):
                     raise ValueError(f"material historical claim {claim.claim_id} requires at least one grade A source")
         for image in post.images:
@@ -245,7 +255,10 @@ def write_scaffold(path: Path, scaffold: HistoricalCycleScaffoldV1) -> None:
     if path.exists():
         raise FileExistsError(f"refusing to overwrite existing historical scaffold: {path}")
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(scaffold.model_dump(mode="json"), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(scaffold.model_dump(mode="json"), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 def _parser() -> argparse.ArgumentParser:
