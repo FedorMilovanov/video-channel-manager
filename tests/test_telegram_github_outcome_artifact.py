@@ -119,6 +119,7 @@ def _artifacts(*, expired: bool = False, duplicates: int = 1) -> dict[str, Any]:
     [
         (".github/workflows/svodka-canary.yml", "workflow_dispatch", "manual"),
         (".github/workflows/svodka-scheduled-publisher.yml", "schedule", "scheduled"),
+        (".github/workflows/svodka-scheduled-publisher.yml", "workflow_dispatch", "scheduled"),
     ],
 )
 def test_provider_outcome_artifact_proof_accepts_exact_svodka_source_run(
@@ -217,6 +218,11 @@ def test_provider_outcome_artifact_proof_rejects_successful_source_run() -> None
             "event does not match",
         ),
         (
+            _run(".github/workflows/svodka-scheduled-publisher.yml", "push"),
+            _artifacts(),
+            "event does not match",
+        ),
+        (
             _run(".github/workflows/svodka-canary.yml", "workflow_dispatch", head_sha="9" * 40),
             _artifacts(),
             "head SHA differs",
@@ -238,13 +244,13 @@ def test_provider_outcome_artifact_proof_rejects_inexact_provenance(
     artifacts_payload: dict[str, Any],
     message: str,
 ) -> None:
-    path = ".github/workflows/svodka-canary.yml"
+    path = str(run_payload["path"]).split("@", 1)[0]
     with pytest.raises(ValueError, match=message):
         prove_provider_outcome_artifact(
             run_payload=run_payload,
             jobs_payload=_jobs(path),
             artifacts_payload=artifacts_payload,
-            dispatch=_dispatch(),
+            dispatch=_dispatch(mode="scheduled" if path.endswith("svodka-scheduled-publisher.yml") else "manual"),
             source_run_id=RUN_ID,
             source_run_attempt=ATTEMPT,
             requested_publication_id=PUBLICATION_ID,
