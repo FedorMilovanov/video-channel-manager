@@ -138,9 +138,7 @@ class RawSuccessorCorpus(BaseModel):
     project_key: Literal["lord-god-strength"]
     channel_username: Literal["@lordchrist"]
     corpus_id: Literal["lordchrist-successor-quotes-v1"]
-    predecessor_queue_digest: Literal[
-        "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"
-    ]
+    predecessor_queue_digest: Literal["sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"]
     review_state: Literal["source_verified_staged"]
     posts: tuple[RawSuccessorQuoteCard, ...]
 
@@ -306,9 +304,7 @@ class SuccessorQuoteCorpus(BaseModel):
     project_key: Literal["lord-god-strength"]
     channel_username: Literal["@lordchrist"]
     corpus_id: Literal["lordchrist-successor-quotes-v1"]
-    predecessor_queue_digest: Literal[
-        "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"
-    ]
+    predecessor_queue_digest: Literal["sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"]
     posts: tuple[SuccessorQuoteCard, ...]
 
     @model_validator(mode="after")
@@ -361,9 +357,7 @@ class SuccessorRelease(BaseModel):
     base_candidate_git_blob_sha1: str = Field(pattern=r"^[0-9a-f]{40}$")
     translation_ledger_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     normalized_corpus_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
-    predecessor_queue_digest: Literal[
-        "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"
-    ]
+    predecessor_queue_digest: Literal["sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"]
     activation_policy: Literal["after_predecessor_queue_complete"]
     release_state: Literal["staged_provider_inert"]
     provider_writes_authorized: Literal[False]
