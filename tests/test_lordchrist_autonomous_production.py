@@ -30,11 +30,13 @@ def test_autonomous_production_config_is_explicit_release_bound_and_slot_gated()
     assert config.enabled is True
     assert config.not_before_moscow_date == date(2026, 8, 8)
     assert config.timezone == "Europe/Moscow"
-    assert config.slots["morning"].time == "09:17"
+    assert config.primary_time == "09:17"
+    assert config.catchup_time == "21:17"
+    assert config.slots["morning"].time == config.primary_time
     assert config.slots["morning"].cron == "17 9 * * *"
     assert config.slots["morning"].iso_weekdays == (1, 2, 3, 4, 5, 6, 7)
     assert config.slots["morning"].max_lateness_minutes == 120
-    assert config.slots["evening"].time == "21:17"
+    assert config.slots["evening"].time == config.catchup_time
     assert config.slots["evening"].cron == "17 21 * * 2,5,0"
     assert config.slots["evening"].iso_weekdays == (2, 5, 7)
     assert config.slots["evening"].max_lateness_minutes == 120
@@ -90,7 +92,7 @@ def test_workflow_uses_version_controlled_slot_gate_and_exact_release_identity()
     assert "scheduled_slot=$scheduled_slot" in workflow
     assert "decide_scheduled_slot" in workflow
     assert "require_release_binding" in workflow
-    assert "--scheduled-slot \"${{ steps.intent.outputs.scheduled_slot }}\"" in workflow
+    assert '--scheduled-slot "${{ steps.intent.outputs.scheduled_slot }}"' in workflow
     assert "production schedule chat id does not match configured Telegram target" not in workflow
     assert "LORDCHRIST_SCHEDULE_ENABLED is not true." not in workflow
     assert 'cron: "17 9 * * *"' in workflow
