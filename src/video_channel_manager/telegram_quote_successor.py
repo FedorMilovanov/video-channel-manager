@@ -16,6 +16,8 @@ LEGACY_QUEUE_DIGEST = "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ec
 REVIEWED_CORPUS_CARD_COUNT = 60
 BASE_CANDIDATE_FILENAME = "successor-quotes-v1.json"
 TRANSLATION_LEDGER_FILENAME = "successor-translation-ledger-v1.json"
+INTEGRITY_AMENDMENT_FILENAME = "successor-integrity-amendments-v1.json"
+CANONICAL_RELEASE_FILENAME = "successor-release-v2.json"
 
 RawSourceTier = Literal["public_domain_primary_text", "official_author_or_ministry"]
 RightsClass = Literal["public_domain_contiguous_excerpt", "modern_short_quote_editorial_context"]
@@ -63,8 +65,11 @@ def _validate_public_https_url(value: str) -> str:
         raise ValueError("source proof must use a public HTTPS URL")
     if parsed.username is not None or parsed.password is not None:
         raise ValueError("credential-bearing source URLs are forbidden")
+    hostname = parsed.hostname.rstrip(".").lower()
+    if hostname == "localhost" or hostname.endswith(".localhost") or hostname.endswith(".local"):
+        raise ValueError("local-only source hostnames are forbidden")
     try:
-        literal_ip = ipaddress.ip_address(parsed.hostname)
+        literal_ip = ipaddress.ip_address(hostname)
     except ValueError:
         literal_ip = None
     if literal_ip is not None and not literal_ip.is_global:
@@ -166,16 +171,13 @@ class TranslationLedgerEntry(BaseModel):
     translation_binding_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     scope: Literal["exact_fragment_only"]
     review_state: Literal["reviewed"]
-    exact_fragment_override: str | None = Field(default=None, min_length=20, max_length=1400)
-
-    @model_validator(mode="after")
-    def allow_only_reviewed_fragment_correction(self) -> "TranslationLedgerEntry":
-        if (
-            self.exact_fragment_override is not None
-            and self.publication_id != "lordchrist-successor-piper-father-spirit-authority"
-        ):
-            raise ValueError("exact fragment override is only allowed for the reviewed Piper sequence-51 correction")
-        return self
+    legacy_exact_fragment_override: str | None = Field(
+        default=None,
+        validation_alias="exact_fragment_override",
+        min_length=20,
+        max_length=1400,
+        exclude=True,
+    )
 
 
 class TranslationLedger(BaseModel):
@@ -195,6 +197,67 @@ class TranslationLedger(BaseModel):
         ids = [entry.publication_id for entry in self.entries]
         if len(ids) != len(set(ids)):
             raise ValueError("reviewed translation ledger publication_id values must be unique")
+        return self
+
+
+class IntegrityAmendmentEntry(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    publication_id: str = Field(pattern=r"^lordchrist-successor-[a-z0-9][a-z0-9-]{4,90}$")
+    candidate_source_fragment_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    legacy_translation_source_fragment_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    legacy_translation_binding_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    corrected_exact_fragment: str = Field(min_length=20, max_length=1400)
+    corrected_quote_ru: str = Field(min_length=10, max_length=1800)
+    source_fragment_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    translation_binding_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    source_url: str = Field(pattern=r"^https://")
+    source_location: str = Field(min_length=2, max_length=300)
+    checked_on: date
+    review_state: Literal["reviewed"]
+
+    @field_validator("source_url")
+    @classmethod
+    def require_public_https_host(cls, value: str) -> str:
+        return _validate_public_https_url(value)
+
+    @model_validator(mode="after")
+    def bind_correction(self) -> "IntegrityAmendmentEntry":
+        if self.source_fragment_sha256 != sha256_text(self.corrected_exact_fragment):
+            raise ValueError("integrity amendment source fragment digest mismatch")
+        expected_binding = sha256_text(
+            canonical_json(
+                {
+                    "source_fragment": self.corrected_exact_fragment,
+                    "quote_ru": self.corrected_quote_ru,
+                    "language": "ru",
+                    "scope": "exact_fragment_only",
+                }
+            )
+        )
+        if self.translation_binding_sha256 != expected_binding:
+            raise ValueError("integrity amendment translation binding mismatch")
+        return self
+
+
+class SuccessorIntegrityAmendments(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.telegram-quote-successor-integrity-amendments"]
+    schema_version: Literal[1]
+    project_key: Literal["lord-god-strength"]
+    channel_username: Literal["@lordchrist"]
+    corpus_id: Literal["lordchrist-successor-quotes-v1"]
+    review_state: Literal["reviewed"]
+    entries: tuple[IntegrityAmendmentEntry, ...]
+
+    @model_validator(mode="after")
+    def validate_entries(self) -> "SuccessorIntegrityAmendments":
+        if not 1 <= len(self.entries) <= REVIEWED_CORPUS_CARD_COUNT:
+            raise ValueError("integrity amendment set must contain 1..60 entries")
+        ids = [entry.publication_id for entry in self.entries]
+        if len(ids) != len(set(ids)):
+            raise ValueError("integrity amendment publication_id values must be unique")
         return self
 
 
@@ -350,12 +413,13 @@ class SuccessorRelease(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_name: Literal["video-channel-manager.telegram-quote-successor-release"]
-    schema_version: Literal[1]
+    schema_version: Literal[2]
     project_key: Literal["lord-god-strength"]
     channel_username: Literal["@lordchrist"]
-    release_id: Literal["lordchrist-successor-quotes-v1"]
+    release_id: Literal["lordchrist-successor-quotes-v1-integrity-v2"]
     base_candidate_git_blob_sha1: str = Field(pattern=r"^[0-9a-f]{40}$")
     translation_ledger_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    integrity_amendment_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     normalized_corpus_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     predecessor_queue_digest: Literal["sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"]
     activation_policy: Literal["after_predecessor_queue_complete"]
@@ -377,8 +441,17 @@ def load_translation_ledger(path: Path) -> TranslationLedger:
         raise ValueError(f"invalid LordChrist successor translation ledger {path}: {exc}") from exc
 
 
-def _normalize_source(raw: RawSuccessorSourceProof, fragment_override: str | None) -> SuccessorSourceProof:
-    fragment = fragment_override or raw.exact_fragment
+def load_integrity_amendments(path: Path) -> SuccessorIntegrityAmendments:
+    try:
+        return SuccessorIntegrityAmendments.model_validate_json(path.read_text(encoding="utf-8"))
+    except (OSError, ValidationError) as exc:
+        raise ValueError(f"invalid LordChrist successor integrity amendments {path}: {exc}") from exc
+
+
+def _normalize_source(
+    raw: RawSuccessorSourceProof,
+    amendment: IntegrityAmendmentEntry | None,
+) -> SuccessorSourceProof:
     normalized_tier: SourceTier
     if raw.rights_class == "public_domain_contiguous_excerpt":
         normalized_tier = "public_domain_primary_text"
@@ -387,44 +460,91 @@ def _normalize_source(raw: RawSuccessorSourceProof, fragment_override: str | Non
     return SuccessorSourceProof(
         author=raw.author,
         work=raw.work,
-        location=raw.location,
+        location=amendment.source_location if amendment is not None else raw.location,
         url=raw.url,
         publisher=raw.publisher,
         source_tier=normalized_tier,
         rights_class=raw.rights_class,
         fragment_language=raw.original_language,
-        exact_fragment=fragment,
-        checked_on=raw.checked_on,
+        exact_fragment=amendment.corrected_exact_fragment if amendment is not None else raw.exact_fragment,
+        checked_on=amendment.checked_on if amendment is not None else raw.checked_on,
         verification_status="accepted_contiguous_fragment",
     )
 
 
-def load_successor_corpus(candidate_path: Path, translation_ledger_path: Path) -> SuccessorQuoteCorpus:
+def _default_amendment_path(candidate_path: Path) -> Path:
+    return candidate_path.with_name(INTEGRITY_AMENDMENT_FILENAME)
+
+
+def load_successor_corpus(
+    candidate_path: Path,
+    translation_ledger_path: Path,
+    integrity_amendment_path: Path | None = None,
+) -> SuccessorQuoteCorpus:
     raw = load_raw_successor_corpus(candidate_path)
     ledger = load_translation_ledger(translation_ledger_path)
+    amendment_path = integrity_amendment_path or _default_amendment_path(candidate_path)
+    amendments = load_integrity_amendments(amendment_path)
+
     by_id = {entry.publication_id: entry for entry in ledger.entries}
+    amendment_by_id = {entry.publication_id: entry for entry in amendments.entries}
     raw_ids = {post.publication_id for post in raw.posts}
     if set(by_id) != raw_ids:
         raise ValueError("translation ledger must bind exactly the 60 candidate publication IDs")
+    if not set(amendment_by_id).issubset(raw_ids):
+        raise ValueError("integrity amendments contain a publication ID outside the candidate corpus")
+
+    legacy_override_ids = {
+        entry.publication_id for entry in ledger.entries if entry.legacy_exact_fragment_override is not None
+    }
+    if not legacy_override_ids.issubset(amendment_by_id):
+        raise ValueError("legacy translation-ledger source overrides require a sealed integrity amendment")
 
     posts: list[SuccessorQuoteCard] = []
     for candidate in raw.posts:
         proof = by_id[candidate.publication_id]
-        source = _normalize_source(candidate.source, proof.exact_fragment_override)
-        translation = ReviewedTranslation(
-            language="ru",
-            scope=proof.scope,
-            review_state=proof.review_state,
-            source_fragment_sha256=proof.source_fragment_sha256,
-            binding_sha256=proof.translation_binding_sha256,
-        )
+        amendment = amendment_by_id.get(candidate.publication_id)
+        if amendment is not None:
+            if amendment.candidate_source_fragment_sha256 != sha256_text(candidate.source.exact_fragment):
+                raise ValueError("integrity amendment candidate source precondition mismatch")
+            if amendment.legacy_translation_source_fragment_sha256 != proof.source_fragment_sha256:
+                raise ValueError("integrity amendment legacy source binding precondition mismatch")
+            if amendment.legacy_translation_binding_sha256 != proof.translation_binding_sha256:
+                raise ValueError("integrity amendment legacy translation binding precondition mismatch")
+            if amendment.source_url != candidate.source.url:
+                raise ValueError("integrity amendment source URL differs from reviewed candidate source")
+            if candidate.source.rights_class == "modern_short_quote_editorial_context":
+                if word_count(amendment.corrected_exact_fragment) > 25:
+                    raise ValueError("modern amended exact source fragments are limited to 25 words")
+                if word_count(amendment.corrected_quote_ru) > 25:
+                    raise ValueError("modern amended visible translated quotations are limited to 25 words")
+            source = _normalize_source(candidate.source, amendment)
+            quote_ru = amendment.corrected_quote_ru
+            translation = ReviewedTranslation(
+                language="ru",
+                scope="exact_fragment_only",
+                review_state=amendment.review_state,
+                source_fragment_sha256=amendment.source_fragment_sha256,
+                binding_sha256=amendment.translation_binding_sha256,
+            )
+        else:
+            source = _normalize_source(candidate.source, None)
+            quote_ru = proof.quote_ru
+            translation = ReviewedTranslation(
+                language="ru",
+                scope=proof.scope,
+                review_state=proof.review_state,
+                source_fragment_sha256=proof.source_fragment_sha256,
+                binding_sha256=proof.translation_binding_sha256,
+            )
+
         posts.append(
             SuccessorQuoteCard(
                 sequence=candidate.sequence,
                 publication_id=candidate.publication_id,
                 title=candidate.title,
                 theme=candidate.theme,
-                quote_ru=proof.quote_ru,
+                quote_ru=quote_ru,
                 translation=translation,
                 editorial_context_ru=candidate.editorial_context_ru,
                 attribution_ru=candidate.attribution_ru,
@@ -447,15 +567,18 @@ def load_successor_release(
     release_path: Path,
     candidate_path: Path,
     translation_ledger_path: Path,
+    integrity_amendment_path: Path | None = None,
 ) -> SuccessorRelease:
     try:
         release = SuccessorRelease.model_validate_json(release_path.read_text(encoding="utf-8"))
     except (OSError, ValidationError) as exc:
         raise ValueError(f"invalid LordChrist successor release {release_path}: {exc}") from exc
 
+    amendment_path = integrity_amendment_path or _default_amendment_path(candidate_path)
     try:
         candidate_bytes = candidate_path.read_bytes()
         ledger_bytes = translation_ledger_path.read_bytes()
+        amendment_bytes = amendment_path.read_bytes()
     except OSError as exc:
         raise ValueError(f"cannot read successor release inputs: {exc}") from exc
 
@@ -463,10 +586,15 @@ def load_successor_release(
         raise ValueError("successor release is not bound to the exact candidate Git blob")
     if release.translation_ledger_digest != sha256_bytes(ledger_bytes):
         raise ValueError("successor release is not bound to the exact translation ledger")
+    if release.integrity_amendment_digest != sha256_bytes(amendment_bytes):
+        raise ValueError("successor release is not bound to the exact integrity amendment set")
 
-    corpus = load_successor_corpus(candidate_path, translation_ledger_path)
+    corpus = load_successor_corpus(candidate_path, translation_ledger_path, amendment_path)
     if release.normalized_corpus_digest != corpus.digest:
-        raise ValueError("successor release digest does not match the normalized reviewed corpus")
+        raise ValueError(
+            "successor release digest does not match the normalized reviewed corpus: "
+            f"expected {release.normalized_corpus_digest}, got {corpus.digest}"
+        )
     if release.predecessor_queue_digest != corpus.predecessor_queue_digest:
         raise ValueError("successor release predecessor binding differs from corpus")
     return release
