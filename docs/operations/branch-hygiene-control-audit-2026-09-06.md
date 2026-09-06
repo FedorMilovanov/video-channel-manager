@@ -65,14 +65,23 @@ Examples at `6773eccde6b812024f5e7712b0e2dff6c72b1272` include old `feature/*`, 
 
 Historical Milovi refs at `eac58db5aced0c08294f14d0cce36bac153eae01` are also fully absorbed in code ancestry. They should not be deleted in bulk: some names may still be cited by forensic material, while others are ordinary stale working refs.
 
-## Unique/outlier tips — KEEP pending exact classification
+## Divergent outliers — KEEP until unique history is disposed explicitly
 
-The branch listing also contains refs whose tips are not part of the four large absorbed groups above, for example:
+Exact compare from each branch tip to the audit baseline proves that the following refs are **not** safe delete candidates yet:
 
-- `audit/mypy2-ci-fix` → `03c0b46ea1087eb72831d761655253f2471ba040`;
-- `agent/pester-psgallery-bootstrap` → `2cd5995a553a95a4117361a5746de453ae444d90`;
-- `agent/milovi-post486-ci-repair` → `000efd66a3f160bb63f8badf60753b59e722e6c2`;
-- `work/lordchrist-rich-media-binding` → `1017df9da690855579323df2df154860e3b86d0b`;
+| Branch | Exact tip | Compare result | Verdict |
+| --- | --- | --- | --- |
+| `audit/mypy2-ci-fix` | `03c0b46ea1087eb72831d761655253f2471ba040` | diverged; current `main` is ahead by 17, but the branch retains 5 commits outside `main` | KEEP pending supersession/evidence proof |
+| `agent/pester-psgallery-bootstrap` | `2cd5995a553a95a4117361a5746de453ae444d90` | diverged; current `main` is ahead by 12, branch retains 1 commit outside `main` | KEEP pending supersession/evidence proof |
+| `agent/milovi-post486-ci-repair` | `000efd66a3f160bb63f8badf60753b59e722e6c2` | diverged; current `main` is ahead by 60, branch retains 6 commits outside `main` | KEEP pending supersession/evidence proof |
+| `work/lordchrist-rich-media-binding` | `1017df9da690855579323df2df154860e3b86d0b` | diverged; current `main` is ahead by 95, branch retains 8 commits outside `main` | KEEP; likely historical rich-track evidence until inspected explicitly |
+
+A branch may be functionally superseded while still containing commits that are not ancestors of `main`. Such a ref must not be deleted until those commits are classified as intentionally abandoned/superseded or preserved elsewhere. Equivalent functionality in `main` is not by itself enough to pass the evidence-retention gate.
+
+## Remaining outlier tips — KEEP pending exact classification
+
+The branch listing also contains additional refs outside the four large absorbed groups that still need exact compare + PR/evidence inspection, including:
+
 - `work/lordchrist-rich-media-binding-v2` → `4aa172ed12514a12ee7a5d7d72002e3c41022e49`;
 - `work/svodka-reconciliation-diagnostics` → `ccf6549ad9950d3981fb8b2521c6286818a5b212`;
 - `work/svodka-retire-completed-rich-oneoffs` → `31d5091f18bc2eea7a46423d9530cb81e4380c32`;
