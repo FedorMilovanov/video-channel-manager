@@ -102,6 +102,8 @@ class MiloviExecutionAuthority(BaseModel):
         if self.execution_authorized:
             if self.release_digest is None or not self.authorized_by or self.authorized_at is None:
                 raise ValueError("active execution authority requires exact release digest and human provenance")
+            if self.publication_id not in self.authorized_by:
+                raise ValueError("authorized_by must name exact publication_id for active execution authority")
             if self.authorized_at.tzinfo is None:
                 raise ValueError("execution authorization timestamp must be timezone-aware")
         elif self.release_digest is not None or self.authorized_by is not None or self.authorized_at is not None:
@@ -319,6 +321,8 @@ def validate_bundle(
         or release.items[0].publication_id != publication_id
     ):
         raise ValueError("Milovi runtime release differs from exact permanent feed binding")
+    if release.release_authorized and (not release.reviewed_by or release.release_id not in release.reviewed_by):
+        raise ValueError("reviewed_by must name exact release_id for authorized Milovi release")
 
     authority = _load_authority(paths["authority"])
     item = release.items[0]

@@ -28,17 +28,13 @@ QUEUE_PATH = REPOSITORY_ROOT / "content/telegram/svodka/draft-14-posts-2026-08.j
 APPROVAL_PATH = REPOSITORY_ROOT / "content/telegram/svodka/release-approval-2026-08.json"
 
 RELEASE_STATE_WRITER_WORKFLOWS = (
-    LEDGER_WORKFLOW,
     SKIP_EXPIRED_WORKFLOW,
     CANARY_WORKFLOW,
     SCHEDULED_WORKFLOW,
     RECONCILE_SKIPPED_WORKFLOW,
     RECONCILE_OUTCOME_WORKFLOW,
 )
-STATE_WRITER_WORKFLOWS = RELEASE_STATE_WRITER_WORKFLOWS + (
-    CUSTOM_EMOJI_CANARY_WORKFLOW,
-    NATIVE_RICH_CANARY_WORKFLOW,
-)
+STATE_WRITER_WORKFLOWS = RELEASE_STATE_WRITER_WORKFLOWS
 
 
 def _workflow(path: Path) -> str:
@@ -65,9 +61,12 @@ def test_all_state_writers_share_lossless_serialization_contract() -> None:
     workflows_dir = REPOSITORY_ROOT / ".github/workflows"
     discovered = {path for path in workflows_dir.glob("*.yml") if expected_group in _workflow(path)}
 
+    assert not LEDGER_WORKFLOW.exists()
     assert not RICH_PRODUCTION_WORKFLOW.exists()
     assert not RICH_SUCCESSOR_WORKFLOW.exists()
     assert not RICH_MESSAGE_28_RECONCILIATION_WORKFLOW.exists()
+    assert not CUSTOM_EMOJI_CANARY_WORKFLOW.exists()
+    assert not NATIVE_RICH_CANARY_WORKFLOW.exists()
     assert {path.name for path in discovered} == expected_names
     assert discovered == set(STATE_WRITER_WORKFLOWS)
     for path in discovered:
@@ -79,85 +78,12 @@ def test_all_state_writers_share_lossless_serialization_contract() -> None:
         _assert_materialized_release_contract(_workflow(path))
 
 
-def test_custom_emoji_capability_canary_is_manual_serialized_and_release_independent() -> None:
-    workflow = _workflow(CUSTOM_EMOJI_CANARY_WORKFLOW)
-
-    assert "workflow_dispatch:" in workflow
-    assert "schedule:" not in workflow
-    assert "push:" not in workflow
-    assert "CUSTOM-EMOJI-CANARY:@deep_info_life:ONE-POST" in workflow
-    assert "group: svodka-telegram-publisher" in workflow
-    assert "cancel-in-progress: false" in workflow
-    assert "queue: max" in workflow
-    _assert_dual_current_main_quality(workflow)
-    assert "release-approval-2026-08.json" not in workflow
-    assert "svodka_approval_cli" not in workflow
-    assert "Persist intent before Telegram mutation" in workflow
-    assert "Archive exact canary outcome before durable-state mutation" in workflow
-    assert "Persist exact canary outcome and block blind retry" in workflow
-    assert "Refuse any second capability-canary attempt" in workflow
-    assert "telegram_custom_emoji_canary send" in workflow
-    assert "sendMessage" not in workflow
-    assert "deleteMessage" not in workflow
-
-    persist_index = workflow.index("Persist intent before Telegram mutation")
-    reproof_index = workflow.index("Re-prove current-main quality immediately before Telegram mutation")
-    send_index = workflow.index("Send exactly one visible custom-emoji capability post")
-    archive_index = workflow.index("Archive exact canary outcome before durable-state mutation")
-    apply_index = workflow.index("Persist exact canary outcome and block blind retry")
-    assert persist_index < reproof_index < send_index < archive_index < apply_index
+def test_custom_emoji_capability_canary_is_retired_from_executable_workflows() -> None:
+    assert not CUSTOM_EMOJI_CANARY_WORKFLOW.exists()
 
 
-def test_native_rich_canary_is_manual_main_only_serialized_and_release_independent() -> None:
-    workflow = _workflow(NATIVE_RICH_CANARY_WORKFLOW)
-
-    assert "workflow_dispatch:" in workflow
-    assert "schedule:" not in workflow
-    assert "push:" not in workflow
-    assert "RICH-CANARY:@deep_info_life:ONE-ARTICLE" in workflow
-    assert "if: github.ref == 'refs/heads/main'" in workflow
-    assert "group: svodka-telegram-publisher" in workflow
-    assert "cancel-in-progress: false" in workflow
-    assert "queue: max" in workflow
-    _assert_dual_current_main_quality(workflow)
-    assert "release-approval-2026-08.json" not in workflow
-    assert "publication-ledger.json" not in workflow
-    assert "svodka_approval_cli" not in workflow
-    assert "Refuse every second native Rich Message canary run" in workflow
-    assert "Persist durable intent before any Telegram mutation" in workflow
-    assert "Dispatch exactly one native sendRichMessage mutation" in workflow
-    assert "Archive exact provider outcome before durable outcome" in workflow
-    assert "Persist durable outcome and permanently block blind retry" in workflow
-    assert "sendMessage" not in workflow
-    assert "deleteMessage" not in workflow
-    assert "editMessageText" not in workflow
-
-    persist_index = workflow.index("Persist durable intent before any Telegram mutation")
-    reproof_index = workflow.index("Re-prove exact current-main quality immediately before mutation")
-    send_index = workflow.index("Dispatch exactly one native sendRichMessage mutation")
-    archive_index = workflow.index("Archive exact provider outcome before durable outcome")
-    apply_index = workflow.index("Persist durable outcome and permanently block blind retry")
-    assert persist_index < reproof_index < send_index < archive_index < apply_index
-
-
-def test_ledger_initialization_is_manual_exact_provider_free_and_dual_quality_proven() -> None:
-    workflow = _workflow(LEDGER_WORKFLOW)
-
-    assert "workflow_dispatch:" in workflow
-    assert "schedule:" not in workflow
-    assert "INITIALIZE:$REQUESTED_DIGEST" in workflow
-    assert "release.release_authorized" in workflow
-    assert "initialize-ledger" in workflow
-    _assert_materialized_release_contract(workflow)
-    _assert_dual_current_main_quality(workflow)
-    initialize_index = workflow.index("initialize-ledger")
-    reproof_index = workflow.index("telegram_github_quality_gate", initialize_index)
-    commit_index = workflow.index('git -C "$STATE_DIR" commit -m "Initialize Svodka publication ledger [skip ci]"')
-    assert initialize_index < reproof_index < commit_index
-    assert "sendMessage" not in workflow
-    assert "sendPoll" not in workflow
-    assert "send-once" not in workflow
-    assert "secrets." not in workflow
+def test_native_rich_canary_is_retired_from_executable_workflows() -> None:
+    assert not NATIVE_RICH_CANARY_WORKFLOW.exists()
 
 
 def test_canary_is_exact_fresh_manual_dispatch_with_durable_intent_first() -> None:
