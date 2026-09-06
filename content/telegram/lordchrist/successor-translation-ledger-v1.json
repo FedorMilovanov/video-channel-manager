@@ -1,0 +1,490 @@
+{
+  "schema_name": "video-channel-manager.telegram-quote-successor-translation-ledger",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "corpus_id": "lordchrist-successor-quotes-v1",
+  "entries": [
+    {
+      "publication_id": "lordchrist-successor-augustine-one-substance",
+      "quote_ru": "Отец, Сын и Святой Дух являют Божественное единство одной и той же сущности в нераздельном равенстве.",
+      "source_fragment_sha256": "sha256:95fdd4674a929e64a5519805c4e5ba5b09c943e0aef4dbe7017e5e15aeaf1077",
+      "translation_binding_sha256": "sha256:3659ee28ddde1ee819915e80186ba4656f10042137f3ec32bfcc9bebfb673a13",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-chrysostom-pride-stronghold",
+      "quote_ru": "Это было крепостью наших зол, корнем и источником всякого нечестия.",
+      "source_fragment_sha256": "sha256:dd12cc0b099313ddf5a6b3893a2c233e696b9226782629ecc3cc5054168b2b05",
+      "translation_binding_sha256": "sha256:33ff1fd7610441e4847ced70a8e30ec54174ab9f002b9f7683a26f81a8835f53",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-owen-kill-sin",
+      "quote_ru": "Умерщвляй грех, иначе он будет умерщвлять тебя.",
+      "source_fragment_sha256": "sha256:8d6b525569368d4ee032a88c292bb443ae50e9cbf2437d124c27f59c75d6e854",
+      "translation_binding_sha256": "sha256:116cc3e48c5a26f45ebc1256ea60dd6020cc6ee750fc2065d779bcd9257dbf21",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-charnock-best-not-worst",
+      "quote_ru": "Неужели Бог повелевает творениям отдавать нам лучшее, а мы отделываемся перед Ним худшим от самих себя?",
+      "source_fragment_sha256": "sha256:fc4a89d3ff21312434fdfd808422f12fb75ae0bfcee606f97c35a7b00464e4ac",
+      "translation_binding_sha256": "sha256:954fa0c8f03a0867a135c2741eec14e37cbb9c0a80723c1102c2c0de996bf20a",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-gurnall-arms-dependence",
+      "quote_ru": "Тот, Кто даёт вам оружие, один может научить пользоваться им и дать вам победить посредством него.",
+      "source_fragment_sha256": "sha256:c24b752529cb5323a0f4158881dc72c09f92d71c5dab7e31ec761f82d189eead",
+      "translation_binding_sha256": "sha256:8dfb167c95974e561bb39887fbf74829be90d9cb5c1424c4fdac711b673b6e53",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-bunyan-perfect-righteousness",
+      "quote_ru": "Я увидел, что мне нужна совершенная праведность, чтобы представить меня перед Богом без вины.",
+      "source_fragment_sha256": "sha256:70b56bf1e100cb723cd1e6ffe1a122d480992c9e1ee516fc12e55a06ae0ae270",
+      "translation_binding_sha256": "sha256:68c3c6b67bba263b8edcf9daf77fb3235f8c6a6b2155baff621192ad54362370",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-augustine-indivisible-works",
+      "quote_ru": "Отец, Сын и Святой Дух, будучи нераздельными, также и действуют нераздельно.",
+      "source_fragment_sha256": "sha256:b06a620f4dfd73f45576433a34fc71d9cfeed2bd38312dac61b08fe7c34202c7",
+      "translation_binding_sha256": "sha256:54bd5c0124394fb0b6a091acdaf606cee2e1f3fa6dfb5522e2b645bbb9a01f61",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-chrysostom-humility-self-command",
+      "quote_ru": "Как гордость есть источник всякого нечестия, так смирение — начало всякого самообладания.",
+      "source_fragment_sha256": "sha256:dfbe15b30846a1e966ac5f8404c50ad95b88b7e4ae5c02b8beac2643c79cc533",
+      "translation_binding_sha256": "sha256:a205f0e7de2efa9a4ae86a88c9816df388eb0082bcc7649988226e3a3a9f05aa",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-owen-sin-utmost",
+      "quote_ru": "Грех всегда стремится к крайнему пределу.",
+      "source_fragment_sha256": "sha256:f056f6272f917fb0faf290abddc882e59b591e6c7959b692dfd8ce58da90af44",
+      "translation_binding_sha256": "sha256:934bbc863680e799883b0bfc0752ad886039c80c1e8034749fd8b61be2312cd1",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-charnock-best-part",
+      "quote_ru": "Поскольку Бог желает поклонения от Своего творения, оно должно совершаться лучшей частью Его творения.",
+      "source_fragment_sha256": "sha256:606e4285f17938b93bc6336cc3bcb7780f241363a207c2a1200557778d8a7b07",
+      "translation_binding_sha256": "sha256:7efeda7aacc0ea6da84b54f8eb017359ed6009c39e6037df58445c58f6a3c00d",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-gurnall-humble-boldness",
+      "quote_ru": "Христианин в молитве приближается к Богу со смиренной дерзновенностью веры.",
+      "source_fragment_sha256": "sha256:23405575689ea73afbbb98006b1d3f7d4c0bcd1dfd3b3c0de320ae73e13cc496",
+      "translation_binding_sha256": "sha256:a4b58080ef1f48cc1eeecbdf56a656fc8287ca8b6ddf6c7d281b616dd2557e26",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-bunyan-righteousness-in-christ",
+      "quote_ru": "Этой праведности нигде нельзя было найти, кроме Личности Иисуса Христа.",
+      "source_fragment_sha256": "sha256:b32d264e0336d14d5797f48a79c1d152a188f45fae77d07b5dc1721ab66b2057",
+      "translation_binding_sha256": "sha256:e61af101af8333253248b1492ca1afab4169df06570ca377262152390bba35d6",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-augustine-nourished-faith",
+      "quote_ru": "Мы должны питаться верой и быть ведомыми такими путями, которые более соответствуют нашей способности.",
+      "source_fragment_sha256": "sha256:542f312a74ebc8bb0915fb9abb6969bd900f254b7c3045f06ca296b268f633be",
+      "translation_binding_sha256": "sha256:53fc8cf67db4252eb54c821ff19a5ada05b7eba7c41cd876107a81384b89399c",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-chrysostom-humility-adds",
+      "quote_ru": "Смирение не только ничего у нас не отнимает, но прибавляет нам даже то, чего у нас ещё нет.",
+      "source_fragment_sha256": "sha256:19c853bcefa5853c604099689a6abd25fe5fcf2473acb8e4f6b084f648e988b1",
+      "translation_binding_sha256": "sha256:b6db7f2a8dcb4025a10e4e4d5cd757ca0a5b37c181b9954ed8391b0d2b8d75fc",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-owen-mortify-by-spirit",
+      "quote_ru": "Все иные пути умерщвления греха тщетны; всякая помощь оставляет нас беспомощными: это должно совершаться Духом.",
+      "source_fragment_sha256": "sha256:7b7ef076fa5fdf4bb9fe3d964636e7f472e65ebc3f446125f02eac202a250a23",
+      "translation_binding_sha256": "sha256:07a4eeef36b285024f781c1e8934888186ffac61c9741df99dc89926b749c4d5",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-charnock-immutability-perfection",
+      "quote_ru": "Неизменность Бога есть совершенство.",
+      "source_fragment_sha256": "sha256:cabd5fc52b2420200980aabdfc70ac82c94724a7b64d00af431e0a467d3af8f7",
+      "translation_binding_sha256": "sha256:eedd8612e7f8da08267737c291b9b43e7172cef029b3a26737f7dd369db64280",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-gurnall-defend-in-suffering",
+      "quote_ru": "Они даны защищать его в страдании, а не освобождать от него.",
+      "source_fragment_sha256": "sha256:6408cebaeaac83b2738d772229efbc6e63cdbab84581a29eeb88c82ce38d342f",
+      "translation_binding_sha256": "sha256:13a57e91a45f370319a81f3c6932419251037f53114f2bb118a0a891005c42bf",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-bunyan-christ-righteousness-unchanged",
+      "quote_ru": "Моя праведность была Сам Иисус Христос, вчера, сегодня и вовеки Тот же.",
+      "source_fragment_sha256": "sha256:b1f52bdf66b8f56ba0ab614c329948e37517141213efbad24377322c6ca5269a",
+      "translation_binding_sha256": "sha256:6c97a88063925b8a70428bc5e0d2962a50f400f3bcb0fcf6500881f28caa6b58",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-augustine-trinity-inquiry",
+      "quote_ru": "Ни в каком другом предмете ошибка не опаснее, исследование не труднее, а открытие истины не полезнее.",
+      "source_fragment_sha256": "sha256:82ed3eb6ba9728889e14c04e48b2002177937dd5f3b816af6246e07cab13928d",
+      "translation_binding_sha256": "sha256:b430e81357b37eb5545290d4acaa5314f9a45e47edf32f5c576f83609d222521",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-chrysostom-groundwork-good",
+      "quote_ru": "Это смирение является основанием всего, что есть доброго.",
+      "source_fragment_sha256": "sha256:82392abcbf8f97b95eb2d40e3ad319441484658a79d1a21fec8a0a3bbd1e9ffb",
+      "translation_binding_sha256": "sha256:f1ed67514c4fbdc20fc945ce3a22f5e30de5a3de44c125578cb73a7b14ce3f31",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-owen-sin-darkens",
+      "quote_ru": "Как грех ослабляет, так он и помрачает душу.",
+      "source_fragment_sha256": "sha256:397e7041a7bdc88cc6df9f58ff11fa51c8b07660d8cea0f97ad2faf8654d8e91",
+      "translation_binding_sha256": "sha256:bb148ad6640676bf23b8c93b7d9601b3dc40eda9a9f593f0919f7ebf1d89a187",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-charnock-necessarily-unchangeable",
+      "quote_ru": "Бог необходимо есть Тот, Кто Он есть, и потому неизменно остаётся Тем, Кто Он есть.",
+      "source_fragment_sha256": "sha256:6a01f0b9b7a2da39db1047d2c41caf589ec30ca8fd0dd588a3901351157874e0",
+      "translation_binding_sha256": "sha256:ad18fca3bf01ad266cbd1ae292270de2753e25c048e96f18ea3af0f38c2c4471",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-gurnall-armour-field",
+      "quote_ru": "Доспехи даны не для того, чтобы носить их дома у очага, а для поля.",
+      "source_fragment_sha256": "sha256:f69bc0e3582eadfd962f1e1d3dcbf5feb538db081ae9ebdb882c4a4c924aa6db",
+      "translation_binding_sha256": "sha256:f81f0ace745aa8c19304b9b52e0963b66617fa30dbf5ddf7163ee770c05df23c",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-bunyan-nothing-but-christ",
+      "quote_ru": "Христос! Христос! Перед моими глазами не было ничего, кроме Христа.",
+      "source_fragment_sha256": "sha256:40db22442099633a541b589896cd5eb1cb3dcb40ee066f0dc58cbbce24ac9e7e",
+      "translation_binding_sha256": "sha256:6c79b91176ea0649c16b5d9923ac3a8637ea3bb008cba5f24d06e4cce45ed5a6",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-augustine-embrace-love",
+      "quote_ru": "Обними любовь Божью и через любовь обними Самого Бога.",
+      "source_fragment_sha256": "sha256:9a64995439d92efbbc723868bac77475c1c1a7927c6c4c5300a00765fd1dac89",
+      "translation_binding_sha256": "sha256:41a46c6718ace75fd39bf1e2dfddfc20b43ce99e89ece7d8c2a012ade9a17e71",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-chrysostom-word-unchanged",
+      "quote_ru": "Слово, Которое было Богом, не превратилось в человека с утратой Божества, и Его сущность не изменилась, но Он явился как человек.",
+      "source_fragment_sha256": "sha256:7ad3d8dcf8068e3274dadc4b8551fbef4f6bf3ae794ec6da7ef77ea218bc7ca4",
+      "translation_binding_sha256": "sha256:f4de41dfd98be55e1bd7cb863ccf20ac2b7ceba6c31f674d0daeb69f9fe46820",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-owen-receive-father-love",
+      "quote_ru": "Принять её — значит поверить ей.",
+      "source_fragment_sha256": "sha256:098418d41f41aa09c3abce00306358f26ffc71a904c61a422f5db79ac5191556",
+      "translation_binding_sha256": "sha256:ccefc48f4ece4a1a0602be32093d4376c0cf012fe60fc654a1ca820b1d1729e0",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-charnock-decrees-promises",
+      "quote_ru": "Всё, что Бог постановил, неизменно; всё, что Бог обещал, будет исполнено.",
+      "source_fragment_sha256": "sha256:7727d18cd7f8834c2b4359ddef92dceb434d81dfbbb6713dd6893de1d36962d2",
+      "translation_binding_sha256": "sha256:921bcefe6318047a26118a28b00e8776ab9565bbc4a58833bbfa1e88629ad0b4",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-gurnall-resolve-hardship",
+      "quote_ru": "Решись на трудность — или сложи оружие.",
+      "source_fragment_sha256": "sha256:f50d873b878ada1acc9ae1080b4d65bf40af7fd4923db3153b7b54eab75326b8",
+      "translation_binding_sha256": "sha256:ace9cf748e26c128096d9af440e94565bbd49367219407e28ecd5d64be2b0560",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-bunyan-christ-is-all",
+      "quote_ru": "Теперь Христос был всем: всей моей мудростью, всей моей праведностью, всем моим освящением и всем моим искуплением.",
+      "source_fragment_sha256": "sha256:0bfab3aba9ca4549c671801544586529a673893752b684a137a9818f32af68ef",
+      "translation_binding_sha256": "sha256:75d83eba76feccccbb4fdb166c580f50970d0fb42ae194060298cafef84f2ff6",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-augustine-pride-love",
+      "quote_ru": "В той мере, в какой мы исцеляемся от опухоли гордости, в той же мере мы всё больше наполняемся любовью.",
+      "source_fragment_sha256": "sha256:3e3d542d8a3a42e3b11d6aa92a2a74ab92687039035b5de9c56ffc4e43908497",
+      "translation_binding_sha256": "sha256:daae50601274566bdeff8234a38f2ca2b4af27d6a2177c9d931fc160a45c7116",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-chrysostom-son-obedience",
+      "quote_ru": "Он стал послушен как Сын Своему Отцу; этим Он не впал в рабское состояние.",
+      "source_fragment_sha256": "sha256:e96bd7483cce989e782f98850c4a57d721d1dc7bc9df244619d7c1bcb83de64d",
+      "translation_binding_sha256": "sha256:cfeabde1e70e1037d08622f9b8292696efadd6c51e01220b2047e6bcbce71591",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-owen-adoration-trinity",
+      "quote_ru": "Всякое поклонение относится к тому, что обще всем; поэтому в каждом акте поклонения и почитания поклоняются и почитают всех.",
+      "source_fragment_sha256": "sha256:226aef1142b6b38cb83bbb1c78b325562376350befece23b247bc49bd8ceb858",
+      "translation_binding_sha256": "sha256:285987be40ec638774cea6272edcadbd061c5ed959c37ebb31fc6255d31e3457",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-charnock-immutably-good",
+      "quote_ru": "Быть неизменно благим — не признак несовершенства, а высота совершенства.",
+      "source_fragment_sha256": "sha256:0fc0adb950160e17c50f29cc6054ada78b7a2ebafd9f186e66cc82cf7d5e0c40",
+      "translation_binding_sha256": "sha256:9d2b827997965c19c07c1980905123009795a733e67258a4021fd59bc36209ee",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-gurnall-sense-weakness",
+      "quote_ru": "Осознание слабости души — особое средство побудить к большей осторожности и усердию.",
+      "source_fragment_sha256": "sha256:3509140328640f5872de8a1f9638fd78396b986e7b39765f424c3a931d18d725",
+      "translation_binding_sha256": "sha256:26e943abb7ed9efa32b0fb786a532b934a325e0c877f991df0353ea4ed42a3a2",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-bunyan-union-victory",
+      "quote_ru": "Если Он и я едины, тогда Его праведность — моя, Его заслуги — мои, Его победа также моя.",
+      "source_fragment_sha256": "sha256:2605cc9d75c57e1bafe2764950e5ac1b4606bdaedb380b1d273d0b0dee942331",
+      "translation_binding_sha256": "sha256:6588245a7ca757ced15a6aa2647854d9cc7abf65e2a89f44d59b41a1eec0cd9a",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-augustine-love-three",
+      "quote_ru": "Вот три вещи: тот, кто любит; то, что любимо; и сама любовь.",
+      "source_fragment_sha256": "sha256:3eb575abb3456e11c999e7283f693d38cd01ca3a9847deb05a5218ca6d42ee41",
+      "translation_binding_sha256": "sha256:aa70891256bd7849858578c9ef9b46a3fa68ced88e1603005b9749e584c1829c",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-chrysostom-all-rise",
+      "quote_ru": "Все воскреснут, однако не все к жизни: некоторые — к наказанию, а некоторые — к жизни.",
+      "source_fragment_sha256": "sha256:21aa6ba8c43160fa42fd466cd9755e23b090b5a1500da0ecba04d6cfd128dab8",
+      "translation_binding_sha256": "sha256:9c67c2d67a46a504366701d4e479bcf84a2a01250c8ea49557a3d9aa928b6b3b",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-owen-access-trinitarian",
+      "quote_ru": "В поклонении наш доступ — «к Отцу»; и это «через Христа», то есть Его посредничество; «Духом», то есть при Его содействии.",
+      "source_fragment_sha256": "sha256:7bb86b39aed781b87313b1320e3ed7acdabbc02df510c643f650021eb661a85d",
+      "translation_binding_sha256": "sha256:80c922bce1870bdc0b6ee3f34a74060496b8b658afacaf761f1a87316e3800f7",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-charnock-prefer-immutable-god",
+      "quote_ru": "Предпочти неизменного Бога изменчивым творениям.",
+      "source_fragment_sha256": "sha256:a39cb84b7f8a09848eaf74c871960bc78074132f27fa56f0da649ba2646ac05c",
+      "translation_binding_sha256": "sha256:31502bc7a9294fcd1a6f313f366619d3c9d8ff442d362c99cba6a664dd0e8070",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-gurnall-duty-difficulties",
+      "quote_ru": "Во всём христианском хождении с Богом и служении Богу нет обязанности, которая не была бы окружена многими трудностями.",
+      "source_fragment_sha256": "sha256:bcad5877f56927f9d08543098ce1e6a8e07e4a40199869bd325f4bfcd4873e6d",
+      "translation_binding_sha256": "sha256:4af40b6bae7ff7e1aff1b01b8dc6b9defc4a5b7e9fda06fbab1f716dcac6d6fe",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-bunyan-god-portion",
+      "quote_ru": "Сам Бог есть удел святых.",
+      "source_fragment_sha256": "sha256:10504f6aaa60fed558b0833567701a47d19d2d5fce045a1f8bf2657c2e781b0f",
+      "translation_binding_sha256": "sha256:ce62659234f778d177fa00ebf622f04f3366b261f50ffa6b5703adc6e00ddcad",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-carson-faith-object",
+      "quote_ru": "Спасает не интенсивность нашей веры, а объект нашей веры.",
+      "source_fragment_sha256": "sha256:e7cb3690329c7058ccf1839460bf7a7eb27e54450292d3399239f21ceea34eb8",
+      "translation_binding_sha256": "sha256:9c3f5663664354bb8a8eecfe5bfd5c9f26cfdca5bcf05d223b478509aadb1256",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-macarthur-repentance-not-merit",
+      "quote_ru": "Покаяние не более заслуживающее спасение дело, чем вера. Это внутренний ответ.",
+      "source_fragment_sha256": "sha256:f00f9dd14c85c0d02e0d591bf6e0e6e0cb89222908c527636d8da51022305ed5",
+      "translation_binding_sha256": "sha256:b66cd42b18e51330ec79ffec3c31ec6c5cd4bbb7007d09f87ed6aea03c58cec4",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-piper-prayer-pattern",
+      "quote_ru": "Молитесь Отцу во имя Сына силой Святого Духа.",
+      "source_fragment_sha256": "sha256:a120fe7a32dc9048b873d7a2cc3532601e04377b189a70a307ab7cb68f359353",
+      "translation_binding_sha256": "sha256:35416351710fb04e13509107158d8646f579f17773396aced54bb48f2f952575",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-strauch-followership-first",
+      "quote_ru": "Последователь Иисуса должен учиться всю жизнь. Следование предшествует лидерству.",
+      "source_fragment_sha256": "sha256:b0654f57682f8b73fd05e0cad56d4faea18b749ebc1de6627c74c5545355580e",
+      "translation_binding_sha256": "sha256:4f7ccb7830677f439e5ea7287334816f6340adb3b580efc4cab541f43ea91205",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-block-covenant-terms",
+      "quote_ru": "Бог избирает участника завета. Бог устанавливает условия. Бог определяет цель завета.",
+      "source_fragment_sha256": "sha256:5fa18ec3858c3e155feaf4a33693fd5e633990462485af163947d3f1852f947c",
+      "translation_binding_sha256": "sha256:c124d92797c7a36ddb72b225a42bd26195851b2420080307cc59b80aed866a36",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-baucham-truth-goodness-gospel",
+      "quote_ru": "Верующие должны быть снаряжены ходить в истине, стремясь к добру и красоте силой Евангелия.",
+      "source_fragment_sha256": "sha256:36b65a8b82b0b9912fc3665bc9d7c201e372a3228433496bfb9ca2c3b5b45797",
+      "translation_binding_sha256": "sha256:90b6bdf52922cda3757c755bcb4479f3430428f4bba03dd7ba4f463a2cd39751",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-carson-father-son-love",
+      "quote_ru": "Любовь Отца к Сыну и любовь Сына к Отцу.",
+      "source_fragment_sha256": "sha256:42cd28e4b390ba938d21818e8cd42bf8162a3f5236ee9dd6e2cb922d805f7168",
+      "translation_binding_sha256": "sha256:a56c9d0c221d235e84f500e208d13b58ca1355c137d8e885bf9bec5670f90704",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-macarthur-resurrection-cornerstone",
+      "quote_ru": "Воскресение Иисуса Христа — краеугольный камень христианской веры.",
+      "source_fragment_sha256": "sha256:4a6ee3ac174ae2c7c90633b035bf2d212bb0ed1961d51c23d0792435d8664f16",
+      "translation_binding_sha256": "sha256:c3f106e16cc1920fcce96db7a2768bfbd05026b2b80563bf3a6e8e3f2fb10699",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-piper-father-spirit-authority",
+      "quote_ru": "Молитесь Богу Отцу силой Бога Духа, во имя и властью Бога Сына.",
+      "source_fragment_sha256": "sha256:d4ed1a067d1b1e61a8c2a6fbeb6458c09586e0cf2dcb92a0cfa0786f0b5bb76f",
+      "translation_binding_sha256": "sha256:9fc6a1326d8d9a486d277f33b9477184b2c984499eb46136484c071c4beb7eb7",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed",
+      "exact_fragment_override": "Pray to God the Father in the power of God the Spirit, in the name or by the authority of God the Son."
+    },
+    {
+      "publication_id": "lordchrist-successor-strauch-leading-love",
+      "quote_ru": "Когда руководители и учителя узнают, что Библия говорит о любви, это заметно улучшает их отношения и действенность в служении.",
+      "source_fragment_sha256": "sha256:9d864bb1fb16c77b4ff470be81203d5c3734965cc3bb0bde4713a66b1bd9e868",
+      "translation_binding_sha256": "sha256:20d22d6b1f5af19dc455a2067aa73e73185688bada1bcfa93b961eaa3840e747",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-carson-eternal-perfect-love",
+      "quote_ru": "В вечности Отец любил Сына совершенной любовью.",
+      "source_fragment_sha256": "sha256:f1086a4c7d96c4de4958d2e456676d3cba76a8754396fc8751b6c65cff2e076a",
+      "translation_binding_sha256": "sha256:36ff264ef9a46c5bc54241bdd44b099128a3211b681f8d67fc50c1c4fc1c0e38",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-macarthur-one-god-three",
+      "quote_ru": "Есть один Бог. Он вечно существует в трёх Лицах. Каждое из трёх Лиц полностью есть Бог.",
+      "source_fragment_sha256": "sha256:d03bed1fed30ab7c1e0c45222baff4fa10ff191ecbac196fc57e81374916da7c",
+      "translation_binding_sha256": "sha256:c720458ba65a022b6a4166c6f9f273975d8ba8ef9d5f3f655dc1ce3f3d1543d3",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-piper-spirit-eternal-love",
+      "quote_ru": "Святой Дух — вечная любовь, текущая между Отцом и Сыном, когда Они наслаждаются друг другом.",
+      "source_fragment_sha256": "sha256:3a610414051b5989c15aafad9940f7491d7d8608af98b51f4b1e672d7227b7c8",
+      "translation_binding_sha256": "sha256:b9728a384dba126161e74e6f59174555a63b80f5e43860491be62910adfa024b",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-carson-elective-love",
+      "quote_ru": "Иногда Божья любовь избирает: она выбирает одного, а не другого.",
+      "source_fragment_sha256": "sha256:783782b1effd854e619b6889a6e4e962ae97d94986d1478a53a9f57b18fa7bc4",
+      "translation_binding_sha256": "sha256:571dd5d3347bd20e7419be57257f4681ce775fcb36e192a19e9ba0d87328c00f",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-macarthur-eternal-sonship",
+      "quote_ru": "Писание действительно представляет отношения Бога Отца и Христа Сына как вечные отношения Отца и Сына.",
+      "source_fragment_sha256": "sha256:e1da4e1a19b1ca1d76fb9b14f7b914433165a12c91bf2ca6b38feff272a98c26",
+      "translation_binding_sha256": "sha256:fa31c8880f91ec5928267600663dc67dd1d09b2ea0589f1051d73a6450bd735d",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-piper-pray-all-persons",
+      "quote_ru": "Правильно и неизбежно молиться всем Лицам Троицы.",
+      "source_fragment_sha256": "sha256:ce3e20e4dfb2fad099e63f8e34845420d98e45e69e9486b69eb634b7df2e4b85",
+      "translation_binding_sha256": "sha256:777e28228bf95b15c7a1ea61b412aeb36f608082da6e7f3d87917ed68abae1ae",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-carson-resurrection-focus",
+      "quote_ru": "Все новозаветные авторы в равной мере сосредоточены на воскресении Господа Иисуса.",
+      "source_fragment_sha256": "sha256:4c051fbdc4a1456f1ccee9d8884bbd307ae5867d8745473f15ca914be46b9f57",
+      "translation_binding_sha256": "sha256:578477e882a857298f064ff01c4e695b2c19abe46d0b461fe39a70828b4b1686",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    },
+    {
+      "publication_id": "lordchrist-successor-macarthur-full-essence",
+      "quote_ru": "Полная, неразбавленная и неразделённая сущность Бога одинаково принадлежит Отцу, Сыну и Святому Духу.",
+      "source_fragment_sha256": "sha256:3a3e3ba7f3c9089dd85802ac48ff1a0bdfd826fac9f78a84d23258c11f3f34e1",
+      "translation_binding_sha256": "sha256:c8d0e7dc4e55c2e7099f61312c2afb3ddb3417e2eab9c0385cc628f954de4aa6",
+      "scope": "exact_fragment_only",
+      "review_state": "reviewed"
+    }
+  ]
+}
