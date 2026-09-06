@@ -10,9 +10,7 @@ from video_channel_manager.telegram_historical_bundle import (
 from video_channel_manager.telegram_historical_editorial import build_historical_rich_document
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = Path(
-    "content/telegram/lordchrist/historical-editorial/v1/cycles/2026-09-cycle-01/manifest.json"
-)
+MANIFEST = Path("content/telegram/lordchrist/historical-editorial/v1/cycles/2026-09-cycle-01/manifest.json")
 
 
 def test_sealed_historical_bundle_materializes_against_real_repository_data() -> None:
