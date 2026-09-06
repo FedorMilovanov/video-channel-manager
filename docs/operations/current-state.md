@@ -24,7 +24,7 @@ Only `main` is a supported code/runtime execution baseline.
 
 ### Current checkpoint
 
-The exact repository checkpoint used for this documentation sync is `main` `11df90a356f2b56cecf1c53861704694ce1fc311` (PR #557). Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
+The exact repository checkpoint used for this documentation sync is `main` `796c955de8fef3cdeab7ad8341a365b0e3245e85`. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
 
 Material late-2026-09-06 / early-2026-09-07 hardening now present on `main`:
 
@@ -33,10 +33,12 @@ Material late-2026-09-06 / early-2026-09-07 hardening now present on `main`:
 - PR #544: Milovi live release/execution gates bind exact publication identity through structured `reviewed_publication_id` / `authorized_publication_id`; free-text provenance cannot satisfy a fresh live authorization gate.
 - PR #533: `milovi-feed-20260906-001` was merged provider-inert and expired without release/execution authorization or durable feed registration. It is stale evidence and must not be initialized, published, retimed or caught up.
 - PR #548: LordChrist verified-quote production moved from a global one-publication-per-day guard to explicit durable `morning` / `evening` slots.
-- PR #550: branch-hygiene final ledger merged; the audited 146-ref baseline is completely classified as 8 KEEP / 138 DELETE candidates.
+- PR #550: branch-hygiene final ledger merged; the audited 146-ref baseline was completely classified as 8 KEEP / 138 DELETE candidates.
 - PR #551: scheduled LordChrist provider dispatch now rejects a slot-less scheduled envelope before any Telegram HTTP call.
-- PR #555: provider-critical CODEOWNERS coverage was expanded; this is review routing and does not replace server-side branch/ruleset enforcement.
+- PR #555: provider-critical CODEOWNERS coverage was expanded; this is review routing and does not replace server-side branch protection.
 - PR #557: the reviewed 60-card LordChrist successor quote corpus, translation ledger, exact source/translation bindings and provider-inert staged release were merged.
+- Issue #531 is completed after the exact 138-ref frozen deletion manifest was physically deleted through genuine GitHub delete-ref operations and independently verified with a complete post-delete branch listing.
+- `main` now has real server-side branch protection with eight GitHub Actions required checks bound to GitHub Actions App `15368`, strict up-to-date enforcement and administrator enforcement.
 
 ## Telegram / LordChrist verified quotes
 
@@ -141,25 +143,33 @@ Canonical runbooks: [`resi-dash-local-handoff.md`](resi-dash-local-handoff.md) a
 
 PR #550 merged the final role ledger: [`branch-hygiene-final-ledger-2026-09-06.md`](branch-hygiene-final-ledger-2026-09-06.md). Its frozen baseline completely partitions 146 refs into **8 KEEP / 138 DELETE candidates** with exact tip/evidence dispositions. Force-moving obsolete refs is explicitly not deletion and remains prohibited.
 
-GitHub automatically removed the merged PR heads for #548 and #550. Those refs require no manual cleanup. New LordChrist refs created after the frozen baseline are not part of the 138-delete manifest and must not be swept by prefix or by an inverse keep-list.
+Issue #531 is closed as **completed**. The exact 138-ref frozen DELETE manifest passed a provider-inert PLAN-ONLY preflight proving 127 absorbed tips and 11 explicitly dispositioned divergent histories, with zero moved refs and zero open-PR collisions. A repository-admin `gh api DELETE repos/.../git/refs/heads/...` pass then deleted exactly 138/138 refs with exact-SHA rereads before each deletion.
 
-Issue #531 remains open because the connected GitHub mutation surface still exposes no genuine delete-ref action. Physical cleanup must use a real branch/ref deletion surface with exact-SHA preconditions, an immediate open-PR recheck per ref and a full post-delete inventory. `main`, all `state/*`, content-addressed Milovi evidence and active/new agent refs must remain unchanged.
+Fresh GitHub post-delete inventory is complete: page 1 contains **11 refs** and page 2 is empty. `main`, all three durable `state/*` refs and content-addressed Milovi evidence `agent/milovi-video-accepted-73c578eff825` remain intact. Active/new LordChrist and documentation refs created outside the frozen manifest remain separate work and must not be swept by prefix or inverse keep-list.
 
 ## GitHub governance
 
-At this checkpoint `main` still reports `protected=false`, classic required-status enforcement `off`, and no repository ruleset enforcement. Green workflows and repository policy files do not create GitHub branch protection themselves.
+`main` now has real classic GitHub branch protection enabled. Fresh GitHub branch readback reports `protected=true`, required-status enforcement level `everyone`, and exactly eight required GitHub Actions checks, each bound to GitHub Actions App ID `15368`:
 
-The connected GitHub App lacks the repository-administration write surface required to apply real branch protection. The correct external admin operation is to require PRs, strict up-to-date required checks, administrator enforcement, conversation resolution, no force-push and no deletion of `main`, followed by a fresh GitHub readback. Do not simulate this with workflow YAML or documentation.
+- `quality (3.11)`;
+- `quality (3.12)`;
+- `quality (3.13)`;
+- `PowerShell Windows 5.1`;
+- `PowerShell Windows 7`;
+- `PowerShell Linux 7`;
+- `milovi-gap-read`;
+- `permanent-feed-contract`.
 
-The stable required check contexts verified on current PRs are the common CI matrix/jobs plus `milovi-gap-read` and `permanent-feed-contract`; all are unconditional `pull_request` workflows. Exact settings must still be read back after an external admin change before this document may claim protection is enabled.
+The repository-admin apply/readback also verifies strict up-to-date required checks, PR-before-merge with `required_approving_review_count=0`, administrator enforcement, required conversation resolution, force-push disabled, protected-branch deletion disabled, linear-history enforcement disabled and branch locking disabled. The zero-approval setting deliberately avoids a single-owner self-review deadlock while still requiring the PR and all protected checks. Repository rulesets remain empty; classic branch protection is the active server-side enforcement surface.
+
+The connected GitHub App still cannot read the full Administration-only `/branches/main/protection` object, but its independent branch endpoint confirms `protected=true`, enforcement=`everyone` and the exact eight `(context, app_id=15368)` bindings. Do not confuse that connector permission boundary with absence of protection.
 
 ## Next safe work
 
-1. Finish #531 only through the exact 138-ref frozen deletion manifest and fresh post-delete readback; never bulk-delete by prefix and never touch new active refs.
-2. Apply real `main` branch protection through a repository-admin surface, then verify it from GitHub before declaring governance closed.
-3. Continue #552 historical-editorial work in its active lane; review its eventual PR independently rather than creating competing provider-authority paths.
-4. Continue #503 only when a fresh owner AuditPackage/media source exists; do not write speculative replacement code for an external-data blocker.
-5. Treat #353 as measured growth/future-publication operations with no standing provider authority.
-6. For any provider-visible work, start from fresh current `main`, fresh durable state, exact target identity, immutable operation identity and a new explicit owning authorization scope.
+1. Continue #552 historical-editorial work in its active lane; review its eventual PR independently rather than creating competing provider-authority paths.
+2. Continue #503 only when a fresh owner AuditPackage/media source exists; do not write speculative replacement code for an external-data blocker.
+3. Treat #353 as measured growth/future-publication operations with no standing provider authority.
+4. Reclassify only the small retained/active branch set when its owning scopes close; do not reopen the completed frozen #531 cleanup or bulk-delete by prefix.
+5. For any provider-visible work, start from fresh current `main`, fresh durable state, exact target identity, immutable operation identity and a new explicit owning authorization scope.
 
 Nothing in this document is authorization for a provider mutation.
