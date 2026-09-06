@@ -10,9 +10,7 @@ from video_channel_manager import milovi_telegram_feed as milovi
 
 PUBLICATION_ID = "milovi-feed-20260821-001"
 LEGACY_UNSCOPED_PUBLICATION_ID = "milovi-feed-20260820-002"
-RELEASE_PATH = Path(
-    "content/telegram/milovi-cake/releases/milovi-feed-20260821-001-runtime.json"
-)
+RELEASE_PATH = Path("content/telegram/milovi-cake/releases/milovi-feed-20260821-001-runtime.json")
 DIGEST_A = "sha256:" + "a" * 64
 DIGEST_B = "sha256:" + "b" * 64
 DIGEST_C = "sha256:" + "c" * 64
@@ -49,9 +47,7 @@ def test_active_execution_authority_rejects_generic_human_provenance() -> None:
 
 
 def test_active_execution_authority_accepts_exact_publication_provenance() -> None:
-    authority = _active_authority(
-        f"human user explicitly authorized {PUBLICATION_ID} for @MiloviCake"
-    )
+    authority = _active_authority(f"human user explicitly authorized {PUBLICATION_ID} for @MiloviCake")
 
     assert authority.execution_authorized is True
     assert authority.provider_mutation_allowed is True
@@ -59,9 +55,7 @@ def test_active_execution_authority_accepts_exact_publication_provenance() -> No
 
 def test_authorized_release_rejects_generic_review_provenance(monkeypatch: pytest.MonkeyPatch) -> None:
     release = milovi.load_release(RELEASE_PATH)
-    generic_release = release.model_copy(
-        update={"reviewed_by": "human user requested real posts"}
-    )
+    generic_release = release.model_copy(update={"reviewed_by": "human user requested real posts"})
     monkeypatch.setattr(milovi, "load_release", lambda _path: generic_release)
 
     with pytest.raises(

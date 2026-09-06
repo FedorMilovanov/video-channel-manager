@@ -321,9 +321,7 @@ def validate_bundle(
         or release.items[0].publication_id != publication_id
     ):
         raise ValueError("Milovi runtime release differs from exact permanent feed binding")
-    if release.release_authorized and (
-        not release.reviewed_by or release.release_id not in release.reviewed_by
-    ):
+    if release.release_authorized and (not release.reviewed_by or release.release_id not in release.reviewed_by):
         raise ValueError("reviewed_by must name exact release_id for authorized Milovi release")
 
     authority = _load_authority(paths["authority"])
