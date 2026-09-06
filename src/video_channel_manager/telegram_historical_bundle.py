@@ -155,6 +155,14 @@ def _load_json(path: Path) -> object:
         raise ValueError(f"invalid historical bundle JSON {path}: {exc}") from exc
 
 
+def _load_bound_json(path: Path, expected_sha256: str, *, label: str) -> object:
+    payload = _load_json(path)
+    actual_sha256 = sha256_json(payload)
+    if actual_sha256 != expected_sha256:
+        raise ValueError(f"{label} digest mismatch")
+    return payload
+
+
 def resolve_repo_path(repo_root: Path, value: str) -> Path:
     """Resolve one manifest-owned path without allowing repository escape."""
 
@@ -177,17 +185,22 @@ def load_source_catalog(
     *,
     repo_root: Path = Path("."),
 ) -> tuple[HistoricalSourceCatalogManifestV1, HistoricalSourceRegistry]:
-    resolved_manifest = manifest_path if manifest_path.is_absolute() else resolve_repo_path(repo_root, str(manifest_path))
+    resolved_manifest = (
+        manifest_path if manifest_path.is_absolute() else resolve_repo_path(repo_root, str(manifest_path))
+    )
     manifest = load_source_catalog_manifest(resolved_manifest)
 
     sources: list[HistoricalSource] = []
     for ref in manifest.shards:
         shard_path = resolve_repo_path(repo_root, ref.path)
-        shard = HistoricalSourceShardV1.model_validate(_load_json(shard_path))
+        shard_payload = _load_bound_json(
+            shard_path,
+            ref.sha256,
+            label=f"historical source shard {ref.shard_id}",
+        )
+        shard = HistoricalSourceShardV1.model_validate(shard_payload)
         if shard.shard_id != ref.shard_id:
             raise ValueError(f"historical source shard identity mismatch: {ref.shard_id}")
-        if shard.digest != ref.sha256:
-            raise ValueError(f"historical source shard digest mismatch: {ref.shard_id}")
         if len(shard.sources) != ref.source_count:
             raise ValueError(f"historical source shard count mismatch: {ref.shard_id}")
         if shard.checked_on > manifest.checked_on:
@@ -216,29 +229,36 @@ def materialize_historical_bundle(
     *,
     repo_root: Path = Path("."),
 ) -> tuple[HistoricalEditorialBundleManifestV1, HistoricalEditorialQueueV1, HistoricalSourceRegistry, TheologyProfile]:
-    resolved_manifest = manifest_path if manifest_path.is_absolute() else resolve_repo_path(repo_root, str(manifest_path))
+    resolved_manifest = (
+        manifest_path if manifest_path.is_absolute() else resolve_repo_path(repo_root, str(manifest_path))
+    )
     manifest = load_historical_bundle_manifest(resolved_manifest)
 
     catalog_path = resolve_repo_path(repo_root, manifest.source_catalog_path)
-    catalog, registry = load_source_catalog(catalog_path, repo_root=repo_root)
-    if catalog.digest != manifest.source_catalog_sha256:
-        raise ValueError("historical bundle source catalog digest mismatch")
+    _load_bound_json(catalog_path, manifest.source_catalog_sha256, label="historical source catalog")
+    _catalog, registry = load_source_catalog(catalog_path, repo_root=repo_root)
     if registry.digest != manifest.source_registry_sha256:
         raise ValueError("historical bundle source registry digest mismatch")
 
     theology_path = resolve_repo_path(repo_root, manifest.theology_profile_path)
-    theology = load_theology_profile(theology_path)
-    if theology.digest != manifest.theology_profile_sha256:
-        raise ValueError("historical bundle theology profile digest mismatch")
+    theology_payload = _load_bound_json(
+        theology_path,
+        manifest.theology_profile_sha256,
+        label="historical theology profile",
+    )
+    theology = TheologyProfile.model_validate(theology_payload)
 
     posts: list[HistoricalPost] = []
     for ref in manifest.posts:
         post_path = resolve_repo_path(repo_root, ref.path)
-        post = HistoricalPost.model_validate(_load_json(post_path))
+        post_payload = _load_bound_json(
+            post_path,
+            ref.sha256,
+            label=f"historical post {ref.publication_id}",
+        )
+        post = HistoricalPost.model_validate(post_payload)
         if post.sequence != ref.sequence or post.publication_id != ref.publication_id:
             raise ValueError(f"historical post identity mismatch: {ref.path}")
-        if post.digest != ref.sha256:
-            raise ValueError(f"historical post digest mismatch: {ref.publication_id}")
         posts.append(post)
 
     queue = HistoricalEditorialQueueV1(
