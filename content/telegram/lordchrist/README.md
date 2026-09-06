@@ -52,6 +52,28 @@ Rich-материал строится как короткая Telegram-стат
 
 Старая research-v2 provider release, однажды получившая unresolved provider outcome, остаётся retired/no-replay. Её нельзя оживлять blind retry. Новая rich-линия должна выпускаться только как новый reviewed successor release с собственной canary/state identity.
 
+## Historical editorial — reusable evidence-backed cycles
+
+Для регулярных исторических публикаций используется отдельный provider-inert workflow:
+
+```text
+historical-editorial/README.md
+historical-editorial/v1/source-catalog.json
+historical-editorial/v1/theology-profile.json
+historical-editorial/v1/cycles/<cycle>/manifest.json
+```
+
+Он предназначен для биографий служителей, истории миссий, мученичества, богословских споров и проверяемых исторических фактов. Источники шардируются по темам и переиспользуются между циклами; каждый material claim требует независимого cross-check и как минимум одного grade-A source. Богословская оценка хранится отдельно от исторического описания и привязана к exact commit профиля проекта.
+
+Новый цикл не создаёт нового renderer или transport path. Sealed bundle материализуется в `HistoricalEditorialQueueV1`, затем в существующий `RichArticleDocument`. Канонический preflight и scaffold-next доступны через:
+
+```bash
+python -m video_channel_manager.telegram_historical_bundle preflight <manifest>
+python -m video_channel_manager.telegram_historical_bundle scaffold-next <manifest> ...
+```
+
+Редакционный preflight никогда не является разрешением на Telegram provider write.
+
 ## Safety
 
 Нельзя вручную изменять source JSON ради оформления уже начатой кампании: это изменит queue digest и нарушит ledger binding. Новое оформление вводится только новой reviewed presentation policy/version или отдельным successor release.
