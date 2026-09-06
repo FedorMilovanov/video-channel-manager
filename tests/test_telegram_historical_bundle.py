@@ -20,6 +20,10 @@ def test_sealed_historical_bundle_materializes_against_real_repository_data() ->
     assert queue.live_eligible is False
     assert queue.schedule.provider_writes_authorized is False
     assert queue.schedule.backfill_policy == "none"
+    assert queue.source_binding_kind == "catalog"
+    assert queue.source_binding_path == manifest.source_catalog_path
+    assert queue.source_binding_sha256 == manifest.source_catalog_sha256
+    assert queue.source_registry_sha256 == registry.digest
     assert queue.verification.reviewed_urls == 69
     assert len(registry.sources) == 52
     assert len(queue.posts) == 9
@@ -62,6 +66,7 @@ def test_every_sealed_post_builds_a_real_rich_article_document() -> None:
 def test_next_cycle_scaffold_reuses_bound_catalog_without_authorizing_provider_writes() -> None:
     from datetime import date
 
+    manifest, _queue, registry, _theology = materialize_historical_bundle(MANIFEST, repo_root=REPO_ROOT)
     scaffold = build_next_scaffold_from_manifest(
         MANIFEST,
         cycle_id="history-cycle-2026-10-01",
@@ -73,5 +78,9 @@ def test_next_cycle_scaffold_reuses_bound_catalog_without_authorizing_provider_w
     assert scaffold.provider_writes_authorized is False
     assert scaffold.timezone == "Europe/Moscow"
     assert scaffold.local_time == "19:17"
+    assert scaffold.source_binding_kind == "catalog"
+    assert scaffold.source_binding_path == manifest.source_catalog_path
+    assert scaffold.source_binding_sha256 == manifest.source_catalog_sha256
+    assert scaffold.source_registry_sha256 == registry.digest
     assert len(scaffold.slots) == 9
     assert all(slot.scheduled_date.isoweekday() in (1, 3, 6) for slot in scaffold.slots)
