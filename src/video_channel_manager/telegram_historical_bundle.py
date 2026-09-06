@@ -17,7 +17,6 @@ from video_channel_manager.telegram_historical_editorial import (
     HistoricalVerification,
     TheologyProfile,
     _validate_post_evidence,
-    load_theology_profile,
 )
 from video_channel_manager.telegram_historical_workflow import (
     HistoricalBundlePreflightV1,
