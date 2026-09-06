@@ -113,6 +113,8 @@ class SuccessorQuoteCard(BaseModel):
         if self.source.rights_class == "modern_short_quote_editorial_context":
             if self.editorial_context_ru is None or len(self.editorial_context_ru.strip()) < 80:
                 raise ValueError("modern cards require substantial Russian editorial context")
+        elif self.editorial_context_ru is not None:
+            raise ValueError("public-domain cards must keep editorial context out of the translated quote payload")
         return self
 
     @property
@@ -205,6 +207,30 @@ class SuccessorQuoteCorpus(BaseModel):
         )
 
 
+class SuccessorCorpusManifest(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.telegram-quote-successor-corpus-manifest"]
+    schema_version: Literal[1]
+    project_key: Literal["lord-god-strength"]
+    channel_username: Literal["@lordchrist"]
+    corpus_id: Literal["lordchrist-successor-quotes-v1"]
+    predecessor_queue_digest: Literal[LEGACY_QUEUE_DIGEST]
+    review_state: Literal["source_verified_staged"]
+    shards: tuple[str, ...]
+
+    @field_validator("shards")
+    @classmethod
+    def validate_shards(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        if len(value) != 12 or len(value) != len(set(value)):
+            raise ValueError("successor manifest must bind exactly twelve unique author shards")
+        for shard in value:
+            candidate = Path(shard)
+            if candidate.is_absolute() or ".." in candidate.parts or candidate.suffix != ".json":
+                raise ValueError("successor shard paths must be relative JSON paths without traversal")
+        return value
+
+
 class SuccessorRelease(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -220,10 +246,43 @@ class SuccessorRelease(BaseModel):
     provider_writes_authorized: Literal[False]
 
 
+def _load_sharded_corpus(path: Path, manifest: SuccessorCorpusManifest) -> SuccessorQuoteCorpus:
+    posts: list[dict[str, Any]] = []
+    for shard_name in manifest.shards:
+        shard_path = path.parent / shard_name
+        try:
+            payload = json.loads(shard_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValueError(f"invalid LordChrist successor shard {shard_path}: {exc}") from exc
+        if not isinstance(payload, list):
+            raise ValueError(f"successor shard {shard_path} must contain a JSON array")
+        posts.extend(payload)
+    return SuccessorQuoteCorpus.model_validate(
+        {
+            "schema_name": "video-channel-manager.telegram-quote-successor-corpus",
+            "schema_version": 1,
+            "project_key": manifest.project_key,
+            "channel_username": manifest.channel_username,
+            "corpus_id": manifest.corpus_id,
+            "predecessor_queue_digest": manifest.predecessor_queue_digest,
+            "review_state": manifest.review_state,
+            "posts": posts,
+        }
+    )
+
+
 def load_successor_corpus(path: Path) -> SuccessorQuoteCorpus:
     try:
-        return SuccessorQuoteCorpus.model_validate_json(path.read_text(encoding="utf-8"))
-    except (OSError, ValidationError) as exc:
+        raw = path.read_text(encoding="utf-8")
+        data = json.loads(raw)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"invalid LordChrist successor quote corpus {path}: {exc}") from exc
+    try:
+        if data.get("schema_name") == "video-channel-manager.telegram-quote-successor-corpus-manifest":
+            manifest = SuccessorCorpusManifest.model_validate(data)
+            return _load_sharded_corpus(path, manifest)
+        return SuccessorQuoteCorpus.model_validate(data)
+    except ValidationError as exc:
         raise ValueError(f"invalid LordChrist successor quote corpus {path}: {exc}") from exc
 
 
