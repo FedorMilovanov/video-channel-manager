@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 from video_channel_manager.lordchrist_cross_track_effect_guard import require_no_cross_track_unresolved_effects
@@ -48,6 +48,13 @@ def _aware_datetime(value: str) -> datetime:
     return parsed
 
 
+def _iso_date(value: str) -> date:
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("date must be valid ISO 8601 YYYY-MM-DD") from exc
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description="Guarded @lordchrist Telegram queue runner")
     root.add_argument("--queue", type=Path, required=True)
@@ -78,6 +85,8 @@ def parser() -> argparse.ArgumentParser:
     prepare.add_argument("--github-sha", required=True)
     prepare.add_argument("--github-workflow-sha", required=True)
     prepare.add_argument("--expected-publication-id")
+    prepare.add_argument("--scheduled-moscow-date", type=_iso_date)
+    prepare.add_argument("--scheduled-slot", choices=("morning", "evening"))
     prepare.add_argument("--target-proof", type=Path, required=True)
     prepare.add_argument("--dispatch", type=Path, required=True)
 
@@ -256,6 +265,8 @@ def main() -> int:
             mode=args.mode,
             target=target,
             expected_publication_id=args.expected_publication_id,
+            scheduled_moscow_date=args.scheduled_moscow_date,
+            scheduled_slot=args.scheduled_slot,
         )
         if prepared.envelope is None:
             print(json.dumps({"prepared": False, "reason": prepared.reason}, ensure_ascii=False))
@@ -264,6 +275,8 @@ def main() -> int:
                 "manual canary",
                 "manual publication_id mismatch",
                 "manual execution requires",
+                "scheduled execution requires exact Moscow date and slot",
+                "scheduled Moscow date mismatch",
             )
             if any(marker in prepared.reason for marker in blocking_markers):
                 return 5
@@ -280,6 +293,12 @@ def main() -> int:
                     "workflow_run_id": prepared.envelope.workflow_run_id,
                     "workflow_run_attempt": prepared.envelope.workflow_run_attempt,
                     "github_sha": prepared.envelope.github_sha,
+                    "scheduled_moscow_date": (
+                        prepared.envelope.scheduled_moscow_date.isoformat()
+                        if prepared.envelope.scheduled_moscow_date is not None
+                        else None
+                    ),
+                    "scheduled_slot": prepared.envelope.scheduled_slot,
                 },
                 ensure_ascii=False,
             )
@@ -321,6 +340,10 @@ def main() -> int:
                     "workflow_run_id": entry.workflow_run_id,
                     "workflow_run_attempt": entry.workflow_run_attempt,
                     "github_sha": entry.github_sha,
+                    "scheduled_moscow_date": (
+                        entry.scheduled_moscow_date.isoformat() if entry.scheduled_moscow_date is not None else None
+                    ),
+                    "scheduled_slot": entry.scheduled_slot,
                 },
                 ensure_ascii=False,
             )

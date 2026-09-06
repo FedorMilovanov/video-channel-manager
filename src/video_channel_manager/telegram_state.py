@@ -18,6 +18,7 @@ from video_channel_manager.telegram_models import (
     DispatchMode,
     LedgerEntry,
     PreparedDispatch,
+    ScheduledSlot,
     TargetProof,
     TelegramLedger,
     TelegramPost,
@@ -249,6 +250,8 @@ def verify_persisted_intent(
         raise ValueError("persisted ledger payload fingerprint differs from prepared dispatch")
     if entry.dispatch_mode != envelope.dispatch_mode:
         raise ValueError("persisted ledger dispatch mode differs from prepared dispatch")
+    if entry.scheduled_moscow_date != envelope.scheduled_moscow_date or entry.scheduled_slot != envelope.scheduled_slot:
+        raise ValueError("persisted ledger scheduled slot provenance differs from prepared dispatch")
     if entry.bot_username is None:
         raise ValueError("persisted ledger has no bot username")
     if (
@@ -266,6 +269,21 @@ def _require_provenance(*, run_id: str, run_attempt: str, github_sha: str, githu
         raise ValueError("dispatch requires complete GitHub execution provenance")
 
 
+def _already_published_on_date(
+    ledger: TelegramLedger,
+    *,
+    local_date: date,
+    publication_timezone: str,
+) -> bool:
+    return any(
+        entry.state == "published"
+        and entry.provider_effect == "verified"
+        and entry.published_at_utc is not None
+        and publication_local_date(entry.published_at_utc, publication_timezone) == local_date
+        for entry in ledger.entries.values()
+    )
+
+
 def prepare_next(
     queue: TelegramQueue,
     ledger: TelegramLedger,
@@ -277,6 +295,8 @@ def prepare_next(
     mode: DispatchMode,
     target: TargetProof,
     expected_publication_id: str | None = None,
+    scheduled_moscow_date: date | None = None,
+    scheduled_slot: ScheduledSlot | None = None,
     publication_timezone: str = PUBLICATION_TIMEZONE,
     now: datetime | None = None,
 ) -> PreparedDispatch:
@@ -301,17 +321,12 @@ def prepare_next(
         raise ValueError("target proof is not a Telegram channel")
 
     today = publication_local_date(now, publication_timezone)
-    already_published_today = any(
-        entry.state == "published"
-        and entry.provider_effect == "verified"
-        and entry.published_at_utc is not None
-        and publication_local_date(entry.published_at_utc, publication_timezone) == today
-        for entry in ledger.entries.values()
-    )
-    if already_published_today:
-        return PreparedDispatch(None, f"one publication is already verified for {today.isoformat()}")
-
-    if mode == "scheduled":
+    if mode == "manual":
+        if scheduled_moscow_date is not None or scheduled_slot is not None:
+            raise ValueError("manual execution cannot carry scheduled slot provenance")
+        if _already_published_on_date(ledger, local_date=today, publication_timezone=publication_timezone):
+            return PreparedDispatch(None, f"one publication is already verified for {today.isoformat()}")
+    else:
         manual_canary = any(
             entry.state == "published"
             and entry.provider_effect == "verified"
@@ -324,6 +339,38 @@ def prepare_next(
         )
         if not manual_canary:
             return PreparedDispatch(None, "scheduled execution requires one exact verified manual canary")
+
+        has_date = scheduled_moscow_date is not None
+        has_slot = scheduled_slot is not None
+        if has_date != has_slot:
+            return PreparedDispatch(None, "scheduled execution requires exact Moscow date and slot")
+        if not has_date:
+            # Backward-compatible prepare-only path for legacy library callers.
+            # The provider transport rejects slot-less scheduled envelopes, and
+            # the production workflow always supplies explicit date+slot.
+            if _already_published_on_date(ledger, local_date=today, publication_timezone=publication_timezone):
+                return PreparedDispatch(None, f"one publication is already verified for {today.isoformat()}")
+        else:
+            assert scheduled_moscow_date is not None
+            assert scheduled_slot is not None
+            if scheduled_moscow_date != today:
+                return PreparedDispatch(
+                    None,
+                    f"scheduled Moscow date mismatch: requested {scheduled_moscow_date.isoformat()}, current {today.isoformat()}",
+                )
+            claimed_by = next(
+                (
+                    entry.publication_id
+                    for entry in ledger.entries.values()
+                    if entry.scheduled_moscow_date == scheduled_moscow_date and entry.scheduled_slot == scheduled_slot
+                ),
+                None,
+            )
+            if claimed_by is not None:
+                return PreparedDispatch(
+                    None,
+                    f"scheduled slot {scheduled_moscow_date.isoformat()}/{scheduled_slot} is already claimed by {claimed_by}",
+                )
 
     post, reason = strict_next_post(queue, ledger)
     if post is None:
@@ -347,6 +394,8 @@ def prepare_next(
     entry.provider_effect = "may_exist"
     entry.intent_id = intent_id
     entry.dispatch_mode = mode
+    entry.scheduled_moscow_date = scheduled_moscow_date
+    entry.scheduled_slot = scheduled_slot
     entry.workflow_run_id = run_id
     entry.workflow_run_attempt = run_attempt
     entry.github_sha = github_sha
@@ -374,6 +423,8 @@ def prepare_next(
         payload_sha256=post.payload_sha256,
         text=post.text,
         dispatch_mode=mode,
+        scheduled_moscow_date=scheduled_moscow_date,
+        scheduled_slot=scheduled_slot,
         target=target,
         prepared_at_utc=now,
     )

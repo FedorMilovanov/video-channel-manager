@@ -23,7 +23,7 @@ on:
   schedule:
     - cron: "17 9 * * *"
       timezone: Europe/Moscow
-    - cron: "17 21 * * *"
+    - cron: "17 21 * * 0,2,5"
       timezone: Europe/Moscow
 
 permissions:
@@ -82,6 +82,7 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
+          SCHEDULE_EXPRESSION: ${{ github.event.schedule }}
           REQUESTED_ACTION: ${{ inputs.action }}
           REQUESTED_PUBLICATION_ID: ${{ inputs.publication_id }}
           CONFIRMATION: ${{ inputs.confirm }}
@@ -92,6 +93,8 @@ jobs:
           do_publish=false
           reason=manual_preview
           publication_id=""
+          scheduled_moscow_date=""
+          scheduled_slot=""
 
           if [[ "$EVENT_NAME" == "schedule" ]]; then
             if [[ "$RUN_ATTEMPT" != "1" ]]; then
@@ -99,7 +102,7 @@ jobs:
               exit 5
             fi
             mode=scheduled
-            schedule_state="$(python - <<'PY'
+            schedule_result="$(python - <<'PY'
           import json
           import os
           from datetime import date, datetime
@@ -112,13 +115,29 @@ jobs:
           policy = load_presentation_policy(Path(os.environ["PRESENTATION_POLICY_PATH"]))
           expected = {
               "schema_name": "video-channel-manager.telegram-production-schedule",
-              "schema_version": 2,
+              "schema_version": 3,
               "project_key": "lord-god-strength",
               "channel_username": "@lordchrist",
               "timezone": "Europe/Moscow",
-              "primary_time": "09:17",
-              "catchup_time": "21:17",
-              "daily_verified_limit": 1,
+              "max_publications_per_slot": 1,
+              "slots": {
+                  "morning": {
+                      "time": "09:17",
+                      "weekdays": [
+                          "monday",
+                          "tuesday",
+                          "wednesday",
+                          "thursday",
+                          "friday",
+                          "saturday",
+                          "sunday",
+                      ],
+                  },
+                  "evening": {
+                      "time": "21:17",
+                      "weekdays": ["tuesday", "friday", "sunday"],
+                  },
+              },
           }
           for key, value in expected.items():
               if config.get(key) != value:
@@ -135,11 +154,26 @@ jobs:
               raise SystemExit("production schedule presentation policy id mismatch")
           if config.get("presentation_policy_sha256") != policy.digest:
               raise SystemExit("production schedule presentation policy digest mismatch")
+
+          slot_by_schedule = {
+              "17 9 * * *": "morning",
+              "17 21 * * 0,2,5": "evening",
+          }
+          expression = os.environ.get("SCHEDULE_EXPRESSION", "")
+          slot = slot_by_schedule.get(expression)
+          if slot is None:
+              raise SystemExit(f"unrecognized scheduled trigger: {expression!r}")
+
           not_before = date.fromisoformat(str(config["not_before_moscow_date"]))
           today = datetime.now(ZoneInfo("Europe/Moscow")).date()
-          print("active" if config.get("enabled") is True and today >= not_before else "inactive")
+          weekday = today.strftime("%A").casefold()
+          if weekday not in config["slots"][slot]["weekdays"]:
+              raise SystemExit(f"scheduled slot {slot} is not eligible on {weekday}")
+          state = "active" if config.get("enabled") is True and today >= not_before else "inactive"
+          print(f"{state}|{today.isoformat()}|{slot}")
           PY
             )"
+            IFS='|' read -r schedule_state scheduled_moscow_date scheduled_slot <<< "$schedule_result"
             if [[ "$schedule_state" == "active" ]]; then
               do_preflight=true
               do_publish=true
@@ -173,6 +207,8 @@ jobs:
           echo "do_publish=$do_publish" >> "$GITHUB_OUTPUT"
           echo "reason=$reason" >> "$GITHUB_OUTPUT"
           echo "publication_id=$publication_id" >> "$GITHUB_OUTPUT"
+          echo "scheduled_moscow_date=$scheduled_moscow_date" >> "$GITHUB_OUTPUT"
+          echo "scheduled_slot=$scheduled_slot" >> "$GITHUB_OUTPUT"
 
       - name: Check out publication ledger read-only
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -267,6 +303,10 @@ jobs:
       - name: Enforce publication gates
         if: steps.intent.outputs.do_publish == 'true'
         shell: bash
+        env:
+          SCHEDULE_EXPRESSION: ${{ github.event.schedule }}
+          SCHEDULED_MOSCOW_DATE: ${{ steps.intent.outputs.scheduled_moscow_date }}
+          SCHEDULED_SLOT: ${{ steps.intent.outputs.scheduled_slot }}
         run: |
           set -euo pipefail
           if [[ "${{ steps.intent.outputs.mode }}" == "scheduled" ]]; then
@@ -281,6 +321,28 @@ jobs:
 
           config = json.loads(Path(os.environ["PRODUCTION_CONFIG_PATH"]).read_text(encoding="utf-8"))
           policy = load_presentation_policy(Path(os.environ["PRESENTATION_POLICY_PATH"]))
+          expected_slots = {
+              "morning": {
+                  "time": "09:17",
+                  "weekdays": [
+                      "monday",
+                      "tuesday",
+                      "wednesday",
+                      "thursday",
+                      "friday",
+                      "saturday",
+                      "sunday",
+                  ],
+              },
+              "evening": {
+                  "time": "21:17",
+                  "weekdays": ["tuesday", "friday", "sunday"],
+              },
+          }
+          if config.get("schema_version") != 3 or config.get("slots") != expected_slots:
+              raise SystemExit("Scheduled production config slot contract mismatch.")
+          if config.get("max_publications_per_slot") != 1:
+              raise SystemExit("Scheduled production config must allow exactly one publication per slot.")
           if config.get("enabled") is not True:
               raise SystemExit("Scheduled production config is not active.")
           if config.get("queue_digest") != os.environ["LORDCHRIST_APPROVED_QUEUE_DIGEST"]:
@@ -293,12 +355,26 @@ jobs:
               raise SystemExit("Scheduled production config bot username mismatch.")
           if config.get("presentation_policy_id") != policy.policy_id or config.get("presentation_policy_sha256") != policy.digest:
               raise SystemExit("Scheduled production config presentation policy mismatch.")
+
+          slot_by_schedule = {
+              "17 9 * * *": "morning",
+              "17 21 * * 0,2,5": "evening",
+          }
+          expression = os.environ.get("SCHEDULE_EXPRESSION", "")
+          expected_slot = slot_by_schedule.get(expression)
+          if expected_slot is None or os.environ.get("SCHEDULED_SLOT") != expected_slot:
+              raise SystemExit("Scheduled trigger does not match the durable editorial slot.")
+
+          today = datetime.now(ZoneInfo("Europe/Moscow")).date()
+          if os.environ.get("SCHEDULED_MOSCOW_DATE") != today.isoformat():
+              raise SystemExit("Scheduled durable Moscow date is no longer current.")
+          weekday = today.strftime("%A").casefold()
+          if weekday not in expected_slots[expected_slot]["weekdays"]:
+              raise SystemExit("Scheduled slot is not eligible on the current Moscow weekday.")
           not_before = date.fromisoformat(str(config["not_before_moscow_date"]))
-          if datetime.now(ZoneInfo("Europe/Moscow")).date() < not_before:
+          if today < not_before:
               raise SystemExit("Scheduled production config is not active yet.")
-          if config.get("daily_verified_limit") != 1:
-              raise SystemExit("Scheduled production config must preserve one verified publication per day.")
-          print("Scheduled production config is active.")
+          print(f"Scheduled production slot is active: {today.isoformat()}/{expected_slot}.")
           PY
           else
             [[ "${LORDCHRIST_POSTING_ENABLED,,}" == "true" ]] || {
@@ -337,6 +413,11 @@ jobs:
           )
           if [[ "${{ steps.intent.outputs.mode }}" == "manual" ]]; then
             args+=(--expected-publication-id "${{ steps.intent.outputs.publication_id }}")
+          else
+            args+=(
+              --scheduled-moscow-date "${{ steps.intent.outputs.scheduled_moscow_date }}"
+              --scheduled-slot "${{ steps.intent.outputs.scheduled_slot }}"
+            )
           fi
 
           set +e
@@ -346,7 +427,7 @@ jobs:
 
           if [[ "$status" -eq 3 ]]; then
             echo "prepared=false" >> "$GITHUB_OUTPUT"
-            echo "No eligible next publication; queue may already be complete or today's quota is used."
+            echo "No eligible next publication; queue may be complete or this exact slot is already claimed."
             exit 0
           fi
           [[ "$status" -eq 0 ]] || exit "$status"
