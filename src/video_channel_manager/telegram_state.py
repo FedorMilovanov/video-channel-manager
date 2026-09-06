@@ -269,6 +269,21 @@ def _require_provenance(*, run_id: str, run_attempt: str, github_sha: str, githu
         raise ValueError("dispatch requires complete GitHub execution provenance")
 
 
+def _already_published_on_date(
+    ledger: TelegramLedger,
+    *,
+    local_date: date,
+    publication_timezone: str,
+) -> bool:
+    return any(
+        entry.state == "published"
+        and entry.provider_effect == "verified"
+        and entry.published_at_utc is not None
+        and publication_local_date(entry.published_at_utc, publication_timezone) == local_date
+        for entry in ledger.entries.values()
+    )
+
+
 def prepare_next(
     queue: TelegramQueue,
     ledger: TelegramLedger,
@@ -309,37 +324,9 @@ def prepare_next(
     if mode == "manual":
         if scheduled_moscow_date is not None or scheduled_slot is not None:
             raise ValueError("manual execution cannot carry scheduled slot provenance")
-        already_published_today = any(
-            entry.state == "published"
-            and entry.provider_effect == "verified"
-            and entry.published_at_utc is not None
-            and publication_local_date(entry.published_at_utc, publication_timezone) == today
-            for entry in ledger.entries.values()
-        )
-        if already_published_today:
+        if _already_published_on_date(ledger, local_date=today, publication_timezone=publication_timezone):
             return PreparedDispatch(None, f"one publication is already verified for {today.isoformat()}")
     else:
-        if scheduled_moscow_date is None or scheduled_slot is None:
-            return PreparedDispatch(None, "scheduled execution requires exact Moscow date and slot")
-        if scheduled_moscow_date != today:
-            return PreparedDispatch(
-                None,
-                f"scheduled Moscow date mismatch: requested {scheduled_moscow_date.isoformat()}, current {today.isoformat()}",
-            )
-        claimed_by = next(
-            (
-                entry.publication_id
-                for entry in ledger.entries.values()
-                if entry.scheduled_moscow_date == scheduled_moscow_date and entry.scheduled_slot == scheduled_slot
-            ),
-            None,
-        )
-        if claimed_by is not None:
-            return PreparedDispatch(
-                None,
-                f"scheduled slot {scheduled_moscow_date.isoformat()}/{scheduled_slot} is already claimed by {claimed_by}",
-            )
-
         manual_canary = any(
             entry.state == "published"
             and entry.provider_effect == "verified"
@@ -352,6 +339,38 @@ def prepare_next(
         )
         if not manual_canary:
             return PreparedDispatch(None, "scheduled execution requires one exact verified manual canary")
+
+        has_date = scheduled_moscow_date is not None
+        has_slot = scheduled_slot is not None
+        if has_date != has_slot:
+            return PreparedDispatch(None, "scheduled execution requires exact Moscow date and slot")
+        if not has_date:
+            # Backward-compatible prepare-only path for legacy library callers.
+            # The provider transport rejects slot-less scheduled envelopes, and
+            # the production workflow always supplies explicit date+slot.
+            if _already_published_on_date(ledger, local_date=today, publication_timezone=publication_timezone):
+                return PreparedDispatch(None, f"one publication is already verified for {today.isoformat()}")
+        else:
+            assert scheduled_moscow_date is not None
+            assert scheduled_slot is not None
+            if scheduled_moscow_date != today:
+                return PreparedDispatch(
+                    None,
+                    f"scheduled Moscow date mismatch: requested {scheduled_moscow_date.isoformat()}, current {today.isoformat()}",
+                )
+            claimed_by = next(
+                (
+                    entry.publication_id
+                    for entry in ledger.entries.values()
+                    if entry.scheduled_moscow_date == scheduled_moscow_date and entry.scheduled_slot == scheduled_slot
+                ),
+                None,
+            )
+            if claimed_by is not None:
+                return PreparedDispatch(
+                    None,
+                    f"scheduled slot {scheduled_moscow_date.isoformat()}/{scheduled_slot} is already claimed by {claimed_by}",
+                )
 
     post, reason = strict_next_post(queue, ledger)
     if post is None:
