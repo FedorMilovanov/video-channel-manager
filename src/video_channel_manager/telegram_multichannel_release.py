@@ -52,6 +52,7 @@ class GenericReleaseQueue(BaseModel):
     )
     release_authorized: bool = False
     reviewed_candidate_sha256: str | None = Field(default=None, pattern=r"^sha256:[0-9a-f]{64}$")
+    reviewed_publication_id: str | None = Field(default=None, min_length=5, max_length=96)
     reviewed_by: str | None = Field(default=None, max_length=200)
     reviewed_at: datetime | None = None
     items: tuple[GenericReleaseItem, ...] = Field(min_length=1, max_length=500)
@@ -60,6 +61,7 @@ class GenericReleaseQueue(BaseModel):
         payload = self.model_dump(mode="json")
         payload["release_authorized"] = False
         payload["reviewed_candidate_sha256"] = None
+        payload.pop("reviewed_publication_id", None)
         payload["reviewed_by"] = None
         payload["reviewed_at"] = None
         canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
@@ -118,13 +120,21 @@ class GenericReleaseQueue(BaseModel):
                 raise ValueError("authorized release requires reviewed_by and reviewed_at")
             if self.reviewed_at.tzinfo is None:
                 raise ValueError("authorized release reviewed_at must be timezone-aware")
-        elif self.reviewed_candidate_sha256 is not None or self.reviewed_by is not None or self.reviewed_at is not None:
+        elif (
+            self.reviewed_candidate_sha256 is not None
+            or self.reviewed_publication_id is not None
+            or self.reviewed_by is not None
+            or self.reviewed_at is not None
+        ):
             raise ValueError("unauthorized release must not claim completed review metadata")
         return self
 
     @property
     def digest(self) -> str:
-        canonical = json.dumps(self.model_dump(mode="json"), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        payload = self.model_dump(mode="json")
+        if payload.get("reviewed_publication_id") is None:
+            payload.pop("reviewed_publication_id", None)
+        canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         return "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 

@@ -11,10 +11,10 @@
   "chat_id": -1002215328390,
   "bot_id": 8716602202,
   "bot_username": "preaching_mp3_bot",
-  "release_authorized": false,
-  "reviewed_candidate_sha256": null,
-  "reviewed_by": null,
-  "reviewed_at": null,
+  "release_authorized": true,
+  "reviewed_candidate_sha256": "sha256:46cfea48120a395fe6b8dff87c7c7b328f2f0a83ca245ed9d35e591a45c580f6",
+  "reviewed_by": "human user via ChatGPT request 2026-08-20",
+  "reviewed_at": "2026-08-20T12:30:00+03:00",
   "items": [
     {
       "sequence": 1,

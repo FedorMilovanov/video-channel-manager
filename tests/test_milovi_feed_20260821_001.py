@@ -4,6 +4,8 @@ import hashlib
 import json
 from pathlib import Path
 
+import pytest
+
 from video_channel_manager.milovi_telegram_feed import validate_bundle
 from video_channel_manager.telegram_multichannel_release import load_release
 
@@ -61,12 +63,8 @@ def test_20260821_caption_digest_and_authorized_runtime_match() -> None:
     assert "да, публикуем milovi-feed-20260821-001" in str(authority["authorized_by"])
 
 
-def test_20260821_bundle_validates_authorized_without_provider_access() -> None:
-    result = validate_bundle(
-        PUBLICATION_ID,
-        require_release_authorized=True,
-        require_execution_authorized=True,
-    )
+def test_20260821_historical_bundle_remains_readable_without_provider_access() -> None:
+    result = validate_bundle(PUBLICATION_ID)
 
     assert result["valid"] is True
     assert result["payload_kind"] == "photo"
@@ -75,3 +73,15 @@ def test_20260821_bundle_validates_authorized_without_provider_access() -> None:
     assert result["provider_mutation_allowed"] is True
     assert result["provider_access_performed"] is False
     assert result["blockers"] == []
+
+
+def test_20260821_historical_bundle_is_not_current_live_authority() -> None:
+    with pytest.raises(
+        ValueError,
+        match="release review provenance does not bind exact publication_id",
+    ):
+        validate_bundle(
+            PUBLICATION_ID,
+            require_release_authorized=True,
+            require_execution_authorized=True,
+        )
