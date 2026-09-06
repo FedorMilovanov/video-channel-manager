@@ -8,7 +8,7 @@
   "execution_authorized": false,
   "provider_mutation_allowed": false,
   "publication_id": "milovi-feed-20260906-001",
-  "scheduled_at": "2026-09-06T16:30:00+03:00",
+  "scheduled_at": "2026-09-06T20:00:00+03:00",
   "timezone": "Europe/Moscow",
   "operation": "sendPhoto",
   "media": {
@@ -39,5 +39,5 @@
     "legacy_publication_id": "milovi-follow-on-001",
     "stale_predecessor_publication_id": "milovi-feed-20260821-001"
   },
-  "execution_note": "Fresh strict-next September identity for marathon position 1. Same reviewed p06 source/transport and caption; no new claims. User explicitly requested real provider-visible posts on 2026-09-06; provider execution remains bound separately."
+  "execution_note": "Fresh strict-next September identity for marathon position 1 in the canonical 20:00 Europe/Moscow slot. Same reviewed p06 source/transport and caption; no new claims. User explicitly requested real provider-visible posts on 2026-09-06; provider execution remains bound separately."
 }
