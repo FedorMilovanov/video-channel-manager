@@ -1,0 +1,12 @@
+{
+  "schema_name": "video-channel-manager.telegram-quote-successor-release",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "release_id": "lordchrist-successor-quotes-v1",
+  "corpus_digest": "sha256:87d7a8cc7d01a5e026a17ef92e5cfcd01d6e46770db4742012de98144a691b2c",
+  "predecessor_queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
+  "activation_policy": "after_predecessor_queue_complete",
+  "release_state": "staged_provider_inert",
+  "provider_writes_authorized": false
+}
