@@ -29,6 +29,7 @@ CLAIM_ID_RE = r"^claim-[a-z0-9][a-z0-9-]{2,100}$"
 PUB_ID_RE = r"^lordchrist-history-[a-z0-9][a-z0-9-]{4,90}$"
 
 SourceGrade = Literal["A", "B+"]
+SourceBindingKind = Literal["registry", "catalog"]
 EvidenceRole = Literal[
     "primary_document",
     "critical_edition",
@@ -322,7 +323,9 @@ class HistoricalEditorialQueueV1(BaseModel):
     state: Literal["provider_inert"]
     verification: HistoricalVerification
     schedule: HistoricalSchedule
-    source_registry_path: str
+    source_binding_kind: SourceBindingKind
+    source_binding_path: str = Field(min_length=5, max_length=300)
+    source_binding_sha256: str = Field(pattern=SHA_RE)
     source_registry_sha256: str = Field(pattern=SHA_RE)
     theology_profile_path: str
     theology_profile_sha256: str = Field(pattern=SHA_RE)
@@ -339,6 +342,8 @@ class HistoricalEditorialQueueV1(BaseModel):
         claim_ids = [claim.claim_id for post in self.posts for claim in post.claims]
         if len(claim_ids) != len(set(claim_ids)):
             raise ValueError("historical claim ids must be unique across the queue")
+        if self.source_binding_kind == "registry" and self.source_binding_sha256 != self.source_registry_sha256:
+            raise ValueError("direct registry binding digest must equal materialized registry digest")
         return self
 
     @property
@@ -411,7 +416,14 @@ def _validate_post_evidence(
 
 def load_historical_editorial_queue(path: Path) -> HistoricalEditorialQueueV1:
     queue = HistoricalEditorialQueueV1.model_validate(_load_json(path))
-    registry = load_historical_source_registry(Path(queue.source_registry_path))
+    if queue.source_binding_kind != "registry":
+        raise ValueError("catalog-bound historical queues must be materialized through materialize_historical_bundle")
+
+    binding_path = Path(queue.source_binding_path)
+    binding_payload = _load_json(binding_path)
+    if sha256_json(binding_payload) != queue.source_binding_sha256:
+        raise ValueError("historical source binding digest mismatch")
+    registry = HistoricalSourceRegistry.model_validate(binding_payload)
     theology = load_theology_profile(Path(queue.theology_profile_path))
     if registry.digest != queue.source_registry_sha256:
         raise ValueError("historical source registry digest mismatch")
@@ -536,6 +548,7 @@ __all__ = [
     "HistoricalSource",
     "HistoricalSourceRegistry",
     "HistoricalVerification",
+    "SourceBindingKind",
     "TheologyProfile",
     "TheologyReview",
     "build_historical_rich_document",
