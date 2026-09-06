@@ -1284,16 +1284,52 @@ def require_min_editorial_gap(policy: LordChristShortsPolicy, editorial_times: S
 
 def load_and_validate_editorial_schedule(path: Path, policy: LordChristShortsPolicy) -> tuple[str, str]:
     payload = _read_json_object(path)
+    if payload.get("schema_name") != "video-channel-manager.telegram-production-schedule":
+        raise ValueError("editorial schedule schema differs from LordChrist production schedule")
     if payload.get("project_key") != PROJECT_KEY:
         raise ValueError("editorial schedule project differs from LordChrist")
     if str(payload.get("channel_username") or "").casefold() != TELEGRAM_CHANNEL_USERNAME.casefold():
         raise ValueError("editorial schedule channel differs from LordChrist")
     if payload.get("timezone") != policy.timezone:
         raise ValueError("editorial schedule timezone differs from Shorts policy")
-    primary = str(payload.get("primary_time") or "")
-    catchup = str(payload.get("catchup_time") or "")
-    require_min_editorial_gap(policy, (primary, catchup))
-    return primary, catchup
+
+    schema_version = payload.get("schema_version")
+    if schema_version == 3:
+        if payload.get("max_publications_per_slot") != 1:
+            raise ValueError("slot-aware editorial schedule must allow exactly one publication per slot")
+        slots = payload.get("slots")
+        if not isinstance(slots, dict) or set(slots) != {"morning", "evening"}:
+            raise ValueError("slot-aware editorial schedule must define exactly morning and evening slots")
+        expected_weekdays = {
+            "morning": [
+                "monday",
+                "tuesday",
+                "wednesday",
+                "thursday",
+                "friday",
+                "saturday",
+                "sunday",
+            ],
+            "evening": ["tuesday", "friday", "sunday"],
+        }
+        editorial_times: list[str] = []
+        for slot_name in ("morning", "evening"):
+            slot = slots.get(slot_name)
+            if not isinstance(slot, dict):
+                raise ValueError(f"editorial slot {slot_name} must be an object")
+            if slot.get("weekdays") != expected_weekdays[slot_name]:
+                raise ValueError(f"editorial slot {slot_name} weekdays differ from the reviewed cadence")
+            editorial_times.append(str(slot.get("time") or ""))
+        morning, evening = editorial_times
+    elif schema_version == 2:
+        # Historical read compatibility only. Current production must use schema v3 slots.
+        morning = str(payload.get("primary_time") or "")
+        evening = str(payload.get("catchup_time") or "")
+    else:
+        raise ValueError(f"unsupported editorial schedule schema_version: {schema_version!r}")
+
+    require_min_editorial_gap(policy, (morning, evening))
+    return morning, evening
 
 
 def _release_identity(
