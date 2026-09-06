@@ -33,9 +33,11 @@ def test_autonomous_production_config_is_explicit_release_bound_and_slot_gated()
     assert config.slots["morning"].time == "09:17"
     assert config.slots["morning"].cron == "17 9 * * *"
     assert config.slots["morning"].iso_weekdays == (1, 2, 3, 4, 5, 6, 7)
+    assert config.slots["morning"].max_lateness_minutes == 120
     assert config.slots["evening"].time == "21:17"
     assert config.slots["evening"].cron == "17 21 * * 2,5,0"
     assert config.slots["evening"].iso_weekdays == (2, 5, 7)
+    assert config.slots["evening"].max_lateness_minutes == 120
     assert config.max_verified_per_slot == 1
     assert config.max_verified_per_day == 2
     assert config.backfill_policy == "none"
@@ -60,6 +62,25 @@ def test_schedule_decision_has_daily_morning_and_only_tuesday_friday_sunday_even
     monday_result = decide_scheduled_slot(config, event_schedule="17 21 * * 2,5,0", now=monday_evening)
     assert monday_result.active is False
     assert monday_result.slot is None
+
+
+def test_schedule_decision_rejects_premature_and_stale_runs_without_backfill() -> None:
+    config = load_production_schedule(CONFIG_PATH)
+
+    before_morning = datetime(2026, 9, 8, 6, 16, 59, tzinfo=UTC)  # 09:16:59 Moscow
+    morning_deadline = datetime(2026, 9, 8, 8, 17, tzinfo=UTC)  # 11:17 Moscow
+    fresh_delayed_evening = datetime(2026, 9, 8, 19, 16, 59, tzinfo=UTC)  # 22:16:59 Moscow
+
+    premature = decide_scheduled_slot(config, event_schedule="17 9 * * *", now=before_morning)
+    stale = decide_scheduled_slot(config, event_schedule="17 9 * * *", now=morning_deadline)
+    delayed = decide_scheduled_slot(config, event_schedule="17 21 * * 2,5,0", now=fresh_delayed_evening)
+
+    assert premature.active is False
+    assert premature.reason == "morning slot is not due yet"
+    assert stale.active is False
+    assert stale.reason == "morning slot is too stale for safe publication"
+    assert delayed.active is True
+    assert delayed.slot == "evening"
 
 
 def test_workflow_uses_version_controlled_slot_gate_and_exact_release_identity() -> None:
