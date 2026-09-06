@@ -10,7 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from video_channel_manager.telegram_historical_editorial import (
     HistoricalEditorialQueueV1,
-    load_historical_source_registry,
+    HistoricalSourceRegistry,
+    SourceBindingKind,
     load_theology_profile,
 )
 from video_channel_manager.telegram_research import sha256_json
@@ -35,7 +36,7 @@ class HistoricalCycleScaffoldV1(BaseModel):
     """Provider-inert planning envelope for a future historical cycle.
 
     The scaffold is intentionally not a publishable queue. It gives editors
-    deterministic dates and immutable registry/profile bindings while leaving
+    deterministic dates and immutable source/profile bindings while leaving
     topic and publication identity blank until research is complete.
     """
 
@@ -49,7 +50,9 @@ class HistoricalCycleScaffoldV1(BaseModel):
     timezone: Literal["Europe/Moscow"]
     local_time: Literal["19:17"]
     iso_weekdays: tuple[int, int, int]
-    source_registry_path: str = Field(min_length=5)
+    source_binding_kind: SourceBindingKind
+    source_binding_path: str = Field(min_length=5, max_length=300)
+    source_binding_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     source_registry_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     theology_profile_path: str = Field(min_length=5)
     theology_profile_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
@@ -69,6 +72,8 @@ class HistoricalCycleScaffoldV1(BaseModel):
         for slot in self.slots:
             if slot.release_offset_days != (slot.scheduled_date - first).days:
                 raise ValueError("historical scaffold offsets must match scheduled dates")
+        if self.source_binding_kind == "registry" and self.source_binding_sha256 != self.source_registry_sha256:
+            raise ValueError("direct registry binding digest must equal materialized registry digest")
         return self
 
     @property
@@ -124,7 +129,9 @@ def build_cycle_scaffold(
     *,
     cycle_id: str,
     start_on: date,
-    source_registry_path: str,
+    source_binding_kind: SourceBindingKind,
+    source_binding_path: str,
+    source_binding_sha256: str,
     source_registry_sha256: str,
     theology_profile_path: str,
     theology_profile_sha256: str,
@@ -149,7 +156,9 @@ def build_cycle_scaffold(
         timezone=DEFAULT_TIMEZONE,
         local_time=DEFAULT_LOCAL_TIME,
         iso_weekdays=DEFAULT_WEEKDAYS,
-        source_registry_path=source_registry_path,
+        source_binding_kind=source_binding_kind,
+        source_binding_path=source_binding_path,
+        source_binding_sha256=source_binding_sha256,
         source_registry_sha256=source_registry_sha256,
         theology_profile_path=theology_profile_path,
         theology_profile_sha256=theology_profile_sha256,
@@ -169,18 +178,21 @@ def _resolve_repo_path(repo_root: Path, value: str) -> Path:
 
 
 def preflight_historical_bundle(queue_path: Path, *, repo_root: Path = Path(".")) -> HistoricalBundlePreflightV1:
-    """Validate a queue plus its bound registries and return a compact proof report.
-
-    The existing queue loader is intentionally reused so all claim/evidence,
-    theology, rights, digest and provider-inert checks stay single-sourced.
-    """
+    """Validate a direct-registry queue and return a compact proof report."""
 
     resolved_queue = queue_path if queue_path.is_absolute() else _resolve_repo_path(repo_root, str(queue_path))
     raw = json.loads(resolved_queue.read_text(encoding="utf-8"))
     queue = HistoricalEditorialQueueV1.model_validate(raw)
-    registry_path = _resolve_repo_path(repo_root, queue.source_registry_path)
+    if queue.source_binding_kind != "registry":
+        raise ValueError("catalog-bound historical queues require manifest preflight")
+
+    binding_path = _resolve_repo_path(repo_root, queue.source_binding_path)
+    binding_payload = json.loads(binding_path.read_text(encoding="utf-8"))
+    if sha256_json(binding_payload) != queue.source_binding_sha256:
+        raise ValueError("historical source binding digest mismatch")
+    registry = HistoricalSourceRegistry.model_validate(binding_payload)
+
     theology_path = _resolve_repo_path(repo_root, queue.theology_profile_path)
-    registry = load_historical_source_registry(registry_path)
     theology = load_theology_profile(theology_path)
 
     if registry.digest != queue.source_registry_sha256:
@@ -260,14 +272,16 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="LordChrist historical editorial workflow")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    preflight = sub.add_parser("preflight", help="validate one historical editorial bundle")
+    preflight = sub.add_parser("preflight", help="validate one direct-registry historical editorial bundle")
     preflight.add_argument("queue", type=Path)
     preflight.add_argument("--repo-root", type=Path, default=Path("."))
 
     scaffold = sub.add_parser("scaffold", help="create a provider-inert future-cycle scaffold")
     scaffold.add_argument("--cycle-id", required=True)
     scaffold.add_argument("--start-on", required=True, type=date.fromisoformat)
-    scaffold.add_argument("--source-registry-path", required=True)
+    scaffold.add_argument("--source-binding-kind", required=True, choices=("registry", "catalog"))
+    scaffold.add_argument("--source-binding-path", required=True)
+    scaffold.add_argument("--source-binding-sha256", required=True)
     scaffold.add_argument("--source-registry-sha256", required=True)
     scaffold.add_argument("--theology-profile-path", required=True)
     scaffold.add_argument("--theology-profile-sha256", required=True)
@@ -286,7 +300,9 @@ def main(argv: list[str] | None = None) -> int:
     scaffold = build_cycle_scaffold(
         cycle_id=args.cycle_id,
         start_on=args.start_on,
-        source_registry_path=args.source_registry_path,
+        source_binding_kind=args.source_binding_kind,
+        source_binding_path=args.source_binding_path,
+        source_binding_sha256=args.source_binding_sha256,
         source_registry_sha256=args.source_registry_sha256,
         theology_profile_path=args.theology_profile_path,
         theology_profile_sha256=args.theology_profile_sha256,
