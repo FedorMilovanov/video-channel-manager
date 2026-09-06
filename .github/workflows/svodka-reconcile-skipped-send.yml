@@ -237,20 +237,20 @@ jobs:
           workflow_path = str(run.get("path") or "").split("@", 1)[0]
           allowed = {
               ".github/workflows/svodka-canary.yml": (
-                  "workflow_dispatch",
+                  ("workflow_dispatch",),
                   "Persist intent before Telegram mutation",
                   "Send exactly one canary payload",
               ),
               ".github/workflows/svodka-scheduled-publisher.yml": (
-                  "schedule",
+                  ("schedule", "workflow_dispatch"),
                   "Persist scheduled intent before Telegram mutation",
                   "Send exactly one scheduled payload",
               ),
           }
           if workflow_path not in allowed:
               raise SystemExit(f"source run is not a recognized Svodka provider workflow: {workflow_path}")
-          expected_event, persist_name, send_name = allowed[workflow_path]
-          if run.get("event") != expected_event:
+          expected_events, persist_name, send_name = allowed[workflow_path]
+          if run.get("event") not in expected_events:
               raise SystemExit("source run event does not match the provider workflow contract")
 
           evidence_path = (

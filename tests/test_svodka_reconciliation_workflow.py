@@ -6,6 +6,7 @@ from video_channel_manager.telegram_channel_profile import load_channel_profile
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/svodka-reconcile-skipped-send.yml"
+LEGACY_PUBLISHER = ROOT / ".github/workflows/svodka-scheduled-publisher.yml"
 PROFILE = ROOT / "content/telegram/channels/svodka.json"
 
 
@@ -26,6 +27,17 @@ def test_reconciliation_is_manual_main_only_and_provider_free() -> None:
     assert "send-once" not in workflow
 
 
+def test_legacy_publisher_source_contract_is_manual_recovery_only() -> None:
+    publisher = LEGACY_PUBLISHER.read_text(encoding="utf-8")
+
+    assert "workflow_dispatch:" in publisher
+    assert "schedule:" not in publisher
+    assert "github.event_name == 'workflow_dispatch'" in publisher
+    assert "SVODKA-LEGACY-RECOVERY:@deep_info_life" in publisher
+    assert "Persist scheduled intent before Telegram mutation" in publisher
+    assert "Send exactly one scheduled payload" in publisher
+
+
 def test_reconciliation_requires_completed_matching_exact_github_attempt_and_provenance() -> None:
     workflow = WORKFLOW.read_text(encoding="utf-8")
 
@@ -38,11 +50,22 @@ def test_reconciliation_requires_completed_matching_exact_github_attempt_and_pro
     assert "/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100" in workflow
     assert 'run.get("status") != "completed"' in workflow
     assert 'workflow_path = str(run.get("path") or "").split("@", 1)[0]' in workflow
-    assert '".github/workflows/svodka-canary.yml": (' in workflow
-    assert '"workflow_dispatch"' in workflow
-    assert '".github/workflows/svodka-scheduled-publisher.yml": (' in workflow
-    assert '"schedule"' in workflow
-    assert 'run.get("event") != expected_event' in workflow
+    assert (
+        '".github/workflows/svodka-canary.yml": (\n'
+        '                  ("workflow_dispatch",),\n'
+        '                  "Persist intent before Telegram mutation",\n'
+        '                  "Send exactly one canary payload",\n'
+        "              ),"
+    ) in workflow
+    assert (
+        '".github/workflows/svodka-scheduled-publisher.yml": (\n'
+        '                  ("schedule", "workflow_dispatch"),\n'
+        '                  "Persist scheduled intent before Telegram mutation",\n'
+        '                  "Send exactly one scheduled payload",\n'
+        "              ),"
+    ) in workflow
+    assert "expected_events, persist_name, send_name = allowed[workflow_path]" in workflow
+    assert 'run.get("event") not in expected_events' in workflow
     assert 'persist_steps[0].get("conclusion") != "success"' in workflow
     assert 'send_steps[0].get("conclusion") != "skipped"' in workflow
     assert 'run.get("head_sha")' in workflow
