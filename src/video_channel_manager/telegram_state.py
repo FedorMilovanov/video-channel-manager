@@ -18,6 +18,7 @@ from video_channel_manager.telegram_models import (
     DispatchMode,
     LedgerEntry,
     PreparedDispatch,
+    ScheduledSlot,
     TargetProof,
     TelegramLedger,
     TelegramPost,
@@ -249,6 +250,8 @@ def verify_persisted_intent(
         raise ValueError("persisted ledger payload fingerprint differs from prepared dispatch")
     if entry.dispatch_mode != envelope.dispatch_mode:
         raise ValueError("persisted ledger dispatch mode differs from prepared dispatch")
+    if entry.scheduled_slot != envelope.scheduled_slot:
+        raise ValueError("persisted ledger scheduled slot differs from prepared dispatch")
     if entry.bot_username is None:
         raise ValueError("persisted ledger has no bot username")
     if (
@@ -266,6 +269,21 @@ def _require_provenance(*, run_id: str, run_attempt: str, github_sha: str, githu
         raise ValueError("dispatch requires complete GitHub execution provenance")
 
 
+def _verified_publications_on(
+    ledger: TelegramLedger,
+    publication_date: date,
+    publication_timezone: str,
+) -> list[LedgerEntry]:
+    return [
+        entry
+        for entry in ledger.entries.values()
+        if entry.state == "published"
+        and entry.provider_effect == "verified"
+        and entry.published_at_utc is not None
+        and publication_local_date(entry.published_at_utc, publication_timezone) == publication_date
+    ]
+
+
 def prepare_next(
     queue: TelegramQueue,
     ledger: TelegramLedger,
@@ -277,6 +295,7 @@ def prepare_next(
     mode: DispatchMode,
     target: TargetProof,
     expected_publication_id: str | None = None,
+    scheduled_slot: ScheduledSlot | None = None,
     publication_timezone: str = PUBLICATION_TIMEZONE,
     now: datetime | None = None,
 ) -> PreparedDispatch:
@@ -289,6 +308,8 @@ def prepare_next(
         github_sha=github_sha,
         github_workflow_sha=github_workflow_sha,
     )
+    if mode == "manual" and scheduled_slot is not None:
+        raise ValueError("manual execution cannot carry a scheduled slot")
     if mode == "scheduled" and run_attempt != "1":
         return PreparedDispatch(None, "strict queue blocked: scheduled workflow re-runs are forbidden")
 
@@ -301,15 +322,41 @@ def prepare_next(
         raise ValueError("target proof is not a Telegram channel")
 
     today = publication_local_date(now, publication_timezone)
-    already_published_today = any(
-        entry.state == "published"
-        and entry.provider_effect == "verified"
-        and entry.published_at_utc is not None
-        and publication_local_date(entry.published_at_utc, publication_timezone) == today
-        for entry in ledger.entries.values()
-    )
-    if already_published_today:
-        return PreparedDispatch(None, f"one publication is already verified for {today.isoformat()}")
+    published_today = _verified_publications_on(ledger, today, publication_timezone)
+    if mode == "manual":
+        if published_today:
+            return PreparedDispatch(None, f"one publication is already verified for {today.isoformat()}")
+    elif scheduled_slot is None:
+        # Backward-safe programmatic behavior for legacy callers. Production workflow always supplies an explicit slot.
+        if published_today:
+            return PreparedDispatch(None, f"one publication is already verified for {today.isoformat()}")
+    else:
+        manual_today = [entry for entry in published_today if entry.dispatch_mode == "manual"]
+        if manual_today:
+            return PreparedDispatch(
+                None,
+                f"manual publication already verified for {today.isoformat()}; scheduled slots are closed for the day",
+            )
+        legacy_scheduled_today = [
+            entry for entry in published_today if entry.dispatch_mode == "scheduled" and entry.scheduled_slot is None
+        ]
+        if legacy_scheduled_today:
+            return PreparedDispatch(
+                None,
+                f"legacy scheduled publication already verified for {today.isoformat()}; transition day is closed",
+            )
+        same_slot = [
+            entry
+            for entry in published_today
+            if entry.dispatch_mode == "scheduled" and entry.scheduled_slot == scheduled_slot
+        ]
+        if same_slot:
+            return PreparedDispatch(
+                None,
+                f"scheduled slot {scheduled_slot} is already verified for {today.isoformat()}",
+            )
+        if len(published_today) >= 2:
+            return PreparedDispatch(None, f"two publications are already verified for {today.isoformat()}")
 
     if mode == "scheduled":
         manual_canary = any(
@@ -347,6 +394,7 @@ def prepare_next(
     entry.provider_effect = "may_exist"
     entry.intent_id = intent_id
     entry.dispatch_mode = mode
+    entry.scheduled_slot = scheduled_slot if mode == "scheduled" else None
     entry.workflow_run_id = run_id
     entry.workflow_run_attempt = run_attempt
     entry.github_sha = github_sha
@@ -374,6 +422,7 @@ def prepare_next(
         payload_sha256=post.payload_sha256,
         text=post.text,
         dispatch_mode=mode,
+        scheduled_slot=entry.scheduled_slot,
         target=target,
         prepared_at_utc=now,
     )
