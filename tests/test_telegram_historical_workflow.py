@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from copy import deepcopy
 from datetime import date
 from pathlib import Path
 
@@ -92,7 +91,9 @@ def _theology_payload() -> dict[str, object]:
     }
 
 
-def _claim(claim_id: str, *, voice: str = "historical_fact", side: str = "none", proximity: str = "not_applicable") -> dict[str, object]:
+def _claim(
+    claim_id: str, *, voice: str = "historical_fact", side: str = "none", proximity: str = "not_applicable"
+) -> dict[str, object]:
     return {
         "claim_id": claim_id,
         "claim_text": "Проверяемое историческое утверждение связано с двумя независимыми источниками высокого качества.",
@@ -144,12 +145,16 @@ def _post(sequence: int) -> dict[str, object]:
             {
                 "section_id": "context",
                 "heading": "Исторический контекст",
-                "paragraphs": ["Содержательный абзац исторического контекста с ясной редакционной структурой и без внутреннего машинного языка."],
+                "paragraphs": [
+                    "Содержательный абзац исторического контекста с ясной редакционной структурой и без внутреннего машинного языка."
+                ],
             },
             {
                 "section_id": "meaning",
                 "heading": "Почему это важно",
-                "paragraphs": ["Второй содержательный абзац связывает исторический материал с читательским выводом, не подменяя документированные факты богословской оценкой."],
+                "paragraphs": [
+                    "Второй содержательный абзац связывает исторический материал с читательским выводом, не подменяя документированные факты богословской оценкой."
+                ],
             },
         ],
         "evidence_boundary": "Источники подтверждают перечисленные факты; интерпретационные выводы редакции вынесены отдельно и не выдаются за содержание первичных документов.",
@@ -182,8 +187,12 @@ def _write_bundle(tmp_path: Path) -> Path:
     registry_rel = "content/telegram/lordchrist/historical-editorial/v1/source-registry.json"
     theology_rel = "content/telegram/lordchrist/historical-editorial/v1/theology-profile.json"
     queue_rel = "content/telegram/lordchrist/historical-editorial/v1/cycle-fixture.json"
-    (tmp_path / registry_rel).write_text(json.dumps(_registry_payload(), ensure_ascii=False, indent=2), encoding="utf-8")
-    (tmp_path / theology_rel).write_text(json.dumps(_theology_payload(), ensure_ascii=False, indent=2), encoding="utf-8")
+    (tmp_path / registry_rel).write_text(
+        json.dumps(_registry_payload(), ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    (tmp_path / theology_rel).write_text(
+        json.dumps(_theology_payload(), ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
     queue_payload = {
         "schema_name": "video-channel-manager.telegram-historical-editorial-queue",
