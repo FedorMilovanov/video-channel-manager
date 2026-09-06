@@ -10,12 +10,8 @@ PUBLICATION_ID = "milovi-feed-20260821-001"
 LEGACY_UNSCOPED_PUBLICATION_ID = "milovi-feed-20260820-002"
 RELEASE_PATH = Path("content/telegram/milovi-cake/releases/milovi-feed-20260821-001-runtime.json")
 AUTHORITY_PATH = Path("content/telegram/milovi-cake/releases/milovi-feed-20260821-001-execution-authority.json")
-LEGACY_RELEASE_PATH = Path(
-    "content/telegram/milovi-cake/releases/milovi-feed-20260820-002-runtime.json"
-)
-LEGACY_AUTHORITY_PATH = Path(
-    "content/telegram/milovi-cake/releases/milovi-feed-20260820-002-execution-authority.json"
-)
+LEGACY_RELEASE_PATH = Path("content/telegram/milovi-cake/releases/milovi-feed-20260820-002-runtime.json")
+LEGACY_AUTHORITY_PATH = Path("content/telegram/milovi-cake/releases/milovi-feed-20260820-002-execution-authority.json")
 LEGACY_CANDIDATE_DIGEST = "sha256:46cfea48120a395fe6b8dff87c7c7b328f2f0a83ca245ed9d35e591a45c580f6"
 LEGACY_RELEASE_DIGEST = "sha256:d507dc58519b9c5ec3bceede9ad1792b7b602c93fa3f13e48e287b6aee9e25dc"
 
