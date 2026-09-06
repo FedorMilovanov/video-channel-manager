@@ -1,0 +1,14 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-source-shard",
+  "schema_version": 1,
+  "shard_id": "history-sources-calvin",
+  "checked_on": "2026-08-08",
+  "sources": [
+    {"source_id":"src-unige-sermons","title":"Les sermons de Calvin","publisher":"Université de Genève","url":"https://www.unige.ch/theologie/calvin-sermons/sermons","evidence_type":"institutional","grade":"B+","evidence_role":"institutional_collection","checked_on":"2026-08-08","topic_tags":["calvin","preaching"],"independence_group":"unige-calvin-sermons"},
+    {"source_id":"src-unige-project","title":"Projet Calvin sermons","publisher":"Université de Genève","url":"https://www.unige.ch/theologie/calvin-sermons/presentation-projet","evidence_type":"institutional","grade":"B+","evidence_role":"institutional_collection","checked_on":"2026-08-08","topic_tags":["calvin","research-project"],"independence_group":"unige-calvin-sermons"},
+    {"source_id":"src-unige-inventory","title":"Inventaire des sermons","publisher":"Université de Genève","url":"https://www.unige.ch/theologie/calvin-sermons/banques-donnees/inventaire-sermons","evidence_type":"institutional","grade":"B+","evidence_role":"university_archive","checked_on":"2026-08-08","topic_tags":["calvin","sermon-catalog"],"independence_group":"unige-calvin-sermons"},
+    {"source_id":"src-unige-isaiah","title":"Calvin — sermons sur Ésaïe","publisher":"Université de Genève","url":"https://www.unige.ch/theologie/calvin-sermons/sermons/calvin-esaie","evidence_type":"institutional","grade":"B+","evidence_role":"institutional_collection","checked_on":"2026-08-08","topic_tags":["calvin","isaiah"],"independence_group":"unige-calvin-sermons"},
+    {"source_id":"src-cambridge-job","title":"Calvin as an interpreter of Job","publisher":"Cambridge University Press","url":"https://www.cambridge.org/core/books/calvin-and-the-bible/calvin-as-an-interpreter-of-job/1C3C9EE04BCBC8D3FC1920943E3DFA66","evidence_type":"scholarly","grade":"B+","evidence_role":"academic_monograph","checked_on":"2026-08-08","topic_tags":["calvin","job","exegesis"],"independence_group":"cambridge-calvin-job"},
+    {"source_id":"src-cambridge-ephesians","title":"Expounding Scripture and applying it to our use: Calvin's sermons on Ephesians","publisher":"Cambridge University Press","url":"https://www.cambridge.org/core/journals/scottish-journal-of-theology/article/abs/expounding-scripture-and-applying-it-to-our-use-calvins-sermons-on-ephesians/0F9F0F69488B0D607B863B974C8D54B5","evidence_type":"scholarly","grade":"B+","evidence_role":"peer_reviewed","checked_on":"2026-08-08","topic_tags":["calvin","ephesians","preaching"],"independence_group":"cambridge-calvin-ephesians"}
+  ]
+}
