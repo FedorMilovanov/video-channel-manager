@@ -164,13 +164,11 @@ def build_cycle_scaffold(
     )
 
 
-def _resolve_repo_path(repo_root: Path, value: str) -> Path:
-    path = Path(value)
-    if path.is_absolute():
-        raise ValueError("historical bundle paths must be repository-relative")
-    resolved_root = repo_root.resolve()
-    resolved = (resolved_root / path).resolve()
-    if resolved != resolved_root and resolved_root not in resolved.parents:
+def _resolve_repo_path(repo_root: Path, value: str | Path) -> Path:
+    root = repo_root.resolve()
+    candidate = Path(value)
+    resolved = candidate.resolve() if candidate.is_absolute() else (root / candidate).resolve()
+    if resolved != root and root not in resolved.parents:
         raise ValueError("historical bundle path escapes repository root")
     return resolved
 
@@ -178,7 +176,7 @@ def _resolve_repo_path(repo_root: Path, value: str) -> Path:
 def preflight_historical_bundle(queue_path: Path, *, repo_root: Path = Path(".")) -> HistoricalBundlePreflightV1:
     """Validate a direct-registry queue and return a compact proof report."""
 
-    resolved_queue = queue_path if queue_path.is_absolute() else _resolve_repo_path(repo_root, str(queue_path))
+    resolved_queue = _resolve_repo_path(repo_root, queue_path)
     raw = json.loads(resolved_queue.read_text(encoding="utf-8"))
     queue = HistoricalEditorialQueueV1.model_validate(raw)
     if queue.source_binding_kind != "registry":
