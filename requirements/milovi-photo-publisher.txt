@@ -1,0 +1,8 @@
+# Exact Milovi live-photo materialization runtime for GitHub Actions.
+# Production uses Ubuntu 24.04 x86-64 + CPython 3.11. Keep this file minimal,
+# wheel-only and hash-locked; refresh the version and hash atomically.
+--require-hashes
+--only-binary=:all:
+
+Pillow==12.3.0 \
+    --hash=sha256:23d27a3e0307ec2244cc51e7287b919aa68d097504ebe19df4e76a98a3eea5bd
