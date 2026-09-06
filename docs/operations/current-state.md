@@ -10,7 +10,7 @@ For every new task, resolve fresh current `main` and the relevant durable state 
 Repository implementation, artifact production and provider rollout are separate completion states.
 
 - Implementation completion does not itself authorize execution.
-- A completed provider outcome is not reopened only because stricter policy is introduced later.
+- A completed artifact/provider outcome is not retroactively reopened only because stricter policy is introduced later.
 - An old successful rollout does not authorize a new mutation.
 - An ambiguous provider effect remains blocking unless exact read-only reconciliation or a narrowly bound no-replay disposition resolves it.
 - Credentials authenticate; exact project identity, target binding, immutable operation/release identity, durable state and fresh explicit execution authority select the operation.
@@ -18,7 +18,7 @@ Repository implementation, artifact production and provider rollout are separate
 
 ## Repository source of truth
 
-Only `main` is a supported code/runtime execution baseline.
+Only `main` is a supported repository code/runtime execution baseline.
 
 `state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs. None is a code baseline. Ephemeral `work/`, `agent/`, `feature/` and `research/` refs become non-authoritative when their owning scope closes; preserve unique evidence before cleanup and never rewrite a durable state ref as branch hygiene.
 
@@ -42,7 +42,9 @@ Material late-2026-09-06 / early-2026-09-07 hardening now present on `main`:
 
 ## Telegram / LordChrist verified quotes
 
-Issues #541 and #543 are closed as **completed** after the slot-aware runtime, transport hardening and reviewed successor-corpus work merged through PRs #548, #551 and #557.
+Issues #541 and #543 are closed as **completed** after the slot-aware runtime, transport hardening and reviewed successor-corpus work merged through PRs #548, #551 and #557. Issue #168 is closed as repository implementation complete; implementation completion does not itself authorize execution.
+
+The historical research-v2 canary ambiguity is no longer a legacy blocker. Issue #286 / PR #287 introduced the exact `retired_no_replay` disposition. For unrelated ambiguity, every other `dispatching` or `may_exist` effect remains fail-closed, and the retired August research release itself cannot resume, retry, or authorize a successor.
 
 The authoritative production schedule is schema v3:
 
@@ -87,7 +89,9 @@ Canonical runbook: [`lordchrist-shorts-feed.md`](lordchrist-shorts-feed.md).
 
 ## Telegram / Svodka
 
-Issue #170 is repository-pipeline complete. Issue #235 is completed with verified successor publications including Telegram messages `28` and `29`; the intervening v3 failed-no-effect identity is immutable and was not retried under the same release identity.
+Issue #170 is closed as repository pipeline implementation complete. The historical approval bound release `svodka-pilot-2026-08`; its profile used `provider_writes_authorized=true` only for the reviewed rollout gates, and the durable ledger now exists on `state/svodka-telegram`. Those facts are historical evidence, not standing authority.
+
+Issue #235 is completed with verified successor publications including Telegram messages `28` and `29`; the intervening v3 failed-no-effect identity is immutable and was not retried under the same release identity.
 
 The original 14-entry `svodka-pilot-2026-08` ledger is fully terminalized as historical no-replay evidence. Completed reconciliation/successor workflows and later consumed one-offs have been retired from executable `main` where appropriate. PR #536 preserves the custom-emoji canary as `unknown / may_exist / message_id=null`; PR #538 retired the consumed native-rich canary; PR #540 retired the consumed ledger bootstrap. None created new provider authority or changed `state/svodka-telegram`.
 
@@ -107,7 +111,7 @@ The permanent Milovi architecture is a single feed control plane. `.github/workf
 
 Each new feed operation requires a fresh immutable `milovi-feed-YYYYMMDD-NNN` identity, exact review, provider-free state initialization after release authorization, channel-wide duplicate agreement, strict freshness, exact target preflight, current-main quality, durable intent before mutation, exactly one provider attempt and fresh exact human execution authority. Structured publication identity is the live authorization gate; credentials, old receipts, old issue text, accepted media and generic continuation are not.
 
-All historical Milovi feed identities through `milovi-feed-20260906-001` are expired/non-replayable evidence. Do not initialize, publish, retime, catch up or reinterpret them as successors.
+`milovi-feed-20260819-001`, `milovi-feed-20260820-001`, `milovi-feed-20260820-002`, `milovi-feed-20260821-001` and `milovi-feed-20260906-001` are all historical identities now. Their old release/execution windows are expired evidence, not current authority. Issue #353 has no standing Telegram provider authority. Any future publication requires a fresh identity plus current review, provider-free state initialization and separate fresh execution authority.
 
 The native-video artifact lane remains complete at `16 / 16` accepted Telegram-ready MP4/H.264 outputs on content-addressed evidence ref `agent/milovi-video-accepted-73c578eff825`, digest `sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae`. Artifact readiness is not provider authority.
 
@@ -117,11 +121,11 @@ Canonical runbook: [`milovi-telegram-feed-control-plane.md`](milovi-telegram-fee
 
 ## Instagram / Legendary Poet and Lord God
 
-Issue #492 is repository-implementation complete and provider-inert. Launch packs, Reel factory, caption rendering and a read-only Graph identity client exist; exact Professional account IDs, hashed vertical masters and a live Meta publisher do not. Live rollout requires a new exact owning scope.
+Issue #492 is closed as repository implementation complete. Launch packs, Reel factory, caption rendering and a read-only Graph identity client exist; exact Professional account IDs, hashed vertical masters and a live Meta publisher do not. Provider publications remain 0. Live rollout requires a new exact owning scope.
 
 ## YouTube / Legendary Poet / «Чёрный человек»
 
-The historical authorized rollout is complete. Public video `x-puy27S2qs` remains the collision guard for that exact project/channel/media identity. Processing, public visibility, custom thumbnail, playlist membership and top-level comment were verified. Issue #154 is closed as **completed**. The historical provenance gap predates the later quality-master binding rule and is not required rework. Do not regenerate/reupload solely to satisfy policy introduced after the published bytes were produced.
+The historical authorized rollout is complete. Public video `x-puy27S2qs` remains the collision guard for that exact project/channel/media identity. Processing, public visibility, custom thumbnail, playlist membership and top-level comment were verified. The current `main` includes the guarded YouTube release executor; implementation completion does not itself authorize execution. Issue #154 is closed as **completed**. The historical provenance gap predates the later quality-master binding rule and is not required rework. Do not regenerate or reupload the album solely to satisfy policy introduced after the published bytes were produced.
 
 No future YouTube upload, metadata edit, thumbnail change, playlist mutation, visibility change, comment mutation, deletion or replacement is authorized by this state.
 
@@ -135,7 +139,7 @@ One durable state/concurrency namespace has one write owner at a time. Parallel 
 
 Local MP3 support remains `local_only_read_only_intake_and_manifest`: inspect, probe, hash, tag inventory and deterministic manifests. It does not authorize ID3 rewrite, rename/transcode, remote upload, metadata mutation, playlist changes or wall publication.
 
-Resi remains the repository-owned `watch -> sample -> explicit handoff` flow. The watcher never auto-dispatches a multi-gigabyte FULL download; language-sensitive work samples sermon speech before full handoff. The retained `<TITLE> - FULL.mp4` master goes to the canonical Windows Downloads location; generated control files/exact trims remain under operator output unless explicitly redirected. This capability has provider effect `impossible` and does not bypass DRM/access controls or infer rights.
+Resi remains the repository-owned `watch -> sample -> explicit handoff` flow. The watcher never auto-dispatches a multi-gigabyte FULL download; language-sensitive work samples sermon speech before full handoff. The retained `<TITLE> - FULL.mp4` master goes to canonical Windows Downloads (`C:\Users\Fedor\Downloads`); generated handoff/watcher control files and exact-trim outputs remain under repository `operator-output` unless explicitly redirected. This capability has provider effect `impossible` and does not bypass DRM/access controls or infer rights.
 
 Canonical runbooks: [`resi-dash-local-handoff.md`](resi-dash-local-handoff.md) and [`resi-grace-russian-live.md`](resi-grace-russian-live.md).
 
@@ -160,7 +164,9 @@ Fresh GitHub post-delete inventory is complete: page 1 contains **11 refs** and 
 - `milovi-gap-read`;
 - `permanent-feed-contract`.
 
-The repository-admin apply/readback also verifies strict up-to-date required checks, PR-before-merge with `required_approving_review_count=0`, administrator enforcement, required conversation resolution, force-push disabled, protected-branch deletion disabled, linear-history enforcement disabled and branch locking disabled. The zero-approval setting deliberately avoids a single-owner self-review deadlock while still requiring the PR and all protected checks. Repository rulesets remain empty; classic branch protection is the active server-side enforcement surface.
+The repository-admin apply/readback also verifies strict up-to-date required checks, PR-before-merge with `required_approving_review_count=0`, administrator enforcement, required conversation resolution, force-push disabled, protected-branch deletion disabled, linear-history enforcement disabled and branch locking disabled. The zero-approval setting deliberately avoids a single-owner self-review deadlock while still requiring the PR and all protected checks. The repository ruleset count `0` remains unchanged; classic branch protection is the active server-side enforcement surface.
+
+Dependency Graph itself is policy-enabled for this public repository. SBOM REST export is verified unavailable through both documented generation surfaces at the recorded probe points; that scoped result must not be collapsed into a blanket `UNVERIFIED` item.
 
 The connected GitHub App still cannot read the full Administration-only `/branches/main/protection` object, but its independent branch endpoint confirms `protected=true`, enforcement=`everyone` and the exact eight `(context, app_id=15368)` bindings. Do not confuse that connector permission boundary with absence of protection.
 
