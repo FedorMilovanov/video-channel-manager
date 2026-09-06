@@ -299,7 +299,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --disable-pip-version-check --only-binary=:all: Pillow==11.3.0
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/milovi-photo-publisher.txt
+          python -m pip check
           python - <<'PY'
           import json
           import os

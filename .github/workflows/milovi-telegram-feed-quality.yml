@@ -94,6 +94,18 @@ jobs:
           assert "schedule:" not in text
           assert "cron:" not in text
 
+          photo_lock = Path("requirements/milovi-photo-publisher.txt").read_text(encoding="utf-8")
+          assert "--require-hashes" in photo_lock
+          assert "--only-binary=:all:" in photo_lock
+          assert "Pillow==12.3.0" in photo_lock
+          assert "sha256:23d27a3e0307ec2244cc51e7287b919aa68d097504ebe19df4e76a98a3eea5bd" in photo_lock
+          assert "-r requirements/milovi-photo-publisher.txt" in text
+          assert "Pillow==11.3.0" not in text
+          assert "--only-binary=:all: Pillow==" not in text
+
+          pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
+          assert '"Pillow>=12.3,<13"' in pyproject
+
           discovery_text = discovery.read_text(encoding="utf-8")
           assert "discover-target" in discovery_text
           assert "provider_writes_authorized" not in discovery_text
