@@ -53,8 +53,10 @@ jobs:
 
           root = Path(".github/workflows")
           canonical = root / "milovi-telegram-feed-publisher.yml"
+          recovery = root / "milovi-reconcile-provider-outcome.yml"
           discovery = root / "milovi-telegram-target-discovery.yml"
           assert canonical.is_file()
+          assert recovery.is_file()
           assert discovery.is_file()
           retired = {
               "milovi-telegram-bootstrap-activation-package.yml",
@@ -91,8 +93,39 @@ jobs:
           assert "require-execution-authorized" in text
           assert "telegram_multichannel_cli prepare" in text
           assert text.index("telegram_multichannel_cli prepare") < text.index("telegram_multichannel_cli send-once")
+          send_index = text.index("- name: Send exactly once through the canonical generic Telegram runtime")
+          archive_index = text.index("- name: Archive exact provider outcome before state mutation")
+          apply_index = text.index("- name: Apply exact outcome and persist terminal or blocking state")
+          assert send_index < archive_index < apply_index
+          assert "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a" in text
+          artifact_name_template = "name: milovi-provider-outcome-$" + "{{ github.run_id }}-$" + "{{ github.run_attempt }}"
+          assert artifact_name_template in text
+          assert "if-no-files-found: error" in text
           assert "schedule:" not in text
           assert "cron:" not in text
+
+          recovery_text = recovery.read_text(encoding="utf-8")
+          assert "workflow_dispatch:" in recovery_text
+          assert "group: milovi-cake-telegram-publisher" in recovery_text
+          assert "actions: read" in recovery_text
+          assert "contents: write" in recovery_text
+          assert "telegram_milovi_outcome_artifact prove" in recovery_text
+          assert "telegram_milovi_outcome_artifact fetch" in recovery_text
+          assert "telegram_milovi_outcome_artifact validate" in recovery_text
+          assert "telegram_multichannel_cli verify-intent" in recovery_text
+          assert "telegram_multichannel_cli apply-outcome" in recovery_text
+          assert "MILOVI_STATE_BASE_SHA" in recovery_text
+          assert "current_main_sha" in recovery_text
+          for forbidden in (
+              "LORDCHRIST_TELEGRAM_BOT_TOKEN",
+              "MILOVI_CAKE_TELEGRAM_BOT_TOKEN",
+              "telegram_channel_cli preflight",
+              "telegram_multichannel_cli send-once",
+              "sendMessage",
+              "sendPhoto",
+              "sendVideo",
+          ):
+              assert forbidden not in recovery_text
 
           photo_lock = Path("requirements/milovi-photo-publisher.txt").read_text(encoding="utf-8")
           assert "--require-hashes" in photo_lock

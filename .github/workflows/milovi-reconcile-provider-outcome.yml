@@ -1,0 +1,249 @@
+name: Milovi reconcile archived provider outcome
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: Exact failed/cancelled Milovi provider workflow run id
+        required: true
+        type: string
+      source_run_attempt:
+        description: Exact source workflow run attempt
+        required: true
+        default: "1"
+        type: string
+      publication_id:
+        description: Exact unresolved Milovi publication_id
+        required: true
+        type: string
+      confirm:
+        description: RECOVER-MILOVI-OUTCOME:<run_id>:<attempt>:<publication_id>
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: milovi-cake-telegram-publisher
+  cancel-in-progress: false
+
+env:
+  PYTHONPATH: src
+  STATE_BRANCH: state/milovi-cake-telegram
+  STATE_DIR: .state/milovi
+  RECOVERED_OUTCOME_PATH: .runtime/milovi-recovered-outcome.json
+  RECOVERY_PROOF_PATH: .runtime/milovi-outcome-recovery-proof.json
+
+jobs:
+  reconcile:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact recovery runtime
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install provider-free recovery runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            -r requirements/telegram-publisher.txt
+
+      - name: Validate exact recovery request and current main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+          CONFIRMATION: ${{ inputs.confirm }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_RUN_ID" =~ ^[1-9][0-9]*$ ]] || { echo "source_run_id must be a positive integer" >&2; exit 2; }
+          [[ "$SOURCE_RUN_ATTEMPT" =~ ^[1-9][0-9]*$ ]] || { echo "source_run_attempt must be a positive integer" >&2; exit 2; }
+          [[ "$PUBLICATION_ID" =~ ^milovi-feed-[0-9]{8}-[0-9]{3}$ ]] || { echo "publication_id is invalid" >&2; exit 2; }
+          expected="RECOVER-MILOVI-OUTCOME:$SOURCE_RUN_ID:$SOURCE_RUN_ATTEMPT:$PUBLICATION_ID"
+          [[ "$CONFIRMATION" == "$expected" ]] || { echo "recovery requires exact confirmation: $expected" >&2; exit 2; }
+          remote_main="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          [[ "$remote_main" == "$GITHUB_SHA" ]] || { echo "recovery runtime is not exact current main" >&2; exit 3; }
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow milovi-telegram-feed-quality.yml \
+            --sha "$GITHUB_SHA"
+
+      - name: Check out durable Milovi state read-only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/milovi-cake-telegram
+          path: .state/milovi
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify exact unresolved persisted intent
+        env:
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          release="content/telegram/milovi-cake/releases/$PUBLICATION_ID-runtime.json"
+          ledger="$STATE_DIR/content/telegram/milovi-cake/feed/$PUBLICATION_ID.json"
+          evidence_dir="$STATE_DIR/content/telegram/milovi-cake/feed-dispatches/$SOURCE_RUN_ID-$SOURCE_RUN_ATTEMPT"
+          dispatch="$evidence_dir/dispatch.json"
+          [[ -f "$release" && -f "$ledger" && -f "$dispatch" && -f "$evidence_dir/target-proof.json" ]] || {
+            echo "exact Milovi release/state/dispatch evidence is missing" >&2
+            exit 3
+          }
+          python -m video_channel_manager.telegram_multichannel_cli verify-intent \
+            --release "$release" \
+            --ledger "$ledger" \
+            --envelope "$dispatch"
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from video_channel_manager.telegram_multichannel_state import GenericDispatchEnvelope
+
+          path = Path(os.environ["STATE_DIR"]) / "content/telegram/milovi-cake/feed-dispatches" / (
+              f"{os.environ['SOURCE_RUN_ID']}-{os.environ['SOURCE_RUN_ATTEMPT']}"
+          ) / "dispatch.json"
+          dispatch = GenericDispatchEnvelope.model_validate_json(path.read_text(encoding="utf-8"))
+          if dispatch.workflow_run_id != os.environ["SOURCE_RUN_ID"]:
+              raise SystemExit("durable dispatch run id differs from recovery request")
+          if dispatch.workflow_run_attempt != os.environ["SOURCE_RUN_ATTEMPT"]:
+              raise SystemExit("durable dispatch attempt differs from recovery request")
+          if dispatch.publication_id != os.environ["PUBLICATION_ID"]:
+              raise SystemExit("durable dispatch publication differs from recovery request")
+          PY
+          echo "MILOVI_STATE_BASE_SHA=$(git -C "$STATE_DIR" rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Prove and download exact archived provider outcome
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_dir="$STATE_DIR/content/telegram/milovi-cake/feed-dispatches/$SOURCE_RUN_ID-$SOURCE_RUN_ATTEMPT"
+          python -m video_channel_manager.telegram_milovi_outcome_artifact prove \
+            --dispatch "$evidence_dir/dispatch.json" \
+            --source-run-id "$SOURCE_RUN_ID" \
+            --source-run-attempt "$SOURCE_RUN_ATTEMPT" \
+            --publication-id "$PUBLICATION_ID" \
+            --proof-output "$RECOVERY_PROOF_PATH"
+          python -m video_channel_manager.telegram_milovi_outcome_artifact fetch \
+            --proof "$RECOVERY_PROOF_PATH" \
+            --outcome-output "$RECOVERED_OUTCOME_PATH"
+          python -m video_channel_manager.telegram_milovi_outcome_artifact validate \
+            --dispatch "$evidence_dir/dispatch.json" \
+            --outcome "$RECOVERED_OUTCOME_PATH" \
+            --publication-id "$PUBLICATION_ID"
+
+      - name: Enable exact Milovi state writer
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/milovi-cake-telegram
+          path: .state/milovi
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Re-verify unchanged durable intent before apply
+        env:
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          current_state_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          [[ "$current_state_sha" == "$MILOVI_STATE_BASE_SHA" ]] || {
+            echo "durable Milovi state changed while recovery proof was built" >&2
+            exit 4
+          }
+          release="content/telegram/milovi-cake/releases/$PUBLICATION_ID-runtime.json"
+          ledger="$STATE_DIR/content/telegram/milovi-cake/feed/$PUBLICATION_ID.json"
+          dispatch="$STATE_DIR/content/telegram/milovi-cake/feed-dispatches/$SOURCE_RUN_ID-$SOURCE_RUN_ATTEMPT/dispatch.json"
+          python -m video_channel_manager.telegram_multichannel_cli verify-intent \
+            --release "$release" \
+            --ledger "$ledger" \
+            --envelope "$dispatch"
+
+      - name: Apply archived outcome without provider access
+        env:
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          release="content/telegram/milovi-cake/releases/$PUBLICATION_ID-runtime.json"
+          ledger="$STATE_DIR/content/telegram/milovi-cake/feed/$PUBLICATION_ID.json"
+          dispatch="$STATE_DIR/content/telegram/milovi-cake/feed-dispatches/$SOURCE_RUN_ID-$SOURCE_RUN_ATTEMPT/dispatch.json"
+          python -m video_channel_manager.telegram_multichannel_cli apply-outcome \
+            --release "$release" \
+            --ledger "$ledger" \
+            --envelope "$dispatch" \
+            --outcome "$RECOVERED_OUTCOME_PATH"
+          python -m video_channel_manager.milovi_telegram_feed sync-index \
+            --publication-id "$PUBLICATION_ID" \
+            --state-checkout "$STATE_DIR"
+
+      - name: Persist recovered state and immutable evidence
+        env:
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt }}
+          PUBLICATION_ID: ${{ inputs.publication_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          recovery_rel_dir="content/telegram/milovi-cake/feed-recoveries/$SOURCE_RUN_ID-$SOURCE_RUN_ATTEMPT"
+          recovery_abs_dir="$STATE_DIR/$recovery_rel_dir"
+          mkdir -p "$recovery_abs_dir"
+          cp -- "$RECOVERY_PROOF_PATH" "$recovery_abs_dir/outcome-recovery-proof.json"
+          cp -- "$RECOVERED_OUTCOME_PATH" "$recovery_abs_dir/provider-outcome.json"
+
+          current_main_sha="$(git ls-remote origin refs/heads/main | cut -f1)"
+          [[ "$current_main_sha" == "$GITHUB_SHA" ]] || {
+            echo "recovery runtime SHA is no longer current main; refusing durable state mutation" >&2
+            exit 4
+          }
+
+          ledger_rel="content/telegram/milovi-cake/feed/$PUBLICATION_ID.json"
+          index_rel="content/telegram/milovi-cake/feed/index.json"
+          git -C "$STATE_DIR" config user.name "milovi-telegram-feed[bot]"
+          git -C "$STATE_DIR" config user.email "milovi-telegram-feed@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$ledger_rel" "$index_rel" "$recovery_rel_dir"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo "recovery produced no durable state/evidence delta" >&2
+            exit 4
+          }
+          parent_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          [[ "$parent_sha" == "$MILOVI_STATE_BASE_SHA" ]] || {
+            echo "durable state base changed before recovery commit" >&2
+            exit 4
+          }
+          remote_before="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$remote_before" == "$parent_sha" ]] || {
+            echo "remote durable state moved before recovery push" >&2
+            exit 4
+          }
+          git -C "$STATE_DIR" commit -m "Recover Milovi provider outcome for run $SOURCE_RUN_ID/$SOURCE_RUN_ATTEMPT"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$remote_sha" == "$local_sha" ]] || {
+            echo "remote recovered Milovi state commit verification failed" >&2
+            exit 4
+          }
