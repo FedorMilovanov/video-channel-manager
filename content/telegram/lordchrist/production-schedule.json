@@ -1,6 +1,6 @@
 {
   "schema_name": "video-channel-manager.telegram-production-schedule",
-  "schema_version": 2,
+  "schema_version": 3,
   "project_key": "lord-god-strength",
   "channel_username": "@lordchrist",
   "chat_id": -1001295216957,
@@ -9,11 +9,31 @@
   "enabled": true,
   "not_before_moscow_date": "2026-08-08",
   "timezone": "Europe/Moscow",
-  "primary_time": "09:17",
-  "catchup_time": "21:17",
-  "daily_verified_limit": 1,
+  "max_publications_per_slot": 1,
+  "slots": {
+    "morning": {
+      "time": "09:17",
+      "weekdays": [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday"
+      ]
+    },
+    "evening": {
+      "time": "21:17",
+      "weekdays": [
+        "tuesday",
+        "friday",
+        "sunday"
+      ]
+    }
+  },
   "queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
   "presentation_policy_id": "lordchrist-editorial-v2",
   "presentation_policy_sha256": "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8",
-  "activation_note": "Autonomous production enabled after verified manual canary 1470 and verified GitHub-hosted presentation test 1471; exact Telegram identity and presentation policy are release-bound."
+  "activation_note": "Slot-aware autonomous production preserves the verified legacy queue while binding each scheduled attempt to one exact Europe/Moscow date and editorial slot."
 }
