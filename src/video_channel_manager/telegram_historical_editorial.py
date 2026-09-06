@@ -378,14 +378,19 @@ def _validate_post_evidence(
         if claim.direct_quote:
             if not any(
                 source.grade == "A"
-                and source.evidence_role in {"primary_document", "critical_edition", "official_archive", "university_archive"}
+                and source.evidence_role
+                in {"primary_document", "critical_edition", "official_archive", "university_archive"}
                 for source in bound
             ):
-                raise ValueError(f"direct quotation {claim.claim_id} requires grade A primary/critical/archive evidence")
+                raise ValueError(
+                    f"direct quotation {claim.claim_id} requires grade A primary/critical/archive evidence"
+                )
         elif claim.voice != "editorial_evaluation":
             groups = {source.independence_group for source in bound}
             if len(groups) < 2:
-                raise ValueError(f"material historical claim {claim.claim_id} requires two independent evidence groups")
+                raise ValueError(
+                    f"material historical claim {claim.claim_id} requires two independent evidence groups"
+                )
             if not any(source.grade == "A" for source in bound):
                 raise ValueError(f"material historical claim {claim.claim_id} requires at least one grade A source")
         if claim.voice == "editorial_evaluation" and not post.theology_review.scripture_refs:
@@ -487,7 +492,11 @@ def build_historical_rich_document(
     media_slots = tuple(
         RichMediaSlot(
             slot_id=image.asset_id,
-            placement={"after": "lead" if index == 1 else post.sections[min(index - 2, len(post.sections) - 1)].section_id},
+            placement={
+                "after": "lead"
+                if index == 1
+                else post.sections[min(index - 2, len(post.sections) - 1)].section_id
+            },
             depicts=image.depicts,
             purpose=image.purpose,
             preferred_source_type="reviewed historical image",
