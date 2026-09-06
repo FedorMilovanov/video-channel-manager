@@ -342,8 +342,6 @@ class HistoricalEditorialQueueV1(BaseModel):
         claim_ids = [claim.claim_id for post in self.posts for claim in post.claims]
         if len(claim_ids) != len(set(claim_ids)):
             raise ValueError("historical claim ids must be unique across the queue")
-        if self.source_binding_kind == "registry" and self.source_binding_sha256 != self.source_registry_sha256:
-            raise ValueError("direct registry binding digest must equal materialized registry digest")
         return self
 
     @property
@@ -360,6 +358,15 @@ def _load_json(path: Path) -> object:
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise ValueError(f"invalid historical editorial JSON {path}: {exc}") from exc
+
+
+def _resolve_repo_path(repo_root: Path, value: str | Path) -> Path:
+    root = repo_root.resolve()
+    candidate = Path(value)
+    resolved = candidate.resolve() if candidate.is_absolute() else (root / candidate).resolve()
+    if resolved != root and root not in resolved.parents:
+        raise ValueError("historical editorial path escapes repository root")
+    return resolved
 
 
 def load_historical_source_registry(path: Path) -> HistoricalSourceRegistry:
@@ -414,17 +421,24 @@ def _validate_post_evidence(
         raise ValueError("theology profile is newer than queue verification")
 
 
-def load_historical_editorial_queue(path: Path) -> HistoricalEditorialQueueV1:
-    queue = HistoricalEditorialQueueV1.model_validate(_load_json(path))
+def load_historical_editorial_queue(
+    path: Path,
+    *,
+    repo_root: Path = Path("."),
+) -> HistoricalEditorialQueueV1:
+    resolved_queue = _resolve_repo_path(repo_root, path)
+    queue = HistoricalEditorialQueueV1.model_validate(_load_json(resolved_queue))
     if queue.source_binding_kind != "registry":
         raise ValueError("catalog-bound historical queues must be materialized through materialize_historical_bundle")
 
-    binding_path = Path(queue.source_binding_path)
+    binding_path = _resolve_repo_path(repo_root, queue.source_binding_path)
     binding_payload = _load_json(binding_path)
     if sha256_json(binding_payload) != queue.source_binding_sha256:
         raise ValueError("historical source binding digest mismatch")
     registry = HistoricalSourceRegistry.model_validate(binding_payload)
-    theology = load_theology_profile(Path(queue.theology_profile_path))
+
+    theology_path = _resolve_repo_path(repo_root, queue.theology_profile_path)
+    theology = load_theology_profile(theology_path)
     if registry.digest != queue.source_registry_sha256:
         raise ValueError("historical source registry digest mismatch")
     if theology.digest != queue.theology_profile_sha256:
