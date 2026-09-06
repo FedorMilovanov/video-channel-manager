@@ -12,14 +12,14 @@
   "bot_id": 8716602202,
   "bot_username": "preaching_mp3_bot",
   "release_authorized": true,
-  "reviewed_candidate_sha256": "sha256:6b765e044f4cc0b3503104065ef5dcb055a3c3c06127cb9b58cd3b3b46243323",
+  "reviewed_candidate_sha256": "sha256:e970e33add0420a8dd3d955d697f49ec8f33ba5102fc246d38ca0e71f260dd4b",
   "reviewed_by": "human user via ChatGPT request 2026-09-06: нужны реальные результаты, чтобы были посты реальные",
   "reviewed_at": "2026-09-06T16:17:34+03:00",
   "items": [
     {
       "sequence": 1,
       "publication_id": "milovi-feed-20260906-001",
-      "scheduled_at": "2026-09-06T16:30:00+03:00",
+      "scheduled_at": "2026-09-06T20:00:00+03:00",
       "source_sha256": "sha256:6ca82d87ab4c4ac869e1363df7758bef47aa8eccbcc5e2f5be70a402ce459fcc",
       "payload": {
         "schema_name": "video-channel-manager.telegram-generic-photo-payload",
