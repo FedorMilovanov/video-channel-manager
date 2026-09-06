@@ -98,7 +98,8 @@ jobs:
           apply_index = text.index("- name: Apply exact outcome and persist terminal or blocking state")
           assert send_index < archive_index < apply_index
           assert "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a" in text
-          assert "name: milovi-provider-outcome-${{ github.run_id }}-${{ github.run_attempt }}" in text
+          artifact_name_template = "name: milovi-provider-outcome-$" + "{{ github.run_id }}-$" + "{{ github.run_attempt }}"
+          assert artifact_name_template in text
           assert "if-no-files-found: error" in text
           assert "schedule:" not in text
           assert "cron:" not in text
