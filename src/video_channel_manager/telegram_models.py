@@ -196,6 +196,7 @@ class TelegramQueue(BaseModel):
 StateName = Literal["pending", "dispatching", "published", "unknown", "failed", "skipped"]
 ProviderEffect = Literal["impossible", "not_dispatched", "confirmed_absent", "may_exist", "verified"]
 DispatchMode = Literal["manual", "scheduled"]
+ScheduledSlot = Literal["morning", "evening"]
 
 
 class TargetProof(BaseModel):
@@ -233,6 +234,8 @@ class LedgerEntry(BaseModel):
     provider_effect: ProviderEffect = "impossible"
     intent_id: str | None = None
     dispatch_mode: DispatchMode | None = None
+    scheduled_moscow_date: date | None = None
+    scheduled_slot: ScheduledSlot | None = None
     workflow_run_id: str | None = None
     workflow_run_attempt: str | None = None
     github_sha: str | None = None
@@ -268,6 +271,15 @@ class LedgerEntry(BaseModel):
 
     @model_validator(mode="after")
     def validate_state_evidence(self) -> "LedgerEntry":
+        has_date = self.scheduled_moscow_date is not None
+        has_slot = self.scheduled_slot is not None
+        if has_date != has_slot:
+            raise ValueError("scheduled slot provenance requires both scheduled_moscow_date and scheduled_slot")
+        if self.dispatch_mode == "manual" and (has_date or has_slot):
+            raise ValueError("manual entries cannot carry scheduled slot provenance")
+        if self.dispatch_mode is None and (has_date or has_slot):
+            raise ValueError("slot provenance requires a dispatch mode")
+
         if self.state == "published":
             if self.provider_effect != "verified":
                 raise ValueError("published entries require provider_effect=verified")
@@ -324,13 +336,18 @@ class TelegramLedger(BaseModel):
     @model_validator(mode="after")
     def validate_entry_identity(self) -> "TelegramLedger":
         intent_ids: list[str] = []
+        slot_claims: list[tuple[date, ScheduledSlot]] = []
         for key, entry in self.entries.items():
             if key != entry.publication_id:
                 raise ValueError(f"ledger key does not match publication_id: {key}")
             if entry.intent_id is not None:
                 intent_ids.append(entry.intent_id)
+            if entry.scheduled_moscow_date is not None and entry.scheduled_slot is not None:
+                slot_claims.append((entry.scheduled_moscow_date, entry.scheduled_slot))
         if len(intent_ids) != len(set(intent_ids)):
             raise ValueError("ledger intent_id values must be unique")
+        if len(slot_claims) != len(set(slot_claims)):
+            raise ValueError("scheduled Moscow date/slot claims must be unique")
         return self
 
 
@@ -352,6 +369,8 @@ class DispatchEnvelope(BaseModel):
     payload_sha256: str = Field(pattern=SHA256_PATTERN)
     text: str = Field(min_length=100, max_length=MAX_TELEGRAM_TEXT_LENGTH)
     dispatch_mode: DispatchMode
+    scheduled_moscow_date: date | None = None
+    scheduled_slot: ScheduledSlot | None = None
     target: TargetProof
     prepared_at_utc: datetime
 
@@ -359,6 +378,12 @@ class DispatchEnvelope(BaseModel):
     def validate_dispatch_timestamp(self) -> "DispatchEnvelope":
         if self.prepared_at_utc.tzinfo is None:
             raise ValueError("dispatch prepared timestamp must be timezone-aware")
+        has_date = self.scheduled_moscow_date is not None
+        has_slot = self.scheduled_slot is not None
+        if has_date != has_slot:
+            raise ValueError("scheduled dispatch provenance requires both date and slot")
+        if self.dispatch_mode == "manual" and (has_date or has_slot):
+            raise ValueError("manual dispatch cannot carry scheduled slot provenance")
         return self
 
 
