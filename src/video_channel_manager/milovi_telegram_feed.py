@@ -88,6 +88,7 @@ class MiloviExecutionAuthority(BaseModel):
     execution_authorized: bool = False
     provider_mutation_allowed: bool = False
     authorized_by: str | None = Field(default=None, max_length=200)
+    authorized_publication_id: str | None = Field(default=None, min_length=5, max_length=96)
     authorized_at: datetime | None = None
     authority_source: Literal["fresh_exact_human_authorization_only"]
     historical_authorization_inherits: Literal[False]
@@ -102,11 +103,14 @@ class MiloviExecutionAuthority(BaseModel):
         if self.execution_authorized:
             if self.release_digest is None or not self.authorized_by or self.authorized_at is None:
                 raise ValueError("active execution authority requires exact release digest and human provenance")
-            if self.publication_id not in self.authorized_by:
-                raise ValueError("authorized_by must name exact publication_id for active execution authority")
             if self.authorized_at.tzinfo is None:
                 raise ValueError("execution authorization timestamp must be timezone-aware")
-        elif self.release_digest is not None or self.authorized_by is not None or self.authorized_at is not None:
+        elif (
+            self.release_digest is not None
+            or self.authorized_by is not None
+            or self.authorized_publication_id is not None
+            or self.authorized_at is not None
+        ):
             raise ValueError("inactive execution authority must not claim active authorization metadata")
         return self
 
@@ -321,8 +325,6 @@ def validate_bundle(
         or release.items[0].publication_id != publication_id
     ):
         raise ValueError("Milovi runtime release differs from exact permanent feed binding")
-    if release.release_authorized and (not release.reviewed_by or release.release_id not in release.reviewed_by):
-        raise ValueError("reviewed_by must name exact release_id for authorized Milovi release")
 
     authority = _load_authority(paths["authority"])
     item = release.items[0]
@@ -417,13 +419,16 @@ def validate_bundle(
     else:
         raise ValueError("permanent Milovi feed supports only exact photo, message or accepted-video payloads")
 
-    if require_release_authorized and not release.release_authorized:
-        raise ValueError("Milovi release is not freshly authorized")
-    if require_execution_authorized:
+    if require_release_authorized or require_execution_authorized:
         if not release.release_authorized:
             raise ValueError("Milovi release is not freshly authorized")
+        if release.reviewed_publication_id != publication_id:
+            raise ValueError("Milovi release review provenance does not bind exact publication_id")
+    if require_execution_authorized:
         if not authority.execution_authorized or not authority.provider_mutation_allowed:
             raise ValueError("fresh exact Milovi execution authority is missing")
+        if authority.authorized_publication_id != publication_id:
+            raise ValueError("Milovi execution provenance does not bind exact publication_id")
         if authority.release_digest != release.digest:
             raise ValueError("Milovi execution authority does not bind exact authorized release digest")
 
