@@ -45,6 +45,18 @@ ControversySide = Literal["none", "side_a", "side_b", "synthesis"]
 TopicKind = Literal["biography", "martyrdom", "controversy", "historical_fact", "mission_history"]
 TheologyAlignment = Literal["aligned", "mixed", "not_applicable"]
 
+REQUIRED_THEOLOGY_COMMITMENTS: frozenset[str] = frozenset(
+    {
+        "Богодухновенность Священного Писания",
+        "Достаточность Священного Писания",
+        "Спасение по благодати через веру в Иисуса Христа",
+        "Грамматико-исторический метод толкования",
+        "Последовательно-буквальное чтение текста, включая пророчество",
+        "Буквальное тысячелетнее царство",
+        "Различение Израиля и Церкви в Божьем замысле",
+    }
+)
+
 
 def _public_https(value: str) -> str:
     parsed = urlparse(value)
@@ -206,7 +218,17 @@ class TheologyProfile(BaseModel):
     source_path: Literal["about/index.html"]
     source_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
     checked_on: date
-    commitments: tuple[str, ...] = Field(min_length=6, max_length=12)
+    commitments: tuple[str, ...] = Field(min_length=7, max_length=12)
+
+    @model_validator(mode="after")
+    def commitments_contract(self) -> "TheologyProfile":
+        commitments = set(self.commitments)
+        if len(commitments) != len(self.commitments):
+            raise ValueError("theology commitments must be unique")
+        missing = REQUIRED_THEOLOGY_COMMITMENTS - commitments
+        if missing:
+            raise ValueError(f"theology profile is missing required commitments: {sorted(missing)}")
+        return self
 
     @property
     def digest(self) -> str:
@@ -562,6 +584,7 @@ __all__ = [
     "HistoricalSource",
     "HistoricalSourceRegistry",
     "HistoricalVerification",
+    "REQUIRED_THEOLOGY_COMMITMENTS",
     "SourceBindingKind",
     "TheologyProfile",
     "TheologyReview",
