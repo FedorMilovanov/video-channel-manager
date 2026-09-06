@@ -55,6 +55,12 @@ All refs in this table are branch-only cleanup candidates. Their exact tip is al
 | `agent/tmp-do-not-use` | `c3e75b8cc805d9cc394a2f0c2156e65ec69d9c94` | DELETE |
 | `agent/audit-branch-hygiene-20260906` | `7e4bcd95824b0010cd6346cc0f5c4dc001321883` | DELETE after confirming no later movement |
 
+### Pre-delete dependency proof for the high-confidence set
+
+At this audit checkpoint the only open pull request is this hygiene PR itself; none of the six candidate refs is an open PR head. Exact repository code searches against the pre-audit `main` found no existing references to `noop-audit-temp`, `tmp/noop`, `tmp-do-not-use`, `tmp-never-use`, `agent/tmp-do-not-use`, or `agent/audit-branch-hygiene-20260906`. Therefore no pre-existing current runbook/evidence dependency was found for these exact names. This audit document's own later mention of the refs is disposition evidence, not a dependency requiring the branches to remain executable.
+
+This does not remove the final reread requirement immediately before actual deletion.
+
 ## Large absorbed groups requiring role-only classification
 
 A large fraction of the 145 refs share exact tips that are already ancestors of `main`. These refs do **not** need code-merging work; the remaining question is evidence retention only.
