@@ -119,7 +119,7 @@ Issue #492 is repository-implementation complete and provider-inert. Launch pack
 
 ## YouTube / Legendary Poet / «Чёрный человек»
 
-The historical authorized rollout is complete. Public video `x-puy27S2qs` remains the collision guard for that exact project/channel/media identity. Processing, public visibility, custom thumbnail, playlist membership and top-level comment were verified. Issue #154 is closed as completed. Do not regenerate/reupload solely to satisfy policy introduced after the published bytes were produced.
+The historical authorized rollout is complete. Public video `x-puy27S2qs` remains the collision guard for that exact project/channel/media identity. Processing, public visibility, custom thumbnail, playlist membership and top-level comment were verified. Issue #154 is closed as **completed**. Do not regenerate/reupload solely to satisfy policy introduced after the published bytes were produced.
 
 No future YouTube upload, metadata edit, thumbnail change, playlist mutation, visibility change, comment mutation, deletion or replacement is authorized by this state.
 
