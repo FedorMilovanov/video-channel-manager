@@ -85,9 +85,13 @@ def test_current_state_is_a_live_index_not_a_commit_ledger() -> None:
     )
     assert "The current exact candidate is `milovi-feed-20260820-001`" not in text
     assert "`milovi-feed-20260820-002`" in text
-    assert "Do not publish, retime or catch up `milovi-feed-20260820-002`" in text
-    assert "The current exact publication is `milovi-feed-20260821-001`" in text
-    assert "There is currently no live dated Milovi feed candidate" not in text
+    assert "`milovi-feed-20260821-001`" in text
+    assert "are all historical identities now" in text
+    assert "expired evidence, not current authority" in text
+    assert "Issue #353 has no standing Telegram provider authority" in text
+    assert "Any future publication requires a fresh identity" in text
+    assert "The current exact publication is `milovi-feed-20260821-001`" not in text
+    assert "the only currently authorized Milovi identity" not in text
     assert "Issue #492 is closed as repository implementation complete" in text
     assert "Provider publications remain 0" in text
 
