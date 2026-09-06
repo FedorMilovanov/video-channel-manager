@@ -2,8 +2,12 @@
 /.github/ @FedorMilovanov
 
 # Telegram production runtime, release contracts, and content
+/requirements/telegram-publisher.in @FedorMilovanov
 /requirements/telegram-publisher.txt @FedorMilovanov
 /src/video_channel_manager/telegram_*.py @FedorMilovanov
+/src/video_channel_manager/lordchrist_*.py @FedorMilovanov
+/src/video_channel_manager/milovi_*.py @FedorMilovanov
+/src/video_channel_manager/svodka_*.py @FedorMilovanov
 /content/telegram/ @FedorMilovanov
 
 # VK mutation runtime and safety control plane

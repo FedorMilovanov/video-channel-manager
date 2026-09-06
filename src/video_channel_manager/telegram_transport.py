@@ -314,6 +314,8 @@ def dispatch_prepared(
     dispatch_age = effective_now - envelope.prepared_at_utc.astimezone(UTC)
     if dispatch_age < -timedelta(minutes=1) or dispatch_age > timedelta(minutes=15):
         raise ValueError("prepared dispatch expired or has an invalid future timestamp")
+    if envelope.dispatch_mode == "scheduled" and envelope.scheduled_slot is None:
+        raise ValueError("scheduled provider dispatch requires exact editorial slot")
 
     post = verify_dispatch_against_queue(queue, envelope)
     entry = verify_persisted_intent(queue, ledger, envelope)
