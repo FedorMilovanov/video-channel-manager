@@ -1,0 +1,29 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-feed-media",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "publication_id": "milovi-feed-20260906-001",
+  "media_id": "p06",
+  "candidate_path": "content/telegram/milovi-cake/marathon-publication-candidate-2026-09-06-001.json",
+  "caption_sha256": "sha256:152f9d5cd8490df1a31c7af2969acd682a6608c52339a99e5b2395fa95461d8c",
+  "source": {
+    "repository": "FedorMilovanov/Milovi_Cake",
+    "commit": "551866f1c34611406fc0a696bec8fc8fb4fd36d8",
+    "path": "img/gallery/gallery-06-hd.webp",
+    "git_blob_sha1": "333c5ab3b42900e2e7c219514e0119eb9bf6a99c",
+    "byte_size": 207190,
+    "sha256": "sha256:6ca82d87ab4c4ac869e1363df7758bef47aa8eccbcc5e2f5be70a402ce459fcc",
+    "media_type": "image/webp",
+    "pixel_width": 1024,
+    "pixel_height": 1536
+  },
+  "transport": {
+    "format": "image/jpeg",
+    "byte_size": 537768,
+    "sha256": "sha256:e8a48c819550a7e914f81fe7f7f30d27d9412d72744dc1d93c109989ab86770a",
+    "media_path": ".runtime/milovi-telegram-feed/milovi-feed-20260906-001.jpg",
+    "filename": "milovi-feed-20260906-001.jpg",
+    "encoder": "Pillow/JPEG quality=95 subsampling=0 optimize=false progressive=false exif=empty"
+  },
+  "provider_write_performed": false
+}

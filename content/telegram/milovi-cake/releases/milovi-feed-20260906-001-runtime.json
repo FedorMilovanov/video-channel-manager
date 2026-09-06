@@ -1,0 +1,41 @@
+{
+  "schema_name": "video-channel-manager.telegram-release-queue",
+  "schema_version": 1,
+  "release_id": "milovi-feed-20260906-001",
+  "project_key": "milovi-cake",
+  "channel_username": "@MiloviCake",
+  "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+  "timezone": "Europe/Moscow",
+  "daily_verified_limit": 2,
+  "target_binding_sha256": "sha256:741a8b4b54d785976236c6f15ed5d82cc9ad46aeb96a80cf372f22c421ba047c",
+  "chat_id": -1002215328390,
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "release_authorized": false,
+  "reviewed_candidate_sha256": null,
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "items": [
+    {
+      "sequence": 1,
+      "publication_id": "milovi-feed-20260906-001",
+      "scheduled_at": "2026-09-06T20:00:00+03:00",
+      "source_sha256": "sha256:6ca82d87ab4c4ac869e1363df7758bef47aa8eccbcc5e2f5be70a402ce459fcc",
+      "payload": {
+        "schema_name": "video-channel-manager.telegram-generic-photo-payload",
+        "schema_version": 1,
+        "project_key": "milovi-cake",
+        "channel_username": "@MiloviCake",
+        "publication_id": "milovi-feed-20260906-001",
+        "profile_sha256": "sha256:f1fe9e669895c553264e6127ec0d3495ffc794930616661982c786139082fbdc",
+        "provider_payload_sha256": "sha256:496fa25b5263a245026804e068e684d40a7a6056d633459b1ba079f00db58a0f",
+        "caption": "Чёрный и золото — сочетание, которому не нужен лишний шум.\n\nЧёрно-золотой торт с шарами из портфолио Milovi Cake.\n\nЕщё работы → https://milovicake.ru/gallery/",
+        "media_path": ".runtime/milovi-telegram-feed/milovi-feed-20260906-001.jpg",
+        "media_sha256": "sha256:e8a48c819550a7e914f81fe7f7f30d27d9412d72744dc1d93c109989ab86770a",
+        "media_byte_size": 537768,
+        "media_filename": "milovi-feed-20260906-001.jpg",
+        "media_mime_type": "image/jpeg"
+      }
+    }
+  ]
+}
