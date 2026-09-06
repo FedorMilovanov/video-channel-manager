@@ -64,6 +64,7 @@ class HistoricalSource(BaseModel):
     evidence_role: EvidenceRole
     checked_on: date
     topic_tags: tuple[str, ...] = Field(min_length=1, max_length=12)
+    independence_group: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{2,100}$")
 
     @field_validator("url")
     @classmethod
@@ -243,7 +244,7 @@ class HistoricalPost(BaseModel):
     theology_review: TheologyReview
     images: tuple[HistoricalImagePlan, ...] = Field(default=(), max_length=3)
     release_offset_days: int = Field(ge=0, le=30)
-    opposing_primary_extant: bool = False
+    opposing_primary_bound: bool = False
     no_opposing_primary_note: str | None = Field(default=None, min_length=20, max_length=500)
     editorial_status: Literal["ready"]
     fact_check_status: Literal["accepted"]
@@ -258,11 +259,11 @@ class HistoricalPost(BaseModel):
             sides = {claim.controversy_side for claim in self.claims}
             if "side_a" not in sides or "synthesis" not in sides:
                 raise ValueError("controversy requires side_a and scholarly synthesis evidence")
-            if self.opposing_primary_extant and "side_b" not in sides:
-                raise ValueError("extant opposing primary evidence must be represented as side_b")
-            if not self.opposing_primary_extant and self.no_opposing_primary_note is None:
-                raise ValueError("controversy without opposing primary evidence requires an explicit limitation note")
-        elif self.opposing_primary_extant or self.no_opposing_primary_note is not None:
+            if self.opposing_primary_bound and "side_b" not in sides:
+                raise ValueError("bound opposing primary evidence must be represented as side_b")
+            if not self.opposing_primary_bound and self.no_opposing_primary_note is None:
+                raise ValueError("controversy without bound opposing primary evidence requires an explicit limitation note")
+        elif self.opposing_primary_bound or self.no_opposing_primary_note is not None:
             raise ValueError("opposing-primary fields are reserved for controversy posts")
         if self.topic_kind == "martyrdom" and not any(
             claim.testimony_proximity in {"contemporary", "near_contemporary", "later_tradition"}
@@ -382,9 +383,9 @@ def _validate_post_evidence(
             ):
                 raise ValueError(f"direct quotation {claim.claim_id} requires grade A primary/critical/archive evidence")
         elif claim.voice != "editorial_evaluation":
-            publishers = {source.publisher.casefold() for source in bound}
-            if len(publishers) < 2:
-                raise ValueError(f"material historical claim {claim.claim_id} requires two independent publishers")
+            groups = {source.independence_group for source in bound}
+            if len(groups) < 2:
+                raise ValueError(f"material historical claim {claim.claim_id} requires two independent evidence groups")
             if not any(source.grade == "A" for source in bound):
                 raise ValueError(f"material historical claim {claim.claim_id} requires at least one grade A source")
         if claim.voice == "editorial_evaluation" and not post.theology_review.scripture_refs:
