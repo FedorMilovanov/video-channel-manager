@@ -64,7 +64,7 @@ def test_generic_profile_model_represents_multiple_channels_without_core_constan
     assert lordchrist.digest != svodka.digest
 
 
-def test_lordchrist_migration_profile_matches_existing_live_identity_and_limit() -> None:
+def test_lordchrist_migration_profile_matches_live_identity_while_slot_policy_owns_runtime_limit() -> None:
     profile = load_channel_profile(LORDCHRIST_PROFILE_PATH)
     production = json.loads(LORDCHRIST_PRODUCTION_PATH.read_text(encoding="utf-8"))
 
@@ -72,7 +72,10 @@ def test_lordchrist_migration_profile_matches_existing_live_identity_and_limit()
     assert profile.project_key == production["project_key"]
     assert profile.channel_username == production["channel_username"]
     assert profile.timezone == production["timezone"]
-    assert profile.daily_verified_limit == production["daily_verified_limit"] == 1
+    assert profile.daily_verified_limit == 1
+    assert production["max_verified_per_slot"] == 1
+    assert production["max_verified_per_day"] == 2
+    assert "daily_verified_limit" not in production
     assert profile.state_branch == "state/lordchrist-telegram"
     assert production["bot_id"] == 8716602202
     assert production["bot_username"] == "preaching_mp3_bot"

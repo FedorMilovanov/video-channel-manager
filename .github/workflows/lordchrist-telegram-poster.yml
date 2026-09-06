@@ -23,7 +23,7 @@ on:
   schedule:
     - cron: "17 9 * * *"
       timezone: Europe/Moscow
-    - cron: "17 21 * * *"
+    - cron: "17 21 * * 2,5,0"
       timezone: Europe/Moscow
 
 permissions:
@@ -81,6 +81,7 @@ jobs:
         shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE_EVENT: ${{ github.event.schedule }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
           REQUESTED_ACTION: ${{ inputs.action }}
           REQUESTED_PUBLICATION_ID: ${{ inputs.publication_id }}
@@ -92,6 +93,7 @@ jobs:
           do_publish=false
           reason=manual_preview
           publication_id=""
+          scheduled_slot=""
 
           if [[ "$EVENT_NAME" == "schedule" ]]; then
             if [[ "$RUN_ATTEMPT" != "1" ]]; then
@@ -99,55 +101,50 @@ jobs:
               exit 5
             fi
             mode=scheduled
-            schedule_state="$(python - <<'PY'
-          import json
+            mapfile -t schedule_parts < <(python - <<'PY'
           import os
-          from datetime import date, datetime
+          from datetime import UTC, datetime
           from pathlib import Path
-          from zoneinfo import ZoneInfo
 
           from video_channel_manager.telegram_presentation import load_presentation_policy
+          from video_channel_manager.telegram_schedule import (
+              decide_scheduled_slot,
+              load_production_schedule,
+              require_release_binding,
+          )
 
-          config = json.loads(Path(os.environ["PRODUCTION_CONFIG_PATH"]).read_text(encoding="utf-8"))
+          schedule = load_production_schedule(Path(os.environ["PRODUCTION_CONFIG_PATH"]))
           policy = load_presentation_policy(Path(os.environ["PRESENTATION_POLICY_PATH"]))
-          expected = {
-              "schema_name": "video-channel-manager.telegram-production-schedule",
-              "schema_version": 2,
-              "project_key": "lord-god-strength",
-              "channel_username": "@lordchrist",
-              "timezone": "Europe/Moscow",
-              "primary_time": "09:17",
-              "catchup_time": "21:17",
-              "daily_verified_limit": 1,
-          }
-          for key, value in expected.items():
-              if config.get(key) != value:
-                  raise SystemExit(f"invalid production schedule field {key}: {config.get(key)!r}")
-          if config.get("queue_digest") != os.environ["LORDCHRIST_APPROVED_QUEUE_DIGEST"]:
-              raise SystemExit("production schedule queue digest does not match approved queue digest")
-          if config.get("chat_id") != int(os.environ["LORDCHRIST_TELEGRAM_CHAT_ID"]):
-              raise SystemExit("production schedule chat id does not match configured Telegram target")
-          if config.get("bot_id") != int(os.environ["LORDCHRIST_TELEGRAM_BOT_ID"]):
-              raise SystemExit("production schedule bot id does not match configured Telegram bot")
-          if str(config.get("bot_username") or "").casefold() != os.environ["LORDCHRIST_TELEGRAM_BOT_USERNAME"].casefold():
-              raise SystemExit("production schedule bot username does not match configured Telegram bot")
-          if config.get("presentation_policy_id") != policy.policy_id:
-              raise SystemExit("production schedule presentation policy id mismatch")
-          if config.get("presentation_policy_sha256") != policy.digest:
-              raise SystemExit("production schedule presentation policy digest mismatch")
-          not_before = date.fromisoformat(str(config["not_before_moscow_date"]))
-          today = datetime.now(ZoneInfo("Europe/Moscow")).date()
-          print("active" if config.get("enabled") is True and today >= not_before else "inactive")
+          require_release_binding(
+              schedule,
+              queue_digest=os.environ["LORDCHRIST_APPROVED_QUEUE_DIGEST"],
+              chat_id=int(os.environ["LORDCHRIST_TELEGRAM_CHAT_ID"]),
+              bot_id=int(os.environ["LORDCHRIST_TELEGRAM_BOT_ID"]),
+              bot_username=os.environ["LORDCHRIST_TELEGRAM_BOT_USERNAME"],
+              presentation_policy_id=policy.policy_id,
+              presentation_policy_sha256=policy.digest,
+          )
+          decision = decide_scheduled_slot(
+              schedule,
+              event_schedule=os.environ.get("SCHEDULE_EVENT", ""),
+              now=datetime.now(tz=UTC),
+          )
+          print("active" if decision.active else "inactive")
+          print(decision.slot or "")
+          print(decision.reason)
           PY
-            )"
-            if [[ "$schedule_state" == "active" ]]; then
+            )
+            schedule_state="${schedule_parts[0]:-inactive}"
+            scheduled_slot="${schedule_parts[1]:-}"
+            schedule_reason="${schedule_parts[2]:-unknown_schedule_state}"
+            if [[ "$schedule_state" == "active" && -n "$scheduled_slot" ]]; then
               do_preflight=true
               do_publish=true
-              reason=scheduled_execution
+              reason="scheduled_${scheduled_slot}_execution"
             else
               do_preflight=false
               do_publish=false
-              reason=scheduled_not_active_yet
+              reason="scheduled_inactive:$schedule_reason"
             fi
           elif [[ "$REQUESTED_ACTION" == "preflight" ]]; then
             do_preflight=true
@@ -173,6 +170,7 @@ jobs:
           echo "do_publish=$do_publish" >> "$GITHUB_OUTPUT"
           echo "reason=$reason" >> "$GITHUB_OUTPUT"
           echo "publication_id=$publication_id" >> "$GITHUB_OUTPUT"
+          echo "scheduled_slot=$scheduled_slot" >> "$GITHUB_OUTPUT"
 
       - name: Check out publication ledger read-only
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -267,38 +265,46 @@ jobs:
       - name: Enforce publication gates
         if: steps.intent.outputs.do_publish == 'true'
         shell: bash
+        env:
+          SCHEDULE_EVENT: ${{ github.event.schedule }}
+          EXPECTED_SLOT: ${{ steps.intent.outputs.scheduled_slot }}
         run: |
           set -euo pipefail
           if [[ "${{ steps.intent.outputs.mode }}" == "scheduled" ]]; then
             python - <<'PY'
-          import json
           import os
-          from datetime import date, datetime
+          from datetime import UTC, datetime
           from pathlib import Path
-          from zoneinfo import ZoneInfo
 
           from video_channel_manager.telegram_presentation import load_presentation_policy
+          from video_channel_manager.telegram_schedule import (
+              decide_scheduled_slot,
+              load_production_schedule,
+              require_release_binding,
+          )
 
-          config = json.loads(Path(os.environ["PRODUCTION_CONFIG_PATH"]).read_text(encoding="utf-8"))
+          schedule = load_production_schedule(Path(os.environ["PRODUCTION_CONFIG_PATH"]))
           policy = load_presentation_policy(Path(os.environ["PRESENTATION_POLICY_PATH"]))
-          if config.get("enabled") is not True:
-              raise SystemExit("Scheduled production config is not active.")
-          if config.get("queue_digest") != os.environ["LORDCHRIST_APPROVED_QUEUE_DIGEST"]:
-              raise SystemExit("Scheduled production config queue digest mismatch.")
-          if config.get("chat_id") != int(os.environ["LORDCHRIST_TELEGRAM_CHAT_ID"]):
-              raise SystemExit("Scheduled production config chat id mismatch.")
-          if config.get("bot_id") != int(os.environ["LORDCHRIST_TELEGRAM_BOT_ID"]):
-              raise SystemExit("Scheduled production config bot id mismatch.")
-          if str(config.get("bot_username") or "").casefold() != os.environ["LORDCHRIST_TELEGRAM_BOT_USERNAME"].casefold():
-              raise SystemExit("Scheduled production config bot username mismatch.")
-          if config.get("presentation_policy_id") != policy.policy_id or config.get("presentation_policy_sha256") != policy.digest:
-              raise SystemExit("Scheduled production config presentation policy mismatch.")
-          not_before = date.fromisoformat(str(config["not_before_moscow_date"]))
-          if datetime.now(ZoneInfo("Europe/Moscow")).date() < not_before:
-              raise SystemExit("Scheduled production config is not active yet.")
-          if config.get("daily_verified_limit") != 1:
-              raise SystemExit("Scheduled production config must preserve one verified publication per day.")
-          print("Scheduled production config is active.")
+          require_release_binding(
+              schedule,
+              queue_digest=os.environ["LORDCHRIST_APPROVED_QUEUE_DIGEST"],
+              chat_id=int(os.environ["LORDCHRIST_TELEGRAM_CHAT_ID"]),
+              bot_id=int(os.environ["LORDCHRIST_TELEGRAM_BOT_ID"]),
+              bot_username=os.environ["LORDCHRIST_TELEGRAM_BOT_USERNAME"],
+              presentation_policy_id=policy.policy_id,
+              presentation_policy_sha256=policy.digest,
+          )
+          decision = decide_scheduled_slot(
+              schedule,
+              event_schedule=os.environ.get("SCHEDULE_EVENT", ""),
+              now=datetime.now(tz=UTC),
+          )
+          expected_slot = os.environ.get("EXPECTED_SLOT", "")
+          if not decision.active or decision.slot != expected_slot:
+              raise SystemExit(
+                  f"Scheduled production slot reproof failed: active={decision.active}, slot={decision.slot!r}, expected={expected_slot!r}."
+              )
+          print(f"Scheduled production slot {decision.slot} is active and release-bound.")
           PY
           else
             [[ "${LORDCHRIST_POSTING_ENABLED,,}" == "true" ]] || {
@@ -337,6 +343,8 @@ jobs:
           )
           if [[ "${{ steps.intent.outputs.mode }}" == "manual" ]]; then
             args+=(--expected-publication-id "${{ steps.intent.outputs.publication_id }}")
+          else
+            args+=(--scheduled-slot "${{ steps.intent.outputs.scheduled_slot }}")
           fi
 
           set +e
@@ -346,7 +354,7 @@ jobs:
 
           if [[ "$status" -eq 3 ]]; then
             echo "prepared=false" >> "$GITHUB_OUTPUT"
-            echo "No eligible next publication; queue may already be complete or today's quota is used."
+            echo "No eligible next publication; queue may be complete or this slot/day quota is already used."
             exit 0
           fi
           [[ "$status" -eq 0 ]] || exit "$status"
