@@ -66,7 +66,9 @@ A queue or scaffold records both the artifact that is physically bound and the s
 - `source_binding_sha256` seals the canonical persisted JSON at that path;
 - `source_registry_sha256` seals the materialized `HistoricalSourceRegistry` used for claim validation.
 
-For a direct `registry` binding, the artifact and semantic registry digests must be identical. For a `catalog` binding they are deliberately separate: the catalog digest identifies the manifest and shard graph, while the registry digest identifies the fully materialized evidence set.
+These two digests are independent by contract for **both** binding kinds. With the current direct-registry schema they normally have the same value, because the persisted registry has no hydration-only defaults. Code must not depend on that equality: a future schema default may legitimately change the semantic model digest without changing the sealed persisted artifact. The loader therefore verifies the artifact hash first and the materialized registry hash separately.
+
+For a `catalog` binding the distinction is visible already: the catalog digest identifies the manifest and shard graph, while the registry digest identifies the fully materialized evidence set.
 
 Do not point a `source_binding_path` at a catalog and label it as a registry. Direct-registry preflight accepts only `source_binding_kind=registry`; catalog-bound cycles must go through `telegram_historical_bundle` so shard seals and the catalog seal are verified before the registry is materialized.
 
