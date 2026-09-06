@@ -204,7 +204,7 @@ jobs:
           $ErrorActionPreference = "Stop"
           [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-          Install-Module -Name Pester -RequiredVersion 5.7.1 -Scope CurrentUser -Force -SkipPublisherCheck -AllowClobber
+          Install-Module -Name Pester -RequiredVersion 5.7.1 -Scope CurrentUser -Force -AllowClobber
       - name: Run operator tests in Windows PowerShell 5.1
         shell: powershell
         run: |
@@ -233,7 +233,7 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-          Install-Module -Name Pester -RequiredVersion 5.7.1 -Scope CurrentUser -Force -SkipPublisherCheck -AllowClobber
+          Install-Module -Name Pester -RequiredVersion 5.7.1 -Scope CurrentUser -Force -AllowClobber
       - name: Run operator tests in PowerShell 7 on Windows
         shell: pwsh
         run: |
@@ -262,7 +262,7 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-          Install-Module -Name Pester -RequiredVersion 5.7.1 -Scope CurrentUser -Force -SkipPublisherCheck -AllowClobber
+          Install-Module -Name Pester -RequiredVersion 5.7.1 -Scope CurrentUser -Force -AllowClobber
       - name: Run operator tests in PowerShell 7 on Linux
         shell: pwsh
         run: |
