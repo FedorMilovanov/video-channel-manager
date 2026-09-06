@@ -1,7 +1,7 @@
 {
   "schema_name": "video-manager.retirement-registry",
   "schema_version": 1,
-  "updated_at": "2026-09-06T14:04:23Z",
+  "updated_at": "2026-09-06T16:13:46Z",
   "repository": "FedorMilovanov/video-channel-manager",
   "execution_authority": false,
   "provider_writes_authorized": false,
@@ -170,6 +170,19 @@
         "state/svodka-telegram:content/telegram/svodka/custom-emoji-capability-canary.json"
       ],
       "reason": "The one-shot custom-emoji capability probe ended unknown/may_exist with no message id. Issue #273 is closed not_planned and Unicode fallback remains the production behavior. The historical provider effect must remain fail-closed and the canary must never be replayed."
+    },
+    {
+      "id": "svodka-native-rich-message-canary-v1",
+      "kind": "repository_provider_executor",
+      "issues": [537],
+      "status": "retired_non_executable",
+      "execution_prohibited": true,
+      "replacement": null,
+      "historical_evidence": [
+        "state/svodka-telegram:content/telegram/svodka/native-rich-message-canary.json",
+        "github-actions:run/31441659164/attempt/1"
+      ],
+      "reason": "The fixed one-shot native Rich Message canary completed successfully and durable state is terminal verified/provider_effect=verified. Its workflow explicitly forbids every second run, so the consumed provider-capable entrypoint has no legitimate future execution and is retired rather than retained as dormant mutation surface."
     }
   ],
   "history_archives": [
