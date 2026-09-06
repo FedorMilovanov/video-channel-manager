@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from video_channel_manager import milovi_telegram_feed as milovi
 
 PUBLICATION_ID = "milovi-feed-20260821-001"
+LEGACY_UNSCOPED_PUBLICATION_ID = "milovi-feed-20260820-002"
 RELEASE_PATH = Path(
     "content/telegram/milovi-cake/releases/milovi-feed-20260821-001-runtime.json"
 )
@@ -76,4 +77,14 @@ def test_historical_exact_release_provenance_remains_valid() -> None:
     assert result["valid"] is True
     assert result["publication_id"] == PUBLICATION_ID
     assert result["release_authorized"] is True
+    assert result["provider_access_performed"] is False
+
+
+def test_legacy_unscoped_authorization_is_retired_provider_inert() -> None:
+    result = milovi.validate_bundle(LEGACY_UNSCOPED_PUBLICATION_ID)
+
+    assert result["valid"] is True
+    assert result["release_authorized"] is False
+    assert result["execution_authorized"] is False
+    assert result["provider_mutation_allowed"] is False
     assert result["provider_access_performed"] is False
