@@ -66,9 +66,29 @@ These refs were checked after the initial audit artifact was frozen. Each points
 | `agent/milovi-exact-six-public-readback-20260906` | `83dd0ffe921c56806f1f24fc7ff58d9a236599a5` | DELETE after final exact-ref reread |
 | `agent/milovi-exact-six-thumbnails-20260906` | `1fd68f5454e83d413fbced1dc0afa38f43a12b85` | DELETE after final exact-ref reread |
 
+### Absorbed role-classification batch
+
+A later role pass checked additional names from the already-absorbed `fb2a8c…` and `6773ecc…` groups. Fresh open-PR readback showed no one below as an open PR head, and exact current-main code search found no dependency on these branch names. They are ordinary branch-only coordination/history refs, not durable state or content-addressed evidence refs.
+
+| Branch | Exact tip | Verdict |
+| --- | --- | --- |
+| `arena/019fc79b-video-channel-manager` | `fb2a8c099e352350d0ad38fadd91da8ae0ae07cd` | DELETE after final exact-ref reread |
+| `arena/019fed75-video-channel-manager` | `fb2a8c099e352350d0ad38fadd91da8ae0ae07cd` | DELETE after final exact-ref reread |
+| `ops/link-operational-issues-20260731` | `6773eccde6b812024f5e7712b0e2dff6c72b1272` | DELETE after final exact-ref reread |
+| `ops/project-memory-20260731` | `6773eccde6b812024f5e7712b0e2dff6c72b1272` | DELETE after final exact-ref reread |
+| `feature/vk-description-rendering-v1` | `6773eccde6b812024f5e7712b0e2dff6c72b1272` | DELETE after final exact-ref reread |
+| `feature/vk-readonly-v1` | `6773eccde6b812024f5e7712b0e2dff6c72b1272` | DELETE after final exact-ref reread |
+| `feature/youtube-comment-publishing-v1` | `6773eccde6b812024f5e7712b0e2dff6c72b1272` | DELETE after final exact-ref reread |
+| `feature/youtube-oauth-v2` | `6773eccde6b812024f5e7712b0e2dff6c72b1272` | DELETE after final exact-ref reread |
+| `integration/youtube-vk-unified-v1` | `6773eccde6b812024f5e7712b0e2dff6c72b1272` | DELETE after final exact-ref reread |
+| `integration/youtube-vk-unified-v2` | `6773eccde6b812024f5e7712b0e2dff6c72b1272` | DELETE after final exact-ref reread |
+| `integration/youtube-vk-unified-v2-finalize-staging` | `6773eccde6b812024f5e7712b0e2dff6c72b1272` | DELETE after final exact-ref reread |
+| `refactor/issue323-durable-promotion-dispatcher` | `6773eccde6b812024f5e7712b0e2dff6c72b1272` | DELETE after final exact-ref reread |
+| `fix/issue-323-finalizer-successor-preflight` | `6773eccde6b812024f5e7712b0e2dff6c72b1272` | DELETE after final exact-ref reread |
+
 ### Pre-delete dependency proof for the high-confidence set
 
-At the initial audit checkpoint the only open pull request was the hygiene PR itself; none of the original six candidate refs was an open PR head. Exact repository code searches against the pre-audit `main` found no existing references to `noop-audit-temp`, `tmp/noop`, `tmp-do-not-use`, `tmp-never-use`, `agent/tmp-do-not-use`, or `agent/audit-branch-hygiene-20260906`. The later same-day absorbed candidates were also checked against current-main code search and open-PR heads before receiving their disposition. Therefore no current runbook/evidence dependency was found for these exact names. This audit document's own mention of the refs is disposition evidence, not a dependency requiring the branches to remain executable.
+At the initial audit checkpoint the only open pull request was the hygiene PR itself; none of the original six candidate refs was an open PR head. Exact repository code searches against the pre-audit `main` found no existing references to `noop-audit-temp`, `tmp/noop`, `tmp-do-not-use`, `tmp-never-use`, `agent/tmp-do-not-use`, or `agent/audit-branch-hygiene-20260906`. The later same-day absorbed candidates and absorbed-role batch were also checked against current-main code search and open-PR heads before receiving their disposition. Therefore no current runbook/evidence dependency was found for these exact names. This audit document's own mention of the refs is disposition evidence, not a dependency requiring the branches to remain executable.
 
 This does not remove the final reread requirement immediately before actual deletion.
 
@@ -78,7 +98,7 @@ A large fraction of the 145 baseline refs share exact tips that are already ance
 
 Examples at `fb2a8c099e352350d0ad38fadd91da8ae0ae07cd` include many historical `agent/*` and `work/*` refs for YouTube, VK, Svodka, LordChrist research, audit and hardening work. Because all those refs share an exact fully absorbed tip, the unique-commit gate is already satisfied as `0 unique branch commits`; each still needs an evidence/runbook-reference verdict before deletion.
 
-Examples at `6773eccde6b812024f5e7712b0e2dff6c72b1272` include old `feature/*`, `integration/*`, `ops/*`, `refactor/*`, and fix refs. They are likewise fully absorbed in code ancestry and now require only the evidence/reference check.
+The old `feature/*`, `integration/*`, `ops/*`, `refactor/*`, and named fix refs checked in the absorbed-role batch are now explicitly disposed. Remaining absorbed refs at `6773eccde6b812024f5e7712b0e2dff6c72b1272`, if any, still require the same name-level evidence/reference check before deletion.
 
 Historical Milovi refs at `eac58db5aced0c08294f14d0cce36bac153eae01` are also fully absorbed in code ancestry. They should not be deleted in bulk: some names may still be cited by forensic material, while others are ordinary stale working refs.
 
