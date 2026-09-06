@@ -54,17 +54,22 @@ def test_provider_workflow_step_contract_matches_recovery_verifier() -> None:
     scheduled = SCHEDULED_WORKFLOW.read_text(encoding="utf-8")
 
     contracts = {
-        ".github/workflows/svodka-canary.yml": ("workflow_dispatch", canary),
-        ".github/workflows/svodka-scheduled-publisher.yml": ("schedule", scheduled),
+        ".github/workflows/svodka-canary.yml": (("workflow_dispatch",), canary),
+        ".github/workflows/svodka-scheduled-publisher.yml": (("schedule", "workflow_dispatch"), scheduled),
     }
     assert set(PROVIDER_WORKFLOWS) == set(contracts)
-    for workflow_path, (expected_event, workflow) in contracts.items():
+    for workflow_path, (expected_events, workflow) in contracts.items():
         contract = PROVIDER_WORKFLOWS[workflow_path]
-        assert contract.event == expected_event
+        assert contract.events == expected_events
         assert contract.persist_step in workflow
         assert contract.send_step in workflow
         assert contract.archive_step in workflow
         assert contract.final_state_step in workflow
+
+    assert "workflow_dispatch:" in scheduled
+    assert "schedule:" not in scheduled
+    assert "github.event_name == 'workflow_dispatch'" in scheduled
+    assert "SVODKA-LEGACY-RECOVERY:@deep_info_life" in scheduled
 
 
 def test_archived_outcome_recovery_persists_only_after_provenance_without_current_quality_dependency() -> None:
