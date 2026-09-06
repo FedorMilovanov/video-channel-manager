@@ -11,10 +11,10 @@
   "chat_id": -1002215328390,
   "bot_id": 8716602202,
   "bot_username": "preaching_mp3_bot",
-  "release_authorized": true,
-  "reviewed_candidate_sha256": "sha256:e970e33add0420a8dd3d955d697f49ec8f33ba5102fc246d38ca0e71f260dd4b",
-  "reviewed_by": "human user via ChatGPT request 2026-09-06: нужны реальные результаты, чтобы были посты реальные",
-  "reviewed_at": "2026-09-06T16:17:34+03:00",
+  "release_authorized": false,
+  "reviewed_candidate_sha256": null,
+  "reviewed_by": null,
+  "reviewed_at": null,
   "items": [
     {
       "sequence": 1,
