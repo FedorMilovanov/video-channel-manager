@@ -1,0 +1,19 @@
+{
+  "schema_name": "video-channel-manager.milovi-telegram-execution-authority",
+  "schema_version": 1,
+  "project_key": "milovi-cake",
+  "publication_id": "milovi-feed-20260906-001",
+  "release_id": "milovi-feed-20260906-001",
+  "release_candidate_sha256": "sha256:6b765e044f4cc0b3503104065ef5dcb055a3c3c06127cb9b58cd3b3b46243323",
+  "release_digest": "sha256:e82440857a9876dc3a9bd8eb49b32f0cc4269b250d4e78aee4134d72e1de74a3",
+  "provider_payload_sha256": "sha256:496fa25b5263a245026804e068e684d40a7a6056d633459b1ba079f00db58a0f",
+  "execution_authorized": true,
+  "provider_mutation_allowed": true,
+  "authorized_by": "human user via ChatGPT request 2026-09-06: нужны реальные результаты, чтобы были посты реальные",
+  "authorized_at": "2026-09-06T16:17:34+03:00",
+  "authority_source": "fresh_exact_human_authorization_only",
+  "historical_authorization_inherits": false,
+  "automation_is_execution_authority": false,
+  "max_provider_attempts": 1,
+  "blind_mutation_retries": 0
+}
