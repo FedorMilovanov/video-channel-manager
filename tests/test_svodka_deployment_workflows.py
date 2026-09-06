@@ -28,7 +28,6 @@ QUEUE_PATH = REPOSITORY_ROOT / "content/telegram/svodka/draft-14-posts-2026-08.j
 APPROVAL_PATH = REPOSITORY_ROOT / "content/telegram/svodka/release-approval-2026-08.json"
 
 RELEASE_STATE_WRITER_WORKFLOWS = (
-    LEDGER_WORKFLOW,
     SKIP_EXPIRED_WORKFLOW,
     CANARY_WORKFLOW,
     SCHEDULED_WORKFLOW,
@@ -62,6 +61,7 @@ def test_all_state_writers_share_lossless_serialization_contract() -> None:
     workflows_dir = REPOSITORY_ROOT / ".github/workflows"
     discovered = {path for path in workflows_dir.glob("*.yml") if expected_group in _workflow(path)}
 
+    assert not LEDGER_WORKFLOW.exists()
     assert not RICH_PRODUCTION_WORKFLOW.exists()
     assert not RICH_SUCCESSOR_WORKFLOW.exists()
     assert not RICH_MESSAGE_28_RECONCILIATION_WORKFLOW.exists()
@@ -84,26 +84,6 @@ def test_custom_emoji_capability_canary_is_retired_from_executable_workflows() -
 
 def test_native_rich_canary_is_retired_from_executable_workflows() -> None:
     assert not NATIVE_RICH_CANARY_WORKFLOW.exists()
-
-
-def test_ledger_initialization_is_manual_exact_provider_free_and_dual_quality_proven() -> None:
-    workflow = _workflow(LEDGER_WORKFLOW)
-
-    assert "workflow_dispatch:" in workflow
-    assert "schedule:" not in workflow
-    assert "INITIALIZE:$REQUESTED_DIGEST" in workflow
-    assert "release.release_authorized" in workflow
-    assert "initialize-ledger" in workflow
-    _assert_materialized_release_contract(workflow)
-    _assert_dual_current_main_quality(workflow)
-    initialize_index = workflow.index("initialize-ledger")
-    reproof_index = workflow.index("telegram_github_quality_gate", initialize_index)
-    commit_index = workflow.index('git -C "$STATE_DIR" commit -m "Initialize Svodka publication ledger [skip ci]"')
-    assert initialize_index < reproof_index < commit_index
-    assert "sendMessage" not in workflow
-    assert "sendPoll" not in workflow
-    assert "send-once" not in workflow
-    assert "secrets." not in workflow
 
 
 def test_canary_is_exact_fresh_manual_dispatch_with_durable_intent_first() -> None:
