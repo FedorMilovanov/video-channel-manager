@@ -176,6 +176,7 @@ class HistoricalImagePlan(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     asset_id: str = Field(pattern=r"^img-[a-z0-9][a-z0-9-]{2,80}$")
+    asset_role: Literal["historical_source_image"] = "historical_source_image"
     source_id: str = Field(pattern=SOURCE_ID_RE)
     source_page_url: str
     direct_media_url: str | None = None
@@ -214,6 +215,7 @@ class TheologyProfile(BaseModel):
     schema_name: Literal["video-channel-manager.telegram-historical-theology-profile"]
     schema_version: Literal[1]
     profile_id: Literal["lordchrist-historical-editorial-v1"]
+    tradition: Literal["historical_evangelical_christianity"] = "historical_evangelical_christianity"
     source_repository: Literal["FedorMilovanov/gb-is-my-strength"]
     source_path: Literal["about/index.html"]
     source_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
