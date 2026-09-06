@@ -196,6 +196,7 @@ class TelegramQueue(BaseModel):
 StateName = Literal["pending", "dispatching", "published", "unknown", "failed", "skipped"]
 ProviderEffect = Literal["impossible", "not_dispatched", "confirmed_absent", "may_exist", "verified"]
 DispatchMode = Literal["manual", "scheduled"]
+ScheduledSlot = Literal["morning", "evening"]
 
 
 class TargetProof(BaseModel):
@@ -233,6 +234,7 @@ class LedgerEntry(BaseModel):
     provider_effect: ProviderEffect = "impossible"
     intent_id: str | None = None
     dispatch_mode: DispatchMode | None = None
+    scheduled_slot: ScheduledSlot | None = None
     workflow_run_id: str | None = None
     workflow_run_attempt: str | None = None
     github_sha: str | None = None
@@ -259,6 +261,8 @@ class LedgerEntry(BaseModel):
             raise ValueError(f"{self.state} entries require exact GitHub SHA provenance")
         if self.dispatch_mode is None or not _timezone_aware(self.attempted_at_utc):
             raise ValueError(f"{self.state} entries require dispatch mode and attempted timestamp")
+        if self.dispatch_mode == "manual" and self.scheduled_slot is not None:
+            raise ValueError(f"{self.state} manual entries cannot retain a scheduled slot")
         if self.actual_chat_id is None or self.actual_chat_id >= 0:
             raise ValueError(f"{self.state} entries require the exact negative channel id")
         if self.actual_chat_username != CHANNEL_USERNAME.removeprefix("@"):
@@ -352,6 +356,7 @@ class DispatchEnvelope(BaseModel):
     payload_sha256: str = Field(pattern=SHA256_PATTERN)
     text: str = Field(min_length=100, max_length=MAX_TELEGRAM_TEXT_LENGTH)
     dispatch_mode: DispatchMode
+    scheduled_slot: ScheduledSlot | None = None
     target: TargetProof
     prepared_at_utc: datetime
 
@@ -359,6 +364,8 @@ class DispatchEnvelope(BaseModel):
     def validate_dispatch_timestamp(self) -> "DispatchEnvelope":
         if self.prepared_at_utc.tzinfo is None:
             raise ValueError("dispatch prepared timestamp must be timezone-aware")
+        if self.dispatch_mode == "manual" and self.scheduled_slot is not None:
+            raise ValueError("manual dispatch cannot carry a scheduled slot")
         return self
 
 
