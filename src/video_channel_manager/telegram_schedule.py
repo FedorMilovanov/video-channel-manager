@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
-from typing import Literal, cast
+from typing import Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
@@ -49,6 +49,8 @@ class ProductionSchedule(BaseModel):
     enabled: bool
     not_before_moscow_date: date
     timezone: Literal["Europe/Moscow"]
+    primary_time: Literal["09:17"]
+    catchup_time: Literal["21:17"]
     slots: dict[ScheduledSlot, PublicationSlotConfig]
     max_verified_per_slot: Literal[1]
     max_verified_per_day: Literal[2]
@@ -66,10 +68,10 @@ class ProductionSchedule(BaseModel):
             raise ValueError("morning slot must be enabled every day")
         if self.slots["evening"].iso_weekdays != (2, 5, 7):
             raise ValueError("evening slot must be enabled only Tuesday, Friday, and Sunday")
-        if self.slots["morning"].time != "09:17":
-            raise ValueError("morning slot must remain at 09:17 Europe/Moscow")
-        if self.slots["evening"].time != "21:17":
-            raise ValueError("evening slot must remain at 21:17 Europe/Moscow")
+        if self.slots["morning"].time != self.primary_time:
+            raise ValueError("morning slot must remain bound to primary_time")
+        if self.slots["evening"].time != self.catchup_time:
+            raise ValueError("evening slot must remain bound to catchup_time")
         if self.slots["morning"].cron != "17 9 * * *":
             raise ValueError("morning slot cron differs from the release contract")
         if self.slots["evening"].cron != "17 21 * * 2,5,0":
@@ -143,7 +145,7 @@ def decide_scheduled_slot(
     matching = [name for name, slot in schedule.slots.items() if slot.cron == event_schedule]
     if len(matching) != 1:
         return ScheduleDecision(False, None, "schedule event does not map to exactly one configured slot")
-    slot_name = cast(ScheduledSlot, matching[0])
+    slot_name = matching[0]
     slot = schedule.slots[slot_name]
     if local.isoweekday() not in slot.iso_weekdays:
         return ScheduleDecision(False, None, f"{slot_name} slot is not eligible on ISO weekday {local.isoweekday()}")
