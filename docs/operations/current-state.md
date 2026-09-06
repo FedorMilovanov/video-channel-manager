@@ -24,9 +24,9 @@ Only `main` is a supported code/runtime execution baseline.
 
 ### Current checkpoint
 
-The exact repository checkpoint used for this documentation sync is `main` `a1aae944d3260826e91ca6f8477d205bc1fef374` (PR #551). Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
+The exact repository checkpoint used for this documentation sync is `main` `11df90a356f2b56cecf1c53861704694ce1fc311` (PR #557). Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
 
-Material late-2026-09-06 hardening now present on `main`:
+Material late-2026-09-06 / early-2026-09-07 hardening now present on `main`:
 
 - PR #532: Milovi archive-before-terminal-state provider outcome capture plus exact provider-free recovery under the permanent writer concurrency contract.
 - PRs #536, #538 and #540: retirement of consumed/ambiguous Svodka executable one-offs while preserving immutable no-replay evidence.
@@ -35,10 +35,12 @@ Material late-2026-09-06 hardening now present on `main`:
 - PR #548: LordChrist verified-quote production moved from a global one-publication-per-day guard to explicit durable `morning` / `evening` slots.
 - PR #550: branch-hygiene final ledger merged; the audited 146-ref baseline is completely classified as 8 KEEP / 138 DELETE candidates.
 - PR #551: scheduled LordChrist provider dispatch now rejects a slot-less scheduled envelope before any Telegram HTTP call.
+- PR #555: provider-critical CODEOWNERS coverage was expanded; this is review routing and does not replace server-side branch/ruleset enforcement.
+- PR #557: the reviewed 60-card LordChrist successor quote corpus, translation ledger, exact source/translation bindings and provider-inert staged release were merged.
 
 ## Telegram / LordChrist verified quotes
 
-Issue #543 is closed as **completed** after the current-main completion audit of PRs #548 and #551.
+Issues #541 and #543 are closed as **completed** after the slot-aware runtime, transport hardening and reviewed successor-corpus work merged through PRs #548, #551 and #557.
 
 The authoritative production schedule is schema v3:
 
@@ -53,15 +55,23 @@ The authoritative production schedule is schema v3:
 
 Production prepares bind `scheduled_slot` into both the durable ledger entry and dispatch envelope. A replay of the same `(Moscow date, slot)` is blocked. The workflow maps the exact GitHub schedule event to one logical slot, re-proves freshness/release binding immediately before mutation, requires exact current-main CI and exact target preflight, persists intent before `sendMessage`, uses one mutation attempt and zero blind retries. PR #551 additionally enforces the slot at the transport boundary before HTTP.
 
-The immutable verified 30-post queue/digest remains unchanged. Historical ledger rows remain readable; no migration/rewrite of `state/lordchrist-telegram` was required by #548/#551. Closing #543 records implementation completion and does not authorize an ad-hoc send, replay, edit/delete/pin or MTProto action.
+The immutable verified 30-post queue/digest remains unchanged. Historical ledger rows remain readable; no migration/rewrite of `state/lordchrist-telegram` was required by #548/#551. Closing #541/#543 records implementation completion and does not authorize an ad-hoc send, replay, edit/delete/pin or MTProto action.
 
-Issue #541 remains open for the **separate successor quote corpus/source-policy lane**. The active successor work must not be collapsed into the completed #543 cadence implementation. Modern-author material requires its own reviewed copyright/source policy rather than weakening the legacy verified-30 contract.
+The successor corpus is a separate reviewed contract and does not weaken the legacy verified-30 schema. It contains exactly 60 cards across 12 authors and all 12 reviewed theological themes: 42 public-domain primary-source excerpts and 18 modern short quotations. Modern exact source fragments and visible translated quotations are capped at 25 words, require reviewed official author/ministry/publisher evidence, and retain substantial Russian editorial context. Visible Russian quotation text is cryptographically bound to the exact continuous source fragment; source/translation tampering fails closed. The reviewed release is also bound to the exact candidate Git blob, translation-ledger bytes and normalized corpus digest.
+
+Exact reviewed successor identities:
+
+- candidate Git blob SHA-1: `da9d9c812772510ddcfe14cc5f69a6771e2dbc4c`;
+- translation ledger SHA-256: `61eec8558cc62ea709c4c2aa835528fa7d5fa519ec624568e2327762434f5e59`;
+- normalized corpus SHA-256: `2cda3946e4cf0e34ac476b668271e90d66cb1adb6528db6adc8c0cc6f86bf677`.
+
+The successor release remains `activation_policy=after_predecessor_queue_complete`, `release_state=staged_provider_inert`, `provider_writes_authorized=false`. Corpus readiness is not permission to bypass the remaining legacy queue or to perform a manual provider send.
 
 ## Telegram / LordChrist historical rich editorial
 
 Issue #552 is the active provider-inert historical/biographical editorial lane. Its repository scope requires a broad discovery pass, A/B+ production evidence, exact quote locators, certainty/proximity classification, image-rights provenance, explicit separation of historical description from theological evaluation, and approximately three staged historical rich posts per week.
 
-Issue #552 authorizes repository code/content/tests/docs only. It authorizes **0 provider writes** and does not create live scheduling/execution authority. The first research wave includes Spurgeon/Down-Grade, Bunyan imprisonment/preaching and Judson/Burmese Bible with correction of simplistic narratives. Do not interfere with active #552/successor-corpus agent refs during branch hygiene.
+Issue #552 authorizes repository code/content/tests/docs only. It authorizes **0 provider writes** and does not create live scheduling/execution authority. The first research wave includes Spurgeon/Down-Grade, Bunyan imprisonment/preaching and Judson/Burmese Bible with correction of simplistic narratives. Do not interfere with active #552 refs during branch hygiene; the completed #557 successor quote corpus is immutable release evidence, not an active competing research lane.
 
 The earlier LordChrist rich successor canary remains historical completion evidence: `lordchrist-rich-sermons-survive-century` published as Telegram message `1484` with verified durable state and one `sendRichMessage`; its one-shot workflows are retired and do not authorize another rich publication.
 
@@ -147,7 +157,7 @@ The stable required check contexts verified on current PRs are the common CI mat
 
 1. Finish #531 only through the exact 138-ref frozen deletion manifest and fresh post-delete readback; never bulk-delete by prefix and never touch new active refs.
 2. Apply real `main` branch protection through a repository-admin surface, then verify it from GitHub before declaring governance closed.
-3. Leave #541 successor-corpus and #552 historical-editorial work to their active lanes; review their eventual PRs independently rather than creating competing branches.
+3. Continue #552 historical-editorial work in its active lane; review its eventual PR independently rather than creating competing provider-authority paths.
 4. Continue #503 only when a fresh owner AuditPackage/media source exists; do not write speculative replacement code for an external-data blocker.
 5. Treat #353 as measured growth/future-publication operations with no standing provider authority.
 6. For any provider-visible work, start from fresh current `main`, fresh durable state, exact target identity, immutable operation identity and a new explicit owning authorization scope.
