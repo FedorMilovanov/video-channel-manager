@@ -1,0 +1,45 @@
+{
+  "schema_name": "video-manager.svodka-custom-emoji-canary-evidence",
+  "schema_version": 1,
+  "project_key": "svodka",
+  "publication_id": "svodka-custom-emoji-capability-canary",
+  "source_workflow": ".github/workflows/svodka-custom-emoji-capability-canary.yml",
+  "source_run": {
+    "run_id": 31421838994,
+    "run_attempt": 1,
+    "head_sha": "8eb584e19f7ba7c8cb78f5b9121cb312ac13bd06"
+  },
+  "github_actions_artifact": {
+    "artifact_id": 9075800305,
+    "name": "svodka-custom-emoji-canary-outcome-31421838994-1",
+    "size_bytes": 1384,
+    "sha256": "b01fef30c370cb807626d36d6bdd98f544c5bde08a156568e9ce3b4210a5d7e9",
+    "created_at": "2026-08-10T19:04:44Z",
+    "expires_at": "2026-09-09T19:04:43Z"
+  },
+  "archived_member": {
+    "archive_path": "svodka-custom-emoji-outcome.json",
+    "repository_path": "content/telegram/svodka/custom-emoji-canary/evidence/svodka-custom-emoji-outcome-31421838994-1.json",
+    "size_bytes": 1206,
+    "sha256": "204032d5817be391821a2a393d5950ec9a5ce75b51883807d15504503e28dd77"
+  },
+  "durable_state": {
+    "ref": "state/svodka-telegram",
+    "path": "content/telegram/svodka/custom-emoji-capability-canary.json",
+    "state": "unknown",
+    "provider_effect": "may_exist",
+    "message_id": null
+  },
+  "preserved_outcome": {
+    "state": "unknown",
+    "provider_effect": "may_exist",
+    "message_id": null,
+    "blind_retry_allowed": false
+  },
+  "execution_prohibited": true,
+  "reclassification_performed": false,
+  "provider_access_performed": false,
+  "provider_write_performed": false,
+  "owning_issue": 534,
+  "historical_issue": 273
+}
