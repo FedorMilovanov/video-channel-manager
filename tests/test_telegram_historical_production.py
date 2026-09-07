@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
+from video_channel_manager.telegram_historical_editorial import build_historical_rich_document
 from video_channel_manager.telegram_historical_production import (
     _guard_unresolved,
     _validate_second_pass,
@@ -91,6 +92,15 @@ def test_second_pass_fails_closed_on_duplicate_or_unreviewed_url() -> None:
 
 def test_first_historical_rich_document_uses_existing_transport_without_media() -> None:
     release, queue, registry, profile_path, aux = _loaded()
+    sealed_queue_digest = queue.digest
+    post = queue.posts[0]
+    assert post.images
+    assert post.images[0].production_ready is False
+
+    editorial_document = build_historical_rich_document(queue, post, registry)
+    assert editorial_document.media == ()
+    assert tuple(slot.slot_id for slot in editorial_document.media_slots) == tuple(image.asset_id for image in post.images)
+
     document, render = build_document(
         ROOT,
         release,
@@ -101,6 +111,7 @@ def test_first_historical_rich_document_uses_existing_transport_without_media() 
         release["canary_publication_id"],
     )
 
+    assert queue.digest == sealed_queue_digest
     assert document.publication_id == "lordchrist-history-spurgeon-down-grade"
     assert document.target.chat_id == -1001295216957
     assert document.target.bot_id == 8716602202
