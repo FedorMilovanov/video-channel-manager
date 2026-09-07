@@ -24,7 +24,7 @@ Only `main` is a supported repository code/runtime execution baseline.
 
 ### Current checkpoint
 
-The exact repository checkpoint used for this documentation sync is `main` `de58fcaa3a25f63980e548e35acc7f68cf3a2819`, the merge of PR #556. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
+The exact repository checkpoint used for this documentation sync is `main` `900c0ac0d3cd946ca7dad9f63f49aa5f83f5b690`, the merge of PR #560. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
 
 Material 2026-09-06 / 2026-09-07 hardening now present on `main` includes:
 
@@ -142,7 +142,7 @@ Canonical runbooks: [`resi-dash-local-handoff.md`](resi-dash-local-handoff.md) a
 
 Issue #531 is closed as **completed**. PR #550's frozen role ledger partitioned the audited 146-ref baseline into 8 KEEP / 138 DELETE candidates, and the exact 138-ref DELETE manifest was physically removed through genuine delete-ref operations with exact-SHA rereads and zero open-PR collisions.
 
-Fresh current GitHub inventory after the later completed/auto-deleted agent lanes contains **9 refs total**: `main`, the three durable state refs, the content-addressed Milovi accepted-video evidence ref, and four retained historical/research/agent refs. This newer count does not reopen the completed frozen #531 cleanup and is not permission for prefix-based deletion.
+The stable post-merge inventory, excluding the transient branch used for this documentation update, contains **9 refs total**: `main`, the three durable state refs, the content-addressed Milovi accepted-video evidence ref, and four retained historical/research/agent refs. This newer count does not reopen the completed frozen #531 cleanup and is not permission for prefix-based deletion.
 
 ## GitHub governance / Issue #443
 
@@ -161,11 +161,11 @@ The repository ruleset count `0` remains unchanged; classic branch protection is
 
 Issue #443 is the **only open repository tracker**. The current GitHub App cannot read the Administration-only full `/branches/main/protection` object: fresh readback returns `403 Resource not accessible by integration`. Therefore PR-before-merge, conversation resolution, force-push/delete controls and bypass policy must not be claimed as freshly independently proven from the branch summary alone.
 
-All three exact durable state refs are still reported as unprotected by their branch endpoints. They require GitHub-admin enforcement that blocks deletion and non-fast-forward updates while preserving intended ordinary fast-forward publisher/recovery writes. The connected mutation surface exposes no branch-protection/ruleset admin write, so #443 remains fail-closed until an administration-capable path can apply and authoritatively re-read those settings.
+Fresh durable-state readback now shows partial external admin progress: `state/lordchrist-telegram` reports `protected=true` and protection enabled with required-status enforcement off, which is appropriate for a state-only ref. Its full protection payload is also 403 to this integration, so no-delete/no-force controls and the intended normal fast-forward writer path are not independently proven. `state/milovi-cake-telegram` and `state/svodka-telegram` remain not protected by their branch summaries. The connected mutation surface exposes no branch-protection/ruleset admin write, so #443 remains fail-closed until an administration-capable path finishes and authoritatively verifies all required settings.
 
 ## Next safe work
 
-1. Keep #443 open until an administration-capable GitHub path proves the complete `main` policy and protects all three exact durable state refs without breaking intended fast-forward state writes.
+1. Keep #443 open until an administration-capable GitHub path proves the complete `main` policy, proves the exact destructive-history and fast-forward semantics of the LordChrist state protection, and protects/verifies the remaining Milovi and Svodka durable state refs.
 2. Reopen #503 or create a successor only when a fresh <=48h owner YouTube AuditPackage and/or exact owner media is available; do not substitute public downloads or stale evidence.
 3. Any future Milovi growth/Dzen/provider/admin experiment needs a new exact scope and real attribution/outcome data; closed #353 is not standing authority.
 4. Any live rollout of the completed #552 historical editorial lane needs a fresh release identity, media proof where applicable, exact review/canary and separate explicit execution authorization.
