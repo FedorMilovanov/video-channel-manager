@@ -113,7 +113,7 @@ def test_modern_visible_quote_cannot_expand_beyond_25_words(tmp_path: Path) -> N
         load_successor_corpus(CANDIDATES, changed)
 
 
-def test_reviewed_piper_sequence_51_fragment_correction_is_explicit() -> None:
+def test_reviewed_piper_sequence_51_fragment_correction_is_amendment_bound() -> None:
     raw = load_raw_successor_corpus(CANDIDATES)
     corpus = load_successor_corpus(CANDIDATES, TRANSLATIONS)
     raw_post = raw.posts[50]
@@ -121,7 +121,9 @@ def test_reviewed_piper_sequence_51_fragment_correction_is_explicit() -> None:
 
     assert raw_post.publication_id == "lordchrist-successor-piper-father-spirit-authority"
     assert raw_post.source.exact_fragment.endswith("by the authority")
-    assert post.source.exact_fragment.endswith("by the authority of God the Son.")
+    assert post.source.exact_fragment == (
+        "Pray to the Father in the power of the Spirit, in the name or by the authority and the merit of the Son."
+    )
     assert word_count(post.source.exact_fragment) <= 25
     assert post.translation.source_fragment_sha256 == post.source.fragment_sha256
 
@@ -146,13 +148,16 @@ def test_source_evidence_rejects_non_public_or_credential_urls(url: str) -> None
         SuccessorSourceProof.model_validate(payload)
 
 
-def test_release_is_bound_to_candidate_ledger_and_normalized_corpus() -> None:
+def test_legacy_release_v1_remains_reproducible_but_is_not_effective_source_authority() -> None:
     release = load_successor_release(RELEASE, CANDIDATES, TRANSLATIONS)
-    corpus = load_successor_corpus(CANDIDATES, TRANSLATIONS)
+    effective = load_successor_corpus(CANDIDATES, TRANSLATIONS)
 
+    assert release.schema_version == 1
+    assert release.release_id == "lordchrist-successor-quotes-v1"
     assert release.base_candidate_git_blob_sha1 == git_blob_sha1(CANDIDATES.read_bytes())
     assert release.translation_ledger_digest == sha256_bytes(TRANSLATIONS.read_bytes())
-    assert release.normalized_corpus_digest == corpus.digest
+    assert release.normalized_corpus_digest == "sha256:2cda3946e4cf0e34ac476b668271e90d66cb1adb6528db6adc8c0cc6f86bf677"
+    assert release.normalized_corpus_digest != effective.digest
     assert release.activation_policy == "after_predecessor_queue_complete"
     assert release.release_state == "staged_provider_inert"
     assert release.provider_writes_authorized is False
