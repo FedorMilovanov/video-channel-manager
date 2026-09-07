@@ -96,8 +96,18 @@ def load_release(path: Path, root: Path) -> tuple[dict[str, Any], Any, Any, Path
     if recurring_dates != expected_dates:
         raise ValueError("historical v2 recurring dates differ from the exact Monday/Wednesday/Saturday cadence")
 
+    canary_not_before = datetime.fromisoformat(str(release["canary_not_before_moscow"]))
+    canary_not_after = datetime.fromisoformat(str(release["canary_not_after_moscow"]))
+    if canary_not_before.tzinfo is None or canary_not_after.tzinfo is None or canary_not_after <= canary_not_before:
+        raise ValueError("historical v2 canary window must be an ordered timezone-aware interval")
+    canary_slot_date = canary_not_before.astimezone(MOSCOW).date().isoformat()
+    if recurring_dates and canary_slot_date >= recurring_dates[0]:
+        raise ValueError("historical v2 out-of-band canary must precede the recurring cycle")
+
+    # Keep the durable ledger's canary slot a real date instead of a sentinel.
+    # The canary remains manual-only; recurring dates start with publication #2.
     effective_aux = dict(aux)
-    effective_aux["planned_dates"] = (None, *recurring_dates)
+    effective_aux["planned_dates"] = (canary_slot_date, *recurring_dates)
     effective_aux["recurring_publication_ids"] = recurring_ids
     effective_aux["recurring_scheduled_dates_moscow"] = recurring_dates
     return release, queue, registry, profile_path, effective_aux
@@ -106,7 +116,7 @@ def load_release(path: Path, root: Path) -> tuple[dict[str, Any], Any, Any, Path
 def new_ledger(
     release: dict[str, Any],
     queue: Any,
-    planned_dates: tuple[str | None, ...],
+    planned_dates: tuple[str, ...],
 ) -> dict[str, Any]:
     """Create the durable ledger, adding explicit two-phase canary state for v2."""
 
@@ -158,7 +168,7 @@ def load_ledger(
     path: Path,
     release: dict[str, Any],
     queue: Any,
-    planned_dates: tuple[str | None, ...],
+    planned_dates: tuple[str, ...],
     *,
     create: bool = False,
 ) -> dict[str, Any]:
