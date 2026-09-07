@@ -1,0 +1,76 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-production-release",
+  "schema_version": 1,
+  "release_id": "lordchrist-history-cycle-2026-09-14-human-v2-live-v1",
+  "owning_issue": 561,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "chat_id": -1001295216957,
+  "chat_username": "lordchrist",
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "state_branch": "state/lordchrist-telegram",
+  "cycle_id": "history-cycle-2026-09-14-v2",
+  "cycle_start_date_moscow": "2026-09-14",
+  "publication_ids": [
+    "lordchrist-history-spurgeon-down-grade-1887-v2",
+    "lordchrist-history-bunyan-bedford-prison-v2",
+    "lordchrist-history-judson-burmese-bible-v2",
+    "lordchrist-history-spurgeon-cholera-1854-v2",
+    "lordchrist-history-carey-enquiry-missions-v2",
+    "lordchrist-history-fuller-gospel-worthy-v2",
+    "lordchrist-history-tyndale-new-testament-1526-v2",
+    "lordchrist-history-stam-china-december-1934-v2",
+    "lordchrist-history-sattler-schleitheim-1527-v2"
+  ],
+  "scheduled_dates_moscow": [
+    "2026-09-14",
+    "2026-09-16",
+    "2026-09-19",
+    "2026-09-21",
+    "2026-09-23",
+    "2026-09-26",
+    "2026-09-28",
+    "2026-09-30",
+    "2026-10-03"
+  ],
+  "schedule": {
+    "timezone": "Europe/Moscow",
+    "local_time": "19:17",
+    "iso_weekdays": [1, 3, 6],
+    "freshness_minutes": 120
+  },
+  "provider_writes_authorized": true,
+  "authorization_basis": "User requested the issue-561 historical lane be rebuilt after rejecting and deleting the technically successful v1 canary message 1514. This v2 release permits only the exact manually confirmed replacement canary first; recurring publication remains inert until separate provider-free editorial approval of the exact verified canary message.",
+  "activation_policy": "verified_canary_then_exact_schedule",
+  "editorial_approval_required": true,
+  "canary_publication_id": "lordchrist-history-spurgeon-down-grade-1887-v2",
+  "canary_not_before_moscow": "2026-09-07T19:00:00+03:00",
+  "canary_not_after_moscow": "2026-09-13T18:30:00+03:00",
+  "max_provider_attempts_per_publication": 1,
+  "blind_mutation_retries": 0,
+  "max_combined_verified_per_day_moscow": 2,
+  "backfill_policy": "none",
+  "media_policy": "text_only_until_exact_transport_bytes_are_bound",
+  "replenishment_guard_remaining": 1,
+  "manifest": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/cycles/2026-09-cycle-02/manifest.json",
+    "git_blob_sha": "9d4606719976a905162879127d78835a05d8903f"
+  },
+  "second_pass_verification": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/verification/second-pass-human-v2-2026-09-07.json",
+    "git_blob_sha": "6e35128a4a9b939a0a1938d5bbd0701253981506"
+  },
+  "profile": {
+    "path": "content/telegram/channels/lordchrist-rich.json",
+    "git_blob_sha": "d9aa04313825c11906e18a043267068feccb3c95"
+  },
+  "legacy_profile": {
+    "path": "content/telegram/channels/lordchrist.json",
+    "git_blob_sha": "33ac149116a7d1c6862a1b8e2b8d39f09925f72d"
+  },
+  "target_binding": {
+    "path": "content/telegram/channels/lordchrist-rich-target-binding.json",
+    "git_blob_sha": "26efd9956ae634416f288e323e23f7bd2de32a3d"
+  }
+}
