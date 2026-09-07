@@ -90,7 +90,7 @@ def _public_https(value: str) -> str:
         literal_ip = ipaddress.ip_address(host)
     except ValueError:
         if "." not in host:
-            raise ValueError("single-label historical source hosts are not public")
+            raise ValueError("single-label historical source hosts are not public") from None
     else:
         if not literal_ip.is_global:
             raise ValueError("non-global historical source literal IPs are forbidden")
@@ -373,8 +373,8 @@ class HistoricalPost(BaseModel):
         bound_sections = self.prose_claim_bindings.sections
         if [binding.section_id for binding in bound_sections] != [section.section_id for section in self.sections]:
             raise ValueError("prose binding sections must exactly match rendered section order")
-        for section, binding in zip(self.sections, bound_sections, strict=True):
-            if len(binding.paragraph_claim_ids) != len(section.paragraphs):
+        for section, section_binding in zip(self.sections, bound_sections, strict=True):
+            if len(section_binding.paragraph_claim_ids) != len(section.paragraphs):
                 raise ValueError(f"prose binding paragraph count mismatch: {section.section_id}")
 
         rendered_bindings: list[tuple[str, ...]] = [
