@@ -146,26 +146,15 @@ The stable post-merge inventory, excluding the transient branch used for this do
 
 ## GitHub governance / Issue #443
 
-The branch summary proves `main` is protected: it reports `protected=true`, required-status enforcement level `everyone`, and exactly eight required GitHub Actions checks bound to GitHub Actions App ID `15368`:
+Issue #443 is closed as **completed**. Administration-capable owner-token readback on current `main` proves the source policy in full: required status checks use `strict=true`; the exact eight required GitHub Actions contexts remain present; pull requests are required before merge; administrator enforcement is enabled; conversation resolution is required; force pushes and branch deletion are disabled; branch lock is disabled; and no ordinary bypass allowance is configured. Connected branch-summary readback independently reports `main` protected with enforcement level `everyone` and the same eight contexts bound to GitHub Actions App ID `15368`.
 
-- `quality (3.11)`;
-- `quality (3.12)`;
-- `quality (3.13)`;
-- `PowerShell Windows 5.1`;
-- `PowerShell Windows 7`;
-- `PowerShell Linux 7`;
-- `milovi-gap-read`;
-- `permanent-feed-contract`.
+All three exact durable state refs are also protected at their unchanged SHAs. Administration-capable readback proves the intended state-safe profile on each: no PR/check gate, no actor restriction, administrator enforcement enabled, force pushes and deletion disabled, lock disabled, and intended ordinary fast-forward publisher/recovery writes preserved. The repository ruleset count remains `0`, so classic branch protection is the active server-side enforcement surface.
 
-The repository ruleset count `0` remains unchanged; classic branch protection is the visible server-side enforcement surface. Dependency Graph itself is policy-enabled for this public repository. SBOM REST export is verified unavailable through both documented generation surfaces at the recorded probe points; that scoped result must not be collapsed into a blanket `UNVERIFIED` item.
-
-All three exact durable state refs now report server-side protection enabled. Administration-capable readback for the exact unchanged state SHAs additionally proves that each state ref has no PR/check gate, no actor restriction, admin enforcement enabled, force pushes disabled, branch deletion disabled, branch lock disabled, and intended ordinary fast-forward state writes preserved. The durable-state portion of #443 is complete.
-
-Issue #443 remains open for one evidence boundary only. The connected GitHub App cannot read the Administration-only full `/branches/main/protection` object: fresh readback returns `403 Resource not accessible by integration`. Therefore the branch summary does not independently prove the remaining `main` flags required by the tracker: PR-before-merge, conversation resolution where supported, force-push prohibition, deletion prohibition and absence of ordinary bypass paths. An administration-capable readback must enumerate those settings before #443 can be closed as completed.
+This governance closure is evidence, not standing authority. Future protection changes require a fresh administration-capable audit; repository YAML, CODEOWNERS or CI self-checks are not substitutes for server-side policy.
 
 ## Next safe work
 
-1. Keep #443 open only until administration-capable evidence explicitly proves the remaining five `main` protection settings while the existing eight required contexts remain intact; no further state-ref work is required.
+1. Repository governance tracker #443 is complete; no current GitHub-governance remediation remains. Re-audit only after a future policy change or contradictory fresh evidence.
 2. Reopen #503 or create a successor only when a fresh <=48h owner YouTube AuditPackage and/or exact owner media is available; do not substitute public downloads or stale evidence.
 3. Any future Milovi growth/Dzen/provider/admin experiment needs a new exact scope and real attribution/outcome data; closed #353 is not standing authority.
 4. Any live rollout of the completed #552 historical editorial lane needs a fresh release identity, media proof where applicable, exact review/canary and separate explicit execution authorization.
