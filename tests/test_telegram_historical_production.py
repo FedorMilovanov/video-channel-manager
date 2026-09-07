@@ -19,6 +19,7 @@ from video_channel_manager.telegram_historical_production import (
 
 ROOT = Path(__file__).resolve().parents[1]
 RELEASE_PATH = ROOT / "content/telegram/lordchrist/historical-editorial/v1/production-release-2026-09-cycle-01.json"
+WORKFLOW_PATH = ROOT / ".github/workflows/lordchrist-telegram-poster.yml"
 MOSCOW = ZoneInfo("Europe/Moscow")
 
 
@@ -61,7 +62,7 @@ def test_historical_production_release_is_exact_and_second_pass_is_50_urls() -> 
 
 
 def test_second_pass_fails_closed_on_duplicate_or_unreviewed_url() -> None:
-    release, queue, _registry, _profile_path, aux = _loaded()
+    release, _queue, _registry, _profile_path, aux = _loaded()
     publication_ids = tuple(release["publication_ids"])
     verification = json.loads(json.dumps(aux["verification"]))
     verification["entries"][1]["url"] = verification["entries"][0]["url"]
@@ -217,3 +218,20 @@ def test_non_slot_day_is_provider_inert() -> None:
     )
     assert decision.active is False
     assert decision.reason == "no_historical_slot_today"
+
+
+def test_historical_lane_is_routed_through_existing_single_writer_workflow() -> None:
+    workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+    assert 'group: lordchrist-telegram-publisher' in workflow
+    assert workflow.count('group: lordchrist-telegram-publisher') == 1
+    assert '- cron: "17 9 * * *"' in workflow
+    assert '- cron: "17 19 * * 1,3,6"' in workflow
+    assert '- cron: "17 21 * * 2,5,0"' in workflow
+    assert "historical-rich:" in workflow
+    assert "telegram_historical_production prepare" in workflow
+    assert "telegram_historical_production send" in workflow
+    assert "telegram_historical_production apply" in workflow
+    assert "startsWith(inputs.publication_id, 'lordchrist-history-')" in workflow
+    assert "Persist historical intent before sendRichMessage" in workflow
+    assert "Archive exact historical provider outcome before durable result mutation" in workflow
+    assert "blind retry is forbidden" in workflow.lower()
