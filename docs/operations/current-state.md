@@ -1,5 +1,6 @@
 # Current operational state
 Updated: 2026-09-07
+
 This file is the concise current operational interpretation. It does **not** authorize provider mutation. Historical issues, comments, pull requests, CI runs, credentials, releases and receipts are evidence only; they are never standing execution authority.
 
 For every new task, resolve fresh current `main` and the relevant durable state before acting. Do not treat an older SHA, issue body, checkpoint comment or workflow run as the live baseline when newer terminal evidence exists.
@@ -23,66 +24,65 @@ Only `main` is a supported repository code/runtime execution baseline.
 
 ### Current checkpoint
 
-The exact repository checkpoint used for this documentation sync is `main` `796c955de8fef3cdeab7ad8341a365b0e3245e85`. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
+The exact repository checkpoint used for this documentation sync is `main` `de58fcaa3a25f63980e548e35acc7f68cf3a2819`, the merge of PR #556. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
 
-Material late-2026-09-06 / early-2026-09-07 hardening now present on `main`:
+Material 2026-09-06 / 2026-09-07 hardening now present on `main` includes:
 
-- PR #532: Milovi archive-before-terminal-state provider outcome capture plus exact provider-free recovery under the permanent writer concurrency contract.
-- PRs #536, #538 and #540: retirement of consumed/ambiguous Svodka executable one-offs while preserving immutable no-replay evidence.
-- PR #544: Milovi live release/execution gates bind exact publication identity through structured `reviewed_publication_id` / `authorized_publication_id`; free-text provenance cannot satisfy a fresh live authorization gate.
-- PR #533: `milovi-feed-20260906-001` was merged provider-inert and expired without release/execution authorization or durable feed registration. It is stale evidence and must not be initialized, published, retimed or caught up.
-- PR #548: LordChrist verified-quote production moved from a global one-publication-per-day guard to explicit durable `morning` / `evening` slots.
-- PR #550: branch-hygiene final ledger merged; the audited 146-ref baseline was completely classified as 8 KEEP / 138 DELETE candidates.
-- PR #551: scheduled LordChrist provider dispatch now rejects a slot-less scheduled envelope before any Telegram HTTP call.
-- PR #555: provider-critical CODEOWNERS coverage was expanded; this is review routing and does not replace server-side branch protection.
-- PR #557: the reviewed 60-card LordChrist successor quote corpus, translation ledger, exact source/translation bindings and provider-inert staged release were merged.
-- Issue #531 is completed after the exact 138-ref frozen deletion manifest was physically deleted through genuine GitHub delete-ref operations and independently verified with a complete post-delete branch listing.
-- `main` now has real server-side branch protection with eight GitHub Actions required checks bound to GitHub Actions App `15368`, strict up-to-date enforcement and administrator enforcement.
+- PRs #532, #536, #538, #540 and #544: provider-outcome/recovery hardening and retirement of consumed or ambiguous executable one-offs without weakening no-replay semantics.
+- PRs #548 and #551: LordChrist verified-quote production moved to durable `morning` / `evening` slots, and scheduled dispatch rejects slot-less envelopes before Telegram HTTP.
+- PR #550 plus completed issue #531: the frozen 138-ref DELETE manifest was physically deleted with exact-SHA checks; force-moving refs was not used as a substitute for deletion.
+- PR #555: provider-critical CODEOWNERS coverage expanded; this remains review routing, not server-side protection.
+- PR #557: reviewed 60-card LordChrist successor quote corpus and provider-inert staged release.
+- PR #559: sealed successor source-integrity amendment v2, preserving historical v1 reproducibility while moving current source authority to an explicit amendment-bound release.
+- PR #556: evidence-backed historical/biographical LordChrist editorial lane with 69 reviewed URLs, 52 accepted A/B+ sources and a sealed nine-post provider-inert cycle.
 
 ## Telegram / LordChrist verified quotes
 
-Issues #541 and #543 are closed as **completed** after the slot-aware runtime, transport hardening and reviewed successor-corpus work merged through PRs #548, #551 and #557. Issue #168 is closed as repository implementation complete; implementation completion does not itself authorize execution.
+Issues #541 and #543 are closed as **completed** after the slot-aware runtime, transport hardening and reviewed successor-corpus work merged through PRs #548, #551, #557 and #559. Issue #168 is closed as repository implementation complete; implementation completion does not itself authorize execution.
 
 The historical research-v2 canary ambiguity is no longer a legacy blocker. Issue #286 / PR #287 introduced the exact `retired_no_replay` disposition. For unrelated ambiguity, every other `dispatching` or `may_exist` effect remains fail-closed, and the retired August research release itself cannot resume, retry, or authorize a successor.
 
-The authoritative production schedule is schema v3:
+The authoritative production schedule remains schema v3:
 
 - `morning`: 09:17 `Europe/Moscow`, every day;
 - `evening`: 21:17 `Europe/Moscow`, Tuesday / Friday / Sunday;
 - one verified publication maximum per slot and two maximum per eligible day;
 - each slot has a two-hour freshness window;
-- `backfill_policy=none`: a missed slot does not become a later catch-up publication;
+- `backfill_policy=none`;
 - scheduled workflow reruns are forbidden;
-- a same-day manual publication closes scheduled slots for that Moscow date;
-- a legacy verified scheduled row without slot metadata conservatively closes its transition date rather than guessing a historical slot.
+- a same-day manual publication closes scheduled slots for that Moscow date.
 
-Production prepares bind `scheduled_slot` into both the durable ledger entry and dispatch envelope. A replay of the same `(Moscow date, slot)` is blocked. The workflow maps the exact GitHub schedule event to one logical slot, re-proves freshness/release binding immediately before mutation, requires exact current-main CI and exact target preflight, persists intent before `sendMessage`, uses one mutation attempt and zero blind retries. PR #551 additionally enforces the slot at the transport boundary before HTTP.
+Production binds `scheduled_slot` into durable ledger state and the dispatch envelope, persists intent before `sendMessage`, uses one provider attempt and zero blind mutation retries, and fails closed on ambiguous outcomes.
 
-The immutable verified 30-post queue/digest remains unchanged. Historical ledger rows remain readable; no migration/rewrite of `state/lordchrist-telegram` was required by #548/#551. Closing #541/#543 records implementation completion and does not authorize an ad-hoc send, replay, edit/delete/pin or MTProto action.
+The immutable verified 30-post predecessor queue remains historical/current release context. Closing implementation issues does not authorize an ad-hoc send, replay, edit/delete/pin or MTProto action.
 
-The successor corpus is a separate reviewed contract and does not weaken the legacy verified-30 schema. It contains exactly 60 cards across 12 authors and all 12 reviewed theological themes: 42 public-domain primary-source excerpts and 18 modern short quotations. Modern exact source fragments and visible translated quotations are capped at 25 words, require reviewed official author/ministry/publisher evidence, and retain substantial Russian editorial context. Visible Russian quotation text is cryptographically bound to the exact continuous source fragment; source/translation tampering fails closed. The reviewed release is also bound to the exact candidate Git blob, translation-ledger bytes and normalized corpus digest.
+The successor corpus remains a separate reviewed contract with exactly 60 cards across 12 authors and 12 reviewed theological themes: 42 public-domain primary-source excerpts and 18 modern short quotations. Modern exact fragments and visible translated quotations remain capped at 25 words.
 
-Exact reviewed successor identities:
+Current sealed successor release identities after PR #559:
 
-- candidate Git blob SHA-1: `da9d9c812772510ddcfe14cc5f69a6771e2dbc4c`;
+- base candidate Git blob SHA-1: `da9d9c812772510ddcfe14cc5f69a6771e2dbc4c`;
 - translation ledger SHA-256: `61eec8558cc62ea709c4c2aa835528fa7d5fa519ec624568e2327762434f5e59`;
-- normalized corpus SHA-256: `2cda3946e4cf0e34ac476b668271e90d66cb1adb6528db6adc8c0cc6f86bf677`.
+- integrity amendment SHA-256: `b4d0346a2353c6e309c5003eb5a0c13b8dc60094e8f865e6d25da364e5783549`;
+- normalized effective corpus SHA-256: `6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873`;
+- release id: `lordchrist-successor-quotes-v1-integrity-v2`.
 
-The successor release remains `activation_policy=after_predecessor_queue_complete`, `release_state=staged_provider_inert`, `provider_writes_authorized=false`. Corpus readiness is not permission to bypass the remaining legacy queue or to perform a manual provider send.
+The successor release remains `activation_policy=after_predecessor_queue_complete`, `release_state=staged_provider_inert`, `provider_writes_authorized=false`. Corpus readiness is not permission to bypass the predecessor queue or perform a manual provider send.
 
 ## Telegram / LordChrist historical rich editorial
 
-Issue #552 is the active provider-inert historical/biographical editorial lane. Its repository scope requires a broad discovery pass, A/B+ production evidence, exact quote locators, certainty/proximity classification, image-rights provenance, explicit separation of historical description from theological evaluation, and approximately three staged historical rich posts per week.
+Issue #552 is closed as **completed** through PR #556. The merged provider-inert lane contains a broad discovery record, 52 accepted A/B+ sources from 69 reviewed URLs, exact evidence/theology bindings, nine independently sealed posts over three Monday/Wednesday/Saturday weeks, deterministic source/post/cycle digests, and fail-closed prose-to-claim, direct-quote-fragment, registry-identity, URL and repository-path validation.
 
-Issue #552 authorizes repository code/content/tests/docs only. It authorizes **0 provider writes** and does not create live scheduling/execution authority. The first research wave includes Spurgeon/Down-Grade, Bunyan imprisonment/preaching and Judson/Burmese Bible with correction of simplistic narratives. Do not interfere with active #552 refs during branch hygiene; the completed #557 successor quote corpus is immutable release evidence, not an active competing research lane.
+The historical editorial release remains non-live: `provider_writes_authorized=false`, `live_eligible=false`, `backfill_policy=none`. Its image plans remain transport-inert until exact direct media bytes/MIME/SHA-256 and rights evidence are separately pinned and reviewed. PR #556 and issue #552 authorize **0 provider writes** and do not create live scheduling/execution authority.
 
-The earlier LordChrist rich successor canary remains historical completion evidence: `lordchrist-rich-sermons-survive-century` published as Telegram message `1484` with verified durable state and one `sendRichMessage`; its one-shot workflows are retired and do not authorize another rich publication.
+The earlier rich successor canary `lordchrist-rich-sermons-survive-century` remains historical completion evidence as Telegram message `1484`; its one-shot workflows are retired and do not authorize another rich publication.
 
 ## LordChrist YouTube Shorts -> Telegram native video
 
-Repository implementation is complete and hardened through PRs #502, #504, #505, #515 and #516. The canonical provider-inert operator path is `lordchrist_shorts_artifacts build-wave`, using stable `lordchrist-short-<youtube_video_id>` identities, exact owner snapshot/media bindings and atomic artifact derivation.
+Repository implementation is complete and hardened through PRs #502, #504, #505, #515 and #516. The canonical provider-inert operator path remains `lordchrist_shorts_artifacts build-wave`, using stable `lordchrist-short-<youtube_video_id>` identities, exact owner snapshot/media bindings and atomic artifact derivation.
 
-Issue #503 remains an **artifact-level** scope until a fresh owner `video-manager youtube scan` AuditPackage is classified and every selected backlog item is exact-owner-media accepted or explicitly media-missing/candidate-unconfirmed. Historical duration-only snapshots are reconciliation evidence only. No Telegram publication, Story, MTProto action, YouTube mutation, release authorization or execution authority is created by this lane.
+Issue #503 is closed as **not planned / externally blocked**, not as artifact-complete. The last admissible materialized inventory reached 279 duration-eligible records: 2 exact Shorts plus 277 explicit candidates, with `unresolved_non_candidate=0`; that owner snapshot later expired under the 48-hour freshness contract. Fresh connected-Drive review on 2026-09-07 found no newer owner AuditPackage, and this environment has no local OAuth token runtime or owner Takeout/local masters.
+
+Do not substitute public/third-party downloads, stale-snapshot reinterpretation or replacement OAuth credentials. Reopen this scope or create a fresh successor only when a new <=48h owner AuditPackage and/or exact owner media exists. No Telegram publication, Story, MTProto action, YouTube mutation, release authorization or execution authority is created by the closed tracker.
 
 Canonical runbook: [`lordchrist-shorts-feed.md`](lordchrist-shorts-feed.md).
 
@@ -92,29 +92,25 @@ Issue #170 is closed as repository pipeline implementation complete. The histori
 
 Issue #235 is completed with verified successor publications including Telegram messages `28` and `29`; the intervening v3 failed-no-effect identity is immutable and was not retried under the same release identity.
 
-The original 14-entry `svodka-pilot-2026-08` ledger is fully terminalized as historical no-replay evidence. Completed reconciliation/successor workflows and later consumed one-offs have been retired from executable `main` where appropriate. PR #536 preserves the custom-emoji canary as `unknown / may_exist / message_id=null`; PR #538 retired the consumed native-rich canary; PR #540 retired the consumed ledger bootstrap. None created new provider authority or changed `state/svodka-telegram`.
-
-No new Svodka Telegram mutation is authorized by this state.
+The original 14-entry `svodka-pilot-2026-08` ledger is terminal historical no-replay evidence. Consumed reconciliation/bootstrap/canary executors were retired where appropriate. No new Svodka Telegram mutation is authorized by this state.
 
 ## VK / Milovi Cake / Issue #323
 
 Issue #323 is closed. The marathon accepted all 12 allowlisted Milovi Cake sources as completed native VK Clip uploads with durable logical wall mappings. Older checkpoints saying `OPEN`, `8/12`, `upload_in_progress` or `pending` are historical evidence only.
 
-Durable invariants remain: do not duplicate a verified Clip because of transient projection; aggregate omission is not exact disappearance proof; ambiguous provider responses require exact reconciliation; the retired legacy finalizer must not return as a second mutation authority; destructive cleanup authority is consumed unless a new exact scope explicitly grants another operation.
+Durable invariants remain: do not duplicate a verified Clip because of transient projection; aggregate omission is not exact disappearance proof; ambiguous provider responses require exact reconciliation; retired legacy finalizers must not return as second mutation authorities.
 
 Canonical historical analysis: [`2026-08-14-milovi-issue-323-interim-postmortem.md`](2026-08-14-milovi-issue-323-interim-postmortem.md). Reusable architecture target: [`vk-native-clip-golden-path.md`](vk-native-clip-golden-path.md).
 
 ## Telegram / Milovi Cake / Issue #353
 
-The permanent Milovi architecture is a single feed control plane. `.github/workflows/milovi-telegram-feed-publisher.yml` is the only supported Milovi Telegram provider writer. It owns `state/milovi-cake-telegram`, shares the generic Telegram prepare/send/apply runtime and keeps source/release authorization separate from provider execution authorization.
+The permanent Milovi architecture is a single feed control plane. `.github/workflows/milovi-telegram-feed-publisher.yml` remains the only supported Milovi Telegram provider writer and owns `state/milovi-cake-telegram` through the reviewed generic prepare/send/apply contract.
 
-Each new feed operation requires a fresh immutable `milovi-feed-YYYYMMDD-NNN` identity, exact review, provider-free state initialization after release authorization, channel-wide duplicate agreement, strict freshness, exact target preflight, current-main quality, durable intent before mutation, exactly one provider attempt and fresh exact human execution authority. Structured publication identity is the live authorization gate; credentials, old receipts, old issue text, accepted media and generic continuation are not.
+`milovi-feed-20260819-001`, `milovi-feed-20260820-001`, `milovi-feed-20260820-002`, `milovi-feed-20260821-001` and `milovi-feed-20260906-001` are all historical identities now. Their release/execution windows are expired evidence, not current authority. Issue #353 has no standing Telegram provider authority. Any future publication requires a fresh identity plus current review, provider-free state initialization and separate fresh execution authority.
 
-`milovi-feed-20260819-001`, `milovi-feed-20260820-001`, `milovi-feed-20260820-002`, `milovi-feed-20260821-001` and `milovi-feed-20260906-001` are all historical identities now. Their old release/execution windows are expired evidence, not current authority. Issue #353 has no standing Telegram provider authority. Any future publication requires a fresh identity plus current review, provider-free state initialization and separate fresh execution authority.
+The native-video artifact lane remains complete at `16 / 16` accepted Telegram-ready MP4/H.264 outputs on content-addressed evidence ref `agent/milovi-video-accepted-73c578eff825`, digest `sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae`.
 
-The native-video artifact lane remains complete at `16 / 16` accepted Telegram-ready MP4/H.264 outputs on content-addressed evidence ref `agent/milovi-video-accepted-73c578eff825`, digest `sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae`. Artifact readiness is not provider authority.
-
-Issue #353 remains open for growth/acquisition/Dzen and deliberately authorized future publication operations, not architecture reimplementation.
+Issue #353 is closed as **not planned for further work under the historical tracker**. Engineering/control-plane work is complete; no Dzen/acquisition experiment is being falsely claimed as executed. Future growth, Dzen, paid placement, invite-link/admin work or publication operations require a new exact scope with real attribution/outcome data and explicit operation-specific provider/admin authorization.
 
 Canonical runbook: [`milovi-telegram-feed-control-plane.md`](milovi-telegram-feed-control-plane.md).
 
@@ -144,15 +140,13 @@ Canonical runbooks: [`resi-dash-local-handoff.md`](resi-dash-local-handoff.md) a
 
 ## Repository branch hygiene / Issue #531
 
-PR #550 merged the final role ledger: [`branch-hygiene-final-ledger-2026-09-06.md`](branch-hygiene-final-ledger-2026-09-06.md). Its frozen baseline completely partitions 146 refs into **8 KEEP / 138 DELETE candidates** with exact tip/evidence dispositions. Force-moving obsolete refs is explicitly not deletion and remains prohibited.
+Issue #531 is closed as **completed**. PR #550's frozen role ledger partitioned the audited 146-ref baseline into 8 KEEP / 138 DELETE candidates, and the exact 138-ref DELETE manifest was physically removed through genuine delete-ref operations with exact-SHA rereads and zero open-PR collisions.
 
-Issue #531 is closed as **completed**. The exact 138-ref frozen DELETE manifest passed a provider-inert PLAN-ONLY preflight proving 127 absorbed tips and 11 explicitly dispositioned divergent histories, with zero moved refs and zero open-PR collisions. A repository-admin `gh api DELETE repos/.../git/refs/heads/...` pass then deleted exactly 138/138 refs with exact-SHA rereads before each deletion.
+Fresh current GitHub inventory after the later completed/auto-deleted agent lanes contains **9 refs total**: `main`, the three durable state refs, the content-addressed Milovi accepted-video evidence ref, and four retained historical/research/agent refs. This newer count does not reopen the completed frozen #531 cleanup and is not permission for prefix-based deletion.
 
-Fresh GitHub post-delete inventory is complete: page 1 contains **11 refs** and page 2 is empty. `main`, all three durable `state/*` refs and content-addressed Milovi evidence `agent/milovi-video-accepted-73c578eff825` remain intact. Active/new LordChrist and documentation refs created outside the frozen manifest remain separate work and must not be swept by prefix or inverse keep-list.
+## GitHub governance / Issue #443
 
-## GitHub governance
-
-`main` now has real classic GitHub branch protection enabled. Fresh GitHub branch readback reports `protected=true`, required-status enforcement level `everyone`, and exactly eight required GitHub Actions checks, each bound to GitHub Actions App ID `15368`:
+The branch summary proves `main` is protected: it reports `protected=true`, required-status enforcement level `everyone`, and exactly eight required GitHub Actions checks bound to GitHub Actions App ID `15368`:
 
 - `quality (3.11)`;
 - `quality (3.12)`;
@@ -163,18 +157,18 @@ Fresh GitHub post-delete inventory is complete: page 1 contains **11 refs** and 
 - `milovi-gap-read`;
 - `permanent-feed-contract`.
 
-The repository-admin apply/readback also verifies strict up-to-date required checks, PR-before-merge with `required_approving_review_count=0`, administrator enforcement, required conversation resolution, force-push disabled, protected-branch deletion disabled, linear-history enforcement disabled and branch locking disabled. The zero-approval setting deliberately avoids a single-owner self-review deadlock while still requiring the PR and all protected checks. The repository ruleset count `0` remains unchanged; classic branch protection is the active server-side enforcement surface.
+The repository ruleset count `0` remains unchanged; classic branch protection is the visible server-side enforcement surface. Dependency Graph itself is policy-enabled for this public repository. SBOM REST export is verified unavailable through both documented generation surfaces at the recorded probe points; that scoped result must not be collapsed into a blanket `UNVERIFIED` item.
 
-Dependency Graph itself is policy-enabled for this public repository. SBOM REST export is verified unavailable through both documented generation surfaces at the recorded probe points; that scoped result must not be collapsed into a blanket `UNVERIFIED` item.
+Issue #443 is the **only open repository tracker**. The current GitHub App cannot read the Administration-only full `/branches/main/protection` object: fresh readback returns `403 Resource not accessible by integration`. Therefore PR-before-merge, conversation resolution, force-push/delete controls and bypass policy must not be claimed as freshly independently proven from the branch summary alone.
 
-The connected GitHub App still cannot read the full Administration-only `/branches/main/protection` object, but its independent branch endpoint confirms `protected=true`, enforcement=`everyone` and the exact eight `(context, app_id=15368)` bindings. Do not confuse that connector permission boundary with absence of protection.
+All three exact durable state refs are still reported as unprotected by their branch endpoints. They require GitHub-admin enforcement that blocks deletion and non-fast-forward updates while preserving intended ordinary fast-forward publisher/recovery writes. The connected mutation surface exposes no branch-protection/ruleset admin write, so #443 remains fail-closed until an administration-capable path can apply and authoritatively re-read those settings.
 
 ## Next safe work
 
-1. Continue #552 historical-editorial work in its active lane; review its eventual PR independently rather than creating competing provider-authority paths.
-2. Continue #503 only when a fresh owner AuditPackage/media source exists; do not write speculative replacement code for an external-data blocker.
-3. Treat #353 as measured growth/future-publication operations with no standing provider authority.
-4. Reclassify only the small retained/active branch set when its owning scopes close; do not reopen the completed frozen #531 cleanup or bulk-delete by prefix.
+1. Keep #443 open until an administration-capable GitHub path proves the complete `main` policy and protects all three exact durable state refs without breaking intended fast-forward state writes.
+2. Reopen #503 or create a successor only when a fresh <=48h owner YouTube AuditPackage and/or exact owner media is available; do not substitute public downloads or stale evidence.
+3. Any future Milovi growth/Dzen/provider/admin experiment needs a new exact scope and real attribution/outcome data; closed #353 is not standing authority.
+4. Any live rollout of the completed #552 historical editorial lane needs a fresh release identity, media proof where applicable, exact review/canary and separate explicit execution authorization.
 5. For any provider-visible work, start from fresh current `main`, fresh durable state, exact target identity, immutable operation identity and a new explicit owning authorization scope.
 
 Nothing in this document is authorization for a provider mutation.
