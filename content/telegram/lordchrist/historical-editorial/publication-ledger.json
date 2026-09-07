@@ -15,17 +15,17 @@
       "publication_id": "lordchrist-history-spurgeon-down-grade-1887-v2",
       "sequence": 1,
       "scheduled_date_moscow": "2026-09-07",
-      "state": "intent",
-      "provider_effect": "impossible",
+      "state": "published",
+      "provider_effect": "verified",
       "dispatch_mode": "manual_canary",
       "workflow_run_id": "34161758154",
       "workflow_run_attempt": "1",
       "github_sha": "9eb93e63f1b987c9e141bbb8377189f6baad313f",
       "document_sha256": "sha256:5b91561a0e50980845e99a95ee3b52ffeb4290a79ffb7c262636b83b04c91d6e",
       "intent_created_at_utc": "2026-09-07T21:05:16.833353+00:00",
-      "published_at_utc": null,
-      "message_id": null,
-      "message_url": null,
+      "published_at_utc": "2026-09-07T21:05:22.573861+00:00",
+      "message_id": 1515,
+      "message_url": "https://t.me/lordchrist/1515",
       "error": null
     },
     "lordchrist-history-bunyan-bedford-prison-v2": {
@@ -165,7 +165,7 @@
       "error": null
     }
   },
-  "canary_transport_verified_at_utc": null,
+  "canary_transport_verified_at_utc": "2026-09-07T21:05:22.573861+00:00",
   "canary_editorial_approved_at_utc": null,
   "canary_editorial_approved_by": null
 }
