@@ -1,0 +1,76 @@
+{
+  "sequence": 4,
+  "publication_id": "lordchrist-history-spurgeon-cholera-1854-v2",
+  "topic_kind": "biography",
+  "title": "Лондон, 1854: двадцатилетний Сперджен отменил поездки и пошёл к больным холерой",
+  "lead": "Осенью 1854 года Чарльзу Сперджену было всего двадцать. Он недавно стал пастором New Park Street Chapel в Лондоне, когда город накрыла тяжёлая вспышка холеры. Вокруг умирали люди, семьи звали пастора к постелям больных, а страх заражения заставлял многих держаться подальше. Сперджен сделал обратное: отменил выездные проповеднические приглашения и остался в городе, потому что считал своим долгом быть рядом со своей паствой в дни болезни, смерти и скорби.",
+  "sections": [
+    {
+      "section_id": "stay",
+      "heading": "Он мог уехать — и сознательно остался",
+      "paragraphs": [
+        "К тому времени Сперджена уже приглашали проповедовать за пределами Лондона. Но во время эпидемии он отказался от этих поездок. Позже он вспоминал, что оставался «на месте» ради посещения больных и умирающих. Для молодого пастора это было не героическое дополнение к служению, а само служение: когда его люди не могли прийти к нему, он шёл к ним.",
+        "New Park Street Chapel при этом не исчезла из жизни общины. Протоколы церкви показывают, что осенью 1854 года продолжались собрания, приём членов, Вечеря Господня и обычная церковная забота. Эпидемия изменила ритм, но не отменила пастырскую ответственность."
+      ]
+    },
+    {
+      "section_id": "houses",
+      "heading": "«Дом за домом»: служение среди страха",
+      "paragraphs": [
+        "По воспоминаниям Сперджена, семья за семьёй посылала за ним к заболевшим. Он ходил по домам днём, а иногда и ночью, молился с умирающими, утешал родственников и говорил о Христе. Иногда его звали люди, которые прежде не имели отношения к его церкви — болезнь внезапно открывала двери, которые в обычное время были закрыты.",
+        "Один вызов пришёл около трёх часов ночи. Умирал человек, который прежде насмехался над молодым проповедником. Сперджен пришёл, но человек уже почти не мог отвечать. Этот эпизод он вспоминал не как красивую историю обращения: счастливого финала он не придумал. Он стоял у постели, говорил, а затем признал страшную неопределённость последних минут."
+      ]
+    },
+    {
+      "section_id": "preaching",
+      "heading": "Когда смерть стала видимой, люди начали слушать иначе",
+      "paragraphs": [
+        "Сперджен заметил, что во время холеры лондонцы внимательнее слушали проповедь о вечности. В городе, где смерть перестала быть далёкой темой, насмешек становилось меньше. Он не использовал эпидемию для дешёвого давления, но и не делал вид, будто пастор должен говорить только о санитарных мерах и молчать о душе.",
+        "И это отличает пастырское присутствие от простой смелости. Он не был врачом и не выдавал себя за врача. Его обязанностью было быть пастором: прийти, когда страшно; молиться, когда семья растеряна; говорить о Христе, когда человек стоит у границы смерти; продолжать заботиться о живых после похорон."
+      ]
+    },
+    {
+      "section_id": "lesson",
+      "heading": "Пастырь нужен именно тогда, когда присутствовать тяжело",
+      "paragraphs": [
+        "История 1854 года не требует от каждого служителя безрассудно пренебрегать медицинской опасностью. Христианская любовь не равна неосторожности. Но она разрушает другое искушение — служение, которое хорошо работает, пока оно удобно, публично и безопасно.",
+        "«Пасите Божие стадо» звучит особенно серьёзно, когда стадо болеет, боится или хоронит близких. Сперджену было двадцать лет, и он ещё не был знаменитым «князем проповедников». В те недели он учился более простой вещи: пасторство измеряется не только кафедрой, но и дверью, в которую ты готов постучать, когда за ней горе."
+      ]
+    }
+  ],
+  "evidence_boundary": "Во время лондонской вспышки холеры 1854 года Сперджен отменил внешние проповеднические поездки, чтобы оставаться в городе; посещал больных и умирающих, иногда ночью, а New Park Street Chapel продолжала церковную жизнь. Его собственные позднейшие воспоминания и сохранившиеся церковные материалы подтверждают этот пастырский ритм, включая ночной вызов к умирающему человеку, ранее насмехавшемуся над ним.",
+  "claims": [
+    {"claim_id":"claim-spurgeon-cholera-v2-stayed-london","claim_text":"Во время вспышки холеры 1854 года Сперджен отменил выездные проповеднические обязательства и остался в Лондоне ради посещения больных и умирающих.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-spurgeon-autobiography","src-spurgeon-cholera"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
+    {"claim_id":"claim-spurgeon-cholera-v2-visits","claim_text":"Сперджен описывал многочисленные посещения заболевших и скорбящих семей, включая ночные вызовы во время холерной эпидемии.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-spurgeon-autobiography","src-spurgeon-cholera"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
+    {"claim_id":"claim-spurgeon-cholera-v2-church-life","claim_text":"Протоколы New Park Street Chapel показывают продолжение церковной жизни осенью 1854 года, включая собрания, приём членов и Вечерю Господню.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-spurgeon-autobiography","src-spurgeon-cholera"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"},
+    {"claim_id":"claim-spurgeon-cholera-v2-receptivity","claim_text":"Сперджен позднее вспоминал, что во время холеры люди в Лондоне слушали проповедь о Евангелии и смерти с большей серьёзностью.","claim_kind":"historical","certainty":"exact","voice":"participant_position","source_ids":["src-spurgeon-autobiography","src-spurgeon-cholera"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
+    {"claim_id":"claim-spurgeon-cholera-v2-editorial","claim_text":"Редакционный вывод: пастырская верность требует разумного, реального присутствия рядом со страдающими и не позволяет превращать кафедру в замену личной заботе.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-spurgeon-cholera"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
+  ],
+  "prose_claim_bindings": {
+    "title_claim_ids":["claim-spurgeon-cholera-v2-stayed-london"],
+    "lead_claim_ids":["claim-spurgeon-cholera-v2-stayed-london","claim-spurgeon-cholera-v2-visits"],
+    "evidence_boundary_claim_ids":["claim-spurgeon-cholera-v2-stayed-london","claim-spurgeon-cholera-v2-visits","claim-spurgeon-cholera-v2-church-life","claim-spurgeon-cholera-v2-receptivity"],
+    "sections":[
+      {"section_id":"stay","paragraph_claim_ids":[["claim-spurgeon-cholera-v2-stayed-london"],["claim-spurgeon-cholera-v2-church-life"]]},
+      {"section_id":"houses","paragraph_claim_ids":[["claim-spurgeon-cholera-v2-visits"],["claim-spurgeon-cholera-v2-visits"]]},
+      {"section_id":"preaching","paragraph_claim_ids":[["claim-spurgeon-cholera-v2-receptivity"],["claim-spurgeon-cholera-v2-visits","claim-spurgeon-cholera-v2-editorial"]]},
+      {"section_id":"lesson","paragraph_claim_ids":[["claim-spurgeon-cholera-v2-editorial"],["claim-spurgeon-cholera-v2-editorial"]]}
+    ]
+  },
+  "theology_review": {
+    "historical_description":"Очерк фиксирует конкретные решения молодого Сперджена во время лондонской холеры 1854 года: отказ от поездок, посещения больных и сохранение церковной жизни.",
+    "participant_position":"Сперджен считал своим пастырским долгом оставаться рядом с больными, умирающими и скорбящими и использовать открывшиеся возможности для свидетельства о Христе.",
+    "editorial_evaluation":"Пастырская любовь требует и благоразумия, и присутствия. Служитель не заменяет врача, но не имеет права исчезнуть из жизни стада в момент страдания; Слово, молитва и личная забота особенно нужны там, где смерть перестаёт быть абстракцией.",
+    "scripture_refs":["1 Пет 5:2–3","Иак 5:14","2 Кор 1:3–4","Флп 1:20–21"],
+    "alignment":"aligned",
+    "description_separated_from_evaluation":true,
+    "review_status":"accepted"
+  },
+  "images":[],
+  "release_offset_days": 7,
+  "opposing_primary_bound": false,
+  "no_opposing_primary_note": null,
+  "editorial_status": "ready",
+  "fact_check_status": "accepted",
+  "rights_status": "reviewed"
+}

@@ -1,0 +1,166 @@
+name: Lordchrist historical editorial approval
+
+on:
+  workflow_dispatch:
+    inputs:
+      message_id:
+        description: Exact verified Telegram message ID of the v2 historical canary
+        required: true
+        type: string
+      confirm:
+        description: Type APPROVE-HISTORY:<message_id>
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: lordchrist-telegram-publisher
+  cancel-in-progress: false
+  queue: max
+
+env:
+  PYTHONPATH: src
+  STATE_BRANCH: state/lordchrist-telegram
+  STATE_DIR: .state/lordchrist
+  HISTORICAL_RELEASE_PATH: content/telegram/lordchrist/historical-editorial/v1/production-release-2026-09-cycle-02.json
+  HISTORICAL_LEDGER_RELATIVE_PATH: content/telegram/lordchrist/historical-editorial/publication-ledger.json
+  HISTORICAL_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/historical-editorial/publication-ledger.json
+
+jobs:
+  approve-canary:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime without provider credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Validate exact approval request
+        shell: bash
+        env:
+          MESSAGE_ID: ${{ inputs.message_id }}
+          CONFIRMATION: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          [[ "$MESSAGE_ID" =~ ^[1-9][0-9]*$ ]] || {
+            echo "Historical editorial approval requires an exact positive Telegram message ID." >&2
+            exit 2
+          }
+          [[ "$CONFIRMATION" == "APPROVE-HISTORY:$MESSAGE_ID" ]] || {
+            echo "Historical editorial approval confirmation mismatch." >&2
+            exit 2
+          }
+          python -m video_channel_manager.telegram_historical_production preview \
+            --release "$HISTORICAL_RELEASE_PATH"
+
+      - name: Require exact current-main CI proof
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow ci.yml \
+            --sha "$GITHUB_SHA"
+
+      - name: Check out shared LordChrist state with writer credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/lordchrist-telegram
+          path: .state/lordchrist
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Apply provider-free editorial approval
+        shell: bash
+        env:
+          MESSAGE_ID: ${{ inputs.message_id }}
+          APPROVED_BY: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          [[ -f "$HISTORICAL_LEDGER_PATH" ]] || {
+            echo "Historical v2 ledger is not initialized." >&2
+            exit 2
+          }
+          python -m video_channel_manager.telegram_historical_production status \
+            --release "$HISTORICAL_RELEASE_PATH" \
+            --ledger "$HISTORICAL_LEDGER_PATH" > /dev/null
+          python -m video_channel_manager.telegram_historical_production approve-canary \
+            --release "$HISTORICAL_RELEASE_PATH" \
+            --ledger "$HISTORICAL_LEDGER_PATH" \
+            --message-id "$MESSAGE_ID" \
+            --approved-by "$APPROVED_BY"
+
+      - name: Persist exact approval state with CAS semantics
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C "$STATE_DIR" config user.name "lordchrist-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "lordchrist-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$HISTORICAL_LEDGER_RELATIVE_PATH"
+          git -C "$STATE_DIR" diff --cached --quiet && {
+            echo "Editorial approval produced no durable state delta." >&2
+            exit 3
+          }
+          parent_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" commit -m "Approve Lordchrist historical v2 canary editorially [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+
+          if ! git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"; then
+            remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" 2>/dev/null | cut -f1 || true)"
+            if [[ "$remote_sha" != "$local_sha" ]]; then
+              echo "Shared LordChrist state moved from $parent_sha; refusing to overwrite approval state." >&2
+              exit 3
+            fi
+          fi
+
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$remote_sha" == "$local_sha" ]] || {
+            echo "Remote editorial approval commit differs from the exact local commit." >&2
+            exit 3
+          }
+
+      - name: Read back armed v2 approval gate
+        shell: bash
+        env:
+          MESSAGE_ID: ${{ inputs.message_id }}
+        run: |
+          set -euo pipefail
+          git -C "$STATE_DIR" fetch --no-tags origin "$STATE_BRANCH"
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$HISTORICAL_LEDGER_RELATIVE_PATH" > .state-approved-ledger.json
+          python -m video_channel_manager.telegram_historical_production status \
+            --release "$HISTORICAL_RELEASE_PATH" \
+            --ledger .state-approved-ledger.json > /dev/null
+          MESSAGE_ID="$MESSAGE_ID" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          value = json.loads(Path(".state-approved-ledger.json").read_text(encoding="utf-8"))
+          canary = value["entries"]["lordchrist-history-spurgeon-down-grade-1887-v2"]
+          if canary.get("message_id") != int(os.environ["MESSAGE_ID"]):
+              raise SystemExit("Canary message ID changed during editorial approval readback.")
+          if not value.get("canary_transport_verified_at_utc"):
+              raise SystemExit("Canary transport verification is missing after approval.")
+          if not value.get("canary_editorial_approved_at_utc"):
+              raise SystemExit("Canary editorial approval is missing after approval.")
+          if value.get("canary_verified_at_utc") != value.get("canary_editorial_approved_at_utc"):
+              raise SystemExit("Recurring schedule activation is not bound to editorial approval.")
+          print("Historical v2 editorial approval is durable; no provider mutation was performed by this workflow.")
+          PY

@@ -1,0 +1,64 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-source-catalog",
+  "schema_version": 1,
+  "catalog_id": "history-source-catalog-lordchrist-human-v2",
+  "checked_on": "2026-09-07",
+  "total_sources": 53,
+  "registry_sha256": "sha256:f2a4ec50986c2d38b8c7c09a1de64dc31b42dab95ca1e77a0f34eb26ea35496f",
+  "shards": [
+    {
+      "shard_id": "history-sources-calvin",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/calvin.json",
+      "sha256": "sha256:bbd419389b1ebc862baf8862ea251ac1ed7c6a439674d61ccfc7402e825e0023",
+      "source_count": 6
+    },
+    {
+      "shard_id": "history-sources-spurgeon-core",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/spurgeon-core.json",
+      "sha256": "sha256:2daecba7d11df236d206457f7e202a6a4bce8c0c8de5ea3ffc0e46b715b9b125",
+      "source_count": 9
+    },
+    {
+      "shard_id": "history-sources-macarthur",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/macarthur.json",
+      "sha256": "sha256:6a79d0210197c2f4549ee3182ffd1f69c0b7f28e5e7f891ae85ae60a238c2593",
+      "source_count": 9
+    },
+    {
+      "shard_id": "history-sources-spurgeon-history",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/spurgeon-history.json",
+      "sha256": "sha256:9ff80d2d4883aeed41b732948f10ef7bb4996cb2257a4dce31af77bde338ff06",
+      "source_count": 4
+    },
+    {
+      "shard_id": "history-sources-bunyan",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/bunyan.json",
+      "sha256": "sha256:563f3b0ac180b07e11085c68966d650509aa7aea4eaf0d730aaf675d844f04bb",
+      "source_count": 5
+    },
+    {
+      "shard_id": "history-sources-judson-human-v2",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/judson-human-v2.json",
+      "sha256": "sha256:145c78299e6530c2b4223e8f24a94e5f1d6b856e7bd4350a809481a3d71d9ca7",
+      "source_count": 5
+    },
+    {
+      "shard_id": "history-sources-baptist-mission",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/baptist-mission.json",
+      "sha256": "sha256:0882daa5d36a5255904727d05a63cb910fbeee99bee4797dc333d0c207ff42ff",
+      "source_count": 8
+    },
+    {
+      "shard_id": "history-sources-tyndale",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/tyndale.json",
+      "sha256": "sha256:9f4697446b29c52132f2ca276adff1f2e997c009881f35b069974d2f026f4fee",
+      "source_count": 3
+    },
+    {
+      "shard_id": "history-sources-stam-sattler",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/stam-sattler.json",
+      "sha256": "sha256:053238d27140428dbb05d4b96599a0ae68dc7e213cc8a887fd3fb1e9a647ec36",
+      "source_count": 4
+    }
+  ]
+}

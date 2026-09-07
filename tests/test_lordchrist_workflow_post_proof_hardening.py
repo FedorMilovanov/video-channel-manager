@@ -5,11 +5,12 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS_DIR = ROOT / ".github/workflows"
 WORKFLOW = WORKFLOWS_DIR / "lordchrist-telegram-poster.yml"
 RECOVERY_WORKFLOW = WORKFLOWS_DIR / "lordchrist-reconcile-provider-outcome.yml"
+APPROVAL_WORKFLOW = WORKFLOWS_DIR / "lordchrist-historical-editorial-approval.yml"
 RICH_CANARY_WORKFLOW = WORKFLOWS_DIR / "lordchrist-rich-live-canary.yml"
 RICH_CONTROLLER_WORKFLOW = WORKFLOWS_DIR / "lordchrist-rich-live-controller.yml"
 RESEARCH_WORKFLOW = WORKFLOWS_DIR / "lordchrist-research-v2-publisher.yml"
 WRITER_GROUP = "group: lordchrist-telegram-publisher"
-EXPECTED_WRITERS = {WORKFLOW, RECOVERY_WORKFLOW}
+EXPECTED_LOCK_PARTICIPANTS = {WORKFLOW, RECOVERY_WORKFLOW, APPROVAL_WORKFLOW}
 
 
 def workflow_text() -> str:
@@ -22,7 +23,7 @@ def test_complete_lordchrist_writer_surface_uses_lossless_serialization_contract
     assert not RESEARCH_WORKFLOW.exists()
     assert not RICH_CANARY_WORKFLOW.exists()
     assert not RICH_CONTROLLER_WORKFLOW.exists()
-    assert discovered == EXPECTED_WRITERS
+    assert discovered == EXPECTED_LOCK_PARTICIPANTS
     for path in discovered:
         text = path.read_text(encoding="utf-8")
         assert "cancel-in-progress: false" in text, path.name
@@ -30,6 +31,13 @@ def test_complete_lordchrist_writer_surface_uses_lossless_serialization_contract
         assert "queue: single" not in text, path.name
         assert "runs-on: ubuntu-24.04" in text, path.name
         assert "runs-on: ubuntu-latest" not in text, path.name
+
+    approval = APPROVAL_WORKFLOW.read_text(encoding="utf-8")
+    assert "telegram_historical_production approve-canary" in approval
+    assert "LORDCHRIST_TELEGRAM_BOT_TOKEN" not in approval
+    assert "telegram_historical_production preflight" not in approval
+    assert "telegram_historical_production send" not in approval
+    assert "sendRichMessage" not in approval
 
 
 def test_lordchrist_scheduler_queues_pending_runs_without_cancelling_active_run() -> None:

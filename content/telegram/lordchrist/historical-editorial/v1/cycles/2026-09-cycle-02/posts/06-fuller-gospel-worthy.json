@@ -1,0 +1,76 @@
+{
+  "sequence": 6,
+  "publication_id": "lordchrist-history-fuller-gospel-worthy-v2",
+  "topic_kind": "historical_fact",
+  "title": "1785: Эндрю Фуллер спорит с кальвинизмом, который перестал звать грешника ко Христу",
+  "lead": "В 1785 году молодой баптистский пастор Эндрю Фуллер выпустил книгу с длинным названием: The Gospel of Christ Worthy of All Acceptation. Вопрос за ним стоял очень практический: имеет ли проповедник право и обязанность прямо призывать каждого слушателя покаяться и веровать во Христа — или такой призыв можно адресовать только тем, в ком уже заметны признаки избрания и действия благодати? Для части английских Particular Baptists это был не академический нюанс. От ответа зависело, как звучит проповедь Евангелия.",
+  "sections": [
+    {
+      "section_id": "problem",
+      "heading": "Когда защита благодати превратилась в тормоз для проповеди",
+      "paragraphs": [
+        "Фуллер вырос внутри строгого кальвинистского баптизма и сам знал логику, которую позже отверг. Если грешник духовно неспособен прийти ко Христу без возрождающей благодати, рассуждали некоторые, значит нельзя требовать от него того, чего он не может сделать. На практике это могло сделать евангельский призыв осторожным до паралича: проповедовать истину — да, но не обращаться к каждому слушателю с непосредственным повелением веровать.",
+        "Фуллер пришёл к другому выводу, в том числе через чтение Джонатана Эдвардса. Неспособность грешника, утверждал он, нравственная, а не такая, которая снимает ответственность. Человек не любит Бога и не хочет Христа — и именно поэтому остаётся виновным, а не освобождённым от обязанности веровать."
+      ]
+    },
+    {
+      "section_id": "book",
+      "heading": "Книга 1785 года вернула призыв в центр кафедры",
+      "paragraphs": [
+        "Само название формулировало тезис: Евангелие Христа достойно принятия всеми, кому оно приходит. Фуллер защищал обязанность людей верить Божьему свидетельству и принимать Христа. Он не отказался от избрания, действенной благодати или мысли, что спасение от начала до конца принадлежит Богу. Он отказался делать из этих истин вывод, которого, по его убеждению, не делало Писание: будто проповедник не должен звать всякого человека ко Христу.",
+        "Книга сразу вошла в спор. Уже в 1786 году Дэн Тейлор напечатал отдельные Observations на труд Фуллера, пересказывая его «leading idea» как обязанность веры во Христа для всех людей, слышащих Евангелие. То есть современники поняли, где именно проходит линия спора."
+      ]
+    },
+    {
+      "section_id": "mission",
+      "heading": "Через семь лет богословский вывод стал миссионерской практикой",
+      "paragraphs": [
+        "В 1792 году Фуллер сидел среди четырнадцати баптистов в Кеттеринге, когда было создано миссионерское общество. Его избрали секретарём. Кэри вскоре отправился как миссионер; Фуллер остался в Британии — собирать средства, переписываться, искать поддержку, объяснять церквам необходимость миссии и годами держать домашнюю сторону предприятия.",
+        "Связь между 1785 и 1792 годами не была механической — миссионерское движение имело несколько причин и несколько лидеров. Но богословский барьер был снят: можно одновременно исповедовать суверенную благодать и без колебаний говорить каждому человеку: покайся и веруй во Христа. Для миссии это не мелкая формулировка. Это определяет, к кому церковь считает себя посланной."
+      ]
+    },
+    {
+      "section_id": "lesson",
+      "heading": "Правильная доктрина должна делать проповедь библейской, а не немой",
+      "paragraphs": [
+        "История Фуллера полезна именно внутри реформатского богословия. Опасность бывает не только в том, чтобы ослабить Божий суверенитет. Можно так защищать одну истину, что практические выводы начнут противоречить другим ясным текстам Писания. Бог избирает и спасает; тот же Бог повелевает всем людям повсюду покаяться и посылает проповедников ко всем народам.",
+        "Поэтому проверка доктрины — не только вопрос: «звучит ли она строго?» Нужно спрашивать: сохраняет ли она весь библейский текст? Фуллер помог своим братьям увидеть, что сильная вера в благодать не делает евангельский призыв осторожнее. Она позволяет звать грешника свободно, потому что сила спасения находится не в убедительности проповедника, а во Христе."
+      ]
+    }
+  ],
+  "evidence_boundary": "The Gospel of Christ Worthy of All Acceptation был опубликован Эндрю Фуллером в Northampton в 1785 году. В книге он защищал обязанность людей, слышащих Евангелие, веровать во Христа; современная историческая литература связывает его вывод с преодолением детерминистического High Calvinism при сохранении учения о спасительной благодати. В 1792 году Фуллер стал секретарём нового Particular Baptist Missionary Society и играл ключевую роль в его британской поддержке.",
+  "claims": [
+    {"claim_id":"claim-fuller-v2-book-1785","claim_text":"Эндрю Фуллер опубликовал The Gospel of Christ Worthy of All Acceptation в Northampton в 1785 году.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-fuller-wellcome-1785","src-fuller-folger-catalog"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-fuller-v2-duty-faith","claim_text":"Центральным тезисом книги Фуллера была обязанность людей, которым проповедуется Евангелие, веровать во Христа, при сохранении его кальвинистского понимания спасительной благодати.","claim_kind":"historical","certainty":"exact","voice":"participant_position","source_ids":["src-fuller-wellcome-1785","src-fuller-oup-reader"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"side_a"},
+    {"claim_id":"claim-fuller-v2-edwards-high-calvinism","claim_text":"Современное исследование связывает развитие позиции Фуллера с чтением Jonathan Edwards и отходом от детерминистических практических выводов High Calvinism.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-fuller-wellcome-1785","src-fuller-oup-reader","src-oup-particular-baptists"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"},
+    {"claim_id":"claim-fuller-v2-secretary-1792","claim_text":"2 октября 1792 года Фуллер участвовал в создании Particular Baptist missionary society в Кеттеринге и был избран его секретарём.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-carey-enquiry-1792","src-carey-center-bms","src-oup-particular-baptists"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
+    {"claim_id":"claim-fuller-v2-editorial","claim_text":"Редакционный вывод: учение о суверенной благодати не ослабляет всеобщий евангельский призыв; библейская система должна сохранять и Божью инициативу в спасении, и обязанность всех слышащих покаяться и веровать.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-fuller-oup-reader"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
+  ],
+  "prose_claim_bindings": {
+    "title_claim_ids":["claim-fuller-v2-book-1785","claim-fuller-v2-duty-faith"],
+    "lead_claim_ids":["claim-fuller-v2-book-1785","claim-fuller-v2-duty-faith"],
+    "evidence_boundary_claim_ids":["claim-fuller-v2-book-1785","claim-fuller-v2-duty-faith","claim-fuller-v2-edwards-high-calvinism","claim-fuller-v2-secretary-1792"],
+    "sections":[
+      {"section_id":"problem","paragraph_claim_ids":[["claim-fuller-v2-duty-faith","claim-fuller-v2-edwards-high-calvinism"],["claim-fuller-v2-duty-faith","claim-fuller-v2-edwards-high-calvinism"]]},
+      {"section_id":"book","paragraph_claim_ids":[["claim-fuller-v2-book-1785","claim-fuller-v2-duty-faith"],["claim-fuller-v2-duty-faith"]]},
+      {"section_id":"mission","paragraph_claim_ids":[["claim-fuller-v2-secretary-1792"],["claim-fuller-v2-duty-faith","claim-fuller-v2-secretary-1792"]]},
+      {"section_id":"lesson","paragraph_claim_ids":[["claim-fuller-v2-editorial"],["claim-fuller-v2-editorial"]]}
+    ]
+  },
+  "theology_review": {
+    "historical_description":"Очерку дана хронология от публикации Gospel Worthy в 1785 году до участия Фуллера в создании миссионерского общества 1792 года, с акцентом на реальный богословский вопрос всеобщего евангельского призыва.",
+    "participant_position":"Фуллер утверждал, что все, кому приходит Евангелие, обязаны веровать во Христа, не отказываясь при этом от кальвинистского учения о спасении по суверенной благодати.",
+    "editorial_evaluation":"Писание одновременно учит Божьей суверенной благодати и всеобщему повелению покаяться и веровать. Нельзя использовать избрание или человеческую неспособность как основание для ослабления свободного евангельского призыва.",
+    "scripture_refs":["Деян 17:30","Мк 1:15","Ин 6:37","Рим 10:14–17"],
+    "alignment":"aligned",
+    "description_separated_from_evaluation":true,
+    "review_status":"accepted"
+  },
+  "images":[],
+  "release_offset_days":12,
+  "opposing_primary_bound":false,
+  "no_opposing_primary_note":null,
+  "editorial_status":"ready",
+  "fact_check_status":"accepted",
+  "rights_status":"reviewed"
+}
