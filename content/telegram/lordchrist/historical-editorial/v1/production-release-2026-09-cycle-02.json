@@ -76,7 +76,7 @@
   "replenishment_guard_remaining": 1,
   "manifest": {
     "path": "content/telegram/lordchrist/historical-editorial/v1/cycles/2026-09-cycle-02/manifest.json",
-    "git_blob_sha": "9d4606719976a905162879127d78835a05d8903f"
+    "git_blob_sha": "d878cc869a23ebd834e2fbf6d70414444643ec6b"
   },
   "second_pass_verification": {
     "path": "content/telegram/lordchrist/historical-editorial/v1/verification/second-pass-human-v2-2026-09-07.json",
