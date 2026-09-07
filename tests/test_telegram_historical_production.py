@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -8,9 +9,9 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from video_channel_manager.telegram_historical_production import (
-    SUCCESSOR_BINDING_SCHEMA,
     _guard_unresolved,
     _validate_second_pass,
+    bind_successor_cycle,
     build_document,
     coverage_status,
     decide_scheduled,
@@ -30,23 +31,15 @@ def _loaded():
     return release, queue, registry, profile_path, aux
 
 
-def _bind_verified_successor_state(ledger: dict, release: dict) -> None:
-    ledger["successor_cycle_binding"] = {
-        "schema_name": SUCCESSOR_BINDING_SCHEMA,
-        "schema_version": 1,
-        "current_release_id": release["release_id"],
-        "current_release_sha256": release_digest(release),
-        "current_cycle_id": release["cycle_id"],
-        "successor_cycle_id": "2026-10-cycle-01",
-        "successor_manifest_path": "content/telegram/lordchrist/historical-editorial/v1/cycles/2026-10-cycle-01/manifest.json",
-        "successor_manifest_git_blob_sha": "0" * 40,
-        "successor_queue_sha256": "sha256:" + "1" * 64,
-        "successor_source_registry_sha256": "sha256:" + "2" * 64,
-        "successor_theology_profile_sha256": "sha256:" + "3" * 64,
-        "verified_at_utc": "2026-09-24T10:00:00+00:00",
-        "verified_by": "test-suite",
-        "provider_write_performed": False,
-    }
+def _successor_manifest(tmp_path: Path) -> Path:
+    relative = Path("content/telegram/lordchrist/historical-editorial/v1")
+    shutil.copytree(ROOT / relative, tmp_path / relative)
+    manifest_path = tmp_path / relative / "cycles/2026-09-cycle-01/manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["cycle_id"] = "history-cycle-2026-10-01"
+    manifest["series_id"] = "series-history-2026-10-cycle-01"
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return manifest_path
 
 
 def test_historical_production_release_is_exact_and_second_pass_is_50_urls() -> None:
@@ -122,7 +115,9 @@ def test_scheduler_is_inert_until_canary_is_verified() -> None:
     release, queue, _registry, _profile_path, aux = _loaded()
     planned = tuple(aux["planned_dates"])
     ledger = new_ledger(release, queue, planned)
+    assert ledger["cycle_id"] == release["cycle_id"]
     decision = decide_scheduled(
+        ROOT,
         release,
         ledger,
         tuple(release["publication_ids"]),
@@ -150,6 +145,7 @@ def test_scheduler_uses_exact_slot_and_never_backfills_stale_run() -> None:
     )
 
     active = decide_scheduled(
+        ROOT,
         release,
         ledger,
         ids,
@@ -161,6 +157,7 @@ def test_scheduler_uses_exact_slot_and_never_backfills_stale_run() -> None:
     assert active.reason == "active_exact_historical_slot"
 
     stale = decide_scheduled(
+        ROOT,
         release,
         ledger,
         ids,
@@ -197,7 +194,7 @@ def test_confirmed_no_effect_is_terminal_for_identity_but_not_global_writer_bloc
     assert ledger["entries"][second]["state"] == "failed_no_effect"
 
 
-def test_replenishment_gate_uses_durable_successor_binding_without_mutating_release() -> None:
+def test_replenishment_gate_uses_reproved_durable_successor_without_mutating_release(tmp_path: Path) -> None:
     release, queue, _registry, _profile_path, aux = _loaded()
     planned = tuple(aux["planned_dates"])
     ids = tuple(release["publication_ids"])
@@ -215,11 +212,12 @@ def test_replenishment_gate_uses_durable_successor_binding_without_mutating_rele
         )
 
     original_release_digest = release_digest(release)
-    coverage = coverage_status(release, ledger)
+    coverage = coverage_status(ROOT, release, ledger)
     assert coverage["pending_count"] == 1
     assert coverage["exhaustion_block_active"] is True
 
     blocked = decide_scheduled(
+        ROOT,
         release,
         ledger,
         ids,
@@ -229,8 +227,17 @@ def test_replenishment_gate_uses_durable_successor_binding_without_mutating_rele
     assert blocked.active is False
     assert blocked.reason == "successor_cycle_required_before_exhaustion"
 
-    _bind_verified_successor_state(ledger, release)
+    successor_manifest = _successor_manifest(tmp_path)
+    bind_successor_cycle(
+        tmp_path,
+        release,
+        ledger,
+        successor_manifest,
+        verified_by="test-suite",
+        now=datetime(2026, 9, 24, 10, 0, tzinfo=ZoneInfo("UTC")),
+    )
     unblocked = decide_scheduled(
+        tmp_path,
         release,
         ledger,
         ids,
@@ -240,7 +247,11 @@ def test_replenishment_gate_uses_durable_successor_binding_without_mutating_rele
     assert unblocked.active is True
     assert unblocked.publication_id == ids[-1]
     assert release_digest(release) == original_release_digest
-    assert coverage_status(release, ledger)["successor_cycle_verified"] is True
+    assert coverage_status(tmp_path, release, ledger)["successor_cycle_verified"] is True
+
+    successor_manifest.write_text(successor_manifest.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="successor manifest Git blob differs"):
+        coverage_status(tmp_path, release, ledger)
 
 
 def test_non_slot_day_is_provider_inert() -> None:
@@ -249,6 +260,7 @@ def test_non_slot_day_is_provider_inert() -> None:
     ledger = new_ledger(release, queue, planned)
     ledger["canary_verified_at_utc"] = "2026-09-07T09:30:00+00:00"
     decision = decide_scheduled(
+        ROOT,
         release,
         ledger,
         tuple(release["publication_ids"]),
