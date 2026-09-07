@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Public historical-editorial facade with human reader-facing rendering.
 
 The validation/data model remains byte-for-byte compatible in
@@ -9,25 +7,27 @@ remain mandatory in the sealed data and claim bindings. The public article
 contains the historical essay itself and a compact source drawer.
 """
 
+from __future__ import annotations
+
 from video_channel_manager import telegram_historical_editorial_core as _core
-from video_channel_manager.telegram_historical_editorial_core import (  # noqa: F401
-    HistoricalClaim,
-    HistoricalEditorialQueueV1,
-    HistoricalImagePlan,
-    HistoricalPost,
-    HistoricalProseClaimBindings,
-    HistoricalSchedule,
-    HistoricalSectionClaimBinding,
-    HistoricalSource,
-    HistoricalSourceRegistry,
-    HistoricalVerification,
-    REQUIRED_THEOLOGY_COMMITMENTS,
-    SourceBindingKind,
-    TheologyProfile,
-    TheologyReview,
-    load_historical_editorial_queue,
-    load_historical_source_registry,
-    load_theology_profile,
+from video_channel_manager.telegram_historical_editorial_core import (
+    HistoricalClaim as HistoricalClaim,
+    HistoricalEditorialQueueV1 as HistoricalEditorialQueueV1,
+    HistoricalImagePlan as HistoricalImagePlan,
+    HistoricalPost as HistoricalPost,
+    HistoricalProseClaimBindings as HistoricalProseClaimBindings,
+    HistoricalSchedule as HistoricalSchedule,
+    HistoricalSectionClaimBinding as HistoricalSectionClaimBinding,
+    HistoricalSource as HistoricalSource,
+    HistoricalSourceRegistry as HistoricalSourceRegistry,
+    HistoricalVerification as HistoricalVerification,
+    REQUIRED_THEOLOGY_COMMITMENTS as REQUIRED_THEOLOGY_COMMITMENTS,
+    SourceBindingKind as SourceBindingKind,
+    TheologyProfile as TheologyProfile,
+    TheologyReview as TheologyReview,
+    load_historical_editorial_queue as load_historical_editorial_queue,
+    load_historical_source_registry as load_historical_source_registry,
+    load_theology_profile as load_theology_profile,
 )
 from video_channel_manager.telegram_rich_models import RichArticleDocument, RichBlockDetails
 
