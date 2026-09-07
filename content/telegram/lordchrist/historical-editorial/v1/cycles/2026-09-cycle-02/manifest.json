@@ -8,7 +8,7 @@
   "purpose": "evidence_backed_historical_edification",
   "state": "provider_inert",
   "verification": {
-    "reviewed_urls": 69,
+    "reviewed_urls": 70,
     "checked_on": "2026-09-07",
     "method": "a_bplus_primary_archive_scholarly_crosscheck",
     "production_threshold": "A_or_B_plus_only",
@@ -26,15 +26,15 @@
     "max_verified_per_day": 2,
     "backfill_policy": "none"
   },
-  "source_catalog_path": "content/telegram/lordchrist/historical-editorial/v1/source-catalog.json",
-  "source_catalog_sha256": "sha256:5e8009606023463ed9ada07b6d54e41bdb0ccc2970902fe865bab419af6d7a11",
-  "source_registry_sha256": "sha256:dd4552fce9a0fd83120fbf6837089c93ac84d0e5b877ef29257bdf207dbb9566",
+  "source_catalog_path": "content/telegram/lordchrist/historical-editorial/v1/source-catalog-human-v2.json",
+  "source_catalog_sha256": "sha256:811d1d0cbceb84101fdb7593508244b42052fc88bd73b0d5bae8b29a11061540",
+  "source_registry_sha256": "sha256:f2a4ec50986c2d38b8c7c09a1de64dc31b42dab95ca1e77a0f34eb26ea35496f",
   "theology_profile_path": "content/telegram/lordchrist/historical-editorial/v1/theology-profile.json",
   "theology_profile_sha256": "sha256:b0334e70490332853c991e4cbcad4eb9dcdf5f50279df84e95b71cecaeba1a32",
   "posts": [
     {"sequence":1,"publication_id":"lordchrist-history-spurgeon-down-grade-1887-v2","path":"content/telegram/lordchrist/historical-editorial/v1/cycles/2026-09-cycle-02/posts/01-spurgeon-down-grade-1887.json","sha256":"sha256:3b53d42dd1723aca239e4ca89ede091bfb77ce25f225add45f11248812565219"},
     {"sequence":2,"publication_id":"lordchrist-history-bunyan-bedford-prison-v2","path":"content/telegram/lordchrist/historical-editorial/v1/cycles/2026-09-cycle-02/posts/02-bunyan-bedford-prison.json","sha256":"sha256:1a51c9a68cbc9ff8aecdd623de4c279036265645f8c70b51b623758966672f4e"},
-    {"sequence":3,"publication_id":"lordchrist-history-judson-burmese-bible-v2","path":"content/telegram/lordchrist/historical-editorial/v1/cycles/2026-09-cycle-02/posts/03-judson-burmese-bible.json","sha256":"sha256:6c5cea5513dd770697e0ba2bf81af4fbf37b98f7ff03c1b79e09c9bf883d1157"},
+    {"sequence":3,"publication_id":"lordchrist-history-judson-burmese-bible-v2","path":"content/telegram/lordchrist/historical-editorial/v1/cycles/2026-09-cycle-02/posts/03-judson-burmese-bible.json","sha256":"sha256:fa7c9326d6807802fd44bee53994a91090639e3183118b776775693a786fc25a"},
     {"sequence":4,"publication_id":"lordchrist-history-spurgeon-cholera-1854-v2","path":"content/telegram/lordchrist/historical-editorial/v1/cycles/2026-09-cycle-02/posts/04-spurgeon-cholera.json","sha256":"sha256:0de90a3fb13fd631fd946059611071d3504dbccf3946c9d7f3652542a163f940"},
     {"sequence":5,"publication_id":"lordchrist-history-carey-enquiry-missions-v2","path":"content/telegram/lordchrist/historical-editorial/v1/cycles/2026-09-cycle-02/posts/05-carey-enquiry-missions.json","sha256":"sha256:01d9a402e85d5cb9af0fcdf9d5454006e8cdd9dfb540985fa65cd4b410197e37"},
     {"sequence":6,"publication_id":"lordchrist-history-fuller-gospel-worthy-v2","path":"content/telegram/lordchrist/historical-editorial/v1/cycles/2026-09-cycle-02/posts/06-fuller-gospel-worthy.json","sha256":"sha256:c630332893d4778f0792c0c60d8b83d8bd38c2c5581dcfe180a07b98c0aa8930"},
