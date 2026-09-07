@@ -35,7 +35,7 @@ def test_human_release_v2_is_exactly_sealed_and_two_phase() -> None:
         "2026-09-30",
     )
     assert tuple(aux["planned_dates"]) == (
-        None,
+        "2026-09-07",
         "2026-09-14",
         "2026-09-16",
         "2026-09-19",
@@ -51,7 +51,7 @@ def test_human_release_v2_is_exactly_sealed_and_two_phase() -> None:
     assert ledger["canary_verified_at_utc"] is None
     assert ledger[TRANSPORT_VERIFIED_FIELD] is None
     assert ledger[EDITORIAL_APPROVED_FIELD] is None
-    assert ledger["entries"][release["canary_publication_id"]]["scheduled_date_moscow"] is None
+    assert ledger["entries"][release["canary_publication_id"]]["scheduled_date_moscow"] == "2026-09-07"
     assert all(entry["state"] == "pending" for entry in ledger["entries"].values())
 
 
@@ -82,5 +82,6 @@ def test_editorial_approval_workflow_is_provider_free_and_shares_writer_lock() -
     assert "production-release-2026-09-cycle-02.json" in workflow
     assert "telegram_historical_production approve-canary" in workflow
     assert "LORDCHRIST_TELEGRAM_BOT_TOKEN" not in workflow
+    assert "telegram_historical_production preflight" not in workflow
     assert "telegram_historical_production send" not in workflow
     assert "sendRichMessage" not in workflow
