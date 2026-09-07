@@ -41,10 +41,10 @@
   "evidence_boundary":"Schleitheim Confession датирована 24 февраля 1527 года и представляет семь статей, принятых собранием Swiss Brethren. Перевод и вводная заметка J. C. Wenger связывают с Михаэлем Саттлером ведущую авторскую роль, но формулируют это как исторически принятое мнение, а сам документ говорит от лица собрания. Саттлер был казнён в мае 1527 года. Точная реконструкция всех деталей его суда и смерти в этот пост не включается без отдельной первичной привязки.",
   "claims":[
     {"claim_id":"claim-sattler-v2-schleitheim-date","claim_text":"Schleitheim Confession была принята собранием Swiss Brethren 24 февраля 1527 года и содержит семь статей церковной практики и дисциплины.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-schleitheim-oregon","src-sattler-cambridge"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
-    {"claim_id":"claim-sattler-v2-seven-articles","claim_text":"Семь статей Schleitheim посвящены крещению, отлучению, Вечере Господней, отделению, пастырям, мечу и клятве.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-schleitheim-oregon"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
-    {"claim_id":"claim-sattler-v2-authorship-qualified","claim_text":"Историческая традиция и современная реконструкция связывают с Михаэлем Саттлером ведущую роль в составлении Schleitheim Confession, тогда как сам текст оформлен коллективным голосом собрания.","claim_kind":"historical","certainty":"qualified","voice":"historical_fact","source_ids":["src-schleitheim-oregon","src-sattler-cambridge"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
+    {"claim_id":"claim-sattler-v2-seven-articles","claim_text":"Семь статей Schleitheim посвящены крещению, отлучению, Вечере Господней, отделению, пастырям, мечу и клятве.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-schleitheim-oregon","src-sattler-cambridge"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-sattler-v2-authorship-qualified","claim_text":"Историческая традиция и современная реконструкция связывают с Михаэлем Саттлером ведущую роль в составлении Schleitheim Confession, тогда как сам текст оформлен коллективным голосом собрания.","claim_kind":"historical","certainty":"estimate","voice":"historical_fact","source_ids":["src-schleitheim-oregon","src-sattler-cambridge"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
     {"claim_id":"claim-sattler-v2-martyrdom-may","claim_text":"Михаэль Саттлер был казнён в мае 1527 года, менее чем через три месяца после собрания в Шлайтхайме.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-schleitheim-oregon","src-sattler-cambridge"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
-    {"claim_id":"claim-sattler-v2-pacifism","claim_text":"Schleitheim Confession занимает явную позицию против применения меча внутри христианской общины и против участия христианина в соответствующих формах принудительной власти.","claim_kind":"historical","certainty":"exact","voice":"participant_position","source_ids":["src-schleitheim-oregon"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"side_a"},
+    {"claim_id":"claim-sattler-v2-pacifism","claim_text":"Schleitheim Confession занимает явную позицию против применения меча внутри христианской общины и против участия христианина в соответствующих формах принудительной власти.","claim_kind":"historical","certainty":"exact","voice":"participant_position","source_ids":["src-schleitheim-oregon","src-sattler-cambridge"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"side_a"},
     {"claim_id":"claim-sattler-v2-editorial","claim_text":"Редакционный вывод: мужество мученика заслуживает уважения, но не делает его богословие непогрешимым; церковные исповедания и исторические герои должны оставаться под проверяющей властью Писания.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-schleitheim-oregon","src-sattler-cambridge"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
   ],
   "prose_claim_bindings": {
@@ -68,8 +68,8 @@
     "review_status":"accepted"
   },
   "images":[],
-  "release_offset_days":21,
-  "opposing_primary_bound":true,
+  "release_offset_days":19,
+  "opposing_primary_bound":false,
   "no_opposing_primary_note":null,
   "editorial_status":"ready",
   "fact_check_status":"accepted",
