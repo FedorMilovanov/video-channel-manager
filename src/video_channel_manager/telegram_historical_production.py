@@ -191,7 +191,6 @@ def load_release(path: Path, root: Path) -> tuple[dict[str, Any], Any, Any, Path
     publication_ids = tuple(post.publication_id for post in queue.posts)
     if (
         manifest.cycle_id != release.get("cycle_id")
-        or queue.cycle_id != release.get("cycle_id")
         or tuple(release.get("publication_ids") or ()) != publication_ids
         or release.get("canary_publication_id") != publication_ids[0]
         or queue.schedule.timezone != "Europe/Moscow"
@@ -207,7 +206,7 @@ def load_release(path: Path, root: Path) -> tuple[dict[str, Any], Any, Any, Path
 
     verification = _read(verification_path)
     _validate_second_pass(verification, publication_ids)
-    if verification.get("cycle_id") != queue.cycle_id:
+    if verification.get("cycle_id") != manifest.cycle_id:
         raise ValueError("second-pass verification is bound to another historical cycle")
 
     offsets = tuple(post.release_offset_days for post in queue.posts)
@@ -300,7 +299,7 @@ def new_ledger(release: dict[str, Any], queue: Any, planned_dates: tuple[str, ..
         "owning_issue": OWNING_ISSUE,
         "project_key": PROJECT,
         "channel_username": CHANNEL,
-        "cycle_id": queue.cycle_id,
+        "cycle_id": release["cycle_id"],
         "canary_publication_id": release["canary_publication_id"],
         "canary_verified_at_utc": None,
         "successor_cycle_binding": None,
@@ -372,10 +371,42 @@ def _validate_successor_binding(binding: Any, release: dict[str, Any]) -> None:
         raise ValueError("historical successor cycle binding timestamp must be timezone-aware")
 
 
-def successor_cycle_is_bound(ledger: dict[str, Any], release: dict[str, Any]) -> bool:
+def _reprove_successor_binding(root: Path, binding: dict[str, Any], release: dict[str, Any]) -> None:
+    _validate_successor_binding(binding, release)
+    relative = str(binding["successor_manifest_path"])
+    resolved = (root / relative).resolve()
+    if _repo_relative(root, resolved) != relative:
+        raise ValueError("historical successor manifest path is not canonical inside the repository")
+    if not resolved.is_file():
+        raise ValueError("historical successor manifest no longer exists")
+    actual_blob = _blob(resolved.read_bytes())
+    if actual_blob != binding["successor_manifest_git_blob_sha"]:
+        raise ValueError("historical successor manifest Git blob differs from durable binding")
+    manifest, queue, registry, theology = materialize_historical_bundle(resolved, repo_root=root)
+    if (
+        manifest.project_key != PROJECT
+        or manifest.channel_username.casefold() != CHANNEL.casefold()
+        or manifest.cycle_id != binding["successor_cycle_id"]
+        or manifest.cycle_id == release["cycle_id"]
+        or len(queue.posts) != len(release["publication_ids"])
+        or queue.schedule.timezone != "Europe/Moscow"
+        or queue.schedule.local_time != "19:17"
+        or tuple(queue.schedule.iso_weekdays) != (1, 3, 6)
+        or queue.schedule.backfill_policy != "none"
+        or queue.digest != binding["successor_queue_sha256"]
+        or registry.digest != binding["successor_source_registry_sha256"]
+        or theology.digest != binding["successor_theology_profile_sha256"]
+    ):
+        raise ValueError("historical successor cycle proof differs from durable binding")
+
+
+def successor_cycle_is_bound(root: Path, ledger: dict[str, Any], release: dict[str, Any]) -> bool:
     binding = ledger.get("successor_cycle_binding")
     _validate_successor_binding(binding, release)
-    return binding is not None
+    if binding is None:
+        return False
+    _reprove_successor_binding(root, binding, release)
+    return True
 
 
 def load_ledger(
@@ -397,7 +428,7 @@ def load_ledger(
         or ledger.get("owning_issue") != OWNING_ISSUE
         or ledger.get("project_key") != PROJECT
         or ledger.get("channel_username") != CHANNEL
-        or ledger.get("cycle_id") != queue.cycle_id
+        or ledger.get("cycle_id") != release["cycle_id"]
         or ledger.get("canary_publication_id") != release["canary_publication_id"]
         or not isinstance(entries, dict)
         or tuple(entries) != expected_ids
@@ -427,7 +458,7 @@ def bind_successor_cycle(
     verified_by: str,
     now: datetime | None = None,
 ) -> dict[str, Any]:
-    if successor_cycle_is_bound(ledger, release):
+    if successor_cycle_is_bound(root, ledger, release):
         raise ValueError("historical successor cycle is already durably bound")
     if not verified_by.strip():
         raise ValueError("successor cycle binding requires verified_by")
@@ -439,7 +470,6 @@ def bind_successor_cycle(
         manifest.project_key != PROJECT
         or manifest.channel_username.casefold() != CHANNEL.casefold()
         or manifest.cycle_id == release["cycle_id"]
-        or queue.cycle_id != manifest.cycle_id
         or len(queue.posts) != len(release["publication_ids"])
         or queue.schedule.timezone != "Europe/Moscow"
         or queue.schedule.local_time != "19:17"
@@ -465,6 +495,7 @@ def bind_successor_cycle(
         "provider_write_performed": False,
     }
     _validate_successor_binding(binding, release)
+    _reprove_successor_binding(root, binding, release)
     ledger["successor_cycle_binding"] = binding
     return ledger
 
@@ -582,6 +613,7 @@ class ScheduledDecision:
 
 
 def decide_scheduled(
+    root: Path,
     release: dict[str, Any],
     ledger: dict[str, Any],
     publication_ids: tuple[str, ...],
@@ -616,12 +648,14 @@ def decide_scheduled(
     if not isinstance(entries, dict):
         raise ValueError("historical ledger entries are invalid")
     remaining = sum(isinstance(item, dict) and item.get("state") == "pending" for item in entries.values())
-    if remaining <= int(release["replenishment_guard_remaining"]) and not successor_cycle_is_bound(ledger, release):
+    if remaining <= int(release["replenishment_guard_remaining"]) and not successor_cycle_is_bound(
+        root, ledger, release
+    ):
         return ScheduledDecision(False, publication_id, "successor_cycle_required_before_exhaustion")
     return ScheduledDecision(True, publication_id, "active_exact_historical_slot")
 
 
-def coverage_status(release: dict[str, Any], ledger: dict[str, Any]) -> dict[str, Any]:
+def coverage_status(root: Path, release: dict[str, Any], ledger: dict[str, Any]) -> dict[str, Any]:
     entries = ledger.get("entries")
     if not isinstance(entries, dict):
         raise ValueError("historical ledger entries are invalid")
@@ -641,7 +675,7 @@ def coverage_status(release: dict[str, Any], ledger: dict[str, Any]) -> dict[str
         if isinstance(raw, dict) and raw.get("state") == "failed_no_effect"
     ]
     guard_remaining = int(release["replenishment_guard_remaining"])
-    successor_bound = successor_cycle_is_bound(ledger, release)
+    successor_bound = successor_cycle_is_bound(root, ledger, release)
     return {
         "release_id": release["release_id"],
         "pending_count": len(pending),
@@ -721,7 +755,7 @@ def prepare(
 ) -> tuple[dict[str, Any] | None, dict[str, Any], str]:
     publication_ids = tuple(post.publication_id for post in queue.posts)
     if mode == "scheduled":
-        decision = decide_scheduled(release, ledger, publication_ids, planned_dates, now=now)
+        decision = decide_scheduled(root, release, ledger, publication_ids, planned_dates, now=now)
         if not decision.active:
             return None, ledger, decision.reason
         if decision.publication_id is None:
@@ -1044,7 +1078,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 0
     if args.cmd == "coverage":
-        print(json.dumps(coverage_status(release, ledger), ensure_ascii=False))
+        print(json.dumps(coverage_status(args.root, release, ledger), ensure_ascii=False))
         return 0
     if args.cmd == "bind-successor":
         updated = bind_successor_cycle(
