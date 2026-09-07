@@ -1,0 +1,11 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-source-catalog",
+  "schema_version": 1,
+  "catalog_id": "history-source-catalog-lordchrist-human-v2",
+  "checked_on": "2026-09-07",
+  "total_sources": 53,
+  "registry_sha256": "sha256:f2a4ec50986c2d38b8c7c09a1de64dc31b42dab95ca1e77a0f34eb26ea35496f",
+  "shards": [
+    {"shard_id":"history-sources-calvin","path":"content/telegram/lordchrist/historical-editorial/v1/sources/calvin.json","sha256":"sha256:bbd419389b1ebc862baf8862ea251ac1ed7c6a439674d61ccfc7402fe865bab419af6d7a11","source_count":6}
+  ]
+}
