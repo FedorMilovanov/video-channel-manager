@@ -15,6 +15,16 @@
     {"claim_id":"claim-carey-bms-collective","claim_text":"Раннее Баптистское миссионерское общество возникло как коллективная организационная инициатива, а не как единоличный проект Уильяма Кэри.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-carey-enquiry-1792","src-bms-origins"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"},
     {"claim_id":"claim-carey-editorial","claim_text":"Редакционный вывод: устойчивое миссионерское действие требует соединения библейского основания, интеллектуальной честности, практического планирования и церковного сотрудничества.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-carey-enquiry-1792"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
   ],
+  "prose_claim_bindings": {
+    "title_claim_ids": ["claim-carey-enquiry-content","claim-carey-bms-collective"],
+    "lead_claim_ids": ["claim-carey-enquiry-content","claim-carey-bms-collective"],
+    "evidence_boundary_claim_ids": ["claim-carey-enquiry-content","claim-carey-bms-collective"],
+    "sections": [
+      {"section_id":"enquiry","paragraph_claim_ids":[["claim-carey-enquiry-content"],["claim-carey-enquiry-content","claim-carey-bms-collective"]]},
+      {"section_id":"society","paragraph_claim_ids":[["claim-carey-bms-collective"],["claim-carey-bms-collective"]]},
+      {"section_id":"lesson","paragraph_claim_ids":[["claim-carey-editorial"]]}
+    ]
+  },
   "theology_review": {"historical_description":"Исторический слой строится на первичном тексте Enquiry и институциональной истории раннего Баптистского миссионерского общества.","participant_position":"Кэри аргументировал, что христиане обязаны использовать доступные средства для распространения Евангелия среди народов.","editorial_evaluation":"Редакция согласна с приоритетом Великого поручения и видит достоинство метода Кэри в подчинении миссионерской практики библейскому аргументу, а не в создании культа одного исторического деятеля.","scripture_refs":["Мф 28:18–20","Рим 10:14–15","Деян 13:1–3"],"alignment":"aligned","description_separated_from_evaluation":true,"review_status":"accepted"},
   "images": [],
   "release_offset_days": 9,
