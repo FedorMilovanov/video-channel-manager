@@ -1,0 +1,77 @@
+{
+  "sequence": 5,
+  "publication_id": "lordchrist-history-carey-enquiry-missions-v2",
+  "topic_kind": "mission_history",
+  "title": "2 октября 1792 года четырнадцать баптистов собрали £13 и начали миссионерское общество",
+  "lead": "История Уильяма Кэри часто запоминается одной красивой фразой о «великих ожиданиях». Но 1792 год был сильнее лозунга. Сначала Кэри выпустил 87-страничный Enquiry — расчётливый, местами почти статистический призыв перестать говорить о мировой миссии отвлечённо. Затем 2 октября в доме вдовы Биби Уоллис в Кеттеринге собрались четырнадцать человек. Они не имели большого капитала, аппарата или готовой сети. Первые пожертвования составили £13 2s 6d, ещё £1 дали продажи Enquiry. С этого маленького стола началось Particular Baptist Missionary Society.",
+  "sections": [
+    {
+      "section_id": "enquiry",
+      "heading": "Кэри сначала заставил вопрос стать конкретным",
+      "paragraphs": [
+        "В Enquiry Кэри не ограничился призывом «любить народы». Он разбил вопрос на пять частей: обязанность христиан в свете Великого поручения, прежние миссионерские попытки, положение народов мира, практическую возможность дальнейшей работы и конкретные средства. В книге были расстояния, население, языки, религии и трудности. Он пытался показать: огромное поле — не оправдание бездействия, а причина планировать серьёзнее.",
+        "31 мая 1792 года на баптистской ассоциации он проповедовал по Ис 54:2–3. Позднейший рассказ Эндрю Фуллера передаёт две мысли проповеди: ожидать великого и предпринимать великое. Но главный результат был не в формуле. Перед расставанием министры постановили подготовить план создания общества для распространения Евангелия среди язычников."
+      ]
+    },
+    {
+      "section_id": "kettering",
+      "heading": "Кеттеринг: четырнадцать человек и очень маленькая касса",
+      "paragraphs": [
+        "2 октября они встретились снова — в доме Mrs Beeby Wallis. В списке были Кэри, Эндрю Фуллер, Джон Райленд, Джон Сатклифф, Самуэль Пирс и ещё девять участников. Общество получило длинное название: Particular Baptist Society for the Propagation of the Gospel Amongst the Heathen. Фуллер стал секретарём, Рейнолд Хогг — казначеем.",
+        "Деньги показывают масштаб старта лучше любой легенды. На месте собрали £13 2s 6d. К ним прибавили £1 от продажи Enquiry в Кеттеринге. Это не бюджет великого движения, а сумма маленького круга провинциальных баптистов, решивших превратить убеждение в обязательство."
+      ]
+    },
+    {
+      "section_id": "means",
+      "heading": "Почему слово «средства» было богословски важным",
+      "paragraphs": [
+        "Само название Enquiry говорило о «means» — средствах для обращения народов. Кэри не противопоставлял суверенитет Бога человеческому послушанию. Если Христос повелел делать учеников из всех народов, молитва о Божьем действии не освобождает церковь от отправки людей, изучения языков, сбора денег, печати и долгого труда.",
+        "Именно здесь история Кэри полезнее романтического портрета одинокого героя. Рядом с ним были Фуллер, Райленд, Сатклифф, Пирс, жертвователи и позже миссионеры, переводчики, печатники. Миссия стала возможной не потому, что один человек оказался необычайно смелым, а потому, что убеждение стало общей ответственностью церкви."
+      ]
+    },
+    {
+      "section_id": "lesson",
+      "heading": "Благочестивое согласие ничего не стоит, пока оно не стало послушанием",
+      "paragraphs": [
+        "Можно годами соглашаться с Великой комиссией и при этом не менять ни календаря, ни бюджета, ни молитвы, ни подготовки служителей. Кэри бил именно по этой пропасти между правильной доктриной и практической неподвижностью. Он не доказывал, что человек может обратить мир собственными силами. Он доказывал, что Божье повеление нельзя обезвредить ссылкой на Божий суверенитет.",
+        "Церкви и сегодня нужен этот трезвый вопрос: что из того, во что мы верим, уже стало делом? Не всякий верующий поедет за океан, но Евангелие поручено всей церкви. Кто-то идёт, кто-то обучает, кто-то поддерживает, кто-то молится — но никто не должен превращать послушание в красивую тему для чужой биографии."
+      ]
+    }
+  ],
+  "evidence_boundary": "В 1792 году Кэри опубликовал 87-страничный Enquiry из пяти разделов. После миссионерской проповеди 31 мая баптистские служители постановили подготовить план миссионерского общества. 2 октября 1792 года четырнадцать участников встретились в доме Beeby Wallis в Кеттеринге и основали Particular Baptist Society for the Propagation of the Gospel Amongst the Heathen; Фуллер стал секретарём, Hogg казначеем, а первые пожертвования составили £13 2s 6d плюс £1 от продаж Enquiry.",
+  "claims": [
+    {"claim_id":"claim-carey-v2-enquiry-1792","claim_text":"В 1792 году Уильям Кэри опубликовал 87-страничный Enquiry, состоявший из введения и пяти основных разделов о долге, истории, состоянии народов, практической возможности и средствах миссии.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-carey-enquiry-1792","src-carey-center-bms"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-carey-v2-may-resolution","claim_text":"После миссионерской проповеди Кэри в конце мая 1792 года баптистские служители постановили подготовить план создания общества для распространения Евангелия среди язычников.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-carey-center-bms","src-bms-origins"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
+    {"claim_id":"claim-carey-v2-society-17921002","claim_text":"2 октября 1792 года четырнадцать участников встретились в доме Beeby Wallis в Кеттеринге и создали Particular Baptist Society for the Propagation of the Gospel Amongst the Heathen.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-carey-center-bms","src-bms-origins"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-carey-v2-first-funds","claim_text":"На учредительной встрече нового миссионерского общества было пожертвовано £13 2s 6d, а ещё £1 поступил от продажи Enquiry в Кеттеринге.","claim_kind":"numeric","certainty":"exact","voice":"historical_fact","source_ids":["src-carey-center-bms"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-carey-v2-fuller-secretary","claim_text":"Эндрю Фуллер был избран секретарём нового миссионерского общества, а Reynold Hogg — его казначеем.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-carey-center-bms"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-carey-v2-editorial","claim_text":"Редакционный вывод: вера в Божий суверенитет не отменяет использования законных средств послушания Великой комиссии; миссия требует совместной ответственности церкви, а не только восхищения отдельными героями.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-carey-enquiry-1792"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
+  ],
+  "prose_claim_bindings": {
+    "title_claim_ids":["claim-carey-v2-society-17921002","claim-carey-v2-first-funds"],
+    "lead_claim_ids":["claim-carey-v2-enquiry-1792","claim-carey-v2-society-17921002","claim-carey-v2-first-funds"],
+    "evidence_boundary_claim_ids":["claim-carey-v2-enquiry-1792","claim-carey-v2-may-resolution","claim-carey-v2-society-17921002","claim-carey-v2-first-funds","claim-carey-v2-fuller-secretary"],
+    "sections":[
+      {"section_id":"enquiry","paragraph_claim_ids":[["claim-carey-v2-enquiry-1792"],["claim-carey-v2-may-resolution"]]},
+      {"section_id":"kettering","paragraph_claim_ids":[["claim-carey-v2-society-17921002","claim-carey-v2-fuller-secretary"],["claim-carey-v2-first-funds"]]},
+      {"section_id":"means","paragraph_claim_ids":[["claim-carey-v2-enquiry-1792","claim-carey-v2-editorial"],["claim-carey-v2-society-17921002","claim-carey-v2-editorial"]]},
+      {"section_id":"lesson","paragraph_claim_ids":[["claim-carey-v2-editorial"],["claim-carey-v2-editorial"]]}
+    ]
+  },
+  "theology_review": {
+    "historical_description":"Очерку придана конкретная хронология 1792 года: публикация Enquiry, майское решение подготовить миссионерский план и учредительная встреча четырнадцати участников в Кеттеринге с фиксированными первыми пожертвованиями.",
+    "participant_position":"Кэри считал Великое поручение действующим обязательством церкви и настаивал, что доверие Божьему суверенитету не отменяет практических средств миссионерского послушания.",
+    "editorial_evaluation":"Бог один спасает грешников, но Он повелевает церкви проповедовать Евангелие всем народам. Суверенная благодать не является оправданием бездействия; она даёт основание трудиться, молиться, посылать и поддерживать, полагаясь на Бога, а не на человеческую технику.",
+    "scripture_refs":["Мф 28:18–20","Рим 10:13–15","1 Кор 3:6–7","Ис 54:2–3"],
+    "alignment":"aligned",
+    "description_separated_from_evaluation":true,
+    "review_status":"accepted"
+  },
+  "images":[],
+  "release_offset_days":10,
+  "opposing_primary_bound":false,
+  "no_opposing_primary_note":null,
+  "editorial_status":"ready",
+  "fact_check_status":"accepted",
+  "rights_status":"reviewed"
+}
