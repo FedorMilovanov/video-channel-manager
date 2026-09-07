@@ -78,6 +78,8 @@ The workflow then persists durable intent to `state/lordchrist-telegram` before 
 
 The exact rich provider outcome must be archived before the durable ledger is changed from intent. `provider_effect=may_exist` is terminal blocking evidence and never authorizes a replay of the same publication identity.
 
+A provider-proven no-effect outcome is stored as `failed_no_effect`. That publication identity remains terminal and is not retried, but it does not globally block later publication identities. Only unresolved `intent` or `may_exist` states stop the historical writer globally.
+
 Only a verified outcome with exact returned chat, exact rich structure and a Telegram `message_id` sets `canary_verified_at_utc`.
 
 ## Automatic schedule
@@ -111,7 +113,19 @@ The tracks share one LordChrist writer namespace so their state operations canno
 
 The production release has `replenishment_guard_remaining=1`.
 
-When only the final current-cycle publication remains pending, scheduling fails closed with `successor_cycle_required_before_exhaustion` unless a separately reviewed successor cycle has been explicitly bound and marked verified by a successor release. This prevents the historical lane from silently reaching the end of the nine-post reservoir.
+When only the final current-cycle publication remains pending, scheduling fails closed with `successor_cycle_required_before_exhaustion` until a separately reviewed successor cycle is durably bound. The current production release itself is immutable: do not modify its digest or add a mutable `successor_cycle_verified` flag to it.
+
+After the successor editorial bundle is separately reviewed and sealed in the repository, bind it provider-free into the current historical ledger:
+
+```bash
+python -m video_channel_manager.telegram_historical_production bind-successor \
+  --release content/telegram/lordchrist/historical-editorial/v1/production-release-2026-09-cycle-01.json \
+  --ledger .state/lordchrist/content/telegram/lordchrist/historical-editorial/publication-ledger.json \
+  --successor-manifest content/telegram/lordchrist/historical-editorial/v1/cycles/<NEXT-CYCLE>/manifest.json \
+  --verified-by "github-actions:<run-id>/<attempt>"
+```
+
+`bind-successor` performs no Telegram access. It materializes and validates the successor bundle, requires the same project/channel and reviewed 19:17 Monday/Wednesday/Saturday no-backfill cadence, rejects the current cycle as its own successor, and records the exact successor manifest Git blob plus queue/source-registry/theology digests in durable state. Commit and fast-forward the resulting ledger only to `state/lordchrist-telegram`, then read it back and confirm that the current release SHA-256 is unchanged.
 
 Coverage can be inspected provider-free:
 
@@ -135,6 +149,7 @@ Never replay the same historical publication identity when:
 
 - durable state is `intent`;
 - provider effect is `may_exist`;
+- the identity is terminal `failed_no_effect`;
 - the workflow result is ambiguous;
 - a slot expired;
 - the exact release/source/theology/verification/profile/target binding drifted;
