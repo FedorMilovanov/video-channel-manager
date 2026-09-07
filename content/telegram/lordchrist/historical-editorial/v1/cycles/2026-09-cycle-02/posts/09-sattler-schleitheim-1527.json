@@ -1,0 +1,77 @@
+{
+  "sequence": 9,
+  "publication_id": "lordchrist-history-sattler-schleitheim-1527-v2",
+  "topic_kind": "martyrdom",
+  "title": "24 февраля 1527 года они договорились, какой должна быть церковь. Весной Михаэль Саттлер уже ждал казни",
+  "lead": "В феврале 1527 года анабаптистские общины Швейцарии и южной Германии жили под давлением сразу с нескольких сторон. Их преследовали власти, внутри движения появлялись радикальные и противоречивые учения, а общего церковного порядка ещё не было. 24 февраля представители Swiss Brethren собрались в Шлайтхайме и приняли семь статей — о крещении, церковной дисциплине, Вечере Господней, отделении от зла, пастырях, мече и клятве. Одним из главных участников и, по принятой исторической реконструкции, главным автором текста был Михаэль Саттлер. Менее чем через три месяца он был казнён.",
+  "sections": [
+    {
+      "section_id":"schleitheim",
+      "heading":"Семь статей вместо красивой декларации",
+      "paragraphs":[
+        "Текст начинается не с политической программы, а с попытки привести разрозненные общины к «одному разумению». Первая статья ограничивает крещение теми, кто исповедует покаяние и веру; вторая говорит о церковном отлучении; третья связывает Вечерю Господню с дисциплинированным собранием верующих. Далее идут отделение от того, что авторы считали злом, требования к пастырям, отказ общины пользоваться мечом и отказ от клятв.",
+        "Это не была полная система богословия. Сам документ возник в условиях преследования и внутреннего беспорядка. Его задача была практической: ответить, как конкретно должна жить община, если она считает себя церковью учеников Христа, а не просто религиозной частью гражданского общества."
+      ]
+    },
+    {
+      "section_id":"sattler",
+      "heading":"Саттлер пришёл к этому не из безопасного кабинета",
+      "paragraphs":[
+        "Михаэль Саттлер раньше был связан с католическим монастырём, затем присоединился к Swiss Brethren. Исследователи обычно связывают с ним ведущую роль в составлении Schleitheim Confession, но сам первичный текст говорит коллективным голосом собрания — «мы, собравшиеся в Господе в Шлайтхайме». Это важная деталь: документ задумывался как согласие общин, а не личный манифест одного лидера.",
+        "В конце текста авторы снова возвращаются к единству и настойчиво просят держаться принятого решения. Это звучит особенно тяжело в ретроспективе: движение не получило долгого мирного периода, чтобы спокойно испытать свою церковную модель. Уже в мае Саттлер оказался перед судом и был казнён."
+      ]
+    },
+    {
+      "section_id":"limits",
+      "heading":"У мученика тоже надо проверять богословие",
+      "paragraphs":[
+        "Саттлер погиб за убеждения, но сама смерть не делает все эти убеждения автоматически библейскими. Schleitheim, например, занимает сильную пацифистскую позицию и связывает христианскую общину с отказом от меча и участия в светской власти. Реформатская традиция не обязана принимать этот вывод только потому, что его исповедовал преследуемый человек.",
+        "Именно здесь историческая память становится зрелой. Можно признать мужество Саттлера, серьёзность его экклезиологии и цену ученичества — и одновременно проверять каждую доктрину Писанием. Мученичество свидетельствует о силе убеждения; оно не заменяет экзегезу."
+      ]
+    },
+    {
+      "section_id":"lesson",
+      "heading":"Церкви нужны не только правильные чувства, но ясные границы",
+      "paragraphs":[
+        "Schleitheim напоминает, что церковь быстро распадается в туман, если не умеет ответить на практические вопросы: кто принадлежит общине, как действует дисциплина, кто пастырствует, что означает Вечеря, где проходит граница послушания Христу. Нельзя бесконечно жить одним общим словом «мы верующие».",
+        "Но ясность должна оставаться под Словом Божьим. Исповедание полезно не потому, что его подписали почитаемые люди, а потому, насколько верно оно выражает Писание. Лучшее уважение к верным христианам прошлого — не копировать их без проверки, а учиться их серьёзности и вместе с ними стоять под властью текста."
+      ]
+    }
+  ],
+  "evidence_boundary":"Schleitheim Confession датирована 24 февраля 1527 года и представляет семь статей, принятых собранием Swiss Brethren. Перевод и вводная заметка J. C. Wenger связывают с Михаэлем Саттлером ведущую авторскую роль, но формулируют это как исторически принятое мнение, а сам документ говорит от лица собрания. Саттлер был казнён в мае 1527 года. Точная реконструкция всех деталей его суда и смерти в этот пост не включается без отдельной первичной привязки.",
+  "claims":[
+    {"claim_id":"claim-sattler-v2-schleitheim-date","claim_text":"Schleitheim Confession была принята собранием Swiss Brethren 24 февраля 1527 года и содержит семь статей церковной практики и дисциплины.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-schleitheim-oregon","src-sattler-cambridge"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-sattler-v2-seven-articles","claim_text":"Семь статей Schleitheim посвящены крещению, отлучению, Вечере Господней, отделению, пастырям, мечу и клятве.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-schleitheim-oregon"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-sattler-v2-authorship-qualified","claim_text":"Историческая традиция и современная реконструкция связывают с Михаэлем Саттлером ведущую роль в составлении Schleitheim Confession, тогда как сам текст оформлен коллективным голосом собрания.","claim_kind":"historical","certainty":"qualified","voice":"historical_fact","source_ids":["src-schleitheim-oregon","src-sattler-cambridge"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
+    {"claim_id":"claim-sattler-v2-martyrdom-may","claim_text":"Михаэль Саттлер был казнён в мае 1527 года, менее чем через три месяца после собрания в Шлайтхайме.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-schleitheim-oregon","src-sattler-cambridge"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
+    {"claim_id":"claim-sattler-v2-pacifism","claim_text":"Schleitheim Confession занимает явную позицию против применения меча внутри христианской общины и против участия христианина в соответствующих формах принудительной власти.","claim_kind":"historical","certainty":"exact","voice":"participant_position","source_ids":["src-schleitheim-oregon"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"side_a"},
+    {"claim_id":"claim-sattler-v2-editorial","claim_text":"Редакционный вывод: мужество мученика заслуживает уважения, но не делает его богословие непогрешимым; церковные исповедания и исторические герои должны оставаться под проверяющей властью Писания.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-schleitheim-oregon","src-sattler-cambridge"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
+  ],
+  "prose_claim_bindings": {
+    "title_claim_ids":["claim-sattler-v2-schleitheim-date","claim-sattler-v2-martyrdom-may"],
+    "lead_claim_ids":["claim-sattler-v2-schleitheim-date","claim-sattler-v2-seven-articles","claim-sattler-v2-authorship-qualified","claim-sattler-v2-martyrdom-may"],
+    "evidence_boundary_claim_ids":["claim-sattler-v2-schleitheim-date","claim-sattler-v2-seven-articles","claim-sattler-v2-authorship-qualified","claim-sattler-v2-martyrdom-may"],
+    "sections":[
+      {"section_id":"schleitheim","paragraph_claim_ids":[["claim-sattler-v2-seven-articles"],["claim-sattler-v2-schleitheim-date","claim-sattler-v2-seven-articles"]]},
+      {"section_id":"sattler","paragraph_claim_ids":[["claim-sattler-v2-authorship-qualified"],["claim-sattler-v2-martyrdom-may"]]},
+      {"section_id":"limits","paragraph_claim_ids":[["claim-sattler-v2-pacifism","claim-sattler-v2-editorial"],["claim-sattler-v2-editorial"]]},
+      {"section_id":"lesson","paragraph_claim_ids":[["claim-sattler-v2-editorial"],["claim-sattler-v2-editorial"]]}
+    ]
+  },
+  "theology_review": {
+    "historical_description":"Очерку придана конкретная связь между собранием Swiss Brethren 24 февраля 1527 года, семью статьями Schleitheim Confession и мученичеством Михаэля Саттлера в мае того же года, с квалифицированной формулировкой его авторской роли.",
+    "participant_position":"Schleitheim описывает церковь как дисциплинированное собрание исповедующих веру учеников и занимает радикальную позицию отделения и неприменения меча.",
+    "editorial_evaluation":"Мужество и мученичество христианина не делают его непогрешимым толкователем. Исповедания полезны постольку, поскольку верно выражают Писание. Редакция уважает серьёзность ранних анабаптистов, но оценивает их пацифистские и экклезиологические выводы самостоятельно по тексту Библии.",
+    "scripture_refs":["Деян 17:11","2 Тим 3:16–17","1 Тим 3:15","Иуд 3"],
+    "alignment":"mixed",
+    "description_separated_from_evaluation":true,
+    "review_status":"accepted"
+  },
+  "images":[],
+  "release_offset_days":21,
+  "opposing_primary_bound":true,
+  "no_opposing_primary_note":null,
+  "editorial_status":"ready",
+  "fact_check_status":"accepted",
+  "rights_status":"reviewed"
+}
