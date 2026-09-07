@@ -409,6 +409,23 @@ class SuccessorQuoteCorpus(BaseModel):
         return sha256_text(canonical_json(self.model_dump(mode="json")))
 
 
+class LegacySuccessorRelease(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.telegram-quote-successor-release"]
+    schema_version: Literal[1]
+    project_key: Literal["lord-god-strength"]
+    channel_username: Literal["@lordchrist"]
+    release_id: Literal["lordchrist-successor-quotes-v1"]
+    base_candidate_git_blob_sha1: str = Field(pattern=r"^[0-9a-f]{40}$")
+    translation_ledger_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    normalized_corpus_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    predecessor_queue_digest: Literal["sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"]
+    activation_policy: Literal["after_predecessor_queue_complete"]
+    release_state: Literal["staged_provider_inert"]
+    provider_writes_authorized: Literal[False]
+
+
 class SuccessorRelease(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -448,22 +465,23 @@ def load_integrity_amendments(path: Path) -> SuccessorIntegrityAmendments:
         raise ValueError(f"invalid LordChrist successor integrity amendments {path}: {exc}") from exc
 
 
+def _source_tier(raw: RawSuccessorSourceProof) -> SourceTier:
+    if raw.rights_class == "public_domain_contiguous_excerpt":
+        return "public_domain_primary_text"
+    return "official_author_ministry_or_publisher"
+
+
 def _normalize_source(
     raw: RawSuccessorSourceProof,
     amendment: IntegrityAmendmentEntry | None,
 ) -> SuccessorSourceProof:
-    normalized_tier: SourceTier
-    if raw.rights_class == "public_domain_contiguous_excerpt":
-        normalized_tier = "public_domain_primary_text"
-    else:
-        normalized_tier = "official_author_ministry_or_publisher"
     return SuccessorSourceProof(
         author=raw.author,
         work=raw.work,
         location=amendment.source_location if amendment is not None else raw.location,
         url=raw.url,
         publisher=raw.publisher,
-        source_tier=normalized_tier,
+        source_tier=_source_tier(raw),
         rights_class=raw.rights_class,
         fragment_language=raw.original_language,
         exact_fragment=amendment.corrected_exact_fragment if amendment is not None else raw.exact_fragment,
@@ -472,8 +490,85 @@ def _normalize_source(
     )
 
 
+def _normalize_legacy_source(
+    raw: RawSuccessorSourceProof,
+    proof: TranslationLedgerEntry,
+) -> SuccessorSourceProof:
+    return SuccessorSourceProof(
+        author=raw.author,
+        work=raw.work,
+        location=raw.location,
+        url=raw.url,
+        publisher=raw.publisher,
+        source_tier=_source_tier(raw),
+        rights_class=raw.rights_class,
+        fragment_language=raw.original_language,
+        exact_fragment=proof.legacy_exact_fragment_override or raw.exact_fragment,
+        checked_on=raw.checked_on,
+        verification_status="accepted_contiguous_fragment",
+    )
+
+
 def _default_amendment_path(candidate_path: Path) -> Path:
     return candidate_path.with_name(INTEGRITY_AMENDMENT_FILENAME)
+
+
+def _build_card(
+    candidate: RawSuccessorQuoteCard,
+    source: SuccessorSourceProof,
+    quote_ru: str,
+    translation: ReviewedTranslation,
+) -> SuccessorQuoteCard:
+    return SuccessorQuoteCard(
+        sequence=candidate.sequence,
+        publication_id=candidate.publication_id,
+        title=candidate.title,
+        theme=candidate.theme,
+        quote_ru=quote_ru,
+        translation=translation,
+        editorial_context_ru=candidate.editorial_context_ru,
+        attribution_ru=candidate.attribution_ru,
+        hashtags=candidate.hashtags,
+        semantic_key=candidate.semantic_key,
+        source=source,
+    )
+
+
+def _build_corpus(raw: RawSuccessorCorpus, posts: list[SuccessorQuoteCard]) -> SuccessorQuoteCorpus:
+    return SuccessorQuoteCorpus(
+        project_key=raw.project_key,
+        channel_username=raw.channel_username,
+        corpus_id=raw.corpus_id,
+        predecessor_queue_digest=raw.predecessor_queue_digest,
+        posts=tuple(posts),
+    )
+
+
+def _load_legacy_successor_corpus(
+    candidate_path: Path,
+    translation_ledger_path: Path,
+) -> SuccessorQuoteCorpus:
+    """Reproduce the sealed v1 corpus only for historical release verification."""
+    raw = load_raw_successor_corpus(candidate_path)
+    ledger = load_translation_ledger(translation_ledger_path)
+    by_id = {entry.publication_id: entry for entry in ledger.entries}
+    raw_ids = {post.publication_id for post in raw.posts}
+    if set(by_id) != raw_ids:
+        raise ValueError("translation ledger must bind exactly the 60 candidate publication IDs")
+
+    posts: list[SuccessorQuoteCard] = []
+    for candidate in raw.posts:
+        proof = by_id[candidate.publication_id]
+        source = _normalize_legacy_source(candidate.source, proof)
+        translation = ReviewedTranslation(
+            language="ru",
+            scope=proof.scope,
+            review_state=proof.review_state,
+            source_fragment_sha256=proof.source_fragment_sha256,
+            binding_sha256=proof.translation_binding_sha256,
+        )
+        posts.append(_build_card(candidate, source, proof.quote_ru, translation))
+    return _build_corpus(raw, posts)
 
 
 def load_successor_corpus(
@@ -537,30 +632,9 @@ def load_successor_corpus(
                 source_fragment_sha256=proof.source_fragment_sha256,
                 binding_sha256=proof.translation_binding_sha256,
             )
+        posts.append(_build_card(candidate, source, quote_ru, translation))
 
-        posts.append(
-            SuccessorQuoteCard(
-                sequence=candidate.sequence,
-                publication_id=candidate.publication_id,
-                title=candidate.title,
-                theme=candidate.theme,
-                quote_ru=quote_ru,
-                translation=translation,
-                editorial_context_ru=candidate.editorial_context_ru,
-                attribution_ru=candidate.attribution_ru,
-                hashtags=candidate.hashtags,
-                semantic_key=candidate.semantic_key,
-                source=source,
-            )
-        )
-
-    return SuccessorQuoteCorpus(
-        project_key=raw.project_key,
-        channel_username=raw.channel_username,
-        corpus_id=raw.corpus_id,
-        predecessor_queue_digest=raw.predecessor_queue_digest,
-        posts=tuple(posts),
-    )
+    return _build_corpus(raw, posts)
 
 
 def load_successor_release(
@@ -568,17 +642,27 @@ def load_successor_release(
     candidate_path: Path,
     translation_ledger_path: Path,
     integrity_amendment_path: Path | None = None,
-) -> SuccessorRelease:
+) -> LegacySuccessorRelease | SuccessorRelease:
     try:
-        release = SuccessorRelease.model_validate_json(release_path.read_text(encoding="utf-8"))
-    except (OSError, ValidationError) as exc:
+        release_payload = json.loads(release_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"invalid LordChrist successor release {release_path}: {exc}") from exc
+    if not isinstance(release_payload, dict):
+        raise ValueError(f"invalid LordChrist successor release {release_path}: root must be an object")
+
+    try:
+        if release_payload.get("schema_version") == 1:
+            release: LegacySuccessorRelease | SuccessorRelease = LegacySuccessorRelease.model_validate(release_payload)
+        elif release_payload.get("schema_version") == 2:
+            release = SuccessorRelease.model_validate(release_payload)
+        else:
+            raise ValueError("unsupported LordChrist successor release schema_version")
+    except ValidationError as exc:
         raise ValueError(f"invalid LordChrist successor release {release_path}: {exc}") from exc
 
-    amendment_path = integrity_amendment_path or _default_amendment_path(candidate_path)
     try:
         candidate_bytes = candidate_path.read_bytes()
         ledger_bytes = translation_ledger_path.read_bytes()
-        amendment_bytes = amendment_path.read_bytes()
     except OSError as exc:
         raise ValueError(f"cannot read successor release inputs: {exc}") from exc
 
@@ -586,10 +670,19 @@ def load_successor_release(
         raise ValueError("successor release is not bound to the exact candidate Git blob")
     if release.translation_ledger_digest != sha256_bytes(ledger_bytes):
         raise ValueError("successor release is not bound to the exact translation ledger")
-    if release.integrity_amendment_digest != sha256_bytes(amendment_bytes):
-        raise ValueError("successor release is not bound to the exact integrity amendment set")
 
-    corpus = load_successor_corpus(candidate_path, translation_ledger_path, amendment_path)
+    if isinstance(release, LegacySuccessorRelease):
+        corpus = _load_legacy_successor_corpus(candidate_path, translation_ledger_path)
+    else:
+        amendment_path = integrity_amendment_path or _default_amendment_path(candidate_path)
+        try:
+            amendment_bytes = amendment_path.read_bytes()
+        except OSError as exc:
+            raise ValueError(f"cannot read successor integrity amendment: {exc}") from exc
+        if release.integrity_amendment_digest != sha256_bytes(amendment_bytes):
+            raise ValueError("successor release is not bound to the exact integrity amendment set")
+        corpus = load_successor_corpus(candidate_path, translation_ledger_path, amendment_path)
+
     if release.normalized_corpus_digest != corpus.digest:
         raise ValueError(
             "successor release digest does not match the normalized reviewed corpus: "
