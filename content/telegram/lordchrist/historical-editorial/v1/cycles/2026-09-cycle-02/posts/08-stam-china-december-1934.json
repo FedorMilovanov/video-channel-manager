@@ -1,0 +1,91 @@
+{
+  "sequence": 8,
+  "publication_id": "lordchrist-history-stam-china-december-1934-v2",
+  "topic_kind": "martyrdom",
+  "title": "Восемь дней в декабре 1934-го: гибель Джона и Бетти Стэм и спасение их трёхмесячной дочери",
+  "lead": "6 декабря 1934 года коммунистические части вошли в китайский Цзиндэ. Джон и Бетти Стэм, молодая семья China Inland Mission, оказались в плену вместе с трёхмесячной Helen Priscilla. Через два дня родителей обезглавили возле Мяошэ. Ребёнка никто из них уже не мог защитить. Но спустя несколько дней местный китайский христианин Ло Кэ-чжоу нашёл девочку, спрятанную в спальном мешке, и понёс её через горы в рисовой корзине. 14 декабря в Нью-Джерси пришла телеграмма: ребёнок Стэмов жив.",
+  "sections": [
+    {
+      "section_id": "jingde",
+      "heading": "6 декабря: город пал за несколько часов",
+      "paragraphs": [
+        "Стэмы вернулись в Цзиндэ только в середине ноября. Район годами жил между гражданской войной, бандитизмом и столкновениями националистов с коммунистами, но местный чиновник заверил миссионеров, что опасность миновала. Утром 6 декабря всё изменилось: вооружённые отряды вошли в город, начали грабить дома и добрались до миссионерской станции.",
+        "Джон и Бетти отдали деньги и имущество, но их всё равно повели в местную тюрьму. Там захватчики обсуждали убийство младенца и заставили Джона написать в штаб миссии требование выкупа — 20 тысяч долларов. Письмо так и не было доставлено."
+      ]
+    },
+    {
+      "section_id": "miaosheo",
+      "heading": "7–8 декабря: двенадцать миль пешком и последняя ночь",
+      "paragraphs": [
+        "На следующий день пленников заставили пройти около двенадцати миль до соседнего Мяошэ. Ночь они провели в покинутом доме. Утром 8 декабря Джона и Бетти провели через город к месту казни.",
+        "Китайский торговец Чан Сю-шэн попытался просить за них. Солдаты обыскали его дом, нашли Библию и сборник гимнов, арестовали его и убили на следующий день. Самих Стэмов вывели на холм за городом и обезглавили. Их тела остались там после ухода отряда."
+      ]
+    },
+    {
+      "section_id": "baby",
+      "heading": "Рисовая корзина, десять долларов и шесть дней пути к известию",
+      "paragraphs": [
+        "Когда вооружённые части ушли, местный евангелист Ло Кэ-чжоу вернулся в разорённый город. Он знал Джона и начал искать ребёнка. В доме, где Стэмы провели последнюю ночь, люди услышали слабый плач. Helen Priscilla лежала в спальном мешке; рядом были чистые пелёнки и две пятидолларовые банкноты.",
+        "Ло с семьёй посадили девочку и собственного четырёхлетнего сына в рисовые корзины и понесли через горы. Десять долларов, оставленные рядом с ребёнком, пошли на сухое молоко. 14 декабря семья добралась до Сюаньчэна и передала ребёнка миссионеру George Birch. В тот же день родственники Стэмов в Paterson, New Jersey получили короткую телеграмму о том, что ребёнок в безопасности."
+      ]
+    },
+    {
+      "section_id": "lesson",
+      "heading": "В этой истории нет удобной морали",
+      "paragraphs": [
+        "Христианское мученичество нельзя превращать в красивый плакат. Джон и Бетти умерли молодыми; трёхмесячная девочка осталась сиротой; китайский христианин, попросивший пощадить их, тоже был убит. Верность Богу не означает обещания земной безопасности.",
+        "Но история показывает и другое: Божья верность часто действует через неприметное послушание обычных людей. Не только через знаменитых миссионеров, но через пастора Ло и его семью, которые вернулись в разрушенный город, услышали плач, взяли чужого ребёнка и понесли его через горы. В церкви героизм иногда выглядит не как громкая смерть, а как тяжёлая корзина, которую кто-то просто не бросил."
+      ]
+    }
+  ],
+  "evidence_boundary": "6 декабря 1934 года Стэмы были захвачены в Цзиндэ; 7 декабря их повели примерно двенадцать миль в Мяошэ; утром 8 декабря Джон и Бетти были обезглавлены. Младенца Helen Priscilla позднее обнаружил местный евангелист Lo Ke-chou; рядом были две пятидолларовые банкноты, использованные затем для покупки молока. 14 декабря ребёнка передали сотруднику China Inland Mission в Xuancheng, после чего родственникам отправили телеграмму о её безопасности. Wheaton Archives хранит эту телеграмму и связанные письма.",
+  "claims": [
+    {"claim_id":"claim-stam-v2-capture-19341206","claim_text":"6 декабря 1934 года Джон и Бетти Стэм с младенцем Helen Priscilla были захвачены коммунистическими силами в Цзиндэ и помещены под стражу.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-wheaton-449","src-stam-princeton-manuscripts"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-stam-v2-miaosheo-execution","claim_text":"После перехода примерно двенадцати миль до Мяошэ Стэмы были казнены утром 8 декабря 1934 года посредством обезглавливания.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-wheaton-449","src-stam-princeton-manuscripts"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-stam-v2-chang","claim_text":"Местный торговец Chang Hsiu-sheng просил пощадить Стэмов, после чего был арестован; в его доме нашли Библию и сборник гимнов, а на следующий день его убили.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-wheaton-449"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
+    {"claim_id":"claim-stam-v2-rescue","claim_text":"Евангелист Lo Ke-chou нашёл Helen Priscilla в покинутом доме, а его семья перенесла ребёнка через горы в рисовой корзине, используя оставленные рядом десять долларов для покупки молока.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-wheaton-449"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-stam-v2-telegram-19341214","claim_text":"14 декабря 1934 года после передачи ребёнка сотруднику China Inland Mission родственники Стэмов получили телеграмму о том, что младенец находится в безопасности.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-wheaton-449"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-stam-v2-editorial","claim_text":"Редакционный вывод: верность Христу не гарантирует земной безопасности, а Божье провидение часто действует через тихое и рискованное послушание неизвестных людей рядом с трагедией.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-stam-wheaton-449"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
+  ],
+  "prose_claim_bindings": {
+    "title_claim_ids":["claim-stam-v2-capture-19341206","claim-stam-v2-miaosheo-execution","claim-stam-v2-rescue"],
+    "lead_claim_ids":["claim-stam-v2-capture-19341206","claim-stam-v2-miaosheo-execution","claim-stam-v2-rescue","claim-stam-v2-telegram-19341214"],
+    "evidence_boundary_claim_ids":["claim-stam-v2-capture-19341206","claim-stam-v2-miaosheo-execution","claim-stam-v2-rescue","claim-stam-v2-telegram-19341214"],
+    "sections":[
+      {"section_id":"jingde","paragraph_claim_ids":[["claim-stam-v2-capture-19341206"],["claim-stam-v2-capture-19341206"]]},
+      {"section_id":"miaosheo","paragraph_claim_ids":[["claim-stam-v2-miaosheo-execution"],["claim-stam-v2-miaosheo-execution","claim-stam-v2-chang"]]},
+      {"section_id":"baby","paragraph_claim_ids":[["claim-stam-v2-rescue"],["claim-stam-v2-rescue","claim-stam-v2-telegram-19341214"]]},
+      {"section_id":"lesson","paragraph_claim_ids":[["claim-stam-v2-editorial"],["claim-stam-v2-editorial"]]}
+    ]
+  },
+  "theology_review": {
+    "historical_description":"Очерку придана последовательная хронология захвата семьи 6 декабря, перехода и казни 8 декабря, поиска младенца китайскими христианами и доставки ребёнка в безопасное место 14 декабря 1934 года.",
+    "participant_position":"Джон и Бетти Стэм служили в China Inland Mission и оставались на миссионерском поле в условиях гражданской войны; архивные материалы фиксируют их пленение, гибель и последующее спасение дочери местными христианами.",
+    "editorial_evaluation":"Писание не обещает верующим избавления от всякой земной опасности. Надежда христианина — Христос, воскресение и верность Бога. Одновременно церковь должна видеть ценность простого послушания: в кризисе любовь к ближнему проявляется в конкретном риске и заботе, а не только в громких словах.",
+    "scripture_refs":["Рим 14:7–8","Откр 12:11","Евр 11:35–40","Иак 2:15–17"],
+    "alignment":"aligned",
+    "description_separated_from_evaluation":true,
+    "review_status":"accepted"
+  },
+  "images":[{
+    "asset_id":"img-stam-telegram-v2",
+    "source_id":"src-stam-wheaton-449",
+    "source_page_url":"https://fromthevault.wheaton.edu/2019/12/03/stam-baby-safe-remembering-john-and-betty-stam/",
+    "direct_media_url":null,
+    "depicts":"Архивная телеграмма семье Стэм с известием о безопасности младенца",
+    "purpose":"Документальная иллюстрация к развязке истории спасения Helen Priscilla",
+    "rights_basis":"Wheaton Archives provides archival provenance and a reproduction on its site; transport use remains disabled until exact reuse rights and bytes are independently bound.",
+    "license_label":"Rights pending",
+    "attribution_text":"Wheaton College Archives & Special Collections, Collection 449",
+    "expected_mime":null,
+    "expected_sha256":null,
+    "production_ready":false,
+    "checked_on":"2026-09-07"
+  }],
+  "release_offset_days":19,
+  "opposing_primary_bound":false,
+  "no_opposing_primary_note":null,
+  "editorial_status":"ready",
+  "fact_check_status":"accepted",
+  "rights_status":"reviewed"
+}
