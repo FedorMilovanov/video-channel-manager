@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ipaddress
 import json
 from datetime import date
 from pathlib import Path
@@ -8,7 +9,13 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from video_channel_manager.telegram_research import Certainty, ClaimKind, EvidenceType, sha256_json
+from video_channel_manager.telegram_research import (
+    Certainty,
+    ClaimKind,
+    EvidenceType,
+    sha256_json,
+    sha256_text,
+)
 from video_channel_manager.telegram_rich_models import (
     RICH_ARTICLE_SCHEMA_NAME,
     RICH_ARTICLE_SCHEMA_VERSION,
@@ -57,11 +64,36 @@ REQUIRED_THEOLOGY_COMMITMENTS: frozenset[str] = frozenset(
     }
 )
 
+_LOCAL_HOST_SUFFIXES = (
+    ".localhost",
+    ".local",
+    ".localdomain",
+    ".internal",
+    ".lan",
+    ".home",
+    ".home.arpa",
+)
+
 
 def _public_https(value: str) -> str:
     parsed = urlparse(value)
-    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
-        raise ValueError("URL must be public HTTPS without embedded credentials")
+    if parsed.scheme != "https" or not parsed.hostname:
+        raise ValueError("URL must use public HTTPS")
+    if parsed.username is not None or parsed.password is not None:
+        raise ValueError("credential-bearing historical URLs are forbidden")
+
+    host = parsed.hostname.rstrip(".").casefold()
+    if host == "localhost" or host.endswith(_LOCAL_HOST_SUFFIXES):
+        raise ValueError("local historical source hosts are forbidden")
+
+    try:
+        literal_ip = ipaddress.ip_address(host)
+    except ValueError:
+        if "." not in host:
+            raise ValueError("single-label historical source hosts are not public")
+    else:
+        if not literal_ip.is_global:
+            raise ValueError("non-global historical source literal IPs are forbidden")
     return value
 
 
@@ -135,6 +167,9 @@ class HistoricalClaim(BaseModel):
     source_ids: tuple[str, ...] = Field(min_length=1, max_length=8)
     direct_quote: bool = False
     locator: str | None = Field(default=None, min_length=2, max_length=220)
+    quoted_fragment_source_id: str | None = Field(default=None, pattern=SOURCE_ID_RE)
+    quoted_fragment: str | None = Field(default=None, min_length=1, max_length=2000)
+    quoted_fragment_sha256: str | None = Field(default=None, pattern=SHA_RE)
     testimony_proximity: TestimonyProximity = "not_applicable"
     controversy_side: ControversySide = "none"
 
@@ -142,13 +177,24 @@ class HistoricalClaim(BaseModel):
     def claim_contract(self) -> "HistoricalClaim":
         if len(self.source_ids) != len(set(self.source_ids)):
             raise ValueError("claim source_ids must be unique")
+        quote_proof = (
+            self.quoted_fragment_source_id,
+            self.quoted_fragment,
+            self.quoted_fragment_sha256,
+        )
         if self.direct_quote:
             if self.locator is None or self.certainty != "exact":
                 raise ValueError("direct quotation requires exact certainty and an exact locator")
+            if any(value is None for value in quote_proof):
+                raise ValueError("direct quotation requires immutable quoted fragment proof")
+            if self.quoted_fragment_source_id not in self.source_ids:
+                raise ValueError("quoted fragment source must be one of claim source_ids")
+            if sha256_text(self.quoted_fragment or "") != self.quoted_fragment_sha256:
+                raise ValueError("quoted fragment digest mismatch")
             if self.voice == "editorial_evaluation":
                 raise ValueError("editorial evaluation cannot masquerade as a direct historical quotation")
-        elif self.locator is not None:
-            raise ValueError("locator is reserved for direct quotations")
+        elif self.locator is not None or any(value is not None for value in quote_proof):
+            raise ValueError("locator and quoted fragment proof are reserved for direct quotations")
         if self.voice == "editorial_evaluation" and self.controversy_side != "none":
             raise ValueError("editorial evaluation must remain separate from controversy participant evidence")
         if self.controversy_side in {"side_a", "side_b"} and self.voice != "participant_position":
@@ -169,6 +215,47 @@ class HistoricalSection(BaseModel):
     def visible_text(self) -> "HistoricalSection":
         if any(not paragraph.strip() or len(paragraph) > 1200 for paragraph in self.paragraphs):
             raise ValueError("historical section paragraphs must be compact visible text")
+        return self
+
+
+class HistoricalSectionClaimBinding(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    section_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{2,40}$")
+    paragraph_claim_ids: tuple[tuple[str, ...], ...] = Field(min_length=1, max_length=5)
+
+    @model_validator(mode="after")
+    def binding_contract(self) -> "HistoricalSectionClaimBinding":
+        for claim_ids in self.paragraph_claim_ids:
+            if not 1 <= len(claim_ids) <= 8:
+                raise ValueError("each rendered historical paragraph requires 1..8 claim ids")
+            if len(set(claim_ids)) != len(claim_ids):
+                raise ValueError("paragraph claim bindings must be unique")
+            if any(not claim_id.startswith("claim-") for claim_id in claim_ids):
+                raise ValueError("paragraph claim bindings must use historical claim ids")
+        return self
+
+
+class HistoricalProseClaimBindings(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    title_claim_ids: tuple[str, ...] = Field(min_length=1, max_length=8)
+    lead_claim_ids: tuple[str, ...] = Field(min_length=1, max_length=8)
+    evidence_boundary_claim_ids: tuple[str, ...] = Field(min_length=1, max_length=8)
+    sections: tuple[HistoricalSectionClaimBinding, ...] = Field(min_length=2, max_length=5)
+
+    @model_validator(mode="after")
+    def binding_contract(self) -> "HistoricalProseClaimBindings":
+        scalar_bindings = (
+            self.title_claim_ids,
+            self.lead_claim_ids,
+            self.evidence_boundary_claim_ids,
+        )
+        if any(len(set(claim_ids)) != len(claim_ids) for claim_ids in scalar_bindings):
+            raise ValueError("rendered prose claim bindings must be unique")
+        section_ids = [section.section_id for section in self.sections]
+        if len(section_ids) != len(set(section_ids)):
+            raise ValueError("prose binding section ids must be unique")
         return self
 
 
@@ -266,6 +353,7 @@ class HistoricalPost(BaseModel):
     sections: tuple[HistoricalSection, ...] = Field(min_length=2, max_length=5)
     evidence_boundary: str = Field(min_length=50, max_length=1000)
     claims: tuple[HistoricalClaim, ...] = Field(min_length=3, max_length=16)
+    prose_claim_bindings: HistoricalProseClaimBindings
     theology_review: TheologyReview
     images: tuple[HistoricalImagePlan, ...] = Field(default=(), max_length=3)
     release_offset_days: int = Field(ge=0, le=30)
@@ -280,6 +368,35 @@ class HistoricalPost(BaseModel):
         ids = [claim.claim_id for claim in self.claims]
         if len(ids) != len(set(ids)):
             raise ValueError("claim ids must be unique inside a historical post")
+        claim_ids = set(ids)
+
+        bound_sections = self.prose_claim_bindings.sections
+        if [binding.section_id for binding in bound_sections] != [section.section_id for section in self.sections]:
+            raise ValueError("prose binding sections must exactly match rendered section order")
+        for section, binding in zip(self.sections, bound_sections, strict=True):
+            if len(binding.paragraph_claim_ids) != len(section.paragraphs):
+                raise ValueError(f"prose binding paragraph count mismatch: {section.section_id}")
+
+        rendered_bindings: list[tuple[str, ...]] = [
+            self.prose_claim_bindings.title_claim_ids,
+            self.prose_claim_bindings.lead_claim_ids,
+            self.prose_claim_bindings.evidence_boundary_claim_ids,
+        ]
+        rendered_bindings.extend(
+            claim_ids_for_paragraph
+            for section_binding in bound_sections
+            for claim_ids_for_paragraph in section_binding.paragraph_claim_ids
+        )
+        used_claim_ids: set[str] = set()
+        for binding in rendered_bindings:
+            unknown = set(binding) - claim_ids
+            if unknown:
+                raise ValueError(f"rendered historical prose uses unknown claim ids: {sorted(unknown)}")
+            used_claim_ids.update(binding)
+        orphaned = claim_ids - used_claim_ids
+        if orphaned:
+            raise ValueError(f"historical claims must bind rendered prose: {sorted(orphaned)}")
+
         if self.topic_kind == "controversy":
             sides = {claim.controversy_side for claim in self.claims}
             if "side_a" not in sides or "synthesis" not in sides:
@@ -414,12 +531,15 @@ def _validate_post_evidence(
             raise ValueError(f"historical claim {claim.claim_id} uses unknown sources: {sorted(unknown)}")
         bound = [by_id[source_id] for source_id in claim.source_ids]
         if claim.direct_quote:
-            if not any(
-                source.grade == "A"
-                and source.evidence_role
-                in {"primary_document", "critical_edition", "official_archive", "university_archive"}
-                for source in bound
-            ):
+            quote_source = by_id.get(claim.quoted_fragment_source_id or "")
+            if quote_source is None:
+                raise ValueError(f"direct quotation {claim.claim_id} uses unknown quoted fragment source")
+            if quote_source.grade != "A" or quote_source.evidence_role not in {
+                "primary_document",
+                "critical_edition",
+                "official_archive",
+                "university_archive",
+            }:
                 raise ValueError(
                     f"direct quotation {claim.claim_id} requires grade A primary/critical/archive evidence"
                 )
@@ -485,6 +605,8 @@ def build_historical_rich_document(
 ) -> RichArticleDocument:
     if post not in queue.posts:
         raise ValueError("historical post does not belong to selected queue")
+    if registry.digest != queue.source_registry_sha256:
+        raise ValueError("historical source registry digest mismatch at rich-document boundary")
 
     by_id = {source.source_id: source for source in registry.sources}
     source_ids = tuple(dict.fromkeys(source_id for claim in post.claims for source_id in claim.source_ids))
@@ -582,7 +704,9 @@ __all__ = [
     "HistoricalEditorialQueueV1",
     "HistoricalImagePlan",
     "HistoricalPost",
+    "HistoricalProseClaimBindings",
     "HistoricalSchedule",
+    "HistoricalSectionClaimBinding",
     "HistoricalSource",
     "HistoricalSourceRegistry",
     "HistoricalVerification",
