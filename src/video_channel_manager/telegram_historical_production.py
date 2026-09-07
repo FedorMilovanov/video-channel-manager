@@ -12,7 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -35,7 +35,6 @@ from video_channel_manager.telegram_historical_production_core import (
     coverage_status as coverage_status,
     decide_scheduled as decide_scheduled,
     guard_state as guard_state,
-    load_release as load_release,
     release_digest as release_digest,
     run_preflight as run_preflight,
     send as send,
@@ -47,6 +46,7 @@ TRANSPORT_VERIFIED_FIELD = "canary_transport_verified_at_utc"
 EDITORIAL_APPROVED_FIELD = "canary_editorial_approved_at_utc"
 EDITORIAL_APPROVED_BY_FIELD = "canary_editorial_approved_by"
 
+_ORIGINAL_LOAD_RELEASE = _core.load_release
 _ORIGINAL_NEW_LEDGER = _core.new_ledger
 _ORIGINAL_LOAD_LEDGER = _core.load_ledger
 _ORIGINAL_APPLY = _core.apply
@@ -59,7 +59,55 @@ def _editorial_approval_required(release: dict[str, Any]) -> bool:
     return value
 
 
-def new_ledger(release: dict[str, Any], queue: Any, planned_dates: tuple[str, ...]) -> dict[str, Any]:
+def _expected_recurring_dates(start_value: str, count: int) -> tuple[str, ...]:
+    """Return the exact Monday/Wednesday/Saturday sequence beginning at start."""
+
+    current = date.fromisoformat(start_value)
+    if current.isoweekday() != 1:
+        raise ValueError("historical v2 recurring cycle must start on Monday")
+    result: list[str] = []
+    while len(result) < count:
+        if current.isoweekday() in {1, 3, 6}:
+            result.append(current.isoformat())
+        current += timedelta(days=1)
+    return tuple(result)
+
+
+def load_release(path: Path, root: Path) -> tuple[dict[str, Any], Any, Any, Path, dict[str, Any]]:
+    """Load the core release and apply the explicit v2 out-of-band canary contract."""
+
+    release, queue, registry, profile_path, aux = _ORIGINAL_LOAD_RELEASE(path, root)
+    if not _editorial_approval_required(release):
+        return release, queue, registry, profile_path, aux
+
+    publication_ids = tuple(release["publication_ids"])
+    recurring_ids = tuple(release.get("recurring_publication_ids") or ())
+    recurring_dates = tuple(release.get("recurring_scheduled_dates_moscow") or ())
+    if (
+        release.get("canary_out_of_band") is not True
+        or not publication_ids
+        or release.get("canary_publication_id") != publication_ids[0]
+        or recurring_ids != publication_ids[1:]
+        or len(recurring_dates) != len(recurring_ids)
+    ):
+        raise ValueError("historical v2 out-of-band canary schedule is invalid")
+
+    expected_dates = _expected_recurring_dates(str(release["cycle_start_date_moscow"]), len(recurring_ids))
+    if recurring_dates != expected_dates:
+        raise ValueError("historical v2 recurring dates differ from the exact Monday/Wednesday/Saturday cadence")
+
+    effective_aux = dict(aux)
+    effective_aux["planned_dates"] = (None, *recurring_dates)
+    effective_aux["recurring_publication_ids"] = recurring_ids
+    effective_aux["recurring_scheduled_dates_moscow"] = recurring_dates
+    return release, queue, registry, profile_path, effective_aux
+
+
+def new_ledger(
+    release: dict[str, Any],
+    queue: Any,
+    planned_dates: tuple[str | None, ...],
+) -> dict[str, Any]:
     """Create the durable ledger, adding explicit two-phase canary state for v2."""
 
     ledger = _ORIGINAL_NEW_LEDGER(release, queue, planned_dates)
@@ -110,7 +158,7 @@ def load_ledger(
     path: Path,
     release: dict[str, Any],
     queue: Any,
-    planned_dates: tuple[str, ...],
+    planned_dates: tuple[str | None, ...],
     *,
     create: bool = False,
 ) -> dict[str, Any]:
@@ -188,6 +236,7 @@ def approve_canary(
 def _install_core_overrides() -> None:
     """Make the existing CLI use the two-phase gate without duplicating transport code."""
 
+    _core.load_release = load_release
     _core.new_ledger = new_ledger
     _core.load_ledger = load_ledger
     _core.apply = apply
