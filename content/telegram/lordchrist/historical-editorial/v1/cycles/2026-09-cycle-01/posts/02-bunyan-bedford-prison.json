@@ -15,6 +15,16 @@
     {"claim_id":"claim-bunyan-prison-context","claim_text":"Современные исследования рассматривают заключение Буньяна в конкретном правовом и конфессиональном контексте Англии после Реставрации.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-bunyan-bedfordshire-hsa1672","src-bunyan-oxford-prison"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"},
     {"claim_id":"claim-bunyan-editorial","claim_text":"Редакционный вывод: историческая ценность свидетельства возрастает, когда благочестивый рассказ очищен от деталей, которые источники не позволяют утверждать уверенно.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-bunyan-oxford-prison"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
   ],
+  "prose_claim_bindings": {
+    "title_claim_ids": ["claim-bunyan-imprisonment-record","claim-bunyan-prison-context"],
+    "lead_claim_ids": ["claim-bunyan-imprisonment-record","claim-bunyan-prison-context","claim-bunyan-editorial"],
+    "evidence_boundary_claim_ids": ["claim-bunyan-imprisonment-record","claim-bunyan-prison-context"],
+    "sections": [
+      {"section_id":"records","paragraph_claim_ids":[["claim-bunyan-imprisonment-record"],["claim-bunyan-prison-context"]]},
+      {"section_id":"writing","paragraph_claim_ids":[["claim-bunyan-imprisonment-record","claim-bunyan-prison-context"],["claim-bunyan-imprisonment-record","claim-bunyan-prison-context"]]},
+      {"section_id":"lesson","paragraph_claim_ids":[["claim-bunyan-editorial"]]}
+    ]
+  },
   "theology_review": {"historical_description":"Исторический слой основан на архивных записях Бедфордшира и независимой современной академической реконструкции.","participant_position":"Буньян воспринимал своё служение и страдание через обязательность послушания Богу и христианской совести.","editorial_evaluation":"Редакция видит в этой истории пример верности совести, но не превращает страдание само по себе в критерий правоты: нормой остаётся Священное Писание, а фактические детали должны оставаться проверяемыми.","scripture_refs":["Деян 5:29","1 Пет 3:15–17","2 Тим 3:16–17"],"alignment":"aligned","description_separated_from_evaluation":true,"review_status":"accepted"},
   "images": [{"asset_id":"img-bunyan-portrait","source_id":"src-image-bunyan-nlw","source_page_url":"https://commons.wikimedia.org/wiki/File:Portrait_of_John_Bunyan_(4672796).jpg","direct_media_url":null,"depicts":"Исторический портрет Джона Буньяна","purpose":"Главная иллюстрация к биографическому материалу о Бедфордском заключении","rights_basis":"Портрет из Welsh Portrait Collection Национальной библиотеки Уэльса используется как проверенный provenance record; перед транспортом требуется отдельная фиксация конкретного файла, MIME и SHA-256.","license_label":"Public domain provenance record","attribution_text":"National Library of Wales, Welsh Portrait Collection; via Wikimedia Commons","expected_mime":null,"expected_sha256":null,"production_ready":false,"checked_on":"2026-09-07"}],
   "release_offset_days": 2,
