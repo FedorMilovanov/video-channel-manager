@@ -16,6 +16,7 @@ from video_channel_manager.telegram_channel_profile import load_channel_profile
 from video_channel_manager.telegram_historical_bundle import materialize_historical_bundle
 from video_channel_manager.telegram_historical_editorial import build_historical_rich_document
 from video_channel_manager.telegram_multichannel_transport import GenericTargetProof, preflight_channel
+from video_channel_manager.telegram_rich_models import RichArticleDocument
 from video_channel_manager.telegram_rich_provider import (
     HttpxTelegramRichMutationProvider,
     TelegramRichMessageDocument,
@@ -201,8 +202,6 @@ def load_release(path: Path, root: Path) -> tuple[dict[str, Any], Any, Any, Path
         raise ValueError("historical production release differs from the sealed editorial cycle")
     if theology.digest != queue.theology_profile_sha256:
         raise ValueError("historical production theology differs from sealed editorial cycle")
-    if any(post.images for post in queue.posts):
-        raise ValueError("historical production v1 is text-only until exact media transport bytes are separately bound")
 
     verification = _read(verification_path)
     _validate_second_pass(verification, publication_ids)
@@ -237,6 +236,22 @@ def load_release(path: Path, root: Path) -> tuple[dict[str, Any], Any, Any, Path
     )
 
 
+def _materialize_text_only_article(queue: Any, post: Any, registry: Any) -> RichArticleDocument:
+    article = build_historical_rich_document(queue, post, registry)
+    if article.media:
+        raise ValueError("historical production v1 cannot discard already-bound rich media")
+    expected_slot_ids = tuple(image.asset_id for image in post.images)
+    actual_slot_ids = tuple(slot.slot_id for slot in article.media_slots)
+    if actual_slot_ids != expected_slot_ids:
+        raise ValueError("historical image plans differ from rich editorial media slots")
+    payload = article.model_dump(mode="python")
+    payload["media_slots"] = ()
+    text_only = RichArticleDocument.model_validate(payload)
+    if text_only.media or text_only.media_slots:
+        raise ValueError("historical production v1 text-only projection retained transport media")
+    return text_only
+
+
 def build_document(
     root: Path,
     release: dict[str, Any],
@@ -249,9 +264,7 @@ def build_document(
     post = next((candidate for candidate in queue.posts if candidate.publication_id == publication_id), None)
     if post is None:
         raise ValueError("historical publication is outside the exact release")
-    article = build_historical_rich_document(queue, post, registry)
-    if article.media or article.media_slots:
-        raise ValueError("historical production v1 cannot emit unbound media")
+    article = _materialize_text_only_article(queue, post, registry)
     profile = load_channel_profile(profile_path)
     binding = load_target_binding(target_binding_path, profile)
     if (
