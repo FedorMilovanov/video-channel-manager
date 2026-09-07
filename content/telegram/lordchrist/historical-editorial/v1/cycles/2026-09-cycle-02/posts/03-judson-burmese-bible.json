@@ -1,0 +1,76 @@
+{
+  "sequence": 3,
+  "publication_id": "lordchrist-history-judson-burmese-bible-v2",
+  "topic_kind": "mission_history",
+  "title": "Двадцать четыре года над бирманской Библией: труд Адонирама Джадсона, который пережил тюрьму",
+  "lead": "Когда Адонирам Джадсон начал переводить Писание на бирманский язык, перед ним стояла задача на десятилетия. Современное исследование прослеживает его работу примерно с 1816 по 1840 год. Между началом и завершением были война, арест 8 июня 1824 года, почти двадцать один месяц заключения, смерть близких и постоянная языковая работа. Эта история сильнее миссионерской легенды именно потому, что показывает не мгновенный подвиг, а долгую верность.",
+  "sections": [
+    {
+      "section_id": "language",
+      "heading": "Сначала — язык, которым нельзя овладеть за несколько месяцев",
+      "paragraphs": [
+        "Джадсон работал не только над отдельными евангелизационными фразами. Он годами изучал письменный и разговорный бирманский, переводил библейский текст, составлял языковые материалы и возвращался к формулировкам снова. Его ранние письма и журнальные материалы показывают, что перевод Писания был для него не приложением к миссии, а одним из её центральных инструментов.",
+        "При этом он не начинал в пустоте. До него в Бирме уже существовала многовековая католическая миссионерская традиция, а британские баптисты работали с бирманскими переводами до его прибытия. Даже ранний католический сборник Scripture Extracts, напечатанный баптистами в Серампоре в 1811 году, попал к Джадсону и стал одним из ресурсов. Он пользовался наследием предшественников, но выстраивал собственный переводческий подход."
+      ]
+    },
+    {
+      "section_id": "prison",
+      "heading": "1824–1826: переводчик становится государственным заключённым",
+      "paragraphs": [
+        "8 июня 1824 года, во время Первой англо-бирманской войны, Джадсона арестовали в Аве по подозрению в связях с британцами. Он оставался заключённым до 25 февраля 1826 года. Это не был удобный кабинетный перерыв: война превратила иностранного миссионера в подозреваемого, а его жизнь и работа оказались зависимы от решений двора и хода военных событий.",
+        "Даже языковой труд оказался связан с этим кризисом. Издание бирмано-английского словаря 1826 года было подготовлено на основе грамматики и рукописей Джадсона и других миссионеров в то время, когда сам он находился в заключении. История перевода здесь выглядит не романтически: текст сохранялся и двигался вперёд благодаря нескольким людям, рукописям, печатникам и годам работы."
+      ]
+    },
+    {
+      "section_id": "bible",
+      "heading": "От Нового Завета к полной Библии",
+      "paragraphs": [
+        "К 1832 году вышел бирманский Новый Завет Джадсона. Работа продолжалась: перевод всей Библии был завершён к 1840 году. Позднее он закончил и большой бирмано-английский словарь. То, что начиналось как медленная миссионерская работа одного поколения, стало языковым наследием, которым бирманские протестанты пользовались далеко после смерти переводчика.",
+        "В этом есть важная деталь: величие Джадсона не в том, что он будто бы один «изобрёл» бирманскую христианскую лексику. Его заслуга в другом — он десятилетиями учился, принимал полезное от предшественников, спорил с вариантами, переводил заново и довёл огромную работу до завершения. Служение не стало меньше от того, что оно оказалось не одиночным мифом, а настоящим человеческим трудом."
+      ]
+    },
+    {
+      "section_id": "lesson",
+      "heading": "Верность часто выглядит как исправленная строка, а не как громкий момент",
+      "paragraphs": [
+        "Мы легко восхищаемся миссионером в момент опасности и гораздо хуже видим тысячи обычных дней: учить язык, проверять слово, переписывать страницу, признавать более точный вариант, продолжать после потерь. Но именно из таких дней и складывается труд, которым потом пользуются поколения.",
+        "Для служителя это серьёзное наставление. Любовь к Слову Божьему проявляется не только в готовности страдать за него, но и в нежелании обращаться с ним небрежно. «Верно преподающий слово истины» — это человек, который не торопится выдавать приблизительное за точное. Ревность без труда быстро сгорает; верность умеет работать годами."
+      ]
+    }
+  ],
+  "evidence_boundary": "Исследования прослеживают переводческую работу Джадсона над бирманской Библией с 1816 до 1840 года. Он был арестован 8 июня 1824 года и освобождён 25 февраля 1826 года; в 1832 году был опубликован его бирманский Новый Завет, а к 1840 году завершён перевод всей Библии. Его работа использовала и перерабатывала существовавшие до него католические и баптистские языковые материалы, поэтому она не описывается как перевод «с нуля».",
+  "claims": [
+    {"claim_id":"claim-judson-v2-translation-1816-1840","claim_text":"Академическая реконструкция прослеживает работу Адонирама Джадсона над бирманским переводом Библии примерно с 1816 по 1840 год.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-cambridge-judson-exegete-2019","src-cambridge-judson-burmese-2024"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"},
+    {"claim_id":"claim-judson-v2-predecessor-materials","claim_text":"Перевод Джадсона опирался на более ранние католические и британские баптистские бирманские языковые и переводческие материалы, которые он развивал и перерабатывал.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-judson-letter-1817","src-cambridge-judson-burmese-2024"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"},
+    {"claim_id":"claim-judson-v2-imprisonment","claim_text":"Джадсон был арестован в Аве 8 июня 1824 года во время англо-бирманской войны и освобождён 25 февраля 1826 года.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-cambridge-judson-exegete-2019","src-judson-letter-1817"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-judson-v2-new-testament-bible","claim_text":"К 1832 году Джадсон опубликовал бирманский Новый Завет, а к 1840 году завершил перевод всей Библии на бирманский язык.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-cambridge-judson-exegete-2019","src-cambridge-judson-burmese-2024"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"},
+    {"claim_id":"claim-judson-v2-editorial","claim_text":"Редакционный вывод: миссионерская верность включает долгую языковую и экзегетическую дисциплину; точность обращения с Писанием важнее героического образа одиночного гения.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-cambridge-judson-exegete-2019"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
+  ],
+  "prose_claim_bindings": {
+    "title_claim_ids":["claim-judson-v2-translation-1816-1840","claim-judson-v2-imprisonment"],
+    "lead_claim_ids":["claim-judson-v2-translation-1816-1840","claim-judson-v2-imprisonment"],
+    "evidence_boundary_claim_ids":["claim-judson-v2-translation-1816-1840","claim-judson-v2-predecessor-materials","claim-judson-v2-imprisonment","claim-judson-v2-new-testament-bible"],
+    "sections":[
+      {"section_id":"language","paragraph_claim_ids":[["claim-judson-v2-translation-1816-1840"],["claim-judson-v2-predecessor-materials"]]},
+      {"section_id":"prison","paragraph_claim_ids":[["claim-judson-v2-imprisonment"],["claim-judson-v2-imprisonment","claim-judson-v2-translation-1816-1840"]]},
+      {"section_id":"bible","paragraph_claim_ids":[["claim-judson-v2-new-testament-bible"],["claim-judson-v2-predecessor-materials","claim-judson-v2-translation-1816-1840"]]},
+      {"section_id":"lesson","paragraph_claim_ids":[["claim-judson-v2-editorial"],["claim-judson-v2-editorial"]]}
+    ]
+  },
+  "theology_review": {
+    "historical_description":"Джадсон описывается через длительность переводческой работы, конкретный период заключения и документируемые этапы публикации бирманского библейского текста, без легенды о полностью изолированном переводе.",
+    "participant_position":"Джадсон рассматривал перевод и распространение Писания на понятном языке как долговременную основу миссионерского служения.",
+    "editorial_evaluation":"Достаточность и авторитет Писания требуют не только провозглашения, но и точного обращения с текстом. Миссионерская ревность должна соединяться с языковой, экзегетической и редакционной дисциплиной.",
+    "scripture_refs":["2 Тим 2:15","Неем 8:8","2 Кор 4:2"],
+    "alignment":"aligned",
+    "description_separated_from_evaluation":true,
+    "review_status":"accepted"
+  },
+  "images":[{"asset_id":"img-judson-brown-portrait-v2","source_id":"src-judson-brown-portrait","source_page_url":"https://library.brown.edu/cds/portraits/display.php?idno=268","direct_media_url":null,"depicts":"Портрет Адонирама Джадсона работы George Peter Alexander Healy, 1846","purpose":"Историческая портретная иллюстрация к очерку о бирманском переводе Библии","rights_basis":"Brown University Library предоставляет институциональную запись портрета; перед transport требуется отдельная проверка прав, прямого media URL, MIME и SHA-256.","license_label":"Institutional provenance; transport rights pending","attribution_text":"Brown University Library portrait collection","expected_mime":null,"expected_sha256":null,"production_ready":false,"checked_on":"2026-09-07"}],
+  "release_offset_days": 5,
+  "opposing_primary_bound": false,
+  "no_opposing_primary_note": null,
+  "editorial_status": "ready",
+  "fact_check_status": "accepted",
+  "rights_status": "reviewed"
+}
