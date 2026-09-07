@@ -414,9 +414,7 @@ def test_theology_profile_requires_israel_church_distinction() -> None:
     commitments = raw["commitments"]
     assert isinstance(commitments, list)
     raw["commitments"] = [
-        "Дополнительная позиция"
-        if commitment == "Различение Израиля и Церкви в Божьем замысле"
-        else commitment
+        "Дополнительная позиция" if commitment == "Различение Израиля и Церкви в Божьем замысле" else commitment
         for commitment in commitments
     ]
 
