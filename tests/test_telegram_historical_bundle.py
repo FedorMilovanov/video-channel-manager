@@ -2,12 +2,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from video_channel_manager.telegram_historical_bundle import (
     build_next_scaffold_from_manifest,
     materialize_historical_bundle,
     preflight_historical_bundle_manifest,
 )
-from video_channel_manager.telegram_historical_editorial import build_historical_rich_document
+from video_channel_manager.telegram_historical_editorial import (
+    HistoricalSourceRegistry,
+    build_historical_rich_document,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = Path("content/telegram/lordchrist/historical-editorial/v1/cycles/2026-09-cycle-01/manifest.json")
@@ -61,6 +66,22 @@ def test_every_sealed_post_builds_a_real_rich_article_document() -> None:
     assert all(document.metadata.language == "ru" for document in documents)
     assert all(document.sources for document in documents)
     assert sum(len(document.media_slots) for document in documents) == 3
+
+
+def test_rich_builder_rejects_registry_identity_drift() -> None:
+    _manifest, queue, registry, _theology = materialize_historical_bundle(MANIFEST, repo_root=REPO_ROOT)
+    sources = list(registry.sources)
+    sources[0] = sources[0].model_copy(update={"title": sources[0].title + " drift"})
+    wrong_registry = HistoricalSourceRegistry(
+        schema_name="video-channel-manager.telegram-historical-source-registry",
+        schema_version=1,
+        checked_on=registry.checked_on,
+        sources=tuple(sources),
+    )
+
+    assert wrong_registry.digest != queue.source_registry_sha256
+    with pytest.raises(ValueError, match="rich-document boundary"):
+        build_historical_rich_document(queue, queue.posts[0], wrong_registry)
 
 
 def test_next_cycle_scaffold_reuses_bound_catalog_without_authorizing_provider_writes() -> None:
