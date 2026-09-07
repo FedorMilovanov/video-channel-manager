@@ -82,7 +82,7 @@
       "source_ids": ["src-spurgeon-autobiography", "src-cambridge-spurgeon-downgrade"],
       "direct_quote": false,
       "testimony_proximity": "contemporary",
-      "controversy_side": "none"
+      "controversy_side": "synthesis"
     },
     {
       "claim_id": "claim-spurgeon-downgrade-association-afterward",
