@@ -18,7 +18,7 @@ The only replacement canary is:
 
 `lordchrist-history-spurgeon-down-grade-1887-v2`
 
-It is intentionally outside the recurring date map. Its durable ledger entry therefore has `scheduled_date_moscow=null`.
+It is intentionally outside the recurring date map. Its durable ledger entry uses `scheduled_date_moscow=2026-09-07`, the exact Moscow date on which the sealed manual-canary authorization window begins. That audit date does not make the canary schedulable: the release restricts it to the exact manually confirmed canary path.
 
 The canary authorization window is sealed in the release. Manual dispatch requires the exact publication identity, first workflow attempt, current-main CI proof, fresh target proof, clear shared LordChrist state, and exact confirmation `PUBLISH:lordchrist-history-spurgeon-down-grade-1887-v2`.
 
@@ -37,7 +37,7 @@ For v2 the durable state fields are:
 
 The owner must review the actual reader-facing canary message before approval. Approval is bound to the exact durable Telegram `message_id`; a different ID fails closed.
 
-The provider-free workflow is `.github/workflows/lordchrist-historical-editorial-approval.yml`. It shares concurrency group `lordchrist-telegram-publisher`, contains no Telegram bot token and has no send path. It requires exact confirmation `APPROVE-HISTORY:<message_id>`, current-main CI, exact release validation and durable message-ID readback before persisting approval.
+The provider-free workflow is `.github/workflows/lordchrist-historical-editorial-approval.yml`. It shares concurrency group `lordchrist-telegram-publisher`, contains no Telegram bot token and has no preflight/send path. It requires exact confirmation `APPROVE-HISTORY:<message_id>`, current-main CI, exact release validation and durable message-ID readback before persisting approval.
 
 ## Recurring schedule after approval
 
@@ -52,7 +52,7 @@ The canary does not consume the first recurring Monday slot. After editorial app
 - 2026-09-28 — Stam v2;
 - 2026-09-30 — Sattler v2.
 
-The release seals these mappings as `recurring_publication_ids` and `recurring_scheduled_dates_moscow`. The facade materializes the durable ledger as one unscheduled canary entry followed by the eight exact recurring dates. It never dynamically chooses an older pending post.
+The release seals these mappings as `recurring_publication_ids` and `recurring_scheduled_dates_moscow`. The facade materializes the durable ledger as one manual-only canary audit date followed by the eight exact recurring dates. It never dynamically chooses an older pending post.
 
 A recurring event before editorial approval returns `canary_not_verified`. A late event outside the 120-minute freshness window returns `slot_expired_no_backfill`. A verified exact slot is not replayed.
 
@@ -66,7 +66,7 @@ Historical state remains on `state/lordchrist-telegram` at:
 
 After the v2 code is merged, archive the existing v1 historical ledger as audit evidence and initialize a pristine ledger from the exact merged v2 release provider-free. Do not edit an old release-bound ledger into a v2 ledger by hand.
 
-The v2 ledger must bind the exact release SHA-256 and contain all nine publication identities. The canary entry starts pending/impossible with no scheduled date; the remaining entries start pending/impossible with their exact recurring dates.
+The v2 ledger must bind the exact release SHA-256 and contain all nine publication identities. The canary entry starts pending/impossible with the exact 2026-09-07 audit date; the remaining entries start pending/impossible with their exact recurring dates.
 
 ## Provider-effect rules
 
