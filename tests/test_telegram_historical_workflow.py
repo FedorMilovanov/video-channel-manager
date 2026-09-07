@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from video_channel_manager.telegram_historical_editorial import (
     HistoricalEditorialQueueV1,
+    HistoricalImagePlan,
     HistoricalSourceRegistry,
     TheologyProfile,
     load_historical_editorial_queue,
@@ -213,9 +214,7 @@ def _write_bundle(tmp_path: Path) -> Path:
     registry_rel = "content/telegram/lordchrist/historical-editorial/v1/source-registry.json"
     theology_rel = "content/telegram/lordchrist/historical-editorial/v1/theology-profile.json"
     queue_rel = "content/telegram/lordchrist/historical-editorial/v1/cycle-fixture.json"
-    (tmp_path / registry_rel).write_text(
-        json.dumps(registry_payload, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    (tmp_path / registry_rel).write_text(json.dumps(registry_payload, ensure_ascii=False, indent=2), encoding="utf-8")
     (tmp_path / theology_rel).write_text(
         json.dumps(_theology_payload(), ensure_ascii=False, indent=2), encoding="utf-8"
     )
@@ -415,13 +414,33 @@ def test_theology_profile_requires_israel_church_distinction() -> None:
     commitments = raw["commitments"]
     assert isinstance(commitments, list)
     raw["commitments"] = [
-        commitment
+        "Дополнительная позиция"
+        if commitment == "Различение Израиля и Церкви в Божьем замысле"
+        else commitment
         for commitment in commitments
-        if commitment != "Различение Израиля и Церкви в Божьем замысле"
     ]
 
     with pytest.raises(ValidationError, match="missing required commitments"):
         TheologyProfile.model_validate(raw)
+
+
+def test_historical_image_role_rejects_generated_generic_religious_imagery() -> None:
+    raw = {
+        "asset_id": "img-generic-scene",
+        "asset_role": "generated_generic_religious_image",
+        "source_id": "src-primary-archive",
+        "source_page_url": "https://archive.example.edu/image",
+        "depicts": "Generic religious scene",
+        "purpose": "Historical article illustration",
+        "rights_basis": "Fixture rights basis reviewed",
+        "license_label": "Public domain",
+        "attribution_text": "Fixture archive",
+        "production_ready": False,
+        "checked_on": "2026-09-07",
+    }
+
+    with pytest.raises(ValidationError, match="asset_role"):
+        HistoricalImagePlan.model_validate(raw)
 
 
 def test_scaffold_rejects_noncanonical_cadence() -> None:
