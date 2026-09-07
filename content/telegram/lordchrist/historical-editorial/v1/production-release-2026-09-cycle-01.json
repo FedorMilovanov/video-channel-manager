@@ -52,7 +52,6 @@
   "backfill_policy": "none",
   "media_policy": "text_only_until_exact_transport_bytes_are_bound",
   "replenishment_guard_remaining": 1,
-  "successor_cycle_verified": false,
   "manifest": {
     "path": "content/telegram/lordchrist/historical-editorial/v1/cycles/2026-09-cycle-01/manifest.json",
     "git_blob_sha": "3c083786f1d5df33d5ee948321309be66a57c4db"
