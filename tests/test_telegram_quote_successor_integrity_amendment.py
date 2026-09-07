@@ -8,6 +8,7 @@ import pytest
 from pydantic import ValidationError
 
 from video_channel_manager.telegram_quote_successor import (
+    CANONICAL_RELEASE_FILENAME,
     IntegrityAmendmentEntry,
     TranslationLedgerEntry,
     load_integrity_amendments,
@@ -23,11 +24,10 @@ LORDCHRIST = ROOT / "content" / "telegram" / "lordchrist"
 CANDIDATES = LORDCHRIST / "successor-quotes-v1.json"
 TRANSLATIONS = LORDCHRIST / "successor-translation-ledger-v1.json"
 AMENDMENTS = LORDCHRIST / "successor-integrity-amendments-v1.json"
-RELEASE = LORDCHRIST / "successor-release-v2.json"
+RELEASE = LORDCHRIST / CANONICAL_RELEASE_FILENAME
 PUBLICATION_ID = "lordchrist-successor-piper-father-spirit-authority"
 CORRECTED_FRAGMENT = (
-    "Pray to the Father in the power of the Spirit, in the name or by the authority "
-    "and the merit of the Son."
+    "Pray to the Father in the power of the Spirit, in the name or by the authority and the merit of the Son."
 )
 CORRECTED_QUOTE_RU = "Молитесь Отцу силой Духа, во имя Сына или на основании власти и заслуги Сына."
 
@@ -154,8 +154,11 @@ def test_amended_corpus_preserves_reviewed_inventory_contract() -> None:
 
 def test_release_v2_reseals_candidate_ledger_amendment_and_effective_corpus() -> None:
     release = load_successor_release(RELEASE, CANDIDATES, TRANSLATIONS, AMENDMENTS)
+    corpus = load_successor_corpus(CANDIDATES, TRANSLATIONS, AMENDMENTS)
+
     assert release.schema_version == 2
     assert release.release_id == "lordchrist-successor-quotes-v1-integrity-v2"
+    assert release.normalized_corpus_digest == corpus.digest
     assert release.activation_policy == "after_predecessor_queue_complete"
     assert release.release_state == "staged_provider_inert"
     assert release.provider_writes_authorized is False
