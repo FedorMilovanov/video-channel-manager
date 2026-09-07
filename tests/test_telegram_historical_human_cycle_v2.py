@@ -19,7 +19,7 @@ from video_channel_manager.telegram_rich_validation import plain_text
 
 ROOT = Path(__file__).resolve().parents[1]
 CYCLE_DIR = ROOT / "content/telegram/lordchrist/historical-editorial/v1/cycles/2026-09-cycle-02"
-SOURCE_CATALOG = ROOT / "content/telegram/lordchrist/historical-editorial/v1/source-catalog.json"
+SOURCE_CATALOG = ROOT / "content/telegram/lordchrist/historical-editorial/v1/source-catalog-human-v2.json"
 THEOLOGY_PROFILE = ROOT / "content/telegram/lordchrist/historical-editorial/v1/theology-profile.json"
 POST_FILES = (
     "01-spurgeon-down-grade-1887.json",
@@ -70,7 +70,7 @@ def _queue() -> tuple[HistoricalEditorialQueueV1, object]:
         purpose="evidence_backed_historical_edification",
         state="provider_inert",
         verification=HistoricalVerification(
-            reviewed_urls=69,
+            reviewed_urls=70,
             checked_on=date(2026, 9, 7),
             method="a_bplus_primary_archive_scholarly_crosscheck",
             production_threshold="A_or_B_plus_only",
@@ -89,7 +89,7 @@ def _queue() -> tuple[HistoricalEditorialQueueV1, object]:
             backfill_policy="none",
         ),
         source_binding_kind="catalog",
-        source_binding_path="content/telegram/lordchrist/historical-editorial/v1/source-catalog.json",
+        source_binding_path="content/telegram/lordchrist/historical-editorial/v1/source-catalog-human-v2.json",
         source_binding_sha256=catalog.digest,
         source_registry_sha256=registry.digest,
         theology_profile_path="content/telegram/lordchrist/historical-editorial/v1/theology-profile.json",
