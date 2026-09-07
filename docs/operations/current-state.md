@@ -24,7 +24,7 @@ Only `main` is a supported repository code/runtime execution baseline.
 
 ### Current checkpoint
 
-The exact repository checkpoint used for this documentation sync is `main` `de58fcaa3a25f63980e548e35acc7f68cf3a2819`, the merge of PR #556. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
+The exact repository checkpoint used for this documentation sync is `main` `900c0ac0d3cd946ca7dad9f63f49aa5f83f5b690`, the merge of PR #560. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
 
 Material 2026-09-06 / 2026-09-07 hardening now present on `main` includes:
 
@@ -142,30 +142,19 @@ Canonical runbooks: [`resi-dash-local-handoff.md`](resi-dash-local-handoff.md) a
 
 Issue #531 is closed as **completed**. PR #550's frozen role ledger partitioned the audited 146-ref baseline into 8 KEEP / 138 DELETE candidates, and the exact 138-ref DELETE manifest was physically removed through genuine delete-ref operations with exact-SHA rereads and zero open-PR collisions.
 
-Fresh current GitHub inventory after the later completed/auto-deleted agent lanes contains **9 refs total**: `main`, the three durable state refs, the content-addressed Milovi accepted-video evidence ref, and four retained historical/research/agent refs. This newer count does not reopen the completed frozen #531 cleanup and is not permission for prefix-based deletion.
+The stable post-merge inventory, excluding the transient branch used for this documentation update, contains **9 refs total**: `main`, the three durable state refs, the content-addressed Milovi accepted-video evidence ref, and four retained historical/research/agent refs. This newer count does not reopen the completed frozen #531 cleanup and is not permission for prefix-based deletion.
 
 ## GitHub governance / Issue #443
 
-The branch summary proves `main` is protected: it reports `protected=true`, required-status enforcement level `everyone`, and exactly eight required GitHub Actions checks bound to GitHub Actions App ID `15368`:
+Issue #443 is closed as **completed**. Administration-capable owner-token readback on current `main` proves the source policy in full: required status checks use `strict=true`; the exact eight required GitHub Actions contexts remain present; pull requests are required before merge; administrator enforcement is enabled; conversation resolution is required; force pushes and branch deletion are disabled; branch lock is disabled; and no ordinary bypass allowance is configured. Connected branch-summary readback independently reports `protected=true` for `main`, required-status enforcement level `everyone`, and the same eight required GitHub Actions checks bound to GitHub Actions App ID `15368`.
 
-- `quality (3.11)`;
-- `quality (3.12)`;
-- `quality (3.13)`;
-- `PowerShell Windows 5.1`;
-- `PowerShell Windows 7`;
-- `PowerShell Linux 7`;
-- `milovi-gap-read`;
-- `permanent-feed-contract`.
+All three exact durable state refs are also protected at their unchanged SHAs. Administration-capable readback proves the intended state-safe profile on each: no PR/check gate, no actor restriction, administrator enforcement enabled, force pushes and deletion disabled, lock disabled, and intended ordinary fast-forward publisher/recovery writes preserved. The repository ruleset count `0` remains unchanged, so classic branch protection is the active server-side enforcement surface. Dependency Graph itself is policy-enabled for this public repository. SBOM REST export is verified unavailable through both documented generation surfaces at the recorded probe points; that scoped result must not be collapsed into a blanket `UNVERIFIED` item.
 
-The repository ruleset count `0` remains unchanged; classic branch protection is the visible server-side enforcement surface. Dependency Graph itself is policy-enabled for this public repository. SBOM REST export is verified unavailable through both documented generation surfaces at the recorded probe points; that scoped result must not be collapsed into a blanket `UNVERIFIED` item.
-
-Issue #443 is the **only open repository tracker**. The current GitHub App cannot read the Administration-only full `/branches/main/protection` object: fresh readback returns `403 Resource not accessible by integration`. Therefore PR-before-merge, conversation resolution, force-push/delete controls and bypass policy must not be claimed as freshly independently proven from the branch summary alone.
-
-All three exact durable state refs are still reported as unprotected by their branch endpoints. They require GitHub-admin enforcement that blocks deletion and non-fast-forward updates while preserving intended ordinary fast-forward publisher/recovery writes. The connected mutation surface exposes no branch-protection/ruleset admin write, so #443 remains fail-closed until an administration-capable path can apply and authoritatively re-read those settings.
+This governance closure is evidence, not standing authority. Future protection changes require a fresh administration-capable audit; repository YAML, CODEOWNERS or CI self-checks are not substitutes for server-side policy.
 
 ## Next safe work
 
-1. Keep #443 open until an administration-capable GitHub path proves the complete `main` policy and protects all three exact durable state refs without breaking intended fast-forward state writes.
+1. Repository governance tracker #443 is complete; no current GitHub-governance remediation remains. Re-audit only after a future policy change or contradictory fresh evidence.
 2. Reopen #503 or create a successor only when a fresh <=48h owner YouTube AuditPackage and/or exact owner media is available; do not substitute public downloads or stale evidence.
 3. Any future Milovi growth/Dzen/provider/admin experiment needs a new exact scope and real attribution/outcome data; closed #353 is not standing authority.
 4. Any live rollout of the completed #552 historical editorial lane needs a fresh release identity, media proof where applicable, exact review/canary and separate explicit execution authorization.
