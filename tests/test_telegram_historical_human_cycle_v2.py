@@ -44,9 +44,7 @@ BANNED_READER_PHRASES = (
 
 def _load_posts() -> tuple[HistoricalPost, ...]:
     return tuple(
-        HistoricalPost.model_validate(
-            json.loads((CYCLE_DIR / "posts" / filename).read_text(encoding="utf-8"))
-        )
+        HistoricalPost.model_validate(json.loads((CYCLE_DIR / "posts" / filename).read_text(encoding="utf-8")))
         for filename in POST_FILES
     )
 
