@@ -42,9 +42,9 @@
   "claims": [
     {"claim_id":"claim-stam-v2-capture-19341206","claim_text":"6 декабря 1934 года Джон и Бетти Стэм с младенцем Helen Priscilla были захвачены коммунистическими силами в Цзиндэ и помещены под стражу.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-wheaton-449","src-stam-princeton-manuscripts"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
     {"claim_id":"claim-stam-v2-miaosheo-execution","claim_text":"После перехода примерно двенадцати миль до Мяошэ Стэмы были казнены утром 8 декабря 1934 года посредством обезглавливания.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-wheaton-449","src-stam-princeton-manuscripts"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
-    {"claim_id":"claim-stam-v2-chang","claim_text":"Местный торговец Chang Hsiu-sheng просил пощадить Стэмов, после чего был арестован; в его доме нашли Библию и сборник гимнов, а на следующий день его убили.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-wheaton-449"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
-    {"claim_id":"claim-stam-v2-rescue","claim_text":"Евангелист Lo Ke-chou нашёл Helen Priscilla в покинутом доме, а его семья перенесла ребёнка через горы в рисовой корзине, используя оставленные рядом десять долларов для покупки молока.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-wheaton-449"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
-    {"claim_id":"claim-stam-v2-telegram-19341214","claim_text":"14 декабря 1934 года после передачи ребёнка сотруднику China Inland Mission родственники Стэмов получили телеграмму о том, что младенец находится в безопасности.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-wheaton-449"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-stam-v2-chang","claim_text":"Местный торговец Chang Hsiu-sheng просил пощадить Стэмов, после чего был арестован; в его доме нашли Библию и сборник гимнов, а на следующий день его убили.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-wheaton-449","src-stam-princeton-manuscripts"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
+    {"claim_id":"claim-stam-v2-rescue","claim_text":"Евангелист Lo Ke-chou нашёл Helen Priscilla в покинутом доме, а его семья перенесла ребёнка через горы в рисовой корзине, используя оставленные рядом десять долларов для покупки молока.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-wheaton-449","src-stam-princeton-manuscripts"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-stam-v2-telegram-19341214","claim_text":"14 декабря 1934 года после передачи ребёнка сотруднику China Inland Mission родственники Стэмов получили телеграмму о том, что младенец находится в безопасности.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-wheaton-449","src-stam-princeton-manuscripts"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
     {"claim_id":"claim-stam-v2-editorial","claim_text":"Редакционный вывод: верность Христу не гарантирует земной безопасности, а Божье провидение часто действует через тихое и рискованное послушание неизвестных людей рядом с трагедией.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-stam-wheaton-449"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
   ],
   "prose_claim_bindings": {
@@ -82,7 +82,7 @@
     "production_ready":false,
     "checked_on":"2026-09-07"
   }],
-  "release_offset_days":19,
+  "release_offset_days":16,
   "opposing_primary_bound":false,
   "no_opposing_primary_note":null,
   "editorial_status":"ready",
