@@ -927,7 +927,11 @@ def test_workflow_exposes_read_only_preflight_exact_manual_binding_and_max_queue
     assert "state/lordchrist-telegram" in workflow
     assert "getChatMember" not in workflow
     assert "LORDCHRIST_TELEGRAM_BOT_TOKEN" not in header
-    assert workflow.count("${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}") == 2
+    assert workflow.count("${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}") == 4
+    assert "Read-only bot and channel preflight" in workflow
+    assert "Send exactly one prepared message" in workflow
+    assert "Read-only historical Telegram target proof" in workflow
+    assert "Send exactly one historical rich message" in workflow
 
 
 def test_ci_runs_branch_work_only_via_pull_request_to_avoid_duplicate_matrices() -> None:
