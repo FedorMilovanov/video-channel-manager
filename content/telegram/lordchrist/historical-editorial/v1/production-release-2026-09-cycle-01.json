@@ -1,0 +1,76 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-production-release",
+  "schema_version": 1,
+  "release_id": "lordchrist-history-cycle-2026-09-01-live-v1",
+  "owning_issue": 561,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "chat_id": -1001295216957,
+  "chat_username": "lordchrist",
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "state_branch": "state/lordchrist-telegram",
+  "cycle_id": "history-cycle-2026-09-01",
+  "cycle_start_date_moscow": "2026-09-07",
+  "publication_ids": [
+    "lordchrist-history-spurgeon-down-grade",
+    "lordchrist-history-bunyan-bedford-prison",
+    "lordchrist-history-judson-burmese-bible",
+    "lordchrist-history-spurgeon-cholera-1854",
+    "lordchrist-history-carey-enquiry-missions",
+    "lordchrist-history-fuller-gospel-worthy",
+    "lordchrist-history-tyndale-translation-martyrdom",
+    "lordchrist-history-stam-china-martyrdom",
+    "lordchrist-history-sattler-schleitheim-martyrdom"
+  ],
+  "scheduled_dates_moscow": [
+    "2026-09-07",
+    "2026-09-09",
+    "2026-09-12",
+    "2026-09-14",
+    "2026-09-16",
+    "2026-09-19",
+    "2026-09-21",
+    "2026-09-23",
+    "2026-09-26"
+  ],
+  "schedule": {
+    "timezone": "Europe/Moscow",
+    "local_time": "19:17",
+    "iso_weekdays": [1, 3, 6],
+    "freshness_minutes": 120
+  },
+  "provider_writes_authorized": true,
+  "authorization_basis": "User explicitly requested full issue-561 production completion after the surgical audit: exact canary first, then recurring Monday/Wednesday/Saturday historical rich slots with no backfill or blind retry.",
+  "activation_policy": "verified_canary_then_exact_schedule",
+  "canary_publication_id": "lordchrist-history-spurgeon-down-grade",
+  "canary_not_before_moscow": "2026-09-07T12:00:00+03:00",
+  "canary_not_after_moscow": "2026-09-09T18:30:00+03:00",
+  "max_provider_attempts_per_publication": 1,
+  "blind_mutation_retries": 0,
+  "max_combined_verified_per_day_moscow": 2,
+  "backfill_policy": "none",
+  "media_policy": "text_only_until_exact_transport_bytes_are_bound",
+  "replenishment_guard_remaining": 1,
+  "successor_cycle_verified": false,
+  "manifest": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/cycles/2026-09-cycle-01/manifest.json",
+    "git_blob_sha": "3c083786f1d5df33d5ee948321309be66a57c4db"
+  },
+  "second_pass_verification": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/verification/second-pass-2026-09-07.json",
+    "git_blob_sha": "1378a461039539b633eb2b6fac32c94166019768"
+  },
+  "profile": {
+    "path": "content/telegram/channels/lordchrist-rich.json",
+    "git_blob_sha": "d9aa04313825c11906e18a043267068feccb3c95"
+  },
+  "legacy_profile": {
+    "path": "content/telegram/channels/lordchrist.json",
+    "git_blob_sha": "33ac149116a7d1c6862a1b8e2b8d39f09925f72d"
+  },
+  "target_binding": {
+    "path": "content/telegram/channels/lordchrist-rich-target-binding.json",
+    "git_blob_sha": "26efd9956ae634416f288e323e23f7bd2de32a3d"
+  }
+}
