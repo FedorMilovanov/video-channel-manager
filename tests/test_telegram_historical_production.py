@@ -99,7 +99,9 @@ def test_first_historical_rich_document_uses_existing_transport_without_media() 
 
     editorial_document = build_historical_rich_document(queue, post, registry)
     assert editorial_document.media == ()
-    assert tuple(slot.slot_id for slot in editorial_document.media_slots) == tuple(image.asset_id for image in post.images)
+    assert tuple(slot.slot_id for slot in editorial_document.media_slots) == tuple(
+        image.asset_id for image in post.images
+    )
 
     document, render = build_document(
         ROOT,
