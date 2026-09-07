@@ -15,6 +15,16 @@
     {"claim_id":"claim-spurgeon-downgrade-context","claim_text":"Современная историческая реконструкция помещает Down-Grade в контекст Pastors’ College, Баптистского союза и викторианского нонконформизма.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-spurgeon-autobiography","src-cambridge-spurgeon-downgrade"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"synthesis"},
     {"claim_id":"claim-spurgeon-downgrade-editorial","claim_text":"Редакционный вывод: принципиальность в доктрине должна сочетаться с точным представлением оппонента и проверяемостью обвинений.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-cambridge-spurgeon-downgrade"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
   ],
+  "prose_claim_bindings": {
+    "title_claim_ids": ["claim-spurgeon-downgrade-position","claim-spurgeon-downgrade-context"],
+    "lead_claim_ids": ["claim-spurgeon-downgrade-position","claim-spurgeon-downgrade-context"],
+    "evidence_boundary_claim_ids": ["claim-spurgeon-downgrade-position","claim-spurgeon-downgrade-context"],
+    "sections": [
+      {"section_id":"context","paragraph_claim_ids":[["claim-spurgeon-downgrade-position"],["claim-spurgeon-downgrade-context"]]},
+      {"section_id":"boundary","paragraph_claim_ids":[["claim-spurgeon-downgrade-position","claim-spurgeon-downgrade-context"],["claim-spurgeon-downgrade-context"]]},
+      {"section_id":"lesson","paragraph_claim_ids":[["claim-spurgeon-downgrade-editorial"]]}
+    ]
+  },
   "theology_review": {"historical_description":"Исторический слой фиксирует собственную позицию Сперджена и отдельно академическую реконструкцию конфликта.","participant_position":"Сперджен видел кризис прежде всего как отступление от фундаментальных истин христианской веры.","editorial_evaluation":"Редакция разделяет необходимость хранить здравое учение и достаточность Писания, но не переносит автоматически исторические ярлыки Down-Grade на современных людей без самостоятельного доказательства.","scripture_refs":["2 Тим 3:16–17","Иуд 3","2 Тим 2:24–25"],"alignment":"aligned","description_separated_from_evaluation":true,"review_status":"accepted"},
   "images": [{"asset_id":"img-spurgeon-down-grade","source_id":"src-image-spurgeon-nlw","source_page_url":"https://commons.wikimedia.org/wiki/File:Portrait_of_C._H._Spurgeon_(4671161).jpg","direct_media_url":null,"depicts":"Исторический портрет Чарльза Хэддона Сперджена","purpose":"Главная историческая иллюстрация к материалу о Down-Grade Controversy","rights_basis":"Портрет из Welsh Portrait Collection Национальной библиотеки Уэльса отмечен как public domain; перед transport требуется отдельная проверка конкретных байтов.","license_label":"Public domain","attribution_text":"National Library of Wales, Welsh Portrait Collection; via Wikimedia Commons","expected_mime":null,"expected_sha256":null,"production_ready":false,"checked_on":"2026-09-07"}],
   "release_offset_days": 0,
