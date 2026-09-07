@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from video_channel_manager.telegram_historical_production import (
+    SUCCESSOR_BINDING_SCHEMA,
     _guard_unresolved,
     _validate_second_pass,
     build_document,
@@ -15,6 +16,7 @@ from video_channel_manager.telegram_historical_production import (
     decide_scheduled,
     load_release,
     new_ledger,
+    release_digest,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,6 +28,25 @@ MOSCOW = ZoneInfo("Europe/Moscow")
 def _loaded():
     release, queue, registry, profile_path, aux = load_release(RELEASE_PATH, ROOT)
     return release, queue, registry, profile_path, aux
+
+
+def _bind_verified_successor_state(ledger: dict, release: dict) -> None:
+    ledger["successor_cycle_binding"] = {
+        "schema_name": SUCCESSOR_BINDING_SCHEMA,
+        "schema_version": 1,
+        "current_release_id": release["release_id"],
+        "current_release_sha256": release_digest(release),
+        "current_cycle_id": release["cycle_id"],
+        "successor_cycle_id": "2026-10-cycle-01",
+        "successor_manifest_path": "content/telegram/lordchrist/historical-editorial/v1/cycles/2026-10-cycle-01/manifest.json",
+        "successor_manifest_git_blob_sha": "0" * 40,
+        "successor_queue_sha256": "sha256:" + "1" * 64,
+        "successor_source_registry_sha256": "sha256:" + "2" * 64,
+        "successor_theology_profile_sha256": "sha256:" + "3" * 64,
+        "verified_at_utc": "2026-09-24T10:00:00+00:00",
+        "verified_by": "test-suite",
+        "provider_write_performed": False,
+    }
 
 
 def test_historical_production_release_is_exact_and_second_pass_is_50_urls() -> None:
@@ -160,7 +181,23 @@ def test_unresolved_historical_effect_blocks_every_follow_on() -> None:
         _guard_unresolved(ledger)
 
 
-def test_replenishment_gate_blocks_last_slot_until_successor_is_verified() -> None:
+def test_confirmed_no_effect_is_terminal_for_identity_but_not_global_writer_block() -> None:
+    release, queue, _registry, _profile_path, aux = _loaded()
+    ledger = new_ledger(release, queue, tuple(aux["planned_dates"]))
+    second = release["publication_ids"][1]
+    ledger["entries"][second].update(
+        {
+            "state": "failed_no_effect",
+            "provider_effect": "confirmed_absent",
+            "error": "provider proved no effect",
+        }
+    )
+
+    _guard_unresolved(ledger)
+    assert ledger["entries"][second]["state"] == "failed_no_effect"
+
+
+def test_replenishment_gate_uses_durable_successor_binding_without_mutating_release() -> None:
     release, queue, _registry, _profile_path, aux = _loaded()
     planned = tuple(aux["planned_dates"])
     ids = tuple(release["publication_ids"])
@@ -177,6 +214,7 @@ def test_replenishment_gate_blocks_last_slot_until_successor_is_verified() -> No
             }
         )
 
+    original_release_digest = release_digest(release)
     coverage = coverage_status(release, ledger)
     assert coverage["pending_count"] == 1
     assert coverage["exhaustion_block_active"] is True
@@ -191,10 +229,9 @@ def test_replenishment_gate_blocks_last_slot_until_successor_is_verified() -> No
     assert blocked.active is False
     assert blocked.reason == "successor_cycle_required_before_exhaustion"
 
-    successor_release = dict(release)
-    successor_release["successor_cycle_verified"] = True
+    _bind_verified_successor_state(ledger, release)
     unblocked = decide_scheduled(
-        successor_release,
+        release,
         ledger,
         ids,
         planned,
@@ -202,6 +239,8 @@ def test_replenishment_gate_blocks_last_slot_until_successor_is_verified() -> No
     )
     assert unblocked.active is True
     assert unblocked.publication_id == ids[-1]
+    assert release_digest(release) == original_release_digest
+    assert coverage_status(release, ledger)["successor_cycle_verified"] is True
 
 
 def test_non_slot_day_is_provider_inert() -> None:
@@ -222,8 +261,8 @@ def test_non_slot_day_is_provider_inert() -> None:
 
 def test_historical_lane_is_routed_through_existing_single_writer_workflow() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
-    assert 'group: lordchrist-telegram-publisher' in workflow
-    assert workflow.count('group: lordchrist-telegram-publisher') == 1
+    assert "group: lordchrist-telegram-publisher" in workflow
+    assert workflow.count("group: lordchrist-telegram-publisher") == 1
     assert '- cron: "17 9 * * *"' in workflow
     assert '- cron: "17 19 * * 1,3,6"' in workflow
     assert '- cron: "17 21 * * 2,5,0"' in workflow
