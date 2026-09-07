@@ -16,13 +16,11 @@ from video_channel_manager.telegram_historical_production import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-RELEASE_PATH = ROOT / "content/telegram/lordchrist/historical-editorial/v1/production-release-2026-09-cycle-01.json"
+RELEASE_PATH = ROOT / "content/telegram/lordchrist/historical-editorial/v1/production-release-2026-09-cycle-02.json"
 
 
 def _transport_verified_v2_ledger():
     release, queue, _registry, _profile_path, aux = load_release(RELEASE_PATH, ROOT)
-    release = dict(release)
-    release["editorial_approval_required"] = True
     planned = tuple(aux["planned_dates"])
     ledger = new_ledger(release, queue, planned)
     canary_id = str(release["canary_publication_id"])
@@ -51,13 +49,13 @@ def test_transport_verified_canary_does_not_arm_schedule_before_editorial_approv
         ledger,
         tuple(post.publication_id for post in queue.posts),
         planned,
-        now=datetime.fromisoformat("2026-09-09T19:20:00+03:00"),
+        now=datetime.fromisoformat("2026-09-14T19:20:00+03:00"),
     )
     assert decision.active is False
     assert decision.reason == "canary_not_verified"
 
 
-def test_exact_provider_free_editorial_approval_arms_schedule() -> None:
+def test_exact_provider_free_editorial_approval_arms_first_recurring_slot_without_backfill() -> None:
     release, queue, planned, ledger = _transport_verified_v2_ledger()
 
     approved = approve_canary(
@@ -77,10 +75,12 @@ def test_exact_provider_free_editorial_approval_arms_schedule() -> None:
         approved,
         tuple(post.publication_id for post in queue.posts),
         planned,
-        now=datetime.fromisoformat("2026-09-09T19:20:00+03:00"),
+        now=datetime.fromisoformat("2026-09-14T19:20:00+03:00"),
     )
     assert decision.active is True
-    assert decision.publication_id == release["publication_ids"][1]
+    assert decision.publication_id == release["recurring_publication_ids"][0]
+    assert decision.publication_id == "lordchrist-history-bunyan-bedford-prison-v2"
+    assert decision.reason == "active_exact_historical_slot"
 
 
 def test_editorial_approval_rejects_message_id_not_in_durable_provider_evidence() -> None:
