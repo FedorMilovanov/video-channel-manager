@@ -1,0 +1,36 @@
+{
+  "sequence": 4,
+  "publication_id": "lordchrist-history-spurgeon-cholera-1854",
+  "topic_kind": "biography",
+  "title": "Сперджен во время холеры 1854 года: пастырство, которое вышло из кафедры",
+  "lead": "В биографии молодого Сперджена есть эпизод, который легко романтизировать: эпидемия холеры, страх в Лондоне и пастор, посещающий больных. Но документируемая история интереснее лозунга. Источники показывают не образ бесстрашного героя, а служителя, который продолжал пастырскую работу среди реальной опасности, усталости и массовой смерти.",
+  "sections": [
+    {"section_id":"outbreak","heading":"Лондонская эпидемия и молодой пастор","paragraphs":["В 1854 году Лондон переживал тяжёлую вспышку холеры. Для Сперджена, только начинавшего служение в New Park Street Chapel, это стало не теоретической темой проповеди, а повседневной пастырской реальностью: семьи заболевали, люди умирали, а община нуждалась в посещении и утешении.","Институциональная реконструкция Spurgeon Library и современная биографическая работа описывают этот период как важный ранний эпизод его служения. Собственная автобиографическая традиция Сперджена даёт первичную линию для проверки того, как он сам помнил эти события."]},
+    {"section_id":"pastoral","heading":"Не культ риска, а обязанность служения","paragraphs":["Исторически важна не идея «христианин не боится болезни», а то, что пастырская обязанность в кризисе принимала практическую форму. Сперджен не строил богословие на презрении к опасности; эпизод показывает сочетание проповеди, посещения и утешения людей в бедствии.","Поэтому редакция не использует этот случай для современных медицинских аналогий, которые источники XIX века не могут решить за нас."]},
+    {"section_id":"lesson","heading":"Почему этот эпизод остаётся сильным","paragraphs":["Подлинная пастырская верность измеряется не эффектной позой, а присутствием рядом с людьми тогда, когда служение становится тяжёлым. История Сперджена во время холеры ценна именно этим: она возвращает слово «пастырь» из абстракции в конкретное действие."]}
+  ],
+  "evidence_boundary": "Установлено: вспышка холеры 1854 года совпала с ранним лондонским служением Сперджена; источники описывают его пастырские посещения и служение в условиях эпидемии. Материал не выводит из этого эпизода универсальных медицинских предписаний и не романтизирует опасность как духовную добродетель.",
+  "claims": [
+    {"claim_id":"claim-spurgeon-cholera-ministry","claim_text":"Во время лондонской вспышки холеры 1854 года Сперджен продолжал пастырское служение, включая посещение людей, затронутых эпидемией.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-spurgeon-autobiography","src-spurgeon-cholera"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
+    {"claim_id":"claim-spurgeon-cholera-biographical-context","claim_text":"Современная биографическая реконструкция рассматривает эпидемию 1854 года как значимый эпизод раннего пастырского служения Сперджена в Лондоне.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-spurgeon-autobiography","src-bh-spurgeon-biography"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"},
+    {"claim_id":"claim-spurgeon-cholera-editorial","claim_text":"Редакционный вывод: этот эпизод свидетельствует о пастырской ответственности в кризисе, но не служит основанием для переноса медицинских решений XIX века в современность.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-spurgeon-cholera"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
+  ],
+  "prose_claim_bindings": {
+    "title_claim_ids": ["claim-spurgeon-cholera-ministry","claim-spurgeon-cholera-biographical-context"],
+    "lead_claim_ids": ["claim-spurgeon-cholera-ministry","claim-spurgeon-cholera-biographical-context"],
+    "evidence_boundary_claim_ids": ["claim-spurgeon-cholera-ministry","claim-spurgeon-cholera-biographical-context","claim-spurgeon-cholera-editorial"],
+    "sections": [
+      {"section_id":"outbreak","paragraph_claim_ids":[["claim-spurgeon-cholera-ministry"],["claim-spurgeon-cholera-biographical-context"]]},
+      {"section_id":"pastoral","paragraph_claim_ids":[["claim-spurgeon-cholera-ministry","claim-spurgeon-cholera-editorial"],["claim-spurgeon-cholera-editorial"]]},
+      {"section_id":"lesson","paragraph_claim_ids":[["claim-spurgeon-cholera-editorial"]]}
+    ]
+  },
+  "theology_review": {"historical_description":"Исторический слой фиксирует эпидемический контекст, пастырскую работу Сперджена и современную биографическую оценку этого периода.","participant_position":"Для Сперджена пастырское служение включало не только публичную проповедь, но и личное присутствие рядом с людьми в страдании.","editorial_evaluation":"Редакция видит здесь библейский принцип пастырской заботы и милосердия, не превращая исторический пример в универсальную инструкцию по вопросам медицины или допустимого риска.","scripture_refs":["1 Пет 5:2–3","Иак 1:27","Рим 12:15"],"alignment":"aligned","description_separated_from_evaluation":true,"review_status":"accepted"},
+  "images": [],
+  "release_offset_days": 7,
+  "opposing_primary_bound": false,
+  "no_opposing_primary_note": null,
+  "editorial_status": "ready",
+  "fact_check_status": "accepted",
+  "rights_status": "reviewed"
+}

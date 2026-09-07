@@ -1,0 +1,36 @@
+{
+  "sequence": 6,
+  "publication_id": "lordchrist-history-fuller-gospel-worthy",
+  "topic_kind": "historical_fact",
+  "title": "Эндрю Фуллер и «Gospel Worthy of All Acceptation»: спор, который изменил миссионерскую практику баптистов",
+  "lead": "До Кэри был Фуллер. Его трактат 1785 года часто упоминают как один из текстов, помогавших английским Particular Baptists выйти из богословской пассивности к более активной евангелизации. Но полезнее не повторять формулу, а увидеть, что именно зафиксировано: существует первичное издание, академическая традиция связывает его с внутренними баптистскими спорами, а позднейшая миссионерская мобилизация разворачивалась уже в этом изменившемся интеллектуальном поле.",
+  "sections": [
+    {"section_id":"text","heading":"Документ 1785 года","paragraphs":["Bibliographic records Wellcome и Folger фиксируют раннее издание The Gospel of Christ Worthy of All Acceptation. Уже сам факт первичного текста важен: обсуждение можно привязать к конкретному документу, а не к пересказу поздней биографии.","Oxford Academic помещает трактат в более широкую историю евангеликализма и Particular Baptists. В этом контексте работа Фуллера связана с вопросом о всеобщем провозглашении Евангелия и ответственности слушателя ответить верой."]},
+    {"section_id":"baptists","heading":"Почему спор был практическим","paragraphs":["Для части баптистской среды вопрос был не отвлечённым: богословская модель напрямую влияла на готовность призывать неверующих к покаянию и вере и, следовательно, на миссионерскую активность.","Однако корректнее говорить о существенном влиянии Фуллера, а не о единственной причине будущего миссионерского движения. Исторические изменения редко имеют одного автора."]},
+    {"section_id":"lesson","heading":"Доктрина всегда имеет последствия","paragraphs":["Этот эпизод полезен потому, что показывает связь между точностью богословской формулировки и практикой церкви. Ошибка может парализовать действие; исправление аргумента может открыть пространство для послушания. Но и здесь история требует осторожности: влияние не равно единоличному причинению."]}
+  ],
+  "evidence_boundary": "Установлено: трактат Фуллера 1785 года существует в ранних библиографических записях и рассматривается академической литературой как значимый текст Particular Baptist и евангеликальной истории. Материал говорит о влиянии на миссионерскую культуру, но не утверждает, что один трактат единолично создал Баптистское миссионерское общество или всё последующее движение.",
+  "claims": [
+    {"claim_id":"claim-fuller-1785-text","claim_text":"The Gospel of Christ Worthy of All Acceptation Фуллера был опубликован в 1785 году и подтверждается независимыми архивно-библиографическими записями.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-fuller-wellcome-1785","src-fuller-oup-reader"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-fuller-baptist-context","claim_text":"Академическая литература помещает трактат Фуллера в важный внутренний контекст Particular Baptists и последующего развития евангелизационной и миссионерской активности.","claim_kind":"influence","certainty":"estimate","voice":"historical_fact","source_ids":["src-fuller-folger-catalog","src-oup-particular-baptists"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"},
+    {"claim_id":"claim-fuller-editorial","claim_text":"Редакционный вывод: доктринальная формулировка имеет практические последствия, поэтому богословская точность и миссионерское послушание нельзя безопасно разводить по разным комнатам.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-fuller-oup-reader"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
+  ],
+  "prose_claim_bindings": {
+    "title_claim_ids": ["claim-fuller-1785-text","claim-fuller-baptist-context"],
+    "lead_claim_ids": ["claim-fuller-1785-text","claim-fuller-baptist-context"],
+    "evidence_boundary_claim_ids": ["claim-fuller-1785-text","claim-fuller-baptist-context"],
+    "sections": [
+      {"section_id":"text","paragraph_claim_ids":[["claim-fuller-1785-text"],["claim-fuller-baptist-context"]]},
+      {"section_id":"baptists","paragraph_claim_ids":[["claim-fuller-baptist-context"],["claim-fuller-baptist-context"]]},
+      {"section_id":"lesson","paragraph_claim_ids":[["claim-fuller-editorial","claim-fuller-baptist-context"]]}
+    ]
+  },
+  "theology_review": {"historical_description":"Историческое описание опирается на ранние библиографические записи трактата и академическую реконструкцию Particular Baptist контекста.","participant_position":"Фуллер защищал необходимость всеобщего провозглашения Евангелия и ответственности грешника ответить на евангельский призыв.","editorial_evaluation":"Редакция принимает необходимость свободно провозглашать Евангелие всем людям, одновременно сохраняя спасение исключительно по благодати через веру и не превращая человеческий ответ в основание заслуги.","scripture_refs":["Рим 10:9–17","Еф 2:8–9","Деян 17:30"],"alignment":"aligned","description_separated_from_evaluation":true,"review_status":"accepted"},
+  "images": [],
+  "release_offset_days": 12,
+  "opposing_primary_bound": false,
+  "no_opposing_primary_note": null,
+  "editorial_status": "ready",
+  "fact_check_status": "accepted",
+  "rights_status": "reviewed"
+}

@@ -1,0 +1,7 @@
+{
+  "schema_name":"video-channel-manager.telegram-historical-source-shard","schema_version":1,"shard_id":"history-sources-tyndale","checked_on":"2026-09-07","sources":[
+    {"source_id":"src-tyndale-british-library","title":"William Tyndale papers and first New Testament facsimile material, Add MS 26670","publisher":"British Library Archives","url":"https://searcharchives.bl.uk/catalog/040-002030439","evidence_type":"primary","grade":"A","evidence_role":"official_archive","checked_on":"2026-09-07","topic_tags":["tyndale","new-testament","archive"],"independence_group":"british-library-tyndale"},
+    {"source_id":"src-tyndale-cambridge-englishing","title":"Englishing the Bible, 1066–1549","publisher":"Cambridge University Press","url":"https://www.cambridge.org/core/books/abs/cambridge-history-of-medieval-english-literature/englishing-the-bible-10661549/BDFB47E34323199AE2D8A8A10C6FF032","evidence_type":"scholarly","grade":"B+","evidence_role":"academic_monograph","checked_on":"2026-09-07","topic_tags":["tyndale","bible-translation","english"],"independence_group":"cambridge-englishing-bible"},
+    {"source_id":"src-tyndale-loc","title":"William Tyndale exhibit essay","publisher":"Library of Congress","url":"https://www.loc.gov/loc/lcib/9707/tyndale.html","evidence_type":"institutional","grade":"B+","evidence_role":"institutional_collection","checked_on":"2026-09-07","topic_tags":["tyndale","execution","bible-translation"],"independence_group":"loc-tyndale"}
+  ]
+}

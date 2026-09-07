@@ -1,0 +1,18 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-theology-profile",
+  "schema_version": 1,
+  "profile_id": "lordchrist-historical-editorial-v1",
+  "source_repository": "FedorMilovanov/gb-is-my-strength",
+  "source_path": "about/index.html",
+  "source_commit": "69c0520bcac095576399cbb9e926f9f1280c7665",
+  "checked_on": "2026-09-07",
+  "commitments": [
+    "Богодухновенность Священного Писания",
+    "Достаточность Священного Писания",
+    "Спасение по благодати через веру в Иисуса Христа",
+    "Грамматико-исторический метод толкования",
+    "Последовательно-буквальное чтение текста, включая пророчество",
+    "Буквальное тысячелетнее царство",
+    "Различение Израиля и Церкви в Божьем замысле"
+  ]
+}

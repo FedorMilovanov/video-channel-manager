@@ -1,0 +1,36 @@
+{
+  "sequence": 5,
+  "publication_id": "lordchrist-history-carey-enquiry-missions",
+  "topic_kind": "mission_history",
+  "title": "Уильям Кэри и Enquiry 1792 года: как миссия стала аргументом, а не лозунгом",
+  "lead": "Уильяма Кэри часто называют «отцом современного миссионерского движения». Такой ярлык удобен, но сам по себе мало объясняет. Гораздо интереснее открыть его Enquiry 1792 года и увидеть, что за миссионерским импульсом стояла не только страсть, но и систематический аргумент: библейский долг, исторические примеры, география народов и практический вопрос о средствах.",
+  "sections": [
+    {"section_id":"enquiry","heading":"Что Кэри действительно написал","paragraphs":["В Enquiry Кэри не ограничился призывом «нужно идти». Трактат соединял богословское обоснование миссии с историческими и географическими сведениями и с обсуждением практических средств. Именно поэтому документ важен для истории: он показывает способ мышления, а не только знаменитый результат.","Первичный текст 1792 года позволяет проверять содержание напрямую, а институциональные материалы BMS и William Carey University помогают поместить его в контекст формирования миссионерского общества."]},
+    {"section_id":"society","heading":"От трактата к организованной миссии","paragraphs":["В том же историческом контексте возникло Баптистское миссионерское общество. Источники показывают, что раннее движение было коллективным проектом: Кэри был важнейшей фигурой, но не одиночным создателем всей системы.","Это важная поправка к популярной биографии. История миссии становится сильнее, когда видны не только великие имена, но и сеть людей, денег, переписки, переводов, печати и церковной поддержки."]},
+    {"section_id":"lesson","heading":"Что этот документ учит сегодня","paragraphs":["Ревность без аргумента быстро превращается в лозунг, а аргумент без действия — в академическую декорацию. Enquiry интересен именно соединением: Писание, рассуждение, реальные данные и практический план. Для редакционной культуры это полезная модель мышления."]}
+  ],
+  "evidence_boundary": "Установлено: Enquiry 1792 года содержит библейское, историческое, географическое и практическое обоснование миссионерского действия; формирование Баптистского миссионерского общества было коллективным процессом. Материал сознательно не использует титул «отец современных миссий» как точное историческое измерение или исключительное авторство.",
+  "claims": [
+    {"claim_id":"claim-carey-enquiry-content","claim_text":"Enquiry 1792 года соединяет библейское обоснование миссии с историческими, географическими и практическими рассуждениями о средствах её осуществления.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-carey-enquiry-1792","src-carey-center-bms"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-carey-bms-collective","claim_text":"Раннее Баптистское миссионерское общество возникло как коллективная организационная инициатива, а не как единоличный проект Уильяма Кэри.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-carey-enquiry-1792","src-bms-origins"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"},
+    {"claim_id":"claim-carey-editorial","claim_text":"Редакционный вывод: устойчивое миссионерское действие требует соединения библейского основания, интеллектуальной честности, практического планирования и церковного сотрудничества.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-carey-enquiry-1792"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
+  ],
+  "prose_claim_bindings": {
+    "title_claim_ids": ["claim-carey-enquiry-content","claim-carey-bms-collective"],
+    "lead_claim_ids": ["claim-carey-enquiry-content","claim-carey-bms-collective"],
+    "evidence_boundary_claim_ids": ["claim-carey-enquiry-content","claim-carey-bms-collective"],
+    "sections": [
+      {"section_id":"enquiry","paragraph_claim_ids":[["claim-carey-enquiry-content"],["claim-carey-enquiry-content","claim-carey-bms-collective"]]},
+      {"section_id":"society","paragraph_claim_ids":[["claim-carey-bms-collective"],["claim-carey-bms-collective"]]},
+      {"section_id":"lesson","paragraph_claim_ids":[["claim-carey-editorial"]]}
+    ]
+  },
+  "theology_review": {"historical_description":"Исторический слой строится на первичном тексте Enquiry и институциональной истории раннего Баптистского миссионерского общества.","participant_position":"Кэри аргументировал, что христиане обязаны использовать доступные средства для распространения Евангелия среди народов.","editorial_evaluation":"Редакция согласна с приоритетом Великого поручения и видит достоинство метода Кэри в подчинении миссионерской практики библейскому аргументу, а не в создании культа одного исторического деятеля.","scripture_refs":["Мф 28:18–20","Рим 10:14–15","Деян 13:1–3"],"alignment":"aligned","description_separated_from_evaluation":true,"review_status":"accepted"},
+  "images": [],
+  "release_offset_days": 9,
+  "opposing_primary_bound": false,
+  "no_opposing_primary_note": null,
+  "editorial_status": "ready",
+  "fact_check_status": "accepted",
+  "rights_status": "reviewed"
+}

@@ -1,0 +1,36 @@
+{
+  "sequence": 3,
+  "publication_id": "lordchrist-history-judson-burmese-bible",
+  "topic_kind": "mission_history",
+  "title": "Адонирам Джадсон и бирманская Библия: почему точность важнее миссионерской легенды",
+  "lead": "О Джадсоне легко написать вдохновляющий текст в жанре «один человек перевёл Библию для целого народа». Но современные исследования его бирманского перевода показывают более интересную и честную картину: труд был огромным, влияние — долговременным, однако перевод возник не в интеллектуальном вакууме. Источники позволяют увидеть и подвиг, и зависимость от предшествующей переводческой традиции.",
+  "sections": [
+    {"section_id":"translation","heading":"Перевод как многолетний труд","paragraphs":["Первичные миссионерские материалы Джадсона и современные исследования подтверждают масштаб его работы над бирманским текстом Писания. Его вклад нельзя свести к краткой миссионерской кампании: это был длительный филологический, экзегетический и пастырский труд.","При этом новое исследование Cambridge прямо разбирает зависимости и развитие перевода. Поэтому формула «перевёл всё с нуля» слишком груба и исторически хуже, чем реальность."]},
+    {"section_id":"method","heading":"Что меняется, когда мы видим метод","paragraphs":["История перевода показывает, что серьёзная миссия требует не только ревности, но и языковой дисциплины: сопоставления вариантов, работы с уже существующими материалами, проверки смысла и долговременного пересмотра текста.","Такой взгляд не уменьшает роль Джадсона. Напротив, он показывает реальную сложность его работы и освобождает биографию от героического упрощения."]},
+    {"section_id":"lesson","heading":"Урок для сегодняшней редакции","paragraphs":["Чем значительнее служитель, тем меньше ему нужны легенды. Если источник позволяет сказать «выдающийся многолетний переводчик», нет необходимости добавлять непроверяемое «первый и единственный, начавший с нуля». Историческая точность сама становится формой уважения."]}
+  ],
+  "evidence_boundary": "Установлено: Джадсон вёл многолетнюю работу над бирманским переводом Библии и оставил значимое переводческое наследие. Современные исследования показывают зависимость и развитие текста относительно предшествующих ресурсов, поэтому цикл не использует формулу о полностью изолированном переводе «с нуля».",
+  "claims": [
+    {"claim_id":"claim-judson-translation-work","claim_text":"Джадсон вёл длительную работу над бирманским библейским переводом, что подтверждается его собственными миссионерскими материалами и современной академической реконструкцией.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-judson-letter-1817","src-cambridge-judson-exegete-2019"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-judson-translation-dependency","claim_text":"Современное исследование бирманской Библии Джадсона показывает развитие перевода и его зависимость от существовавших до него языковых и переводческих ресурсов.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-judson-letter-1817","src-cambridge-judson-burmese-2024"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"},
+    {"claim_id":"claim-judson-editorial","claim_text":"Редакционный вывод: миссионерское величие не требует легенды об интеллектуальной изоляции; точное описание совместимости, зависимости и развития лучше служит истине.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-cambridge-judson-burmese-2024"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
+  ],
+  "prose_claim_bindings": {
+    "title_claim_ids": ["claim-judson-translation-work","claim-judson-translation-dependency"],
+    "lead_claim_ids": ["claim-judson-translation-work","claim-judson-translation-dependency"],
+    "evidence_boundary_claim_ids": ["claim-judson-translation-work","claim-judson-translation-dependency"],
+    "sections": [
+      {"section_id":"translation","paragraph_claim_ids":[["claim-judson-translation-work"],["claim-judson-translation-dependency"]]},
+      {"section_id":"method","paragraph_claim_ids":[["claim-judson-translation-work","claim-judson-translation-dependency"],["claim-judson-translation-work","claim-judson-translation-dependency"]]},
+      {"section_id":"lesson","paragraph_claim_ids":[["claim-judson-editorial"]]}
+    ]
+  },
+  "theology_review": {"historical_description":"Историческое описание разводит доказанный масштаб переводческой работы Джадсона и вопрос о зависимости его текста от более ранних ресурсов.","participant_position":"Джадсон понимал перевод Писания как часть миссионерского служения и стремился сделать библейский текст доступным на бирманском языке.","editorial_evaluation":"Редакция оценивает этот труд через приоритет точного Слова Божьего: миссионерская ревность должна соединяться с языковой и экзегетической точностью, а биографическая похвала — с честностью источников.","scripture_refs":["2 Тим 2:15","Неем 8:8","2 Кор 4:2"],"alignment":"aligned","description_separated_from_evaluation":true,"review_status":"accepted"},
+  "images": [{"asset_id":"img-judson-brown-portrait","source_id":"src-judson-brown-portrait","source_page_url":"https://library.brown.edu/cds/portraits/display.php?idno=268","direct_media_url":null,"depicts":"Портрет Адонирама Джадсона работы George Peter Alexander Healy, 1846","purpose":"Историческая портретная иллюстрация к материалу о бирманском переводе Библии","rights_basis":"Brown University Library предоставляет институциональную запись портрета; перед публикацией изображения требуется отдельная проверка прав, прямого media URL, MIME и SHA-256.","license_label":"Institutional provenance; transport rights pending","attribution_text":"Brown University Library portrait collection","expected_mime":null,"expected_sha256":null,"production_ready":false,"checked_on":"2026-09-07"}],
+  "release_offset_days": 5,
+  "opposing_primary_bound": false,
+  "no_opposing_primary_note": null,
+  "editorial_status": "ready",
+  "fact_check_status": "accepted",
+  "rights_status": "reviewed"
+}

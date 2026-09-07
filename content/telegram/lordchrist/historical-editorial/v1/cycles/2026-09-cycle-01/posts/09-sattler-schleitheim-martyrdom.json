@@ -1,0 +1,36 @@
+{
+  "sequence": 9,
+  "publication_id": "lordchrist-history-sattler-schleitheim-martyrdom",
+  "topic_kind": "martyrdom",
+  "title": "Михаэль Заттлер: Шляйтхаймское исповедание и несколько месяцев до казни",
+  "lead": "В феврале 1527 года швейцарские братья приняли семь статей, известных как Шляйтхаймское исповедание. С Михаэлем Заттлером этот документ связан особенно тесно; уже через несколько месяцев он был казнён. Сочетание первичного текста исповедания и современной академической реконструкции позволяет увидеть ранний анабаптизм не как набор ярлыков, а как конкретную попытку сформулировать церковную практику в условиях преследования.",
+  "sections": [
+    {"section_id":"confession","heading":"Семь статей в момент давления","paragraphs":["Университет Орегона публикует перевод Шляйтхаймского исповедания с указанием конференции 24 февраля 1527 года и исторической связи Заттлера с документом. В самом тексте обсуждаются крещение, церковная дисциплина, Вечеря, отделение, пастыри, меч и клятва.","Это не полный систематический символ веры. Даже редакционная заметка к источнику подчёркивает его ограниченную задачу: документ возник в конкретной ранней анабаптистской среде и отвечал на практические споры этой общины."]},
+    {"section_id":"trial","heading":"От исповедания к суду","paragraphs":["Академическое исследование Cambridge рассматривает дело Заттлера в контексте Swiss Brethren и революционных потрясений Реформации. Институциональная публикация первичного текста также фиксирует, что он был сожжён менее чем через три месяца после Шляйтхаймской конференции.","Редакция не делает из мученической смерти аргумент в пользу каждой статьи Шляйтхайма. Исторический факт стойкости и богословская оценка конкретной доктрины — разные операции и должны оставаться раздельными."]},
+    {"section_id":"lesson","heading":"Как читать исповедания прошлого","paragraphs":["Исторические исповедания особенно полезны, когда их читают одновременно внимательно и трезво: как свидетельство реальных христиан в реальной опасности, но не как текст, стоящий над Писанием. Их мужество заслуживает уважения; их формулировки всё равно требуют библейской проверки."]}
+  ],
+  "evidence_boundary": "Установлено: Шляйтхаймское исповедание датируется 24 февраля 1527 года, связано с Михаэлем Заттлером и ранними Swiss Brethren; академические и институциональные источники помещают его последующий суд и казнь в том же историческом контексте. Материал не утверждает, что мученичество подтверждает безошибочность всех семи статей.",
+  "claims": [
+    {"claim_id":"claim-sattler-schleitheim-1527","claim_text":"Шляйтхаймское исповедание было принято на конференции Swiss Brethren 24 февраля 1527 года и тесно связано с деятельностью Михаэля Заттлера.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-schleitheim-oregon","src-sattler-cambridge"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-sattler-martyrdom-context","claim_text":"Заттлер был казнён в 1527 году вскоре после Шляйтхаймской конференции, в контексте преследования ранних анабаптистов.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-schleitheim-oregon","src-sattler-cambridge"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
+    {"claim_id":"claim-sattler-editorial","claim_text":"Редакционный вывод: мученичество заслуживает исторического почтения, но не отменяет необходимости проверять каждую доктринальную формулировку исповедания по Священному Писанию.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-sattler-cambridge"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
+  ],
+  "prose_claim_bindings": {
+    "title_claim_ids": ["claim-sattler-schleitheim-1527","claim-sattler-martyrdom-context"],
+    "lead_claim_ids": ["claim-sattler-schleitheim-1527","claim-sattler-martyrdom-context"],
+    "evidence_boundary_claim_ids": ["claim-sattler-schleitheim-1527","claim-sattler-martyrdom-context","claim-sattler-editorial"],
+    "sections": [
+      {"section_id":"confession","paragraph_claim_ids":[["claim-sattler-schleitheim-1527"],["claim-sattler-schleitheim-1527"]]},
+      {"section_id":"trial","paragraph_claim_ids":[["claim-sattler-martyrdom-context"],["claim-sattler-martyrdom-context","claim-sattler-editorial"]]},
+      {"section_id":"lesson","paragraph_claim_ids":[["claim-sattler-editorial"]]}
+    ]
+  },
+  "theology_review": {"historical_description":"Исторический слой связывает датированный первичный текст Шляйтхайма с академической реконструкцией роли Заттлера, суда и раннего анабаптистского движения.","participant_position":"Шляйтхаймские статьи выражали стремление Swiss Brethren устроить церковную жизнь в соответствии с их прочтением Нового Завета в условиях давления.","editorial_evaluation":"Редакция уважает их серьёзность и готовность страдать за убеждения, но сохраняет собственную баптистскую и грамматико-историческую проверку каждого положения непосредственно по Писанию, не принимая историческое исповедание как высший авторитет.","scripture_refs":["Деян 17:11","2 Тим 3:16–17","1 Фес 5:21"],"alignment":"mixed","description_separated_from_evaluation":true,"review_status":"accepted"},
+  "images": [],
+  "release_offset_days": 19,
+  "opposing_primary_bound": false,
+  "no_opposing_primary_note": null,
+  "editorial_status": "ready",
+  "fact_check_status": "accepted",
+  "rights_status": "reviewed"
+}

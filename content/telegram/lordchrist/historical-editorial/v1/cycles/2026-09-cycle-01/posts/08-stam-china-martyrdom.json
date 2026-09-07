@@ -1,0 +1,36 @@
+{
+  "sequence": 8,
+  "publication_id": "lordchrist-history-stam-china-martyrdom",
+  "topic_kind": "martyrdom",
+  "title": "Джон и Бетти Стэм: миссия в Китае и память, которую можно проверить по архивам",
+  "lead": "История Джона и Бетти Стэм трагична и потому особенно уязвима для благочестивого приукрашивания. Архивы Wheaton College и Princeton Theological Seminary позволяют удержать другой подход: начинать с сохранившихся предметов, семейных материалов и миссионерских документов, а не с поздних драматических пересказов. Тогда их смерть остаётся тяжёлой, но исторически ответственной историей служения.",
+  "sections": [
+    {"section_id":"archives","heading":"Что осталось после них","paragraphs":["Wheaton College хранит материалы семьи Стэм, включая известный детский safe и связанные с миссией документы. Princeton Theological Seminary описывает отдельный manuscript collection, где материалы семей Scott и Stam входят в более широкий архив китайских миссий 1927–1938 годов.","Такие фонды важны не как реликвии сами по себе, а как независимые точки проверки: письма, предметы и административные следы позволяют восстанавливать служение без зависимости от одного позднего рассказчика."]},
+    {"section_id":"death","heading":"Мученичество без эксплуатации трагедии","paragraphs":["Джон и Бетти Стэм были миссионерами в Китае и погибли в 1934 году. Редакционный стандарт не превращает их смерть в эмоциональный аттракцион и не добавляет подробности последнего часа, если они не связаны с проверяемым источником.","Особенно важно отличать архивно подтверждаемую последовательность событий от поздних цитат, легенд и реконструированных диалогов. Чем тяжелее событие, тем выше должна быть дисциплина источника."]},
+    {"section_id":"lesson","heading":"Что остаётся после героической рамки","paragraphs":["После удаления эффектных деталей остаётся не меньшая, а большая история: молодая семья, реальное миссионерское служение, реальные архивы и реальная цена. Христианская память не обязана выбирать между почтением и проверяемостью — она должна требовать обоих."]}
+  ],
+  "evidence_boundary": "Установлено архивами: Джон и Бетти Стэм были связаны с миссионерским служением в Китае; сохранились семейные и миссионерские материалы в Wheaton College и Princeton Theological Seminary; их гибель относится к 1934 году. Материал не воспроизводит неподтверждённые последние слова, диалоги или драматические подробности казни.",
+  "claims": [
+    {"claim_id":"claim-stam-archival-records","claim_text":"Служение и семейная история Джона и Бетти Стэм документируются независимыми архивными коллекциями Wheaton College и Princeton Theological Seminary.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-wheaton-449","src-stam-princeton-manuscripts"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
+    {"claim_id":"claim-stam-china-mission-context","claim_text":"Архивные материалы помещают семью Стэм в документируемый контекст протестантских миссий в Китае конца 1920-х и 1930-х годов.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-wheaton-449","src-stam-princeton-manuscripts"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-stam-editorial","claim_text":"Редакционный вывод: память о мучениках должна отвергать эмоциональные детали, которые нельзя проследить до источника, даже когда эти детали усиливают впечатление от истории.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-stam-wheaton-449"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
+  ],
+  "prose_claim_bindings": {
+    "title_claim_ids": ["claim-stam-archival-records","claim-stam-china-mission-context"],
+    "lead_claim_ids": ["claim-stam-archival-records","claim-stam-china-mission-context"],
+    "evidence_boundary_claim_ids": ["claim-stam-archival-records","claim-stam-china-mission-context"],
+    "sections": [
+      {"section_id":"archives","paragraph_claim_ids":[["claim-stam-archival-records","claim-stam-china-mission-context"],["claim-stam-archival-records"]]},
+      {"section_id":"death","paragraph_claim_ids":[["claim-stam-china-mission-context","claim-stam-editorial"],["claim-stam-editorial"]]},
+      {"section_id":"lesson","paragraph_claim_ids":[["claim-stam-editorial"]]}
+    ]
+  },
+  "theology_review": {"historical_description":"Исторический слой ограничен тем, что можно связать с архивными коллекциями Wheaton и Princeton и устойчивой хронологией миссионерского служения.","participant_position":"Джон и Бетти Стэм принадлежали к миссионерской среде, в которой служение в Китае понималось как исполнение христианского призвания к благовестию.","editorial_evaluation":"Редакция чтит стойкость служителей, но не считает мученическую смерть автоматическим доказательством безошибочности человека; высшим критерием остаётся Писание, а историческая память должна быть правдивой.","scripture_refs":["Откр 2:10","2 Кор 4:7–12","Деян 20:24"],"alignment":"aligned","description_separated_from_evaluation":true,"review_status":"accepted"},
+  "images": [],
+  "release_offset_days": 16,
+  "opposing_primary_bound": false,
+  "no_opposing_primary_note": null,
+  "editorial_status": "ready",
+  "fact_check_status": "accepted",
+  "rights_status": "reviewed"
+}
