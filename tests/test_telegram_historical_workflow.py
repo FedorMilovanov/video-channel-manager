@@ -8,8 +8,11 @@ import pytest
 from pydantic import ValidationError
 
 from video_channel_manager.telegram_historical_editorial import (
+    HistoricalClaim,
     HistoricalEditorialQueueV1,
     HistoricalImagePlan,
+    HistoricalPost,
+    HistoricalSource,
     HistoricalSourceRegistry,
     TheologyProfile,
     load_historical_editorial_queue,
@@ -21,6 +24,7 @@ from video_channel_manager.telegram_historical_workflow import (
     preflight_historical_bundle,
     write_scaffold,
 )
+from video_channel_manager.telegram_research import sha256_text
 
 
 def _source(index: int) -> dict[str, object]:
@@ -145,6 +149,8 @@ def _post(sequence: int) -> dict[str, object]:
         topic_kind = "martyrdom"
         claims[0] = _claim("claim-post-8-contemporary", proximity="contemporary")
 
+    factual_ids = [str(claims[0]["claim_id"]), str(claims[1]["claim_id"])]
+    editorial_id = str(claims[2]["claim_id"])
     return {
         "sequence": sequence,
         "publication_id": f"lordchrist-history-fixture-post-{sequence}",
@@ -177,6 +183,15 @@ def _post(sequence: int) -> dict[str, object]:
             "и не выдаются за содержание первичных документов."
         ),
         "claims": claims,
+        "prose_claim_bindings": {
+            "title_claim_ids": factual_ids,
+            "lead_claim_ids": [*factual_ids, editorial_id],
+            "evidence_boundary_claim_ids": factual_ids,
+            "sections": [
+                {"section_id": "context", "paragraph_claim_ids": [factual_ids]},
+                {"section_id": "meaning", "paragraph_claim_ids": [[editorial_id]]},
+            ],
+        },
         "theology_review": {
             "historical_description": (
                 "Историческое описание ограничено тем, что можно подтвердить источниками и академической "
@@ -407,6 +422,58 @@ def test_registry_requires_fifty_sources() -> None:
     raw["sources"] = raw["sources"][:49]
     with pytest.raises(ValidationError):
         HistoricalSourceRegistry.model_validate(raw)
+
+
+def test_rendered_prose_rejects_unknown_claim_binding() -> None:
+    raw = _post(2)
+    bindings = raw["prose_claim_bindings"]
+    assert isinstance(bindings, dict)
+    bindings["lead_claim_ids"] = ["claim-not-in-this-post"]
+
+    with pytest.raises(ValidationError, match="rendered historical prose uses unknown claim ids"):
+        HistoricalPost.model_validate(raw)
+
+
+def test_direct_quote_rejects_tampered_immutable_fragment() -> None:
+    fragment = "Exact source words preserved for deterministic quotation verification."
+    raw = {
+        "claim_id": "claim-quote-proof",
+        "claim_text": "Проверяемая прямая цитата привязана к точному фрагменту первичного источника.",
+        "claim_kind": "historical",
+        "certainty": "exact",
+        "voice": "historical_fact",
+        "source_ids": ["src-primary-archive"],
+        "direct_quote": True,
+        "locator": "page 17",
+        "quoted_fragment_source_id": "src-primary-archive",
+        "quoted_fragment": fragment + " tampered",
+        "quoted_fragment_sha256": sha256_text(fragment),
+        "testimony_proximity": "contemporary",
+        "controversy_side": "none",
+    }
+
+    with pytest.raises(ValidationError, match="quoted fragment digest mismatch"):
+        HistoricalClaim.model_validate(raw)
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://localhost/source",
+        "https://localhost./source",
+        "https://printer.local/source",
+        "https://127.0.0.1/source",
+        "https://10.0.0.1/source",
+        "https://169.254.1.1/source",
+        "https://[::1]/source",
+    ],
+)
+def test_historical_source_rejects_local_or_non_global_hosts(url: str) -> None:
+    raw = _source(1)
+    raw["url"] = url
+
+    with pytest.raises(ValidationError):
+        HistoricalSource.model_validate(raw)
 
 
 def test_theology_profile_requires_israel_church_distinction() -> None:
