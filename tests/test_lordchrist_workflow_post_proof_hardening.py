@@ -40,24 +40,26 @@ def test_lordchrist_scheduler_queues_pending_runs_without_cancelling_active_run(
     assert "queue: single" not in text
 
 
-def test_lordchrist_scheduler_preserves_two_moscow_windows_and_pins_runner() -> None:
+def test_lordchrist_scheduler_preserves_three_moscow_windows_and_pins_runner() -> None:
     text = workflow_text()
     assert 'cron: "17 9 * * *"' in text
+    assert 'cron: "17 19 * * 1,3,6"' in text
     assert 'cron: "17 21 * * 2,5,0"' in text
     assert 'cron: "17 21 * * *"' not in text
-    assert text.count("timezone: Europe/Moscow") >= 2
+    assert text.count("timezone: Europe/Moscow") >= 3
     assert "runs-on: ubuntu-24.04" in text
     assert "runs-on: ubuntu-latest" not in text
 
 
-def test_lordchrist_provider_path_requires_exact_current_main_ci_before_preflight_and_send() -> None:
+def test_lordchrist_provider_paths_require_exact_current_main_ci_before_mutation() -> None:
     text = workflow_text()
     assert "actions: read" in text
     assert "Require current-main exact-SHA repository CI proof" in text
     assert "Re-prove current-main CI immediately before Telegram mutation" in text
-    assert text.count("telegram_github_quality_gate") == 2
-    assert text.count("--workflow ci.yml") == 2
-    assert text.count('--sha "$GITHUB_SHA"') == 2
+    assert "Require exact current-main CI before historical state intent" in text
+    assert text.count("telegram_github_quality_gate") == 3
+    assert text.count("--workflow ci.yml") == 3
+    assert text.count('--sha "$GITHUB_SHA"') == 3
 
     initial_quality = text.index("Require current-main exact-SHA repository CI proof")
     preflight = text.index("Read-only bot and channel preflight")
@@ -65,6 +67,12 @@ def test_lordchrist_provider_path_requires_exact_current_main_ci_before_prefligh
     pre_send_quality = text.index("Re-prove current-main CI immediately before Telegram mutation")
     send = text.index("Send exactly one prepared message")
     assert initial_quality < preflight < persist < pre_send_quality < send
+
+    historical_quality = text.index("Require exact current-main CI before historical state intent")
+    historical_preflight = text.index("Read-only historical Telegram target proof")
+    historical_persist = text.index("Persist historical intent before sendRichMessage")
+    historical_send = text.index("Send exactly one historical rich message")
+    assert historical_quality < historical_preflight < historical_persist < historical_send
 
 
 def test_lordchrist_failed_final_ci_reproof_is_provider_free_and_durably_resolved() -> None:

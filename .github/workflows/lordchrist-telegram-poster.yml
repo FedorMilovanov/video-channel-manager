@@ -1,4 +1,4 @@
-name: Lordchrist Telegram quote publisher
+name: Lordchrist Telegram publisher
 
 on:
   workflow_dispatch:
@@ -22,6 +22,8 @@ on:
         type: string
   schedule:
     - cron: "17 9 * * *"
+      timezone: Europe/Moscow
+    - cron: "17 19 * * 1,3,6"
       timezone: Europe/Moscow
     - cron: "17 21 * * 2,5,0"
       timezone: Europe/Moscow
@@ -48,6 +50,12 @@ env:
   RENDERED_PATH: .runtime/lordchrist-rendered.json
   OUTCOME_PATH: .runtime/lordchrist-outcome.json
   TARGET_PROOF_PATH: .runtime/lordchrist-target-proof.json
+  HISTORICAL_RELEASE_PATH: content/telegram/lordchrist/historical-editorial/v1/production-release-2026-09-cycle-01.json
+  HISTORICAL_LEDGER_RELATIVE_PATH: content/telegram/lordchrist/historical-editorial/publication-ledger.json
+  HISTORICAL_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/historical-editorial/publication-ledger.json
+  HISTORICAL_INTENT_PATH: .runtime/lordchrist-historical-intent.json
+  HISTORICAL_OUTCOME_PATH: .runtime/lordchrist-historical-outcome.json
+  HISTORICAL_TARGET_PROOF_PATH: .runtime/lordchrist-historical-target-proof.json
   LORDCHRIST_TELEGRAM_CHAT_ID: ${{ vars.LORDCHRIST_TELEGRAM_CHAT_ID }}
   LORDCHRIST_TELEGRAM_BOT_ID: ${{ vars.LORDCHRIST_TELEGRAM_BOT_ID }}
   LORDCHRIST_TELEGRAM_BOT_USERNAME: ${{ vars.LORDCHRIST_TELEGRAM_BOT_USERNAME }}
@@ -56,7 +64,10 @@ env:
 
 jobs:
   publish-next:
-    if: github.ref == 'refs/heads/main'
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      !(github.event_name == 'schedule' && github.event.schedule == '17 19 * * 1,3,6') &&
+      !(github.event_name == 'workflow_dispatch' && inputs.action == 'publish' && startsWith(inputs.publication_id, 'lordchrist-history-'))
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -600,3 +611,333 @@ jobs:
             echo "Telegram did not return a fully verified success. Review the state ledger before any ambiguous retry." >&2
             exit 4
           fi
+
+  historical-rich:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (
+        (github.event_name == 'schedule' && github.event.schedule == '17 19 * * 1,3,6') ||
+        (github.event_name == 'workflow_dispatch' && inputs.action == 'publish' && startsWith(inputs.publication_id, 'lordchrist-history-'))
+      )
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact historical release
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Resolve exact historical execution mode
+        id: historical_intent
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE_EVENT: ${{ github.event.schedule }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          REQUESTED_PUBLICATION_ID: ${{ inputs.publication_id }}
+          CONFIRMATION: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          mode=""
+          expected_publication_id=""
+          if [[ "$EVENT_NAME" == "schedule" ]]; then
+            [[ "$SCHEDULE_EVENT" == "17 19 * * 1,3,6" ]] || {
+              echo "Historical job received an unrelated schedule." >&2
+              exit 2
+            }
+            [[ "$RUN_ATTEMPT" == "1" ]] || {
+              echo "Historical scheduled reruns are forbidden." >&2
+              exit 5
+            }
+            mode=scheduled
+          else
+            expected_publication_id="$REQUESTED_PUBLICATION_ID"
+            [[ "$expected_publication_id" == "lordchrist-history-spurgeon-down-grade" ]] || {
+              echo "Manual historical production is restricted to the exact reviewed canary." >&2
+              exit 2
+            }
+            [[ "$CONFIRMATION" == "PUBLISH:$expected_publication_id" ]] || {
+              echo "Historical canary requires exact PUBLISH confirmation." >&2
+              exit 2
+            }
+            [[ "${LORDCHRIST_POSTING_ENABLED,,}" == "true" ]] || {
+              echo "LORDCHRIST_POSTING_ENABLED is not true." >&2
+              exit 2
+            }
+            [[ "$RUN_ATTEMPT" == "1" ]] || {
+              echo "Historical canary reruns are forbidden." >&2
+              exit 5
+            }
+            mode=manual_canary
+          fi
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "expected_publication_id=$expected_publication_id" >> "$GITHUB_OUTPUT"
+
+      - name: Validate exact historical release provider-free
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_historical_production preview \
+            --release "$HISTORICAL_RELEASE_PATH"
+
+      - name: Require exact current-main CI before historical state intent
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow ci.yml \
+            --sha "$GITHUB_SHA"
+
+      - name: Read-only historical Telegram target proof
+        shell: bash
+        env:
+          LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.telegram_historical_production preflight \
+            --release "$HISTORICAL_RELEASE_PATH" \
+            --output "$HISTORICAL_TARGET_PROOF_PATH"
+
+      - name: Check out shared LordChrist state read-only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/lordchrist-telegram
+          path: .state/lordchrist
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Require initialized exact historical ledger and cross-track safety
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -f "$HISTORICAL_LEDGER_PATH" ]] || {
+            echo "Historical durable ledger is not initialized on state/lordchrist-telegram." >&2
+            exit 2
+          }
+          python -m video_channel_manager.telegram_historical_production guard \
+            --release "$HISTORICAL_RELEASE_PATH" \
+            --ledger "$HISTORICAL_LEDGER_PATH" \
+            --state-root "$STATE_DIR"
+          python -m video_channel_manager.telegram_historical_production coverage \
+            --release "$HISTORICAL_RELEASE_PATH" \
+            --ledger "$HISTORICAL_LEDGER_PATH"
+
+      - name: Enable shared LordChrist state writer
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/lordchrist-telegram
+          path: .state/lordchrist
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Prepare one exact historical rich intent
+        id: historical_prepare
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(
+            --release "$HISTORICAL_RELEASE_PATH"
+            --ledger "$HISTORICAL_LEDGER_PATH"
+            --state-root "$STATE_DIR"
+            --mode "${{ steps.historical_intent.outputs.mode }}"
+            --target-proof "$HISTORICAL_TARGET_PROOF_PATH"
+            --github-repository "$GITHUB_REPOSITORY"
+            --github-sha "$GITHUB_SHA"
+            --run-id "$GITHUB_RUN_ID"
+            --run-attempt "$GITHUB_RUN_ATTEMPT"
+            --intent-output "$HISTORICAL_INTENT_PATH"
+          )
+          if [[ "${{ steps.historical_intent.outputs.mode }}" == "manual_canary" ]]; then
+            args+=(--expected-publication-id "${{ steps.historical_intent.outputs.expected_publication_id }}")
+          fi
+          set +e
+          python -m video_channel_manager.telegram_historical_production prepare "${args[@]}"
+          status=$?
+          set -e
+          if [[ "$status" -eq 3 ]]; then
+            echo "prepared=false" >> "$GITHUB_OUTPUT"
+            echo "Historical event is safely inert for this exact slot."
+            exit 0
+          fi
+          [[ "$status" -eq 0 ]] || exit "$status"
+          echo "prepared=true" >> "$GITHUB_OUTPUT"
+
+      - name: Persist historical intent before sendRichMessage
+        id: historical_persist_intent
+        if: steps.historical_prepare.outputs.prepared == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          push_exact_state() {
+            local parent_sha="$1"
+            local local_sha="$2"
+            local remote_sha=""
+            local attempt
+            for attempt in 1 2 3; do
+              if git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"; then
+                return 0
+              fi
+              remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" 2>/dev/null | cut -f1 || true)"
+              if [[ "$remote_sha" == "$local_sha" ]]; then
+                return 0
+              fi
+              if [[ -n "$remote_sha" && "$remote_sha" != "$parent_sha" ]]; then
+                echo "Shared LordChrist state moved unexpectedly; refusing overwrite." >&2
+                return 3
+              fi
+              sleep $((attempt * 2))
+            done
+            return 3
+          }
+
+          git -C "$STATE_DIR" diff --quiet -- "$HISTORICAL_LEDGER_RELATIVE_PATH" && {
+            echo "Historical prepare did not create a durable intent delta." >&2
+            exit 3
+          }
+          evidence_rel_dir="content/telegram/lordchrist/historical-editorial/dispatches/$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          evidence_abs_dir="$STATE_DIR/$evidence_rel_dir"
+          mkdir -p "$evidence_abs_dir"
+          cp -- "$HISTORICAL_INTENT_PATH" "$evidence_abs_dir/intent.json"
+
+          git -C "$STATE_DIR" config user.name "lordchrist-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "lordchrist-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$HISTORICAL_LEDGER_RELATIVE_PATH" "$evidence_rel_dir/intent.json"
+          parent_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" commit -m "Record Lordchrist historical intent for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          push_exact_state "$parent_sha" "$local_sha" || exit 3
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$remote_sha" == "$local_sha" ]] || {
+            echo "Remote historical intent commit differs from local exact commit." >&2
+            exit 3
+          }
+
+          git -C "$STATE_DIR" fetch --no-tags origin "$STATE_BRANCH"
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$HISTORICAL_LEDGER_RELATIVE_PATH" > .runtime/remote-historical-ledger.json
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$evidence_rel_dir/intent.json" > .runtime/remote-historical-intent.json
+          cmp -s "$HISTORICAL_INTENT_PATH" .runtime/remote-historical-intent.json || {
+            echo "Remote historical intent evidence differs from exact prepared intent." >&2
+            exit 3
+          }
+          python -m video_channel_manager.telegram_historical_production status \
+            --release "$HISTORICAL_RELEASE_PATH" \
+            --ledger .runtime/remote-historical-ledger.json > /dev/null
+          echo "persisted=true" >> "$GITHUB_OUTPUT"
+
+      - name: Send exactly one historical rich message
+        id: historical_send
+        if: steps.historical_persist_intent.outputs.persisted == 'true'
+        shell: bash
+        env:
+          LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_historical_production send \
+            --release "$HISTORICAL_RELEASE_PATH" \
+            --intent "$HISTORICAL_INTENT_PATH" \
+            --target-proof "$HISTORICAL_TARGET_PROOF_PATH" \
+            --outcome "$HISTORICAL_OUTCOME_PATH"
+
+      - name: Archive exact historical provider outcome before durable result mutation
+        id: historical_archive
+        if: steps.historical_send.outcome == 'success' && !cancelled()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lordchrist-historical-provider-outcome-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .runtime/lordchrist-historical-outcome.json
+          if-no-files-found: error
+          retention-days: 30
+          include-hidden-files: true
+
+      - name: Apply archived historical outcome
+        if: steps.historical_archive.outcome == 'success' && !cancelled()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_historical_production apply \
+            --release "$HISTORICAL_RELEASE_PATH" \
+            --ledger "$HISTORICAL_LEDGER_PATH" \
+            --intent "$HISTORICAL_INTENT_PATH" \
+            --outcome "$HISTORICAL_OUTCOME_PATH"
+
+      - name: Persist exact historical Telegram result
+        if: steps.historical_persist_intent.outputs.persisted == 'true' && always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          push_exact_state() {
+            local parent_sha="$1"
+            local local_sha="$2"
+            local remote_sha=""
+            local attempt
+            for attempt in 1 2 3; do
+              if git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"; then
+                return 0
+              fi
+              remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" 2>/dev/null | cut -f1 || true)"
+              if [[ "$remote_sha" == "$local_sha" ]]; then
+                return 0
+              fi
+              if [[ -n "$remote_sha" && "$remote_sha" != "$parent_sha" ]]; then
+                echo "Shared LordChrist state moved unexpectedly after provider outcome." >&2
+                return 4
+              fi
+              sleep $((attempt * 2))
+            done
+            return 4
+          }
+
+          git -C "$STATE_DIR" add -- "$HISTORICAL_LEDGER_RELATIVE_PATH"
+          if git -C "$STATE_DIR" diff --cached --quiet; then
+            echo "No historical provider result was applied. Durable intent remains blocking; blind retry is forbidden." >&2
+            exit 4
+          fi
+          parent_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" commit -m "Record Lordchrist historical Telegram result for run $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          push_exact_state "$parent_sha" "$local_sha" || exit 4
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$remote_sha" == "$local_sha" ]] || {
+            echo "Remote historical result commit verification failed." >&2
+            exit 4
+          }
+
+          publication_id="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          value = json.loads(Path(".runtime/lordchrist-historical-intent.json").read_text(encoding="utf-8"))
+          print(value["publication_id"])
+          PY
+          )"
+          PUBLICATION_ID="$publication_id" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          ledger = json.loads(Path(os.environ["HISTORICAL_LEDGER_PATH"]).read_text(encoding="utf-8"))
+          row = ledger["entries"][os.environ["PUBLICATION_ID"]]
+          if row["state"] != "published" or row["provider_effect"] != "verified" or not row.get("message_id"):
+              raise SystemExit(f"Historical provider outcome is terminal but not verified: {row}")
+          print(f"Historical publication verified as Telegram message {row['message_id']}")
+          PY
+
+      - name: Report historical coverage after verified result
+        if: steps.historical_archive.outcome == 'success' && !cancelled()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_historical_production coverage \
+            --release "$HISTORICAL_RELEASE_PATH" \
+            --ledger "$HISTORICAL_LEDGER_PATH"
