@@ -42,8 +42,8 @@
   "claims": [
     {"claim_id":"claim-fuller-v2-book-1785","claim_text":"Эндрю Фуллер опубликовал The Gospel of Christ Worthy of All Acceptation в Northampton в 1785 году.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-fuller-wellcome-1785","src-fuller-folger-catalog"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
     {"claim_id":"claim-fuller-v2-duty-faith","claim_text":"Центральным тезисом книги Фуллера была обязанность людей, которым проповедуется Евангелие, веровать во Христа, при сохранении его кальвинистского понимания спасительной благодати.","claim_kind":"historical","certainty":"exact","voice":"participant_position","source_ids":["src-fuller-wellcome-1785","src-fuller-oup-reader"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"side_a"},
-    {"claim_id":"claim-fuller-v2-edwards-high-calvinism","claim_text":"Современное исследование связывает развитие позиции Фуллера с чтением Jonathan Edwards и отходом от детерминистических практических выводов High Calvinism.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-fuller-oup-reader","src-oup-particular-baptists"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"},
-    {"claim_id":"claim-fuller-v2-secretary-1792","claim_text":"2 октября 1792 года Фуллер участвовал в создании Particular Baptist missionary society в Кеттеринге и был избран его секретарём.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-carey-center-bms","src-oup-particular-baptists"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
+    {"claim_id":"claim-fuller-v2-edwards-high-calvinism","claim_text":"Современное исследование связывает развитие позиции Фуллера с чтением Jonathan Edwards и отходом от детерминистических практических выводов High Calvinism.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-fuller-wellcome-1785","src-fuller-oup-reader","src-oup-particular-baptists"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"},
+    {"claim_id":"claim-fuller-v2-secretary-1792","claim_text":"2 октября 1792 года Фуллер участвовал в создании Particular Baptist missionary society в Кеттеринге и был избран его секретарём.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-carey-enquiry-1792","src-carey-center-bms","src-oup-particular-baptists"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
     {"claim_id":"claim-fuller-v2-editorial","claim_text":"Редакционный вывод: учение о суверенной благодати не ослабляет всеобщий евангельский призыв; библейская система должна сохранять и Божью инициативу в спасении, и обязанность всех слышащих покаяться и веровать.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-fuller-oup-reader"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
   ],
   "prose_claim_bindings": {
@@ -69,7 +69,7 @@
   "images":[],
   "release_offset_days":12,
   "opposing_primary_bound":false,
-  "no_opposing_primary_note":"Короткий очерк фокусируется на позиции Фуллера и её историческом влиянии; полный корпус ответов его баптистских оппонентов не реконструируется в этом посте.",
+  "no_opposing_primary_note":null,
   "editorial_status":"ready",
   "fact_check_status":"accepted",
   "rights_status":"reviewed"
