@@ -149,7 +149,7 @@
       "source_page_url": "https://digitale-sammlungen.de/de/details/bsb00112324",
       "acquisition_page_url": "https://digitale-sammlungen.de/de/details/bsb00112324",
       "download_url": "https://api.digitale-sammlungen.de/iiif/image/v2/bsb00112324_00001/full/full/0/default.jpg",
-      "expected_upstream_sha1": "0000000000000000000000000000000000000000",
+      "expected_upstream_sha1": "67c7b6c38b08a00207b72ae1ed62c0bd533f34c8",
       "expected_source_mime": "image/jpeg",
       "output_file_name": "sattler-v3-schleitheim-bsb-00001.jpg",
       "rights_basis": "Bayerische Staatsbibliothek digital object bsb00112324 is marked Public Domain Mark 1.0; the image is acquired through the official BSB IIIF Image API.",
