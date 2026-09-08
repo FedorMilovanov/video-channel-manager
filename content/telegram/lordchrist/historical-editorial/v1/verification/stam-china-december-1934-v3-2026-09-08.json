@@ -1,0 +1,36 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-topic-verification",
+  "schema_version": 1,
+  "verification_id": "stam-china-december-1934-v3-2026-09-08",
+  "checked_on": "2026-09-08",
+  "publication_id": "lordchrist-history-stam-china-december-1934-v3",
+  "reviewed_document_urls": 5,
+  "primary_document_urls": 3,
+  "institutional_or_scholarly_urls": 2,
+  "independent_evidence_groups_used_in_reader_claims": ["us-state-stam-frus","wheaton-stam-449","princeton-stam-manuscripts"],
+  "source_shards": [
+    "content/telegram/lordchrist/historical-editorial/v1/sources/stam-sattler.json",
+    "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-c.json"
+  ],
+  "method": "official U.S. diplomatic chronology cross-checked against Wheaton and Princeton mission-family archives; vivid rescue details remain bounded to their exact archival family",
+  "important_deltas": [
+    {"kind":"deepen","finding":"FRUS 1934 provides an independent official chronology family for the capture, death reports and fate of the child."},
+    {"kind":"deepen","finding":"Wheaton and Princeton remain the primary families for the mission and family-detail layer rather than being treated as duplicates of the diplomatic record."},
+    {"kind":"boundary","finding":"Sleeping bag, exact money, milk and rice-basket details are not described as independently confirmed by FRUS unless an exact diplomatic document says so."},
+    {"kind":"deepen","finding":"The role of local Chinese Christians is retained as part of the historical action after the missionaries' deaths, not as a decorative footnote."}
+  ],
+  "unsupported_popular_claims": [
+    {"claim":"Every vivid rescue detail in later Stam biographies is independently confirmed by U.S. diplomatic records.","status":"rejected"},
+    {"claim":"The child's survival proves a general promise of earthly protection for faithful missionaries.","status":"rejected_as_theological_overclaim"}
+  ],
+  "claim_upgrade_conditions": [
+    {"claim":"exact sleeping-bag, ten-dollar, milk or rice-basket detail as multi-family confirmed","upgrade_requires":"a second independent contemporary document with exact matching detail and locator"}
+  ],
+  "visual_plan": [
+    {"slot":"hero","source_id":"src-stam-wheaton-449","concept":"archival Western Union 'Stam Baby Safe' telegram","state":"planned_locator_required","production_ready":false},
+    {"slot":"document","source_id":"src-stam-frus-1934-v3","concept":"official FRUS page/document from the December 1934 Stam case series","state":"planned_locator_required","production_ready":false}
+  ],
+  "direct_quote_policy": {"status":"no_reader_direct_quote_selected"},
+  "reader_copy_result": "accepted_for_v3_integration",
+  "provider_write_performed": false
+}

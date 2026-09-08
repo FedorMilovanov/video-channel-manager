@@ -1,0 +1,39 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-topic-verification",
+  "schema_version": 1,
+  "verification_id": "sattler-schleitheim-1527-v3-2026-09-08",
+  "checked_on": "2026-09-08",
+  "publication_id": "lordchrist-history-sattler-schleitheim-1527-v3",
+  "reviewed_document_urls": 5,
+  "primary_document_urls": 3,
+  "institutional_or_scholarly_urls": 2,
+  "independent_evidence_groups_used_in_reader_claims": ["bsb-schleitheim-1527","ghdi-schleitheim-source","sattler-bucer-capito-letter","gameo-sattler-source-criticism","cambridge-sattler"],
+  "source_shards": [
+    "content/telegram/lordchrist/historical-editorial/v1/sources/stam-sattler.json",
+    "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-d.json"
+  ],
+  "method": "1527 Schleitheim primary print/text plus Sattler correspondence plus source-critical mapping of early trial accounts; later martyrology explicitly segregated",
+  "important_deltas": [
+    {"kind":"deepen","finding":"The 1527 Schleitheim print/text is placed ahead of later confessional and martyrdom retellings."},
+    {"kind":"deepen","finding":"Sattler's letter to Bucer and Capito supplies participant evidence for the theological dispute before the martyrdom narrative."},
+    {"kind":"qualify","finding":"Sattler's authorship is retained as a leading-role attribution while the confession's own voice remains collective."},
+    {"kind":"boundary","finding":"Graphic execution details from Martyrs Mirror are not promoted to contemporary evidence without an independent early locator."},
+    {"kind":"boundary","finding":"Admiration for Sattler's courage remains separate from editorial evaluation of Schleitheim pacifism and civil-authority conclusions."}
+  ],
+  "unsupported_popular_claims": [
+    {"claim":"Every graphic detail in the later Martyrs Mirror account is a contemporary eyewitness transcript of Sattler's execution.","status":"rejected"},
+    {"claim":"Sattler alone authored Schleitheim as a purely personal manifesto.","status":"qualified"},
+    {"claim":"Martyrdom itself proves every Schleitheim doctrine biblically correct.","status":"rejected_as_theological_overclaim"}
+  ],
+  "claim_upgrade_conditions": [
+    {"claim":"specific graphic execution detail as exact contemporary fact","upgrade_requires":"independent 1527 or closely contemporary trial/execution source with exact matching detail and locator"},
+    {"claim":"sole authorship of Schleitheim","upgrade_requires":"contemporary documentary evidence identifying Sattler as sole author rather than leading compiler/participant"}
+  ],
+  "visual_plan": [
+    {"slot":"hero","source_id":"src-sattler-bsb-schleitheim-1527-v3","concept":"1527 Schleitheim print/facsimile from Bayerische Staatsbibliothek","state":"planned_locator_required","production_ready":false},
+    {"slot":"document","source_id":"src-sattler-bucer-capito-letter-v3","concept":"Sattler letter to Bucer and Capito as pre-martyrdom participant document","state":"planned_locator_required","production_ready":false}
+  ],
+  "direct_quote_policy": {"status":"no_reader_direct_quote_selected"},
+  "reader_copy_result": "accepted_for_v3_integration",
+  "provider_write_performed": false
+}

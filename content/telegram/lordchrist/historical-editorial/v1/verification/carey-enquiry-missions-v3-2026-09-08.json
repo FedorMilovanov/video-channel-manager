@@ -1,0 +1,37 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-topic-verification",
+  "schema_version": 1,
+  "verification_id": "carey-enquiry-missions-v3-2026-09-08",
+  "checked_on": "2026-09-08",
+  "publication_id": "lordchrist-history-carey-enquiry-missions-v3",
+  "reviewed_document_urls": 6,
+  "primary_document_urls": 3,
+  "institutional_or_scholarly_urls": 3,
+  "independent_evidence_groups_used_in_reader_claims": ["carey-enquiry-1792","carey-center-bms","bms-minute-book-1792","baptist-annual-register-1793"],
+  "source_shards": [
+    "content/telegram/lordchrist/historical-editorial/v1/sources/baptist-mission.json",
+    "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-b.json"
+  ],
+  "method": "Enquiry primary text plus October 1792 minute-book record plus near-contemporary Baptist Annual Register access and institutional cross-check",
+  "important_deltas": [
+    {"kind":"qualify","finding":"Fourteen attendees are kept separate from the subsequent subscription list; v3 does not assert fourteen individual subscribers by inference."},
+    {"kind":"deepen","finding":"The £13 2s 6d subscription is bound to the minute-book record, while the additional £1 from Enquiry sales is kept as a separate accounting item."},
+    {"kind":"boundary","finding":"The expanded slogan 'Expect great things from God; attempt great things for God' is not treated as a guaranteed verbatim transcript of the May 1792 sermon."},
+    {"kind":"deepen","finding":"Carey's contribution is framed as conversion of conviction into means, organization and shared responsibility rather than lone-founder heroics."}
+  ],
+  "unsupported_popular_claims": [
+    {"claim":"All fourteen people present at Kettering were individually listed as subscribers in the first money record.","status":"excluded_without_exact_list_match"},
+    {"claim":"The familiar expanded Carey slogan is a stenographic quotation from 31 May 1792.","status":"excluded_as_exact_quote"}
+  ],
+  "claim_upgrade_conditions": [
+    {"claim":"exact attendee-to-subscriber identity mapping","upgrade_requires":"facsimile or transcription of the original October 2 minute-book subscription names matched against the full attendee list"},
+    {"claim":"expanded Carey slogan as direct quotation","upgrade_requires":"near-contemporary verbatim record with exact wording and locator"}
+  ],
+  "visual_plan": [
+    {"slot":"hero","source_id":"src-carey-enquiry-1792","concept":"1792 Enquiry title page or opening pages","state":"planned_locator_required","production_ready":false},
+    {"slot":"document","source_id":"src-carey-bms-minute-record-v3","concept":"October 2, 1792 minute-book resolutions and subscription record","state":"planned_locator_required","production_ready":false}
+  ],
+  "direct_quote_policy": {"status":"no_reader_direct_quote_selected"},
+  "reader_copy_result": "accepted_for_v3_integration",
+  "provider_write_performed": false
+}

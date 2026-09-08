@@ -1,0 +1,85 @@
+{
+  "sequence": 8,
+  "publication_id": "lordchrist-history-stam-china-december-1934-v3",
+  "topic_kind": "martyrdom",
+  "title": "Декабрь 1934-го без миссионерской легенды: Стэмы, дипломатические документы и спасённый ребёнок",
+  "lead": "История Джона и Бетти Стэм часто пересказывается через яркие детали: плен, переход в Мяошэ, казнь, младенец в спальном мешке, рисовые корзины и десять долларов на молоко. V3 сохраняет человеческую силу рассказа, но перестраивает доказательства. Хронологический позвоночник теперь даёт не только China Inland Mission, но и независимая серия документов Государственного департамента США за декабрь 1934 года; архивы Wheaton и Princeton отвечают за семейные и миссионерские детали. Это позволяет отличить то, что подтверждают независимые contemporaneous records, от того, что известно через внутреннюю память миссии.",
+  "sections": [
+    {
+      "section_id": "capture",
+      "heading": "6 декабря: пленение входит одновременно в миссионерский и дипломатический след",
+      "paragraphs": [
+        "Джон и Бетти Стэм с младенцем Helen Priscilla находились в Цзиндэ, когда город заняли коммунистические силы. Захват семьи быстро стал предметом не только миссионерской переписки, но и официального консульско-дипломатического обмена Соединённых Штатов.",
+        "Именно эта независимость важна. Когда один и тот же базовый факт появляется в миссионерском архиве и в государственном документальном корпусе, мы получаем две разные evidence families, а не несколько повторений одного позднего жизнеописания."
+      ]
+    },
+    {
+      "section_id": "death",
+      "heading": "8 декабря: смерть родителей подтверждается, но подробности нельзя безгранично украшать",
+      "paragraphs": [
+        "После пленения Стэмов увели в район Мяошэ. 8 декабря Джон и Бетти были убиты. Дипломатические документы фиксируют поступление и проверку сообщений об их смерти, а миссионерские архивы сохраняют более подробную локальную реконструкцию последних дней.",
+        "V3 не считает всякую подробность одинаково сильной только потому, что она многократно повторена. Реплика солдата, точное расположение каждого человека или мотив конкретного участника требуют собственного locator. Для мученичества особенно опасно, когда поздний рассказ незаметно превращается в стенограмму."
+      ]
+    },
+    {
+      "section_id": "child",
+      "heading": "Спасение Helen Priscilla: независимый финал и более осторожные внутренние детали",
+      "paragraphs": [
+        "Архив Wheaton хранит знаменитую телеграмму семье с кратким известием, что ребёнок Стэмов в безопасности. Государственная переписка того же периода независимо отслеживает судьбу младенца. Поэтому базовый факт спасения ребёнка закреплён значительно сильнее, чем если бы мы имели только позднюю миссионерскую биографию.",
+        "Подробности о спальном мешке, двух пятидолларовых банкнотах, покупке молока и переноске в рисовой корзине остаются в рассказе только в пределах Wheaton/Princeton evidence. Они не становятся дипломатически подтверждёнными просто потому, что официальный корпус подтверждает общий исход."
+      ]
+    },
+    {
+      "section_id": "local-christians",
+      "heading": "История не принадлежит только двум американским миссионерам",
+      "paragraphs": [
+        "Архивная традиция подчёркивает роль китайских христиан, которые искали ребёнка, вынесли его из опасной зоны и передали дальше по миссионерской сети. Эта часть разрушает привычный западный героический кадр: после смерти известных миссионеров история продолжалась через людей, чьи имена гораздо реже попадают на обложки.",
+        "Поэтому v3 не использует спасение ребёнка как доказательство обещания земной неприкосновенности. Родители погибли. Ребёнок выжил благодаря конкретным действиям других людей. Провидение в историческом рассказе не даёт нам права превращать трагедию в простую формулу, где каждый опасный эпизод получает видимое чудесное завершение."
+      ]
+    },
+    {
+      "section_id": "lesson",
+      "heading": "Мученичество не нуждается в агиографии, чтобы говорить о верности",
+      "paragraphs": [
+        "Джон и Бетти Стэм умерли молодыми, их дочь осталась сиротой, а китайские христиане приняли на себя риск дальнейшего спасения ребёнка. Это не удобная история о том, что верность всегда защищает от катастрофы.",
+        "Христианская надежда лежит глубже — во Христе, воскресении и верности Бога за пределами земной безопасности. А историческая честность требует от нас не использовать трагическую смерть как разрешение преувеличивать каждую красивую деталь ради эмоционального эффекта."
+      ]
+    }
+  ],
+  "evidence_boundary": "V3 использует три независимые evidence families: официальную дипломатическую серию FRUS 1934, Wheaton College Archives и Princeton Theological Seminary Special Collections. Захват семьи, сообщения об убийстве родителей и спасение ребёнка подтверждаются несколькими корпусами. Более яркие детали rescue narrative — спальный мешок, точная сумма денег, молоко и рисовые корзины — остаются привязанными к миссионерским архивам и не объявляются независимо подтверждёнными дипломатическими документами без отдельного locator.",
+  "claims": [
+    {"claim_id":"claim-stam-v3-capture","claim_text":"6 декабря 1934 года Джон и Бетти Стэм с младенцем Helen Priscilla были захвачены коммунистическими силами в Цзиндэ; этот базовый факт отражён как в миссионерских архивах, так и в официальной дипломатической переписке США.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-frus-1934-v3","src-stam-princeton-manuscripts"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-stam-v3-death","claim_text":"Джон и Бетти Стэм были убиты 8 декабря 1934 года после перемещения из Цзиндэ в район Мяошэ; сообщения об их смерти вошли в официальный и миссионерский документальный след.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-frus-1934-v3","src-stam-wheaton-449"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-stam-v3-child-safe","claim_text":"Helen Priscilla пережила пленение родителей и была передана в безопасные руки; Wheaton хранит телеграмму семье о безопасности ребёнка, а дипломатический корпус независимо отслеживает её судьбу.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-wheaton-449","src-stam-frus-1934-v3"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-stam-v3-rescue-details-boundary","claim_text":"Подробности о спальном мешке, деньгах, молоке и переноске ребёнка в рисовой корзине принадлежат миссионерско-семейному archival narrative и не должны выдаваться за независимо подтверждённые FRUS детали без отдельного документа.","claim_kind":"method","certainty":"exact","voice":"historical_fact","source_ids":["src-stam-wheaton-449","src-stam-princeton-manuscripts"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
+    {"claim_id":"claim-stam-v3-editorial","claim_text":"Редакционный вывод: верность Христу не гарантирует земной безопасности, а память о мучениках должна соединять надежду воскресения с исторической дисциплиной и уважением к местным христианам, через которых продолжилась история спасения ребёнка.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-stam-wheaton-449"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
+  ],
+  "prose_claim_bindings": {
+    "title_claim_ids":["claim-stam-v3-capture","claim-stam-v3-death","claim-stam-v3-child-safe"],
+    "lead_claim_ids":["claim-stam-v3-capture","claim-stam-v3-death","claim-stam-v3-child-safe","claim-stam-v3-rescue-details-boundary"],
+    "evidence_boundary_claim_ids":["claim-stam-v3-capture","claim-stam-v3-death","claim-stam-v3-child-safe","claim-stam-v3-rescue-details-boundary"],
+    "sections":[
+      {"section_id":"capture","paragraph_claim_ids":[["claim-stam-v3-capture"],["claim-stam-v3-capture"]]},
+      {"section_id":"death","paragraph_claim_ids":[["claim-stam-v3-death"],["claim-stam-v3-death","claim-stam-v3-rescue-details-boundary"]]},
+      {"section_id":"child","paragraph_claim_ids":[["claim-stam-v3-child-safe"],["claim-stam-v3-rescue-details-boundary"]]},
+      {"section_id":"local-christians","paragraph_claim_ids":[["claim-stam-v3-child-safe","claim-stam-v3-rescue-details-boundary"],["claim-stam-v3-editorial"]]},
+      {"section_id":"lesson","paragraph_claim_ids":[["claim-stam-v3-editorial"],["claim-stam-v3-editorial","claim-stam-v3-rescue-details-boundary"]]}
+    ]
+  },
+  "theology_review": {
+    "historical_description":"V3 разделяет официальный дипломатический корпус и миссионерские семейные архивы, используя первый как независимую хронологическую опору и не повышая яркие rescue details выше уровня их конкретной archival provenance.",
+    "participant_position":"Стэмы служили в China Inland Mission в условиях гражданской войны; после их гибели местные китайские христиане и миссионерская сеть сыграли решающую роль в спасении и передаче их ребёнка.",
+    "editorial_evaluation":"Писание не обещает христианину избавления от всякой земной опасности. Надежда верующего — Христос и воскресение; память о мучениках должна укреплять верность, но не давать разрешения на агиографические преувеличения или стирание служения местных верующих.",
+    "scripture_refs":["Рим 14:7–8","Откр 12:11","Евр 11:35–40","Иак 2:15–17"],
+    "alignment":"aligned",
+    "description_separated_from_evaluation":true,
+    "review_status":"accepted"
+  },
+  "images": [],
+  "release_offset_days": 16,
+  "opposing_primary_bound": false,
+  "no_opposing_primary_note": null,
+  "editorial_status": "ready",
+  "fact_check_status": "accepted",
+  "rights_status": "reviewed"
+}

@@ -1,0 +1,56 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-source-shard",
+  "schema_version": 1,
+  "shard_id": "history-sources-historical-v3-corrections-b",
+  "checked_on": "2026-09-08",
+  "sources": [
+    {
+      "source_id": "src-carey-bms-minute-record-v3",
+      "title": "Baptist Missionary Society calendar reproducing the October 2, 1792 minute-book record",
+      "publisher": "Mission Studies / digitized BMS historical material",
+      "url": "https://missiology.org.uk/pdf/e-books/bms/bms-calendar.pdf",
+      "evidence_type": "primary",
+      "grade": "A",
+      "evidence_role": "critical_edition",
+      "checked_on": "2026-09-08",
+      "topic_tags": ["carey", "bms", "minutes"],
+      "independence_group": "bms-minute-book-1792"
+    },
+    {
+      "source_id": "src-carey-baptist-register-1793-v3",
+      "title": "Baptist Annual Register 1793 full-text primary-document index",
+      "publisher": "William Carey University",
+      "url": "https://careycenter.wmcarey.edu/links/full_texts.htm",
+      "evidence_type": "institutional",
+      "grade": "B+",
+      "evidence_role": "university_archive",
+      "checked_on": "2026-09-08",
+      "topic_tags": ["carey", "baptist-annual-register", "1793"],
+      "independence_group": "baptist-annual-register-1793"
+    },
+    {
+      "source_id": "src-fuller-taylor-observations-1786-v3",
+      "title": "Observations on the Rev. Andrew Fuller's late pamphlet, 1786",
+      "publisher": "Max Planck Institute library / ECCO bibliographic access",
+      "url": "https://mpipsyl.disco.mpg.de/Record/E-Books.EB000462974/DetailsIndex?sid=2451458",
+      "evidence_type": "primary",
+      "grade": "A",
+      "evidence_role": "critical_edition",
+      "checked_on": "2026-09-08",
+      "topic_tags": ["fuller", "dan-taylor", "duty-faith"],
+      "independence_group": "dan-taylor-1786"
+    },
+    {
+      "source_id": "src-fuller-gospel-worthy-1801-v3",
+      "title": "The Gospel Worthy of All Acceptation, second-edition corrections and additions, 1801",
+      "publisher": "Baptist History Homepage",
+      "url": "https://baptisthistoryhomepage.com/fuller.gospel.worthy.1.html",
+      "evidence_type": "primary",
+      "grade": "B+",
+      "evidence_role": "institutional_collection",
+      "checked_on": "2026-09-08",
+      "topic_tags": ["fuller", "gospel-worthy", "1801"],
+      "independence_group": "fuller-1801-edition"
+    }
+  ]
+}

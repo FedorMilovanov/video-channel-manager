@@ -1,0 +1,85 @@
+{
+  "sequence": 2,
+  "publication_id": "lordchrist-history-bunyan-bedford-prison-v3",
+  "topic_kind": "biography",
+  "title": "Свобода ценой молчания: Буньян, Бедфордская тюрьма и лицензия 1672 года",
+  "lead": "12 ноября 1660 года Джона Буньяна арестовали перед религиозным собранием в Нижнем Самселле близ Бедфорда. Самая сильная версия этой истории не нуждается в дорисованных деталях: сохранились собственный рассказ Буньяна, тюремные списки с его именем и документальный след лицензии 1672 года. Вопрос был предельно конкретным: получит ли он свободу ценой обещания прекратить проповедь, которую считал обязанностью перед Богом.",
+  "sections": [
+    {
+      "section_id": "arrest",
+      "heading": "1660: дело началось не с литературной легенды, а с запрета проповедовать",
+      "paragraphs": [
+        "Буньян описывал своё заключение как следствие продолжения религиозных собраний и проповеди без требуемого разрешения. Современная реконструкция Бедфордской тюрьмы подтверждает дату и правовой контекст ареста. Поэтому в новом тексте мы не утверждаем эффектную, но не привязанную к первичному документу деталь о Библии в его руках в момент задержания.",
+        "Суть конфликта от этого не становится слабее. Буньян мог смягчить положение, если бы согласился прекратить несанкционированную проповедь. Он отказался связывать совесть таким обещанием и в результате провёл большую часть периода 1660–1672 годов внутри меняющегося режима заключения."
+      ]
+    },
+    {
+      "section_id": "records",
+      "heading": "Имя «John Bunnyon» осталось в государственном тюремном календаре",
+      "paragraphs": [
+        "Bedfordshire Archives хранит календарь узников 1672 года HSA1672/W/20, где среди заключённых записан John Bunnyon. CELM указывает и на другие сохранившиеся Bedford Gaol lists между 1662 и 1672 годами. Это важный противовес романтизации: перед нами не поздняя легенда о гонимом проповеднике, а повторяющийся административный след человека, которого власти продолжали учитывать как узника.",
+        "При этом слово «двенадцать лет в тюрьме» нельзя превращать в картинку одной камеры и неизменного режима. Условия, разрешения и степень свободы менялись. Исторически честнее говорить о длительном тюремном периоде с изменениями, чем о двенадцати одинаковых годах за одной дверью."
+      ]
+    },
+    {
+      "section_id": "licence",
+      "heading": "1672: освобождение пришло вместе с формальной лицензией на проповедь",
+      "paragraphs": [
+        "После Declaration of Indulgence религиозная политика изменилась. Документальный корпус фиксирует лицензию Буньяна от 9 мая 1672 года на служение как congregational person в Бедфорде и других лицензированных местах. Освобождение было связано не с тем, что Буньян отказался от проповеди, а с тем, что государственный режим временно изменил правила для диссентеров.",
+        "Это делает развязку особенно важной. Буньян не победил государство силой и не получил свободу потому, что доказал отсутствие всякой власти над собой. Он дождался политико-правового изменения и продолжил служение уже в новых условиях. Повиновение Богу выше человека здесь не означает презрения к закону; оно означает отказ назвать грехом то служение, которое совесть считает требованием Писания."
+      ]
+    },
+    {
+      "section_id": "writing",
+      "heading": "Тюрьма породила тексты — но «Пилигрим» не помещается в одну красивую формулу",
+      "paragraphs": [
+        "Тюремный период действительно связан с важнейшими текстами Буньяна, включая Grace Abounding и Prison Meditations. Но датировка и место возникновения The Pilgrim's Progress сложнее популярной формулы «двенадцать лет писал книгу в одной камере». Новый v3 намеренно сохраняет эту границу вместо того, чтобы превращать литературную биографию в удобный плакат.",
+        "В этом и состоит более сильная история: государственная бумага фиксирует заключённого, его собственный текст показывает борьбу совести, а позднейшие произведения показывают, что лишение свободы не остановило пастырское и литературное служение."
+      ]
+    },
+    {
+      "section_id": "lesson",
+      "heading": "Христианская совесть сильна не упрямством, а тем, чему она подчинена",
+      "paragraphs": [
+        "Страдание не делает человека автоматически правым, а конфликт с государством не является духовной добродетелью сам по себе. Ценность примера Буньяна в другом: он связывал обязанность проповедовать не личной независимостью, а повиновением Христу.",
+        "Поэтому Деян 5:29 нельзя использовать как лицензию на самовольство. Совесть должна оставаться под Писанием, христианин — быть готовым страдать за правду, но также проверять, действительно ли предмет конфликта принадлежит Божьему повелению, а не нашему характеру или политической страсти."
+      ]
+    }
+  ],
+  "evidence_boundary": "Первичный и архивный корпус подтверждает арест Буньяна 12 ноября 1660 года перед религиозным собранием, его длительный тюремный период, повторяющиеся Bedford Gaol records с его именем и лицензию на проповедь 9 мая 1672 года. Новый v3 не утверждает без отдельной привязки, что в момент ареста у него в руках была Библия, и не сводит создание The Pilgrim's Progress к двенадцати непрерывным годам работы в одной камере.",
+  "claims": [
+    {"claim_id":"claim-bunyan-v3-arrest","claim_text":"Джон Буньян был арестован 12 ноября 1660 года перед религиозным собранием в Lower Samsell и затем отказался гарантировать прекращение проповеди как условие безопасного освобождения.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-bunyan-relation-imprisonment-v3","src-bunyan-cambridge-prison"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-bunyan-v3-gaol-records","claim_text":"Сохранившиеся Bedford Gaol records, включая календарь 1672 года HSA1672/W/20, документируют Буньяна как заключённого и образуют независимый административный след его тюремного периода.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-bunyan-bedfordshire-hsa1672","src-bunyan-folger-celm"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-bunyan-v3-licence","claim_text":"Документальный корпус фиксирует лицензию Джона Буньяна на проповедь от 9 мая 1672 года после изменения государственной политики в отношении протестантских диссентеров.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-bunyan-nonconformity-records-1672-v3","src-bunyan-folger-celm"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-bunyan-v3-writing-boundary","claim_text":"Тюремный период Буньяна связан с важной писательской работой, но историческая реконструкция не позволяет честно свести происхождение The Pilgrim's Progress к двенадцати непрерывным годам в одной неизменной камере.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-bunyan-relation-imprisonment-v3","src-bunyan-oxford-prison"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"},
+    {"claim_id":"claim-bunyan-v3-editorial","claim_text":"Редакционный вывод: христианская совесть достойна защиты не как автономное чувство, а когда она подчинена Писанию и готова нести цену послушания Христу без романтизации самого конфликта.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-bunyan-oxford-prison"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
+  ],
+  "prose_claim_bindings": {
+    "title_claim_ids":["claim-bunyan-v3-arrest","claim-bunyan-v3-licence"],
+    "lead_claim_ids":["claim-bunyan-v3-arrest","claim-bunyan-v3-gaol-records","claim-bunyan-v3-licence"],
+    "evidence_boundary_claim_ids":["claim-bunyan-v3-arrest","claim-bunyan-v3-gaol-records","claim-bunyan-v3-licence","claim-bunyan-v3-writing-boundary"],
+    "sections":[
+      {"section_id":"arrest","paragraph_claim_ids":[["claim-bunyan-v3-arrest"],["claim-bunyan-v3-arrest"]]},
+      {"section_id":"records","paragraph_claim_ids":[["claim-bunyan-v3-gaol-records"],["claim-bunyan-v3-gaol-records","claim-bunyan-v3-writing-boundary"]]},
+      {"section_id":"licence","paragraph_claim_ids":[["claim-bunyan-v3-licence"],["claim-bunyan-v3-licence","claim-bunyan-v3-editorial"]]},
+      {"section_id":"writing","paragraph_claim_ids":[["claim-bunyan-v3-writing-boundary"],["claim-bunyan-v3-gaol-records","claim-bunyan-v3-writing-boundary"]]},
+      {"section_id":"lesson","paragraph_claim_ids":[["claim-bunyan-v3-editorial"],["claim-bunyan-v3-editorial"]]}
+    ]
+  },
+  "theology_review": {
+    "historical_description":"V3 строит рассказ на собственном тюремном свидетельстве Буньяна, архивных списках Бедфордской тюрьмы и документальном следе лицензии 1672 года, одновременно исключая неподтверждённую кинематографию и упрощённую легенду о происхождении Pilgrim's Progress.",
+    "participant_position":"Буньян понимал продолжение евангельской проповеди как обязанность совести перед Богом и не считал допустимым обещать молчание ради личной безопасности.",
+    "editorial_evaluation":"Совесть христианина должна быть связана Словом Божьим, а не темпераментом. Верность Христу может потребовать гражданской цены, но страдание и конфликт не являются самостоятельным доказательством правоты.",
+    "scripture_refs":["Деян 5:29","1 Пет 3:15–17","2 Тим 3:16–17"],
+    "alignment":"aligned",
+    "description_separated_from_evaluation":true,
+    "review_status":"accepted"
+  },
+  "images": [],
+  "release_offset_days": 2,
+  "opposing_primary_bound": false,
+  "no_opposing_primary_note": null,
+  "editorial_status": "ready",
+  "fact_check_status": "accepted",
+  "rights_status": "reviewed"
+}
