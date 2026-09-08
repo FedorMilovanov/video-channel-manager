@@ -26,13 +26,18 @@ _ALLOWED_DOWNLOAD_HOSTS = frozenset(
     {
         "api.digitale-sammlungen.de",
         "baptiststudiesonline.com",
+        "bible-researcher.com",
         "capito.iterpubs.org",
         "careycenter.wmcarey.edu",
+        "fromthevault.wheaton.edu",
+        "history.state.gov",
         "iiif.wellcomecollection.org",
         "missiology.org.uk",
         "static.history.state.gov",
         "upload.wikimedia.org",
+        "www.bible-researcher.com",
         "www.missiology.org.uk",
+        "www.worms.de",
     }
 )
 _ALLOWED_DOWNLOAD_HOST_SUFFIXES = (".archive.org",)
