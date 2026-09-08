@@ -87,7 +87,6 @@ Do not substitute public/third-party downloads, stale-snapshot reinterpretation 
 Canonical runbook: [`lordchrist-shorts-feed.md`](lordchrist-shorts-feed.md).
 
 ## Telegram / Svodka
-
 Issue #170 is closed as repository pipeline implementation complete. The historical approval bound release `svodka-pilot-2026-08`; its profile used `provider_writes_authorized=true` only for the reviewed rollout gates, and the durable ledger now exists on `state/svodka-telegram`. Those facts are historical evidence, not standing authority.
 
 Issue #235 is completed with verified successor publications including Telegram messages `28` and `29`; the intervening v3 failed-no-effect identity is immutable and was not retried under the same release identity.
@@ -120,7 +119,7 @@ Issue #492 is closed as repository implementation complete for the earlier provi
 
 The media boundary requires an exact trusted hostname plus immutable SHA-256, byte size and content type for the provider-bound Reel (and cover when used). Public media is fetched through an isolated unauthenticated client; redirects, hash/size/type mismatches and untrusted hosts fail closed before container creation. The Meta access token is not sent to the media host. Container creation and final publication each acquire a durable single-winner intent before the provider mutation; ambiguous creation/publish outcomes cannot be blindly replayed.
 
-This repository state still contains **no production Instagram account binding/token and no live canary evidence**. Provider publications remain **0**. Merge/green-CI completion of #569 means repository implementation complete; it does not mean provider rollout complete and does not authorize a live Reel. Live activation requires fresh exact target/credentials/permissions, a reviewed immutable manifest/media object, read-only preflight, current durable state and a separately authorized canary invocation.
+This repository state still contains **no production Instagram account binding/token and no live canary evidence**. Provider publications remain 0. Merge/green-CI completion of #569 means repository implementation complete; it does not mean provider rollout complete and does not authorize a live Reel. Live activation requires fresh exact target/credentials/permissions, a reviewed immutable manifest/media object, read-only preflight, current durable state and a separately authorized canary invocation.
 
 Canonical runbook: [`instagram-production-publishing.md`](instagram-production-publishing.md).
 
