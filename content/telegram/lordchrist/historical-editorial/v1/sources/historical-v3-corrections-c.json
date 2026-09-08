@@ -1,0 +1,44 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-source-shard",
+  "schema_version": 1,
+  "shard_id": "history-sources-historical-v3-corrections-c",
+  "checked_on": "2026-09-08",
+  "sources": [
+    {
+      "source_id": "src-tyndale-celm-prison-letter-1535-v3",
+      "title": "William Tyndale autograph letter from Vilvorde prison, 1535",
+      "publisher": "Folger Shakespeare Library / CELM",
+      "url": "https://celm.folger.edu/authors/tindalewilliam.html",
+      "evidence_type": "primary",
+      "grade": "A",
+      "evidence_role": "university_archive",
+      "checked_on": "2026-09-08",
+      "topic_tags": ["tyndale", "prison-letter", "1535"],
+      "independence_group": "tyndale-autograph-prison-letter"
+    },
+    {
+      "source_id": "src-tyndale-worms-1526-v3",
+      "title": "The Tyndale Bible and the 1526 Worms printing",
+      "publisher": "City of Worms Luther portal",
+      "url": "https://www.worms.de/en/web/luther/Lutherschriften/Schoefferdrucke/Tyndale.php",
+      "evidence_type": "institutional",
+      "grade": "B+",
+      "evidence_role": "institutional_collection",
+      "checked_on": "2026-09-08",
+      "topic_tags": ["tyndale", "worms", "1526"],
+      "independence_group": "worms-tyndale-1526"
+    },
+    {
+      "source_id": "src-stam-frus-1934-v3",
+      "title": "Foreign Relations of the United States, 1934, China: official document series on the Stam case",
+      "publisher": "U.S. Department of State, Office of the Historian",
+      "url": "https://history.state.gov/historicaldocuments/frus1934v03/ch8",
+      "evidence_type": "primary",
+      "grade": "A",
+      "evidence_role": "official_archive",
+      "checked_on": "2026-09-08",
+      "topic_tags": ["stam", "china", "1934"],
+      "independence_group": "us-state-stam-frus"
+    }
+  ]
+}
