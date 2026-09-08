@@ -1,7 +1,7 @@
 # Instagram production publishing runbook
 
 Updated: 2026-09-08
-Owner: issue #568 / PR #569
+Owner: issues #568 / #571, PRs #569 / #573
 
 This runbook describes the repository-side Instagram production publishing capability. It does **not** authorize a provider mutation. A live Reel requires a fresh exact Instagram Professional account identity, external credentials/permissions, a reviewed immutable publish manifest, current durable ledger state, and explicit operation-specific execution authority.
 
@@ -112,6 +112,29 @@ alembic upgrade head
 ```
 
 Migration `0002` creates `instagram_publications`. `video-manager db init` remains a development/bootstrap helper; do not substitute it for migration discipline in deployed environments.
+
+## Reviewed artifact -> hosted object -> publish manifest
+
+Issue #571 adds a provider-inert compatibility boundary before the production publisher. The canonical local media evidence is converted into `InstagramReelArtifactBinding`, which records the exact reviewed media SHA-256 and byte size together with the Meta Reel compatibility assessment and observed FPS/video/audio bitrate telemetry. Hard Reel constraints fail closed at this stage; the documented 9:16 and 128 kbps audio targets remain diagnostics rather than invented hard maxima.
+
+The binding is an exchange contract, not a second publisher and not a hosting implementation. Export its versioned JSON Schema through the repository's canonical exporter:
+
+```powershell
+video-manager schema export
+```
+
+The exported contract is `schemas/generated/instagram-reel-artifact-binding-v1.schema.json`. Generated schema output is an operator/build artifact; the repository does not maintain a second hand-written schema copy.
+
+The operator handoff is:
+
+1. Produce or select the final local Reel bytes and canonical `MediaArtifactEvidence`.
+2. Build/validate `InstagramReelArtifactBinding` from that exact evidence before any hosting or Graph mutation. A hard compatibility failure blocks the release.
+3. Host **those same immutable bytes** at the reviewed HTTPS URL. Hosting is external to the Graph publisher and must not silently transcode or replace the reviewed object.
+4. Construct `InstagramPublishManifest` with `media_sha256`, `media_size_bytes` and `media_content_type` matching the binding exactly. The binding/manifest identity assertion is fail-closed; do not repair a mismatch by editing whichever side is more convenient.
+5. Run the read-only production preflight and provider-inert `plan` flow.
+6. Only under a separate live authorization may `publish --execute` proceed. Before the first Graph POST, the existing #569 remote-byte verifier downloads the hosted object and proves that its SHA-256, byte size and content type still equal the immutable manifest.
+
+This preserves one mutation authority: `video-manager instagram production`. Compatibility binding, schema export, local probing and remote-byte verification do not create another Instagram writer.
 
 ## Publish manifest
 
@@ -327,6 +350,9 @@ Tests use mocked HTTP only. CI must prove at minimum:
 - reconciliation of a provider `PUBLISHED` container cannot republish it;
 - manual media-ID reconciliation is restricted to ambiguous publish state with a known container;
 - default polling is pinned at 60 seconds × 5 attempts to match current Meta guidance;
-- a publication key cannot be rebound to different canonical content.
+- a publication key cannot be rebound to different canonical content;
+- canonical schema export emits the versioned Instagram Reel artifact binding contract;
+- historical media evidence without optional FPS/bitrate telemetry still converts to `MediaQualityReport` without changing old manifest semantics;
+- every hard Reel compatibility boundary and exact binding to the publish manifest is covered provider-inertly.
 
 A green CI proves repository behavior. It does not prove production credentials, permissions, target identity, public media availability or authorize a live canary.
