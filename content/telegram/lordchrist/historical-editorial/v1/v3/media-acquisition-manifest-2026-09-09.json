@@ -101,7 +101,7 @@
       "source_page_url": "https://missiology.org.uk/pdf/e-books/bms/bms-calendar.pdf",
       "acquisition_page_url": "https://missiology.org.uk/pdf/e-books/bms/bms-calendar.pdf",
       "download_url": "https://missiology.org.uk/pdf/e-books/bms/bms-calendar.pdf",
-      "expected_upstream_sha1": "0000000000000000000000000000000000000000",
+      "expected_upstream_sha1": "240f6565caa7013b3c0f905287bfa1d6b98bde9c",
       "expected_source_mime": "application/pdf",
       "output_file_name": "carey-v3-bms-calendar-source.pdf",
       "rights_basis": "Mission Studies supplies this digitized BMS historical calendar for free educational use; production use is limited to a source-exhibit page with attribution to the minute-book record.",
@@ -122,6 +122,22 @@
       "output_file_name": "judson-v3-wayland-vol2-source.pdf",
       "rights_basis": "Public-domain Wayland memoir, exact volume II. Cambridge HTR independently cites archive.org/details/memoiroflifela02wayl as Wayland, Memoir, volume 2; it is used as the TLS-valid acquisition facsimile of the bound primary compilation.",
       "attribution_text": "Francis Wayland, A Memoir of the Life and Labors of the Rev. Adoniram Judson, D.D., Vol. II; Internet Archive facsimile independently cited by Cambridge HTR.",
+      "acquisition_kind": "direct_pdf",
+      "provider_write_performed": false
+    },
+    {
+      "asset_id": "img-sattler-v3-letter316-source-pdf",
+      "publication_id": "lordchrist-history-sattler-schleitheim-1527-v3",
+      "slot": "document",
+      "source_id": "src-sattler-bucer-capito-letter-v3",
+      "source_page_url": "https://capito.iterpubs.org/letters/1526/Letter_316.pdf",
+      "acquisition_page_url": "https://capito.iterpubs.org/letters/1526/Letter_316.pdf",
+      "download_url": "https://capito.iterpubs.org/letters/1526/Letter_316.pdf",
+      "expected_upstream_sha1": "0000000000000000000000000000000000000000",
+      "expected_source_mime": "application/pdf",
+      "output_file_name": "sattler-v3-letter-316-source.pdf",
+      "rights_basis": "Iter/Capito correspondence project provides the critical-edition PDF for scholarly use; production use is limited to a source-exhibit page with explicit attribution.",
+      "attribution_text": "Iter / Electronic Capito Project, Letter 316: Michael Sattler to Martin Bucer and Wolfgang Capito, c. 1526-1527.",
       "acquisition_kind": "direct_pdf",
       "provider_write_performed": false
     }
