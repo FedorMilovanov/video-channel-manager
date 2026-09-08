@@ -1,0 +1,37 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-topic-verification",
+  "schema_version": 1,
+  "verification_id": "tyndale-new-testament-1526-v3-2026-09-08",
+  "checked_on": "2026-09-08",
+  "publication_id": "lordchrist-history-tyndale-new-testament-1526-v3",
+  "reviewed_document_urls": 5,
+  "primary_document_urls": 2,
+  "institutional_or_scholarly_urls": 3,
+  "independent_evidence_groups_used_in_reader_claims": ["british-library-tyndale","tyndale-autograph-prison-letter","worms-tyndale-1526","loc-tyndale","cambridge-englishing-bible"],
+  "source_shards": [
+    "content/telegram/lordchrist/historical-editorial/v1/sources/tyndale.json",
+    "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-c.json"
+  ],
+  "method": "1526 print and suppression chronology plus autograph prison-letter evidence, with institutional and scholarly cross-check; late martyrdom formulas remain a separate transmission layer",
+  "important_deltas": [
+    {"kind":"deepen","finding":"The 1535 autograph prison letter becomes a central primary artifact: Tyndale asks for warm clothing, a lamp, a Hebrew Bible, grammar and dictionary."},
+    {"kind":"boundary","finding":"The famous final-prayer formula is not promoted to an exact direct quotation without a contemporary locator."},
+    {"kind":"deepen","finding":"Cologne/Worms printing, English suppression, imprisonment and execution are treated as separate evidentiary stages instead of one continuous martyrdom legend."},
+    {"kind":"boundary","finding":"The scale of Tyndale's later linguistic influence is not reduced to a single unsupported percentage or slogan."}
+  ],
+  "unsupported_popular_claims": [
+    {"claim":"Tyndale's famous final prayer is preserved as a verbatim contemporary transcript.","status":"excluded_as_exact_quote_without_locator"},
+    {"claim":"A single exact percentage can summarize how much of later English Bibles is Tyndale without a defined textual comparison method.","status":"excluded_without_measurement_method"}
+  ],
+  "claim_upgrade_conditions": [
+    {"claim":"famous final prayer as direct quotation","upgrade_requires":"contemporary or near-contemporary source with exact wording, provenance and locator"},
+    {"claim":"numeric share of Tyndale wording in a later Bible","upgrade_requires":"defined edition pair, collation method, unit of comparison and reproducible count"}
+  ],
+  "visual_plan": [
+    {"slot":"hero","source_id":"src-tyndale-worms-1526-v3","concept":"1526 Worms New Testament artifact/title-page context","state":"planned_locator_required","production_ready":false},
+    {"slot":"document","source_id":"src-tyndale-celm-prison-letter-1535-v3","concept":"1535 autograph prison letter from Vilvorde","state":"planned_locator_required","production_ready":false}
+  ],
+  "direct_quote_policy": {"status":"no_reader_direct_quote_selected"},
+  "reader_copy_result": "accepted_for_v3_integration",
+  "provider_write_performed": false
+}
