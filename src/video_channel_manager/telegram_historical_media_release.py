@@ -46,10 +46,6 @@ BOT_ID = 8716602202
 BOT_USERNAME = "preaching_mp3_bot"
 
 
-def _canonical_json(value: Any) -> str:
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
-
-
 def _sha256_bytes(value: bytes) -> str:
     return "sha256:" + hashlib.sha256(value).hexdigest()
 
@@ -147,10 +143,7 @@ def _validate_media_record(root: Path, record: dict[str, Any], *, source_commit:
         raise ValueError(f"historical media local byte identity differs: {record['asset_id']}")
     if not (data.startswith(b"\xff\xd8\xff") and data.endswith(b"\xff\xd9")):
         raise ValueError(f"historical media is not an exact JPEG payload: {record['asset_id']}")
-    expected_url = (
-        "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/"
-        f"{source_commit}/{record['path']}"
-    )
+    expected_url = f"https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/{source_commit}/{record['path']}"
     if record.get("raw_url") != expected_url:
         raise ValueError(f"historical media raw URL is not immutable/exact: {record['asset_id']}")
     parsed = urlparse(str(record["raw_url"]))
@@ -238,14 +231,17 @@ def load_media_release(
     profile_binding = release.get("profile")
     legacy_binding = release.get("legacy_profile")
     target_binding = release.get("target_binding")
-    if not all(isinstance(item, dict) for item in (profile_binding, legacy_binding, target_binding)):
-        raise ValueError("historical live-media release lacks profile/target bindings")
+    if not isinstance(profile_binding, dict):
+        raise ValueError("historical live-media release lacks profile binding")
+    if not isinstance(legacy_binding, dict):
+        raise ValueError("historical live-media release lacks legacy profile binding")
+    if not isinstance(target_binding, dict):
+        raise ValueError("historical live-media release lacks target binding")
     profile_path = _require_bound_file(root, profile_binding, label="profile")
     legacy_profile_path = _require_bound_file(root, legacy_binding, label="legacy profile")
     target_binding_path = _require_bound_file(root, target_binding, label="target binding")
 
-    checked_on = package.checked_on
-    queue = HistoricalMediaQueue(posts=(post,), digest=package.digest, checked_on=checked_on)
+    queue = HistoricalMediaQueue(posts=(post,), digest=package.digest, checked_on=package.checked_on)
     canary_not_before = str(release.get("canary_not_before_moscow") or "")
     planned_date = canary_not_before.split("T", 1)[0]
     date.fromisoformat(planned_date)
@@ -261,7 +257,7 @@ def load_media_release(
 
 def _target(profile_path: Path, target_binding_path: Path) -> TelegramRichTargetBinding:
     profile = load_channel_profile(profile_path)
-    binding = load_target_binding(target_binding_path)
+    binding = load_target_binding(target_binding_path, profile)
     if (
         profile.project_key != PROJECT
         or profile.channel_username.casefold() != CHANNEL.casefold()
@@ -315,7 +311,6 @@ def build_media_document(
         )
         for source_id in source_ids
     )
-
     media_records = {str(item["asset_id"]): item for item in release["media"]}
     media_items = tuple(
         RichMediaItem(
@@ -338,10 +333,7 @@ def build_media_document(
             RichBlockMedia(
                 block_id=f"m-{asset_id.removeprefix('img-')}",
                 media_id=asset_id,
-                caption=RichBlockCaption(
-                    text=str(item["caption"]),
-                    credit=str(item["disclosure"]),
-                ),
+                caption=RichBlockCaption(text=str(item["caption"]), credit=str(item["disclosure"])),
             )
         )
 
@@ -405,10 +397,11 @@ def build_media_document(
     return document, render
 
 
-def _verify_remote_payload(record: dict[str, Any], *, content: bytes, content_type: str, content_length: str | None) -> None:
-    expected_mime = str(record["mime"])
+def _verify_remote_payload(
+    record: dict[str, Any], *, content: bytes, content_type: str, content_length: str | None
+) -> None:
     actual_mime = content_type.split(";", 1)[0].strip().casefold()
-    if actual_mime != expected_mime:
+    if actual_mime != str(record["mime"]):
         raise ValueError(f"historical remote media MIME differs: {record['asset_id']}")
     if content_length is not None:
         try:
@@ -434,39 +427,39 @@ def verify_transport_media_bytes(
     if not is_media_release_payload(release):
         raise ValueError("exact media verification requires a historical live-media release")
     source_commit = str(release["media_source_commit"])
-    own_client = client is None
-    session = client or httpx.Client(timeout=20.0, follow_redirects=False)
     proofs: list[dict[str, Any]] = []
-    try:
-        for record in release["media"]:
-            _validate_media_record(root, record, source_commit=source_commit)
-            response = session.get(str(record["raw_url"]), headers={"Accept": str(record["mime"])})
-            if response.status_code != 200:
-                raise ValueError(
-                    f"historical remote media HTTP status differs: {record['asset_id']}={response.status_code}"
-                )
-            _verify_remote_payload(
-                record,
-                content=response.content,
-                content_type=response.headers.get("content-type", ""),
-                content_length=response.headers.get("content-length"),
+    for record in release["media"]:
+        _validate_media_record(root, record, source_commit=source_commit)
+        if client is None:
+            response = httpx.get(
+                str(record["raw_url"]),
+                headers={"Accept": str(record["mime"])},
+                timeout=20.0,
+                follow_redirects=False,
             )
-            local = _resolve(root, str(record["path"])).read_bytes()
-            if response.content != local:
-                raise ValueError(f"historical remote media bytes differ from bound Git bytes: {record['asset_id']}")
-            proofs.append(
-                {
-                    "asset_id": record["asset_id"],
-                    "raw_url": record["raw_url"],
-                    "mime": record["mime"],
-                    "byte_length": record["byte_length"],
-                    "sha256": record["sha256"],
-                    "provider_write_performed": False,
-                }
-            )
-    finally:
-        if own_client:
-            session.close()
+        else:
+            response = client.get(str(record["raw_url"]), headers={"Accept": str(record["mime"])})
+        if response.status_code != 200:
+            raise ValueError(f"historical remote media HTTP status differs: {record['asset_id']}={response.status_code}")
+        _verify_remote_payload(
+            record,
+            content=response.content,
+            content_type=response.headers.get("content-type", ""),
+            content_length=response.headers.get("content-length"),
+        )
+        local = _resolve(root, str(record["path"])).read_bytes()
+        if response.content != local:
+            raise ValueError(f"historical remote media bytes differ from bound Git bytes: {record['asset_id']}")
+        proofs.append(
+            {
+                "asset_id": record["asset_id"],
+                "raw_url": record["raw_url"],
+                "mime": record["mime"],
+                "byte_length": record["byte_length"],
+                "sha256": record["sha256"],
+                "provider_write_performed": False,
+            }
+        )
     return tuple(proofs)
 
 
