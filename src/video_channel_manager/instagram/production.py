@@ -4,7 +4,7 @@ import hashlib
 import ipaddress
 import json
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 from typing import Callable, Self, cast
@@ -133,7 +133,7 @@ class InstagramRuntimeConfig:
     api_version: str
     account_id: str
     expected_username: str | None
-    access_token: str
+    access_token: str = field(repr=False)
     writes_enabled: bool
     media_allowed_hosts: tuple[str, ...]
     timeout_seconds: float
