@@ -54,8 +54,11 @@ class AppSettings(BaseSettings):
     instagram_writes_enabled: bool = False
     instagram_media_allowed_hosts: tuple[str, ...] = ()
     instagram_request_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
-    instagram_poll_interval_seconds: float = Field(default=5.0, ge=0, le=60)
-    instagram_poll_attempts: int = Field(default=24, ge=1, le=120)
+    # Meta recommends checking a publishing container once per minute for no
+    # more than five minutes. Explicit overrides remain possible for reviewed
+    # operational needs; tests inject their own zero-sleep runtime config.
+    instagram_poll_interval_seconds: float = Field(default=60.0, ge=0, le=60)
+    instagram_poll_attempts: int = Field(default=5, ge=1, le=120)
 
     @field_validator("environment")
     @classmethod
