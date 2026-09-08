@@ -11,6 +11,9 @@ from typing import Callable, Self, cast
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator, model_validator
+from sqlalchemy import update
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from video_channel_manager.config.settings import AppSettings
 from video_channel_manager.persistence.database import Database
@@ -57,6 +60,8 @@ class InstagramMediaVerificationError(InstagramProductionError):
 
 class PublicationStatus(StrEnum):
     PLANNED = "planned"
+    CONTAINER_REQUESTED = "container_requested"
+    CONTAINER_UNKNOWN = "container_unknown"
     CONTAINER_CREATED = "container_created"
     PROCESSING = "processing"
     READY = "ready"
@@ -213,6 +218,7 @@ class PublicationSnapshot:
     attempt_count: int
     last_error_code: str | None
     last_error_message: str | None
+    container_requested_at: datetime | None
     publish_requested_at: datetime | None
     published_at: datetime | None
     created_at: datetime
@@ -220,7 +226,7 @@ class PublicationSnapshot:
 
 
 class InstagramPublicationLedger:
-    """Transactional ledger that makes Instagram write retries crash-safe."""
+    """Transactional ledger with compare-and-set claims around provider mutations."""
 
     def __init__(self, database: Database) -> None:
         self.database = database
@@ -238,22 +244,41 @@ class InstagramPublicationLedger:
             attempt_count=entity.attempt_count,
             last_error_code=entity.last_error_code,
             last_error_message=entity.last_error_message,
+            container_requested_at=entity.container_requested_at,
             publish_requested_at=entity.publish_requested_at,
             published_at=entity.published_at,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
         )
 
+    @classmethod
+    def _snapshot_from_session(cls, session: Session, publication_key: str) -> PublicationSnapshot:
+        session.expire_all()
+        entity = session.get(InstagramPublicationEntity, publication_key)
+        if entity is None:
+            raise InstagramProductionError(f"Unknown publication key: {publication_key}")
+        return cls._snapshot(entity)
+
     def get(self, publication_key: str) -> PublicationSnapshot | None:
         with self.database.session() as session:
             entity = session.get(InstagramPublicationEntity, publication_key)
             return None if entity is None else self._snapshot(entity)
 
+    @staticmethod
+    def _assert_binding(entity: InstagramPublicationEntity, manifest: InstagramPublishManifest) -> None:
+        if entity.account_id != manifest.account_id or entity.content_hash != manifest.content_hash():
+            raise InstagramProductionError(
+                "Publication key is already bound to different canonical content or a different account"
+            )
+
     def ensure_planned(self, manifest: InstagramPublishManifest) -> PublicationSnapshot:
         content_hash = manifest.content_hash()
-        with self.database.session() as session:
-            entity = session.get(InstagramPublicationEntity, manifest.publication_key)
-            if entity is None:
+        try:
+            with self.database.session() as session:
+                entity = session.get(InstagramPublicationEntity, manifest.publication_key)
+                if entity is not None:
+                    self._assert_binding(entity, manifest)
+                    return self._snapshot(entity)
                 entity = InstagramPublicationEntity(
                     publication_key=manifest.publication_key,
                     account_id=manifest.account_id,
@@ -264,48 +289,159 @@ class InstagramPublicationLedger:
                 session.add(entity)
                 session.flush()
                 return self._snapshot(entity)
-            if entity.account_id != manifest.account_id or entity.content_hash != content_hash:
-                raise InstagramProductionError(
-                    "Publication key is already bound to different canonical content or a different account"
-                )
-            return self._snapshot(entity)
+        except IntegrityError:
+            # A concurrent planner may have inserted the same primary key after
+            # our read. Re-read and verify the immutable binding instead of
+            # turning a safe idempotent race into an operator-visible failure.
+            with self.database.session() as session:
+                entity = session.get(InstagramPublicationEntity, manifest.publication_key)
+                if entity is None:
+                    raise InstagramProductionError(
+                        f"Publication {manifest.publication_key} raced during planning but cannot be re-read"
+                    )
+                self._assert_binding(entity, manifest)
+                return self._snapshot(entity)
 
     def transition(
         self,
         publication_key: str,
         status: PublicationStatus,
         *,
+        expected_statuses: set[PublicationStatus] | None = None,
         container_id: str | None = None,
         media_id: str | None = None,
         provider_status: str | None = None,
         error_code: str | None = None,
         error_message: str | None = None,
         increment_attempt: bool = False,
+        container_requested: bool = False,
         publish_requested: bool = False,
         published: bool = False,
     ) -> PublicationSnapshot:
+        now = utc_now()
+        if expected_statuses is None:
+            with self.database.session() as session:
+                entity = session.get(InstagramPublicationEntity, publication_key)
+                if entity is None:
+                    raise InstagramProductionError(f"Unknown publication key: {publication_key}")
+                entity.status = status.value
+                if container_id is not None:
+                    entity.provider_container_id = container_id
+                if media_id is not None:
+                    entity.provider_media_id = media_id
+                if provider_status is not None:
+                    entity.provider_status = provider_status
+                entity.last_error_code = error_code
+                entity.last_error_message = error_message
+                if increment_attempt:
+                    entity.attempt_count += 1
+                if container_requested:
+                    entity.container_requested_at = now
+                if publish_requested:
+                    entity.publish_requested_at = now
+                if published:
+                    entity.published_at = now
+                entity.updated_at = now
+                session.flush()
+                return self._snapshot(entity)
+
+        values: dict[str, object] = {
+            "status": status.value,
+            "last_error_code": error_code,
+            "last_error_message": error_message,
+            "updated_at": now,
+        }
+        if container_id is not None:
+            values["provider_container_id"] = container_id
+        if media_id is not None:
+            values["provider_media_id"] = media_id
+        if provider_status is not None:
+            values["provider_status"] = provider_status
+        if increment_attempt:
+            values["attempt_count"] = InstagramPublicationEntity.attempt_count + 1
+        if container_requested:
+            values["container_requested_at"] = now
+        if publish_requested:
+            values["publish_requested_at"] = now
+        if published:
+            values["published_at"] = now
+
         with self.database.session() as session:
-            entity = session.get(InstagramPublicationEntity, publication_key)
-            if entity is None:
-                raise InstagramProductionError(f"Unknown publication key: {publication_key}")
-            entity.status = status.value
-            if container_id is not None:
-                entity.provider_container_id = container_id
-            if media_id is not None:
-                entity.provider_media_id = media_id
-            if provider_status is not None:
-                entity.provider_status = provider_status
-            entity.last_error_code = error_code
-            entity.last_error_message = error_message
-            if increment_attempt:
-                entity.attempt_count += 1
-            if publish_requested:
-                entity.publish_requested_at = utc_now()
-            if published:
-                entity.published_at = utc_now()
-            entity.updated_at = utc_now()
-            session.flush()
-            return self._snapshot(entity)
+            statement = (
+                update(InstagramPublicationEntity)
+                .where(
+                    InstagramPublicationEntity.publication_key == publication_key,
+                    InstagramPublicationEntity.status.in_([item.value for item in expected_statuses]),
+                )
+                .values(values)
+                .returning(InstagramPublicationEntity.publication_key)
+            )
+            changed_key = session.execute(statement).scalar_one_or_none()
+            if changed_key is None:
+                current = self._snapshot_from_session(session, publication_key)
+                raise InstagramReconciliationRequired(
+                    f"Atomic state transition refused for {publication_key}: current state is {current.status.value}"
+                )
+            return self._snapshot_from_session(session, publication_key)
+
+    def claim_container_request(self, publication_key: str) -> PublicationSnapshot:
+        now = utc_now()
+        with self.database.session() as session:
+            statement = (
+                update(InstagramPublicationEntity)
+                .where(
+                    InstagramPublicationEntity.publication_key == publication_key,
+                    InstagramPublicationEntity.status.in_(
+                        [PublicationStatus.PLANNED.value, PublicationStatus.RETRYABLE_FAILURE.value]
+                    ),
+                    InstagramPublicationEntity.provider_container_id.is_(None),
+                )
+                .values(
+                    status=PublicationStatus.CONTAINER_REQUESTED.value,
+                    attempt_count=InstagramPublicationEntity.attempt_count + 1,
+                    container_requested_at=now,
+                    last_error_code=None,
+                    last_error_message=None,
+                    updated_at=now,
+                )
+                .returning(InstagramPublicationEntity.publication_key)
+            )
+            changed_key = session.execute(statement).scalar_one_or_none()
+            if changed_key is None:
+                current = self._snapshot_from_session(session, publication_key)
+                raise InstagramReconciliationRequired(
+                    f"Container creation claim refused for {publication_key}: current state is {current.status.value}"
+                )
+            return self._snapshot_from_session(session, publication_key)
+
+    def claim_publish_request(self, publication_key: str, container_id: str) -> PublicationSnapshot:
+        now = utc_now()
+        with self.database.session() as session:
+            statement = (
+                update(InstagramPublicationEntity)
+                .where(
+                    InstagramPublicationEntity.publication_key == publication_key,
+                    InstagramPublicationEntity.status == PublicationStatus.READY.value,
+                    InstagramPublicationEntity.provider_container_id == container_id,
+                )
+                .values(
+                    status=PublicationStatus.PUBLISH_REQUESTED.value,
+                    provider_status="FINISHED",
+                    attempt_count=InstagramPublicationEntity.attempt_count + 1,
+                    publish_requested_at=now,
+                    last_error_code=None,
+                    last_error_message=None,
+                    updated_at=now,
+                )
+                .returning(InstagramPublicationEntity.publication_key)
+            )
+            changed_key = session.execute(statement).scalar_one_or_none()
+            if changed_key is None:
+                current = self._snapshot_from_session(session, publication_key)
+                raise InstagramReconciliationRequired(
+                    f"Publish claim refused for {publication_key}: current state is {current.status.value}"
+                )
+            return self._snapshot_from_session(session, publication_key)
 
 
 RequestValue = str | int | float | bool | None
@@ -550,6 +686,16 @@ class InstagramProviderClient:
 class InstagramProductionService:
     """Safe orchestration for preflight, publish, resume and reconciliation."""
 
+    _PUBLISH_AMBIGUOUS = {
+        PublicationStatus.PUBLISH_REQUESTED,
+        PublicationStatus.PUBLISH_UNKNOWN,
+        PublicationStatus.PUBLISHED_UNRESOLVED,
+    }
+    _CONTAINER_AMBIGUOUS = {
+        PublicationStatus.CONTAINER_REQUESTED,
+        PublicationStatus.CONTAINER_UNKNOWN,
+    }
+
     def __init__(
         self,
         config: InstagramRuntimeConfig,
@@ -595,11 +741,7 @@ class InstagramProductionService:
 
         if snapshot.status == PublicationStatus.PUBLISHED:
             return snapshot
-        if snapshot.status in {
-            PublicationStatus.PUBLISH_REQUESTED,
-            PublicationStatus.PUBLISH_UNKNOWN,
-            PublicationStatus.PUBLISHED_UNRESOLVED,
-        }:
+        if snapshot.status in self._CONTAINER_AMBIGUOUS | self._PUBLISH_AMBIGUOUS:
             raise InstagramReconciliationRequired(
                 f"Publication {manifest.publication_key} is {snapshot.status.value}; reconcile before any further write"
             )
@@ -617,43 +759,61 @@ class InstagramProductionService:
                 self.ledger.transition(
                     manifest.publication_key,
                     status,
+                    expected_statuses={PublicationStatus.PLANNED, PublicationStatus.RETRYABLE_FAILURE},
                     error_code=exc.error_code,
                     error_message=str(exc),
-                    increment_attempt=True,
                 )
                 raise
 
+            self.ledger.claim_container_request(manifest.publication_key)
             try:
                 container_id = self.client.create_reel_container(manifest)
-            except (InstagramProviderError, InstagramTransportError) as exc:
+            except InstagramProviderError as exc:
+                if exc.status_code is not None and 400 <= exc.status_code < 500:
+                    self.ledger.transition(
+                        manifest.publication_key,
+                        PublicationStatus.TERMINAL_FAILURE,
+                        expected_statuses={PublicationStatus.CONTAINER_REQUESTED},
+                        error_code=self._error_code(exc),
+                        error_message=str(exc),
+                    )
+                    raise
                 self.ledger.transition(
                     manifest.publication_key,
-                    PublicationStatus.RETRYABLE_FAILURE,
+                    PublicationStatus.CONTAINER_UNKNOWN,
+                    expected_statuses={PublicationStatus.CONTAINER_REQUESTED},
                     error_code=self._error_code(exc),
                     error_message=str(exc),
-                    increment_attempt=True,
                 )
-                raise
+                raise InstagramReconciliationRequired(
+                    f"Container creation result for {manifest.publication_key} is unknown; exact provider evidence is required"
+                ) from exc
+            except InstagramTransportError as exc:
+                self.ledger.transition(
+                    manifest.publication_key,
+                    PublicationStatus.CONTAINER_UNKNOWN,
+                    expected_statuses={PublicationStatus.CONTAINER_REQUESTED},
+                    error_code=self._error_code(exc),
+                    error_message=str(exc),
+                )
+                raise InstagramReconciliationRequired(
+                    f"Container creation result for {manifest.publication_key} is unknown; exact provider evidence is required"
+                ) from exc
+
             snapshot = self.ledger.transition(
                 manifest.publication_key,
                 PublicationStatus.CONTAINER_CREATED,
+                expected_statuses={PublicationStatus.CONTAINER_REQUESTED},
                 container_id=container_id,
-                increment_attempt=True,
             )
 
         snapshot = self._wait_for_container(manifest.publication_key, container_id)
         if snapshot.status != PublicationStatus.READY:
             return snapshot
 
-        # Persist this state before the irreversible publish request. A crash or
-        # timeout from this point is intentionally ambiguous and must reconcile.
-        self.ledger.transition(
-            manifest.publication_key,
-            PublicationStatus.PUBLISH_REQUESTED,
-            provider_status="FINISHED",
-            increment_attempt=True,
-            publish_requested=True,
-        )
+        # CAS is committed before the irreversible publish request. Exactly one
+        # process can acquire READY -> PUBLISH_REQUESTED for this container.
+        self.ledger.claim_publish_request(manifest.publication_key, container_id)
         try:
             media_id = self.client.publish_container(container_id)
         except InstagramProviderError as exc:
@@ -661,6 +821,7 @@ class InstagramProductionService:
                 self.ledger.transition(
                     manifest.publication_key,
                     PublicationStatus.TERMINAL_FAILURE,
+                    expected_statuses={PublicationStatus.PUBLISH_REQUESTED},
                     error_code=self._error_code(exc),
                     error_message=str(exc),
                 )
@@ -668,6 +829,7 @@ class InstagramProductionService:
                 self.ledger.transition(
                     manifest.publication_key,
                     PublicationStatus.PUBLISH_UNKNOWN,
+                    expected_statuses={PublicationStatus.PUBLISH_REQUESTED},
                     error_code=self._error_code(exc),
                     error_message=str(exc),
                 )
@@ -676,6 +838,7 @@ class InstagramProductionService:
             self.ledger.transition(
                 manifest.publication_key,
                 PublicationStatus.PUBLISH_UNKNOWN,
+                expected_statuses={PublicationStatus.PUBLISH_REQUESTED},
                 error_code=self._error_code(exc),
                 error_message=str(exc),
             )
@@ -686,60 +849,116 @@ class InstagramProductionService:
         return self.ledger.transition(
             manifest.publication_key,
             PublicationStatus.PUBLISHED,
+            expected_statuses={PublicationStatus.PUBLISH_REQUESTED},
             media_id=media_id,
             provider_status="PUBLISHED",
             published=True,
         )
 
-    def reconcile(self, publication_key: str, *, published_media_id: str | None = None) -> PublicationSnapshot:
+    def reconcile(
+        self,
+        publication_key: str,
+        *,
+        published_media_id: str | None = None,
+        observed_container_id: str | None = None,
+    ) -> PublicationSnapshot:
         snapshot = self.ledger.get(publication_key)
         if snapshot is None:
             raise InstagramProductionError(f"Unknown publication key: {publication_key}")
         if snapshot.account_id != self.config.account_id:
             raise InstagramIdentityMismatchError("Ledger publication belongs to a different Instagram account")
         if snapshot.status == PublicationStatus.PUBLISHED:
+            if published_media_id is not None or observed_container_id is not None:
+                raise InstagramProductionError("Published publication does not accept reconciliation overrides")
             return snapshot
+
         if published_media_id is not None:
             normalized = published_media_id.strip()
             if not normalized:
                 raise InstagramProductionError("published_media_id must not be empty")
+            if snapshot.status not in self._PUBLISH_AMBIGUOUS or snapshot.provider_container_id is None:
+                raise InstagramProductionError(
+                    "published_media_id is accepted only for an ambiguous publish with an exact known container"
+                )
             return self.ledger.transition(
                 publication_key,
                 PublicationStatus.PUBLISHED,
+                expected_statuses={snapshot.status},
                 media_id=normalized,
                 provider_status="PUBLISHED",
                 published=True,
             )
+
+        if observed_container_id is not None:
+            normalized_container_id = observed_container_id.strip()
+            if not normalized_container_id:
+                raise InstagramProductionError("observed_container_id must not be empty")
+            if snapshot.status not in self._CONTAINER_AMBIGUOUS or snapshot.provider_container_id is not None:
+                raise InstagramProductionError(
+                    "observed_container_id is accepted only for ambiguous container creation without a known container"
+                )
+            snapshot = self.ledger.transition(
+                publication_key,
+                PublicationStatus.CONTAINER_CREATED,
+                expected_statuses={snapshot.status},
+                container_id=normalized_container_id,
+                error_code="container_id_bound_from_exact_evidence",
+                error_message="Exact provider container id bound during reconciliation",
+            )
+
         container_id = snapshot.provider_container_id
         if container_id is None:
+            if snapshot.status in self._CONTAINER_AMBIGUOUS:
+                raise InstagramReconciliationRequired(
+                    f"Container creation result for {publication_key} is ambiguous; supply exact provider container evidence"
+                )
             return snapshot
 
         self.preflight()
         status_code, status_message = self.client.get_container_status(container_id)
-        if status_code == "FINISHED":
-            return self.ledger.transition(
-                publication_key,
-                PublicationStatus.READY,
-                provider_status=status_code,
-            )
+
         if status_code == "PUBLISHED":
             return self.ledger.transition(
                 publication_key,
                 PublicationStatus.PUBLISHED_UNRESOLVED,
+                expected_statuses={snapshot.status},
                 provider_status=status_code,
                 error_code="published_media_id_required",
                 error_message="Provider confirms publication, but exact media id must be supplied from provider evidence",
+            )
+
+        if snapshot.status in self._PUBLISH_AMBIGUOUS:
+            # FINISHED is not sufficient evidence that an earlier media_publish
+            # had no effect; provider state can lag an in-flight/just-completed
+            # mutation. Never reopen READY from an ambiguous publish result.
+            return self.ledger.transition(
+                publication_key,
+                PublicationStatus.PUBLISH_UNKNOWN,
+                expected_statuses={snapshot.status},
+                provider_status=status_code,
+                error_code="publish_effect_unresolved",
+                error_message=status_message or f"Publish effect remains unresolved; container reports {status_code}",
+            )
+
+        if status_code == "FINISHED":
+            return self.ledger.transition(
+                publication_key,
+                PublicationStatus.READY,
+                expected_statuses={snapshot.status},
+                provider_status=status_code,
             )
         if status_code == "IN_PROGRESS":
             return self.ledger.transition(
                 publication_key,
                 PublicationStatus.PROCESSING,
+                expected_statuses={snapshot.status},
                 provider_status=status_code,
             )
         if status_code in {"ERROR", "EXPIRED"}:
             return self.ledger.transition(
                 publication_key,
                 PublicationStatus.TERMINAL_FAILURE,
+                expected_statuses={snapshot.status},
                 provider_status=status_code,
                 error_code=status_code.lower(),
                 error_message=status_message or f"Instagram container is {status_code}",
@@ -748,18 +967,25 @@ class InstagramProductionService:
 
     def _wait_for_container(self, publication_key: str, container_id: str) -> PublicationSnapshot:
         latest: PublicationSnapshot | None = None
+        expected_statuses = {
+            PublicationStatus.CONTAINER_CREATED,
+            PublicationStatus.PROCESSING,
+            PublicationStatus.READY,
+        }
         for attempt in range(self.config.poll_attempts):
             status_code, status_message = self.client.get_container_status(container_id)
             if status_code == "FINISHED":
                 return self.ledger.transition(
                     publication_key,
                     PublicationStatus.READY,
+                    expected_statuses=expected_statuses,
                     provider_status=status_code,
                 )
             if status_code == "PUBLISHED":
                 self.ledger.transition(
                     publication_key,
                     PublicationStatus.PUBLISHED_UNRESOLVED,
+                    expected_statuses=expected_statuses,
                     provider_status=status_code,
                     error_code="published_media_id_required",
                     error_message="Container is already published; exact media id requires reconciliation",
@@ -771,6 +997,7 @@ class InstagramProductionService:
                 return self.ledger.transition(
                     publication_key,
                     PublicationStatus.TERMINAL_FAILURE,
+                    expected_statuses=expected_statuses,
                     provider_status=status_code,
                     error_code=status_code.lower(),
                     error_message=status_message or f"Instagram container is {status_code}",
@@ -780,6 +1007,7 @@ class InstagramProductionService:
             latest = self.ledger.transition(
                 publication_key,
                 PublicationStatus.PROCESSING,
+                expected_statuses=expected_statuses,
                 provider_status=status_code,
             )
             if attempt + 1 < self.config.poll_attempts:
