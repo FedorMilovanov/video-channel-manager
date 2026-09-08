@@ -1,5 +1,5 @@
 # Current operational state
-Updated: 2026-09-07
+Updated: 2026-09-08
 
 This file is the concise current operational interpretation. It does **not** authorize provider mutation. Historical issues, comments, pull requests, CI runs, credentials, releases and receipts are evidence only; they are never standing execution authority.
 
@@ -116,7 +116,13 @@ Canonical runbook: [`milovi-telegram-feed-control-plane.md`](milovi-telegram-fee
 
 ## Instagram / Legendary Poet and Lord God
 
-Issue #492 is closed as repository implementation complete. Launch packs, Reel factory, caption rendering and a read-only Graph identity client exist; exact Professional account IDs, hashed vertical masters and a live Meta publisher do not. Provider publications remain 0. Live rollout requires a new exact owning scope.
+Issue #492 remains closed as the earlier provider-inert launch/content/factory implementation. PR #569 under issue #568 now owns the production-publishing implementation: explicit Instagram/Facebook login mode and Graph version, exact account preflight, default-off double write gate, durable SQL publication ledger, idempotent publication-key/content binding, crash-safe pre-publish intent, fail-closed ambiguous-result reconciliation, and exact public-media trust/integrity verification before the first provider POST.
+
+The media boundary requires an exact trusted hostname plus immutable SHA-256, byte size and content type for the provider-bound Reel (and cover when used). Public media is fetched through an isolated unauthenticated client; redirects, hash/size/type mismatches and untrusted hosts fail closed before container creation. The Meta access token is not sent to the media host.
+
+This repository state still contains **no production Instagram account binding/token and no live canary evidence**. Provider publications remain **0**. Merge/green-CI completion of #569 means repository implementation complete; it does not mean provider rollout complete and does not authorize a live Reel. Live activation requires fresh exact target/credentials/permissions, a reviewed immutable manifest/media object, read-only preflight, current durable state and a separately authorized canary invocation.
+
+Canonical runbook: [`instagram-production-publishing.md`](instagram-production-publishing.md).
 
 ## YouTube / Legendary Poet / «Чёрный человек»
 
@@ -158,6 +164,7 @@ This governance closure is evidence, not standing authority. Future protection c
 2. Reopen #503 or create a successor only when a fresh <=48h owner YouTube AuditPackage and/or exact owner media is available; do not substitute public downloads or stale evidence.
 3. Any future Milovi growth/Dzen/provider/admin experiment needs a new exact scope and real attribution/outcome data; closed #353 is not standing authority.
 4. Any live rollout of the completed #552 historical editorial lane needs a fresh release identity, media proof where applicable, exact review/canary and separate explicit execution authorization.
-5. For any provider-visible work, start from fresh current `main`, fresh durable state, exact target identity, immutable operation identity and a new explicit owning authorization scope.
+5. Complete #568/#569 repository review/CI/merge before any Instagram activation. After merge, live Instagram rollout starts with fresh exact credentials/identity, immutable remote-media evidence and a read-only preflight; one separately authorized canary is the first permitted provider write.
+6. For any provider-visible work, start from fresh current `main`, fresh durable state, exact target identity, immutable operation identity and a new explicit owning authorization scope.
 
 Nothing in this document is authorization for a provider mutation.
