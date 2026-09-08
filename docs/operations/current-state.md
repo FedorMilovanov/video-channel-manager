@@ -87,6 +87,7 @@ Do not substitute public/third-party downloads, stale-snapshot reinterpretation 
 Canonical runbook: [`lordchrist-shorts-feed.md`](lordchrist-shorts-feed.md).
 
 ## Telegram / Svodka
+
 Issue #170 is closed as repository pipeline implementation complete. The historical approval bound release `svodka-pilot-2026-08`; its profile used `provider_writes_authorized=true` only for the reviewed rollout gates, and the durable ledger now exists on `state/svodka-telegram`. Those facts are historical evidence, not standing authority.
 
 Issue #235 is completed with verified successor publications including Telegram messages `28` and `29`; the intervening v3 failed-no-effect identity is immutable and was not retried under the same release identity.
