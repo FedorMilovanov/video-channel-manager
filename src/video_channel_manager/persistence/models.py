@@ -197,5 +197,6 @@ class InstagramPublicationEntity(Base, TimestampMixin):
     attempt_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     last_error_code: Mapped[str | None] = mapped_column(String(200))
     last_error_message: Mapped[str | None] = mapped_column(Text)
+    container_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     publish_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
