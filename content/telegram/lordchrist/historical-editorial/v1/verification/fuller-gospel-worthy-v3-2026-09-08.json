@@ -1,0 +1,38 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-topic-verification",
+  "schema_version": 1,
+  "verification_id": "fuller-gospel-worthy-v3-2026-09-08",
+  "checked_on": "2026-09-08",
+  "publication_id": "lordchrist-history-fuller-gospel-worthy-v3",
+  "reviewed_document_urls": 5,
+  "primary_document_urls": 4,
+  "institutional_or_scholarly_urls": 1,
+  "independent_evidence_groups_used_in_reader_claims": ["wellcome-fuller-1785","folger-fuller-catalog","dan-taylor-1786","fuller-1801-edition","oup-fuller-reader","oup-particular-baptists"],
+  "source_shards": [
+    "content/telegram/lordchrist/historical-editorial/v1/sources/baptist-mission.json",
+    "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-b.json"
+  ],
+  "method": "first-edition Fuller primary text plus opposing Dan Taylor primary response plus second-edition self-revision and independent scholarly synthesis",
+  "important_deltas": [
+    {"kind":"correct","finding":"The title and reader copy no longer say Fuller opposed Calvinism in general; the target is the high/hyper-Calvinist inference concerning duty-faith and indiscriminate gospel address."},
+    {"kind":"deepen","finding":"Dan Taylor 1786 is bound as genuine opposing contemporary primary evidence rather than a secondary mention."},
+    {"kind":"qualify","finding":"The 1801 second edition is materially revised and cannot be silently back-projected into the 1785 first edition."},
+    {"kind":"boundary","finding":"The connection between Gospel Worthy and the 1792 missionary society is retained as multicausal rather than a single-book causal claim."}
+  ],
+  "unsupported_popular_claims": [
+    {"claim":"Andrew Fuller abandoned Calvinism in Gospel Worthy.","status":"rejected"},
+    {"claim":"The 1801 wording is identical to the 1785 first edition.","status":"rejected"},
+    {"claim":"Gospel Worthy alone caused the Baptist Missionary Society to be founded.","status":"rejected_as_monocausal"}
+  ],
+  "claim_upgrade_conditions": [
+    {"claim":"specific doctrinal wording assigned to the 1785 first edition","upgrade_requires":"locator in the 1785 text rather than the 1801 corrected edition"},
+    {"claim":"direct causal statement from Gospel Worthy to BMS foundation","upgrade_requires":"near-contemporary participant document explicitly making that causal connection"}
+  ],
+  "visual_plan": [
+    {"slot":"hero","source_id":"src-fuller-wellcome-1785","concept":"1785 Gospel Worthy title page","state":"planned_locator_required","production_ready":false},
+    {"slot":"opposition","source_id":"src-fuller-taylor-observations-1786-v3","concept":"1786 Dan Taylor Observations title page or opening","state":"planned_locator_required","production_ready":false}
+  ],
+  "direct_quote_policy": {"status":"no_reader_direct_quote_selected"},
+  "reader_copy_result": "accepted_for_v3_integration",
+  "provider_write_performed": false
+}
