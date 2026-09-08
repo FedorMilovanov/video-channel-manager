@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from dotenv import dotenv_values
 from pydantic import Field, SecretStr, field_validator
@@ -40,6 +41,20 @@ class AppSettings(BaseSettings):
     vk_shared_env_file: Path = Field(default_factory=lambda: Path.home() / "Projects" / "mp3telegrambot" / ".env")
     vk_api_version: str = "5.199"
 
+    # Instagram production publishing is intentionally disabled by default.
+    # Credentials are secrets and must only arrive through VCM_* environment
+    # configuration or an external secret store that populates the environment.
+    instagram_login_mode: Literal["instagram", "facebook"] = "instagram"
+    instagram_graph_host: str = "https://graph.instagram.com"
+    instagram_graph_api_version: str | None = None
+    instagram_account_id: str | None = None
+    instagram_account_username: str | None = None
+    instagram_access_token: SecretStr | None = None
+    instagram_writes_enabled: bool = False
+    instagram_request_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
+    instagram_poll_interval_seconds: float = Field(default=5.0, ge=0, le=60)
+    instagram_poll_attempts: int = Field(default=24, ge=1, le=120)
+
     @field_validator("environment")
     @classmethod
     def normalize_environment(cls, value: str) -> str:
@@ -50,6 +65,23 @@ class AppSettings(BaseSettings):
     def normalize_log_level(cls, value: str) -> str:
         return value.strip().upper()
 
+    @field_validator("instagram_graph_host")
+    @classmethod
+    def validate_instagram_graph_host(cls, value: str) -> str:
+        normalized = value.strip().rstrip("/")
+        allowed = {"https://graph.instagram.com", "https://graph.facebook.com"}
+        if normalized not in allowed:
+            raise ValueError(f"Instagram Graph host must be one of: {', '.join(sorted(allowed))}")
+        return normalized
+
+    @field_validator("instagram_graph_api_version", "instagram_account_id", "instagram_account_username")
+    @classmethod
+    def normalize_optional_instagram_value(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized or None
+
     def ensure_runtime_directories(self) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)
         (self.data_dir / "exports").mkdir(exist_ok=True)
@@ -58,6 +90,7 @@ class AppSettings(BaseSettings):
         (self.data_dir / "secrets").mkdir(exist_ok=True)
         (self.data_dir / "youtube").mkdir(exist_ok=True)
         (self.data_dir / "vk").mkdir(exist_ok=True)
+        (self.data_dir / "instagram").mkdir(exist_ok=True)
 
 
 def _read_shared_vk_access_token(path: Path) -> SecretStr | None:
