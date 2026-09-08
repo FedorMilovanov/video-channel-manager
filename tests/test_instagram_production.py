@@ -34,7 +34,9 @@ MEDIA_SHA256 = f"sha256:{hashlib.sha256(MEDIA_BYTES).hexdigest()}"
 MEDIA_URL = "https://cdn.example.com/reel.mp4"
 
 
-def _config(*, writes_enabled: bool = True, media_allowed_hosts: tuple[str, ...] = ("cdn.example.com",)) -> InstagramRuntimeConfig:
+def _config(
+    *, writes_enabled: bool = True, media_allowed_hosts: tuple[str, ...] = ("cdn.example.com",)
+) -> InstagramRuntimeConfig:
     return InstagramRuntimeConfig(
         login_mode="instagram",
         graph_host="https://graph.instagram.com",
@@ -85,7 +87,10 @@ def _media_response(request: httpx.Request, content: bytes = MEDIA_BYTES) -> htt
     )
 
 
-def _provider_client(config: InstagramRuntimeConfig, handler: httpx.MockTransport) -> Iterator[InstagramProviderClient]:
+@contextmanager
+def _provider_client(
+    config: InstagramRuntimeConfig, handler: httpx.MockTransport
+) -> Iterator[InstagramProviderClient]:
     with httpx.Client(transport=handler) as graph_client, httpx.Client(transport=handler) as media_client:
         yield InstagramProviderClient(config, client=graph_client, media_client=media_client)
 
@@ -136,7 +141,7 @@ def test_write_gate_blocks_before_any_provider_request() -> None:
 
     config = _config(writes_enabled=False)
     transport = httpx.MockTransport(handler)
-    with _ledger() as ledger, contextmanager(_provider_client)(config, transport) as client:
+    with _ledger() as ledger, _provider_client(config, transport) as client:
         service = InstagramProductionService(config, ledger, client=client, sleep=lambda _: None)
         with pytest.raises(InstagramWriteGateError):
             service.publish(_manifest(), execute=True)
@@ -149,7 +154,7 @@ def test_preflight_requires_exact_provider_identity() -> None:
 
     config = _config()
     transport = httpx.MockTransport(handler)
-    with _ledger() as ledger, contextmanager(_provider_client)(config, transport) as client:
+    with _ledger() as ledger, _provider_client(config, transport) as client:
         service = InstagramProductionService(config, ledger, client=client, sleep=lambda _: None)
         with pytest.raises(InstagramIdentityMismatchError):
             service.preflight()
@@ -179,7 +184,7 @@ def test_successful_reel_publish_is_durable_and_idempotent() -> None:
 
     config = _config()
     transport = httpx.MockTransport(handler)
-    with _ledger() as ledger, contextmanager(_provider_client)(config, transport) as client:
+    with _ledger() as ledger, _provider_client(config, transport) as client:
         service = InstagramProductionService(config, ledger, client=client, sleep=lambda _: None)
         first = service.publish(_manifest(), execute=True)
         second = service.publish(_manifest(), execute=True)
@@ -214,7 +219,7 @@ def test_media_sha_mismatch_is_terminal_and_causes_zero_provider_posts() -> None
 
     config = _config()
     transport = httpx.MockTransport(handler)
-    with _ledger() as ledger, contextmanager(_provider_client)(config, transport) as client:
+    with _ledger() as ledger, _provider_client(config, transport) as client:
         service = InstagramProductionService(config, ledger, client=client, sleep=lambda _: None)
         with pytest.raises(InstagramMediaVerificationError) as error:
             service.publish(_manifest(key="bad-sha"), execute=True)
@@ -247,7 +252,7 @@ def test_media_size_mismatch_is_terminal_and_causes_zero_provider_posts() -> Non
 
     config = _config()
     transport = httpx.MockTransport(handler)
-    with _ledger() as ledger, contextmanager(_provider_client)(config, transport) as client:
+    with _ledger() as ledger, _provider_client(config, transport) as client:
         service = InstagramProductionService(config, ledger, client=client, sleep=lambda _: None)
         with pytest.raises(InstagramMediaVerificationError) as error:
             service.publish(_manifest(key="bad-size"), execute=True)
@@ -272,7 +277,7 @@ def test_media_redirect_is_refused_before_provider_post() -> None:
 
     config = _config()
     transport = httpx.MockTransport(handler)
-    with _ledger() as ledger, contextmanager(_provider_client)(config, transport) as client:
+    with _ledger() as ledger, _provider_client(config, transport) as client:
         service = InstagramProductionService(config, ledger, client=client, sleep=lambda _: None)
         with pytest.raises(InstagramMediaVerificationError) as error:
             service.publish(_manifest(key="redirect"), execute=True)
@@ -294,7 +299,7 @@ def test_untrusted_media_host_is_refused_before_media_fetch_or_provider_post() -
 
     config = _config(media_allowed_hosts=())
     transport = httpx.MockTransport(handler)
-    with _ledger() as ledger, contextmanager(_provider_client)(config, transport) as client:
+    with _ledger() as ledger, _provider_client(config, transport) as client:
         service = InstagramProductionService(config, ledger, client=client, sleep=lambda _: None)
         with pytest.raises(InstagramConfigurationError, match="VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS"):
             service.publish(_manifest(key="untrusted-host"), execute=True)
@@ -326,7 +331,7 @@ def test_unknown_publish_result_blocks_blind_retry_until_reconciliation() -> Non
 
     config = _config()
     transport = httpx.MockTransport(handler)
-    with _ledger() as ledger, contextmanager(_provider_client)(config, transport) as client:
+    with _ledger() as ledger, _provider_client(config, transport) as client:
         service = InstagramProductionService(config, ledger, client=client, sleep=lambda _: None)
         with pytest.raises(InstagramReconciliationRequired):
             service.publish(_manifest(key="ambiguous"), execute=True)
@@ -357,7 +362,7 @@ def test_reconcile_published_container_never_republishes_without_exact_media_id(
 
     config = _config()
     transport = httpx.MockTransport(handler)
-    with _ledger() as ledger, contextmanager(_provider_client)(config, transport) as client:
+    with _ledger() as ledger, _provider_client(config, transport) as client:
         manifest = _manifest(key="published-unknown")
         ledger.ensure_planned(manifest)
         ledger.transition(
