@@ -76,6 +76,22 @@
       "attribution_text": "William Carey University, Carey Center; William Carey, An Enquiry, Leicester, 1792.",
       "acquisition_kind": "direct_pdf",
       "provider_write_performed": false
+    },
+    {
+      "asset_id": "img-judson-v3-wayland-source-pdf",
+      "publication_id": "lordchrist-history-judson-burmese-bible-v3",
+      "slot": "document",
+      "source_id": "src-judson-wayland-vol2-v3",
+      "source_page_url": "https://baptiststudiesonline.com/wp-content/uploads/2018/05/Judson-Adoniram-Wayland-Francis-v-2.pdf",
+      "acquisition_page_url": "https://baptiststudiesonline.com/wp-content/uploads/2018/05/Judson-Adoniram-Wayland-Francis-v-2.pdf",
+      "download_url": "https://baptiststudiesonline.com/wp-content/uploads/2018/05/Judson-Adoniram-Wayland-Francis-v-2.pdf",
+      "expected_upstream_sha1": "0000000000000000000000000000000000000000",
+      "expected_source_mime": "application/pdf",
+      "output_file_name": "judson-v3-wayland-vol2-source.pdf",
+      "rights_basis": "Nineteenth-century public-domain memoir and primary-letter compilation, digitized by Baptist Studies Online.",
+      "attribution_text": "Francis Wayland, A Memoir of the Life and Labors of the Rev. Adoniram Judson, D.D., Vol. II; Baptist Studies Online digitization.",
+      "acquisition_kind": "direct_pdf",
+      "provider_write_performed": false
     }
   ]
 }
