@@ -8,8 +8,30 @@ from typer.testing import CliRunner
 
 from video_channel_manager.cli.instagram_production import instagram_production_app
 from video_channel_manager.config import get_settings
-from video_channel_manager.instagram.production import InstagramPublicationLedger, PublicationStatus
+from video_channel_manager.instagram.production import (
+    InstagramPublicationLedger,
+    InstagramRuntimeConfig,
+    PublicationStatus,
+)
 from video_channel_manager.persistence import Database
+
+
+def test_runtime_config_repr_redacts_access_token() -> None:
+    token = "super-secret-instagram-token"
+    config = InstagramRuntimeConfig(
+        login_mode="instagram",
+        graph_host="https://graph.instagram.com",
+        api_version="v25.0",
+        account_id="17841400000000000",
+        expected_username="example_creator",
+        access_token=token,
+        writes_enabled=False,
+        media_allowed_hosts=("cdn.example.com",),
+        timeout_seconds=30.0,
+        poll_interval_seconds=5.0,
+        poll_attempts=24,
+    )
+    assert token not in repr(config)
 
 
 def test_plan_is_provider_inert_without_instagram_credentials(
