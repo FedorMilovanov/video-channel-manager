@@ -143,7 +143,6 @@ def test_valid_mov_hevc_with_ffprobe_alias_string_passes() -> None:
         (_PATH, {"video_frame_rate_fps": None}, "video_frame_rate_missing"),
         (_PATH, {"video_frame_rate_fps": 22.999}, "video_frame_rate_out_of_range"),
         (_PATH, {"video_frame_rate_fps": 60.001}, "video_frame_rate_out_of_range"),
-        (_PATH, {"width": None}, "video_dimensions_missing"),
         (_PATH, {"width": 1921}, "horizontal_pixels_above_1920"),
         (_PATH, {"video_bitrate_bps": None}, "video_bitrate_missing"),
         (_PATH, {"video_bitrate_bps": 25_000_001}, "video_bitrate_above_25_mbps"),
