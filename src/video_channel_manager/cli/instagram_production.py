@@ -12,6 +12,7 @@ from rich.table import Table
 from video_channel_manager.config import get_settings
 from video_channel_manager.instagram.production import (
     InstagramConfigurationError,
+    InstagramIdentityMismatchError,
     InstagramProductionError,
     InstagramProductionService,
     InstagramPublicationLedger,
@@ -87,24 +88,27 @@ def preflight() -> None:
 def plan(
     manifest_path: Annotated[Path, typer.Argument(help="Exact Instagram publish manifest JSON")],
 ) -> None:
-    """Persist/inspect one publication plan without making any provider request."""
+    """Persist/inspect one publication plan without provider credentials or requests."""
 
-    service: InstagramProductionService | None = None
     database: Database | None = None
     try:
         manifest = _read_manifest(manifest_path)
-        service, database = _open_service()
-        snapshot = service.plan(manifest)
+        settings = get_settings()
+        if settings.instagram_account_id is not None and manifest.account_id != settings.instagram_account_id:
+            raise InstagramIdentityMismatchError(
+                f"Manifest account {manifest.account_id!r} does not match configured account "
+                f"{settings.instagram_account_id!r}"
+            )
+        database = Database(settings.database_url)
+        snapshot = InstagramPublicationLedger(database).ensure_planned(manifest)
     except InstagramProductionError as exc:
         console.print(f"[red]Instagram publish plan failed:[/red] {exc}")
         raise typer.Exit(code=2) from exc
     finally:
-        if service is not None:
-            service.close()
         if database is not None:
             database.close()
     _render_snapshot(snapshot)
-    console.print("[yellow]Provider writes: none.[/yellow]")
+    console.print("[yellow]Provider writes: none; provider credentials: not required.[/yellow]")
 
 
 @instagram_production_app.command("status")
