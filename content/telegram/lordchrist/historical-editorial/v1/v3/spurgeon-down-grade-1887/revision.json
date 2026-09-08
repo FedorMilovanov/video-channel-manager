@@ -1,0 +1,81 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-revision-package",
+  "schema_version": 1,
+  "revision_id": "historical-revision-spurgeon-down-grade-1887-v3",
+  "owning_issue": 561,
+  "checked_on": "2026-09-08",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "publication_id": "lordchrist-history-spurgeon-down-grade-1887-v3",
+  "state": "provider_inert",
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "post": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/spurgeon-down-grade-1887/post.json",
+    "git_blob_sha": "833e9c3e5932ae1873b159f6c3efda1a31ad4409"
+  },
+  "verification": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/verification/spurgeon-down-grade-v3-2026-09-08.json",
+    "git_blob_sha": "61136342cb712151ce24b8c99fa59310a5a73a6a"
+  },
+  "theology_profile": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/theology-profile.json",
+    "git_blob_sha": "06c879d9b55cfb37d8995dca6c3a2197522c850f"
+  },
+  "source_shards": [
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/spurgeon-core.json",
+      "git_blob_sha": "0aa293f37b193365bf28c3c301fa073149fa0648"
+    },
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/spurgeon-history.json",
+      "git_blob_sha": "0d0c04f0d6965069629da80643dc1a0b7ae84e46"
+    },
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/spurgeon-down-grade-v3-primary-a.json",
+      "git_blob_sha": "02c39adfc5e253580992b92dcfd64c410d3b8216"
+    },
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/spurgeon-down-grade-v3-primary-b.json",
+      "git_blob_sha": "4e8e011fee1d0faa5ca706d78509e468f25c9387"
+    }
+  ],
+  "editorial_media": [
+    {
+      "asset_id": "img-spurgeon-v3-hero",
+      "asset_role": "editorial_reconstruction",
+      "accepted_file_name": "spurgeon-v3-hero-github.jpg",
+      "accepted_mime": "image/jpeg",
+      "accepted_byte_length": 131308,
+      "accepted_width": 1200,
+      "accepted_height": 675,
+      "accepted_sha256": "sha256:9ccb4ff08042b3cf996164653c0b26759f870c853da12518b4f673b4daa9d2f1",
+      "placement_after": "lead",
+      "depicts": "Чарльз Сперджен на фоне визуально реконструированной сцены церковной полемики конца XIX века.",
+      "purpose": "Открывающая редакционная иллюстрация к материалу о Down-Grade Controversy; не используется как историческое свидетельство.",
+      "disclosure": "Редакционная AI-реконструкция; не историческая фотография. Изображение не является источником фактических утверждений статьи.",
+      "rights_basis": "Редакционный визуальный материал создан по заданию владельца проекта и принят для использования в этом материале; исторический evidence-status ему не присваивается.",
+      "attribution_text": "Редакционная AI-реконструкция для «Господь Бог — Сила Моя».",
+      "transport_ready": false,
+      "provider_write_performed": false
+    },
+    {
+      "asset_id": "img-spurgeon-v3-portrait",
+      "asset_role": "editorial_reconstruction",
+      "accepted_file_name": "spurgeon-v3-portrait-github.jpg",
+      "accepted_mime": "image/jpeg",
+      "accepted_byte_length": 89046,
+      "accepted_width": 800,
+      "accepted_height": 1000,
+      "accepted_sha256": "sha256:d257d13b6fa1ecf060b7540960d5e1c49c4a655c827f348f551b282778aff23f",
+      "placement_after": "censure",
+      "depicts": "Редакционная реконструкция Чарльза Сперджена с Библией в проповеднической обстановке викторианского Лондона.",
+      "purpose": "Вторая иллюстрация внутри статьи, визуально поддерживающая исторический рассказ без подмены первичных документов.",
+      "disclosure": "Редакционная AI-реконструкция; не историческая фотография. Изображение не является источником фактических утверждений статьи.",
+      "rights_basis": "Редакционный визуальный материал создан по заданию владельца проекта и принят для использования в этом материале; исторический evidence-status ему не присваивается.",
+      "attribution_text": "Редакционная AI-реконструкция для «Господь Бог — Сила Моя».",
+      "transport_ready": false,
+      "provider_write_performed": false
+    }
+  ]
+}

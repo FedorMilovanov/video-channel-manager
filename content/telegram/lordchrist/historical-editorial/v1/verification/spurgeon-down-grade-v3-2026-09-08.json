@@ -1,0 +1,52 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-topic-verification",
+  "schema_version": 1,
+  "verification_id": "spurgeon-down-grade-v3-2026-09-08",
+  "checked_on": "2026-09-08",
+  "publication_id": "lordchrist-history-spurgeon-down-grade-1887-v3",
+  "reviewed_document_urls": 35,
+  "primary_document_urls": 33,
+  "institutional_or_scholarly_urls": 2,
+  "independent_evidence_groups_used_in_reader_claims": [
+    "spurgeon-sword-trowel-primary",
+    "spurgeon-autobiography",
+    "baptist-union-1888-primary",
+    "randall-spurgeon-downgrade"
+  ],
+  "source_shards": [
+    "content/telegram/lordchrist/historical-editorial/v1/sources/spurgeon-down-grade-v3-primary-a.json",
+    "content/telegram/lordchrist/historical-editorial/v1/sources/spurgeon-down-grade-v3-primary-b.json"
+  ],
+  "method": "primary-corpus chronology plus opposing-party document plus independent scholarly synthesis",
+  "important_deltas": [
+    {
+      "kind": "qualify",
+      "finding": "The controversy must not be described as a simple Calvinist-versus-Arminian fight. In April 1887 Spurgeon explicitly said his warning was not an attack on Methodists and placed central evangelical truths above Calvinism as a system."
+    },
+    {
+      "kind": "deepen",
+      "finding": "The September and October 1887 primary texts show Spurgeon distinguishing minor differences from matters he regarded as vital to religion, while also explaining that he had delayed public protest partly to avoid needless division."
+    },
+    {
+      "kind": "qualify",
+      "finding": "It is inaccurate to say that the Baptist Union never articulated doctrine. On 23 April 1888 it adopted a brief doctrinal statement naming Scripture, Christ, justification, the Holy Spirit, resurrection and judgment. The remaining historical issue concerns the statement's confessional and disciplinary force, not its nonexistence."
+    },
+    {
+      "kind": "deepen",
+      "finding": "The February 1888 censure response documents Spurgeon's constitutional argument for refusing to submit named doctrinal cases to the Union, which he believed lacked an adequate doctrinal basis for adjudication."
+    },
+    {
+      "kind": "boundary",
+      "finding": "Multiple Sword and Trowel pages are separate primary documents but share one authorial corpus and therefore are not counted as independent corroborating witnesses. Reader-facing material must not inflate 35 reviewed URLs into 35 independent sources."
+    }
+  ],
+  "direct_quote_policy": {
+    "status": "accepted",
+    "max_words_per_source": 25,
+    "selected_fragment": "The gospel is too precious for us to be indifferent to its adulteration.",
+    "source_id": "src-spurgeon-dg-september-1887",
+    "sha256": "sha256:b5bc6931d86414222e68c812ae9f5a0018c9134da3e3b3989a75f40565eb9901"
+  },
+  "reader_copy_result": "accepted_for_v3_integration",
+  "provider_write_performed": false
+}
