@@ -34,11 +34,13 @@ Current Meta reference collection: https://www.postman.com/meta/instagram/docume
 8. Every provider-bound video/cover URL must use an exact hostname allowlisted by `VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS`.
 9. Before the first Meta provider POST for a logical publication, the runtime downloads the exact public media through an isolated unauthenticated client, refuses redirects, streams the bytes and verifies exact SHA-256, size and content type against the immutable manifest.
 10. The Meta Bearer token is sent only to the configured Graph host; it is never attached to public-media verification requests.
-11. The durable ledger is updated before the irreversible `media_publish` request.
-12. `publish_requested`, `publish_unknown` and `published_unresolved` are fail-closed states. They prohibit another publish until reconciliation proves what happened.
-13. A network failure or 5xx around `media_publish` is treated as an ambiguous provider effect, not as permission to retry.
-14. A provider-confirmed `PUBLISHED` container without an exact media ID is recorded as `published_unresolved`; never infer or fabricate the media ID.
-15. Provider writes never occur in CI tests.
+11. Before `POST /media`, the durable ledger atomically claims `container_requested`; only one process can own container creation for that logical publication.
+12. Before `POST /media_publish`, the durable ledger atomically claims `publish_requested` for the exact known container; only one process can own final publication.
+13. `container_requested`, `container_unknown`, `publish_requested`, `publish_unknown` and `published_unresolved` are fail-closed states. They prohibit blind mutation replay.
+14. A network failure or 5xx around container creation is treated as an ambiguous creation effect (`container_unknown`), not as permission to create another container.
+15. A network failure or 5xx around `media_publish` is treated as an ambiguous publication effect (`publish_unknown`), not as permission to retry.
+16. A provider-confirmed `PUBLISHED` container without an exact media ID is recorded as `published_unresolved`; never infer or fabricate the media ID.
+17. Provider writes never occur in CI tests.
 
 ## Runtime configuration
 
@@ -55,13 +57,25 @@ VCM_INSTAGRAM_ACCOUNT_USERNAME=<optional-exact-username-assertion>
 VCM_INSTAGRAM_ACCESS_TOKEN=<secret>
 ```
 
-Required before the first provider write, using exact bare public hostnames only:
+Required before the first provider write, using the JSON list representation expected by `pydantic-settings` and exact bare public hostnames only:
 
 ```text
-VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS=media.example.net
+VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS=["media.example.net"]
 ```
 
-For multiple trusted media hosts use the pydantic-settings tuple/list environment representation configured for the deployment rather than wildcard domains. Do not allowlist `localhost`, private IP literals, URL schemes or paths.
+Multiple trusted hosts are represented explicitly, never with wildcards:
+
+```text
+VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS=["media.example.net","cdn.example.com"]
+```
+
+PowerShell example:
+
+```powershell
+$env:VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS = '["media.example.net"]'
+```
+
+Do not allowlist `localhost`, private IP literals, URL schemes or paths.
 
 Production kill switch, default false:
 
@@ -154,7 +168,7 @@ video-manager instagram production status legendary-poet.2026-09-08.reel-001
 
 Expected initial state: `planned`.
 
-Re-running the same manifest is idempotent. Reusing the same publication key with different canonical content is rejected.
+Re-running the same manifest is idempotent. Concurrent planners are also idempotent: a primary-key race is re-read and accepted only if the account/content binding is byte-for-byte the same canonical manifest. Reusing the same publication key with different canonical content is rejected.
 
 ## Canary execution
 
@@ -172,7 +186,7 @@ Before enabling writes, independently verify:
 - final caption/cover/feed choice;
 - durable ledger state for the publication key;
 - no existing Instagram post for the same intended release;
-- no unresolved `publish_requested`, `publish_unknown` or `published_unresolved` state.
+- no unresolved `container_requested`, `container_unknown`, `publish_requested`, `publish_unknown` or `published_unresolved` state.
 
 Only for the approved invocation:
 
@@ -187,7 +201,7 @@ Immediately restore the kill switch after the authorized operation:
 $env:VCM_INSTAGRAM_WRITES_ENABLED = "false"
 ```
 
-The publisher performs read-only exact-target preflight, verifies the exact remote media bytes, creates one Reel container if no container is already durably known, polls that exact container, persists `publish_requested`, then performs one `media_publish` request.
+The publisher performs read-only exact-target preflight and verifies the exact remote media bytes. If no container is durably known, it first commits a single-winner `container_requested` claim and only the winning process may call `POST /media`. After the exact container reaches `FINISHED`, it commits a single-winner `publish_requested` claim and only the winning process may call `POST /media_publish`.
 
 ## State machine
 
@@ -195,6 +209,7 @@ Normal path:
 
 ```text
 planned
+  -> container_requested
   -> container_created
   -> processing (zero or more observations)
   -> ready
@@ -205,15 +220,16 @@ planned
 Failure/reconciliation states:
 
 ```text
-retryable_failure       creation/known pre-publish failure; no publish ambiguity
+retryable_failure       pre-provider media verification/transient failure; no provider mutation ambiguity
+container_unknown       container-create request may have taken effect; exact provider evidence is required
 terminal_failure        provider/media evidence proves the operation cannot safely continue
-publish_unknown         publish request outcome is ambiguous
+publish_unknown         publish request may have taken effect; exact provider evidence is required
 published_unresolved    provider proves the container was published but exact media ID is not yet bound
 ```
 
-A media-verification transport/transient HTTP failure is retryable because no provider POST has occurred. Hash, size, content-type, redirect and trust-boundary mismatches are terminal for that immutable manifest/publication binding.
+`container_requested` and `publish_requested` are themselves ambiguous after a process crash because the process may stop after durable intent is committed and at any point around the network call. Another process therefore cannot acquire either mutation claim while one of those states exists.
 
-`publish_requested` itself is treated as ambiguous after a restart. This is deliberate: a crash can occur after the durable state commit and at any point around the network call.
+A media-verification transport/transient HTTP failure is retryable because no provider POST has occurred. Hash, size, content-type, redirect and trust-boundary mismatches are terminal for that immutable manifest/publication binding.
 
 ## Reconciliation
 
@@ -223,26 +239,36 @@ Inspect local state first:
 video-manager instagram production status <publication-key>
 ```
 
-Then reconcile read-only against the exact known container:
+### Ambiguous container creation
+
+If the ledger is `container_requested` or `container_unknown` and no container ID is known, ordinary reconciliation remains blocked. Do not call `POST /media` again. Obtain the exact container ID from independent provider evidence, then bind that exact ID:
 
 ```powershell
-video-manager instagram production reconcile <publication-key>
+video-manager instagram production reconcile <publication-key> --observed-container-id <exact-provider-container-id>
 ```
 
-Interpretation:
+The command then performs read-only preflight and reads that exact container's status. The container ID must come from exact provider evidence; never guess it or select a merely recent container.
 
-- provider `FINISHED` -> ledger returns to `ready`; the container is not published and a separately authorized later publish can use that same container;
-- provider `IN_PROGRESS` -> ledger becomes `processing`; do not create another container;
+### Known container before publish ambiguity
+
+For `container_created`, `processing` or `ready`, read-only reconciliation against the exact known container interprets provider status as follows:
+
+- provider `FINISHED` -> `ready`;
+- provider `IN_PROGRESS` -> `processing`;
 - provider `ERROR` or `EXPIRED` -> `terminal_failure`;
-- provider `PUBLISHED` -> `published_unresolved`; do not call `media_publish` again.
+- provider `PUBLISHED` -> `published_unresolved`; never call `media_publish` again.
 
-If independent exact provider evidence proves the media ID for a `PUBLISHED` result, bind it explicitly:
+### Ambiguous final publish
+
+For `publish_requested`, `publish_unknown` or `published_unresolved`, provider `FINISHED`, `IN_PROGRESS`, `ERROR` or `EXPIRED` is **not proof that the earlier `media_publish` had no effect**. These observations remain fail-closed as `publish_unknown`. In particular, `FINISHED` never reopens `ready` from an ambiguous publish state.
+
+Provider `PUBLISHED` becomes `published_unresolved`. If independent exact provider evidence proves the resulting media ID, bind it explicitly:
 
 ```powershell
 video-manager instagram production reconcile <publication-key> --published-media-id <exact-provider-media-id>
 ```
 
-The media ID must come from exact provider evidence. Do not select the newest post, match only by visual similarity, or guess an ID.
+`--published-media-id` is accepted only when the ledger is already in an ambiguous publish state and has an exact known container. The media ID must come from exact provider evidence. Do not select the newest post, match only by visual similarity, or guess an ID.
 
 ## Emergency stop
 
@@ -254,7 +280,7 @@ $env:VCM_INSTAGRAM_WRITES_ENABLED = "false"
 
 This does not rewrite ledger history and does not delete, edit or roll back an already published Instagram post. Provider-side deletion/editing is intentionally outside this publisher and requires a new exact owning scope.
 
-If a process is currently waiting on a container, stopping the process is safe with respect to duplicate publication: the known container ID is durable. If interruption happens at or after `publish_requested`, treat the effect as ambiguous and reconcile before doing anything else.
+If a process is currently only polling a known container, stopping it creates no new mutation. If interruption happens at or after `container_requested`, assume container creation may have taken effect until exact reconciliation proves the container identity. If interruption happens at or after `publish_requested`, assume publication may have taken effect. In both cases, do not replay the provider mutation blindly.
 
 ## Evidence to retain after a live canary
 
@@ -264,8 +290,8 @@ Retain provider-safe evidence without secrets:
 - exact publication key and manifest content hash;
 - exact media URL hostname, SHA-256, byte size and content type;
 - exact account ID and reviewed username (never token);
-- container ID;
-- final provider media ID when known;
+- `container_requested_at` and exact container ID;
+- `publish_requested_at` and final provider media ID when known;
 - ledger state and timestamps;
 - read-only provider status/reconciliation result;
 - public permalink if independently resolved;
@@ -284,11 +310,17 @@ Tests use mocked HTTP only. CI must prove at minimum:
 - media SHA-256 or size mismatch causes zero provider POSTs;
 - media redirects are refused before provider POST;
 - public-media verification never receives the Meta Authorization header;
+- only one database client can win the container-creation CAS claim;
+- only one database client can win the final-publish CAS claim;
+- a lost container-create response becomes `container_unknown` and cannot trigger a blind second `POST /media`;
+- exact observed container evidence can bind the ambiguous creation to one container and continue read-only reconciliation;
 - successful container -> finished -> publish path persists IDs;
 - rerunning a published logical publication does not publish twice;
 - ambiguous publish transport outcome becomes `publish_unknown`;
 - a second publish is refused while ambiguity exists;
+- `FINISHED` does not reopen `ready` after an ambiguous publish;
 - reconciliation of a provider `PUBLISHED` container cannot republish it;
+- manual media-ID reconciliation is restricted to ambiguous publish state with a known container;
 - a publication key cannot be rebound to different canonical content.
 
 A green CI proves repository behavior. It does not prove production credentials, permissions, target identity, public media availability or authorize a live canary.
