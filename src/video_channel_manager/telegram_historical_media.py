@@ -84,7 +84,9 @@ class HistoricalMediaAcquisitionAsset(BaseModel):
             if parsed.username or parsed.password:
                 raise ValueError(f"{label} must not contain credentials")
         if not _download_host_allowed(urlparse(self.download_url).hostname):
-            raise ValueError(f"historical media download host is not allowlisted: {urlparse(self.download_url).hostname}")
+            raise ValueError(
+                f"historical media download host is not allowlisted: {urlparse(self.download_url).hostname}"
+            )
         if "/" in self.output_file_name or "\\" in self.output_file_name:
             raise ValueError("historical media output filename must be a basename")
         suffix_by_mime = {
