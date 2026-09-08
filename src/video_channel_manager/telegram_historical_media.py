@@ -22,13 +22,25 @@ _SHA1_RE = r"^[0-9a-f]{40}$"
 _SHA256_RE = r"^sha256:[0-9a-f]{64}$"
 _PUBLICATION_RE = r"^lordchrist-history-[a-z0-9][a-z0-9-]{4,90}$"
 _ASSET_RE = r"^img-[a-z0-9][a-z0-9-]{2,80}$"
-_ALLOWED_DOWNLOAD_HOSTS = frozenset({"upload.wikimedia.org"})
-_MAX_SOURCE_BYTES = 10_000_000
+_ALLOWED_DOWNLOAD_HOSTS = frozenset(
+    {
+        "api.digitale-sammlungen.de",
+        "baptiststudiesonline.com",
+        "capito.iterpubs.org",
+        "careycenter.wmcarey.edu",
+        "iiif.wellcomecollection.org",
+        "missiology.org.uk",
+        "static.history.state.gov",
+        "upload.wikimedia.org",
+        "www.missiology.org.uk",
+    }
+)
+_MAX_SOURCE_BYTES = 50_000_000
 _ACQUISITION_USER_AGENT = (
     "video-channel-manager-historical-media/1.0 "
     "(+https://github.com/FedorMilovanov/video-channel-manager; contact via repository issues)"
 )
-_ACQUISITION_ACCEPT = "image/avif,image/webp,image/apng,image/*,*/*;q=0.8"
+_ACQUISITION_ACCEPT = "image/avif,image/webp,image/apng,image/*,application/pdf,*/*;q=0.8"
 
 
 class HistoricalMediaAcquisitionAsset(BaseModel):
@@ -42,11 +54,11 @@ class HistoricalMediaAcquisitionAsset(BaseModel):
     acquisition_page_url: str = Field(min_length=12, max_length=500)
     download_url: str = Field(min_length=12, max_length=700)
     expected_upstream_sha1: str = Field(pattern=_SHA1_RE)
-    expected_source_mime: Literal["image/jpeg", "image/png"]
+    expected_source_mime: Literal["image/jpeg", "image/png", "application/pdf"]
     output_file_name: str = Field(min_length=5, max_length=180)
     rights_basis: str = Field(min_length=20, max_length=500)
     attribution_text: str = Field(min_length=10, max_length=300)
-    acquisition_kind: Literal["direct_image"]
+    acquisition_kind: Literal["direct_image", "direct_pdf"]
     provider_write_performed: Literal[False]
 
     @model_validator(mode="after")
@@ -66,9 +78,18 @@ class HistoricalMediaAcquisitionAsset(BaseModel):
             raise ValueError(f"historical media download host is not allowlisted: {download_host}")
         if "/" in self.output_file_name or "\\" in self.output_file_name:
             raise ValueError("historical media output filename must be a basename")
-        expected_suffix = ".jpg" if self.expected_source_mime == "image/jpeg" else ".png"
+        suffix_by_mime = {
+            "image/jpeg": ".jpg",
+            "image/png": ".png",
+            "application/pdf": ".pdf",
+        }
+        expected_suffix = suffix_by_mime[self.expected_source_mime]
         if not self.output_file_name.casefold().endswith(expected_suffix):
             raise ValueError("historical media output filename suffix differs from MIME")
+        if self.acquisition_kind == "direct_image" and self.expected_source_mime == "application/pdf":
+            raise ValueError("direct_image historical acquisition cannot declare PDF MIME")
+        if self.acquisition_kind == "direct_pdf" and self.expected_source_mime != "application/pdf":
+            raise ValueError("direct_pdf historical acquisition requires PDF MIME")
         return self
 
 
@@ -115,15 +136,24 @@ class HistoricalMediaAcquisitionResult(BaseModel):
     source_sha1: str = Field(pattern=_SHA1_RE)
     source_sha256: str = Field(pattern=_SHA256_RE)
     source_byte_length: int = Field(gt=0, le=_MAX_SOURCE_BYTES)
-    mime: Literal["image/jpeg", "image/png"]
-    width: int = Field(gt=0, le=20_000)
-    height: int = Field(gt=0, le=20_000)
+    mime: Literal["image/jpeg", "image/png", "application/pdf"]
+    width: int | None = Field(default=None, gt=0, le=20_000)
+    height: int | None = Field(default=None, gt=0, le=20_000)
     output_file_name: str
     etag: str | None = None
     last_modified: str | None = None
     rights_basis: str
     attribution_text: str
     provider_write_performed: Literal[False]
+
+    @model_validator(mode="after")
+    def dimensions_match_mime(self) -> "HistoricalMediaAcquisitionResult":
+        if self.mime == "application/pdf":
+            if self.width is not None or self.height is not None:
+                raise ValueError("source PDF acquisition must not invent image dimensions")
+        elif self.width is None or self.height is None:
+            raise ValueError("source image acquisition requires dimensions")
+        return self
 
 
 class HistoricalMediaAcquisitionReceipt(BaseModel):
@@ -163,7 +193,7 @@ def _sha256(data: bytes) -> str:
 
 
 def _sha1(data: bytes) -> str:
-    return hashlib.sha1(data).hexdigest()  # noqa: S324 - upstream Commons identity is SHA-1 by contract
+    return hashlib.sha1(data).hexdigest()  # noqa: S324 - upstream archival identity is SHA-1 by contract
 
 
 def _image_probe(data: bytes) -> tuple[Literal["image/jpeg", "image/png"], int, int]:
@@ -219,6 +249,17 @@ def _image_probe(data: bytes) -> tuple[Literal["image/jpeg", "image/png"], int, 
             offset += segment_length
         raise ValueError("JPEG dimensions not found")
     raise ValueError("historical media source is not an accepted JPEG or PNG")
+
+
+def _source_probe(
+    data: bytes,
+) -> tuple[Literal["image/jpeg", "image/png", "application/pdf"], int | None, int | None]:
+    if data.startswith(b"%PDF-"):
+        if b"%%EOF" not in data[-4096:]:
+            raise ValueError("historical media PDF is truncated or lacks an EOF marker")
+        return "application/pdf", None, None
+    mime, width, height = _image_probe(data)
+    return mime, width, height
 
 
 def _load_manifest(path: Path, *, repo_root: Path) -> HistoricalMediaAcquisitionManifest:
@@ -340,7 +381,7 @@ def _fetch_asset(
             f"historical media upstream SHA-1 differs for {asset.asset_id}: "
             f"expected {asset.expected_upstream_sha1}, got {actual_sha1}"
         )
-    mime, width, height = _image_probe(data)
+    mime, width, height = _source_probe(data)
     if mime != asset.expected_source_mime:
         raise ValueError(f"historical media MIME differs for {asset.asset_id}: {mime}")
 
