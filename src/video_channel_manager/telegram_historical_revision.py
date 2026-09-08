@@ -5,7 +5,7 @@ import hashlib
 import json
 from datetime import date
 from pathlib import Path
-from typing import Any, Literal, Sequence
+from typing import Literal, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
