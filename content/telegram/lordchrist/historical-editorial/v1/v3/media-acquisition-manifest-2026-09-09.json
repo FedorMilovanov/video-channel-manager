@@ -94,6 +94,22 @@
       "provider_write_performed": false
     },
     {
+      "asset_id": "img-carey-v3-bms-minute-source-pdf",
+      "publication_id": "lordchrist-history-carey-enquiry-missions-v3",
+      "slot": "document",
+      "source_id": "src-carey-bms-minute-record-v3",
+      "source_page_url": "https://missiology.org.uk/pdf/e-books/bms/bms-calendar.pdf",
+      "acquisition_page_url": "https://missiology.org.uk/pdf/e-books/bms/bms-calendar.pdf",
+      "download_url": "https://missiology.org.uk/pdf/e-books/bms/bms-calendar.pdf",
+      "expected_upstream_sha1": "0000000000000000000000000000000000000000",
+      "expected_source_mime": "application/pdf",
+      "output_file_name": "carey-v3-bms-calendar-source.pdf",
+      "rights_basis": "Mission Studies supplies this digitized BMS historical calendar for free educational use; production use is limited to a source-exhibit page with attribution to the minute-book record.",
+      "attribution_text": "Mission Studies / Baptist Missionary Society historical calendar; October 2, 1792 minute-book record.",
+      "acquisition_kind": "direct_pdf",
+      "provider_write_performed": false
+    },
+    {
       "asset_id": "img-judson-v3-wayland-source-pdf",
       "publication_id": "lordchrist-history-judson-burmese-bible-v3",
       "slot": "document",
