@@ -15,21 +15,21 @@
       "publication_id": "lordchrist-history-spurgeon-down-grade-1887-v3",
       "sequence": 1,
       "scheduled_date_moscow": "2026-09-08",
-      "state": "intent",
-      "provider_effect": "impossible",
+      "state": "published",
+      "provider_effect": "verified",
       "dispatch_mode": "manual_canary",
       "workflow_run_id": "34262319432",
       "workflow_run_attempt": "1",
       "github_sha": "08ada047319e125046cdf08df1e9bdb419c5adf2",
       "document_sha256": "sha256:387e43eb2b3adbc3f25ee0d41e9e06e55d466bd1802c763d6f19eb134d7bca33",
       "intent_created_at_utc": "2026-09-08T18:20:41.008522+00:00",
-      "published_at_utc": null,
-      "message_id": null,
-      "message_url": null,
+      "published_at_utc": "2026-09-08T18:20:49.312774+00:00",
+      "message_id": 1516,
+      "message_url": "https://t.me/lordchrist/1516",
       "error": null
     }
   },
-  "canary_transport_verified_at_utc": null,
+  "canary_transport_verified_at_utc": "2026-09-08T18:20:49.312774+00:00",
   "canary_editorial_approved_at_utc": null,
   "canary_editorial_approved_by": null
 }
