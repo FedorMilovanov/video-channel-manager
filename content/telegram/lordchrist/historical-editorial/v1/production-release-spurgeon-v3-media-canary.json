@@ -1,0 +1,86 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-live-media-release",
+  "schema_version": 1,
+  "release_id": "lordchrist-history-spurgeon-down-grade-1887-v3-media-live-v1",
+  "owning_issue": 561,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "chat_id": -1001295216957,
+  "chat_username": "lordchrist",
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "state_branch": "state/lordchrist-telegram",
+  "cycle_id": "history-cycle-spurgeon-v3-media-canary-2026-09-08",
+  "cycle_start_date_moscow": "2026-09-08",
+  "publication_ids": [
+    "lordchrist-history-spurgeon-down-grade-1887-v3"
+  ],
+  "scheduled_dates_moscow": [
+    "2026-09-08"
+  ],
+  "schedule": {
+    "timezone": "Europe/Moscow",
+    "local_time": "19:17",
+    "iso_weekdays": [1, 3, 6],
+    "freshness_minutes": 120
+  },
+  "provider_writes_authorized": true,
+  "authorization_basis": "Issue #561: publish exactly one reviewed Spurgeon Down-Grade v3 replacement canary with the two accepted editorial AI reconstructions. This release does not authorize recurring publication; recurring historical publication remains gated on separate provider-free editorial approval of the verified v3 canary.",
+  "activation_policy": "verified_canary_then_exact_schedule",
+  "editorial_approval_required": true,
+  "canary_out_of_band": true,
+  "canary_publication_id": "lordchrist-history-spurgeon-down-grade-1887-v3",
+  "canary_not_before_moscow": "2026-09-08T00:00:00+03:00",
+  "canary_not_after_moscow": "2026-09-13T23:59:59+03:00",
+  "recurring_publication_ids": [],
+  "recurring_scheduled_dates_moscow": [],
+  "max_provider_attempts_per_publication": 1,
+  "blind_mutation_retries": 0,
+  "max_combined_verified_per_day_moscow": 2,
+  "backfill_policy": "none",
+  "media_policy": "exact_https_photos_bound_before_sendRichMessage",
+  "replenishment_guard_remaining": 0,
+  "media_source_commit": "68d654c6dc5beabdba0f476559f55badac4980f4",
+  "revision": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/spurgeon-down-grade-1887/revision.json",
+    "git_blob_sha": "579832fc57170d10e8356c8d0facc217ddf760bf"
+  },
+  "profile": {
+    "path": "content/telegram/channels/lordchrist-rich.json",
+    "git_blob_sha": "d9aa04313825c11906e18a043267068feccb3c95"
+  },
+  "legacy_profile": {
+    "path": "content/telegram/channels/lordchrist.json",
+    "git_blob_sha": "33ac149116a7d1c6862a1b8e2b8d39f09925f72d"
+  },
+  "target_binding": {
+    "path": "content/telegram/channels/lordchrist-rich-target-binding.json",
+    "git_blob_sha": "26efd9956ae634416f288e323e23f7bd2de32a3d"
+  },
+  "media": [
+    {
+      "asset_id": "img-spurgeon-v3-hero",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/media/spurgeon-down-grade-v3/spurgeon-v3-hero-github.jpg",
+      "git_blob_sha": "32742cb1c1701ab861d1b4adff6349cabc78ddef",
+      "raw_url": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/68d654c6dc5beabdba0f476559f55badac4980f4/content/telegram/lordchrist/historical-editorial/v1/media/spurgeon-down-grade-v3/spurgeon-v3-hero-github.jpg",
+      "mime": "image/jpeg",
+      "byte_length": 131308,
+      "sha256": "sha256:9ccb4ff08042b3cf996164653c0b26759f870c853da12518b4f673b4daa9d2f1",
+      "placement_after": "lead",
+      "caption": "Чарльз Сперджен и церковная полемика конца XIX века.",
+      "disclosure": "Редакционная AI-реконструкция; не историческая фотография. Изображение не является источником фактических утверждений статьи."
+    },
+    {
+      "asset_id": "img-spurgeon-v3-portrait",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/media/spurgeon-down-grade-v3/spurgeon-v3-portrait-github.jpg",
+      "git_blob_sha": "1769058538105671ec042ecc296fa6737565df10",
+      "raw_url": "https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/68d654c6dc5beabdba0f476559f55badac4980f4/content/telegram/lordchrist/historical-editorial/v1/media/spurgeon-down-grade-v3/spurgeon-v3-portrait-github.jpg",
+      "mime": "image/jpeg",
+      "byte_length": 89046,
+      "sha256": "sha256:d257d13b6fa1ecf060b7540960d5e1c49c4a655c827f348f551b282778aff23f",
+      "placement_after": "censure",
+      "caption": "Чарльз Сперджен с Библией в проповеднической обстановке викторианского Лондона.",
+      "disclosure": "Редакционная AI-реконструкция; не историческая фотография. Изображение не является источником фактических утверждений статьи."
+    }
+  ]
+}
