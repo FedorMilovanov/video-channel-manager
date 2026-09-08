@@ -212,7 +212,9 @@ def _validate_topic_verification(
     reviewed = value.get("reviewed_document_urls")
     primary = value.get("primary_document_urls")
     secondary = value.get("institutional_or_scholarly_urls")
-    if not all(isinstance(item, int) and not isinstance(item, bool) and item >= 0 for item in (reviewed, primary, secondary)):
+    if not all(
+        isinstance(item, int) and not isinstance(item, bool) and item >= 0 for item in (reviewed, primary, secondary)
+    ):
         raise ValueError("historical topic verification URL counts are invalid")
     assert isinstance(reviewed, int) and isinstance(primary, int) and isinstance(secondary, int)
     if reviewed <= 0 or primary + secondary != reviewed:
@@ -253,9 +255,7 @@ def preflight_historical_revision(
     sources: list[HistoricalSource] = []
     shard_paths: list[str] = []
     for index, ref in enumerate(package.source_shards, start=1):
-        shard = HistoricalSourceShardV1.model_validate(
-            _load_bound_json(repo_root, ref, label=f"source shard {index}")
-        )
+        shard = HistoricalSourceShardV1.model_validate(_load_bound_json(repo_root, ref, label=f"source shard {index}"))
         if shard.checked_on > package.checked_on:
             raise ValueError(f"historical revision source shard is newer than the package: {ref.path}")
         shard_paths.append(ref.path)
