@@ -63,7 +63,9 @@ jobs:
           import os
           from pathlib import Path
 
+          manifest_path = Path(os.environ["MANIFEST_PATH"])
           output_dir = Path(os.environ["OUTPUT_DIR"])
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
           receipt = json.loads((output_dir / "acquisition-receipt.json").read_text(encoding="utf-8"))
           if receipt.get("status") != "PASS":
               raise SystemExit("historical media acquisition did not pass")
@@ -73,8 +75,14 @@ jobs:
               raise SystemExit("historical media acquisition unexpectedly became live-eligible")
           if receipt.get("provider_write_performed") is not False:
               raise SystemExit("historical media acquisition unexpectedly claimed a provider write")
-          if receipt.get("asset_count") != 3:
-              raise SystemExit("phase-1 historical media acquisition must contain exactly three archive assets")
+          expected_count = len(manifest.get("assets") or [])
+          if expected_count <= 0:
+              raise SystemExit("historical media manifest has no acquisition assets")
+          if receipt.get("asset_count") != expected_count:
+              raise SystemExit(
+                  f"historical media receipt count differs from exact manifest: "
+                  f"{receipt.get('asset_count')} != {expected_count}"
+              )
           print(json.dumps(receipt, ensure_ascii=False, indent=2))
           PY
 
