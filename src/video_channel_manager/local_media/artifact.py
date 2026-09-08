@@ -23,6 +23,11 @@ MediaProbe = Callable[[Path], MediaQualityReport]
 _SHA256_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 _WINDOWS_ABSOLUTE_RE = re.compile(r"^[A-Za-z]:[\\/]")
 _GLOB_META = frozenset("*?[]")
+_OPTIONAL_TELEMETRY_FIELDS = (
+    "video_frame_rate_fps",
+    "video_bitrate_bps",
+    "audio_bitrate_bps",
+)
 
 
 class MediaArtifactError(RuntimeError):
@@ -187,6 +192,9 @@ class MediaProbeEvidence(FrozenEvidence):
     height: int | None = Field(default=None, gt=0)
     sample_rate_hz: int | None = Field(default=None, gt=0)
     audio_channels: int | None = Field(default=None, gt=0)
+    video_frame_rate_fps: float | None = Field(default=None, gt=0)
+    video_bitrate_bps: int | None = Field(default=None, gt=0)
+    audio_bitrate_bps: int | None = Field(default=None, gt=0)
 
     @field_validator("path")
     @classmethod
@@ -401,6 +409,11 @@ def assess_media_profile(
 
 def calculate_media_manifest_sha256(evidence: MediaArtifactEvidence) -> str:
     payload = evidence.model_dump(mode="json", exclude={"manifest_sha256"})
+    raw_probe = payload.get("probe")
+    if isinstance(raw_probe, dict):
+        for field_name in _OPTIONAL_TELEMETRY_FIELDS:
+            if raw_probe.get(field_name) is None:
+                raw_probe.pop(field_name, None)
     return _canonical_sha256(payload)
 
 
@@ -461,6 +474,17 @@ def validate_media_artifact_evidence(evidence: MediaArtifactEvidence) -> None:
         raise MediaArtifactError(f"media profile is incompatible: {assessment.reasons}")
 
 
+def _fresh_probe_matches_cached(fresh: MediaProbeEvidence, cached: MediaProbeEvidence) -> bool:
+    optional_fields = set(_OPTIONAL_TELEMETRY_FIELDS)
+    if fresh.model_dump(exclude=optional_fields) != cached.model_dump(exclude=optional_fields):
+        return False
+    for field_name in _OPTIONAL_TELEMETRY_FIELDS:
+        cached_value = getattr(cached, field_name)
+        if cached_value is not None and getattr(fresh, field_name) != cached_value:
+            return False
+    return True
+
+
 def validate_cached_media_artifact(
     evidence: MediaArtifactEvidence | Mapping[str, Any],
     *,
@@ -516,7 +540,7 @@ def validate_cached_media_artifact(
 
     fresh_report = probe(final_path)
     fresh_probe = MediaProbeEvidence.from_report(fresh_report)
-    if fresh_probe != parsed.probe:
+    if not _fresh_probe_matches_cached(fresh_probe, parsed.probe):
         raise MediaArtifactError("fresh ffprobe evidence does not match media manifest")
     if fresh_probe.sha256 != digest:
         raise MediaArtifactError("fresh ffprobe report SHA-256 does not match file bytes")

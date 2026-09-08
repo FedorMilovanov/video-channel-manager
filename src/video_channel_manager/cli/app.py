@@ -46,6 +46,7 @@ from video_channel_manager.exchange.instagram_video import (
     InstagramVideoIntakeArtifact,
     InstagramVideoRouteArtifact,
 )
+from video_channel_manager.instagram.artifact import InstagramReelArtifactBinding
 from video_channel_manager.instagram.production import InstagramPublishManifest
 from video_channel_manager.local_media import scan_local_media
 from video_channel_manager.persistence import Database
@@ -147,6 +148,7 @@ def schema_export(
         "instagram-video-route-v1.schema.json": InstagramVideoRouteArtifact.model_json_schema(),
         "instagram-reel-factory-v1.schema.json": InstagramReelFactoryRegistry.model_json_schema(),
         "instagram-reel-queue-v1.schema.json": InstagramReelQueueArtifact.model_json_schema(),
+        "instagram-reel-artifact-binding-v1.schema.json": InstagramReelArtifactBinding.model_json_schema(),
         "instagram-reel-factory-coverage-v1.schema.json": InstagramFactoryCoverageArtifact.model_json_schema(),
         "instagram-historical-factory-backlog-v1.schema.json": InstagramHistoricalBacklogArtifact.model_json_schema(),
         "instagram-account-observation-v1.schema.json": InstagramAccountObservation.model_json_schema(),
