@@ -11,6 +11,7 @@ from pydantic import ValidationError
 
 from video_channel_manager.telegram_historical_media import (
     HistoricalMediaAcquisitionAsset,
+    _build_acquisition_client,
     _image_probe,
     acquire_historical_media,
 )
@@ -44,6 +45,13 @@ def test_image_probe_accepts_bound_jpeg_and_png_dimensions() -> None:
 
     png = b"\x89PNG\r\n\x1a\n" + b"\x00\x00\x00\rIHDR" + struct.pack(">II", 640, 480)
     assert _image_probe(png) == ("image/png", 640, 480)
+
+
+def test_default_client_identifies_project_to_archive_origin() -> None:
+    with _build_acquisition_client() as client:
+        assert client.headers["user-agent"].startswith("video-channel-manager-historical-media/1.0")
+        assert "github.com/FedorMilovanov/video-channel-manager" in client.headers["user-agent"]
+        assert client.headers["accept"].startswith("image/")
 
 
 def test_asset_rejects_unallowlisted_download_host() -> None:

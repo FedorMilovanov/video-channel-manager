@@ -12,6 +12,7 @@ import httpx
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from video_channel_manager.telegram_historical_bundle import HistoricalSourceShardV1
+from video_channel_manager.telegram_historical_editorial import HistoricalSource
 from video_channel_manager.telegram_historical_revision import (
     HistoricalRevisionGitBlobRef,
     load_historical_revision_git_blob_json,
@@ -23,6 +24,11 @@ _PUBLICATION_RE = r"^lordchrist-history-[a-z0-9][a-z0-9-]{4,90}$"
 _ASSET_RE = r"^img-[a-z0-9][a-z0-9-]{2,80}$"
 _ALLOWED_DOWNLOAD_HOSTS = frozenset({"upload.wikimedia.org"})
 _MAX_SOURCE_BYTES = 10_000_000
+_ACQUISITION_USER_AGENT = (
+    "video-channel-manager-historical-media/1.0 "
+    "(+https://github.com/FedorMilovanov/video-channel-manager; contact via repository issues)"
+)
+_ACQUISITION_ACCEPT = "image/avif,image/webp,image/apng,image/*,*/*;q=0.8"
 
 
 class HistoricalMediaAcquisitionAsset(BaseModel):
@@ -259,7 +265,7 @@ def _validate_manifest_bindings(manifest: HistoricalMediaAcquisitionManifest, *,
         if not isinstance(shard_refs, list) or not isinstance(verification_ref, dict):
             raise ValueError("historical v3 batch topic bindings are invalid")
 
-        source_by_id: dict[str, object] = {}
+        source_by_id: dict[str, HistoricalSource] = {}
         for index, raw_ref in enumerate(shard_refs, start=1):
             ref = HistoricalRevisionGitBlobRef.model_validate(raw_ref)
             shard = HistoricalSourceShardV1.model_validate(
@@ -267,10 +273,10 @@ def _validate_manifest_bindings(manifest: HistoricalMediaAcquisitionManifest, *,
             )
             for source in shard.sources:
                 source_by_id[source.source_id] = source
-        source = source_by_id.get(asset.source_id)
-        if source is None:
+        bound_source = source_by_id.get(asset.source_id)
+        if bound_source is None:
             raise ValueError(f"historical media source is not bound to topic: {asset.source_id}")
-        source_url = getattr(source, "url", None)
+        source_url = bound_source.url
         if source_url != asset.source_page_url:
             raise ValueError(f"historical media source page differs from bound source registry: {asset.source_id}")
 
@@ -368,6 +374,17 @@ def _fetch_asset(
     )
 
 
+def _build_acquisition_client() -> httpx.Client:
+    return httpx.Client(
+        follow_redirects=True,
+        timeout=httpx.Timeout(30.0, connect=15.0),
+        headers={
+            "User-Agent": _ACQUISITION_USER_AGENT,
+            "Accept": _ACQUISITION_ACCEPT,
+        },
+    )
+
+
 def acquire_historical_media(
     manifest_path: Path,
     *,
@@ -377,11 +394,7 @@ def acquire_historical_media(
 ) -> HistoricalMediaAcquisitionReceipt:
     manifest = _load_manifest(manifest_path, repo_root=repo_root)
     owns_client = client is None
-    active_client = client or httpx.Client(
-        follow_redirects=True,
-        timeout=httpx.Timeout(30.0, connect=15.0),
-        headers={"User-Agent": "video-channel-manager-historical-media/1.0"},
-    )
+    active_client = client or _build_acquisition_client()
     try:
         results = tuple(_fetch_asset(asset, client=active_client, output_dir=output_dir) for asset in manifest.assets)
     finally:
