@@ -30,6 +30,7 @@ def upgrade() -> None:
         sa.Column("attempt_count", sa.Integer(), nullable=False),
         sa.Column("last_error_code", sa.String(length=200), nullable=True),
         sa.Column("last_error_message", sa.Text(), nullable=True),
+        sa.Column("container_requested_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("publish_requested_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("published_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
