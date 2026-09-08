@@ -24,7 +24,7 @@ Only `main` is a supported repository code/runtime execution baseline.
 
 ### Current checkpoint
 
-The exact repository checkpoint used for this documentation sync is `main` `68d654c6dc5beabdba0f476559f55badac4980f4`. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
+The exact repository checkpoint used for this documentation sync is `main` `08ada047319e125046cdf08df1e9bdb419c5adf2`. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
 
 Material 2026-09-06 / 2026-09-07 / 2026-09-08 hardening now present on `main` includes:
 
@@ -116,11 +116,13 @@ Canonical runbook: [`milovi-telegram-feed-control-plane.md`](milovi-telegram-fee
 
 ## Instagram / Legendary Poet and Lord God
 
-Issue #492 is closed as repository implementation complete for the earlier provider-inert launch/content/factory scope. PR #569 under issue #568 now owns the production-publishing implementation: explicit Instagram/Facebook login mode and Graph version, exact account preflight, default-off double write gate, durable SQL publication ledger, idempotent publication-key/content binding, compare-and-set mutation claims, fail-closed ambiguous-result reconciliation, and exact public-media trust/integrity verification before the first provider POST.
+Issue #492 is closed as repository implementation complete for the earlier provider-inert launch/content/factory scope. PR #569 under issue #568 provides the production-publishing authority: explicit Instagram/Facebook login mode and Graph version, exact account preflight, default-off double write gate, durable SQL publication ledger, idempotent publication-key/content binding, compare-and-set mutation claims, fail-closed ambiguous-result reconciliation, and exact public-media trust/integrity verification before the first provider POST.
 
-The media boundary requires an exact trusted hostname plus immutable SHA-256, byte size and content type for the provider-bound Reel (and cover when used). Public media is fetched through an isolated unauthenticated client; redirects, hash/size/type mismatches and untrusted hosts fail closed before container creation. The Meta access token is not sent to the media host. Container creation and final publication each acquire a durable single-winner intent before the provider mutation; ambiguous creation/publish outcomes cannot be blindly replayed.
+Issue #571 / PR #573 adds the missing provider-inert Reel media-compatibility boundary on top of that publisher. Canonical `MediaArtifactEvidence` now carries FPS plus video/audio bitrate telemetry, and `InstagramReelArtifactBinding` binds the exact reviewed local bytes to the current Reel profile before hosting/provider mutation. Hard container/codec/sample-rate/FPS/dimension/video-bitrate/duration/file-size constraints fail closed; recommended 9:16 and the documented 128 kbps audio target remain advisories rather than invented hard maxima. The versioned binding is exported through the canonical `video-manager schema export` path.
 
-This repository state still contains **no production Instagram account binding/token and no live canary evidence**. Provider publications remain 0. Merge/green-CI completion of #569 means repository implementation complete; it does not mean provider rollout complete and does not authorize a live Reel. Live activation requires fresh exact target/credentials/permissions, a reviewed immutable manifest/media object, read-only preflight, current durable state and a separately authorized canary invocation.
+The operator handoff is one-way and exact: reviewed local artifact -> compatibility binding -> same immutable bytes hosted at a reviewed HTTPS URL -> `InstagramPublishManifest` with matching SHA-256, byte size and content type -> read-only preflight/provider-inert plan -> separately authorized production publish. The existing #569 publisher remains the only Graph mutation authority and re-verifies the hosted public bytes before the first provider POST; #571 does not add a second writer.
+
+This repository state still contains **no production Instagram account binding/token and no live canary evidence**. Provider publications remain 0. Repository implementation completion does not mean provider rollout complete and does not authorize a live Reel. Live activation requires fresh exact target/credentials/permissions, a reviewed immutable binding/manifest/media object, read-only preflight, current durable state and a separately authorized canary invocation.
 
 Canonical runbook: [`instagram-production-publishing.md`](instagram-production-publishing.md).
 
@@ -164,7 +166,7 @@ This governance closure is evidence, not standing authority. Future protection c
 2. Reopen #503 or create a successor only when a fresh <=48h owner YouTube AuditPackage and/or exact owner media is available; do not substitute public downloads or stale evidence.
 3. Any future Milovi growth/Dzen/provider/admin experiment needs a new exact scope and real attribution/outcome data; closed #353 is not standing authority.
 4. Any live rollout of the completed #552 historical editorial lane needs a fresh release identity, media proof where applicable, exact review/canary and separate explicit execution authorization.
-5. Complete #568/#569 repository review/CI/merge before any Instagram activation. After merge, live Instagram rollout starts with fresh exact credentials/identity, immutable remote-media evidence and a read-only preflight; one separately authorized canary is the first permitted provider write.
+5. Instagram repository implementation now has one canonical artifact-to-publisher path across #569 and #573. Any live rollout starts from fresh exact credentials/identity, an immutable compatibility-bound remote media object, read-only preflight and one separately authorized canary; no repository merge is standing provider authority.
 6. For any provider-visible work, start from fresh current `main`, fresh durable state, exact target identity, immutable operation identity and a new explicit owning authorization scope.
 
 Nothing in this document is authorization for a provider mutation.

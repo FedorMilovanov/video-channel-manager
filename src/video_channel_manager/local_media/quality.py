@@ -4,6 +4,7 @@ import hashlib
 import json
 import subprocess
 from dataclasses import asdict, dataclass
+from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +28,9 @@ class MediaQualityReport:
     height: int | None
     sample_rate_hz: int | None
     audio_channels: int | None
+    video_frame_rate_fps: float | None = None
+    video_bitrate_bps: int | None = None
+    audio_bitrate_bps: int | None = None
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -58,6 +62,17 @@ def _positive_int(value: object) -> int | None:
     return parsed if parsed > 0 else None
 
 
+def _positive_frame_rate(value: object) -> float | None:
+    raw = str(value or "").strip()
+    if not raw or raw in {"0", "0/0", "N/A"}:
+        return None
+    try:
+        parsed = float(Fraction(raw))
+    except (ValueError, ZeroDivisionError):
+        return None
+    return round(parsed, 6) if parsed > 0 else None
+
+
 def _first_stream(streams: list[dict[str, Any]], codec_type: str) -> dict[str, Any] | None:
     return next((stream for stream in streams if stream.get("codec_type") == codec_type), None)
 
@@ -84,7 +99,10 @@ def probe_media(
         "-v",
         "error",
         "-show_entries",
-        "format=format_name,duration,size:stream=index,codec_type,codec_name,width,height,sample_rate,channels,duration",
+        (
+            "format=format_name,duration,size:"
+            "stream=index,codec_type,codec_name,width,height,sample_rate,channels,duration,avg_frame_rate,bit_rate"
+        ),
         "-of",
         "json",
         str(path),
@@ -152,6 +170,9 @@ def probe_media(
         height=_positive_int(video.get("height")),
         sample_rate_hz=_positive_int(audio.get("sample_rate")),
         audio_channels=_positive_int(audio.get("channels")),
+        video_frame_rate_fps=_positive_frame_rate(video.get("avg_frame_rate")),
+        video_bitrate_bps=_positive_int(video.get("bit_rate")),
+        audio_bitrate_bps=_positive_int(audio.get("bit_rate")),
     )
 
 
