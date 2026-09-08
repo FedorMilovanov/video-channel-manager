@@ -40,7 +40,8 @@ Current Meta reference collection: https://www.postman.com/meta/instagram/docume
 14. A network failure or 5xx around container creation is treated as an ambiguous creation effect (`container_unknown`), not as permission to create another container.
 15. A network failure or 5xx around `media_publish` is treated as an ambiguous publication effect (`publish_unknown`), not as permission to retry.
 16. A provider-confirmed `PUBLISHED` container without an exact media ID is recorded as `published_unresolved`; never infer or fabricate the media ID.
-17. Provider writes never occur in CI tests.
+17. Default container-status polling follows Meta's current recommendation: once per minute for no more than five minutes. A more aggressive override requires a separately reviewed operational reason.
+18. Provider writes never occur in CI tests.
 
 ## Runtime configuration
 
@@ -83,13 +84,15 @@ Production kill switch, default false:
 VCM_INSTAGRAM_WRITES_ENABLED=false
 ```
 
-Operational tuning:
+Operational defaults:
 
 ```text
 VCM_INSTAGRAM_REQUEST_TIMEOUT_SECONDS=30
-VCM_INSTAGRAM_POLL_INTERVAL_SECONDS=5
-VCM_INSTAGRAM_POLL_ATTEMPTS=24
+VCM_INSTAGRAM_POLL_INTERVAL_SECONDS=60
+VCM_INSTAGRAM_POLL_ATTEMPTS=5
 ```
+
+The 60-second / five-attempt polling defaults intentionally match Meta's current recommendation to query a container status once per minute for no more than five minutes. Do not lower the interval merely to make a live run appear faster; an explicit override should be reviewed against current provider guidance and rate-limit pressure.
 
 For Facebook Login compatibility mode, set both:
 
@@ -154,6 +157,8 @@ It must prove:
 - the token resolves the configured exact `account_id`;
 - the optional exact username assertion matches;
 - the publishing-limit endpoint is readable with the active token/permissions.
+
+Meta currently documents a limit of 100 API-published posts in a moving 24-hour period and recommends that applications also enforce the publishing rate limit. Before an authorized canary, inspect the returned publishing-limit evidence and treat quota exhaustion or ambiguous quota evidence as blocking rather than relying on `media_publish` to reject the operation.
 
 Failure is blocking. Do not bypass identity mismatch by editing a manifest to whichever account the token happened to return.
 
@@ -321,6 +326,7 @@ Tests use mocked HTTP only. CI must prove at minimum:
 - `FINISHED` does not reopen `ready` after an ambiguous publish;
 - reconciliation of a provider `PUBLISHED` container cannot republish it;
 - manual media-ID reconciliation is restricted to ambiguous publish state with a known container;
+- default polling is pinned at 60 seconds × 5 attempts to match current Meta guidance;
 - a publication key cannot be rebound to different canonical content.
 
 A green CI proves repository behavior. It does not prove production credentials, permissions, target identity, public media availability or authorize a live canary.
