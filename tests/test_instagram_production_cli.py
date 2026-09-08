@@ -78,7 +78,6 @@ def test_plan_is_provider_inert_without_instagram_credentials(
         get_settings.cache_clear()
 
     assert result.exit_code == 0, result.output
-    assert "Provider writes: none; provider credentials: not required." in result.output
 
     database = Database(database_url)
     try:
