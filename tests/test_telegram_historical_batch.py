@@ -16,9 +16,7 @@ from video_channel_manager.telegram_historical_editorial import HistoricalSource
 from video_channel_manager.telegram_historical_revision import load_historical_revision_git_blob_json
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = Path(
-    "content/telegram/lordchrist/historical-editorial/v1/v3/batch-manifest-2026-09-08.json"
-)
+MANIFEST = Path("content/telegram/lordchrist/historical-editorial/v1/v3/batch-manifest-2026-09-08.json")
 
 
 def _manifest_payload() -> dict[str, object]:

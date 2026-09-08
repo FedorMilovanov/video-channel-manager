@@ -183,7 +183,11 @@ def validate_historical_v3_red_team(
         url = item.get("url")
         topic = item.get("topic")
         family = item.get("family")
-        if not all(isinstance(part, str) and part.strip() for part in (url, topic, family)):
+        if not isinstance(url, str) or not url.strip():
+            raise ValueError("historical v3 red-team reviewed entries require url/topic/family")
+        if not isinstance(topic, str) or not topic.strip():
+            raise ValueError("historical v3 red-team reviewed entries require url/topic/family")
+        if not isinstance(family, str) or not family.strip():
             raise ValueError("historical v3 red-team reviewed entries require url/topic/family")
         urls.append(url)
         reviewed_topics.add(topic)

@@ -254,9 +254,7 @@ def preflight_historical_revision(
     repo_root: Path = Path("."),
 ) -> HistoricalRevisionPreflightV1:
     package = load_historical_revision_package(package_path, repo_root=repo_root)
-    post = HistoricalPost.model_validate(
-        load_historical_revision_git_blob_json(repo_root, package.post, label="post")
-    )
+    post = HistoricalPost.model_validate(load_historical_revision_git_blob_json(repo_root, package.post, label="post"))
     theology = TheologyProfile.model_validate(
         load_historical_revision_git_blob_json(repo_root, package.theology_profile, label="theology profile")
     )
