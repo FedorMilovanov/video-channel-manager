@@ -50,9 +50,9 @@ env:
   RENDERED_PATH: .runtime/lordchrist-rendered.json
   OUTCOME_PATH: .runtime/lordchrist-outcome.json
   TARGET_PROOF_PATH: .runtime/lordchrist-target-proof.json
-  HISTORICAL_RELEASE_PATH: content/telegram/lordchrist/historical-editorial/v1/production-release-2026-09-cycle-02.json
-  HISTORICAL_LEDGER_RELATIVE_PATH: content/telegram/lordchrist/historical-editorial/publication-ledger.json
-  HISTORICAL_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/historical-editorial/publication-ledger.json
+  HISTORICAL_RELEASE_PATH: ${{ github.event_name == 'workflow_dispatch' && inputs.publication_id == 'lordchrist-history-spurgeon-down-grade-1887-v3' && 'content/telegram/lordchrist/historical-editorial/v1/production-release-spurgeon-v3-media-canary.json' || 'content/telegram/lordchrist/historical-editorial/v1/production-release-2026-09-cycle-02.json' }}
+  HISTORICAL_LEDGER_RELATIVE_PATH: ${{ github.event_name == 'workflow_dispatch' && inputs.publication_id == 'lordchrist-history-spurgeon-down-grade-1887-v3' && 'content/telegram/lordchrist/historical-editorial/publication-ledger-spurgeon-v3-media.json' || 'content/telegram/lordchrist/historical-editorial/publication-ledger.json' }}
+  HISTORICAL_LEDGER_PATH: ${{ github.event_name == 'workflow_dispatch' && inputs.publication_id == 'lordchrist-history-spurgeon-down-grade-1887-v3' && '.state/lordchrist/content/telegram/lordchrist/historical-editorial/publication-ledger-spurgeon-v3-media.json' || '.state/lordchrist/content/telegram/lordchrist/historical-editorial/publication-ledger.json' }}
   HISTORICAL_INTENT_PATH: .runtime/lordchrist-historical-intent.json
   HISTORICAL_OUTCOME_PATH: .runtime/lordchrist-historical-outcome.json
   HISTORICAL_TARGET_PROOF_PATH: .runtime/lordchrist-historical-target-proof.json
@@ -663,7 +663,7 @@ jobs:
             mode=scheduled
           else
             expected_publication_id="$REQUESTED_PUBLICATION_ID"
-            [[ "$expected_publication_id" == "lordchrist-history-spurgeon-down-grade-1887-v2" ]] || {
+            [[ "$expected_publication_id" == "lordchrist-history-spurgeon-down-grade-1887-v3" ]] || {
               echo "Manual historical production is restricted to the exact reviewed canary." >&2
               exit 2
             }

@@ -67,11 +67,14 @@ def test_human_release_v2_second_pass_is_bound_to_all_new_publication_ids() -> N
     assert all(verification["post_coverage"][publication_id] >= 3 for publication_id in release["publication_ids"])
 
 
-def test_unified_writer_is_bound_to_exact_v2_release_and_canary() -> None:
+def test_unified_writer_preserves_v2_schedule_and_routes_exact_v3_canary() -> None:
     workflow = WORKFLOW.read_text(encoding="utf-8")
     assert "production-release-2026-09-cycle-02.json" in workflow
     assert "production-release-2026-09-cycle-01.json" not in workflow
-    assert '[[ "$expected_publication_id" == "lordchrist-history-spurgeon-down-grade-1887-v2" ]]' in workflow
+    assert "production-release-spurgeon-v3-media-canary.json" in workflow
+    assert "publication-ledger-spurgeon-v3-media.json" in workflow
+    assert '[[ "$expected_publication_id" == "lordchrist-history-spurgeon-down-grade-1887-v3" ]]' in workflow
+    assert "(github.event_name == 'schedule' && github.event.schedule == '17 19 * * 1,3,6')" in workflow
     assert workflow.count("group: lordchrist-telegram-publisher") == 1
     assert "telegram_historical_production send" in workflow
 
