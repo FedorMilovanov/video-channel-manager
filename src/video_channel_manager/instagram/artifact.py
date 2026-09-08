@@ -76,10 +76,7 @@ class InstagramReelArtifactBinding(BaseModel):
 
 def _normalized_format_tokens(format_names: tuple[str, ...]) -> frozenset[str]:
     return frozenset(
-        token.strip().lower()
-        for format_name in format_names
-        for token in format_name.split(",")
-        if token.strip()
+        token.strip().lower() for format_name in format_names for token in format_name.split(",") if token.strip()
     )
 
 
