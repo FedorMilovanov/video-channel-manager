@@ -1,0 +1,80 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-source-shard",
+  "schema_version": 1,
+  "shard_id": "history-sources-historical-v3-corrections-a",
+  "checked_on": "2026-09-08",
+  "sources": [
+    {
+      "source_id": "src-bunyan-relation-imprisonment-v3",
+      "title": "Grace Abounding to the Chief of Sinners and A Relation of the Imprisonment of Mr. John Bunyan",
+      "publisher": "Project Gutenberg",
+      "url": "https://www.gutenberg.org/ebooks/654",
+      "evidence_type": "primary",
+      "grade": "A",
+      "evidence_role": "critical_edition",
+      "checked_on": "2026-09-08",
+      "topic_tags": ["bunyan", "imprisonment", "primary-corpus"],
+      "independence_group": "bunyan-self-imprisonment"
+    },
+    {
+      "source_id": "src-bunyan-nonconformity-records-1672-v3",
+      "title": "Original Records of Early Nonconformity under Persecution and Indulgence",
+      "publisher": "Google Books digitized historical edition",
+      "url": "https://books.google.com/books/about/Original_Records_of_Early_Nonconformity.html?hl=en&id=GHgcAAAAMAAJ&output=html_text",
+      "evidence_type": "primary",
+      "grade": "A",
+      "evidence_role": "critical_edition",
+      "checked_on": "2026-09-08",
+      "topic_tags": ["bunyan", "licence", "1672"],
+      "independence_group": "early-nonconformity-records"
+    },
+    {
+      "source_id": "src-judson-wayland-vol2-v3",
+      "title": "A Memoir of the Life and Labors of the Rev. Adoniram Judson, D.D., Vol. II",
+      "publisher": "Baptist Studies Online digitized historical edition",
+      "url": "https://baptiststudiesonline.com/wp-content/uploads/2018/05/Judson-Adoniram-Wayland-Francis-v-2.pdf",
+      "evidence_type": "primary",
+      "grade": "A",
+      "evidence_role": "critical_edition",
+      "checked_on": "2026-09-08",
+      "topic_tags": ["judson", "burmese-bible", "letters"],
+      "independence_group": "wayland-judson-letters"
+    },
+    {
+      "source_id": "src-spurgeon-cholera-autobiography-v3",
+      "title": "The Cholera Year in London — Spurgeon autobiographical recollection",
+      "publisher": "The Spurgeon Library",
+      "url": "https://www.spurgeon.org/wp-content/uploads/2020/03/The_Cholera_Year_in_London.pdf",
+      "evidence_type": "primary",
+      "grade": "A",
+      "evidence_role": "primary_document",
+      "checked_on": "2026-09-08",
+      "topic_tags": ["spurgeon", "cholera", "autobiography"],
+      "independence_group": "spurgeon-autobiography-cholera"
+    },
+    {
+      "source_id": "src-london-cholera-inquiry-1855-v3",
+      "title": "Report on the Cholera Outbreak in the Parish of St James, Westminster, during the Autumn of 1854",
+      "publisher": "Wellcome Collection",
+      "url": "https://wellcomecollection.org/works/z8xczc2r",
+      "evidence_type": "primary",
+      "grade": "A",
+      "evidence_role": "official_archive",
+      "checked_on": "2026-09-08",
+      "topic_tags": ["cholera", "london", "1854"],
+      "independence_group": "st-james-cholera-inquiry"
+    },
+    {
+      "source_id": "src-john-snow-cholera-plan-v3",
+      "title": "Plan showing the ascertained deaths from cholera in part of St James, Westminster",
+      "publisher": "Wellcome Collection",
+      "url": "https://wellcomecollection.org/works/dx4prdbj",
+      "evidence_type": "primary",
+      "grade": "A",
+      "evidence_role": "official_archive",
+      "checked_on": "2026-09-08",
+      "topic_tags": ["john-snow", "cholera", "map"],
+      "independence_group": "john-snow-map"
+    }
+  ]
+}
