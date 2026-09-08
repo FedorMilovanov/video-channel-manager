@@ -101,7 +101,7 @@
       "source_page_url": "https://baptiststudiesonline.com/wp-content/uploads/2018/05/Judson-Adoniram-Wayland-Francis-v-2.pdf",
       "acquisition_page_url": "https://archive.org/details/memoiroflifela02wayl",
       "download_url": "https://archive.org/download/memoiroflifela02wayl/memoiroflifela02wayl.pdf",
-      "expected_upstream_sha1": "0000000000000000000000000000000000000000",
+      "expected_upstream_sha1": "694471b7cf99f457402d0b53bf1357bab3111cdb",
       "expected_source_mime": "application/pdf",
       "output_file_name": "judson-v3-wayland-vol2-source.pdf",
       "rights_basis": "Public-domain Wayland memoir, exact volume II. Cambridge HTR independently cites archive.org/details/memoiroflifela02wayl as Wayland, Memoir, volume 2; it is used as the TLS-valid acquisition facsimile of the bound primary compilation.",
