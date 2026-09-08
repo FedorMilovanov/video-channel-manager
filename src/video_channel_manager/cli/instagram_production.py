@@ -131,7 +131,10 @@ def publish(
     manifest_path: Annotated[Path, typer.Argument(help="Exact Instagram publish manifest JSON")],
     execute: Annotated[
         bool,
-        typer.Option("--execute", help="Authorize this invocation to make provider writes; kill switch must also be on"),
+        typer.Option(
+            "--execute",
+            help="Authorize this invocation to make provider writes; kill switch must also be on",
+        ),
     ] = False,
 ) -> None:
     """Create, process and publish one Reel through the durable write ledger."""
