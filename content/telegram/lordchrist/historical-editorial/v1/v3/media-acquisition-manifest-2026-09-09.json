@@ -83,13 +83,13 @@
       "slot": "document",
       "source_id": "src-judson-wayland-vol2-v3",
       "source_page_url": "https://baptiststudiesonline.com/wp-content/uploads/2018/05/Judson-Adoniram-Wayland-Francis-v-2.pdf",
-      "acquisition_page_url": "https://baptiststudiesonline.com/wp-content/uploads/2018/05/Judson-Adoniram-Wayland-Francis-v-2.pdf",
-      "download_url": "https://baptiststudiesonline.com/wp-content/uploads/2018/05/Judson-Adoniram-Wayland-Francis-v-2.pdf",
+      "acquisition_page_url": "https://archive.org/details/memoiroflifelabo0000wayl",
+      "download_url": "https://archive.org/download/memoiroflifelabo0000wayl/memoiroflifelabo0000wayl.pdf",
       "expected_upstream_sha1": "0000000000000000000000000000000000000000",
       "expected_source_mime": "application/pdf",
-      "output_file_name": "judson-v3-wayland-vol2-source.pdf",
-      "rights_basis": "Nineteenth-century public-domain memoir and primary-letter compilation, digitized by Baptist Studies Online.",
-      "attribution_text": "Francis Wayland, A Memoir of the Life and Labors of the Rev. Adoniram Judson, D.D., Vol. II; Baptist Studies Online digitization.",
+      "output_file_name": "judson-v3-wayland-two-volumes-source.pdf",
+      "rights_basis": "Public-domain 1853 Wayland memoir; Open Library identifies Internet Archive item memoiroflifelabo0000wayl as the two-volume edition, used here as a TLS-valid facsimile of the same primary compilation.",
+      "attribution_text": "Francis Wayland, A Memoir of the Life and Labors of the Rev. Adoniram Judson, D.D., 1853, two volumes; Internet Archive/Open Library facsimile.",
       "acquisition_kind": "direct_pdf",
       "provider_write_performed": false
     }
