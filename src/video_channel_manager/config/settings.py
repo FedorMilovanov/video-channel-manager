@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ipaddress
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -93,7 +94,7 @@ class AppSettings(BaseSettings):
             if "://" in host or "/" in host or host == "localhost":
                 raise ValueError("Instagram media allowed hosts must be bare public hostnames")
             try:
-                address = __import__("ipaddress").ip_address(host)
+                address = ipaddress.ip_address(host)
             except ValueError:
                 continue
             if not address.is_global:
