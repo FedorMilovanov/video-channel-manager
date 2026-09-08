@@ -289,7 +289,7 @@ class InstagramPublicationLedger:
                 session.add(entity)
                 session.flush()
                 return self._snapshot(entity)
-        except IntegrityError:
+        except IntegrityError as exc:
             # A concurrent planner may have inserted the same primary key after
             # our read. Re-read and verify the immutable binding instead of
             # turning a safe idempotent race into an operator-visible failure.
@@ -298,7 +298,7 @@ class InstagramPublicationLedger:
                 if entity is None:
                     raise InstagramProductionError(
                         f"Publication {manifest.publication_key} raced during planning but cannot be re-read"
-                    )
+                    ) from exc
                 self._assert_binding(entity, manifest)
                 return self._snapshot(entity)
 
