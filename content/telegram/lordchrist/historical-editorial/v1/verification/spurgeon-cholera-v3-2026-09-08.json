@@ -1,0 +1,36 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-topic-verification",
+  "schema_version": 1,
+  "verification_id": "spurgeon-cholera-v3-2026-09-08",
+  "checked_on": "2026-09-08",
+  "publication_id": "lordchrist-history-spurgeon-cholera-1854-v3",
+  "reviewed_document_urls": 4,
+  "primary_document_urls": 3,
+  "institutional_or_scholarly_urls": 1,
+  "independent_evidence_groups_used_in_reader_claims": ["spurgeon-autobiography-cholera","spurgeon-library-secondary","st-james-cholera-inquiry","john-snow-map","rhodes-spurgeon-biography-2026"],
+  "source_shards": [
+    "content/telegram/lordchrist/historical-editorial/v1/sources/spurgeon-history.json",
+    "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-a.json"
+  ],
+  "method": "participant recollection kept explicitly retrospective; civic epidemic context established through independent official and cartographic primary records",
+  "important_deltas": [
+    {"kind":"qualify","finding":"House-to-house visits and the night-call episode are labeled retrospective participant recollection, not contemporaneous diary evidence."},
+    {"kind":"deepen","finding":"The St James cholera inquiry and John Snow map provide an independent evidence family for the scale and geography of the epidemic."},
+    {"kind":"boundary","finding":"The Snow map is not used to infer Spurgeon's personal route or the exact houses he visited."},
+    {"kind":"boundary","finding":"No modern medical-policy prescription is inferred from Spurgeon's nineteenth-century pastoral conduct."}
+  ],
+  "unsupported_popular_claims": [
+    {"claim":"John Snow's map proves which cholera houses Spurgeon personally visited.","status":"rejected"},
+    {"claim":"Spurgeon's 1854 example settles a modern medical-risk policy question.","status":"rejected_as_anachronistic"}
+  ],
+  "claim_upgrade_conditions": [
+    {"claim":"specific Spurgeon visit address","upgrade_requires":"dated 1854 church record, letter, diary, or household testimony locating that visit"}
+  ],
+  "visual_plan": [
+    {"slot":"hero","source_id":"src-image-spurgeon-nlw","concept":"historical portrait of young C. H. Spurgeon","state":"planned_unmaterialized","production_ready":false},
+    {"slot":"document","source_id":"src-john-snow-cholera-plan-v3","concept":"John Snow mortality map as epidemic context, explicitly not a Spurgeon route map","state":"planned_unmaterialized","production_ready":false}
+  ],
+  "direct_quote_policy": {"status":"no_reader_direct_quote_selected"},
+  "reader_copy_result": "accepted_for_v3_integration",
+  "provider_write_performed": false
+}
