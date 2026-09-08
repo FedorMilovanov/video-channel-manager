@@ -10,6 +10,47 @@ from sqlalchemy import create_engine, inspect, text
 from video_channel_manager.config import get_settings
 
 
+def _config(repository_root: Path) -> Config:
+    config = Config(str(repository_root / "alembic.ini"))
+    config.set_main_option("script_location", str(repository_root / "migrations"))
+    return config
+
+
+def _revision(database_url: str) -> str:
+    engine = create_engine(database_url)
+    try:
+        with engine.connect() as connection:
+            return connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
+    finally:
+        engine.dispose()
+
+
+def test_instagram_ledger_downgrade_allows_empty_state(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository_root = Path(__file__).resolve().parents[1]
+    database_path = tmp_path / "empty-ledger.db"
+    database_url = f"sqlite:///{database_path.as_posix()}"
+    monkeypatch.setenv("VCM_DATABASE_URL", database_url)
+    get_settings.cache_clear()
+
+    config = _config(repository_root)
+    try:
+        command.upgrade(config, "head")
+        assert _revision(database_url) == "0002"
+        command.downgrade(config, "0001")
+    finally:
+        get_settings.cache_clear()
+
+    engine = create_engine(database_url)
+    try:
+        assert "instagram_publications" not in inspect(engine).get_table_names()
+        assert _revision(database_url) == "0001"
+    finally:
+        engine.dispose()
+
+
 def test_instagram_ledger_downgrade_refuses_non_empty_state(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -20,8 +61,7 @@ def test_instagram_ledger_downgrade_refuses_non_empty_state(
     monkeypatch.setenv("VCM_DATABASE_URL", database_url)
     get_settings.cache_clear()
 
-    config = Config(str(repository_root / "alembic.ini"))
-    config.set_main_option("script_location", str(repository_root / "migrations"))
+    config = _config(repository_root)
     try:
         command.upgrade(config, "head")
         engine = create_engine(database_url)
@@ -72,8 +112,8 @@ def test_instagram_ledger_downgrade_refuses_non_empty_state(
     try:
         inspector = inspect(engine)
         assert "instagram_publications" in inspector.get_table_names()
+        assert _revision(database_url) == "0002"
         with engine.connect() as connection:
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0002"
             assert connection.execute(text("SELECT COUNT(*) FROM instagram_publications")).scalar_one() == 1
     finally:
         engine.dispose()
