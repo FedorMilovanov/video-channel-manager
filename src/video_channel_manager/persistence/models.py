@@ -179,3 +179,23 @@ class OperationAttempt(Base):
     response_metadata: Mapped[dict[str, object]] = mapped_column(JSON, default=dict, nullable=False)
 
     __table_args__ = (UniqueConstraint("operation_id", "attempt_number", name="uq_operation_attempt"),)
+
+
+class InstagramPublicationEntity(Base, TimestampMixin):
+    """Durable provider-write ledger for one logical Instagram publication."""
+
+    __tablename__ = "instagram_publications"
+
+    publication_key: Mapped[str] = mapped_column(String(200), primary_key=True)
+    account_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(128), nullable=False)
+    manifest: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default="planned", nullable=False)
+    provider_container_id: Mapped[str | None] = mapped_column(String(255))
+    provider_media_id: Mapped[str | None] = mapped_column(String(255))
+    provider_status: Mapped[str | None] = mapped_column(String(100))
+    attempt_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    last_error_code: Mapped[str | None] = mapped_column(String(200))
+    last_error_message: Mapped[str | None] = mapped_column(Text)
+    publish_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
