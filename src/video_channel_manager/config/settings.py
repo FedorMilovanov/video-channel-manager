@@ -51,6 +51,7 @@ class AppSettings(BaseSettings):
     instagram_account_username: str | None = None
     instagram_access_token: SecretStr | None = None
     instagram_writes_enabled: bool = False
+    instagram_media_allowed_hosts: tuple[str, ...] = ()
     instagram_request_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
     instagram_poll_interval_seconds: float = Field(default=5.0, ge=0, le=60)
     instagram_poll_attempts: int = Field(default=24, ge=1, le=120)
@@ -81,6 +82,23 @@ class AppSettings(BaseSettings):
             return None
         normalized = value.strip()
         return normalized or None
+
+    @field_validator("instagram_media_allowed_hosts")
+    @classmethod
+    def normalize_instagram_media_allowed_hosts(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        normalized = tuple(host.strip().lower().rstrip(".") for host in value if host.strip())
+        if len(set(normalized)) != len(normalized):
+            raise ValueError("Instagram media allowed hosts must not contain duplicates")
+        for host in normalized:
+            if "://" in host or "/" in host or host == "localhost":
+                raise ValueError("Instagram media allowed hosts must be bare public hostnames")
+            try:
+                address = __import__("ipaddress").ip_address(host)
+            except ValueError:
+                continue
+            if not address.is_global:
+                raise ValueError("Instagram media allowed hosts must not contain private or local IP addresses")
+        return normalized
 
     def ensure_runtime_directories(self) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)
