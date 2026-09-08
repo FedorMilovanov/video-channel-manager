@@ -1,0 +1,113 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-v3-red-team-dossier",
+  "schema_version": 1,
+  "dossier_id": "lordchrist-historical-v3-red-team-2026-09-08",
+  "owning_issue": 561,
+  "checked_on": "2026-09-08",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "provider_write_performed": false,
+  "reviewed_urls": 40,
+  "method": "primary-first red-team; separate evidence families; downgrade legends; preserve participant recollection as recollection; require opposing primary evidence for controversies",
+  "required_v3_fields": [
+    "independence_group",
+    "unsupported_popular_claims",
+    "claim_upgrade_conditions",
+    "visual_plan",
+    "historical_description_separated_from_editorial_evaluation"
+  ],
+  "topic_findings": {
+    "bunyan": [
+      "Keep the 12 November 1660 arrest and Bedford gaol record spine.",
+      "Remove the unbound cinematic detail that Bunyan necessarily had a Bible in his hands at the arrest.",
+      "Bind the 9 May 1672 preaching licence separately from the later release narrative.",
+      "Do not compress Pilgrim's Progress composition into twelve continuous years in one cell."
+    ],
+    "judson": [
+      "Correct the chronology: New Testament printing completed 19 December 1832; full translation completed 31 January 1834; later revisions continued; major revised quarto edition completed in October 1840.",
+      "Reject the solitary-genius/from-scratch legend and retain predecessor Catholic and Baptist language materials.",
+      "Treat imprisonment chronology independently from translation-completion chronology."
+    ],
+    "spurgeon_cholera": [
+      "Treat vivid house-to-house and night-call details as retrospective participant recollection when sourced from the Autobiography.",
+      "Use the 1855 St James cholera inquiry and John Snow map only for epidemic context, never to infer Spurgeon's exact route.",
+      "Avoid modern medical-policy extrapolation."
+    ],
+    "carey": [
+      "Separate fourteen attendees from the subsequent subscription record; do not state that fourteen people each subscribed unless the minute list proves it.",
+      "Bind the October 2, 1792 minute-book resolutions and £13 2s 6d separately from the £1 Enquiry-sales addition.",
+      "Treat the familiar expanded slogan 'Expect great things from God; attempt great things for God' as a transmission question rather than an automatic verbatim quote."
+    ],
+    "fuller": [
+      "Do not frame Fuller as correcting Calvinism in general; identify the high/hyper-Calvinist inference concerning duty-faith and indiscriminate gospel address.",
+      "Distinguish the first edition from the materially corrected 1801 second edition.",
+      "Bind Dan Taylor's 1786 response as opposing contemporary primary evidence.",
+      "Keep the 1785-to-1792 mission connection explicitly multicausal."
+    ],
+    "tyndale": [
+      "Keep the famous final-prayer formula outside exact reader copy without a contemporary locator.",
+      "Use the 1535 autograph prison letter as a stronger human primary artifact than a late martyrdom quotation.",
+      "Keep Cologne/Worms printing, English suppression and later imprisonment as separate evidence stages."
+    ],
+    "stam": [
+      "Use U.S. State Department FRUS documents as an independent chronology family alongside mission archives.",
+      "Keep vivid rescue details such as money, sleeping bag, milk and rice baskets only at the certainty supported by the exact Wheaton/Princeton document locator.",
+      "Do not let later missionary retellings count as independent contemporary witnesses."
+    ],
+    "sattler": [
+      "Use 1527 Schleitheim print/text and the Sattler-Bucer-Capito correspondence before later martyrology.",
+      "Keep Sattler's authorship role qualified: leading attribution versus the confession's collective voice.",
+      "Do not inflate graphic execution details from Martyrs Mirror into contemporary evidence.",
+      "Preserve theological evaluation of Schleitheim pacifism separately from admiration for Sattler's courage."
+    ]
+  },
+  "reviewed": [
+    {"n":1,"topic":"bunyan","url":"https://bedsarchivescat.bedford.gov.uk/Details/archive/110061210","class":"primary_archive","family":"bedfordshire-gaol","impact":"confirm"},
+    {"n":2,"topic":"bunyan","url":"https://celm.folger.edu/introductions/BunyanJohn.html","class":"institutional_archive","family":"folger-celm","impact":"deepen"},
+    {"n":3,"topic":"bunyan","url":"https://www.gutenberg.org/ebooks/654","class":"primary_text","family":"bunyan-self","impact":"deepen"},
+    {"n":4,"topic":"bunyan","url":"https://books.google.com/books/about/Original_Records_of_Early_Nonconformity.html?hl=en&id=GHgcAAAAMAAJ&output=html_text","class":"primary_transcription","family":"nonconformity-records","impact":"deepen"},
+    {"n":5,"topic":"bunyan","url":"https://academic.oup.com/edited-volume/28289/chapter-abstract/214480444","class":"scholarly","family":"oxford-bunyan","impact":"qualify"},
+
+    {"n":6,"topic":"judson","url":"https://babel.hathitrust.org/cgi/pt?id=nyp.33433069129165&view=1up&seq=9&skin=2021","class":"primary_text","family":"judson-early-letter","impact":"deepen"},
+    {"n":7,"topic":"judson","url":"https://tufs.repo.nii.ac.jp/records/11248","class":"primary_archive","family":"ann-judson","impact":"confirm"},
+    {"n":8,"topic":"judson","url":"https://baptiststudiesonline.com/wp-content/uploads/2018/05/Judson-Adoniram-Wayland-Francis-v-2.pdf","class":"near_contemporary_primary_compilation","family":"wayland-judson","impact":"qualify"},
+    {"n":9,"topic":"judson","url":"https://www.cambridge.org/core/journals/harvard-theological-review/article/abs/nineteenthcentury-new-england-exegete-abroad-adoniram-judson-and-the-burmese-bible/F071D56C5D785F21238CDEE27DADA06E","class":"peer_reviewed","family":"cambridge-judson-2019","impact":"correct"},
+    {"n":10,"topic":"judson","url":"https://www.cambridge.org/core/journals/church-history/article/adoniram-judsons-burmese-bible-dependency-and-development/28713DAF10C3B9FD4491EABC8B7291F1","class":"peer_reviewed","family":"cambridge-judson-2024","impact":"deepen"},
+
+    {"n":11,"topic":"spurgeon_cholera","url":"https://www.spurgeon.org/wp-content/uploads/2020/03/The_Cholera_Year_in_London.pdf","class":"participant_recollection","family":"spurgeon-autobiography","impact":"qualify"},
+    {"n":12,"topic":"spurgeon_cholera","url":"https://www.spurgeon.org/blog/spurgeon-and-the-cholera-outbreak-of-1854","class":"institutional","family":"spurgeon-library","impact":"confirm"},
+    {"n":13,"topic":"spurgeon_cholera","url":"https://wellcomecollection.org/works/z8xczc2r","class":"primary_official_report","family":"st-james-inquiry","impact":"deepen"},
+    {"n":14,"topic":"spurgeon_cholera","url":"https://wellcomecollection.org/works/dx4prdbj","class":"primary_map","family":"john-snow","impact":"deepen"},
+
+    {"n":15,"topic":"carey","url":"https://careycenter.wmcarey.edu/enquiry/enquiry.html","class":"primary_text","family":"carey-enquiry","impact":"confirm"},
+    {"n":16,"topic":"carey","url":"https://careycenter.wmcarey.edu/bms/bms.htm","class":"institutional_primary_access","family":"carey-center-bms","impact":"deepen"},
+    {"n":17,"topic":"carey","url":"https://careycenter.wmcarey.edu/links/full_texts.htm","class":"institutional_primary_index","family":"baptist-annual-register","impact":"deepen"},
+    {"n":18,"topic":"carey","url":"https://missiology.org.uk/pdf/e-books/bms/bms-calendar.pdf","class":"primary_transcription","family":"bms-minute-book","impact":"correct"},
+    {"n":19,"topic":"carey","url":"https://careycenter.wmcarey.edu/bib/histories_missions.htm","class":"institutional_bibliography","family":"carey-center-bibliography","impact":"confirm"},
+    {"n":20,"topic":"carey","url":"https://academic.oup.com/book/4320/chapter-abstract/146236657","class":"scholarly","family":"oxford-carey","impact":"qualify"},
+
+    {"n":21,"topic":"fuller","url":"https://content.www.wellcomecollection.org/works/ev8wpye6","class":"primary_1785","family":"fuller-1785","impact":"confirm"},
+    {"n":22,"topic":"fuller","url":"https://catalog.folger.edu/record/855626","class":"primary_bibliographic","family":"folger-fuller","impact":"confirm"},
+    {"n":23,"topic":"fuller","url":"https://mpipsyl.disco.mpg.de/Record/E-Books.EB000462974/DetailsIndex?sid=2451458","class":"opposing_primary_1786","family":"dan-taylor-1786","impact":"deepen"},
+    {"n":24,"topic":"fuller","url":"https://baptisthistoryhomepage.com/fuller.gospel.worthy.1.html","class":"primary_1801_transcription","family":"fuller-1801","impact":"qualify"},
+    {"n":25,"topic":"fuller","url":"https://academic.oup.com/book/4320/chapter-abstract/146235575","class":"scholarly","family":"oxford-fuller","impact":"qualify"},
+
+    {"n":26,"topic":"tyndale","url":"https://searcharchives.bl.uk/catalog/040-002030439","class":"primary_archive","family":"british-library-tyndale","impact":"confirm"},
+    {"n":27,"topic":"tyndale","url":"https://celm.folger.edu/authors/tindalewilliam.html","class":"primary_autograph_archive","family":"tyndale-prison-letter","impact":"deepen"},
+    {"n":28,"topic":"tyndale","url":"https://www.worms.de/en/web/luther/Lutherschriften/Schoefferdrucke/Tyndale.php","class":"institutional","family":"worms-1526","impact":"confirm"},
+    {"n":29,"topic":"tyndale","url":"https://www.loc.gov/loc/lcib/9707/tyndale.html","class":"institutional","family":"loc-tyndale","impact":"confirm"},
+    {"n":30,"topic":"tyndale","url":"https://www.cambridge.org/core/books/abs/cambridge-history-of-medieval-english-literature/englishing-the-bible-10661549/BDFB47E34323199AE2D8A8A10C6FF032","class":"scholarly","family":"cambridge-englishing","impact":"qualify"},
+
+    {"n":31,"topic":"stam","url":"https://history.state.gov/historicaldocuments/frus1934v03/ch8","class":"primary_official_diplomatic","family":"us-state-frus","impact":"deepen"},
+    {"n":32,"topic":"stam","url":"https://fromthevault.wheaton.edu/2019/12/03/stam-baby-safe-remembering-john-and-betty-stam/","class":"primary_university_archive","family":"wheaton-stam","impact":"confirm"},
+    {"n":33,"topic":"stam","url":"https://princetonseminaryarchives.libraryhost.com/repositories/2/top_containers/31097?page=1","class":"primary_university_archive","family":"princeton-stam","impact":"confirm"},
+    {"n":34,"topic":"stam","url":"https://www2.wheaton.edu/bgc/archives/bulletin/bu0303.htm","class":"institutional_archive","family":"wheaton-bulletin-0303","impact":"deepen"},
+    {"n":35,"topic":"stam","url":"https://www2.wheaton.edu/bgc/archives/bulletin/bu0509.htm","class":"institutional_archive","family":"wheaton-bulletin-0509","impact":"deepen"},
+
+    {"n":36,"topic":"sattler","url":"https://digitale-sammlungen.de/de/details/bsb00112324","class":"primary_1527_print","family":"bsb-schleitheim","impact":"confirm"},
+    {"n":37,"topic":"sattler","url":"https://germanhistorydocs.org/de/von-den-reformationen-bis-zum-dreissigjaehrigen-krieg-1500-1648/die-bekenntnischrift-der-taeuferbewegung-die-schleitheimer-artikel-1527","class":"primary_critical_text","family":"ghdi-schleitheim","impact":"confirm"},
+    {"n":38,"topic":"sattler","url":"https://capito.iterpubs.org/letters/1526/Letter_316.pdf","class":"primary_letter","family":"sattler-bucer-capito","impact":"deepen"},
+    {"n":39,"topic":"sattler","url":"https://gameo.org/index.php?title=Sattler%2C_Michael_%28d._1527%29","class":"institutional_source_criticism","family":"gameo-sattler","impact":"qualify"},
+    {"n":40,"topic":"sattler","url":"https://www.cambridge.org/core/journals/church-history/article/abs/revolution-and-the-swiss-brethren-the-case-of-michael-sattler/2F968C8752AB1A316A6EBE269CF310EC","class":"peer_reviewed","family":"cambridge-sattler","impact":"qualify"}
+  ]
+}
