@@ -31,11 +31,14 @@ Current Meta reference collection: https://www.postman.com/meta/instagram/docume
 5. `VCM_INSTAGRAM_ACCESS_TOKEN` is secret material. Never commit it, print it, place it in a manifest, issue, PR, log bundle or receipt.
 6. `VCM_INSTAGRAM_GRAPH_API_VERSION` is mandatory. The runtime does not guess or silently upgrade API versions.
 7. A stable `publication_key` is bound permanently to one account and one canonical manifest content hash.
-8. The durable ledger is updated before the irreversible `media_publish` request.
-9. `publish_requested`, `publish_unknown` and `published_unresolved` are fail-closed states. They prohibit another publish until reconciliation proves what happened.
-10. A network failure or 5xx around `media_publish` is treated as an ambiguous provider effect, not as permission to retry.
-11. A provider-confirmed `PUBLISHED` container without an exact media ID is recorded as `published_unresolved`; never infer or fabricate the media ID.
-12. Provider writes never occur in CI tests.
+8. Every provider-bound video/cover URL must use an exact hostname allowlisted by `VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS`.
+9. Before the first Meta provider POST for a logical publication, the runtime downloads the exact public media through an isolated unauthenticated client, refuses redirects, streams the bytes and verifies exact SHA-256, size and content type against the immutable manifest.
+10. The Meta Bearer token is sent only to the configured Graph host; it is never attached to public-media verification requests.
+11. The durable ledger is updated before the irreversible `media_publish` request.
+12. `publish_requested`, `publish_unknown` and `published_unresolved` are fail-closed states. They prohibit another publish until reconciliation proves what happened.
+13. A network failure or 5xx around `media_publish` is treated as an ambiguous provider effect, not as permission to retry.
+14. A provider-confirmed `PUBLISHED` container without an exact media ID is recorded as `published_unresolved`; never infer or fabricate the media ID.
+15. Provider writes never occur in CI tests.
 
 ## Runtime configuration
 
@@ -51,6 +54,14 @@ VCM_INSTAGRAM_ACCOUNT_ID=<exact-professional-account-id>
 VCM_INSTAGRAM_ACCOUNT_USERNAME=<optional-exact-username-assertion>
 VCM_INSTAGRAM_ACCESS_TOKEN=<secret>
 ```
+
+Required before the first provider write, using exact bare public hostnames only:
+
+```text
+VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS=media.example.net
+```
+
+For multiple trusted media hosts use the pydantic-settings tuple/list environment representation configured for the deployment rather than wildcard domains. Do not allowlist `localhost`, private IP literals, URL schemes or paths.
 
 Production kill switch, default false:
 
@@ -95,16 +106,24 @@ A live publish accepts one immutable JSON manifest. Example:
   "publication_key": "legendary-poet.2026-09-08.reel-001",
   "account_id": "<exact-professional-account-id>",
   "video_url": "https://media.example.net/immutable/reel-001.mp4",
+  "media_sha256": "sha256:<64-lowercase-hex>",
+  "media_size_bytes": 12345678,
+  "media_content_type": "video/mp4",
   "caption": "Reviewed caption",
   "share_to_feed": true,
   "cover_url": null,
+  "cover_sha256": null,
+  "cover_size_bytes": null,
+  "cover_content_type": null,
   "thumb_offset_ms": null
 }
 ```
 
-The URL must be HTTPS and publicly reachable by Meta; localhost and non-global IP targets are rejected. The publication key is an idempotency boundary, not a display label. Never reuse it for changed caption/media/account content.
+The URL must be HTTPS and publicly reachable by Meta; localhost and non-global IP targets are rejected. Its hostname must also match the explicit media-host allowlist. The publication key is an idempotency boundary, not a display label. Never reuse it for changed caption/media/account content.
 
-Before a canary, the URL must point at the reviewed final Reel bytes, not an editor preview, mutable local tunnel, temporary authenticated URL that may expire during Meta ingestion, or an unreviewed source master. The exact technical/media evidence remains upstream authority for those bytes.
+Before the first Graph POST, the publisher itself fetches the public object using a separate client with no Meta Authorization header. Redirects are refused. A non-2xx response, unexpected content type, wrong byte count or wrong SHA-256 fails closed before container creation. If `cover_url` is supplied, its SHA-256, byte size and content type are mandatory and receive the same verification.
+
+The public URL must therefore expose the **same immutable bytes** that were reviewed. Do not use an editor preview, mutable local tunnel, temporary authenticated URL that may expire during Meta ingestion, URL that redirects to another object, or an unreviewed source master.
 
 Meta's current Reels documentation should be re-read before a live rollout. At the time of this runbook sync the official Meta Postman collection documents MOV/MP4, H.264 or HEVC video, AAC audio, 23-60 FPS, maximum 1920 horizontal pixels, recommended 9:16, 3 seconds to 15 minutes duration, and a public server URL. Provider specifications can change; repository code deliberately does not freeze a speculative API version.
 
@@ -148,7 +167,8 @@ Before enabling writes, independently verify:
 - exact Instagram account ID and username;
 - current token and required permissions;
 - current publishing quota;
-- final public media URL and reviewed bytes;
+- final public media URL, exact allowed hostname and reviewed immutable bytes;
+- exact media SHA-256, byte size and content type recorded in the manifest;
 - final caption/cover/feed choice;
 - durable ledger state for the publication key;
 - no existing Instagram post for the same intended release;
@@ -167,7 +187,7 @@ Immediately restore the kill switch after the authorized operation:
 $env:VCM_INSTAGRAM_WRITES_ENABLED = "false"
 ```
 
-The publisher performs read-only exact-target preflight before writes, creates one Reel container if no container is already durably known, polls that exact container, persists `publish_requested`, then performs one `media_publish` request.
+The publisher performs read-only exact-target preflight, verifies the exact remote media bytes, creates one Reel container if no container is already durably known, polls that exact container, persists `publish_requested`, then performs one `media_publish` request.
 
 ## State machine
 
@@ -186,10 +206,12 @@ Failure/reconciliation states:
 
 ```text
 retryable_failure       creation/known pre-publish failure; no publish ambiguity
-terminal_failure        provider proves the operation cannot safely continue
+terminal_failure        provider/media evidence proves the operation cannot safely continue
 publish_unknown         publish request outcome is ambiguous
 published_unresolved    provider proves the container was published but exact media ID is not yet bound
 ```
+
+A media-verification transport/transient HTTP failure is retryable because no provider POST has occurred. Hash, size, content-type, redirect and trust-boundary mismatches are terminal for that immutable manifest/publication binding.
 
 `publish_requested` itself is treated as ambiguous after a restart. This is deliberate: a crash can occur after the durable state commit and at any point around the network call.
 
@@ -240,6 +262,7 @@ Retain provider-safe evidence without secrets:
 
 - exact repository/deployment SHA;
 - exact publication key and manifest content hash;
+- exact media URL hostname, SHA-256, byte size and content type;
 - exact account ID and reviewed username (never token);
 - container ID;
 - final provider media ID when known;
@@ -257,6 +280,10 @@ Tests use mocked HTTP only. CI must prove at minimum:
 
 - kill switch blocks before any provider request;
 - exact target mismatch fails closed;
+- untrusted media hosts fail closed before media fetch/provider POST;
+- media SHA-256 or size mismatch causes zero provider POSTs;
+- media redirects are refused before provider POST;
+- public-media verification never receives the Meta Authorization header;
 - successful container -> finished -> publish path persists IDs;
 - rerunning a published logical publication does not publish twice;
 - ambiguous publish transport outcome becomes `publish_unknown`;
