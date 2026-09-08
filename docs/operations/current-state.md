@@ -24,9 +24,9 @@ Only `main` is a supported repository code/runtime execution baseline.
 
 ### Current checkpoint
 
-The exact repository checkpoint used for this documentation sync is `main` `900c0ac0d3cd946ca7dad9f63f49aa5f83f5b690`, the merge of PR #560. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
+The exact repository checkpoint used for this documentation sync is `main` `68d654c6dc5beabdba0f476559f55badac4980f4`. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
 
-Material 2026-09-06 / 2026-09-07 hardening now present on `main` includes:
+Material 2026-09-06 / 2026-09-07 / 2026-09-08 hardening now present on `main` includes:
 
 - PRs #532, #536, #538, #540 and #544: provider-outcome/recovery hardening and retirement of consumed or ambiguous executable one-offs without weakening no-replay semantics.
 - PRs #548 and #551: LordChrist verified-quote production moved to durable `morning` / `evening` slots, and scheduled dispatch rejects slot-less envelopes before Telegram HTTP.
@@ -116,9 +116,9 @@ Canonical runbook: [`milovi-telegram-feed-control-plane.md`](milovi-telegram-fee
 
 ## Instagram / Legendary Poet and Lord God
 
-Issue #492 remains closed as the earlier provider-inert launch/content/factory implementation. PR #569 under issue #568 now owns the production-publishing implementation: explicit Instagram/Facebook login mode and Graph version, exact account preflight, default-off double write gate, durable SQL publication ledger, idempotent publication-key/content binding, crash-safe pre-publish intent, fail-closed ambiguous-result reconciliation, and exact public-media trust/integrity verification before the first provider POST.
+Issue #492 is closed as repository implementation complete for the earlier provider-inert launch/content/factory scope. PR #569 under issue #568 now owns the production-publishing implementation: explicit Instagram/Facebook login mode and Graph version, exact account preflight, default-off double write gate, durable SQL publication ledger, idempotent publication-key/content binding, compare-and-set mutation claims, fail-closed ambiguous-result reconciliation, and exact public-media trust/integrity verification before the first provider POST.
 
-The media boundary requires an exact trusted hostname plus immutable SHA-256, byte size and content type for the provider-bound Reel (and cover when used). Public media is fetched through an isolated unauthenticated client; redirects, hash/size/type mismatches and untrusted hosts fail closed before container creation. The Meta access token is not sent to the media host.
+The media boundary requires an exact trusted hostname plus immutable SHA-256, byte size and content type for the provider-bound Reel (and cover when used). Public media is fetched through an isolated unauthenticated client; redirects, hash/size/type mismatches and untrusted hosts fail closed before container creation. The Meta access token is not sent to the media host. Container creation and final publication each acquire a durable single-winner intent before the provider mutation; ambiguous creation/publish outcomes cannot be blindly replayed.
 
 This repository state still contains **no production Instagram account binding/token and no live canary evidence**. Provider publications remain **0**. Merge/green-CI completion of #569 means repository implementation complete; it does not mean provider rollout complete and does not authorize a live Reel. Live activation requires fresh exact target/credentials/permissions, a reviewed immutable manifest/media object, read-only preflight, current durable state and a separately authorized canary invocation.
 
