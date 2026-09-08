@@ -40,4 +40,10 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    bind = op.get_bind()
+    row_count = bind.execute(sa.text("SELECT COUNT(*) FROM instagram_publications")).scalar_one()
+    if row_count:
+        raise RuntimeError(
+            "Refusing to drop non-empty Instagram publication ledger; durable provider-write state must be preserved"
+        )
     op.drop_table("instagram_publications")
