@@ -133,12 +133,28 @@
       "source_page_url": "https://capito.iterpubs.org/letters/1526/Letter_316.pdf",
       "acquisition_page_url": "https://capito.iterpubs.org/letters/1526/Letter_316.pdf",
       "download_url": "https://capito.iterpubs.org/letters/1526/Letter_316.pdf",
-      "expected_upstream_sha1": "0000000000000000000000000000000000000000",
+      "expected_upstream_sha1": "bf8ea35a100d6f6f744f7092203840dbe8f5c659",
       "expected_source_mime": "application/pdf",
       "output_file_name": "sattler-v3-letter-316-source.pdf",
       "rights_basis": "Iter/Capito correspondence project provides the critical-edition PDF for scholarly use; production use is limited to a source-exhibit page with explicit attribution.",
       "attribution_text": "Iter / Electronic Capito Project, Letter 316: Michael Sattler to Martin Bucer and Wolfgang Capito, c. 1526-1527.",
       "acquisition_kind": "direct_pdf",
+      "provider_write_performed": false
+    },
+    {
+      "asset_id": "img-sattler-v3-schleitheim-bsb-00001",
+      "publication_id": "lordchrist-history-sattler-schleitheim-1527-v3",
+      "slot": "hero",
+      "source_id": "src-sattler-bsb-schleitheim-1527-v3",
+      "source_page_url": "https://digitale-sammlungen.de/de/details/bsb00112324",
+      "acquisition_page_url": "https://digitale-sammlungen.de/de/details/bsb00112324",
+      "download_url": "https://api.digitale-sammlungen.de/iiif/image/v2/bsb00112324_00001/full/full/0/default.jpg",
+      "expected_upstream_sha1": "0000000000000000000000000000000000000000",
+      "expected_source_mime": "image/jpeg",
+      "output_file_name": "sattler-v3-schleitheim-bsb-00001.jpg",
+      "rights_basis": "Bayerische Staatsbibliothek digital object bsb00112324 is marked Public Domain Mark 1.0; the image is acquired through the official BSB IIIF Image API.",
+      "attribution_text": "Bayerische Staatsbibliothek Digital, bsb00112324, Brüderliche Vereinigung etzlicher Kinder Gottes, 1527.",
+      "acquisition_kind": "direct_image",
       "provider_write_performed": false
     }
   ]
