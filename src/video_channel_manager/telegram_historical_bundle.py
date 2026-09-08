@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from datetime import date
 from pathlib import Path
@@ -28,7 +27,6 @@ from video_channel_manager.telegram_historical_workflow import (
 from video_channel_manager.telegram_research import sha256_json
 
 SHA_RE = r"^sha256:[0-9a-f]{64}$"
-GIT_BLOB_RE = r"^[0-9a-f]{40}$"
 
 
 class HistoricalSourceShardV1(BaseModel):
@@ -65,24 +63,6 @@ class HistoricalSourceShardRef(BaseModel):
     shard_id: str = Field(pattern=r"^history-sources-[a-z0-9][a-z0-9-]{3,80}$")
     path: str = Field(min_length=5, max_length=300)
     sha256: str = Field(pattern=SHA_RE)
-    source_count: int = Field(ge=1, le=25)
-
-
-class HistoricalSupplementalSourceShardRef(BaseModel):
-    """Exact Git-byte binding for cycle-local evidence added on top of a stable catalog.
-
-    The reusable base catalog stays immutable.  A later historical revision may
-    add a small set of newly reviewed primary documents without copying or
-    resealing every pre-existing source record.  Git blob identity binds the
-    exact supplemental bytes; the materializer then derives one combined
-    registry digest that is carried by the queue and re-proved at render time.
-    """
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    shard_id: str = Field(pattern=r"^history-sources-[a-z0-9][a-z0-9-]{3,80}$")
-    path: str = Field(min_length=5, max_length=300)
-    git_blob_sha: str = Field(pattern=GIT_BLOB_RE)
     source_count: int = Field(ge=1, le=25)
 
 
@@ -131,14 +111,7 @@ class HistoricalPostRefV1(BaseModel):
 
 
 class HistoricalEditorialBundleManifestV1(BaseModel):
-    """Small canonical cycle manifest; post bodies live in independent files.
-
-    ``source_registry_sha256`` continues to bind the reusable base catalog.
-    Optional cycle-local supplemental shards are independently byte-bound by
-    Git blob identity and are combined with that base registry only during
-    materialization.  This avoids mutable mega-catalogs while preserving a
-    single derived registry digest at the queue/render boundary.
-    """
+    """Small canonical cycle manifest; post bodies live in independent files."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -155,9 +128,6 @@ class HistoricalEditorialBundleManifestV1(BaseModel):
     source_catalog_path: str = Field(min_length=5, max_length=300)
     source_catalog_sha256: str = Field(pattern=SHA_RE)
     source_registry_sha256: str = Field(pattern=SHA_RE)
-    supplemental_source_shards: tuple[HistoricalSupplementalSourceShardRef, ...] = Field(
-        default=(), max_length=10
-    )
     theology_profile_path: str = Field(min_length=5, max_length=300)
     theology_profile_sha256: str = Field(pattern=SHA_RE)
     posts: tuple[HistoricalPostRefV1, ...] = Field(min_length=9, max_length=9)
@@ -170,12 +140,6 @@ class HistoricalEditorialBundleManifestV1(BaseModel):
             raise ValueError("historical bundle publication ids must be unique")
         if len({post.path for post in self.posts}) != 9:
             raise ValueError("historical bundle post paths must be unique")
-        supplemental_ids = [shard.shard_id for shard in self.supplemental_source_shards]
-        supplemental_paths = [shard.path for shard in self.supplemental_source_shards]
-        if len(supplemental_ids) != len(set(supplemental_ids)):
-            raise ValueError("historical supplemental source shard ids must be unique")
-        if len(supplemental_paths) != len(set(supplemental_paths)):
-            raise ValueError("historical supplemental source shard paths must be unique")
         return self
 
     @property
@@ -196,10 +160,6 @@ def _load_bound_json(path: Path, expected_sha256: str, *, label: str) -> object:
     if actual_sha256 != expected_sha256:
         raise ValueError(f"{label} digest mismatch")
     return payload
-
-
-def _git_blob_sha(data: bytes) -> str:
-    return hashlib.sha1(f"blob {len(data)}\0".encode() + data).hexdigest()  # noqa: S324
 
 
 def resolve_repo_path(repo_root: Path, value: str) -> Path:
@@ -275,41 +235,9 @@ def materialize_historical_bundle(
 
     catalog_path = resolve_repo_path(repo_root, manifest.source_catalog_path)
     _load_bound_json(catalog_path, manifest.source_catalog_sha256, label="historical source catalog")
-    catalog, base_registry = load_source_catalog(catalog_path, repo_root=repo_root)
-    if base_registry.digest != manifest.source_registry_sha256:
-        raise ValueError("historical bundle base source registry digest mismatch")
-
-    base_shard_ids = {shard.shard_id for shard in catalog.shards}
-    base_shard_paths = {shard.path for shard in catalog.shards}
-    supplemental_sources: list[HistoricalSource] = []
-    supplemental_dates: list[date] = []
-    for ref in manifest.supplemental_source_shards:
-        if ref.shard_id in base_shard_ids or ref.path in base_shard_paths:
-            raise ValueError("historical supplemental source shard collides with reusable base catalog")
-        shard_path = resolve_repo_path(repo_root, ref.path)
-        raw = shard_path.read_bytes()
-        actual_blob = _git_blob_sha(raw)
-        if actual_blob != ref.git_blob_sha:
-            raise ValueError(f"historical supplemental source shard Git blob mismatch: {ref.shard_id}")
-        shard = HistoricalSourceShardV1.model_validate(_load_json(shard_path))
-        if shard.shard_id != ref.shard_id:
-            raise ValueError(f"historical supplemental source shard identity mismatch: {ref.shard_id}")
-        if len(shard.sources) != ref.source_count:
-            raise ValueError(f"historical supplemental source shard count mismatch: {ref.shard_id}")
-        if shard.checked_on > manifest.verification.checked_on:
-            raise ValueError(f"historical supplemental source shard is newer than cycle verification: {ref.shard_id}")
-        supplemental_sources.extend(shard.sources)
-        supplemental_dates.append(shard.checked_on)
-
-    registry = base_registry
-    if supplemental_sources:
-        combined_checked_on = max((base_registry.checked_on, *supplemental_dates))
-        registry = HistoricalSourceRegistry(
-            schema_name="video-channel-manager.telegram-historical-source-registry",
-            schema_version=1,
-            checked_on=combined_checked_on,
-            sources=(*base_registry.sources, *supplemental_sources),
-        )
+    _catalog, registry = load_source_catalog(catalog_path, repo_root=repo_root)
+    if registry.digest != manifest.source_registry_sha256:
+        raise ValueError("historical bundle source registry digest mismatch")
 
     theology_path = resolve_repo_path(repo_root, manifest.theology_profile_path)
     theology_payload = _load_bound_json(
@@ -354,7 +282,7 @@ def materialize_historical_bundle(
     if queue.verification.reviewed_urls < len(registry.sources):
         raise ValueError("reviewed_urls cannot be lower than persisted source registry size")
     if queue.verification.checked_on < registry.checked_on:
-        raise ValueError("historical verification cannot predate source catalog or supplemental source shards")
+        raise ValueError("historical verification cannot predate source catalog")
     if queue.verification.checked_on < theology.checked_on:
         raise ValueError("historical verification cannot predate theology profile")
     for post in queue.posts:
@@ -460,7 +388,6 @@ __all__ = [
     "HistoricalSourceCatalogManifestV1",
     "HistoricalSourceShardRef",
     "HistoricalSourceShardV1",
-    "HistoricalSupplementalSourceShardRef",
     "build_next_scaffold_from_manifest",
     "load_historical_bundle_manifest",
     "load_source_catalog",
