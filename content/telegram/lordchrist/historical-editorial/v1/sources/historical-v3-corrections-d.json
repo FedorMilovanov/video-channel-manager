@@ -1,0 +1,56 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-source-shard",
+  "schema_version": 1,
+  "shard_id": "history-sources-historical-v3-corrections-d",
+  "checked_on": "2026-09-08",
+  "sources": [
+    {
+      "source_id": "src-sattler-bsb-schleitheim-1527-v3",
+      "title": "Brüderliche Vereinigung etlicher Kinder Gottes, seven articles, 1527",
+      "publisher": "Bayerische Staatsbibliothek Digital",
+      "url": "https://digitale-sammlungen.de/de/details/bsb00112324",
+      "evidence_type": "primary",
+      "grade": "A",
+      "evidence_role": "official_archive",
+      "checked_on": "2026-09-08",
+      "topic_tags": ["sattler", "schleitheim", "1527"],
+      "independence_group": "bsb-schleitheim-1527"
+    },
+    {
+      "source_id": "src-sattler-ghdi-schleitheim-v3",
+      "title": "Schleitheim Articles, 1527 source text",
+      "publisher": "German History in Documents and Images",
+      "url": "https://germanhistorydocs.org/de/von-den-reformationen-bis-zum-dreissigjaehrigen-krieg-1500-1648/die-bekenntnischrift-der-taeuferbewegung-die-schleitheimer-artikel-1527",
+      "evidence_type": "primary",
+      "grade": "A",
+      "evidence_role": "critical_edition",
+      "checked_on": "2026-09-08",
+      "topic_tags": ["sattler", "schleitheim", "confession"],
+      "independence_group": "ghdi-schleitheim-source"
+    },
+    {
+      "source_id": "src-sattler-bucer-capito-letter-v3",
+      "title": "Michael Sattler letter to Martin Bucer and Wolfgang Capito, c. 1526–1527",
+      "publisher": "Iter / Capito correspondence project",
+      "url": "https://capito.iterpubs.org/letters/1526/Letter_316.pdf",
+      "evidence_type": "primary",
+      "grade": "A",
+      "evidence_role": "critical_edition",
+      "checked_on": "2026-09-08",
+      "topic_tags": ["sattler", "bucer", "capito"],
+      "independence_group": "sattler-bucer-capito-letter"
+    },
+    {
+      "source_id": "src-sattler-gameo-trial-sources-v3",
+      "title": "Michael Sattler source-critical survey of trial records",
+      "publisher": "Global Anabaptist Mennonite Encyclopedia Online",
+      "url": "https://gameo.org/index.php?title=Sattler%2C_Michael_%28d._1527%29",
+      "evidence_type": "institutional",
+      "grade": "B+",
+      "evidence_role": "institutional_collection",
+      "checked_on": "2026-09-08",
+      "topic_tags": ["sattler", "trial", "source-criticism"],
+      "independence_group": "gameo-sattler-source-criticism"
+    }
+  ]
+}
