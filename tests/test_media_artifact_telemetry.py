@@ -97,8 +97,14 @@ def test_historical_v1_payload_without_telemetry_keeps_its_digest(tmp_path: Path
     raw_probe.pop("audio_bitrate_bps")
 
     parsed = MediaArtifactEvidence.model_validate(historical_payload)
+    report = parsed.probe.to_report()
 
     assert parsed.manifest_sha256 == evidence.manifest_sha256
+    assert report.path == str(media.resolve())
+    assert report.sha256 == sha256_file(media)
+    assert report.video_frame_rate_fps is None
+    assert report.video_bitrate_bps is None
+    assert report.audio_bitrate_bps is None
     validate_media_artifact_evidence(parsed)
 
 
