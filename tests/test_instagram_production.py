@@ -102,9 +102,7 @@ def _media_response(request: httpx.Request, content: bytes = MEDIA_BYTES) -> htt
 
 
 @contextmanager
-def _provider_client(
-    config: InstagramRuntimeConfig, handler: httpx.MockTransport
-) -> Iterator[InstagramProviderClient]:
+def _provider_client(config: InstagramRuntimeConfig, handler: httpx.MockTransport) -> Iterator[InstagramProviderClient]:
     with httpx.Client(transport=handler) as graph_client, httpx.Client(transport=handler) as media_client:
         yield InstagramProviderClient(config, client=graph_client, media_client=media_client)
 
