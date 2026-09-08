@@ -1,0 +1,35 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-production-ledger",
+  "schema_version": 1,
+  "release_id": "lordchrist-history-spurgeon-down-grade-1887-v3-media-live-v1",
+  "release_sha256": "sha256:f0f841c5886668ab62abddfc4aa5152694e950dea7b70bd3604b24f5c20f3df5",
+  "owning_issue": 561,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "cycle_id": "history-cycle-spurgeon-v3-media-canary-2026-09-08",
+  "canary_publication_id": "lordchrist-history-spurgeon-down-grade-1887-v3",
+  "canary_verified_at_utc": null,
+  "successor_cycle_binding": null,
+  "entries": {
+    "lordchrist-history-spurgeon-down-grade-1887-v3": {
+      "publication_id": "lordchrist-history-spurgeon-down-grade-1887-v3",
+      "sequence": 1,
+      "scheduled_date_moscow": "2026-09-08",
+      "state": "pending",
+      "provider_effect": "impossible",
+      "dispatch_mode": null,
+      "workflow_run_id": null,
+      "workflow_run_attempt": null,
+      "github_sha": null,
+      "document_sha256": null,
+      "intent_created_at_utc": null,
+      "published_at_utc": null,
+      "message_id": null,
+      "message_url": null,
+      "error": null
+    }
+  },
+  "canary_transport_verified_at_utc": null,
+  "canary_editorial_approved_at_utc": null,
+  "canary_editorial_approved_by": null
+}
