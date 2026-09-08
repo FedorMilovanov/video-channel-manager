@@ -1,0 +1,86 @@
+{
+  "sequence": 9,
+  "publication_id": "lordchrist-history-sattler-schleitheim-1527-v3",
+  "topic_kind": "martyrdom",
+  "title": "До Martyrs Mirror: Шлайтхайм 1527 года, письмо Саттлера и ранние следы его суда",
+  "lead": "Михаэля Саттлера легко превратить в героя поздней мартирологии: семь статей, арест, жестокий суд и смерть. V3 идёт в обратном порядке источников. Сначала — печатный корпус Schleitheim 1527 года, письмо Саттлера к Мартину Буцеру и Вольфгангу Капитону, ранние сведения о процессе; лишь затем — позднейшие рассказы о мученичестве. Такой порядок не уменьшает цену его верности. Он отделяет то, что можно показать документом XVI века, от деталей, которые приобрели окончательную форму в более поздней памяти анабаптистов.",
+  "sections": [
+    {
+      "section_id": "schleitheim",
+      "heading": "24 февраля 1527 года: семь статей говорят коллективным голосом",
+      "paragraphs": [
+        "Schleitheim Articles были приняты собранием Swiss Brethren 24 февраля 1527 года и касались крещения, отлучения, Вечери Господней, отделения, пастырей, меча и клятв. Сохранившийся ранний печатный корпус позволяет читать документ не через пересказ биографа, а как собственный голос движения.",
+        "Саттлеру традиционно приписывают ведущую роль в составлении текста. Но сама формулировка исповедания коллективна. Поэтому v3 избегает удобной подписи «Саттлер написал Шлайтхайм» без оговорки: более точно говорить о leading authorship attribution внутри решения собрания."
+      ]
+    },
+    {
+      "section_id": "letter",
+      "heading": "Письмо к Буцеру и Капитону показывает спор до мученического образа",
+      "paragraphs": [
+        "В письме к Martin Bucer и Wolfgang Capito Саттлер перечисляет богословские разногласия, касающиеся крещения, Вечери, церковной дисциплины и отношения к принуждению. Это особенно ценный документ, потому что он показывает Саттлера участником реальной полемики, а не только человеком, которого позже вспоминали через способ его смерти.",
+        "Из письма видно также, что раннеанабаптистский спор нельзя свести к одному вопросу о крещении. Речь шла о форме церкви, дисциплине, отношении к гражданской власти и о том, может ли религиозное убеждение навязываться силой."
+      ]
+    },
+    {
+      "section_id": "trial",
+      "heading": "Ранние источники процесса существуют — и они не тождественны поздней Martyrs Mirror",
+      "paragraphs": [
+        "Source-critical survey по Саттлеру отмечает несколько независимых ранних рассказов о процессе, официальный набор обвинений и материал предварительного допроса. Это важно: у историка есть возможность работать с несколькими ранними линиями передачи, а не только с нидерландской мартирологией XVII века.",
+        "Поэтому v3 сохраняет базовую хронологию ареста, суда и казни в мае 1527 года, но не импортирует автоматически каждую graphic detail из позднего рассказа. Чем страшнее эпизод, тем выше должна быть дисциплина доказательства, а не ниже."
+      ]
+    },
+    {
+      "section_id": "doctrine",
+      "heading": "Мученичество не делает семь статей непогрешимыми",
+      "paragraphs": [
+        "Schleitheim занимает сильную позицию по крещению исповедующих, церковной дисциплине и отделению общины; одновременно документ радикально ограничивает применение меча и участие христианина в формах принудительной власти. Эти положения должны описываться сначала как позиция авторов, а уже потом оцениваться редакционно.",
+        "Реформатская церковь может уважать мужество Саттлера и серьёзность ранних анабаптистов, не принимая автоматически их пацифистскую экклезиологию. Смерть за убеждение показывает силу убеждения; она не заменяет экзегезу."
+      ]
+    },
+    {
+      "section_id": "lesson",
+      "heading": "Лучшее уважение к мученику — не украшать его историю и не канонизировать его выводы",
+      "paragraphs": [
+        "История Саттлера требует двух видов честности одновременно. Исторической — не превращать позднюю память в современную стенограмму. Богословской — не превращать страдание в аргумент, который освобождает убеждения мученика от проверки Писанием.",
+        "Церкви действительно нужны ясные границы, дисциплина и исповедальная серьёзность. Но всякая человеческая формула остаётся под Божьим Словом. Именно поэтому можно учиться у серьёзности Шлайтхайма и одновременно спорить с отдельными его выводами."
+      ]
+    }
+  ],
+  "evidence_boundary": "V3 ставит на первое место первичные и ранние материалы: Schleitheim 1527 года, письмо Саттлера к Bucer и Capito и source-critical evidence о нескольких ранних рассказах процесса. Дата собрания 24 февраля 1527 года, семь статей, квалифицированная leading-role attribution Саттлеру и его смерть в мае 1527 года остаются в тексте. Графические подробности казни из значительно более поздней Martyrs Mirror не повышаются до contemporary evidence без независимой ранней привязки.",
+  "claims": [
+    {"claim_id":"claim-sattler-v3-schleitheim","claim_text":"Schleitheim Articles были приняты собранием Swiss Brethren 24 февраля 1527 года и содержат семь статей о крещении, отлучении, Вечере, отделении, пастырях, мече и клятвах.","claim_kind":"historical","certainty":"exact","voice":"historical_fact","source_ids":["src-sattler-bsb-schleitheim-1527-v3","src-schleitheim-oregon"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-sattler-v3-authorship","claim_text":"С Михаэлем Саттлером обоснованно связывают ведущую роль в формировании Schleitheim Articles, но сам документ говорит коллективным голосом собрания и не должен описываться как простой личный манифест Саттлера.","claim_kind":"historical","certainty":"estimate","voice":"historical_fact","source_ids":["src-sattler-ghdi-schleitheim-v3","src-sattler-cambridge"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
+    {"claim_id":"claim-sattler-v3-bucer-letter","claim_text":"Письмо Саттлера к Martin Bucer и Wolfgang Capito документирует ряд его разногласий по крещению, Вечере, дисциплине и религиозному принуждению ещё внутри раннего анабаптистского конфликта.","claim_kind":"historical","certainty":"exact","voice":"participant_position","source_ids":["src-sattler-bucer-capito-letter-v3","src-sattler-cambridge"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-sattler-v3-trial-sources","claim_text":"Историография процесса Саттлера располагает несколькими ранними независимыми рассказами и дополнительными официальными материалами, поэтому поздняя Martyrs Mirror не является единственной линией свидетельства о его суде и смерти.","claim_kind":"method","certainty":"exact","voice":"historical_fact","source_ids":["src-sattler-ghdi-schleitheim-v3","src-sattler-gameo-trial-sources-v3"],"direct_quote":false,"testimony_proximity":"near_contemporary","controversy_side":"none"},
+    {"claim_id":"claim-sattler-v3-pacifism","claim_text":"Schleitheim занимает явную позицию против применения меча внутри христианского ученичества и против соответствующих форм участия верующего в принудительной гражданской власти.","claim_kind":"historical","certainty":"exact","voice":"participant_position","source_ids":["src-sattler-bsb-schleitheim-1527-v3","src-schleitheim-oregon"],"direct_quote":false,"testimony_proximity":"contemporary","controversy_side":"none"},
+    {"claim_id":"claim-sattler-v3-editorial","claim_text":"Редакционный вывод: мученичество заслуживает уважения, но не делает богословие мученика непогрешимым; и исторические детали, и доктринальные выводы должны оставаться под проверкой первичных источников и Писания.","claim_kind":"interpretation","certainty":"interpretation","voice":"editorial_evaluation","source_ids":["src-sattler-cambridge"],"direct_quote":false,"testimony_proximity":"not_applicable","controversy_side":"none"}
+  ],
+  "prose_claim_bindings": {
+    "title_claim_ids":["claim-sattler-v3-schleitheim","claim-sattler-v3-bucer-letter","claim-sattler-v3-trial-sources"],
+    "lead_claim_ids":["claim-sattler-v3-schleitheim","claim-sattler-v3-bucer-letter","claim-sattler-v3-trial-sources"],
+    "evidence_boundary_claim_ids":["claim-sattler-v3-schleitheim","claim-sattler-v3-authorship","claim-sattler-v3-trial-sources","claim-sattler-v3-pacifism"],
+    "sections":[
+      {"section_id":"schleitheim","paragraph_claim_ids":[["claim-sattler-v3-schleitheim"],["claim-sattler-v3-authorship"]]},
+      {"section_id":"letter","paragraph_claim_ids":[["claim-sattler-v3-bucer-letter"],["claim-sattler-v3-bucer-letter"]]},
+      {"section_id":"trial","paragraph_claim_ids":[["claim-sattler-v3-trial-sources"],["claim-sattler-v3-trial-sources"]]},
+      {"section_id":"doctrine","paragraph_claim_ids":[["claim-sattler-v3-pacifism"],["claim-sattler-v3-pacifism","claim-sattler-v3-editorial"]]},
+      {"section_id":"lesson","paragraph_claim_ids":[["claim-sattler-v3-editorial"],["claim-sattler-v3-editorial"]]}
+    ]
+  },
+  "theology_review": {
+    "historical_description":"V3 приоритизирует ранний печатный Schleitheim corpus, письмо Саттлера и source-critical reconstruction процесса, а позднюю Martyrs Mirror оставляет отдельным transmission layer, не смешивая её с contemporary evidence.",
+    "participant_position":"Schleitheim описывает дисциплинированную церковь исповедующих учеников, практику believer's baptism и радикальное ограничение меча и принудительной власти; письмо Саттлера показывает эти разногласия в живой полемике.",
+    "editorial_evaluation":"Мужество мученика не отменяет необходимости проверять его богословие Писанием. Редакция уважает серьёзность ранних анабаптистов, но не считает их пацифистские и экклезиологические выводы обязательными только из-за цены, которую они за них заплатили.",
+    "scripture_refs":["Деян 17:11","2 Тим 3:16–17","1 Тим 3:15","Иуд 3"],
+    "alignment":"mixed",
+    "description_separated_from_evaluation":true,
+    "review_status":"accepted"
+  },
+  "images": [],
+  "release_offset_days": 19,
+  "opposing_primary_bound": false,
+  "no_opposing_primary_note": null,
+  "editorial_status": "ready",
+  "fact_check_status": "accepted",
+  "rights_status": "reviewed"
+}
