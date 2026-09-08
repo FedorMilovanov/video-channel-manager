@@ -5,6 +5,12 @@ document. It does not by itself approve reader-facing copy for recurring
 publication. Releases that opt into ``editorial_approval_required`` therefore
 record transport verification first and require a separate provider-free
 owner approval before the legacy activation timestamp is populated.
+
+The facade also owns the additive exact-bound media release extension. Legacy
+v1/v2 releases keep the frozen core path unchanged; a live-media release uses
+the same durable intent, writer, target proof, rich provider, outcome archive,
+and apply semantics, but re-proves its immutable HTTPS media bytes immediately
+before the one permitted ``sendRichMessage`` call.
 """
 
 from __future__ import annotations
@@ -16,6 +22,7 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Sequence
 
+from video_channel_manager import telegram_historical_media_release as _media
 from video_channel_manager import telegram_historical_production_core as _core
 from video_channel_manager.telegram_historical_production_core import (
     CHANNEL as CHANNEL,
@@ -31,13 +38,11 @@ from video_channel_manager.telegram_historical_production_core import (
     _guard_unresolved as _guard_unresolved,
     _validate_second_pass as _validate_second_pass,
     bind_successor_cycle as bind_successor_cycle,
-    build_document as build_document,
     coverage_status as coverage_status,
     decide_scheduled as decide_scheduled,
     guard_state as guard_state,
     release_digest as release_digest,
     run_preflight as run_preflight,
-    send as send,
     successor_cycle_is_bound as successor_cycle_is_bound,
 )
 from video_channel_manager.telegram_rich_provider import TelegramRichProviderOutcome
@@ -49,6 +54,8 @@ EDITORIAL_APPROVED_BY_FIELD = "canary_editorial_approved_by"
 _ORIGINAL_LOAD_RELEASE = _core.load_release
 _ORIGINAL_NEW_LEDGER = _core.new_ledger
 _ORIGINAL_LOAD_LEDGER = _core.load_ledger
+_ORIGINAL_BUILD_DOCUMENT = _core.build_document
+_ORIGINAL_SEND = _core.send
 _ORIGINAL_APPLY = _core.apply
 
 
@@ -73,8 +80,23 @@ def _expected_recurring_dates(start_value: str, count: int) -> tuple[str, ...]:
     return tuple(result)
 
 
+def _release_payload(path: Path, root: Path) -> dict[str, Any]:
+    resolved = path if path.is_absolute() else root / path
+    try:
+        value = json.loads(resolved.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"invalid historical production release {resolved}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise ValueError("historical production release must be a JSON object")
+    return value
+
+
 def load_release(path: Path, root: Path) -> tuple[dict[str, Any], Any, Any, Path, dict[str, Any]]:
-    """Load the core release and apply the explicit v2 out-of-band canary contract."""
+    """Load either the frozen core release or the additive exact-media release."""
+
+    candidate = _release_payload(path, root)
+    if _media.is_media_release_payload(candidate):
+        return _media.load_media_release(path, root)
 
     release, queue, registry, profile_path, aux = _ORIGINAL_LOAD_RELEASE(path, root)
     if not _editorial_approval_required(release):
@@ -104,8 +126,6 @@ def load_release(path: Path, root: Path) -> tuple[dict[str, Any], Any, Any, Path
     if recurring_dates and canary_slot_date >= recurring_dates[0]:
         raise ValueError("historical v2 out-of-band canary must precede the recurring cycle")
 
-    # Keep the durable ledger's canary slot a real date instead of a sentinel.
-    # The canary remains manual-only; recurring dates start with publication #2.
     effective_aux = dict(aux)
     effective_aux["planned_dates"] = (canary_slot_date, *recurring_dates)
     effective_aux["recurring_publication_ids"] = recurring_ids
@@ -113,12 +133,44 @@ def load_release(path: Path, root: Path) -> tuple[dict[str, Any], Any, Any, Path
     return release, queue, registry, profile_path, effective_aux
 
 
+def build_document(
+    root: Path,
+    release: dict[str, Any],
+    queue: Any,
+    registry: Any,
+    profile_path: Path,
+    target_binding_path: Path,
+    publication_id: str,
+) -> Any:
+    """Render exact-media releases without changing the frozen text-only core path."""
+
+    if _media.is_media_release_payload(release):
+        return _media.build_media_document(
+            root,
+            release,
+            queue,
+            registry,
+            profile_path,
+            target_binding_path,
+            publication_id,
+        )
+    return _ORIGINAL_BUILD_DOCUMENT(
+        root,
+        release,
+        queue,
+        registry,
+        profile_path,
+        target_binding_path,
+        publication_id,
+    )
+
+
 def new_ledger(
     release: dict[str, Any],
     queue: Any,
     planned_dates: tuple[str, ...],
 ) -> dict[str, Any]:
-    """Create the durable ledger, adding explicit two-phase canary state for v2."""
+    """Create the durable ledger, adding explicit two-phase canary state."""
 
     ledger = _ORIGINAL_NEW_LEDGER(release, queue, planned_dates)
     if _editorial_approval_required(release):
@@ -133,7 +185,7 @@ def _validate_editorial_gate(ledger: dict[str, Any], release: dict[str, Any]) ->
         return
     required = (TRANSPORT_VERIFIED_FIELD, EDITORIAL_APPROVED_FIELD, EDITORIAL_APPROVED_BY_FIELD)
     if any(field not in ledger for field in required):
-        raise ValueError("historical v2 ledger is missing explicit editorial canary gate fields")
+        raise ValueError("historical ledger is missing explicit editorial canary gate fields")
 
     transport_at = ledger.get(TRANSPORT_VERIFIED_FIELD)
     approved_at = ledger.get(EDITORIAL_APPROVED_FIELD)
@@ -179,6 +231,37 @@ def load_ledger(
     return ledger
 
 
+def send(
+    root: Path,
+    release: dict[str, Any],
+    queue: Any,
+    registry: Any,
+    profile_path: Path,
+    target_binding_path: Path,
+    intent: dict[str, Any],
+    target_path: Path,
+    outcome_path: Path,
+    *,
+    token: str,
+) -> TelegramRichProviderOutcome:
+    """Re-prove exact media bytes immediately before the existing one-shot provider mutation."""
+
+    if _media.is_media_release_payload(release):
+        _media.verify_transport_media_bytes(root, release)
+    return _ORIGINAL_SEND(
+        root,
+        release,
+        queue,
+        registry,
+        profile_path,
+        target_binding_path,
+        intent,
+        target_path,
+        outcome_path,
+        token=token,
+    )
+
+
 def apply(
     ledger: dict[str, Any],
     release: dict[str, Any],
@@ -213,7 +296,7 @@ def approve_canary(
     approved_by: str,
     now: datetime | None = None,
 ) -> dict[str, Any]:
-    """Provider-free owner approval that alone arms the recurring schedule."""
+    """Provider-free owner approval that alone arms a later recurring schedule."""
 
     if not _editorial_approval_required(release):
         raise ValueError("historical release does not require the explicit editorial approval gate")
@@ -236,19 +319,19 @@ def approve_canary(
     approved_at = (now or datetime.now(tz=UTC)).astimezone(UTC).isoformat()
     ledger[EDITORIAL_APPROVED_FIELD] = approved_at
     ledger[EDITORIAL_APPROVED_BY_FIELD] = approved_by.strip()
-    # Backward-compatible scheduler activation field. For v2 this timestamp
-    # means editorial approval, never raw transport success.
     ledger["canary_verified_at_utc"] = approved_at
     _validate_editorial_gate(ledger, release)
     return ledger
 
 
 def _install_core_overrides() -> None:
-    """Make the existing CLI use the two-phase gate without duplicating transport code."""
+    """Make the existing CLI use two-phase approval and exact-media routing."""
 
     _core.load_release = load_release
     _core.new_ledger = new_ledger
     _core.load_ledger = load_ledger
+    _core.build_document = build_document
+    _core.send = send
     _core.apply = apply
 
 
@@ -295,8 +378,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     return _core.main(arguments)
 
 
-# Install for callers that import this module and invoke the core orchestration
-# functions indirectly before calling ``main``.
 _install_core_overrides()
 
 
