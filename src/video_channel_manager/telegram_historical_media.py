@@ -35,12 +35,22 @@ _ALLOWED_DOWNLOAD_HOSTS = frozenset(
         "www.missiology.org.uk",
     }
 )
+_ALLOWED_DOWNLOAD_HOST_SUFFIXES = (".archive.org",)
 _MAX_SOURCE_BYTES = 50_000_000
 _ACQUISITION_USER_AGENT = (
     "video-channel-manager-historical-media/1.0 "
     "(+https://github.com/FedorMilovanov/video-channel-manager; contact via repository issues)"
 )
 _ACQUISITION_ACCEPT = "image/avif,image/webp,image/apng,image/*,application/pdf,*/*;q=0.8"
+
+
+def _download_host_allowed(host: str | None) -> bool:
+    if not host:
+        return False
+    normalized = host.casefold().rstrip(".")
+    if normalized in _ALLOWED_DOWNLOAD_HOSTS or normalized == "archive.org":
+        return True
+    return any(normalized.endswith(suffix) for suffix in _ALLOWED_DOWNLOAD_HOST_SUFFIXES)
 
 
 class HistoricalMediaAcquisitionAsset(BaseModel):
@@ -73,9 +83,8 @@ class HistoricalMediaAcquisitionAsset(BaseModel):
                 raise ValueError(f"{label} must be an absolute HTTPS URL")
             if parsed.username or parsed.password:
                 raise ValueError(f"{label} must not contain credentials")
-        download_host = urlparse(self.download_url).hostname
-        if download_host not in _ALLOWED_DOWNLOAD_HOSTS:
-            raise ValueError(f"historical media download host is not allowlisted: {download_host}")
+        if not _download_host_allowed(urlparse(self.download_url).hostname):
+            raise ValueError(f"historical media download host is not allowlisted: {urlparse(self.download_url).hostname}")
         if "/" in self.output_file_name or "\\" in self.output_file_name:
             raise ValueError("historical media output filename must be a basename")
         suffix_by_mime = {
@@ -83,8 +92,7 @@ class HistoricalMediaAcquisitionAsset(BaseModel):
             "image/png": ".png",
             "application/pdf": ".pdf",
         }
-        expected_suffix = suffix_by_mime[self.expected_source_mime]
-        if not self.output_file_name.casefold().endswith(expected_suffix):
+        if not self.output_file_name.casefold().endswith(suffix_by_mime[self.expected_source_mime]):
             raise ValueError("historical media output filename suffix differs from MIME")
         if self.acquisition_kind == "direct_image" and self.expected_source_mime == "application/pdf":
             raise ValueError("direct_image historical acquisition cannot declare PDF MIME")
@@ -204,21 +212,7 @@ def _image_probe(data: bytes) -> tuple[Literal["image/jpeg", "image/png"], int, 
         return "image/png", width, height
     if data.startswith(b"\xff\xd8"):
         offset = 2
-        sof_markers = {
-            0xC0,
-            0xC1,
-            0xC2,
-            0xC3,
-            0xC5,
-            0xC6,
-            0xC7,
-            0xC9,
-            0xCA,
-            0xCB,
-            0xCD,
-            0xCE,
-            0xCF,
-        }
+        sof_markers = {0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF}
         while offset + 4 <= len(data):
             if data[offset] != 0xFF:
                 offset += 1
@@ -317,8 +311,7 @@ def _validate_manifest_bindings(manifest: HistoricalMediaAcquisitionManifest, *,
         bound_source = source_by_id.get(asset.source_id)
         if bound_source is None:
             raise ValueError(f"historical media source is not bound to topic: {asset.source_id}")
-        source_url = bound_source.url
-        if source_url != asset.source_page_url:
+        if bound_source.url != asset.source_page_url:
             raise ValueError(f"historical media source page differs from bound source registry: {asset.source_id}")
 
         verification = load_historical_revision_git_blob_json(
@@ -351,9 +344,8 @@ def _fetch_asset(
     with client.stream("GET", asset.download_url) as response:
         response.raise_for_status()
         final_url = str(response.url)
-        final_host = urlparse(final_url).hostname
-        if final_host not in _ALLOWED_DOWNLOAD_HOSTS:
-            raise ValueError(f"historical media redirect escaped allowlist: {final_host}")
+        if not _download_host_allowed(urlparse(final_url).hostname):
+            raise ValueError(f"historical media redirect escaped allowlist: {urlparse(final_url).hostname}")
         content_length = response.headers.get("content-length")
         if content_length is not None:
             try:
@@ -419,10 +411,7 @@ def _build_acquisition_client() -> httpx.Client:
     return httpx.Client(
         follow_redirects=True,
         timeout=httpx.Timeout(30.0, connect=15.0),
-        headers={
-            "User-Agent": _ACQUISITION_USER_AGENT,
-            "Accept": _ACQUISITION_ACCEPT,
-        },
+        headers={"User-Agent": _ACQUISITION_USER_AGENT, "Accept": _ACQUISITION_ACCEPT},
     )
 
 
