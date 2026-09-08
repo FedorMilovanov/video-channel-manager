@@ -46,6 +46,7 @@ from video_channel_manager.exchange.instagram_video import (
     InstagramVideoIntakeArtifact,
     InstagramVideoRouteArtifact,
 )
+from video_channel_manager.instagram.production import InstagramPublishManifest
 from video_channel_manager.local_media import scan_local_media
 from video_channel_manager.persistence import Database
 from video_channel_manager.wave_engine.cli import schema_documents as wave_schema_documents
@@ -154,6 +155,7 @@ def schema_export(
         "instagram-launch-pack-v1.schema.json": InstagramLaunchPack.model_json_schema(),
         "instagram-launch-preview-v1.schema.json": InstagramLaunchPreviewArtifact.model_json_schema(),
         "instagram-analytics-snapshot-v1.schema.json": InstagramAnalyticsSnapshot.model_json_schema(),
+        "instagram-publish-manifest-v1.schema.json": InstagramPublishManifest.model_json_schema(),
         **wave_schema_documents(),
     }
     for filename, schema in documents.items():
