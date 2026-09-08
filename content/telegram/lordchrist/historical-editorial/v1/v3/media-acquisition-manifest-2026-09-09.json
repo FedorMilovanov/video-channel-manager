@@ -62,6 +62,22 @@
       "provider_write_performed": false
     },
     {
+      "asset_id": "img-spurgeon-cholera-v3-snow-map-archive",
+      "publication_id": "lordchrist-history-spurgeon-cholera-1854-v3",
+      "slot": "document",
+      "source_id": "src-john-snow-cholera-plan-v3",
+      "source_page_url": "https://wellcomecollection.org/works/dx4prdbj",
+      "acquisition_page_url": "https://commons.wikimedia.org/wiki/File:Plan_Showing_the_Ascertained_Deaths_from_Cholera_Wellcome_L0072142.jpg",
+      "download_url": "https://upload.wikimedia.org/wikipedia/commons/3/35/Plan_Showing_the_Ascertained_Deaths_from_Cholera_Wellcome_L0072142.jpg",
+      "expected_upstream_sha1": "5a00dd0ebcd089065449ac15633c07ddecd830c7",
+      "expected_source_mime": "image/jpeg",
+      "output_file_name": "spurgeon-cholera-v3-snow-map-wellcome-l0072142.jpg",
+      "rights_basis": "Exact Wellcome L0072142 reproduction of the bound dx4prdbj map work, licensed CC BY 4.0 on Wikimedia Commons; attribution and source link retained.",
+      "attribution_text": "Wellcome Collection, L0072142, Plan Showing the Ascertained Deaths from Cholera; CC BY 4.0.",
+      "acquisition_kind": "direct_image",
+      "provider_write_performed": false
+    },
+    {
       "asset_id": "img-carey-v3-enquiry-source-pdf",
       "publication_id": "lordchrist-history-carey-enquiry-missions-v3",
       "slot": "hero",
