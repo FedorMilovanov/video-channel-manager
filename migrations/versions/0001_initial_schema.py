@@ -8,6 +8,7 @@ Create Date: 2026-07-24
 from typing import Sequence, Union
 
 from alembic import op
+from sqlalchemy import Table
 
 revision: str = "0001"
 down_revision: Union[str, None] = None
@@ -32,7 +33,7 @@ _BASELINE_TABLE_NAMES = (
 )
 
 
-def _baseline_tables():
+def _baseline_tables() -> list[Table]:
     from video_channel_manager.persistence.models import Base
 
     return [Base.metadata.tables[name] for name in _BASELINE_TABLE_NAMES]
