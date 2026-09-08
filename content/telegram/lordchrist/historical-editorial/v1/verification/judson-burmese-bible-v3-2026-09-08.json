@@ -1,0 +1,37 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-topic-verification",
+  "schema_version": 1,
+  "verification_id": "judson-burmese-bible-v3-2026-09-08",
+  "checked_on": "2026-09-08",
+  "publication_id": "lordchrist-history-judson-burmese-bible-v3",
+  "reviewed_document_urls": 5,
+  "primary_document_urls": 3,
+  "institutional_or_scholarly_urls": 2,
+  "independent_evidence_groups_used_in_reader_claims": ["judson-letter-1817","tufs-ann-judson-1830","wayland-judson-letters","cambridge-judson-exegete-2019","cambridge-judson-burmese-2024"],
+  "source_shards": [
+    "content/telegram/lordchrist/historical-editorial/v1/sources/judson-human-v2.json",
+    "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-a.json"
+  ],
+  "method": "primary letters and captivity record cross-checked against two independent peer-reviewed translation histories",
+  "important_deltas": [
+    {"kind":"correct","finding":"Full translation completion is moved from the vague 1840 endpoint to 31 January 1834."},
+    {"kind":"deepen","finding":"19 December 1832 is retained as the completion of New Testament printing, not the completion of the whole Bible."},
+    {"kind":"deepen","finding":"24 October 1840 is identified as the last sheet of a major revised quarto edition, preserving the distinction between translation and revision."},
+    {"kind":"boundary","finding":"The post rejects a from-scratch solitary-genius framing and retains predecessor Catholic and Baptist language materials."}
+  ],
+  "unsupported_popular_claims": [
+    {"claim":"Judson first finished the entire Burmese Bible in 1840.","status":"corrected"},
+    {"claim":"Judson created Burmese Christian vocabulary without meaningful predecessors.","status":"rejected"},
+    {"claim":"Judson continuously translated the Bible in prison throughout the 1824–1826 captivity.","status":"excluded_without_specific_locator"}
+  ],
+  "claim_upgrade_conditions": [
+    {"claim":"any exact daily prison-translation activity","upgrade_requires":"dated Judson or Ann Judson document locating the translation work inside captivity"}
+  ],
+  "visual_plan": [
+    {"slot":"hero","source_id":"src-judson-brown-portrait","concept":"1846 Healy portrait of Adoniram Judson","state":"planned_unmaterialized","production_ready":false},
+    {"slot":"document","source_id":"src-judson-wayland-vol2-v3","concept":"page/facsimile carrying the 1834 completion or 1840 revised-edition letter","state":"planned_locator_required","production_ready":false}
+  ],
+  "direct_quote_policy": {"status":"no_reader_direct_quote_selected"},
+  "reader_copy_result": "accepted_for_v3_integration",
+  "provider_write_performed": false
+}
