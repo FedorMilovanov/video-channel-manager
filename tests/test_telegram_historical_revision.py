@@ -90,7 +90,9 @@ def test_revision_schema_requires_non_historical_disclosure_for_ai_editorial_art
     payload = _package_payload()
     media = payload["editorial_media"]
     assert isinstance(media, list) and isinstance(media[0], dict)
-    media[0]["disclosure"] = "Редакционная иллюстрация для исторической статьи без дополнительного указания статуса изображения."
+    media[0]["disclosure"] = (
+        "Редакционная иллюстрация для исторической статьи без дополнительного указания статуса изображения."
+    )
     path = _write_package(tmp_path, payload)
 
     with pytest.raises(ValueError, match="non-historical photography"):
