@@ -143,7 +143,9 @@ def _validate_media_record(root: Path, record: dict[str, Any], *, source_commit:
         raise ValueError(f"historical media local byte identity differs: {record['asset_id']}")
     if not (data.startswith(b"\xff\xd8\xff") and data.endswith(b"\xff\xd9")):
         raise ValueError(f"historical media is not an exact JPEG payload: {record['asset_id']}")
-    expected_url = f"https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/{source_commit}/{record['path']}"
+    expected_url = (
+        f"https://raw.githubusercontent.com/FedorMilovanov/video-channel-manager/{source_commit}/{record['path']}"
+    )
     if record.get("raw_url") != expected_url:
         raise ValueError(f"historical media raw URL is not immutable/exact: {record['asset_id']}")
     parsed = urlparse(str(record["raw_url"]))
@@ -440,7 +442,9 @@ def verify_transport_media_bytes(
         else:
             response = client.get(str(record["raw_url"]), headers={"Accept": str(record["mime"])})
         if response.status_code != 200:
-            raise ValueError(f"historical remote media HTTP status differs: {record['asset_id']}={response.status_code}")
+            raise ValueError(
+                f"historical remote media HTTP status differs: {record['asset_id']}={response.status_code}"
+            )
         _verify_remote_payload(
             record,
             content=response.content,
