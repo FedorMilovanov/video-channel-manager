@@ -19,6 +19,7 @@ from video_channel_manager.cli.compare import compare_app
 from video_channel_manager.cli.content import content_app
 from video_channel_manager.cli.instagram import instagram_app
 from video_channel_manager.cli.instagram_launch import launch_preview_command
+from video_channel_manager.cli.instagram_production import instagram_production_app
 from video_channel_manager.cli.resi import resi_app
 from video_channel_manager.cli.vk import vk_app
 from video_channel_manager.cli.youtube import youtube_app
@@ -45,6 +46,7 @@ from video_channel_manager.exchange.instagram_video import (
     InstagramVideoIntakeArtifact,
     InstagramVideoRouteArtifact,
 )
+from video_channel_manager.instagram.production import InstagramPublishManifest
 from video_channel_manager.local_media import scan_local_media
 from video_channel_manager.persistence import Database
 from video_channel_manager.wave_engine.cli import schema_documents as wave_schema_documents
@@ -65,6 +67,7 @@ app.add_typer(album_app, name="album")
 app.add_typer(compare_app, name="compare")
 app.add_typer(content_app, name="content")
 instagram_app.command("launch-preview")(launch_preview_command)
+instagram_app.add_typer(instagram_production_app, name="production")
 app.add_typer(instagram_app, name="instagram")
 app.add_typer(resi_app, name="resi")
 app.add_typer(youtube_app, name="youtube")
@@ -107,6 +110,12 @@ def doctor() -> None:
         "VK local accounts": "present" if vk_registry.is_file() else "none",
         "Safe mode": str(settings.safe_mode),
         "Destructive operations": "enabled" if settings.allow_destructive_operations else "disabled",
+        "Instagram provider": (
+            f"{settings.instagram_login_mode} via {settings.instagram_graph_host}"
+            if settings.instagram_graph_api_version
+            else "not configured"
+        ),
+        "Instagram writes": "enabled" if settings.instagram_writes_enabled else "disabled",
     }
     for name, value in checks.items():
         table.add_row(name, value)
@@ -146,6 +155,7 @@ def schema_export(
         "instagram-launch-pack-v1.schema.json": InstagramLaunchPack.model_json_schema(),
         "instagram-launch-preview-v1.schema.json": InstagramLaunchPreviewArtifact.model_json_schema(),
         "instagram-analytics-snapshot-v1.schema.json": InstagramAnalyticsSnapshot.model_json_schema(),
+        "instagram-publish-manifest-v1.schema.json": InstagramPublishManifest.model_json_schema(),
         **wave_schema_documents(),
     }
     for filename, schema in documents.items():
