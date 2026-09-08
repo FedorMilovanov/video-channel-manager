@@ -55,6 +55,9 @@ def _render_snapshot(snapshot: PublicationSnapshot) -> None:
     table.add_row("Media", snapshot.provider_media_id or "-")
     table.add_row("Provider status", snapshot.provider_status or "-")
     table.add_row("Attempts", str(snapshot.attempt_count))
+    table.add_row("Container requested", str(snapshot.container_requested_at or "-"))
+    table.add_row("Publish requested", str(snapshot.publish_requested_at or "-"))
+    table.add_row("Published", str(snapshot.published_at or "-"))
     table.add_row("Last error", snapshot.last_error_message or "-")
     console.print(table)
 
@@ -166,6 +169,13 @@ def reconcile(
             help="Exact provider media ID from independently verified provider evidence; never guessed",
         ),
     ] = None,
+    observed_container_id: Annotated[
+        str | None,
+        typer.Option(
+            "--container-id",
+            help="Exact provider container ID from independently verified evidence after ambiguous creation",
+        ),
+    ] = None,
 ) -> None:
     """Resolve an in-flight or ambiguous publication without blind republishing."""
 
@@ -173,7 +183,11 @@ def reconcile(
     database: Database | None = None
     try:
         service, database = _open_service()
-        snapshot = service.reconcile(publication_key, published_media_id=published_media_id)
+        snapshot = service.reconcile(
+            publication_key,
+            published_media_id=published_media_id,
+            observed_container_id=observed_container_id,
+        )
     except InstagramProductionError as exc:
         console.print(f"[red]Instagram reconciliation failed:[/red] {exc}")
         raise typer.Exit(code=2) from exc
