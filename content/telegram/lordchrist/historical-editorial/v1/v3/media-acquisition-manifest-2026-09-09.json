@@ -60,6 +60,22 @@
       "attribution_text": "National Library of Wales, Welsh Portrait Collection; C. H. Spurgeon portrait, 1870s; public-domain digitization via Wikimedia Commons.",
       "acquisition_kind": "direct_image",
       "provider_write_performed": false
+    },
+    {
+      "asset_id": "img-carey-v3-enquiry-source-pdf",
+      "publication_id": "lordchrist-history-carey-enquiry-missions-v3",
+      "slot": "hero",
+      "source_id": "src-carey-enquiry-1792",
+      "source_page_url": "https://careycenter.wmcarey.edu/enquiry/enquiry.html",
+      "acquisition_page_url": "https://careycenter.wmcarey.edu/enquiry/enquiry.html",
+      "download_url": "https://careycenter.wmcarey.edu/enquiry/anenquiry.pdf",
+      "expected_upstream_sha1": "0000000000000000000000000000000000000000",
+      "expected_source_mime": "application/pdf",
+      "output_file_name": "carey-v3-enquiry-1792-source.pdf",
+      "rights_basis": "1792 public-domain primary text, digitized and served by William Carey University as the source edition linked from its Carey Center Enquiry page.",
+      "attribution_text": "William Carey University, Carey Center; William Carey, An Enquiry, Leicester, 1792.",
+      "acquisition_kind": "direct_pdf",
+      "provider_write_performed": false
     }
   ]
 }
