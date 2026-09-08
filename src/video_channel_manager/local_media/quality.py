@@ -36,7 +36,6 @@ class MediaQualityReport:
         return asdict(self)
 
 
-
 def sha256_file(path: Path, *, chunk_size: int = 1024 * 1024) -> str:
     if chunk_size <= 0:
         raise ValueError("chunk_size must be positive")
@@ -47,7 +46,6 @@ def sha256_file(path: Path, *, chunk_size: int = 1024 * 1024) -> str:
     return f"sha256:{digest.hexdigest()}"
 
 
-
 def _positive_float(value: object) -> float | None:
     try:
         parsed = float(str(value))
@@ -56,14 +54,12 @@ def _positive_float(value: object) -> float | None:
     return parsed if parsed > 0 else None
 
 
-
 def _positive_int(value: object) -> int | None:
     try:
         parsed = int(str(value))
     except (TypeError, ValueError):
         return None
     return parsed if parsed > 0 else None
-
 
 
 def _positive_frame_rate(value: object) -> float | None:
@@ -77,10 +73,8 @@ def _positive_frame_rate(value: object) -> float | None:
     return round(parsed, 6) if parsed > 0 else None
 
 
-
 def _first_stream(streams: list[dict[str, Any]], codec_type: str) -> dict[str, Any] | None:
     return next((stream for stream in streams if stream.get("codec_type") == codec_type), None)
-
 
 
 def probe_media(
