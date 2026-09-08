@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from video_channel_manager.instagram.production import InstagramPublishManifest
 from video_channel_manager.local_media.artifact import MediaArtifactEvidence, validate_media_artifact_evidence
+
+InstagramContainer = Literal["mp4", "mov"]
+InstagramMediaContentType = Literal["video/mp4", "video/quicktime"]
+InstagramVideoCodec = Literal["h264", "hevc"]
 
 _MAX_FILE_SIZE_BYTES = 1_000_000_000
 _MAX_VIDEO_BITRATE_BPS = 25_000_000
@@ -19,8 +23,11 @@ _RECOMMENDED_AUDIO_BITRATE_BPS = 128_000
 _MAX_HORIZONTAL_PIXELS = 1_920
 _ALLOWED_VIDEO_CODECS = frozenset({"h264", "hevc"})
 _ALLOWED_AUDIO_CODECS = frozenset({"aac"})
-_ALLOWED_CONTAINER_SUFFIXES = {".mp4": "mp4", ".mov": "mov"}
-_CONTAINER_CONTENT_TYPES = {"mp4": "video/mp4", "mov": "video/quicktime"}
+_ALLOWED_CONTAINER_SUFFIXES: dict[str, InstagramContainer] = {".mp4": "mp4", ".mov": "mov"}
+_CONTAINER_CONTENT_TYPES: dict[InstagramContainer, InstagramMediaContentType] = {
+    "mp4": "video/mp4",
+    "mov": "video/quicktime",
+}
 _FFPROBE_CONTAINER_ALIASES = frozenset({"mp4", "mov"})
 
 
@@ -53,10 +60,10 @@ class InstagramReelArtifactBinding(BaseModel):
     media_manifest_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     media_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     media_size_bytes: int = Field(gt=0)
-    media_content_type: Literal["video/mp4", "video/quicktime"]
-    container: Literal["mp4", "mov"]
+    media_content_type: InstagramMediaContentType
+    container: InstagramContainer
     duration_seconds: float = Field(ge=_MIN_DURATION_SECONDS, le=_MAX_DURATION_SECONDS)
-    video_codec: Literal["h264", "hevc"]
+    video_codec: InstagramVideoCodec
     video_frame_rate_fps: float = Field(ge=_MIN_FRAME_RATE_FPS, le=_MAX_FRAME_RATE_FPS)
     video_bitrate_bps: int = Field(gt=0, le=_MAX_VIDEO_BITRATE_BPS)
     width: int = Field(gt=0, le=_MAX_HORIZONTAL_PIXELS)
@@ -147,6 +154,7 @@ def bind_instagram_reel_artifact(evidence: MediaArtifactEvidence) -> InstagramRe
     assert video_bitrate is not None
     assert audio_bitrate is not None
 
+    validated_video_codec = cast(InstagramVideoCodec, video_codec)
     advisories: list[str] = []
     if probe.width * 16 != probe.height * 9:
         advisories.append("aspect_ratio_not_exact_9_16")
@@ -160,7 +168,7 @@ def bind_instagram_reel_artifact(evidence: MediaArtifactEvidence) -> InstagramRe
         media_content_type=_CONTAINER_CONTENT_TYPES[container],
         container=container,
         duration_seconds=probe.duration_seconds,
-        video_codec=video_codec,
+        video_codec=validated_video_codec,
         video_frame_rate_fps=frame_rate,
         video_bitrate_bps=video_bitrate,
         width=probe.width,
