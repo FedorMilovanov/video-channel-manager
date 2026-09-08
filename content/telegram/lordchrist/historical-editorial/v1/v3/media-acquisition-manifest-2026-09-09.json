@@ -1,0 +1,65 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-media-acquisition-manifest",
+  "schema_version": 1,
+  "manifest_id": "historical-media-acquisition-lordchrist-v3-archive-phase1-2026-09-09",
+  "owning_issue": 561,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "state": "provider_inert",
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "batch_manifest": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/batch-manifest-2026-09-08.json",
+    "git_blob_sha": "15524e5a7eb421d6710f8a86dfb2b0173fd522b6"
+  },
+  "assets": [
+    {
+      "asset_id": "img-bunyan-v3-hero-archive",
+      "publication_id": "lordchrist-history-bunyan-bedford-prison-v3",
+      "slot": "hero",
+      "source_id": "src-image-bunyan-nlw",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Portrait_of_John_Bunyan_(4672796).jpg",
+      "acquisition_page_url": "https://commons.wikimedia.org/wiki/File:Portrait_of_John_Bunyan_(4672796).jpg",
+      "download_url": "https://upload.wikimedia.org/wikipedia/commons/5/5d/Portrait_of_John_Bunyan_%284672796%29.jpg",
+      "expected_upstream_sha1": "055db26dad0efeb0145ce3533219dd637dcc03c2",
+      "expected_source_mime": "image/jpeg",
+      "output_file_name": "bunyan-v3-hero-nlw-4672796.jpg",
+      "rights_basis": "National Library of Wales digitization; Wikimedia Commons records Public Domain Mark 1.0 and no known copyright restrictions.",
+      "attribution_text": "National Library of Wales, Welsh Portrait Collection; public-domain digitization via Wikimedia Commons.",
+      "acquisition_kind": "direct_image",
+      "provider_write_performed": false
+    },
+    {
+      "asset_id": "img-judson-v3-hero-archive",
+      "publication_id": "lordchrist-history-judson-burmese-bible-v3",
+      "slot": "hero",
+      "source_id": "src-judson-brown-portrait",
+      "source_page_url": "https://library.brown.edu/cds/portraits/display.php?idno=268",
+      "acquisition_page_url": "https://commons.wikimedia.org/wiki/File:Adoniram_Judson_1846.jpg",
+      "download_url": "https://upload.wikimedia.org/wikipedia/commons/5/5e/Adoniram_Judson_1846.jpg",
+      "expected_upstream_sha1": "ef61018d12a4aff63d563f8503e64815b6decdbf",
+      "expected_source_mime": "image/jpeg",
+      "output_file_name": "judson-v3-hero-brown-healy-1846.jpg",
+      "rights_basis": "Brown University portrait by George P. A. Healy (1846); Wikimedia Commons records the work as public domain with Public Domain Mark 1.0.",
+      "attribution_text": "Brown University Library; George P. A. Healy, Adoniram Judson, 1846; public-domain reproduction via Wikimedia Commons.",
+      "acquisition_kind": "direct_image",
+      "provider_write_performed": false
+    },
+    {
+      "asset_id": "img-spurgeon-cholera-v3-hero-archive",
+      "publication_id": "lordchrist-history-spurgeon-cholera-1854-v3",
+      "slot": "hero",
+      "source_id": "src-image-spurgeon-nlw",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Portrait_of_C._H._Spurgeon_(4671161).jpg",
+      "acquisition_page_url": "https://commons.wikimedia.org/wiki/File:Portrait_of_C._H._Spurgeon_(4671161).jpg",
+      "download_url": "https://upload.wikimedia.org/wikipedia/commons/c/c5/Portrait_of_C._H._Spurgeon_%284671161%29.jpg",
+      "expected_upstream_sha1": "ae50d4be4b1b28d92741626a8d58ac52c736ab9f",
+      "expected_source_mime": "image/jpeg",
+      "output_file_name": "spurgeon-cholera-v3-hero-nlw-4671161.jpg",
+      "rights_basis": "National Library of Wales digitization of an 1870s portrait; Wikimedia Commons records Public Domain Mark 1.0 and no known copyright restrictions.",
+      "attribution_text": "National Library of Wales, Welsh Portrait Collection; C. H. Spurgeon portrait, 1870s; public-domain digitization via Wikimedia Commons.",
+      "acquisition_kind": "direct_image",
+      "provider_write_performed": false
+    }
+  ]
+}
