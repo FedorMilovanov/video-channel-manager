@@ -153,7 +153,14 @@ def _resolve_repo_path(repo_root: Path, value: str | Path) -> Path:
     return resolved
 
 
-def _load_bound_json(repo_root: Path, ref: HistoricalRevisionGitBlobRef, *, label: str) -> object:
+def load_historical_revision_git_blob_json(
+    repo_root: Path,
+    ref: HistoricalRevisionGitBlobRef,
+    *,
+    label: str,
+) -> object:
+    """Load repository JSON only when its bytes still match the bound Git blob identity."""
+
     path = _resolve_repo_path(repo_root, ref.path)
     try:
         data = path.read_bytes()
@@ -168,7 +175,9 @@ def _load_bound_json(repo_root: Path, ref: HistoricalRevisionGitBlobRef, *, labe
         raise ValueError(f"invalid historical revision {label} JSON: {ref.path}") from exc
 
 
-def _validate_claim_evidence(post: HistoricalPost, sources: tuple[HistoricalSource, ...]) -> None:
+def validate_historical_claim_evidence(post: HistoricalPost, sources: tuple[HistoricalSource, ...]) -> None:
+    """Apply the shared claim/evidence contract used by revision and batch preflights."""
+
     by_id = {source.source_id: source for source in sources}
     known = set(by_id)
     for claim in post.claims:
@@ -191,24 +200,28 @@ def _validate_claim_evidence(post: HistoricalPost, sources: tuple[HistoricalSour
             raise ValueError("historical revision editorial evaluation requires Scripture references")
 
 
-def _validate_topic_verification(
+def validate_historical_topic_verification(
     value: object,
-    package: HistoricalRevisionPackageV1,
+    *,
+    publication_id: str,
+    checked_on: date,
     shard_paths: tuple[str, ...],
 ) -> None:
+    """Validate the common topic-verification envelope against exact bound inputs."""
+
     if not isinstance(value, dict):
         raise ValueError("historical topic verification must be an object")
     if (
         value.get("schema_name") != "video-channel-manager.telegram-historical-topic-verification"
         or value.get("schema_version") != 1
-        or value.get("publication_id") != package.publication_id
+        or value.get("publication_id") != publication_id
         or value.get("reader_copy_result") != "accepted_for_v3_integration"
         or value.get("provider_write_performed") is not False
     ):
-        raise ValueError("historical topic verification header differs from the revision package")
-    checked_on = date.fromisoformat(str(value.get("checked_on") or ""))
-    if checked_on > package.checked_on:
-        raise ValueError("historical topic verification is newer than the revision package")
+        raise ValueError("historical topic verification header differs from the bound publication")
+    verification_checked_on = date.fromisoformat(str(value.get("checked_on") or ""))
+    if verification_checked_on > checked_on:
+        raise ValueError("historical topic verification is newer than its binding authority")
     reviewed = value.get("reviewed_document_urls")
     primary = value.get("primary_document_urls")
     secondary = value.get("institutional_or_scholarly_urls")
@@ -241,9 +254,11 @@ def preflight_historical_revision(
     repo_root: Path = Path("."),
 ) -> HistoricalRevisionPreflightV1:
     package = load_historical_revision_package(package_path, repo_root=repo_root)
-    post = HistoricalPost.model_validate(_load_bound_json(repo_root, package.post, label="post"))
+    post = HistoricalPost.model_validate(
+        load_historical_revision_git_blob_json(repo_root, package.post, label="post")
+    )
     theology = TheologyProfile.model_validate(
-        _load_bound_json(repo_root, package.theology_profile, label="theology profile")
+        load_historical_revision_git_blob_json(repo_root, package.theology_profile, label="theology profile")
     )
     if post.publication_id != package.publication_id:
         raise ValueError("historical revision publication id differs from the bound post")
@@ -255,7 +270,9 @@ def preflight_historical_revision(
     sources: list[HistoricalSource] = []
     shard_paths: list[str] = []
     for index, ref in enumerate(package.source_shards, start=1):
-        shard = HistoricalSourceShardV1.model_validate(_load_bound_json(repo_root, ref, label=f"source shard {index}"))
+        shard = HistoricalSourceShardV1.model_validate(
+            load_historical_revision_git_blob_json(repo_root, ref, label=f"source shard {index}")
+        )
         if shard.checked_on > package.checked_on:
             raise ValueError(f"historical revision source shard is newer than the package: {ref.path}")
         shard_paths.append(ref.path)
@@ -268,10 +285,15 @@ def preflight_historical_revision(
     if len(source_urls) != len(set(source_urls)):
         raise ValueError("historical revision source URLs must be unique across bound shards")
     source_tuple = tuple(sources)
-    _validate_claim_evidence(post, source_tuple)
+    validate_historical_claim_evidence(post, source_tuple)
 
-    verification = _load_bound_json(repo_root, package.verification, label="topic verification")
-    _validate_topic_verification(verification, package, tuple(shard_paths))
+    verification = load_historical_revision_git_blob_json(repo_root, package.verification, label="topic verification")
+    validate_historical_topic_verification(
+        verification,
+        publication_id=package.publication_id,
+        checked_on=package.checked_on,
+        shard_paths=tuple(shard_paths),
+    )
 
     placement_targets = {"title", "lead", "evidence", "theology"}
     placement_targets.update(section.section_id for section in post.sections)

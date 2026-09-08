@@ -1,0 +1,206 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-v3-batch-manifest",
+  "schema_version": 1,
+  "batch_id": "historical-v3-batch-lordchrist-remaining-eight-2026-09-08",
+  "owning_issue": 561,
+  "checked_on": "2026-09-08",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "state": "provider_inert",
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "theology_profile": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/theology-profile.json",
+    "git_blob_sha": "06c879d9b55cfb37d8995dca6c3a2197522c850f"
+  },
+  "red_team": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/verification/historical-v3-red-team-2026-09-08.json",
+    "git_blob_sha": "f85ac83f42510d55fda2ef1e27f7e06bc2f3d822"
+  },
+  "topics": [
+    {
+      "publication_id": "lordchrist-history-bunyan-bedford-prison-v3",
+      "red_team_topic": "bunyan",
+      "post": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/bunyan-bedford-prison/post.json",
+        "git_blob_sha": "bc6c391298f226fc46ff0fc2746aa3dca98ce4ef"
+      },
+      "verification": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/verification/bunyan-bedford-prison-v3-2026-09-08.json",
+        "git_blob_sha": "c41f0b8482013127290990d3b4adfc039379b8e3"
+      },
+      "source_shards": [
+        {
+          "path": "content/telegram/lordchrist/historical-editorial/v1/sources/bunyan.json",
+          "git_blob_sha": "14fc172beb608963fda43cb43cb12f2aeacabba7"
+        },
+        {
+          "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-a.json",
+          "git_blob_sha": "9e6a45a880b3d61af87fbfcf54876dc84515b55a"
+        }
+      ],
+      "expected_visual_slots": 2
+    },
+    {
+      "publication_id": "lordchrist-history-judson-burmese-bible-v3",
+      "red_team_topic": "judson",
+      "post": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/judson-burmese-bible/post.json",
+        "git_blob_sha": "0d2d3ac51b2fa80c3b751e7ec345a24a10e7e65b"
+      },
+      "verification": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/verification/judson-burmese-bible-v3-2026-09-08.json",
+        "git_blob_sha": "dca4428b3e2d2d003d4301d159e210e8acafb0f1"
+      },
+      "source_shards": [
+        {
+          "path": "content/telegram/lordchrist/historical-editorial/v1/sources/judson-human-v2.json",
+          "git_blob_sha": "ce169d4e5121714dea6b63cbc7161cbc23272f4e"
+        },
+        {
+          "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-a.json",
+          "git_blob_sha": "9e6a45a880b3d61af87fbfcf54876dc84515b55a"
+        }
+      ],
+      "expected_visual_slots": 2
+    },
+    {
+      "publication_id": "lordchrist-history-spurgeon-cholera-1854-v3",
+      "red_team_topic": "spurgeon_cholera",
+      "post": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/spurgeon-cholera-1854/post.json",
+        "git_blob_sha": "f16dd99a1f00cd1c940bcd185acb08b5731559b8"
+      },
+      "verification": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/verification/spurgeon-cholera-v3-2026-09-08.json",
+        "git_blob_sha": "dfed16a426e94bb4e06c21358bcfbc9ddf6e9f12"
+      },
+      "source_shards": [
+        {
+          "path": "content/telegram/lordchrist/historical-editorial/v1/sources/spurgeon-history.json",
+          "git_blob_sha": "0d0c04f0d6965069629da80643dc1a0b7ae84e46"
+        },
+        {
+          "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-a.json",
+          "git_blob_sha": "9e6a45a880b3d61af87fbfcf54876dc84515b55a"
+        }
+      ],
+      "expected_visual_slots": 2
+    },
+    {
+      "publication_id": "lordchrist-history-carey-enquiry-missions-v3",
+      "red_team_topic": "carey",
+      "post": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/carey-enquiry-missions/post.json",
+        "git_blob_sha": "07afe5003e05d67fa5cd4e1d30b4a7fedf16970c"
+      },
+      "verification": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/verification/carey-enquiry-missions-v3-2026-09-08.json",
+        "git_blob_sha": "0c504999b2908fdc037c09c4df92b8553003fca0"
+      },
+      "source_shards": [
+        {
+          "path": "content/telegram/lordchrist/historical-editorial/v1/sources/baptist-mission.json",
+          "git_blob_sha": "a7df1c79468ddf6b371a158c99c19e0d4b7f08c2"
+        },
+        {
+          "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-b.json",
+          "git_blob_sha": "3bb191c201b03f84fc76dec4caf6ad3e2c1b5f87"
+        }
+      ],
+      "expected_visual_slots": 2
+    },
+    {
+      "publication_id": "lordchrist-history-fuller-gospel-worthy-v3",
+      "red_team_topic": "fuller",
+      "post": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/fuller-gospel-worthy/post.json",
+        "git_blob_sha": "829ad1f4ddaf19477b78354fdb2c3088affadd3f"
+      },
+      "verification": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/verification/fuller-gospel-worthy-v3-2026-09-08.json",
+        "git_blob_sha": "1e644d67c51feb5cf26959dfeeef17b91689d8e7"
+      },
+      "source_shards": [
+        {
+          "path": "content/telegram/lordchrist/historical-editorial/v1/sources/baptist-mission.json",
+          "git_blob_sha": "a7df1c79468ddf6b371a158c99c19e0d4b7f08c2"
+        },
+        {
+          "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-b.json",
+          "git_blob_sha": "3bb191c201b03f84fc76dec4caf6ad3e2c1b5f87"
+        }
+      ],
+      "expected_visual_slots": 2
+    },
+    {
+      "publication_id": "lordchrist-history-tyndale-new-testament-1526-v3",
+      "red_team_topic": "tyndale",
+      "post": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/tyndale-new-testament-1526/post.json",
+        "git_blob_sha": "7428f0d2398c5ffcbce61af1c37a1cae00c24840"
+      },
+      "verification": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/verification/tyndale-new-testament-1526-v3-2026-09-08.json",
+        "git_blob_sha": "f6780c84411a0418307fad87f390cfea0c71720e"
+      },
+      "source_shards": [
+        {
+          "path": "content/telegram/lordchrist/historical-editorial/v1/sources/tyndale.json",
+          "git_blob_sha": "aaf0904264f01d6c0d0bfa38fd17d83742b371ab"
+        },
+        {
+          "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-c.json",
+          "git_blob_sha": "c9e63ecfb4dd3efe229bebc01891b470e2cbd67b"
+        }
+      ],
+      "expected_visual_slots": 2
+    },
+    {
+      "publication_id": "lordchrist-history-stam-china-december-1934-v3",
+      "red_team_topic": "stam",
+      "post": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/stam-china-december-1934/post.json",
+        "git_blob_sha": "94072d6d3b05f6c04b87c4c6e09ecbe9204e6bad"
+      },
+      "verification": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/verification/stam-china-december-1934-v3-2026-09-08.json",
+        "git_blob_sha": "f82da8d40888b71c29d2299bb78c028fb228f952"
+      },
+      "source_shards": [
+        {
+          "path": "content/telegram/lordchrist/historical-editorial/v1/sources/stam-sattler.json",
+          "git_blob_sha": "beaaa44741c5f3028c4a4f05cb6bda730dd04f74"
+        },
+        {
+          "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-c.json",
+          "git_blob_sha": "c9e63ecfb4dd3efe229bebc01891b470e2cbd67b"
+        }
+      ],
+      "expected_visual_slots": 2
+    },
+    {
+      "publication_id": "lordchrist-history-sattler-schleitheim-1527-v3",
+      "red_team_topic": "sattler",
+      "post": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/sattler-schleitheim-1527/post.json",
+        "git_blob_sha": "8c191fa5391fe7f85e35a33edd1f1c3b178bd6fb"
+      },
+      "verification": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/verification/sattler-schleitheim-1527-v3-2026-09-08.json",
+        "git_blob_sha": "4a9fd47ef19dbb7536d9c707b0333de538ec07e8"
+      },
+      "source_shards": [
+        {
+          "path": "content/telegram/lordchrist/historical-editorial/v1/sources/stam-sattler.json",
+          "git_blob_sha": "beaaa44741c5f3028c4a4f05cb6bda730dd04f74"
+        },
+        {
+          "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-d.json",
+          "git_blob_sha": "2c45638f436cc8205ea48d85ebe3ed9510002bc7"
+        }
+      ],
+      "expected_visual_slots": 2
+    }
+  ]
+}
