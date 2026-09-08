@@ -172,6 +172,7 @@ def reconcile(
     observed_container_id: Annotated[
         str | None,
         typer.Option(
+            "--observed-container-id",
             "--container-id",
             help="Exact provider container ID from independently verified evidence after ambiguous creation",
         ),
