@@ -39,6 +39,8 @@ class HistoricalRevisionArchivalMediaV2(BaseModel):
         "primary_document_facsimile",
         "critical_edition_facsimile",
         "contextual_historical_map",
+        "institutional_catalog_record",
+        "official_document_excerpt",
     ]
     accepted_file: HistoricalRevisionGitBlobRef
     accepted_mime: Literal["image/jpeg", "image/png"]

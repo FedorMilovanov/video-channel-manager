@@ -1,0 +1,93 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-revision-package",
+  "schema_version": 2,
+  "revision_id": "historical-revision-tyndale-new-testament-1526-archival-v2-2026-09-09",
+  "owning_issue": 561,
+  "checked_on": "2026-09-09",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "publication_id": "lordchrist-history-tyndale-new-testament-1526-v3",
+  "state": "provider_inert",
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "post": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/tyndale-new-testament-1526/post.json",
+    "git_blob_sha": "7428f0d2398c5ffcbce61af1c37a1cae00c24840"
+  },
+  "verification": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/verification/tyndale-new-testament-1526-v3-2026-09-08.json",
+    "git_blob_sha": "f6780c84411a0418307fad87f390cfea0c71720e"
+  },
+  "theology_profile": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/theology-profile.json",
+    "git_blob_sha": "06c879d9b55cfb37d8995dca6c3a2197522c850f"
+  },
+  "source_shards": [
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/tyndale.json",
+      "git_blob_sha": "aaf0904264f01d6c0d0bfa38fd17d83742b371ab"
+    },
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-c.json",
+      "git_blob_sha": "c9e63ecfb4dd3efe229bebc01891b470e2cbd67b"
+    }
+  ],
+  "acquisition_manifest": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/media-acquisition-manifest-v2-2026-09-09.json",
+    "git_blob_sha": "daf1ca2fe768e5a3f970c0c18b204ac029d249cf"
+  },
+  "render_receipt": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/media-render-receipt-v2-2026-09-09.json",
+    "git_blob_sha": "d7598e41b08f4b9b87694a02fe0e82d1f13a6138"
+  },
+  "archival_media": [
+    {
+      "asset_id": "img-tyndale-v3-worms-source-pdf-exhibit",
+      "slot": "hero",
+      "source_id": "src-tyndale-worms-1526-v3",
+      "acquisition_asset_id": "img-tyndale-v3-worms-source-pdf",
+      "exhibit_kind": "critical_edition_facsimile",
+      "accepted_file": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/tyndale-new-testament-1526/media/tyndale-v3-worms-1526-page-44.png",
+        "git_blob_sha": "c61bdead7589ec93c908cdae22e01452521c177e"
+      },
+      "accepted_mime": "image/png",
+      "accepted_byte_length": 2293770,
+      "accepted_width": 1186,
+      "accepted_height": 1755,
+      "accepted_sha256": "sha256:05eb3258f96cc6d69208e15dbbdf4c1b77b24fa970b0baecd9a5f0bd73a34450",
+      "placement_after": "title",
+      "depicts": "Archival exhibit for src-tyndale-worms-1526-v3 derived from the exact pinned acquisition source.",
+      "purpose": "Show the exact bound historical document or a deterministic page rendering of that source.",
+      "claim_boundary": "The exhibit evidences only the bound source page and is not a reconstruction of events outside that document.",
+      "rights_basis": "City of Worms/Stadtarchiv scholarly PDF reproduces and identifies the 1526 Worms New Testament title page; use is limited to an attributed source exhibit.",
+      "attribution_text": "Stadtarchiv Worms / Der Wormsgau 30 (2013), article on Tyndale’s 1526 Worms New Testament and Peter Schöffer the Younger.",
+      "transport_ready": false,
+      "provider_write_performed": false
+    },
+    {
+      "asset_id": "img-tyndale-v3-prison-letter-demaus-pdf-exhibit",
+      "slot": "document",
+      "source_id": "src-tyndale-celm-prison-letter-1535-v3",
+      "acquisition_asset_id": "img-tyndale-v3-prison-letter-demaus-pdf",
+      "exhibit_kind": "critical_edition_facsimile",
+      "accepted_file": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/tyndale-new-testament-1526/media/tyndale-v3-prison-letter-1535-page-462.png",
+        "git_blob_sha": "955a55528f860ec9d2a057ff83a08c521f49e456"
+      },
+      "accepted_mime": "image/png",
+      "accepted_byte_length": 579695,
+      "accepted_width": 1428,
+      "accepted_height": 1445,
+      "accepted_sha256": "sha256:24ffc3c42f06dc6d021043b69dd08f001ad9b470d33684c542ed29f11366b023",
+      "placement_after": "evidence",
+      "depicts": "Archival exhibit for src-tyndale-celm-prison-letter-1535-v3 derived from the exact pinned acquisition source.",
+      "purpose": "Show the exact bound historical document or a deterministic page rendering of that source.",
+      "claim_boundary": "The exhibit evidences only the bound source page and is not a reconstruction of events outside that document.",
+      "rights_basis": "Public-domain 1886 Demaus/Lovett biography explicitly includes a facsimile of the Vilvorde letter; CELM independently identifies the autograph as TiW 6, Office fiscal, liasse 1330.",
+      "attribution_text": "Robert Demaus, William Tyndale: A Biography, revised by Richard Lovett, 1886; facsimile of the 1535 Vilvorde prison letter, cross-identified by CELM TiW 6.",
+      "transport_ready": false,
+      "provider_write_performed": false
+    }
+  ]
+}

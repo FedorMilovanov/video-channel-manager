@@ -1,0 +1,93 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-revision-package",
+  "schema_version": 2,
+  "revision_id": "historical-revision-sattler-schleitheim-1527-archival-v2-2026-09-09",
+  "owning_issue": 561,
+  "checked_on": "2026-09-09",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "publication_id": "lordchrist-history-sattler-schleitheim-1527-v3",
+  "state": "provider_inert",
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "post": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/sattler-schleitheim-1527/post.json",
+    "git_blob_sha": "8c191fa5391fe7f85e35a33edd1f1c3b178bd6fb"
+  },
+  "verification": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/verification/sattler-schleitheim-1527-v3-2026-09-08.json",
+    "git_blob_sha": "4a9fd47ef19dbb7536d9c707b0333de538ec07e8"
+  },
+  "theology_profile": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/theology-profile.json",
+    "git_blob_sha": "06c879d9b55cfb37d8995dca6c3a2197522c850f"
+  },
+  "source_shards": [
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/stam-sattler.json",
+      "git_blob_sha": "beaaa44741c5f3028c4a4f05cb6bda730dd04f74"
+    },
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-d.json",
+      "git_blob_sha": "2c45638f436cc8205ea48d85ebe3ed9510002bc7"
+    }
+  ],
+  "acquisition_manifest": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/media-acquisition-manifest-v2-2026-09-09.json",
+    "git_blob_sha": "daf1ca2fe768e5a3f970c0c18b204ac029d249cf"
+  },
+  "render_receipt": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/media-render-receipt-v2-2026-09-09.json",
+    "git_blob_sha": "d7598e41b08f4b9b87694a02fe0e82d1f13a6138"
+  },
+  "archival_media": [
+    {
+      "asset_id": "img-sattler-v3-schleitheim-bsb-00001-exhibit",
+      "slot": "hero",
+      "source_id": "src-sattler-bsb-schleitheim-1527-v3",
+      "acquisition_asset_id": "img-sattler-v3-schleitheim-bsb-00001",
+      "exhibit_kind": "primary_document_facsimile",
+      "accepted_file": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/sattler-schleitheim-1527/media/sattler-v3-schleitheim-bsb-00001.jpg",
+        "git_blob_sha": "e00ef2ab21cc188d2fcfed9ead61349b97ced2f5"
+      },
+      "accepted_mime": "image/jpeg",
+      "accepted_byte_length": 217423,
+      "accepted_width": 1273,
+      "accepted_height": 1707,
+      "accepted_sha256": "sha256:b39bba67b6c700a310e0406c0d384aee56c284ca315c3bb05c2721b8a41c8203",
+      "placement_after": "title",
+      "depicts": "Archival exhibit for src-sattler-bsb-schleitheim-1527-v3 derived from the exact pinned acquisition source.",
+      "purpose": "Show the exact bound historical document or a deterministic page rendering of that source.",
+      "claim_boundary": "The exhibit evidences only the bound source page and is not a reconstruction of events outside that document.",
+      "rights_basis": "Bayerische Staatsbibliothek digital object bsb00112324 is marked Public Domain Mark 1.0; the image is acquired through the official BSB IIIF Image API.",
+      "attribution_text": "Bayerische Staatsbibliothek Digital, bsb00112324, Brüderliche Vereinigung etzlicher Kinder Gottes, 1527.",
+      "transport_ready": false,
+      "provider_write_performed": false
+    },
+    {
+      "asset_id": "img-sattler-v3-letter316-source-pdf-exhibit",
+      "slot": "document",
+      "source_id": "src-sattler-bucer-capito-letter-v3",
+      "acquisition_asset_id": "img-sattler-v3-letter316-source-pdf",
+      "exhibit_kind": "critical_edition_facsimile",
+      "accepted_file": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/sattler-schleitheim-1527/media/sattler-v3-letter-316-page-1.png",
+        "git_blob_sha": "1bac64d9abc2a01cd777b63906bcd7b9654d8c02"
+      },
+      "accepted_mime": "image/png",
+      "accepted_byte_length": 138537,
+      "accepted_width": 1530,
+      "accepted_height": 1980,
+      "accepted_sha256": "sha256:6fa6c0d6237c67e1e0da74afe1cac0292fe2b5ce2344f9320f95239c521c7abd",
+      "placement_after": "evidence",
+      "depicts": "Archival exhibit for src-sattler-bucer-capito-letter-v3 derived from the exact pinned acquisition source.",
+      "purpose": "Show the exact bound historical document or a deterministic page rendering of that source.",
+      "claim_boundary": "The exhibit evidences only the bound source page and is not a reconstruction of events outside that document.",
+      "rights_basis": "Iter/Capito correspondence project provides the critical-edition PDF for scholarly use; production use is limited to a source-exhibit page with explicit attribution.",
+      "attribution_text": "Iter / Electronic Capito Project, Letter 316: Michael Sattler to Martin Bucer and Wolfgang Capito, c. 1526-1527.",
+      "transport_ready": false,
+      "provider_write_performed": false
+    }
+  ]
+}

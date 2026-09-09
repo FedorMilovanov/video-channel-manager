@@ -1,0 +1,19 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-revision-preflight",
+  "schema_version": 2,
+  "status": "PASS",
+  "revision_id": "historical-revision-judson-burmese-bible-archival-v2-2026-09-09",
+  "revision_sha256": "sha256:f3803769b1d65f1db0bc351c35fd8cd8d6cdbf0d55c49e21f67c55fe4a1c0c01",
+  "publication_id": "lordchrist-history-judson-burmese-bible-v3",
+  "source_count": 12,
+  "grade_a_count": 10,
+  "grade_bplus_count": 2,
+  "independent_evidence_groups": 12,
+  "claim_count": 5,
+  "direct_quote_count": 0,
+  "archival_media_count": 2,
+  "transport_ready_media_count": 0,
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "provider_write_performed": false
+}

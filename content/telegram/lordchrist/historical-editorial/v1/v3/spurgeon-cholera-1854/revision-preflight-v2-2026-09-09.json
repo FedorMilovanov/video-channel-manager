@@ -1,0 +1,19 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-revision-preflight",
+  "schema_version": 2,
+  "status": "PASS",
+  "revision_id": "historical-revision-spurgeon-cholera-1854-archival-v2-2026-09-09",
+  "revision_sha256": "sha256:19410f5e4ab1adcc21b313ce086ed27f0ab9b2e543efbf2bc7ff964dbd6564c9",
+  "publication_id": "lordchrist-history-spurgeon-cholera-1854-v3",
+  "source_count": 11,
+  "grade_a_count": 8,
+  "grade_bplus_count": 3,
+  "independent_evidence_groups": 11,
+  "claim_count": 5,
+  "direct_quote_count": 0,
+  "archival_media_count": 2,
+  "transport_ready_media_count": 0,
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "provider_write_performed": false
+}

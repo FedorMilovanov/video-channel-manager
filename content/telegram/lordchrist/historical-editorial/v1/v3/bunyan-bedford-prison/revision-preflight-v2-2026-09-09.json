@@ -1,0 +1,19 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-revision-preflight",
+  "schema_version": 2,
+  "status": "PASS",
+  "revision_id": "historical-revision-bunyan-bedford-prison-archival-v2-2026-09-09",
+  "revision_sha256": "sha256:ebde10b1891e16c09449d000e5b28b0c575983a28ae5187b97d7bfcadc9c5afb",
+  "publication_id": "lordchrist-history-bunyan-bedford-prison-v3",
+  "source_count": 12,
+  "grade_a_count": 9,
+  "grade_bplus_count": 3,
+  "independent_evidence_groups": 12,
+  "claim_count": 5,
+  "direct_quote_count": 0,
+  "archival_media_count": 2,
+  "transport_ready_media_count": 0,
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "provider_write_performed": false
+}
