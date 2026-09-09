@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/lordchrist-historical-media-acquisition.yml"
-      - "content/telegram/lordchrist/historical-editorial/v1/v3/media-acquisition-manifest-*.json"
+      - "content/telegram/lordchrist/historical-editorial/v1/v3/media-acquisition-*.json"
       - "src/video_channel_manager/telegram_historical_media.py"
       - "tests/test_telegram_historical_media.py"
   workflow_dispatch:
@@ -22,7 +22,7 @@ jobs:
     timeout-minutes: 15
     env:
       PYTHONPATH: src
-      MANIFEST_PATH: content/telegram/lordchrist/historical-editorial/v1/v3/media-acquisition-manifest-2026-09-09.json
+      MANIFEST_PATH: content/telegram/lordchrist/historical-editorial/v1/v3/media-acquisition-probes-2026-09-09.json
       OUTPUT_DIR: .runtime/lordchrist-historical-media-acquisition
     steps:
       - name: Check out exact event head
