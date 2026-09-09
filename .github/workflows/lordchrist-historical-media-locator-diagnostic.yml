@@ -12,154 +12,36 @@ permissions:
 jobs:
   diagnose:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 5
     steps:
-      - name: Probe final Bunyan and Taylor archival transports
+      - name: Pin Taylor Wellcome catalog JSON
         shell: bash
         run: |
-          set -u -o pipefail
+          set -euo pipefail
           UA='video-channel-manager-historical-media-locator/1.0 (+https://github.com/FedorMilovanov/video-channel-manager)'
-          BROWSER_UA='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/150.0 Safari/537.36'
+          url='https://api.wellcomecollection.org/catalogue/v2/works/d2cy4t36?include=identifiers,items,holdings,contributors,production,images'
           tmp="$(mktemp -d)"
           trap 'rm -rf "$tmp"' EXIT
-
-          echo '=== BEDFORD OFFICIAL 1667 GAOL LIST IMAGE ==='
-          bed_page='https://bedsarchives.bedford.gov.uk/ExploreYourArchive/Explore-the-World/Caribbean/TransportedtoBarbados.aspx'
-          bed_img='https://bedsarchives.bedford.gov.uk/images/ExploreYourArchive2013/1667%20Gaol%20List.JPG'
-          curl -fsSL --max-time 30 -A "$UA" "$bed_page" -o "$tmp/bed-page.html"
-          python - "$tmp/bed-page.html" <<'PY'
-          import re,sys
-          from pathlib import Path
-          text=Path(sys.argv[1]).read_text(encoding='utf-8',errors='replace')
-          for n,line in enumerate(text.splitlines(),1):
-              if any(k in line.casefold() for k in ('1667','gaol','bunyan','hsa1667/w/58','barbados')):
-                  print(f'BEDFORD_PAGE_L{n}', ' '.join(line.split())[:3000])
-          for src in re.findall(r'(?:src|href)=["\']([^"\']+)',text,re.I):
-              if '1667' in src or 'Gaol' in src:
-                  print('BEDFORD_PAGE_MEDIA',src)
-          PY
-          curl -fsSL --max-time 30 -A "$UA" -e "$bed_page" -D "$tmp/bed-img.headers" "$bed_img" -o "$tmp/bed-img"
-          head -40 "$tmp/bed-img.headers" | tr -d '\r'
-          file "$tmp/bed-img"
-          stat -c '%s bytes' "$tmp/bed-img"
-          sha1sum "$tmp/bed-img"
-          sha256sum "$tmp/bed-img"
-          python - "$tmp/bed-img" <<'PY'
-          import struct,sys
-          from pathlib import Path
-          data=Path(sys.argv[1]).read_bytes()
-          if data.startswith(b'\xff\xd8'):
-              offset=2
-              sof={0xC0,0xC1,0xC2,0xC3,0xC5,0xC6,0xC7,0xC9,0xCA,0xCB,0xCD,0xCE,0xCF}
-              while offset+4 <= len(data):
-                  if data[offset] != 0xff:
-                      offset += 1; continue
-                  while offset < len(data) and data[offset] == 0xff: offset += 1
-                  marker=data[offset]; offset += 1
-                  if marker in {0xd8,0xd9}: continue
-                  if marker == 0xda: break
-                  length=int.from_bytes(data[offset:offset+2],'big')
-                  if marker in sof:
-                      h=int.from_bytes(data[offset+3:offset+5],'big')
-                      w=int.from_bytes(data[offset+5:offset+7],'big')
-                      print('BEDFORD_IMAGE_DIMENSIONS',w,h)
-                      break
-                  offset += length
-          PY
-
-          echo '=== GOOGLE BOOKS API: EXACT TAYLOR 1786 ==='
-          python - <<'PY' > "$tmp/google-queries.txt"
-          import urllib.parse
-          queries=[
-              'intitle:"Observations on the Rev. Andrew Fuller late pamphlet" inauthor:"Dan Taylor"',
-              'intitle:"Observations on the Rev. Andrew Fuller’s late pamphlet" inauthor:"Dan Taylor"',
-              '"Observations on the Rev. Andrew Fuller" "Dan Taylor" 1786',
-              '"faith in Christ is the duty of all men" "Dan Taylor"',
-          ]
-          for q in queries:
-              print('https://www.googleapis.com/books/v1/volumes?'+urllib.parse.urlencode({'q':q,'maxResults':40,'printType':'books'}))
-          PY
-          qi=0
-          while IFS= read -r url; do
-            qi=$((qi+1)); echo "GOOGLE_API_QUERY[$qi] $url"
-            if curl -fsSL --max-time 30 -A "$BROWSER_UA" "$url" -o "$tmp/google-$qi.json"; then
-              python - "$tmp/google-$qi.json" <<'PY'
+          curl -fsSL --max-time 30 -A "$UA" -D "$tmp/headers" "$url" -o "$tmp/taylor.json"
+          head -40 "$tmp/headers" | tr -d '\r'
+          file "$tmp/taylor.json"
+          stat -c '%s bytes' "$tmp/taylor.json"
+          sha1sum "$tmp/taylor.json"
+          sha256sum "$tmp/taylor.json"
+          python - "$tmp/taylor.json" <<'PY'
           import json,sys
           v=json.load(open(sys.argv[1],encoding='utf-8'))
-          print('totalItems=',v.get('totalItems'))
-          for item in v.get('items',[]):
-              info=item.get('volumeInfo',{}); access=item.get('accessInfo',{})
-              print(json.dumps({
-                  'id':item.get('id'),'title':info.get('title'),'subtitle':info.get('subtitle'),
-                  'authors':info.get('authors'),'publishedDate':info.get('publishedDate'),
-                  'publisher':info.get('publisher'),'industryIdentifiers':info.get('industryIdentifiers'),
-                  'pageCount':info.get('pageCount'),'previewLink':info.get('previewLink'),
-                  'infoLink':info.get('infoLink'),'accessInfo':access,
-              },ensure_ascii=False))
+          assert v['id']=='d2cy4t36'
+          assert v['title'].startswith("Observations on the Rev. Andrew Fuller's late pamphlet")
+          assert any(event.get('dates') and event['dates'][0].get('label')=='1786' for event in v.get('production',[]))
+          assert any(c.get('agent',{}).get('label')=='Taylor, Dan 1738-1816.' for c in v.get('contributors',[]))
+          holdings=v.get('holdings',[])
+          assert holdings
+          location=holdings[0].get('location',{})
+          print('TAYLOR_WORK_ID',v['id'])
+          print('TAYLOR_TITLE',v['title'])
+          print('TAYLOR_PRODUCTION',json.dumps(v.get('production'),ensure_ascii=False))
+          print('TAYLOR_CONTRIBUTORS',json.dumps(v.get('contributors'),ensure_ascii=False))
+          print('TAYLOR_HOLDING_LOCATION',json.dumps(location,ensure_ascii=False))
+          print('TAYLOR_IMAGES',json.dumps(v.get('images'),ensure_ascii=False))
           PY
-            else
-              echo 'GOOGLE_API_FAILED'
-            fi
-          done < "$tmp/google-queries.txt"
-
-          echo '=== GOOGLE BOOKS HTML SEARCH ==='
-          python - <<'PY' > "$tmp/google-html-url"
-          import urllib.parse
-          q='"Observations on the Rev. Andrew Fuller" "Dan Taylor" 1786'
-          print('https://books.google.com/books?'+urllib.parse.urlencode({'q':q}))
-          PY
-          curl -L --max-time 30 -A "$BROWSER_UA" "$(cat "$tmp/google-html-url")" -o "$tmp/google-html.html" || true
-          python - "$tmp/google-html.html" <<'PY'
-          import re,sys,html
-          from pathlib import Path
-          p=Path(sys.argv[1])
-          if not p.exists(): raise SystemExit
-          text=p.read_text(encoding='utf-8',errors='ignore')
-          ids=[]
-          for pat in (r'[?&]id=([A-Za-z0-9_-]{6,})',r'/books/edition/[^/]+/([A-Za-z0-9_-]{6,})'):
-              ids += re.findall(pat,text)
-          print('GOOGLE_HTML_VOLUME_IDS',list(dict.fromkeys(ids))[:100])
-          for m in re.finditer(r'.{0,250}(?:Dan Taylor|Andrew Fuller|1786|Observations).{0,700}',text,re.I|re.S):
-              print('GOOGLE_HTML_CONTEXT',' '.join(html.unescape(m.group(0)).split())[:1800])
-          PY
-
-          echo '=== OPENLIBRARY EXACT SEARCH ==='
-          python - <<'PY' > "$tmp/ol-url"
-          import urllib.parse
-          params={'title':"Observations on the Rev. Andrew Fuller's late pamphlet",'author':'Dan Taylor','first_publish_year':'1786','limit':100}
-          print('https://openlibrary.org/search.json?'+urllib.parse.urlencode(params))
-          PY
-          if curl -fsSL --max-time 30 -A "$UA" "$(cat "$tmp/ol-url")" -o "$tmp/ol.json"; then
-            python - "$tmp/ol.json" <<'PY'
-          import json,sys
-          v=json.load(open(sys.argv[1],encoding='utf-8'))
-          print('OPENLIBRARY_NUM_FOUND',v.get('numFound'))
-          for d in v.get('docs',[]):
-              print(json.dumps({k:d.get(k) for k in ('key','title','author_name','first_publish_year','edition_key','ia','oclc','lccn','isbn','id_google')},ensure_ascii=False))
-          PY
-          fi
-
-          echo '=== READINGLENGTH EXACT TAYLOR RECORDS ==='
-          for id in BYKn8y6 BZvJc1q; do
-            url="https://www.readinglength.com/book/$id"
-            echo "READINGLENGTH_URL $url"
-            curl -L --max-time 30 -A "$BROWSER_UA" "$url" -o "$tmp/reading-$id.html" || true
-            file "$tmp/reading-$id.html" || true
-            wc -c "$tmp/reading-$id.html" || true
-            python - "$tmp/reading-$id.html" <<'PY'
-          import html,re,sys
-          from pathlib import Path
-          p=Path(sys.argv[1])
-          if not p.exists(): raise SystemExit
-          text=p.read_text(encoding='utf-8',errors='ignore')
-          for url in dict.fromkeys(re.findall(r'https?://[^\s"<>]+',text)):
-              if any(k in url.casefold() for k in ('google','openlibrary','archive','hathi','worldcat','isbn','books')):
-                  print('READING_EXTERNAL',html.unescape(url)[:2200])
-          for token in ('isbn','google','openlibrary','archive.org','worldcat','1786','Dan Taylor','Andrew Fuller'):
-              print('READING_TOKEN',token,text.casefold().count(token.casefold()))
-          for m in re.finditer(r'.{0,300}(?:Dan Taylor|Andrew Fuller|1786|ISBN|Google Books|Open Library|Internet Archive).{0,900}',text,re.I|re.S):
-              print('READING_CONTEXT',' '.join(html.unescape(m.group(0)).split())[:2200])
-          PY
-          done
-
-          echo 'diagnostic completed'
