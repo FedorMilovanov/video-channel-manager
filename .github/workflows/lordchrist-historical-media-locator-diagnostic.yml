@@ -1,0 +1,80 @@
+name: LordChrist historical media locator diagnostic
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/lordchrist-historical-media-locator-diagnostic.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Inspect remaining public archival locators
+        shell: bash
+        run: |
+          set -euo pipefail
+          UA='video-channel-manager-historical-media-locator/1.0 (+https://github.com/FedorMilovanov/video-channel-manager)'
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+
+          echo '=== BEDFORD MAIN ==='
+          curl -fsSL --max-time 25 -A "$UA" 'https://bedsarchivescat.bedford.gov.uk/Details/archive/110061210' -o "$tmp/bed-main.html"
+          grep -Eo 'https?://[^"'"' <>]+' "$tmp/bed-main.html" | grep -Ei '110669209|110669210|Slide65|Slide66|image|media|file|download' | head -80 || true
+          grep -Ein '110669209|110669210|Slide65|Slide66|image|media|file|download' "$tmp/bed-main.html" | head -80 || true
+          for id in 110669209 110669210; do
+            echo "=== BEDFORD CHILD $id ==="
+            curl -fsSL --max-time 25 -A "$UA" "https://bedsarchivescat.bedford.gov.uk/Details/archive/$id" -o "$tmp/bed-$id.html" || true
+            grep -Eo 'https?://[^"'"' <>]+' "$tmp/bed-$id.html" | grep -Ei 'image|media|file|download|jpg|jpeg|png|tif|iiif' | head -80 || true
+            grep -Ein 'image|media|file|download|jpg|jpeg|png|tif|iiif|src=|href=' "$tmp/bed-$id.html" | head -100 || true
+          done
+
+          echo '=== GOOGLE BOOKS FULLER VOLUME API ==='
+          curl -fsSL --max-time 25 -A "$UA" 'https://www.googleapis.com/books/v1/volumes/UfRhAAAAcAAJ' -o "$tmp/fuller-volume.json"
+          python - <<'PY' "$tmp/fuller-volume.json"
+          import json, sys
+          v=json.load(open(sys.argv[1], encoding='utf-8'))
+          print(json.dumps({
+            'id':v.get('id'),
+            'volumeInfo':{k:v.get('volumeInfo',{}).get(k) for k in ('title','publishedDate','pageCount')},
+            'accessInfo':v.get('accessInfo',{}),
+          }, ensure_ascii=False, indent=2))
+          PY
+
+          echo '=== GOOGLE BOOKS TAYLOR SEARCH API ==='
+          python - <<'PY' > "$tmp/taylor-query.txt"
+          import urllib.parse
+          q='intitle:"Observations on the Rev. Andrew Fuller’s late pamphlet" inauthor:"Dan Taylor"'
+          print('https://www.googleapis.com/books/v1/volumes?q='+urllib.parse.quote(q)+'&maxResults=10')
+          PY
+          curl -fsSL --max-time 25 -A "$UA" "$(cat "$tmp/taylor-query.txt")" -o "$tmp/taylor-search.json"
+          python - <<'PY' "$tmp/taylor-search.json"
+          import json, sys
+          v=json.load(open(sys.argv[1], encoding='utf-8'))
+          for item in v.get('items',[]):
+            info=item.get('volumeInfo',{}); access=item.get('accessInfo',{})
+            print(json.dumps({'id':item.get('id'),'title':info.get('title'),'authors':info.get('authors'),'publishedDate':info.get('publishedDate'),'accessInfo':access}, ensure_ascii=False))
+          PY
+
+          echo '=== GOETTINGEN TAYLOR FULLTEXT ==='
+          curl -fsSL --max-time 25 -A "$UA" 'https://nl.sub.uni-goettingen.de/id/0220002400?origin=/collection/nlh-ecc' -o "$tmp/taylor.html" || true
+          grep -Eo 'https?://[^"'"' <>]+' "$tmp/taylor.html" | grep -Ei 'pdf|download|image|viewer|digit|0220002400' | head -100 || true
+          grep -Ein 'pdf|download|image|viewer|digit|0220002400' "$tmp/taylor.html" | head -100 || true
+
+          echo '=== OFFICIAL FRUS EPUB ==='
+          curl -fsSL --max-time 25 -A "$UA" 'https://static.history.state.gov/frus/frus1934v03/ebook/frus1934v03.epub' -o "$tmp/frus.epub"
+          sha1sum "$tmp/frus.epub"
+          sha256sum "$tmp/frus.epub"
+          stat -c '%s bytes' "$tmp/frus.epub"
+          python - <<'PY' "$tmp/frus.epub"
+          import sys, zipfile
+          p=sys.argv[1]
+          with zipfile.ZipFile(p) as z:
+            print('mimetype=', z.read('mimetype').decode('ascii'))
+            names=[n for n in z.namelist() if 'd384' in n.lower() or '481' in n.lower()]
+            print('candidate entries=', names[:50])
+          PY
