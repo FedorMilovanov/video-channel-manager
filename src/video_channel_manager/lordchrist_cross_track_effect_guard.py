@@ -16,6 +16,7 @@ from video_channel_manager.telegram_state import load_queue as load_legacy_queue
 
 SUCCESSOR_QUEUE_DIGEST = "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873"
 SUCCESSOR_LEDGER_FILENAME = "successor-publication-ledger.json"
+SUCCESSOR_ENTRY_COUNT = 60
 
 
 class EffectEntry(Protocol):
@@ -120,8 +121,8 @@ def load_optional_successor_ledger(
     """Load the exact sealed-successor state as a channel-wide effect track.
 
     The ledger may legitimately be absent before predecessor completion. Once it
-    exists, an unknown queue identity is a hard failure rather than a reason to
-    ignore the state.
+    exists, an unknown or partial queue identity is a hard failure rather than a
+    reason to ignore state that may carry a provider effect.
     """
 
     if not path.exists():
@@ -136,6 +137,10 @@ def load_optional_successor_ledger(
         raise ValueError("successor ledger channel differs from canonical Lordchrist profile")
     if ledger.queue_digest != SUCCESSOR_QUEUE_DIGEST:
         raise ValueError("successor ledger queue digest differs from the sealed reviewed successor release")
+    if len(ledger.entries) != SUCCESSOR_ENTRY_COUNT or any(
+        not publication_id.startswith("lordchrist-successor-") for publication_id in ledger.entries
+    ):
+        raise ValueError("successor ledger coverage differs from the sealed reviewed successor release")
     return ledger
 
 
