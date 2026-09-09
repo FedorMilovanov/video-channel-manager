@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Protocol
@@ -114,6 +115,19 @@ def require_no_cross_track_unresolved_effects(
     legacy_ledger_path: Path,
     research_ledger_path: Path,
 ) -> dict[str, object]:
+    # After the quote handoff the active --queue path is a generated successor
+    # runtime artifact. The channel-wide effect barrier must still inspect the
+    # immutable predecessor ledger as its legacy track; explicit workflow-bound
+    # paths keep that identity stable and fail closed if only one is supplied.
+    predecessor_queue_raw = os.environ.get("LORDCHRIST_PREDECESSOR_QUEUE_PATH", "").strip()
+    predecessor_ledger_raw = os.environ.get("LORDCHRIST_PREDECESSOR_LEDGER_PATH", "").strip()
+    if bool(predecessor_queue_raw) != bool(predecessor_ledger_raw):
+        raise ValueError("LordChrist predecessor guard paths must be configured together")
+    if predecessor_queue_raw:
+        legacy_queue_path = Path(predecessor_queue_raw)
+        legacy_ledger_path = Path(predecessor_ledger_raw)
+        research_ledger_path = legacy_ledger_path.parent / "research-v2/publication-ledger.json"
+
     profile = load_channel_profile(profile_path)
     legacy_queue = load_legacy_queue(legacy_queue_path)
     legacy_ledger = load_legacy_ledger(legacy_ledger_path, legacy_queue)
