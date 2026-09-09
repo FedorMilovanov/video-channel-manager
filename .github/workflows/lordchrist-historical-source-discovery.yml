@@ -1,0 +1,92 @@
+name: LordChrist historical source discovery
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/lordchrist-historical-source-discovery.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Inspect public institutional locators
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          import re
+          import urllib.request
+          from html import unescape
+          from urllib.parse import urljoin
+
+          UA = "video-channel-manager-historical-source-discovery/1.0"
+
+          def get(url: str) -> tuple[str, dict[str, str]]:
+              req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "*/*"})
+              with urllib.request.urlopen(req, timeout=25) as response:
+                  body = response.read(8_000_000)
+                  headers = {k.lower(): v for k, v in response.headers.items()}
+                  print(f"FETCH {url} -> {response.status} {headers.get('content-type')} bytes={len(body)} final={response.url}")
+                  return body.decode("utf-8", errors="replace"), headers
+
+          def links(base: str, text: str, needles: tuple[str, ...]) -> None:
+              found: set[str] = set()
+              for match in re.finditer(r'''(?:href|src)\s*=\s*["']([^"']+)["']''', text, re.I):
+                  candidate = unescape(match.group(1))
+                  if any(needle.casefold() in candidate.casefold() for needle in needles):
+                      found.add(urljoin(base, candidate))
+              for candidate in sorted(found):
+                  print("CANDIDATE", candidate)
+
+          beds = "https://bedsarchivescat.bedford.gov.uk/Details/archive/110061210"
+          try:
+              text, _ = get(beds)
+              links(beds, text, ("Slide65", "Slide66", "110061210", "image", "media"))
+              for line in text.splitlines():
+                  if "Slide65" in line or "Slide66" in line:
+                      print("BEDS_LINE", re.sub(r"\s+", " ", line)[:2000])
+          except Exception as exc:
+              print("BEDS_ERROR", type(exc).__name__, str(exc))
+
+          for work_id in ("ev8wpye6", "d2cy4t36"):
+              url = f"https://api.wellcomecollection.org/catalogue/v2/works/{work_id}?include=items,identifiers,images"
+              try:
+                  text, _ = get(url)
+                  value = json.loads(text)
+                  print("WELLCOME", work_id, json.dumps(value, ensure_ascii=False)[:18000])
+              except Exception as exc:
+                  print("WELLCOME_ERROR", work_id, type(exc).__name__, str(exc))
+
+          for url in (
+              "https://history.state.gov/historicaldocuments/frus1934v03/d384",
+              "https://history.state.gov/historicaldocuments/frus1934v03/pg_482",
+              "https://history.state.gov/historicaldocuments/frus1934v03",
+          ):
+              try:
+                  text, _ = get(url)
+                  links(url, text, ("482", "image", "jpg", "jpeg", "png", "epub", "download", "facsimile"))
+                  for line in text.splitlines():
+                      low = line.casefold()
+                      if "pg_482" in low or "epub" in low or "page image" in low:
+                          print("FRUS_LINE", re.sub(r"\s+", " ", line)[:2000])
+              except Exception as exc:
+                  print("FRUS_ERROR", url, type(exc).__name__, str(exc))
+
+          google = "https://books.google.com/books?id=UfRhAAAAcAAJ"
+          try:
+              text, _ = get(google)
+              links(google, text, ("UfRhAAAAcAAJ", "PP1", "books/content", "pageImage", "pageImageUrl"))
+              for line in text.splitlines():
+                  if "PP1" in line or "UfRhAAAAcAAJ" in line and "books/content" in line:
+                      print("GOOGLE_LINE", re.sub(r"\s+", " ", line)[:3000])
+          except Exception as exc:
+              print("GOOGLE_ERROR", type(exc).__name__, str(exc))
+          PY
