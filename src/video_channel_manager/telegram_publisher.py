@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from pydantic import ValidationError
 
@@ -113,7 +113,7 @@ def _precheck_ledger_identity(path: Path, queue: Any) -> None:
 
 def load_ledger(path: Path, queue: Any) -> TelegramLedger:
     _precheck_ledger_identity(path, queue)
-    return _state.load_ledger(path, queue)  # type: ignore[arg-type]
+    return _state.load_ledger(path, queue)
 
 
 def load_or_initialize_ledger(path: Path, queue: Any) -> TelegramLedger:
@@ -160,12 +160,15 @@ def prepare_next(queue: Any, ledger: TelegramLedger, **kwargs: Any) -> PreparedD
         raise RuntimeError("successor prepare requires exact predecessor queue and ledger paths")
     predecessor_queue = _load_legacy_queue(Path(predecessor_queue_raw))
     predecessor_ledger = load_ledger(Path(predecessor_ledger_raw), predecessor_queue)
-    return prepare_with_history(
-        queue,
-        ledger,
-        predecessor_ledger,
-        _prepare_next,
-        **kwargs,
+    return cast(
+        PreparedDispatch,
+        prepare_with_history(
+            queue,
+            ledger,
+            predecessor_ledger,
+            _prepare_next,
+            **kwargs,
+        ),
     )
 
 
