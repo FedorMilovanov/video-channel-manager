@@ -53,7 +53,7 @@
       "source_page_url": "https://celm.folger.edu/authors/tindalewilliam.html",
       "acquisition_page_url": "https://upload.wikimedia.org/wikipedia/commons/0/0b/William_Tyndale%2C_a_biography%3B_being_a_contribution_to_the_early_history_of_the_English_Bible_%28IA_cu31924029231715%29.pdf",
       "download_url": "https://upload.wikimedia.org/wikipedia/commons/0/0b/William_Tyndale%2C_a_biography%3B_being_a_contribution_to_the_early_history_of_the_English_Bible_%28IA_cu31924029231715%29.pdf",
-      "expected_upstream_sha1": "0000000000000000000000000000000000000000",
+      "expected_upstream_sha1": "e7e17830c7c6be2a36be27f2261b388411365037",
       "expected_source_mime": "application/pdf",
       "output_file_name": "tyndale-v3-demaus-1886-source.pdf",
       "rights_basis": "Public-domain 1886 Demaus/Lovett biography explicitly includes a facsimile of the Vilvorde letter; CELM independently identifies the autograph as TiW 6, Office fiscal, liasse 1330.",
