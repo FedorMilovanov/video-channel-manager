@@ -12,64 +12,91 @@ permissions:
 jobs:
   diagnose:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 12
     steps:
       - name: Check out exact PR head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - name: Install project
-        run: python -m pip install -e .
-      - name: Reconcile sealed historical identities
+      - name: Pin final archival page locators and FRUS identity
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
-          import json
-          import subprocess
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils unzip >/dev/null
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          UA='video-channel-manager-historical-media-locator/1.0 (+https://github.com/FedorMilovanov/video-channel-manager)'
+
+          fetch_pdf() {
+            local name="$1" url="$2"
+            echo "=== PDF $name ==="
+            curl -fsSL --retry 3 --max-time 90 -A "$UA" "$url" -o "$tmp/$name.pdf"
+            file "$tmp/$name.pdf"
+            sha1sum "$tmp/$name.pdf"
+            sha256sum "$tmp/$name.pdf"
+            pdfinfo "$tmp/$name.pdf" | grep -E '^(Pages|Page size|Title|Author):' || true
+            pdftotext -layout "$tmp/$name.pdf" "$tmp/$name.txt"
+          }
+
+          fetch_pdf carey 'https://careycenter.wmcarey.edu/enquiry/anenquiry.pdf'
+          fetch_pdf bms 'https://missiology.org.uk/pdf/e-books/bms/bms-calendar.pdf'
+          fetch_pdf judson 'https://archive.org/download/memoiroflifela02wayl/memoiroflifela02wayl.pdf'
+          fetch_pdf sattler 'https://capito.iterpubs.org/letters/1526/Letter_316.pdf'
+
+          python - "$tmp" <<'PY'
           from pathlib import Path
+          import re, sys
 
-          from video_channel_manager.telegram_historical_bundle import HistoricalSourceShardV1
-          from video_channel_manager.telegram_historical_editorial import HistoricalSourceRegistry
-          from video_channel_manager.telegram_research import sha256_json
+          root = Path(sys.argv[1])
+          queries = {
+              'carey': [r'AN\s+ENQUIRY', r'obligation.*christians', r'heathens'],
+              'bms': [r'October\s+2', r'1792', r'Kettering', r'Particular Baptist Society'],
+              'judson': [r'January\s+31,?\s+1834', r'1834', r'Burmese Bible', r'translation.*Bible', r'finished'],
+              'sattler': [r'Michael Sattler', r'Bucer', r'Capito', r'316'],
+          }
+          for name, pats in queries.items():
+              data = (root / f'{name}.txt').read_text(encoding='utf-8', errors='replace')
+              # pdftotext separates PDF pages with form-feed.
+              pages = data.split('\f')
+              print(f'=== LOCATORS {name} pages={len(pages)} ===')
+              for idx, page in enumerate(pages, 1):
+                  flat = ' '.join(page.split())
+                  hits = [pat for pat in pats if re.search(pat, flat, re.I)]
+                  if hits:
+                      print(f'{name.upper()}_PAGE {idx} HITS={hits} CONTEXT={flat[:1800]}')
+          PY
 
-          root = Path('.')
-          bunyan = root / 'content/telegram/lordchrist/historical-editorial/v1/sources/bunyan.json'
-          bunyan_verification = root / 'content/telegram/lordchrist/historical-editorial/v1/verification/bunyan-bedford-prison-v3-2026-09-08.json'
-          corrections_b = root / 'content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-b.json'
-          batch = root / 'content/telegram/lordchrist/historical-editorial/v1/v3/batch-manifest-2026-09-08.json'
-
-          def git_blob(path: Path) -> str:
-              return subprocess.check_output(['git', 'hash-object', str(path)], text=True).strip()
-
-          print('BUNYAN_GIT_BLOB', git_blob(bunyan))
-          print('BUNYAN_VERIFICATION_GIT_BLOB', git_blob(bunyan_verification))
-          print('CORRECTIONS_B_GIT_BLOB', git_blob(corrections_b))
-          print('BATCH_CURRENT_GIT_BLOB', git_blob(batch))
-          print('BUNYAN_SHA256_JSON', sha256_json(json.loads(bunyan.read_text(encoding='utf-8'))))
-          print('CORRECTIONS_B_SHA256_JSON', sha256_json(json.loads(corrections_b.read_text(encoding='utf-8'))))
-
-          for catalog_name in ('source-catalog.json', 'source-catalog-human-v2.json'):
-              catalog_path = root / 'content/telegram/lordchrist/historical-editorial/v1' / catalog_name
-              catalog = json.loads(catalog_path.read_text(encoding='utf-8'))
-              sources = []
-              shard_lines = []
-              for ref in catalog['shards']:
-                  shard_path = root / ref['path']
-                  payload = json.loads(shard_path.read_text(encoding='utf-8'))
-                  shard = HistoricalSourceShardV1.model_validate(payload)
-                  digest = sha256_json(payload)
-                  count = len(shard.sources)
-                  shard_lines.append((ref['shard_id'], digest, count))
-                  sources.extend(shard.sources)
-              registry = HistoricalSourceRegistry(
-                  schema_name='video-channel-manager.telegram-historical-source-registry',
-                  schema_version=1,
-                  checked_on=catalog['checked_on'],
-                  sources=tuple(sources),
-              )
-              print('CATALOG', catalog_name)
-              print('CATALOG_TOTAL_SOURCES', len(sources))
-              print('CATALOG_REGISTRY_SHA256', registry.digest)
-              for shard_id, digest, count in shard_lines:
-                  if shard_id == 'history-sources-bunyan':
-                      print('CATALOG_BUNYAN_SHARD', shard_id, digest, count)
+          echo '=== FRUS EPUB ==='
+          frus='https://static.history.state.gov/frus/frus1934v03/ebook/frus1934v03.epub'
+          curl -fsSL --retry 3 --max-time 90 -A "$UA" "$frus" -o "$tmp/frus.epub"
+          file "$tmp/frus.epub"
+          stat -c 'FRUS_BYTES %s' "$tmp/frus.epub"
+          sha1sum "$tmp/frus.epub" | sed 's# .*# FRUS_SHA1#'
+          sha256sum "$tmp/frus.epub" | sed 's# .*# FRUS_SHA256#'
+          unzip -t "$tmp/frus.epub" | tail -3
+          unzip -q "$tmp/frus.epub" -d "$tmp/frus"
+          python - "$tmp/frus" <<'PY'
+          from pathlib import Path
+          import html, re, sys
+          root = Path(sys.argv[1])
+          needles = [
+              'December 13, 1934',
+              'Telegram 384',
+              'bodies of Mr. and Mrs. Stam',
+              'bodies of Mr. and Mrs',
+              'baby had not been found',
+          ]
+          for p in sorted(root.rglob('*')):
+              if not p.is_file():
+                  continue
+              try:
+                  text = p.read_text(encoding='utf-8', errors='ignore')
+              except Exception:
+                  continue
+              plain = html.unescape(re.sub(r'<[^>]+>', ' ', text))
+              flat = ' '.join(plain.split())
+              hits = [n for n in needles if n.casefold() in flat.casefold()]
+              if hits:
+                  pos = min(flat.casefold().find(n.casefold()) for n in hits)
+                  lo=max(0,pos-600); hi=min(len(flat),pos+1800)
+                  print('FRUS_MATCH', p.relative_to(root), 'HITS=', hits, 'CONTEXT=', flat[lo:hi])
           PY
