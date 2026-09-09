@@ -10,6 +10,11 @@ from rich.console import Console
 from rich.table import Table
 
 from video_channel_manager.config import get_settings
+from video_channel_manager.instagram.local_resumable import (
+    InstagramLocalResumableService,
+    InstagramResumableUploadLedger,
+    build_local_publish_manifest,
+)
 from video_channel_manager.instagram.production import (
     InstagramConfigurationError,
     InstagramIdentityMismatchError,
@@ -43,6 +48,15 @@ def _open_service() -> tuple[InstagramProductionService, Database]:
     database = Database(settings.database_url)
     ledger = InstagramPublicationLedger(database)
     return InstagramProductionService(config, ledger), database
+
+
+def _open_local_service() -> tuple[InstagramLocalResumableService, Database]:
+    settings = get_settings()
+    config = InstagramRuntimeConfig.from_settings(settings)
+    database = Database(settings.database_url)
+    ledger = InstagramPublicationLedger(database)
+    upload_ledger = InstagramResumableUploadLedger(database)
+    return InstagramLocalResumableService(config, ledger, upload_ledger), database
 
 
 def _render_snapshot(snapshot: PublicationSnapshot) -> None:
@@ -154,6 +168,56 @@ def publish(
         snapshot = service.publish(manifest, execute=execute)
     except (InstagramProductionError, InstagramConfigurationError) as exc:
         console.print(f"[red]Instagram publish refused/failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+    finally:
+        if service is not None:
+            service.close()
+        if database is not None:
+            database.close()
+    _render_snapshot(snapshot)
+
+
+@instagram_production_app.command("publish-local")
+def publish_local(
+    video_path: Annotated[Path, typer.Argument(help="Reviewed local MP4 to upload directly to Instagram")],
+    publication_key: Annotated[
+        str,
+        typer.Option("--publication-key", help="Stable idempotency/publication key for this exact Reel"),
+    ],
+    caption: Annotated[str, typer.Option("--caption", help="Exact Instagram Reel caption")] = "",
+    share_to_feed: Annotated[
+        bool,
+        typer.Option("--share-to-feed/--no-share-to-feed", help="Ask Instagram to share the Reel to the feed"),
+    ] = True,
+    thumb_offset_ms: Annotated[
+        int | None,
+        typer.Option("--thumb-offset-ms", min=0, help="Optional thumbnail offset in milliseconds"),
+    ] = None,
+    execute: Annotated[
+        bool,
+        typer.Option(
+            "--execute",
+            help="Authorize this invocation to make provider writes; kill switch must also be on",
+        ),
+    ] = False,
+) -> None:
+    """Upload one local MP4 with Meta resumable upload, then process and publish it as a Reel."""
+
+    service: InstagramLocalResumableService | None = None
+    database: Database | None = None
+    try:
+        service, database = _open_local_service()
+        manifest = build_local_publish_manifest(
+            video_path,
+            publication_key=publication_key,
+            account_id=service.config.account_id,
+            caption=caption,
+            share_to_feed=share_to_feed,
+            thumb_offset_ms=thumb_offset_ms,
+        )
+        snapshot = service.publish_local(manifest, video_path, execute=execute)
+    except (InstagramProductionError, InstagramConfigurationError) as exc:
+        console.print(f"[red]Instagram local publish refused/failed:[/red] {exc}")
         raise typer.Exit(code=2) from exc
     finally:
         if service is not None:
