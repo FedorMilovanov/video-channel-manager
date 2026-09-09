@@ -3,7 +3,7 @@
   "schema_version": 1,
   "project_key": "lord-god-strength",
   "channel_username": "@lordchrist",
-  "owning_issue": 576,
+  "owning_issue": 582,
   "release_id": "lordchrist-successor-quotes-v1-integrity-v2",
   "predecessor_queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
   "successor_queue_digest": "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873",
