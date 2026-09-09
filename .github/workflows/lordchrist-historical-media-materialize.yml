@@ -1,10 +1,14 @@
-name: LordChrist historical media materialize v2
+name: LordChrist historical archival v2 verify
 
 on:
   pull_request:
     paths:
       - ".github/workflows/lordchrist-historical-media-materialize.yml"
       - "content/telegram/lordchrist/historical-editorial/v1/v3/media-acquisition-manifest-v2-2026-09-09.json"
+      - "content/telegram/lordchrist/historical-editorial/v1/v3/media-render-receipt-v2-2026-09-09.json"
+      - "content/telegram/lordchrist/historical-editorial/v1/v3/*/media/**"
+      - "content/telegram/lordchrist/historical-editorial/v1/v3/*/revision-package-v2-2026-09-09.json"
+      - "content/telegram/lordchrist/historical-editorial/v1/v3/*/revision-preflight-v2-2026-09-09.json"
       - "content/telegram/lordchrist/historical-editorial/v1/v3/batch-manifest-2026-09-08.json"
       - "content/telegram/lordchrist/historical-editorial/v1/verification/**"
       - "content/telegram/lordchrist/historical-editorial/v1/sources/**"
@@ -12,35 +16,36 @@ on:
       - "src/video_channel_manager/telegram_historical_media_v2.py"
       - "src/video_channel_manager/telegram_historical_media_materialize_v2.py"
       - "src/video_channel_manager/telegram_historical_archival_revision.py"
+      - "tests/test_telegram_historical_media.py"
       - "tests/test_telegram_historical_media_v2.py"
       - "tests/test_telegram_historical_media_materialize_v2.py"
       - "tests/test_telegram_historical_archival_revision.py"
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: lordchrist-historical-media-materialize-v2-${{ github.event.pull_request.number || github.ref }}
+  group: lordchrist-historical-archival-v2-verify-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  materialize-v2:
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+  verify-archival-v2:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
       PYTHONPATH: src
       MANIFEST_PATH: content/telegram/lordchrist/historical-editorial/v1/v3/media-acquisition-manifest-v2-2026-09-09.json
+      ACQUISITION_DIR: .runtime/lordchrist-historical-media-v2-verify
     steps:
-      - name: Check out exact PR head with push authority
+      - name: Check out exact event head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 1
-          persist-credentials: true
+          persist-credentials: false
 
-      - name: Assert exact event head
+      - name: Assert exact PR head
         if: github.event_name == 'pull_request'
         shell: bash
         run: |
@@ -60,95 +65,55 @@ jobs:
           sudo apt-get install -y --no-install-recommends poppler-utils
           python -m pip install --disable-pip-version-check -e '.[dev,milovi-gap-read]'
           python -m pip install --disable-pip-version-check 'Pillow==12.3.0'
+          command -v pdftoppm
           pdftoppm -v 2>&1 | sed -n '1,2p'
           python - <<'PY'
           import PIL
-          if PIL.__version__ != '12.3.0':
-              raise SystemExit(f'unexpected Pillow runtime: {PIL.__version__}')
-          print('Pillow', PIL.__version__)
+          if PIL.__version__ != "12.3.0":
+              raise SystemExit(f"unexpected Pillow runtime: {PIL.__version__}")
           PY
 
-      - name: Bootstrap complete V2 materializer sources
-        shell: bash
-        env:
-          MATERIALIZER_Z: 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
-          MATERIALIZER_TEST_Z: eNqVVU1vEzEQvedXWHtAicS2CkWolDQSlbggVCr1iNDIWc8mpv7CHocGxH9nvNmkSWlK2Nvanjdv5r2x2+itAGgz5YgAQtvgIwnpnCdJ2rs0GLTlzFIr9NAseAcNWOnkHOMJocF5lBYWOpGPupG8h0pLPkEYtTT6J8Ly1QYXbj69v759KSAYqR0syJryk2PwCaH1cTAYKGwFYSJovA0GqcRDRKcwljAHOgHey4bMCpK+J0QH2envGUGmhJSGI1FPxbV3eDEQ/JVVzm3QDdf5R+LyUozfPN78VdBPOgzQSjAbUVaEdj3v388G+kwhE7TaIDhp8UiAlO2wi6coXeIYW85UQbUQuMfVEzAdyjEgrJkjTStuZVgdRDo/Aulb8o5FaHxU0MioDoKNjwDDkGed9v+COsIMd4ghMQ5J4+cgnYI25gQJ2aJU/MguUWxO7Rp6bIzZquh8KfaFv1hzeUK93dK62C+VtvO6zcZgrJdnNcmV8bH+gcYwX6x7WtXXE7xf6JkmuNNOraVxzIlyGTFptvzXHa4OJEokbUlTKqzHb89e16WTT6H7ttUNTx8o32TLJuCJaTAG+m9oGZuFXiJPtZ1h7MA/f7i6uT1VZ+fjkyJitSvTw1xzLdYvMfFNEO9y6KRRXJ7ipc6VGg9N6g7KsJqE6Ue/cOKFtOGduEKilZgkit7Np7fMenLa/0xOw7TqjFOtA/rD5dAex12zbBvV9wdmPjslI5MDyTciX4PQyiZpW8a6YV72L9YbvP4ae7ld6LFWbLHdO274vPijDrRz8Rax+zsId1jt0W5bqz5RRtGnKt5+xH4vgKsXUmzr3zu/YbMXsGEilA7G8xugG7Eh1UXvlrUXacp7IWba83MSFmVwhUKS2qSHuG3KPxdHVnQ=
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import base64
-          import os
-          import zlib
-          from pathlib import Path
-
-          files = {
-              Path('src/video_channel_manager/telegram_historical_media_materialize_v2.py'): os.environ['MATERIALIZER_Z'],
-              Path('tests/test_telegram_historical_media_materialize_v2.py'): os.environ['MATERIALIZER_TEST_Z'],
-          }
-          for path, encoded in files.items():
-              path.parent.mkdir(parents=True, exist_ok=True)
-              path.write_bytes(zlib.decompress(base64.b64decode(encoded)))
-          PY
-
-      - name: Extend archival exhibit taxonomy and normalize closure sources
+      - name: Validate archival V2 implementation
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path('src/video_channel_manager/telegram_historical_archival_revision.py')
-          text = path.read_text(encoding='utf-8')
-          anchor = (
-              '        "critical_edition_facsimile",\n'
-              '        "contextual_historical_map",\n'
-          )
-          replacement = (
-              '        "critical_edition_facsimile",\n'
-              '        "contextual_historical_map",\n'
-              '        "institutional_catalog_record",\n'
-              '        "official_document_excerpt",\n'
-          )
-          if '"institutional_catalog_record"' not in text:
-              if anchor not in text:
-                  raise SystemExit('archival exhibit taxonomy anchor differs')
-              path.write_text(text.replace(anchor, replacement, 1), encoding='utf-8')
-          PY
-          ruff check --fix \
+          ruff check \
             src/video_channel_manager/telegram_historical_archival_revision.py \
+            src/video_channel_manager/telegram_historical_media_v2.py \
             src/video_channel_manager/telegram_historical_media_materialize_v2.py \
+            tests/test_telegram_historical_archival_revision.py \
+            tests/test_telegram_historical_media_v2.py \
             tests/test_telegram_historical_media_materialize_v2.py
-          ruff format \
+          ruff format --check \
             src/video_channel_manager/telegram_historical_archival_revision.py \
+            src/video_channel_manager/telegram_historical_media_v2.py \
             src/video_channel_manager/telegram_historical_media_materialize_v2.py \
+            tests/test_telegram_historical_archival_revision.py \
+            tests/test_telegram_historical_media_v2.py \
             tests/test_telegram_historical_media_materialize_v2.py
-
-      - name: Run V2 regressions
-        shell: bash
-        run: |
-          set -euo pipefail
           python -m pytest \
+            tests/test_telegram_historical_media.py \
             tests/test_telegram_historical_media_v2.py \
             tests/test_telegram_historical_media_materialize_v2.py \
             tests/test_telegram_historical_archival_revision.py \
             -q
 
-      - name: Acquire, render and preflight all 16 exhibits
+      - name: Re-acquire and deterministically reproduce all 16 exhibits
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf .runtime/lordchrist-historical-media-v2
+          rm -rf "$ACQUISITION_DIR"
           python -m video_channel_manager.telegram_historical_media_materialize_v2 \
             "$MANIFEST_PATH" \
             --repo-root . \
-            --acquisition-dir .runtime/lordchrist-historical-media-v2 \
-            > /tmp/lordchrist-materialize-v2.json
-          cat /tmp/lordchrist-materialize-v2.json
+            --acquisition-dir "$ACQUISITION_DIR" \
+            > /tmp/lordchrist-archival-v2-verify.json
+          cat /tmp/lordchrist-archival-v2-verify.json
           python - <<'PY'
           import json
           from pathlib import Path
 
-          result = json.loads(Path('/tmp/lordchrist-materialize-v2.json').read_text(encoding='utf-8'))
+          result = json.loads(Path('/tmp/lordchrist-archival-v2-verify.json').read_text(encoding='utf-8'))
           assert result['status'] == 'PASS'
           assert result['asset_count'] == 16
           assert result['publication_count'] == 8
@@ -158,62 +123,27 @@ jobs:
           assert result['live_eligible'] is False
           assert result['provider_write_performed'] is False
           for path in result['preflights']:
-              report = json.loads(Path(path).read_text(encoding='utf-8'))
-              assert report['status'] == 'PASS'
-              assert report['archival_media_count'] == 2
-              assert report['transport_ready_media_count'] == 0
-              assert report['provider_writes_authorized'] is False
-              assert report['live_eligible'] is False
-              assert report['provider_write_performed'] is False
-          PY
-
-      - name: Enforce provider-inert generated surface
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          root = Path('content/telegram/lordchrist/historical-editorial/v1/v3')
-          receipt = json.loads((root / 'media-render-receipt-v2-2026-09-09.json').read_text(encoding='utf-8'))
-          assert receipt['asset_count'] == 16
-          assert len(receipt['outputs']) == 16
-          assert len({(item['publication_id'], item['slot']) for item in receipt['outputs']}) == 16
-          packages = list(root.glob('*/revision-package-v2-2026-09-09.json'))
-          assert len(packages) == 8
-          for path in packages:
-              value = json.loads(path.read_text(encoding='utf-8'))
+              value = json.loads(Path(path).read_text(encoding='utf-8'))
+              assert value['status'] == 'PASS'
+              assert value['archival_media_count'] == 2
+              assert value['transport_ready_media_count'] == 0
               assert value['provider_writes_authorized'] is False
               assert value['live_eligible'] is False
-              assert all(item['transport_ready'] is False for item in value['archival_media'])
-              assert all(item['provider_write_performed'] is False for item in value['archival_media'])
+              assert value['provider_write_performed'] is False
           PY
 
-      - name: Commit deterministic provider-inert closure
-        if: github.event_name == 'pull_request'
+      - name: Require byte-for-byte reproducibility of committed closure
         shell: bash
-        env:
-          HEAD_REF: ${{ github.event.pull_request.head.ref }}
-          EVENT_HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- \
-            src/video_channel_manager/telegram_historical_archival_revision.py \
-            src/video_channel_manager/telegram_historical_media_materialize_v2.py \
-            tests/test_telegram_historical_media_materialize_v2.py \
-            'content/telegram/lordchrist/historical-editorial/v1/v3/*/media/*.jpg' \
-            'content/telegram/lordchrist/historical-editorial/v1/v3/*/media/*.png' \
-            content/telegram/lordchrist/historical-editorial/v1/v3/media-render-receipt-v2-2026-09-09.json \
-            'content/telegram/lordchrist/historical-editorial/v1/v3/*/revision-package-v2-2026-09-09.json' \
-            'content/telegram/lordchrist/historical-editorial/v1/v3/*/revision-preflight-v2-2026-09-09.json'
-          if git diff --cached --quiet; then
-            echo 'All 16 deterministic exhibits and all 8 revision preflights are already committed.'
-            exit 0
+          if ! git diff --quiet; then
+            git status --short
+            git diff --stat
+            git diff -- \
+              content/telegram/lordchrist/historical-editorial/v1/v3/media-render-receipt-v2-2026-09-09.json \
+              'content/telegram/lordchrist/historical-editorial/v1/v3/*/revision-package-v2-2026-09-09.json' \
+              'content/telegram/lordchrist/historical-editorial/v1/v3/*/revision-preflight-v2-2026-09-09.json'
+            raise='committed historical archival V2 closure is not reproducible'
+            echo "$raise" >&2
+            exit 1
           fi
-          git commit -m 'feat(lordchrist): materialize complete archival v3 media'
-          git fetch --no-tags origin "$HEAD_REF"
-          test "$(git rev-parse "origin/$HEAD_REF")" = "$EVENT_HEAD"
-          git push origin "HEAD:$HEAD_REF"
