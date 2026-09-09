@@ -27,12 +27,12 @@
       },
       "verification": {
         "path": "content/telegram/lordchrist/historical-editorial/v1/verification/bunyan-bedford-prison-v3-2026-09-08.json",
-        "git_blob_sha": "c41f0b8482013127290990d3b4adfc039379b8e3"
+        "git_blob_sha": "4006527edcc7e717f42d2f74727a17c6bcfbd864"
       },
       "source_shards": [
         {
           "path": "content/telegram/lordchrist/historical-editorial/v1/sources/bunyan.json",
-          "git_blob_sha": "14fc172beb608963fda43cb43cb12f2aeacabba7"
+          "git_blob_sha": "11c2439e2e064f0721005e42351acdd014747535"
         },
         {
           "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-a.json",
@@ -105,7 +105,7 @@
         },
         {
           "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-b.json",
-          "git_blob_sha": "3bb191c201b03f84fc76dec4caf6ad3e2c1b5f87"
+          "git_blob_sha": "45574be0de901178b7aab40536233931f893d275"
         }
       ],
       "expected_visual_slots": 2
@@ -128,7 +128,7 @@
         },
         {
           "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-b.json",
-          "git_blob_sha": "3bb191c201b03f84fc76dec4caf6ad3e2c1b5f87"
+          "git_blob_sha": "45574be0de901178b7aab40536233931f893d275"
         }
       ],
       "expected_visual_slots": 2
