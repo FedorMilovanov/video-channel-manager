@@ -228,7 +228,7 @@ class TargetProof(BaseModel):
 class LedgerEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    publication_id: str = Field(pattern=r"^lordchrist-[a-z0-9][a-z0-9-]{4,80}$")
+    publication_id: str = Field(pattern=r"^lordchrist-[a-z0-9][a-z0-9-]{4,100}$")
     payload_sha256: str = Field(pattern=SHA256_PATTERN)
     state: StateName = "pending"
     provider_effect: ProviderEffect = "impossible"
@@ -346,8 +346,8 @@ class DispatchEnvelope(BaseModel):
     project_key: Literal["lord-god-strength"]
     channel_username: Literal["@lordchrist"]
     queue_digest: str = Field(pattern=SHA256_PATTERN)
-    publication_id: str = Field(pattern=r"^lordchrist-[a-z0-9][a-z0-9-]{4,80}$")
-    sequence: int = Field(ge=1, le=30)
+    publication_id: str = Field(pattern=r"^lordchrist-[a-z0-9][a-z0-9-]{4,100}$")
+    sequence: int = Field(ge=1, le=60)
     intent_id: str = Field(min_length=16, max_length=128)
     workflow_run_id: str = Field(min_length=1, max_length=128)
     workflow_run_attempt: str = Field(pattern=r"^[1-9][0-9]*$")
