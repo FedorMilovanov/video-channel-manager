@@ -1,9 +1,80 @@
 {
-  "schema_name":"video-channel-manager.telegram-historical-source-shard","schema_version":1,"shard_id":"history-sources-bunyan","checked_on":"2026-09-07","sources":[
-    {"source_id":"src-bunyan-bedfordshire-hsa1672","title":"Calendar of Prisoners in the County Gaol, HSA1672/W/20","publisher":"Bedfordshire Archives Service","url":"https://bedsarchivescat.bedford.gov.uk/Details/archive/110061210","evidence_type":"primary","grade":"A","evidence_role":"official_archive","checked_on":"2026-09-07","topic_tags":["bunyan","bedford","imprisonment"],"independence_group":"bedfordshire-hsa1672"},
-    {"source_id":"src-bunyan-folger-celm","title":"John Bunyan manuscript and Bedford gaol records guide","publisher":"Folger Shakespeare Library / CELM","url":"https://celm.folger.edu/introductions/BunyanJohn.html","evidence_type":"institutional","grade":"B+","evidence_role":"institutional_collection","checked_on":"2026-09-07","topic_tags":["bunyan","manuscripts","imprisonment"],"independence_group":"folger-celm-bunyan"},
-    {"source_id":"src-bunyan-cambridge-prison","title":"John Bunyan 1660–1688","publisher":"Cambridge University Press / Boydell & Brewer","url":"https://www.cambridge.org/core/books/abs/bedford-prison-16601877/john-bunyan-16601688/A53CEF7BF3CA56D4B8D9182A13C1E3F3","evidence_type":"scholarly","grade":"B+","evidence_role":"academic_monograph","checked_on":"2026-09-07","topic_tags":["bunyan","bedford-prison"],"independence_group":"stockdale-bunyan-prison"},
-    {"source_id":"src-bunyan-oxford-prison","title":"Bunyan in Prison: Writings from the 1660s","publisher":"Oxford University Press","url":"https://academic.oup.com/edited-volume/28289/chapter-abstract/214480444","evidence_type":"scholarly","grade":"B+","evidence_role":"academic_monograph","checked_on":"2026-09-07","topic_tags":["bunyan","prison","writings"],"independence_group":"gay-bunyan-prison"},
-    {"source_id":"src-image-bunyan-nlw","title":"Portrait of John Bunyan, Welsh Portrait Collection","publisher":"National Library of Wales / Wikimedia Commons","url":"https://commons.wikimedia.org/wiki/File:Portrait_of_John_Bunyan_(4672796).jpg","evidence_type":"primary","grade":"A","evidence_role":"institutional_collection","checked_on":"2026-09-07","topic_tags":["bunyan","portrait","image-provenance"],"independence_group":"nlw-bunyan-portrait"}
+  "schema_name": "video-channel-manager.telegram-historical-source-shard",
+  "schema_version": 1,
+  "shard_id": "history-sources-bunyan",
+  "checked_on": "2026-09-09",
+  "sources": [
+    {
+      "source_id": "src-bunyan-bedfordshire-hsa1672",
+      "title": "Calendar of Prisoners in the County Gaol, HSA1672/W/20",
+      "publisher": "Bedfordshire Archives Service",
+      "url": "https://bedsarchivescat.bedford.gov.uk/Details/archive/110061210",
+      "evidence_type": "primary",
+      "grade": "A",
+      "evidence_role": "official_archive",
+      "checked_on": "2026-09-07",
+      "topic_tags": ["bunyan", "bedford", "imprisonment", "1672"],
+      "independence_group": "bedfordshire-hsa1672"
+    },
+    {
+      "source_id": "src-bunyan-bedfordshire-hsa1667-v3",
+      "title": "Calendar of Prisoners in the County Gaol, HSA1667/W/58",
+      "publisher": "Bedfordshire Archives Service / Bedford Borough Council",
+      "url": "https://bedsarchives.bedford.gov.uk/ExploreYourArchive/Explore-the-World/Caribbean/TransportedtoBarbados.aspx",
+      "evidence_type": "primary",
+      "grade": "A",
+      "evidence_role": "official_archive",
+      "checked_on": "2026-09-09",
+      "topic_tags": ["bunyan", "bedford", "gaol-list", "1667", "image-provenance"],
+      "independence_group": "bedfordshire-hsa1667"
+    },
+    {
+      "source_id": "src-bunyan-folger-celm",
+      "title": "John Bunyan manuscript and Bedford gaol records guide",
+      "publisher": "Folger Shakespeare Library / CELM",
+      "url": "https://celm.folger.edu/introductions/BunyanJohn.html",
+      "evidence_type": "institutional",
+      "grade": "B+",
+      "evidence_role": "institutional_collection",
+      "checked_on": "2026-09-07",
+      "topic_tags": ["bunyan", "manuscripts", "imprisonment"],
+      "independence_group": "folger-celm-bunyan"
+    },
+    {
+      "source_id": "src-bunyan-cambridge-prison",
+      "title": "John Bunyan 1660–1688",
+      "publisher": "Cambridge University Press / Boydell & Brewer",
+      "url": "https://www.cambridge.org/core/books/abs/bedford-prison-16601877/john-bunyan-16601688/A53CEF7BF3CA56D4B8D9182A13C1E3F3",
+      "evidence_type": "scholarly",
+      "grade": "B+",
+      "evidence_role": "academic_monograph",
+      "checked_on": "2026-09-07",
+      "topic_tags": ["bunyan", "bedford-prison"],
+      "independence_group": "stockdale-bunyan-prison"
+    },
+    {
+      "source_id": "src-bunyan-oxford-prison",
+      "title": "Bunyan in Prison: Writings from the 1660s",
+      "publisher": "Oxford University Press",
+      "url": "https://academic.oup.com/edited-volume/28289/chapter-abstract/214480444",
+      "evidence_type": "scholarly",
+      "grade": "B+",
+      "evidence_role": "academic_monograph",
+      "checked_on": "2026-09-07",
+      "topic_tags": ["bunyan", "prison", "writings"],
+      "independence_group": "gay-bunyan-prison"
+    },
+    {
+      "source_id": "src-image-bunyan-nlw",
+      "title": "Portrait of John Bunyan, Welsh Portrait Collection",
+      "publisher": "National Library of Wales / Wikimedia Commons",
+      "url": "https://commons.wikimedia.org/wiki/File:Portrait_of_John_Bunyan_(4672796).jpg",
+      "evidence_type": "primary",
+      "grade": "A",
+      "evidence_role": "institutional_collection",
+      "checked_on": "2026-09-07",
+      "topic_tags": ["bunyan", "portrait", "image-provenance"],
+      "independence_group": "nlw-bunyan-portrait"
+    }
   ]
 }
