@@ -127,10 +127,12 @@ def test_archival_media_suffix_must_match_accepted_mime() -> None:
 
 def test_archival_package_rejects_duplicate_visual_slots() -> None:
     payload = _package()
-    payload["archival_media"] = [
-        _media(slot="hero", asset_id="img-example-archival-one"),
-        _media(slot="hero", asset_id="img-example-archival-two"),
-    ]
+    first = _media(slot="hero", asset_id="img-example-archival-one")
+    second = _media(slot="hero", asset_id="img-example-archival-two")
+    second_file = second["accepted_file"]
+    assert isinstance(second_file, dict)
+    second_file["path"] = "content/example-hero-two.png"
+    payload["archival_media"] = [first, second]
     with pytest.raises(ValidationError, match="slots must be unique"):
         HistoricalRevisionPackageV2.model_validate(payload)
 
