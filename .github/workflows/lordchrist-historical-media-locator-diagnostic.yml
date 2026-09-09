@@ -22,6 +22,7 @@ jobs:
           tmp="$(mktemp -d)"
           trap 'rm -rf "$tmp"' EXIT
 
+          echo '=== BEDFORD RECORDS ==='
           curl -fsSL --max-time 25 -A "$UA" 'https://bedsarchivescat.bedford.gov.uk/Details/archive/110061210' -o "$tmp/bed-main.html"
           for id in 110669209 110669210; do
             curl -fsSL --max-time 25 -A "$UA" "https://bedsarchivescat.bedford.gov.uk/Details/archive/$id" -o "$tmp/bed-$id.html" || true
@@ -42,44 +43,75 @@ jobs:
                       print(f'L{n}', line[:1600])
           PY
 
-          echo '=== GOOGLE BOOKS FULLER VOLUME API ==='
-          curl -fsSL --max-time 25 -A "$UA" 'https://www.googleapis.com/books/v1/volumes/UfRhAAAAcAAJ' -o "$tmp/fuller-volume.json"
-          python - "$tmp/fuller-volume.json" <<'PY'
+          echo '=== BEDFORD IMAGE VIEWER RUNTIME ==='
+          curl -fsSL --max-time 25 -A "$UA" 'https://bedsarchivescat.bedford.gov.uk/Scripts/Base/ImageViewer.js' -o "$tmp/bed-viewer.js"
+          python - "$tmp/bed-viewer.js" <<'PY'
+          import re, sys
+          from pathlib import Path
+          text=Path(sys.argv[1]).read_text(encoding='utf-8',errors='replace')
+          for n,line in enumerate(text.splitlines(),1):
+              if any(k in line.casefold() for k in ('ajax','image','viewer','priref','download','media','url','src')):
+                  print(f'L{n}',line[:1800])
+          print('URLS')
+          for url in dict.fromkeys(re.findall(r'https?://[^\s"<>]+',text)):
+              print(url[:1600])
+          PY
+
+          echo '=== INTERNET ARCHIVE EXACT-TITLE SEARCH ==='
+          python - <<'PY' > "$tmp/ia-urls.txt"
+          import urllib.parse
+          queries=[
+              'title:("The gospel of Christ worthy of all acceptation") AND creator:("Andrew Fuller")',
+              'title:("Observations on the Rev. Andrew Fuller late pamphlet") AND creator:("Dan Taylor")',
+              'title:("Observations on the Rev. Andrew Fuller’s late pamphlet") AND creator:("Dan Taylor")',
+          ]
+          for q in queries:
+              params=urllib.parse.urlencode({
+                  'q':q,
+                  'fl[]':['identifier','title','creator','date','year'],
+                  'rows':50,
+                  'page':1,
+                  'output':'json',
+              },doseq=True)
+              print('https://archive.org/advancedsearch.php?'+params)
+          PY
+          while IFS= read -r url; do
+            echo "QUERY $url"
+            if curl -fsSL --max-time 25 -A "$UA" "$url" -o "$tmp/ia.json"; then
+              python - "$tmp/ia.json" <<'PY'
+          import json, sys
+          data=json.load(open(sys.argv[1],encoding='utf-8'))
+          print(json.dumps(data.get('response',{}).get('docs',[]),ensure_ascii=False,indent=2))
+          PY
+            fi
+          done < "$tmp/ia-urls.txt"
+
+          echo '=== GOOGLE BOOKS FULLER METADATA (NON-FATAL) ==='
+          if curl -fsSL --max-time 25 -A "$UA" 'https://www.googleapis.com/books/v1/volumes/UfRhAAAAcAAJ' -o "$tmp/fuller-volume.json"; then
+            python - "$tmp/fuller-volume.json" <<'PY'
           import json, sys
           v=json.load(open(sys.argv[1], encoding='utf-8'))
           print(json.dumps({'id':v.get('id'),'volumeInfo':{k:v.get('volumeInfo',{}).get(k) for k in ('title','publishedDate','pageCount')},'accessInfo':v.get('accessInfo',{})}, ensure_ascii=False, indent=2))
           PY
-
-          echo '=== GOOGLE BOOKS TAYLOR SEARCH API ==='
-          python - <<'PY' > "$tmp/taylor-query.txt"
-          import urllib.parse
-          q='intitle:"Observations on the Rev. Andrew Fuller late pamphlet" inauthor:"Dan Taylor"'
-          print('https://www.googleapis.com/books/v1/volumes?q='+urllib.parse.quote(q)+'&maxResults=10')
-          PY
-          curl -fsSL --max-time 25 -A "$UA" "$(cat "$tmp/taylor-query.txt")" -o "$tmp/taylor-search.json"
-          python - "$tmp/taylor-search.json" <<'PY'
-          import json, sys
-          v=json.load(open(sys.argv[1], encoding='utf-8'))
-          for item in v.get('items',[]):
-              info=item.get('volumeInfo',{}); access=item.get('accessInfo',{})
-              print(json.dumps({'id':item.get('id'),'title':info.get('title'),'authors':info.get('authors'),'publishedDate':info.get('publishedDate'),'accessInfo':access}, ensure_ascii=False))
-          PY
+          else
+            echo 'Google Books metadata unavailable; continuing without weakening archival requirements.'
+          fi
 
           echo '=== GOETTINGEN TAYLOR FULLTEXT ==='
-          curl -fsSL --max-time 25 -A "$UA" 'https://nl.sub.uni-goettingen.de/id/0220002400?origin=/collection/nlh-ecc' -o "$tmp/taylor.html" || true
-          python - "$tmp/taylor.html" <<'PY'
+          if curl -fsSL --max-time 25 -A "$UA" 'https://nl.sub.uni-goettingen.de/id/0220002400?origin=/collection/nlh-ecc' -o "$tmp/taylor.html"; then
+            python - "$tmp/taylor.html" <<'PY'
           import re, sys
           from pathlib import Path
-          p=Path(sys.argv[1])
-          if p.exists():
-              text=p.read_text(encoding='utf-8',errors='replace')
-              for url in dict.fromkeys(re.findall(r'https?://[^\s"<>]+',text)):
-                  if any(k in url.casefold() for k in ('pdf','download','image','viewer','digit','0220002400')):
-                      print('URL',url[:1200])
-              for n,line in enumerate(text.splitlines(),1):
-                  if any(k in line.casefold() for k in ('pdf','download','image','viewer','digit','0220002400')):
-                      print(f'L{n}',line[:1600])
+          text=Path(sys.argv[1]).read_text(encoding='utf-8',errors='replace')
+          keys=('pdf','download','image','viewer','digit','0220002400','iiif','manifest','mets','alto','presentation')
+          for url in dict.fromkeys(re.findall(r'https?://[^\s"<>]+',text)):
+              if any(k in url.casefold() for k in keys):
+                  print('URL',url[:1600])
+          for n,line in enumerate(text.splitlines(),1):
+              if any(k in line.casefold() for k in keys):
+                  print(f'L{n}',line[:1800])
           PY
+          fi
 
           echo '=== OFFICIAL FRUS EPUB ==='
           curl -fsSL --max-time 25 -A "$UA" 'https://static.history.state.gov/frus/frus1934v03/ebook/frus1934v03.epub' -o "$tmp/frus.epub"
@@ -87,7 +119,7 @@ jobs:
           sha256sum "$tmp/frus.epub"
           stat -c '%s bytes' "$tmp/frus.epub"
           python - "$tmp/frus.epub" <<'PY'
-          import sys, zipfile
+          import re, sys, zipfile
           p=sys.argv[1]
           with zipfile.ZipFile(p) as z:
               print('mimetype=',z.read('mimetype').decode('ascii'))
@@ -100,5 +132,8 @@ jobs:
                   data=z.read(name).decode('utf-8',errors='replace')
                   if 'Stam' in data and ('December 17' in data or 'baby was safe' in data or 'Wuhu' in data):
                       hits.append(name)
+                      plain=re.sub(r'<[^>]+>',' ',data)
+                      plain=' '.join(plain.split())
+                      print('HIT',name,plain[:3000])
               print('stam entries=',hits[:30])
           PY
