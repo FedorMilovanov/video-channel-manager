@@ -288,7 +288,9 @@ def acquire_historical_media_v2(
     owns_client = client is None
     active_client = client or _build_acquisition_client()
     try:
-        results = tuple(_fetch_asset_v2(asset, client=active_client, output_dir=output_dir) for asset in manifest.assets)
+        results = tuple(
+            _fetch_asset_v2(asset, client=active_client, output_dir=output_dir) for asset in manifest.assets
+        )
     finally:
         if owns_client:
             active_client.close()
