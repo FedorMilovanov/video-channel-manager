@@ -86,6 +86,7 @@ jobs:
               'img-stam-v3-wheaton-telegram': 'sha256:4ad6ec29439c599cd130d1b1f1412651fb8af6176a0710997dd2010f151e70c9',
               'img-tyndale-v3-worms-source-pdf': 'sha256:421e5071c54b1d4aa261d81b94f89467deff1e8ac6950c4b0e37fabad5aa1def',
               'img-tyndale-v3-prison-letter-demaus-pdf': 'sha256:44411b2cf6f93139b92a78d9526acdc531f579c8ee9b311bb37ae852263f599b',
+              'img-fuller-v3-gospel-worthy-1785-pr1': 'sha256:12557f8948b8bdc6af436e3a8b3adddd45f7f7d2b67c5832e799cdf4686f72bb',
           }
           if set(by_asset) != set(expected):
               raise SystemExit(f'unexpected probe asset universe: {sorted(by_asset)}')
@@ -95,8 +96,10 @@ jobs:
 
           tyndale_dir = root / 'content/telegram/lordchrist/historical-editorial/v1/v3/tyndale-new-testament-1526/media'
           stam_dir = root / 'content/telegram/lordchrist/historical-editorial/v1/v3/stam-china-december-1934/media'
+          fuller_dir = root / 'content/telegram/lordchrist/historical-editorial/v1/v3/fuller-gospel-worthy/media'
           tyndale_dir.mkdir(parents=True, exist_ok=True)
           stam_dir.mkdir(parents=True, exist_ok=True)
+          fuller_dir.mkdir(parents=True, exist_ok=True)
 
           worms_source = out / by_asset['img-tyndale-v3-worms-source-pdf']['output_file_name']
           worms_target = tyndale_dir / 'tyndale-v3-worms-1526-page-44.png'
@@ -118,6 +121,10 @@ jobs:
           stam_source = out / by_asset['img-stam-v3-wheaton-telegram']['output_file_name']
           stam_target = stam_dir / 'stam-v3-wheaton-telegram.jpg'
           stam_target.write_bytes(stam_source.read_bytes())
+
+          fuller_source = out / by_asset['img-fuller-v3-gospel-worthy-1785-pr1']['output_file_name']
+          fuller_target = fuller_dir / 'fuller-v3-gospel-worthy-1785-pr1.png'
+          fuller_target.write_bytes(fuller_source.read_bytes())
 
           version = subprocess.run(['pdftoppm', '-v'], check=True, capture_output=True, text=True)
           poppler_lines = (version.stderr or version.stdout).splitlines()
@@ -173,6 +180,14 @@ jobs:
                       'transform': {'kind': 'identity_copy'},
                       **identity(stam_target),
                   },
+                  {
+                      'publication_id': 'lordchrist-history-fuller-gospel-worthy-v3',
+                      'slot': 'hero',
+                      'source_asset_id': 'img-fuller-v3-gospel-worthy-1785-pr1',
+                      'source_sha256': expected['img-fuller-v3-gospel-worthy-1785-pr1'],
+                      'transform': {'kind': 'identity_copy', 'google_books_page_id': 'PR1'},
+                      **identity(fuller_target),
+                  },
               ],
           }
           receipt_path = root / 'content/telegram/lordchrist/historical-editorial/v1/v3/media-render-receipt-phase2-2026-09-09.json'
@@ -193,6 +208,7 @@ jobs:
             content/telegram/lordchrist/historical-editorial/v1/v3/tyndale-new-testament-1526/media/tyndale-v3-worms-1526-page-44.png \
             content/telegram/lordchrist/historical-editorial/v1/v3/tyndale-new-testament-1526/media/tyndale-v3-prison-letter-1535-page-462.png \
             content/telegram/lordchrist/historical-editorial/v1/v3/stam-china-december-1934/media/stam-v3-wheaton-telegram.jpg \
+            content/telegram/lordchrist/historical-editorial/v1/v3/fuller-gospel-worthy/media/fuller-v3-gospel-worthy-1785-pr1.png \
             content/telegram/lordchrist/historical-editorial/v1/v3/media-render-receipt-phase2-2026-09-09.json
           if git diff --cached --quiet; then
             echo 'Exact materialized bytes already committed.'
