@@ -27,6 +27,7 @@ _ALLOWED_DOWNLOAD_HOSTS = frozenset(
         "api.digitale-sammlungen.de",
         "baptiststudiesonline.com",
         "bible-researcher.com",
+        "books.google.com",
         "capito.iterpubs.org",
         "careycenter.wmcarey.edu",
         "fromthevault.wheaton.edu",
