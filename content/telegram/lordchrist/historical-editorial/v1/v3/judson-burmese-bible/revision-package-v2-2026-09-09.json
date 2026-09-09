@@ -1,0 +1,93 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-revision-package",
+  "schema_version": 2,
+  "revision_id": "historical-revision-judson-burmese-bible-archival-v2-2026-09-09",
+  "owning_issue": 561,
+  "checked_on": "2026-09-09",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "publication_id": "lordchrist-history-judson-burmese-bible-v3",
+  "state": "provider_inert",
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "post": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/judson-burmese-bible/post.json",
+    "git_blob_sha": "0d2d3ac51b2fa80c3b751e7ec345a24a10e7e65b"
+  },
+  "verification": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/verification/judson-burmese-bible-v3-2026-09-08.json",
+    "git_blob_sha": "dca4428b3e2d2d003d4301d159e210e8acafb0f1"
+  },
+  "theology_profile": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/theology-profile.json",
+    "git_blob_sha": "06c879d9b55cfb37d8995dca6c3a2197522c850f"
+  },
+  "source_shards": [
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/judson-human-v2.json",
+      "git_blob_sha": "ce169d4e5121714dea6b63cbc7161cbc23272f4e"
+    },
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-a.json",
+      "git_blob_sha": "05792a526c43395e6f5074a2676cb0afe53fcf8c"
+    }
+  ],
+  "acquisition_manifest": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/media-acquisition-manifest-v2-2026-09-09.json",
+    "git_blob_sha": "daf1ca2fe768e5a3f970c0c18b204ac029d249cf"
+  },
+  "render_receipt": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/media-render-receipt-v2-2026-09-09.json",
+    "git_blob_sha": "d7598e41b08f4b9b87694a02fe0e82d1f13a6138"
+  },
+  "archival_media": [
+    {
+      "asset_id": "img-judson-v3-hero-archive-exhibit",
+      "slot": "hero",
+      "source_id": "src-judson-brown-portrait",
+      "acquisition_asset_id": "img-judson-v3-hero-archive",
+      "exhibit_kind": "archival_portrait",
+      "accepted_file": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/judson-burmese-bible/media/judson-v3-hero-brown-healy-1846.jpg",
+        "git_blob_sha": "1122e02a77d5aabcfb7be54740c4d960230195f2"
+      },
+      "accepted_mime": "image/jpeg",
+      "accepted_byte_length": 320752,
+      "accepted_width": 792,
+      "accepted_height": 941,
+      "accepted_sha256": "sha256:277613ba298814cf8d3ea77651d2ee932d6a2c64235b6baa274f5f6309cafe26",
+      "placement_after": "title",
+      "depicts": "Archival exhibit for src-judson-brown-portrait derived from the exact pinned acquisition source.",
+      "purpose": "Identify the historical person using an attributed archival portrait.",
+      "claim_boundary": "The portrait identifies the subject only and is not evidence for the narrative event itself.",
+      "rights_basis": "Brown University portrait by George P. A. Healy (1846); Wikimedia Commons records the work as public domain with Public Domain Mark 1.0.",
+      "attribution_text": "Brown University Library; George P. A. Healy, Adoniram Judson, 1846; public-domain reproduction via Wikimedia Commons.",
+      "transport_ready": false,
+      "provider_write_performed": false
+    },
+    {
+      "asset_id": "img-judson-v3-wayland-source-pdf-exhibit",
+      "slot": "document",
+      "source_id": "src-judson-wayland-vol2-v3",
+      "acquisition_asset_id": "img-judson-v3-wayland-source-pdf",
+      "exhibit_kind": "primary_document_facsimile",
+      "accepted_file": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/judson-burmese-bible/media/judson-v3-wayland-burmese-bible-completion-page-85.png",
+        "git_blob_sha": "1e897886802dc87ccb546c86eb6486c6b034082e"
+      },
+      "accepted_mime": "image/png",
+      "accepted_byte_length": 664801,
+      "accepted_width": 718,
+      "accepted_height": 1280,
+      "accepted_sha256": "sha256:03533a0ddd63f65d228b2b2c3b9a11f67a787577f9c3759f1ab1186e1385e3b6",
+      "placement_after": "evidence",
+      "depicts": "Archival exhibit for src-judson-wayland-vol2-v3 derived from the exact pinned acquisition source.",
+      "purpose": "Show the exact bound historical document or a deterministic page rendering of that source.",
+      "claim_boundary": "The exhibit evidences only the bound source page and is not a reconstruction of events outside that document.",
+      "rights_basis": "Public-domain Wayland memoir, exact volume II. Cambridge HTR independently cites archive.org/details/memoiroflifela02wayl as Wayland, Memoir, volume 2; it is used as the TLS-valid acquisition facsimile of the bound primary compilation.",
+      "attribution_text": "Francis Wayland, A Memoir of the Life and Labors of the Rev. Adoniram Judson, D.D., Vol. II; Internet Archive facsimile independently cited by Cambridge HTR.",
+      "transport_ready": false,
+      "provider_write_performed": false
+    }
+  ]
+}

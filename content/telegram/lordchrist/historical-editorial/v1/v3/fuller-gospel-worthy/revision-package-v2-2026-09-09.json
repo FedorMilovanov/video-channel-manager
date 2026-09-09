@@ -1,0 +1,93 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-revision-package",
+  "schema_version": 2,
+  "revision_id": "historical-revision-fuller-gospel-worthy-archival-v2-2026-09-09",
+  "owning_issue": 561,
+  "checked_on": "2026-09-09",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "publication_id": "lordchrist-history-fuller-gospel-worthy-v3",
+  "state": "provider_inert",
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "post": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/fuller-gospel-worthy/post.json",
+    "git_blob_sha": "829ad1f4ddaf19477b78354fdb2c3088affadd3f"
+  },
+  "verification": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/verification/fuller-gospel-worthy-v3-2026-09-08.json",
+    "git_blob_sha": "15669b063f0831ae09f0d8525dc5a9f582e55a6d"
+  },
+  "theology_profile": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/theology-profile.json",
+    "git_blob_sha": "06c879d9b55cfb37d8995dca6c3a2197522c850f"
+  },
+  "source_shards": [
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/baptist-mission.json",
+      "git_blob_sha": "a7df1c79468ddf6b371a158c99c19e0d4b7f08c2"
+    },
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-b.json",
+      "git_blob_sha": "45574be0de901178b7aab40536233931f893d275"
+    }
+  ],
+  "acquisition_manifest": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/media-acquisition-manifest-v2-2026-09-09.json",
+    "git_blob_sha": "daf1ca2fe768e5a3f970c0c18b204ac029d249cf"
+  },
+  "render_receipt": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/media-render-receipt-v2-2026-09-09.json",
+    "git_blob_sha": "d7598e41b08f4b9b87694a02fe0e82d1f13a6138"
+  },
+  "archival_media": [
+    {
+      "asset_id": "img-fuller-v3-gospel-worthy-1785-pr1-exhibit",
+      "slot": "hero",
+      "source_id": "src-fuller-wellcome-1785",
+      "acquisition_asset_id": "img-fuller-v3-gospel-worthy-1785-pr1",
+      "exhibit_kind": "primary_document_facsimile",
+      "accepted_file": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/fuller-gospel-worthy/media/fuller-v3-gospel-worthy-1785-pr1.png",
+        "git_blob_sha": "21a8070480475836114ca04f1c3de9078109156b"
+      },
+      "accepted_mime": "image/png",
+      "accepted_byte_length": 15567,
+      "accepted_width": 300,
+      "accepted_height": 391,
+      "accepted_sha256": "sha256:12557f8948b8bdc6af436e3a8b3adddd45f7f7d2b67c5832e799cdf4686f72bb",
+      "placement_after": "title",
+      "depicts": "Archival exhibit for src-fuller-wellcome-1785 derived from the exact pinned acquisition source.",
+      "purpose": "Show the exact bound historical document or a deterministic page rendering of that source.",
+      "claim_boundary": "The exhibit evidences only the bound source page and is not a reconstruction of events outside that document.",
+      "rights_basis": "Public-domain 1785 first edition. Wellcome and Folger identify the edition and ESTC T87556; Google Books supplies the page image from its digitization of the British Library original.",
+      "attribution_text": "Andrew Fuller, The Gospel of Christ Worthy of All Acceptation, Northampton, 1785; British Library original digitized by Google Books, edition cross-checked against Wellcome/Folger.",
+      "transport_ready": false,
+      "provider_write_performed": false
+    },
+    {
+      "asset_id": "img-fuller-v3-taylor-wellcome-catalog-exhibit",
+      "slot": "opposition",
+      "source_id": "src-fuller-taylor-wellcome-1786-v3",
+      "acquisition_asset_id": "img-fuller-v3-taylor-wellcome-catalog",
+      "exhibit_kind": "institutional_catalog_record",
+      "accepted_file": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/fuller-gospel-worthy/media/fuller-v3-taylor-wellcome-catalog-record.png",
+        "git_blob_sha": "be05ad54ceb65d809ec2a4b24d7db6fcb8b031c6"
+      },
+      "accepted_mime": "image/png",
+      "accepted_byte_length": 70628,
+      "accepted_width": 1600,
+      "accepted_height": 1000,
+      "accepted_sha256": "sha256:edc8acc29a8082669e4f4df1395543a75734e9870424ac1fe0c6b3a0d901ebcd",
+      "placement_after": "evidence",
+      "depicts": "Archival exhibit for src-fuller-taylor-wellcome-1786-v3 derived from the exact pinned acquisition source.",
+      "purpose": "Show the exact institutional catalogue record for the opposing 1786 work.",
+      "claim_boundary": "This is a rendered catalogue record, explicitly not a facsimile or reconstruction of the 1786 title page.",
+      "rights_basis": "Wellcome Collection exposes the institutional catalogue record through its public Catalogue API; the rendered exhibit is explicitly a catalogue record and not a facsimile of the 1786 title page.",
+      "attribution_text": "Wellcome Collection catalogue record d2cy4t36 for Dan Taylor, Observations on Andrew Fuller, 1786.",
+      "transport_ready": false,
+      "provider_write_performed": false
+    }
+  ]
+}

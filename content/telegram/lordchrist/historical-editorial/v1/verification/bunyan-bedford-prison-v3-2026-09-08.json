@@ -2,35 +2,84 @@
   "schema_name": "video-channel-manager.telegram-historical-topic-verification",
   "schema_version": 1,
   "verification_id": "bunyan-bedford-prison-v3-2026-09-08",
-  "checked_on": "2026-09-08",
+  "checked_on": "2026-09-09",
   "publication_id": "lordchrist-history-bunyan-bedford-prison-v3",
   "reviewed_document_urls": 5,
   "primary_document_urls": 3,
   "institutional_or_scholarly_urls": 2,
-  "independent_evidence_groups_used_in_reader_claims": ["bunyan-self-imprisonment","bedfordshire-hsa1672","folger-celm-bunyan","early-nonconformity-records","gay-bunyan-prison"],
+  "independent_evidence_groups_used_in_reader_claims": [
+    "bunyan-self-imprisonment",
+    "bedfordshire-hsa1672",
+    "folger-celm-bunyan",
+    "early-nonconformity-records",
+    "gay-bunyan-prison"
+  ],
   "source_shards": [
     "content/telegram/lordchrist/historical-editorial/v1/sources/bunyan.json",
     "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-a.json"
   ],
   "method": "primary self-account plus state gaol records plus licence record plus independent prison-history synthesis",
   "important_deltas": [
-    {"kind":"remove","finding":"The v2 cinematic detail that Bunyan had a Bible in his hands at the arrest is not retained without a primary locator."},
-    {"kind":"deepen","finding":"The 1672 gaol calendar is treated as a state administrative artifact rather than a decorative anecdote."},
-    {"kind":"deepen","finding":"The 9 May 1672 preaching licence is separated from the broad release narrative and bound as its own documented event."},
-    {"kind":"boundary","finding":"Pilgrim's Progress composition is not reduced to twelve continuous years in one unchanged cell."}
+    {
+      "kind": "remove",
+      "finding": "The v2 cinematic detail that Bunyan had a Bible in his hands at the arrest is not retained without a primary locator."
+    },
+    {
+      "kind": "deepen",
+      "finding": "The 1672 gaol calendar HSA1672/W/20 remains state administrative evidence in the historical argument rather than a decorative anecdote."
+    },
+    {
+      "kind": "correct",
+      "finding": "The document visual is now the separately identified public Bedford Archives HSA1667/W/58 gaol list. It is explicitly dated 1667 and is not presented as the inaccessible 1672 Slide65 reproduction."
+    },
+    {
+      "kind": "deepen",
+      "finding": "The 9 May 1672 preaching licence is separated from the broad release narrative and bound as its own documented event."
+    },
+    {
+      "kind": "boundary",
+      "finding": "Pilgrim's Progress composition is not reduced to twelve continuous years in one unchanged cell."
+    }
   ],
   "unsupported_popular_claims": [
-    {"claim":"Bunyan was arrested with a Bible visibly in his hands.","status":"excluded_without_locator"},
-    {"claim":"Bunyan spent exactly twelve uninterrupted years in one cell writing Pilgrim's Progress.","status":"rejected_as_overcompressed"}
+    {
+      "claim": "Bunyan was arrested with a Bible visibly in his hands.",
+      "status": "excluded_without_locator"
+    },
+    {
+      "claim": "Bunyan spent exactly twelve uninterrupted years in one cell writing Pilgrim's Progress.",
+      "status": "rejected_as_overcompressed"
+    },
+    {
+      "claim": "The public HSA1667/W/58 image is a reproduction of HSA1672/W/20.",
+      "status": "rejected_as_date_and_artifact_conflation"
+    }
   ],
   "claim_upgrade_conditions": [
-    {"claim":"Bible-in-hand arrest detail","upgrade_requires":"contemporary or Bunyan-authored locator explicitly describing the object at the moment of arrest"}
+    {
+      "claim": "Bible-in-hand arrest detail",
+      "upgrade_requires": "contemporary or Bunyan-authored locator explicitly describing the object at the moment of arrest"
+    }
   ],
   "visual_plan": [
-    {"slot":"hero","source_id":"src-image-bunyan-nlw","concept":"historical Bunyan portrait","state":"planned_unmaterialized","production_ready":false},
-    {"slot":"document","source_id":"src-bunyan-bedfordshire-hsa1672","concept":"1672 Bedford gaol calendar with John Bunnyon entry","state":"planned_unmaterialized","production_ready":false}
+    {
+      "slot": "hero",
+      "source_id": "src-image-bunyan-nlw",
+      "concept": "historical Bunyan portrait",
+      "state": "planned_unmaterialized",
+      "production_ready": false
+    },
+    {
+      "slot": "document",
+      "source_id": "src-bunyan-bedfordshire-hsa1667-v3",
+      "concept": "1667 Bedford gaol calendar HSA1667/W/58 listing John Bunyan",
+      "state": "planned_unmaterialized",
+      "production_ready": false
+    }
   ],
-  "direct_quote_policy": {"status":"no_reader_direct_quote_selected"},
+  "direct_quote_policy": {
+    "status": "no_reader_direct_quote_selected"
+  },
   "reader_copy_result": "accepted_for_v3_integration",
   "provider_write_performed": false
 }

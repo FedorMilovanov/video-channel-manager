@@ -1,0 +1,93 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-revision-package",
+  "schema_version": 2,
+  "revision_id": "historical-revision-stam-china-december-1934-archival-v2-2026-09-09",
+  "owning_issue": 561,
+  "checked_on": "2026-09-09",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "publication_id": "lordchrist-history-stam-china-december-1934-v3",
+  "state": "provider_inert",
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "post": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/stam-china-december-1934/post.json",
+    "git_blob_sha": "94072d6d3b05f6c04b87c4c6e09ecbe9204e6bad"
+  },
+  "verification": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/verification/stam-china-december-1934-v3-2026-09-08.json",
+    "git_blob_sha": "36f08b112e4c5912e684dba0cf0670a3a4a6d0e9"
+  },
+  "theology_profile": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/theology-profile.json",
+    "git_blob_sha": "06c879d9b55cfb37d8995dca6c3a2197522c850f"
+  },
+  "source_shards": [
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/stam-sattler.json",
+      "git_blob_sha": "beaaa44741c5f3028c4a4f05cb6bda730dd04f74"
+    },
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-c.json",
+      "git_blob_sha": "c9e63ecfb4dd3efe229bebc01891b470e2cbd67b"
+    }
+  ],
+  "acquisition_manifest": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/media-acquisition-manifest-v2-2026-09-09.json",
+    "git_blob_sha": "daf1ca2fe768e5a3f970c0c18b204ac029d249cf"
+  },
+  "render_receipt": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/media-render-receipt-v2-2026-09-09.json",
+    "git_blob_sha": "d7598e41b08f4b9b87694a02fe0e82d1f13a6138"
+  },
+  "archival_media": [
+    {
+      "asset_id": "img-stam-v3-wheaton-telegram-exhibit",
+      "slot": "hero",
+      "source_id": "src-stam-wheaton-449",
+      "acquisition_asset_id": "img-stam-v3-wheaton-telegram",
+      "exhibit_kind": "primary_document_facsimile",
+      "accepted_file": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/stam-china-december-1934/media/stam-v3-wheaton-telegram.jpg",
+        "git_blob_sha": "1c158323856d98fe4daa827c366184a59bd8b0b6"
+      },
+      "accepted_mime": "image/jpeg",
+      "accepted_byte_length": 147402,
+      "accepted_width": 675,
+      "accepted_height": 408,
+      "accepted_sha256": "sha256:4ad6ec29439c599cd130d1b1f1412651fb8af6176a0710997dd2010f151e70c9",
+      "placement_after": "title",
+      "depicts": "Archival exhibit for src-stam-wheaton-449 derived from the exact pinned acquisition source.",
+      "purpose": "Show the exact bound historical document or a deterministic page rendering of that source.",
+      "claim_boundary": "The exhibit evidences only the bound source page and is not a reconstruction of events outside that document.",
+      "rights_basis": "Wheaton College Archives & Special Collections publishes the archival telegram as part of its Collection 449 Stam-family exhibit; use remains provider-inert and attributed.",
+      "attribution_text": "Wheaton College Archives & Special Collections, Collection 449: Ephemera of the Stam Family, ‘Stam Baby Safe’ telegram.",
+      "transport_ready": false,
+      "provider_write_performed": false
+    },
+    {
+      "asset_id": "img-stam-v3-frus-1934-epub-exhibit",
+      "slot": "document",
+      "source_id": "src-stam-frus-1934-v3",
+      "acquisition_asset_id": "img-stam-v3-frus-1934-epub",
+      "exhibit_kind": "official_document_excerpt",
+      "accepted_file": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/stam-china-december-1934/media/stam-v3-frus-d381-excerpt.png",
+        "git_blob_sha": "1ef8d580b2cbe5cf02d0593ec44cdd22e07635eb"
+      },
+      "accepted_mime": "image/png",
+      "accepted_byte_length": 89453,
+      "accepted_width": 1600,
+      "accepted_height": 1000,
+      "accepted_sha256": "sha256:717d25d20c9c697f795acae2fe1e9a37c7e70d50c6b862ad8f2b6bfd83c3c7d1",
+      "placement_after": "evidence",
+      "depicts": "Archival exhibit for src-stam-frus-1934-v3 derived from the exact pinned acquisition source.",
+      "purpose": "Show a bounded excerpt of the exact official diplomatic document tied to the historical chronology.",
+      "claim_boundary": "The excerpt evidences only the text present in the pinned official document and does not upgrade later biographical details.",
+      "rights_basis": "Official U.S. Department of State FRUS 1934 volume distributed by the Office of the Historian; the exhibit is a deterministic excerpt of document 381, not a page facsimile.",
+      "attribution_text": "U.S. Department of State, Office of the Historian, FRUS 1934, China, document 381 (December 13, 1934).",
+      "transport_ready": false,
+      "provider_write_performed": false
+    }
+  ]
+}

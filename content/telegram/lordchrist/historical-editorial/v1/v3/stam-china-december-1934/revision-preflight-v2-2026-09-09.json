@@ -1,0 +1,19 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-revision-preflight",
+  "schema_version": 2,
+  "status": "PASS",
+  "revision_id": "historical-revision-stam-china-december-1934-archival-v2-2026-09-09",
+  "revision_sha256": "sha256:51b5521753f45daff1fea842a62de9d5a5a1d3f0d924ba7b063bb53979d0f475",
+  "publication_id": "lordchrist-history-stam-china-december-1934-v3",
+  "source_count": 7,
+  "grade_a_count": 5,
+  "grade_bplus_count": 2,
+  "independent_evidence_groups": 7,
+  "claim_count": 5,
+  "direct_quote_count": 0,
+  "archival_media_count": 2,
+  "transport_ready_media_count": 0,
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "provider_write_performed": false
+}

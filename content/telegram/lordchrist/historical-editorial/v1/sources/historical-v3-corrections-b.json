@@ -2,7 +2,7 @@
   "schema_name": "video-channel-manager.telegram-historical-source-shard",
   "schema_version": 1,
   "shard_id": "history-sources-historical-v3-corrections-b",
-  "checked_on": "2026-09-08",
+  "checked_on": "2026-09-09",
   "sources": [
     {
       "source_id": "src-carey-bms-minute-record-v3",
@@ -38,6 +38,18 @@
       "evidence_role": "critical_edition",
       "checked_on": "2026-09-08",
       "topic_tags": ["fuller", "dan-taylor", "duty-faith"],
+      "independence_group": "dan-taylor-1786"
+    },
+    {
+      "source_id": "src-fuller-taylor-wellcome-1786-v3",
+      "title": "Wellcome catalogue record for Dan Taylor, Observations on the Rev. Andrew Fuller's late pamphlet, 1786",
+      "publisher": "Wellcome Collection",
+      "url": "https://content.www.wellcomecollection.org/works/d2cy4t36",
+      "evidence_type": "institutional",
+      "grade": "B+",
+      "evidence_role": "institutional_collection",
+      "checked_on": "2026-09-09",
+      "topic_tags": ["fuller", "dan-taylor", "1786", "catalog-record", "image-provenance"],
       "independence_group": "dan-taylor-1786"
     },
     {

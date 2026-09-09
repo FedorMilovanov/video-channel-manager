@@ -1,0 +1,273 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-media-render-receipt",
+  "schema_version": 2,
+  "owning_issue": 561,
+  "state": "provider_inert",
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "provider_write_performed": false,
+  "manifest_id": "historical-media-acquisition-lordchrist-v3-complete-v2-2026-09-09",
+  "asset_count": 16,
+  "outputs": [
+    {
+      "publication_id": "lordchrist-history-bunyan-bedford-prison-v3",
+      "slot": "hero",
+      "source_asset_id": "img-bunyan-v3-hero-archive",
+      "source_sha256": "sha256:2ffa25321349674e79547f431a4a1984874bacd6f27b3fbb533990a4e129078f",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/bunyan-bedford-prison/media/bunyan-v3-hero-nlw-4672796.jpg",
+      "transform": {
+        "kind": "identity_copy"
+      },
+      "sha256": "sha256:2ffa25321349674e79547f431a4a1984874bacd6f27b3fbb533990a4e129078f",
+      "byte_length": 301180,
+      "mime": "image/jpeg",
+      "width": 1200,
+      "height": 2048
+    },
+    {
+      "publication_id": "lordchrist-history-bunyan-bedford-prison-v3",
+      "slot": "document",
+      "source_asset_id": "img-bunyan-v3-gaol-list-1667",
+      "source_sha256": "sha256:b0cf3e86805d95013f9df6918c2732e12e8f767fccf78653cd8c46c9a69ea602",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/bunyan-bedford-prison/media/bunyan-v3-bedford-hsa1667-w58.jpg",
+      "transform": {
+        "kind": "identity_copy"
+      },
+      "sha256": "sha256:b0cf3e86805d95013f9df6918c2732e12e8f767fccf78653cd8c46c9a69ea602",
+      "byte_length": 100701,
+      "mime": "image/jpeg",
+      "width": 493,
+      "height": 529
+    },
+    {
+      "publication_id": "lordchrist-history-judson-burmese-bible-v3",
+      "slot": "hero",
+      "source_asset_id": "img-judson-v3-hero-archive",
+      "source_sha256": "sha256:277613ba298814cf8d3ea77651d2ee932d6a2c64235b6baa274f5f6309cafe26",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/judson-burmese-bible/media/judson-v3-hero-brown-healy-1846.jpg",
+      "transform": {
+        "kind": "identity_copy"
+      },
+      "sha256": "sha256:277613ba298814cf8d3ea77651d2ee932d6a2c64235b6baa274f5f6309cafe26",
+      "byte_length": 320752,
+      "mime": "image/jpeg",
+      "width": 792,
+      "height": 941
+    },
+    {
+      "publication_id": "lordchrist-history-judson-burmese-bible-v3",
+      "slot": "document",
+      "source_asset_id": "img-judson-v3-wayland-source-pdf",
+      "source_sha256": "sha256:3485fb9fa5dd63c1a688f279d6f76b7308323740da3a7150ad98b4a2c8c5249d",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/judson-burmese-bible/media/judson-v3-wayland-burmese-bible-completion-page-85.png",
+      "transform": {
+        "kind": "pdf_page_render",
+        "pdf_page_1_based": 85,
+        "dpi": 180,
+        "rotation_degrees_clockwise": 0
+      },
+      "sha256": "sha256:03533a0ddd63f65d228b2b2c3b9a11f67a787577f9c3759f1ab1186e1385e3b6",
+      "byte_length": 664801,
+      "mime": "image/png",
+      "width": 718,
+      "height": 1280
+    },
+    {
+      "publication_id": "lordchrist-history-spurgeon-cholera-1854-v3",
+      "slot": "hero",
+      "source_asset_id": "img-spurgeon-cholera-v3-hero-archive",
+      "source_sha256": "sha256:a7cdc68b7b09e57133faed8b33641057e0c0c18ac4436b3064d4fab405847be9",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/spurgeon-cholera-1854/media/spurgeon-cholera-v3-hero-nlw-4671161.jpg",
+      "transform": {
+        "kind": "identity_copy"
+      },
+      "sha256": "sha256:a7cdc68b7b09e57133faed8b33641057e0c0c18ac4436b3064d4fab405847be9",
+      "byte_length": 264910,
+      "mime": "image/jpeg",
+      "width": 1200,
+      "height": 2014
+    },
+    {
+      "publication_id": "lordchrist-history-spurgeon-cholera-1854-v3",
+      "slot": "document",
+      "source_asset_id": "img-spurgeon-cholera-v3-snow-map-archive",
+      "source_sha256": "sha256:248dca60304a3eef769011e0eae200885f1817fa9bb0885cafcbbffa8f449b47",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/spurgeon-cholera-1854/media/spurgeon-cholera-v3-snow-map-wellcome-l0072142.jpg",
+      "transform": {
+        "kind": "identity_copy"
+      },
+      "sha256": "sha256:248dca60304a3eef769011e0eae200885f1817fa9bb0885cafcbbffa8f449b47",
+      "byte_length": 7164259,
+      "mime": "image/jpeg",
+      "width": 5777,
+      "height": 7749
+    },
+    {
+      "publication_id": "lordchrist-history-carey-enquiry-missions-v3",
+      "slot": "hero",
+      "source_asset_id": "img-carey-v3-enquiry-source-pdf",
+      "source_sha256": "sha256:993e13d4d6cd8b75fc5388c6f0b77b3fb0ed4e0aef8ed1eb3ca750942d9667e0",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/carey-enquiry-missions/media/carey-v3-enquiry-title-page-1.png",
+      "transform": {
+        "kind": "pdf_page_render",
+        "pdf_page_1_based": 1,
+        "dpi": 180,
+        "rotation_degrees_clockwise": 0
+      },
+      "sha256": "sha256:edb04198fe9f61fe227fd222898eef3de4a1f13e0621158ce0f7ea751b4425d2",
+      "byte_length": 157308,
+      "mime": "image/png",
+      "width": 1530,
+      "height": 1980
+    },
+    {
+      "publication_id": "lordchrist-history-carey-enquiry-missions-v3",
+      "slot": "document",
+      "source_asset_id": "img-carey-v3-bms-minute-source-pdf",
+      "source_sha256": "sha256:469fd16ae617a55f8dd8296328814794c7226e1781215069b286d6c1109b8d1f",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/carey-enquiry-missions/media/carey-v3-bms-minute-page-85.png",
+      "transform": {
+        "kind": "pdf_page_render",
+        "pdf_page_1_based": 85,
+        "dpi": 180,
+        "rotation_degrees_clockwise": 0
+      },
+      "sha256": "sha256:bc20e6e9750a4ae71c138f7950aca82341f779dd02266b6b1d0790411e672fe9",
+      "byte_length": 88154,
+      "mime": "image/png",
+      "width": 863,
+      "height": 1294
+    },
+    {
+      "publication_id": "lordchrist-history-fuller-gospel-worthy-v3",
+      "slot": "hero",
+      "source_asset_id": "img-fuller-v3-gospel-worthy-1785-pr1",
+      "source_sha256": "sha256:12557f8948b8bdc6af436e3a8b3adddd45f7f7d2b67c5832e799cdf4686f72bb",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/fuller-gospel-worthy/media/fuller-v3-gospel-worthy-1785-pr1.png",
+      "transform": {
+        "kind": "identity_copy"
+      },
+      "sha256": "sha256:12557f8948b8bdc6af436e3a8b3adddd45f7f7d2b67c5832e799cdf4686f72bb",
+      "byte_length": 15567,
+      "mime": "image/png",
+      "width": 300,
+      "height": 391
+    },
+    {
+      "publication_id": "lordchrist-history-fuller-gospel-worthy-v3",
+      "slot": "opposition",
+      "source_asset_id": "img-fuller-v3-taylor-wellcome-catalog",
+      "source_sha256": "sha256:782d96dffcc8748657a8e3679fffbbfd2cf73e3c93a9fb0c684aa98e9c26543d",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/fuller-gospel-worthy/media/fuller-v3-taylor-wellcome-catalog-record.png",
+      "transform": {
+        "kind": "institutional_catalog_record",
+        "record_id": "d2cy4t36"
+      },
+      "sha256": "sha256:edc8acc29a8082669e4f4df1395543a75734e9870424ac1fe0c6b3a0d901ebcd",
+      "byte_length": 70628,
+      "mime": "image/png",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "publication_id": "lordchrist-history-tyndale-new-testament-1526-v3",
+      "slot": "hero",
+      "source_asset_id": "img-tyndale-v3-worms-source-pdf",
+      "source_sha256": "sha256:421e5071c54b1d4aa261d81b94f89467deff1e8ac6950c4b0e37fabad5aa1def",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/tyndale-new-testament-1526/media/tyndale-v3-worms-1526-page-44.png",
+      "transform": {
+        "kind": "pdf_page_render",
+        "pdf_page_1_based": 44,
+        "dpi": 180,
+        "rotation_degrees_clockwise": 0
+      },
+      "sha256": "sha256:05eb3258f96cc6d69208e15dbbdf4c1b77b24fa970b0baecd9a5f0bd73a34450",
+      "byte_length": 2293770,
+      "mime": "image/png",
+      "width": 1186,
+      "height": 1755
+    },
+    {
+      "publication_id": "lordchrist-history-tyndale-new-testament-1526-v3",
+      "slot": "document",
+      "source_asset_id": "img-tyndale-v3-prison-letter-demaus-pdf",
+      "source_sha256": "sha256:44411b2cf6f93139b92a78d9526acdc531f579c8ee9b311bb37ae852263f599b",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/tyndale-new-testament-1526/media/tyndale-v3-prison-letter-1535-page-462.png",
+      "transform": {
+        "kind": "pdf_page_render",
+        "pdf_page_1_based": 462,
+        "dpi": 180,
+        "rotation_degrees_clockwise": 90
+      },
+      "sha256": "sha256:24ffc3c42f06dc6d021043b69dd08f001ad9b470d33684c542ed29f11366b023",
+      "byte_length": 579695,
+      "mime": "image/png",
+      "width": 1428,
+      "height": 1445
+    },
+    {
+      "publication_id": "lordchrist-history-stam-china-december-1934-v3",
+      "slot": "hero",
+      "source_asset_id": "img-stam-v3-wheaton-telegram",
+      "source_sha256": "sha256:4ad6ec29439c599cd130d1b1f1412651fb8af6176a0710997dd2010f151e70c9",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/stam-china-december-1934/media/stam-v3-wheaton-telegram.jpg",
+      "transform": {
+        "kind": "identity_copy"
+      },
+      "sha256": "sha256:4ad6ec29439c599cd130d1b1f1412651fb8af6176a0710997dd2010f151e70c9",
+      "byte_length": 147402,
+      "mime": "image/jpeg",
+      "width": 675,
+      "height": 408
+    },
+    {
+      "publication_id": "lordchrist-history-stam-china-december-1934-v3",
+      "slot": "document",
+      "source_asset_id": "img-stam-v3-frus-1934-epub",
+      "source_sha256": "sha256:93e14f142e9f4e3576a438e58e29179673b46c1bd1a26bd14e0a9fda65279770",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/stam-china-december-1934/media/stam-v3-frus-d381-excerpt.png",
+      "transform": {
+        "kind": "official_document_excerpt",
+        "epub_member": "OEBPS/d381.html"
+      },
+      "sha256": "sha256:717d25d20c9c697f795acae2fe1e9a37c7e70d50c6b862ad8f2b6bfd83c3c7d1",
+      "byte_length": 89453,
+      "mime": "image/png",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "publication_id": "lordchrist-history-sattler-schleitheim-1527-v3",
+      "slot": "hero",
+      "source_asset_id": "img-sattler-v3-schleitheim-bsb-00001",
+      "source_sha256": "sha256:b39bba67b6c700a310e0406c0d384aee56c284ca315c3bb05c2721b8a41c8203",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/sattler-schleitheim-1527/media/sattler-v3-schleitheim-bsb-00001.jpg",
+      "transform": {
+        "kind": "identity_copy"
+      },
+      "sha256": "sha256:b39bba67b6c700a310e0406c0d384aee56c284ca315c3bb05c2721b8a41c8203",
+      "byte_length": 217423,
+      "mime": "image/jpeg",
+      "width": 1273,
+      "height": 1707
+    },
+    {
+      "publication_id": "lordchrist-history-sattler-schleitheim-1527-v3",
+      "slot": "document",
+      "source_asset_id": "img-sattler-v3-letter316-source-pdf",
+      "source_sha256": "sha256:1daf77128e3496f2f10aee5544ba09d27c4911ea208cdb47c896228e8fb2858c",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/sattler-schleitheim-1527/media/sattler-v3-letter-316-page-1.png",
+      "transform": {
+        "kind": "pdf_page_render",
+        "pdf_page_1_based": 1,
+        "dpi": 180,
+        "rotation_degrees_clockwise": 0
+      },
+      "sha256": "sha256:6fa6c0d6237c67e1e0da74afe1cac0292fe2b5ce2344f9320f95239c521c7abd",
+      "byte_length": 138537,
+      "mime": "image/png",
+      "width": 1530,
+      "height": 1980
+    }
+  ]
+}
