@@ -60,6 +60,22 @@
       "attribution_text": "Robert Demaus, William Tyndale: A Biography, revised by Richard Lovett, 1886; facsimile of the 1535 Vilvorde prison letter, cross-identified by CELM TiW 6.",
       "acquisition_kind": "direct_pdf",
       "provider_write_performed": false
+    },
+    {
+      "asset_id": "img-fuller-v3-gospel-worthy-1785-pr1",
+      "publication_id": "lordchrist-history-fuller-gospel-worthy-v3",
+      "slot": "hero",
+      "source_id": "src-fuller-wellcome-1785",
+      "source_page_url": "https://content.www.wellcomecollection.org/works/ev8wpye6",
+      "acquisition_page_url": "https://books.google.com/books?id=UfRhAAAAcAAJ&pg=PR1&source=gbs_selected_pages",
+      "download_url": "https://books.google.com/books/content?id=UfRhAAAAcAAJ&pg=PR1&img=1&zoom=2&hl=en",
+      "expected_upstream_sha1": "bc6a3a797b93ed6aa75aa73b206e1582bbd9496d",
+      "expected_source_mime": "image/png",
+      "output_file_name": "fuller-v3-gospel-worthy-1785-pr1.png",
+      "rights_basis": "Public-domain 1785 first edition. Wellcome and Folger identify the edition and ESTC T87556; Google Books supplies the page image from its digitization of the British Library original.",
+      "attribution_text": "Andrew Fuller, The Gospel of Christ Worthy of All Acceptation, Northampton, 1785; British Library original digitized by Google Books, edition cross-checked against Wellcome/Folger.",
+      "acquisition_kind": "direct_image",
+      "provider_write_performed": false
     }
   ]
 }
