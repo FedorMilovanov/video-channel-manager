@@ -3,7 +3,7 @@
   "schema_version": 1,
   "batch_id": "historical-v3-batch-lordchrist-remaining-eight-2026-09-08",
   "owning_issue": 561,
-  "checked_on": "2026-09-08",
+  "checked_on": "2026-09-09",
   "project_key": "lord-god-strength",
   "channel_username": "@lordchrist",
   "state": "provider_inert",
@@ -32,11 +32,11 @@
       "source_shards": [
         {
           "path": "content/telegram/lordchrist/historical-editorial/v1/sources/bunyan.json",
-          "git_blob_sha": "11c2439e2e064f0721005e42351acdd014747535"
+          "git_blob_sha": "14fc172beb608963fda43cb43cb12f2aeacabba7"
         },
         {
           "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-a.json",
-          "git_blob_sha": "9e6a45a880b3d61af87fbfcf54876dc84515b55a"
+          "git_blob_sha": "05792a526c43395e6f5074a2676cb0afe53fcf8c"
         }
       ],
       "expected_visual_slots": 2
@@ -59,7 +59,7 @@
         },
         {
           "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-a.json",
-          "git_blob_sha": "9e6a45a880b3d61af87fbfcf54876dc84515b55a"
+          "git_blob_sha": "05792a526c43395e6f5074a2676cb0afe53fcf8c"
         }
       ],
       "expected_visual_slots": 2
@@ -82,7 +82,7 @@
         },
         {
           "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-a.json",
-          "git_blob_sha": "9e6a45a880b3d61af87fbfcf54876dc84515b55a"
+          "git_blob_sha": "05792a526c43395e6f5074a2676cb0afe53fcf8c"
         }
       ],
       "expected_visual_slots": 2
