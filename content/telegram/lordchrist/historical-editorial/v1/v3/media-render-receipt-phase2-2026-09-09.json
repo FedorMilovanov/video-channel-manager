@@ -61,6 +61,22 @@
       "mime": "image/jpeg",
       "width": 675,
       "height": 408
+    },
+    {
+      "publication_id": "lordchrist-history-fuller-gospel-worthy-v3",
+      "slot": "hero",
+      "source_asset_id": "img-fuller-v3-gospel-worthy-1785-pr1",
+      "source_sha256": "sha256:12557f8948b8bdc6af436e3a8b3adddd45f7f7d2b67c5832e799cdf4686f72bb",
+      "transform": {
+        "kind": "identity_copy",
+        "google_books_page_id": "PR1"
+      },
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/fuller-gospel-worthy/media/fuller-v3-gospel-worthy-1785-pr1.png",
+      "sha256": "sha256:12557f8948b8bdc6af436e3a8b3adddd45f7f7d2b67c5832e799cdf4686f72bb",
+      "byte_length": 15567,
+      "mime": "image/png",
+      "width": 300,
+      "height": 391
     }
   ]
 }
