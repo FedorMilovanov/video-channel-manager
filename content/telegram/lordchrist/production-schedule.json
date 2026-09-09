@@ -29,7 +29,8 @@
   "max_verified_per_day": 2,
   "backfill_policy": "none",
   "queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
+  "successor_queue_digest": "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873",
   "presentation_policy_id": "lordchrist-editorial-v2",
   "presentation_policy_sha256": "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8",
-  "activation_note": "Autonomous production enabled after verified manual canary 1470 and verified GitHub-hosted presentation test 1471. Slot policy v3 treats GitHub scheduler delay as a bounded same-day lease rather than backfill: the morning 09:17 event remains eligible only until the 21:17 editorial boundary, while the evening 21:17 event expires before the Moscow calendar day ends. Existing strict ledger guards still enforce one verified publication per slot, two per day, no scheduled reruns, no catch-up/backfill, exact Telegram identity, predecessor queue binding, and reviewed presentation policy. Successor release binding is provided separately by the sealed post-predecessor activation envelope."
+  "activation_note": "Autonomous production enabled after verified manual canary 1470 and verified GitHub-hosted presentation test 1471. Slot policy v3 treats GitHub scheduler delay as a bounded same-day lease rather than backfill: the morning 09:17 event remains eligible only until the 21:17 editorial boundary, while the evening 21:17 event expires before the Moscow calendar day ends. Existing strict ledger guards still enforce one verified publication per slot, two per day, no scheduled reruns, no catch-up/backfill, exact Telegram identity, predecessor queue binding, and reviewed presentation policy. The sealed successor normalized corpus digest is also release-bound here, while provider authorization remains separately gated by successor-activation-v1.json and predecessor terminality."
 }
