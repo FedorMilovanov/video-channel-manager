@@ -14,130 +14,92 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
-      - name: Probe final archival binary routes
+      - name: Inspect final unresolved archival binary routes
         shell: bash
         run: |
-          set -euo pipefail
-          UA='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/150.0 Safari/537.36'
+          set -u -o pipefail
+          UA='video-channel-manager-historical-media-locator/1.0 (+https://github.com/FedorMilovanov/video-channel-manager)'
           tmp="$(mktemp -d)"
           trap 'rm -rf "$tmp"' EXIT
 
-          echo '=== BEDFORD SLIDE65 INPUTS ==='
+          echo '=== WELLCOME EXACT TAYLOR WORK d2cy4t36 ==='
+          for url in \
+            'https://api.wellcomecollection.org/catalogue/v2/works/d2cy4t36?include=identifiers,items,holdings,contributors,production,images' \
+            'https://api.wellcomecollection.org/catalogue/v2/images?query=d2cy4t36&pageSize=100'; do
+            echo "WELLCOME_URL $url"
+            if curl -fsSL --max-time 30 -A "$UA" "$url" -o "$tmp/wellcome.json"; then
+              python -m json.tool "$tmp/wellcome.json" | head -1200
+              python - "$tmp/wellcome.json" <<'PY'
+          import json,sys
+          v=json.load(open(sys.argv[1],encoding='utf-8'))
+          def walk(x,path=''):
+              if isinstance(x,dict):
+                  for k,val in x.items():
+                      p=f'{path}.{k}' if path else k
+                      if k in {'url','id','label','license','linkText','accessConditions','locations','items','images','thumbnail','referenceNumber','title'}:
+                          print('FIELD',p,json.dumps(val,ensure_ascii=False)[:4000])
+                      walk(val,p)
+              elif isinstance(x,list):
+                  for i,val in enumerate(x): walk(val,f'{path}[{i}]')
+          walk(v)
+          PY
+            else
+              echo 'WELLCOME_FETCH_FAILED'
+            fi
+          done
+
+          echo '=== WELLCOME TITLE SEARCH ==='
+          python - <<'PY' > "$tmp/wellcome-search-url"
+          import urllib.parse
+          q='Observations on the Rev. Andrew Fuller late pamphlet Dan Taylor 1786'
+          print('https://api.wellcomecollection.org/catalogue/v2/works?'+urllib.parse.urlencode({'query':q,'include':'identifiers,items,holdings,contributors,production,images','pageSize':20}))
+          PY
+          if curl -fsSL --max-time 30 -A "$UA" "$(cat "$tmp/wellcome-search-url")" -o "$tmp/wellcome-search.json"; then
+            python - "$tmp/wellcome-search.json" <<'PY'
+          import json,sys
+          v=json.load(open(sys.argv[1],encoding='utf-8'))
+          for r in v.get('results',[]):
+              print(json.dumps({k:r.get(k) for k in ('id','title','referenceNumber','items','images','identifiers','availabilities')},ensure_ascii=False,indent=2))
+          PY
+          fi
+
+          echo '=== BEDFORD CHILD HTML MEDIA MARKERS ==='
           curl -fsSL --max-time 30 -A "$UA" 'https://bedsarchivescat.bedford.gov.uk/Details/archive/110669209' -o "$tmp/bed.html"
-          python - "$tmp/bed.html" "$tmp/bed-env.json" <<'PY'
-          import html, json, re, sys
-          from html.parser import HTMLParser
-          from pathlib import Path
-
-          class Inputs(HTMLParser):
-              def __init__(self):
-                  super().__init__(); self.items=[]
-              def handle_starttag(self, tag, attrs):
-                  if tag.casefold() == 'input': self.items.append(dict(attrs))
-
-          text=Path(sys.argv[1]).read_text(encoding='utf-8',errors='replace')
-          parser=Inputs(); parser.feed(text)
-          interesting=[]
-          for item in parser.items:
-              cls=item.get('class','')
-              if 'ais-image' in cls or 'ais-priref' in cls:
-                  interesting.append(item)
-                  print(json.dumps(item,ensure_ascii=False))
-          filenames=[i.get('value') for i in parser.items if 'ais-image-filename-value' in i.get('class','') and i.get('value')]
-          servers=[i.get('value') for i in parser.items if 'ais-image-server' in i.get('class','') and i.get('value')]
-          payload={'filenames':filenames,'servers':servers}
-          Path(sys.argv[2]).write_text(json.dumps(payload),encoding='utf-8')
-          print('BEDFORD_ENV',json.dumps(payload,ensure_ascii=False))
-          for token in ('Slide65','GetImageURL','GetImageViewer','ais-image-filename-value','ais-image-server'):
-              print(token,'hits=',text.count(token))
-          PY
-
-          python - "$tmp/bed-env.json" "$tmp/bed-helper-queries.txt" <<'PY'
-          import json, sys, urllib.parse
-          data=json.load(open(sys.argv[1],encoding='utf-8'))
-          rows=[]
-          for filename in data.get('filenames',[]):
-              for server in data.get('servers',[]):
-                  q=urllib.parse.urlencode({'filename':filename,'imageServer':server,'size':'1600','commentImage':'false'})
-                  rows.append('https://bedsarchivescat.bedford.gov.uk/helper/GetImageURL?'+q)
-                  q2=urllib.parse.urlencode({'filename':filename,'imageServer':server,'totalimages':'1','commentImage':'false'})
-                  rows.append('https://bedsarchivescat.bedford.gov.uk/helper/GetImageViewer?'+q2)
-          open(sys.argv[2],'w',encoding='utf-8').write('\n'.join(rows))
-          PY
-          n=0
-          while IFS= read -r url; do
-            [ -n "$url" ] || continue
-            n=$((n+1)); echo "BEDFORD_HELPER[$n] $url"
-            if curl -fsSL --max-time 30 -A "$UA" -e 'https://bedsarchivescat.bedford.gov.uk/Details/archive/110669209' "$url" -o "$tmp/bed-helper-$n"; then
-              file "$tmp/bed-helper-$n" || true
-              wc -c "$tmp/bed-helper-$n"
-              head -c 2500 "$tmp/bed-helper-$n" | tr '\000' ' ' || true
-              echo
-              python - "$tmp/bed-helper-$n" <<'PY'
-          import re,sys
-          from pathlib import Path
-          data=Path(sys.argv[1]).read_bytes()
-          text=data.decode('utf-8',errors='ignore')
-          urls=list(dict.fromkeys(re.findall(r'https?://[^\s"<>]+',text)))
-          for url in urls:
-              if any(k in url.casefold() for k in ('image','jpg','jpeg','png','tif','slide65')):
-                  print('BEDFORD_DISCOVERED_URL',url[:2000])
-          PY
-            fi
-          done < "$tmp/bed-helper-queries.txt"
-
-          echo '=== GOOGLE BOOKS FULLER PR1 ==='
-          for url in \
-            'https://books.google.com/books?id=UfRhAAAAcAAJ&pg=PR1&source=gbs_selected_pages' \
-            'https://www.google.com/books?id=UfRhAAAAcAAJ&jscmd=SearchWithinVolume2&q=gospel' \
-            'https://books.google.com/books/content?id=UfRhAAAAcAAJ&pg=PR1&img=1&zoom=2&hl=en'; do
-            echo "FULLER_URL $url"
-            if curl -L --max-time 30 -A "$UA" -D "$tmp/full-h" "$url" -o "$tmp/full-b"; then
-              head -40 "$tmp/full-h" | tr -d '\r'
-              file "$tmp/full-b" || true
-              wc -c "$tmp/full-b"
-              sha1sum "$tmp/full-b"; sha256sum "$tmp/full-b"
-              python - "$tmp/full-b" <<'PY'
-          import re,sys
-          from pathlib import Path
-          data=Path(sys.argv[1]).read_bytes()
-          text=data.decode('utf-8',errors='ignore')
-          for token in ('PR1','books/content','pageImage','sig=','img=1','UfRhAAAAcAAJ'):
-              print('TOKEN',token,'hits=',text.count(token))
-          for m in re.finditer(r'.{0,220}(?:PR1|books/content|pageImage|sig=).{0,500}',text,re.I|re.S):
-              print('FULLER_CONTEXT',' '.join(m.group(0).split())[:1800])
-          PY
-            fi
-          done
-
-          echo '=== TAYLOR MAX PLANCK / GOETTINGEN ==='
-          curl -fsSL --max-time 30 -A "$UA" 'https://mpipsyl.disco.mpg.de/Record/E-Books.EB000462974/DetailsIndex' -o "$tmp/taylor-mpi.html"
-          python - "$tmp/taylor-mpi.html" <<'PY'
+          python - "$tmp/bed.html" <<'PY'
           import re,sys
           from pathlib import Path
           text=Path(sys.argv[1]).read_text(encoding='utf-8',errors='replace')
-          for url in dict.fromkeys(re.findall(r'https?://[^\s"<>]+',text)):
-              if any(k in url.casefold() for k in ('goettingen','0220002400','ecco','fulltext')):
-                  print('TAYLOR_LINK',url[:1800])
+          for n,line in enumerate(text.splitlines(),1):
+              low=line.casefold()
+              if any(k in low for k in ('image','media','filename','server','slide65','110669209','download','attachment','digital','thumbnail')):
+                  print(f'BED_L{n}',line[:5000])
+          for src in re.findall(r'(?:src|href)=["\']([^"\']+)',text,re.I):
+              if any(k in src.casefold() for k in ('image','media','download','110669209','slide65','helper')):
+                  print('BED_LINK',src[:3000])
           PY
+
+          echo '=== BEDFORD DETAIL DOWNLOAD ROUTES ==='
           for url in \
-            'http://nl.sub.uni-goettingen.de/id/0220002400?origin=/collection/nlh-ecc' \
-            'https://nl.sub.uni-goettingen.de/id/0220002400?origin=/collection/nlh-ecc'; do
-            echo "TAYLOR_URL $url"
-            curl -L --max-time 30 -A "$UA" -e 'https://mpipsyl.disco.mpg.de/' -D "$tmp/tay-h" "$url" -o "$tmp/tay-b" || true
-            head -40 "$tmp/tay-h" | tr -d '\r' || true
-            file "$tmp/tay-b" || true
-            wc -c "$tmp/tay-b" || true
-            python - "$tmp/tay-b" <<'PY'
-          import re,sys
-          from pathlib import Path
-          p=Path(sys.argv[1])
-          if not p.exists(): raise SystemExit
-          text=p.read_text(encoding='utf-8',errors='ignore')
-          for token in ('pdf','iiif','manifest','image','download','0220002400'):
-              print('TOKEN',token,'hits=',text.casefold().count(token))
-          for url in dict.fromkeys(re.findall(r'https?://[^\s"<>]+',text)):
-              if any(k in url.casefold() for k in ('pdf','iiif','manifest','image','download','0220002400')):
-                  print('TAYLOR_DISCOVERED_URL',url[:2000])
-          PY
+            'https://bedsarchivescat.bedford.gov.uk/Details/download?priref=110669209&database=archive' \
+            'https://bedsarchivescat.bedford.gov.uk/Details/download?priref=110061210&database=archive' \
+            'https://bedsarchivescat.bedford.gov.uk/helper/GetImageViewer?priref=110669209' \
+            'https://bedsarchivescat.bedford.gov.uk/helper/GetImageURL?priref=110669209&size=1600'; do
+            echo "BED_ROUTE $url"
+            curl -L --max-time 30 -A "$UA" -e 'https://bedsarchivescat.bedford.gov.uk/Details/archive/110669209' -D "$tmp/bed-h" "$url" -o "$tmp/bed-b" || true
+            head -30 "$tmp/bed-h" | tr -d '\r' || true
+            file "$tmp/bed-b" || true
+            wc -c "$tmp/bed-b" || true
+            head -c 3000 "$tmp/bed-b" | tr '\000' ' ' || true
+            echo
           done
+
+          echo '=== TAYLOR EXTERNAL EXACT-ID SEARCH ENDPOINTS ==='
+          for url in \
+            'https://archive.org/advancedsearch.php?q=%22T11675%22&fl%5B%5D=identifier&fl%5B%5D=title&fl%5B%5D=creator&fl%5B%5D=date&rows=50&output=json' \
+            'https://archive.org/advancedsearch.php?q=%220220002400%22&fl%5B%5D=identifier&fl%5B%5D=title&fl%5B%5D=creator&fl%5B%5D=date&rows=50&output=json'; do
+            echo "IA_URL $url"
+            curl -fsSL --max-time 30 -A "$UA" "$url" || true
+            echo
+          done
+
+          echo 'diagnostic completed; absence of a route is data, not a workflow failure'
