@@ -30,7 +30,7 @@ class LordchristProviderOutcome(BaseModel):
     schema_name: Literal["video-channel-manager.telegram-lordchrist-provider-outcome"]
     schema_version: Literal[1]
     queue_digest: str = Field(pattern=SHA256_PATTERN)
-    publication_id: str = Field(pattern=r"^lordchrist-[a-z0-9][a-z0-9-]{4,80}$")
+    publication_id: str = Field(pattern=r"^lordchrist-[a-z0-9][a-z0-9-]{4,100}$")
     dispatch_intent_id: str = Field(min_length=16, max_length=128)
     workflow_run_id: str = Field(min_length=1, max_length=128)
     workflow_run_attempt: str = Field(pattern=r"^[1-9][0-9]*$")

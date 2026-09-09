@@ -20,7 +20,7 @@ class PublicationSlotConfig(BaseModel):
     cron: str = Field(min_length=5, max_length=64)
     time: str = Field(pattern=r"^(?:[01][0-9]|2[0-3]):[0-5][0-9]$")
     iso_weekdays: tuple[int, ...]
-    max_lateness_minutes: int = Field(ge=1, le=180)
+    max_lateness_minutes: int = Field(ge=1, le=720)
 
     @field_validator("iso_weekdays")
     @classmethod
@@ -56,6 +56,7 @@ class ProductionSchedule(BaseModel):
     max_verified_per_day: Literal[2]
     backfill_policy: Literal["none"]
     queue_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    successor_queue_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     presentation_policy_id: str = Field(min_length=2, max_length=120)
     presentation_policy_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     activation_note: str = Field(min_length=20, max_length=1000)
@@ -76,8 +77,12 @@ class ProductionSchedule(BaseModel):
             raise ValueError("morning slot cron differs from the release contract")
         if self.slots["evening"].cron != "17 21 * * 2,5,0":
             raise ValueError("evening slot cron differs from the release contract")
-        if any(slot.max_lateness_minutes != 120 for slot in self.slots.values()):
-            raise ValueError("all production slots must use the two-hour freshness window")
+        if self.slots["morning"].max_lateness_minutes != 720:
+            raise ValueError("morning slot must remain valid only until the 21:17 editorial boundary")
+        if self.slots["evening"].max_lateness_minutes != 160:
+            raise ValueError("evening slot must expire before the Moscow calendar day ends")
+        if self.queue_digest == self.successor_queue_digest:
+            raise ValueError("predecessor and successor queue digests must be distinct")
         return self
 
 
@@ -106,8 +111,8 @@ def require_release_binding(
     presentation_policy_id: str,
     presentation_policy_sha256: str,
 ) -> None:
-    if schedule.queue_digest != queue_digest:
-        raise ValueError("production schedule queue digest does not match approved queue digest")
+    if queue_digest not in {schedule.queue_digest, schedule.successor_queue_digest}:
+        raise ValueError("production schedule queue digest does not match an approved quote release")
     if schedule.chat_id != chat_id:
         raise ValueError("production schedule chat id does not match configured Telegram target")
     if schedule.bot_id != bot_id:
@@ -126,7 +131,14 @@ def decide_scheduled_slot(
     event_schedule: str,
     now: datetime | None = None,
 ) -> ScheduleDecision:
-    """Map one GitHub schedule event to one fresh logical slot without catch-up/backfill."""
+    """Map one GitHub schedule event to one bounded same-day logical slot.
+
+    GitHub explicitly does not guarantee exact delivery of scheduled workflows.
+    Lateness here is therefore a lease for the *same* slot, not catch-up or
+    backfill: the morning lease expires at the next editorial boundary and the
+    evening lease expires before the Moscow calendar day ends. Existing ledger
+    guards still enforce one verified publication per slot and two per day.
+    """
 
     current = now or datetime.now(tz=UTC)
     if current.tzinfo is None:

@@ -8,7 +8,9 @@ and provider transport.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
+from typing import Any, cast
 
 from pydantic import ValidationError
 
@@ -48,9 +50,9 @@ from video_channel_manager.telegram_state import (
     initialize_ledger,
     initialize_ledger_file,
     load_dispatch,
-    load_queue,
+    load_queue as _load_legacy_queue,
     load_target_proof,
-    prepare_next,
+    prepare_next as _prepare_next,
     preview_next,
     publication_local_date,
     require_execution_enabled,
@@ -65,7 +67,15 @@ from video_channel_manager.telegram_state import (
 from video_channel_manager.telegram_transport import TelegramApiError, dispatch_prepared, preflight_target
 
 
-def _precheck_ledger_identity(path: Path, queue: TelegramQueue) -> None:
+def load_queue(path: Path) -> Any:
+    """Load either the immutable predecessor queue or a generated sealed successor runtime queue."""
+
+    from video_channel_manager.telegram_quote_runtime import load_active_queue
+
+    return load_active_queue(path)
+
+
+def _precheck_ledger_identity(path: Path, queue: Any) -> None:
     """Report queue-binding failures before low-level schema details obscure them."""
 
     if not path.is_file():
@@ -101,12 +111,12 @@ def _precheck_ledger_identity(path: Path, queue: TelegramQueue) -> None:
             raise ValueError(f"payload changed after ledger initialization: {publication_id}")
 
 
-def load_ledger(path: Path, queue: TelegramQueue) -> TelegramLedger:
+def load_ledger(path: Path, queue: Any) -> TelegramLedger:
     _precheck_ledger_identity(path, queue)
     return _state.load_ledger(path, queue)
 
 
-def load_or_initialize_ledger(path: Path, queue: TelegramQueue) -> TelegramLedger:
+def load_or_initialize_ledger(path: Path, queue: Any) -> TelegramLedger:
     """Backward-compatible name with intentionally strict production semantics."""
 
     return load_ledger(path, queue)
@@ -129,6 +139,37 @@ def save_ledger(path: Path, ledger: TelegramLedger) -> None:
                 ],
             )
     _state.save_ledger(path, ledger)
+
+
+def prepare_next(queue: Any, ledger: TelegramLedger, **kwargs: Any) -> PreparedDispatch:
+    """Preserve predecessor canary/day history across the sealed successor handoff.
+
+    Successor state remains a distinct exact-coverage ledger. A validated shadow
+    view exposes predecessor publications only to the existing canary/per-day
+    safety policy, then copies back only the selected successor intent.
+    """
+
+    from video_channel_manager.telegram_quote_runtime import SUCCESSOR_RUNTIME_SCHEMA, prepare_with_history
+
+    if getattr(queue, "schema_name", None) != SUCCESSOR_RUNTIME_SCHEMA:
+        return _prepare_next(queue, ledger, **kwargs)
+
+    predecessor_queue_raw = os.environ.get("LORDCHRIST_PREDECESSOR_QUEUE_PATH", "").strip()
+    predecessor_ledger_raw = os.environ.get("LORDCHRIST_PREDECESSOR_LEDGER_PATH", "").strip()
+    if not predecessor_queue_raw or not predecessor_ledger_raw:
+        raise RuntimeError("successor prepare requires exact predecessor queue and ledger paths")
+    predecessor_queue = _load_legacy_queue(Path(predecessor_queue_raw))
+    predecessor_ledger = load_ledger(Path(predecessor_ledger_raw), predecessor_queue)
+    return cast(
+        PreparedDispatch,
+        prepare_with_history(
+            queue,
+            ledger,
+            predecessor_ledger,
+            _prepare_next,
+            **kwargs,
+        ),
+    )
 
 
 __all__ = [
