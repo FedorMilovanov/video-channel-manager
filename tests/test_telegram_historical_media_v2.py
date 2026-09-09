@@ -9,7 +9,9 @@ from pydantic import ValidationError
 from video_channel_manager.telegram_historical_media_v2 import (
     HistoricalMediaAcquisitionAssetV2,
     HistoricalMediaAcquisitionManifestV2,
+    _download_host_allowed_v2,
     _epub_probe,
+    _json_probe,
 )
 
 
@@ -38,7 +40,7 @@ def _asset(publication_index: int, slot: str) -> dict[str, object]:
         "slot": slot,
         "source_id": f"src-complete-{publication_index}-{suffix}",
         "source_page_url": "https://history.state.gov/historicaldocuments/frus1934v03/ch8",
-        "acquisition_page_url": "https://history.state.gov/historicaldocuments/frus1934v03/d384",
+        "acquisition_page_url": "https://history.state.gov/historicaldocuments/frus1934v03/d381",
         "download_url": "https://static.history.state.gov/frus/frus1934v03/ebook/frus1934v03.epub",
         "expected_upstream_sha1": "a" * 40,
         "expected_source_mime": "application/epub+zip",
@@ -61,6 +63,20 @@ def test_epub_probe_rejects_compressed_or_wrong_mimetype_entry() -> None:
         _epub_probe(_epub(mimetype=b"application/zip"))
 
 
+def test_json_probe_requires_utf8_json_object() -> None:
+    assert _json_probe(b'{"id":"d2cy4t36"}') == ("application/json", None, None)
+    with pytest.raises(ValueError, match="object"):
+        _json_probe(b"[]")
+    with pytest.raises(ValueError, match="UTF-8 JSON"):
+        _json_probe(b"{broken")
+
+
+def test_v2_extra_archive_hosts_are_narrowly_allowlisted() -> None:
+    assert _download_host_allowed_v2("bedsarchives.bedford.gov.uk")
+    assert _download_host_allowed_v2("api.wellcomecollection.org")
+    assert not _download_host_allowed_v2("example.invalid")
+
+
 def test_epub_asset_requires_epub_kind_and_extension() -> None:
     payload = _asset(1, "document")
     assert HistoricalMediaAcquisitionAssetV2.model_validate(payload)
@@ -72,6 +88,24 @@ def test_epub_asset_requires_epub_kind_and_extension() -> None:
     payload = _asset(1, "document")
     payload["output_file_name"] = "wrong.pdf"
     with pytest.raises(ValidationError, match="suffix"):
+        HistoricalMediaAcquisitionAssetV2.model_validate(payload)
+
+
+def test_json_asset_requires_json_kind_and_extension() -> None:
+    payload = _asset(1, "document")
+    payload.update(
+        {
+            "source_page_url": "https://wellcomecollection.org/works/d2cy4t36",
+            "acquisition_page_url": "https://api.wellcomecollection.org/catalogue/v2/works/d2cy4t36",
+            "download_url": "https://api.wellcomecollection.org/catalogue/v2/works/d2cy4t36",
+            "expected_source_mime": "application/json",
+            "output_file_name": "taylor-1786.json",
+            "acquisition_kind": "direct_json",
+        }
+    )
+    assert HistoricalMediaAcquisitionAssetV2.model_validate(payload)
+    payload["acquisition_kind"] = "direct_epub"
+    with pytest.raises(ValidationError, match="kind differs"):
         HistoricalMediaAcquisitionAssetV2.model_validate(payload)
 
 
