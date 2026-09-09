@@ -1,0 +1,93 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-revision-package",
+  "schema_version": 2,
+  "revision_id": "historical-revision-carey-enquiry-missions-archival-v2-2026-09-09",
+  "owning_issue": 561,
+  "checked_on": "2026-09-09",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "publication_id": "lordchrist-history-carey-enquiry-missions-v3",
+  "state": "provider_inert",
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "post": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/carey-enquiry-missions/post.json",
+    "git_blob_sha": "07afe5003e05d67fa5cd4e1d30b4a7fedf16970c"
+  },
+  "verification": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/verification/carey-enquiry-missions-v3-2026-09-08.json",
+    "git_blob_sha": "0c504999b2908fdc037c09c4df92b8553003fca0"
+  },
+  "theology_profile": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/theology-profile.json",
+    "git_blob_sha": "06c879d9b55cfb37d8995dca6c3a2197522c850f"
+  },
+  "source_shards": [
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/baptist-mission.json",
+      "git_blob_sha": "a7df1c79468ddf6b371a158c99c19e0d4b7f08c2"
+    },
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-b.json",
+      "git_blob_sha": "45574be0de901178b7aab40536233931f893d275"
+    }
+  ],
+  "acquisition_manifest": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/media-acquisition-manifest-v2-2026-09-09.json",
+    "git_blob_sha": "daf1ca2fe768e5a3f970c0c18b204ac029d249cf"
+  },
+  "render_receipt": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/media-render-receipt-v2-2026-09-09.json",
+    "git_blob_sha": "d7598e41b08f4b9b87694a02fe0e82d1f13a6138"
+  },
+  "archival_media": [
+    {
+      "asset_id": "img-carey-v3-enquiry-source-pdf-exhibit",
+      "slot": "hero",
+      "source_id": "src-carey-enquiry-1792",
+      "acquisition_asset_id": "img-carey-v3-enquiry-source-pdf",
+      "exhibit_kind": "primary_document_facsimile",
+      "accepted_file": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/carey-enquiry-missions/media/carey-v3-enquiry-title-page-1.png",
+        "git_blob_sha": "a4cdee247292e1698b0c821dc105147aa3bd4f99"
+      },
+      "accepted_mime": "image/png",
+      "accepted_byte_length": 157308,
+      "accepted_width": 1530,
+      "accepted_height": 1980,
+      "accepted_sha256": "sha256:edb04198fe9f61fe227fd222898eef3de4a1f13e0621158ce0f7ea751b4425d2",
+      "placement_after": "title",
+      "depicts": "Archival exhibit for src-carey-enquiry-1792 derived from the exact pinned acquisition source.",
+      "purpose": "Show the exact bound historical document or a deterministic page rendering of that source.",
+      "claim_boundary": "The exhibit evidences only the bound source page and is not a reconstruction of events outside that document.",
+      "rights_basis": "1792 public-domain primary text, digitized and served by William Carey University as the source edition linked from its Carey Center Enquiry page.",
+      "attribution_text": "William Carey University, Carey Center; William Carey, An Enquiry, Leicester, 1792.",
+      "transport_ready": false,
+      "provider_write_performed": false
+    },
+    {
+      "asset_id": "img-carey-v3-bms-minute-source-pdf-exhibit",
+      "slot": "document",
+      "source_id": "src-carey-bms-minute-record-v3",
+      "acquisition_asset_id": "img-carey-v3-bms-minute-source-pdf",
+      "exhibit_kind": "primary_document_facsimile",
+      "accepted_file": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/carey-enquiry-missions/media/carey-v3-bms-minute-page-85.png",
+        "git_blob_sha": "dcc80768a12a6209735b19160313e8447d92562d"
+      },
+      "accepted_mime": "image/png",
+      "accepted_byte_length": 88154,
+      "accepted_width": 863,
+      "accepted_height": 1294,
+      "accepted_sha256": "sha256:bc20e6e9750a4ae71c138f7950aca82341f779dd02266b6b1d0790411e672fe9",
+      "placement_after": "evidence",
+      "depicts": "Archival exhibit for src-carey-bms-minute-record-v3 derived from the exact pinned acquisition source.",
+      "purpose": "Show the exact bound historical document or a deterministic page rendering of that source.",
+      "claim_boundary": "The exhibit evidences only the bound source page and is not a reconstruction of events outside that document.",
+      "rights_basis": "Mission Studies supplies this digitized BMS historical calendar for free educational use; production use is limited to a source-exhibit page with attribution to the minute-book record.",
+      "attribution_text": "Mission Studies / Baptist Missionary Society historical calendar; October 2, 1792 minute-book record.",
+      "transport_ready": false,
+      "provider_write_performed": false
+    }
+  ]
+}

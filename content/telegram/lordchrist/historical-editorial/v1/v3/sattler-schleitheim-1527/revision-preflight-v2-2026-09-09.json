@@ -1,0 +1,19 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-revision-preflight",
+  "schema_version": 2,
+  "status": "PASS",
+  "revision_id": "historical-revision-sattler-schleitheim-1527-archival-v2-2026-09-09",
+  "revision_sha256": "sha256:628bece58e7999c2a8fd19d937c612bb8ec6ab8506ba18c7c69e261730f21883",
+  "publication_id": "lordchrist-history-sattler-schleitheim-1527-v3",
+  "source_count": 8,
+  "grade_a_count": 6,
+  "grade_bplus_count": 2,
+  "independent_evidence_groups": 8,
+  "claim_count": 6,
+  "direct_quote_count": 0,
+  "archival_media_count": 2,
+  "transport_ready_media_count": 0,
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "provider_write_performed": false
+}
