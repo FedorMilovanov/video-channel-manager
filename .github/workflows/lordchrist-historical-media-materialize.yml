@@ -42,13 +42,19 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install provider-free runtime
+      - name: Install provider-free deterministic render runtime
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --disable-pip-version-check -e '.[dev]'
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends poppler-utils
+          python -m pip install --disable-pip-version-check -e '.[dev,milovi-gap-read]'
           command -v pdftoppm
-          pdftoppm -v 2>&1 | head -2
+          pdftoppm -v 2>&1 | sed -n '1,2p'
+          python - <<'PY'
+          from PIL import __version__
+          print('Pillow', __version__)
+          PY
 
       - name: Re-acquire exact proven source bytes
         shell: bash
@@ -113,7 +119,9 @@ jobs:
           stam_target = stam_dir / 'stam-v3-wheaton-telegram.jpg'
           stam_target.write_bytes(stam_source.read_bytes())
 
-          poppler = subprocess.run(['pdftoppm', '-v'], check=True, capture_output=True, text=True).stderr.splitlines()[0]
+          version = subprocess.run(['pdftoppm', '-v'], check=True, capture_output=True, text=True)
+          poppler_lines = (version.stderr or version.stdout).splitlines()
+          poppler = poppler_lines[0] if poppler_lines else 'pdftoppm-version-unavailable'
 
           def identity(path: Path) -> dict[str, object]:
               data = path.read_bytes()
