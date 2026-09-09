@@ -73,9 +73,7 @@ class SuccessorRuntimeQueue(BaseModel):
     project_key: Literal["lord-god-strength"]
     channel_username: Literal["@lordchrist"]
     release_id: Literal["lordchrist-successor-quotes-v1-integrity-v2"]
-    predecessor_queue_digest: Literal[
-        "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"
-    ]
+    predecessor_queue_digest: Literal["sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"]
     normalized_corpus_digest: str = Field(pattern=SHA256_PATTERN)
     posts: tuple[SuccessorRuntimePost, ...]
 
@@ -110,9 +108,7 @@ class SuccessorActivation(BaseModel):
     channel_username: Literal["@lordchrist"]
     owning_issue: Literal[582]
     release_id: Literal["lordchrist-successor-quotes-v1-integrity-v2"]
-    predecessor_queue_digest: Literal[
-        "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"
-    ]
+    predecessor_queue_digest: Literal["sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"]
     successor_queue_digest: str = Field(pattern=SHA256_PATTERN)
     activation_policy: Literal["after_predecessor_queue_complete"]
     release_state: Literal["armed_after_predecessor_terminal"]
