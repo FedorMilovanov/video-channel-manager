@@ -14,8 +14,6 @@ from video_channel_manager.telegram_models import (
     SHA256_PATTERN,
     TelegramLedger,
     TelegramQueue,
-    canonical_json,
-    sha256_text,
 )
 from video_channel_manager.telegram_quote_successor import (
     LEGACY_QUEUE_DIGEST,
