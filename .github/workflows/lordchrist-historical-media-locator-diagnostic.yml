@@ -12,91 +12,63 @@ permissions:
 jobs:
   diagnose:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 8
     steps:
       - name: Check out exact PR head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - name: Pin final archival page locators and FRUS identity
+      - name: Pin final Bedford and Wellcome source identities
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq poppler-utils unzip >/dev/null
           tmp="$(mktemp -d)"
           trap 'rm -rf "$tmp"' EXIT
           UA='video-channel-manager-historical-media-locator/1.0 (+https://github.com/FedorMilovanov/video-channel-manager)'
 
-          fetch_pdf() {
-            local name="$1" url="$2"
-            echo "=== PDF $name ==="
-            curl -fsSL --retry 3 --max-time 90 -A "$UA" "$url" -o "$tmp/$name.pdf"
-            file "$tmp/$name.pdf"
-            sha1sum "$tmp/$name.pdf"
-            sha256sum "$tmp/$name.pdf"
-            pdfinfo "$tmp/$name.pdf" | grep -E '^(Pages|Page size|Title|Author):' || true
-            pdftotext -layout "$tmp/$name.pdf" "$tmp/$name.txt"
-          }
-
-          fetch_pdf carey 'https://careycenter.wmcarey.edu/enquiry/anenquiry.pdf'
-          fetch_pdf bms 'https://missiology.org.uk/pdf/e-books/bms/bms-calendar.pdf'
-          fetch_pdf judson 'https://archive.org/download/memoiroflifela02wayl/memoiroflifela02wayl.pdf'
-          fetch_pdf sattler 'https://capito.iterpubs.org/letters/1526/Letter_316.pdf'
-
-          python - "$tmp" <<'PY'
+          bedford='https://bedsarchives.bedford.gov.uk/images/ExploreYourArchive2013/1667%20Gaol%20List.JPG'
+          echo '=== BEDFORD HSA1667/W/58 ==='
+          curl -fsSL --retry 3 --max-time 90 -A "$UA" "$bedford" -o "$tmp/bedford.jpg"
+          file "$tmp/bedford.jpg"
+          stat -c 'BEDFORD_BYTES %s' "$tmp/bedford.jpg"
+          sha1sum "$tmp/bedford.jpg" | sed 's# .*# BEDFORD_SHA1#'
+          sha256sum "$tmp/bedford.jpg" | sed 's# .*# BEDFORD_SHA256#'
+          python - "$tmp/bedford.jpg" <<'PY'
           from pathlib import Path
-          import re, sys
-
-          root = Path(sys.argv[1])
-          queries = {
-              'carey': [r'AN\s+ENQUIRY', r'obligation.*christians', r'heathens'],
-              'bms': [r'October\s+2', r'1792', r'Kettering', r'Particular Baptist Society'],
-              'judson': [r'January\s+31,?\s+1834', r'1834', r'Burmese Bible', r'translation.*Bible', r'finished'],
-              'sattler': [r'Michael Sattler', r'Bucer', r'Capito', r'316'],
-          }
-          for name, pats in queries.items():
-              data = (root / f'{name}.txt').read_text(encoding='utf-8', errors='replace')
-              # pdftotext separates PDF pages with form-feed.
-              pages = data.split('\f')
-              print(f'=== LOCATORS {name} pages={len(pages)} ===')
-              for idx, page in enumerate(pages, 1):
-                  flat = ' '.join(page.split())
-                  hits = [pat for pat in pats if re.search(pat, flat, re.I)]
-                  if hits:
-                      print(f'{name.upper()}_PAGE {idx} HITS={hits} CONTEXT={flat[:1800]}')
+          import struct, sys
+          data = Path(sys.argv[1]).read_bytes()
+          if not data.startswith(b'\xff\xd8'):
+              raise SystemExit('Bedford source is not JPEG')
+          i = 2
+          while i + 9 < len(data):
+              if data[i] != 0xFF:
+                  i += 1
+                  continue
+              marker = data[i + 1]
+              i += 2
+              if marker in {0xD8, 0xD9} or 0xD0 <= marker <= 0xD7:
+                  continue
+              length = struct.unpack('>H', data[i:i+2])[0]
+              if marker in {0xC0,0xC1,0xC2,0xC3,0xC5,0xC6,0xC7,0xC9,0xCA,0xCB,0xCD,0xCE,0xCF}:
+                  h, w = struct.unpack('>HH', data[i+3:i+7])
+                  print('BEDFORD_DIMENSIONS', w, h)
+                  break
+              i += length
+          else:
+              raise SystemExit('Bedford JPEG dimensions not found')
           PY
 
-          echo '=== FRUS EPUB ==='
-          frus='https://static.history.state.gov/frus/frus1934v03/ebook/frus1934v03.epub'
-          curl -fsSL --retry 3 --max-time 90 -A "$UA" "$frus" -o "$tmp/frus.epub"
-          file "$tmp/frus.epub"
-          stat -c 'FRUS_BYTES %s' "$tmp/frus.epub"
-          sha1sum "$tmp/frus.epub" | sed 's# .*# FRUS_SHA1#'
-          sha256sum "$tmp/frus.epub" | sed 's# .*# FRUS_SHA256#'
-          unzip -t "$tmp/frus.epub" | tail -3
-          unzip -q "$tmp/frus.epub" -d "$tmp/frus"
-          python - "$tmp/frus" <<'PY'
+          taylor='https://api.wellcomecollection.org/catalogue/v2/works/d2cy4t36'
+          echo '=== WELLCOME TAYLOR 1786 ==='
+          curl -fsSL --retry 3 --max-time 90 -A "$UA" -H 'Accept: application/json' "$taylor" -o "$tmp/taylor.json"
+          file "$tmp/taylor.json"
+          stat -c 'TAYLOR_BYTES %s' "$tmp/taylor.json"
+          sha1sum "$tmp/taylor.json" | sed 's# .*# TAYLOR_SHA1#'
+          sha256sum "$tmp/taylor.json" | sed 's# .*# TAYLOR_SHA256#'
+          python - "$tmp/taylor.json" <<'PY'
+          import json, sys
           from pathlib import Path
-          import html, re, sys
-          root = Path(sys.argv[1])
-          needles = [
-              'December 13, 1934',
-              'Telegram 384',
-              'bodies of Mr. and Mrs. Stam',
-              'bodies of Mr. and Mrs',
-              'baby had not been found',
-          ]
-          for p in sorted(root.rglob('*')):
-              if not p.is_file():
-                  continue
-              try:
-                  text = p.read_text(encoding='utf-8', errors='ignore')
-              except Exception:
-                  continue
-              plain = html.unescape(re.sub(r'<[^>]+>', ' ', text))
-              flat = ' '.join(plain.split())
-              hits = [n for n in needles if n.casefold() in flat.casefold()]
-              if hits:
-                  pos = min(flat.casefold().find(n.casefold()) for n in hits)
-                  lo=max(0,pos-600); hi=min(len(flat),pos+1800)
-                  print('FRUS_MATCH', p.relative_to(root), 'HITS=', hits, 'CONTEXT=', flat[lo:hi])
+          payload = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+          if not isinstance(payload, dict):
+              raise SystemExit('Wellcome response is not a JSON object')
+          print('TAYLOR_ID', payload.get('id'))
+          print('TAYLOR_TITLE', payload.get('title'))
           PY
