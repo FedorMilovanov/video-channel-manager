@@ -30,22 +30,6 @@
       "provider_write_performed": false
     },
     {
-      "asset_id": "img-stam-v3-frus-source-pdf",
-      "publication_id": "lordchrist-history-stam-china-december-1934-v3",
-      "slot": "document",
-      "source_id": "src-stam-frus-1934-v3",
-      "source_page_url": "https://history.state.gov/historicaldocuments/frus1934v03/ch8",
-      "acquisition_page_url": "https://history.state.gov/historicaldocuments/frus1934v03",
-      "download_url": "https://static.history.state.gov/frus/frus1934v03/pdf/frus1934v03.pdf",
-      "expected_upstream_sha1": "0000000000000000000000000000000000000000",
-      "expected_source_mime": "application/pdf",
-      "output_file_name": "stam-v3-frus1934v03-source.pdf",
-      "rights_basis": "Official U.S. Department of State Foreign Relations volume served by the Office of the Historian; the selected exhibit will remain attributed to the exact FRUS document/page.",
-      "attribution_text": "U.S. Department of State, Office of the Historian, Foreign Relations of the United States, 1934, The Far East, Volume III.",
-      "acquisition_kind": "direct_pdf",
-      "provider_write_performed": false
-    },
-    {
       "asset_id": "img-tyndale-v3-worms-source-pdf",
       "publication_id": "lordchrist-history-tyndale-new-testament-1526-v3",
       "slot": "hero",
