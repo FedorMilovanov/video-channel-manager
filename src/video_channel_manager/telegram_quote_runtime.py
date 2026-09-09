@@ -110,7 +110,7 @@ class SuccessorActivation(BaseModel):
     schema_version: Literal[1]
     project_key: Literal["lord-god-strength"]
     channel_username: Literal["@lordchrist"]
-    owning_issue: Literal[576]
+    owning_issue: Literal[582]
     release_id: Literal["lordchrist-successor-quotes-v1-integrity-v2"]
     predecessor_queue_digest: Literal[
         "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"
