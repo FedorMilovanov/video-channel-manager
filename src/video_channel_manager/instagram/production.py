@@ -512,7 +512,7 @@ class InstagramProviderClient:
         return cast(dict[str, object], payload)
 
     def get_account_identity(self) -> dict[str, object]:
-        return self._request("GET", self.config.account_id, params={"fields": "id,username,account_type"})
+        return self._request("GET", self.config.account_id, params={"fields": "id,username"})
 
     def get_publishing_limit(self) -> dict[str, object]:
         return self._request(
