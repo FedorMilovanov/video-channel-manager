@@ -28,7 +28,22 @@ _SHA1_RE = r"^[0-9a-f]{40}$"
 _SHA256_RE = r"^sha256:[0-9a-f]{64}$"
 _PUBLICATION_RE = r"^lordchrist-history-[a-z0-9][a-z0-9-]{4,90}$"
 _ASSET_RE = r"^img-[a-z0-9][a-z0-9-]{2,100}$"
-_SOURCE_MIME = Literal["image/jpeg", "image/png", "application/pdf", "application/epub+zip"]
+_SOURCE_MIME = Literal[
+    "image/jpeg",
+    "image/png",
+    "application/pdf",
+    "application/epub+zip",
+    "application/json",
+]
+_V2_EXTRA_DOWNLOAD_HOSTS = frozenset({"api.wellcomecollection.org", "bedsarchives.bedford.gov.uk"})
+
+
+def _download_host_allowed_v2(host: str | None) -> bool:
+    if _download_host_allowed(host):
+        return True
+    if not host:
+        return False
+    return host.casefold().rstrip(".") in _V2_EXTRA_DOWNLOAD_HOSTS
 
 
 class HistoricalMediaAcquisitionAssetV2(BaseModel):
@@ -46,7 +61,7 @@ class HistoricalMediaAcquisitionAssetV2(BaseModel):
     output_file_name: str = Field(min_length=5, max_length=180)
     rights_basis: str = Field(min_length=20, max_length=500)
     attribution_text: str = Field(min_length=10, max_length=300)
-    acquisition_kind: Literal["direct_image", "direct_pdf", "direct_epub"]
+    acquisition_kind: Literal["direct_image", "direct_pdf", "direct_epub", "direct_json"]
     provider_write_performed: Literal[False]
 
     @model_validator(mode="after")
@@ -61,7 +76,7 @@ class HistoricalMediaAcquisitionAssetV2(BaseModel):
                 raise ValueError(f"{label} must be an absolute HTTPS URL")
             if parsed.username or parsed.password:
                 raise ValueError(f"{label} must not contain credentials")
-        if not _download_host_allowed(urlparse(self.download_url).hostname):
+        if not _download_host_allowed_v2(urlparse(self.download_url).hostname):
             raise ValueError(
                 f"historical media download host is not allowlisted: {urlparse(self.download_url).hostname}"
             )
@@ -72,6 +87,7 @@ class HistoricalMediaAcquisitionAssetV2(BaseModel):
             "image/png": ".png",
             "application/pdf": ".pdf",
             "application/epub+zip": ".epub",
+            "application/json": ".json",
         }
         if not self.output_file_name.casefold().endswith(suffix_by_mime[self.expected_source_mime]):
             raise ValueError("historical media output filename suffix differs from MIME")
@@ -80,6 +96,7 @@ class HistoricalMediaAcquisitionAssetV2(BaseModel):
             "image/png": "direct_image",
             "application/pdf": "direct_pdf",
             "application/epub+zip": "direct_epub",
+            "application/json": "direct_json",
         }
         if self.acquisition_kind != kind_by_mime[self.expected_source_mime]:
             raise ValueError("historical media acquisition kind differs from MIME")
@@ -149,7 +166,7 @@ class HistoricalMediaAcquisitionResultV2(BaseModel):
 
     @model_validator(mode="after")
     def dimensions_match_mime(self) -> "HistoricalMediaAcquisitionResultV2":
-        if self.mime in {"application/pdf", "application/epub+zip"}:
+        if self.mime in {"application/pdf", "application/epub+zip", "application/json"}:
             if self.width is not None or self.height is not None:
                 raise ValueError("document acquisition must not invent image dimensions")
         elif self.width is None or self.height is None:
@@ -192,9 +209,22 @@ def _epub_probe(data: bytes) -> tuple[Literal["application/epub+zip"], None, Non
     return "application/epub+zip", None, None
 
 
+def _json_probe(data: bytes) -> tuple[Literal["application/json"], None, None]:
+    try:
+        payload = json.loads(data.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("historical media JSON source is not valid UTF-8 JSON") from exc
+    if not isinstance(payload, dict):
+        raise ValueError("historical media JSON source must be an object")
+    return "application/json", None, None
+
+
 def _source_probe_v2(data: bytes) -> tuple[_SOURCE_MIME, int | None, int | None]:
     if data.startswith(b"PK\x03\x04"):
         return _epub_probe(data)
+    stripped = data.lstrip()
+    if stripped.startswith(b"{"):
+        return _json_probe(data)
     return _source_probe(data)
 
 
@@ -214,7 +244,7 @@ def _fetch_asset_v2(
     with client.stream("GET", asset.download_url) as response:
         response.raise_for_status()
         final_url = str(response.url)
-        if not _download_host_allowed(urlparse(final_url).hostname):
+        if not _download_host_allowed_v2(urlparse(final_url).hostname):
             raise ValueError(f"historical media redirect escaped allowlist: {urlparse(final_url).hostname}")
         content_length = response.headers.get("content-length")
         if content_length is not None:
@@ -288,9 +318,7 @@ def acquire_historical_media_v2(
     owns_client = client is None
     active_client = client or _build_acquisition_client()
     try:
-        results = tuple(
-            _fetch_asset_v2(asset, client=active_client, output_dir=output_dir) for asset in manifest.assets
-        )
+        results = tuple(_fetch_asset_v2(asset, client=active_client, output_dir=output_dir) for asset in manifest.assets)
     finally:
         if owns_client:
             active_client.close()
