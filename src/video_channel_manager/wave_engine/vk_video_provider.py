@@ -93,20 +93,14 @@ class VkNativeVideoUploadAdapter:
 
     def _validate_operation(self, operation: WaveOperation) -> dict[str, Any]:
         if operation.operation_kind != VK_VIDEO_OPERATION_KIND:
-            raise OperationRejectedError(
-                f"Unsupported VK video operation kind: {operation.operation_kind}"
-            )
+            raise OperationRejectedError(f"Unsupported VK video operation kind: {operation.operation_kind}")
         if operation.mutation_class is not MutationClass.AMBIGUOUS_MUTATION:
             raise OperationRejectedError("VK native video upload must be an ambiguous mutation")
         if operation.policy_version != VK_VIDEO_POLICY_VERSION:
-            raise OperationRejectedError(
-                f"Unsupported VK video policy: {operation.policy_version}"
-            )
+            raise OperationRejectedError(f"Unsupported VK video policy: {operation.policy_version}")
         community_id = operation.project.community_id
         if community_id not in self._community_ids:
-            raise OperationRejectedError(
-                f"VK account registry does not bind community {community_id}"
-            )
+            raise OperationRejectedError(f"VK account registry does not bind community {community_id}")
         if operation.project.owner_id != -community_id:
             raise OperationRejectedError("VK video owner/community binding is inconsistent")
 
@@ -144,9 +138,7 @@ class VkNativeVideoUploadAdapter:
                 raw = json.loads(guard_path.read_text(encoding="utf-8"))
                 guard = VkUploadWallGuard.from_mapping(raw)
             except (OSError, ValueError, json.JSONDecodeError) as exc:
-                raise OperationRejectedError(
-                    f"Existing upload wall guard evidence is invalid: {exc}"
-                ) from exc
+                raise OperationRejectedError(f"Existing upload wall guard evidence is invalid: {exc}") from exc
             if guard.community_id != community_id:
                 raise OperationRejectedError("Existing upload wall guard belongs to another community")
             self._wall_guard = guard
@@ -188,9 +180,7 @@ class VkNativeVideoUploadAdapter:
             try:
                 raw = json.loads(path.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError) as exc:
-                raise UnknownProviderOutcomeError(
-                    f"Cannot read existing VK upload provider journal: {path}"
-                ) from exc
+                raise UnknownProviderOutcomeError(f"Cannot read existing VK upload provider journal: {path}") from exc
             if not isinstance(raw, Mapping):
                 raise UnknownProviderOutcomeError("VK upload provider journal is not an object")
             existing = raw
@@ -233,9 +223,7 @@ class VkNativeVideoUploadAdapter:
 
         rendered = render_vk_video_description(str(payload["published_description"]))
         if rendered.text != str(payload["published_description"]) or rendered.has_errors:
-            raise OperationRejectedError(
-                "Published VK description is not already stable under the current renderer"
-            )
+            raise OperationRejectedError("Published VK description is not already stable under the current renderer")
 
         readiness = VkUploadReadiness(
             expected_title=str(payload["published_title"]),
@@ -276,17 +264,11 @@ class VkNativeVideoUploadAdapter:
             raise OperationRejectedError(str(exc)) from exc
         except Exception as exc:
             if self._provider_dispatch_started(record):
-                raise UnknownProviderOutcomeError(
-                    f"VK upload failed after provider dispatch began: {exc}"
-                ) from exc
-            raise OperationRejectedError(
-                f"VK upload failed before provider dispatch: {exc}"
-            ) from exc
+                raise UnknownProviderOutcomeError(f"VK upload failed after provider dispatch began: {exc}") from exc
+            raise OperationRejectedError(f"VK upload failed before provider dispatch: {exc}") from exc
 
         if record.get("stage") != UploadStage.VERIFIED.value:
-            raise UnknownProviderOutcomeError(
-                f"VK upload returned without VERIFIED stage: {record.get('stage')}"
-            )
+            raise UnknownProviderOutcomeError(f"VK upload returned without VERIFIED stage: {record.get('stage')}")
         reservation = record.get("reservation")
         verification = record.get("verification")
         if not isinstance(reservation, Mapping) or not isinstance(verification, Mapping):
@@ -344,9 +326,7 @@ class VkNativeVideoUploadAdapter:
             UploadStage.PROCESSING,
             UploadStage.UNKNOWN_REQUIRES_RECONCILIATION,
         }:
-            raise RuntimeError(
-                f"VK upload stage {stage.value} is not eligible for read-only exact-ID reconciliation"
-            )
+            raise RuntimeError(f"VK upload stage {stage.value} is not eligible for read-only exact-ID reconciliation")
 
         guard_path = self._batch_guard_path()
         if not guard_path.is_file():
@@ -386,9 +366,7 @@ class VkNativeVideoUploadAdapter:
         persist()
 
         if record.get("stage") != UploadStage.VERIFIED.value:
-            raise RuntimeError(
-                f"VK exact-ID reconciliation did not reach verified: {record.get('stage')}"
-            )
+            raise RuntimeError(f"VK exact-ID reconciliation did not reach verified: {record.get('stage')}")
         reservation = record.get("reservation")
         verification = record.get("verification")
         if not isinstance(reservation, Mapping) or not isinstance(verification, Mapping):
