@@ -31,6 +31,7 @@ from video_channel_manager.instagram.production import (
     InstagramTransportError,
     PublicationSnapshot,
     PublicationStatus,
+    RequestValue,
 )
 from video_channel_manager.persistence.database import Database
 from video_channel_manager.persistence.models import Base, utc_now
@@ -320,7 +321,9 @@ class InstagramResumableUploadLedger:
 def _validated_upload_uri(value: str) -> str:
     parts = urlsplit(value)
     if parts.scheme.lower() != "https" or (parts.hostname or "").lower() != "rupload.facebook.com":
-        raise InstagramProviderError("Instagram resumable upload URI is outside the exact rupload.facebook.com boundary")
+        raise InstagramProviderError(
+            "Instagram resumable upload URI is outside the exact rupload.facebook.com boundary"
+        )
     if parts.username is not None or parts.password is not None or parts.fragment:
         raise InstagramProviderError("Instagram resumable upload URI contains forbidden authority/fragment data")
     if not parts.path or parts.path == "/":
@@ -339,7 +342,7 @@ class InstagramResumableProviderClient(InstagramProviderClient):
 
     def create_resumable_reel_container(self, manifest: InstagramLocalPublishManifest) -> tuple[str, str]:
         self._require_supported_mode()
-        data: dict[str, str | int] = {
+        data: dict[str, RequestValue] = {
             "media_type": "REELS",
             "upload_type": "resumable",
             "caption": manifest.caption,
