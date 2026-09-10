@@ -319,6 +319,75 @@ class VkWallWriter(VkVideoWriter):
     has no implicit fallback and requires a different reviewed authority type.
     """
 
+    def _read_upload_wall_head(
+        self,
+        *,
+        community_id: int,
+        surface: VkWallSurface,
+        head_limit: int,
+    ) -> tuple[list[dict[str, Any]], int]:
+        if community_id <= 0 or not 1 <= head_limit <= 100:
+            raise ValueError("community_id must be positive and upload wall head_limit must be 1..100")
+        response = self._call(
+            "wall.get",
+            params={
+                "owner_id": -community_id,
+                "filter": surface.api_filter,
+                "count": head_limit,
+                "offset": 0,
+            },
+            retry_transient=True,
+        )
+        if not isinstance(response, dict) or not isinstance(response.get("items"), list):
+            raise VkWriteError("wall.get returned an invalid upload-guard response", method="wall.get")
+        raw_total = response.get("count")
+        if type(raw_total) is not int or raw_total < 0:
+            raise VkWriteError("wall.get returned an invalid upload-guard total count", method="wall.get")
+        raw_items = response["items"]
+        items = [item for item in raw_items if isinstance(item, dict)]
+        if len(items) != len(raw_items):
+            raise VkWriteError("wall.get returned a non-object upload-guard item", method="wall.get")
+        if len(items) > min(head_limit, raw_total):
+            raise VkWriteError("wall.get returned too many upload-guard items", method="wall.get")
+        if any(item.get("owner_id") != -community_id for item in items):
+            raise VkWriteError("wall.get returned an upload-guard post from another owner", method="wall.get")
+        return items, raw_total
+
+    def capture_upload_wall_guard(
+        self,
+        *,
+        community_id: int,
+        head_limit: int = 100,
+    ) -> VkUploadWallGuard:
+        """Capture exactly one published and one postponed head page for upload isolation."""
+
+        published, published_total = self._read_upload_wall_head(
+            community_id=community_id,
+            surface=VkWallSurface.PUBLISHED,
+            head_limit=head_limit,
+        )
+        postponed, postponed_total = self._read_upload_wall_head(
+            community_id=community_id,
+            surface=VkWallSurface.POSTPONED,
+            head_limit=head_limit,
+        )
+        captured_at = datetime.now(UTC).isoformat()
+        return VkUploadWallGuard(
+            community_id=community_id,
+            captured_at=captured_at,
+            head_limit=head_limit,
+            published_total=published_total,
+            postponed_total=postponed_total,
+            published_posts=tuple(
+                VkWallPostFingerprint.from_item(item, surface=VkWallSurface.PUBLISHED)
+                for item in published
+            ),
+            postponed_posts=tuple(
+                VkWallPostFingerprint.from_item(item, surface=VkWallSurface.POSTPONED)
+                for item in postponed
+            ),
+        )
+
     def _read_wall_surface(
         self,
         *,
