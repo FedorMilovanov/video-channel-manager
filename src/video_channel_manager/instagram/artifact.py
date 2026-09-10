@@ -6,7 +6,11 @@ from typing import Literal, cast
 from pydantic import BaseModel, ConfigDict, Field
 
 from video_channel_manager.instagram.production import InstagramPublishManifest
-from video_channel_manager.local_media.artifact import MediaArtifactEvidence, validate_media_artifact_evidence
+from video_channel_manager.local_media.artifact import (
+    MediaArtifactEvidence,
+    MediaProbeEvidence,
+    validate_media_artifact_evidence,
+)
 
 InstagramContainer = Literal["mp4", "mov"]
 InstagramMediaContentType = Literal["video/mp4", "video/quicktime"]
@@ -80,16 +84,13 @@ def _normalized_format_tokens(format_names: tuple[str, ...]) -> frozenset[str]:
     )
 
 
-def bind_instagram_reel_artifact(evidence: MediaArtifactEvidence) -> InstagramReelArtifactBinding:
-    """Validate canonical evidence against the current server-published Reel media contract.
+def bind_instagram_reel_probe(
+    probe: MediaProbeEvidence,
+    *,
+    media_manifest_sha256: str,
+) -> InstagramReelArtifactBinding:
+    """Validate one canonical ffprobe observation against the Reel media contract."""
 
-    This function is deliberately provider-inert. It performs no hosting, HTTP request,
-    account lookup, container creation, or publication. The existing production publisher
-    remains the sole owner of provider I/O and independently verifies hosted bytes.
-    """
-
-    validate_media_artifact_evidence(evidence)
-    probe = evidence.probe
     reasons: list[str] = []
 
     suffix = Path(probe.path).suffix.lower()
@@ -159,7 +160,7 @@ def bind_instagram_reel_artifact(evidence: MediaArtifactEvidence) -> InstagramRe
         advisories.append("audio_bitrate_not_recommended_128_kbps")
 
     return InstagramReelArtifactBinding(
-        media_manifest_sha256=evidence.manifest_sha256,
+        media_manifest_sha256=media_manifest_sha256,
         media_sha256=probe.sha256,
         media_size_bytes=probe.size_bytes,
         media_content_type=_CONTAINER_CONTENT_TYPES[container],
@@ -174,6 +175,21 @@ def bind_instagram_reel_artifact(evidence: MediaArtifactEvidence) -> InstagramRe
         audio_sample_rate_hz=48_000,
         audio_bitrate_bps=audio_bitrate,
         advisories=tuple(advisories),
+    )
+
+
+def bind_instagram_reel_artifact(evidence: MediaArtifactEvidence) -> InstagramReelArtifactBinding:
+    """Validate canonical evidence against the current server-published Reel media contract.
+
+    This function is deliberately provider-inert. It performs no hosting, HTTP request,
+    account lookup, container creation, or publication. The existing production publisher
+    remains the sole owner of provider I/O and independently verifies hosted bytes.
+    """
+
+    validate_media_artifact_evidence(evidence)
+    return bind_instagram_reel_probe(
+        evidence.probe,
+        media_manifest_sha256=evidence.manifest_sha256,
     )
 
 
