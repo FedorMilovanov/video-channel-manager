@@ -30,8 +30,7 @@ NOW = datetime(2026, 8, 4, 2, 0, tzinfo=UTC)
 PUBLISH_AT = NOW + timedelta(hours=12)
 PUBLISH_DATE = int(PUBLISH_AT.timestamp())
 
-
-def _audit() -> AuditPackage:
+def_audit() -> AuditPackage:
     channel_id = str(COMMUNITY_ID)
     video_remote_id = f"{OWNER_ID}_{VIDEO_ID}"
     return AuditPackage(
@@ -52,8 +51,7 @@ def _audit() -> AuditPackage:
         ],
     )
 
-
-def _writer(tmp_path: Path, transport: httpx.MockTransport) -> VkWallWriter:
+def_writer(tmp_path: Path, transport: httpx.MockTransport) -> VkWallWriter:
     store = VkTokenStore(tmp_path)
     store.save_token("legendary-poet", VkAccessToken(access_token="secret", scopes=["video", "groups", "wall"]))
     return VkWallWriter(
@@ -63,8 +61,7 @@ def _writer(tmp_path: Path, transport: httpx.MockTransport) -> VkWallWriter:
         api_base_url="https://api.example/method",
     )
 
-
-def _video_post(
+def_video_post(
     post_id: int,
     *,
     text: str,
@@ -84,12 +81,10 @@ def _video_post(
         ],
     }
 
-
-def _surface_filter(request: httpx.Request) -> str:
+def_surface_filter(request: httpx.Request) -> str:
     return parse_qs(request.content.decode("utf-8"))["filter"][0]
 
-
-def test_render_wall_post_accepts_underscores_inside_source_urls() -> None:
+deftest_render_wall_post_accepts_underscores_inside_source_urls() -> None:
     message = render_vk_wall_post(
         project_key="legendary-poet",
         headline="На поле Куликовом ⚡ Александр Блок",
@@ -108,8 +103,7 @@ def test_render_wall_post_accepts_underscores_inside_source_urls() -> None:
     assert message.count("thelegendarypoet.ru") == 1
     assert "#РусскаяПоэзия" in message
 
-
-def test_render_wall_post_requires_registered_project() -> None:
+deftest_render_wall_post_requires_registered_project() -> None:
     with pytest.raises(ValueError, match="registered project_key"):
         render_vk_wall_post(
             project_key="unknown",
@@ -119,8 +113,7 @@ def test_render_wall_post_requires_registered_project() -> None:
             source_links=[],
         )
 
-
-def test_build_wall_plan_is_project_bound_postponed_and_self_validating() -> None:
+deftest_build_wall_plan_is_project_bound_postponed_and_self_validating() -> None:
     message = (
         "На поле Куликовом ⚡ Александр Блок\n\n"
         "Пять частей одного цикла.\n\n"
@@ -168,9 +161,7 @@ def test_build_wall_plan_is_project_bound_postponed_and_self_validating() -> Non
     with pytest.raises(ValueError, match="guid"):
         validate_vk_wall_post_plan(tampered)
 
-
-
-def test_upload_wall_guard_reads_exactly_one_head_page_per_surface(tmp_path: Path) -> None:
+deftest_upload_wall_guard_reads_exactly_one_head_page_per_surface(tmp_path: Path) -> None:
     calls: list[tuple[str, str]] = []
 
     def respond(request: httpx.Request) -> httpx.Response:
@@ -213,8 +204,7 @@ def test_upload_wall_guard_reads_exactly_one_head_page_per_surface(tmp_path: Pat
     assert calls == [("owner", "25"), ("postponed", "25")]
     assert guard.guard_sha256.startswith("sha256:")
 
-
-def test_wall_writer_posts_once_to_postponed_and_reconciles_exact_delta(tmp_path: Path) -> None:
+deftest_wall_writer_posts_once_to_postponed_and_reconciles_exact_delta(tmp_path: Path) -> None:
     calls: list[str] = []
     message = "На поле Куликовом\n\nhttps://thelegendarypoet.ru/"
     wall_get_calls = 0
@@ -265,8 +255,7 @@ def test_wall_writer_posts_once_to_postponed_and_reconciles_exact_delta(tmp_path
         "/method/wall.get",
     ]
 
-
-def test_wall_writer_blocks_existing_video_on_postponed_surface(tmp_path: Path) -> None:
+deftest_wall_writer_blocks_existing_video_on_postponed_surface(tmp_path: Path) -> None:
     def respond(request: httpx.Request) -> httpx.Response:
         assert request.url.path.endswith("/wall.get")
         if _surface_filter(request) == "owner":
@@ -288,8 +277,7 @@ def test_wall_writer_blocks_existing_video_on_postponed_surface(tmp_path: Path) 
             now=NOW,
         )
 
-
-def test_wall_writer_blocks_schedule_slot_collision(tmp_path: Path) -> None:
+deftest_wall_writer_blocks_schedule_slot_collision(tmp_path: Path) -> None:
     def respond(request: httpx.Request) -> httpx.Response:
         assert request.url.path.endswith("/wall.get")
         if _surface_filter(request) == "owner":
@@ -316,8 +304,7 @@ def test_wall_writer_blocks_schedule_slot_collision(tmp_path: Path) -> None:
             now=NOW,
         )
 
-
-def test_wall_post_does_not_retry_ambiguous_failure_and_stays_unknown(tmp_path: Path) -> None:
+deftest_wall_post_does_not_retry_ambiguous_failure_and_stays_unknown(tmp_path: Path) -> None:
     wall_post_calls = 0
 
     def respond(request: httpx.Request) -> httpx.Response:
@@ -343,8 +330,7 @@ def test_wall_post_does_not_retry_ambiguous_failure_and_stays_unknown(tmp_path: 
 
     assert wall_post_calls == 1
 
-
-def test_ambiguous_wall_response_can_reconcile_exact_post_without_replay(tmp_path: Path) -> None:
+deftest_ambiguous_wall_response_can_reconcile_exact_post_without_replay(tmp_path: Path) -> None:
     wall_post_calls = 0
     wall_get_calls = 0
     message = "Пост"
@@ -379,8 +365,7 @@ def test_ambiguous_wall_response_can_reconcile_exact_post_without_replay(tmp_pat
     assert result.remote_id == f"{OWNER_ID}_88"
     assert wall_post_calls == 1
 
-
-def test_incomplete_wall_surface_blocks_before_mutation(tmp_path: Path) -> None:
+deftest_incomplete_wall_surface_blocks_before_mutation(tmp_path: Path) -> None:
     wall_post_calls = 0
 
     def respond(request: httpx.Request) -> httpx.Response:
