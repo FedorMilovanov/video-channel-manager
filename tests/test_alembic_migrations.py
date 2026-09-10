@@ -67,6 +67,7 @@ def test_fresh_alembic_upgrade_head_creates_instagram_ledger(
             "created_at",
             "updated_at",
         } <= columns
-        assert _revision(database_url) == "0002"
+        assert "instagram_resumable_uploads" in inspector.get_table_names()
+        assert _revision(database_url) == "0003"
     finally:
         engine.dispose()
