@@ -22,8 +22,12 @@ _MIN_DURATION_SECONDS = 3.0
 _MAX_DURATION_SECONDS = 15.0 * 60.0
 _MIN_FRAME_RATE_FPS = 23.0
 _MAX_FRAME_RATE_FPS = 60.0
-_REQUIRED_AUDIO_SAMPLE_RATE_HZ = 48_000
+_MAX_AUDIO_SAMPLE_RATE_HZ = 48_000
+_MIN_AUDIO_CHANNELS = 1
+_MAX_AUDIO_CHANNELS = 2
 _RECOMMENDED_AUDIO_BITRATE_BPS = 128_000
+_MIN_ASPECT_RATIO = 0.01
+_MAX_ASPECT_RATIO = 10.0
 _MAX_HORIZONTAL_PIXELS = 1_920
 _ALLOWED_VIDEO_CODECS = frozenset({"h264", "hevc"})
 _ALLOWED_AUDIO_CODECS = frozenset({"aac"})
@@ -60,7 +64,7 @@ class InstagramReelArtifactBinding(BaseModel):
         "video-manager.instagram-reel-artifact-binding"
     )
     schema_version: Literal["1.0"] = "1.0"
-    ruleset_version: Literal["meta-instagram-reels-2026-09-v1"] = "meta-instagram-reels-2026-09-v1"
+    ruleset_version: Literal["meta-instagram-reels-2026-09-v2"] = "meta-instagram-reels-2026-09-v2"
     media_manifest_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     media_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     media_size_bytes: int = Field(gt=0)
@@ -73,7 +77,8 @@ class InstagramReelArtifactBinding(BaseModel):
     width: int = Field(gt=0, le=_MAX_HORIZONTAL_PIXELS)
     height: int = Field(gt=0)
     audio_codec: Literal["aac"]
-    audio_sample_rate_hz: Literal[48000]
+    audio_sample_rate_hz: int = Field(gt=0, le=_MAX_AUDIO_SAMPLE_RATE_HZ)
+    audio_channels: int = Field(ge=_MIN_AUDIO_CHANNELS, le=_MAX_AUDIO_CHANNELS)
     audio_bitrate_bps: int = Field(gt=0)
     advisories: tuple[str, ...] = ()
 
@@ -110,8 +115,17 @@ def bind_instagram_reel_probe(
     if audio_codec not in _ALLOWED_AUDIO_CODECS:
         reasons.append("audio_codec_not_aac")
 
-    if probe.sample_rate_hz != _REQUIRED_AUDIO_SAMPLE_RATE_HZ:
-        reasons.append("audio_sample_rate_not_48000_hz")
+    sample_rate = probe.sample_rate_hz
+    if sample_rate is None:
+        reasons.append("audio_sample_rate_missing")
+    elif sample_rate > _MAX_AUDIO_SAMPLE_RATE_HZ:
+        reasons.append("audio_sample_rate_above_48000_hz")
+
+    audio_channels = probe.audio_channels
+    if audio_channels is None:
+        reasons.append("audio_channels_missing")
+    elif not _MIN_AUDIO_CHANNELS <= audio_channels <= _MAX_AUDIO_CHANNELS:
+        reasons.append("audio_channels_not_mono_or_stereo")
 
     frame_rate = probe.video_frame_rate_fps
     if frame_rate is None:
@@ -121,8 +135,12 @@ def bind_instagram_reel_probe(
 
     if probe.width is None or probe.height is None:
         reasons.append("video_dimensions_missing")
-    elif probe.width > _MAX_HORIZONTAL_PIXELS:
-        reasons.append("horizontal_pixels_above_1920")
+    else:
+        if probe.width > _MAX_HORIZONTAL_PIXELS:
+            reasons.append("horizontal_pixels_above_1920")
+        aspect_ratio = probe.width / probe.height
+        if not _MIN_ASPECT_RATIO <= aspect_ratio <= _MAX_ASPECT_RATIO:
+            reasons.append("aspect_ratio_out_of_range")
 
     video_bitrate = probe.video_bitrate_bps
     if video_bitrate is None:
@@ -146,6 +164,8 @@ def bind_instagram_reel_probe(
     assert container is not None
     assert video_codec in _ALLOWED_VIDEO_CODECS
     assert audio_codec == "aac"
+    assert sample_rate is not None
+    assert audio_channels is not None
     assert frame_rate is not None
     assert probe.width is not None
     assert probe.height is not None
@@ -172,7 +192,8 @@ def bind_instagram_reel_probe(
         width=probe.width,
         height=probe.height,
         audio_codec="aac",
-        audio_sample_rate_hz=48_000,
+        audio_sample_rate_hz=sample_rate,
+        audio_channels=audio_channels,
         audio_bitrate_bps=audio_bitrate,
         advisories=tuple(advisories),
     )
