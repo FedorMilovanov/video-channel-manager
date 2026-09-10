@@ -161,17 +161,23 @@ def test_archival_v3_release_is_exact_and_canary_is_outside_recurring_queue() ->
 
 def test_v2_state_migrates_only_when_all_recurring_rows_are_provider_inert(tmp_path: Path) -> None:
     release, queue, _registry, _profile_path, aux = _loaded()
+    planned_dates = tuple(aux["planned_dates"])
     ledger_path = tmp_path / "publication-ledger.json"
     ledger_path.write_text(json.dumps(_legacy_v2_ledger(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
-    migrated = load_ledger(ledger_path, release, queue, tuple(aux["planned_dates"]))
+    migrated = load_ledger(ledger_path, release, queue, planned_dates)
     assert migrated["release_id"] == release["release_id"]
     assert migrated["cycle_id"] == release["cycle_id"]
     assert migrated["canary_publication_id"] == "lordchrist-history-spurgeon-down-grade-1887-v3"
     assert migrated["canary_verified_at_utc"] is None
     assert tuple(migrated["entries"]) == EXPECTED_PUBLICATION_IDS
+    assert [row["sequence"] for row in migrated["entries"].values()] == list(range(1, 9))
     assert all(row["state"] == "pending" for row in migrated["entries"].values())
     assert all(row["provider_effect"] == "impossible" for row in migrated["entries"].values())
+
+    ledger_path.write_text(json.dumps(migrated, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    reloaded = load_ledger(ledger_path, release, queue, planned_dates)
+    assert reloaded == migrated
 
     unsafe = _legacy_v2_ledger()
     first = unsafe["entries"][LEGACY_RECURRING_IDS[0]]
@@ -180,7 +186,7 @@ def test_v2_state_migrates_only_when_all_recurring_rows_are_provider_inert(tmp_p
     first["message_id"] = 1517
     ledger_path.write_text(json.dumps(unsafe, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     with pytest.raises(ValueError, match="no longer safely migratable"):
-        load_ledger(ledger_path, release, queue, tuple(aux["planned_dates"]))
+        load_ledger(ledger_path, release, queue, planned_dates)
 
 
 def test_external_canary_message_1516_does_not_arm_schedule_before_editorial_approval() -> None:
