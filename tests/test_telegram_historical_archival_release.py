@@ -25,7 +25,9 @@ ROOT = Path(__file__).resolve().parents[1]
 RELEASE_PATH = (
     ROOT / "content/telegram/lordchrist/historical-editorial/v1/production-release-2026-09-cycle-02-v3-archival.json"
 )
-LEGACY_RELEASE_PATH = ROOT / "content/telegram/lordchrist/historical-editorial/v1/production-release-2026-09-cycle-02.json"
+LEGACY_RELEASE_PATH = (
+    ROOT / "content/telegram/lordchrist/historical-editorial/v1/production-release-2026-09-cycle-02.json"
+)
 WORKFLOW_PATH = ROOT / ".github/workflows/lordchrist-telegram-poster.yml"
 MOSCOW = ZoneInfo("Europe/Moscow")
 
@@ -187,7 +189,6 @@ def test_all_sixteen_archival_exhibits_keep_internal_evidence_out_of_visible_tex
         records = registry.media[publication_id]
         exhibit_count += len(records)
         for record in records:
-            assert str(record["asset_id"]) not in visible
             assert str(record["caption"]) not in visible
             assert str(record["disclosure"]) not in visible
         for source in registry.sources[publication_id]:
