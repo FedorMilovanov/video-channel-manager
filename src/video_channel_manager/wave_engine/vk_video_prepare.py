@@ -496,9 +496,7 @@ def prepare_vk_video_wave(
             "repeat": False,
         }
         specs_by_id[source_id] = WaveOperationSpec(
-            order_key=f"{source.published_at.isoformat() if video.published_at else '0000'}-{source_id}"
-            if False
-            else f"{video.published_at.isoformat() if video.published_at else '0000'}-{source_id}",
+            order_key=f"{video.published_at.isoformat() if video.published_at else '0000'}-{source_id}",
             operation_kind=VK_VIDEO_OPERATION_KIND,
             mutation_class=MutationClass.AMBIGUOUS_MUTATION,
             payload=payload,
