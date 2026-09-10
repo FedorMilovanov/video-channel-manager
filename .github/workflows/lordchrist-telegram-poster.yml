@@ -268,45 +268,23 @@ jobs:
                   handle.write(f"{key}={value}\n")
           PY
 
-      - name: Enable state writer for one-time successor ledger initialization
-        if: steps.active_release.outputs.needs_ledger_initialization == 'true'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: state/lordchrist-telegram
-          path: .state/lordchrist
-          fetch-depth: 0
-          persist-credentials: true
-
-      - name: Initialize exact successor ledger before provider preflight
+      - name: Materialize missing successor ledger locally for read-only validation
         if: steps.active_release.outputs.needs_ledger_initialization == 'true'
         shell: bash
         run: |
           set -euo pipefail
           [[ "${{ steps.active_release.outputs.active_release }}" == "successor" ]] || {
-            echo "Ledger initialization requested for a non-successor release." >&2
+            echo "Local ledger materialization requested for a non-successor release." >&2
             exit 2
           }
           [[ ! -e "$SUCCESSOR_LEDGER_PATH" ]] || {
-            echo "Successor ledger appeared after selection; refusing ambiguous initialization." >&2
+            echo "Successor ledger unexpectedly exists in the read-only state snapshot." >&2
             exit 3
           }
           python -m video_channel_manager.telegram_quote_runtime initialize-ledger \
             --runtime-queue "$SUCCESSOR_RUNTIME_QUEUE_PATH" \
             --ledger "$SUCCESSOR_LEDGER_PATH" \
             --confirm INITIALIZE_REVIEWED_SUCCESSOR_LEDGER
-
-          git -C "$STATE_DIR" config user.name "lordchrist-publisher[bot]"
-          git -C "$STATE_DIR" config user.email "lordchrist-publisher@users.noreply.github.com"
-          git -C "$STATE_DIR" add -- "$SUCCESSOR_LEDGER_RELATIVE_PATH"
-          parent_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
-          git -C "$STATE_DIR" commit -m "Initialize sealed Lordchrist successor ledger [skip ci]"
-          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
-          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
-          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
-          [[ "$remote_sha" == "$local_sha" ]] || {
-            echo "Remote successor ledger initialization commit differs from local exact commit." >&2
-            exit 3
-          }
 
       - name: Validate immutable queue and strict ledger
         shell: bash
@@ -440,6 +418,65 @@ jobs:
               exit 2
             }
           fi
+
+      - name: Discard read-only successor ledger before durable initialization
+        if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f -- "$SUCCESSOR_LEDGER_PATH"
+
+      - name: Enable state writer for one-time successor ledger initialization
+        if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/lordchrist-telegram
+          path: .state/lordchrist
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Persist exact successor ledger after current-main proof
+        if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${{ steps.active_release.outputs.active_release }}" == "successor" ]] || {
+            echo "Ledger initialization requested for a non-successor release." >&2
+            exit 2
+          }
+          [[ ! -e "$SUCCESSOR_LEDGER_PATH" ]] || {
+            echo "Successor ledger appeared after selection; refusing ambiguous initialization." >&2
+            exit 3
+          }
+          python -m video_channel_manager.telegram_quote_runtime initialize-ledger \
+            --runtime-queue "$SUCCESSOR_RUNTIME_QUEUE_PATH" \
+            --ledger "$SUCCESSOR_LEDGER_PATH" \
+            --confirm INITIALIZE_REVIEWED_SUCCESSOR_LEDGER
+
+          git -C "$STATE_DIR" config user.name "lordchrist-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "lordchrist-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$SUCCESSOR_LEDGER_RELATIVE_PATH"
+          parent_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" commit -m "Initialize sealed Lordchrist successor ledger [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$remote_sha" == "$local_sha" ]] || {
+            echo "Remote successor ledger initialization commit differs from local exact commit." >&2
+            exit 3
+          }
+
+          git -C "$STATE_DIR" fetch --no-tags origin "$STATE_BRANCH"
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$SUCCESSOR_LEDGER_RELATIVE_PATH" > .runtime/remote-successor-ledger.json
+          cmp -s "$SUCCESSOR_LEDGER_PATH" .runtime/remote-successor-ledger.json || {
+            echo "Remote successor ledger differs from the exact initialized ledger." >&2
+            exit 3
+          }
+          python -m video_channel_manager.telegram_cli \
+            --queue "$QUEUE_PATH" \
+            --ledger .runtime/remote-successor-ledger.json \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            validate
 
       - name: Enable publication ledger writer
         if: steps.intent.outputs.do_publish == 'true'

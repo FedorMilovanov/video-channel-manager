@@ -113,7 +113,7 @@ def test_workflow_uses_version_controlled_slot_gate_and_exact_release_identity()
 def test_scheduled_gate_does_not_require_manual_posting_toggle() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
     gate_start = workflow.index("      - name: Enforce publication gates")
-    gate_end = workflow.index("      - name: Enable publication ledger writer")
+    gate_end = workflow.index("      - name: Discard read-only successor ledger before durable initialization")
     gate = workflow[gate_start:gate_end]
 
     scheduled_branch, manual_branch = gate.split("          else\n", 1)
@@ -136,3 +136,54 @@ def test_send_step_bridges_only_a_valid_schedule_event_into_legacy_internal_gate
     assert "LORDCHRIST_SCHEDULE_ENABLED: ${{ github.event_name == 'schedule' && 'true' || 'false' }}" in send_step
     assert workflow.count("LORDCHRIST_SCHEDULE_ENABLED: ${{ github.event_name == 'schedule'") == 1
     assert "if: steps.persist_intent.outputs.persisted == 'true'" in send_step
+
+
+def test_successor_ledger_durable_initialization_is_execution_gated_and_after_current_main_proof() -> None:
+    workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+    local_start = workflow.index("      - name: Materialize missing successor ledger locally for read-only validation")
+    validate_start = workflow.index("      - name: Validate immutable queue and strict ledger")
+    preview_start = workflow.index("      - name: Preview next publication")
+    quality_start = workflow.index("      - name: Require current-main exact-SHA repository CI proof")
+    target_start = workflow.index("      - name: Validate read-only target configuration")
+    preflight_start = workflow.index("      - name: Read-only bot and channel preflight")
+    gate_start = workflow.index("      - name: Enforce publication gates")
+    discard_start = workflow.index("      - name: Discard read-only successor ledger before durable initialization")
+    writer_start = workflow.index("      - name: Enable state writer for one-time successor ledger initialization")
+    durable_start = workflow.index("      - name: Persist exact successor ledger after current-main proof")
+    publication_writer_start = workflow.index("      - name: Enable publication ledger writer")
+
+    assert (
+        local_start
+        < validate_start
+        < preview_start
+        < quality_start
+        < target_start
+        < preflight_start
+        < gate_start
+        < discard_start
+        < writer_start
+        < durable_start
+        < publication_writer_start
+    )
+
+    local_step = workflow[local_start:validate_start]
+    assert "steps.active_release.outputs.needs_ledger_initialization == 'true'" in local_step
+    assert "persist-credentials: true" not in local_step
+    assert 'git -C "$STATE_DIR" push' not in local_step
+
+    writer_step = workflow[writer_start:durable_start]
+    assert "steps.active_release.outputs.needs_ledger_initialization == 'true'" in writer_step
+    assert "steps.intent.outputs.do_publish == 'true'" in writer_step
+    assert "persist-credentials: true" in writer_step
+
+    durable_step = workflow[durable_start:publication_writer_start]
+    assert "steps.active_release.outputs.needs_ledger_initialization == 'true'" in durable_step
+    assert "steps.intent.outputs.do_publish == 'true'" in durable_step
+    assert "Initialize sealed Lordchrist successor ledger" in durable_step
+    assert 'git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"' in durable_step
+    assert "remote-successor-ledger.json" in durable_step
+
+    before_quality = workflow[:quality_start]
+    assert "persist-credentials: true" not in before_quality[local_start:]
+    assert "Initialize sealed Lordchrist successor ledger" not in before_quality
