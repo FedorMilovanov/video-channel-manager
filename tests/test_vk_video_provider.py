@@ -8,6 +8,7 @@ import pytest
 
 import video_channel_manager.wave_engine.vk_video_provider as provider_module
 from video_channel_manager.platforms.vk.upload_lifecycle import UploadRecoveryRequired, UploadStage
+from video_channel_manager.platforms.vk.text import render_vk_video_description
 from video_channel_manager.platforms.vk.wall_safety import build_upload_wall_guard
 from video_channel_manager.wave_engine.canonical import file_sha256, write_json_atomic
 from video_channel_manager.wave_engine.engine import OperationRejectedError, UnknownProviderOutcomeError
@@ -43,10 +44,10 @@ def _operation(manifest_path: str, manifest_sha256: str) -> WaveOperation:
             "source_duration_seconds": 305,
             "privacy_status": "public",
             "published_title": "Поэма",
-            "published_description": "Описание",
+            "published_description": render_vk_video_description("Описание").text,
             "media_manifest_path": manifest_path,
             "media_manifest_sha256": manifest_sha256,
-            "media_artifact_manifest_sha256": "a" * 64,
+            "media_artifact_manifest_sha256": "sha256:" + "a" * 64,
             "processing_timeout_seconds": 60,
             "wallpost": False,
             "auto_publish": False,
@@ -104,7 +105,7 @@ def _artifact(media: Path) -> SimpleNamespace:
             source_id="yt-1",
         ),
         acquisition=SimpleNamespace(authoritative_final_path=str(media.resolve())),
-        manifest_sha256="a" * 64,
+        manifest_sha256="sha256:" + "a" * 64,
     )
 
 
