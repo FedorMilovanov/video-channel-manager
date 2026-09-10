@@ -289,7 +289,9 @@ def load_archival_release(
     media_by_publication: dict[str, tuple[dict[str, Any], ...]] = {}
     package_digests: list[str] = []
     checked_on: date | None = None
-    for sequence, (expected_id, raw_binding) in enumerate(zip(EXPECTED_PUBLICATION_IDS, package_bindings, strict=True), start=1):
+    for sequence, (expected_id, raw_binding) in enumerate(
+        zip(EXPECTED_PUBLICATION_IDS, package_bindings, strict=True), start=1
+    ):
         if not isinstance(raw_binding, dict) or set(raw_binding) != {"publication_id", "path", "git_blob_sha"}:
             raise ValueError("archival historical revision-package binding is invalid")
         if raw_binding.get("publication_id") != expected_id:
@@ -301,7 +303,11 @@ def load_archival_release(
         )
         preflight = preflight_historical_archival_revision(package_path, repo_root=root)
         package = load_historical_archival_revision_package(package_path, repo_root=root)
-        if preflight.status != "PASS" or preflight.publication_id != expected_id or package.publication_id != expected_id:
+        if (
+            preflight.status != "PASS"
+            or preflight.publication_id != expected_id
+            or package.publication_id != expected_id
+        ):
             raise ValueError("archival historical revision package failed exact preflight binding")
         if len(package.archival_media) != 2:
             raise ValueError("each archival historical publication requires exactly two accepted exhibits")
@@ -336,14 +342,20 @@ def load_archival_release(
         sources=sources_by_publication,
         media=media_by_publication,
     )
-    return release, queue, registry, profile_path, {
-        "planned_dates": EXPECTED_DATES,
-        "recurring_publication_ids": EXPECTED_PUBLICATION_IDS,
-        "recurring_scheduled_dates_moscow": EXPECTED_DATES,
-        "target_binding_path": target_binding_path,
-        "legacy_profile_path": legacy_profile_path,
-        "external_canary_ledger_relative_path": canary["ledger_path"],
-    }
+    return (
+        release,
+        queue,
+        registry,
+        profile_path,
+        {
+            "planned_dates": EXPECTED_DATES,
+            "recurring_publication_ids": EXPECTED_PUBLICATION_IDS,
+            "recurring_scheduled_dates_moscow": EXPECTED_DATES,
+            "target_binding_path": target_binding_path,
+            "legacy_profile_path": legacy_profile_path,
+            "external_canary_ledger_relative_path": canary["ledger_path"],
+        },
+    )
 
 
 def _target(profile_path: Path, target_binding_path: Path) -> TelegramRichTargetBinding:
@@ -496,7 +508,9 @@ def build_archival_document(
 
 def _verify_remote_record(record: dict[str, Any], response: httpx.Response, local: bytes) -> None:
     if response.status_code != 200:
-        raise ValueError(f"archival historical remote media HTTP status differs: {record['asset_id']}={response.status_code}")
+        raise ValueError(
+            f"archival historical remote media HTTP status differs: {record['asset_id']}={response.status_code}"
+        )
     actual_mime = response.headers.get("content-type", "").split(";", 1)[0].strip().casefold()
     if actual_mime != str(record["mime"]):
         raise ValueError(f"archival historical remote media MIME differs: {record['asset_id']}")
@@ -585,7 +599,9 @@ def sync_external_canary(
     local_activation = ledger.get("canary_verified_at_utc")
     if approved_at is None:
         if approved_by is not None or witness_activation is not None or local_activation is not None:
-            raise ValueError("archival historical recurring schedule cannot be armed before external editorial approval")
+            raise ValueError(
+                "archival historical recurring schedule cannot be armed before external editorial approval"
+            )
         return ledger, False
     approved_time = _aware_timestamp(approved_at, label="external canary editorial approval")
     if approved_time < transport_time:
