@@ -90,7 +90,7 @@ The canonical non-secret Legendary Poet target remains project `legendary-poet`,
 
 A fresh local read-only production preflight succeeded against that exact account/username and returned publishing quota `0/100` at the probe point. This satisfies and closes #577. Credential validity is still a fresh runtime condition and must be re-proved before later provider work; no token value is stored here.
 
-The first controlled local-resumable canary investigation reached provider container/binary-upload handling, but **no `media_publish` was issued and no Instagram Reel was published**. Meta exposed a provider-visible terminal upload failure beneath top-level `IN_PROGRESS`: `uploading_phase.status=error`, error `1363008` / `FILE_NOT_FOUND`, with observed `bytes_transferred=0` and `source_file_size=0`. Existing failed/ambiguous canary containers are no-replay evidence and must not be republished or blindly re-uploaded.
+The first controlled local-resumable canary investigation reached provider container/binary-upload handling, but **no `media_publish` was issued and no Instagram Reel was published**. Provider publications remain 0. Meta exposed a provider-visible terminal upload failure beneath top-level `IN_PROGRESS`: `uploading_phase.status=error`, error `1363008` / `FILE_NOT_FOUND`, with observed `bytes_transferred=0` and `source_file_size=0`. Existing failed/ambiguous canary containers are no-replay evidence and must not be republished or blindly re-uploaded.
 
 The reviewed local MP4 was repaired with a stream-copy remux using `-use_editlist 0 -movflags +faststart`; the resulting structure was verified as `ftyp -> moov -> mdat` with no `edts/elst` edit list. This local artifact must still be re-proved from fresh current `main` before any later canary.
 
