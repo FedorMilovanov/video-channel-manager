@@ -746,10 +746,28 @@ def _commit_verified(
     clock: Clock,
 ) -> None:
     _fault(fault_hook, "after_remote_ready_before_wall_postflight")
-    wall_after_snapshot = writer.capture_upload_wall_guard(
-        community_id=community_id,
-        head_limit=wall_before_snapshot.head_limit,
-    )
+    try:
+        wall_after_snapshot = writer.capture_upload_wall_guard(
+            community_id=community_id,
+            head_limit=wall_before_snapshot.head_limit,
+        )
+    except Exception as exc:
+        _record_error(record, exc, clock=clock)
+        persist()
+        _persist_transition(
+            record,
+            UploadStage.UNKNOWN_REQUIRES_RECONCILIATION,
+            persist=persist,
+            evidence={
+                "reason": "upload_wall_postflight_unavailable",
+                "error_type": type(exc).__name__,
+            },
+            clock=clock,
+        )
+        raise UploadRecoveryRequired(
+            "Upload reached remote readiness but bounded wall postflight is unavailable; "
+            "exact reconciliation is required and retransmission is forbidden"
+        ) from exc
     wall_delta = compare_upload_wall_guards(wall_before_snapshot, wall_after_snapshot)
     raw_wall_safety = record.get("wall_safety")
     if not isinstance(raw_wall_safety, dict):
