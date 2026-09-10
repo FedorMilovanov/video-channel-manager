@@ -160,6 +160,11 @@ def test_archival_v3_release_is_exact_and_canary_is_outside_recurring_queue() ->
     assert document.expected_media_sha256 is not None
     assert render.media_placeholders == ()
     assert len(render.provider_assigned_media) == 2
+    assert "Граница доказательств" not in render.visible_text
+    assert "Богословская оценка" not in render.visible_text
+    assert queue.posts[0].evidence_boundary not in render.visible_text
+    assert queue.posts[0].theology_review.editorial_evaluation in render.visible_text
+    assert registry.sources[EXPECTED_PUBLICATION_IDS[0]][0].title in render.visible_text
 
 
 def test_v2_state_migrates_only_when_all_recurring_rows_are_provider_inert(tmp_path: Path) -> None:
