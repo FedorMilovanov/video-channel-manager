@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal, cast
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from video_channel_manager.instagram.production import InstagramPublishManifest
 from video_channel_manager.local_media.artifact import (
@@ -15,6 +15,10 @@ from video_channel_manager.local_media.artifact import (
 InstagramContainer = Literal["mp4", "mov"]
 InstagramMediaContentType = Literal["video/mp4", "video/quicktime"]
 InstagramVideoCodec = Literal["h264", "hevc"]
+InstagramReelRulesetVersion = Literal[
+    "meta-instagram-reels-2026-09-v1",
+    "meta-instagram-reels-2026-09-v2",
+]
 
 _MAX_FILE_SIZE_BYTES = 1_000_000_000
 _MAX_VIDEO_BITRATE_BPS = 25_000_000
@@ -64,7 +68,7 @@ class InstagramReelArtifactBinding(BaseModel):
         "video-manager.instagram-reel-artifact-binding"
     )
     schema_version: Literal["1.0"] = "1.0"
-    ruleset_version: Literal["meta-instagram-reels-2026-09-v2"] = "meta-instagram-reels-2026-09-v2"
+    ruleset_version: InstagramReelRulesetVersion = "meta-instagram-reels-2026-09-v2"
     media_manifest_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     media_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     media_size_bytes: int = Field(gt=0)
@@ -78,9 +82,15 @@ class InstagramReelArtifactBinding(BaseModel):
     height: int = Field(gt=0)
     audio_codec: Literal["aac"]
     audio_sample_rate_hz: int = Field(gt=0, le=_MAX_AUDIO_SAMPLE_RATE_HZ)
-    audio_channels: int = Field(ge=_MIN_AUDIO_CHANNELS, le=_MAX_AUDIO_CHANNELS)
+    audio_channels: int | None = Field(default=None, ge=_MIN_AUDIO_CHANNELS, le=_MAX_AUDIO_CHANNELS)
     audio_bitrate_bps: int = Field(gt=0)
     advisories: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def require_v2_audio_channels(self) -> InstagramReelArtifactBinding:
+        if self.ruleset_version == "meta-instagram-reels-2026-09-v2" and self.audio_channels is None:
+            raise ValueError("v2 Reel artifact bindings require audio_channels")
+        return self
 
 
 def _normalized_format_tokens(format_names: tuple[str, ...]) -> frozenset[str]:
