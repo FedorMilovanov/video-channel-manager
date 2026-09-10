@@ -451,6 +451,36 @@ class VkWallDelta:
         }
 
 
+def build_upload_wall_guard(
+    *,
+    community_id: int,
+    published_items: Iterable[Mapping[str, Any]],
+    postponed_items: Iterable[Mapping[str, Any]],
+    published_total: int | None = None,
+    postponed_total: int | None = None,
+    head_limit: int = 100,
+    captured_at: datetime | None = None,
+) -> VkUploadWallGuard:
+    published_list = list(published_items)
+    postponed_list = list(postponed_items)
+    observed_at = (captured_at or datetime.now(UTC)).astimezone(UTC).isoformat()
+    return VkUploadWallGuard(
+        community_id=community_id,
+        captured_at=observed_at,
+        head_limit=head_limit,
+        published_total=len(published_list) if published_total is None else published_total,
+        postponed_total=len(postponed_list) if postponed_total is None else postponed_total,
+        published_posts=tuple(
+            VkWallPostFingerprint.from_item(item, surface=VkWallSurface.PUBLISHED)
+            for item in published_list
+        ),
+        postponed_posts=tuple(
+            VkWallPostFingerprint.from_item(item, surface=VkWallSurface.POSTPONED)
+            for item in postponed_list
+        ),
+    )
+
+
 def compare_upload_wall_guards(before: VkUploadWallGuard, after: VkUploadWallGuard) -> "VkWallDelta":
     if before.community_id != after.community_id:
         raise ValueError("Upload wall guards belong to different communities")
@@ -574,6 +604,7 @@ __all__ = [
     "VkWallPostFingerprint",
     "VkWallSnapshot",
     "VkWallSurface",
+    "build_upload_wall_guard",
     "build_wall_snapshot",
     "canonical_wall_attachment",
     "compare_upload_wall_guards",
