@@ -32,8 +32,8 @@ from video_channel_manager.platforms.vk.upload_lifecycle import (
     execute_upload_operation as _execute_legacy_upload_operation,
 )
 from video_channel_manager.platforms.vk.wall_safety import (
+    VkUploadWallGuard,
     VkUploadWallPolicy,
-    VkWallSnapshot,
 )
 
 
@@ -223,15 +223,15 @@ class _AuthorityWriter:
             on_observation=on_observation,
         )
 
-    def capture_wall_snapshot(
+    def capture_upload_wall_guard(
         self,
         *,
         community_id: int,
-        max_posts_per_surface: int = 10000,
-    ) -> VkWallSnapshot:
-        return self._delegate.capture_wall_snapshot(
+        head_limit: int = 100,
+    ) -> VkUploadWallGuard:
+        return self._delegate.capture_upload_wall_guard(
             community_id=community_id,
-            max_posts_per_surface=max_posts_per_surface,
+            head_limit=head_limit,
         )
 
 
@@ -250,7 +250,7 @@ def execute_upload_operation(
     media_artifact: MediaArtifactEvidence | Mapping[str, Any] | None,
     readiness: VkUploadReadiness,
     processing_timeout: int,
-    wall_before_snapshot: VkWallSnapshot,
+    wall_before_snapshot: VkUploadWallGuard,
     persist: PersistCallback,
     media_probe: MediaProbe = probe_media,
     fault_hook: FaultHook | None = None,
