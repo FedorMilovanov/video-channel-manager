@@ -74,7 +74,7 @@
   "max_combined_verified_per_day_moscow": 2,
   "backfill_policy": "none",
   "media_policy": "exact_git_bound_archival_photos_reproved_before_sendRichMessage",
-  "replenishment_guard_remaining": 0,
+  "replenishment_guard_remaining": 1,
   "media_source_commit": "955f2799ca8228b46ae3c0c67698273090048a0e",
   "external_canary_binding": {
     "ledger_path": "content/telegram/lordchrist/historical-editorial/publication-ledger-spurgeon-v3-media.json",
