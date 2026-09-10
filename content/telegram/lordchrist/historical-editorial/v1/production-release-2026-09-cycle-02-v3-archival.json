@@ -1,0 +1,141 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-archival-live-release",
+  "schema_version": 1,
+  "release_id": "lordchrist-history-cycle-2026-09-14-v3-archival-live-v1",
+  "owning_issue": 561,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "chat_id": -1001295216957,
+  "chat_username": "lordchrist",
+  "bot_id": 8716602202,
+  "bot_username": "preaching_mp3_bot",
+  "state_branch": "state/lordchrist-telegram",
+  "cycle_id": "history-cycle-2026-09-14-v3-archival",
+  "cycle_start_date_moscow": "2026-09-14",
+  "publication_ids": [
+    "lordchrist-history-bunyan-bedford-prison-v3",
+    "lordchrist-history-judson-burmese-bible-v3",
+    "lordchrist-history-spurgeon-cholera-1854-v3",
+    "lordchrist-history-carey-enquiry-missions-v3",
+    "lordchrist-history-fuller-gospel-worthy-v3",
+    "lordchrist-history-tyndale-new-testament-1526-v3",
+    "lordchrist-history-stam-china-december-1934-v3",
+    "lordchrist-history-sattler-schleitheim-1527-v3"
+  ],
+  "scheduled_dates_moscow": [
+    "2026-09-14",
+    "2026-09-16",
+    "2026-09-19",
+    "2026-09-21",
+    "2026-09-23",
+    "2026-09-26",
+    "2026-09-28",
+    "2026-09-30"
+  ],
+  "schedule": {
+    "timezone": "Europe/Moscow",
+    "local_time": "19:17",
+    "iso_weekdays": [
+      1,
+      3,
+      6
+    ],
+    "freshness_minutes": 120
+  },
+  "provider_writes_authorized": true,
+  "authorization_basis": "Issue #561: continue the reviewed LordChrist historical v3 rollout only with the eight remaining archival-media publications. The already verified v3 canary is Telegram message 1516 and is not part of this recurring queue. Recurring publication remains provider-inert until that exact canary receives separate durable editorial approval.",
+  "activation_policy": "external_verified_approved_canary_then_exact_schedule",
+  "editorial_approval_required": false,
+  "external_editorial_approval_required": true,
+  "canary_out_of_band": true,
+  "canary_publication_id": "lordchrist-history-spurgeon-down-grade-1887-v3",
+  "recurring_publication_ids": [
+    "lordchrist-history-bunyan-bedford-prison-v3",
+    "lordchrist-history-judson-burmese-bible-v3",
+    "lordchrist-history-spurgeon-cholera-1854-v3",
+    "lordchrist-history-carey-enquiry-missions-v3",
+    "lordchrist-history-fuller-gospel-worthy-v3",
+    "lordchrist-history-tyndale-new-testament-1526-v3",
+    "lordchrist-history-stam-china-december-1934-v3",
+    "lordchrist-history-sattler-schleitheim-1527-v3"
+  ],
+  "recurring_scheduled_dates_moscow": [
+    "2026-09-14",
+    "2026-09-16",
+    "2026-09-19",
+    "2026-09-21",
+    "2026-09-23",
+    "2026-09-26",
+    "2026-09-28",
+    "2026-09-30"
+  ],
+  "max_provider_attempts_per_publication": 1,
+  "blind_mutation_retries": 0,
+  "max_combined_verified_per_day_moscow": 2,
+  "backfill_policy": "none",
+  "media_policy": "exact_git_bound_archival_photos_reproved_before_sendRichMessage",
+  "replenishment_guard_remaining": 1,
+  "media_source_commit": "955f2799ca8228b46ae3c0c67698273090048a0e",
+  "external_canary_binding": {
+    "ledger_path": "content/telegram/lordchrist/historical-editorial/publication-ledger-spurgeon-v3-media.json",
+    "release_id": "lordchrist-history-spurgeon-down-grade-1887-v3-media-live-v1",
+    "publication_id": "lordchrist-history-spurgeon-down-grade-1887-v3",
+    "message_id": 1516,
+    "required_state": "published",
+    "required_provider_effect": "verified"
+  },
+  "revision_packages": [
+    {
+      "publication_id": "lordchrist-history-bunyan-bedford-prison-v3",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/bunyan-bedford-prison/revision-package-v2-2026-09-09.json",
+      "git_blob_sha": "dea5e8af5b819a587f6a58a341bc81969fd2de18"
+    },
+    {
+      "publication_id": "lordchrist-history-judson-burmese-bible-v3",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/judson-burmese-bible/revision-package-v2-2026-09-09.json",
+      "git_blob_sha": "37bf7576316cd4cb7f9c627c3293432f68b5aaa3"
+    },
+    {
+      "publication_id": "lordchrist-history-spurgeon-cholera-1854-v3",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/spurgeon-cholera-1854/revision-package-v2-2026-09-09.json",
+      "git_blob_sha": "392816182fb72b427ca4c7bae07d182ee57d77ba"
+    },
+    {
+      "publication_id": "lordchrist-history-carey-enquiry-missions-v3",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/carey-enquiry-missions/revision-package-v2-2026-09-09.json",
+      "git_blob_sha": "88c9211d54aeaa2f7c2c120c000fc4d5b5f3be01"
+    },
+    {
+      "publication_id": "lordchrist-history-fuller-gospel-worthy-v3",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/fuller-gospel-worthy/revision-package-v2-2026-09-09.json",
+      "git_blob_sha": "aad1ac61220fc02bb9ce6f9316aaf7a0ba44a7bf"
+    },
+    {
+      "publication_id": "lordchrist-history-tyndale-new-testament-1526-v3",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/tyndale-new-testament-1526/revision-package-v2-2026-09-09.json",
+      "git_blob_sha": "5a6ce74808960940513dd1735008e79f33fec705"
+    },
+    {
+      "publication_id": "lordchrist-history-stam-china-december-1934-v3",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/stam-china-december-1934/revision-package-v2-2026-09-09.json",
+      "git_blob_sha": "5aceedadd7ac6b036b1750af148e232dc8741924"
+    },
+    {
+      "publication_id": "lordchrist-history-sattler-schleitheim-1527-v3",
+      "path": "content/telegram/lordchrist/historical-editorial/v1/v3/sattler-schleitheim-1527/revision-package-v2-2026-09-09.json",
+      "git_blob_sha": "0e474dc3d52b8940d77d2640dbc8aa4e336f7a81"
+    }
+  ],
+  "profile": {
+    "path": "content/telegram/channels/lordchrist-rich.json",
+    "git_blob_sha": "d9aa04313825c11906e18a043267068feccb3c95"
+  },
+  "legacy_profile": {
+    "path": "content/telegram/channels/lordchrist.json",
+    "git_blob_sha": "33ac149116a7d1c6862a1b8e2b8d39f09925f72d"
+  },
+  "target_binding": {
+    "path": "content/telegram/channels/lordchrist-rich-target-binding.json",
+    "git_blob_sha": "26efd9956ae634416f288e323e23f7bd2de32a3d"
+  }
+}

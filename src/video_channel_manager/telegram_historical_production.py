@@ -1,4 +1,4 @@
-"""Historical production facade with a separate editorial canary approval gate.
+"""Historical production facade with explicit editorial and archival activation gates.
 
 Transport verification proves that Telegram accepted the exact reviewed rich
 document. It does not by itself approve reader-facing copy for recurring
@@ -6,11 +6,13 @@ publication. Releases that opt into ``editorial_approval_required`` therefore
 record transport verification first and require a separate provider-free
 owner approval before the legacy activation timestamp is populated.
 
-The facade also owns the additive exact-bound media release extension. Legacy
-v1/v2 releases keep the frozen core path unchanged; a live-media release uses
-the same durable intent, writer, target proof, rich provider, outcome archive,
-and apply semantics, but re-proves its immutable HTTPS media bytes immediately
-before the one permitted ``sendRichMessage`` call.
+The facade also owns additive exact-bound media release extensions. Legacy
+v1/v2 releases keep the frozen core path unchanged. The single-canary live-media
+release and the eight-publication archival v3 release reuse the same durable
+intent, writer, target proof, rich provider, outcome archive, and apply
+semantics. Exact media bytes are re-proved immediately before the one permitted
+``sendRichMessage`` call. The archival recurring release is additionally gated
+by the durable, separately approved v3 canary message 1516.
 """
 
 from __future__ import annotations
@@ -22,6 +24,7 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Sequence
 
+from video_channel_manager import telegram_historical_archival_release as _archival
 from video_channel_manager import telegram_historical_media_release as _media
 from video_channel_manager import telegram_historical_production_core as _core
 from video_channel_manager.telegram_historical_production_core import (
@@ -55,8 +58,23 @@ _ORIGINAL_LOAD_RELEASE = _core.load_release
 _ORIGINAL_NEW_LEDGER = _core.new_ledger
 _ORIGINAL_LOAD_LEDGER = _core.load_ledger
 _ORIGINAL_BUILD_DOCUMENT = _core.build_document
+_ORIGINAL_PREPARE = _core.prepare
 _ORIGINAL_SEND = _core.send
 _ORIGINAL_APPLY = _core.apply
+
+_LEGACY_V2_RELEASE_ID = "lordchrist-history-cycle-2026-09-14-human-v2-live-v1"
+_LEGACY_V2_CYCLE_ID = "history-cycle-2026-09-14-v2"
+_LEGACY_V2_CANARY_ID = "lordchrist-history-spurgeon-down-grade-1887-v2"
+_LEGACY_V2_RECURRING_IDS = (
+    "lordchrist-history-bunyan-bedford-prison-v2",
+    "lordchrist-history-judson-burmese-bible-v2",
+    "lordchrist-history-spurgeon-cholera-1854-v2",
+    "lordchrist-history-carey-enquiry-missions-v2",
+    "lordchrist-history-fuller-gospel-worthy-v2",
+    "lordchrist-history-tyndale-new-testament-1526-v2",
+    "lordchrist-history-stam-china-december-1934-v2",
+    "lordchrist-history-sattler-schleitheim-1527-v2",
+)
 
 
 def _editorial_approval_required(release: dict[str, Any]) -> bool:
@@ -92,9 +110,11 @@ def _release_payload(path: Path, root: Path) -> dict[str, Any]:
 
 
 def load_release(path: Path, root: Path) -> tuple[dict[str, Any], Any, Any, Path, dict[str, Any]]:
-    """Load either the frozen core release or the additive exact-media release."""
+    """Load the frozen core release or one of the additive exact-media releases."""
 
     candidate = _release_payload(path, root)
+    if _archival.is_archival_release_payload(candidate):
+        return _archival.load_archival_release(path, root)
     if _media.is_media_release_payload(candidate):
         return _media.load_media_release(path, root)
 
@@ -144,6 +164,16 @@ def build_document(
 ) -> Any:
     """Render exact-media releases without changing the frozen text-only core path."""
 
+    if _archival.is_archival_release_payload(release):
+        return _archival.build_archival_document(
+            root,
+            release,
+            queue,
+            registry,
+            profile_path,
+            target_binding_path,
+            publication_id,
+        )
     if _media.is_media_release_payload(release):
         return _media.build_media_document(
             root,
@@ -170,9 +200,18 @@ def new_ledger(
     queue: Any,
     planned_dates: tuple[str, ...],
 ) -> dict[str, Any]:
-    """Create the durable ledger, adding explicit two-phase canary state."""
+    """Create a core-compatible durable ledger for every release shape."""
 
     ledger = _ORIGINAL_NEW_LEDGER(release, queue, planned_dates)
+    if _archival.is_archival_release_payload(release):
+        entries = ledger.get("entries")
+        if not isinstance(entries, dict):
+            raise ValueError("archival historical ledger entries are invalid")
+        for sequence, post in enumerate(queue.posts, start=1):
+            row = entries.get(post.publication_id)
+            if not isinstance(row, dict):
+                raise ValueError("archival historical ledger is missing a recurring publication")
+            row["sequence"] = sequence
     if _editorial_approval_required(release):
         ledger[TRANSPORT_VERIFIED_FIELD] = None
         ledger[EDITORIAL_APPROVED_FIELD] = None
@@ -216,6 +255,83 @@ def _validate_editorial_gate(ledger: dict[str, Any], release: dict[str, Any]) ->
         raise ValueError("historical editorial approval requires an exact verified canary publication")
 
 
+def _safe_archival_ledger_migration(
+    path: Path,
+    release: dict[str, Any],
+    queue: Any,
+    planned_dates: tuple[str, ...],
+    *,
+    create: bool,
+) -> dict[str, Any] | None:
+    """Project the untouched v2 recurring ledger into the archival v3 release.
+
+    The old v2 canary (1515) is intentionally not copied. The new recurring
+    release is activated only by the separate v3 canary ledger for message
+    1516. Migration is allowed solely while all eight old recurring rows remain
+    pending/impossible and therefore have no provider effect to preserve.
+    """
+
+    if not _archival.is_archival_release_payload(release):
+        return None
+    if create and not path.exists():
+        return new_ledger(release, queue, planned_dates)
+    if not path.exists():
+        return None
+
+    raw = _release_payload(path, Path("."))
+    if raw.get("release_id") == release.get("release_id"):
+        return None
+    if (
+        raw.get("schema_name") != _core.LEDGER_SCHEMA
+        or raw.get("schema_version") != 1
+        or raw.get("release_id") != _LEGACY_V2_RELEASE_ID
+        or raw.get("cycle_id") != _LEGACY_V2_CYCLE_ID
+        or raw.get("owning_issue") != OWNING_ISSUE
+        or raw.get("project_key") != PROJECT
+        or raw.get("channel_username") != CHANNEL
+        or raw.get("canary_publication_id") != _LEGACY_V2_CANARY_ID
+    ):
+        raise ValueError("archival historical state is neither the exact release nor the safe v2 predecessor")
+
+    entries = raw.get("entries")
+    expected_keys = (_LEGACY_V2_CANARY_ID, *_LEGACY_V2_RECURRING_IDS)
+    if not isinstance(entries, dict) or tuple(entries) != expected_keys:
+        raise ValueError("archival historical v2 predecessor ledger entries differ from the exact predecessor")
+
+    canary = entries[_LEGACY_V2_CANARY_ID]
+    if (
+        not isinstance(canary, dict)
+        or canary.get("state") != "published"
+        or canary.get("provider_effect") != "verified"
+        or canary.get("message_id") != 1515
+    ):
+        raise ValueError("archival historical v2 predecessor canary differs from durable message 1515")
+
+    for index, publication_id in enumerate(_LEGACY_V2_RECURRING_IDS):
+        row = entries[publication_id]
+        if not isinstance(row, dict) or (
+            row.get("publication_id") != publication_id
+            or row.get("sequence") != index + 2
+            or row.get("scheduled_date_moscow") != planned_dates[index]
+            or row.get("state") != "pending"
+            or row.get("provider_effect") != "impossible"
+            or row.get("dispatch_mode") is not None
+            or row.get("workflow_run_id") is not None
+            or row.get("workflow_run_attempt") is not None
+            or row.get("github_sha") is not None
+            or row.get("document_sha256") is not None
+            or row.get("intent_created_at_utc") is not None
+            or row.get("published_at_utc") is not None
+            or row.get("message_id") is not None
+            or row.get("message_url") is not None
+        ):
+            raise ValueError("archival historical v2 recurring state is no longer safely migratable")
+
+    if raw.get("canary_verified_at_utc") is not None or raw.get("successor_cycle_binding") is not None:
+        raise ValueError("archival historical v2 predecessor has activation/successor state that cannot be discarded")
+    return new_ledger(release, queue, planned_dates)
+
+
 def load_ledger(
     path: Path,
     release: dict[str, Any],
@@ -224,11 +340,64 @@ def load_ledger(
     *,
     create: bool = False,
 ) -> dict[str, Any]:
-    """Load the exact release ledger and prove its editorial activation semantics."""
+    """Load the exact ledger, allowing only the provider-inert v2→v3 state projection."""
 
+    migrated = _safe_archival_ledger_migration(path, release, queue, planned_dates, create=create)
+    if migrated is not None:
+        return migrated
     ledger = _ORIGINAL_LOAD_LEDGER(path, release, queue, planned_dates, create=create)
     _validate_editorial_gate(ledger, release)
     return ledger
+
+
+def prepare(
+    root: Path,
+    state_root: Path,
+    release: dict[str, Any],
+    queue: Any,
+    registry: Any,
+    profile_path: Path,
+    target_binding_path: Path,
+    legacy_profile_path: Path,
+    planned_dates: tuple[str, ...],
+    ledger: dict[str, Any],
+    target_path: Path,
+    *,
+    mode: str,
+    expected_publication_id: str | None,
+    repository: str,
+    sha: str,
+    run_id: str,
+    attempt: str,
+    now: datetime | None = None,
+) -> tuple[dict[str, Any] | None, dict[str, Any], str]:
+    """Synchronize the external v3 canary gate before the frozen prepare path."""
+
+    if _archival.is_archival_release_payload(release):
+        binding = release["external_canary_binding"]
+        witness_path = state_root / str(binding["ledger_path"])
+        witness = _release_payload(witness_path, Path(".")) if witness_path.is_file() else None
+        ledger, _active = _archival.sync_external_canary(ledger, release, witness)
+    return _ORIGINAL_PREPARE(
+        root,
+        state_root,
+        release,
+        queue,
+        registry,
+        profile_path,
+        target_binding_path,
+        legacy_profile_path,
+        planned_dates,
+        ledger,
+        target_path,
+        mode=mode,
+        expected_publication_id=expected_publication_id,
+        repository=repository,
+        sha=sha,
+        run_id=run_id,
+        attempt=attempt,
+        now=now,
+    )
 
 
 def send(
@@ -246,7 +415,10 @@ def send(
 ) -> TelegramRichProviderOutcome:
     """Re-prove exact media bytes immediately before the existing one-shot provider mutation."""
 
-    if _media.is_media_release_payload(release):
+    if _archival.is_archival_release_payload(release):
+        publication_id = str(intent.get("publication_id") or "")
+        _archival.verify_transport_media_bytes(root, release, registry, publication_id)
+    elif _media.is_media_release_payload(release):
         _media.verify_transport_media_bytes(root, release)
     return _ORIGINAL_SEND(
         root,
@@ -331,6 +503,7 @@ def _install_core_overrides() -> None:
     _core.new_ledger = new_ledger
     _core.load_ledger = load_ledger
     _core.build_document = build_document
+    _core.prepare = prepare
     _core.send = send
     _core.apply = apply
 
@@ -345,8 +518,42 @@ def _approval_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _archival_preview(arguments: list[str]) -> int | None:
+    parsed = _core.parser().parse_args(arguments)
+    release, queue, registry, profile_path, aux = load_release(parsed.release, parsed.root)
+    if not _archival.is_archival_release_payload(release):
+        return None
+    publication_id = str(release["publication_ids"][0])
+    document, render = build_document(
+        parsed.root,
+        release,
+        queue,
+        registry,
+        profile_path,
+        Path(aux["target_binding_path"]),
+        publication_id,
+    )
+    print(
+        json.dumps(
+            {
+                "release_id": release["release_id"],
+                "release_sha256": release_digest(release),
+                "cycle_id": release["cycle_id"],
+                "external_canary_publication_id": release["canary_publication_id"],
+                "preview_publication_id": publication_id,
+                "document_sha256": document.document_sha256,
+                "render_sha256": render.render_sha256,
+                "scheduled_dates_moscow": list(aux["planned_dates"]),
+                "provider_write_performed": False,
+            },
+            ensure_ascii=False,
+        )
+    )
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
-    """Run the production CLI, intercepting the provider-free approval command."""
+    """Run the production CLI, intercepting provider-free approval and archival preview."""
 
     _install_core_overrides()
     arguments = list(sys.argv[1:] if argv is None else argv)
@@ -375,6 +582,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         )
         return 0
+    if arguments and arguments[0] == "preview":
+        archival_status = _archival_preview(arguments)
+        if archival_status is not None:
+            return archival_status
     return _core.main(arguments)
 
 
@@ -408,6 +619,7 @@ __all__ = [
     "load_release",
     "main",
     "new_ledger",
+    "prepare",
     "release_digest",
     "run_preflight",
     "send",
