@@ -22,6 +22,7 @@ from video_channel_manager.platforms.vk import (
     VkTokenStore,
 )
 from video_channel_manager.platforms.vk.clips_audit import build_vk_clips_audit_snapshot
+from video_channel_manager.platforms.vk.flood_control import VK_FLOOD_CONTROL_CODE, VkFloodControlGate
 from video_channel_manager.platforms.vk.clips_owner_probe import (
     VK_OWNER_CLIPS_PROBE_API_VERSION,
     build_vk_owner_clips_probe_snapshot,
@@ -160,6 +161,79 @@ def accounts() -> None:
             item.updated_at.astimezone(UTC).strftime("%Y-%m-%d %H:%M UTC"),
         )
     console.print(table)
+
+
+@vk_app.command("flood-status")
+def flood_status(
+    account: Annotated[str, typer.Option("--account", "-a")] = "default",
+) -> None:
+    """Show durable local VK code-9 circuits without calling VK."""
+
+    settings = get_settings()
+    store = VkTokenStore(settings.data_dir)
+    alias = store.validate_alias(account)
+    gate = VkFloodControlGate(settings.data_dir, alias)
+    try:
+        entries = gate.list_open()
+    except (OSError, ValueError) as exc:
+        console.print(f"[red]Cannot read VK flood-control state:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+    if not entries:
+        console.print(f"[green]No open VK flood-control circuits for '{alias}'.[/green] Provider calls: 0")
+        return
+    table = Table(title=f"Open VK flood-control circuits for '{alias}'")
+    table.add_column("Method")
+    table.add_column("First observed")
+    table.add_column("Last observed")
+    table.add_column("Occurrences", justify="right")
+    for entry in entries:
+        table.add_row(
+            entry.method,
+            entry.first_observed_at,
+            entry.last_observed_at,
+            str(entry.occurrences),
+        )
+    console.print(table)
+    console.print("[yellow]Provider calls: 0. No automatic TTL is assumed for VK API code 9.[/yellow]")
+
+
+@vk_app.command("flood-reset")
+def flood_reset(
+    method: Annotated[str, typer.Option("--method", help="Exact open VK API method circuit, e.g. wall.get")],
+    account: Annotated[str, typer.Option("--account", "-a")] = "default",
+    confirm_code: Annotated[
+        int | None,
+        typer.Option("--confirm-code", help="Explicitly confirm VK API code 9 before reopening the method"),
+    ] = None,
+) -> None:
+    """Explicitly reopen one local code-9 circuit; this command never calls VK."""
+
+    if confirm_code != VK_FLOOD_CONTROL_CODE:
+        raise typer.BadParameter(
+            f"--confirm-code {VK_FLOOD_CONTROL_CODE} is required; no provider request will be made",
+            param_hint="--confirm-code",
+        )
+    settings = get_settings()
+    store = VkTokenStore(settings.data_dir)
+    alias = store.validate_alias(account)
+    normalized_method = method.strip()
+    if not normalized_method:
+        raise typer.BadParameter("method cannot be blank", param_hint="--method")
+    gate = VkFloodControlGate(settings.data_dir, alias)
+    try:
+        cleared = gate.clear(normalized_method)
+    except (OSError, ValueError) as exc:
+        console.print(f"[red]Cannot update VK flood-control state:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+    if cleared:
+        console.print(
+            f"[green]Cleared local VK flood-control circuit:[/green] {alias} / {normalized_method}. "
+            "Provider calls: 0."
+        )
+    else:
+        console.print(
+            f"No open local VK flood-control circuit existed for {alias} / {normalized_method}. Provider calls: 0."
+        )
 
 
 @vk_app.command("communities")
