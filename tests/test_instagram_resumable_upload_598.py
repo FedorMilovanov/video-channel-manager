@@ -93,6 +93,7 @@ def test_binary_upload_passes_complete_bytes_and_only_meta_sample_headers(monkey
     observed: dict[str, Any] = {}
 
     with _client(config, unused_transport) as client:
+
         def fake_post(url: str, *, headers: dict[str, str], content: bytes) -> httpx.Response:
             observed["url"] = url
             observed["headers"] = dict(headers)
