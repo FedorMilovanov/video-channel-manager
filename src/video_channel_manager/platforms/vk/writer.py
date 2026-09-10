@@ -23,6 +23,7 @@ from video_channel_manager.platforms.http import (
 from video_channel_manager.platforms.vk.flood_control import VK_FLOOD_CONTROL_CODE, VkFloodControlGate
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.upload_lifecycle import (
+    UploadTicketProtocol,
     VkUploadReadiness,
     VkUploadReadinessAssessment,
     assess_vk_upload_readiness,
@@ -378,7 +379,7 @@ class VkVideoWriter(HttpClientOwner):
             reservation_response=dict(response),
         )
 
-    def upload_file(self, ticket: VkUploadTicket, path: Path) -> dict[str, Any]:
+    def upload_file(self, ticket: UploadTicketProtocol, path: Path) -> dict[str, Any]:
         if ticket.video_id <= 0 or ticket.owner_id == 0 or not ticket.upload_url:
             raise ValueError("VK upload ticket is invalid")
         if not path.is_file():
@@ -485,7 +486,7 @@ class VkVideoWriter(HttpClientOwner):
 
     def wait_until_available(
         self,
-        ticket: VkUploadTicket,
+        ticket: UploadTicketProtocol,
         *,
         readiness: VkUploadReadiness | None = None,
         timeout_seconds: int = 3600,
