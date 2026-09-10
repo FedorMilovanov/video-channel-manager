@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -257,11 +258,12 @@ class InstagramResumableUploadLedger:
         )
 
     def mark_unknown(self, publication_key: str, exc: Exception) -> ResumableUploadSnapshot:
+        provider_error_code = exc.error_code if isinstance(exc, InstagramProviderError) else None
         return self._transition(
             publication_key,
             ResumableUploadState.UPLOAD_UNKNOWN,
             expected={ResumableUploadState.UPLOAD_REQUESTED},
-            error_code=type(exc).__name__,
+            error_code=provider_error_code or type(exc).__name__,
             error_message=str(exc),
         )
 
@@ -337,6 +339,77 @@ def _validated_upload_uri(value: str) -> str:
     return value
 
 
+_RESUMABLE_ERROR_DETAIL_MAX_CHARS = 512
+_RUPLOAD_URL_PATTERN = re.compile(r"https://rupload\.facebook\.com/[^\s\"'<>]+", re.IGNORECASE)
+_AUTH_VALUE_PATTERN = re.compile(r"(?i)\b(?:OAuth|Bearer)\s+[^\s,;]+")
+_ACCESS_TOKEN_PATTERN = re.compile(r"(?i)(access_token\s*[=:]\s*)[^\s&;,]+")
+
+
+def _safe_resumable_provider_detail(value: str, *, access_token: str, upload_uri: str) -> str:
+    detail = " ".join(value.split())
+    if access_token:
+        detail = detail.replace(access_token, "[REDACTED_TOKEN]")
+    if upload_uri:
+        detail = detail.replace(upload_uri, "[REDACTED_UPLOAD_URI]")
+    detail = _RUPLOAD_URL_PATTERN.sub("[REDACTED_UPLOAD_URI]", detail)
+    detail = _AUTH_VALUE_PATTERN.sub("[REDACTED_AUTHORIZATION]", detail)
+    detail = _ACCESS_TOKEN_PATTERN.sub(r"\1[REDACTED_TOKEN]", detail)
+    if len(detail) > _RESUMABLE_ERROR_DETAIL_MAX_CHARS:
+        detail = detail[: _RESUMABLE_ERROR_DETAIL_MAX_CHARS - 3] + "..."
+    return detail
+
+
+def _resumable_provider_error(
+    response: httpx.Response,
+    *,
+    access_token: str,
+    upload_uri: str,
+) -> InstagramProviderError:
+    payload: object | None
+    try:
+        payload = response.json()
+    except ValueError:
+        payload = None
+
+    error_code: str | None = None
+    detail = ""
+    if isinstance(payload, dict):
+        raw_error = payload.get("error")
+        if isinstance(raw_error, dict):
+            raw_code = raw_error.get("code")
+            if raw_code is not None:
+                error_code = str(raw_code)
+            raw_message = raw_error.get("message")
+            if isinstance(raw_message, str) and raw_message:
+                detail = raw_message
+            elif raw_error:
+                detail = json.dumps(raw_error, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        elif isinstance(raw_error, str) and raw_error:
+            detail = raw_error
+        if not detail:
+            raw_message = payload.get("message")
+            if isinstance(raw_message, str) and raw_message:
+                detail = raw_message
+        if error_code is None:
+            raw_code = payload.get("code")
+            if raw_code is not None:
+                error_code = str(raw_code)
+        if not detail and payload:
+            detail = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    if not detail:
+        detail = response.text
+
+    safe_detail = _safe_resumable_provider_detail(
+        detail,
+        access_token=access_token,
+        upload_uri=upload_uri,
+    )
+    message = f"Instagram resumable upload returned HTTP {response.status_code}"
+    if safe_detail:
+        message = f"{message}: {safe_detail}"
+    return InstagramProviderError(message, status_code=response.status_code, error_code=error_code)
+
+
 class InstagramResumableProviderClient(InstagramProviderClient):
     """Facebook Login resumable-upload transport, isolated from the public-URL transport."""
 
@@ -368,43 +441,31 @@ class InstagramResumableProviderClient(InstagramProviderClient):
     def upload_local_video(self, upload_uri: str, stream: BinaryIO, *, file_size: int) -> None:
         self._require_supported_mode()
         target = _validated_upload_uri(upload_uri)
-
-        def chunks() -> Iterator[bytes]:
-            while chunk := stream.read(1024 * 1024):
-                yield chunk
-
         try:
+            body = stream.read()
             response = self._client.post(
                 target,
                 headers={
                     "Authorization": f"OAuth {self.config.access_token}",
                     "offset": "0",
                     "file_size": str(file_size),
-                    "Content-Length": str(file_size),
                 },
-                content=chunks(),
+                content=body,
             )
         except (httpx.RequestError, OSError) as exc:
             raise InstagramTransportError("Instagram resumable binary upload transport failure") from exc
 
-        payload: object
+        payload: object | None
         try:
             payload = response.json()
         except ValueError:
-            payload = {}
+            payload = None
         if response.is_error:
-            error_code: str | None = None
-            message = f"Instagram resumable upload returned HTTP {response.status_code}"
-            if isinstance(payload, dict):
-                raw_error = payload.get("error")
-                if isinstance(raw_error, dict):
-                    raw_message = raw_error.get("message")
-                    if isinstance(raw_message, str) and raw_message:
-                        message = raw_message
-                    raw_code = raw_error.get("code")
-                    if raw_code is not None:
-                        error_code = str(raw_code)
-            raise InstagramProviderError(message, status_code=response.status_code, error_code=error_code)
+            raise _resumable_provider_error(
+                response,
+                access_token=self.config.access_token,
+                upload_uri=target,
+            )
         if isinstance(payload, dict) and payload.get("success") is False:
             raise InstagramProviderError("Instagram resumable upload response reported success=false")
 
@@ -653,7 +714,8 @@ class InstagramLocalResumableService(InstagramProductionService):
                     except (InstagramProviderError, InstagramTransportError) as exc:
                         self.upload_ledger.mark_unknown(manifest.publication_key, exc)
                         raise InstagramReconciliationRequired(
-                            f"Binary upload result for {manifest.publication_key} is unknown; refusing blind replay"
+                            f"Binary upload result for {manifest.publication_key} is unknown; refusing blind replay. "
+                            f"Provider detail: {exc}"
                         ) from exc
                 child = self.upload_ledger.mark_uploaded(manifest.publication_key)
             if child.state == ResumableUploadState.UPLOADED:
