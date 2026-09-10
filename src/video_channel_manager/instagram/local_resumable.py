@@ -774,11 +774,7 @@ class InstagramLocalResumableService(InstagramProductionService):
                             file_size=manifest.media_size_bytes,
                         )
                     except InstagramProviderError as exc:
-                        if (
-                            exc.status_code is not None
-                            and 400 <= exc.status_code < 500
-                            and exc.retryable is False
-                        ):
+                        if exc.status_code is not None and 400 <= exc.status_code < 500 and exc.retryable is False:
                             self.upload_ledger.mark_provider_failed(
                                 manifest.publication_key,
                                 error_code=exc.error_code or type(exc).__name__,
