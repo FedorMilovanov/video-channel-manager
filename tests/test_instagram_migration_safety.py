@@ -38,7 +38,7 @@ def test_instagram_ledger_downgrade_allows_empty_state(
     config = _config(repository_root)
     try:
         command.upgrade(config, "head")
-        assert _revision(database_url) == "0002"
+        assert _revision(database_url) == "0003"
         command.downgrade(config, "0001")
     finally:
         get_settings.cache_clear()
