@@ -350,10 +350,7 @@ class VkUploadWallGuard:
             raise ValueError("published upload wall guard contains too many head posts")
         if len(self.postponed_posts) > min(self.head_limit, self.postponed_total):
             raise ValueError("postponed upload wall guard contains too many head posts")
-        identities = [
-            (post.surface.value, post.remote_id)
-            for post in (*self.published_posts, *self.postponed_posts)
-        ]
+        identities = [(post.surface.value, post.remote_id) for post in (*self.published_posts, *self.postponed_posts)]
         if len(identities) != len(set(identities)):
             raise ValueError("upload wall guard contains duplicate post identities")
 
@@ -394,14 +391,10 @@ class VkUploadWallGuard:
         if not isinstance(raw_published, list) or not isinstance(raw_postponed, list):
             raise ValueError("VK upload wall guard posts must be lists")
         published = tuple(
-            VkWallPostFingerprint.from_mapping(item)
-            for item in raw_published
-            if isinstance(item, Mapping)
+            VkWallPostFingerprint.from_mapping(item) for item in raw_published if isinstance(item, Mapping)
         )
         postponed = tuple(
-            VkWallPostFingerprint.from_mapping(item)
-            for item in raw_postponed
-            if isinstance(item, Mapping)
+            VkWallPostFingerprint.from_mapping(item) for item in raw_postponed if isinstance(item, Mapping)
         )
         if len(published) != len(raw_published) or len(postponed) != len(raw_postponed):
             raise ValueError("VK upload wall guard contains a non-object post")
@@ -471,12 +464,10 @@ def build_upload_wall_guard(
         published_total=len(published_list) if published_total is None else published_total,
         postponed_total=len(postponed_list) if postponed_total is None else postponed_total,
         published_posts=tuple(
-            VkWallPostFingerprint.from_item(item, surface=VkWallSurface.PUBLISHED)
-            for item in published_list
+            VkWallPostFingerprint.from_item(item, surface=VkWallSurface.PUBLISHED) for item in published_list
         ),
         postponed_posts=tuple(
-            VkWallPostFingerprint.from_item(item, surface=VkWallSurface.POSTPONED)
-            for item in postponed_list
+            VkWallPostFingerprint.from_item(item, surface=VkWallSurface.POSTPONED) for item in postponed_list
         ),
     )
 
@@ -495,9 +486,7 @@ def compare_upload_wall_guards(before: VkUploadWallGuard, after: VkUploadWallGua
     created_keys = sorted(set(after_posts) - set(before_posts))
     removed_keys = sorted(set(before_posts) - set(after_posts))
     changed_keys = sorted(
-        key
-        for key in set(before_posts) & set(after_posts)
-        if before_posts[key].as_dict() != after_posts[key].as_dict()
+        key for key in set(before_posts) & set(after_posts) if before_posts[key].as_dict() != after_posts[key].as_dict()
     )
     reasons: list[str] = []
     if before.published_total != after.published_total:
@@ -508,11 +497,7 @@ def compare_upload_wall_guards(before: VkUploadWallGuard, after: VkUploadWallGua
     created = tuple(f"{surface}:{remote_id}" for surface, remote_id in created_keys)
     removed = tuple(f"{surface}:{remote_id}" for surface, remote_id in removed_keys)
     changed = tuple(f"{surface}:{remote_id}" for surface, remote_id in changed_keys)
-    status = (
-        VkWallDeltaStatus.CHANGED
-        if reasons or created or removed or changed
-        else VkWallDeltaStatus.CLEAN
-    )
+    status = VkWallDeltaStatus.CHANGED if reasons or created or removed or changed else VkWallDeltaStatus.CLEAN
     return VkWallDelta(
         status=status,
         created=created,
