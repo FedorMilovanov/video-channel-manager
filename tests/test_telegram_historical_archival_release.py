@@ -21,7 +21,10 @@ from video_channel_manager.telegram_historical_production import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-RELEASE_PATH = ROOT / "content/telegram/lordchrist/historical-editorial/v1/production-release-2026-09-cycle-02.json"
+RELEASE_PATH = (
+    ROOT
+    / "content/telegram/lordchrist/historical-editorial/v1/production-release-2026-09-cycle-02-v3-archival.json"
+)
 WORKFLOW_PATH = ROOT / ".github/workflows/lordchrist-telegram-poster.yml"
 MOSCOW = ZoneInfo("Europe/Moscow")
 
