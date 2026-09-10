@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import json
-import os
 import shutil
 import subprocess
 from collections.abc import Iterable, Sequence
@@ -365,9 +363,7 @@ def prepare_vk_video_wave(
     target = _load_audit(target_audit_path.resolve())
 
     expected_channel = str(_single_project_value(PROJECT_CHANNEL_IDS.get(project_key, ()), field="YouTube channel"))
-    expected_community = int(
-        _single_project_value(PROJECT_VK_COMMUNITY_IDS.get(project_key, ()), field="VK community")
-    )
+    expected_community = int(_single_project_value(PROJECT_VK_COMMUNITY_IDS.get(project_key, ()), field="VK community"))
     if source.channel.ref.platform is not PlatformName.YOUTUBE:
         raise VkVideoPreparationError("Source AuditPackage must be YouTube")
     if source.channel.ref.channel_id != expected_channel:
@@ -392,11 +388,7 @@ def prepare_vk_video_wave(
     comparison = compare_audit_packages(source, target, project_key=project_key)
     missing_ids = {item.ref.remote_id for item in comparison.missing_on_target}
     source_by_id = {item.ref.remote_id: item for item in source.videos}
-    conflict_source_ids = {
-        ref.remote_id
-        for conflict in comparison.conflicts
-        for ref in conflict.source_refs
-    }
+    conflict_source_ids = {ref.remote_id for conflict in comparison.conflicts for ref in conflict.source_refs}
     for source_id in normalized_candidates:
         video = source_by_id.get(source_id)
         if video is None:
@@ -443,6 +435,9 @@ def prepare_vk_video_wave(
 
     for source_id in normalized_candidates:
         video = source_by_id[source_id]
+        duration_seconds = video.duration_seconds
+        if duration_seconds is None:
+            raise VkVideoPreparationError(f"Validated candidate lost duration evidence: {source_id}")
         if source_id in reuse_by_id:
             media_path, media_manifest_path = _reuse_media_manifest(
                 manifest_path=reuse_by_id[source_id],
@@ -450,7 +445,7 @@ def prepare_vk_video_wave(
                 project_key=project_key,
                 source_channel_id=expected_channel,
                 source_id=source_id,
-                source_duration_seconds=int(video.duration_seconds),
+                source_duration_seconds=duration_seconds,
             )
             acquisition_result_path = None
         else:
@@ -483,7 +478,7 @@ def prepare_vk_video_wave(
             "youtube_snapshot_id": str(source.snapshot_id),
             "target_snapshot_id": str(target.snapshot_id),
             "source_title": video.title,
-            "source_duration_seconds": int(video.duration_seconds),
+            "source_duration_seconds": duration_seconds,
             "privacy_status": video.privacy_status,
             "published_title": title,
             "published_description": rendered.text,
@@ -503,12 +498,14 @@ def prepare_vk_video_wave(
         )
         shared_artifacts.extend((media_path, media_manifest_path))
         if acquisition_result_path is not None:
-            shared_artifacts.extend((acquisition_result_path, acquisition_directory / f"{source_id}.final-path.txt"))
+            shared_artifacts.extend(
+                (acquisition_result_path, acquisition_directory / f"{source_id}.final-path.txt")
+            )
         media_summary.append(
             {
                 "source_video_id": source_id,
                 "title": title,
-                "duration_seconds": int(video.duration_seconds),
+                "duration_seconds": duration_seconds,
                 "published_at": video.published_at.isoformat() if video.published_at else None,
                 "media_path": _repo_relative(root, media_path),
                 "media_sha256": file_sha256(media_path),
