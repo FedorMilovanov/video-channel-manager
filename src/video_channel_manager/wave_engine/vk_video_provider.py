@@ -37,6 +37,11 @@ VK_VIDEO_POLICY_VERSION = "vk-native-video-wave-v1"
 VK_VIDEO_DEFAULT_ACCOUNT_ALIAS = "legendary-poet"
 
 
+def _minimum_duration_seconds(source_duration_seconds: int) -> int:
+    tolerance = max(5, min(30, round(source_duration_seconds * 0.02)))
+    return max(1, source_duration_seconds - tolerance)
+
+
 class VkNativeVideoUploadAdapter:
     """Reviewed Wave adapter for ordinary native VK Video uploads.
 
@@ -231,7 +236,7 @@ class VkNativeVideoUploadAdapter:
 
         readiness = VkUploadReadiness(
             expected_title=str(payload["published_title"]),
-            minimum_duration_seconds=max(1, int(payload["source_duration_seconds"]) - 3),
+            minimum_duration_seconds=_minimum_duration_seconds(int(payload["source_duration_seconds"])),
             allowed_types=("video",),
             require_playable=True,
         )
@@ -352,7 +357,7 @@ class VkNativeVideoUploadAdapter:
 
         readiness = VkUploadReadiness(
             expected_title=str(payload["published_title"]),
-            minimum_duration_seconds=max(1, int(payload["source_duration_seconds"]) - 3),
+            minimum_duration_seconds=_minimum_duration_seconds(int(payload["source_duration_seconds"])),
             allowed_types=("video",),
             require_playable=True,
         )
