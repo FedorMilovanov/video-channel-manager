@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Iterator
 from contextlib import contextmanager
+from dataclasses import replace
 from pathlib import Path
 from urllib.parse import parse_qs
 
 import httpx
 import pytest
+from pydantic import ValidationError
 
 from video_channel_manager.instagram.local_resumable import (
+    InstagramLocalPublishManifest,
     InstagramLocalResumableService,
     InstagramResumableProviderClient,
     InstagramResumableUploadLedger,
@@ -16,6 +20,7 @@ from video_channel_manager.instagram.local_resumable import (
     build_local_publish_manifest,
 )
 from video_channel_manager.instagram.production import (
+    InstagramMediaVerificationError,
     InstagramProductionError,
     InstagramProviderError,
     InstagramPublicationLedger,
@@ -24,6 +29,7 @@ from video_channel_manager.instagram.production import (
     InstagramWriteGateError,
     PublicationStatus,
 )
+from video_channel_manager.local_media.quality import MediaQualityReport
 from video_channel_manager.persistence import Database
 
 
@@ -74,6 +80,28 @@ def _write_video(path: Path, content: bytes = VIDEO_BYTES) -> None:
     path.write_bytes(content)
 
 
+def _compatible_probe(path: Path) -> MediaQualityReport:
+    content = path.read_bytes()
+    return MediaQualityReport(
+        path=str(path.resolve()),
+        size_bytes=len(content),
+        sha256=f"sha256:{hashlib.sha256(content).hexdigest()}",
+        duration_seconds=12.0,
+        format_names=("mov", "mp4", "m4a", "3gp", "3g2", "mj2"),
+        video_stream_count=1,
+        audio_stream_count=1,
+        video_codec="h264",
+        audio_codec="aac",
+        width=1080,
+        height=1920,
+        sample_rate_hz=48_000,
+        audio_channels=2,
+        video_frame_rate_fps=30.0,
+        video_bitrate_bps=5_000_000,
+        audio_bitrate_bps=128_000,
+    )
+
+
 def _response(request: httpx.Request, status_code: int, payload: dict[str, object]) -> httpx.Response:
     return httpx.Response(status_code, request=request, json=payload)
 
@@ -103,6 +131,16 @@ def test_local_manifest_binds_bytes_but_not_filesystem_path(tmp_path: Path) -> N
     assert "second.mp4" not in second_manifest.model_dump_json()
 
 
+def test_local_manifest_rejects_media_above_one_gigabyte() -> None:
+    with pytest.raises(ValidationError):
+        InstagramLocalPublishManifest(
+            publication_key="local.too-large",
+            account_id=ACCOUNT_ID,
+            media_sha256="sha256:" + "0" * 64,
+            media_size_bytes=1_000_000_001,
+        )
+
+
 def test_same_publication_key_rejects_changed_local_bytes(tmp_path: Path) -> None:
     video = tmp_path / "reel.mp4"
     _write_video(video, b"first bytes")
@@ -129,10 +167,52 @@ def test_kill_switch_blocks_before_any_provider_request(tmp_path: Path) -> None:
     config = _config(writes_enabled=False)
     transport = httpx.MockTransport(handler)
     with _ledgers() as (ledger, upload_ledger, _database), _client(config, transport) as client:
-        service = InstagramLocalResumableService(config, ledger, upload_ledger, client=client)
+        service = InstagramLocalResumableService(
+            config,
+            ledger,
+            upload_ledger,
+            client=client,
+            media_probe=_compatible_probe,
+        )
         with pytest.raises(InstagramWriteGateError):
             service.publish_local(manifest, video, execute=True)
     assert requests == []
+
+
+def test_incompatible_local_mp4_fails_before_provider_write_or_durable_intent(tmp_path: Path) -> None:
+    video = tmp_path / "incompatible.mp4"
+    _write_video(video)
+    manifest = build_local_publish_manifest(video, publication_key="local.incompatible", account_id=ACCOUNT_ID)
+    writes: list[str] = []
+
+    def incompatible_probe(path: Path) -> MediaQualityReport:
+        return replace(_compatible_probe(path), sample_rate_hz=44_100)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}"):
+            return _response(request, 200, {"id": ACCOUNT_ID, "username": USERNAME})
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}/content_publishing_limit"):
+            return _response(request, 200, {"data": []})
+        if request.method == "POST":
+            writes.append(str(request.url))
+        raise AssertionError(f"Unexpected request: {request.method} {request.url}")
+
+    config = _config()
+    transport = httpx.MockTransport(handler)
+    with _ledgers() as (ledger, upload_ledger, _database), _client(config, transport) as client:
+        service = InstagramLocalResumableService(
+            config,
+            ledger,
+            upload_ledger,
+            client=client,
+            media_probe=incompatible_probe,
+        )
+        with pytest.raises(InstagramMediaVerificationError, match="canonical Reel compatibility"):
+            service.publish_local(manifest, video, execute=True)
+        assert ledger.get(manifest.publication_key) is None
+        assert upload_ledger.get(manifest.publication_key) is None
+    assert writes == []
 
 
 def test_successful_local_resumable_publish_sends_exact_protocol_and_is_idempotent(tmp_path: Path) -> None:
@@ -178,7 +258,13 @@ def test_successful_local_resumable_publish_sends_exact_protocol_and_is_idempote
     config = _config()
     transport = httpx.MockTransport(handler)
     with _ledgers() as (ledger, upload_ledger, _database), _client(config, transport) as client:
-        service = InstagramLocalResumableService(config, ledger, upload_ledger, client=client)
+        service = InstagramLocalResumableService(
+            config,
+            ledger,
+            upload_ledger,
+            client=client,
+            media_probe=_compatible_probe,
+        )
         first = service.publish_local(manifest, video, execute=True)
         second = service.publish_local(manifest, video, execute=True)
 
@@ -222,7 +308,13 @@ def test_upload_transport_ambiguity_blocks_blind_binary_replay(tmp_path: Path) -
     config = _config()
     transport = httpx.MockTransport(handler)
     with _ledgers() as (ledger, upload_ledger, _database), _client(config, transport) as client:
-        service = InstagramLocalResumableService(config, ledger, upload_ledger, client=client)
+        service = InstagramLocalResumableService(
+            config,
+            ledger,
+            upload_ledger,
+            client=client,
+            media_probe=_compatible_probe,
+        )
 
         with pytest.raises(InstagramReconciliationRequired, match="Binary upload result"):
             service.publish_local(manifest, video, execute=True)
@@ -275,7 +367,13 @@ def test_persisted_container_response_recovers_without_duplicate_container_write
         config = _config()
         transport = httpx.MockTransport(handler)
         with _client(config, transport) as client:
-            service = InstagramLocalResumableService(config, ledger, upload_ledger, client=client)
+            service = InstagramLocalResumableService(
+                config,
+                ledger,
+                upload_ledger,
+                client=client,
+                media_probe=_compatible_probe,
+            )
             result = service.publish_local(manifest, video, execute=True)
 
         assert result.status == PublicationStatus.PUBLISHED
@@ -305,7 +403,13 @@ def test_resumable_container_rejects_non_meta_upload_uri_fail_closed(tmp_path: P
     config = _config()
     transport = httpx.MockTransport(handler)
     with _ledgers() as (ledger, upload_ledger, _database), _client(config, transport) as client:
-        service = InstagramLocalResumableService(config, ledger, upload_ledger, client=client)
+        service = InstagramLocalResumableService(
+            config,
+            ledger,
+            upload_ledger,
+            client=client,
+            media_probe=_compatible_probe,
+        )
         with pytest.raises(InstagramReconciliationRequired):
             service.publish_local(manifest, video, execute=True)
         snapshot = ledger.get(manifest.publication_key)
@@ -337,7 +441,13 @@ def test_provider_client_rejects_local_resumable_on_instagram_login_mode(tmp_pat
 
     transport = httpx.MockTransport(handler)
     with _ledgers() as (ledger, upload_ledger, _database), _client(config, transport) as client:
-        service = InstagramLocalResumableService(config, ledger, upload_ledger, client=client)
+        service = InstagramLocalResumableService(
+            config,
+            ledger,
+            upload_ledger,
+            client=client,
+            media_probe=_compatible_probe,
+        )
         with pytest.raises(InstagramProductionError, match="Facebook Login"):
             service.publish_local(manifest, video, execute=True)
 
