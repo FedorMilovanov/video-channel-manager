@@ -114,11 +114,14 @@ def test_write_client_safe_read_code_9_does_not_retry_or_block_other_methods(tmp
     assert calls == ["video.get"]
 
     # The circuit is method-scoped: a successful unrelated read is still allowed.
-    assert writer.album_ids_for_video(
-        community_id=235216998,
-        owner_id=-235216998,
-        video_id=501,
-    ) == set()
+    assert (
+        writer.album_ids_for_video(
+            community_id=235216998,
+            owner_id=-235216998,
+            video_id=501,
+        )
+        == set()
+    )
     assert calls == ["video.get", "video.getAlbumsByVideo"]
 
     with pytest.raises(VkWriteError) as local_stop:
