@@ -16,6 +16,10 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, update
 from sqlalchemy.orm import Mapped, mapped_column
 
+from video_channel_manager.instagram.artifact import (
+    InstagramArtifactCompatibilityError,
+    bind_instagram_reel_probe,
+)
 from video_channel_manager.instagram.production import (
     InstagramConfigurationError,
     InstagramIdentityMismatchError,
@@ -33,6 +37,8 @@ from video_channel_manager.instagram.production import (
     PublicationStatus,
     RequestValue,
 )
+from video_channel_manager.local_media.artifact import MediaProbe, MediaProbeEvidence
+from video_channel_manager.local_media.quality import MediaQualityError, probe_media
 from video_channel_manager.persistence.database import Database
 from video_channel_manager.persistence.models import Base, utc_now
 
@@ -47,7 +53,7 @@ class InstagramLocalPublishManifest(BaseModel):
     publication_key: str = Field(min_length=1, max_length=200, pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]*$")
     account_id: str = Field(min_length=1, max_length=255)
     media_sha256: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
-    media_size_bytes: int = Field(gt=0)
+    media_size_bytes: int = Field(gt=0, le=1_000_000_000)
     media_content_type: Literal["video/mp4"] = "video/mp4"
     caption: str = Field(default="", max_length=2200)
     share_to_feed: bool = True
@@ -413,6 +419,7 @@ class InstagramLocalResumableService(InstagramProductionService):
         upload_ledger: InstagramResumableUploadLedger,
         *,
         client: InstagramResumableProviderClient | None = None,
+        media_probe: MediaProbe = probe_media,
     ) -> None:
         owns_client = client is None
         resumable_client = client or InstagramResumableProviderClient(config)
@@ -420,6 +427,7 @@ class InstagramLocalResumableService(InstagramProductionService):
         self._owns_client = owns_client
         self.resumable_client = resumable_client
         self.upload_ledger = upload_ledger
+        self._media_probe = media_probe
 
     @contextmanager
     def _verified_local_stream(
@@ -461,6 +469,39 @@ class InstagramLocalResumableService(InstagramProductionService):
                     error_code="local_video_sha256_mismatch",
                     retryable=False,
                 )
+
+            try:
+                report = self._media_probe(candidate.resolve())
+                probe = MediaProbeEvidence.from_report(report)
+                binding = bind_instagram_reel_probe(
+                    probe,
+                    media_manifest_sha256=manifest.content_hash(),
+                )
+            except (MediaQualityError, InstagramArtifactCompatibilityError, ValueError) as exc:
+                raise InstagramMediaVerificationError(
+                    f"Instagram local video failed canonical Reel compatibility: {exc}",
+                    error_code="local_video_reel_incompatible",
+                    retryable=False,
+                ) from exc
+            if probe.size_bytes != manifest.media_size_bytes or binding.media_size_bytes != manifest.media_size_bytes:
+                raise InstagramMediaVerificationError(
+                    "Instagram canonical Reel probe size does not match the frozen local manifest",
+                    error_code="local_video_probe_size_mismatch",
+                    retryable=False,
+                )
+            if probe.sha256 != manifest.media_sha256 or binding.media_sha256 != manifest.media_sha256:
+                raise InstagramMediaVerificationError(
+                    "Instagram canonical Reel probe SHA-256 does not match the frozen local manifest",
+                    error_code="local_video_probe_sha256_mismatch",
+                    retryable=False,
+                )
+            if binding.media_content_type != manifest.media_content_type:
+                raise InstagramMediaVerificationError(
+                    "Instagram canonical Reel content type does not match the frozen local manifest",
+                    error_code="local_video_probe_content_type_mismatch",
+                    retryable=False,
+                )
+
             stream.seek(0)
             yield stream
         except OSError as exc:
