@@ -139,7 +139,7 @@ def test_valid_mov_hevc_with_ffprobe_alias_string_passes() -> None:
         (_PATH, {"format_names": ("matroska",)}, "ffprobe_container_not_mov_or_mp4"),
         (_PATH, {"video_codec": "vp9"}, "video_codec_not_h264_or_hevc"),
         (_PATH, {"audio_codec": "opus"}, "audio_codec_not_aac"),
-        (_PATH, {"sample_rate_hz": 44_100}, "audio_sample_rate_not_48000_hz"),
+        (_PATH, {"sample_rate_hz": 48_001}, "audio_sample_rate_above_48000_hz"),
         (_PATH, {"video_frame_rate_fps": None}, "video_frame_rate_missing"),
         (_PATH, {"video_frame_rate_fps": 22.999}, "video_frame_rate_out_of_range"),
         (_PATH, {"video_frame_rate_fps": 60.001}, "video_frame_rate_out_of_range"),
@@ -174,6 +174,8 @@ def test_reel_hard_limits_fail_closed(
         {"duration_seconds": 3.0},
         {"duration_seconds": 900.0},
         {"size_bytes": 1_000_000_000},
+        {"sample_rate_hz": 44_100},
+        {"sample_rate_hz": 48_000},
         {"width": 1920, "height": 3413},
     ],
 )
