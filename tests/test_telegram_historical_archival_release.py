@@ -24,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RELEASE_PATH = (
     ROOT / "content/telegram/lordchrist/historical-editorial/v1/production-release-2026-09-cycle-02-v3-archival.json"
 )
+LEGACY_RELEASE_PATH = ROOT / "content/telegram/lordchrist/historical-editorial/v1/production-release-2026-09-cycle-02.json"
 WORKFLOW_PATH = ROOT / ".github/workflows/lordchrist-telegram-poster.yml"
 MOSCOW = ZoneInfo("Europe/Moscow")
 
@@ -166,6 +167,29 @@ def test_archival_v3_release_is_exact_and_canary_is_outside_recurring_queue() ->
     assert registry.sources[EXPECTED_PUBLICATION_IDS[0]][0].title in render.visible_text
 
 
+def test_scheduled_github_event_bridges_legacy_workflow_path_to_archival_v3(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "schedule")
+
+    release, queue, registry, _profile_path, aux = load_release(LEGACY_RELEASE_PATH, ROOT)
+
+    assert release["schema_name"] == "video-channel-manager.telegram-historical-archival-live-release"
+    assert release["release_id"] == "lordchrist-history-cycle-2026-09-14-v3-archival-live-v1"
+    assert tuple(post.publication_id for post in queue.posts) == EXPECTED_PUBLICATION_IDS
+    assert tuple(aux["planned_dates"]) == EXPECTED_DATES
+    assert set(registry.packages) == set(EXPECTED_PUBLICATION_IDS)
+
+
+def test_non_schedule_github_event_keeps_legacy_v2_release(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "pull_request")
+
+    release, _queue, _registry, _profile_path, _aux = load_release(LEGACY_RELEASE_PATH, ROOT)
+
+    assert release["schema_name"] == "video-channel-manager.telegram-historical-production-release"
+    assert release["release_id"] == "lordchrist-history-cycle-2026-09-14-human-v2-live-v1"
+
+
 def test_v2_state_migrates_only_when_all_recurring_rows_are_provider_inert(tmp_path: Path) -> None:
     release, queue, _registry, _profile_path, aux = _loaded()
     planned_dates = tuple(aux["planned_dates"])
@@ -244,7 +268,8 @@ def test_archival_rollout_reuses_existing_single_writer_without_new_workflow() -
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
     assert workflow.count("group: lordchrist-telegram-publisher") == 1
     assert "historical-rich:" in workflow
-    assert "production-release-2026-09-cycle-02-v3-archival.json" in workflow
+    assert "production-release-2026-09-cycle-02.json" in workflow
+    assert "production-release-2026-09-cycle-02-v3-archival.json" not in workflow
     assert "telegram_historical_production prepare" in workflow
     assert "Persist historical intent before sendRichMessage" in workflow
     assert "Archive exact historical provider outcome before durable result mutation" in workflow
