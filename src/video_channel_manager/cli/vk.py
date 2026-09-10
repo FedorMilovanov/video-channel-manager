@@ -227,8 +227,7 @@ def flood_reset(
         raise typer.Exit(code=2) from exc
     if cleared:
         console.print(
-            f"[green]Cleared local VK flood-control circuit:[/green] {alias} / {normalized_method}. "
-            "Provider calls: 0."
+            f"[green]Cleared local VK flood-control circuit:[/green] {alias} / {normalized_method}. Provider calls: 0."
         )
     else:
         console.print(
