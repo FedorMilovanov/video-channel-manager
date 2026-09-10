@@ -87,6 +87,34 @@ Regex-cleanup допустим для ссылок и разметки, но н�
 - `verify_vk_description_apply_bundle.py` независимо проверяет manifest, result, plan и final snapshot;
 - `Invoke-VkDeferredEditorialReview.ps1` строит следующую review-only очередь только из apply-ZIP, прошедшего verifier.
 
+## Инцидент 7: VK API code 9 нельзя лечить коротким обычным retry
+
+`error_code=9` (`Flood control`) наблюдался на `groups.getById` даже после отдельной паузы. Старый общий retry-класс ставил code 9 рядом с обычными transient/rate-limit ответами и позволял каждому новому процессу снова начинать серию запросов.
+
+Постоянное исправление:
+
+- code 9 отделён от обычных retryable `6/10/29`;
+- первый code 9 не повторяется автоматически;
+- exact `account_alias + method` записывается в durable local flood-control circuit;
+- следующий процесс проверяет circuit до сети и останавливается с нулём provider attempts;
+- circuit не имеет выдуманного автоматического TTL;
+- `vk flood-status` читает состояние локально без обращения к VK;
+- повторное открытие exact method возможно только явным `vk flood-reset --confirm-code 9`;
+- unrelated VK method не блокируется только потому, что code 9 был получен на другом method.
+
+## Инцидент 8: полное чтение всей стены перед каждым upload создаёт лишнюю provider-нагрузку
+
+Для `video.save` с `wallpost=0` и `auto_publish=0` прежний upload safety мог использовать полный published+postponed crawl. Это было избыточно для узкой проверки «не появился ли wall side effect» и увеличивало число `wall.get`.
+
+Постоянное исправление:
+
+- native-video upload использует bounded two-surface head guard: один `owner` read + один `postponed` read;
+- provider-reported total counts входят в guard evidence;
+- один batch guard снимается до первой video mutation и переиспользуется для операций batch;
+- после каждого потенциально достигшего VK upload выполняется bounded postflight;
+- любой count/head delta или недоступный postflight переводит операцию в `unknown_requires_reconciliation`;
+- полный wall crawl остаётся обязательным для отдельного `wall.post`, где нужны полная duplicate/schedule collision semantics.
+
 ## Обязательные acceptance criteria для новых writers
 
 Каждый новый remote writer обязан иметь:
