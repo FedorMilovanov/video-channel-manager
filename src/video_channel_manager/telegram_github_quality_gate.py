@@ -10,6 +10,7 @@ import urllib.request
 from typing import Any, cast
 
 ALLOWED_QUALITY_EVENTS = frozenset({"push", "workflow_dispatch"})
+SCHEDULED_QUALITY_WAIT_SECONDS = 420.0
 
 
 def _safe_github_json(url: str, *, token: str) -> dict[str, Any]:
@@ -135,20 +136,23 @@ def parser() -> argparse.ArgumentParser:
     )
     root.add_argument("--workflow", required=True)
     root.add_argument("--sha", required=True)
-    root.add_argument("--wait-seconds", type=float, default=0)
+    root.add_argument("--wait-seconds", type=float)
     root.add_argument("--poll-seconds", type=float, default=10)
     return root
 
 
 def main() -> int:
     args = parser().parse_args()
+    wait_seconds = args.wait_seconds
+    if wait_seconds is None:
+        wait_seconds = SCHEDULED_QUALITY_WAIT_SECONDS if os.environ.get("GITHUB_EVENT_NAME") == "schedule" else 0
     run = require_successful_quality_run(
         api_url=os.environ.get("GITHUB_API_URL", "https://api.github.com"),
         repository=os.environ.get("GITHUB_REPOSITORY", ""),
         token=os.environ.get("GH_TOKEN", ""),
         workflow_file=args.workflow,
         head_sha=args.sha,
-        wait_seconds=args.wait_seconds,
+        wait_seconds=wait_seconds,
         poll_seconds=args.poll_seconds,
     )
     print(
