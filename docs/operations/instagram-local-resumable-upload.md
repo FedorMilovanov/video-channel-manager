@@ -2,11 +2,11 @@
 
 This runbook extends the production Instagram publisher with a reviewed local-file transport. The existing `docs/operations/instagram-production-publishing.md` runbook remains authoritative for the public-HTTPS-URL `publish` command; the rules below apply only to `publish-local`.
 
-Owning issue: #584.
+Owning implementation issue: #584. Resumable incident hardening: #600.
 
 ## Supported provider mode
 
-The initial production boundary is deliberately narrow:
+The production boundary is deliberately narrow:
 
 - `VCM_INSTAGRAM_LOGIN_MODE=facebook`
 - `VCM_INSTAGRAM_GRAPH_HOST=https://graph.facebook.com`
@@ -24,15 +24,50 @@ The initial production boundary is deliberately narrow:
 1. reads the local `.mp4` and freezes exact SHA-256, byte size, caption, account, feed-sharing choice and thumbnail offset into immutable publication identity;
 2. requires the existing double write gate (`--execute` plus `VCM_INSTAGRAM_WRITES_ENABLED=true`);
 3. runs the existing read-only exact-account and publishing-limit preflight;
-4. persists the publication plan before a provider mutation;
-5. creates one Reel container with `media_type=REELS` and `upload_type=resumable`;
-6. validates that the returned upload URI is HTTPS on exactly `rupload.facebook.com`, persists the exact container response in a child ledger, and only then advances the parent container state;
-7. opens and re-verifies the same local bytes, persists `upload_requested`, and sends the binary body to the returned URI with the Meta resumable headers;
-8. treats any ambiguous binary-upload result as blocking evidence and refuses blind replay;
-9. polls the existing container status until provider-visible processing is `FINISHED` (or returns a non-ready durable state);
-10. persists the final publish intent before `media_publish`, then records the exact returned media ID.
+4. verifies the local MP4 structure before durable intent: `ftyp`, `moov` before `mdat`, and no `edts/elst` edit list;
+5. verifies the canonical Reel media contract, including H.264/HEVC, AAC, audio sample rate at most 48 kHz, mono/stereo, frame rate, dimensions, bitrate, duration and file size;
+6. persists the publication plan before a provider mutation;
+7. creates one Reel container with `media_type=REELS` and `upload_type=resumable`;
+8. validates that the returned upload URI is HTTPS on exactly `rupload.facebook.com`, persists the exact container response in a child ledger, and only then advances the parent container state;
+9. opens and re-verifies the same local bytes, persists `upload_requested`, and sends the binary body to the returned URI with the Meta resumable headers;
+10. uses a dedicated long resumable-upload timeout (`connect=30s`, `write=900s`, `read=300s`) rather than the short Graph request timeout;
+11. treats any ambiguous binary-upload result as blocking evidence and refuses blind replay;
+12. polls the existing container with `id,status,status_code,video_status`; upload/processing phase `error` is terminal even if Meta leaves top-level `status_code=IN_PROGRESS`;
+13. persists the final publish intent before `media_publish`, then records the exact returned media ID.
 
 The filesystem path is attempt metadata only. It is intentionally excluded from immutable publication identity, so identical reviewed bytes may be moved without changing the publication key binding.
+
+## MP4 requirements that must be proved locally
+
+Meta's local Reel path requires a compatible MP4. For this repository, `publish-local` fails closed unless the local structure proves:
+
+- an `ftyp` box is present;
+- `moov` exists and precedes `mdat` (`faststart` layout);
+- no MP4 edit list (`edts` / `elst`) is present;
+- the normal canonical Reel codec/rate/size contract passes.
+
+AAC at 44.1 kHz is valid because the Meta contract is **48 kHz maximum**, not exactly 48 kHz. Do not transcode an otherwise-valid file solely to turn 44.1 kHz into 48 kHz.
+
+If an MP4 contains edit lists, a byte-preserving stream-copy remux is the preferred first repair when the streams themselves are already compatible:
+
+```powershell
+ffmpeg -y `
+  -i "D:\Videos\input.mp4" `
+  -map 0:v:0 -map 0:a:0 `
+  -c copy `
+  -movflags +faststart `
+  -use_editlist 0 `
+  "D:\Videos\output-instagram-clean.mp4"
+```
+
+Verify structure before any provider write:
+
+```powershell
+ffprobe -v trace "D:\Videos\output-instagram-clean.mp4" 2>&1 |
+  Select-String "type:'ftyp'|type:'moov'|type:'mdat'|type:'edts'|type:'elst'|edit_count"
+```
+
+Expected: `ftyp`, then `moov`, then `mdat`; no `edts`, `elst`, or `edit_count` lines.
 
 ## Database migration
 
@@ -89,12 +124,18 @@ Do not commit the real token or the local `.env`.
 
 ## Failure and resume rules
 
-- Before container creation: local byte mismatch or an invalid target causes zero provider writes.
+- Before container creation: local byte mismatch, invalid MP4 structure, incompatible media, or an invalid target causes zero provider writes.
 - Ambiguous container creation: no automatic second container is created. Resolve exact provider evidence first.
 - Container response received but process crashes before parent-state update: rerunning `publish-local` may recover the exact persisted container ID/upload URI without creating another container.
-- Ambiguous binary upload (`upload_requested` / `upload_unknown`): `publish-local` will not resend the bytes. Run the existing read-only reconciliation against the known container first. Provider-visible `IN_PROGRESS`/`FINISHED` is sufficient to continue without replaying the upload; otherwise keep the operation blocked.
+- Ambiguous binary upload (`upload_requested` / `upload_unknown`): `publish-local` will not resend the bytes. Run read-only reconciliation against the known container first.
+- **Top-level `IN_PROGRESS` is not proof of successful upload.** Read `video_status.uploading_phase` and `video_status.processing_phase`. A phase-level `error` is terminal and blocks publish/replay even when top-level status remains `IN_PROGRESS`.
+- Phase diagnostics are preserved in the durable error message, including available `bytes_transferred`, `source_file_size`, provider error code and provider message.
+- HTTP failures from `rupload.facebook.com` preserve a bounded secret-redacted response/debug body plus available `x-fb-request-id` and `x-fb-trace-id`; access tokens must never appear in logs or ledger diagnostics.
+- Transport failures preserve the underlying exception class/message but still remain ambiguous until provider reconciliation.
 - Ambiguous `media_publish`: use the existing publication reconciliation rules and never issue a blind second `media_publish`.
 - A completed publication is idempotent under the same `publication_key` and immutable content hash.
+
+A known failure shape observed during the first canary investigation was Meta error `1363008` / `OIL Error[FILE_NOT_FOUND]` with `uploading_phase.status=error`, `bytes_transferred=0` and `source_file_size=0`. That state is a provider-visible terminal upload failure, not a reason to keep polling forever and not permission to replay the same container.
 
 ## Operator checks
 
@@ -107,4 +148,4 @@ video-manager instagram production status legendary-poet-canary-20260910
 video-manager instagram production reconcile legendary-poet-canary-20260910
 ```
 
-If the local file changes, keep the old publication key bound to the old immutable content. Use a new reviewed key only for intentionally changed media/caption/account identity.
+If the local file changes, keep the old publication key bound to the old immutable content. Use a new reviewed key only for intentionally changed media/caption/account identity. A new key does not itself authorize a new provider write.
