@@ -36,6 +36,15 @@ from video_channel_manager.wave_engine.vk_article_provider import (
     VK_ARTICLE_OPERATION_KIND,
     VkPostponedArticlePhotoAdapter,
 )
+from video_channel_manager.wave_engine.vk_video_prepare import (
+    VkVideoPreparationError,
+    prepare_vk_video_wave,
+)
+from video_channel_manager.wave_engine.vk_video_provider import (
+    VK_VIDEO_DEFAULT_ACCOUNT_ALIAS,
+    VK_VIDEO_OPERATION_KIND,
+    VkNativeVideoUploadAdapter,
+)
 
 
 wave_app = typer.Typer(no_args_is_help=True, help="Versioned fail-closed wave engine.")
@@ -43,10 +52,12 @@ source_app = typer.Typer(no_args_is_help=True, help="Verify exact source evidenc
 wave_plan_app = typer.Typer(no_args_is_help=True, help="Build and validate versioned wave plans.")
 result_app = typer.Typer(no_args_is_help=True, help="Verify structured wave results.")
 article_app = typer.Typer(no_args_is_help=True, help="Prepare reviewed article publication waves.")
+video_app = typer.Typer(no_args_is_help=True, help="Prepare reviewed native VK Video waves.")
 wave_app.add_typer(source_app, name="source")
 wave_app.add_typer(wave_plan_app, name="plan")
 wave_app.add_typer(result_app, name="result")
 wave_app.add_typer(article_app, name="article")
+wave_app.add_typer(video_app, name="video")
 console = Console()
 _ModelT = TypeVar("_ModelT", bound=BaseModel)
 
@@ -125,6 +136,69 @@ def article_prepare(
     console.print(f"Batch request: {summary['batch']['request_path']} sha256={summary['batch']['request_sha256']}")
 
 
+@video_app.command("prepare")
+def video_prepare(
+    project: Annotated[str, typer.Option("--project", help="Canonical registered project key")],
+    source_audit: Annotated[Path, typer.Option("--source-audit", help="Fresh YouTube AuditPackage")],
+    target_audit: Annotated[Path, typer.Option("--target-audit", help="Fresh VK AuditPackage")],
+    candidate_id: Annotated[
+        list[str],
+        typer.Option("--candidate-id", help="Exact reviewed missing YouTube ID; repeat for the bounded wave"),
+    ],
+    canary_id: Annotated[str, typer.Option("--canary-id", help="Exact candidate ID used for the one-item canary")],
+    output_root: Annotated[Path, typer.Option("--output-root", "-o")],
+    repository_root: Annotated[Path, typer.Option("--repository-root")] = Path("."),
+    vk_account: Annotated[str, typer.Option("--vk-account")] = VK_VIDEO_DEFAULT_ACCOUNT_ALIAS,
+    yt_dlp: Annotated[str, typer.Option("--yt-dlp")] = "yt-dlp",
+    reuse_media_manifest: Annotated[
+        list[Path] | None,
+        typer.Option(
+            "--reuse-media-manifest",
+            help="Existing validated media-artifact manifest inside the repository; repeat as needed",
+        ),
+    ] = None,
+    processing_timeout_seconds: Annotated[
+        int,
+        typer.Option("--processing-timeout-seconds", min=1),
+    ] = 3600,
+) -> None:
+    """Build immutable canary/batch Wave + operator evidence without VK writes."""
+
+    try:
+        summary = prepare_vk_video_wave(
+            project_key=project,
+            source_audit_path=source_audit,
+            target_audit_path=target_audit,
+            candidate_ids=candidate_id,
+            canary_id=canary_id,
+            repository_root=repository_root,
+            output_root=output_root,
+            account_alias=vk_account,
+            yt_dlp=yt_dlp,
+            reuse_media_manifests=tuple(reuse_media_manifest or ()),
+            processing_timeout_seconds=processing_timeout_seconds,
+        )
+    except (OSError, ValueError, VkVideoPreparationError) as exc:
+        console.print(f"[red]VK video wave preparation failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+    console.print(
+        f"[green]Prepared VK native-video wave:[/green] "
+        f"project={summary['project_key']} candidates={len(summary['candidate_ids'])} "
+        f"canary={summary['canary_id']} provider_writes=0"
+    )
+    console.print(
+        f"Canary request: {summary['canary']['request_path']} "
+        f"sha256={summary['canary']['request_sha256']}"
+    )
+    batch = summary.get("batch")
+    if isinstance(batch, dict):
+        console.print(
+            f"Batch request: {batch['request_path']} "
+            f"sha256={batch['request_sha256']}"
+        )
+
+
 @wave_app.command("preview")
 def preview(path: Path) -> None:
     plan = _read_model(path, WavePlan)
@@ -191,6 +265,12 @@ def _article_plan(plan: WavePlan) -> bool:
     }
 
 
+def _video_plan(plan: WavePlan) -> bool:
+    return bool(plan.operations) and {operation.operation_kind for operation in plan.operations} == {
+        VK_VIDEO_OPERATION_KIND
+    }
+
+
 @wave_app.command("apply")
 def apply(
     source_path: Annotated[Path, typer.Option("--source")],
@@ -208,21 +288,30 @@ def apply(
         repository_root=repository_root,
         enable_provider_writes=enable_provider_writes,
     )
-    if not _article_plan(plan):
+    if not (_article_plan(plan) or _video_plan(plan)):
         console.print(
             "[red]Rejected:[/red] no reviewed production provider adapter is registered for this operation set."
         )
         raise typer.Exit(code=3)
     if journal_directory is None:
         raise typer.BadParameter(
-            "Legendary Poet article apply requires --journal-directory",
+            "Wave apply requires --journal-directory",
             param_hint="--journal-directory",
         )
-    try:
+
+    adapter: VkPostponedArticlePhotoAdapter | VkNativeVideoUploadAdapter
+    if _article_plan(plan):
         adapter = VkPostponedArticlePhotoAdapter(
             repository_root=repository_root,
             account_alias=vk_account,
         )
+    else:
+        adapter = VkNativeVideoUploadAdapter(
+            repository_root=repository_root,
+            journal_directory=journal_directory,
+            account_alias=vk_account,
+        )
+    try:
         result = WaveEngine().apply(
             source=source,
             plan=plan,
@@ -235,22 +324,27 @@ def apply(
             provider_writes_enabled=enable_provider_writes,
         )
     except (OSError, ValueError) as exc:
-        console.print(f"[red]Article wave apply rejected:[/red] {exc}")
+        console.print(f"[red]Wave apply rejected:[/red] {exc}")
         raise typer.Exit(code=3) from exc
+    finally:
+        close = getattr(adapter, "close", None)
+        if callable(close):
+            close()
 
+    label = "Article" if _article_plan(plan) else "VK video"
     if result.status is WaveStatus.SUCCEEDED:
         console.print(
-            f"[green]Article wave succeeded:[/green] {len(result.operations)} operation(s); "
+            f"[green]{label} wave succeeded:[/green] {len(result.operations)} operation(s); "
             f"result={journal_directory / 'result.json'}"
         )
         return
     if result.status is WaveStatus.UNKNOWN_REQUIRES_RECONCILIATION:
         console.print(
-            "[red]Article wave outcome requires reconciliation.[/red] "
+            f"[red]{label} wave outcome requires reconciliation.[/red] "
             f"Do not retry. Result: {journal_directory / 'result.json'}"
         )
         raise typer.Exit(code=4)
-    console.print(f"[red]Article wave failed:[/red] {journal_directory / 'result.json'}")
+    console.print(f"[red]{label} wave failed:[/red] {journal_directory / 'result.json'}")
     raise typer.Exit(code=3)
 
 
@@ -270,16 +364,25 @@ def reconcile(
         request.assert_matches(plan, result)
     except ValueError as exc:
         raise typer.BadParameter(str(exc), param_hint=str(request_path)) from exc
-    if not _article_plan(plan):
+    if not (_article_plan(plan) or _video_plan(plan)):
         console.print(
             f"[red]Rejected:[/red] no production reconciliation adapter is registered for {request.self_digest}."
         )
         raise typer.Exit(code=3)
-    try:
+
+    adapter: VkPostponedArticlePhotoAdapter | VkNativeVideoUploadAdapter
+    if _article_plan(plan):
         adapter = VkPostponedArticlePhotoAdapter(
             repository_root=repository_root,
             account_alias=vk_account,
         )
+    else:
+        adapter = VkNativeVideoUploadAdapter(
+            repository_root=repository_root,
+            journal_directory=result_path.parent,
+            account_alias=vk_account,
+        )
+    try:
         reconciliation = WaveEngine().reconcile(
             plan=plan,
             result=result,
@@ -288,9 +391,14 @@ def reconcile(
             output_path=output_path,
         )
     except (OSError, RuntimeError, ValueError) as exc:
-        console.print(f"[red]Article reconciliation failed closed:[/red] {exc}")
+        console.print(f"[red]Wave reconciliation failed closed:[/red] {exc}")
         raise typer.Exit(code=3) from exc
-    console.print(f"[green]Article reconciliation succeeded:[/green] {reconciliation.self_digest} -> {output_path}")
+    finally:
+        close = getattr(adapter, "close", None)
+        if callable(close):
+            close()
+    label = "Article" if _article_plan(plan) else "VK video"
+    console.print(f"[green]{label} reconciliation succeeded:[/green] {reconciliation.self_digest} -> {output_path}")
 
 
 @result_app.command("verify")
