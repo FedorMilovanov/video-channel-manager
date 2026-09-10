@@ -1,5 +1,5 @@
 # Current operational state
-Updated: 2026-09-08
+Updated: 2026-09-10
 
 This file is the concise current operational interpretation. It does **not** authorize provider mutation. Historical issues, comments, pull requests, CI runs, credentials, releases and receipts are evidence only; they are never standing execution authority.
 
@@ -24,9 +24,9 @@ Only `main` is a supported repository code/runtime execution baseline.
 
 ### Current checkpoint
 
-The exact repository checkpoint used for this documentation sync is `main` `08ada047319e125046cdf08df1e9bdb419c5adf2`. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
+The exact repository checkpoint used for this documentation sync is `main` `d78309ae2bd5f860eb3fbca8c90586612efd0f8a`. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
 
-Material 2026-09-06 / 2026-09-07 / 2026-09-08 hardening now present on `main` includes:
+Material 2026-09-06 through 2026-09-10 hardening now present on `main` includes:
 
 - PRs #532, #536, #538, #540 and #544: provider-outcome/recovery hardening and retirement of consumed or ambiguous executable one-offs without weakening no-replay semantics.
 - PRs #548 and #551: LordChrist verified-quote production moved to durable `morning` / `evening` slots, and scheduled dispatch rejects slot-less envelopes before Telegram HTTP.
@@ -35,10 +35,11 @@ Material 2026-09-06 / 2026-09-07 / 2026-09-08 hardening now present on `main` in
 - PR #557: reviewed 60-card LordChrist successor quote corpus and provider-inert staged release.
 - PR #559: sealed successor source-integrity amendment v2, preserving historical v1 reproducibility while moving current source authority to an explicit amendment-bound release.
 - PR #556: evidence-backed historical/biographical LordChrist editorial lane with 69 reviewed URLs, 52 accepted A/B+ sources and a sealed nine-post provider-inert cycle.
+- PR #583 / issue #582: LordChrist verified-quote production replaced the fragile two-hour scheduler freshness gate with bounded same-Moscow-day leases and added a release-bound automatic predecessor-to-successor handoff that remains fail-closed on incomplete, mismatched or ambiguous durable state.
 
 ## Telegram / LordChrist verified quotes
 
-Issues #541 and #543 are closed as **completed** after the slot-aware runtime, transport hardening and reviewed successor-corpus work merged through PRs #548, #551, #557 and #559. Issue #168 is closed as repository implementation complete; implementation completion does not itself authorize execution.
+Issues #541, #543 and #582 are closed as **completed** after the slot-aware runtime, transport hardening, reviewed successor-corpus work and production handoff merged through PRs #548, #551, #557, #559 and #583. Issue #168 is closed as repository implementation complete; implementation completion does not itself authorize execution.
 
 The historical research-v2 canary ambiguity is no longer a legacy blocker. Issue #286 / PR #287 introduced the exact `retired_no_replay` disposition. For unrelated ambiguity, every other `dispatching` or `may_exist` effect remains fail-closed, and the retired August research release itself cannot resume, retry, or authorize a successor.
 
@@ -47,14 +48,15 @@ The authoritative production schedule remains schema v3:
 - `morning`: 09:17 `Europe/Moscow`, every day;
 - `evening`: 21:17 `Europe/Moscow`, Tuesday / Friday / Sunday;
 - one verified publication maximum per slot and two maximum per eligible day;
-- each slot has a two-hour freshness window;
+- the morning event has a bounded 720-minute same-day lease and expires at the 21:17 editorial boundary;
+- the evening event has a bounded 160-minute lease and cannot cross the Moscow calendar-day boundary;
 - `backfill_policy=none`;
 - scheduled workflow reruns are forbidden;
 - a same-day manual publication closes scheduled slots for that Moscow date.
 
-Production binds `scheduled_slot` into durable ledger state and the dispatch envelope, persists intent before `sendMessage`, uses one provider attempt and zero blind mutation retries, and fails closed on ambiguous outcomes.
+Production binds `scheduled_slot` into durable ledger state and the dispatch envelope, persists intent before `sendMessage`, uses one provider attempt and zero blind mutation retries, and fails closed on ambiguous outcomes. Scheduler delay inside the reviewed lease is not treated as catch-up or backfill; next-day execution remains impossible.
 
-The immutable verified 30-post predecessor queue remains historical/current release context. Closing implementation issues does not authorize an ad-hoc send, replay, edit/delete/pin or MTProto action.
+The runtime keeps the immutable verified 30-post predecessor queue authoritative until exact terminal completion and cross-track provider-effect safety are proven. Incomplete predecessor state, digest mismatch, partial successor state or ambiguous provider effects block handoff. Closing implementation issues does not authorize an ad-hoc send, replay, edit/delete/pin or MTProto action.
 
 The successor corpus remains a separate reviewed contract with exactly 60 cards across 12 authors and 12 reviewed theological themes: 42 public-domain primary-source excerpts and 18 modern short quotations. Modern exact fragments and visible translated quotations remain capped at 25 words.
 
@@ -66,7 +68,7 @@ Current sealed successor release identities after PR #559:
 - normalized effective corpus SHA-256: `6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873`;
 - release id: `lordchrist-successor-quotes-v1-integrity-v2`.
 
-The successor release remains `activation_policy=after_predecessor_queue_complete`, `release_state=staged_provider_inert`, `provider_writes_authorized=false`. Corpus readiness is not permission to bypass the predecessor queue or perform a manual provider send.
+The immutable sealed successor release itself remains `activation_policy=after_predecessor_queue_complete`, `release_state=staged_provider_inert`, `provider_writes_authorized=false`. PR #583 adds the separate reviewed `successor-activation-v1.json` envelope for owning issue #582 with `release_state=armed_after_predecessor_terminal` and `provider_writes_authorized=true`, bound to the exact predecessor/successor digests, Telegram target identity and presentation policy. The runtime may select that envelope only after predecessor terminality and cross-track provider-effect safety are proven, and then uses the successor's separate durable ledger. This envelope is not permission for a premature or manual provider send and does not weaken the repository-wide requirement for fresh durable-state and execution-gate verification.
 
 ## Telegram / LordChrist historical rich editorial
 
