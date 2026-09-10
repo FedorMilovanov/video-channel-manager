@@ -1,0 +1,149 @@
+name: LordChrist historical archival v2 verify
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/lordchrist-historical-media-materialize.yml"
+      - "content/telegram/lordchrist/historical-editorial/v1/v3/media-acquisition-manifest-v2-2026-09-09.json"
+      - "content/telegram/lordchrist/historical-editorial/v1/v3/media-render-receipt-v2-2026-09-09.json"
+      - "content/telegram/lordchrist/historical-editorial/v1/v3/*/media/**"
+      - "content/telegram/lordchrist/historical-editorial/v1/v3/*/revision-package-v2-2026-09-09.json"
+      - "content/telegram/lordchrist/historical-editorial/v1/v3/*/revision-preflight-v2-2026-09-09.json"
+      - "content/telegram/lordchrist/historical-editorial/v1/v3/batch-manifest-2026-09-08.json"
+      - "content/telegram/lordchrist/historical-editorial/v1/verification/**"
+      - "content/telegram/lordchrist/historical-editorial/v1/sources/**"
+      - "src/video_channel_manager/telegram_historical_media.py"
+      - "src/video_channel_manager/telegram_historical_media_v2.py"
+      - "src/video_channel_manager/telegram_historical_media_materialize_v2.py"
+      - "src/video_channel_manager/telegram_historical_archival_revision.py"
+      - "tests/test_telegram_historical_media.py"
+      - "tests/test_telegram_historical_media_v2.py"
+      - "tests/test_telegram_historical_media_materialize_v2.py"
+      - "tests/test_telegram_historical_archival_revision.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lordchrist-historical-archival-v2-verify-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-archival-v2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONPATH: src
+      MANIFEST_PATH: content/telegram/lordchrist/historical-editorial/v1/v3/media-acquisition-manifest-v2-2026-09-09.json
+      ACQUISITION_DIR: .runtime/lordchrist-historical-media-v2-verify
+    steps:
+      - name: Check out exact event head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Assert exact PR head
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install deterministic archival runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends poppler-utils
+          python -m pip install --disable-pip-version-check -e '.[dev,milovi-gap-read]'
+          python -m pip install --disable-pip-version-check 'Pillow==12.3.0'
+          command -v pdftoppm
+          pdftoppm -v 2>&1 | sed -n '1,2p'
+          python - <<'PY'
+          import PIL
+          if PIL.__version__ != "12.3.0":
+              raise SystemExit(f"unexpected Pillow runtime: {PIL.__version__}")
+          PY
+
+      - name: Validate archival V2 implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruff check \
+            src/video_channel_manager/telegram_historical_archival_revision.py \
+            src/video_channel_manager/telegram_historical_media_v2.py \
+            src/video_channel_manager/telegram_historical_media_materialize_v2.py \
+            tests/test_telegram_historical_archival_revision.py \
+            tests/test_telegram_historical_media_v2.py \
+            tests/test_telegram_historical_media_materialize_v2.py
+          ruff format --check \
+            src/video_channel_manager/telegram_historical_archival_revision.py \
+            src/video_channel_manager/telegram_historical_media_v2.py \
+            src/video_channel_manager/telegram_historical_media_materialize_v2.py \
+            tests/test_telegram_historical_archival_revision.py \
+            tests/test_telegram_historical_media_v2.py \
+            tests/test_telegram_historical_media_materialize_v2.py
+          python -m pytest \
+            tests/test_telegram_historical_media.py \
+            tests/test_telegram_historical_media_v2.py \
+            tests/test_telegram_historical_media_materialize_v2.py \
+            tests/test_telegram_historical_archival_revision.py \
+            -q
+
+      - name: Re-acquire and deterministically reproduce all 16 exhibits
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$ACQUISITION_DIR"
+          python -m video_channel_manager.telegram_historical_media_materialize_v2 \
+            "$MANIFEST_PATH" \
+            --repo-root . \
+            --acquisition-dir "$ACQUISITION_DIR" \
+            > /tmp/lordchrist-archival-v2-verify.json
+          cat /tmp/lordchrist-archival-v2-verify.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          result = json.loads(Path('/tmp/lordchrist-archival-v2-verify.json').read_text(encoding='utf-8'))
+          assert result['status'] == 'PASS'
+          assert result['asset_count'] == 16
+          assert result['publication_count'] == 8
+          assert len(result['revision_packages']) == 8
+          assert len(result['preflights']) == 8
+          assert result['provider_writes_authorized'] is False
+          assert result['live_eligible'] is False
+          assert result['provider_write_performed'] is False
+          for path in result['preflights']:
+              value = json.loads(Path(path).read_text(encoding='utf-8'))
+              assert value['status'] == 'PASS'
+              assert value['archival_media_count'] == 2
+              assert value['transport_ready_media_count'] == 0
+              assert value['provider_writes_authorized'] is False
+              assert value['live_eligible'] is False
+              assert value['provider_write_performed'] is False
+          PY
+
+      - name: Require byte-for-byte reproducibility of committed closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! git diff --quiet; then
+            git status --short
+            git diff --stat
+            git diff -- \
+              content/telegram/lordchrist/historical-editorial/v1/v3/media-render-receipt-v2-2026-09-09.json \
+              'content/telegram/lordchrist/historical-editorial/v1/v3/*/revision-package-v2-2026-09-09.json' \
+              'content/telegram/lordchrist/historical-editorial/v1/v3/*/revision-preflight-v2-2026-09-09.json'
+            raise='committed historical archival V2 closure is not reproducible'
+            echo "$raise" >&2
+            exit 1
+          fi

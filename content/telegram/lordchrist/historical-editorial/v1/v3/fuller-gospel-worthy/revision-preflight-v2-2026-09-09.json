@@ -1,0 +1,19 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-revision-preflight",
+  "schema_version": 2,
+  "status": "PASS",
+  "revision_id": "historical-revision-fuller-gospel-worthy-archival-v2-2026-09-09",
+  "revision_sha256": "sha256:56f6b13197098d7dcbdb721c6c0d2716cbae5bbd45a9c71539d0f1f4e258dfb5",
+  "publication_id": "lordchrist-history-fuller-gospel-worthy-v3",
+  "source_count": 13,
+  "grade_a_count": 5,
+  "grade_bplus_count": 8,
+  "independent_evidence_groups": 12,
+  "claim_count": 6,
+  "direct_quote_count": 0,
+  "archival_media_count": 2,
+  "transport_ready_media_count": 0,
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "provider_write_performed": false
+}

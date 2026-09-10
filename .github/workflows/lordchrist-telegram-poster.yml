@@ -39,13 +39,27 @@ concurrency:
 
 env:
   PYTHONPATH: src
+  PREDECESSOR_QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
   QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
   PRESENTATION_POLICY_PATH: content/telegram/lordchrist/presentation-policy.json
   PRODUCTION_CONFIG_PATH: content/telegram/lordchrist/production-schedule.json
+  SUCCESSOR_CANDIDATE_PATH: content/telegram/lordchrist/successor-quotes-v1.json
+  SUCCESSOR_TRANSLATION_LEDGER_PATH: content/telegram/lordchrist/successor-translation-ledger-v1.json
+  SUCCESSOR_INTEGRITY_AMENDMENTS_PATH: content/telegram/lordchrist/successor-integrity-amendments-v1.json
+  SUCCESSOR_RELEASE_PATH: content/telegram/lordchrist/successor-release-v2.json
+  SUCCESSOR_ACTIVATION_PATH: content/telegram/lordchrist/successor-activation-v1.json
+  SUCCESSOR_RUNTIME_QUEUE_PATH: .runtime/lordchrist-successor-runtime-queue.json
+  ACTIVE_SELECTION_PATH: .runtime/lordchrist-active-quote-selection.json
   STATE_BRANCH: state/lordchrist-telegram
   STATE_DIR: .state/lordchrist
+  PREDECESSOR_LEDGER_RELATIVE_PATH: content/telegram/lordchrist/publication-ledger.json
+  PREDECESSOR_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json
+  SUCCESSOR_LEDGER_RELATIVE_PATH: content/telegram/lordchrist/successor-publication-ledger.json
+  SUCCESSOR_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/successor-publication-ledger.json
   LEDGER_RELATIVE_PATH: content/telegram/lordchrist/publication-ledger.json
   LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json
+  LORDCHRIST_PREDECESSOR_QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
+  LORDCHRIST_PREDECESSOR_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json
   DISPATCH_PATH: .runtime/lordchrist-dispatch.json
   RENDERED_PATH: .runtime/lordchrist-rendered.json
   OUTCOME_PATH: .runtime/lordchrist-outcome.json
@@ -161,7 +175,7 @@ jobs:
             do_preflight=true
             reason=manual_read_only_preflight
           elif [[ "$REQUESTED_ACTION" == "publish" ]]; then
-            [[ "$REQUESTED_PUBLICATION_ID" =~ ^lordchrist-[a-z0-9][a-z0-9-]{4,80}$ ]] || {
+            [[ "$REQUESTED_PUBLICATION_ID" =~ ^lordchrist-[a-z0-9][a-z0-9-]{4,100}$ ]] || {
               echo "Manual publication requires an exact valid publication_id." >&2
               exit 2
             }
@@ -190,6 +204,87 @@ jobs:
           path: .state/lordchrist
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Resolve exact active quote release
+        id: active_release
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          mapfile -t policy_parts < <(python - <<'PY'
+          import os
+          from pathlib import Path
+          from video_channel_manager.telegram_presentation import load_presentation_policy
+          policy = load_presentation_policy(Path(os.environ["PRESENTATION_POLICY_PATH"]))
+          print(policy.policy_id)
+          print(policy.digest)
+          PY
+          )
+          python -m video_channel_manager.telegram_quote_runtime resolve \
+            --predecessor-queue "$PREDECESSOR_QUEUE_PATH" \
+            --predecessor-ledger "$PREDECESSOR_LEDGER_PATH" \
+            --candidate "$SUCCESSOR_CANDIDATE_PATH" \
+            --translation-ledger "$SUCCESSOR_TRANSLATION_LEDGER_PATH" \
+            --integrity-amendments "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
+            --release "$SUCCESSOR_RELEASE_PATH" \
+            --activation "$SUCCESSOR_ACTIVATION_PATH" \
+            --runtime-queue "$SUCCESSOR_RUNTIME_QUEUE_PATH" \
+            --successor-ledger "$SUCCESSOR_LEDGER_PATH" \
+            --expected-chat-id "$LORDCHRIST_TELEGRAM_CHAT_ID" \
+            --expected-bot-id "$LORDCHRIST_TELEGRAM_BOT_ID" \
+            --expected-bot-username "$LORDCHRIST_TELEGRAM_BOT_USERNAME" \
+            --presentation-policy-id "${policy_parts[0]}" \
+            --presentation-policy-sha256 "${policy_parts[1]}" \
+            --output "$ACTIVE_SELECTION_PATH"
+
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          selection = json.loads(Path(os.environ["ACTIVE_SELECTION_PATH"]).read_text(encoding="utf-8"))
+          active = selection["active_release"]
+          ledger_relative = (
+              os.environ["SUCCESSOR_LEDGER_RELATIVE_PATH"]
+              if active == "successor"
+              else os.environ["PREDECESSOR_LEDGER_RELATIVE_PATH"]
+          )
+          outputs = {
+              "active_release": active,
+              "queue_digest": selection["queue_digest"],
+              "needs_ledger_initialization": str(selection["needs_ledger_initialization"]).lower(),
+          }
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              for key, value in outputs.items():
+                  handle.write(f"{key}={value}\n")
+          env = {
+              "QUEUE_PATH": selection["queue_path"],
+              "LEDGER_PATH": selection["ledger_path"],
+              "LEDGER_RELATIVE_PATH": ledger_relative,
+              "LORDCHRIST_APPROVED_QUEUE_DIGEST": selection["queue_digest"],
+          }
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
+              for key, value in env.items():
+                  handle.write(f"{key}={value}\n")
+          PY
+
+      - name: Materialize missing successor ledger locally for read-only validation
+        if: steps.active_release.outputs.needs_ledger_initialization == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${{ steps.active_release.outputs.active_release }}" == "successor" ]] || {
+            echo "Local ledger materialization requested for a non-successor release." >&2
+            exit 2
+          }
+          [[ ! -e "$SUCCESSOR_LEDGER_PATH" ]] || {
+            echo "Successor ledger unexpectedly exists in the read-only state snapshot." >&2
+            exit 3
+          }
+          python -m video_channel_manager.telegram_quote_runtime initialize-ledger \
+            --runtime-queue "$SUCCESSOR_RUNTIME_QUEUE_PATH" \
+            --ledger "$SUCCESSOR_LEDGER_PATH" \
+            --confirm INITIALIZE_REVIEWED_SUCCESSOR_LEDGER
 
       - name: Validate immutable queue and strict ledger
         shell: bash
@@ -323,6 +418,65 @@ jobs:
               exit 2
             }
           fi
+
+      - name: Discard read-only successor ledger before durable initialization
+        if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f -- "$SUCCESSOR_LEDGER_PATH"
+
+      - name: Enable state writer for one-time successor ledger initialization
+        if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/lordchrist-telegram
+          path: .state/lordchrist
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Persist exact successor ledger after current-main proof
+        if: steps.active_release.outputs.needs_ledger_initialization == 'true' && steps.intent.outputs.do_publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${{ steps.active_release.outputs.active_release }}" == "successor" ]] || {
+            echo "Ledger initialization requested for a non-successor release." >&2
+            exit 2
+          }
+          [[ ! -e "$SUCCESSOR_LEDGER_PATH" ]] || {
+            echo "Successor ledger appeared after selection; refusing ambiguous initialization." >&2
+            exit 3
+          }
+          python -m video_channel_manager.telegram_quote_runtime initialize-ledger \
+            --runtime-queue "$SUCCESSOR_RUNTIME_QUEUE_PATH" \
+            --ledger "$SUCCESSOR_LEDGER_PATH" \
+            --confirm INITIALIZE_REVIEWED_SUCCESSOR_LEDGER
+
+          git -C "$STATE_DIR" config user.name "lordchrist-publisher[bot]"
+          git -C "$STATE_DIR" config user.email "lordchrist-publisher@users.noreply.github.com"
+          git -C "$STATE_DIR" add -- "$SUCCESSOR_LEDGER_RELATIVE_PATH"
+          parent_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" commit -m "Initialize sealed Lordchrist successor ledger [skip ci]"
+          local_sha="$(git -C "$STATE_DIR" rev-parse HEAD)"
+          git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"
+          remote_sha="$(git -C "$STATE_DIR" ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)"
+          [[ "$remote_sha" == "$local_sha" ]] || {
+            echo "Remote successor ledger initialization commit differs from local exact commit." >&2
+            exit 3
+          }
+
+          git -C "$STATE_DIR" fetch --no-tags origin "$STATE_BRANCH"
+          git -C "$STATE_DIR" show "origin/$STATE_BRANCH:$SUCCESSOR_LEDGER_RELATIVE_PATH" > .runtime/remote-successor-ledger.json
+          cmp -s "$SUCCESSOR_LEDGER_PATH" .runtime/remote-successor-ledger.json || {
+            echo "Remote successor ledger differs from the exact initialized ledger." >&2
+            exit 3
+          }
+          python -m video_channel_manager.telegram_cli \
+            --queue "$QUEUE_PATH" \
+            --ledger .runtime/remote-successor-ledger.json \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            validate
 
       - name: Enable publication ledger writer
         if: steps.intent.outputs.do_publish == 'true'

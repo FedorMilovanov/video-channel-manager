@@ -1,0 +1,93 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-revision-package",
+  "schema_version": 2,
+  "revision_id": "historical-revision-spurgeon-cholera-1854-archival-v2-2026-09-09",
+  "owning_issue": 561,
+  "checked_on": "2026-09-09",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "publication_id": "lordchrist-history-spurgeon-cholera-1854-v3",
+  "state": "provider_inert",
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "post": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/spurgeon-cholera-1854/post.json",
+    "git_blob_sha": "f16dd99a1f00cd1c940bcd185acb08b5731559b8"
+  },
+  "verification": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/verification/spurgeon-cholera-v3-2026-09-08.json",
+    "git_blob_sha": "dfed16a426e94bb4e06c21358bcfbc9ddf6e9f12"
+  },
+  "theology_profile": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/theology-profile.json",
+    "git_blob_sha": "06c879d9b55cfb37d8995dca6c3a2197522c850f"
+  },
+  "source_shards": [
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/spurgeon-history.json",
+      "git_blob_sha": "0d0c04f0d6965069629da80643dc1a0b7ae84e46"
+    },
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-a.json",
+      "git_blob_sha": "05792a526c43395e6f5074a2676cb0afe53fcf8c"
+    }
+  ],
+  "acquisition_manifest": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/media-acquisition-manifest-v2-2026-09-09.json",
+    "git_blob_sha": "daf1ca2fe768e5a3f970c0c18b204ac029d249cf"
+  },
+  "render_receipt": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/media-render-receipt-v2-2026-09-09.json",
+    "git_blob_sha": "d7598e41b08f4b9b87694a02fe0e82d1f13a6138"
+  },
+  "archival_media": [
+    {
+      "asset_id": "img-spurgeon-cholera-v3-hero-archive-exhibit",
+      "slot": "hero",
+      "source_id": "src-image-spurgeon-nlw",
+      "acquisition_asset_id": "img-spurgeon-cholera-v3-hero-archive",
+      "exhibit_kind": "archival_portrait",
+      "accepted_file": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/spurgeon-cholera-1854/media/spurgeon-cholera-v3-hero-nlw-4671161.jpg",
+        "git_blob_sha": "01936c9143731accfccba877e84c33b11ef5d916"
+      },
+      "accepted_mime": "image/jpeg",
+      "accepted_byte_length": 264910,
+      "accepted_width": 1200,
+      "accepted_height": 2014,
+      "accepted_sha256": "sha256:a7cdc68b7b09e57133faed8b33641057e0c0c18ac4436b3064d4fab405847be9",
+      "placement_after": "title",
+      "depicts": "Archival exhibit for src-image-spurgeon-nlw derived from the exact pinned acquisition source.",
+      "purpose": "Identify the historical person using an attributed archival portrait.",
+      "claim_boundary": "The portrait identifies the subject only and is not evidence for the narrative event itself.",
+      "rights_basis": "National Library of Wales digitization of an 1870s portrait; Wikimedia Commons records Public Domain Mark 1.0 and no known copyright restrictions.",
+      "attribution_text": "National Library of Wales, Welsh Portrait Collection; C. H. Spurgeon portrait, 1870s; public-domain digitization via Wikimedia Commons.",
+      "transport_ready": false,
+      "provider_write_performed": false
+    },
+    {
+      "asset_id": "img-spurgeon-cholera-v3-snow-map-archive-exhibit",
+      "slot": "document",
+      "source_id": "src-john-snow-cholera-plan-v3",
+      "acquisition_asset_id": "img-spurgeon-cholera-v3-snow-map-archive",
+      "exhibit_kind": "contextual_historical_map",
+      "accepted_file": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/spurgeon-cholera-1854/media/spurgeon-cholera-v3-snow-map-wellcome-l0072142.jpg",
+        "git_blob_sha": "69a044991b95235e414c8f81ee679724a6c10581"
+      },
+      "accepted_mime": "image/jpeg",
+      "accepted_byte_length": 7164259,
+      "accepted_width": 5777,
+      "accepted_height": 7749,
+      "accepted_sha256": "sha256:248dca60304a3eef769011e0eae200885f1817fa9bb0885cafcbbffa8f449b47",
+      "placement_after": "evidence",
+      "depicts": "Archival exhibit for src-john-snow-cholera-plan-v3 derived from the exact pinned acquisition source.",
+      "purpose": "Show the documented historical geographic context without reconstructing an unstated scene.",
+      "claim_boundary": "The map supplies geographic context only and does not depict the sermon or pastoral actions described in the post.",
+      "rights_basis": "Exact Wellcome L0072142 reproduction of the bound dx4prdbj map work, licensed CC BY 4.0 on Wikimedia Commons; attribution and source link retained.",
+      "attribution_text": "Wellcome Collection, L0072142, Plan Showing the Ascertained Deaths from Cholera; CC BY 4.0.",
+      "transport_ready": false,
+      "provider_write_performed": false
+    }
+  ]
+}

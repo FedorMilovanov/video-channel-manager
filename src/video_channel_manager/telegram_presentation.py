@@ -75,7 +75,7 @@ class RenderedTelegramPost(BaseModel):
 
     schema_name: Literal["video-channel-manager.telegram-rendered-post"]
     schema_version: Literal[2]
-    publication_id: str = Field(pattern=r"^lordchrist-[a-z0-9][a-z0-9-]{4,80}$")
+    publication_id: str = Field(pattern=r"^lordchrist-[a-z0-9][a-z0-9-]{4,100}$")
     source_payload_sha256: str = Field(pattern=SHA256_PATTERN)
     presentation_policy_id: Literal["lordchrist-editorial-v2"]
     presentation_policy_sha256: str = Field(pattern=SHA256_PATTERN)

@@ -2,7 +2,7 @@
   "schema_name": "video-channel-manager.telegram-historical-source-shard",
   "schema_version": 1,
   "shard_id": "history-sources-historical-v3-corrections-a",
-  "checked_on": "2026-09-08",
+  "checked_on": "2026-09-09",
   "sources": [
     {
       "source_id": "src-bunyan-relation-imprisonment-v3",
@@ -27,6 +27,18 @@
       "checked_on": "2026-09-08",
       "topic_tags": ["bunyan", "licence", "1672"],
       "independence_group": "early-nonconformity-records"
+    },
+    {
+      "source_id": "src-bunyan-bedfordshire-hsa1667-v3",
+      "title": "Calendar of Prisoners in the County Gaol, HSA1667/W/58",
+      "publisher": "Bedfordshire Archives Service / Bedford Borough Council",
+      "url": "https://bedsarchives.bedford.gov.uk/ExploreYourArchive/Explore-the-World/Caribbean/TransportedtoBarbados.aspx",
+      "evidence_type": "primary",
+      "grade": "A",
+      "evidence_role": "official_archive",
+      "checked_on": "2026-09-09",
+      "topic_tags": ["bunyan", "bedford", "gaol-list", "1667", "image-provenance"],
+      "independence_group": "bedfordshire-hsa1667"
     },
     {
       "source_id": "src-judson-wayland-vol2-v3",

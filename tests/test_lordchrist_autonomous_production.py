@@ -11,6 +11,7 @@ CONFIG_PATH = ROOT / "content/telegram/lordchrist/production-schedule.json"
 POLICY_PATH = ROOT / "content/telegram/lordchrist/presentation-policy.json"
 WORKFLOW_PATH = ROOT / ".github/workflows/lordchrist-telegram-poster.yml"
 EXPECTED_DIGEST = "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"
+EXPECTED_SUCCESSOR_DIGEST = "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873"
 EXPECTED_CHAT_ID = -1001295216957
 EXPECTED_BOT_ID = 8716602202
 EXPECTED_BOT_USERNAME = "preaching_mp3_bot"
@@ -35,15 +36,16 @@ def test_autonomous_production_config_is_explicit_release_bound_and_slot_gated()
     assert config.slots["morning"].time == config.primary_time
     assert config.slots["morning"].cron == "17 9 * * *"
     assert config.slots["morning"].iso_weekdays == (1, 2, 3, 4, 5, 6, 7)
-    assert config.slots["morning"].max_lateness_minutes == 120
+    assert config.slots["morning"].max_lateness_minutes == 720
     assert config.slots["evening"].time == config.catchup_time
     assert config.slots["evening"].cron == "17 21 * * 2,5,0"
     assert config.slots["evening"].iso_weekdays == (2, 5, 7)
-    assert config.slots["evening"].max_lateness_minutes == 120
+    assert config.slots["evening"].max_lateness_minutes == 160
     assert config.max_verified_per_slot == 1
     assert config.max_verified_per_day == 2
     assert config.backfill_policy == "none"
     assert config.queue_digest == EXPECTED_DIGEST
+    assert config.successor_queue_digest == EXPECTED_SUCCESSOR_DIGEST
     assert config.presentation_policy_id == policy.policy_id
     assert config.presentation_policy_sha256 == policy.digest
 
@@ -70,19 +72,27 @@ def test_schedule_decision_rejects_premature_and_stale_runs_without_backfill() -
     config = load_production_schedule(CONFIG_PATH)
 
     before_morning = datetime(2026, 9, 8, 6, 16, 59, tzinfo=UTC)  # 09:16:59 Moscow
-    morning_deadline = datetime(2026, 9, 8, 8, 17, tzinfo=UTC)  # 11:17 Moscow
-    fresh_delayed_evening = datetime(2026, 9, 8, 19, 16, 59, tzinfo=UTC)  # 22:16:59 Moscow
+    fresh_delayed_morning = datetime(2026, 9, 8, 18, 16, 59, tzinfo=UTC)  # 21:16:59 Moscow
+    morning_deadline = datetime(2026, 9, 8, 18, 17, tzinfo=UTC)  # 21:17 Moscow
+    fresh_delayed_evening = datetime(2026, 9, 8, 20, 56, 59, tzinfo=UTC)  # 23:56:59 Moscow
+    evening_deadline = datetime(2026, 9, 8, 20, 57, tzinfo=UTC)  # 23:57 Moscow
 
     premature = decide_scheduled_slot(config, event_schedule="17 9 * * *", now=before_morning)
-    stale = decide_scheduled_slot(config, event_schedule="17 9 * * *", now=morning_deadline)
-    delayed = decide_scheduled_slot(config, event_schedule="17 21 * * 2,5,0", now=fresh_delayed_evening)
+    delayed_morning = decide_scheduled_slot(config, event_schedule="17 9 * * *", now=fresh_delayed_morning)
+    stale_morning = decide_scheduled_slot(config, event_schedule="17 9 * * *", now=morning_deadline)
+    delayed_evening = decide_scheduled_slot(config, event_schedule="17 21 * * 2,5,0", now=fresh_delayed_evening)
+    stale_evening = decide_scheduled_slot(config, event_schedule="17 21 * * 2,5,0", now=evening_deadline)
 
     assert premature.active is False
     assert premature.reason == "morning slot is not due yet"
-    assert stale.active is False
-    assert stale.reason == "morning slot is too stale for safe publication"
-    assert delayed.active is True
-    assert delayed.slot == "evening"
+    assert delayed_morning.active is True
+    assert delayed_morning.slot == "morning"
+    assert stale_morning.active is False
+    assert stale_morning.reason == "morning slot is too stale for safe publication"
+    assert delayed_evening.active is True
+    assert delayed_evening.slot == "evening"
+    assert stale_evening.active is False
+    assert stale_evening.reason == "evening slot is too stale for safe publication"
 
 
 def test_workflow_uses_version_controlled_slot_gate_and_exact_release_identity() -> None:
@@ -103,7 +113,7 @@ def test_workflow_uses_version_controlled_slot_gate_and_exact_release_identity()
 def test_scheduled_gate_does_not_require_manual_posting_toggle() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
     gate_start = workflow.index("      - name: Enforce publication gates")
-    gate_end = workflow.index("      - name: Enable publication ledger writer")
+    gate_end = workflow.index("      - name: Discard read-only successor ledger before durable initialization")
     gate = workflow[gate_start:gate_end]
 
     scheduled_branch, manual_branch = gate.split("          else\n", 1)
@@ -126,3 +136,54 @@ def test_send_step_bridges_only_a_valid_schedule_event_into_legacy_internal_gate
     assert "LORDCHRIST_SCHEDULE_ENABLED: ${{ github.event_name == 'schedule' && 'true' || 'false' }}" in send_step
     assert workflow.count("LORDCHRIST_SCHEDULE_ENABLED: ${{ github.event_name == 'schedule'") == 1
     assert "if: steps.persist_intent.outputs.persisted == 'true'" in send_step
+
+
+def test_successor_ledger_durable_initialization_is_execution_gated_and_after_current_main_proof() -> None:
+    workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+    local_start = workflow.index("      - name: Materialize missing successor ledger locally for read-only validation")
+    validate_start = workflow.index("      - name: Validate immutable queue and strict ledger")
+    preview_start = workflow.index("      - name: Preview next publication")
+    quality_start = workflow.index("      - name: Require current-main exact-SHA repository CI proof")
+    target_start = workflow.index("      - name: Validate read-only target configuration")
+    preflight_start = workflow.index("      - name: Read-only bot and channel preflight")
+    gate_start = workflow.index("      - name: Enforce publication gates")
+    discard_start = workflow.index("      - name: Discard read-only successor ledger before durable initialization")
+    writer_start = workflow.index("      - name: Enable state writer for one-time successor ledger initialization")
+    durable_start = workflow.index("      - name: Persist exact successor ledger after current-main proof")
+    publication_writer_start = workflow.index("      - name: Enable publication ledger writer")
+
+    assert (
+        local_start
+        < validate_start
+        < preview_start
+        < quality_start
+        < target_start
+        < preflight_start
+        < gate_start
+        < discard_start
+        < writer_start
+        < durable_start
+        < publication_writer_start
+    )
+
+    local_step = workflow[local_start:validate_start]
+    assert "steps.active_release.outputs.needs_ledger_initialization == 'true'" in local_step
+    assert "persist-credentials: true" not in local_step
+    assert 'git -C "$STATE_DIR" push' not in local_step
+
+    writer_step = workflow[writer_start:durable_start]
+    assert "steps.active_release.outputs.needs_ledger_initialization == 'true'" in writer_step
+    assert "steps.intent.outputs.do_publish == 'true'" in writer_step
+    assert "persist-credentials: true" in writer_step
+
+    durable_step = workflow[durable_start:publication_writer_start]
+    assert "steps.active_release.outputs.needs_ledger_initialization == 'true'" in durable_step
+    assert "steps.intent.outputs.do_publish == 'true'" in durable_step
+    assert "Initialize sealed Lordchrist successor ledger" in durable_step
+    assert 'git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"' in durable_step
+    assert "remote-successor-ledger.json" in durable_step
+
+    before_quality = workflow[:quality_start]
+    assert "persist-credentials: true" not in before_quality[local_start:]
+    assert "Initialize sealed Lordchrist successor ledger" not in before_quality

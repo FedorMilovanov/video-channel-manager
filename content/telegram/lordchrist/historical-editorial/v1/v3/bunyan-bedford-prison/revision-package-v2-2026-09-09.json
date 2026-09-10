@@ -1,0 +1,93 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-revision-package",
+  "schema_version": 2,
+  "revision_id": "historical-revision-bunyan-bedford-prison-archival-v2-2026-09-09",
+  "owning_issue": 561,
+  "checked_on": "2026-09-09",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "publication_id": "lordchrist-history-bunyan-bedford-prison-v3",
+  "state": "provider_inert",
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "post": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/bunyan-bedford-prison/post.json",
+    "git_blob_sha": "bc6c391298f226fc46ff0fc2746aa3dca98ce4ef"
+  },
+  "verification": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/verification/bunyan-bedford-prison-v3-2026-09-08.json",
+    "git_blob_sha": "4006527edcc7e717f42d2f74727a17c6bcfbd864"
+  },
+  "theology_profile": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/theology-profile.json",
+    "git_blob_sha": "06c879d9b55cfb37d8995dca6c3a2197522c850f"
+  },
+  "source_shards": [
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/bunyan.json",
+      "git_blob_sha": "14fc172beb608963fda43cb43cb12f2aeacabba7"
+    },
+    {
+      "path": "content/telegram/lordchrist/historical-editorial/v1/sources/historical-v3-corrections-a.json",
+      "git_blob_sha": "05792a526c43395e6f5074a2676cb0afe53fcf8c"
+    }
+  ],
+  "acquisition_manifest": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/media-acquisition-manifest-v2-2026-09-09.json",
+    "git_blob_sha": "daf1ca2fe768e5a3f970c0c18b204ac029d249cf"
+  },
+  "render_receipt": {
+    "path": "content/telegram/lordchrist/historical-editorial/v1/v3/media-render-receipt-v2-2026-09-09.json",
+    "git_blob_sha": "d7598e41b08f4b9b87694a02fe0e82d1f13a6138"
+  },
+  "archival_media": [
+    {
+      "asset_id": "img-bunyan-v3-hero-archive-exhibit",
+      "slot": "hero",
+      "source_id": "src-image-bunyan-nlw",
+      "acquisition_asset_id": "img-bunyan-v3-hero-archive",
+      "exhibit_kind": "archival_portrait",
+      "accepted_file": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/bunyan-bedford-prison/media/bunyan-v3-hero-nlw-4672796.jpg",
+        "git_blob_sha": "67455491b5d40d0b7bfe6589689aef5853f63f86"
+      },
+      "accepted_mime": "image/jpeg",
+      "accepted_byte_length": 301180,
+      "accepted_width": 1200,
+      "accepted_height": 2048,
+      "accepted_sha256": "sha256:2ffa25321349674e79547f431a4a1984874bacd6f27b3fbb533990a4e129078f",
+      "placement_after": "title",
+      "depicts": "Archival exhibit for src-image-bunyan-nlw derived from the exact pinned acquisition source.",
+      "purpose": "Identify the historical person using an attributed archival portrait.",
+      "claim_boundary": "The portrait identifies the subject only and is not evidence for the narrative event itself.",
+      "rights_basis": "National Library of Wales digitization; Wikimedia Commons records Public Domain Mark 1.0 and no known copyright restrictions.",
+      "attribution_text": "National Library of Wales, Welsh Portrait Collection; public-domain digitization via Wikimedia Commons.",
+      "transport_ready": false,
+      "provider_write_performed": false
+    },
+    {
+      "asset_id": "img-bunyan-v3-gaol-list-1667-exhibit",
+      "slot": "document",
+      "source_id": "src-bunyan-bedfordshire-hsa1667-v3",
+      "acquisition_asset_id": "img-bunyan-v3-gaol-list-1667",
+      "exhibit_kind": "primary_document_facsimile",
+      "accepted_file": {
+        "path": "content/telegram/lordchrist/historical-editorial/v1/v3/bunyan-bedford-prison/media/bunyan-v3-bedford-hsa1667-w58.jpg",
+        "git_blob_sha": "d65d633eb785c9a7dd253e34792b89e6440d5a26"
+      },
+      "accepted_mime": "image/jpeg",
+      "accepted_byte_length": 100701,
+      "accepted_width": 493,
+      "accepted_height": 529,
+      "accepted_sha256": "sha256:b0cf3e86805d95013f9df6918c2732e12e8f767fccf78653cd8c46c9a69ea602",
+      "placement_after": "evidence",
+      "depicts": "Archival exhibit for src-bunyan-bedfordshire-hsa1667-v3 derived from the exact pinned acquisition source.",
+      "purpose": "Show the exact bound historical document or a deterministic page rendering of that source.",
+      "claim_boundary": "The exhibit evidences only the bound source page and is not a reconstruction of events outside that document.",
+      "rights_basis": "Bedfordshire Archives Service publishes HSA1667/W/58 through the official Bedford Borough Council archive site; the provider-inert exhibit retains archival attribution and does not imply a 1672 identity.",
+      "attribution_text": "Bedfordshire Archives Service, HSA1667/W/58, Calendar of Prisoners in the County Gaol, 1667.",
+      "transport_ready": false,
+      "provider_write_performed": false
+    }
+  ]
+}
