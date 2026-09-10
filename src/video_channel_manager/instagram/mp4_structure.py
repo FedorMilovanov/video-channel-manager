@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import struct
 from dataclasses import dataclass
 from pathlib import Path
@@ -162,26 +161,8 @@ def inspect_instagram_mp4_structure(path: Path) -> InstagramMp4StructureEvidence
     )
 
 
-def build_minimal_mp4_for_test(*, edit_list: bool = False, moov_after_mdat: bool = False) -> bytes:
-    """Build tiny structural fixture bytes; this is intentionally not playable media."""
-
-    def box(box_type: bytes, payload: bytes = b"") -> bytes:
-        return struct.pack(">I4s", _BOX_HEADER_SIZE + len(payload), box_type) + payload
-
-    ftyp = box(b"ftyp", b"isom\x00\x00\x02\x00isom")
-    trak_payload = box(b"tkhd")
-    if edit_list:
-        trak_payload += box(b"edts", box(b"elst"))
-    trak = box(b"trak", trak_payload)
-    moov = box(b"moov", trak)
-    mdat = box(b"mdat", b"payload")
-    body = mdat + moov if moov_after_mdat else moov + mdat
-    return ftyp + body
-
-
 __all__ = [
     "InstagramMp4StructureError",
     "InstagramMp4StructureEvidence",
-    "build_minimal_mp4_for_test",
     "inspect_instagram_mp4_structure",
 ]
