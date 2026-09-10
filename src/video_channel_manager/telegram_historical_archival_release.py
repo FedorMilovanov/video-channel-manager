@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
@@ -38,6 +39,11 @@ from video_channel_manager.telegram_target_binding import load_target_binding
 
 ARCHIVAL_RELEASE_SCHEMA = "video-channel-manager.telegram-historical-archival-live-release"
 ARCHIVAL_MEDIA_POLICY = "exact_git_bound_archival_photos_reproved_before_sendRichMessage"
+ARCHIVAL_SCHEDULE_RELEASE_RELATIVE_PATH = (
+    "content/telegram/lordchrist/historical-editorial/v1/production-release-2026-09-cycle-02-v3-archival.json"
+)
+LEGACY_RELEASE_SCHEMA = "video-channel-manager.telegram-historical-production-release"
+LEGACY_SCHEDULE_RELEASE_ID = "lordchrist-history-cycle-2026-09-14-human-v2-live-v1"
 PROJECT = "lord-god-strength"
 CHANNEL = "@lordchrist"
 CHAT_ID = -1001295216957
@@ -120,8 +126,20 @@ def _bound_path(root: Path, binding: dict[str, Any], *, label: str) -> Path:
     return path
 
 
+def _is_scheduled_legacy_bridge(value: dict[str, Any]) -> bool:
+    return (
+        os.environ.get("GITHUB_ACTIONS") == "true"
+        and os.environ.get("GITHUB_EVENT_NAME") == "schedule"
+        and value.get("schema_name") == LEGACY_RELEASE_SCHEMA
+        and value.get("release_id") == LEGACY_SCHEDULE_RELEASE_ID
+        and value.get("owning_issue") == 561
+        and value.get("project_key") == PROJECT
+        and str(value.get("channel_username") or "").casefold() == CHANNEL.casefold()
+    )
+
+
 def is_archival_release_payload(value: dict[str, Any]) -> bool:
-    return value.get("schema_name") == ARCHIVAL_RELEASE_SCHEMA
+    return value.get("schema_name") == ARCHIVAL_RELEASE_SCHEMA or _is_scheduled_legacy_bridge(value)
 
 
 @dataclass(frozen=True)
@@ -214,7 +232,10 @@ def load_archival_release(
 ) -> tuple[dict[str, Any], HistoricalArchivalQueue, HistoricalArchivalRegistry, Path, dict[str, Any]]:
     resolved_release = path if path.is_absolute() else root / path
     release = _read_json(resolved_release)
-    if not is_archival_release_payload(release):
+    if _is_scheduled_legacy_bridge(release):
+        resolved_release = _resolve(root, ARCHIVAL_SCHEDULE_RELEASE_RELATIVE_PATH)
+        release = _read_json(resolved_release)
+    if release.get("schema_name") != ARCHIVAL_RELEASE_SCHEMA:
         raise ValueError("not an archival historical live release")
     if (
         release.get("schema_version") != 1
@@ -529,7 +550,7 @@ def verify_transport_media_bytes(
     *,
     client: httpx.Client | None = None,
 ) -> tuple[dict[str, Any], ...]:
-    if not is_archival_release_payload(release) or publication_id not in EXPECTED_PUBLICATION_IDS:
+    if release.get("schema_name") != ARCHIVAL_RELEASE_SCHEMA or publication_id not in EXPECTED_PUBLICATION_IDS:
         raise ValueError("archival historical media verification requires an exact recurring publication")
     source_commit = str(release["media_source_commit"])
     proofs: list[dict[str, Any]] = []
@@ -567,7 +588,7 @@ def sync_external_canary(
     release: dict[str, Any],
     witness: dict[str, Any] | None,
 ) -> tuple[dict[str, Any], bool]:
-    if not is_archival_release_payload(release):
+    if release.get("schema_name") != ARCHIVAL_RELEASE_SCHEMA:
         raise ValueError("external canary sync requires an archival historical release")
     if witness is None:
         if ledger.get("canary_verified_at_utc") is not None:
@@ -614,6 +635,7 @@ def sync_external_canary(
 __all__ = [
     "ARCHIVAL_MEDIA_POLICY",
     "ARCHIVAL_RELEASE_SCHEMA",
+    "ARCHIVAL_SCHEDULE_RELEASE_RELATIVE_PATH",
     "EXPECTED_DATES",
     "EXPECTED_PUBLICATION_IDS",
     "HistoricalArchivalQueue",
