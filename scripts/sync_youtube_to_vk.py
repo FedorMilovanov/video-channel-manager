@@ -213,8 +213,7 @@ def _prepare_upload_wall_baseline(
         if journal.get("upload_wall_baseline") is not None:
             raise UploadRecoveryRequired(
                 "Provider-dispatched legacy uploads are bound to a full-wall baseline and cannot be "
-                "silently migrated to the bounded upload guard: "
-                + ", ".join(unsafe_source_ids[:10])
+                "silently migrated to the bounded upload guard: " + ", ".join(unsafe_source_ids[:10])
             )
         raise UploadRecoveryRequired(
             "Existing upload journal has provider-dispatched records but no bounded pre-dispatch wall guard: "
