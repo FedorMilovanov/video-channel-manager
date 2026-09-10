@@ -20,6 +20,7 @@ from video_channel_manager.instagram.production import (
     InstagramIdentityMismatchError,
     InstagramProductionError,
     InstagramProductionService,
+    InstagramProviderError,
     InstagramPublicationLedger,
     InstagramPublishManifest,
     InstagramRuntimeConfig,
@@ -35,6 +36,7 @@ instagram_production_app = typer.Typer(
 )
 
 _META_REEL_MAX_BYTES = 1_000_000_000
+_META_OAUTH_INVALID_TOKEN_CODE = "190"
 
 
 def _read_manifest(path: Path) -> InstagramPublishManifest:
@@ -53,6 +55,25 @@ def _enforce_local_reel_size(path: Path) -> None:
         raise InstagramProductionError(
             f"Instagram local video is {size_bytes} bytes; Meta Reels accepts at most {_META_REEL_MAX_BYTES} bytes"
         )
+
+
+def _preflight_failure_message(exc: InstagramProductionError, *, login_mode: str | None) -> str:
+    """Return a secret-safe operator diagnosis for read-only preflight failures."""
+
+    if isinstance(exc, InstagramProviderError) and exc.error_code == _META_OAUTH_INVALID_TOKEN_CODE:
+        if login_mode == "facebook":
+            return (
+                "Meta rejected the configured Facebook Login credential (OAuth error code 190: access token is "
+                "invalid or expired). Keep VCM_INSTAGRAM_WRITES_ENABLED=false, renew the Facebook User credential "
+                "outside Git, derive a fresh Page Access Token for the exact registered Facebook Page, and rerun "
+                "the read-only Instagram preflight. No provider write was attempted."
+            )
+        return (
+            "Meta rejected the configured Instagram credential (OAuth error code 190: access token is invalid or "
+            "expired). Keep VCM_INSTAGRAM_WRITES_ENABLED=false, renew the credential outside Git, and rerun the "
+            "read-only Instagram preflight. No provider write was attempted."
+        )
+    return str(exc)
 
 
 def _open_service() -> tuple[InstagramProductionService, Database]:
@@ -100,7 +121,9 @@ def preflight() -> None:
         service, database = _open_service()
         result = service.preflight()
     except InstagramProductionError as exc:
-        console.print(f"[red]Instagram preflight failed:[/red] {exc}")
+        login_mode = service.config.login_mode if service is not None else None
+        message = _preflight_failure_message(exc, login_mode=login_mode)
+        console.print(f"[red]Instagram preflight failed:[/red] {message}")
         raise typer.Exit(code=2) from exc
     finally:
         if service is not None:
