@@ -453,11 +453,8 @@ def build_archival_document(
         for index, paragraph in enumerate(section.paragraphs, start=1):
             blocks.append(RichBlockParagraph(block_id=f"p-{section.section_id}-{index}", text=paragraph))
         append_placement(section.section_id)
-    blocks.append(RichBlockHeading(block_id="h-evidence-boundary", text="Граница доказательств", size=2))
-    blocks.append(RichBlockParagraph(block_id="p-evidence-boundary", text=post.evidence_boundary))
     append_placement("evidence")
-    blocks.append(RichBlockHeading(block_id="h-theology-review", text="Богословская оценка", size=2))
-    blocks.append(RichBlockParagraph(block_id="p-theology-review", text=post.theology_review.editorial_evaluation))
+    blocks.append(RichBlockParagraph(block_id="p-pastoral-application", text=post.theology_review.editorial_evaluation))
     append_placement("theology")
     expected_media_ids = tuple(str(record["asset_id"]) for record in records)
     if tuple(placed) != expected_media_ids:
