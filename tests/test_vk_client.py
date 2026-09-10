@@ -11,7 +11,7 @@ from video_channel_manager.platforms.vk.models import VkAccessToken, VkCommunity
 from video_channel_manager.platforms.vk.service import VkInventoryService
 from video_channel_manager.platforms.vk.store import VkTokenStore
 
-def_client(tmp_path: Path) -> VkApiClient:
+def _client(tmp_path: Path) -> VkApiClient:
     store = VkTokenStore(tmp_path)
     store.save_token("default", VkAccessToken(access_token="access", user_id=42))
 
