@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
+from video_channel_manager import telegram_historical_production_core as production_core
 from video_channel_manager.telegram_historical_archival_release import (
     EXPECTED_DATES,
     EXPECTED_PUBLICATION_IDS,
@@ -136,6 +137,7 @@ def test_archival_v3_release_is_exact_and_canary_is_outside_recurring_queue() ->
     assert release["provider_writes_authorized"] is True
     assert release["external_editorial_approval_required"] is True
     assert release["canary_publication_id"] == "lordchrist-history-spurgeon-down-grade-1887-v3"
+    assert release["replenishment_guard_remaining"] == 1
     assert tuple(release["publication_ids"]) == EXPECTED_PUBLICATION_IDS
     assert tuple(release["recurring_publication_ids"]) == EXPECTED_PUBLICATION_IDS
     assert tuple(aux["planned_dates"]) == EXPECTED_DATES
@@ -165,6 +167,40 @@ def test_archival_v3_release_is_exact_and_canary_is_outside_recurring_queue() ->
     assert queue.posts[0].evidence_boundary not in render.visible_text
     assert queue.posts[0].theology_review.editorial_evaluation in render.visible_text
     assert registry.sources[EXPECTED_PUBLICATION_IDS[0]][0].title in render.visible_text
+
+
+def test_all_sixteen_archival_exhibits_keep_internal_evidence_out_of_visible_text() -> None:
+    release, queue, registry, profile_path, aux = _loaded()
+    exhibit_count = 0
+
+    for publication_id in EXPECTED_PUBLICATION_IDS:
+        _document, render = build_document(
+            ROOT,
+            release,
+            queue,
+            registry,
+            profile_path,
+            aux["target_binding_path"],
+            publication_id,
+        )
+        visible = render.visible_text
+        records = registry.media[publication_id]
+        exhibit_count += len(records)
+        for record in records:
+            assert str(record["asset_id"]) not in visible
+            assert str(record["caption"]) not in visible
+            assert str(record["disclosure"]) not in visible
+        for source in registry.sources[publication_id]:
+            assert source.source_id not in visible
+        for forbidden in (
+            "Archival exhibit",
+            "exact pinned acquisition",
+            "claim_boundary",
+            "acquisition source",
+        ):
+            assert forbidden.casefold() not in visible.casefold()
+
+    assert exhibit_count == 16
 
 
 def test_scheduled_github_event_bridges_legacy_workflow_path_to_archival_v3(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -254,6 +290,50 @@ def test_external_canary_message_1516_does_not_arm_schedule_before_editorial_app
     assert decision.active is True
     assert decision.publication_id == EXPECTED_PUBLICATION_IDS[0]
     assert decision.reason == "active_exact_historical_slot"
+
+
+def test_archival_replenishment_blocks_final_slot_until_successor_is_bound(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    release, queue, _registry, _profile_path, aux = _loaded()
+    planned = tuple(aux["planned_dates"])
+    ledger = new_ledger(release, queue, planned)
+    ledger["canary_verified_at_utc"] = "2026-09-10T09:00:00+00:00"
+    for index, publication_id in enumerate(EXPECTED_PUBLICATION_IDS[:-1], start=1):
+        ledger["entries"][publication_id].update(
+            {
+                "state": "published",
+                "provider_effect": "verified",
+                "published_at_utc": f"2026-09-{13 + index:02d}T10:00:00+00:00",
+                "message_id": 1600 + index,
+                "message_url": f"https://t.me/lordchrist/{1600 + index}",
+            }
+        )
+
+    blocked = decide_scheduled(
+        ROOT,
+        release,
+        ledger,
+        EXPECTED_PUBLICATION_IDS,
+        planned,
+        now=datetime(2026, 9, 30, 19, 20, tzinfo=MOSCOW),
+    )
+    assert blocked.active is False
+    assert blocked.publication_id == EXPECTED_PUBLICATION_IDS[-1]
+    assert blocked.reason == "successor_cycle_required_before_exhaustion"
+
+    monkeypatch.setattr(production_core, "successor_cycle_is_bound", lambda *_args, **_kwargs: True)
+    unblocked = decide_scheduled(
+        ROOT,
+        release,
+        ledger,
+        EXPECTED_PUBLICATION_IDS,
+        planned,
+        now=datetime(2026, 9, 30, 19, 20, tzinfo=MOSCOW),
+    )
+    assert unblocked.active is True
+    assert unblocked.publication_id == EXPECTED_PUBLICATION_IDS[-1]
+    assert unblocked.reason == "active_exact_historical_slot"
 
 
 def test_external_canary_gate_fails_closed_on_wrong_message_identity() -> None:
