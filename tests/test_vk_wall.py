@@ -169,6 +169,51 @@ def test_build_wall_plan_is_project_bound_postponed_and_self_validating() -> Non
         validate_vk_wall_post_plan(tampered)
 
 
+
+def test_upload_wall_guard_reads_exactly_one_head_page_per_surface(tmp_path: Path) -> None:
+    calls: list[tuple[str, str]] = []
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        assert request.url.path.endswith("/wall.get")
+        form = parse_qs(request.content.decode("utf-8"))
+        surface = form["filter"][0]
+        calls.append((surface, form["count"][0]))
+        if surface == "owner":
+            return httpx.Response(
+                200,
+                json={
+                    "response": {
+                        "count": 250,
+                        "items": [_video_post(101, text="Published head")],
+                    }
+                },
+            )
+        return httpx.Response(
+            200,
+            json={
+                "response": {
+                    "count": 12,
+                    "items": [_video_post(202, text="Postponed head")],
+                }
+            },
+        )
+
+    writer = _writer(tmp_path, httpx.MockTransport(respond))
+    guard = writer.capture_upload_wall_guard(
+        community_id=COMMUNITY_ID,
+        head_limit=25,
+    )
+
+    assert guard.community_id == COMMUNITY_ID
+    assert guard.head_limit == 25
+    assert guard.published_total == 250
+    assert guard.postponed_total == 12
+    assert [post.post_id for post in guard.published_posts] == [101]
+    assert [post.post_id for post in guard.postponed_posts] == [202]
+    assert calls == [("owner", "25"), ("postponed", "25")]
+    assert guard.guard_sha256.startswith("sha256:")
+
+
 def test_wall_writer_posts_once_to_postponed_and_reconciles_exact_delta(tmp_path: Path) -> None:
     calls: list[str] = []
     message = "На поле Куликовом\n\nhttps://thelegendarypoet.ru/"
