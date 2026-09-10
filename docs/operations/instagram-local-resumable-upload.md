@@ -127,7 +127,8 @@ Do not commit the real token or the local `.env`.
 - Before container creation: local byte mismatch, invalid MP4 structure, incompatible media, or an invalid target causes zero provider writes.
 - Ambiguous container creation: no automatic second container is created. Resolve exact provider evidence first.
 - Container response received but process crashes before parent-state update: rerunning `publish-local` may recover the exact persisted container ID/upload URI without creating another container.
-- Ambiguous binary upload (`upload_requested` / `upload_unknown`): `publish-local` will not resend the bytes. Run read-only reconciliation against the known container first.
+- Explicit non-retriable HTTP 4xx upload rejection: if Meta returns `debug_info.retriable=false`, the child is terminalized as `provider_failed` immediately and the parent becomes `terminal_failure`; the same publication key is never replayed.
+- Ambiguous binary upload (`upload_requested` / `upload_unknown`): transport failures, 5xx responses, or 4xx responses without an explicit non-retriable provider decision remain no-replay ambiguous. Run read-only reconciliation against the known container first.
 - **Top-level `IN_PROGRESS` is not proof of successful upload.** Read `video_status.uploading_phase` and `video_status.processing_phase`. A phase-level `error` is terminal and blocks publish/replay even when top-level status remains `IN_PROGRESS`.
 - Phase diagnostics are preserved in the durable error message, including available `bytes_transferred`, `source_file_size`, provider error code and provider message.
 - HTTP failures from `rupload.facebook.com` preserve a bounded secret-redacted response/debug body plus available `x-fb-request-id` and `x-fb-trace-id`; access tokens must never appear in logs or ledger diagnostics.

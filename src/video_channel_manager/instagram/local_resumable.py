@@ -44,6 +44,7 @@ from video_channel_manager.instagram.production import (
 from video_channel_manager.instagram.provider_diagnostics import (
     describe_provider_http_error,
     extract_resumable_phase_failure,
+    provider_http_retryable,
     secret_safe_exception_detail,
 )
 from video_channel_manager.local_media.artifact import MediaProbe, MediaProbeEvidence
@@ -459,7 +460,12 @@ class InstagramResumableProviderClient(InstagramProviderClient):
                 upload_uri=target,
                 prefix="Instagram resumable upload",
             )
-            raise InstagramProviderError(message, status_code=response.status_code, error_code=error_code)
+            raise InstagramProviderError(
+                message,
+                status_code=response.status_code,
+                error_code=error_code,
+                retryable=provider_http_retryable(response),
+            )
 
         payload: object | None
         try:
@@ -473,7 +479,12 @@ class InstagramResumableProviderClient(InstagramProviderClient):
                 upload_uri=target,
                 prefix="Instagram resumable upload",
             )
-            raise InstagramProviderError(message, status_code=response.status_code, error_code=error_code)
+            raise InstagramProviderError(
+                message,
+                status_code=response.status_code,
+                error_code=error_code,
+                retryable=provider_http_retryable(response),
+            )
 
 
 class InstagramLocalResumableService(InstagramProductionService):
@@ -762,7 +773,28 @@ class InstagramLocalResumableService(InstagramProductionService):
                             stream,
                             file_size=manifest.media_size_bytes,
                         )
-                    except (InstagramProviderError, InstagramTransportError) as exc:
+                    except InstagramProviderError as exc:
+                        if exc.status_code is not None and 400 <= exc.status_code < 500 and exc.retryable is False:
+                            self.upload_ledger.mark_provider_failed(
+                                manifest.publication_key,
+                                error_code=exc.error_code or type(exc).__name__,
+                                error_message=str(exc),
+                            )
+                            self.ledger.transition(
+                                manifest.publication_key,
+                                PublicationStatus.TERMINAL_FAILURE,
+                                expected_statuses={PublicationStatus.CONTAINER_CREATED},
+                                provider_status="ERROR",
+                                error_code=exc.error_code or type(exc).__name__,
+                                error_message=str(exc),
+                            )
+                            raise
+                        self.upload_ledger.mark_unknown(manifest.publication_key, exc)
+                        raise InstagramReconciliationRequired(
+                            f"Binary upload result for {manifest.publication_key} is unknown; refusing blind replay. "
+                            f"Provider detail: {exc}"
+                        ) from exc
+                    except InstagramTransportError as exc:
                         self.upload_ledger.mark_unknown(manifest.publication_key, exc)
                         raise InstagramReconciliationRequired(
                             f"Binary upload result for {manifest.publication_key} is unknown; refusing blind replay. "

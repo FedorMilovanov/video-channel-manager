@@ -535,6 +535,7 @@ def test_resumable_client_preserves_debug_info_and_meta_request_ids_without_toke
 
     assert error.value.status_code == 400
     assert error.value.error_code == "ProcessingFailedError"
+    assert error.value.retryable is False
     message = str(error.value)
     assert "ProcessingFailedError" in message
     assert "body=" in message
@@ -542,6 +543,143 @@ def test_resumable_client_preserves_debug_info_and_meta_request_ids_without_toke
     assert "trace-456" in message
     assert "[REDACTED_TOKEN]" in message
     assert TOKEN not in message
+
+
+def test_nonretriable_http_400_terminalizes_parent_and_child_without_reconcile(tmp_path: Path) -> None:
+    video = tmp_path / "reel.mp4"
+    _write_video(video)
+    manifest = build_local_publish_manifest(
+        video,
+        publication_key="local.nonretriable-400",
+        account_id=ACCOUNT_ID,
+    )
+    writes: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}"):
+            return _response(request, 200, {"id": ACCOUNT_ID, "username": USERNAME})
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}/content_publishing_limit"):
+            return _response(request, 200, {"data": []})
+        if request.method == "POST" and path.endswith(f"/{ACCOUNT_ID}/media"):
+            writes.append("container")
+            return _response(request, 200, {"id": "container-local-1", "uri": UPLOAD_URI})
+        if request.method == "POST" and request.url.host == "rupload.facebook.com":
+            writes.append("upload")
+            return _response(
+                request,
+                400,
+                {
+                    "debug_info": {
+                        "message": "Request processing failed",
+                        "retriable": False,
+                        "type": "ProcessingFailedError",
+                    }
+                },
+            )
+        if request.method == "POST" and path.endswith(f"/{ACCOUNT_ID}/media_publish"):
+            writes.append("publish")
+            raise AssertionError("non-retriable upload rejection must block media_publish")
+        raise AssertionError(f"Unexpected request: {request.method} {request.url}")
+
+    config = _config()
+    transport = httpx.MockTransport(handler)
+    with _ledgers() as (ledger, upload_ledger, _database), _client(config, transport) as client:
+        service = InstagramLocalResumableService(
+            config,
+            ledger,
+            upload_ledger,
+            client=client,
+            media_probe=_compatible_probe,
+        )
+
+        with pytest.raises(InstagramProviderError) as error:
+            service.publish_local(manifest, video, execute=True)
+
+        assert error.value.status_code == 400
+        assert error.value.error_code == "ProcessingFailedError"
+        assert error.value.retryable is False
+        assert writes == ["container", "upload"]
+
+        parent = ledger.get(manifest.publication_key)
+        child = upload_ledger.get(manifest.publication_key)
+        assert parent is not None
+        assert parent.status == PublicationStatus.TERMINAL_FAILURE
+        assert parent.provider_status == "ERROR"
+        assert parent.last_error_code == "ProcessingFailedError"
+        assert parent.last_error_message is not None
+        assert "retriable" in parent.last_error_message
+        assert child is not None
+        assert child.state == ResumableUploadState.PROVIDER_FAILED
+        assert child.attempt_count == 1
+        assert child.last_error_code == "ProcessingFailedError"
+        assert child.last_error_message == parent.last_error_message
+
+        with pytest.raises(InstagramProductionError, match="terminally failed"):
+            service.publish_local(manifest, video, execute=True)
+        assert writes == ["container", "upload"]
+
+
+def test_http_500_remains_ambiguous_even_when_debug_info_says_nonretriable(tmp_path: Path) -> None:
+    video = tmp_path / "reel.mp4"
+    _write_video(video)
+    manifest = build_local_publish_manifest(
+        video,
+        publication_key="local.server-error-500",
+        account_id=ACCOUNT_ID,
+    )
+    upload_calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal upload_calls
+        path = request.url.path
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}"):
+            return _response(request, 200, {"id": ACCOUNT_ID, "username": USERNAME})
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}/content_publishing_limit"):
+            return _response(request, 200, {"data": []})
+        if request.method == "POST" and path.endswith(f"/{ACCOUNT_ID}/media"):
+            return _response(request, 200, {"id": "container-local-1", "uri": UPLOAD_URI})
+        if request.method == "POST" and request.url.host == "rupload.facebook.com":
+            upload_calls += 1
+            return _response(
+                request,
+                500,
+                {
+                    "debug_info": {
+                        "message": "Request processing failed",
+                        "retriable": False,
+                        "type": "ProcessingFailedError",
+                    }
+                },
+            )
+        raise AssertionError(f"Unexpected request: {request.method} {request.url}")
+
+    config = _config()
+    transport = httpx.MockTransport(handler)
+    with _ledgers() as (ledger, upload_ledger, _database), _client(config, transport) as client:
+        service = InstagramLocalResumableService(
+            config,
+            ledger,
+            upload_ledger,
+            client=client,
+            media_probe=_compatible_probe,
+        )
+
+        with pytest.raises(InstagramReconciliationRequired, match="unknown"):
+            service.publish_local(manifest, video, execute=True)
+
+        parent = ledger.get(manifest.publication_key)
+        child = upload_ledger.get(manifest.publication_key)
+        assert parent is not None
+        assert parent.status == PublicationStatus.CONTAINER_CREATED
+        assert child is not None
+        assert child.state == ResumableUploadState.UPLOAD_UNKNOWN
+        assert child.attempt_count == 1
+        assert upload_calls == 1
+
+        with pytest.raises(InstagramReconciliationRequired, match="ambiguous"):
+            service.publish_local(manifest, video, execute=True)
+        assert upload_calls == 1
 
 
 def test_resumable_status_phase_error_overrides_stale_in_progress() -> None:
