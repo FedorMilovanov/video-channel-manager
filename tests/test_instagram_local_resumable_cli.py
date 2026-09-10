@@ -5,6 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from typer.main import get_command
 from typer.testing import CliRunner
 
 from video_channel_manager.cli.instagram_production import (
@@ -27,13 +28,13 @@ def test_publish_local_is_exposed_in_production_help() -> None:
     assert "publish-local" in _plain(result.output)
 
 
-def test_publish_local_help_exposes_explicit_write_gate() -> None:
-    result = CliRunner().invoke(instagram_production_app, ["publish-local", "--help"])
-    assert result.exit_code == 0, result.output
-    output = _plain(result.output)
-    assert "--publication-key" in output
-    assert "--execute" in output
-    assert "--share-to-feed" in output
+def test_publish_local_exposes_explicit_write_gate() -> None:
+    command = get_command(instagram_production_app)
+    publish_local = command.commands["publish-local"]
+    options = {option for parameter in publish_local.params for option in getattr(parameter, "opts", ())}
+    assert "--publication-key" in options
+    assert "--execute" in options
+    assert "--share-to-feed" in options
 
 
 def test_publish_local_rejects_file_above_meta_one_gigabyte_limit(
