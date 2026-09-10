@@ -25,7 +25,6 @@ from video_channel_manager.telegram_rich_models import (
     RichArticleDocument,
     RichArticleMetadata,
     RichArticleSource,
-    RichBlockCaption,
     RichBlockDetails,
     RichBlockHeading,
     RichBlockMedia,
@@ -257,7 +256,7 @@ def load_archival_release(
         or release.get("blind_mutation_retries") != 0
         or release.get("backfill_policy") != "none"
         or release.get("media_policy") != ARCHIVAL_MEDIA_POLICY
-        or release.get("replenishment_guard_remaining") != 0
+        or release.get("replenishment_guard_remaining") != 1
     ):
         raise ValueError("archival historical release header/policy is invalid")
     publication_ids = tuple(release.get("publication_ids") or ())
@@ -444,7 +443,7 @@ def build_archival_document(
             media_id=str(record["asset_id"]),
             kind="photo",
             uri=str(record["raw_url"]),
-            alt_text=str(record["caption"]),
+            alt_text=f"Архивная иллюстрация к публикации «{post.title}»",
         )
         for record in records
     )
@@ -461,7 +460,6 @@ def build_archival_document(
                 RichBlockMedia(
                     block_id=f"m-{asset_id.removeprefix('img-')}",
                     media_id=asset_id,
-                    caption=RichBlockCaption(text=str(record["caption"]), credit=str(record["disclosure"])),
                 )
             )
             placed.append(asset_id)
