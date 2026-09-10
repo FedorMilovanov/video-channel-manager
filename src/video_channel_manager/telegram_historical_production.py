@@ -200,9 +200,18 @@ def new_ledger(
     queue: Any,
     planned_dates: tuple[str, ...],
 ) -> dict[str, Any]:
-    """Create the durable ledger, adding explicit two-phase canary state where needed."""
+    """Create a core-compatible durable ledger for every release shape."""
 
     ledger = _ORIGINAL_NEW_LEDGER(release, queue, planned_dates)
+    if _archival.is_archival_release_payload(release):
+        entries = ledger.get("entries")
+        if not isinstance(entries, dict):
+            raise ValueError("archival historical ledger entries are invalid")
+        for sequence, post in enumerate(queue.posts, start=1):
+            row = entries.get(post.publication_id)
+            if not isinstance(row, dict):
+                raise ValueError("archival historical ledger is missing a recurring publication")
+            row["sequence"] = sequence
     if _editorial_approval_required(release):
         ledger[TRANSPORT_VERIFIED_FIELD] = None
         ledger[EDITORIAL_APPROVED_FIELD] = None
