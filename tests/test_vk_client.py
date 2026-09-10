@@ -11,8 +11,7 @@ from video_channel_manager.platforms.vk.models import VkAccessToken, VkCommunity
 from video_channel_manager.platforms.vk.service import VkInventoryService
 from video_channel_manager.platforms.vk.store import VkTokenStore
 
-
-def _client(tmp_path: Path) -> VkApiClient:
+def_client(tmp_path: Path) -> VkApiClient:
     store = VkTokenStore(tmp_path)
     store.save_token("default", VkAccessToken(access_token="access", user_id=42))
 
@@ -126,8 +125,7 @@ def _client(tmp_path: Path) -> VkApiClient:
         api_base_url="https://example.test/method",
     )
 
-
-def test_complete_vk_inventory_package(tmp_path: Path) -> None:
+deftest_complete_vk_inventory_package(tmp_path: Path) -> None:
     client = _client(tmp_path)
     package = VkInventoryService(client).build_audit_package("legendary_poet")
 
@@ -142,8 +140,7 @@ def test_complete_vk_inventory_package(tmp_path: Path) -> None:
     assert package.memberships[0].position == 0
     assert package.metadata["read_only"] is True
 
-
-def test_vk_api_errors_do_not_echo_token(tmp_path: Path) -> None:
+deftest_vk_api_errors_do_not_echo_token(tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
     store.save_token("default", VkAccessToken(access_token="super-secret"))
 
@@ -172,8 +169,7 @@ def test_vk_api_errors_do_not_echo_token(tmp_path: Path) -> None:
 
     assert "super-secret" not in str(error.value)
 
-
-def test_vk_safe_read_retries_provider_transient_error(tmp_path: Path) -> None:
+deftest_vk_safe_read_retries_provider_transient_error(tmp_path: Path) -> None:
     from video_channel_manager.platforms.http import RetryPolicy
 
     store = VkTokenStore(tmp_path)
@@ -204,8 +200,7 @@ def test_vk_safe_read_retries_provider_transient_error(tmp_path: Path) -> None:
     assert calls == 2
     assert sleeps == [0.15]
 
-
-def test_vk_invalid_json_has_structured_failure_kind(tmp_path: Path) -> None:
+deftest_vk_invalid_json_has_structured_failure_kind(tmp_path: Path) -> None:
     from video_channel_manager.platforms.http import HttpFailureKind
 
     store = VkTokenStore(tmp_path)
@@ -259,4 +254,3 @@ def test_registry_bound_inventory_bypasses_group_discovery() -> None:
     assert package.videos == []
     assert package.collections == []
     assert package.memberships == []
-
