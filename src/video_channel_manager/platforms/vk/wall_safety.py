@@ -296,6 +296,129 @@ class VkWallSnapshot:
         return snapshot
 
 
+VK_UPLOAD_WALL_GUARD_SCHEMA = "video-manager.vk-upload-wall-guard"
+VK_UPLOAD_WALL_GUARD_VERSION = 1
+
+
+@dataclass(frozen=True, slots=True)
+class VkUploadWallGuard:
+    """Bounded two-surface evidence used only to prove video-upload wall isolation.
+
+    A native video upload has wallpost/auto_publish disabled. To prove that this
+    invariant held remotely we only need to detect a newly created/transitioned
+    head entry, not re-freeze the entire historical wall before every upload.
+    Full wall snapshots remain mandatory for actual wall publication workflows.
+    """
+
+    community_id: int
+    captured_at: str
+    head_limit: int
+    published_total: int
+    postponed_total: int
+    published_posts: tuple[VkWallPostFingerprint, ...]
+    postponed_posts: tuple[VkWallPostFingerprint, ...]
+
+    def __post_init__(self) -> None:
+        if self.community_id <= 0:
+            raise ValueError("community_id must be positive")
+        if type(self.head_limit) is not int or not 1 <= self.head_limit <= 100:
+            raise ValueError("upload wall guard head_limit must be an exact integer from 1 to 100")
+        for field, value in (
+            ("published_total", self.published_total),
+            ("postponed_total", self.postponed_total),
+        ):
+            if type(value) is not int or value < 0:
+                raise ValueError(f"{field} must be a non-negative exact integer")
+        try:
+            captured_at = datetime.fromisoformat(self.captured_at)
+        except ValueError as exc:
+            raise ValueError("captured_at must be an ISO-8601 datetime") from exc
+        if captured_at.tzinfo is None or captured_at.utcoffset() is None:
+            raise ValueError("captured_at must be timezone-aware")
+        expected_owner = -self.community_id
+        if any(
+            post.owner_id != expected_owner or post.surface is not VkWallSurface.PUBLISHED
+            for post in self.published_posts
+        ):
+            raise ValueError("published upload wall guard contains invalid owner/surface")
+        if any(
+            post.owner_id != expected_owner or post.surface is not VkWallSurface.POSTPONED
+            for post in self.postponed_posts
+        ):
+            raise ValueError("postponed upload wall guard contains invalid owner/surface")
+        if len(self.published_posts) > min(self.head_limit, self.published_total):
+            raise ValueError("published upload wall guard contains too many head posts")
+        if len(self.postponed_posts) > min(self.head_limit, self.postponed_total):
+            raise ValueError("postponed upload wall guard contains too many head posts")
+        identities = [
+            (post.surface.value, post.remote_id)
+            for post in (*self.published_posts, *self.postponed_posts)
+        ]
+        if len(identities) != len(set(identities)):
+            raise ValueError("upload wall guard contains duplicate post identities")
+
+    @property
+    def posts(self) -> tuple[VkWallPostFingerprint, ...]:
+        return self.published_posts + self.postponed_posts
+
+    @property
+    def guard_sha256(self) -> str:
+        return _canonical_sha256(self._payload())
+
+    def _payload(self) -> dict[str, object]:
+        return {
+            "schema_name": VK_UPLOAD_WALL_GUARD_SCHEMA,
+            "schema_version": VK_UPLOAD_WALL_GUARD_VERSION,
+            "community_id": self.community_id,
+            "captured_at": self.captured_at,
+            "head_limit": self.head_limit,
+            "published_total": self.published_total,
+            "postponed_total": self.postponed_total,
+            "published_posts": [post.as_dict() for post in self.published_posts],
+            "postponed_posts": [post.as_dict() for post in self.postponed_posts],
+        }
+
+    def as_dict(self) -> dict[str, object]:
+        payload = self._payload()
+        payload["guard_sha256"] = self.guard_sha256
+        return payload
+
+    @classmethod
+    def from_mapping(cls, raw: Mapping[str, object]) -> "VkUploadWallGuard":
+        if raw.get("schema_name") != VK_UPLOAD_WALL_GUARD_SCHEMA:
+            raise ValueError("Unsupported or missing VK upload wall guard schema")
+        if raw.get("schema_version") != VK_UPLOAD_WALL_GUARD_VERSION:
+            raise ValueError("Unsupported VK upload wall guard version")
+        raw_published = raw.get("published_posts")
+        raw_postponed = raw.get("postponed_posts")
+        if not isinstance(raw_published, list) or not isinstance(raw_postponed, list):
+            raise ValueError("VK upload wall guard posts must be lists")
+        published = tuple(
+            VkWallPostFingerprint.from_mapping(item)
+            for item in raw_published
+            if isinstance(item, Mapping)
+        )
+        postponed = tuple(
+            VkWallPostFingerprint.from_mapping(item)
+            for item in raw_postponed
+            if isinstance(item, Mapping)
+        )
+        if len(published) != len(raw_published) or len(postponed) != len(raw_postponed):
+            raise ValueError("VK upload wall guard contains a non-object post")
+        guard = cls(
+            community_id=_require_exact_int(raw.get("community_id"), field="community_id", minimum=1),
+            captured_at=str(raw.get("captured_at") or ""),
+            head_limit=_require_exact_int(raw.get("head_limit"), field="head_limit", minimum=1),
+            published_total=_require_exact_int(raw.get("published_total"), field="published_total", minimum=0),
+            postponed_total=_require_exact_int(raw.get("postponed_total"), field="postponed_total", minimum=0),
+            published_posts=published,
+            postponed_posts=postponed,
+        )
+        if raw.get("guard_sha256") != guard.guard_sha256:
+            raise ValueError("VK upload wall guard self-digest does not match")
+        return guard
+
+
 class VkWallDeltaStatus(StrEnum):
     CLEAN = "clean"
     CHANGED = "changed"
@@ -326,6 +449,49 @@ class VkWallDelta:
             "after_sha256": self.after_sha256,
             "reasons": list(self.reasons),
         }
+
+
+def compare_upload_wall_guards(before: VkUploadWallGuard, after: VkUploadWallGuard) -> "VkWallDelta":
+    if before.community_id != after.community_id:
+        raise ValueError("Upload wall guards belong to different communities")
+    if before.head_limit != after.head_limit:
+        raise ValueError("Upload wall guards use different head limits")
+
+    def keyed(guard: VkUploadWallGuard) -> dict[tuple[str, str], VkWallPostFingerprint]:
+        return {(post.surface.value, post.remote_id): post for post in guard.posts}
+
+    before_posts = keyed(before)
+    after_posts = keyed(after)
+    created_keys = sorted(set(after_posts) - set(before_posts))
+    removed_keys = sorted(set(before_posts) - set(after_posts))
+    changed_keys = sorted(
+        key
+        for key in set(before_posts) & set(after_posts)
+        if before_posts[key].as_dict() != after_posts[key].as_dict()
+    )
+    reasons: list[str] = []
+    if before.published_total != after.published_total:
+        reasons.append("published_total_changed")
+    if before.postponed_total != after.postponed_total:
+        reasons.append("postponed_total_changed")
+
+    created = tuple(f"{surface}:{remote_id}" for surface, remote_id in created_keys)
+    removed = tuple(f"{surface}:{remote_id}" for surface, remote_id in removed_keys)
+    changed = tuple(f"{surface}:{remote_id}" for surface, remote_id in changed_keys)
+    status = (
+        VkWallDeltaStatus.CHANGED
+        if reasons or created or removed or changed
+        else VkWallDeltaStatus.CLEAN
+    )
+    return VkWallDelta(
+        status=status,
+        created=created,
+        removed=removed,
+        changed=changed,
+        before_sha256=before.guard_sha256,
+        after_sha256=after.guard_sha256,
+        reasons=tuple(reasons),
+    )
 
 
 def compare_wall_snapshots(before: VkWallSnapshot, after: VkWallSnapshot) -> VkWallDelta:
@@ -397,8 +563,11 @@ __all__ = [
     "DEFAULT_UPLOAD_WALL_POLICY",
     "VK_UPLOAD_WALL_POLICY_SCHEMA",
     "VK_UPLOAD_WALL_POLICY_VERSION",
+    "VK_UPLOAD_WALL_GUARD_SCHEMA",
+    "VK_UPLOAD_WALL_GUARD_VERSION",
     "VK_WALL_SNAPSHOT_SCHEMA",
     "VK_WALL_SNAPSHOT_VERSION",
+    "VkUploadWallGuard",
     "VkUploadWallPolicy",
     "VkWallDelta",
     "VkWallDeltaStatus",
@@ -407,5 +576,6 @@ __all__ = [
     "VkWallSurface",
     "build_wall_snapshot",
     "canonical_wall_attachment",
+    "compare_upload_wall_guards",
     "compare_wall_snapshots",
 ]
