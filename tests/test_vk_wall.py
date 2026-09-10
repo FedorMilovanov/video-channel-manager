@@ -30,7 +30,7 @@ NOW = datetime(2026, 8, 4, 2, 0, tzinfo=UTC)
 PUBLISH_AT = NOW + timedelta(hours=12)
 PUBLISH_DATE = int(PUBLISH_AT.timestamp())
 
-def_audit() -> AuditPackage:
+def _audit() -> AuditPackage:
     channel_id = str(COMMUNITY_ID)
     video_remote_id = f"{OWNER_ID}_{VIDEO_ID}"
     return AuditPackage(
