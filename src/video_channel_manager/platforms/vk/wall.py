@@ -15,6 +15,7 @@ from video_channel_manager.platforms.vk.publishing import VK_PUBLICATION_PROFILE
 from video_channel_manager.platforms.vk.text import render_vk_video_description
 from video_channel_manager.platforms.vk.text_writer import canonical_vk_text
 from video_channel_manager.platforms.vk.wall_safety import (
+    VkUploadWallGuard,
     VkWallDelta,
     VkWallDeltaStatus,
     VkWallPostFingerprint,
@@ -379,12 +380,10 @@ class VkWallWriter(VkVideoWriter):
             published_total=published_total,
             postponed_total=postponed_total,
             published_posts=tuple(
-                VkWallPostFingerprint.from_item(item, surface=VkWallSurface.PUBLISHED)
-                for item in published
+                VkWallPostFingerprint.from_item(item, surface=VkWallSurface.PUBLISHED) for item in published
             ),
             postponed_posts=tuple(
-                VkWallPostFingerprint.from_item(item, surface=VkWallSurface.POSTPONED)
-                for item in postponed
+                VkWallPostFingerprint.from_item(item, surface=VkWallSurface.POSTPONED) for item in postponed
             ),
         )
 
