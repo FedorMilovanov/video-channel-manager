@@ -125,7 +125,7 @@ def _client(tmp_path: Path) -> VkApiClient:
         api_base_url="https://example.test/method",
     )
 
-deftest_complete_vk_inventory_package(tmp_path: Path) -> None:
+def test_complete_vk_inventory_package(tmp_path: Path) -> None:
     client = _client(tmp_path)
     package = VkInventoryService(client).build_audit_package("legendary_poet")
 
@@ -140,7 +140,7 @@ deftest_complete_vk_inventory_package(tmp_path: Path) -> None:
     assert package.memberships[0].position == 0
     assert package.metadata["read_only"] is True
 
-deftest_vk_api_errors_do_not_echo_token(tmp_path: Path) -> None:
+def test_vk_api_errors_do_not_echo_token(tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
     store.save_token("default", VkAccessToken(access_token="super-secret"))
 
@@ -169,7 +169,7 @@ deftest_vk_api_errors_do_not_echo_token(tmp_path: Path) -> None:
 
     assert "super-secret" not in str(error.value)
 
-deftest_vk_safe_read_retries_provider_transient_error(tmp_path: Path) -> None:
+def test_vk_safe_read_retries_provider_transient_error(tmp_path: Path) -> None:
     from video_channel_manager.platforms.http import RetryPolicy
 
     store = VkTokenStore(tmp_path)
@@ -200,7 +200,7 @@ deftest_vk_safe_read_retries_provider_transient_error(tmp_path: Path) -> None:
     assert calls == 2
     assert sleeps == [0.15]
 
-deftest_vk_invalid_json_has_structured_failure_kind(tmp_path: Path) -> None:
+def test_vk_invalid_json_has_structured_failure_kind(tmp_path: Path) -> None:
     from video_channel_manager.platforms.http import HttpFailureKind
 
     store = VkTokenStore(tmp_path)
