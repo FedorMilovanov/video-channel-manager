@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import re
+import time
 import urllib.parse
 import urllib.request
 from typing import Any, cast
@@ -65,7 +66,7 @@ def select_successful_quality_run(
         ):
             matching.append(cast(dict[str, Any], candidate))
     if not matching:
-        raise ValueError("no successful Svodka quality run proves the exact current main SHA")
+        raise ValueError("no successful quality run proves the exact current main SHA")
 
     def run_number(value: dict[str, Any]) -> int:
         raw = value.get("id", 0)
@@ -84,6 +85,8 @@ def require_successful_quality_run(
     token: str,
     workflow_file: str,
     head_sha: str,
+    wait_seconds: float = 0,
+    poll_seconds: float = 10,
 ) -> dict[str, Any]:
     if re.fullmatch(r"[0-9a-f]{40}", head_sha) is None:
         raise ValueError("quality gate requires an exact 40-character GitHub SHA")
@@ -93,11 +96,12 @@ def require_successful_quality_run(
         raise ValueError("quality gate requires an exact workflow filename")
     if not token.strip():
         raise ValueError("quality gate requires GitHub Actions read credentials")
+    if wait_seconds < 0:
+        raise ValueError("quality gate wait_seconds must be non-negative")
+    if poll_seconds <= 0:
+        raise ValueError("quality gate poll_seconds must be positive")
 
     main_ref_url = f"{api_url.rstrip('/')}/repos/{repository}/git/ref/heads/main"
-    main_ref = _safe_github_json(main_ref_url, token=token)
-    require_current_main_ref(main_ref, head_sha=head_sha)
-
     encoded_workflow = urllib.parse.quote(workflow_file, safe="")
     query = urllib.parse.urlencode(
         {
@@ -107,8 +111,22 @@ def require_successful_quality_run(
         }
     )
     runs_url = f"{api_url.rstrip('/')}/repos/{repository}/actions/workflows/{encoded_workflow}/runs?{query}"
-    payload = _safe_github_json(runs_url, token=token)
-    return select_successful_quality_run(payload, workflow_file=workflow_file, head_sha=head_sha)
+    deadline = time.monotonic() + wait_seconds
+
+    while True:
+        main_ref = _safe_github_json(main_ref_url, token=token)
+        require_current_main_ref(main_ref, head_sha=head_sha)
+
+        payload = _safe_github_json(runs_url, token=token)
+        try:
+            return select_successful_quality_run(payload, workflow_file=workflow_file, head_sha=head_sha)
+        except ValueError as exc:
+            if str(exc) != "no successful quality run proves the exact current main SHA":
+                raise
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise
+            time.sleep(min(poll_seconds, remaining))
 
 
 def parser() -> argparse.ArgumentParser:
@@ -117,6 +135,8 @@ def parser() -> argparse.ArgumentParser:
     )
     root.add_argument("--workflow", required=True)
     root.add_argument("--sha", required=True)
+    root.add_argument("--wait-seconds", type=float, default=0)
+    root.add_argument("--poll-seconds", type=float, default=10)
     return root
 
 
@@ -128,6 +148,8 @@ def main() -> int:
         token=os.environ.get("GH_TOKEN", ""),
         workflow_file=args.workflow,
         head_sha=args.sha,
+        wait_seconds=args.wait_seconds,
+        poll_seconds=args.poll_seconds,
     )
     print(
         json.dumps(
