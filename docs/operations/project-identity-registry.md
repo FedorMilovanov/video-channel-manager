@@ -1,6 +1,6 @@
 # Project identity registry
 
-Updated: 2026-08-17
+Updated: 2026-09-09
 
 This repository operates three separate media projects owned by Fedor Milovanov. They are never aliases of one project and must not be mixed in descriptions, comments, playlists, manifests, API writes, reports, ledgers, results, or public footer links.
 
@@ -37,6 +37,14 @@ Project isolation requires exact:
 - manifest, plan, journal, result, and postflight.
 
 Never select a community by VK alias, browser profile, display order, remembered context, or vanity route alone.
+
+### Instagram
+
+Instagram production publishing uses an exact Instagram Professional account ID as the provider target. Authentication mode, token type, Page ownership and display names are not substitutes for target identity.
+
+For the currently proven `legendary-poet` Facebook Login compatibility route, the externally stored Page Access Token authenticates Graph access while the exact Instagram Professional account ID `17841435926122104` and username assertion `the.legendary.poet` select and verify the provider target. The linked Facebook Page is `The Legendary Poet`, Page ID `1299632476567433`.
+
+The Page Access Token is secret material and is never stored in this registry or committed to Git. The local runtime must keep it in ignored `.env` / approved secret storage. Any future Instagram project binding must be registered separately with exact IDs before provider mutation.
 
 ## Project 1: Господь Бог — Сила Моя
 
@@ -107,6 +115,19 @@ Operational/admin routes are not public links:
 - https://cabinet.vkvideo.ru/dashboard/@thelegendarypoet
 - https://cabinet.vkvideo.ru/dashboard/@thelegendarypoet?filterPreset=published&section=video_my_content&subsection=video_my_content_clips
 
+### Instagram
+
+- Professional username: `the.legendary.poet`
+- Professional account ID: `17841435926122104`
+- Linked Facebook Page: `The Legendary Poet`
+- Facebook Page ID: `1299632476567433`
+- Proven compatibility login mode: `facebook`
+- Proven Graph host: `https://graph.facebook.com`
+
+Read-only provider evidence on 2026-09-09 resolved the Facebook Page's `instagram_business_account` exactly to ID `17841435926122104` / username `the.legendary.poet`; direct identity read and `content_publishing_limit` also succeeded with the externally stored Page Access Token. The Graph API version used for that checkpoint was `v26.0`; it is evidence, not a permanent hard-coded version.
+
+Every Instagram write must bind exact account ID `17841435926122104`; username is an additional assertion, not a replacement for the numeric ID. The Facebook Page ID and token authenticate/bridge the compatibility route but do not change the Instagram mutation target.
+
 ### Other registered links
 
 - Website: https://thelegendarypoet.ru/
@@ -156,16 +177,18 @@ Only cake content belongs to Milovi cake-transfer queues. Personal/family/non-ca
 1. Every plan, journal, report, backup, and manifest includes `project_key`.
 2. Every YouTube operation binds exact expected channel ID, not only alias/title.
 3. Every VK operation binds exact community and owner IDs, not token alias, browser profile, or vanity URL.
-4. Each plan uses only the selected project's registered link profile.
-5. Cross-project promotion is forbidden by default and requires an explicit per-operation exception.
-6. Unknown links, handles, routes, or IDs fail closed.
-7. Preflight prints resolved project, YouTube channel, OAuth alias, VK community/owner, and link profile.
-8. The shared VK alias `legendary-poet` and any shared VK browser session never determine the project.
-9. Public and admin routes remain distinct.
-10. Source-code profiles and validators stay synchronized with this registry; documentation alone never authorizes writes.
-11. Only one exact project-bound owning issue may authorize the next operation.
-12. Milovi Cake read-only reconciliation is owned by Issue #257; that issue does not authorize provider writes or deletion.
-13. Reuse of an already-authorized VK browser profile is preferred over creating per-project browser profiles; exact target proof remains mandatory before every browser write.
+4. Every Instagram operation binds exact Instagram Professional account ID; Page ID, username, login mode and credential never substitute for it.
+5. Each plan uses only the selected project's registered link profile.
+6. Cross-project promotion is forbidden by default and requires an explicit per-operation exception.
+7. Unknown links, handles, routes, or IDs fail closed.
+8. Preflight prints/resolves the exact project/provider identities applicable to the operation and rejects mismatches.
+9. The shared VK alias `legendary-poet` and any shared VK browser session never determine the project.
+10. Public and admin routes remain distinct.
+11. Source-code profiles and validators stay synchronized with this registry; documentation alone never authorizes writes.
+12. Only one exact project-bound owning issue may authorize the next operation.
+13. Milovi Cake read-only reconciliation is owned by Issue #257; that issue does not authorize provider writes or deletion.
+14. Reuse of an already-authorized VK browser profile is preferred over creating per-project browser profiles; exact target proof remains mandatory before every browser write.
+15. Instagram credentials authenticate only; a valid Page Access Token or green preflight is never standing execution authority for a new publication.
 
 ## Required identity checks
 
@@ -187,6 +210,10 @@ YouTube OAuth alias: legendary-poet
 YouTube channel ID: UC-78ys2S3cQ3lpqgXfo-SvQ
 VK community ID: 235216998
 VK owner ID: -235216998
+Instagram Professional username: the.legendary.poet
+Instagram Professional account ID: 17841435926122104
+Facebook Page: The Legendary Poet
+Facebook Page ID: 1299632476567433
 ```
 
 Milovi Cake:
@@ -199,4 +226,4 @@ VK community ID: 68859909
 VK owner ID: -68859909
 ```
 
-One shared VK token and one shared authorized VK browser session may serve all three registered communities; exact numeric IDs and `project_key` decide the target. Any mismatch stops without scanning or writing.
+Shared credentials/sessions are authentication context only; exact numeric IDs and `project_key` decide the target. Any mismatch stops without scanning or writing.
