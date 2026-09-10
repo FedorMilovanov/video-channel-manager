@@ -305,12 +305,14 @@ class VkNativeVideoUploadAdapter:
         if not journal_path.is_file():
             raise RuntimeError("VK video reconciliation has no provider journal")
         raw = json.loads(journal_path.read_text(encoding="utf-8"))
-        if not isinstance(raw, Mapping):
+        if not isinstance(raw, dict):
             raise RuntimeError("VK video provider journal is invalid")
-        stage = UploadStage(str(raw.get("stage")))
+        record = raw
+        stage = UploadStage(str(record.get("stage")))
+
+        reservation = record.get("reservation")
         if stage is UploadStage.VERIFIED:
-            reservation = raw.get("reservation")
-            verification = raw.get("verification")
+            verification = record.get("verification")
             if not isinstance(reservation, Mapping) or not isinstance(verification, Mapping):
                 raise RuntimeError("Verified VK upload has incomplete evidence")
             return {
@@ -322,10 +324,78 @@ class VkNativeVideoUploadAdapter:
                 "wall_delta_status": verification.get("wall_delta_status"),
                 "reconciliation": "already_verified",
             }
-        raise RuntimeError(
-            "VK native-video provider reconciliation requires the original Wave journal directory "
-            f"and exact upload record support for stage {stage.value}; no replay was attempted"
+
+        if not isinstance(reservation, Mapping):
+            raise RuntimeError(
+                "VK upload reservation outcome is unknown and no exact remote ID was journaled; "
+                "reconciliation cannot infer identity from title or aggregate inventory"
+            )
+        if stage not in {
+            UploadStage.UPLOAD_STARTED,
+            UploadStage.UPLOAD_RESPONSE_RECEIVED,
+            UploadStage.PROCESSING,
+            UploadStage.UNKNOWN_REQUIRES_RECONCILIATION,
+        }:
+            raise RuntimeError(
+                f"VK upload stage {stage.value} is not eligible for read-only exact-ID reconciliation"
+            )
+
+        guard_path = self._batch_guard_path()
+        if not guard_path.is_file():
+            raise RuntimeError("VK video reconciliation has no immutable upload wall guard")
+        raw_guard = json.loads(guard_path.read_text(encoding="utf-8"))
+        if not isinstance(raw_guard, Mapping):
+            raise RuntimeError("VK upload wall guard evidence is invalid")
+        wall_guard = VkUploadWallGuard.from_mapping(raw_guard)
+        if wall_guard.community_id != operation.project.community_id:
+            raise RuntimeError("VK upload wall guard belongs to another community")
+
+        readiness = VkUploadReadiness(
+            expected_title=str(payload["published_title"]),
+            minimum_duration_seconds=max(1, int(payload["source_duration_seconds"]) - 3),
+            allowed_types=("video",),
+            require_playable=True,
         )
+
+        def persist() -> None:
+            write_json_atomic(journal_path, record)
+
+        # Stages admitted above never retransmit media. The shared lifecycle
+        # performs exact remote-ID readback/wait and then bounded wall postflight.
+        execute_upload_operation(
+            record,
+            writer=self.writer,
+            community_id=operation.project.community_id,
+            title=str(payload["published_title"]),
+            description=str(payload["published_description"]),
+            media_path=None,
+            media_artifact=None,
+            readiness=readiness,
+            processing_timeout=int(payload.get("processing_timeout_seconds") or 3600),
+            wall_before_snapshot=wall_guard,
+            persist=persist,
+        )
+        persist()
+
+        if record.get("stage") != UploadStage.VERIFIED.value:
+            raise RuntimeError(
+                f"VK exact-ID reconciliation did not reach verified: {record.get('stage')}"
+            )
+        reservation = record.get("reservation")
+        verification = record.get("verification")
+        if not isinstance(reservation, Mapping) or not isinstance(verification, Mapping):
+            raise RuntimeError("Reconciled VK upload lacks exact verification evidence")
+        if verification.get("wall_delta_status") != "clean":
+            raise RuntimeError("Reconciled VK upload lacks clean bounded wall postflight")
+        return {
+            "source_video_id": str(payload["source_video_id"]),
+            "remote_id": str(reservation.get("remote_id")),
+            "owner_id": reservation.get("owner_id"),
+            "video_id": reservation.get("video_id"),
+            "upload_stage": record["stage"],
+            "wall_delta_status": verification.get("wall_delta_status"),
+            "reconciliation": "exact_remote_id_verified",
+        }
 
 
 __all__ = [
