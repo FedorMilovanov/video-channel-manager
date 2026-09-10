@@ -141,9 +141,7 @@ def test_send_step_bridges_only_a_valid_schedule_event_into_legacy_internal_gate
 def test_successor_ledger_durable_initialization_is_execution_gated_and_after_current_main_proof() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
 
-    local_start = workflow.index(
-        "      - name: Materialize missing successor ledger locally for read-only validation"
-    )
+    local_start = workflow.index("      - name: Materialize missing successor ledger locally for read-only validation")
     validate_start = workflow.index("      - name: Validate immutable queue and strict ledger")
     preview_start = workflow.index("      - name: Preview next publication")
     quality_start = workflow.index("      - name: Require current-main exact-SHA repository CI proof")
@@ -172,7 +170,7 @@ def test_successor_ledger_durable_initialization_is_execution_gated_and_after_cu
     local_step = workflow[local_start:validate_start]
     assert "steps.active_release.outputs.needs_ledger_initialization == 'true'" in local_step
     assert "persist-credentials: true" not in local_step
-    assert "git -C \"$STATE_DIR\" push" not in local_step
+    assert 'git -C "$STATE_DIR" push' not in local_step
 
     writer_step = workflow[writer_start:durable_start]
     assert "steps.active_release.outputs.needs_ledger_initialization == 'true'" in writer_step
@@ -183,7 +181,7 @@ def test_successor_ledger_durable_initialization_is_execution_gated_and_after_cu
     assert "steps.active_release.outputs.needs_ledger_initialization == 'true'" in durable_step
     assert "steps.intent.outputs.do_publish == 'true'" in durable_step
     assert "Initialize sealed Lordchrist successor ledger" in durable_step
-    assert "git -C \"$STATE_DIR\" push origin \"HEAD:$STATE_BRANCH\"" in durable_step
+    assert 'git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"' in durable_step
     assert "remote-successor-ledger.json" in durable_step
 
     before_quality = workflow[:quality_start]
