@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import re
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -21,6 +20,10 @@ from video_channel_manager.instagram.artifact import (
     InstagramArtifactCompatibilityError,
     bind_instagram_reel_probe,
 )
+from video_channel_manager.instagram.mp4_structure import (
+    InstagramMp4StructureError,
+    inspect_instagram_mp4_structure,
+)
 from video_channel_manager.instagram.production import (
     InstagramConfigurationError,
     InstagramIdentityMismatchError,
@@ -38,10 +41,20 @@ from video_channel_manager.instagram.production import (
     PublicationStatus,
     RequestValue,
 )
+from video_channel_manager.instagram.provider_diagnostics import (
+    describe_provider_http_error,
+    extract_resumable_phase_failure,
+    secret_safe_exception_detail,
+)
 from video_channel_manager.local_media.artifact import MediaProbe, MediaProbeEvidence
 from video_channel_manager.local_media.quality import MediaQualityError, probe_media
 from video_channel_manager.persistence.database import Database
 from video_channel_manager.persistence.models import Base, utc_now
+
+
+_RESUMABLE_UPLOAD_TIMEOUT = httpx.Timeout(connect=30.0, read=300.0, write=900.0, pool=30.0)
+_PHASE_ERROR_PREFIX = "Instagram resumable "
+_PROVIDER_ERROR_CODE_MARKER = "provider_error_code="
 
 
 class InstagramLocalPublishManifest(BaseModel):
@@ -133,6 +146,7 @@ class ResumableUploadState(StrEnum):
     UPLOAD_UNKNOWN = "upload_unknown"
     UPLOADED = "uploaded"
     PROVIDER_OBSERVED = "provider_observed"
+    PROVIDER_FAILED = "provider_failed"
 
 
 class InstagramResumableUploadEntity(Base):
@@ -283,6 +297,31 @@ class InstagramResumableUploadLedger:
             },
         )
 
+    def mark_provider_failed(
+        self,
+        publication_key: str,
+        *,
+        error_code: str | None,
+        error_message: str | None,
+    ) -> ResumableUploadSnapshot:
+        current = self.get(publication_key)
+        if current is None:
+            raise InstagramProductionError(f"Missing resumable upload child for {publication_key}")
+        if current.state == ResumableUploadState.PROVIDER_FAILED:
+            return current
+        return self._transition(
+            publication_key,
+            ResumableUploadState.PROVIDER_FAILED,
+            expected={
+                ResumableUploadState.UPLOAD_REQUESTED,
+                ResumableUploadState.UPLOAD_UNKNOWN,
+                ResumableUploadState.UPLOADED,
+                ResumableUploadState.PROVIDER_OBSERVED,
+            },
+            error_code=error_code,
+            error_message=error_message,
+        )
+
     def _transition(
         self,
         publication_key: str,
@@ -296,10 +335,12 @@ class InstagramResumableUploadLedger:
         now = utc_now()
         values: dict[str, object] = {
             "state": state.value,
-            "last_error_code": error_code,
-            "last_error_message": error_message,
             "updated_at": now,
         }
+        if error_code is not None:
+            values["last_error_code"] = error_code
+        if error_message is not None:
+            values["last_error_message"] = error_message
         if uploaded:
             values["uploaded_at"] = now
         with self.database.session() as session:
@@ -339,77 +380,6 @@ def _validated_upload_uri(value: str) -> str:
     return value
 
 
-_RESUMABLE_ERROR_DETAIL_MAX_CHARS = 512
-_RUPLOAD_URL_PATTERN = re.compile(r"https://rupload\.facebook\.com/[^\s\"'<>]+", re.IGNORECASE)
-_AUTH_VALUE_PATTERN = re.compile(r"(?i)\b(?:OAuth|Bearer)\s+[^\s,;]+")
-_ACCESS_TOKEN_PATTERN = re.compile(r"(?i)(access_token\s*[=:]\s*)[^\s&;,]+")
-
-
-def _safe_resumable_provider_detail(value: str, *, access_token: str, upload_uri: str) -> str:
-    detail = " ".join(value.split())
-    if access_token:
-        detail = detail.replace(access_token, "[REDACTED_TOKEN]")
-    if upload_uri:
-        detail = detail.replace(upload_uri, "[REDACTED_UPLOAD_URI]")
-    detail = _RUPLOAD_URL_PATTERN.sub("[REDACTED_UPLOAD_URI]", detail)
-    detail = _AUTH_VALUE_PATTERN.sub("[REDACTED_AUTHORIZATION]", detail)
-    detail = _ACCESS_TOKEN_PATTERN.sub(r"\1[REDACTED_TOKEN]", detail)
-    if len(detail) > _RESUMABLE_ERROR_DETAIL_MAX_CHARS:
-        detail = detail[: _RESUMABLE_ERROR_DETAIL_MAX_CHARS - 3] + "..."
-    return detail
-
-
-def _resumable_provider_error(
-    response: httpx.Response,
-    *,
-    access_token: str,
-    upload_uri: str,
-) -> InstagramProviderError:
-    payload: object | None
-    try:
-        payload = response.json()
-    except ValueError:
-        payload = None
-
-    error_code: str | None = None
-    detail = ""
-    if isinstance(payload, dict):
-        raw_error = payload.get("error")
-        if isinstance(raw_error, dict):
-            raw_code = raw_error.get("code")
-            if raw_code is not None:
-                error_code = str(raw_code)
-            raw_message = raw_error.get("message")
-            if isinstance(raw_message, str) and raw_message:
-                detail = raw_message
-            elif raw_error:
-                detail = json.dumps(raw_error, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-        elif isinstance(raw_error, str) and raw_error:
-            detail = raw_error
-        if not detail:
-            raw_message = payload.get("message")
-            if isinstance(raw_message, str) and raw_message:
-                detail = raw_message
-        if error_code is None:
-            raw_code = payload.get("code")
-            if raw_code is not None:
-                error_code = str(raw_code)
-        if not detail and payload:
-            detail = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-    if not detail:
-        detail = response.text
-
-    safe_detail = _safe_resumable_provider_detail(
-        detail,
-        access_token=access_token,
-        upload_uri=upload_uri,
-    )
-    message = f"Instagram resumable upload returned HTTP {response.status_code}"
-    if safe_detail:
-        message = f"{message}: {safe_detail}"
-    return InstagramProviderError(message, status_code=response.status_code, error_code=error_code)
-
-
 class InstagramResumableProviderClient(InstagramProviderClient):
     """Facebook Login resumable-upload transport, isolated from the public-URL transport."""
 
@@ -438,6 +408,25 @@ class InstagramResumableProviderClient(InstagramProviderClient):
             raise InstagramProviderError("Instagram resumable container response did not include an upload URI")
         return container_id, _validated_upload_uri(upload_uri)
 
+    def get_container_status(self, container_id: str) -> tuple[str, str | None]:
+        """Read top-level status plus Meta's resumable phase status in one provider GET."""
+
+        payload = self._request(
+            "GET",
+            container_id,
+            params={"fields": "id,status,status_code,video_status"},
+        )
+        raw_code = payload.get("status_code")
+        if not isinstance(raw_code, str) or not raw_code:
+            raise InstagramProviderError("Instagram container response did not include status_code")
+        raw_status = payload.get("status")
+        status_message = raw_status if isinstance(raw_status, str) else None
+
+        phase_failure = extract_resumable_phase_failure(payload)
+        if phase_failure is not None:
+            return "ERROR", phase_failure.durable_message()
+        return raw_code.upper(), status_message
+
     def upload_local_video(self, upload_uri: str, stream: BinaryIO, *, file_size: int) -> None:
         self._require_supported_mode()
         target = _validated_upload_uri(upload_uri)
@@ -451,23 +440,40 @@ class InstagramResumableProviderClient(InstagramProviderClient):
                     "file_size": str(file_size),
                 },
                 content=body,
+                timeout=_RESUMABLE_UPLOAD_TIMEOUT,
             )
         except (httpx.RequestError, OSError) as exc:
-            raise InstagramTransportError("Instagram resumable binary upload transport failure") from exc
+            detail = secret_safe_exception_detail(
+                exc,
+                secret=self.config.access_token,
+                upload_uri=target,
+            )
+            raise InstagramTransportError(
+                f"Instagram resumable binary upload transport failure ({type(exc).__name__}): {detail}"
+            ) from exc
+
+        if response.is_error:
+            message, error_code = describe_provider_http_error(
+                response,
+                secret=self.config.access_token,
+                upload_uri=target,
+                prefix="Instagram resumable upload",
+            )
+            raise InstagramProviderError(message, status_code=response.status_code, error_code=error_code)
 
         payload: object | None
         try:
             payload = response.json()
         except ValueError:
             payload = None
-        if response.is_error:
-            raise _resumable_provider_error(
-                response,
-                access_token=self.config.access_token,
-                upload_uri=target,
-            )
         if isinstance(payload, dict) and payload.get("success") is False:
-            raise InstagramProviderError("Instagram resumable upload response reported success=false")
+            message, error_code = describe_provider_http_error(
+                response,
+                secret=self.config.access_token,
+                upload_uri=target,
+                prefix="Instagram resumable upload",
+            )
+            raise InstagramProviderError(message, status_code=response.status_code, error_code=error_code)
 
 
 class InstagramLocalResumableService(InstagramProductionService):
@@ -530,6 +536,15 @@ class InstagramLocalResumableService(InstagramProductionService):
                     error_code="local_video_sha256_mismatch",
                     retryable=False,
                 )
+
+            try:
+                inspect_instagram_mp4_structure(candidate.resolve())
+            except InstagramMp4StructureError as exc:
+                raise InstagramMediaVerificationError(
+                    f"Instagram local video failed MP4 structure requirements: {exc}",
+                    error_code="local_video_mp4_structure_incompatible",
+                    retryable=False,
+                ) from exc
 
             try:
                 report = self._media_probe(candidate.resolve())
@@ -597,6 +612,42 @@ class InstagramLocalResumableService(InstagramProductionService):
             error_code="resumable_container_response_recovered",
             error_message="Recovered exact resumable container response from durable child ledger",
         )
+
+    def _record_terminal_upload_outcome(self, snapshot: PublicationSnapshot) -> None:
+        if snapshot.status != PublicationStatus.TERMINAL_FAILURE:
+            return
+        message = snapshot.last_error_message
+        if not message or not message.startswith(_PHASE_ERROR_PREFIX) or " phase reported error" not in message:
+            return
+        child = self.upload_ledger.get(snapshot.publication_key)
+        if child is None or child.state == ResumableUploadState.CONTAINER_RETURNED:
+            return
+
+        error_code = snapshot.last_error_code
+        if _PROVIDER_ERROR_CODE_MARKER in message:
+            raw_code = message.split(_PROVIDER_ERROR_CODE_MARKER, 1)[1].split(";", 1)[0].strip()
+            if raw_code:
+                error_code = raw_code
+        self.upload_ledger.mark_provider_failed(
+            snapshot.publication_key,
+            error_code=error_code,
+            error_message=message,
+        )
+
+    def reconcile(
+        self,
+        publication_key: str,
+        *,
+        published_media_id: str | None = None,
+        observed_container_id: str | None = None,
+    ) -> PublicationSnapshot:
+        snapshot = super().reconcile(
+            publication_key,
+            published_media_id=published_media_id,
+            observed_container_id=observed_container_id,
+        )
+        self._record_terminal_upload_outcome(snapshot)
+        return snapshot
 
     def publish_local(
         self,
@@ -728,6 +779,7 @@ class InstagramLocalResumableService(InstagramProductionService):
 
         if snapshot.status == PublicationStatus.PROCESSING:
             snapshot = self._wait_for_container(manifest.publication_key, container_id)
+            self._record_terminal_upload_outcome(snapshot)
         if snapshot.status != PublicationStatus.READY:
             return snapshot
 

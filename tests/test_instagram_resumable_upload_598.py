@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import io
+import struct
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -32,8 +33,18 @@ from video_channel_manager.persistence import Database
 ACCOUNT_ID = "17841400000000000"
 USERNAME = "example_creator"
 TOKEN = "issue-598-secret-token"
-VIDEO_BYTES = b"issue 598 exact reel bytes"
 UPLOAD_URI = "https://rupload.facebook.com/ig-api-upload/v26.0/container-598"
+
+
+def _box(box_type: bytes, payload: bytes = b"") -> bytes:
+    return struct.pack(">I4s", 8 + len(payload), box_type) + payload
+
+
+VIDEO_BYTES = (
+    _box(b"ftyp", b"isom\x00\x00\x02\x00isom")
+    + _box(b"moov", _box(b"trak", _box(b"tkhd")))
+    + _box(b"mdat", b"issue 598 exact reel bytes")
+)
 
 
 def _config() -> InstagramRuntimeConfig:
@@ -94,10 +105,17 @@ def test_binary_upload_passes_complete_bytes_and_only_meta_sample_headers(monkey
 
     with _client(config, unused_transport) as client:
 
-        def fake_post(url: str, *, headers: dict[str, str], content: bytes) -> httpx.Response:
+        def fake_post(
+            url: str,
+            *,
+            headers: dict[str, str],
+            content: bytes,
+            timeout: httpx.Timeout,
+        ) -> httpx.Response:
             observed["url"] = url
             observed["headers"] = dict(headers)
             observed["content"] = content
+            observed["timeout"] = timeout
             request = httpx.Request("POST", url, headers=headers, content=content)
             return httpx.Response(200, request=request, json={"success": True})
 
@@ -113,6 +131,11 @@ def test_binary_upload_passes_complete_bytes_and_only_meta_sample_headers(monkey
         "file_size": str(len(VIDEO_BYTES)),
     }
     assert "Content-Length" not in observed["headers"]
+    timeout = observed["timeout"]
+    assert isinstance(timeout, httpx.Timeout)
+    assert timeout.connect == 30.0
+    assert timeout.read == 300.0
+    assert timeout.write == 900.0
 
 
 def test_plain_text_http_400_detail_is_bounded_and_redacted() -> None:

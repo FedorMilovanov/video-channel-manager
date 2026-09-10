@@ -17,7 +17,11 @@ def test_schema_export_includes_instagram_reel_artifact_binding(tmp_path: Path) 
 
     assert properties["schema_name"]["const"] == "video-manager.instagram-reel-artifact-binding"
     assert properties["schema_version"]["default"] == "1.0"
-    assert properties["ruleset_version"]["default"] == "meta-instagram-reels-2026-09-v1"
+    assert properties["ruleset_version"]["default"] == "meta-instagram-reels-2026-09-v2"
+    assert properties["ruleset_version"]["enum"] == [
+        "meta-instagram-reels-2026-09-v1",
+        "meta-instagram-reels-2026-09-v2",
+    ]
     assert "media_sha256" in properties
     assert "media_size_bytes" in properties
     assert "media_content_type" in properties
