@@ -8,11 +8,13 @@ import typer
 from pydantic import ValidationError
 from rich.console import Console
 from rich.table import Table
+from sqlalchemy import inspect as sa_inspect
 
 from video_channel_manager.config import get_settings
 from video_channel_manager.instagram.local_resumable import (
     InstagramLocalResumableService,
     InstagramResumableUploadLedger,
+    ResumableUploadSnapshot,
     build_local_publish_manifest,
 )
 from video_channel_manager.instagram.production import (
@@ -93,7 +95,36 @@ def _open_local_service() -> tuple[InstagramLocalResumableService, Database]:
     return InstagramLocalResumableService(config, ledger, upload_ledger), database
 
 
-def _render_snapshot(snapshot: PublicationSnapshot) -> None:
+def _resumable_upload_snapshot(
+    database: Database,
+    publication_key: str,
+) -> ResumableUploadSnapshot | None:
+    """Return local-resumable child state when that migration/table and row exist."""
+
+    if not sa_inspect(database.engine).has_table("instagram_resumable_uploads"):
+        return None
+    return InstagramResumableUploadLedger(database).get(publication_key)
+
+
+def _open_reconciliation_service(
+    publication_key: str,
+) -> tuple[InstagramProductionService, Database]:
+    """Route reconciliation through the transport that owns the durable publication."""
+
+    settings = get_settings()
+    config = InstagramRuntimeConfig.from_settings(settings)
+    database = Database(settings.database_url)
+    ledger = InstagramPublicationLedger(database)
+    upload_ledger = InstagramResumableUploadLedger(database)
+    if _resumable_upload_snapshot(database, publication_key) is not None:
+        return InstagramLocalResumableService(config, ledger, upload_ledger), database
+    return InstagramProductionService(config, ledger), database
+
+
+def _render_snapshot(
+    snapshot: PublicationSnapshot,
+    resumable: ResumableUploadSnapshot | None = None,
+) -> None:
     table = Table(title=f"Instagram publication {snapshot.publication_key}")
     table.add_column("Field")
     table.add_column("Value")
@@ -108,6 +139,11 @@ def _render_snapshot(snapshot: PublicationSnapshot) -> None:
     table.add_row("Publish requested", str(snapshot.publish_requested_at or "-"))
     table.add_row("Published", str(snapshot.published_at or "-"))
     table.add_row("Last error", snapshot.last_error_message or "-")
+    if resumable is not None:
+        table.add_row("Upload state", resumable.state.value)
+        table.add_row("Upload attempts", str(resumable.attempt_count))
+        table.add_row("Upload error code", resumable.last_error_code or "-")
+        table.add_row("Upload error", resumable.last_error_message or "-")
     console.print(table)
 
 
@@ -174,13 +210,14 @@ def status(
         snapshot = InstagramPublicationLedger(database).get(publication_key)
         if snapshot is None:
             raise InstagramProductionError(f"Unknown publication key: {publication_key}")
+        resumable = _resumable_upload_snapshot(database, publication_key)
     except InstagramProductionError as exc:
         console.print(f"[red]Instagram status failed:[/red] {exc}")
         raise typer.Exit(code=2) from exc
     finally:
         if database is not None:
             database.close()
-    _render_snapshot(snapshot)
+    _render_snapshot(snapshot, resumable)
 
 
 @instagram_production_app.command("publish")
@@ -288,12 +325,13 @@ def reconcile(
     service: InstagramProductionService | None = None
     database: Database | None = None
     try:
-        service, database = _open_service()
+        service, database = _open_reconciliation_service(publication_key)
         snapshot = service.reconcile(
             publication_key,
             published_media_id=published_media_id,
             observed_container_id=observed_container_id,
         )
+        resumable = _resumable_upload_snapshot(database, publication_key)
     except InstagramProductionError as exc:
         console.print(f"[red]Instagram reconciliation failed:[/red] {exc}")
         raise typer.Exit(code=2) from exc
@@ -302,4 +340,4 @@ def reconcile(
             service.close()
         if database is not None:
             database.close()
-    _render_snapshot(snapshot)
+    _render_snapshot(snapshot, resumable)
