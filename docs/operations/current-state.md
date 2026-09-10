@@ -2,13 +2,10 @@
 Updated: 2026-09-10
 
 This file is the concise current operational interpretation. It does **not** authorize provider mutation. Historical issues, comments, pull requests, CI runs, credentials, releases and receipts are evidence only; they are never standing execution authority.
-
 For every new task, resolve fresh current `main` and the relevant durable state before acting. Do not treat an older SHA, issue body, checkpoint comment or workflow run as the live baseline when newer terminal evidence exists.
 
 ## Completion and authority model
-
 Repository implementation, artifact production and provider rollout are separate completion states.
-
 - Implementation completion does not itself authorize execution.
 - A completed artifact/provider outcome is not retroactively reopened only because stricter policy is introduced later.
 - An old successful rollout does not authorize a new mutation.
@@ -17,158 +14,111 @@ Repository implementation, artifact production and provider rollout are separate
 - No blind provider retry is authorized by this document.
 
 ## Repository source of truth
-
 Only `main` is a supported repository code/runtime execution baseline.
-
 `state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs. None is a code baseline. Ephemeral `work/`, `agent/`, `feature/` and `research/` refs become non-authoritative when their owning scope closes; preserve unique evidence before cleanup and never rewrite a durable state ref as branch hygiene.
 
 ### Current checkpoint
-
-The exact repository checkpoint used for this documentation sync is `main` `d78309ae2bd5f860eb3fbca8c90586612efd0f8a`. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
-
-Material 2026-09-06 through 2026-09-10 hardening now present on `main` includes:
-
-- PRs #532, #536, #538, #540 and #544: provider-outcome/recovery hardening and retirement of consumed or ambiguous executable one-offs without weakening no-replay semantics.
-- PRs #548 and #551: LordChrist verified-quote production moved to durable `morning` / `evening` slots, and scheduled dispatch rejects slot-less envelopes before Telegram HTTP.
-- PR #550 plus completed issue #531: the frozen 138-ref DELETE manifest was physically deleted with exact-SHA checks; force-moving refs was not used as a substitute for deletion.
-- PR #555: provider-critical CODEOWNERS coverage expanded; this remains review routing, not server-side protection.
-- PR #557: reviewed 60-card LordChrist successor quote corpus and provider-inert staged release.
-- PR #559: sealed successor source-integrity amendment v2, preserving historical v1 reproducibility while moving current source authority to an explicit amendment-bound release.
-- PR #556: evidence-backed historical/biographical LordChrist editorial lane with 69 reviewed URLs, 52 accepted A/B+ sources and a sealed nine-post provider-inert cycle.
-- PR #583 / issue #582: LordChrist verified-quote production replaced the fragile two-hour scheduler freshness gate with bounded same-Moscow-day leases and added a release-bound automatic predecessor-to-successor handoff that remains fail-closed on incomplete, mismatched or ambiguous durable state.
+The exact repository checkpoint used for this documentation sync is `main` `46cc305f7b25e2f340fb945f01ee51b01cb711e3`. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
+Recent hardening now present on `main` includes:
+- LordChrist quote production: durable morning/evening slots, bounded same-Moscow-day leases, predecessor-to-successor handoff, reviewed 60-card successor corpus, source-integrity amendment, and successor-ledger initialization moved behind publication eligibility/current-main/target gates (#548, #551, #557, #559, #583, #590).
+- LordChrist historical production: evidence-backed editorial foundation plus the separate archival-v3 recurring release, 16 media exhibits for eight recurring posts, reader-safe rendering, durable canary/editorial approval and pre-exhaustion successor guard (#556, #591).
+- Instagram: guarded production publisher, Reel compatibility boundary, local resumable MP4 upload with 1 GB boundary/durable child ledger, exact non-secret Legendary Poet target binding, CODEOWNERS coverage and credential-expiry diagnostics (#569, #573, #585, #588, #592, #593).
+- Repository/runtime hardening: provider-outcome/recovery cleanup, completed branch-hygiene deletion manifest, and scheduled exact-main quality proof that waits up to 420 seconds while re-proving `main` and fails closed on timeout/movement (#532, #536, #538, #540, #544, #550, #555, #595).
 
 ## Telegram / LordChrist verified quotes
-
-Issues #541, #543 and #582 are closed as **completed** after the slot-aware runtime, transport hardening, reviewed successor-corpus work and production handoff merged through PRs #548, #551, #557, #559 and #583. Issue #168 is closed as repository implementation complete; implementation completion does not itself authorize execution.
-
+Issues #541, #543, #582 and #589 are closed as **completed** after the slot-aware runtime, transport hardening, reviewed successor-corpus work, production handoff and state-initialization ordering fixes. Issue #168 is closed as repository implementation complete; implementation completion does not itself authorize execution.
 The historical research-v2 canary ambiguity is no longer a legacy blocker. Issue #286 / PR #287 introduced the exact `retired_no_replay` disposition. For unrelated ambiguity, every other `dispatching` or `may_exist` effect remains fail-closed, and the retired August research release itself cannot resume, retry, or authorize a successor.
-
 The authoritative production schedule remains schema v3:
-
 - `morning`: 09:17 `Europe/Moscow`, every day;
 - `evening`: 21:17 `Europe/Moscow`, Tuesday / Friday / Sunday;
 - one verified publication maximum per slot and two maximum per eligible day;
-- the morning event has a bounded 720-minute same-day lease and expires at the 21:17 editorial boundary;
-- the evening event has a bounded 160-minute lease and cannot cross the Moscow calendar-day boundary;
+- morning has a 720-minute same-day lease ending at the 21:17 editorial boundary;
+- evening has a 160-minute lease that cannot cross the Moscow calendar-day boundary;
 - `backfill_policy=none`;
 - scheduled workflow reruns are forbidden;
 - a same-day manual publication closes scheduled slots for that Moscow date.
-
-Production binds `scheduled_slot` into durable ledger state and the dispatch envelope, persists intent before `sendMessage`, uses one provider attempt and zero blind mutation retries, and fails closed on ambiguous outcomes. Scheduler delay inside the reviewed lease is not treated as catch-up or backfill; next-day execution remains impossible.
-
-The runtime keeps the immutable verified 30-post predecessor queue authoritative until exact terminal completion and cross-track provider-effect safety are proven. Incomplete predecessor state, digest mismatch, partial successor state or ambiguous provider effects block handoff. Closing implementation issues does not authorize an ad-hoc send, replay, edit/delete/pin or MTProto action.
-
-The successor corpus remains a separate reviewed contract with exactly 60 cards across 12 authors and 12 reviewed theological themes: 42 public-domain primary-source excerpts and 18 modern short quotations. Modern exact fragments and visible translated quotations remain capped at 25 words.
-
-Current sealed successor release identities after PR #559:
-
+Production binds `scheduled_slot` into durable ledger state and the dispatch envelope, persists intent before `sendMessage`, uses one provider attempt and zero blind mutation retries, and fails closed on ambiguous outcomes. Scheduler delay inside the reviewed lease is not catch-up/backfill; next-day execution remains impossible.
+Scheduled exact-main quality proof may wait up to 420 seconds for a successful run proving the exact current `main` SHA. Every poll re-proves `main`; timeout or branch movement fails closed. Manual/non-scheduled invocations retain zero-wait behavior unless an explicit reviewed wait is supplied.
+The immutable verified 30-post predecessor remains authoritative until exact terminal completion and cross-track provider-effect safety are proven. Incomplete predecessor state, digest mismatch, partial successor state or ambiguous provider effects block handoff.
+When the predecessor becomes terminal, preview/preflight may materialize a missing successor ledger only in the local checkout. Durable successor-ledger initialization is allowed only after publication eligibility, exact-current-main quality proof and provider-target preflight and only on a publishing invocation.
+The successor corpus remains a reviewed 60-card contract across 12 authors and 12 theological themes: 42 public-domain primary-source excerpts and 18 modern short quotations. Modern exact fragments and visible translated quotations remain capped at 25 words.
+Current sealed successor identities:
 - base candidate Git blob SHA-1: `da9d9c812772510ddcfe14cc5f69a6771e2dbc4c`;
 - translation ledger SHA-256: `61eec8558cc62ea709c4c2aa835528fa7d5fa519ec624568e2327762434f5e59`;
 - integrity amendment SHA-256: `b4d0346a2353c6e309c5003eb5a0c13b8dc60094e8f865e6d25da364e5783549`;
 - normalized effective corpus SHA-256: `6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873`;
 - release id: `lordchrist-successor-quotes-v1-integrity-v2`.
-
-The immutable sealed successor release itself remains `activation_policy=after_predecessor_queue_complete`, `release_state=staged_provider_inert`, `provider_writes_authorized=false`. PR #583 adds the separate reviewed `successor-activation-v1.json` envelope for owning issue #582 with `release_state=armed_after_predecessor_terminal` and `provider_writes_authorized=true`, bound to the exact predecessor/successor digests, Telegram target identity and presentation policy. The runtime may select that envelope only after predecessor terminality and cross-track provider-effect safety are proven, and then uses the successor's separate durable ledger. This envelope is not permission for a premature or manual provider send and does not weaken the repository-wide requirement for fresh durable-state and execution-gate verification.
+The sealed successor release itself remains `activation_policy=after_predecessor_queue_complete`, `release_state=staged_provider_inert`, `provider_writes_authorized=false`. The separate reviewed activation envelope is bound to exact predecessor/successor digests, Telegram target and presentation policy and may be selected only after predecessor terminality and provider-effect safety. It is not permission for a premature/manual send, replay, edit/delete/pin or MTProto action.
 
 ## Telegram / LordChrist historical rich editorial
-
-Issue #552 is closed as **completed** through PR #556. The merged provider-inert lane contains a broad discovery record, 52 accepted A/B+ sources from 69 reviewed URLs, exact evidence/theology bindings, nine independently sealed posts over three Monday/Wednesday/Saturday weeks, deterministic source/post/cycle digests, and fail-closed prose-to-claim, direct-quote-fragment, registry-identity, URL and repository-path validation.
-
-The historical editorial release remains non-live: `provider_writes_authorized=false`, `live_eligible=false`, `backfill_policy=none`. Its image plans remain transport-inert until exact direct media bytes/MIME/SHA-256 and rights evidence are separately pinned and reviewed. PR #556 and issue #552 authorize **0 provider writes** and do not create live scheduling/execution authority.
-
-The earlier rich successor canary `lordchrist-rich-sermons-survive-century` remains historical completion evidence as Telegram message `1484`; its one-shot workflows are retired and do not authorize another rich publication.
+Issue #552 is completed for the evidence-backed foundation: 52 accepted A/B+ sources from 69 reviewed URLs with exact evidence/theology and deterministic source/post/cycle bindings.
+Issue #561 is closed as **completed** through PR #591. Canonical v2 remains preserved. Only actual GitHub Actions `schedule` execution bridges the exact legacy v2 release identity to archival-v3 under `GITHUB_ACTIONS=true` and `GITHUB_EVENT_NAME=schedule`; manual, PR and local paths do not silently activate it.
+Archival-v3 contains eight remaining publications bound to 16 exact Git/media exhibits. Reader-facing rendering suppresses internal acquisition/evidence captions and claim-boundary prose; exact media bytes are re-proved before the one-shot rich send path; `replenishment_guard_remaining=1` prevents dispatch of the final pending post without an exact durable successor-cycle binding.
+Canary Telegram message `1516` is durable `published` / `provider_effect=verified`. Editorial approval was recorded provider-free on `state/lordchrist-telegram` commit `1e0ce0e47bbb66f80cb6406a45937b52bcffe5a2`, with verified/approved timestamps `2026-09-10T11:42:41+00:00`.
+The reviewed Monday/Wednesday/Saturday 19:17 `Europe/Moscow` archival-v3 cadence is armed only through normal exact-release/media/target/slot/quality/state/cross-track/replenishment gates. `backfill_policy=none` and one-shot/no-blind-replay semantics remain in force.
+Issue closure and canary approval are not general Telegram authority. They do not authorize an ad-hoc historical send, alternate trigger, backfill, replay, edit/delete/pin or bypass of scheduled release/state gates. Earlier rich canary message `1484` remains historical completion evidence only.
 
 ## LordChrist YouTube Shorts -> Telegram native video
-
-Repository implementation is complete and hardened through PRs #502, #504, #505, #515 and #516. The canonical provider-inert operator path remains `lordchrist_shorts_artifacts build-wave`, using stable `lordchrist-short-<youtube_video_id>` identities, exact owner snapshot/media bindings and atomic artifact derivation.
-
-Issue #503 is closed as **not planned / externally blocked**, not as artifact-complete. The last admissible materialized inventory reached 279 duration-eligible records: 2 exact Shorts plus 277 explicit candidates, with `unresolved_non_candidate=0`; that owner snapshot later expired under the 48-hour freshness contract. Fresh connected-Drive review on 2026-09-07 found no newer owner AuditPackage, and this environment has no local OAuth token runtime or owner Takeout/local masters.
-
-Do not substitute public/third-party downloads, stale-snapshot reinterpretation or replacement OAuth credentials. Reopen this scope or create a fresh successor only when a new <=48h owner AuditPackage and/or exact owner media exists. No Telegram publication, Story, MTProto action, YouTube mutation, release authorization or execution authority is created by the closed tracker.
-
+Repository implementation is complete and hardened through PRs #502, #504, #505, #515 and #516. The canonical provider-inert path remains `lordchrist_shorts_artifacts build-wave`, using stable `lordchrist-short-<youtube_video_id>` identities and exact owner snapshot/media bindings.
+Issue #503 is closed as **not planned / externally blocked**, not artifact-complete. The last admissible materialized inventory reached 279 duration-eligible records; that owner snapshot later expired under the 48-hour freshness contract and no newer owner AuditPackage/local masters were available.
+Do not substitute public/third-party downloads, stale-snapshot reinterpretation or replacement OAuth credentials. Reopen only when a new <=48h owner AuditPackage and/or exact owner media exists. No Telegram/Story/MTProto/YouTube mutation authority is created by the closed tracker.
 Canonical runbook: [`lordchrist-shorts-feed.md`](lordchrist-shorts-feed.md).
 
 ## Telegram / Svodka
-
 Issue #170 is closed as repository pipeline implementation complete. The historical approval bound release `svodka-pilot-2026-08`; its profile used `provider_writes_authorized=true` only for the reviewed rollout gates, and the durable ledger now exists on `state/svodka-telegram`. Those facts are historical evidence, not standing authority.
-
-Issue #235 is completed with verified successor publications including Telegram messages `28` and `29`; the intervening v3 failed-no-effect identity is immutable and was not retried under the same release identity.
-
-The original 14-entry `svodka-pilot-2026-08` ledger is terminal historical no-replay evidence. Consumed reconciliation/bootstrap/canary executors were retired where appropriate. No new Svodka Telegram mutation is authorized by this state.
+Issue #235 is completed with verified successor publications including Telegram messages `28` and `29`; the intervening v3 failed-no-effect identity is immutable and was not retried.
+The original 14-entry ledger is terminal no-replay evidence. Consumed one-shot executors were retired. No new Svodka Telegram mutation is authorized by this state.
 
 ## VK / Milovi Cake / Issue #323
-
-Issue #323 is closed. The marathon accepted all 12 allowlisted Milovi Cake sources as completed native VK Clip uploads with durable logical wall mappings. Older checkpoints saying `OPEN`, `8/12`, `upload_in_progress` or `pending` are historical evidence only.
-
-Durable invariants remain: do not duplicate a verified Clip because of transient projection; aggregate omission is not exact disappearance proof; ambiguous provider responses require exact reconciliation; retired legacy finalizers must not return as second mutation authorities.
-
-Canonical historical analysis: [`2026-08-14-milovi-issue-323-interim-postmortem.md`](2026-08-14-milovi-issue-323-interim-postmortem.md). Reusable architecture target: [`vk-native-clip-golden-path.md`](vk-native-clip-golden-path.md).
+Issue #323 is closed. All 12 allowlisted Milovi Cake sources completed native VK Clip uploads with durable logical wall mappings. Older `OPEN`, `8/12`, `upload_in_progress` or `pending` checkpoints are historical only.
+Do not duplicate a verified Clip because of transient projection; aggregate omission is not exact disappearance proof; ambiguous provider responses require exact reconciliation; retired finalizers must not return as second writers.
+Canonical analysis: [`2026-08-14-milovi-issue-323-interim-postmortem.md`](2026-08-14-milovi-issue-323-interim-postmortem.md). Architecture target: [`vk-native-clip-golden-path.md`](vk-native-clip-golden-path.md).
 
 ## Telegram / Milovi Cake / Issue #353
-
-The permanent Milovi architecture is a single feed control plane. `.github/workflows/milovi-telegram-feed-publisher.yml` remains the only supported Milovi Telegram provider writer and owns `state/milovi-cake-telegram` through the reviewed generic prepare/send/apply contract.
-
+`.github/workflows/milovi-telegram-feed-publisher.yml` remains the only supported Milovi Telegram writer and owns `state/milovi-cake-telegram` through the reviewed generic prepare/send/apply contract.
 `milovi-feed-20260819-001`, `milovi-feed-20260820-001`, `milovi-feed-20260820-002`, `milovi-feed-20260821-001` and `milovi-feed-20260906-001` are all historical identities now. Their release/execution windows are expired evidence, not current authority. Issue #353 has no standing Telegram provider authority. Any future publication requires a fresh identity plus current review, provider-free state initialization and separate fresh execution authority.
-
-The native-video artifact lane remains complete at `16 / 16` accepted Telegram-ready MP4/H.264 outputs on content-addressed evidence ref `agent/milovi-video-accepted-73c578eff825`, digest `sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae`.
-
-Issue #353 is closed as **not planned for further work under the historical tracker**. Engineering/control-plane work is complete; no Dzen/acquisition experiment is being falsely claimed as executed. Future growth, Dzen, paid placement, invite-link/admin work or publication operations require a new exact scope with real attribution/outcome data and explicit operation-specific provider/admin authorization.
-
+The native-video artifact lane remains complete at `16 / 16` accepted Telegram-ready MP4/H.264 outputs on evidence ref `agent/milovi-video-accepted-73c578eff825`, digest `sha256:73c578eff82563300c463361bd3998caeba8a083ce0de4ed29cc271617dfd6ae`.
+Issue #353 is closed as **not planned for further work under the historical tracker**. Future growth/Dzen/paid placement/invite-link/admin/publication work requires a new exact scope and explicit authorization.
 Canonical runbook: [`milovi-telegram-feed-control-plane.md`](milovi-telegram-feed-control-plane.md).
 
 ## Instagram / Legendary Poet and Lord God
-
-Issue #492 is closed as repository implementation complete for the earlier provider-inert launch/content/factory scope. PR #569 under issue #568 provides the production-publishing authority: explicit Instagram/Facebook login mode and Graph version, exact account preflight, default-off double write gate, durable SQL publication ledger, idempotent publication-key/content binding, compare-and-set mutation claims, fail-closed ambiguous-result reconciliation, and exact public-media trust/integrity verification before the first provider POST.
-
-Issue #571 / PR #573 adds the missing provider-inert Reel media-compatibility boundary on top of that publisher. Canonical `MediaArtifactEvidence` now carries FPS plus video/audio bitrate telemetry, and `InstagramReelArtifactBinding` binds the exact reviewed local bytes to the current Reel profile before hosting/provider mutation. Hard container/codec/sample-rate/FPS/dimension/video-bitrate/duration/file-size constraints fail closed; recommended 9:16 and the documented 128 kbps audio target remain advisories rather than invented hard maxima. The versioned binding is exported through the canonical `video-manager schema export` path.
-
-The operator handoff is one-way and exact: reviewed local artifact -> compatibility binding -> same immutable bytes hosted at a reviewed HTTPS URL -> `InstagramPublishManifest` with matching SHA-256, byte size and content type -> read-only preflight/provider-inert plan -> separately authorized production publish. The existing #569 publisher remains the only Graph mutation authority and re-verifies the hosted public bytes before the first provider POST; #571 does not add a second writer.
-
-This repository state still contains **no production Instagram account binding/token and no live canary evidence**. Provider publications remain 0. Repository implementation completion does not mean provider rollout complete and does not authorize a live Reel. Live activation requires fresh exact target/credentials/permissions, a reviewed immutable binding/manifest/media object, read-only preflight, current durable state and a separately authorized canary invocation.
-
-Canonical runbook: [`instagram-production-publishing.md`](instagram-production-publishing.md).
+Issue #492 is closed as repository implementation complete for the earlier provider-inert launch/content/factory scope. PR #569 provides the production publisher: explicit login/Graph configuration, exact identity preflight, default-off double write gate, durable SQL ledger, idempotent publication-key/content binding, CAS claims, fail-closed reconciliation and public-media integrity verification before provider POST. Provider publications remain 0.
+Issue #571 / PR #573 adds canonical Reel media compatibility via `InstagramReelArtifactBinding`, binding exact reviewed bytes to hard container/codec/sample-rate/FPS/dimension/video-bitrate/duration/file-size constraints before hosting/provider mutation.
+PR #585 adds direct local-MP4 resumable upload without a second publication authority: canonical Reel proof before durable planning/provider mutation, hard 1 GB service/manifest boundary, durable child-state, no blind replay, exact-byte re-proof before binary upload, then the existing processing/publish state machine.
+The canonical non-secret Legendary Poet target from PR #592 is project `legendary-poet`, Instagram account `17841435926122104`, username `the.legendary.poet`, Facebook Page `1299632476567433`, login mode `facebook`, Graph host `https://graph.facebook.com`. Credentials authenticate this target; they do not redefine it.
+PR #593 classifies Meta OAuth code `190` during read-only preflight as invalid/expired credential, suppresses the raw provider message for that class, keeps writes disabled and directs credential replacement outside Git before exact identity/quota recheck.
+The repository contains the target binding and guarded transports, but no valid current access-token value and no accepted fresh post-rotation preflight/live Instagram canary evidence. Issues #577 and #581 remain open on that external boundary. Green CI, credential rotation or read-only preflight is not standing execution authority; the first canary still requires one immutable reviewed Reel/manifest, current durable state and separate operation-specific authorization.
+The handoff remains one-way: reviewed local artifact -> compatibility binding -> reviewed HTTPS object or guarded local resumable transport -> exact manifest/state binding -> read-only preflight -> separately authorized production publish. No blind retry is allowed from ambiguous provider state.
+Canonical runbooks: [`instagram-production-publishing.md`](instagram-production-publishing.md) and [`instagram-facebook-token-lifecycle.md`](instagram-facebook-token-lifecycle.md).
 
 ## YouTube / Legendary Poet / «Чёрный человек»
-
-The historical authorized rollout is complete. Public video `x-puy27S2qs` remains the collision guard for that exact project/channel/media identity. Processing, public visibility, custom thumbnail, playlist membership and top-level comment were verified. The current `main` includes the guarded YouTube release executor; implementation completion does not itself authorize execution. Issue #154 is closed as **completed**. The historical provenance gap predates the later quality-master binding rule and is not required rework. Do not regenerate or reupload the album solely to satisfy policy introduced after the published bytes were produced.
-
-No future YouTube upload, metadata edit, thumbnail change, playlist mutation, visibility change, comment mutation, deletion or replacement is authorized by this state.
+The historical authorized rollout is complete. Public video `x-puy27S2qs` remains the collision guard. Processing, public visibility, thumbnail, playlist membership and top-level comment were verified. The current `main` includes the guarded YouTube release executor; implementation completion does not itself authorize execution. Issue #154 is closed as **completed**. The historical provenance gap predates the later quality-master binding rule and is not required rework. Do not regenerate or reupload the album solely to satisfy policy introduced after the published bytes were produced.
+No future YouTube upload, metadata/thumbnail/playlist/visibility/comment mutation, deletion or replacement is authorized by this state.
 
 ## Telegram runtime / supply chain
-
-The minimal Telegram runtime remains exact-version and SHA-256 hash locked with pip `--require-hashes`. Production/minimal installs keep the hash-locked transaction isolated from test-only dependencies. Any lock refresh is one coherent supply-chain change and must pass isolated install, `pip check`, guarded provider-free CLI smoke and dependency audit before acceptance.
-
+The minimal Telegram runtime remains exact-version and SHA-256 hash locked with pip `--require-hashes`. Production/minimal installs keep this transaction isolated from test-only dependencies. Any lock refresh must pass isolated install, `pip check`, provider-free guarded CLI smoke and dependency audit.
 One durable state/concurrency namespace has one write owner at a time. Parallel agents must not create competing provider writers against the same state namespace.
 
 ## Local MP3 and Resi DASH
-
-Local MP3 support remains `local_only_read_only_intake_and_manifest`: inspect, probe, hash, tag inventory and deterministic manifests. It does not authorize ID3 rewrite, rename/transcode, remote upload, metadata mutation, playlist changes or wall publication.
-
-Resi remains the repository-owned `watch -> sample -> explicit handoff` flow. The watcher never auto-dispatches a multi-gigabyte FULL download; language-sensitive work samples sermon speech before full handoff. The retained `<TITLE> - FULL.mp4` master goes to canonical Windows Downloads (`C:\Users\Fedor\Downloads`); generated handoff/watcher control files and exact-trim outputs remain under repository `operator-output` unless explicitly redirected. This capability has provider effect `impossible` and does not bypass DRM/access controls or infer rights.
-
+Local MP3 remains `local_only_read_only_intake_and_manifest`: inspect/probe/hash/tag inventory and deterministic manifests only; no rewrite, rename/transcode, remote upload or provider mutation.
+Resi remains `watch -> sample -> explicit handoff`. The watcher never auto-dispatches a multi-gigabyte FULL download; the retained `<TITLE> - FULL.mp4` master goes to canonical Windows Downloads (`C:\Users\Fedor\Downloads`); generated handoff/watcher control files and exact-trim outputs remain under repository `operator-output` unless explicitly redirected. Provider effect remains `impossible`.
 Canonical runbooks: [`resi-dash-local-handoff.md`](resi-dash-local-handoff.md) and [`resi-grace-russian-live.md`](resi-grace-russian-live.md).
 
 ## Repository branch hygiene / Issue #531
-
-Issue #531 is closed as **completed**. PR #550's frozen role ledger partitioned the audited 146-ref baseline into 8 KEEP / 138 DELETE candidates, and the exact 138-ref DELETE manifest was physically removed through genuine delete-ref operations with exact-SHA rereads and zero open-PR collisions.
-
-The stable post-merge inventory, excluding the transient branch used for this documentation update, contains **9 refs total**: `main`, the three durable state refs, the content-addressed Milovi accepted-video evidence ref, and four retained historical/research/agent refs. This newer count does not reopen the completed frozen #531 cleanup and is not permission for prefix-based deletion.
+Issue #531 is closed as **completed**. PR #550's frozen baseline produced 138 DELETE candidates, physically removed with exact-SHA rereads and zero open-PR collisions.
+A previously recorded post-cleanup ref count is not a durable invariant. Any later hygiene pass must resolve fresh complete refs and classify them by durable-state role, open ownership and unique evidence. Never delete/rewrite a ref merely by prefix/age or treat a durable state ref as disposable debt.
 
 ## GitHub governance / Issue #443
-
-Issue #443 is closed as **completed**. Administration-capable owner-token readback on current `main` proves the source policy in full: required status checks use `strict=true`; the exact eight required GitHub Actions contexts remain present; pull requests are required before merge; administrator enforcement is enabled; conversation resolution is required; force pushes and branch deletion are disabled; branch lock is disabled; and no ordinary bypass allowance is configured. Connected branch-summary readback independently reports `protected=true` for `main`, required-status enforcement level `everyone`, and the same eight required GitHub Actions checks bound to GitHub Actions App ID `15368`.
-
-All three exact durable state refs are also protected at their unchanged SHAs. Administration-capable readback proves the intended state-safe profile on each: no PR/check gate, no actor restriction, administrator enforcement enabled, force pushes and deletion disabled, lock disabled, and intended ordinary fast-forward publisher/recovery writes preserved. The repository ruleset count `0` remains unchanged, so classic branch protection is the active server-side enforcement surface. Dependency Graph itself is policy-enabled for this public repository. SBOM REST export is verified unavailable through both documented generation surfaces at the recorded probe points; that scoped result must not be collapsed into a blanket `UNVERIFIED` item.
-
-This governance closure is evidence, not standing authority. Future protection changes require a fresh administration-capable audit; repository YAML, CODEOWNERS or CI self-checks are not substitutes for server-side policy.
+Issue #443 is closed as **completed**. Fresh administration-capable evidence at closure proved `protected=true`, required-status enforcement level `everyone`, the exact eight required GitHub Actions checks bound to GitHub Actions App ID `15368`, strict checks, PR-before-merge, administrator enforcement, conversation resolution, force-push/deletion disabled and no ordinary bypass. The three durable state refs use the intended protected state-safe profile.
+The repository ruleset count `0` remains unchanged, Dependency Graph itself is policy-enabled for this public repository, and SBOM REST export is verified unavailable through both documented generation surfaces; that scoped result must not be collapsed into a blanket `UNVERIFIED` item.
+This closure is evidence, not standing authority. Future protection changes require fresh administration-capable audit; repository YAML/CODEOWNERS/CI self-checks are not substitutes for server-side policy.
 
 ## Next safe work
-
-1. Repository governance tracker #443 is complete; no current GitHub-governance remediation remains. Re-audit only after a future policy change or contradictory fresh evidence.
-2. Reopen #503 or create a successor only when a fresh <=48h owner YouTube AuditPackage and/or exact owner media is available; do not substitute public downloads or stale evidence.
-3. Any future Milovi growth/Dzen/provider/admin experiment needs a new exact scope and real attribution/outcome data; closed #353 is not standing authority.
-4. Any live rollout of the completed #552 historical editorial lane needs a fresh release identity, media proof where applicable, exact review/canary and separate explicit execution authorization.
-5. Instagram repository implementation now has one canonical artifact-to-publisher path across #569 and #573. Any live rollout starts from fresh exact credentials/identity, an immutable compatibility-bound remote media object, read-only preflight and one separately authorized canary; no repository merge is standing provider authority.
-6. For any provider-visible work, start from fresh current `main`, fresh durable state, exact target identity, immutable operation identity and a new explicit owning authorization scope.
+1. Reopen #503 only with a fresh <=48h owner AuditPackage and/or exact owner media.
+2. Future Milovi/Dzen/provider/admin experiments require new exact scope and real attribution/outcome data.
+3. LordChrist historical #561 is complete through #591; archival-v3 may progress only through exact scheduled release/state gates, and later cycles require exact successor binding before the final pending post.
+4. Instagram #577/#581 remain externally blocked until a fresh valid credential proves exact read-only identity/quota preflight; the first live canary still requires a frozen exact manifest/media/caption/feed choice and explicit operation-specific execution authority.
+5. Issue #594 is a separate Legendary Poet YouTube -> VK transfer scope; do not merge it conceptually with Instagram or LordChrist and do not reuse historical missing counts as authority.
+6. For provider-visible work, start from fresh current `main`, fresh durable state, exact target identity, immutable operation identity and a new explicit owning authorization scope.
 
 Nothing in this document is authorization for a provider mutation.
