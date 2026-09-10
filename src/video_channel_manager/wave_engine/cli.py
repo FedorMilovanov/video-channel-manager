@@ -187,16 +187,10 @@ def video_prepare(
         f"project={summary['project_key']} candidates={len(summary['candidate_ids'])} "
         f"canary={summary['canary_id']} provider_writes=0"
     )
-    console.print(
-        f"Canary request: {summary['canary']['request_path']} "
-        f"sha256={summary['canary']['request_sha256']}"
-    )
+    console.print(f"Canary request: {summary['canary']['request_path']} sha256={summary['canary']['request_sha256']}")
     batch = summary.get("batch")
     if isinstance(batch, dict):
-        console.print(
-            f"Batch request: {batch['request_path']} "
-            f"sha256={batch['request_sha256']}"
-        )
+        console.print(f"Batch request: {batch['request_path']} sha256={batch['request_sha256']}")
 
 
 @wave_app.command("preview")
