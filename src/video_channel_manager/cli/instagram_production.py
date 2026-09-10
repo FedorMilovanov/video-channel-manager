@@ -34,12 +34,25 @@ instagram_production_app = typer.Typer(
     help="Production-capable Instagram publishing with explicit write gates and durable reconciliation.",
 )
 
+_META_REEL_MAX_BYTES = 1_000_000_000
+
 
 def _read_manifest(path: Path) -> InstagramPublishManifest:
     try:
         return InstagramPublishManifest.model_validate_json(path.read_text(encoding="utf-8-sig"))
     except (OSError, UnicodeError, ValidationError) as exc:
         raise InstagramProductionError(f"Invalid Instagram publish manifest {path}: {exc}") from exc
+
+
+def _enforce_local_reel_size(path: Path) -> None:
+    try:
+        size_bytes = path.expanduser().stat().st_size
+    except OSError:
+        return
+    if size_bytes > _META_REEL_MAX_BYTES:
+        raise InstagramProductionError(
+            f"Instagram local video is {size_bytes} bytes; Meta Reels accepts at most {_META_REEL_MAX_BYTES} bytes"
+        )
 
 
 def _open_service() -> tuple[InstagramProductionService, Database]:
@@ -206,6 +219,7 @@ def publish_local(
     service: InstagramLocalResumableService | None = None
     database: Database | None = None
     try:
+        _enforce_local_reel_size(video_path)
         service, database = _open_local_service()
         manifest = build_local_publish_manifest(
             video_path,
