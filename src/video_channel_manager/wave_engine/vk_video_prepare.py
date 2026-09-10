@@ -498,9 +498,7 @@ def prepare_vk_video_wave(
         )
         shared_artifacts.extend((media_path, media_manifest_path))
         if acquisition_result_path is not None:
-            shared_artifacts.extend(
-                (acquisition_result_path, acquisition_directory / f"{source_id}.final-path.txt")
-            )
+            shared_artifacts.extend((acquisition_result_path, acquisition_directory / f"{source_id}.final-path.txt"))
         media_summary.append(
             {
                 "source_video_id": source_id,
