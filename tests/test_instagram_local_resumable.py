@@ -540,7 +540,7 @@ def test_resumable_client_preserves_debug_info_and_meta_request_ids_without_toke
     assert "body=" in message
     assert "request-123" in message
     assert "trace-456" in message
-    assert "[REDACTED]" in message
+    assert "[REDACTED_TOKEN]" in message
     assert TOKEN not in message
 
 
