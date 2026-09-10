@@ -136,3 +136,36 @@ Before claiming work from any non-state branch:
 7. do not compete with Issue #594 / PR #604 while that lane remains active.
 
 This audit authorizes no provider mutation and no branch deletion/force-update.
+
+
+## Post-audit retirement actions
+
+The point-in-time classifications above were followed by repository-only ref cleanup.
+No provider or durable-state mutation occurred.
+
+### Zero-ahead stale refs
+
+Issue #609 fast-forwarded the audited zero-ahead stale refs to exact
+`main@254d90c8b0b72774dcb798e5b176cacb83288561` with `force=false` after
+fresh open-PR ownership checks. A follow-up applied the same proof to six inert alias
+refs (`do-not-use`, `final-accidental`, `oops6`,
+`probe/lordchrist-historical-v3-final-sources-561`, `tmp-noop`,
+`zzz-test-ignore`). No unique commits were discarded.
+
+### Semantically superseded divergent LordChrist refs
+
+Issue #612 aligned exactly three divergent refs to that same current-main commit only
+after semantic supersession and open-PR ownership were re-proved. Their retired tips
+are recorded here so provenance remains addressable even though the branch names now
+point to main:
+
+- `agent/lordchrist-historical-live-561` retired tip
+  `6ce072e9b1a3d23941dfaaecd78a419584ace1b0`;
+- `feature/lordchrist-successor-quote-corpus-v1-20260906` retired tip
+  `0fab4b04d23c8ef7d218fddd711fc3b597f3cb09`;
+- `fix/lordchrist-quote-handoff-576` retired tip
+  `9c50d9643442984770ac5c4f1f24f27cc815d23d`.
+
+The retained archival-v3 provenance ref, Milovi accepted-video evidence ref,
+protected `state/*` refs, active Instagram lane, and active VK lane were not
+modified.
