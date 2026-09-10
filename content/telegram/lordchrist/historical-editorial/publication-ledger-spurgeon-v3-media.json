@@ -8,7 +8,7 @@
   "channel_username": "@lordchrist",
   "cycle_id": "history-cycle-spurgeon-v3-media-canary-2026-09-08",
   "canary_publication_id": "lordchrist-history-spurgeon-down-grade-1887-v3",
-  "canary_verified_at_utc": null,
+  "canary_verified_at_utc": "2026-09-10T11:42:41+00:00",
   "successor_cycle_binding": null,
   "entries": {
     "lordchrist-history-spurgeon-down-grade-1887-v3": {
@@ -30,6 +30,6 @@
     }
   },
   "canary_transport_verified_at_utc": "2026-09-08T18:20:49.312774+00:00",
-  "canary_editorial_approved_at_utc": null,
-  "canary_editorial_approved_by": null
+  "canary_editorial_approved_at_utc": "2026-09-10T11:42:41+00:00",
+  "canary_editorial_approved_by": "FedorMilovanov"
 }
