@@ -119,6 +119,7 @@ class VkNativeVideoUploadAdapter:
             "published_description",
             "media_manifest_path",
             "media_manifest_sha256",
+            "media_artifact_manifest_sha256",
         )
         for field in required_text:
             value = payload.get(field)
@@ -227,6 +228,8 @@ class VkNativeVideoUploadAdapter:
             raise OperationRejectedError("Media artifact source channel does not match Wave operation")
         if artifact.source.source_id != str(payload["source_video_id"]):
             raise OperationRejectedError("Media artifact source ID does not match Wave operation")
+        if artifact.manifest_sha256 != str(payload["media_artifact_manifest_sha256"]):
+            raise OperationRejectedError("Media artifact internal digest does not match Wave operation")
 
         rendered = render_vk_video_description(str(payload["published_description"]))
         if rendered.text != str(payload["published_description"]) or rendered.has_errors:
