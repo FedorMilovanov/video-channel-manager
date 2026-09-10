@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from typing import cast
 
 import httpx
 
-_MAX_DIAGNOSTIC_BODY_CHARS = 4_000
+_MAX_PROVIDER_DETAIL_CHARS = 512
+_RUPLOAD_URL_PATTERN = re.compile(r"https://rupload\.facebook\.com/[^\s\"'<>]+", re.IGNORECASE)
+_AUTH_VALUE_PATTERN = re.compile(r"(?i)\b(?:OAuth|Bearer)\s+[^\s,;]+")
+_ACCESS_TOKEN_PATTERN = re.compile(r"(?i)(access_token\s*[=:]\s*)[^\s&;,]+")
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,25 +98,32 @@ def extract_resumable_phase_failure(payload: dict[str, object]) -> ResumablePhas
     return _phase_failure("processing", raw_video_status.get("processing_phase"))
 
 
-def redact_secret(value: str, secret: str) -> str:
-    if not secret:
+def _secret_safe_detail(value: str, *, secret: str, upload_uri: str | None = None) -> str:
+    detail = " ".join(value.split())
+    if secret:
+        detail = detail.replace(secret, "[REDACTED_TOKEN]")
+    if upload_uri:
+        detail = detail.replace(upload_uri, "[REDACTED_UPLOAD_URI]")
+    detail = _RUPLOAD_URL_PATTERN.sub("[REDACTED_UPLOAD_URI]", detail)
+    detail = _AUTH_VALUE_PATTERN.sub("[REDACTED_AUTHORIZATION]", detail)
+    detail = _ACCESS_TOKEN_PATTERN.sub(r"\1[REDACTED_TOKEN]", detail)
+    return detail
+
+
+def secret_safe_exception_detail(
+    exc: BaseException,
+    *,
+    secret: str,
+    upload_uri: str | None = None,
+) -> str:
+    detail = str(exc).strip() or type(exc).__name__
+    return _secret_safe_detail(detail, secret=secret, upload_uri=upload_uri)
+
+
+def _bounded_detail(value: str) -> str:
+    if len(value) <= _MAX_PROVIDER_DETAIL_CHARS:
         return value
-    return value.replace(secret, "[REDACTED]")
-
-
-def secret_safe_exception_detail(exc: BaseException, *, secret: str) -> str:
-    detail = str(exc).strip()
-    if not detail:
-        detail = type(exc).__name__
-    return redact_secret(detail, secret)
-
-
-def _response_body(response: httpx.Response, *, secret: str) -> str:
-    raw = response.text
-    safe = redact_secret(raw, secret)
-    if len(safe) > _MAX_DIAGNOSTIC_BODY_CHARS:
-        safe = safe[:_MAX_DIAGNOSTIC_BODY_CHARS] + "...[truncated]"
-    return safe
+    return value[: _MAX_PROVIDER_DETAIL_CHARS - 3] + "..."
 
 
 def _json_payload(response: httpx.Response) -> dict[str, object] | None:
@@ -127,65 +138,81 @@ def describe_provider_http_error(
     response: httpx.Response,
     *,
     secret: str,
+    upload_uri: str,
     prefix: str,
 ) -> tuple[str, str | None]:
-    """Preserve useful Meta diagnostics while guaranteeing the configured token is redacted."""
+    """Preserve bounded Meta diagnostics without leaking credentials or the one-time upload URI."""
 
     payload = _json_payload(response)
     error_code: str | None = None
-    summary: str | None = None
+    summaries: list[str] = []
 
     if payload is not None:
         raw_error = payload.get("error")
         if isinstance(raw_error, dict):
-            raw_message = raw_error.get("message")
-            if isinstance(raw_message, str) and raw_message.strip():
-                summary = raw_message.strip()
             raw_code = raw_error.get("code")
             if raw_code is not None:
                 error_code = str(raw_code)
             raw_subcode = raw_error.get("error_subcode")
+            raw_message = raw_error.get("message")
+            raw_user_message = raw_error.get("error_user_msg")
+            if isinstance(raw_message, str) and raw_message.strip():
+                summaries.append(raw_message.strip())
+            elif isinstance(raw_user_message, str) and raw_user_message.strip():
+                summaries.append(raw_user_message.strip())
             if raw_subcode is not None:
-                suffix = f"subcode={raw_subcode}"
-                summary = f"{summary}; {suffix}" if summary else suffix
+                summaries.append(f"subcode={raw_subcode}")
+        elif isinstance(raw_error, str) and raw_error.strip():
+            summaries.append(raw_error.strip())
+
+        if error_code is None:
+            raw_code = payload.get("code")
+            if raw_code is not None:
+                error_code = str(raw_code)
 
         raw_debug = payload.get("debug_info")
         if isinstance(raw_debug, dict):
-            raw_message = raw_debug.get("message")
             raw_type = raw_debug.get("type")
-            debug_parts: list[str] = []
+            raw_message = raw_debug.get("message")
             if raw_type is not None:
-                debug_parts.append(f"type={raw_type}")
+                summaries.append(f"type={raw_type}")
                 if error_code is None:
                     error_code = str(raw_type)
             if isinstance(raw_message, str) and raw_message.strip():
-                debug_parts.append(raw_message.strip())
-            if debug_parts:
-                debug_text = "; ".join(debug_parts)
-                summary = f"{summary}; {debug_text}" if summary else debug_text
+                summaries.append(raw_message.strip())
 
-        if summary is None:
+        if not summaries:
             raw_message = payload.get("message")
             if isinstance(raw_message, str) and raw_message.strip():
-                summary = raw_message.strip()
+                summaries.append(raw_message.strip())
 
-    summary = redact_secret(summary or f"{prefix} returned HTTP {response.status_code}", secret)
-    parts = [summary, f"HTTP {response.status_code}"]
+    parts = [f"{prefix} returned HTTP {response.status_code}"]
+    if summaries:
+        safe_summary = _secret_safe_detail("; ".join(summaries), secret=secret, upload_uri=upload_uri)
+        if safe_summary:
+            parts.append(_bounded_detail(safe_summary))
 
-    body = _response_body(response, secret=secret)
-    if body:
-        # Compact JSON produces a durable, operator-readable diagnostic without newline noise.
-        if payload is not None:
-            body = redact_secret(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), secret)
-            if len(body) > _MAX_DIAGNOSTIC_BODY_CHARS:
-                body = body[:_MAX_DIAGNOSTIC_BODY_CHARS] + "...[truncated]"
-        parts.append(f"body={body}")
+    if payload is not None:
+        raw_body = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    else:
+        raw_body = response.text
+    safe_body = _bounded_detail(_secret_safe_detail(raw_body, secret=secret, upload_uri=upload_uri))
+    if safe_body:
+        parts.append(f"body={safe_body}")
 
     request_id = response.headers.get("x-fb-request-id")
     trace_id = response.headers.get("x-fb-trace-id")
     if request_id:
-        parts.append(f"x-fb-request-id={redact_secret(request_id, secret)}")
+        parts.append(f"x-fb-request-id={_secret_safe_detail(request_id, secret=secret, upload_uri=upload_uri)}")
     if trace_id:
-        parts.append(f"x-fb-trace-id={redact_secret(trace_id, secret)}")
+        parts.append(f"x-fb-trace-id={_secret_safe_detail(trace_id, secret=secret, upload_uri=upload_uri)}")
 
     return "; ".join(parts), error_code
+
+
+__all__ = [
+    "ResumablePhaseFailure",
+    "describe_provider_http_error",
+    "extract_resumable_phase_failure",
+    "secret_safe_exception_detail",
+]
