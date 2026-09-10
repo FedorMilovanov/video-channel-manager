@@ -22,8 +22,7 @@ from video_channel_manager.telegram_historical_production import (
 
 ROOT = Path(__file__).resolve().parents[1]
 RELEASE_PATH = (
-    ROOT
-    / "content/telegram/lordchrist/historical-editorial/v1/production-release-2026-09-cycle-02-v3-archival.json"
+    ROOT / "content/telegram/lordchrist/historical-editorial/v1/production-release-2026-09-cycle-02-v3-archival.json"
 )
 WORKFLOW_PATH = ROOT / ".github/workflows/lordchrist-telegram-poster.yml"
 MOSCOW = ZoneInfo("Europe/Moscow")
@@ -245,7 +244,7 @@ def test_archival_rollout_reuses_existing_single_writer_without_new_workflow() -
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
     assert workflow.count("group: lordchrist-telegram-publisher") == 1
     assert "historical-rich:" in workflow
-    assert "production-release-2026-09-cycle-02.json" in workflow
+    assert "production-release-2026-09-cycle-02-v3-archival.json" in workflow
     assert "telegram_historical_production prepare" in workflow
     assert "Persist historical intent before sendRichMessage" in workflow
     assert "Archive exact historical provider outcome before durable result mutation" in workflow
