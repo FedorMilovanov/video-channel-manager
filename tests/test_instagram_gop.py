@@ -164,9 +164,7 @@ def test_hevc_cra_i_picture_is_not_accepted_as_closed_gop_idr(
     monkeypatch.setattr(
         subprocess,
         "run",
-        lambda *args, **kwargs: _completed(
-            [{"pict_type": "I", "pkt_pos": 8, "pkt_size": len(cra)}]
-        ),
+        lambda *args, **kwargs: _completed([{"pict_type": "I", "pkt_pos": 8, "pkt_size": len(cra)}]),
     )
 
     with pytest.raises(InstagramClosedGopError) as caught:
