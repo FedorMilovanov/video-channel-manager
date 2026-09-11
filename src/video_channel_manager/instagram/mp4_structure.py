@@ -119,9 +119,6 @@ def _find_edit_lists(stream: BinaryIO, moov: Mp4Box) -> tuple[str, ...]:
     return tuple(paths)
 
 
-
-
-
 _VIDEO_SAMPLE_ENTRY_CONFIG: dict[str, tuple[str, str]] = {
     "avc1": ("h264", "avcC"),
     "avc3": ("h264", "avcC"),
