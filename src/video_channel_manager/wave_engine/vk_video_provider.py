@@ -18,7 +18,7 @@ from video_channel_manager.platforms.vk.upload_lifecycle import (
     ensure_upload_record,
 )
 from video_channel_manager.platforms.vk.upload_media import execute_upload_operation
-from video_channel_manager.platforms.vk.writer import VkVideoWriter
+from video_channel_manager.platforms.vk.wall import VkWallWriter
 from video_channel_manager.wave_engine.canonical import (
     file_sha256,
     resolve_repository_relative_path,
@@ -55,7 +55,7 @@ class VkNativeVideoUploadAdapter:
         repository_root: Path,
         journal_directory: Path,
         account_alias: str = VK_VIDEO_DEFAULT_ACCOUNT_ALIAS,
-        writer: VkVideoWriter | None = None,
+        writer: VkWallWriter | None = None,
     ) -> None:
         self.repository_root = repository_root.resolve()
         self.journal_directory = journal_directory.resolve()
@@ -72,7 +72,7 @@ class VkNativeVideoUploadAdapter:
         account = self.store.get_account(self.account_alias)
         self._community_ids = {int(item.community_id) for item in account.communities}
 
-        self.writer = writer or VkVideoWriter(
+        self.writer = writer or VkWallWriter(
             token_store=self.store,
             account_alias=self.account_alias,
             api_version=settings.vk_api_version,
@@ -268,7 +268,6 @@ class VkNativeVideoUploadAdapter:
                 "owner_id": reservation.get("owner_id"),
                 "video_id": reservation.get("video_id"),
                 "upload_stage": stage.value,
-                "wall_delta_status": verification.get("wall_delta_status"),
                 "reconciliation": "already_verified",
             }
 
@@ -295,8 +294,8 @@ class VkNativeVideoUploadAdapter:
         def persist() -> None:
             write_json_atomic(journal_path, record)
 
-        # Stages admitted above never retransmit media. The shared lifecycle
-        # performs exact remote-ID readback/wait and then bounded wall postflight.
+        # Stages admitted above never retransmit media. Reconciliation uses only
+        # the exact journaled VK video ID and does not consult wall state.
         execute_upload_operation(
             record,
             writer=self.writer,
