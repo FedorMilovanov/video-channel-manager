@@ -153,6 +153,41 @@ def provider_http_retryable(response: httpx.Response) -> bool | None:
     return None
 
 
+def describe_resumable_upload_request(
+    request: httpx.Request | None,
+    *,
+    body_length: int,
+    expected_file_size: int,
+) -> str:
+    """Return a non-secret fingerprint of the exact resumable upload request shape."""
+
+    if body_length < 0 or expected_file_size < 0:
+        raise ValueError("resumable upload request lengths cannot be negative")
+
+    method = request.method.upper() if request is not None else "POST"
+    host = request.url.host if request is not None else "rupload.facebook.com"
+    if request is None:
+        content_length = None
+        file_size = str(expected_file_size)
+        offset = "0"
+        content_type = None
+    else:
+        content_length = request.headers.get("content-length")
+        file_size = request.headers.get("file_size")
+        offset = request.headers.get("offset")
+        content_type = request.headers.get("content-type")
+
+    return (
+        f"request_method={method}; "
+        f"request_host={host or '-'}; "
+        f"request_body_length={body_length}; "
+        f"request_content_length={content_length or '<absent>'}; "
+        f"request_file_size={file_size or '<absent>'}; "
+        f"request_offset={offset or '<absent>'}; "
+        f"request_content_type={content_type or '<absent>'}"
+    )
+
+
 def describe_provider_http_error(
     response: httpx.Response,
     *,
@@ -221,10 +256,18 @@ def describe_provider_http_error(
 
     request_id = response.headers.get("x-fb-request-id")
     trace_id = response.headers.get("x-fb-trace-id")
+    proxy_status = response.headers.get("proxy-status")
+    response_content_type = response.headers.get("content-type")
     if request_id:
         parts.append(f"x-fb-request-id={_secret_safe_detail(request_id, secret=secret, upload_uri=upload_uri)}")
     if trace_id:
         parts.append(f"x-fb-trace-id={_secret_safe_detail(trace_id, secret=secret, upload_uri=upload_uri)}")
+    if proxy_status:
+        safe_proxy_status = _secret_safe_detail(proxy_status, secret=secret, upload_uri=upload_uri)
+        parts.append(f"proxy-status={_bounded_detail(safe_proxy_status)}")
+    if response_content_type:
+        safe_content_type = _secret_safe_detail(response_content_type, secret=secret, upload_uri=upload_uri)
+        parts.append(f"response-content-type={_bounded_detail(safe_content_type)}")
 
     return "; ".join(parts), error_code
 
@@ -232,6 +275,7 @@ def describe_provider_http_error(
 __all__ = [
     "ResumablePhaseFailure",
     "describe_provider_http_error",
+    "describe_resumable_upload_request",
     "extract_resumable_phase_failure",
     "provider_http_retryable",
     "secret_safe_exception_detail",
