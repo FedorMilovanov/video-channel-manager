@@ -230,6 +230,7 @@ def _remaining_marker_issues(text: str) -> list[VkTextIssue]:
 def render_vk_video_description(
     source_description: str,
     *,
+    source_video_id: str | None = None,
     site_url: str = _DEFAULT_SITE_URL,
     brand_line: str = _DEFAULT_BRAND_LINE,
 ) -> VkDescriptionRender:
@@ -254,6 +255,15 @@ def render_vk_video_description(
         footer = "\n".join(part for part in (normalized_brand, f"🌐 {normalized_site}") if part)
         text = f"{text}\n\n{footer}" if text else footer
         footer_added = True
+
+    normalized_source_id = str(source_video_id or "").strip()
+    if normalized_source_id:
+        if any(character.isspace() for character in normalized_source_id):
+            raise ValueError("source_video_id must be a normalized token")
+        source_url = f"https://www.youtube.com/watch?v={normalized_source_id}"
+        if source_url not in text:
+            marker = f"Источник видео: {source_url}"
+            text = f"{text}\n\n{marker}" if text else marker
 
     issues = tuple(_remaining_marker_issues(text))
     return VkDescriptionRender(

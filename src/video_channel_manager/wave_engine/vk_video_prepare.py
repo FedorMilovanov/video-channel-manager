@@ -246,7 +246,7 @@ def _build_scope(
             path=_repo_relative(repository_root, path),
             sha256=file_sha256(path),
         )
-        for path in sorted({*artifact_paths, operations_path}, key=lambda item: _repo_relative(repository_root, item))
+        for path in sorted(set(artifact_paths), key=lambda item: _repo_relative(repository_root, item))
     )
     source = WaveSourceEvidence.build(
         project=project,
@@ -338,7 +338,7 @@ def prepare_vk_video_wave(
     *,
     project_key: str,
     source_audit_path: Path,
-    target_audit_path: Path,
+    target_audit_path: Path | None,
     candidate_ids: Sequence[str],
     canary_id: str,
     repository_root: Path,
@@ -359,8 +359,17 @@ def prepare_vk_video_wave(
     if processing_timeout_seconds <= 0:
         raise VkVideoPreparationError("processing_timeout_seconds must be positive")
 
+    normalized_candidates = tuple(dict.fromkeys(value.strip() for value in candidate_ids if value.strip()))
+    if len(normalized_candidates) != 1 or len(candidate_ids) != 1:
+        raise VkVideoPreparationError(
+            "VK native video preparation is one-source-per-run; pass exactly one --candidate-id"
+        )
+    source_id = normalized_candidates[0]
+    if canary_id != source_id:
+        raise VkVideoPreparationError("canary_id must equal the single candidate ID")
+
     source = _load_audit(source_audit_path.resolve())
-    target = _load_audit(target_audit_path.resolve())
+    target = _load_audit(target_audit_path.resolve()) if target_audit_path is not None else None
 
     expected_channel = str(_single_project_value(PROJECT_CHANNEL_IDS.get(project_key, ()), field="YouTube channel"))
     expected_community = int(_single_project_value(PROJECT_VK_COMMUNITY_IDS.get(project_key, ()), field="VK community"))
@@ -370,37 +379,30 @@ def prepare_vk_video_wave(
         raise VkVideoPreparationError(
             f"Source channel mismatch: expected {expected_channel}, got {source.channel.ref.channel_id}"
         )
-    if target.channel.ref.platform is not PlatformName.VK:
-        raise VkVideoPreparationError("Target AuditPackage must be VK")
-    if int(target.channel.ref.channel_id) != expected_community:
-        raise VkVideoPreparationError(
-            f"Target community mismatch: expected {expected_community}, got {target.channel.ref.channel_id}"
-        )
+    if target is not None:
+        if target.channel.ref.platform is not PlatformName.VK:
+            raise VkVideoPreparationError("Target AuditPackage must be VK")
+        if int(target.channel.ref.channel_id) != expected_community:
+            raise VkVideoPreparationError(
+                f"Target community mismatch: expected {expected_community}, got {target.channel.ref.channel_id}"
+            )
 
-    normalized_candidates = tuple(dict.fromkeys(value.strip() for value in candidate_ids if value.strip()))
-    if not normalized_candidates:
-        raise VkVideoPreparationError("At least one exact candidate ID is required")
-    if len(normalized_candidates) != len(candidate_ids):
-        raise VkVideoPreparationError("Candidate IDs must be nonblank and unique")
-    if canary_id not in normalized_candidates:
-        raise VkVideoPreparationError("Canary ID must be one of the exact candidate IDs")
-
-    comparison = compare_audit_packages(source, target, project_key=project_key)
-    missing_ids = {item.ref.remote_id for item in comparison.missing_on_target}
+    comparison = compare_audit_packages(source, target, project_key=project_key) if target is not None else None
     source_by_id = {item.ref.remote_id: item for item in source.videos}
-    conflict_source_ids = {ref.remote_id for conflict in comparison.conflicts for ref in conflict.source_refs}
-    for source_id in normalized_candidates:
-        video = source_by_id.get(source_id)
-        if video is None:
-            raise VkVideoPreparationError(f"Candidate is absent from YouTube snapshot: {source_id}")
+    video = source_by_id.get(source_id)
+    if video is None:
+        raise VkVideoPreparationError(f"Candidate is absent from YouTube snapshot: {source_id}")
+    if comparison is not None:
+        missing_ids = {item.ref.remote_id for item in comparison.missing_on_target}
+        conflict_source_ids = {ref.remote_id for conflict in comparison.conflicts for ref in conflict.source_refs}
         if source_id not in missing_ids:
             raise VkVideoPreparationError(f"Candidate is not proof-backed missing on target: {source_id}")
         if source_id in conflict_source_ids:
             raise VkVideoPreparationError(f"Candidate participates in an ambiguous/conflicting match: {source_id}")
-        if video.privacy_status != "public":
-            raise VkVideoPreparationError(f"Candidate is not public: {source_id}")
-        if video.duration_seconds is None or video.duration_seconds <= 180:
-            raise VkVideoPreparationError(f"Candidate is not long-form (>180s): {source_id}")
+    if video.privacy_status != "public":
+        raise VkVideoPreparationError(f"Candidate is not public: {source_id}")
+    if video.duration_seconds is None or video.duration_seconds <= 180:
+        raise VkVideoPreparationError(f"Candidate is not long-form (>180s): {source_id}")
 
     output.mkdir(parents=True, exist_ok=False)
     evidence_directory = output / "evidence"
@@ -411,25 +413,36 @@ def prepare_vk_video_wave(
         directory.mkdir(parents=True, exist_ok=True)
 
     source_copy = _copy_exact(source_audit_path.resolve(), evidence_directory / "youtube-source.json")
-    target_copy = _copy_exact(target_audit_path.resolve(), evidence_directory / "vk-target.json")
-    comparison_path = evidence_directory / "comparison.json"
-    write_json_atomic(comparison_path, comparison.model_dump(mode="json"))
+    target_copy: Path | None = None
+    comparison_path: Path | None = None
+    if target_audit_path is not None and target is not None and comparison is not None:
+        target_copy = _copy_exact(target_audit_path.resolve(), evidence_directory / "vk-target.json")
+        comparison_path = evidence_directory / "comparison.json"
+        write_json_atomic(comparison_path, comparison.model_dump(mode="json"))
 
     reuse_by_id: dict[str, Path] = {}
     for raw_manifest in reuse_media_manifests:
         artifact = load_media_artifact_manifest(raw_manifest.resolve())
-        source_id = artifact.source.source_id
-        if source_id in reuse_by_id:
-            raise VkVideoPreparationError(f"Duplicate reusable media manifest for {source_id}")
-        reuse_by_id[source_id] = raw_manifest.resolve()
+        reusable_source_id = artifact.source.source_id
+        if reusable_source_id != source_id:
+            raise VkVideoPreparationError(
+                f"Reusable media manifest belongs to {reusable_source_id}, expected {source_id}"
+            )
+        if reusable_source_id in reuse_by_id:
+            raise VkVideoPreparationError(f"Duplicate reusable media manifest for {reusable_source_id}")
+        reuse_by_id[reusable_source_id] = raw_manifest.resolve()
 
     executable = shutil.which(yt_dlp) or (str(Path(yt_dlp).resolve()) if Path(yt_dlp).is_file() else None)
-    need_download = any(source_id not in reuse_by_id for source_id in normalized_candidates)
+    need_download = source_id not in reuse_by_id
     if need_download and executable is None:
         raise VkVideoPreparationError(f"yt-dlp executable not found: {yt_dlp}")
     tool_version = _yt_dlp_version(executable) if need_download and executable is not None else ""
 
-    shared_artifacts: list[Path] = [source_copy, target_copy, comparison_path]
+    shared_artifacts: list[Path] = [source_copy]
+    if target_copy is not None:
+        shared_artifacts.append(target_copy)
+    if comparison_path is not None:
+        shared_artifacts.append(comparison_path)
     specs_by_id: dict[str, WaveOperationSpec] = {}
     media_summary: list[dict[str, Any]] = []
 
@@ -462,7 +475,7 @@ def prepare_vk_video_wave(
             )
 
         artifact = load_media_artifact_manifest(media_manifest_path)
-        rendered = render_vk_video_description(video.description)
+        rendered = render_vk_video_description(video.description, source_video_id=source_id)
         if rendered.has_errors:
             raise VkVideoPreparationError(
                 f"VK description has blocking issues for {source_id}: "
@@ -476,7 +489,7 @@ def prepare_vk_video_wave(
             "source_video_id": source_id,
             "source_channel_id": expected_channel,
             "youtube_snapshot_id": str(source.snapshot_id),
-            "target_snapshot_id": str(target.snapshot_id),
+            "target_snapshot_id": str(target.snapshot_id) if target is not None else None,
             "source_title": video.title,
             "source_duration_seconds": duration_seconds,
             "privacy_status": video.privacy_status,
@@ -522,8 +535,8 @@ def prepare_vk_video_wave(
             "schema_version": 1,
             "project_key": project_key,
             "youtube_snapshot_id": str(source.snapshot_id),
-            "vk_snapshot_id": str(target.snapshot_id),
-            "comparison_conflict_count": comparison.conflict_count,
+            "vk_snapshot_id": str(target.snapshot_id) if target is not None else None,
+            "comparison_conflict_count": comparison.conflict_count if comparison is not None else None,
             "selected_candidate_ids": list(normalized_candidates),
             "canary_id": canary_id,
             "media": media_summary,
@@ -537,30 +550,16 @@ def prepare_vk_video_wave(
         community_id=expected_community,
         owner_id=-expected_community,
     )
-    canary_specs = (specs_by_id[canary_id],)
-    batch_ids = tuple(source_id for source_id in normalized_candidates if source_id != canary_id)
-    batch_specs = tuple(specs_by_id[source_id] for source_id in batch_ids)
-
     canary = _build_scope(
         repository_root=root,
         scope_directory=output / "canary",
         project=project,
         artifact_paths=shared_artifacts,
-        specs=canary_specs,
+        specs=(specs_by_id[source_id],),
         account_alias=account_alias,
     )
-    batch = (
-        _build_scope(
-            repository_root=root,
-            scope_directory=output / "batch",
-            project=project,
-            artifact_paths=shared_artifacts,
-            specs=batch_specs,
-            account_alias=account_alias,
-        )
-        if batch_specs
-        else None
-    )
+    batch_ids: tuple[str, ...] = ()
+    batch = None
     summary = {
         "schema_name": "video-manager.vk-video-wave-preparation",
         "schema_version": 1,
@@ -568,7 +567,7 @@ def prepare_vk_video_wave(
         "community_id": expected_community,
         "owner_id": -expected_community,
         "youtube_snapshot_id": str(source.snapshot_id),
-        "vk_snapshot_id": str(target.snapshot_id),
+        "vk_snapshot_id": str(target.snapshot_id) if target is not None else None,
         "candidate_ids": list(normalized_candidates),
         "canary_id": canary_id,
         "batch_ids": list(batch_ids),

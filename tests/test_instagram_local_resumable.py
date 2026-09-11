@@ -21,6 +21,7 @@ from video_channel_manager.instagram.local_resumable import (
     InstagramResumableUploadLedger,
     ResumableUploadState,
     build_local_publish_manifest,
+    verify_local_reel,
 )
 from video_channel_manager.instagram.production import (
     InstagramMediaVerificationError,
@@ -177,6 +178,46 @@ def test_local_manifest_binds_bytes_but_not_filesystem_path(tmp_path: Path) -> N
     assert first_manifest.media_sha256 == second_manifest.media_sha256
     assert "first.mp4" not in first_manifest.model_dump_json()
     assert "second.mp4" not in second_manifest.model_dump_json()
+
+
+def test_provider_inert_local_verifier_returns_exact_v3_evidence(tmp_path: Path) -> None:
+    video = tmp_path / "verified.mp4"
+    _write_video(video)
+
+    evidence = verify_local_reel(
+        video,
+        media_probe=_compatible_probe,
+        closed_gop_probe=_closed_gop_probe,
+    )
+
+    assert evidence.media_sha256 == f"sha256:{hashlib.sha256(VIDEO_BYTES).hexdigest()}"
+    assert evidence.media_size_bytes == len(VIDEO_BYTES)
+    assert evidence.structure.moov_before_mdat is True
+    assert evidence.structure.edit_list_paths == ()
+    assert evidence.probe.video_codec == "h264"
+    assert evidence.probe.pixel_format == "yuv420p"
+    assert evidence.probe.field_order == "progressive"
+    assert evidence.binding.ruleset_version == "meta-instagram-reels-2026-09-v3"
+    assert evidence.binding.closed_gop_verified is True
+    assert evidence.closed_gop.closed_gop is True
+    assert evidence.closed_gop.intra_frame_count == 2
+    assert evidence.closed_gop.idr_frame_count == 2
+
+
+def test_provider_inert_local_verifier_uses_same_frozen_identity_failures(tmp_path: Path) -> None:
+    video = tmp_path / "identity.mp4"
+    _write_video(video)
+
+    with pytest.raises(InstagramMediaVerificationError) as caught:
+        verify_local_reel(
+            video,
+            expected_sha256="sha256:" + "0" * 64,
+            media_probe=_compatible_probe,
+            closed_gop_probe=_closed_gop_probe,
+        )
+
+    assert caught.value.error_code == "local_video_sha256_mismatch"
+    assert "SHA-256 mismatch" in str(caught.value)
 
 
 def test_local_manifest_rejects_media_above_one_gigabyte() -> None:
