@@ -18,8 +18,7 @@ from video_channel_manager.platforms.vk.upload_lifecycle import (
     ensure_upload_record,
 )
 from video_channel_manager.platforms.vk.upload_media import execute_upload_operation
-from video_channel_manager.platforms.vk.wall import VkWallWriter
-from video_channel_manager.platforms.vk.wall_safety import VkUploadWallGuard
+from video_channel_manager.platforms.vk.writer import VkVideoWriter
 from video_channel_manager.wave_engine.canonical import (
     file_sha256,
     resolve_repository_relative_path,
@@ -45,9 +44,9 @@ def _minimum_duration_seconds(source_duration_seconds: int) -> int:
 class VkNativeVideoUploadAdapter:
     """Reviewed Wave adapter for ordinary native VK Video uploads.
 
-    The adapter owns no alternate provider primitives. It delegates reservation,
-    binary transfer, exact readback, media authority, and wall-isolation proof to
-    the shared VK writer/upload lifecycle.
+    The adapter delegates reservation, binary transfer, exact-ID readback, and
+    media authority to the shared VK writer/upload lifecycle. Wall publication is
+    a separate workflow and is not a prerequisite for a native video upload.
     """
 
     def __init__(
@@ -56,7 +55,7 @@ class VkNativeVideoUploadAdapter:
         repository_root: Path,
         journal_directory: Path,
         account_alias: str = VK_VIDEO_DEFAULT_ACCOUNT_ALIAS,
-        writer: VkWallWriter | None = None,
+        writer: VkVideoWriter | None = None,
     ) -> None:
         self.repository_root = repository_root.resolve()
         self.journal_directory = journal_directory.resolve()
@@ -73,13 +72,12 @@ class VkNativeVideoUploadAdapter:
         account = self.store.get_account(self.account_alias)
         self._community_ids = {int(item.community_id) for item in account.communities}
 
-        self.writer = writer or VkWallWriter(
+        self.writer = writer or VkVideoWriter(
             token_store=self.store,
             account_alias=self.account_alias,
             api_version=settings.vk_api_version,
         )
         self._owns_writer = writer is None
-        self._wall_guard: VkUploadWallGuard | None = None
 
     def close(self) -> None:
         if self._owns_writer:
@@ -87,9 +85,6 @@ class VkNativeVideoUploadAdapter:
 
     def _provider_journal_path(self, operation: WaveOperation) -> Path:
         return self.journal_directory / "provider" / f"{operation.operation_id}.json"
-
-    def _batch_guard_path(self) -> Path:
-        return self.journal_directory / "provider" / "upload-wall-guard.json"
 
     def _validate_operation(self, operation: WaveOperation) -> dict[str, Any]:
         if operation.operation_kind != VK_VIDEO_OPERATION_KIND:
@@ -125,37 +120,6 @@ class VkNativeVideoUploadAdapter:
         if payload.get("privacy_status") != "public":
             raise OperationRejectedError("VK video upload source must be public")
         return payload
-
-    def _load_or_capture_wall_guard(self, community_id: int) -> VkUploadWallGuard:
-        if self._wall_guard is not None:
-            if self._wall_guard.community_id != community_id:
-                raise OperationRejectedError("Batch upload wall guard belongs to another community")
-            return self._wall_guard
-
-        guard_path = self._batch_guard_path()
-        if guard_path.exists():
-            try:
-                raw = json.loads(guard_path.read_text(encoding="utf-8"))
-                guard = VkUploadWallGuard.from_mapping(raw)
-            except (OSError, ValueError, json.JSONDecodeError) as exc:
-                raise OperationRejectedError(f"Existing upload wall guard evidence is invalid: {exc}") from exc
-            if guard.community_id != community_id:
-                raise OperationRejectedError("Existing upload wall guard belongs to another community")
-            self._wall_guard = guard
-            return guard
-
-        # This is the only provider read performed before the first upload
-        # mutation. Any failure here is definitively pre-dispatch and retry-safe
-        # only through a later, separately journaled Wave invocation.
-        try:
-            guard = self.writer.capture_upload_wall_guard(community_id=community_id)
-        except Exception as exc:
-            raise OperationRejectedError(
-                f"VK upload wall preflight unavailable before provider dispatch: {exc}"
-            ) from exc
-        write_json_atomic(guard_path, guard.as_dict())
-        self._wall_guard = guard
-        return guard
 
     @staticmethod
     def _provider_dispatch_started(record: Mapping[str, Any]) -> bool:
@@ -233,8 +197,6 @@ class VkNativeVideoUploadAdapter:
         )
         record = self._load_record(operation, payload=payload, readiness=readiness)
         journal_path = self._provider_journal_path(operation)
-        wall_guard = self._load_or_capture_wall_guard(community_id)
-
         media_path = Path(artifact.acquisition.authoritative_final_path).resolve()
 
         def persist() -> None:
@@ -251,7 +213,7 @@ class VkNativeVideoUploadAdapter:
                 media_artifact=artifact,
                 readiness=readiness,
                 processing_timeout=int(payload.get("processing_timeout_seconds") or 3600),
-                wall_before_snapshot=wall_guard,
+                wall_before_snapshot=None,
                 persist=persist,
             )
         except UploadRejected as exc:
@@ -273,8 +235,6 @@ class VkNativeVideoUploadAdapter:
         verification = record.get("verification")
         if not isinstance(reservation, Mapping) or not isinstance(verification, Mapping):
             raise UnknownProviderOutcomeError("Verified VK upload lacks reservation/verification evidence")
-        if verification.get("wall_delta_status") != "clean":
-            raise UnknownProviderOutcomeError("Verified VK upload lacks clean wall isolation evidence")
 
         return {
             "source_video_id": str(payload["source_video_id"]),
@@ -283,9 +243,6 @@ class VkNativeVideoUploadAdapter:
             "video_id": reservation.get("video_id"),
             "upload_stage": record["stage"],
             "media_manifest_sha256": artifact.manifest_sha256,
-            "wall_before_guard_sha256": verification.get("wall_before_snapshot_sha256"),
-            "wall_after_guard_sha256": verification.get("wall_after_snapshot_sha256"),
-            "wall_delta_status": verification.get("wall_delta_status"),
             "provider_journal_path": str(journal_path.relative_to(self.repository_root)).replace(os.sep, "/"),
         }
 
@@ -328,16 +285,6 @@ class VkNativeVideoUploadAdapter:
         }:
             raise RuntimeError(f"VK upload stage {stage.value} is not eligible for read-only exact-ID reconciliation")
 
-        guard_path = self._batch_guard_path()
-        if not guard_path.is_file():
-            raise RuntimeError("VK video reconciliation has no immutable upload wall guard")
-        raw_guard = json.loads(guard_path.read_text(encoding="utf-8"))
-        if not isinstance(raw_guard, Mapping):
-            raise RuntimeError("VK upload wall guard evidence is invalid")
-        wall_guard = VkUploadWallGuard.from_mapping(raw_guard)
-        if wall_guard.community_id != operation.project.community_id:
-            raise RuntimeError("VK upload wall guard belongs to another community")
-
         readiness = VkUploadReadiness(
             expected_title=str(payload["published_title"]),
             minimum_duration_seconds=_minimum_duration_seconds(int(payload["source_duration_seconds"])),
@@ -360,7 +307,7 @@ class VkNativeVideoUploadAdapter:
             media_artifact=None,
             readiness=readiness,
             processing_timeout=int(payload.get("processing_timeout_seconds") or 3600),
-            wall_before_snapshot=wall_guard,
+            wall_before_snapshot=None,
             persist=persist,
         )
         persist()
@@ -371,15 +318,12 @@ class VkNativeVideoUploadAdapter:
         verification = record.get("verification")
         if not isinstance(reservation, Mapping) or not isinstance(verification, Mapping):
             raise RuntimeError("Reconciled VK upload lacks exact verification evidence")
-        if verification.get("wall_delta_status") != "clean":
-            raise RuntimeError("Reconciled VK upload lacks clean bounded wall postflight")
         return {
             "source_video_id": str(payload["source_video_id"]),
             "remote_id": str(reservation.get("remote_id")),
             "owner_id": reservation.get("owner_id"),
             "video_id": reservation.get("video_id"),
             "upload_stage": record["stage"],
-            "wall_delta_status": verification.get("wall_delta_status"),
             "reconciliation": "exact_remote_id_verified",
         }
 
