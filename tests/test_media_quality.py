@@ -35,7 +35,15 @@ def test_probe_media_requires_audio_and_video_and_returns_fingerprint(
     payload = {
         "format": {"format_name": "mov,mp4,m4a", "duration": "42.5", "size": str(media.stat().st_size)},
         "streams": [
-            {"index": 0, "codec_type": "video", "codec_name": "h264", "width": 1920, "height": 1080},
+            {
+                "index": 0,
+                "codec_type": "video",
+                "codec_name": "h264",
+                "width": 1920,
+                "height": 1080,
+                "pix_fmt": "yuv420p",
+                "field_order": "progressive",
+            },
             {"index": 1, "codec_type": "audio", "codec_name": "aac", "sample_rate": "48000", "channels": 2},
         ],
     }
@@ -53,6 +61,8 @@ def test_probe_media_requires_audio_and_video_and_returns_fingerprint(
     assert report.height == 1080
     assert report.sample_rate_hz == 48000
     assert report.audio_channels == 2
+    assert report.pixel_format == "yuv420p"
+    assert report.field_order == "progressive"
     assert report.sha256 == f"sha256:{hashlib.sha256(b'video-bytes').hexdigest()}"
     assert report.to_dict()["size_bytes"] == len(b"video-bytes")
 
