@@ -38,9 +38,7 @@ if __name__ == "__main__":
         "Use the versioned `video-manager wave` engine through the reviewed operator contract."
     )
 def _retired_mutation_error() -> RuntimeError:
-    return RuntimeError(
-        "This historical VK mutation executor is retired; use the supported Wave/provider workflow."
-    )
+    return RuntimeError("This historical VK mutation executor is retired; use the supported Wave/provider workflow.")
 
 
 
