@@ -261,6 +261,7 @@ def test_registry_bound_inventory_bypasses_group_discovery() -> None:
     assert package.collections == []
     assert package.memberships == []
 
+
 def _pagination_client(tmp_path: Path, handler) -> VkApiClient:
     store = VkTokenStore(tmp_path)
     store.save_token("default", VkAccessToken(access_token="access", user_id=42))
@@ -314,4 +315,3 @@ def test_vk_pagination_rejects_malformed_item(tmp_path: Path) -> None:
 
     with pytest.raises(VkApiError, match="malformed non-object item"):
         client.list_videos(7)
-
