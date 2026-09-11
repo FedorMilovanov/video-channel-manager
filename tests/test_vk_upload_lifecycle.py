@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Callable
 from copy import deepcopy
 from datetime import UTC, datetime
@@ -319,7 +320,7 @@ def test_readiness_verifies_description_and_public_state() -> None:
     guarded = VkUploadReadiness(
         expected_title="Берёза ⚡",
         minimum_duration_seconds=115,
-        expected_description_sha256="sha256:" + __import__("hashlib").sha256("Описание".encode()).hexdigest(),
+        expected_description_sha256="sha256:" + hashlib.sha256("Описание".encode()).hexdigest(),
         require_public=True,
     )
     assert assess_vk_upload_readiness(
