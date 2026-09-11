@@ -462,7 +462,7 @@ def prepare_vk_video_wave(
             )
 
         artifact = load_media_artifact_manifest(media_manifest_path)
-        rendered = render_vk_video_description(video.description)
+        rendered = render_vk_video_description(video.description, source_video_id=source_id)
         if rendered.has_errors:
             raise VkVideoPreparationError(
                 f"VK description has blocking issues for {source_id}: "
