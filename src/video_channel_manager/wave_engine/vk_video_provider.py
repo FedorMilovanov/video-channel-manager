@@ -32,7 +32,7 @@ from video_channel_manager.wave_engine.models import MutationClass, WaveOperatio
 
 
 VK_VIDEO_OPERATION_KIND = "vk.video.upload"
-VK_VIDEO_POLICY_VERSION = "vk-native-video-wave-v1"
+VK_VIDEO_POLICY_VERSION = "vk-native-video-wave-v2"
 VK_VIDEO_DEFAULT_ACCOUNT_ALIAS = "legendary-poet"
 
 
@@ -84,7 +84,13 @@ class VkNativeVideoUploadAdapter:
             self.writer.close()
 
     def _provider_journal_path(self, operation: WaveOperation) -> Path:
-        return self.journal_directory / "provider" / f"{operation.operation_id}.json"
+        return (
+            self.repository_root
+            / "operator-output"
+            / "vk-upload-state"
+            / operation.project.project_key
+            / f"{operation.operation_id}.json"
+        )
 
     def _validate_operation(self, operation: WaveOperation) -> dict[str, Any]:
         if operation.operation_kind != VK_VIDEO_OPERATION_KIND:
