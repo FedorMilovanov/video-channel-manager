@@ -11,6 +11,7 @@ from video_channel_manager.instagram.artifact import (
     InstagramArtifactIdentityError,
     assert_instagram_publish_manifest_identity,
     bind_instagram_reel_artifact,
+    bind_instagram_reel_probe,
 )
 from video_channel_manager.instagram.production import InstagramPublishManifest
 from video_channel_manager.local_media.artifact import (
@@ -46,6 +47,8 @@ def _artifact(
         "height": 1920,
         "sample_rate_hz": 48_000,
         "audio_channels": 2,
+        "pixel_format": "yuv420p",
+        "field_order": "progressive",
         "video_frame_rate_fps": 30.0,
         "video_bitrate_bps": 8_000_000,
         "audio_bitrate_bps": 128_000,
@@ -200,6 +203,66 @@ def test_recommended_aspect_and_audio_bitrate_are_advisory_only() -> None:
         "aspect_ratio_not_exact_9_16",
         "audio_bitrate_not_recommended_128_kbps",
     )
+
+
+def test_v3_binding_requires_progressive_420_and_closed_gop_proof() -> None:
+    evidence = _artifact()
+
+    binding = bind_instagram_reel_probe(
+        evidence.probe,
+        media_manifest_sha256=evidence.manifest_sha256,
+        ruleset_version="meta-instagram-reels-2026-09-v3",
+        closed_gop_verified=True,
+    )
+
+    assert binding.ruleset_version == "meta-instagram-reels-2026-09-v3"
+    assert binding.pixel_format == "yuv420p"
+    assert binding.field_order == "progressive"
+    assert binding.closed_gop_verified is True
+
+
+@pytest.mark.parametrize(
+    ("probe_overrides", "closed_gop_verified", "reason"),
+    [
+        ({"pixel_format": None}, True, "video_pixel_format_missing"),
+        ({"pixel_format": "yuv422p"}, True, "video_chroma_not_420"),
+        ({"field_order": None}, True, "video_field_order_missing"),
+        ({"field_order": "tt"}, True, "video_not_progressive"),
+        ({}, False, "video_closed_gop_not_verified"),
+        ({}, None, "video_closed_gop_not_verified"),
+    ],
+)
+def test_v3_binding_fails_closed_on_missing_scan_chroma_or_gop_evidence(
+    probe_overrides: Mapping[str, Any],
+    closed_gop_verified: bool | None,
+    reason: str,
+) -> None:
+    evidence = _artifact(probe_overrides=probe_overrides)
+
+    with pytest.raises(InstagramArtifactCompatibilityError) as caught:
+        bind_instagram_reel_probe(
+            evidence.probe,
+            media_manifest_sha256=evidence.manifest_sha256,
+            ruleset_version="meta-instagram-reels-2026-09-v3",
+            closed_gop_verified=closed_gop_verified,
+        )
+
+    assert reason in caught.value.reasons
+
+
+def test_v2_binding_remains_readable_without_v3_fields() -> None:
+    evidence = _artifact(probe_overrides={"pixel_format": None, "field_order": None})
+
+    binding = bind_instagram_reel_probe(
+        evidence.probe,
+        media_manifest_sha256=evidence.manifest_sha256,
+        ruleset_version="meta-instagram-reels-2026-09-v2",
+    )
+
+    assert binding.ruleset_version == "meta-instagram-reels-2026-09-v2"
+    assert binding.pixel_format is None
+    assert binding.field_order is None
+    assert binding.closed_gop_verified is None
 
 
 def test_corrupted_canonical_media_digest_is_rejected_before_binding() -> None:
