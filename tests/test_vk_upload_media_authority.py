@@ -29,9 +29,9 @@ from video_channel_manager.platforms.vk.upload_media import (
     journal_media_evidence,
 )
 from video_channel_manager.platforms.vk.wall_safety import (
+    VkUploadWallGuard,
     VkUploadWallPolicy,
-    VkWallSnapshot,
-    build_wall_snapshot,
+    build_upload_wall_guard,
 )
 
 
@@ -96,25 +96,22 @@ class FakeWriter:
         assert assessment.ready
         return item
 
-    def capture_wall_snapshot(
+    def capture_upload_wall_guard(
         self,
         *,
         community_id: int,
-        max_posts_per_surface: int = 10000,
-    ) -> VkWallSnapshot:
+        head_limit: int = 100,
+    ) -> VkUploadWallGuard:
         assert community_id == 235216998
-        assert max_posts_per_surface == 10000
+        assert head_limit == 100
         return _clean_wall_snapshot()
 
 
-def _clean_wall_snapshot() -> VkWallSnapshot:
-    return build_wall_snapshot(
+def _clean_wall_snapshot() -> VkUploadWallGuard:
+    return build_upload_wall_guard(
         community_id=235216998,
         published_items=[],
         postponed_items=[],
-        published_pages=1,
-        postponed_pages=1,
-        complete=True,
         captured_at=datetime(2026, 8, 4, 18, 0, tzinfo=UTC),
     )
 

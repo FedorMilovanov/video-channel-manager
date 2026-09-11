@@ -711,7 +711,7 @@
       "private_imports": [],
       "project_owner": "runtime-bound-or-none",
       "provider_write_capable": true,
-      "sha256": "7b89ef56a58415172c430444de1a3941986fce6e56ca3633d301e2abd9bfc678",
+      "sha256": "c000282ce2fb4dc6e86427cc9210b71fdb2ec0d1d8a56bf13e7df6380dc28614",
       "status": "compatibility_adapter"
     },
     {

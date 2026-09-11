@@ -1,6 +1,6 @@
 # VK upload and wall safety contract
 
-Updated: 2026-08-04  
+Updated: 2026-09-10  
 Owner: Wave 4 / issue #36
 
 ## Invariant
@@ -12,8 +12,8 @@ Every upload plan or runtime contract must therefore bind:
 - `project_key`;
 - exact VK `community_id` and negative `owner_id`;
 - `wall_mutation_authorized: false`;
-- a read-only published+postponed wall snapshot identity and digest captured before execution;
-- an exact postflight wall snapshot and delta after any upload request may have reached VK.
+- a read-only bounded published+postponed upload-wall guard captured before execution;
+- an exact bounded postflight guard and delta after any upload request may have reached VK.
 
 Missing, true, coerced, wrong-project, wrong-community, wrong-owner, or digest-tampered wall authorization fails before media verification or provider dispatch.
 
@@ -31,23 +31,25 @@ The upload wall firewall is the combination of:
 
 1. all three explicit zero-valued `video.save` switches;
 2. versioned, self-digested `wall_mutation_authorized=false` bound to operation identity;
-3. published+postponed before-snapshot digest;
-4. mandatory postflight snapshot/delta;
+3. published+postponed bounded before-guard digest;
+4. mandatory bounded postflight guard/delta;
 5. terminal reconciliation when any unexpected or incomplete wall delta appears.
 
 Upload recovery never auto-deletes an unexpected post.
 
 ## Batch baseline and per-operation evidence
 
-The supported sync captures one complete published+postponed baseline for the exact community before the first batch mutation and stores the full snapshot once in the top-level durable journal.
+The supported native-video path captures one bounded two-surface upload-wall guard for the exact community before the first batch mutation and stores it once in durable batch evidence. The guard reads one head page from `filter=owner` and one head page from `filter=postponed`, with the provider-reported total counts bound into the digest.
 
-Each upload operation stores only the immutable baseline digest and page/capture evidence, then persists its own after-snapshot digest and delta. This avoids duplicating a potentially large wall snapshot for every video while preserving exact binding.
+Each upload operation stores the immutable guard digest and capture evidence, then persists its own bounded after-guard digest and delta. This proves that `wallpost=0` / `auto_publish=0` did not create or transition a head wall object without crawling the complete wall before every video. A total-count change, created/removed/changed head identity, wrong owner, invalid payload, or unavailable postflight is non-clean and stops the wave.
 
 A historical `reserved`, `upload_started`, `processing`, `unknown`, or `verified` record without a pre-dispatch baseline is not granted a fresh baseline retroactively. It stops with `unknown_requires_reconciliation`/recovery-required semantics. A previously verified record is reusable only when its stored wall delta is explicitly `clean`.
 
 ## Snapshot scope
 
-A wall snapshot covers both surfaces for one exact VK owner:
+Two distinct read models are intentional.
+
+For video-upload isolation, the bounded upload-wall guard covers the head of both surfaces for one exact VK owner:
 
 - published posts (`filter=owner`);
 - postponed posts (`filter=postponed`).
@@ -61,9 +63,11 @@ Each normalized entry binds:
 - normalized text digest;
 - normalized attachment identities.
 
-The snapshot digest is calculated over canonical stable ordering. Page totals and surface completeness are evidence, not assumptions. A changing total, truncated scan, invalid object, wrong owner, or exhausted configured limit produces incomplete/unknown state rather than a clean result.
+The upload-guard digest is calculated over canonical stable ordering plus provider-reported surface totals. Its purpose is narrow: prove wall isolation for a native video upload.
 
-A delta reports exact created, changed, deleted, and surface-specific entries. Any non-empty or incomplete delta during an upload operation blocks `verified` and automatic continuation.
+For an actual `wall.post` workflow, a complete published+postponed snapshot remains mandatory. Its page totals and surface completeness are evidence, not assumptions; a truncated scan, invalid object, wrong owner, or exhausted configured limit blocks publication before mutation.
+
+A delta reports exact created, changed, deleted, and surface-specific entries. Any non-clean upload-guard delta blocks `verified` and automatic continuation.
 
 ## Postponed publication
 
@@ -96,7 +100,8 @@ Wave 4 contains no bulk deletion or automatic remediation. Issue #37 remains the
 
 ## Retry boundary
 
-- snapshot reads are classified safe reads and may use the Wave 3 bounded retry policy;
+- ordinary snapshot reads are classified safe reads and may use the bounded retry policy;
+- VK API code `9` (`Flood control`) is a distinct non-auto-retry condition: the exact account+method opens a durable local circuit after the first observed response, and later processes stop before network until that exact circuit is explicitly cleared; no universal recovery TTL is assumed;
 - `wall.post`, `wall.edit`, `wall.delete`, upload reservation, upload-server POST, and all other mutations remain explicit ambiguous mutations;
 - mutation transport loss, HTTP 429/5xx, and provider-transient responses are one attempt and externally non-retryable;
 - `guid` is an additional duplicate guard, not a substitute for published+postponed preflight or postflight.
