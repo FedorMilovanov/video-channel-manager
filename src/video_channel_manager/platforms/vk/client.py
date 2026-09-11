@@ -276,26 +276,81 @@ class VkApiClient(HttpClientOwner):
         return payload["response"]
 
     def _list_offset(self, method: str, *, params: ApiParams, page_size: int) -> list[dict[str, Any]]:
+        if page_size <= 0:
+            raise ValueError("page_size must be positive")
         items: list[dict[str, Any]] = []
         offset = 0
+        expected_total: int | None = None
+        effective_page_size = page_size
         while True:
             page_params = dict(params)
             page_params["offset"] = offset
             page_params["count"] = page_size
             response = self._call(method, params=page_params)
-            page = _dict_items(response)
-            items.extend(page)
-            total = response.get("count") if isinstance(response, dict) else None
-            offset += len(page)
+            if not isinstance(response, dict):
+                raise VkApiError(
+                    f"VK {method} pagination returned a non-object page.",
+                    method=method,
+                    kind=HttpFailureKind.INVALID_PAYLOAD,
+                )
+            raw_total = response.get("count")
+            raw_items = response.get("items")
+            if not isinstance(raw_total, int) or raw_total < 0 or not isinstance(raw_items, list):
+                raise VkApiError(
+                    f"VK {method} pagination page lacks valid count/items.",
+                    method=method,
+                    kind=HttpFailureKind.INVALID_PAYLOAD,
+                )
+            if any(not isinstance(item, dict) for item in raw_items):
+                raise VkApiError(
+                    f"VK {method} pagination returned a malformed non-object item.",
+                    method=method,
+                    kind=HttpFailureKind.INVALID_PAYLOAD,
+                )
+            if expected_total is None:
+                expected_total = raw_total
+            elif raw_total != expected_total:
+                raise VkApiError(
+                    f"VK {method} pagination total changed from {expected_total} to {raw_total}.",
+                    method=method,
+                    kind=HttpFailureKind.INVALID_PAYLOAD,
+                )
 
+            page = list(raw_items)
+            if len(page) > page_size:
+                raise VkApiError(
+                    f"VK {method} pagination returned {len(page)} items for requested page size {page_size}.",
+                    method=method,
+                    kind=HttpFailureKind.INVALID_PAYLOAD,
+                )
             if not page:
+                if offset < raw_total:
+                    raise VkApiError(
+                        f"VK {method} pagination ended early at offset {offset} of {raw_total}.",
+                        method=method,
+                        kind=HttpFailureKind.INVALID_PAYLOAD,
+                    )
                 return items
-            if isinstance(total, int):
-                if offset >= total:
-                    return items
-                continue
-            if len(page) < page_size:
+
+            if offset == 0 and len(page) < page_size and len(page) < raw_total:
+                effective_page_size = len(page)
+            items.extend(page)
+            offset += len(page)
+            if offset >= raw_total:
+                if offset != raw_total:
+                    raise VkApiError(
+                        f"VK {method} pagination exceeded declared total {raw_total} with {offset} items.",
+                        method=method,
+                        kind=HttpFailureKind.INVALID_PAYLOAD,
+                    )
                 return items
+            if len(page) != effective_page_size:
+                raise VkApiError(
+                    f"VK {method} pagination returned an inconsistent page of {len(page)} items "
+                    f"at offset {offset}; expected {effective_page_size}.",
+                    method=method,
+                    kind=HttpFailureKind.INVALID_PAYLOAD,
+                )
 
     def get_current_user(self) -> VkUserIdentity:
         response = self._call("users.get", params={"fields": "screen_name"})

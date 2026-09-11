@@ -230,3 +230,13 @@ def test_guarded_video_edit_refuses_unknown_live_description(tmp_path: Path) -> 
         )
 
     assert methods == ["/method/video.get"]
+
+
+def test_video_description_adds_stable_youtube_source_marker_once() -> None:
+    first = render_vk_video_description("Описание", source_video_id="NgvWlaMqTnI")
+    second = render_vk_video_description(first.text, source_video_id="NgvWlaMqTnI")
+
+    marker = "Источник видео: https://www.youtube.com/watch?v=NgvWlaMqTnI"
+    assert marker in first.text
+    assert first.text.count(marker) == 1
+    assert second.text == first.text

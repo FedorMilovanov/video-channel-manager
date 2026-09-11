@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import json
 import os
+import time
+import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Iterator, Mapping
 
 
 VK_FLOOD_CONTROL_SCHEMA = "video-manager.vk-flood-control"
@@ -71,6 +74,53 @@ class VkFloodControlGate:
         self.data_dir = data_dir
         self.account_alias = normalized_alias
         self.path = data_dir / "vk" / "flood-control" / f"{normalized_alias}.json"
+        self.lock_path = self.path.with_name(f"{self.path.name}.lock")
+
+    @contextmanager
+    def _mutation_lock(self, *, timeout_seconds: float = 5.0) -> Iterator[None]:
+        self.lock_path.parent.mkdir(parents=True, exist_ok=True)
+        deadline = time.monotonic() + timeout_seconds
+        nonce = uuid.uuid4().hex
+        descriptor: int | None = None
+        while descriptor is None:
+            try:
+                descriptor = os.open(self.lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+            except FileExistsError:
+                try:
+                    age = max(0.0, time.time() - self.lock_path.stat().st_mtime)
+                except FileNotFoundError:
+                    continue
+                if age > 30.0:
+                    try:
+                        self.lock_path.unlink()
+                    except FileNotFoundError:
+                        pass
+                    continue
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(f"Timed out waiting for VK flood-control state lock: {self.lock_path}") from None
+                time.sleep(0.01)
+                continue
+            payload = f"{os.getpid()} {nonce}\n".encode("ascii")
+            try:
+                os.write(descriptor, payload)
+                os.fsync(descriptor)
+            except BaseException:
+                os.close(descriptor)
+                descriptor = None
+                self.lock_path.unlink(missing_ok=True)
+                raise
+
+        try:
+            yield
+        finally:
+            assert descriptor is not None
+            os.close(descriptor)
+            try:
+                current = self.lock_path.read_text(encoding="ascii").strip().split()
+            except OSError:
+                current = []
+            if len(current) == 2 and current[1] == nonce:
+                self.lock_path.unlink(missing_ok=True)
 
     @staticmethod
     def _now() -> str:
@@ -110,13 +160,16 @@ class VkFloodControlGate:
 
     def _save(self, payload: Mapping[str, object]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        temporary = self.path.with_name(f".{self.path.name}.tmp")
+        temporary = self.path.with_name(f".{self.path.name}.{uuid.uuid4().hex}.tmp")
         serialized = json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
-        with temporary.open("w", encoding="utf-8", newline="\n") as stream:
-            stream.write(serialized)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temporary, self.path)
+        try:
+            with temporary.open("w", encoding="utf-8", newline="\n") as stream:
+                stream.write(serialized)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary, self.path)
+        finally:
+            temporary.unlink(missing_ok=True)
 
     def get(self, method: str) -> VkFloodControlEntry | None:
         normalized = method.strip()
@@ -145,44 +198,46 @@ class VkFloodControlGate:
         normalized = method.strip()
         if not normalized:
             raise ValueError("VK flood-control method cannot be blank")
-        payload = self._load()
-        methods = payload["methods"]
-        assert isinstance(methods, dict)
-        now = self._now()
-        raw = methods.get(normalized)
-        if raw is None:
-            entry = VkFloodControlEntry(
-                method=normalized,
-                first_observed_at=now,
-                last_observed_at=now,
-                occurrences=1,
-            )
-        else:
-            if not isinstance(raw, Mapping):
-                raise ValueError("VK flood-control method entry is invalid")
-            previous = VkFloodControlEntry.from_mapping(normalized, raw)
-            entry = VkFloodControlEntry(
-                method=normalized,
-                first_observed_at=previous.first_observed_at,
-                last_observed_at=now,
-                occurrences=previous.occurrences + 1,
-            )
-        methods[normalized] = entry.as_dict()
-        self._save(payload)
-        return entry
+        with self._mutation_lock():
+            payload = self._load()
+            methods = payload["methods"]
+            assert isinstance(methods, dict)
+            now = self._now()
+            raw = methods.get(normalized)
+            if raw is None:
+                entry = VkFloodControlEntry(
+                    method=normalized,
+                    first_observed_at=now,
+                    last_observed_at=now,
+                    occurrences=1,
+                )
+            else:
+                if not isinstance(raw, Mapping):
+                    raise ValueError("VK flood-control method entry is invalid")
+                previous = VkFloodControlEntry.from_mapping(normalized, raw)
+                entry = VkFloodControlEntry(
+                    method=normalized,
+                    first_observed_at=previous.first_observed_at,
+                    last_observed_at=now,
+                    occurrences=previous.occurrences + 1,
+                )
+            methods[normalized] = entry.as_dict()
+            self._save(payload)
+            return entry
 
     def clear(self, method: str) -> bool:
         normalized = method.strip()
         if not normalized:
             raise ValueError("VK flood-control method cannot be blank")
-        payload = self._load()
-        methods = payload["methods"]
-        assert isinstance(methods, dict)
-        if normalized not in methods:
-            return False
-        del methods[normalized]
-        self._save(payload)
-        return True
+        with self._mutation_lock():
+            payload = self._load()
+            methods = payload["methods"]
+            assert isinstance(methods, dict)
+            if normalized not in methods:
+                return False
+            del methods[normalized]
+            self._save(payload)
+            return True
 
 
 __all__ = [

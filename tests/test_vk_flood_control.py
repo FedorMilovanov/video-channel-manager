@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import httpx
@@ -129,3 +130,16 @@ def test_write_client_safe_read_code_9_does_not_retry_or_block_other_methods(tmp
 
     assert local_stop.value.attempts == 0
     assert calls == ["video.get", "video.getAlbumsByVideo"]
+
+
+def test_flood_gate_concurrent_records_do_not_lose_occurrences(tmp_path: Path) -> None:
+    def record_once(_index: int) -> None:
+        VkFloodControlGate(tmp_path, "legendary-poet").record("video.get")
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(record_once, range(24)))
+
+    entry = VkFloodControlGate(tmp_path, "legendary-poet").get("video.get")
+    assert entry is not None
+    assert entry.occurrences == 24
+    assert not list((tmp_path / "vk" / "flood-control").glob("*.tmp"))

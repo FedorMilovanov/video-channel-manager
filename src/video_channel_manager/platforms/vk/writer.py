@@ -331,6 +331,54 @@ class VkVideoWriter(HttpClientOwner):
             method="video.addToAlbum",
         )
 
+    def list_community_videos(self, *, community_id: int, page_size: int = 200) -> list[dict[str, Any]]:
+        if community_id <= 0 or page_size <= 0:
+            raise ValueError("community_id and page_size must be positive")
+        items: list[dict[str, Any]] = []
+        offset = 0
+        expected_total: int | None = None
+        effective_page_size = page_size
+        while True:
+            response = self._call(
+                "video.get",
+                params={"owner_id": -community_id, "offset": offset, "count": page_size},
+                retry_transient=True,
+            )
+            if not isinstance(response, dict):
+                raise VkWriteError("video.get inventory returned a non-object page.", method="video.get")
+            raw_total = response.get("count")
+            raw_items = response.get("items")
+            if not isinstance(raw_total, int) or raw_total < 0 or not isinstance(raw_items, list):
+                raise VkWriteError("video.get inventory page lacks valid count/items.", method="video.get")
+            if any(not isinstance(item, dict) for item in raw_items):
+                raise VkWriteError("video.get inventory returned a malformed non-object item.", method="video.get")
+            if expected_total is None:
+                expected_total = raw_total
+            elif raw_total != expected_total:
+                raise VkWriteError(
+                    f"video.get inventory total changed from {expected_total} to {raw_total}.",
+                    method="video.get",
+                )
+            page = list(raw_items)
+            if not page:
+                if offset < raw_total:
+                    raise VkWriteError(
+                        f"video.get inventory ended early at offset {offset} of {raw_total}.",
+                        method="video.get",
+                    )
+                return items
+            if offset == 0 and len(page) < page_size and len(page) < raw_total:
+                effective_page_size = len(page)
+            items.extend(page)
+            offset += len(page)
+            if offset == raw_total:
+                return items
+            if offset > raw_total or len(page) != effective_page_size:
+                raise VkWriteError(
+                    f"video.get inventory pagination is incomplete at {offset} of {raw_total}.",
+                    method="video.get",
+                )
+
     def begin_upload(
         self,
         *,
