@@ -684,7 +684,7 @@ def _bind_wall_baseline(
     record: dict[str, Any],
     *,
     community_id: int,
-    wall_before_snapshot: VkUploadWallGuard | None,
+    wall_before_snapshot: VkUploadWallGuard,
     persist: PersistCallback,
 ) -> None:
     if wall_before_snapshot.community_id != community_id:
