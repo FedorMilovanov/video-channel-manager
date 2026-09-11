@@ -113,6 +113,46 @@ def test_source_and_plan_builds_are_deterministic_self_digested_and_ordered() ->
     assert all(operation.operation_id == operation.compute_operation_id() for operation in first.operations)
 
 
+def test_vk_video_v2_operation_identity_ignores_attempt_snapshot_sequence_and_copy() -> None:
+    project = _project()
+    first_spec = WaveOperationSpec(
+        order_key="2026-09-01-a",
+        operation_kind="vk.video.upload",
+        mutation_class=MutationClass.AMBIGUOUS_MUTATION,
+        payload={
+            "source_channel_id": "UC-source",
+            "source_video_id": "yt-1",
+            "published_title": "Первый заголовок",
+        },
+    )
+    second_spec = WaveOperationSpec(
+        order_key="2026-09-11-z",
+        operation_kind="vk.video.upload",
+        mutation_class=MutationClass.AMBIGUOUS_MUTATION,
+        payload={
+            "source_channel_id": "UC-source",
+            "source_video_id": "yt-1",
+            "published_title": "Обновлённый заголовок",
+        },
+    )
+    first = WaveOperation.build(
+        sequence=0,
+        project=project,
+        source_snapshot_id="1" * 64,
+        policy_version="vk-native-video-wave-v2",
+        spec=first_spec,
+    )
+    second = WaveOperation.build(
+        sequence=7,
+        project=project,
+        source_snapshot_id="2" * 64,
+        policy_version="vk-native-video-wave-v2",
+        spec=second_spec,
+    )
+
+    assert first.operation_id == second.operation_id
+
+
 def test_duplicate_operation_order_key_is_rejected() -> None:
     spec = WaveOperationSpec(
         order_key="same",
