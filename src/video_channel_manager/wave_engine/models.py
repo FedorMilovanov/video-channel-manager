@@ -196,6 +196,43 @@ class WaveOperationSpec(FrozenStrictModel):
         return value
 
 
+def _wave_operation_identity_payload(
+    *,
+    sequence: int,
+    order_key: str,
+    project: "ProjectBinding",
+    source_snapshot_id: str,
+    policy_version: str,
+    operation_kind: str,
+    mutation_class: MutationClass,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    if operation_kind == "vk.video.upload" and policy_version == "vk-native-video-wave-v2":
+        source_channel_id = payload.get("source_channel_id")
+        source_video_id = payload.get("source_video_id")
+        if not isinstance(source_channel_id, str) or not source_channel_id.strip():
+            raise ValueError("vk.video.upload v2 requires source_channel_id for stable identity")
+        if not isinstance(source_video_id, str) or not source_video_id.strip():
+            raise ValueError("vk.video.upload v2 requires source_video_id for stable identity")
+        return {
+            "project": project.model_dump(mode="json"),
+            "operation_kind": operation_kind,
+            "source_platform": "youtube",
+            "source_channel_id": source_channel_id,
+            "source_video_id": source_video_id,
+        }
+    return {
+        "sequence": sequence,
+        "order_key": order_key,
+        "project": project.model_dump(mode="json"),
+        "source_snapshot_id": source_snapshot_id,
+        "policy_version": policy_version,
+        "operation_kind": operation_kind,
+        "mutation_class": mutation_class.value,
+        "payload": payload,
+    }
+
+
 class WaveOperation(FrozenStrictModel):
     operation_id: Digest
     sequence: int = Field(ge=0)
@@ -227,7 +264,16 @@ class WaveOperation(FrozenStrictModel):
         return self
 
     def identity_payload(self) -> dict[str, Any]:
-        return self.model_dump(mode="json", exclude={"operation_id"})
+        return _wave_operation_identity_payload(
+            sequence=self.sequence,
+            order_key=self.order_key,
+            project=self.project,
+            source_snapshot_id=self.source_snapshot_id,
+            policy_version=self.policy_version,
+            operation_kind=self.operation_kind,
+            mutation_class=self.mutation_class,
+            payload=self.payload,
+        )
 
     def compute_operation_id(self) -> str:
         return object_sha256(self.identity_payload())
@@ -242,18 +288,18 @@ class WaveOperation(FrozenStrictModel):
         policy_version: str,
         spec: WaveOperationSpec,
     ) -> Self:
-        payload = {
-            "sequence": sequence,
-            "order_key": spec.order_key,
-            "project": project.model_dump(mode="json"),
-            "source_snapshot_id": source_snapshot_id,
-            "policy_version": policy_version,
-            "operation_kind": spec.operation_kind,
-            "mutation_class": spec.mutation_class.value,
-            "payload": spec.payload,
-        }
+        identity_payload = _wave_operation_identity_payload(
+            sequence=sequence,
+            order_key=spec.order_key,
+            project=project,
+            source_snapshot_id=source_snapshot_id,
+            policy_version=policy_version,
+            operation_kind=spec.operation_kind,
+            mutation_class=spec.mutation_class,
+            payload=spec.payload,
+        )
         return cls(
-            operation_id=object_sha256(payload),
+            operation_id=object_sha256(identity_payload),
             sequence=sequence,
             order_key=spec.order_key,
             project=project,
@@ -552,8 +598,14 @@ class WaveResult(FrozenStrictModel):
                 terminal_seen = True
             elif operation_result.status is OperationStatus.FAILED:
                 if operation.mutation_class is MutationClass.AMBIGUOUS_MUTATION:
-                    if operation_result.error_kind != "rejected_before_dispatch" or not operation_result.retry_safe:
-                        raise ValueError("ambiguous mutation failures are allowed only before provider dispatch")
+                    allowed = (
+                        operation_result.error_kind == "rejected_before_dispatch" and operation_result.retry_safe
+                    ) or (operation_result.error_kind == "provider_rejected" and not operation_result.retry_safe)
+                    if not allowed:
+                        raise ValueError(
+                            "ambiguous mutation failure must be pre-dispatch retry-safe "
+                            "or a definite non-retryable provider rejection"
+                        )
                 elif operation_result.retry_safe is not True:
                     raise ValueError("safe-read failure must be explicitly retry-safe")
                 terminal_seen = True

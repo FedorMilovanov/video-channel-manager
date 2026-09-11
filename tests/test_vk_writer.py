@@ -316,3 +316,58 @@ def test_upload_transport_timeout_is_single_attempt_and_redacts_url(tmp_path: Pa
     assert captured.value.retryable is False
     assert "upload.example" not in str(captured.value)
     assert calls == 1
+
+
+def test_list_community_videos_reads_only_video_surface_with_complete_pagination(tmp_path: Path) -> None:
+    calls: list[tuple[str, bytes]] = []
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        calls.append((request.url.path, request.content))
+        assert request.url.path.endswith("/video.get")
+        if b"offset=0" in request.content:
+            return httpx.Response(
+                200,
+                json={
+                    "response": {
+                        "count": 3,
+                        "items": [
+                            {"owner_id": -235216998, "id": 1, "title": "A"},
+                            {"owner_id": -235216998, "id": 2, "title": "B"},
+                        ],
+                    }
+                },
+            )
+        return httpx.Response(
+            200,
+            json={"response": {"count": 3, "items": [{"owner_id": -235216998, "id": 3, "title": "C"}]}},
+        )
+
+    writer = _writer(tmp_path, httpx.MockTransport(respond))
+    items = writer.list_community_videos(community_id=235216998, page_size=2)
+
+    assert [item["id"] for item in items] == [1, 2, 3]
+    assert [path for path, _content in calls] == ["/method/video.get", "/method/video.get"]
+    assert all(b"owner_id=-235216998" in content for _path, content in calls)
+
+
+def test_list_community_videos_rejects_premature_empty_page(tmp_path: Path) -> None:
+    def respond(request: httpx.Request) -> httpx.Response:
+        if b"offset=0" in request.content:
+            return httpx.Response(
+                200,
+                json={
+                    "response": {
+                        "count": 3,
+                        "items": [
+                            {"owner_id": -235216998, "id": 1},
+                            {"owner_id": -235216998, "id": 2},
+                        ],
+                    }
+                },
+            )
+        return httpx.Response(200, json={"response": {"count": 3, "items": []}})
+
+    writer = _writer(tmp_path, httpx.MockTransport(respond))
+
+    with pytest.raises(VkWriteError, match="ended early"):
+        writer.list_community_videos(community_id=235216998, page_size=2)

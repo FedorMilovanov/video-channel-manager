@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Callable
 from copy import deepcopy
 from datetime import UTC, datetime
@@ -243,6 +244,103 @@ def run(
         fault_hook=fault,
     )
     return persists
+
+
+def test_upload_record_identity_survives_fresh_snapshot_before_dispatch() -> None:
+    record = new_record()
+    operation_id = record["operation_id"]
+
+    refreshed, changed = ensure_upload_record(
+        record,
+        source_snapshot_id="snapshot-2",
+        community_id=235216998,
+        source_video_id="yt-1",
+        source_title="Берёза — обновлённые данные источника",
+        source_duration_seconds=120,
+        published_title="Берёза ⚡",
+        published_description="Описание",
+        readiness=readiness(),
+    )
+
+    assert changed is True
+    assert refreshed["schema_version"] == 2
+    assert refreshed["operation_id"] == operation_id
+    assert refreshed["source_snapshot_id"] == "snapshot-2"
+
+
+def test_upload_record_snapshot_change_after_reservation_keeps_same_object() -> None:
+    record = new_record()
+    record["reservation_dispatch_started_at"] = "2026-09-11T08:00:00+00:00"
+    operation_id = record["operation_id"]
+
+    refreshed, changed = ensure_upload_record(
+        record,
+        source_snapshot_id="snapshot-new",
+        community_id=235216998,
+        source_video_id="yt-1",
+        source_title="Берёза",
+        source_duration_seconds=120,
+        published_title="Берёза ⚡",
+        published_description="Описание",
+        readiness=readiness(),
+    )
+
+    assert changed is False
+    assert refreshed["operation_id"] == operation_id
+    assert refreshed["source_snapshot_id"] == "snapshot-1"
+
+
+def test_upload_record_rejects_mutation_payload_change_after_reservation() -> None:
+    record = new_record()
+    record["reservation_dispatch_started_at"] = "2026-09-11T08:00:00+00:00"
+
+    with pytest.raises(ValueError, match="binding mismatch"):
+        ensure_upload_record(
+            record,
+            source_snapshot_id="snapshot-new",
+            community_id=235216998,
+            source_video_id="yt-1",
+            source_title="Берёза",
+            source_duration_seconds=120,
+            published_title="Другой заголовок",
+            published_description="Описание",
+            readiness=VkUploadReadiness(
+                expected_title="Другой заголовок",
+                minimum_duration_seconds=115,
+            ),
+        )
+
+
+def test_readiness_verifies_description_and_public_state() -> None:
+    item = {
+        **ready_item(),
+        "description": "Описание",
+        "is_private": 0,
+    }
+    guarded = VkUploadReadiness(
+        expected_title="Берёза ⚡",
+        minimum_duration_seconds=115,
+        expected_description_sha256="sha256:" + hashlib.sha256("Описание".encode()).hexdigest(),
+        require_public=True,
+    )
+    assert assess_vk_upload_readiness(
+        item,
+        expected_owner_id=-235216998,
+        expected_video_id=501,
+        readiness=guarded,
+    ).ready
+
+    broken = dict(item)
+    broken["description"] = "Обрезано"
+    broken["is_private"] = 1
+    assessment = assess_vk_upload_readiness(
+        broken,
+        expected_owner_id=-235216998,
+        expected_video_id=501,
+        readiness=guarded,
+    )
+    assert "description_mismatch" in assessment.reasons
+    assert "private" in assessment.reasons
 
 
 def test_readiness_requires_identity_title_duration_type_and_playability() -> None:

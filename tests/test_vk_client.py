@@ -260,3 +260,58 @@ def test_registry_bound_inventory_bypasses_group_discovery() -> None:
     assert package.videos == []
     assert package.collections == []
     assert package.memberships == []
+
+
+def _pagination_client(tmp_path: Path, handler) -> VkApiClient:
+    store = VkTokenStore(tmp_path)
+    store.save_token("default", VkAccessToken(access_token="access", user_id=42))
+    return VkApiClient(
+        token_store=store,
+        account_alias="default",
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        api_base_url="https://example.test/method",
+        max_attempts=1,
+    )
+
+
+def test_vk_pagination_rejects_premature_empty_page(tmp_path: Path) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        params = {key: values[0] for key, values in parse_qs(request.content.decode()).items()}
+        offset = int(params["offset"])
+        if offset == 0:
+            items = [{"id": index, "owner_id": -7, "title": f"Video {index}"} for index in range(200)]
+            return httpx.Response(200, json={"response": {"count": 201, "items": items}})
+        return httpx.Response(200, json={"response": {"count": 201, "items": []}})
+
+    client = _pagination_client(tmp_path, handler)
+
+    with pytest.raises(VkApiError, match="ended early"):
+        client.list_videos(7)
+
+
+def test_vk_pagination_rejects_total_change(tmp_path: Path) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        params = {key: values[0] for key, values in parse_qs(request.content.decode()).items()}
+        offset = int(params["offset"])
+        if offset == 0:
+            items = [{"id": index, "owner_id": -7, "title": f"Video {index}"} for index in range(200)]
+            return httpx.Response(200, json={"response": {"count": 201, "items": items}})
+        return httpx.Response(
+            200,
+            json={"response": {"count": 202, "items": [{"id": 201, "owner_id": -7, "title": "Last"}]}},
+        )
+
+    client = _pagination_client(tmp_path, handler)
+
+    with pytest.raises(VkApiError, match="total changed"):
+        client.list_videos(7)
+
+
+def test_vk_pagination_rejects_malformed_item(tmp_path: Path) -> None:
+    def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"response": {"count": 1, "items": ["not-an-object"]}})
+
+    client = _pagination_client(tmp_path, handler)
+
+    with pytest.raises(VkApiError, match="malformed non-object item"):
+        client.list_videos(7)
