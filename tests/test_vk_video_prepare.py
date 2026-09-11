@@ -180,6 +180,7 @@ def test_video_prepare_rejects_candidate_that_is_already_present_on_vk(
             reuse_media_manifests=[media_manifest],
         )
 
+
 def test_video_prepare_allows_no_target_snapshot_and_relies_on_live_guard(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -227,4 +228,3 @@ def test_video_prepare_rejects_multi_source_batch() -> None:
             repository_root=Path("."),
             output_root=Path("wave"),
         )
-
