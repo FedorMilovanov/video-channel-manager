@@ -25,6 +25,7 @@ from video_channel_manager.wave_engine import (
     WaveStatus,
 )
 from video_channel_manager.wave_engine.canonical import file_sha256, object_sha256, write_json_atomic
+from video_channel_manager.wave_engine.engine import KnownProviderRejectionError
 
 
 def _project() -> ProjectBinding:
@@ -303,6 +304,41 @@ def test_engine_rejects_plan_path_mismatch_digest_mismatch_and_nonempty_journal(
             journal_directory=journal,
             provider_writes_enabled=False,
         )
+
+
+def test_definite_provider_rejection_is_failed_non_retryable_and_not_unknown(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _clear_ci(monkeypatch)
+    plan = _plan(MutationClass.AMBIGUOUS_MUTATION)
+    plan_path = tmp_path / "plan.json"
+    intent = _intent(plan_path, plan, enabled=True)
+
+    class RejectingAdapter:
+        def execute(self, operation: WaveOperation) -> dict[str, object]:
+            del operation
+            raise KnownProviderRejectionError("VK API 9 in video.save: Flood control")
+
+    result = WaveEngine().apply(
+        plan=plan,
+        intent=intent,
+        adapter=RejectingAdapter(),
+        source=_source(),
+        repository_root=tmp_path,
+        source_file_path=tmp_path / "source-evidence.json",
+        plan_file_path=plan_path,
+        journal_directory=tmp_path / "journal-provider-reject",
+        provider_writes_enabled=True,
+    )
+
+    assert result.status is WaveStatus.FAILED
+    rejected = result.operations[0]
+    assert rejected.status is OperationStatus.FAILED
+    assert rejected.retry_safe is False
+    assert rejected.unknown_requires_reconciliation is False
+    assert rejected.error_kind == "provider_rejected"
+    result.assert_matches(plan)
 
 
 def test_ambiguous_failure_is_unknown_non_retryable_and_never_replayed(
