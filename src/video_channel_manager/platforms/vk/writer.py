@@ -337,6 +337,7 @@ class VkVideoWriter(HttpClientOwner):
         items: list[dict[str, Any]] = []
         offset = 0
         expected_total: int | None = None
+        effective_page_size = page_size
         while True:
             response = self._call(
                 "video.get",
@@ -366,11 +367,13 @@ class VkVideoWriter(HttpClientOwner):
                         method="video.get",
                     )
                 return items
+            if offset == 0 and len(page) < page_size and len(page) < raw_total:
+                effective_page_size = len(page)
             items.extend(page)
             offset += len(page)
             if offset == raw_total:
                 return items
-            if offset > raw_total or len(page) < page_size:
+            if offset > raw_total or len(page) != effective_page_size:
                 raise VkWriteError(
                     f"video.get inventory pagination is incomplete at {offset} of {raw_total}.",
                     method="video.get",
