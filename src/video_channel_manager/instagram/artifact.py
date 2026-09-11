@@ -92,10 +92,14 @@ class InstagramReelArtifactBinding(BaseModel):
 
     @model_validator(mode="after")
     def require_versioned_reel_evidence(self) -> InstagramReelArtifactBinding:
-        if self.ruleset_version in {
-            "meta-instagram-reels-2026-09-v2",
-            "meta-instagram-reels-2026-09-v3",
-        } and self.audio_channels is None:
+        if (
+            self.ruleset_version
+            in {
+                "meta-instagram-reels-2026-09-v2",
+                "meta-instagram-reels-2026-09-v3",
+            }
+            and self.audio_channels is None
+        ):
             raise ValueError("v2+ Reel artifact bindings require audio_channels")
         if self.ruleset_version == "meta-instagram-reels-2026-09-v3":
             if self.pixel_format is None:
