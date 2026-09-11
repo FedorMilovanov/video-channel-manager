@@ -134,6 +134,25 @@ def _json_payload(response: httpx.Response) -> dict[str, object] | None:
     return cast(dict[str, object], payload) if isinstance(payload, dict) else None
 
 
+def provider_http_retryable(response: httpx.Response) -> bool | None:
+    """Return Meta's explicit retryability decision when present in JSON diagnostics."""
+
+    payload = _json_payload(response)
+    if payload is None:
+        return None
+    raw_debug = payload.get("debug_info")
+    if isinstance(raw_debug, dict):
+        raw_retriable = raw_debug.get("retriable")
+        if isinstance(raw_retriable, bool):
+            return raw_retriable
+    raw_error = payload.get("error")
+    if isinstance(raw_error, dict):
+        raw_retriable = raw_error.get("retriable")
+        if isinstance(raw_retriable, bool):
+            return raw_retriable
+    return None
+
+
 def describe_provider_http_error(
     response: httpx.Response,
     *,
@@ -214,5 +233,6 @@ __all__ = [
     "ResumablePhaseFailure",
     "describe_provider_http_error",
     "extract_resumable_phase_failure",
+    "provider_http_retryable",
     "secret_safe_exception_detail",
 ]
