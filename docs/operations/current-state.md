@@ -1,5 +1,5 @@
 # Current operational state
-Updated: 2026-09-10
+Updated: 2026-09-11
 
 This file is the concise current operational interpretation. It does **not** authorize provider mutation. Historical issues, comments, pull requests, CI runs, credentials, releases and receipts are evidence only; they are never standing execution authority.
 For every new task, resolve fresh current `main` and the relevant durable state before acting. Do not treat an older SHA, issue body, checkpoint comment or workflow run as the live baseline when newer terminal evidence exists.
@@ -18,12 +18,13 @@ Only `main` is a supported repository code/runtime execution baseline.
 `state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs. None is a code baseline. Ephemeral `work/`, `agent/`, `feature/` and `research/` refs become non-authoritative when their owning scope closes; preserve unique evidence before cleanup and never rewrite a durable state ref as branch hygiene.
 
 ### Current checkpoint
-The exact repository checkpoint used for this documentation sync is `main` `03d99864c78d729ce25b9fcc9fe7aba1b7548f9d`. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
+The exact repository checkpoint used for this documentation sync is `main` `b8250d9771bd48efef22913565a6020b7cf0fac1`. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
 Recent hardening now present on `main` includes:
 - LordChrist quote production: durable morning/evening slots, bounded same-Moscow-day leases, predecessor-to-successor handoff, reviewed 60-card successor corpus, source-integrity amendment, and successor-ledger initialization moved behind publication eligibility/current-main/target gates (#548, #551, #557, #559, #583, #590).
 - LordChrist historical production: evidence-backed editorial foundation plus the separate archival-v3 recurring release, 16 media exhibits for eight recurring posts, reader-safe rendering, durable canary/editorial approval and pre-exhaustion successor guard (#556, #591).
-- Instagram: guarded production publisher, Reel compatibility boundary, local resumable MP4 upload with 1 GB boundary/durable child ledger, exact non-secret Legendary Poet target binding, CODEOWNERS coverage, credential-expiry diagnostics, Meta-aligned binary framing, and phase-aware resumable incident hardening (#569, #573, #585, #588, #592, #593, #599, #601).
-- Repository/runtime hardening: provider-outcome/recovery cleanup, completed branch-hygiene deletion manifest, and scheduled exact-main quality proof that waits up to 420 seconds while re-proving `main` and fails closed on timeout/movement (#532, #536, #538, #540, #544, #550, #555, #595).
+- Instagram: guarded production publisher, Reel compatibility boundary, local resumable MP4 upload with 1 GB boundary/durable child ledger, exact non-secret Legendary Poet target binding, CODEOWNERS coverage, credential-expiry diagnostics, Meta-aligned binary framing, phase-aware resumable reconciliation, and immediate terminalization of explicit non-retriable HTTP 4xx upload rejects (#569, #573, #585, #588, #592, #593, #599, #601, #606, #611).
+- Repository/runtime hardening: provider-outcome/recovery cleanup, completed branch-hygiene deletion manifest, scheduled exact-main quality proof that waits up to 420 seconds while re-proving `main`, stale/divergent branch salvage classification, and non-executable preservation of the retired LordChrist v3 phase-1 acquisition provenance (#532, #536, #538, #540, #544, #550, #555, #595, #608, #616).
+- Legendary Poet VK long-form: PR #604 merged the durable flood-control circuit, bounded upload wall guard, exact registry-bound inventory, reviewed native-video Wave adapter and exact-ID reconciliation path. Repository hardening is complete, but the live transfer is not.
 
 ## Telegram / LordChrist verified quotes
 Issues #541, #543, #582 and #589 are closed as **completed** after the slot-aware runtime, transport hardening, reviewed successor-corpus work, production handoff and state-initialization ordering fixes. Issue #168 is closed as repository implementation complete; implementation completion does not itself authorize execution.
@@ -69,6 +70,11 @@ Issue #170 is closed as repository pipeline implementation complete. The histori
 Issue #235 is completed with verified successor publications including Telegram messages `28` and `29`; the intervening v3 failed-no-effect identity is immutable and was not retried.
 The original 14-entry ledger is terminal no-replay evidence. Consumed one-shot executors were retired. No new Svodka Telegram mutation is authorized by this state.
 
+## VK / Legendary Poet long-form transfer
+Issue #594 is closed after repository hardening merged through PR #604 (`4dcfc64439e949393a4b55a80c297a398fa0c46f`). That closure is **not** provider completion.
+The final #594 execution checkpoint records the canary journal still at `stage=planned`, with `reservation_dispatch_started_at=false` and `upload_dispatch_started_at=false`. `video.save` was not dispatched, binary upload did not begin, and no VK wall/content mutation occurred.
+The old canary wrapper must not be replayed. Any later continuation must start from fresh current `main` and fresh VK/YouTube state, use the merged Wave/operator contract, prove the exact missing long-form set again, and obtain a new explicit owning authorization scope before provider mutation. The historical 8-ID allowlist/snapshots are evidence, not standing current authority.
+
 ## VK / Milovi Cake / Issue #323
 Issue #323 is closed. All 12 allowlisted Milovi Cake sources completed native VK Clip uploads with durable logical wall mappings. Older `OPEN`, `8/12`, `upload_in_progress` or `pending` checkpoints are historical only.
 Do not duplicate a verified Clip because of transient projection; aggregate omission is not exact disappearance proof; ambiguous provider responses require exact reconciliation; retired finalizers must not return as second writers.
@@ -84,7 +90,7 @@ Canonical runbook: [`milovi-telegram-feed-control-plane.md`](milovi-telegram-fee
 ## Instagram / Legendary Poet and Lord God
 Issue #492 is closed as repository implementation complete for the earlier provider-inert launch/content/factory scope. PR #569 provides the production publisher: explicit login/Graph configuration, exact identity preflight, default-off double write gate, durable SQL ledger, idempotent publication-key/content binding, CAS claims, fail-closed reconciliation and public-media integrity verification before provider POST.
 
-Issue #571 / PR #573 adds canonical Reel media compatibility via `InstagramReelArtifactBinding`. PR #585 adds direct local-MP4 resumable upload with a hard 1 GB boundary, exact-byte re-proof, durable child state and zero blind replay. PR #599 aligns the binary upload request with Meta's reviewed complete-byte framing while preserving secret-safe HTTP diagnostics. PR #601 / issue #600 hardens that path further: it requests `video_status`, treats upload/processing phase `error` as terminal even under stale top-level `IN_PROGRESS`, preserves bounded secret-safe phase/provider diagnostics, uses a dedicated upload timeout, accepts AAC sample rates up to 48 kHz, and fails closed on local MP4 edit lists or `moov` after `mdat`.
+Issue #571 / PR #573 adds canonical Reel media compatibility via `InstagramReelArtifactBinding`. PR #585 adds direct local-MP4 resumable upload with a hard 1 GB boundary, exact-byte re-proof, durable child state and zero blind replay. PR #599 aligns the binary upload request with Meta's reviewed complete-byte framing while preserving secret-safe HTTP diagnostics. PR #601 / issue #600 hardens that path further: it requests `video_status`, treats upload/processing phase `error` as terminal even under stale top-level `IN_PROGRESS`, preserves bounded secret-safe phase/provider diagnostics, uses a dedicated upload timeout, accepts AAC sample rates up to 48 kHz, and fails closed on local MP4 edit lists or `moov` after `mdat`. PR #606 routes CLI reconciliation through the same resumable phase-aware state model. PR #611 preserves Meta retryability diagnostics and immediately terminalizes definite HTTP 4xx upload rejects that explicitly report `retriable=false`, while transport/5xx ambiguity remains fail-closed/no-replay.
 
 The canonical non-secret Legendary Poet target remains project `legendary-poet`, Instagram account `17841435926122104`, username `the.legendary.poet`, Facebook Page `1299632476567433`, login mode `facebook`, Graph host `https://graph.facebook.com`. Credentials authenticate this target; they do not redefine it and are not repository state.
 
@@ -114,6 +120,7 @@ Canonical runbooks: [`resi-dash-local-handoff.md`](resi-dash-local-handoff.md) a
 
 ## Repository branch hygiene / Issue #531
 Issue #531 is closed as **completed**. PR #550's frozen baseline produced 138 DELETE candidates, physically removed with exact-SHA rereads and zero open-PR collisions.
+PR #608 later classified newly accumulated stale/divergent refs without disturbing active lanes. PR #616 preserved the final unique LordChrist archival-v3 phase-1 acquisition JSONs byte-for-byte as documentation-only history before that obsolete execution branch was retired.
 A previously recorded post-cleanup ref count is not a durable invariant. Any later hygiene pass must resolve fresh complete refs and classify them by durable-state role, open ownership and unique evidence. Never delete/rewrite a ref merely by prefix/age or treat a durable state ref as disposable debt.
 
 ## GitHub governance / Issue #443
@@ -126,7 +133,7 @@ This closure is evidence, not standing authority. Future protection changes requ
 2. Future Milovi/Dzen/provider/admin experiments require new exact scope and real attribution/outcome data.
 3. LordChrist historical #561 is complete through #591; archival-v3 may progress only through exact scheduled release/state gates, and later cycles require exact successor binding before the final pending post.
 4. Instagram #577 is complete. #581 remains open for the first successful canary: start from fresh current `main`, re-prove the clean MP4 and exact target/quota read-only, then require fresh operation-specific execution authority before any new container/upload/publish write. Never replay the failed canary containers.
-5. Issue #594 is a separate Legendary Poet YouTube -> VK transfer scope; do not merge it conceptually with Instagram or LordChrist and do not reuse historical missing counts as authority.
+5. #594 repository hardening is complete, but its live Legendary Poet YouTube -> VK transfer did **not** run. Any continuation requires a new exact owning scope, fresh provider snapshots/diff, the merged Wave/operator path, and fresh mutation authority; do not reuse the old canary wrapper or historical missing counts as authority.
 6. For provider-visible work, start from fresh current `main`, fresh durable state, exact target identity, immutable operation identity and a new explicit owning authorization scope.
 
 Nothing in this document is authorization for a provider mutation.
