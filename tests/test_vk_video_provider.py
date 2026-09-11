@@ -9,7 +9,6 @@ import pytest
 import video_channel_manager.wave_engine.vk_video_provider as provider_module
 from video_channel_manager.platforms.vk.upload_lifecycle import UploadRecoveryRequired, UploadStage
 from video_channel_manager.platforms.vk.text import render_vk_video_description
-from video_channel_manager.platforms.vk.wall_safety import build_upload_wall_guard
 from video_channel_manager.wave_engine.canonical import file_sha256, write_json_atomic
 from video_channel_manager.wave_engine.engine import OperationRejectedError, UnknownProviderOutcomeError
 from video_channel_manager.wave_engine.models import (
@@ -93,7 +92,6 @@ def _adapter(root: Path, writer: _FakeWriter) -> VkNativeVideoUploadAdapter:
     adapter.writer = writer
     adapter._owns_writer = False
     adapter._community_ids = {COMMUNITY_ID}
-    adapter._wall_guard = None
     return adapter
 
 
@@ -121,27 +119,36 @@ def _inputs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     return root, media, operation
 
 
-def test_video_adapter_wall_failure_is_rejected_before_upload_dispatch(
+def test_video_adapter_does_not_read_wall_before_upload_dispatch(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    root, _media, operation = _inputs(tmp_path, monkeypatch)
+    root, media, operation = _inputs(tmp_path, monkeypatch)
     writer = _FakeWriter(fail_guard=True)
     adapter = _adapter(root, writer)
     dispatched = 0
 
-    def forbidden_execute(*args: Any, **kwargs: Any) -> None:
+    def fake_execute(record: dict[str, Any], **kwargs: Any) -> None:
         nonlocal dispatched
         dispatched += 1
-        raise AssertionError("upload lifecycle must not run")
+        assert kwargs["media_path"] == media.resolve()
+        assert kwargs["wall_before_snapshot"] is None
+        record["stage"] = UploadStage.VERIFIED.value
+        record["reservation"] = {
+            "remote_id": f"{OWNER_ID}_501",
+            "owner_id": OWNER_ID,
+            "video_id": 501,
+        }
+        record["verification"] = {"item_sha256": "sha256:" + "1" * 64}
+        kwargs["persist"]()
 
-    monkeypatch.setattr(provider_module, "execute_upload_operation", forbidden_execute)
+    monkeypatch.setattr(provider_module, "execute_upload_operation", fake_execute)
 
-    with pytest.raises(OperationRejectedError, match="before provider dispatch"):
-        adapter.execute(operation)
+    evidence = adapter.execute(operation)
 
-    assert writer.guard_calls == 1
-    assert dispatched == 0
+    assert dispatched == 1
+    assert writer.guard_calls == 0
+    assert evidence["remote_id"] == f"{OWNER_ID}_501"
 
 
 def test_video_adapter_success_persists_exact_verified_evidence(
@@ -157,17 +164,14 @@ def test_video_adapter_success_persists_exact_verified_evidence(
         nonlocal calls
         calls += 1
         assert kwargs["media_path"] == media.resolve()
+        assert kwargs["wall_before_snapshot"] is None
         record["stage"] = UploadStage.VERIFIED.value
         record["reservation"] = {
             "remote_id": f"{OWNER_ID}_501",
             "owner_id": OWNER_ID,
             "video_id": 501,
         }
-        record["verification"] = {
-            "wall_before_snapshot_sha256": "sha256:" + "1" * 64,
-            "wall_after_snapshot_sha256": "sha256:" + "2" * 64,
-            "wall_delta_status": "clean",
-        }
+        record["verification"] = {"item_sha256": "sha256:" + "1" * 64}
         kwargs["persist"]()
 
     monkeypatch.setattr(provider_module, "execute_upload_operation", fake_execute)
@@ -175,10 +179,10 @@ def test_video_adapter_success_persists_exact_verified_evidence(
     evidence = adapter.execute(operation)
 
     assert calls == 1
-    assert writer.guard_calls == 1
+    assert writer.guard_calls == 0
     assert evidence["remote_id"] == f"{OWNER_ID}_501"
     assert evidence["upload_stage"] == UploadStage.VERIFIED.value
-    assert evidence["wall_delta_status"] == "clean"
+    assert "wall_delta_status" not in evidence
     journal = root / evidence["provider_journal_path"]
     assert journal.is_file()
 
@@ -226,12 +230,6 @@ def test_video_adapter_reconciliation_uses_exact_journaled_id_without_media_repl
             },
         },
     )
-    guard = build_upload_wall_guard(
-        community_id=COMMUNITY_ID,
-        published_items=[],
-        postponed_items=[],
-    )
-    write_json_atomic(adapter._batch_guard_path(), guard.as_dict())
     calls = 0
 
     def fake_execute(record: dict[str, Any], **kwargs: Any) -> None:
@@ -239,11 +237,10 @@ def test_video_adapter_reconciliation_uses_exact_journaled_id_without_media_repl
         calls += 1
         assert kwargs["media_path"] is None
         assert kwargs["media_artifact"] is None
+        assert kwargs["wall_before_snapshot"] is None
         assert record["reservation"]["remote_id"] == f"{OWNER_ID}_501"
         record["stage"] = UploadStage.VERIFIED.value
-        record["verification"] = {
-            "wall_delta_status": "clean",
-        }
+        record["verification"] = {"item_sha256": "sha256:" + "1" * 64}
         kwargs["persist"]()
 
     monkeypatch.setattr(provider_module, "execute_upload_operation", fake_execute)
