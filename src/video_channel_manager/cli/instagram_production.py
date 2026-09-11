@@ -16,6 +16,7 @@ from video_channel_manager.instagram.local_resumable import (
     InstagramResumableUploadLedger,
     ResumableUploadSnapshot,
     build_local_publish_manifest,
+    verify_local_reel,
 )
 from video_channel_manager.instagram.production import (
     InstagramConfigurationError,
@@ -248,6 +249,52 @@ def publish(
         if database is not None:
             database.close()
     _render_snapshot(snapshot)
+
+
+@instagram_production_app.command("validate-local")
+def validate_local(
+    video_path: Annotated[Path, typer.Argument(help="Local MP4 to verify against the exact publish-local Reel contract")],
+) -> None:
+    """Verify one local Reel with the production media boundary and no provider access."""
+
+    try:
+        evidence = verify_local_reel(video_path)
+    except InstagramProductionError as exc:
+        console.print(f"[red]Instagram local Reel validation failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+    probe = evidence.probe
+    binding = evidence.binding
+    structure = evidence.structure
+    closed_gop = evidence.closed_gop
+
+    table = Table(title=f"Instagram local Reel validation: {Path(evidence.path).name}")
+    table.add_column("Field")
+    table.add_column("Value")
+    table.add_row("SHA-256", evidence.media_sha256)
+    table.add_row("Size", str(evidence.media_size_bytes))
+    table.add_row("Ruleset", binding.ruleset_version)
+    table.add_row("Container", binding.container)
+    table.add_row("Content type", binding.media_content_type)
+    table.add_row("moov before mdat", "yes" if structure.moov_before_mdat else "no")
+    table.add_row("Edit lists", "none" if not structure.edit_list_paths else ", ".join(structure.edit_list_paths))
+    table.add_row("Video codec", binding.video_codec)
+    table.add_row("Dimensions", f"{binding.width}x{binding.height}")
+    table.add_row("Pixel format", binding.pixel_format or probe.pixel_format or "-")
+    table.add_row("Field order", binding.field_order or probe.field_order or "-")
+    table.add_row("Frame rate", f"{binding.video_frame_rate_fps:g} fps")
+    table.add_row("Video bitrate", f"{binding.video_bitrate_bps} bps")
+    table.add_row("Audio codec", binding.audio_codec)
+    table.add_row("Audio sample rate", f"{binding.audio_sample_rate_hz} Hz")
+    table.add_row("Audio channels", str(binding.audio_channels or "-"))
+    table.add_row("Audio bitrate", f"{binding.audio_bitrate_bps} bps")
+    table.add_row("Duration", f"{binding.duration_seconds:g} s")
+    table.add_row("Closed GOP", "yes" if closed_gop.closed_gop else "no")
+    table.add_row("Intra / IDR frames", f"{closed_gop.intra_frame_count} / {closed_gop.idr_frame_count}")
+    table.add_row("NAL length size", str(closed_gop.nal_length_size))
+    table.add_row("Advisories", ", ".join(binding.advisories) if binding.advisories else "-")
+    console.print(table)
+    console.print("[green]Instagram local Reel validation passed; provider calls/writes: none.[/green]")
 
 
 @instagram_production_app.command("publish-local")
