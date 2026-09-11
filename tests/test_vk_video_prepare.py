@@ -179,3 +179,52 @@ def test_video_prepare_rejects_candidate_that_is_already_present_on_vk(
             output_root=root / "wave",
             reuse_media_manifests=[media_manifest],
         )
+
+def test_video_prepare_allows_no_target_snapshot_and_relies_on_live_guard(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "repo"
+    root.mkdir()
+    source_path = root / "youtube.json"
+    source = _audit(
+        PlatformName.YOUTUBE,
+        YT_CHANNEL,
+        [_video(PlatformName.YOUTUBE, YT_CHANNEL, "yt-1", "Новый ролик", 305)],
+    )
+    _write_audit(source_path, source)
+    media = root / "yt-1.mp4"
+    media.write_bytes(b"video")
+    media_manifest = root / "yt-1-manifest.json"
+    media_manifest.write_text('{"manifest":true}\n', encoding="utf-8")
+    _patch_reused_media(monkeypatch, media=media, manifest=media_manifest)
+
+    summary = prepare_vk_video_wave(
+        project_key="legendary-poet",
+        source_audit_path=source_path,
+        target_audit_path=None,
+        candidate_ids=["yt-1"],
+        canary_id="yt-1",
+        repository_root=root,
+        output_root=root / "wave",
+        reuse_media_manifests=[media_manifest],
+    )
+
+    assert summary["vk_snapshot_id"] is None
+    assert summary["batch"] is None
+    selection = json.loads((root / "wave" / "evidence" / "selection.json").read_text(encoding="utf-8"))
+    assert selection["vk_snapshot_id"] is None
+
+
+def test_video_prepare_rejects_multi_source_batch() -> None:
+    with pytest.raises(VkVideoPreparationError, match="one-source-per-run"):
+        prepare_vk_video_wave(
+            project_key="legendary-poet",
+            source_audit_path=Path("unused"),
+            target_audit_path=None,
+            candidate_ids=["a", "b"],
+            canary_id="a",
+            repository_root=Path("."),
+            output_root=Path("wave"),
+        )
+
