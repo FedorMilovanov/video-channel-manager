@@ -124,7 +124,7 @@ Result statuses:
 - `unknown_requires_reconciliation` only when provider outcome may actually be unknown;
 - `rejected` for preflight/contract failure.
 
-For the only supported mutating child, `wave apply`, exit codes preserve the Wave result contract: exit `3` is a known failed/pre-dispatch outcome and remains retry-safe; exit `4` is an actual unknown provider outcome and requires reconciliation. A timeout or any unexpected nonzero mutation exit remains unknown fail-closed. The operator does not reinterpret every nonzero mutation exit as unknown.
+For the only supported mutating child, `wave apply`, exit codes preserve the Wave result contract: exit `3` is a known failed outcome and does not require reconciliation; exit `4` is an actual unknown provider outcome and requires reconciliation. The operator-level `retry_safe` flag remains false for mutation runs because it describes replay of the whole operator invocation, not an individual failed operation. A timeout or any unexpected nonzero mutation exit remains unknown fail-closed.
 
 ## Interpreter contract
 
