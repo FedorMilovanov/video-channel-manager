@@ -281,6 +281,7 @@ class VkApiClient(HttpClientOwner):
         items: list[dict[str, Any]] = []
         offset = 0
         expected_total: int | None = None
+        effective_page_size = page_size
         while True:
             page_params = dict(params)
             page_params["offset"] = offset
@@ -331,6 +332,8 @@ class VkApiClient(HttpClientOwner):
                     )
                 return items
 
+            if offset == 0 and len(page) < page_size and len(page) < raw_total:
+                effective_page_size = len(page)
             items.extend(page)
             offset += len(page)
             if offset >= raw_total:
@@ -341,9 +344,10 @@ class VkApiClient(HttpClientOwner):
                         kind=HttpFailureKind.INVALID_PAYLOAD,
                     )
                 return items
-            if len(page) < page_size:
+            if len(page) != effective_page_size:
                 raise VkApiError(
-                    f"VK {method} pagination returned a short page at offset {offset} before total {raw_total}.",
+                    f"VK {method} pagination returned an inconsistent page of {len(page)} items "
+                    f"at offset {offset}; expected {effective_page_size}.",
                     method=method,
                     kind=HttpFailureKind.INVALID_PAYLOAD,
                 )
