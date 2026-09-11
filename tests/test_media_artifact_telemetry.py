@@ -36,6 +36,8 @@ def _evidence(path: Path, *, telemetry: bool) -> MediaArtifactEvidence:
         height=1920,
         sample_rate_hz=48_000,
         audio_channels=2,
+        pixel_format="yuv420p" if telemetry else None,
+        field_order="progressive" if telemetry else None,
         video_frame_rate_fps=30.0 if telemetry else None,
         video_bitrate_bps=8_000_000 if telemetry else None,
         audio_bitrate_bps=128_000 if telemetry else None,
@@ -64,7 +66,13 @@ def _evidence(path: Path, *, telemetry: bool) -> MediaArtifactEvidence:
     return provisional.model_copy(update={"manifest_sha256": calculate_media_manifest_sha256(provisional)})
 
 
-def _fresh_report(path: Path, *, frame_rate: float = 30.0) -> MediaQualityReport:
+def _fresh_report(
+    path: Path,
+    *,
+    frame_rate: float = 30.0,
+    pixel_format: str = "yuv420p",
+    field_order: str = "progressive",
+) -> MediaQualityReport:
     return MediaQualityReport(
         path=str(path.resolve()),
         size_bytes=path.stat().st_size,
@@ -79,6 +87,8 @@ def _fresh_report(path: Path, *, frame_rate: float = 30.0) -> MediaQualityReport
         height=1920,
         sample_rate_hz=48_000,
         audio_channels=2,
+        pixel_format=pixel_format,
+        field_order=field_order,
         video_frame_rate_fps=frame_rate,
         video_bitrate_bps=8_000_000,
         audio_bitrate_bps=128_000,
@@ -92,6 +102,8 @@ def test_historical_v1_payload_without_telemetry_keeps_its_digest(tmp_path: Path
     historical_payload: dict[str, Any] = evidence.model_dump(mode="json")
     raw_probe = historical_payload["probe"]
     assert isinstance(raw_probe, dict)
+    raw_probe.pop("pixel_format")
+    raw_probe.pop("field_order")
     raw_probe.pop("video_frame_rate_fps")
     raw_probe.pop("video_bitrate_bps")
     raw_probe.pop("audio_bitrate_bps")
@@ -102,6 +114,8 @@ def test_historical_v1_payload_without_telemetry_keeps_its_digest(tmp_path: Path
     assert parsed.manifest_sha256 == evidence.manifest_sha256
     assert report.path == str(media.resolve())
     assert report.sha256 == sha256_file(media)
+    assert report.pixel_format is None
+    assert report.field_order is None
     assert report.video_frame_rate_fps is None
     assert report.video_bitrate_bps is None
     assert report.audio_bitrate_bps is None
@@ -153,4 +167,22 @@ def test_new_cached_manifest_requires_its_telemetry_to_match(tmp_path: Path) -> 
             expected_source_duration_seconds=None,
             expected_path=media,
             probe=lambda path: _fresh_report(path, frame_rate=31.0),
+        )
+
+
+def test_new_cached_manifest_requires_scan_and_pixel_format_to_match(tmp_path: Path) -> None:
+    media = tmp_path / "cached-new-scan.mp4"
+    media.write_bytes(b"cached-new-scan-media")
+    evidence = _evidence(media, telemetry=True)
+
+    with pytest.raises(MediaArtifactError, match="fresh ffprobe evidence"):
+        validate_cached_media_artifact(
+            evidence,
+            expected_project_key="legendary-poet",
+            expected_source_platform=PlatformName.YOUTUBE,
+            expected_source_channel_id="UC-78ys2S3cQ3lpqgXfo-SvQ",
+            expected_source_id="historical-media-1",
+            expected_source_duration_seconds=None,
+            expected_path=media,
+            probe=lambda path: _fresh_report(path, pixel_format="yuv422p"),
         )

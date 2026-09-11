@@ -13,6 +13,7 @@ import httpx
 import pytest
 from pydantic import ValidationError
 
+from video_channel_manager.instagram.gop import InstagramClosedGopError, InstagramClosedGopEvidence
 from video_channel_manager.instagram.local_resumable import (
     InstagramLocalPublishManifest,
     InstagramLocalResumableService,
@@ -108,9 +109,22 @@ def _compatible_probe(path: Path) -> MediaQualityReport:
         height=1920,
         sample_rate_hz=48_000,
         audio_channels=2,
+        pixel_format="yuv420p",
+        field_order="progressive",
         video_frame_rate_fps=30.0,
         video_bitrate_bps=5_000_000,
         audio_bitrate_bps=128_000,
+    )
+
+
+def _closed_gop_probe(path: Path, expected_codec: str | None) -> InstagramClosedGopEvidence:
+    assert path.is_file()
+    assert expected_codec == "h264"
+    return InstagramClosedGopEvidence(
+        codec="h264",
+        nal_length_size=4,
+        intra_frame_count=2,
+        idr_frame_count=2,
     )
 
 
@@ -207,10 +221,49 @@ def test_kill_switch_blocks_before_any_provider_request(tmp_path: Path) -> None:
             upload_ledger,
             client=client,
             media_probe=_compatible_probe,
+            closed_gop_probe=_closed_gop_probe,
         )
         with pytest.raises(InstagramWriteGateError):
             service.publish_local(manifest, video, execute=True)
     assert requests == []
+
+
+def test_open_gop_local_mp4_fails_before_provider_write_or_durable_intent(tmp_path: Path) -> None:
+    video = tmp_path / "open-gop.mp4"
+    _write_video(video)
+    manifest = build_local_publish_manifest(video, publication_key="local.open-gop", account_id=ACCOUNT_ID)
+    writes: list[str] = []
+
+    def open_gop_probe(path: Path, expected_codec: str | None) -> InstagramClosedGopEvidence:
+        del path, expected_codec
+        raise InstagramClosedGopError(("non_idr_intra_frame:1",))
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}"):
+            return _response(request, 200, {"id": ACCOUNT_ID, "username": USERNAME})
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}/content_publishing_limit"):
+            return _response(request, 200, {"data": []})
+        if request.method == "POST":
+            writes.append(str(request.url))
+        raise AssertionError(f"Unexpected provider request: {request.method} {request.url}")
+
+    config = _config()
+    transport = httpx.MockTransport(handler)
+    with _ledgers() as (ledger, upload_ledger, _database), _client(config, transport) as client:
+        service = InstagramLocalResumableService(
+            config,
+            ledger,
+            upload_ledger,
+            client=client,
+            media_probe=_compatible_probe,
+            closed_gop_probe=open_gop_probe,
+        )
+        with pytest.raises(InstagramMediaVerificationError, match="closed-GOP"):
+            service.publish_local(manifest, video, execute=True)
+        assert ledger.get(manifest.publication_key) is None
+        assert upload_ledger.get(manifest.publication_key) is None
+    assert writes == []
 
 
 def test_incompatible_local_mp4_fails_before_provider_write_or_durable_intent(tmp_path: Path) -> None:
@@ -241,6 +294,7 @@ def test_incompatible_local_mp4_fails_before_provider_write_or_durable_intent(tm
             upload_ledger,
             client=client,
             media_probe=incompatible_probe,
+            closed_gop_probe=_closed_gop_probe,
         )
         with pytest.raises(InstagramMediaVerificationError, match="canonical Reel compatibility"):
             service.publish_local(manifest, video, execute=True)
@@ -304,6 +358,7 @@ def test_successful_local_resumable_publish_sends_exact_protocol_and_is_idempote
             upload_ledger,
             client=client,
             media_probe=_compatible_probe,
+            closed_gop_probe=_closed_gop_probe,
         )
         first = service.publish_local(manifest, video, execute=True)
         second = service.publish_local(manifest, video, execute=True)
@@ -354,6 +409,7 @@ def test_upload_transport_ambiguity_blocks_blind_binary_replay(tmp_path: Path) -
             upload_ledger,
             client=client,
             media_probe=_compatible_probe,
+            closed_gop_probe=_closed_gop_probe,
         )
 
         with pytest.raises(InstagramReconciliationRequired, match="Binary upload result"):
@@ -418,6 +474,7 @@ def test_persisted_container_response_recovers_without_duplicate_container_write
                 upload_ledger,
                 client=client,
                 media_probe=_compatible_probe,
+                closed_gop_probe=_closed_gop_probe,
             )
             result = service.publish_local(manifest, video, execute=True)
 
@@ -454,6 +511,7 @@ def test_resumable_container_rejects_non_meta_upload_uri_fail_closed(tmp_path: P
             upload_ledger,
             client=client,
             media_probe=_compatible_probe,
+            closed_gop_probe=_closed_gop_probe,
         )
         with pytest.raises(InstagramReconciliationRequired):
             service.publish_local(manifest, video, execute=True)
@@ -492,6 +550,7 @@ def test_provider_client_rejects_local_resumable_on_instagram_login_mode(tmp_pat
             upload_ledger,
             client=client,
             media_probe=_compatible_probe,
+            closed_gop_probe=_closed_gop_probe,
         )
         with pytest.raises(InstagramProductionError, match="Facebook Login"):
             service.publish_local(manifest, video, execute=True)
@@ -591,6 +650,7 @@ def test_nonretriable_http_400_terminalizes_parent_and_child_without_reconcile(t
             upload_ledger,
             client=client,
             media_probe=_compatible_probe,
+            closed_gop_probe=_closed_gop_probe,
         )
 
         with pytest.raises(InstagramProviderError) as error:
@@ -663,6 +723,7 @@ def test_http_500_remains_ambiguous_even_when_debug_info_says_nonretriable(tmp_p
             upload_ledger,
             client=client,
             media_probe=_compatible_probe,
+            closed_gop_probe=_closed_gop_probe,
         )
 
         with pytest.raises(InstagramReconciliationRequired, match="unknown"):
@@ -746,6 +807,7 @@ def test_reconcile_phase_error_marks_parent_and_child_terminal(tmp_path: Path) -
                 upload_ledger,
                 client=client,
                 media_probe=_compatible_probe,
+                closed_gop_probe=_closed_gop_probe,
             )
             result = service.reconcile(manifest.publication_key)
 

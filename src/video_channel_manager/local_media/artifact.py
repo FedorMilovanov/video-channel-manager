@@ -24,6 +24,8 @@ _SHA256_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 _WINDOWS_ABSOLUTE_RE = re.compile(r"^[A-Za-z]:[\\/]")
 _GLOB_META = frozenset("*?[]")
 _OPTIONAL_TELEMETRY_FIELDS = (
+    "pixel_format",
+    "field_order",
     "video_frame_rate_fps",
     "video_bitrate_bps",
     "audio_bitrate_bps",
@@ -192,6 +194,8 @@ class MediaProbeEvidence(FrozenEvidence):
     height: int | None = Field(default=None, gt=0)
     sample_rate_hz: int | None = Field(default=None, gt=0)
     audio_channels: int | None = Field(default=None, gt=0)
+    pixel_format: str | None = None
+    field_order: str | None = None
     video_frame_rate_fps: float | None = Field(default=None, gt=0)
     video_bitrate_bps: int | None = Field(default=None, gt=0)
     audio_bitrate_bps: int | None = Field(default=None, gt=0)

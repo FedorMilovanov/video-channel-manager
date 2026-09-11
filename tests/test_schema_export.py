@@ -21,7 +21,11 @@ def test_schema_export_includes_instagram_reel_artifact_binding(tmp_path: Path) 
     assert properties["ruleset_version"]["enum"] == [
         "meta-instagram-reels-2026-09-v1",
         "meta-instagram-reels-2026-09-v2",
+        "meta-instagram-reels-2026-09-v3",
     ]
+    assert "pixel_format" in properties
+    assert "field_order" in properties
+    assert "closed_gop_verified" in properties
     assert "media_sha256" in properties
     assert "media_size_bytes" in properties
     assert "media_content_type" in properties

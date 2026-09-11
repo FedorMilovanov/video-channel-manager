@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
@@ -19,6 +19,11 @@ from sqlalchemy.orm import Mapped, mapped_column
 from video_channel_manager.instagram.artifact import (
     InstagramArtifactCompatibilityError,
     bind_instagram_reel_probe,
+)
+from video_channel_manager.instagram.gop import (
+    InstagramClosedGopError,
+    InstagramClosedGopEvidence,
+    inspect_instagram_closed_gop,
 )
 from video_channel_manager.instagram.mp4_structure import (
     InstagramMp4StructureError,
@@ -487,6 +492,13 @@ class InstagramResumableProviderClient(InstagramProviderClient):
             )
 
 
+ClosedGopProbe = Callable[[Path, str | None], InstagramClosedGopEvidence]
+
+
+def _default_closed_gop_probe(path: Path, expected_codec: str | None) -> InstagramClosedGopEvidence:
+    return inspect_instagram_closed_gop(path, expected_codec=expected_codec)
+
+
 class InstagramLocalResumableService(InstagramProductionService):
     """Durable local-MP4 -> resumable upload -> process -> publish orchestration."""
 
@@ -498,6 +510,7 @@ class InstagramLocalResumableService(InstagramProductionService):
         *,
         client: InstagramResumableProviderClient | None = None,
         media_probe: MediaProbe = probe_media,
+        closed_gop_probe: ClosedGopProbe = _default_closed_gop_probe,
     ) -> None:
         owns_client = client is None
         resumable_client = client or InstagramResumableProviderClient(config)
@@ -506,6 +519,7 @@ class InstagramLocalResumableService(InstagramProductionService):
         self.resumable_client = resumable_client
         self.upload_ledger = upload_ledger
         self._media_probe = media_probe
+        self._closed_gop_probe = closed_gop_probe
 
     @contextmanager
     def _verified_local_stream(
@@ -560,10 +574,19 @@ class InstagramLocalResumableService(InstagramProductionService):
             try:
                 report = self._media_probe(candidate.resolve())
                 probe = MediaProbeEvidence.from_report(report)
+                closed_gop = self._closed_gop_probe(candidate.resolve(), probe.video_codec)
                 binding = bind_instagram_reel_probe(
                     probe,
                     media_manifest_sha256=manifest.content_hash(),
+                    ruleset_version="meta-instagram-reels-2026-09-v3",
+                    closed_gop_verified=closed_gop.closed_gop,
                 )
+            except InstagramClosedGopError as exc:
+                raise InstagramMediaVerificationError(
+                    f"Instagram local video failed closed-GOP requirement: {exc}",
+                    error_code="local_video_closed_gop_incompatible",
+                    retryable=False,
+                ) from exc
             except (MediaQualityError, InstagramArtifactCompatibilityError, ValueError) as exc:
                 raise InstagramMediaVerificationError(
                     f"Instagram local video failed canonical Reel compatibility: {exc}",

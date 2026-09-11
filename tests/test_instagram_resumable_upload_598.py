@@ -12,6 +12,7 @@ from urllib.parse import parse_qs
 import httpx
 import pytest
 
+from video_channel_manager.instagram.gop import InstagramClosedGopEvidence
 from video_channel_manager.instagram.local_resumable import (
     InstagramLocalResumableService,
     InstagramResumableProviderClient,
@@ -92,9 +93,22 @@ def _compatible_probe(path: Path) -> MediaQualityReport:
         height=1920,
         sample_rate_hz=48_000,
         audio_channels=2,
+        pixel_format="yuv420p",
+        field_order="progressive",
         video_frame_rate_fps=30.0,
         video_bitrate_bps=5_000_000,
         audio_bitrate_bps=128_000,
+    )
+
+
+def _closed_gop_probe(path: Path, expected_codec: str | None) -> InstagramClosedGopEvidence:
+    assert path.is_file()
+    assert expected_codec == "h264"
+    return InstagramClosedGopEvidence(
+        codec="h264",
+        nal_length_size=4,
+        intra_frame_count=2,
+        idr_frame_count=2,
     )
 
 
@@ -215,6 +229,7 @@ def test_http_400_diagnostic_is_durable_and_does_not_reopen_binary_upload(tmp_pa
                 upload_ledger,
                 client=client,
                 media_probe=_compatible_probe,
+                closed_gop_probe=_closed_gop_probe,
             )
             with pytest.raises(InstagramReconciliationRequired) as first_error:
                 service.publish_local(manifest, video, execute=True)
