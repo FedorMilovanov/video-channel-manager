@@ -118,6 +118,31 @@ def _inputs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     return root, media, operation
 
 
+def test_video_adapter_marks_record_load_as_new_known_rejection_attempt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root, _media, operation = _inputs(tmp_path, monkeypatch)
+    adapter = _adapter(root, _FakeWriter())
+    observed: dict[str, Any] = {}
+
+    def fake_ensure(existing: object, **kwargs: Any) -> tuple[dict[str, Any], bool]:
+        assert existing is None
+        observed.update(kwargs)
+        return {"stage": UploadStage.PLANNED.value}, True
+
+    monkeypatch.setattr(provider_module, "ensure_upload_record", fake_ensure)
+    readiness = provider_module.VkUploadReadiness(
+        expected_title="Поэма",
+        minimum_duration_seconds=300,
+    )
+
+    record = adapter._load_record(operation, payload=operation.payload, readiness=readiness)
+
+    assert record["stage"] == UploadStage.PLANNED.value
+    assert observed["retry_known_rejection"] is True
+
+
 def test_video_v2_operation_and_provider_journal_are_stable_across_fresh_snapshots(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
