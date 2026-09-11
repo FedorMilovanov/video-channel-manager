@@ -269,7 +269,7 @@
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": true,
-      "sha256": "18e9b0dce698bd8aa0c8bccdc7973ae69f713b4cdb2f983d086beef7034d4491",
+      "sha256": "edb96e943bfbcd1df1d28dc7c00a3ca99fd30a613e069504e243a95ba5b9848e",
       "status": "retired"
     },
     {
@@ -611,7 +611,7 @@
       "private_imports": [],
       "project_owner": "runtime-bound-or-none",
       "provider_write_capable": true,
-      "sha256": "4979590e5ac7c8ac7a6d5c386e7e51dd62eec18c97570cdb4a360505ec326193",
+      "sha256": "f568c9a290109009258f5537bcf0d206380c2c3a55398c9e7555a93066d25dab",
       "status": "retired"
     },
     {
@@ -711,8 +711,8 @@
       "private_imports": [],
       "project_owner": "runtime-bound-or-none",
       "provider_write_capable": true,
-      "sha256": "c000282ce2fb4dc6e86427cc9210b71fdb2ec0d1d8a56bf13e7df6380dc28614",
-      "status": "compatibility_adapter"
+      "sha256": "18c6f8e7839d3925cc82235cc457cb13e255e51d4f63e7a7d43469d9f37be89a",
+      "status": "retired"
     },
     {
       "callers": [],
