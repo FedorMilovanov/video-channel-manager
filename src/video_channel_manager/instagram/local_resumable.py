@@ -18,6 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from video_channel_manager.instagram.artifact import (
     InstagramArtifactCompatibilityError,
+    InstagramReelArtifactBinding,
     bind_instagram_reel_probe,
 )
 from video_channel_manager.instagram.gop import (
@@ -27,6 +28,7 @@ from video_channel_manager.instagram.gop import (
 )
 from video_channel_manager.instagram.mp4_structure import (
     InstagramMp4StructureError,
+    InstagramMp4StructureEvidence,
     inspect_instagram_mp4_structure,
 )
 from video_channel_manager.instagram.production import (
@@ -512,6 +514,170 @@ def _default_closed_gop_probe(path: Path, expected_codec: str | None) -> Instagr
     return inspect_instagram_closed_gop(path, expected_codec=expected_codec)
 
 
+@dataclass(frozen=True, slots=True)
+class InstagramLocalReelVerification:
+    """Provider-inert proof produced by the exact local publish verifier."""
+
+    path: str
+    media_sha256: str
+    media_size_bytes: int
+    structure: InstagramMp4StructureEvidence
+    probe: MediaProbeEvidence
+    closed_gop: InstagramClosedGopEvidence
+    binding: InstagramReelArtifactBinding
+
+
+def _verify_local_reel_stream(
+    candidate: Path,
+    stream: BinaryIO,
+    *,
+    expected_sha256: str | None = None,
+    expected_size_bytes: int | None = None,
+    expected_content_type: str = "video/mp4",
+    media_manifest_sha256: str | None = None,
+    media_probe: MediaProbe = probe_media,
+    closed_gop_probe: ClosedGopProbe = _default_closed_gop_probe,
+) -> InstagramLocalReelVerification:
+    if candidate.suffix.lower() != ".mp4":
+        raise InstagramMediaVerificationError(
+            "Instagram local resumable upload currently accepts .mp4 files only",
+            error_code="local_video_extension_unsupported",
+            retryable=False,
+        )
+
+    digest = hashlib.sha256()
+    size = 0
+    try:
+        while chunk := stream.read(1024 * 1024):
+            size += len(chunk)
+            digest.update(chunk)
+    except OSError as exc:
+        raise InstagramMediaVerificationError(
+            f"Instagram local video cannot be read: {candidate}",
+            error_code="local_video_read_failed",
+            retryable=True,
+        ) from exc
+
+    if size <= 0:
+        raise InstagramMediaVerificationError(
+            "Instagram local video is empty",
+            error_code="local_video_empty",
+            retryable=False,
+        )
+    observed_sha256 = f"sha256:{digest.hexdigest()}"
+    if expected_size_bytes is not None and size != expected_size_bytes:
+        raise InstagramMediaVerificationError(
+            f"Instagram local video size mismatch: expected {expected_size_bytes}, got {size}",
+            error_code="local_video_size_mismatch",
+            retryable=False,
+        )
+    if expected_sha256 is not None and observed_sha256 != expected_sha256:
+        raise InstagramMediaVerificationError(
+            "Instagram local video SHA-256 mismatch",
+            error_code="local_video_sha256_mismatch",
+            retryable=False,
+        )
+
+    resolved = candidate.resolve()
+    try:
+        structure = inspect_instagram_mp4_structure(resolved)
+    except InstagramMp4StructureError as exc:
+        raise InstagramMediaVerificationError(
+            f"Instagram local video failed MP4 structure requirements: {exc}",
+            error_code="local_video_mp4_structure_incompatible",
+            retryable=False,
+        ) from exc
+
+    try:
+        report = media_probe(resolved)
+        probe = MediaProbeEvidence.from_report(report)
+        closed_gop = closed_gop_probe(resolved, probe.video_codec)
+        binding = bind_instagram_reel_probe(
+            probe,
+            media_manifest_sha256=media_manifest_sha256 or observed_sha256,
+            ruleset_version="meta-instagram-reels-2026-09-v3",
+            closed_gop_verified=closed_gop.closed_gop,
+        )
+    except InstagramClosedGopError as exc:
+        raise InstagramMediaVerificationError(
+            f"Instagram local video failed closed-GOP requirement: {exc}",
+            error_code="local_video_closed_gop_incompatible",
+            retryable=False,
+        ) from exc
+    except (MediaQualityError, InstagramArtifactCompatibilityError, ValueError) as exc:
+        raise InstagramMediaVerificationError(
+            f"Instagram local video failed canonical Reel compatibility: {exc}",
+            error_code="local_video_reel_incompatible",
+            retryable=False,
+        ) from exc
+
+    if probe.size_bytes != size or binding.media_size_bytes != size:
+        raise InstagramMediaVerificationError(
+            "Instagram canonical Reel probe size does not match the exact local file",
+            error_code="local_video_probe_size_mismatch",
+            retryable=False,
+        )
+    if probe.sha256 != observed_sha256 or binding.media_sha256 != observed_sha256:
+        raise InstagramMediaVerificationError(
+            "Instagram canonical Reel probe SHA-256 does not match the exact local file",
+            error_code="local_video_probe_sha256_mismatch",
+            retryable=False,
+        )
+    if binding.media_content_type != expected_content_type:
+        raise InstagramMediaVerificationError(
+            "Instagram canonical Reel content type does not match the expected local media type",
+            error_code="local_video_probe_content_type_mismatch",
+            retryable=False,
+        )
+
+    stream.seek(0)
+    return InstagramLocalReelVerification(
+        path=str(resolved),
+        media_sha256=observed_sha256,
+        media_size_bytes=size,
+        structure=structure,
+        probe=probe,
+        closed_gop=closed_gop,
+        binding=binding,
+    )
+
+
+def verify_local_reel(
+    path: Path,
+    *,
+    expected_sha256: str | None = None,
+    expected_size_bytes: int | None = None,
+    expected_content_type: str = "video/mp4",
+    media_manifest_sha256: str | None = None,
+    media_probe: MediaProbe = probe_media,
+    closed_gop_probe: ClosedGopProbe = _default_closed_gop_probe,
+) -> InstagramLocalReelVerification:
+    """Run the production local Reel verifier without credentials, DB state or network I/O."""
+
+    candidate = path.expanduser()
+    try:
+        stream = candidate.open("rb")
+    except OSError as exc:
+        raise InstagramMediaVerificationError(
+            f"Instagram local video cannot be opened: {candidate}",
+            error_code="local_video_open_failed",
+            retryable=True,
+        ) from exc
+    try:
+        return _verify_local_reel_stream(
+            candidate,
+            stream,
+            expected_sha256=expected_sha256,
+            expected_size_bytes=expected_size_bytes,
+            expected_content_type=expected_content_type,
+            media_manifest_sha256=media_manifest_sha256,
+            media_probe=media_probe,
+            closed_gop_probe=closed_gop_probe,
+        )
+    finally:
+        stream.close()
+
+
 class InstagramLocalResumableService(InstagramProductionService):
     """Durable local-MP4 -> resumable upload -> process -> publish orchestration."""
 
@@ -541,12 +707,6 @@ class InstagramLocalResumableService(InstagramProductionService):
         manifest: InstagramLocalPublishManifest,
     ) -> Iterator[BinaryIO]:
         candidate = path.expanduser()
-        if candidate.suffix.lower() != ".mp4":
-            raise InstagramMediaVerificationError(
-                "Instagram local resumable upload currently accepts .mp4 files only",
-                error_code="local_video_extension_unsupported",
-                retryable=False,
-            )
         try:
             stream = candidate.open("rb")
         except OSError as exc:
@@ -556,83 +716,17 @@ class InstagramLocalResumableService(InstagramProductionService):
                 retryable=True,
             ) from exc
         try:
-            digest = hashlib.sha256()
-            size = 0
-            while chunk := stream.read(1024 * 1024):
-                size += len(chunk)
-                digest.update(chunk)
-            observed_sha256 = f"sha256:{digest.hexdigest()}"
-            if size != manifest.media_size_bytes:
-                raise InstagramMediaVerificationError(
-                    f"Instagram local video size mismatch: expected {manifest.media_size_bytes}, got {size}",
-                    error_code="local_video_size_mismatch",
-                    retryable=False,
-                )
-            if observed_sha256 != manifest.media_sha256:
-                raise InstagramMediaVerificationError(
-                    "Instagram local video SHA-256 mismatch",
-                    error_code="local_video_sha256_mismatch",
-                    retryable=False,
-                )
-
-            try:
-                inspect_instagram_mp4_structure(candidate.resolve())
-            except InstagramMp4StructureError as exc:
-                raise InstagramMediaVerificationError(
-                    f"Instagram local video failed MP4 structure requirements: {exc}",
-                    error_code="local_video_mp4_structure_incompatible",
-                    retryable=False,
-                ) from exc
-
-            try:
-                report = self._media_probe(candidate.resolve())
-                probe = MediaProbeEvidence.from_report(report)
-                closed_gop = self._closed_gop_probe(candidate.resolve(), probe.video_codec)
-                binding = bind_instagram_reel_probe(
-                    probe,
-                    media_manifest_sha256=manifest.content_hash(),
-                    ruleset_version="meta-instagram-reels-2026-09-v3",
-                    closed_gop_verified=closed_gop.closed_gop,
-                )
-            except InstagramClosedGopError as exc:
-                raise InstagramMediaVerificationError(
-                    f"Instagram local video failed closed-GOP requirement: {exc}",
-                    error_code="local_video_closed_gop_incompatible",
-                    retryable=False,
-                ) from exc
-            except (MediaQualityError, InstagramArtifactCompatibilityError, ValueError) as exc:
-                raise InstagramMediaVerificationError(
-                    f"Instagram local video failed canonical Reel compatibility: {exc}",
-                    error_code="local_video_reel_incompatible",
-                    retryable=False,
-                ) from exc
-            if probe.size_bytes != manifest.media_size_bytes or binding.media_size_bytes != manifest.media_size_bytes:
-                raise InstagramMediaVerificationError(
-                    "Instagram canonical Reel probe size does not match the frozen local manifest",
-                    error_code="local_video_probe_size_mismatch",
-                    retryable=False,
-                )
-            if probe.sha256 != manifest.media_sha256 or binding.media_sha256 != manifest.media_sha256:
-                raise InstagramMediaVerificationError(
-                    "Instagram canonical Reel probe SHA-256 does not match the frozen local manifest",
-                    error_code="local_video_probe_sha256_mismatch",
-                    retryable=False,
-                )
-            if binding.media_content_type != manifest.media_content_type:
-                raise InstagramMediaVerificationError(
-                    "Instagram canonical Reel content type does not match the frozen local manifest",
-                    error_code="local_video_probe_content_type_mismatch",
-                    retryable=False,
-                )
-
-            stream.seek(0)
+            _verify_local_reel_stream(
+                candidate,
+                stream,
+                expected_sha256=manifest.media_sha256,
+                expected_size_bytes=manifest.media_size_bytes,
+                expected_content_type=manifest.media_content_type,
+                media_manifest_sha256=manifest.content_hash(),
+                media_probe=self._media_probe,
+                closed_gop_probe=self._closed_gop_probe,
+            )
             yield stream
-        except OSError as exc:
-            raise InstagramMediaVerificationError(
-                f"Instagram local video cannot be read: {candidate}",
-                error_code="local_video_read_failed",
-                retryable=True,
-            ) from exc
         finally:
             stream.close()
 
