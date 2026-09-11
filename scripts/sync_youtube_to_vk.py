@@ -560,7 +560,7 @@ def _upload_candidates(
 
 
 def run(args: argparse.Namespace, *, runtime: SyncRuntime) -> int:
-    if args.execute:
+    if getattr(args, "execute", False):
         raise _retired_mutation_error()
     if args.write_delay < 0:
         raise SystemExit("--write-delay cannot be negative")
