@@ -18,6 +18,7 @@ InstagramVideoCodec = Literal["h264", "hevc"]
 InstagramReelRulesetVersion = Literal[
     "meta-instagram-reels-2026-09-v1",
     "meta-instagram-reels-2026-09-v2",
+    "meta-instagram-reels-2026-09-v3",
 ]
 
 _MAX_FILE_SIZE_BYTES = 1_000_000_000
@@ -83,13 +84,26 @@ class InstagramReelArtifactBinding(BaseModel):
     audio_codec: Literal["aac"]
     audio_sample_rate_hz: int = Field(gt=0, le=_MAX_AUDIO_SAMPLE_RATE_HZ)
     audio_channels: int | None = Field(default=None, ge=_MIN_AUDIO_CHANNELS, le=_MAX_AUDIO_CHANNELS)
+    pixel_format: str | None = None
+    field_order: str | None = None
+    closed_gop_verified: bool | None = None
     audio_bitrate_bps: int = Field(gt=0)
     advisories: tuple[str, ...] = ()
 
     @model_validator(mode="after")
-    def require_v2_audio_channels(self) -> InstagramReelArtifactBinding:
-        if self.ruleset_version == "meta-instagram-reels-2026-09-v2" and self.audio_channels is None:
-            raise ValueError("v2 Reel artifact bindings require audio_channels")
+    def require_versioned_reel_evidence(self) -> InstagramReelArtifactBinding:
+        if self.ruleset_version in {
+            "meta-instagram-reels-2026-09-v2",
+            "meta-instagram-reels-2026-09-v3",
+        } and self.audio_channels is None:
+            raise ValueError("v2+ Reel artifact bindings require audio_channels")
+        if self.ruleset_version == "meta-instagram-reels-2026-09-v3":
+            if self.pixel_format is None:
+                raise ValueError("v3 Reel artifact bindings require pixel_format")
+            if self.field_order is None:
+                raise ValueError("v3 Reel artifact bindings require field_order")
+            if self.closed_gop_verified is not True:
+                raise ValueError("v3 Reel artifact bindings require a closed-GOP proof")
         return self
 
 
@@ -99,10 +113,28 @@ def _normalized_format_tokens(format_names: tuple[str, ...]) -> frozenset[str]:
     )
 
 
+def _is_420_pixel_format(value: str) -> bool:
+    normalized = value.strip().lower()
+    if normalized.startswith(("yuv420p", "yuvj420p")):
+        return True
+    return normalized in {
+        "nv12",
+        "nv21",
+        "p010le",
+        "p010be",
+        "p012le",
+        "p012be",
+        "p016le",
+        "p016be",
+    }
+
+
 def bind_instagram_reel_probe(
     probe: MediaProbeEvidence,
     *,
     media_manifest_sha256: str,
+    ruleset_version: InstagramReelRulesetVersion = "meta-instagram-reels-2026-09-v2",
+    closed_gop_verified: bool | None = None,
 ) -> InstagramReelArtifactBinding:
     """Validate one canonical ffprobe observation against the Reel media contract."""
 
@@ -136,6 +168,20 @@ def bind_instagram_reel_probe(
         reasons.append("audio_channels_missing")
     elif not _MIN_AUDIO_CHANNELS <= audio_channels <= _MAX_AUDIO_CHANNELS:
         reasons.append("audio_channels_not_mono_or_stereo")
+
+    pixel_format = (probe.pixel_format or "").strip().lower()
+    field_order = (probe.field_order or "").strip().lower()
+    if ruleset_version == "meta-instagram-reels-2026-09-v3":
+        if not pixel_format:
+            reasons.append("video_pixel_format_missing")
+        elif not _is_420_pixel_format(pixel_format):
+            reasons.append("video_chroma_not_420")
+        if not field_order:
+            reasons.append("video_field_order_missing")
+        elif field_order != "progressive":
+            reasons.append("video_not_progressive")
+        if closed_gop_verified is not True:
+            reasons.append("video_closed_gop_not_verified")
 
     frame_rate = probe.video_frame_rate_fps
     if frame_rate is None:
@@ -190,6 +236,7 @@ def bind_instagram_reel_probe(
         advisories.append("audio_bitrate_not_recommended_128_kbps")
 
     return InstagramReelArtifactBinding(
+        ruleset_version=ruleset_version,
         media_manifest_sha256=media_manifest_sha256,
         media_sha256=probe.sha256,
         media_size_bytes=probe.size_bytes,
@@ -204,6 +251,9 @@ def bind_instagram_reel_probe(
         audio_codec="aac",
         audio_sample_rate_hz=sample_rate,
         audio_channels=audio_channels,
+        pixel_format=pixel_format or None,
+        field_order=field_order or None,
+        closed_gop_verified=closed_gop_verified,
         audio_bitrate_bps=audio_bitrate,
         advisories=tuple(advisories),
     )
