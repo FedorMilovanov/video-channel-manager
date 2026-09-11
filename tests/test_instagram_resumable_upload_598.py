@@ -24,6 +24,7 @@ from video_channel_manager.instagram.production import (
     InstagramProviderError,
     InstagramPublicationLedger,
     InstagramReconciliationRequired,
+    InstagramTransportError,
     InstagramRuntimeConfig,
     PublicationStatus,
 )
@@ -171,7 +172,86 @@ def test_plain_text_http_400_detail_is_bounded_and_redacted() -> None:
     assert TOKEN not in message
     assert UPLOAD_URI not in message
     assert "[REDACTED" in message
-    assert len(message) < 600
+    assert "request_method=POST" in message
+    assert "request_host=rupload.facebook.com" in message
+    assert f"request_body_length={len(VIDEO_BYTES)}" in message
+    assert f"request_content_length={len(VIDEO_BYTES)}" in message
+    assert f"request_file_size={len(VIDEO_BYTES)}" in message
+    assert "request_offset=0" in message
+    assert "request_content_type=<absent>" in message
+    assert len(message) < 900
+
+
+def test_http_400_diagnostic_preserves_provider_correlation_headers_without_secrets() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            400,
+            request=request,
+            json={
+                "debug_info": {
+                    "message": "Request processing failed",
+                    "retriable": False,
+                    "type": "ProcessingFailedError",
+                }
+            },
+            headers={
+                "X-FB-Request-ID": "request-613",
+                "X-FB-Trace-ID": "trace-613",
+                "Proxy-Status": "e_fb_vip; error=processing_failed; details=/ig-api-upload/v26.0/container-598",
+                "Content-Type": "application/json; charset=UTF-8",
+            },
+        )
+
+    config = _config()
+    with _client(config, httpx.MockTransport(handler)) as client:
+        with pytest.raises(InstagramProviderError) as caught:
+            client.upload_local_video(UPLOAD_URI, io.BytesIO(VIDEO_BYTES), file_size=len(VIDEO_BYTES))
+
+    error = caught.value
+    message = str(error)
+    assert error.status_code == 400
+    assert error.error_code == "ProcessingFailedError"
+    assert error.retryable is False
+    assert "x-fb-request-id=request-613" in message
+    assert "x-fb-trace-id=trace-613" in message
+    assert "proxy-status=e_fb_vip; error=processing_failed; details=[REDACTED_UPLOAD_PATH]" in message
+    assert "response-content-type=application/json; charset=UTF-8" in message
+    assert "request_method=POST" in message
+    assert "request_host=rupload.facebook.com" in message
+    assert f"request_body_length={len(VIDEO_BYTES)}" in message
+    assert f"request_content_length={len(VIDEO_BYTES)}" in message
+    assert f"request_file_size={len(VIDEO_BYTES)}" in message
+    assert "request_offset=0" in message
+    assert "request_content_type=<absent>" in message
+    assert TOKEN not in message
+    assert UPLOAD_URI not in message
+    assert "/ig-api-upload/" not in message
+
+
+def test_transport_failure_keeps_safe_request_fingerprint() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ReadTimeout(
+            f"read timeout for OAuth {TOKEN} at {UPLOAD_URI}",
+            request=request,
+        )
+
+    config = _config()
+    with _client(config, httpx.MockTransport(handler)) as client:
+        with pytest.raises(InstagramTransportError) as caught:
+            client.upload_local_video(UPLOAD_URI, io.BytesIO(VIDEO_BYTES), file_size=len(VIDEO_BYTES))
+
+    message = str(caught.value)
+    assert "ReadTimeout" in message
+    assert "request_method=POST" in message
+    assert "request_host=rupload.facebook.com" in message
+    assert f"request_body_length={len(VIDEO_BYTES)}" in message
+    assert f"request_content_length={len(VIDEO_BYTES)}" in message
+    assert f"request_file_size={len(VIDEO_BYTES)}" in message
+    assert "request_offset=0" in message
+    assert "request_content_type=<absent>" in message
+    assert TOKEN not in message
+    assert UPLOAD_URI not in message
+    assert "/ig-api-upload/" not in message
 
 
 def test_http_400_diagnostic_is_durable_and_does_not_reopen_binary_upload(tmp_path: Path) -> None:

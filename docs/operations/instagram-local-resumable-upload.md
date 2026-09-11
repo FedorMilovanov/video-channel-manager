@@ -2,7 +2,7 @@
 
 This runbook extends the production Instagram publisher with a reviewed local-file transport. The existing `docs/operations/instagram-production-publishing.md` runbook remains authoritative for the public-HTTPS-URL `publish` command; the rules below apply only to `publish-local`.
 
-Owning implementation issue: #584. Resumable incident hardening: #600. Strict local Reel media proof: #614.
+Owning implementation issue: #584. Resumable incident hardening: #600. Strict local Reel media proof: #614. Rupload diagnostics/fallback decision: #613.
 
 ## Supported provider mode
 
@@ -16,6 +16,22 @@ The production boundary is deliberately narrow:
 - a valid access token with the permissions needed by the existing preflight and content-publishing flow
 
 `publish-local` fails closed for the Instagram Login / `graph.instagram.com` mode until that resumable protocol is separately reviewed.
+
+## Resumable wire-framing decision
+
+The reviewed Instagram sample intentionally sends the complete local file body with `Authorization: OAuth ...`, `offset: 0`, and `file_size`. This implementation keeps that shape: the body is materialized as bytes, HTTPX derives `Content-Length`, and the application does **not** add a manual `Content-Length`.
+
+Do not add a `Content-Type` merely to imitate an incidental client default. The current Meta sample does not document a required resumable upload content type, while different public examples use different values. Until Meta documents a requirement or a separately authorized controlled test proves otherwise, this repository leaves request `Content-Type` absent. Changing it is a protocol change, not a harmless retry.
+
+On upload failure, diagnostics record only a non-secret wire fingerprint: method, host, actual body length, HTTP `Content-Length`, `file_size`, `offset`, and request `Content-Type` presence/value. The one-time rupload path, authorization value, and access token are never recorded. Available Meta correlation headers include `x-fb-request-id`, `x-fb-trace-id`, and `Proxy-Status`.
+
+## Public-HTTPS fallback
+
+If `rupload.facebook.com` continues to fail at the provider/OIL boundary, the preferred transport fallback is the already-reviewed public-URL publisher documented in `instagram-production-publishing.md`. This is a different transport and therefore requires a new reviewed publication key and fresh operation-specific authority.
+
+The fallback URL must be a stable direct HTTPS object URL on an explicitly allowed host. Before the Graph container POST, the production publisher fetches that object without redirects and proves exact content type, byte size, and SHA-256 against the frozen manifest. Use the same reviewed CLEAN media bytes; do not silently re-encode or substitute another file merely to change transport.
+
+Provisioning a public object URL is an external deployment step and is not implied by this runbook. A share page, redirector, expiring browser-only link, or URL whose bytes cannot be re-fetched and hashed exactly is not an acceptable `video_url`.
 
 ## What the command does
 
@@ -136,7 +152,7 @@ Do not commit the real token or the local `.env`.
 - Ambiguous binary upload (`upload_requested` / `upload_unknown`): transport failures, 5xx responses, or 4xx responses without an explicit non-retriable provider decision remain no-replay ambiguous. Run read-only reconciliation against the known container first.
 - **Top-level `IN_PROGRESS` is not proof of successful upload.** Read `video_status.uploading_phase` and `video_status.processing_phase`. A phase-level `error` is terminal and blocks publish/replay even when top-level status remains `IN_PROGRESS`.
 - Phase diagnostics are preserved in the durable error message, including available `bytes_transferred`, `source_file_size`, provider error code and provider message.
-- HTTP failures from `rupload.facebook.com` preserve a bounded secret-redacted response/debug body plus available `x-fb-request-id` and `x-fb-trace-id`; access tokens must never appear in logs or ledger diagnostics.
+- HTTP failures from `rupload.facebook.com` preserve a bounded secret-redacted response/debug body, a non-secret request fingerprint, and available `x-fb-request-id`, `x-fb-trace-id`, `Proxy-Status`, and response content type; access tokens and the one-time upload URI must never appear in logs or ledger diagnostics.
 - Transport failures preserve the underlying exception class/message but still remain ambiguous until provider reconciliation.
 - Ambiguous `media_publish`: use the existing publication reconciliation rules and never issue a blind second `media_publish`.
 - A completed publication is idempotent under the same `publication_key` and immutable content hash.
