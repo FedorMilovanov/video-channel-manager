@@ -253,7 +253,10 @@ def publish(
 
 @instagram_production_app.command("validate-local")
 def validate_local(
-    video_path: Annotated[Path, typer.Argument(help="Local MP4 to verify against the exact publish-local Reel contract")],
+    video_path: Annotated[
+        Path,
+        typer.Argument(help="Local MP4 to verify against the exact publish-local Reel contract"),
+    ],
 ) -> None:
     """Verify one local Reel with the production media boundary and no provider access."""
 
