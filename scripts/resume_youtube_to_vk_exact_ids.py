@@ -37,6 +37,11 @@ if __name__ == "__main__":
         "This historical executor is retired by Wave 6. "
         "Use the versioned `video-manager wave` engine through the reviewed operator contract."
     )
+def _retired_mutation_error() -> RuntimeError:
+    return RuntimeError(
+        "This historical VK mutation executor is retired; use the supported Wave/provider workflow."
+    )
+
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -169,6 +174,8 @@ def _write_lock_context(
 
 def main() -> int:
     args = _parser().parse_args()
+    if args.execute:
+        raise _retired_mutation_error()
     if args.write_delay < 0:
         raise SystemExit("--write-delay cannot be negative")
     if args.processing_timeout <= 0:
