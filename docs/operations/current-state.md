@@ -24,7 +24,7 @@ Recent hardening now present on `main` includes:
 - LordChrist historical production: evidence-backed editorial foundation plus the separate archival-v3 recurring release, 16 media exhibits for eight recurring posts, reader-safe rendering, durable canary/editorial approval and pre-exhaustion successor guard (#556, #591).
 - Instagram: guarded production publisher, Reel compatibility boundary, local resumable MP4 upload with 1 GB boundary/durable child ledger, exact non-secret Legendary Poet target binding, CODEOWNERS coverage, credential-expiry diagnostics, Meta-aligned binary framing, phase-aware resumable reconciliation, and immediate terminalization of explicit non-retriable HTTP 4xx upload rejects (#569, #573, #585, #588, #592, #593, #599, #601, #606, #611).
 - Repository/runtime hardening: provider-outcome/recovery cleanup, completed branch-hygiene deletion manifest, scheduled exact-main quality proof that waits up to 420 seconds while re-proving `main`, stale/divergent branch salvage classification, and non-executable preservation of the retired LordChrist v3 phase-1 acquisition provenance (#532, #536, #538, #540, #544, #550, #555, #595, #608, #616).
-- Legendary Poet VK long-form: PR #604 merged the durable flood-control circuit, bounded upload wall guard, exact registry-bound inventory, reviewed native-video Wave adapter and exact-ID reconciliation path. Repository hardening is complete, but the live transfer is not.
+- Legendary Poet VK long-form: PR #622 simplified the production path after #604: ordinary native-video upload no longer depends on `wall.get` or upload wall guards. It keeps explicit `wallpost=0` / `auto_publish=0` / `repeat=0`, durable reservation/upload state, exact VK video-ID verification and no blind retry after an ambiguous dispatch. Repository implementation is complete; the live transfer is not.
 
 ## Telegram / LordChrist verified quotes
 Issues #541, #543, #582 and #589 are closed as **completed** after the slot-aware runtime, transport hardening, reviewed successor-corpus work, production handoff and state-initialization ordering fixes. Issue #168 is closed as repository implementation complete; implementation completion does not itself authorize execution.
@@ -71,9 +71,10 @@ Issue #235 is completed with verified successor publications including Telegram 
 The original 14-entry ledger is terminal no-replay evidence. Consumed one-shot executors were retired. No new Svodka Telegram mutation is authorized by this state.
 
 ## VK / Legendary Poet long-form transfer
-Issue #594 is closed after repository hardening merged through PR #604 (`4dcfc64439e949393a4b55a80c297a398fa0c46f`). That closure is **not** provider completion.
-The final #594 execution checkpoint records the canary journal still at `stage=planned`, with `reservation_dispatch_started_at=false` and `upload_dispatch_started_at=false`. `video.save` was not dispatched, binary upload did not begin, and no VK wall/content mutation occurred.
-The old canary wrapper must not be replayed. Any later continuation must start from fresh current `main` and fresh VK/YouTube state, use the merged Wave/operator contract, prove the exact missing long-form set again, and obtain a new explicit owning authorization scope before provider mutation. The historical 8-ID allowlist/snapshots are evidence, not standing current authority.
+Issue #594 remains historical evidence for the failed canary, not provider completion. PR #622 (`73bb1227edbc854eea3d058807fe5cba1619ef7d`) is the current production contract.
+The #594 canary never reached `video.save`: its provider journal remained pre-dispatch, binary upload did not begin, and no VK wall/content mutation occurred. That old operator run is not replayed.
+Ordinary native-video upload now has no `wall.get` preflight or postflight. The upload path sends explicit zero-valued wall-publication flags, journals reservation/upload state, verifies the exact returned VK video ID, and requires reconciliation only when a provider outcome is genuinely unknown. An explicit VK rejection is a known failure, not automatic reconciliation.
+For a live continuation, use current `main`, determine the current missing long-form IDs, reuse already validated local media manifests when available, and run the existing Wave/operator upload path. No upload-wall snapshot or wall-guard reset is part of this flow.
 
 ## VK / Milovi Cake / Issue #323
 Issue #323 is closed. All 12 allowlisted Milovi Cake sources completed native VK Clip uploads with durable logical wall mappings. Older `OPEN`, `8/12`, `upload_in_progress` or `pending` checkpoints are historical only.
@@ -133,7 +134,7 @@ This closure is evidence, not standing authority. Future protection changes requ
 2. Future Milovi/Dzen/provider/admin experiments require new exact scope and real attribution/outcome data.
 3. LordChrist historical #561 is complete through #591; archival-v3 may progress only through exact scheduled release/state gates, and later cycles require exact successor binding before the final pending post.
 4. Instagram #577 is complete. #581 remains open for the first successful canary: start from fresh current `main`, re-prove the clean MP4 and exact target/quota read-only, then require fresh operation-specific execution authority before any new container/upload/publish write. Never replay the failed canary containers.
-5. #594 repository hardening is complete, but its live Legendary Poet YouTube -> VK transfer did **not** run. Any continuation requires a new exact owning scope, fresh provider snapshots/diff, the merged Wave/operator path, and fresh mutation authority; do not reuse the old canary wrapper or historical missing counts as authority.
+5. Legendary Poet YouTube -> VK live transfer still has not run. Continue from current `main` through the #622 Wave/operator path: refresh the missing-ID decision, reuse validated local media where possible, and do not reintroduce `wall.get`/upload-wall guards or replay the historical canary run.
 6. For provider-visible work, start from fresh current `main`, fresh durable state, exact target identity, immutable operation identity and a new explicit owning authorization scope.
 
 Nothing in this document is authorization for a provider mutation.
