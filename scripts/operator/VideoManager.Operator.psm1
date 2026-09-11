@@ -435,7 +435,7 @@ function Get-VcmOperatorOutcome {
         if (-not $TimedOut -and $ExitCode -eq 3) {
             return [pscustomobject]@{
                 status = "failed"
-                retry_safe = $true
+                retry_safe = $false
                 unknown_requires_reconciliation = $false
             }
         }
