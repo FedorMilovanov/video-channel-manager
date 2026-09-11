@@ -65,7 +65,7 @@ Describe "Wave 7 PowerShell mutation-boundary faults" {
 
         $KnownWaveFailure = Get-VcmOperatorOutcome -OperationClass "ambiguous_mutation" -ExitCode 3
         $KnownWaveFailure.status | Should -Be "failed"
-        $KnownWaveFailure.retry_safe | Should -BeTrue
+        $KnownWaveFailure.retry_safe | Should -BeFalse
         $KnownWaveFailure.unknown_requires_reconciliation | Should -BeFalse
 
         $WaveUnknown = Get-VcmOperatorOutcome -OperationClass "ambiguous_mutation" -ExitCode 4
