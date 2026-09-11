@@ -469,7 +469,7 @@ def test_persisted_container_response_recovers_without_duplicate_container_write
                 upload_ledger,
                 client=client,
                 media_probe=_compatible_probe,
-            closed_gop_probe=_closed_gop_probe,
+                closed_gop_probe=_closed_gop_probe,
             )
             result = service.publish_local(manifest, video, execute=True)
 
@@ -802,7 +802,7 @@ def test_reconcile_phase_error_marks_parent_and_child_terminal(tmp_path: Path) -
                 upload_ledger,
                 client=client,
                 media_probe=_compatible_probe,
-            closed_gop_probe=_closed_gop_probe,
+                closed_gop_probe=_closed_gop_probe,
             )
             result = service.reconcile(manifest.publication_key)
 
