@@ -38,7 +38,7 @@ Provisioning a public object URL is an external deployment step and is not impli
 Before any provider preflight or write, validate the exact local file with the same media boundary used by `publish-local`:
 
 ```powershell
-video-manager instagram production validate-local "D:\\Videos\\output-instagram-clean.mp4"
+video-manager instagram production validate-local "D:\Videos\output-instagram-clean.mp4"
 ```
 
 `validate-local` needs no Instagram credential, publication key, database state, network access or write gate. It performs no provider request and creates no durable publication intent. A successful result reports the exact SHA-256 and byte size, MP4 layout/edit-list verdict, codec/dimensions, pixel format, field order, frame rate, audio parameters, active Reel ruleset, and closed-GOP intra/IDR evidence.
