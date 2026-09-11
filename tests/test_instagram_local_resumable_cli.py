@@ -128,7 +128,8 @@ def test_validate_local_reports_production_verifier_failure(
     result = CliRunner().invoke(instagram_production_app, ["validate-local", str(video)])
 
     assert result.exit_code == 2
-    assert "closed-GOP requirement" in _plain(result.output)
+    output = " ".join(_plain(result.output).split())
+    assert "closed-GOP requirement" in output
 
 
 def test_publish_local_exposes_explicit_write_gate() -> None:
