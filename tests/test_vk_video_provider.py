@@ -67,21 +67,13 @@ def _operation(manifest_path: str, manifest_sha256: str) -> WaveOperation:
 
 
 class _FakeWriter:
-    def __init__(self, *, fail_guard: bool = False) -> None:
-        self.fail_guard = fail_guard
+    def __init__(self) -> None:
         self.guard_calls = 0
 
     def capture_upload_wall_guard(self, *, community_id: int, head_limit: int = 100):
-        assert community_id == COMMUNITY_ID
-        assert head_limit == 100
+        del community_id, head_limit
         self.guard_calls += 1
-        if self.fail_guard:
-            raise RuntimeError("wall unavailable")
-        return build_upload_wall_guard(
-            community_id=COMMUNITY_ID,
-            published_items=[],
-            postponed_items=[],
-        )
+        raise AssertionError("native video upload must not read wall state")
 
 
 def _adapter(root: Path, writer: _FakeWriter) -> VkNativeVideoUploadAdapter:
@@ -124,7 +116,7 @@ def test_video_adapter_does_not_read_wall_before_upload_dispatch(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     root, media, operation = _inputs(tmp_path, monkeypatch)
-    writer = _FakeWriter(fail_guard=True)
+    writer = _FakeWriter()
     adapter = _adapter(root, writer)
     dispatched = 0
 
