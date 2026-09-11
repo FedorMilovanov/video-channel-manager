@@ -45,6 +45,8 @@ def _minimum_duration_seconds(source_duration_seconds: int) -> int:
 
 
 class VkNativeVideoUploadAdapter:
+    reconciliation_replay_safe = True
+
     """Reviewed Wave adapter for ordinary native VK Video uploads.
 
     The adapter delegates reservation, binary transfer, exact-ID readback, and
