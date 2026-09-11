@@ -423,10 +423,14 @@ def prepare_vk_video_wave(
     reuse_by_id: dict[str, Path] = {}
     for raw_manifest in reuse_media_manifests:
         artifact = load_media_artifact_manifest(raw_manifest.resolve())
-        source_id = artifact.source.source_id
-        if source_id in reuse_by_id:
-            raise VkVideoPreparationError(f"Duplicate reusable media manifest for {source_id}")
-        reuse_by_id[source_id] = raw_manifest.resolve()
+        reusable_source_id = artifact.source.source_id
+        if reusable_source_id != source_id:
+            raise VkVideoPreparationError(
+                f"Reusable media manifest belongs to {reusable_source_id}, expected {source_id}"
+            )
+        if reusable_source_id in reuse_by_id:
+            raise VkVideoPreparationError(f"Duplicate reusable media manifest for {reusable_source_id}")
+        reuse_by_id[reusable_source_id] = raw_manifest.resolve()
 
     executable = shutil.which(yt_dlp) or (str(Path(yt_dlp).resolve()) if Path(yt_dlp).is_file() else None)
     need_download = source_id not in reuse_by_id
