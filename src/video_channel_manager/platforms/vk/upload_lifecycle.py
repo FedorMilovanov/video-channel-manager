@@ -292,7 +292,7 @@ def assess_vk_upload_readiness(
     return VkUploadReadinessAssessment(ready=not reasons, reasons=tuple(reasons), observed=observed)
 
 
-def _stable_upload_operation_id(*, community_id: int, source_video_id: str) -> str:
+def stable_upload_operation_id(*, community_id: int, source_video_id: str) -> str:
     return _canonical_sha256(
         {
             "provider": "vk",
@@ -334,7 +334,7 @@ def create_upload_record(
         "readiness": readiness.as_dict(),
         "wall_policy": wall_policy.as_dict(),
     }
-    operation_id = _stable_upload_operation_id(
+    operation_id = stable_upload_operation_id(
         community_id=community_id,
         source_video_id=source_video_id,
     )
@@ -526,7 +526,7 @@ def ensure_upload_record(
             )
         policy_payload = wall_policy.as_dict()
         record["wall_policy"] = policy_payload
-        operation_id = _stable_upload_operation_id(
+        operation_id = stable_upload_operation_id(
             community_id=community_id,
             source_video_id=source_video_id,
         )
@@ -542,7 +542,7 @@ def ensure_upload_record(
     elif not isinstance(raw_wall_policy, Mapping):
         raise ValueError("Upload journal wall_policy must be an object")
 
-    expected_operation_id = _stable_upload_operation_id(
+    expected_operation_id = stable_upload_operation_id(
         community_id=community_id,
         source_video_id=source_video_id,
     )
@@ -613,7 +613,7 @@ def _validate_record_binding(
     if not isinstance(raw_policy, Mapping):
         raise ValueError("Upload journal is missing its wall policy")
     observed_policy = VkUploadWallPolicy.from_mapping(raw_policy)
-    expected_operation_id = _stable_upload_operation_id(
+    expected_operation_id = stable_upload_operation_id(
         community_id=community_id,
         source_video_id=source_video_id,
     )
@@ -1259,6 +1259,7 @@ def execute_upload_operation(
 
 
 __all__ = [
+    "stable_upload_operation_id",
     "StoredUploadTicket",
     "UploadRecoveryRequired",
     "UploadRejected",
