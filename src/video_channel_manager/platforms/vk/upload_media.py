@@ -250,17 +250,17 @@ def execute_upload_operation(
     media_artifact: MediaArtifactEvidence | Mapping[str, Any] | None,
     readiness: VkUploadReadiness,
     processing_timeout: int,
-    wall_before_snapshot: VkUploadWallGuard,
+    wall_before_snapshot: VkUploadWallGuard | None,
     persist: PersistCallback,
     media_probe: MediaProbe = probe_media,
     fault_hook: FaultHook | None = None,
     clock: Clock = _utc_now,
 ) -> dict[str, Any]:
-    """Run the VK upload lifecycle through mandatory Wave 8D media authority.
+    """Run the VK upload lifecycle through mandatory media authority.
 
     The wrapped state machine remains responsible for mutation ordering and
-    reconciliation. This facade makes the immutable media manifest part of the
-    durable journal and reservation intent, and revalidates it at dispatch.
+    reconciliation. Wall evidence is optional and belongs only to workflows that
+    explicitly need wall-state verification.
     """
 
     stage = UploadStage(str(record.get("stage")))
