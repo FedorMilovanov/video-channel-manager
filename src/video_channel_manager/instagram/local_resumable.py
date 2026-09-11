@@ -48,6 +48,7 @@ from video_channel_manager.instagram.production import (
 )
 from video_channel_manager.instagram.provider_diagnostics import (
     describe_provider_http_error,
+    describe_resumable_upload_request,
     extract_resumable_phase_failure,
     provider_http_retryable,
     secret_safe_exception_detail,
@@ -436,6 +437,7 @@ class InstagramResumableProviderClient(InstagramProviderClient):
     def upload_local_video(self, upload_uri: str, stream: BinaryIO, *, file_size: int) -> None:
         self._require_supported_mode()
         target = _validated_upload_uri(upload_uri)
+        body: bytes | None = None
         try:
             body = stream.read()
             response = self._client.post(
@@ -454,10 +456,22 @@ class InstagramResumableProviderClient(InstagramProviderClient):
                 secret=self.config.access_token,
                 upload_uri=target,
             )
+            request = exc.request if isinstance(exc, httpx.RequestError) else None
+            fingerprint = describe_resumable_upload_request(
+                request,
+                body_length=len(body) if body is not None else 0,
+                expected_file_size=file_size,
+            )
             raise InstagramTransportError(
-                f"Instagram resumable binary upload transport failure ({type(exc).__name__}): {detail}"
+                f"Instagram resumable binary upload transport failure ({type(exc).__name__}): "
+                f"{detail}; {fingerprint}"
             ) from exc
 
+        fingerprint = describe_resumable_upload_request(
+            response.request,
+            body_length=len(body),
+            expected_file_size=file_size,
+        )
         if response.is_error:
             message, error_code = describe_provider_http_error(
                 response,
@@ -466,7 +480,7 @@ class InstagramResumableProviderClient(InstagramProviderClient):
                 prefix="Instagram resumable upload",
             )
             raise InstagramProviderError(
-                message,
+                f"{message}; {fingerprint}",
                 status_code=response.status_code,
                 error_code=error_code,
                 retryable=provider_http_retryable(response),
@@ -485,7 +499,7 @@ class InstagramResumableProviderClient(InstagramProviderClient):
                 prefix="Instagram resumable upload",
             )
             raise InstagramProviderError(
-                message,
+                f"{message}; {fingerprint}",
                 status_code=response.status_code,
                 error_code=error_code,
                 retryable=provider_http_retryable(response),
