@@ -246,7 +246,7 @@ def _build_scope(
             path=_repo_relative(repository_root, path),
             sha256=file_sha256(path),
         )
-        for path in sorted({*artifact_paths, operations_path}, key=lambda item: _repo_relative(repository_root, item))
+        for path in sorted(set(artifact_paths), key=lambda item: _repo_relative(repository_root, item))
     )
     source = WaveSourceEvidence.build(
         project=project,
