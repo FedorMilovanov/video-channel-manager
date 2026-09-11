@@ -161,7 +161,9 @@ class VkNativeVideoUploadAdapter:
         for item in self.writer.list_community_videos(community_id=community_id):
             owner_id = item.get("owner_id")
             video_id = item.get("id")
-            remote_id = f"{owner_id}_{video_id}" if isinstance(owner_id, int) and isinstance(video_id, int) else "unknown"
+            remote_id = (
+                f"{owner_id}_{video_id}" if isinstance(owner_id, int) and isinstance(video_id, int) else "unknown"
+            )
             description = str(item.get("description") or "")
             if source_url in description:
                 matches.append(remote_id)
