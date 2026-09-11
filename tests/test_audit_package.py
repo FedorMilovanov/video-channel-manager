@@ -39,3 +39,12 @@ def test_audit_package_rejects_unknown_membership_video() -> None:
             ],
             memberships=[CollectionMembership(collection_ref=ref("p1"), video_ref=ref("missing"))],
         )
+
+def test_audit_package_rejects_duplicate_video_refs() -> None:
+    duplicate = VideoRecord(ref=ref("v1"), title="Video", revision="rev-v1")
+    with pytest.raises(ValidationError, match="video refs must be unique"):
+        AuditPackage(
+            channel=ChannelRecord(ref=ref("UC1"), title="Channel", kind=ChannelKind.VIDEO_CHANNEL),
+            videos=[duplicate, duplicate.model_copy(update={"title": "Duplicate copy"})],
+        )
+
