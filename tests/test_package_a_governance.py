@@ -3,7 +3,7 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,6 +31,7 @@ def _assert_history_archive_blob_provenance(archive: dict[str, object]) -> None:
 
         relative_path = PurePosixPath(filename)
         assert not relative_path.is_absolute()
+        assert not PureWindowsPath(filename).is_absolute()
         assert ".." not in relative_path.parts
         assert relative_path.parts
 
