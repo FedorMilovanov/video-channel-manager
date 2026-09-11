@@ -463,8 +463,7 @@ class InstagramResumableProviderClient(InstagramProviderClient):
                 expected_file_size=file_size,
             )
             raise InstagramTransportError(
-                f"Instagram resumable binary upload transport failure ({type(exc).__name__}): "
-                f"{detail}; {fingerprint}"
+                f"Instagram resumable binary upload transport failure ({type(exc).__name__}): {detail}; {fingerprint}"
             ) from exc
 
         fingerprint = describe_resumable_upload_request(
