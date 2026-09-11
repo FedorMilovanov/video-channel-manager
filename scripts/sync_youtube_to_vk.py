@@ -43,7 +43,7 @@ from video_channel_manager.platforms.vk.upload_lifecycle import (
     ticket_from_record,
 )
 from video_channel_manager.platforms.vk.wall import VkWallWriter
-from video_channel_manager.platforms.vk.wall_safety import VkWallSnapshot
+from video_channel_manager.platforms.vk.wall_safety import VkUploadWallGuard
 from video_channel_manager.platforms.vk.writer import VkVideoWriter, VkWriteError
 
 
@@ -141,17 +141,17 @@ def _load_journal(path: Path, *, source: AuditPackage, community_id: int) -> dic
         if not isinstance(payload, dict) or payload.get("schema_name") != "video-manager.youtube-vk-sync-journal":
             raise ValueError(f"Unexpected journal schema: {path}")
         raw_version = payload.get("schema_version", 2)
-        if not isinstance(raw_version, int) or raw_version not in {2, 3, 4}:
+        if not isinstance(raw_version, int) or raw_version not in {2, 3, 4, 5}:
             raise ValueError(f"Unsupported journal version {raw_version!r}: {path}")
         if payload.get("source_snapshot_id") != str(source.snapshot_id):
             raise ValueError("Existing journal belongs to a different YouTube snapshot.")
         if payload.get("community_id") != community_id:
             raise ValueError("Existing journal belongs to a different VK community.")
-        payload["schema_version"] = 4
+        payload["schema_version"] = 5
         return payload
     return {
         "schema_name": "video-manager.youtube-vk-sync-journal",
-        "schema_version": 4,
+        "schema_version": 5,
         "created_at": datetime.now(UTC).isoformat(),
         "updated_at": datetime.now(UTC).isoformat(),
         "source_snapshot_id": str(source.snapshot_id),
@@ -187,38 +187,43 @@ def _prepare_upload_wall_baseline(
     community_id: int,
     journal: dict[str, Any],
     journal_path: Path,
-) -> VkWallSnapshot:
-    raw_baseline = journal.get("upload_wall_baseline")
-    if raw_baseline is not None:
-        if not isinstance(raw_baseline, dict):
-            raise UploadRecoveryRequired("Sync journal upload_wall_baseline is invalid")
+) -> VkUploadWallGuard:
+    raw_guard = journal.get("upload_wall_guard_baseline")
+    if raw_guard is not None:
+        if not isinstance(raw_guard, dict):
+            raise UploadRecoveryRequired("Sync journal upload_wall_guard_baseline is invalid")
         try:
-            baseline = VkWallSnapshot.from_mapping(raw_baseline)
+            guard = VkUploadWallGuard.from_mapping(raw_guard)
         except ValueError as exc:
-            raise UploadRecoveryRequired(f"Sync journal wall baseline is invalid: {exc}") from exc
-        if baseline.community_id != community_id or not baseline.complete:
-            raise UploadRecoveryRequired("Sync journal wall baseline is incomplete or belongs to another community")
-        return baseline
+            raise UploadRecoveryRequired(f"Sync journal upload wall guard is invalid: {exc}") from exc
+        if guard.community_id != community_id:
+            raise UploadRecoveryRequired("Sync journal upload wall guard belongs to another community")
+        return guard
 
     uploads = journal.get("uploads")
+    unsafe_source_ids: list[str] = []
     if isinstance(uploads, dict):
         unsafe_source_ids = sorted(
             source_id
             for source_id, raw_record in uploads.items()
             if isinstance(raw_record, dict) and _upload_stage_has_possible_provider_dispatch(raw_record)
         )
-        if unsafe_source_ids:
-            raise UploadRecoveryRequired(
-                "Existing upload journal has provider-dispatched records but no pre-dispatch wall baseline: "
-                + ", ".join(unsafe_source_ids[:10])
-            )
 
-    baseline = writer.capture_wall_snapshot(community_id=community_id)
-    if not baseline.complete:
-        raise UploadRecoveryRequired("Fresh upload wall baseline is incomplete")
-    journal["upload_wall_baseline"] = baseline.as_dict()
+    if unsafe_source_ids:
+        if journal.get("upload_wall_baseline") is not None:
+            raise UploadRecoveryRequired(
+                "Provider-dispatched legacy uploads are bound to a full-wall baseline and cannot be "
+                "silently migrated to the bounded upload guard: " + ", ".join(unsafe_source_ids[:10])
+            )
+        raise UploadRecoveryRequired(
+            "Existing upload journal has provider-dispatched records but no bounded pre-dispatch wall guard: "
+            + ", ".join(unsafe_source_ids[:10])
+        )
+
+    guard = writer.capture_upload_wall_guard(community_id=community_id)
+    journal["upload_wall_guard_baseline"] = guard.as_dict()
     _save_journal(journal_path, journal)
-    return baseline
+    return guard
 
 
 def _parse_vk_remote_id(remote_id: str) -> tuple[int, int]:
@@ -437,7 +442,7 @@ def _upload_candidates(
     candidate_ids: list[str],
     community_id: int,
     writer: VkWallWriter,
-    wall_before_snapshot: VkWallSnapshot,
+    wall_before_snapshot: VkUploadWallGuard,
     album_map: dict[str, int],
     journal: dict[str, Any],
     journal_path: Path,
@@ -552,24 +557,34 @@ def run(args: argparse.Namespace, *, runtime: SyncRuntime) -> int:
             f"{runtime.project_key} channel {runtime.expected_source_channel_id}."
         )
 
+    requested_community = str(args.community).strip()
+    if requested_community != str(runtime.expected_community_id):
+        raise SystemExit(
+            f"Target community {requested_community!r} does not exactly match runtime project "
+            f"{runtime.project_key} community {runtime.expected_community_id}."
+        )
+
     store = VkTokenStore(settings.data_dir)
+    account = store.get_account(str(args.account))
+    matching_communities = [
+        item for item in account.communities if int(item.community_id) == runtime.expected_community_id
+    ]
+    if len(matching_communities) != 1:
+        raise SystemExit(
+            f"Local VK account registry does not bind exactly one community {runtime.expected_community_id}."
+        )
+    community_identity = matching_communities[0]
+    community_id = int(community_identity.community_id)
+
     reader = VkApiClient(
         token_store=store,
         account_alias=args.account,
         api_version=settings.vk_api_version,
     )
-    community_record = reader.get_community(args.community)
-    community_id = int(community_record.ref.channel_id)
-    if community_id != runtime.expected_community_id:
-        raise SystemExit(
-            f"Target community {community_id} does not match runtime project "
-            f"{runtime.project_key} community {runtime.expected_community_id}."
-        )
-    if not bool(community_record.metadata.get("managed_by_token")):
-        raise SystemExit("The authorized VK user is not reported as an administrator of this community.")
-
-    print("Reading live VK inventory before any write…")
-    live_before = VkInventoryService(reader).build_audit_package(community_id)
+    inventory = VkInventoryService(reader)
+    print("Reading live VK inventory for the exact registry-bound community before any write…")
+    live_before = inventory.build_audit_package_for_known_community(community_identity)
+    community_record = live_before.channel
     comparison = compare_audit_packages(source, live_before)
     all_candidate_ids = _transfer_candidates(comparison, scope=args.scope)
     candidate_ids = all_candidate_ids if args.phase in {"videos", "all"} else []
@@ -635,7 +650,7 @@ def run(args: argparse.Namespace, *, runtime: SyncRuntime) -> int:
     )
     journal = _load_journal(args.journal, source=source, community_id=community_id)
     album_map = _album_map_from_live(live_before)
-    wall_before_snapshot: VkWallSnapshot | None = None
+    wall_before_snapshot: VkUploadWallGuard | None = None
     if candidate_ids:
         wall_before_snapshot = _prepare_upload_wall_baseline(
             writer=writer,
@@ -689,7 +704,7 @@ def run(args: argparse.Namespace, *, runtime: SyncRuntime) -> int:
                 runtime=runtime,
             )
     print("Reading final live VK inventory…")
-    live_after = VkInventoryService(reader).build_audit_package(community_id)
+    live_after = inventory.build_audit_package_for_known_community(community_identity)
     timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
     result_output = (
         args.result_output or settings.data_dir / "exports" / f"vk-{args.account}-{community_id}-{timestamp}.json"

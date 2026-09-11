@@ -11,10 +11,10 @@ from typing import Any, Protocol, cast
 
 from video_channel_manager.platforms.vk.wall_safety import (
     DEFAULT_UPLOAD_WALL_POLICY,
+    VkUploadWallGuard,
     VkWallDeltaStatus,
     VkUploadWallPolicy,
-    VkWallSnapshot,
-    compare_wall_snapshots,
+    compare_upload_wall_guards,
 )
 
 
@@ -158,12 +158,12 @@ class UploadWriterProtocol(Protocol):
         on_observation: Callable[[dict[str, Any] | None, VkUploadReadinessAssessment | None], None] | None = None,
     ) -> dict[str, Any]: ...
 
-    def capture_wall_snapshot(
+    def capture_upload_wall_guard(
         self,
         *,
         community_id: int,
-        max_posts_per_surface: int = 10000,
-    ) -> VkWallSnapshot: ...
+        head_limit: int = 100,
+    ) -> VkUploadWallGuard: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -669,12 +669,14 @@ def ticket_from_record(record: Mapping[str, Any]) -> StoredUploadTicket:
     )
 
 
-def _wall_baseline_evidence(snapshot: VkWallSnapshot) -> dict[str, object]:
+def _wall_baseline_evidence(snapshot: VkUploadWallGuard) -> dict[str, object]:
     return {
-        "before_snapshot_sha256": snapshot.snapshot_sha256,
+        "guard_schema_name": "video-manager.vk-upload-wall-guard",
+        "before_snapshot_sha256": snapshot.guard_sha256,
         "before_captured_at": snapshot.captured_at,
-        "before_published_pages": snapshot.published_pages,
-        "before_postponed_pages": snapshot.postponed_pages,
+        "head_limit": snapshot.head_limit,
+        "before_published_total": snapshot.published_total,
+        "before_postponed_total": snapshot.postponed_total,
     }
 
 
@@ -682,13 +684,11 @@ def _bind_wall_baseline(
     record: dict[str, Any],
     *,
     community_id: int,
-    wall_before_snapshot: VkWallSnapshot,
+    wall_before_snapshot: VkUploadWallGuard,
     persist: PersistCallback,
 ) -> None:
     if wall_before_snapshot.community_id != community_id:
-        raise UploadRejected("Upload wall baseline belongs to another community")
-    if not wall_before_snapshot.complete:
-        raise UploadRejected("Upload wall baseline is incomplete")
+        raise UploadRejected("Upload wall guard belongs to another community")
     stage = UploadStage(str(record.get("stage")))
     expected = _wall_baseline_evidence(wall_before_snapshot)
     raw_wall_safety = record.get("wall_safety")
@@ -698,25 +698,31 @@ def _bind_wall_baseline(
         )
         if not safe_to_bind:
             raise UploadRecoveryRequired(
-                "Historical upload has no pre-dispatch wall baseline; exact wall reconciliation is required"
+                "Historical upload has no pre-dispatch bounded wall guard; exact wall reconciliation is required"
             )
         record["wall_safety"] = {
             **expected,
             "after_snapshot_sha256": None,
             "after_captured_at": None,
+            "after_published_total": None,
+            "after_postponed_total": None,
             "delta": None,
         }
         persist()
         return
     if not isinstance(raw_wall_safety, Mapping):
         raise UploadRecoveryRequired("Upload journal wall_safety evidence is invalid")
+    if raw_wall_safety.get("guard_schema_name") != "video-manager.vk-upload-wall-guard":
+        raise UploadRecoveryRequired(
+            "Historical upload uses a legacy full-wall baseline; do not reinterpret it as the bounded upload guard"
+        )
     mismatches = {
         key: {"expected": value, "actual": raw_wall_safety.get(key)}
         for key, value in expected.items()
         if raw_wall_safety.get(key) != value
     }
     if mismatches:
-        raise UploadRecoveryRequired(f"Upload wall baseline binding mismatch: {mismatches}")
+        raise UploadRecoveryRequired(f"Upload wall guard binding mismatch: {mismatches}")
 
 
 def _verified_wall_evidence_is_clean(record: Mapping[str, Any]) -> bool:
@@ -732,7 +738,7 @@ def _commit_verified(
     *,
     writer: UploadWriterProtocol,
     community_id: int,
-    wall_before_snapshot: VkWallSnapshot,
+    wall_before_snapshot: VkUploadWallGuard,
     item: Mapping[str, Any],
     assessment: VkUploadReadinessAssessment,
     persist: PersistCallback,
@@ -740,17 +746,38 @@ def _commit_verified(
     clock: Clock,
 ) -> None:
     _fault(fault_hook, "after_remote_ready_before_wall_postflight")
-    wall_after_snapshot = writer.capture_wall_snapshot(community_id=community_id)
-    wall_delta = compare_wall_snapshots(wall_before_snapshot, wall_after_snapshot)
+    try:
+        wall_after_snapshot = writer.capture_upload_wall_guard(
+            community_id=community_id,
+            head_limit=wall_before_snapshot.head_limit,
+        )
+    except Exception as exc:
+        _record_error(record, exc, clock=clock)
+        persist()
+        _persist_transition(
+            record,
+            UploadStage.UNKNOWN_REQUIRES_RECONCILIATION,
+            persist=persist,
+            evidence={
+                "reason": "upload_wall_postflight_unavailable",
+                "error_type": type(exc).__name__,
+            },
+            clock=clock,
+        )
+        raise UploadRecoveryRequired(
+            "Upload reached remote readiness but bounded wall postflight is unavailable; "
+            "exact reconciliation is required and retransmission is forbidden"
+        ) from exc
+    wall_delta = compare_upload_wall_guards(wall_before_snapshot, wall_after_snapshot)
     raw_wall_safety = record.get("wall_safety")
     if not isinstance(raw_wall_safety, dict):
         raise UploadRecoveryRequired("Upload journal lost its wall baseline evidence")
     raw_wall_safety.update(
         {
-            "after_snapshot_sha256": wall_after_snapshot.snapshot_sha256,
+            "after_snapshot_sha256": wall_after_snapshot.guard_sha256,
             "after_captured_at": wall_after_snapshot.captured_at,
-            "after_published_pages": wall_after_snapshot.published_pages,
-            "after_postponed_pages": wall_after_snapshot.postponed_pages,
+            "after_published_total": wall_after_snapshot.published_total,
+            "after_postponed_total": wall_after_snapshot.postponed_total,
             "delta": wall_delta.as_dict(),
         }
     )
@@ -776,8 +803,8 @@ def _commit_verified(
         "verified_at": _iso(clock),
         "assessment": assessment.as_dict(),
         "item_sha256": _canonical_sha256(dict(item)),
-        "wall_before_snapshot_sha256": wall_before_snapshot.snapshot_sha256,
-        "wall_after_snapshot_sha256": wall_after_snapshot.snapshot_sha256,
+        "wall_before_snapshot_sha256": wall_before_snapshot.guard_sha256,
+        "wall_after_snapshot_sha256": wall_after_snapshot.guard_sha256,
         "wall_delta_status": wall_delta.status.value,
     }
     _persist_transition(
@@ -798,7 +825,7 @@ def _resume_or_reconcile(
     *,
     writer: UploadWriterProtocol,
     community_id: int,
-    wall_before_snapshot: VkWallSnapshot,
+    wall_before_snapshot: VkUploadWallGuard,
     readiness: VkUploadReadiness,
     processing_timeout: int,
     persist: PersistCallback,
@@ -924,7 +951,7 @@ def execute_upload_operation(
     media_path: Path | None,
     readiness: VkUploadReadiness,
     processing_timeout: int,
-    wall_before_snapshot: VkWallSnapshot,
+    wall_before_snapshot: VkUploadWallGuard,
     persist: PersistCallback,
     fault_hook: FaultHook | None = None,
     clock: Clock = _utc_now,

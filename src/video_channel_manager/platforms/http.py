@@ -28,6 +28,7 @@ class HttpFailureKind(StrEnum):
     TRANSIENT_HTTP = "transient_http"
     PERMANENT_HTTP = "permanent_http"
     PROVIDER_TRANSIENT = "provider_transient"
+    PROVIDER_FLOOD_CONTROL = "provider_flood_control"
     PROVIDER_ERROR = "provider_error"
     INVALID_JSON = "invalid_json"
     INVALID_PAYLOAD = "invalid_payload"

@@ -1,5 +1,12 @@
 from video_channel_manager.platforms.vk.client import VkApiClient, VkApiError
 from video_channel_manager.platforms.vk.clips_audit import VK_CLIPS_AUDIT_SCHEMA, build_vk_clips_audit_snapshot
+from video_channel_manager.platforms.vk.flood_control import (
+    VK_FLOOD_CONTROL_CODE,
+    VK_FLOOD_CONTROL_SCHEMA,
+    VK_FLOOD_CONTROL_VERSION,
+    VkFloodControlEntry,
+    VkFloodControlGate,
+)
 from video_channel_manager.platforms.vk.lock import local_vk_write_lock
 from video_channel_manager.platforms.vk.models import (
     VkAccessToken,
@@ -66,6 +73,9 @@ __all__ = [
     "ThumbnailOperationRecord",
     "ThumbnailPostflightUnverified",
     "ThumbnailStatus",
+    "VK_FLOOD_CONTROL_CODE",
+    "VK_FLOOD_CONTROL_SCHEMA",
+    "VK_FLOOD_CONTROL_VERSION",
     "UploadMediaAuthorityError",
     "VKCommentRenderer",
     "VKPostRenderer",
@@ -87,6 +97,8 @@ __all__ = [
     "VkCommunityIdentity",
     "VkConfigurationError",
     "VkDescriptionRender",
+    "VkFloodControlEntry",
+    "VkFloodControlGate",
     "VkInventoryService",
     "VkPostponedTextEditError",
     "VkPostponedTextState",

@@ -1,6 +1,6 @@
 # Stable versioned wave engine contract
 
-Updated: 2026-08-04
+Updated: 2026-09-10
 Owner: Wave 6 / issue #76
 
 ## Supported surface
@@ -26,7 +26,8 @@ The supported commands are:
 - `wave apply`;
 - `wave reconcile`;
 - `wave result verify`;
-- `wave result verify-reconciliation`.
+- `wave result verify-reconciliation`;
+- `wave video prepare` for immutable native-VK-video canary/batch evidence.
 
 The PowerShell operator may route provider-mutating manifests only to a complete `wave apply` invocation containing exact `--source`, `--plan`, `--intent`, `--repository-root`, and `--enable-provider-writes` arguments. Historical Python executors may not be selected as an alternative apply route.
 
@@ -80,13 +81,13 @@ For an ambiguous mutation:
 
 Result validation derives the allowed overall status from the operation statuses, rejects safe-read `unknown` outcomes, rejects dispatched ambiguous failures presented as ordinary retryable failures, and requires exact ordered operation coverage.
 
-Production provider adapters are not registered by this wave. The CLI validates exact documents and fails closed for `apply` and `reconcile` until a reviewed dependency-injected adapter is connected. Tests use fakes only.
+Reviewed production adapters are registered only for explicitly supported operation kinds. The current VK production surface includes postponed Legendary Poet article publication and ordinary native VK Video upload through `VkNativeVideoUploadAdapter`. Native video operations must be prepared from exact YouTube/VK AuditPackages, proof-backed missing long-form source IDs, repository-bound media artifact manifests, and immutable canary/batch Wave documents. Historical direct upload executors remain non-authoritative and are not alternate apply routes.
 
 ## Reconciliation
 
 A reconciliation request binds the exact plan digest, result digest, project, source snapshot, and ordered SHA-256 operation IDs that are currently `unknown_requires_reconciliation`. A reconciliation result must exactly cover that request with `reconciled` operations. Existing reconciliation output is never overwritten.
 
-Reconciliation uses exact remote identity and expected-delta evidence through a dependency-injected adapter. It does not retransmit the original mutation.
+Reconciliation uses exact remote identity and expected-delta evidence through a dependency-injected adapter. It does not retransmit the original mutation. For native VK Video uploads, reconciliation is admitted only when the durable provider journal contains the exact reservation identity; it reads that exact `owner_id_video_id` and never infers identity from title or aggregate inventory.
 
 ## Historical executor registry
 
@@ -123,6 +124,8 @@ CI verifies:
 - journal replay rejection and one-attempt ambiguous outcomes;
 - atomic UTF-8 evidence;
 - CLI build/validate/preview/verify behavior;
+- native-video preparation rejects non-missing/ambiguous/non-long-form sources and emits digest-locked canary/batch operator evidence;
+- native-video adapter distinguishes pre-provider rejection from post-dispatch unknown state and reconciles only by exact journaled remote ID;
 - PowerShell provider mutation routing only through the complete `wave apply` contract.
 
 Development and CI perform zero VK or YouTube provider writes.

@@ -7,7 +7,7 @@ import httpx
 import pytest
 
 from video_channel_manager.platforms.vk.client import VkApiClient, VkApiError
-from video_channel_manager.platforms.vk.models import VkAccessToken
+from video_channel_manager.platforms.vk.models import VkAccessToken, VkCommunityIdentity
 from video_channel_manager.platforms.vk.service import VkInventoryService
 from video_channel_manager.platforms.vk.store import VkTokenStore
 
@@ -223,3 +223,40 @@ def test_vk_invalid_json_has_structured_failure_kind(tmp_path: Path) -> None:
 
     assert captured.value.kind is HttpFailureKind.INVALID_JSON
     assert captured.value.attempts == 1
+
+
+def test_registry_bound_inventory_bypasses_group_discovery() -> None:
+    class ExactBoundClient:
+        api_version = "5.199"
+        account_alias = "legendary-poet"
+
+        def get_community(self, community: str | int):
+            raise AssertionError(f"groups.getById must not be called for exact bound identity: {community}")
+
+        def list_videos(self, community_id: int):
+            assert community_id == 235216998
+            return []
+
+        def list_collections(self, community_id: int):
+            assert community_id == 235216998
+            return []
+
+        def list_memberships(self, *, community_id: int, collections, known_video_ids):
+            assert community_id == 235216998
+            assert collections == []
+            assert known_video_ids == set()
+            return []
+
+    identity = VkCommunityIdentity(
+        community_id=235216998,
+        title="The Legendary Poet",
+        screen_name="thelegendarypoet",
+        url="https://vk.ru/thelegendarypoet",
+    )
+    package = VkInventoryService(ExactBoundClient()).build_audit_package_for_known_community(identity)  # type: ignore[arg-type]
+
+    assert package.channel.ref.channel_id == "235216998"
+    assert package.channel.metadata["identity_source"] == "local_account_registry"
+    assert package.videos == []
+    assert package.collections == []
+    assert package.memberships == []

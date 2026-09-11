@@ -21,9 +21,9 @@ from video_channel_manager.platforms.vk.upload_lifecycle import (
 )
 from video_channel_manager.platforms.vk.wall_safety import (
     DEFAULT_UPLOAD_WALL_POLICY,
+    VkUploadWallGuard,
     VkUploadWallPolicy,
-    VkWallSnapshot,
-    build_wall_snapshot,
+    build_upload_wall_guard,
 )
 
 
@@ -44,6 +44,7 @@ class FakeWriter:
         self.observed_wall_policy: VkUploadWallPolicy | None = None
         self.wall_snapshot = clean_wall_snapshot()
         self.wall_snapshot_calls = 0
+        self.wall_error: Exception | None = None
 
     def begin_upload(
         self,
@@ -114,15 +115,17 @@ class FakeWriter:
             raise RuntimeError(f"not ready within {timeout_seconds}: {assessment.reasons}")
         return item
 
-    def capture_wall_snapshot(
+    def capture_upload_wall_guard(
         self,
         *,
         community_id: int,
-        max_posts_per_surface: int = 10000,
-    ) -> VkWallSnapshot:
+        head_limit: int = 100,
+    ) -> VkUploadWallGuard:
         assert community_id == 235216998
-        assert max_posts_per_surface == 10000
+        assert head_limit == 100
         self.wall_snapshot_calls += 1
+        if self.wall_error is not None:
+            raise self.wall_error
         return self.wall_snapshot
 
 
@@ -130,20 +133,17 @@ class RetryableReservationError(RuntimeError):
     retryable = True
 
 
-def clean_wall_snapshot() -> VkWallSnapshot:
-    return build_wall_snapshot(
+def clean_wall_snapshot() -> VkUploadWallGuard:
+    return build_upload_wall_guard(
         community_id=235216998,
         published_items=[],
         postponed_items=[],
-        published_pages=1,
-        postponed_pages=1,
-        complete=True,
         captured_at=datetime(2026, 8, 4, 2, 0, tzinfo=UTC),
     )
 
 
-def changed_wall_snapshot(*, complete: bool = True) -> VkWallSnapshot:
-    return build_wall_snapshot(
+def changed_wall_snapshot() -> VkUploadWallGuard:
+    return build_upload_wall_guard(
         community_id=235216998,
         published_items=[
             {
@@ -160,9 +160,6 @@ def changed_wall_snapshot(*, complete: bool = True) -> VkWallSnapshot:
             }
         ],
         postponed_items=[],
-        published_pages=1,
-        postponed_pages=1,
-        complete=complete,
         captured_at=datetime(2026, 8, 4, 2, 5, tzinfo=UTC),
     )
 
@@ -209,7 +206,7 @@ def run(
     media: Path | None,
     *,
     crash_boundary: str | None = None,
-    wall_before_snapshot: VkWallSnapshot | None = None,
+    wall_before_snapshot: VkUploadWallGuard | None = None,
 ) -> int:
     persists = 0
 
@@ -543,18 +540,20 @@ def test_unexpected_wall_delta_blocks_verified_and_requires_reconciliation(tmp_p
     assert writer.upload_calls == 1
 
 
-def test_incomplete_wall_postflight_is_unknown(tmp_path: Path) -> None:
+def test_unavailable_bounded_wall_postflight_is_unknown(tmp_path: Path) -> None:
     media = tmp_path / "yt-1.mp4"
     media.write_bytes(b"video")
     record = new_record()
     writer = FakeWriter()
-    writer.wall_snapshot = changed_wall_snapshot(complete=False)
+    writer.wall_error = RuntimeError("wall read unavailable")
 
-    with pytest.raises(UploadRecoveryRequired, match="unknown_requires_reconciliation"):
+    with pytest.raises(UploadRecoveryRequired, match="bounded wall postflight is unavailable"):
         run(record, writer, media)
 
     assert record["stage"] == UploadStage.UNKNOWN_REQUIRES_RECONCILIATION.value
-    assert record["wall_safety"]["delta"]["status"] == "unknown_requires_reconciliation"
+    assert record["verification"] is None
+    assert writer.begin_calls == 1
+    assert writer.upload_calls == 1
 
 
 def test_historical_in_progress_record_without_wall_baseline_is_blocked(tmp_path: Path) -> None:
@@ -566,7 +565,7 @@ def test_historical_in_progress_record_without_wall_baseline_is_blocked(tmp_path
     record["stage"] = UploadStage.PROCESSING.value
     record.pop("wall_safety")
 
-    with pytest.raises(UploadRecoveryRequired, match="no pre-dispatch wall baseline"):
+    with pytest.raises(UploadRecoveryRequired, match="no pre-dispatch bounded wall guard"):
         run(record, writer, None)
 
     assert writer.begin_calls == 1

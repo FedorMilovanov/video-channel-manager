@@ -20,8 +20,10 @@ from video_channel_manager.platforms.http import (
     execute_http_request,
     redact_sensitive_text,
 )
+from video_channel_manager.platforms.vk.flood_control import VK_FLOOD_CONTROL_CODE, VkFloodControlGate
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.upload_lifecycle import (
+    UploadTicketProtocol,
     VkUploadReadiness,
     VkUploadReadinessAssessment,
     assess_vk_upload_readiness,
@@ -32,7 +34,7 @@ from video_channel_manager.platforms.vk.wall_safety import (
 )
 
 _API_BASE_URL = "https://api.vk.com/method"
-_RETRYABLE_API_CODES = frozenset({6, 9, 10, 29})
+_RETRYABLE_API_CODES = frozenset({6, 10, 29})
 _RETRYABLE_HTTP_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 ApiParam: TypeAlias = str | int | bool
 ApiParams: TypeAlias = dict[str, ApiParam]
@@ -72,6 +74,8 @@ def _provider_response_kind(response: httpx.Response) -> HttpFailureKind | None:
         return None
     raw_code = raw_error.get("error_code")
     code = int(raw_code) if isinstance(raw_code, int | str) and str(raw_code).isdigit() else None
+    if code == VK_FLOOD_CONTROL_CODE:
+        return HttpFailureKind.PROVIDER_FLOOD_CONTROL
     return HttpFailureKind.PROVIDER_TRANSIENT if code in _RETRYABLE_API_CODES else HttpFailureKind.PROVIDER_ERROR
 
 
@@ -120,6 +124,7 @@ class VkVideoWriter(HttpClientOwner):
             max_delay_seconds=8.0,
         )
         self.request_limiter = request_limiter or RequestRateLimiter()
+        self.flood_control = VkFloodControlGate(token_store.data_dir, self.account_alias)
         self._request_sleep = sleep
         self._jitter = jitter
 
@@ -146,6 +151,16 @@ class VkVideoWriter(HttpClientOwner):
     ) -> object:
         """Call VK under explicit read or ambiguous-mutation authority."""
 
+        open_circuit = self.flood_control.get(method)
+        if open_circuit is not None:
+            raise VkWriteError(
+                f"VK flood-control circuit is open for {method}; clear that exact local circuit before another provider request.",
+                method=method,
+                code=VK_FLOOD_CONTROL_CODE,
+                retryable=False,
+                kind=HttpFailureKind.PROVIDER_FLOOD_CONTROL,
+                attempts=0,
+            )
         access_token = self._token_value()
         request_data: dict[str, str] = {
             "access_token": access_token,
@@ -222,6 +237,8 @@ class VkVideoWriter(HttpClientOwner):
                 secrets=(access_token,),
             )
             kind = result.failure_kind or HttpFailureKind.PROVIDER_ERROR
+            if code == VK_FLOOD_CONTROL_CODE:
+                self.flood_control.record(method)
             raise VkWriteError(
                 f"VK API {code or 'error'} in {method}: {message} [kind={kind.value} attempts={result.attempts}]",
                 method=method,
@@ -362,7 +379,7 @@ class VkVideoWriter(HttpClientOwner):
             reservation_response=dict(response),
         )
 
-    def upload_file(self, ticket: VkUploadTicket, path: Path) -> dict[str, Any]:
+    def upload_file(self, ticket: UploadTicketProtocol, path: Path) -> dict[str, Any]:
         if ticket.video_id <= 0 or ticket.owner_id == 0 or not ticket.upload_url:
             raise ValueError("VK upload ticket is invalid")
         if not path.is_file():
@@ -469,7 +486,7 @@ class VkVideoWriter(HttpClientOwner):
 
     def wait_until_available(
         self,
-        ticket: VkUploadTicket,
+        ticket: UploadTicketProtocol,
         *,
         readiness: VkUploadReadiness | None = None,
         timeout_seconds: int = 3600,
