@@ -656,9 +656,11 @@ def test_new_attempt_can_reopen_definite_no_effect_reservation_rejection(tmp_pat
     assert reopened["transitions"][-1]["to"] == UploadStage.PLANNED.value
 
     writer.begin_error = None
+    media.write_bytes(b"new-attempt-video")
     run(reopened, writer, media)
 
     assert reopened["stage"] == UploadStage.VERIFIED.value
+    assert reopened["media"]["sha256"] != first_media["sha256"]
     assert writer.begin_calls == 2
     assert writer.upload_calls == 1
 
