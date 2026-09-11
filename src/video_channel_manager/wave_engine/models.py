@@ -600,9 +600,7 @@ class WaveResult(FrozenStrictModel):
                 if operation.mutation_class is MutationClass.AMBIGUOUS_MUTATION:
                     allowed = (
                         operation_result.error_kind == "rejected_before_dispatch" and operation_result.retry_safe
-                    ) or (
-                        operation_result.error_kind == "provider_rejected" and not operation_result.retry_safe
-                    )
+                    ) or (operation_result.error_kind == "provider_rejected" and not operation_result.retry_safe)
                     if not allowed:
                         raise ValueError(
                             "ambiguous mutation failure must be pre-dispatch retry-safe "
