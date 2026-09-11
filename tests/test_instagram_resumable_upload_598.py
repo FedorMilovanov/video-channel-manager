@@ -24,6 +24,7 @@ from video_channel_manager.instagram.production import (
     InstagramProviderError,
     InstagramPublicationLedger,
     InstagramReconciliationRequired,
+    InstagramTransportError,
     InstagramRuntimeConfig,
     PublicationStatus,
 )
@@ -215,6 +216,32 @@ def test_http_400_diagnostic_preserves_provider_correlation_headers_without_secr
     assert "x-fb-trace-id=trace-613" in message
     assert "proxy-status=e_fb_vip; error=processing_failed" in message
     assert "response-content-type=application/json; charset=UTF-8" in message
+    assert "request_method=POST" in message
+    assert "request_host=rupload.facebook.com" in message
+    assert f"request_body_length={len(VIDEO_BYTES)}" in message
+    assert f"request_content_length={len(VIDEO_BYTES)}" in message
+    assert f"request_file_size={len(VIDEO_BYTES)}" in message
+    assert "request_offset=0" in message
+    assert "request_content_type=<absent>" in message
+    assert TOKEN not in message
+    assert UPLOAD_URI not in message
+    assert "/ig-api-upload/" not in message
+
+
+def test_transport_failure_keeps_safe_request_fingerprint() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ReadTimeout(
+            f"read timeout for OAuth {TOKEN} at {UPLOAD_URI}",
+            request=request,
+        )
+
+    config = _config()
+    with _client(config, httpx.MockTransport(handler)) as client:
+        with pytest.raises(InstagramTransportError) as caught:
+            client.upload_local_video(UPLOAD_URI, io.BytesIO(VIDEO_BYTES), file_size=len(VIDEO_BYTES))
+
+    message = str(caught.value)
+    assert "ReadTimeout" in message
     assert "request_method=POST" in message
     assert "request_host=rupload.facebook.com" in message
     assert f"request_body_length={len(VIDEO_BYTES)}" in message
