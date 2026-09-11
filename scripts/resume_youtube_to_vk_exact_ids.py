@@ -174,7 +174,7 @@ def _write_lock_context(
 
 def main() -> int:
     args = _parser().parse_args()
-    if args.execute:
+    if getattr(args, "execute", False):
         raise _retired_mutation_error()
     if args.write_delay < 0:
         raise SystemExit("--write-delay cannot be negative")
