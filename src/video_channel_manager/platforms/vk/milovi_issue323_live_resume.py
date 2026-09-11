@@ -49,7 +49,7 @@ def _native_clip_assessment(
         return assessment
 
     observed["readiness_mode"] = "playable_native_short_video"
-    observed["provider_processing_flag_tolerated"] = "processing" in reasons
+    observed["provider_processing_flag_tolerated"] = bool(item.get("processing"))
     observed["blank_clip_title_tolerated"] = "title_mismatch" in reasons
     return VkUploadReadinessAssessment(ready=True, reasons=(), observed=observed)
 
