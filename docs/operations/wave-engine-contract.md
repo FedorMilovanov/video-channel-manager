@@ -51,7 +51,7 @@ Project identity is hard-bound:
 
 Source evidence contains a sorted unique list of exact repository-relative artifact paths and raw-file SHA-256 values. Its `source_snapshot_id` is derived deterministically from the project, policy version, and artifact list. `source verify`, `plan build`, and engine apply all re-hash the referenced files; agreement between two stale JSON documents is not sufficient.
 
-Each operation specification includes an explicit unique `order_key`. The engine sorts by that key before assigning contiguous sequence values. Each operation identity includes its exact project, source snapshot, policy version, order key, sequence, operation kind, mutation class, and canonical JSON payload. Plans require exact ordering, unique operation IDs, an operation-set digest, and a plan self-digest.
+Each operation specification includes an explicit unique `order_key`. The engine sorts by that key before assigning contiguous sequence values. The default operation identity binds exact project, source snapshot, policy version, order key, sequence, operation kind, mutation class, and canonical JSON payload. An explicitly versioned adapter may define a narrower durable provider-object identity when attempt evidence must not create a new remote object; `vk-native-video-wave-v2` is such an exception and binds the YouTube source identity instead of snapshot/sequence/title/output-path churn. Plans still require exact ordering, unique operation IDs, an operation-set digest, and a plan self-digest.
 
 ## Apply and unknown outcomes
 
