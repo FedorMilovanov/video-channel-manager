@@ -10,7 +10,7 @@ import video_channel_manager.wave_engine.vk_video_provider as provider_module
 from video_channel_manager.platforms.vk.upload_lifecycle import UploadRecoveryRequired, UploadStage
 from video_channel_manager.platforms.vk.text import render_vk_video_description
 from video_channel_manager.wave_engine.canonical import file_sha256, write_json_atomic
-from video_channel_manager.wave_engine.engine import OperationRejectedError, UnknownProviderOutcomeError
+from video_channel_manager.wave_engine.engine import UnknownProviderOutcomeError
 from video_channel_manager.wave_engine.models import (
     MutationClass,
     ProjectBinding,
