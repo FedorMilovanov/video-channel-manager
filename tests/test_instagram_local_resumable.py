@@ -239,6 +239,11 @@ def test_open_gop_local_mp4_fails_before_provider_write_or_durable_intent(tmp_pa
         raise InstagramClosedGopError(("non_idr_intra_frame:1",))
 
     def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}"):
+            return _response(request, 200, {"id": ACCOUNT_ID, "username": USERNAME})
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}/content_publishing_limit"):
+            return _response(request, 200, {"data": []})
         if request.method == "POST":
             writes.append(str(request.url))
         raise AssertionError(f"Unexpected provider request: {request.method} {request.url}")
