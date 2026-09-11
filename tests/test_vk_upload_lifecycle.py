@@ -617,6 +617,8 @@ def test_new_attempt_can_reopen_definite_no_effect_reservation_rejection(tmp_pat
     first_operation_id = record["operation_id"]
     first_dispatch_started_at = record["reservation_dispatch_started_at"]
     first_error = dict(record["last_error"])
+    first_rejected_at = record["transitions"][-1]["at"]
+    first_reservation_intent = dict(record["reservation_intent"])
 
     reopened, changed = ensure_upload_record(
         record,
@@ -640,10 +642,10 @@ def test_new_attempt_can_reopen_definite_no_effect_reservation_rejection(tmp_pat
     assert reopened["reservation"] is None
     assert reopened["known_rejections"] == [
         {
-            "rejected_at": record["transitions"][-1]["at"],
+            "rejected_at": first_rejected_at,
             "reservation_dispatch_started_at": first_dispatch_started_at,
             "source_snapshot_id": "snapshot-1",
-            "reservation_intent": record["reservation_intent"],
+            "reservation_intent": first_reservation_intent,
             "last_error": first_error,
         }
     ]
