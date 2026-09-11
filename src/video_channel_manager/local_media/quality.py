@@ -28,6 +28,8 @@ class MediaQualityReport:
     height: int | None
     sample_rate_hz: int | None
     audio_channels: int | None
+    pixel_format: str | None = None
+    field_order: str | None = None
     video_frame_rate_fps: float | None = None
     video_bitrate_bps: int | None = None
     audio_bitrate_bps: int | None = None
@@ -101,7 +103,7 @@ def probe_media(
         "-show_entries",
         (
             "format=format_name,duration,size:"
-            "stream=index,codec_type,codec_name,width,height,sample_rate,channels,duration,avg_frame_rate,bit_rate"
+            "stream=index,codec_type,codec_name,width,height,pix_fmt,field_order,sample_rate,channels,duration,avg_frame_rate,bit_rate"
         ),
         "-of",
         "json",
@@ -170,6 +172,8 @@ def probe_media(
         height=_positive_int(video.get("height")),
         sample_rate_hz=_positive_int(audio.get("sample_rate")),
         audio_channels=_positive_int(audio.get("channels")),
+        pixel_format=str(video.get("pix_fmt") or "").strip().lower() or None,
+        field_order=str(video.get("field_order") or "").strip().lower() or None,
         video_frame_rate_fps=_positive_frame_rate(video.get("avg_frame_rate")),
         video_bitrate_bps=_positive_int(video.get("bit_rate")),
         audio_bitrate_bps=_positive_int(audio.get("bit_rate")),
