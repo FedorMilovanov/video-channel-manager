@@ -45,6 +45,10 @@ from video_channel_manager.wave_engine.vk_video_provider import (
     VK_VIDEO_OPERATION_KIND,
     VkNativeVideoUploadAdapter,
 )
+from video_channel_manager.wave_engine.vk_video_wall_provider import (
+    VK_VIDEO_WALL_OPERATION_KIND,
+    VkPostponedVideoWallAdapter,
+)
 
 
 wave_app = typer.Typer(no_args_is_help=True, help="Versioned fail-closed wave engine.")
@@ -267,6 +271,12 @@ def _video_plan(plan: WavePlan) -> bool:
     }
 
 
+def _video_wall_plan(plan: WavePlan) -> bool:
+    return bool(plan.operations) and {operation.operation_kind for operation in plan.operations} == {
+        VK_VIDEO_WALL_OPERATION_KIND
+    }
+
+
 @wave_app.command("apply")
 def apply(
     source_path: Annotated[Path, typer.Option("--source")],
@@ -284,7 +294,7 @@ def apply(
         repository_root=repository_root,
         enable_provider_writes=enable_provider_writes,
     )
-    if not (_article_plan(plan) or _video_plan(plan)):
+    if not (_article_plan(plan) or _video_plan(plan) or _video_wall_plan(plan)):
         console.print(
             "[red]Rejected:[/red] no reviewed production provider adapter is registered for this operation set."
         )
@@ -295,16 +305,20 @@ def apply(
             param_hint="--journal-directory",
         )
 
-    adapter: VkPostponedArticlePhotoAdapter | VkNativeVideoUploadAdapter
+    adapter: VkPostponedArticlePhotoAdapter | VkNativeVideoUploadAdapter | VkPostponedVideoWallAdapter
     if _article_plan(plan):
         adapter = VkPostponedArticlePhotoAdapter(
             repository_root=repository_root,
             account_alias=vk_account,
         )
-    else:
+    elif _video_plan(plan):
         adapter = VkNativeVideoUploadAdapter(
             repository_root=repository_root,
             journal_directory=journal_directory,
+            account_alias=vk_account,
+        )
+    else:
+        adapter = VkPostponedVideoWallAdapter(
             account_alias=vk_account,
         )
     journal_existed_before = journal_directory.exists()
@@ -334,7 +348,7 @@ def apply(
         if callable(close):
             close()
 
-    label = "Article" if _article_plan(plan) else "VK video"
+    label = "Article" if _article_plan(plan) else "VK video wall" if _video_wall_plan(plan) else "VK video"
     if result.status is WaveStatus.SUCCEEDED:
         console.print(
             f"[green]{label} wave succeeded:[/green] {len(result.operations)} operation(s); "
@@ -367,22 +381,26 @@ def reconcile(
         request.assert_matches(plan, result)
     except ValueError as exc:
         raise typer.BadParameter(str(exc), param_hint=str(request_path)) from exc
-    if not (_article_plan(plan) or _video_plan(plan)):
+    if not (_article_plan(plan) or _video_plan(plan) or _video_wall_plan(plan)):
         console.print(
             f"[red]Rejected:[/red] no production reconciliation adapter is registered for {request.self_digest}."
         )
         raise typer.Exit(code=3)
 
-    adapter: VkPostponedArticlePhotoAdapter | VkNativeVideoUploadAdapter
+    adapter: VkPostponedArticlePhotoAdapter | VkNativeVideoUploadAdapter | VkPostponedVideoWallAdapter
     if _article_plan(plan):
         adapter = VkPostponedArticlePhotoAdapter(
             repository_root=repository_root,
             account_alias=vk_account,
         )
-    else:
+    elif _video_plan(plan):
         adapter = VkNativeVideoUploadAdapter(
             repository_root=repository_root,
             journal_directory=result_path.parent,
+            account_alias=vk_account,
+        )
+    else:
+        adapter = VkPostponedVideoWallAdapter(
             account_alias=vk_account,
         )
     try:
@@ -400,7 +418,7 @@ def reconcile(
         close = getattr(adapter, "close", None)
         if callable(close):
             close()
-    label = "Article" if _article_plan(plan) else "VK video"
+    label = "Article" if _article_plan(plan) else "VK video wall" if _video_wall_plan(plan) else "VK video"
     console.print(f"[green]{label} reconciliation succeeded:[/green] {reconciliation.self_digest} -> {output_path}")
 
 
