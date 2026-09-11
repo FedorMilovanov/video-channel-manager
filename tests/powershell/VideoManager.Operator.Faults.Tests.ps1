@@ -63,6 +63,16 @@ Describe "Wave 7 PowerShell mutation-boundary faults" {
         $SafeFailure.retry_safe | Should -BeTrue
         $SafeFailure.unknown_requires_reconciliation | Should -BeFalse
 
+        $KnownWaveFailure = Get-VcmOperatorOutcome -OperationClass "ambiguous_mutation" -ExitCode 3
+        $KnownWaveFailure.status | Should -Be "failed"
+        $KnownWaveFailure.retry_safe | Should -BeTrue
+        $KnownWaveFailure.unknown_requires_reconciliation | Should -BeFalse
+
+        $WaveUnknown = Get-VcmOperatorOutcome -OperationClass "ambiguous_mutation" -ExitCode 4
+        $WaveUnknown.status | Should -Be "unknown_requires_reconciliation"
+        $WaveUnknown.retry_safe | Should -BeFalse
+        $WaveUnknown.unknown_requires_reconciliation | Should -BeTrue
+
         $MutationFailure = Get-VcmOperatorOutcome -OperationClass "ambiguous_mutation" -ExitCode 7
         $MutationFailure.status | Should -Be "unknown_requires_reconciliation"
         $MutationFailure.retry_safe | Should -BeFalse
