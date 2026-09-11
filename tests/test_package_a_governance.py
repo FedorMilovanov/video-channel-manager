@@ -11,7 +11,6 @@ OPERATIONS = ROOT / "docs" / "operations"
 HISTORY = ROOT / "docs" / "history" / "operational-attempts"
 
 
-
 def _assert_history_archive_blob_provenance(archive: dict[str, object]) -> None:
     source_blob_shas = archive.get("source_blob_shas")
     if source_blob_shas is None:
@@ -45,7 +44,7 @@ def _assert_history_archive_blob_provenance(archive: dict[str, object]) -> None:
         assert archived_file.suffix.casefold() in {".md", ".json"}
 
         data = archived_file.read_bytes()
-        git_blob = b"blob " + str(len(data)).encode("ascii") + b"\\0" + data
+        git_blob = b"blob " + str(len(data)).encode("ascii") + b"\0" + data
         actual_sha = hashlib.sha1(git_blob).hexdigest()
         assert actual_sha == expected_sha
 
