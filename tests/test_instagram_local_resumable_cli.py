@@ -22,6 +22,7 @@ from video_channel_manager.instagram.local_resumable import (
     ResumableUploadState,
 )
 from video_channel_manager.instagram.production import (
+    InstagramMediaVerificationError,
     InstagramProductionError,
     InstagramProductionService,
     InstagramProviderError,
@@ -42,6 +43,90 @@ def test_publish_local_is_exposed_in_production_help() -> None:
     result = CliRunner().invoke(instagram_production_app, ["--help"])
     assert result.exit_code == 0, result.output
     assert "publish-local" in _plain(result.output)
+
+
+def test_validate_local_is_exposed_and_requires_no_provider_configuration(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    video = tmp_path / "reel.mp4"
+    video.write_bytes(b"test")
+
+    evidence = SimpleNamespace(
+        path=str(video),
+        media_sha256="sha256:" + "1" * 64,
+        media_size_bytes=4,
+        structure=SimpleNamespace(moov_before_mdat=True, edit_list_paths=()),
+        probe=SimpleNamespace(pixel_format="yuv420p", field_order="progressive"),
+        closed_gop=SimpleNamespace(
+            closed_gop=True,
+            intra_frame_count=3,
+            idr_frame_count=3,
+            nal_length_size=4,
+        ),
+        binding=SimpleNamespace(
+            ruleset_version="meta-instagram-reels-2026-09-v3",
+            container="mp4",
+            media_content_type="video/mp4",
+            video_codec="h264",
+            width=1080,
+            height=1920,
+            pixel_format="yuv420p",
+            field_order="progressive",
+            video_frame_rate_fps=30.0,
+            video_bitrate_bps=5_000_000,
+            audio_codec="aac",
+            audio_sample_rate_hz=48_000,
+            audio_channels=2,
+            audio_bitrate_bps=128_000,
+            duration_seconds=12.0,
+            advisories=(),
+        ),
+    )
+
+    monkeypatch.setattr(
+        "video_channel_manager.cli.instagram_production.verify_local_reel",
+        lambda path: evidence,
+    )
+
+    def forbidden_settings() -> object:
+        raise AssertionError("validate-local must not load provider settings")
+
+    monkeypatch.setattr("video_channel_manager.cli.instagram_production.get_settings", forbidden_settings)
+
+    result = CliRunner().invoke(instagram_production_app, ["validate-local", str(video)])
+
+    assert result.exit_code == 0, result.output
+    output = _plain(result.output)
+    assert "meta-instagram-reels-2026-09-v3" in output
+    assert "yuv420p" in output
+    assert "progressive" in output
+    assert "Closed GOP" in output
+    assert "3 / 3" in output
+    assert "provider calls/writes: none" in output
+
+
+def test_validate_local_reports_production_verifier_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    video = tmp_path / "bad.mp4"
+    video.write_bytes(b"test")
+
+    def reject(path: Path) -> object:
+        del path
+        raise InstagramMediaVerificationError(
+            "Instagram local video failed closed-GOP requirement: non_idr_intra_frame:1",
+            error_code="local_video_closed_gop_incompatible",
+            retryable=False,
+        )
+
+    monkeypatch.setattr("video_channel_manager.cli.instagram_production.verify_local_reel", reject)
+
+    result = CliRunner().invoke(instagram_production_app, ["validate-local", str(video)])
+
+    assert result.exit_code == 2
+    assert "closed-GOP requirement" in _plain(result.output)
 
 
 def test_publish_local_exposes_explicit_write_gate() -> None:
