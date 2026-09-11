@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from video_channel_manager.config import get_settings
+from video_channel_manager.editorial._project_profiles import PROJECT_CHANNEL_IDS
 from video_channel_manager.local_media.artifact import load_media_artifact_manifest
 from video_channel_manager.platforms.vk.lock import community_vk_write_lock_path, local_vk_write_lock
 from video_channel_manager.platforms.vk.store import VkTokenStore
@@ -108,6 +109,11 @@ class VkNativeVideoUploadAdapter:
             raise OperationRejectedError("VK video owner/community binding is inconsistent")
 
         payload = dict(operation.payload)
+        registered_channels = tuple(PROJECT_CHANNEL_IDS.get(operation.project.project_key, ()))
+        if len(registered_channels) != 1:
+            raise OperationRejectedError("VK video project must have exactly one registered YouTube source channel")
+        if payload.get("source_channel_id") != str(registered_channels[0]):
+            raise OperationRejectedError("VK video source channel does not match the registered project channel")
         required_text = (
             "source_video_id",
             "source_channel_id",
