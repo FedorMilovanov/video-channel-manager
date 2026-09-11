@@ -42,6 +42,10 @@ class OperationRejectedError(RuntimeError):
     """The operation was rejected before provider dispatch."""
 
 
+class KnownProviderRejectionError(OperationRejectedError):
+    """The provider definitely rejected a dispatched mutation."""
+
+
 class WaveFaultStage(StrEnum):
     BEFORE_PREFLIGHT_COMMIT = "before_preflight_commit"
     AFTER_PREFLIGHT_COMMIT = "after_preflight_commit"
@@ -192,6 +196,19 @@ class WaveEngine:
                     unknown_requires_reconciliation=False,
                     evidence=evidence,
                 )
+            except KnownProviderRejectionError as exc:
+                result = WaveOperationResult(
+                    operation_id=operation.operation_id,
+                    status=OperationStatus.FAILED,
+                    attempt_count=1,
+                    retry_safe=False,
+                    unknown_requires_reconciliation=False,
+                    evidence={},
+                    error_kind="provider_rejected",
+                    error_message=str(exc),
+                )
+                overall = WaveStatus.FAILED
+                stop = True
             except OperationRejectedError as exc:
                 result = WaveOperationResult(
                     operation_id=operation.operation_id,
