@@ -359,6 +359,15 @@ def prepare_vk_video_wave(
     if processing_timeout_seconds <= 0:
         raise VkVideoPreparationError("processing_timeout_seconds must be positive")
 
+    normalized_candidates = tuple(dict.fromkeys(value.strip() for value in candidate_ids if value.strip()))
+    if len(normalized_candidates) != 1 or len(candidate_ids) != 1:
+        raise VkVideoPreparationError(
+            "VK native video preparation is one-source-per-run; pass exactly one --candidate-id"
+        )
+    source_id = normalized_candidates[0]
+    if canary_id != source_id:
+        raise VkVideoPreparationError("canary_id must equal the single candidate ID")
+
     source = _load_audit(source_audit_path.resolve())
     target = _load_audit(target_audit_path.resolve()) if target_audit_path is not None else None
 
@@ -377,15 +386,6 @@ def prepare_vk_video_wave(
             raise VkVideoPreparationError(
                 f"Target community mismatch: expected {expected_community}, got {target.channel.ref.channel_id}"
             )
-
-    normalized_candidates = tuple(dict.fromkeys(value.strip() for value in candidate_ids if value.strip()))
-    if len(normalized_candidates) != 1 or len(candidate_ids) != 1:
-        raise VkVideoPreparationError(
-            "VK native video preparation is one-source-per-run; pass exactly one --candidate-id"
-        )
-    source_id = normalized_candidates[0]
-    if canary_id != source_id:
-        raise VkVideoPreparationError("canary_id must equal the single candidate ID")
 
     comparison = compare_audit_packages(source, target, project_key=project_key) if target is not None else None
     source_by_id = {item.ref.remote_id: item for item in source.videos}
