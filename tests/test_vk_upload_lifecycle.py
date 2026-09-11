@@ -603,6 +603,133 @@ def test_explicit_provider_reservation_rejection_is_terminal_known_failure(tmp_p
     assert record["reservation"] is None
 
 
+def test_new_attempt_can_reopen_definite_no_effect_reservation_rejection(tmp_path: Path) -> None:
+    media = tmp_path / "yt-1.mp4"
+    media.write_bytes(b"video")
+    record = new_record()
+    writer = FakeWriter()
+    writer.begin_error = ExplicitProviderReservationError("VK API 9 in video.save: Flood control")
+
+    with pytest.raises(UploadRejected, match="video.save was rejected"):
+        run(record, writer, media)
+
+    assert record["stage"] == UploadStage.REJECTED.value
+    first_operation_id = record["operation_id"]
+    first_dispatch_started_at = record["reservation_dispatch_started_at"]
+    first_error = dict(record["last_error"])
+    first_rejected_at = record["transitions"][-1]["at"]
+    first_reservation_intent = dict(record["reservation_intent"])
+    first_media = dict(record["media"])
+
+    reopened, changed = ensure_upload_record(
+        record,
+        source_snapshot_id="snapshot-2",
+        community_id=235216998,
+        source_video_id="yt-1",
+        source_title="Берёза",
+        source_duration_seconds=120,
+        published_title="Берёза ⚡",
+        published_description="Описание",
+        readiness=readiness(),
+        retry_known_rejection=True,
+    )
+
+    assert changed is True
+    assert reopened["stage"] == UploadStage.PLANNED.value
+    assert reopened["operation_id"] == first_operation_id
+    assert reopened["source_snapshot_id"] == "snapshot-2"
+    assert "reservation_dispatch_started_at" not in reopened
+    assert reopened["last_error"] is None
+    assert reopened["reservation"] is None
+    assert reopened["media"] is None
+    assert reopened["known_rejections"] == [
+        {
+            "rejected_at": first_rejected_at,
+            "reservation_dispatch_started_at": first_dispatch_started_at,
+            "source_snapshot_id": "snapshot-1",
+            "reservation_intent": first_reservation_intent,
+            "media": first_media,
+            "last_error": first_error,
+        }
+    ]
+    assert reopened["transitions"][-1]["from"] == UploadStage.REJECTED.value
+    assert reopened["transitions"][-1]["to"] == UploadStage.PLANNED.value
+
+    writer.begin_error = None
+    media.write_bytes(b"new-attempt-video")
+    run(reopened, writer, media)
+
+    assert reopened["stage"] == UploadStage.VERIFIED.value
+    assert reopened["media"]["sha256"] != first_media["sha256"]
+    assert writer.begin_calls == 2
+    assert writer.upload_calls == 1
+
+
+def test_known_rejection_does_not_reopen_without_new_attempt_authority(tmp_path: Path) -> None:
+    media = tmp_path / "yt-1.mp4"
+    media.write_bytes(b"video")
+    record = new_record()
+    writer = FakeWriter()
+    writer.begin_error = ExplicitProviderReservationError("VK API 9 in video.save: Flood control")
+
+    with pytest.raises(UploadRejected):
+        run(record, writer, media)
+
+    unchanged, changed = ensure_upload_record(
+        record,
+        source_snapshot_id="snapshot-2",
+        community_id=235216998,
+        source_video_id="yt-1",
+        source_title="Берёза",
+        source_duration_seconds=120,
+        published_title="Берёза ⚡",
+        published_description="Описание",
+        readiness=readiness(),
+    )
+
+    assert changed is False
+    assert unchanged["stage"] == UploadStage.REJECTED.value
+    assert unchanged["reservation_dispatch_started_at"] == record["reservation_dispatch_started_at"]
+
+
+def test_rejected_record_with_remote_identity_can_never_reopen() -> None:
+    record = new_record()
+    record["stage"] = UploadStage.REJECTED.value
+    record["reservation_dispatch_started_at"] = "2026-09-11T08:00:00+00:00"
+    record["reservation"] = {
+        "owner_id": -235216998,
+        "video_id": 501,
+        "remote_id": "-235216998_501",
+    }
+    record["last_error"] = {
+        "at": "2026-09-11T08:00:01+00:00",
+        "type": "VkWriteError",
+        "message": "rejected",
+    }
+    record["transitions"].append(
+        {
+            "from": UploadStage.RESERVATION_INTENT_COMMITTED.value,
+            "to": UploadStage.REJECTED.value,
+            "at": "2026-09-11T08:00:01+00:00",
+            "evidence": {"reason": "reservation_rejected"},
+        }
+    )
+
+    with pytest.raises(UploadRecoveryRequired, match="reservation identity"):
+        ensure_upload_record(
+            record,
+            source_snapshot_id="snapshot-2",
+            community_id=235216998,
+            source_video_id="yt-1",
+            source_title="Берёза",
+            source_duration_seconds=120,
+            published_title="Берёза ⚡",
+            published_description="Описание",
+            readiness=readiness(),
+            retry_known_rejection=True,
+        )
+
+
 def test_upload_transport_failure_is_unknown_and_never_retransmitted(tmp_path: Path) -> None:
     media = tmp_path / "yt-1.mp4"
     media.write_bytes(b"video")
