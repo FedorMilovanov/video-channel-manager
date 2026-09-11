@@ -209,4 +209,3 @@ def test_wave_apply_rejection_before_journal_remains_known_failure(
 
     assert exc_info.value.exit_code == 3
     assert not journal.exists()
-
