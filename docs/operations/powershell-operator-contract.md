@@ -1,6 +1,6 @@
 # PowerShell operator contract
 
-Updated: 2026-08-04  
+Updated: 2026-09-11  
 Owner: Wave 5 / issue #72
 
 ## Supported surface
@@ -120,11 +120,11 @@ Result statuses:
 
 - `planned`;
 - `succeeded`;
-- `failed` for a failed safe read;
-- `unknown_requires_reconciliation` for a nonzero ambiguous mutation;
+- `failed` for a known failed outcome;
+- `unknown_requires_reconciliation` only when provider outcome may actually be unknown;
 - `rejected` for preflight/contract failure.
 
-A nonzero ambiguous mutation is never marked retry-safe and is never replayed automatically.
+For the only supported mutating child, `wave apply`, exit codes preserve the Wave result contract: exit `3` is a known failed/pre-dispatch outcome and remains retry-safe; exit `4` is an actual unknown provider outcome and requires reconciliation. A timeout or any unexpected nonzero mutation exit remains unknown fail-closed. The operator does not reinterpret every nonzero mutation exit as unknown.
 
 ## Interpreter contract
 
@@ -153,7 +153,7 @@ CI exercises:
 - request/manifest/output collision rejection;
 - atomic JSON overwrite without BOM or orphaned temp/backup files;
 - project mismatch;
-- native nonzero exit codes;
+- native nonzero exit codes, including distinct Wave apply exit `3` (failed) and `4` (unknown);
 - strict explicit-Python resolution;
 - CI apply prohibition;
 - retired-wrapper rejection.
