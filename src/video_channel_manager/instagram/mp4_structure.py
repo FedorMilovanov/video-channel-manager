@@ -43,6 +43,13 @@ class InstagramMp4StructureEvidence:
         return self.moov_offset < self.mdat_offset
 
 
+@dataclass(frozen=True, slots=True)
+class InstagramMp4VideoSampleEvidence:
+    sample_entry_type: str
+    codec: str
+    nal_length_size: int
+
+
 _BOX_HEADER_SIZE = 8
 _EXTENDED_BOX_HEADER_SIZE = 16
 
@@ -112,6 +119,113 @@ def _find_edit_lists(stream: BinaryIO, moov: Mp4Box) -> tuple[str, ...]:
     return tuple(paths)
 
 
+
+
+
+_VIDEO_SAMPLE_ENTRY_CONFIG: dict[str, tuple[str, str]] = {
+    "avc1": ("h264", "avcC"),
+    "avc3": ("h264", "avcC"),
+    "hvc1": ("hevc", "hvcC"),
+    "hev1": ("hevc", "hvcC"),
+}
+_STSD_HEADER_BYTES = 8
+_VISUAL_SAMPLE_ENTRY_FIXED_BYTES = 78
+
+
+def _first_child(stream: BinaryIO, parent: Mp4Box, box_type: str) -> Mp4Box | None:
+    return next(
+        (
+            child
+            for child in _iter_boxes(stream, start=parent.payload_offset, end=parent.end_offset)
+            if child.box_type == box_type
+        ),
+        None,
+    )
+
+
+def _video_sample_entries(stream: BinaryIO, moov: Mp4Box) -> tuple[Mp4Box, ...]:
+    entries: list[Mp4Box] = []
+    for trak in _iter_boxes(stream, start=moov.payload_offset, end=moov.end_offset):
+        if trak.box_type != "trak":
+            continue
+        mdia = _first_child(stream, trak, "mdia")
+        if mdia is None:
+            continue
+        minf = _first_child(stream, mdia, "minf")
+        if minf is None:
+            continue
+        stbl = _first_child(stream, minf, "stbl")
+        if stbl is None:
+            continue
+        stsd = _first_child(stream, stbl, "stsd")
+        if stsd is None:
+            continue
+        entries_start = stsd.payload_offset + _STSD_HEADER_BYTES
+        if entries_start > stsd.end_offset:
+            raise InstagramMp4StructureError(("mp4_stsd_truncated",))
+        for entry in _iter_boxes(stream, start=entries_start, end=stsd.end_offset):
+            if entry.box_type in _VIDEO_SAMPLE_ENTRY_CONFIG:
+                entries.append(entry)
+    return tuple(entries)
+
+
+def inspect_instagram_mp4_video_sample(path: Path) -> InstagramMp4VideoSampleEvidence:
+    """Return the AVC/HEVC sample-entry framing needed to inspect MP4 access units."""
+
+    candidate = path.expanduser()
+    try:
+        file_size = candidate.stat().st_size
+        if file_size <= 0:
+            raise InstagramMp4StructureError(("empty_mp4",))
+        with candidate.open("rb") as stream:
+            root_boxes = tuple(_iter_boxes(stream, start=0, end=file_size))
+            moov = next((box for box in root_boxes if box.box_type == "moov"), None)
+            if moov is None:
+                raise InstagramMp4StructureError(("mp4_moov_missing",))
+            entries = _video_sample_entries(stream, moov)
+            if len(entries) != 1:
+                reason = "mp4_video_sample_entry_missing" if not entries else "mp4_multiple_video_sample_entries"
+                raise InstagramMp4StructureError((reason,))
+            entry = entries[0]
+            codec, config_type = _VIDEO_SAMPLE_ENTRY_CONFIG[entry.box_type]
+            config_start = entry.payload_offset + _VISUAL_SAMPLE_ENTRY_FIXED_BYTES
+            if config_start >= entry.end_offset:
+                raise InstagramMp4StructureError((f"mp4_{config_type}_missing",))
+            config_box = next(
+                (
+                    child
+                    for child in _iter_boxes(stream, start=config_start, end=entry.end_offset)
+                    if child.box_type == config_type
+                ),
+                None,
+            )
+            if config_box is None:
+                raise InstagramMp4StructureError((f"mp4_{config_type}_missing",))
+            stream.seek(config_box.payload_offset)
+            payload = stream.read(config_box.size - config_box.header_size)
+    except InstagramMp4StructureError:
+        raise
+    except OSError as exc:
+        raise InstagramMp4StructureError((f"mp4_video_sample_read_failed:{type(exc).__name__}",)) from exc
+
+    if codec == "h264":
+        if len(payload) < 5:
+            raise InstagramMp4StructureError(("mp4_avcC_truncated",))
+        nal_length_size = (payload[4] & 0x03) + 1
+    else:
+        if len(payload) < 22:
+            raise InstagramMp4StructureError(("mp4_hvcC_truncated",))
+        nal_length_size = (payload[21] & 0x03) + 1
+    if nal_length_size not in {1, 2, 4}:
+        raise InstagramMp4StructureError(("mp4_nal_length_size_unsupported",))
+
+    return InstagramMp4VideoSampleEvidence(
+        sample_entry_type=entry.box_type,
+        codec=codec,
+        nal_length_size=nal_length_size,
+    )
+
+
 def inspect_instagram_mp4_structure(path: Path) -> InstagramMp4StructureEvidence:
     """Parse only the MP4 box structure needed by the Instagram local-upload contract."""
 
@@ -164,5 +278,7 @@ def inspect_instagram_mp4_structure(path: Path) -> InstagramMp4StructureEvidence
 __all__ = [
     "InstagramMp4StructureError",
     "InstagramMp4StructureEvidence",
+    "InstagramMp4VideoSampleEvidence",
     "inspect_instagram_mp4_structure",
+    "inspect_instagram_mp4_video_sample",
 ]
