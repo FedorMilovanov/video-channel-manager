@@ -20,6 +20,10 @@ from video_channel_manager.instagram.artifact import (
     InstagramArtifactCompatibilityError,
     bind_instagram_reel_probe,
 )
+from video_channel_manager.instagram.gop import (
+    InstagramClosedGopError,
+    inspect_instagram_closed_gop,
+)
 from video_channel_manager.instagram.mp4_structure import (
     InstagramMp4StructureError,
     inspect_instagram_mp4_structure,
@@ -560,10 +564,22 @@ class InstagramLocalResumableService(InstagramProductionService):
             try:
                 report = self._media_probe(candidate.resolve())
                 probe = MediaProbeEvidence.from_report(report)
+                closed_gop = inspect_instagram_closed_gop(
+                    candidate.resolve(),
+                    expected_codec=probe.video_codec,
+                )
                 binding = bind_instagram_reel_probe(
                     probe,
                     media_manifest_sha256=manifest.content_hash(),
+                    ruleset_version="meta-instagram-reels-2026-09-v3",
+                    closed_gop_verified=closed_gop.closed_gop,
                 )
+            except InstagramClosedGopError as exc:
+                raise InstagramMediaVerificationError(
+                    f"Instagram local video failed closed-GOP requirement: {exc}",
+                    error_code="local_video_closed_gop_incompatible",
+                    retryable=False,
+                ) from exc
             except (MediaQualityError, InstagramArtifactCompatibilityError, ValueError) as exc:
                 raise InstagramMediaVerificationError(
                     f"Instagram local video failed canonical Reel compatibility: {exc}",
