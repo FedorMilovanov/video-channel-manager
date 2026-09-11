@@ -68,7 +68,7 @@ _ALLOWED_TRANSITIONS: Mapping[UploadStage, frozenset[UploadStage]] = {
     UploadStage.PROCESSING: frozenset({UploadStage.VERIFIED, UploadStage.UNKNOWN_REQUIRES_RECONCILIATION}),
     UploadStage.UNKNOWN_REQUIRES_RECONCILIATION: frozenset({UploadStage.PROCESSING, UploadStage.VERIFIED}),
     UploadStage.VERIFIED: frozenset(),
-    UploadStage.REJECTED: frozenset({UploadStage.MEDIA_VERIFIED}),
+    UploadStage.REJECTED: frozenset({UploadStage.PLANNED}),
 }
 
 
@@ -608,22 +608,24 @@ def ensure_upload_record(
                 "reservation_dispatch_started_at": dispatch_started_at,
                 "source_snapshot_id": record.get("source_snapshot_id"),
                 "reservation_intent": dict(previous_intent) if isinstance(previous_intent, Mapping) else None,
+                "media": dict(media),
                 "last_error": dict(previous_error),
             }
         )
         record.pop("reservation_dispatch_started_at", None)
         record.pop("reservation_intent", None)
+        record["media"] = None
         record["last_error"] = None
         _transition(
             record,
-            UploadStage.MEDIA_VERIFIED,
+            UploadStage.PLANNED,
             evidence={
                 "reason": "new_wave_after_known_no_effect_reservation_rejection",
                 "known_rejection_index": len(history) - 1,
             },
             clock=clock,
         )
-        stage = UploadStage.MEDIA_VERIFIED
+        stage = UploadStage.PLANNED
         changed = True
 
     provider_dispatch_started = bool(record.get("reservation_dispatch_started_at")) or isinstance(
