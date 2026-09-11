@@ -43,7 +43,7 @@ def _operation(manifest_path: str, manifest_sha256: str) -> WaveOperation:
             "source_duration_seconds": 305,
             "privacy_status": "public",
             "published_title": "Поэма",
-            "published_description": render_vk_video_description("Описание").text,
+            "published_description": render_vk_video_description("Описание", source_video_id="yt-1").text,
             "media_manifest_path": manifest_path,
             "media_manifest_sha256": manifest_sha256,
             "media_artifact_manifest_sha256": "sha256:" + "a" * 64,
