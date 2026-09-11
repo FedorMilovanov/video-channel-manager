@@ -69,6 +69,12 @@ def _operation(manifest_path: str, manifest_sha256: str) -> WaveOperation:
 class _FakeWriter:
     def __init__(self) -> None:
         self.guard_calls = 0
+        self.community_videos: list[dict[str, Any]] = []
+
+    def list_community_videos(self, *, community_id: int, page_size: int = 200) -> list[dict[str, Any]]:
+        assert community_id == COMMUNITY_ID
+        assert page_size == 200
+        return list(self.community_videos)
 
     def capture_upload_wall_guard(self, *, community_id: int, head_limit: int = 100):
         del community_id, head_limit
@@ -81,6 +87,7 @@ def _adapter(root: Path, writer: _FakeWriter) -> VkNativeVideoUploadAdapter:
     adapter.repository_root = root.resolve()
     adapter.journal_directory = (root / "journal").resolve()
     adapter.account_alias = "legendary-poet"
+    adapter.store = SimpleNamespace(data_dir=root / ".data")
     adapter.writer = writer
     adapter._owns_writer = False
     adapter._community_ids = {COMMUNITY_ID}
@@ -109,6 +116,50 @@ def _inputs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(provider_module, "load_media_artifact_manifest", lambda _path: _artifact(media))
     operation = _operation("yt-1-manifest.json", file_sha256(manifest))
     return root, media, operation
+
+
+def test_video_provider_journal_path_is_stable_across_attempt_directories(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root, _media, operation = _inputs(tmp_path, monkeypatch)
+    first = _adapter(root, _FakeWriter())
+    second = _adapter(root, _FakeWriter())
+    second.journal_directory = root / "another-attempt" / "journal"
+
+    assert first._provider_journal_path(operation) == second._provider_journal_path(operation)
+    assert "operator-output/vk-upload-state/legendary-poet" in first._provider_journal_path(operation).as_posix()
+
+
+def test_video_adapter_blocks_live_duplicate_before_upload_dispatch(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root, _media, operation = _inputs(tmp_path, monkeypatch)
+    writer = _FakeWriter()
+    writer.community_videos = [
+        {
+            "owner_id": OWNER_ID,
+            "id": 777,
+            "title": "Поэма",
+            "description": "Источник видео: https://www.youtube.com/watch?v=yt-1",
+            "duration": 305,
+        }
+    ]
+    adapter = _adapter(root, writer)
+    dispatched = 0
+
+    def forbidden_execute(*_args: Any, **_kwargs: Any) -> None:
+        nonlocal dispatched
+        dispatched += 1
+        raise AssertionError("upload must not dispatch when source already exists")
+
+    monkeypatch.setattr(provider_module, "execute_upload_operation", forbidden_execute)
+
+    with pytest.raises(OperationRejectedError, match="already contains the source video"):
+        adapter.execute(operation)
+
+    assert dispatched == 0
 
 
 def test_video_adapter_does_not_read_wall_before_upload_dispatch(
