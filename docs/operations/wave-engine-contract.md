@@ -27,7 +27,7 @@ The supported commands are:
 - `wave reconcile`;
 - `wave result verify`;
 - `wave result verify-reconciliation`;
-- `wave video prepare` for immutable native-VK-video canary/batch evidence.
+- `wave video prepare` for one-source immutable native-VK-video evidence.
 
 The PowerShell operator may route provider-mutating manifests only to a complete `wave apply` invocation containing exact `--source`, `--plan`, `--intent`, `--repository-root`, and `--enable-provider-writes` arguments. Historical Python executors may not be selected as an alternative apply route.
 
@@ -102,8 +102,8 @@ Reconciliation uses exact remote identity and expected-delta evidence through a 
 
 The current reviewed surface contains:
 
-- 26 `retired` direct provider-write executors;
-- 29 `compatibility_adapter` modules/read-only recovery paths;
+- 27 `retired` direct provider-write executors;
+- 28 `compatibility_adapter` modules/read-only recovery paths;
 - 36 `independent_tool` audit/build/verify utilities;
 - the supported engine under `src/video_channel_manager/wave_engine`.
 
@@ -124,7 +124,7 @@ CI verifies:
 - journal replay rejection and one-attempt ambiguous outcomes;
 - atomic UTF-8 evidence;
 - CLI build/validate/preview/verify behavior;
-- native-video preparation rejects non-missing/ambiguous/non-long-form sources and emits digest-locked canary/batch operator evidence;
+- native-video preparation emits one-source digest-locked operator evidence; optional historical target evidence may reject a known present/ambiguous source, while the final absence decision is a fresh live video-only preflight;
 - native-video v2 adapter performs zero wall reads, uses stable source identity across re-plans, serializes writes by community, rejects a fresh exact source/title-duration collision before `video.save`, distinguishes known provider rejection from genuinely ambiguous transport state, and reconciles only by exact journaled remote ID;
 - PowerShell provider mutation routing only through the complete `wave apply` contract.
 

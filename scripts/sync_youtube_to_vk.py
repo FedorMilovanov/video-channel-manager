@@ -47,6 +47,20 @@ from video_channel_manager.platforms.vk.wall_safety import VkUploadWallGuard
 from video_channel_manager.platforms.vk.writer import VkVideoWriter, VkWriteError
 
 
+_WAVE6_RETIRED_EXECUTOR = True
+if __name__ == "__main__":
+    raise SystemExit(
+        "This historical YouTube→VK executor is retired. "
+        "Use the one-source video-manager wave video prepare + reviewed operator/Wave apply path."
+    )
+
+
+def _retired_mutation_error() -> RuntimeError:
+    return RuntimeError(
+        "Legacy YouTube→VK provider mutations are retired; use vk-native-video-wave-v2 through Wave/operator."
+    )
+
+
 class MediaDownloader(Protocol):
     def __call__(self, *, yt_dlp: str, video_id: str, cache_dir: Path) -> Path: ...
 
@@ -345,6 +359,7 @@ def _ensure_albums(
     journal_path: Path,
     write_delay: float,
 ) -> None:
+    raise _retired_mutation_error()
     source_collections = {item.ref.remote_id: item for item in source.collections}
     albums = journal.setdefault("albums", {})
     descriptions = journal.setdefault("unsupported_album_descriptions", {})
@@ -385,6 +400,7 @@ def _place_existing_videos(
     journal_path: Path,
     write_delay: float,
 ) -> None:
+    raise _retired_mutation_error()
     placements = journal.setdefault("placements", {})
     for gap in comparison.collection_gaps:
         album_id = album_map[normalize_title(gap.source_title)]
@@ -454,6 +470,7 @@ def _upload_candidates(
     write_delay: float,
     runtime: SyncRuntime,
 ) -> None:
+    raise _retired_mutation_error()
     source_videos = {item.ref.remote_id: item for item in source.videos}
     uploads = journal.setdefault("uploads", {})
     placements = journal.setdefault("placements", {})
@@ -543,6 +560,8 @@ def _upload_candidates(
 
 
 def run(args: argparse.Namespace, *, runtime: SyncRuntime) -> int:
+    if getattr(args, "execute", False):
+        raise _retired_mutation_error()
     if args.write_delay < 0:
         raise SystemExit("--write-delay cannot be negative")
 

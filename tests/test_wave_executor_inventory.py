@@ -63,7 +63,7 @@ def test_retired_direct_executors_stop_before_historical_write_authority() -> No
     entries = _registry()["executors"]
     assert isinstance(entries, list)
     retired = [entry for entry in entries if entry["status"] == "retired"]
-    assert len(retired) == 26
+    assert len(retired) == 27
 
     for entry in retired:
         assert entry["direct_entrypoint"] is True
@@ -102,6 +102,22 @@ def test_retired_direct_executors_stop_before_historical_write_authority() -> No
             )
             for node in prior
         ), f"retirement guard follows executable module logic: {entry['path']}"
+
+
+def test_all_legacy_youtube_to_vk_mutation_executors_are_retired() -> None:
+    entries = _registry()["executors"]
+    assert isinstance(entries, list)
+    by_path = {entry["path"]: entry for entry in entries}
+    legacy = {
+        "scripts/sync_youtube_to_vk.py",
+        "scripts/sync_youtube_to_vk_textsafe.py",
+        "scripts/resume_youtube_to_vk_exact_ids.py",
+        "scripts/complete_vk_longform_tail.py",
+    }
+    for path in legacy:
+        entry = by_path[path]
+        assert entry["status"] == "retired"
+        assert entry["provider_write_capable"] is True
 
 
 def test_supported_engine_never_imports_historical_scripts_or_private_script_functions() -> None:
