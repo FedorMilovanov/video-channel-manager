@@ -81,7 +81,7 @@ For an ambiguous mutation:
 
 Result validation derives the allowed overall status from the operation statuses, rejects safe-read `unknown` outcomes, rejects dispatched ambiguous failures presented as ordinary retryable failures, and requires exact ordered operation coverage.
 
-Reviewed production adapters are registered only for explicitly supported operation kinds. The current VK production surface includes postponed Legendary Poet article publication and ordinary native VK Video upload through `VkNativeVideoUploadAdapter`. Native video operations use exact project/community binding, repository-bound media artifacts, durable reservation/upload state, and exact-ID readiness verification. They do not depend on `wall.get`; wall publication is a separate workflow. Historical direct upload executors remain non-authoritative and are not alternate apply routes.
+Reviewed production adapters are registered only for explicitly supported operation kinds. The current VK production surface includes postponed Legendary Poet article publication and ordinary native VK Video upload through `VkNativeVideoUploadAdapter`. Native video policy `vk-native-video-wave-v2` uses a stable durable object key derived from project/community plus YouTube channel/video identity. Snapshot IDs, sequence, titles, output paths and other attempt evidence do not create a new upload object. Each run prepares exactly one source video, uses a canonical provider journal under `operator-output/vk-upload-state/<project>/`, takes the community writer mutex, performs a fresh video-only duplicate check immediately before a new `video.save`, and then verifies the exact returned VK video ID. Native video does not depend on `wall.get`; wall publication is a separate workflow. Historical direct upload executors remain non-authoritative and are not alternate apply routes.
 
 ## Reconciliation
 
@@ -125,7 +125,7 @@ CI verifies:
 - atomic UTF-8 evidence;
 - CLI build/validate/preview/verify behavior;
 - native-video preparation rejects non-missing/ambiguous/non-long-form sources and emits digest-locked canary/batch operator evidence;
-- native-video adapter performs zero wall reads, distinguishes known pre-provider failure from post-dispatch unknown state, and reconciles only by exact journaled remote ID;
+- native-video v2 adapter performs zero wall reads, uses stable source identity across re-plans, serializes writes by community, rejects a fresh exact source/title-duration collision before `video.save`, distinguishes known provider rejection from genuinely ambiguous transport state, and reconciles only by exact journaled remote ID;
 - PowerShell provider mutation routing only through the complete `wave apply` contract.
 
 Development and CI perform zero VK or YouTube provider writes.

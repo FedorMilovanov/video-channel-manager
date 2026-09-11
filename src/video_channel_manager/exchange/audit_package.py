@@ -43,6 +43,10 @@ class AuditPackage(StrictModel):
         channel = self.channel.ref
         video_keys = {item.ref.stable_key for item in self.videos}
         collection_keys = {item.ref.stable_key for item in self.collections}
+        if len(video_keys) != len(self.videos):
+            raise ValueError("AuditPackage video refs must be unique")
+        if len(collection_keys) != len(self.collections):
+            raise ValueError("AuditPackage collection refs must be unique")
 
         all_refs = [self.channel.ref, *(item.ref for item in self.videos), *(item.ref for item in self.collections)]
         for ref in all_refs:

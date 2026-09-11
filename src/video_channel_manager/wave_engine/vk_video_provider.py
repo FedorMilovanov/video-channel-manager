@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from collections.abc import Mapping
@@ -7,7 +8,9 @@ from pathlib import Path
 from typing import Any
 
 from video_channel_manager.config import get_settings
+from video_channel_manager.editorial._project_profiles import PROJECT_CHANNEL_IDS
 from video_channel_manager.local_media.artifact import load_media_artifact_manifest
+from video_channel_manager.platforms.vk.lock import community_vk_write_lock_path, local_vk_write_lock
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.text import render_vk_video_description
 from video_channel_manager.platforms.vk.upload_lifecycle import (
@@ -25,6 +28,7 @@ from video_channel_manager.wave_engine.canonical import (
     write_json_atomic,
 )
 from video_channel_manager.wave_engine.engine import (
+    KnownProviderRejectionError,
     OperationRejectedError,
     UnknownProviderOutcomeError,
 )
@@ -32,7 +36,7 @@ from video_channel_manager.wave_engine.models import MutationClass, WaveOperatio
 
 
 VK_VIDEO_OPERATION_KIND = "vk.video.upload"
-VK_VIDEO_POLICY_VERSION = "vk-native-video-wave-v1"
+VK_VIDEO_POLICY_VERSION = "vk-native-video-wave-v2"
 VK_VIDEO_DEFAULT_ACCOUNT_ALIAS = "legendary-poet"
 
 
@@ -42,6 +46,8 @@ def _minimum_duration_seconds(source_duration_seconds: int) -> int:
 
 
 class VkNativeVideoUploadAdapter:
+    reconciliation_replay_safe = True
+
     """Reviewed Wave adapter for ordinary native VK Video uploads.
 
     The adapter delegates reservation, binary transfer, exact-ID readback, and
@@ -84,7 +90,13 @@ class VkNativeVideoUploadAdapter:
             self.writer.close()
 
     def _provider_journal_path(self, operation: WaveOperation) -> Path:
-        return self.journal_directory / "provider" / f"{operation.operation_id}.json"
+        return (
+            self.repository_root
+            / "operator-output"
+            / "vk-upload-state"
+            / operation.project.project_key
+            / f"{operation.operation_id}.json"
+        )
 
     def _validate_operation(self, operation: WaveOperation) -> dict[str, Any]:
         if operation.operation_kind != VK_VIDEO_OPERATION_KIND:
@@ -100,6 +112,11 @@ class VkNativeVideoUploadAdapter:
             raise OperationRejectedError("VK video owner/community binding is inconsistent")
 
         payload = dict(operation.payload)
+        registered_channels = tuple(PROJECT_CHANNEL_IDS.get(operation.project.project_key, ()))
+        if len(registered_channels) != 1:
+            raise OperationRejectedError("VK video project must have exactly one registered YouTube source channel")
+        if payload.get("source_channel_id") != str(registered_channels[0]):
+            raise OperationRejectedError("VK video source channel does not match the registered project channel")
         required_text = (
             "source_video_id",
             "source_channel_id",
@@ -119,7 +136,50 @@ class VkNativeVideoUploadAdapter:
             raise OperationRejectedError("VK video upload requires long-form duration > 180 seconds")
         if payload.get("privacy_status") != "public":
             raise OperationRejectedError("VK video upload source must be public")
+        for field in ("wallpost", "auto_publish", "repeat"):
+            if payload.get(field) is not False:
+                raise OperationRejectedError(f"VK video payload field {field} must be exactly false")
         return payload
+
+    @staticmethod
+    def _requires_new_reservation(record: Mapping[str, Any]) -> bool:
+        return not bool(record.get("reservation_dispatch_started_at")) and not isinstance(
+            record.get("reservation"), Mapping
+        )
+
+    @staticmethod
+    def _normalized_title(value: object) -> str:
+        return " ".join(str(value or "").split()).casefold()
+
+    def _assert_source_absent_live(self, *, payload: Mapping[str, Any], community_id: int) -> None:
+        source_video_id = str(payload["source_video_id"])
+        source_url = f"https://www.youtube.com/watch?v={source_video_id}"
+        expected_title = self._normalized_title(payload["published_title"])
+        expected_duration = int(payload["source_duration_seconds"])
+        tolerance = max(5, min(30, round(expected_duration * 0.02)))
+        matches: list[str] = []
+        for item in self.writer.list_community_videos(community_id=community_id):
+            owner_id = item.get("owner_id")
+            video_id = item.get("id")
+            remote_id = (
+                f"{owner_id}_{video_id}" if isinstance(owner_id, int) and isinstance(video_id, int) else "unknown"
+            )
+            description = str(item.get("description") or "")
+            if source_url in description:
+                matches.append(remote_id)
+                continue
+            raw_duration = item.get("duration")
+            duration = int(raw_duration) if isinstance(raw_duration, int | str) and str(raw_duration).isdigit() else 0
+            if (
+                self._normalized_title(item.get("title")) == expected_title
+                and abs(duration - expected_duration) <= tolerance
+            ):
+                matches.append(remote_id)
+        if matches:
+            raise OperationRejectedError(
+                "VK target already contains the source video or an exact title/duration collision: "
+                + ", ".join(sorted(set(matches)))
+            )
 
     @staticmethod
     def _provider_dispatch_started(record: Mapping[str, Any]) -> bool:
@@ -185,13 +245,19 @@ class VkNativeVideoUploadAdapter:
         if artifact.manifest_sha256 != str(payload["media_artifact_manifest_sha256"]):
             raise OperationRejectedError("Media artifact internal digest does not match Wave operation")
 
-        rendered = render_vk_video_description(str(payload["published_description"]))
+        rendered = render_vk_video_description(
+            str(payload["published_description"]),
+            source_video_id=str(payload["source_video_id"]),
+        )
         if rendered.text != str(payload["published_description"]) or rendered.has_errors:
             raise OperationRejectedError("Published VK description is not already stable under the current renderer")
 
+        description = str(payload["published_description"])
         readiness = VkUploadReadiness(
             expected_title=str(payload["published_title"]),
             minimum_duration_seconds=_minimum_duration_seconds(int(payload["source_duration_seconds"])),
+            expected_description_sha256="sha256:" + hashlib.sha256(description.encode("utf-8")).hexdigest(),
+            require_public=True,
             allowed_types=("video",),
             require_playable=True,
         )
@@ -203,23 +269,31 @@ class VkNativeVideoUploadAdapter:
             write_json_atomic(journal_path, record)
 
         try:
-            execute_upload_operation(
-                record,
-                writer=self.writer,
+            lock_path = community_vk_write_lock_path(self.store.data_dir, community_id=community_id)
+            with local_vk_write_lock(
+                lock_path,
+                account=self.account_alias,
                 community_id=community_id,
-                title=str(payload["published_title"]),
-                description=str(payload["published_description"]),
-                media_path=media_path,
-                media_artifact=artifact,
-                readiness=readiness,
-                processing_timeout=int(payload.get("processing_timeout_seconds") or 3600),
-                wall_before_snapshot=None,
-                persist=persist,
-            )
+                operation=f"vk-video-upload:{payload['source_video_id']}",
+            ):
+                if self._requires_new_reservation(record):
+                    self._assert_source_absent_live(payload=payload, community_id=community_id)
+                execute_upload_operation(
+                    record,
+                    writer=self.writer,
+                    community_id=community_id,
+                    title=str(payload["published_title"]),
+                    description=description,
+                    media_path=media_path,
+                    media_artifact=artifact,
+                    readiness=readiness,
+                    processing_timeout=int(payload.get("processing_timeout_seconds") or 3600),
+                    wall_before_snapshot=None,
+                    persist=persist,
+                )
         except UploadRejected as exc:
-            # UploadRejected is produced only for a known rejection: either local
-            # validation failed before mutation, or VK returned an explicit
-            # non-retryable rejection to video.save. It is not an unknown outcome.
+            if self._provider_dispatch_started(record):
+                raise KnownProviderRejectionError(str(exc)) from exc
             raise OperationRejectedError(str(exc)) from exc
         except UploadRecoveryRequired as exc:
             if self._provider_dispatch_started(record):
@@ -285,9 +359,12 @@ class VkNativeVideoUploadAdapter:
         }:
             raise RuntimeError(f"VK upload stage {stage.value} is not eligible for read-only exact-ID reconciliation")
 
+        description = str(payload["published_description"])
         readiness = VkUploadReadiness(
             expected_title=str(payload["published_title"]),
             minimum_duration_seconds=_minimum_duration_seconds(int(payload["source_duration_seconds"])),
+            expected_description_sha256="sha256:" + hashlib.sha256(description.encode("utf-8")).hexdigest(),
+            require_public=True,
             allowed_types=("video",),
             require_playable=True,
         )

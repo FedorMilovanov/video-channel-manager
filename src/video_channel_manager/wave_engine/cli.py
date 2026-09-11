@@ -140,13 +140,16 @@ def article_prepare(
 def video_prepare(
     project: Annotated[str, typer.Option("--project", help="Canonical registered project key")],
     source_audit: Annotated[Path, typer.Option("--source-audit", help="Fresh YouTube AuditPackage")],
-    target_audit: Annotated[Path, typer.Option("--target-audit", help="Fresh VK AuditPackage")],
     candidate_id: Annotated[
         list[str],
-        typer.Option("--candidate-id", help="Exact reviewed missing YouTube ID; repeat for the bounded wave"),
+        typer.Option("--candidate-id", help="Exact YouTube ID; pass exactly once"),
     ],
     canary_id: Annotated[str, typer.Option("--canary-id", help="Exact candidate ID used for the one-item canary")],
     output_root: Annotated[Path, typer.Option("--output-root", "-o")],
+    target_audit: Annotated[
+        Path | None,
+        typer.Option("--target-audit", help="Optional VK AuditPackage; live duplicate check is authoritative"),
+    ] = None,
     repository_root: Annotated[Path, typer.Option("--repository-root")] = Path("."),
     vk_account: Annotated[str, typer.Option("--vk-account")] = VK_VIDEO_DEFAULT_ACCOUNT_ALIAS,
     yt_dlp: Annotated[str, typer.Option("--yt-dlp")] = "yt-dlp",
@@ -162,7 +165,7 @@ def video_prepare(
         typer.Option("--processing-timeout-seconds", min=1),
     ] = 3600,
 ) -> None:
-    """Build immutable canary/batch Wave + operator evidence without VK writes."""
+    """Build one immutable native-video Wave + operator request without VK writes."""
 
     try:
         summary = prepare_vk_video_wave(
@@ -184,8 +187,7 @@ def video_prepare(
 
     console.print(
         f"[green]Prepared VK native-video wave:[/green] "
-        f"project={summary['project_key']} candidates={len(summary['candidate_ids'])} "
-        f"canary={summary['canary_id']} provider_writes=0"
+        f"project={summary['project_key']} source={summary['canary_id']} provider_writes=0"
     )
     console.print(f"Canary request: {summary['canary']['request_path']} sha256={summary['canary']['request_sha256']}")
     batch = summary.get("batch")
