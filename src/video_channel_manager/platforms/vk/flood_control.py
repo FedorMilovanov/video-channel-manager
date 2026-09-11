@@ -97,9 +97,7 @@ class VkFloodControlGate:
                         pass
                     continue
                 if time.monotonic() >= deadline:
-                    raise TimeoutError(
-                        f"Timed out waiting for VK flood-control state lock: {self.lock_path}"
-                    ) from None
+                    raise TimeoutError(f"Timed out waiting for VK flood-control state lock: {self.lock_path}") from None
                 time.sleep(0.01)
                 continue
             payload = f"{os.getpid()} {nonce}\n".encode("ascii")
