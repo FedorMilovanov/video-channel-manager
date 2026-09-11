@@ -619,6 +619,7 @@ def test_new_attempt_can_reopen_definite_no_effect_reservation_rejection(tmp_pat
     first_error = dict(record["last_error"])
     first_rejected_at = record["transitions"][-1]["at"]
     first_reservation_intent = dict(record["reservation_intent"])
+    first_media = dict(record["media"])
 
     reopened, changed = ensure_upload_record(
         record,
@@ -634,23 +635,25 @@ def test_new_attempt_can_reopen_definite_no_effect_reservation_rejection(tmp_pat
     )
 
     assert changed is True
-    assert reopened["stage"] == UploadStage.MEDIA_VERIFIED.value
+    assert reopened["stage"] == UploadStage.PLANNED.value
     assert reopened["operation_id"] == first_operation_id
     assert reopened["source_snapshot_id"] == "snapshot-2"
     assert "reservation_dispatch_started_at" not in reopened
     assert reopened["last_error"] is None
     assert reopened["reservation"] is None
+    assert reopened["media"] is None
     assert reopened["known_rejections"] == [
         {
             "rejected_at": first_rejected_at,
             "reservation_dispatch_started_at": first_dispatch_started_at,
             "source_snapshot_id": "snapshot-1",
             "reservation_intent": first_reservation_intent,
+            "media": first_media,
             "last_error": first_error,
         }
     ]
     assert reopened["transitions"][-1]["from"] == UploadStage.REJECTED.value
-    assert reopened["transitions"][-1]["to"] == UploadStage.MEDIA_VERIFIED.value
+    assert reopened["transitions"][-1]["to"] == UploadStage.PLANNED.value
 
     writer.begin_error = None
     run(reopened, writer, media)
