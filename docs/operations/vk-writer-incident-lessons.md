@@ -106,14 +106,16 @@ Regex-cleanup допустим для ссылок и разметки, но н�
 
 Для `video.save` с `wallpost=0` и `auto_publish=0` прежний upload safety мог использовать полный published+postponed crawl. Это было избыточно для узкой проверки «не появился ли wall side effect» и увеличивало число `wall.get`.
 
-Постоянное исправление:
+Первое исправление (#604) сократило полный crawl до bounded two-surface guard. Практический canary затем показал более глубокую проблему: даже один обязательный `wall.get` делал доступность Video upload зависимой от Wall API и блокировал `video.save` при provider flood control.
 
-- native-video upload использует bounded two-surface head guard: один `owner` read + один `postponed` read;
-- provider-reported total counts входят в guard evidence;
-- один batch guard снимается до первой video mutation и переиспользуется для операций batch;
-- после каждого потенциально достигшего VK upload выполняется bounded postflight;
-- любой count/head delta или недоступный postflight переводит операцию в `unknown_requires_reconciliation`;
-- полный wall crawl остаётся обязательным для отдельного `wall.post`, где нужны полная duplicate/schedule collision semantics.
+Текущий контракт:
+
+- ordinary native-video upload не вызывает `wall.get` ни до, ни после загрузки;
+- `video.save` явно получает `wallpost=0`, `auto_publish=0`, `repeat=0`;
+- upload сохраняет durable reservation/upload state и проверяет exact VK video ID;
+- неизвестный результат после provider dispatch не ретраится вслепую;
+- wall scan/guard используется только в workflows, которые действительно работают со стеной или явно запросили wall evidence;
+- полный wall crawl остаётся отдельной обязанностью `wall.post`, где нужны duplicate/schedule collision semantics.
 
 ## Обязательные acceptance criteria для новых writers
 

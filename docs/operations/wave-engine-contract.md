@@ -1,6 +1,6 @@
 # Stable versioned wave engine contract
 
-Updated: 2026-09-10
+Updated: 2026-09-11
 Owner: Wave 6 / issue #76
 
 ## Supported surface
@@ -81,7 +81,7 @@ For an ambiguous mutation:
 
 Result validation derives the allowed overall status from the operation statuses, rejects safe-read `unknown` outcomes, rejects dispatched ambiguous failures presented as ordinary retryable failures, and requires exact ordered operation coverage.
 
-Reviewed production adapters are registered only for explicitly supported operation kinds. The current VK production surface includes postponed Legendary Poet article publication and ordinary native VK Video upload through `VkNativeVideoUploadAdapter`. Native video operations must be prepared from exact YouTube/VK AuditPackages, proof-backed missing long-form source IDs, repository-bound media artifact manifests, and immutable canary/batch Wave documents. Historical direct upload executors remain non-authoritative and are not alternate apply routes.
+Reviewed production adapters are registered only for explicitly supported operation kinds. The current VK production surface includes postponed Legendary Poet article publication and ordinary native VK Video upload through `VkNativeVideoUploadAdapter`. Native video operations use exact project/community binding, repository-bound media artifacts, durable reservation/upload state, and exact-ID readiness verification. They do not depend on `wall.get`; wall publication is a separate workflow. Historical direct upload executors remain non-authoritative and are not alternate apply routes.
 
 ## Reconciliation
 
@@ -125,7 +125,7 @@ CI verifies:
 - atomic UTF-8 evidence;
 - CLI build/validate/preview/verify behavior;
 - native-video preparation rejects non-missing/ambiguous/non-long-form sources and emits digest-locked canary/batch operator evidence;
-- native-video adapter distinguishes pre-provider rejection from post-dispatch unknown state and reconciles only by exact journaled remote ID;
+- native-video adapter performs zero wall reads, distinguishes known pre-provider failure from post-dispatch unknown state, and reconciles only by exact journaled remote ID;
 - PowerShell provider mutation routing only through the complete `wave apply` contract.
 
 Development and CI perform zero VK or YouTube provider writes.
