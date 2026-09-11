@@ -1,7 +1,7 @@
 {
   "schema_name": "video-manager.retirement-registry",
   "schema_version": 1,
-  "updated_at": "2026-09-06T16:49:24Z",
+  "updated_at": "2026-09-11T08:03:00Z",
   "repository": "FedorMilovanov/video-channel-manager",
   "execution_authority": false,
   "provider_writes_authorized": false,
@@ -225,6 +225,25 @@
       "evidence_level": "operator_transcript_reported",
       "status": "documentation_only_non_executable",
       "execution_prohibited": true
+    }
+    ,{
+      "id": "lordchrist-v3-phase1-media-2026-09-09",
+      "path": "docs/history/operational-attempts/lordchrist-v3-phase1-media-2026-09-09",
+      "source_issue": 561,
+      "source_ref": "feat/lordchrist-historical-v3-archival-revisions-561",
+      "source_head": "bdfe6a3fb97d4c39340cadd0f3f6295fb6a4aa19",
+      "source_file": "content/telegram/lordchrist/historical-editorial/v1/v3/media-acquisition-evidence-phase1-2026-09-09.json",
+      "source_sha256": "a340b86ec1391a95d0d764ce6ad8d4e4c24857299f441bcc61d4050c3a7b9cd9",
+      "source_blob_shas": {
+        "media-acquisition-evidence-phase1-2026-09-09.json": "29ca9faf2b4b5f587c045ccdf9d16dd5a6340dbb",
+        "media-acquisition-manifest-2026-09-09.json": "968711854f410aaed5d183b3a04461df2de759f8",
+        "media-acquisition-probes-2026-09-09.json": "1b808a51a028e19e838aac50ee620ddfb9cf257b"
+      },
+      "evidence_level": "provider_inert_incomplete_phase1",
+      "status": "documentation_only_non_executable",
+      "execution_prohibited": true,
+      "replacement": "content/telegram/lordchrist/historical-editorial/v1/v3/media-acquisition-manifest-v2-2026-09-09.json + media-render-receipt-v2-2026-09-09.json",
+      "reason": "Preserves incomplete phase-1 acquisition/probe provenance without restoring its superseded acquisition workflow or runtime."
     }
   ],
   "permanent_rules": [

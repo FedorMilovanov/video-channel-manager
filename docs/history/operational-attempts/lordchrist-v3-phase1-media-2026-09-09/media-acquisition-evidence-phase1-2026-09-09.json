@@ -1,0 +1,77 @@
+{
+  "schema_name": "video-channel-manager.telegram-historical-media-acquisition-evidence",
+  "schema_version": 1,
+  "owning_issue": 561,
+  "checked_on": "2026-09-09",
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "state": "provider_inert",
+  "provider_writes_authorized": false,
+  "live_eligible": false,
+  "provider_write_performed": false,
+  "acquisition_head_sha": "b4c69827aff5d71adbaab9d847e04885cf400a95",
+  "acquisition_run_id": 34284266698,
+  "workflow_artifact": {
+    "artifact_id": 10078828133,
+    "name": "lordchrist-historical-media-b4c69827aff5d71adbaab9d847e04885cf400a95",
+    "size_in_bytes": 884881,
+    "digest": "sha256:fcc5fd89ad3c398e05659e1201057743323de24d14433263b552b3f1c5a588a8",
+    "expires_at": "2026-09-15T22:07:59Z"
+  },
+  "bound_inputs": {
+    "batch_manifest_git_blob_sha": "15524e5a7eb421d6710f8a86dfb2b0173fd522b6",
+    "acquisition_manifest_git_blob_sha": "f5c02b2b1f3711225ed7a743852f2881ec8e1d1c",
+    "acquisition_runtime_git_blob_sha": "d4946f686753e32fa260320d1aadfa9982662da2",
+    "acquisition_workflow_git_blob_sha": "416d86d70d676314d20098973105c1ea40363093"
+  },
+  "assets": [
+    {
+      "asset_id": "img-bunyan-v3-hero-archive",
+      "publication_id": "lordchrist-history-bunyan-bedford-prison-v3",
+      "slot": "hero",
+      "source_id": "src-image-bunyan-nlw",
+      "file_name": "bunyan-v3-hero-nlw-4672796.jpg",
+      "source_sha1": "055db26dad0efeb0145ce3533219dd637dcc03c2",
+      "sha256": "sha256:2ffa25321349674e79547f431a4a1984874bacd6f27b3fbb533990a4e129078f",
+      "byte_length": 301180,
+      "mime": "image/jpeg",
+      "width": 1200,
+      "height": 2048,
+      "rights_basis": "National Library of Wales digitization; Wikimedia Commons records Public Domain Mark 1.0 and no known copyright restrictions.",
+      "local_artifact_readback_verified": true
+    },
+    {
+      "asset_id": "img-judson-v3-hero-archive",
+      "publication_id": "lordchrist-history-judson-burmese-bible-v3",
+      "slot": "hero",
+      "source_id": "src-judson-brown-portrait",
+      "file_name": "judson-v3-hero-brown-healy-1846.jpg",
+      "source_sha1": "ef61018d12a4aff63d563f8503e64815b6decdbf",
+      "sha256": "sha256:277613ba298814cf8d3ea77651d2ee932d6a2c64235b6baa274f5f6309cafe26",
+      "byte_length": 320752,
+      "mime": "image/jpeg",
+      "width": 792,
+      "height": 941,
+      "rights_basis": "Brown University portrait by George P. A. Healy (1846); Wikimedia Commons records the work as public domain with Public Domain Mark 1.0.",
+      "local_artifact_readback_verified": true
+    },
+    {
+      "asset_id": "img-spurgeon-cholera-v3-hero-archive",
+      "publication_id": "lordchrist-history-spurgeon-cholera-1854-v3",
+      "slot": "hero",
+      "source_id": "src-image-spurgeon-nlw",
+      "file_name": "spurgeon-cholera-v3-hero-nlw-4671161.jpg",
+      "source_sha1": "ae50d4be4b1b28d92741626a8d58ac52c736ab9f",
+      "sha256": "sha256:a7cdc68b7b09e57133faed8b33641057e0c0c18ac4436b3064d4fab405847be9",
+      "byte_length": 264910,
+      "mime": "image/jpeg",
+      "width": 1200,
+      "height": 2014,
+      "rights_basis": "National Library of Wales digitization of an 1870s portrait; Wikimedia Commons records Public Domain Mark 1.0 and no known copyright restrictions.",
+      "local_artifact_readback_verified": true
+    }
+  ],
+  "asset_count": 3,
+  "remaining_visual_slots": 13,
+  "artifact_complete": false
+}
