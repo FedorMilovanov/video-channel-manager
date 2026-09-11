@@ -584,6 +584,39 @@ def test_verified_record_without_clean_wall_evidence_cannot_replay(tmp_path: Pat
         run(record, writer, None)
 
 
+def test_native_upload_can_verify_without_wall_guard(tmp_path: Path) -> None:
+    media = tmp_path / "yt-1.mp4"
+    media.write_bytes(b"video")
+    record = new_record()
+    writer = FakeWriter()
+    persists = 0
+
+    def persist() -> None:
+        nonlocal persists
+        persists += 1
+
+    execute_upload_operation(
+        record,
+        writer=writer,
+        community_id=235216998,
+        title="Берёза ⚡",
+        description="Описание",
+        media_path=media,
+        readiness=readiness(),
+        processing_timeout=60,
+        wall_before_snapshot=None,
+        persist=persist,
+    )
+
+    assert record["stage"] == UploadStage.VERIFIED.value
+    assert record["verification"]["assessment"]["ready"] is True
+    assert "wall_delta_status" not in record["verification"]
+    assert writer.wall_snapshot_calls == 0
+    assert writer.begin_calls == 1
+    assert writer.upload_calls == 1
+    assert persists > 0
+
+
 def test_legacy_verified_record_requires_exact_reconciliation() -> None:
     legacy = {
         "remote_id": "-235216998_501",
