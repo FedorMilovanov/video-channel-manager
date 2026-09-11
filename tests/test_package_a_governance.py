@@ -1,13 +1,53 @@
 from __future__ import annotations
 
 import ast
+import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 
 ROOT = Path(__file__).resolve().parents[1]
 OPERATIONS = ROOT / "docs" / "operations"
 HISTORY = ROOT / "docs" / "history" / "operational-attempts"
+
+
+
+def _assert_history_archive_blob_provenance(archive: dict[str, object]) -> None:
+    source_blob_shas = archive.get("source_blob_shas")
+    if source_blob_shas is None:
+        return
+
+    assert isinstance(source_blob_shas, dict)
+    assert source_blob_shas
+
+    archive_path = archive.get("path")
+    assert isinstance(archive_path, str)
+    archive_dir = (ROOT / archive_path).resolve()
+    assert archive_dir.is_dir()
+
+    for filename, expected_sha in source_blob_shas.items():
+        assert isinstance(filename, str)
+        assert filename
+        assert "\\" not in filename
+
+        relative_path = PurePosixPath(filename)
+        assert not relative_path.is_absolute()
+        assert ".." not in relative_path.parts
+        assert relative_path.parts
+
+        assert isinstance(expected_sha, str)
+        assert len(expected_sha) == 40
+        assert set(expected_sha) <= set("0123456789abcdef")
+
+        archived_file = archive_dir.joinpath(*relative_path.parts).resolve()
+        assert archived_file.is_relative_to(archive_dir)
+        assert archived_file.is_file()
+        assert archived_file.suffix.casefold() in {".md", ".json"}
+
+        data = archived_file.read_bytes()
+        git_blob = b"blob " + str(len(data)).encode("ascii") + b"\\0" + data
+        actual_sha = hashlib.sha1(git_blob).hexdigest()
+        assert actual_sha == expected_sha
 
 
 def test_package_a_governance_documents_exist_and_keep_zero_write_boundary() -> None:
@@ -75,6 +115,7 @@ def test_retirement_registry_is_machine_readable_and_fail_closed() -> None:
         assert archive["status"] == "documentation_only_non_executable"
         assert archive["execution_prohibited"] is True
         assert (ROOT / archive["path"]).is_dir()
+        _assert_history_archive_blob_provenance(archive)
 
 
 def test_operational_history_archive_contains_no_executable_or_package_files() -> None:
