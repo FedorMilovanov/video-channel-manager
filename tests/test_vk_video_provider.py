@@ -10,7 +10,7 @@ import video_channel_manager.wave_engine.vk_video_provider as provider_module
 from video_channel_manager.platforms.vk.upload_lifecycle import UploadRecoveryRequired, UploadStage
 from video_channel_manager.platforms.vk.text import render_vk_video_description
 from video_channel_manager.wave_engine.canonical import file_sha256, write_json_atomic
-from video_channel_manager.wave_engine.engine import UnknownProviderOutcomeError
+from video_channel_manager.wave_engine.engine import OperationRejectedError, UnknownProviderOutcomeError
 from video_channel_manager.wave_engine.models import (
     MutationClass,
     ProjectBinding,
@@ -177,6 +177,24 @@ def test_video_adapter_success_persists_exact_verified_evidence(
     assert "wall_delta_status" not in evidence
     journal = root / evidence["provider_journal_path"]
     assert journal.is_file()
+
+
+def test_video_adapter_explicit_video_save_rejection_is_known_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root, _media, operation = _inputs(tmp_path, monkeypatch)
+    adapter = _adapter(root, _FakeWriter())
+
+    def fake_execute(record: dict[str, Any], **kwargs: Any) -> None:
+        record["reservation_dispatch_started_at"] = "2026-09-11T08:00:00+00:00"
+        kwargs["persist"]()
+        raise provider_module.UploadRejected("video.save was rejected")
+
+    monkeypatch.setattr(provider_module, "execute_upload_operation", fake_execute)
+
+    with pytest.raises(OperationRejectedError, match="video.save was rejected"):
+        adapter.execute(operation)
 
 
 def test_video_adapter_post_reservation_failure_is_unknown_not_retry_safe(
