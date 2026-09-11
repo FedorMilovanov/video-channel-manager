@@ -42,7 +42,9 @@ def _plain(output: str) -> str:
 def test_publish_local_is_exposed_in_production_help() -> None:
     result = CliRunner().invoke(instagram_production_app, ["--help"])
     assert result.exit_code == 0, result.output
-    assert "publish-local" in _plain(result.output)
+    output = _plain(result.output)
+    assert "publish-local" in output
+    assert "validate-local" in output
 
 
 def test_validate_local_is_exposed_and_requires_no_provider_configuration(
@@ -86,7 +88,7 @@ def test_validate_local_is_exposed_and_requires_no_provider_configuration(
 
     monkeypatch.setattr(
         "video_channel_manager.cli.instagram_production.verify_local_reel",
-        lambda path: evidence,
+        lambda _path: evidence,
     )
 
     def forbidden_settings() -> object:
