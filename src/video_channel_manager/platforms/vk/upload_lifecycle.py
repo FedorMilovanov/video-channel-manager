@@ -257,9 +257,11 @@ def assess_vk_upload_readiness(
 
     if observed_owner != expected_owner_id or observed_video != expected_video_id:
         reasons.append("identity_mismatch")
-    if processing:
+    # VK can keep processing/converting asserted after an exact video is already playable.
+    # When playability is explicitly required and observed, the playable object is authoritative.
+    if processing and (not readiness.require_playable or not playable):
         reasons.append("processing")
-    if converting:
+    if converting and (not readiness.require_playable or not playable):
         reasons.append("converting")
     if _normalized_title(observed_title) != _normalized_title(readiness.expected_title):
         reasons.append("title_mismatch")

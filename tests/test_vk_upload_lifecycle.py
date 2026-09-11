@@ -379,6 +379,43 @@ def test_readiness_requires_identity_title_duration_type_and_playability() -> No
     }
 
 
+def test_readiness_accepts_playable_exact_video_with_stale_processing_flags() -> None:
+    item = ready_item()
+    item["processing"] = 1
+    item["converting"] = 1
+
+    assessment = assess_vk_upload_readiness(
+        item,
+        expected_owner_id=-235216998,
+        expected_video_id=501,
+        readiness=readiness(),
+    )
+
+    assert assessment.ready is True
+    assert assessment.reasons == ()
+
+
+def test_readiness_keeps_processing_as_blocker_without_playability_requirement() -> None:
+    item = ready_item()
+    item["processing"] = 1
+    relaxed = VkUploadReadiness(
+        expected_title="Видео №1",
+        minimum_duration_seconds=115,
+        allowed_types=("video",),
+        require_playable=False,
+    )
+
+    assessment = assess_vk_upload_readiness(
+        item,
+        expected_owner_id=-235216998,
+        expected_video_id=501,
+        readiness=relaxed,
+    )
+
+    assert assessment.ready is False
+    assert "processing" in assessment.reasons
+
+
 def test_new_upload_record_binds_versioned_wall_policy_into_operation_identity() -> None:
     record = new_record()
     policy = record["wall_policy"]
