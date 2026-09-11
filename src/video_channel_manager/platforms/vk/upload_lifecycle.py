@@ -68,7 +68,7 @@ _ALLOWED_TRANSITIONS: Mapping[UploadStage, frozenset[UploadStage]] = {
     UploadStage.PROCESSING: frozenset({UploadStage.VERIFIED, UploadStage.UNKNOWN_REQUIRES_RECONCILIATION}),
     UploadStage.UNKNOWN_REQUIRES_RECONCILIATION: frozenset({UploadStage.PROCESSING, UploadStage.VERIFIED}),
     UploadStage.VERIFIED: frozenset(),
-    UploadStage.REJECTED: frozenset(),
+    UploadStage.REJECTED: frozenset({UploadStage.MEDIA_VERIFIED}),
 }
 
 
@@ -477,6 +477,7 @@ def ensure_upload_record(
     published_description: str,
     readiness: VkUploadReadiness,
     wall_policy: VkUploadWallPolicy = DEFAULT_UPLOAD_WALL_POLICY,
+    retry_known_rejection: bool = False,
     clock: Clock = _utc_now,
 ) -> tuple[dict[str, Any], bool]:
     if existing is None:
@@ -562,6 +563,68 @@ def ensure_upload_record(
         changed = True
     elif observed_schema_version != 2:
         raise ValueError(f"Unsupported upload journal schema version: {observed_schema_version}")
+
+    if retry_known_rejection and stage is UploadStage.REJECTED:
+        if record.get("operation_id") != expected_operation_id:
+            raise UploadRecoveryRequired("Rejected upload journal identity changed; retry is prohibited")
+        if record.get("community_id") != community_id or record.get("source_video_id") != source_video_id:
+            raise UploadRecoveryRequired("Rejected upload journal source binding changed; retry is prohibited")
+        if record.get("reservation") is not None:
+            raise UploadRecoveryRequired("Rejected upload has a reservation identity; retry is prohibited")
+        upload = record.get("upload")
+        if upload not in (None, {}) and (not isinstance(upload, Mapping) or bool(upload)):
+            raise UploadRecoveryRequired("Rejected upload has binary-transfer evidence; retry is prohibited")
+        if record.get("verification") is not None:
+            raise UploadRecoveryRequired("Rejected upload has verification evidence; retry is prohibited")
+        dispatch_started_at = record.get("reservation_dispatch_started_at")
+        if not isinstance(dispatch_started_at, str) or not dispatch_started_at.strip():
+            raise UploadRecoveryRequired("Rejected upload lacks exact reservation-dispatch evidence")
+        transitions = record.get("transitions")
+        if not isinstance(transitions, list) or not transitions:
+            raise UploadRecoveryRequired("Rejected upload lacks transition history")
+        last_transition = transitions[-1]
+        if not isinstance(last_transition, Mapping):
+            raise UploadRecoveryRequired("Rejected upload transition history is invalid")
+        last_evidence = last_transition.get("evidence")
+        if (
+            last_transition.get("to") != UploadStage.REJECTED.value
+            or not isinstance(last_evidence, Mapping)
+            or last_evidence.get("reason") != "reservation_rejected"
+        ):
+            raise UploadRecoveryRequired("Only a known no-effect reservation rejection can be retried")
+        media = record.get("media")
+        if not isinstance(media, Mapping):
+            raise UploadRecoveryRequired("Rejected upload lacks verified media evidence")
+        previous_error = record.get("last_error")
+        if not isinstance(previous_error, Mapping):
+            raise UploadRecoveryRequired("Rejected upload lacks exact rejection evidence")
+        history = record.setdefault("known_rejections", [])
+        if not isinstance(history, list):
+            raise ValueError("Upload known_rejections must be a list")
+        previous_intent = record.get("reservation_intent")
+        history.append(
+            {
+                "rejected_at": last_transition.get("at"),
+                "reservation_dispatch_started_at": dispatch_started_at,
+                "source_snapshot_id": record.get("source_snapshot_id"),
+                "reservation_intent": dict(previous_intent) if isinstance(previous_intent, Mapping) else None,
+                "last_error": dict(previous_error),
+            }
+        )
+        record.pop("reservation_dispatch_started_at", None)
+        record.pop("reservation_intent", None)
+        record["last_error"] = None
+        _transition(
+            record,
+            UploadStage.MEDIA_VERIFIED,
+            evidence={
+                "reason": "new_wave_after_known_no_effect_reservation_rejection",
+                "known_rejection_index": len(history) - 1,
+            },
+            clock=clock,
+        )
+        stage = UploadStage.MEDIA_VERIFIED
+        changed = True
 
     provider_dispatch_started = bool(record.get("reservation_dispatch_started_at")) or isinstance(
         record.get("reservation"), Mapping
