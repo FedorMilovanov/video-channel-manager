@@ -272,6 +272,18 @@ def assess_vk_upload_readiness(
     return VkUploadReadinessAssessment(ready=not reasons, reasons=tuple(reasons), observed=observed)
 
 
+def _stable_upload_operation_id(*, community_id: int, source_video_id: str) -> str:
+    return _canonical_sha256(
+        {
+            "provider": "vk",
+            "operation_kind": "video.upload",
+            "community_id": community_id,
+            "source_platform": "youtube",
+            "source_video_id": source_video_id,
+        }
+    )
+
+
 def create_upload_record(
     *,
     source_snapshot_id: str,
@@ -302,11 +314,15 @@ def create_upload_record(
         "readiness": readiness.as_dict(),
         "wall_policy": wall_policy.as_dict(),
     }
+    operation_id = _stable_upload_operation_id(
+        community_id=community_id,
+        source_video_id=source_video_id,
+    )
     created_at = _iso(clock)
     return {
         "schema_name": "video-manager.vk-upload-operation",
-        "schema_version": 1,
-        "operation_id": _canonical_sha256(operation_payload),
+        "schema_version": 2,
+        "operation_id": operation_id,
         **operation_payload,
         "stage": UploadStage.PLANNED.value,
         "created_at": created_at,
@@ -321,7 +337,7 @@ def create_upload_record(
                 "from": None,
                 "to": UploadStage.PLANNED.value,
                 "at": created_at,
-                "evidence": {"operation_id": _canonical_sha256(operation_payload)},
+                "evidence": {"operation_id": operation_id},
             }
         ],
     }
@@ -490,18 +506,10 @@ def ensure_upload_record(
             )
         policy_payload = wall_policy.as_dict()
         record["wall_policy"] = policy_payload
-        operation_payload = {
-            "source_snapshot_id": source_snapshot_id,
-            "community_id": community_id,
-            "source_video_id": source_video_id,
-            "source_title": source_title,
-            "source_duration_seconds": source_duration_seconds,
-            "published_title": published_title,
-            "published_description_sha256": _text_sha256(published_description),
-            "readiness": readiness.as_dict(),
-            "wall_policy": policy_payload,
-        }
-        operation_id = _canonical_sha256(operation_payload)
+        operation_id = _stable_upload_operation_id(
+            community_id=community_id,
+            source_video_id=source_video_id,
+        )
         record["operation_id"] = operation_id
         transitions = record.get("transitions")
         if isinstance(transitions, list) and transitions:
@@ -513,6 +521,46 @@ def ensure_upload_record(
         changed = True
     elif not isinstance(raw_wall_policy, Mapping):
         raise ValueError("Upload journal wall_policy must be an object")
+
+    expected_operation_id = _stable_upload_operation_id(
+        community_id=community_id,
+        source_video_id=source_video_id,
+    )
+    observed_schema_version = record.get("schema_version")
+    if observed_schema_version == 1:
+        if record.get("community_id") != community_id or record.get("source_video_id") != source_video_id:
+            raise ValueError("Legacy upload journal identity does not match the requested source object")
+        record["schema_version"] = 2
+        record["operation_id"] = expected_operation_id
+        transitions = record.get("transitions")
+        if isinstance(transitions, list) and transitions:
+            initial = transitions[0]
+            if isinstance(initial, dict) and initial.get("from") is None:
+                evidence = initial.get("evidence")
+                if isinstance(evidence, dict):
+                    evidence["operation_id"] = expected_operation_id
+        changed = True
+    elif observed_schema_version != 2:
+        raise ValueError(f"Unsupported upload journal schema version: {observed_schema_version}")
+
+    provider_dispatch_started = bool(record.get("reservation_dispatch_started_at")) or isinstance(
+        record.get("reservation"), Mapping
+    )
+    if not provider_dispatch_started:
+        desired_attempt_evidence = {
+            "source_snapshot_id": source_snapshot_id,
+            "source_title": source_title,
+            "source_duration_seconds": source_duration_seconds,
+            "published_title": published_title,
+            "published_description_sha256": _text_sha256(published_description),
+            "readiness": readiness.as_dict(),
+            "wall_policy": wall_policy.as_dict(),
+        }
+        for key, value in desired_attempt_evidence.items():
+            if record.get(key) != value:
+                record[key] = value
+                changed = True
+
     _validate_record_binding(
         record,
         source_snapshot_id=source_snapshot_id,
@@ -545,18 +593,18 @@ def _validate_record_binding(
     if not isinstance(raw_policy, Mapping):
         raise ValueError("Upload journal is missing its wall policy")
     observed_policy = VkUploadWallPolicy.from_mapping(raw_policy)
+    expected_operation_id = _stable_upload_operation_id(
+        community_id=community_id,
+        source_video_id=source_video_id,
+    )
     expected = {
-        "source_snapshot_id": source_snapshot_id,
         "community_id": community_id,
         "source_video_id": source_video_id,
-        "source_title": source_title,
-        "source_duration_seconds": source_duration_seconds,
         "published_title": published_title,
         "published_description_sha256": _text_sha256(published_description),
         "readiness": readiness.as_dict(),
         "wall_policy": wall_policy.as_dict(),
     }
-    expected_operation_id = _canonical_sha256(expected)
     mismatches = {
         key: {"expected": value, "actual": record.get(key)}
         for key, value in expected.items()
