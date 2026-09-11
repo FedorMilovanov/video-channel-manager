@@ -39,9 +39,7 @@ if __name__ == "__main__":
 
 
 def _retired_mutation_error() -> RuntimeError:
-    return RuntimeError(
-        "This historical VK mutation executor is retired; use the supported Wave/provider workflow."
-    )
+    return RuntimeError("This historical VK mutation executor is retired; use the supported Wave/provider workflow.")
 
 PROJECT_KEY = "lord-god-strength"
 COMMUNITY_ID = 60805374
@@ -415,6 +413,7 @@ def update_ledger(
 
 
 def upload_missing(repo: Path, row: dict[str, Any], writer: VkVideoWriter, journal: dict[str, Any]) -> None:
+    youtube_id = str(row["youtube_id"])
     raise _retired_mutation_error()
     previous = journal["uploads"].get(youtube_id)
     if isinstance(previous, dict) and previous.get("remote_id"):
@@ -486,6 +485,8 @@ def set_source_thumbnail(
     writer: VkThumbnailWriter,
     journal: dict[str, Any],
 ) -> bool:
+    youtube_id = str(row["youtube_id"])
+    identity = remote(row)
     raise _retired_mutation_error()
     if identity is None:
         raise RuntimeError(f"Cannot set thumbnail without VK ID: {youtube_id}")
@@ -581,6 +582,7 @@ def fill_album(
     client: VkApiClient,
     journal: dict[str, Any],
 ) -> int:
+    album = find_album(client)
     raise _retired_mutation_error()
     album_id = int(album.ref.remote_id) if album is not None else journal["album"].get("album_id")
     if not isinstance(album_id, int) or album_id <= 0:
@@ -632,7 +634,7 @@ def main() -> int:
     parser.add_argument("--community", type=int, default=COMMUNITY_ID, help=argparse.SUPPRESS)
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
-    if args.execute:
+    if getattr(args, "execute", False):
         raise _retired_mutation_error()
 
     repo = args.repo.resolve()
