@@ -140,16 +140,16 @@ def article_prepare(
 def video_prepare(
     project: Annotated[str, typer.Option("--project", help="Canonical registered project key")],
     source_audit: Annotated[Path, typer.Option("--source-audit", help="Fresh YouTube AuditPackage")],
-    target_audit: Annotated[
-        Path | None,
-        typer.Option("--target-audit", help="Optional VK AuditPackage; live duplicate check is authoritative"),
-    ] = None,
     candidate_id: Annotated[
         list[str],
         typer.Option("--candidate-id", help="Exact YouTube ID; pass exactly once"),
     ],
     canary_id: Annotated[str, typer.Option("--canary-id", help="Exact candidate ID used for the one-item canary")],
     output_root: Annotated[Path, typer.Option("--output-root", "-o")],
+    target_audit: Annotated[
+        Path | None,
+        typer.Option("--target-audit", help="Optional VK AuditPackage; live duplicate check is authoritative"),
+    ] = None,
     repository_root: Annotated[Path, typer.Option("--repository-root")] = Path("."),
     vk_account: Annotated[str, typer.Option("--vk-account")] = VK_VIDEO_DEFAULT_ACCOUNT_ALIAS,
     yt_dlp: Annotated[str, typer.Option("--yt-dlp")] = "yt-dlp",
