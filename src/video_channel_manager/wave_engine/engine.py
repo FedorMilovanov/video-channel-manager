@@ -294,8 +294,29 @@ class WaveEngine:
         journal_path = output_path.with_name(f".{output_path.name}.journal.json")
         if output_path.exists():
             raise ValueError("reconciliation output already exists; overwrite is prohibited")
+
+        replay_safe = bool(getattr(adapter, "reconciliation_replay_safe", False))
+        existing_journal: dict[str, Any] | None = None
         if journal_path.exists():
-            raise ValueError("reconciliation journal already exists; automatic replay is prohibited")
+            try:
+                raw_existing = json.loads(journal_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                raise ValueError("reconciliation journal is unreadable; automatic replay is prohibited") from exc
+            if not isinstance(raw_existing, dict):
+                raise ValueError("reconciliation journal is invalid; automatic replay is prohibited")
+            if not replay_safe:
+                raise ValueError("reconciliation journal already exists; automatic replay is prohibited")
+            if (
+                raw_existing.get("plan_self_digest") != plan.self_digest
+                or raw_existing.get("result_self_digest") != result.self_digest
+                or raw_existing.get("request_self_digest") != request.self_digest
+                or raw_existing.get("operation_ids") != list(request.operation_ids)
+            ):
+                raise ValueError("reconciliation journal binding mismatch; automatic replay is prohibited")
+            existing_results = raw_existing.get("operation_results")
+            if not isinstance(existing_results, list):
+                raise ValueError("reconciliation journal operation_results is invalid")
+            existing_journal = raw_existing
 
         journal_payload: dict[str, Any] = {
             "schema_name": "video-manager.wave-reconciliation-journal",
@@ -310,13 +331,24 @@ class WaveEngine:
             "current_operation_id": None,
             "reconciliation_result_self_digest": None,
         }
-        _fault(fault_hook, WaveFaultStage.BEFORE_RECONCILIATION_INTENT_COMMIT)
-        write_json_atomic(journal_path, journal_payload)
-        _fault(fault_hook, WaveFaultStage.AFTER_RECONCILIATION_INTENT_COMMIT)
+        if existing_journal is None:
+            _fault(fault_hook, WaveFaultStage.BEFORE_RECONCILIATION_INTENT_COMMIT)
+            write_json_atomic(journal_path, journal_payload)
+            _fault(fault_hook, WaveFaultStage.AFTER_RECONCILIATION_INTENT_COMMIT)
+        else:
+            journal_payload = existing_journal
+            journal_payload["stage"] = "intent_committed"
+            journal_payload["current_operation_id"] = None
+            write_json_atomic(journal_path, journal_payload)
 
         operation_by_id = {operation.operation_id: operation for operation in plan.operations}
-        reconciled: list[WaveOperationResult] = []
+        raw_completed = journal_payload.get("operation_results")
+        assert isinstance(raw_completed, list)
+        reconciled = [WaveOperationResult.model_validate(item) for item in raw_completed]
+        completed_ids = {item.operation_id for item in reconciled}
         for operation_id in request.operation_ids:
+            if operation_id in completed_ids:
+                continue
             operation = operation_by_id[operation_id]
             journal_payload["stage"] = "dispatch_started"
             journal_payload["current_operation_id"] = operation_id
