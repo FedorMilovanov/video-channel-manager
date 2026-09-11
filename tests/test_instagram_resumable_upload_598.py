@@ -197,7 +197,7 @@ def test_http_400_diagnostic_preserves_provider_correlation_headers_without_secr
             headers={
                 "X-FB-Request-ID": "request-613",
                 "X-FB-Trace-ID": "trace-613",
-                "Proxy-Status": "e_fb_vip; error=processing_failed",
+                "Proxy-Status": "e_fb_vip; error=processing_failed; details=/ig-api-upload/v26.0/container-598",
                 "Content-Type": "application/json; charset=UTF-8",
             },
         )
@@ -214,7 +214,7 @@ def test_http_400_diagnostic_preserves_provider_correlation_headers_without_secr
     assert error.retryable is False
     assert "x-fb-request-id=request-613" in message
     assert "x-fb-trace-id=trace-613" in message
-    assert "proxy-status=e_fb_vip; error=processing_failed" in message
+    assert "proxy-status=e_fb_vip; error=processing_failed; details=[REDACTED_UPLOAD_PATH]" in message
     assert "response-content-type=application/json; charset=UTF-8" in message
     assert "request_method=POST" in message
     assert "request_host=rupload.facebook.com" in message
