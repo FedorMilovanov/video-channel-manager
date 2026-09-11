@@ -39,6 +39,10 @@ if __name__ == "__main__":
     )
 
 
+def _retired_mutation_error() -> RuntimeError:
+    return RuntimeError("This historical VK mutation executor is retired; use the supported Wave/provider workflow.")
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", type=Path, help="YouTube AuditPackage used for the transfer")
@@ -169,6 +173,8 @@ def _write_lock_context(
 
 def main() -> int:
     args = _parser().parse_args()
+    if getattr(args, "execute", False):
+        raise _retired_mutation_error()
     if args.write_delay < 0:
         raise SystemExit("--write-delay cannot be negative")
     if args.processing_timeout <= 0:
