@@ -217,8 +217,9 @@ class VkNativeVideoUploadAdapter:
                 persist=persist,
             )
         except UploadRejected as exc:
-            if self._provider_dispatch_started(record):
-                raise UnknownProviderOutcomeError(str(exc)) from exc
+            # UploadRejected is produced only for a known rejection: either local
+            # validation failed before mutation, or VK returned an explicit
+            # non-retryable rejection to video.save. It is not an unknown outcome.
             raise OperationRejectedError(str(exc)) from exc
         except UploadRecoveryRequired as exc:
             if self._provider_dispatch_started(record):
