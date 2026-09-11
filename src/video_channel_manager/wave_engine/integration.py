@@ -271,8 +271,8 @@ def _validate_upload_record(
     schema_version = record.get("schema_version")
     if record.get("schema_name") != "video-manager.vk-upload-operation" or schema_version not in {1, 2}:
         raise IntegrationEvidenceError("upload journal has an unexpected schema")
-    if record.get("source_snapshot_id") != source_snapshot_id:
-        raise IntegrationEvidenceError("upload journal source snapshot differs from comparison")
+    if schema_version == 1 and record.get("source_snapshot_id") != source_snapshot_id:
+        raise IntegrationEvidenceError("legacy upload journal source snapshot differs from comparison")
     if record.get("community_id") != project.community_id:
         raise IntegrationEvidenceError("upload journal community differs from project binding")
     if record.get("source_video_id") != source_video_id:
