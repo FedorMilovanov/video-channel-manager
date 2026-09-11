@@ -33,6 +33,18 @@ The fallback URL must be a stable direct HTTPS object URL on an explicitly allow
 
 Provisioning a public object URL is an external deployment step and is not implied by this runbook. A share page, redirector, expiring browser-only link, or URL whose bytes cannot be re-fetched and hashed exactly is not an acceptable `video_url`.
 
+## Provider-inert local validation
+
+Before any provider preflight or write, validate the exact local file with the same media boundary used by `publish-local`:
+
+```powershell
+video-manager instagram production validate-local "D:\\Videos\\output-instagram-clean.mp4"
+```
+
+`validate-local` needs no Instagram credential, publication key, database state, network access or write gate. It performs no provider request and creates no durable publication intent. A successful result reports the exact SHA-256 and byte size, MP4 layout/edit-list verdict, codec/dimensions, pixel format, field order, frame rate, audio parameters, active Reel ruleset, and closed-GOP intra/IDR evidence.
+
+A non-zero result is blocking. Do not substitute ad-hoc ffprobe checks for a failed `validate-local`: `publish-local` calls the same verifier and will fail for the same media incompatibility.
+
 ## What the command does
 
 `publish-local` does not stage media on an external CDN. It:
