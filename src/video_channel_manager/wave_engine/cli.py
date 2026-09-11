@@ -305,6 +305,7 @@ def apply(
             journal_directory=journal_directory,
             account_alias=vk_account,
         )
+    journal_existed_before = journal_directory.exists()
     try:
         result = WaveEngine().apply(
             source=source,
@@ -318,7 +319,13 @@ def apply(
             provider_writes_enabled=enable_provider_writes,
         )
     except (OSError, ValueError) as exc:
-        console.print(f"[red]Wave apply rejected:[/red] {exc}")
+        if not journal_existed_before and journal_directory.exists():
+            console.print(
+                f"[red]Wave apply stopped after execution journal creation:[/red] {exc}. "
+                "Treat the provider outcome as unknown; do not retry blindly."
+            )
+            raise typer.Exit(code=4) from exc
+        console.print(f"[red]Wave apply rejected before execution journal creation:[/red] {exc}")
         raise typer.Exit(code=3) from exc
     finally:
         close = getattr(adapter, "close", None)
