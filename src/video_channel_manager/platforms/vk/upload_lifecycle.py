@@ -9,6 +9,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any, Protocol, cast
 
+from video_channel_manager.platforms.http import HttpFailureKind
 from video_channel_manager.platforms.vk.wall_safety import (
     DEFAULT_UPLOAD_WALL_POLICY,
     VkUploadWallGuard,
@@ -613,6 +614,18 @@ def _record_error(record: dict[str, Any], exc: BaseException, *, clock: Clock) -
     record["updated_at"] = _iso(clock)
 
 
+def _reservation_failure_is_ambiguous(exc: BaseException) -> bool:
+    if bool(getattr(exc, "retryable", False)):
+        return True
+    return getattr(exc, "kind", None) in {
+        HttpFailureKind.TRANSPORT,
+        HttpFailureKind.RATE_LIMIT,
+        HttpFailureKind.TRANSIENT_HTTP,
+        HttpFailureKind.INVALID_JSON,
+        HttpFailureKind.INVALID_PAYLOAD,
+    }
+
+
 def _fault(fault_hook: FaultHook | None, boundary: str) -> None:
     if fault_hook is not None:
         fault_hook(boundary)
@@ -1081,7 +1094,7 @@ def execute_upload_operation(
             )
         except Exception as exc:
             _record_error(record, exc, clock=clock)
-            if bool(getattr(exc, "retryable", False)):
+            if _reservation_failure_is_ambiguous(exc):
                 _persist_transition(
                     record,
                     UploadStage.UNKNOWN_REQUIRES_RECONCILIATION,
