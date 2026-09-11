@@ -2,7 +2,7 @@
 
 This runbook extends the production Instagram publisher with a reviewed local-file transport. The existing `docs/operations/instagram-production-publishing.md` runbook remains authoritative for the public-HTTPS-URL `publish` command; the rules below apply only to `publish-local`.
 
-Owning implementation issue: #584. Resumable incident hardening: #600.
+Owning implementation issue: #584. Resumable incident hardening: #600. Strict local Reel media proof: #614.
 
 ## Supported provider mode
 
@@ -25,7 +25,7 @@ The production boundary is deliberately narrow:
 2. requires the existing double write gate (`--execute` plus `VCM_INSTAGRAM_WRITES_ENABLED=true`);
 3. runs the existing read-only exact-account and publishing-limit preflight;
 4. verifies the local MP4 structure before durable intent: `ftyp`, `moov` before `mdat`, and no `edts/elst` edit list;
-5. verifies the canonical Reel media contract, including H.264/HEVC, AAC, audio sample rate at most 48 kHz, mono/stereo, frame rate, dimensions, bitrate, duration and file size;
+5. verifies the canonical Reel media contract, including H.264/HEVC, progressive scan, 4:2:0 chroma, a closed-GOP proof from local AVC/HEVC access units, AAC, audio sample rate at most 48 kHz, mono/stereo, frame rate, dimensions, bitrate, duration and file size;
 6. persists the publication plan before a provider mutation;
 7. creates one Reel container with `media_type=REELS` and `upload_type=resumable`;
 8. validates that the returned upload URI is HTTPS on exactly `rupload.facebook.com`, persists the exact container response in a child ledger, and only then advances the parent container state;
@@ -44,7 +44,10 @@ Meta's local Reel path requires a compatible MP4. For this repository, `publish-
 - an `ftyp` box is present;
 - `moov` exists and precedes `mdat` (`faststart` layout);
 - no MP4 edit list (`edts` / `elst`) is present;
-- the normal canonical Reel codec/rate/size contract passes.
+- the video stream reports progressive scan;
+- the pixel format proves 4:2:0 chroma subsampling;
+- every ffprobe-observed I picture can be mapped back to its MP4 packet and contains an AVC/H.264 IDR NAL (type 5) or HEVC IDR NAL (type 19/20); non-IDR I pictures fail closed as an open-GOP risk;
+- the remaining canonical Reel codec/rate/size contract passes.
 
 AAC at 44.1 kHz is valid because the Meta contract is **48 kHz maximum**, not exactly 48 kHz. Do not transcode an otherwise-valid file solely to turn 44.1 kHz into 48 kHz.
 
@@ -68,6 +71,8 @@ ffprobe -v trace "D:\Videos\output-instagram-clean.mp4" 2>&1 |
 ```
 
 Expected: `ftyp`, then `moov`, then `mdat`; no `edts`, `elst`, or `edit_count` lines.
+
+The trace command above proves container layout only. The production `publish-local` pre-write verifier additionally reads ffprobe `pix_fmt` / `field_order` and performs the closed-GOP packet/NAL proof. A file that cannot supply packet positions/sizes or a supported AVC/HEVC sample description fails closed before container creation.
 
 ## Database migration
 
