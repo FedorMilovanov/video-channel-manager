@@ -118,6 +118,52 @@ def _inputs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     return root, media, operation
 
 
+def test_video_v2_operation_and_provider_journal_are_stable_across_fresh_snapshots(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root, _media, first = _inputs(tmp_path, monkeypatch)
+    second = WaveOperation.build(
+        sequence=9,
+        project=first.project,
+        source_snapshot_id="c" * 64,
+        policy_version=VK_VIDEO_POLICY_VERSION,
+        spec=WaveOperationSpec(
+            order_key="different-attempt-order",
+            operation_kind=VK_VIDEO_OPERATION_KIND,
+            mutation_class=MutationClass.AMBIGUOUS_MUTATION,
+            payload={**first.payload, "youtube_snapshot_id": "fresh-snapshot"},
+        ),
+    )
+    adapter = _adapter(root, _FakeWriter())
+
+    assert second.operation_id == first.operation_id
+    assert adapter._provider_journal_path(second) == adapter._provider_journal_path(first)
+
+
+def test_video_adapter_rejects_unregistered_source_channel(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root, _media, operation = _inputs(tmp_path, monkeypatch)
+    bad = WaveOperation.build(
+        sequence=0,
+        project=operation.project,
+        source_snapshot_id=operation.source_snapshot_id,
+        policy_version=VK_VIDEO_POLICY_VERSION,
+        spec=WaveOperationSpec(
+            order_key=operation.order_key,
+            operation_kind=VK_VIDEO_OPERATION_KIND,
+            mutation_class=MutationClass.AMBIGUOUS_MUTATION,
+            payload={**operation.payload, "source_channel_id": "UC-other"},
+        ),
+    )
+    adapter = _adapter(root, _FakeWriter())
+
+    with pytest.raises(OperationRejectedError, match="registered project channel"):
+        adapter.execute(bad)
+
+
 def test_video_provider_journal_path_is_stable_across_attempt_directories(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
