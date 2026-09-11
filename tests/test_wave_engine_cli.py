@@ -122,6 +122,7 @@ def test_wave_cli_rejects_tampered_source_artifact_and_plan(tmp_path: Path) -> N
     assert result.exit_code != 0
     assert "Invalid WavePlan" in result.output
 
+
 def test_wave_apply_exception_after_new_journal_is_unknown_not_retry_safe(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
