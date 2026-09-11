@@ -287,6 +287,51 @@ def test_reconciliation_fault_boundaries_preserve_durable_replay_barrier(
         assert len(adapter.calls) == expected_calls
 
 
+def test_reconciliation_can_resume_existing_sidecar_only_when_adapter_declares_replay_safe(
+    tmp_path: Path,
+) -> None:
+    plan = _plan()
+    result = _unknown_result(plan)
+    request = WaveReconciliationRequest.build(plan=plan, result=result)
+    output = tmp_path / "reconciliation-result.json"
+    journal = tmp_path / ".reconciliation-result.json.journal.json"
+
+    class ReplaySafeAdapter(RecordingReconciliationAdapter):
+        reconciliation_replay_safe = True
+
+    first = ReplaySafeAdapter()
+
+    def crash(stage: WaveFaultStage, operation: WaveOperation | None) -> None:
+        del operation
+        if stage is WaveFaultStage.AFTER_RECONCILIATION_DISPATCH_STARTED_COMMIT:
+            raise CrashAt(stage.value)
+
+    with pytest.raises(CrashAt):
+        WaveEngine().reconcile(
+            plan=plan,
+            result=result,
+            request=request,
+            adapter=first,
+            output_path=output,
+            fault_hook=crash,
+        )
+
+    assert first.calls == []
+    assert journal.exists()
+    second = ReplaySafeAdapter()
+    reconciled = WaveEngine().reconcile(
+        plan=plan,
+        result=result,
+        request=request,
+        adapter=second,
+        output_path=output,
+    )
+
+    assert second.calls == [plan.operations[0].operation_id]
+    assert reconciled.operations[0].status is OperationStatus.RECONCILED
+    assert output.is_file()
+
+
 def test_fault_hook_is_explicit_and_success_path_emits_ordered_stages(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
