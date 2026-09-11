@@ -15,7 +15,10 @@ from video_channel_manager.domain.enums import PlatformName
 from video_channel_manager.editorial._project_profiles import PROJECT_CHANNEL_IDS
 from video_channel_manager.local_media.artifact import MediaArtifactEvidence, validate_media_artifact_evidence
 from video_channel_manager.platforms.vk.thumbnail_lifecycle import ThumbnailOperationRecord, ThumbnailStatus
-from video_channel_manager.platforms.vk.upload_lifecycle import UploadStage
+from video_channel_manager.platforms.vk.upload_lifecycle import (
+    UploadStage,
+    stable_upload_operation_id,
+)
 from video_channel_manager.wave_engine.canonical import object_sha256
 from video_channel_manager.wave_engine.models import (
     FrozenStrictModel,
@@ -265,7 +268,8 @@ def _validate_upload_record(
     source_video_id: str,
     media_manifest_sha256: str,
 ) -> tuple[UploadStage, str | None, str]:
-    if record.get("schema_name") != "video-manager.vk-upload-operation" or record.get("schema_version") != 1:
+    schema_version = record.get("schema_version")
+    if record.get("schema_name") != "video-manager.vk-upload-operation" or schema_version not in {1, 2}:
         raise IntegrationEvidenceError("upload journal has an unexpected schema")
     if record.get("source_snapshot_id") != source_snapshot_id:
         raise IntegrationEvidenceError("upload journal source snapshot differs from comparison")
@@ -274,7 +278,13 @@ def _validate_upload_record(
     if record.get("source_video_id") != source_video_id:
         raise IntegrationEvidenceError("upload journal source video differs from integration item")
     operation_id = record.get("operation_id")
-    expected_operation_id = _canonical_json_sha256(_upload_operation_payload(record), prefixed=True)
+    if schema_version == 1:
+        expected_operation_id = _canonical_json_sha256(_upload_operation_payload(record), prefixed=True)
+    else:
+        expected_operation_id = stable_upload_operation_id(
+            community_id=project.community_id,
+            source_video_id=source_video_id,
+        )
     if not isinstance(operation_id, str) or operation_id != expected_operation_id:
         raise IntegrationEvidenceError("upload journal operation_id does not match its exact binding")
     try:
