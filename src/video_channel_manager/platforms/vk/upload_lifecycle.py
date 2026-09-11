@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -83,6 +84,8 @@ class UploadRejected(RuntimeError):
 class VkUploadReadiness:
     expected_title: str
     minimum_duration_seconds: int
+    expected_description_sha256: str | None = None
+    require_public: bool = True
     allowed_types: tuple[str, ...] = ("video",)
     require_playable: bool = True
 
@@ -91,6 +94,10 @@ class VkUploadReadiness:
             raise ValueError("expected_title cannot be blank")
         if self.minimum_duration_seconds <= 0:
             raise ValueError("minimum_duration_seconds must be positive")
+        if self.expected_description_sha256 is not None:
+            digest = self.expected_description_sha256
+            if not re.fullmatch(r"sha256:[0-9a-f]{64}", digest):
+                raise ValueError("expected_description_sha256 must be a sha256: digest")
         normalized_types = tuple(sorted({value.strip() for value in self.allowed_types if value.strip()}))
         if not normalized_types:
             raise ValueError("allowed_types cannot be empty")
@@ -100,6 +107,8 @@ class VkUploadReadiness:
         return {
             "expected_title": self.expected_title,
             "minimum_duration_seconds": self.minimum_duration_seconds,
+            "expected_description_sha256": self.expected_description_sha256,
+            "require_public": self.require_public,
             "allowed_types": list(self.allowed_types),
             "require_playable": self.require_playable,
         }
@@ -237,6 +246,8 @@ def assess_vk_upload_readiness(
     observed_owner = item.get("owner_id")
     observed_video = item.get("id")
     observed_title = str(item.get("title") or "")
+    observed_description = str(item.get("description") or "")
+    is_private = bool(item.get("is_private"))
     raw_duration = item.get("duration")
     duration = int(raw_duration) if isinstance(raw_duration, int | str) and str(raw_duration).isdigit() else 0
     observed_type = str(item.get("type") or "").strip()
@@ -252,6 +263,13 @@ def assess_vk_upload_readiness(
         reasons.append("converting")
     if _normalized_title(observed_title) != _normalized_title(readiness.expected_title):
         reasons.append("title_mismatch")
+    if (
+        readiness.expected_description_sha256 is not None
+        and _text_sha256(observed_description) != readiness.expected_description_sha256
+    ):
+        reasons.append("description_mismatch")
+    if readiness.require_public and is_private:
+        reasons.append("private")
     if duration < readiness.minimum_duration_seconds:
         reasons.append("duration_below_minimum")
     if observed_type not in readiness.allowed_types:
@@ -263,6 +281,8 @@ def assess_vk_upload_readiness(
         "owner_id": observed_owner,
         "video_id": observed_video,
         "title": observed_title,
+        "description_sha256": _text_sha256(observed_description),
+        "is_private": is_private,
         "duration_seconds": duration,
         "type": observed_type,
         "processing": processing,
