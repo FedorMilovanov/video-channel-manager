@@ -4,6 +4,7 @@ import json
 import re
 from dataclasses import dataclass
 from typing import cast
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -104,6 +105,9 @@ def _secret_safe_detail(value: str, *, secret: str, upload_uri: str | None = Non
         detail = detail.replace(secret, "[REDACTED_TOKEN]")
     if upload_uri:
         detail = detail.replace(upload_uri, "[REDACTED_UPLOAD_URI]")
+        upload_path = urlsplit(upload_uri).path
+        if upload_path and upload_path != "/":
+            detail = detail.replace(upload_path, "[REDACTED_UPLOAD_PATH]")
     detail = _RUPLOAD_URL_PATTERN.sub("[REDACTED_UPLOAD_URI]", detail)
     detail = _AUTH_VALUE_PATTERN.sub("[REDACTED_AUTHORIZATION]", detail)
     detail = _ACCESS_TOKEN_PATTERN.sub(r"\1[REDACTED_TOKEN]", detail)
