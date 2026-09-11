@@ -429,6 +429,16 @@ function Get-VcmOperatorOutcome {
         }
     }
     if ($OperationClass -eq "ambiguous_mutation") {
+        # The only supported mutating child is `wave apply`.
+        # Wave uses exit 3 for a known failed/pre-dispatch outcome and exit 4
+        # only when provider reconciliation is actually required.
+        if (-not $TimedOut -and $ExitCode -eq 3) {
+            return [pscustomobject]@{
+                status = "failed"
+                retry_safe = $false
+                unknown_requires_reconciliation = $false
+            }
+        }
         return [pscustomobject]@{
             status = "unknown_requires_reconciliation"
             retry_safe = $false

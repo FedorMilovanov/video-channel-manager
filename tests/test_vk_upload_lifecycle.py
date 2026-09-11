@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 
+from video_channel_manager.platforms.http import HttpFailureKind
 from video_channel_manager.platforms.vk.upload_lifecycle import (
     StoredUploadTicket,
     UploadRecoveryRequired,
@@ -131,6 +132,16 @@ class FakeWriter:
 
 class RetryableReservationError(RuntimeError):
     retryable = True
+
+
+class TransportReservationError(RuntimeError):
+    retryable = False
+    kind = HttpFailureKind.TRANSPORT
+
+
+class ExplicitProviderReservationError(RuntimeError):
+    retryable = False
+    kind = HttpFailureKind.PROVIDER_FLOOD_CONTROL
 
 
 def clean_wall_snapshot() -> VkUploadWallGuard:
@@ -465,6 +476,35 @@ def test_ambiguous_reservation_failure_is_never_retried(tmp_path: Path) -> None:
     assert writer.begin_calls == 1
 
 
+def test_nonretryable_transport_reservation_failure_is_still_unknown(tmp_path: Path) -> None:
+    media = tmp_path / "yt-1.mp4"
+    media.write_bytes(b"video")
+    record = new_record()
+    writer = FakeWriter()
+    writer.begin_error = TransportReservationError("connection lost after video.save dispatch")
+
+    with pytest.raises(UploadRecoveryRequired, match="second reservation is forbidden"):
+        run(record, writer, media)
+
+    assert record["stage"] == UploadStage.UNKNOWN_REQUIRES_RECONCILIATION.value
+    assert writer.begin_calls == 1
+
+
+def test_explicit_provider_reservation_rejection_is_terminal_known_failure(tmp_path: Path) -> None:
+    media = tmp_path / "yt-1.mp4"
+    media.write_bytes(b"video")
+    record = new_record()
+    writer = FakeWriter()
+    writer.begin_error = ExplicitProviderReservationError("VK API 9 in video.save: Flood control")
+
+    with pytest.raises(UploadRejected, match="video.save was rejected"):
+        run(record, writer, media)
+
+    assert record["stage"] == UploadStage.REJECTED.value
+    assert writer.begin_calls == 1
+    assert record["reservation"] is None
+
+
 def test_upload_transport_failure_is_unknown_and_never_retransmitted(tmp_path: Path) -> None:
     media = tmp_path / "yt-1.mp4"
     media.write_bytes(b"video")
@@ -582,6 +622,39 @@ def test_verified_record_without_clean_wall_evidence_cannot_replay(tmp_path: Pat
 
     with pytest.raises(UploadRecoveryRequired, match="lacks a clean wall postflight"):
         run(record, writer, None)
+
+
+def test_native_upload_can_verify_without_wall_guard(tmp_path: Path) -> None:
+    media = tmp_path / "yt-1.mp4"
+    media.write_bytes(b"video")
+    record = new_record()
+    writer = FakeWriter()
+    persists = 0
+
+    def persist() -> None:
+        nonlocal persists
+        persists += 1
+
+    execute_upload_operation(
+        record,
+        writer=writer,
+        community_id=235216998,
+        title="Берёза ⚡",
+        description="Описание",
+        media_path=media,
+        readiness=readiness(),
+        processing_timeout=60,
+        wall_before_snapshot=None,
+        persist=persist,
+    )
+
+    assert record["stage"] == UploadStage.VERIFIED.value
+    assert record["verification"]["assessment"]["ready"] is True
+    assert "wall_delta_status" not in record["verification"]
+    assert writer.wall_snapshot_calls == 0
+    assert writer.begin_calls == 1
+    assert writer.upload_calls == 1
+    assert persists > 0
 
 
 def test_legacy_verified_record_requires_exact_reconciliation() -> None:
