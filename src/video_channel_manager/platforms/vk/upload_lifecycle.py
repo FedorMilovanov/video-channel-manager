@@ -684,7 +684,7 @@ def _bind_wall_baseline(
     record: dict[str, Any],
     *,
     community_id: int,
-    wall_before_snapshot: VkUploadWallGuard,
+    wall_before_snapshot: VkUploadWallGuard | None,
     persist: PersistCallback,
 ) -> None:
     if wall_before_snapshot.community_id != community_id:
@@ -738,13 +738,30 @@ def _commit_verified(
     *,
     writer: UploadWriterProtocol,
     community_id: int,
-    wall_before_snapshot: VkUploadWallGuard,
+    wall_before_snapshot: VkUploadWallGuard | None,
     item: Mapping[str, Any],
     assessment: VkUploadReadinessAssessment,
     persist: PersistCallback,
     fault_hook: FaultHook | None,
     clock: Clock,
 ) -> None:
+    if wall_before_snapshot is None:
+        _fault(fault_hook, "after_remote_ready_before_verified_commit")
+        record["verification"] = {
+            "verified_at": _iso(clock),
+            "assessment": assessment.as_dict(),
+            "item_sha256": _canonical_sha256(dict(item)),
+        }
+        _persist_transition(
+            record,
+            UploadStage.VERIFIED,
+            persist=persist,
+            evidence={"assessment": assessment.as_dict()},
+            clock=clock,
+        )
+        _fault(fault_hook, "after_verified_commit")
+        return
+
     _fault(fault_hook, "after_remote_ready_before_wall_postflight")
     try:
         wall_after_snapshot = writer.capture_upload_wall_guard(
@@ -825,7 +842,7 @@ def _resume_or_reconcile(
     *,
     writer: UploadWriterProtocol,
     community_id: int,
-    wall_before_snapshot: VkUploadWallGuard,
+    wall_before_snapshot: VkUploadWallGuard | None,
     readiness: VkUploadReadiness,
     processing_timeout: int,
     persist: PersistCallback,
@@ -951,7 +968,7 @@ def execute_upload_operation(
     media_path: Path | None,
     readiness: VkUploadReadiness,
     processing_timeout: int,
-    wall_before_snapshot: VkUploadWallGuard,
+    wall_before_snapshot: VkUploadWallGuard | None,
     persist: PersistCallback,
     fault_hook: FaultHook | None = None,
     clock: Clock = _utc_now,
@@ -964,16 +981,19 @@ def execute_upload_operation(
     except ValueError as exc:
         raise UploadRejected(f"Upload wall policy is invalid: {exc}") from exc
 
-    _bind_wall_baseline(
-        record,
-        community_id=community_id,
-        wall_before_snapshot=wall_before_snapshot,
-        persist=persist,
-    )
+    if wall_before_snapshot is not None:
+        _bind_wall_baseline(
+            record,
+            community_id=community_id,
+            wall_before_snapshot=wall_before_snapshot,
+            persist=persist,
+        )
 
     stage = UploadStage(str(record.get("stage")))
     if stage == UploadStage.VERIFIED:
-        if not _verified_wall_evidence_is_clean(record):
+        if not isinstance(record.get("verification"), Mapping):
+            raise UploadRecoveryRequired("Verified upload lacks exact verification evidence")
+        if wall_before_snapshot is not None and not _verified_wall_evidence_is_clean(record):
             raise UploadRecoveryRequired("Verified upload lacks a clean wall postflight and cannot be reused")
         return record
     if stage == UploadStage.REJECTED:
