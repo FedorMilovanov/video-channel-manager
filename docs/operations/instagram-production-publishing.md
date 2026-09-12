@@ -198,6 +198,29 @@ Expected initial state: `planned`.
 
 Re-running the same manifest is idempotent. Concurrent planners are also idempotent: a primary-key race is re-read and accepted only if the account/content binding is byte-for-byte the same canonical manifest. Reusing the same publication key with different canonical content is rejected.
 
+## Provider-inert public object validation
+
+For the public-HTTPS `video_url` transport, validate the hosted immutable object before any Meta credential or Graph mutation is involved:
+
+```powershell
+$env:VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS = '["media.example.net"]'
+video-manager instagram production validate-public .\operator-output\instagram-reel-001.json
+```
+
+This command:
+
+- requires the exact manifest and media-host allowlist, but **does not require an Instagram access token**;
+- does not open or mutate the publication database;
+- does not call Meta Graph and cannot create a container or publish media;
+- uses the same isolated public-media verifier as the live publisher;
+- refuses redirects;
+- verifies the exact response content type;
+- verifies `Content-Length` when supplied by the server;
+- streams the complete object and verifies the exact byte count and SHA-256;
+- applies the same checks to `cover_url` when a cover is present.
+
+A successful result proves only that the reviewed public URL currently serves the immutable bytes named by the manifest through the configured trust boundary. Re-run the same boundary inside the authorized live invocation; a previous success is not standing provider-write authority and does not make a mutable or expiring URL safe.
+
 ## Canary execution
 
 A live canary is a separate operational act from implementation completion.
