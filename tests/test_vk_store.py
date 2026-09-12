@@ -20,3 +20,13 @@ def test_vk_token_and_registry_are_separate(tmp_path: Path) -> None:
     assert store.load_token("legendary-poet").access_token == "super-secret-value"
     assert store.list_accounts()[0].user.user_id == 42
     assert "super-secret-value" not in store.registry_path.read_text(encoding="utf-8")
+
+
+def test_vk_token_store_finds_aliases_sharing_same_access_token(tmp_path: Path) -> None:
+    store = VkTokenStore(tmp_path)
+    store.save_token("default", VkAccessToken(access_token="shared-token"))
+    store.save_token("legendary-poet", VkAccessToken(access_token="shared-token"))
+    store.save_token("other", VkAccessToken(access_token="different-token"))
+
+    assert store.aliases_sharing_access_token("legendary-poet") == ("default", "legendary-poet")
+    assert store.aliases_sharing_access_token("other") == ("other",)

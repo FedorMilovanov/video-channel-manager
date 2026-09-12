@@ -95,8 +95,9 @@ Regex-cleanup допустим для ссылок и разметки, но н�
 
 - code 9 отделён от обычных retryable `6/10/29`;
 - первый code 9 не повторяется автоматически;
-- exact `account_alias + method` записывается в durable local flood-control circuit;
-- следующий процесс проверяет circuit до сети и останавливается с нулём provider attempts;
+- durable local flood-control circuit логически scoped по exact credential + method: все локальные aliases с тем же access token видят один и тот же open method;
+- legacy per-alias state остаётся совместимым и объединяется через credential view, поэтому второй alias того же токена не может обойти уже открытый circuit;
+- следующий процесс проверяет credential-scoped circuit до сети и останавливается с нулём provider attempts;
 - circuit не имеет выдуманного автоматического TTL;
 - `vk flood-status` читает состояние локально без обращения к VK;
 - повторное открытие exact method возможно только явным `vk flood-reset --confirm-code 9`;

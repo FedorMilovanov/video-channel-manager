@@ -20,7 +20,7 @@ from video_channel_manager.platforms.http import (
     execute_http_request,
     redact_sensitive_text,
 )
-from video_channel_manager.platforms.vk.flood_control import VK_FLOOD_CONTROL_CODE, VkFloodControlGate
+from video_channel_manager.platforms.vk.flood_control import VK_FLOOD_CONTROL_CODE, VkCredentialFloodControl
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.upload_lifecycle import (
     UploadTicketProtocol,
@@ -124,7 +124,7 @@ class VkVideoWriter(HttpClientOwner):
             max_delay_seconds=8.0,
         )
         self.request_limiter = request_limiter or RequestRateLimiter()
-        self.flood_control = VkFloodControlGate(token_store.data_dir, self.account_alias)
+        self.flood_control = VkCredentialFloodControl(token_store, self.account_alias)
         self._request_sleep = sleep
         self._jitter = jitter
 

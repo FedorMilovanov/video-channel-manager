@@ -22,7 +22,7 @@ from video_channel_manager.platforms.vk import (
     VkTokenStore,
 )
 from video_channel_manager.platforms.vk.clips_audit import build_vk_clips_audit_snapshot
-from video_channel_manager.platforms.vk.flood_control import VK_FLOOD_CONTROL_CODE, VkFloodControlGate
+from video_channel_manager.platforms.vk.flood_control import VK_FLOOD_CONTROL_CODE, VkCredentialFloodControl
 from video_channel_manager.platforms.vk.clips_owner_probe import (
     VK_OWNER_CLIPS_PROBE_API_VERSION,
     build_vk_owner_clips_probe_snapshot,
@@ -172,7 +172,7 @@ def flood_status(
     settings = get_settings()
     store = VkTokenStore(settings.data_dir)
     alias = store.validate_alias(account)
-    gate = VkFloodControlGate(settings.data_dir, alias)
+    gate = VkCredentialFloodControl(store, alias)
     try:
         entries = gate.list_open()
     except (OSError, ValueError) as exc:
@@ -219,7 +219,7 @@ def flood_reset(
     normalized_method = method.strip()
     if not normalized_method:
         raise typer.BadParameter("method cannot be blank", param_hint="--method")
-    gate = VkFloodControlGate(settings.data_dir, alias)
+    gate = VkCredentialFloodControl(store, alias)
     try:
         cleared = gate.clear(normalized_method)
     except (OSError, ValueError) as exc:
