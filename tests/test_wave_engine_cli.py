@@ -12,6 +12,16 @@ import video_channel_manager.wave_engine.cli as wave_cli
 from video_channel_manager.cli.app import app
 from video_channel_manager.wave_engine import EvidenceArtifact, ProjectBinding, WaveSourceEvidence
 from video_channel_manager.wave_engine.canonical import file_sha256, write_json_atomic
+from video_channel_manager.wave_engine.models import (
+    MutationClass,
+    OperationStatus,
+    WaveApplyIntent,
+    WaveOperationResult,
+    WaveOperationSpec,
+    WavePlan,
+    WaveResult,
+    WaveStatus,
+)
 
 
 runner = CliRunner()
@@ -27,6 +37,88 @@ def _source(path: Path, repository_root: Path) -> WaveSourceEvidence:
     )
     write_json_atomic(path, source.model_dump(mode="json"))
     return source
+
+
+def _wall_retry_documents(tmp_path: Path) -> tuple[WaveSourceEvidence, WavePlan, WaveApplyIntent]:
+    source_path = tmp_path / "source-evidence.json"
+    source = _source(source_path, tmp_path)
+    plan = WavePlan.build(
+        source=source,
+        specs=(
+            WaveOperationSpec(
+                order_key="000001",
+                operation_kind=wave_cli.VK_VIDEO_WALL_OPERATION_KIND,
+                mutation_class=MutationClass.AMBIGUOUS_MUTATION,
+                payload={"test": "wall"},
+            ),
+        ),
+    )
+    plan_path = tmp_path / "plan.json"
+    write_json_atomic(plan_path, plan.model_dump(mode="json"))
+    intent = WaveApplyIntent.build(
+        source=source,
+        source_path="source-evidence.json",
+        source_file_sha256=file_sha256(source_path),
+        plan=plan,
+        plan_path="plan.json",
+        plan_file_sha256=file_sha256(plan_path),
+        enable_provider_writes=True,
+    )
+    return source, plan, intent
+
+
+def _write_wall_retry_journal(
+    journal: Path,
+    plan: WavePlan,
+    intent: WaveApplyIntent,
+    *,
+    retry_safe: bool = True,
+    error_kind: str = "rejected_before_dispatch",
+) -> WaveResult:
+    journal.mkdir(parents=True)
+    operation = plan.operations[0]
+    operation_result = WaveOperationResult(
+        operation_id=operation.operation_id,
+        status=OperationStatus.FAILED,
+        attempt_count=1,
+        retry_safe=retry_safe,
+        unknown_requires_reconciliation=False,
+        evidence={},
+        error_kind=error_kind,
+        error_message="test failure",
+    )
+    result = WaveResult.build(
+        plan=plan,
+        status=WaveStatus.FAILED,
+        operations=(operation_result,),
+    )
+    write_json_atomic(
+        journal / "preflight-summary.json",
+        {
+            "schema_name": "video-manager.wave-preflight",
+            "schema_version": 1,
+            "status": "passed",
+            "plan_self_digest": plan.self_digest,
+            "apply_intent_self_digest": intent.self_digest,
+            "source_snapshot_id": plan.source_snapshot_id,
+            "operation_set_digest": plan.operation_set_digest,
+            "operation_count": 1,
+        },
+    )
+    write_json_atomic(
+        journal / f"{operation.sequence:06d}-{operation.operation_id}.json",
+        {
+            "schema_name": "video-manager.wave-operation-journal",
+            "schema_version": 1,
+            "stage": "result_committed",
+            "plan_self_digest": plan.self_digest,
+            "apply_intent_self_digest": intent.self_digest,
+            "operation": operation.model_dump(mode="json"),
+            "result": operation_result.model_dump(mode="json"),
+        },
+    )
+    write_json_atomic(journal / "result.json", result.model_dump(mode="json"))
+    return result
 
 
 def test_wave_cli_build_validate_preview_and_source_verify(tmp_path: Path) -> None:
@@ -121,6 +213,80 @@ def test_wave_cli_rejects_tampered_source_artifact_and_plan(tmp_path: Path) -> N
     result = runner.invoke(app, ["wave", "plan", "validate", str(plan_path)])
     assert result.exit_code != 0
     assert "Invalid WavePlan" in result.output
+
+
+def test_video_wall_retry_safe_journal_uses_fresh_sibling_and_preserves_evidence(tmp_path: Path) -> None:
+    _source, plan, intent = _wall_retry_documents(tmp_path)
+    journal = tmp_path / "journal"
+    _write_wall_retry_journal(journal, plan, intent)
+    before = {path.name: path.read_bytes() for path in journal.iterdir() if path.is_file()}
+
+    resolved = wave_cli._resolve_video_wall_apply_journal(
+        requested_journal_directory=journal,
+        repository_root=tmp_path,
+        plan=plan,
+        intent=intent,
+    )
+
+    assert resolved == tmp_path / "journal-retry-001"
+    assert not resolved.exists()
+    after = {path.name: path.read_bytes() for path in journal.iterdir() if path.is_file()}
+    assert after == before
+
+
+def test_video_wall_retry_safe_journal_advances_only_across_valid_failed_attempts(tmp_path: Path) -> None:
+    _source, plan, intent = _wall_retry_documents(tmp_path)
+    journal = tmp_path / "journal"
+    _write_wall_retry_journal(journal, plan, intent)
+    _write_wall_retry_journal(tmp_path / "journal-retry-001", plan, intent)
+
+    resolved = wave_cli._resolve_video_wall_apply_journal(
+        requested_journal_directory=journal,
+        repository_root=tmp_path,
+        plan=plan,
+        intent=intent,
+    )
+
+    assert resolved == tmp_path / "journal-retry-002"
+
+
+def test_video_wall_retry_safe_journal_rejects_provider_dispatched_failure(tmp_path: Path) -> None:
+    _source, plan, intent = _wall_retry_documents(tmp_path)
+    journal = tmp_path / "journal"
+    _write_wall_retry_journal(
+        journal,
+        plan,
+        intent,
+        retry_safe=False,
+        error_kind="provider_rejected",
+    )
+
+    with pytest.raises(ValueError, match="not explicitly retry-safe before provider dispatch"):
+        wave_cli._resolve_video_wall_apply_journal(
+            requested_journal_directory=journal,
+            repository_root=tmp_path,
+            plan=plan,
+            intent=intent,
+        )
+
+
+def test_video_wall_retry_safe_journal_rejects_tampered_operation_binding(tmp_path: Path) -> None:
+    _source, plan, intent = _wall_retry_documents(tmp_path)
+    journal = tmp_path / "journal"
+    _write_wall_retry_journal(journal, plan, intent)
+    operation = plan.operations[0]
+    operation_path = journal / f"{operation.sequence:06d}-{operation.operation_id}.json"
+    payload = json.loads(operation_path.read_text(encoding="utf-8"))
+    payload["apply_intent_self_digest"] = "0" * 64
+    operation_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="incomplete or does not bind"):
+        wave_cli._resolve_video_wall_apply_journal(
+            requested_journal_directory=journal,
+            repository_root=tmp_path,
+            plan=plan,
+            intent=intent,
+        )
 
 
 def test_wave_apply_exception_after_new_journal_is_unknown_not_retry_safe(
