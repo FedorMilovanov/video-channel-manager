@@ -134,6 +134,157 @@ class InstagramPublishManifest(BaseModel):
         return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
 
 
+def require_instagram_media_host(url: HttpUrl, allowed_hosts: tuple[str, ...]) -> None:
+    """Fail closed unless the exact public media hostname is explicitly trusted."""
+
+    host = (url.host or "").lower().rstrip(".")
+    if not allowed_hosts:
+        raise InstagramConfigurationError(
+            "Provider write refused: VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS is empty; configure exact trusted media hosts"
+        )
+    if host not in allowed_hosts:
+        raise InstagramConfigurationError(
+            f"Provider write refused: media host {host!r} is not in VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS"
+        )
+
+
+def verify_instagram_public_object(
+    url: HttpUrl,
+    *,
+    allowed_hosts: tuple[str, ...],
+    expected_sha256: str,
+    expected_size_bytes: int,
+    expected_content_type: str,
+    label: str,
+    media_client: httpx.Client,
+) -> dict[str, object]:
+    """Verify one hosted object without Meta credentials or Graph requests."""
+
+    require_instagram_media_host(url, allowed_hosts)
+    try:
+        with media_client.stream(
+            "GET",
+            str(url),
+            headers={"Accept": expected_content_type},
+            follow_redirects=False,
+        ) as response:
+            if response.is_redirect:
+                raise InstagramMediaVerificationError(
+                    f"Instagram {label} URL redirected; redirects are refused at the provider boundary",
+                    error_code=f"{label}_redirect_refused",
+                    retryable=False,
+                )
+            if response.status_code < 200 or response.status_code >= 300:
+                retryable = response.status_code in {408, 425, 429} or response.status_code >= 500
+                raise InstagramMediaVerificationError(
+                    f"Instagram {label} URL returned HTTP {response.status_code}",
+                    error_code=f"{label}_http_{response.status_code}",
+                    retryable=retryable,
+                )
+
+            content_type = response.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+            if content_type != expected_content_type:
+                raise InstagramMediaVerificationError(
+                    f"Instagram {label} content type mismatch: expected {expected_content_type!r}, got {content_type!r}",
+                    error_code=f"{label}_content_type_mismatch",
+                    retryable=False,
+                )
+
+            raw_content_length = response.headers.get("content-length")
+            if raw_content_length is not None:
+                try:
+                    content_length = int(raw_content_length)
+                except ValueError as exc:
+                    raise InstagramMediaVerificationError(
+                        f"Instagram {label} Content-Length is invalid",
+                        error_code=f"{label}_invalid_content_length",
+                        retryable=False,
+                    ) from exc
+                if content_length != expected_size_bytes:
+                    raise InstagramMediaVerificationError(
+                        f"Instagram {label} size mismatch: expected {expected_size_bytes}, got {content_length}",
+                        error_code=f"{label}_size_mismatch",
+                        retryable=False,
+                    )
+
+            digest = hashlib.sha256()
+            observed_size = 0
+            for chunk in response.iter_bytes():
+                observed_size += len(chunk)
+                if observed_size > expected_size_bytes:
+                    raise InstagramMediaVerificationError(
+                        f"Instagram {label} exceeded expected size {expected_size_bytes}",
+                        error_code=f"{label}_size_mismatch",
+                        retryable=False,
+                    )
+                digest.update(chunk)
+    except InstagramMediaVerificationError:
+        raise
+    except httpx.RequestError as exc:
+        raise InstagramMediaVerificationError(
+            f"Instagram {label} verification transport failure: {exc}",
+            error_code=f"{label}_transport_failure",
+            retryable=True,
+        ) from exc
+
+    if observed_size != expected_size_bytes:
+        raise InstagramMediaVerificationError(
+            f"Instagram {label} size mismatch: expected {expected_size_bytes}, got {observed_size}",
+            error_code=f"{label}_size_mismatch",
+            retryable=False,
+        )
+    observed_sha256 = f"sha256:{digest.hexdigest()}"
+    if observed_sha256 != expected_sha256:
+        raise InstagramMediaVerificationError(
+            f"Instagram {label} SHA-256 mismatch",
+            error_code=f"{label}_sha256_mismatch",
+            retryable=False,
+        )
+    return {
+        "url": str(url),
+        "sha256": observed_sha256,
+        "size_bytes": observed_size,
+        "content_type": expected_content_type,
+    }
+
+
+def verify_instagram_manifest_media(
+    manifest: InstagramPublishManifest,
+    *,
+    allowed_hosts: tuple[str, ...],
+    media_client: httpx.Client,
+) -> dict[str, object]:
+    """Verify every public object bound to a publish manifest without Graph access."""
+
+    video = verify_instagram_public_object(
+        manifest.video_url,
+        allowed_hosts=allowed_hosts,
+        expected_sha256=manifest.media_sha256,
+        expected_size_bytes=manifest.media_size_bytes,
+        expected_content_type=manifest.media_content_type,
+        label="video",
+        media_client=media_client,
+    )
+    result: dict[str, object] = {"video": video}
+    if manifest.cover_url is not None:
+        if manifest.cover_sha256 is None or manifest.cover_size_bytes is None or manifest.cover_content_type is None:
+            raise InstagramMediaVerificationError(
+                "Cover integrity contract is incomplete",
+                error_code="cover_integrity_contract_incomplete",
+                retryable=False,
+            )
+        result["cover"] = verify_instagram_public_object(
+            manifest.cover_url,
+            allowed_hosts=allowed_hosts,
+            expected_sha256=manifest.cover_sha256,
+            expected_size_bytes=manifest.cover_size_bytes,
+            expected_content_type=manifest.cover_content_type,
+            label="cover",
+            media_client=media_client,
+        )
+    return result
+
+
 @dataclass(frozen=True)
 class InstagramRuntimeConfig:
     login_mode: str
@@ -203,15 +354,7 @@ class InstagramRuntimeConfig:
             )
 
     def require_media_host(self, url: HttpUrl) -> None:
-        host = (url.host or "").lower().rstrip(".")
-        if not self.media_allowed_hosts:
-            raise InstagramConfigurationError(
-                "Provider write refused: VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS is empty; configure exact trusted media hosts"
-            )
-        if host not in self.media_allowed_hosts:
-            raise InstagramConfigurationError(
-                f"Provider write refused: media host {host!r} is not in VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS"
-            )
+        require_instagram_media_host(url, self.media_allowed_hosts)
 
 
 @dataclass(frozen=True)
@@ -530,33 +673,11 @@ class InstagramProviderClient:
         )
 
     def verify_manifest_media(self, manifest: InstagramPublishManifest) -> dict[str, object]:
-        video = self._verify_public_object(
-            manifest.video_url,
-            expected_sha256=manifest.media_sha256,
-            expected_size_bytes=manifest.media_size_bytes,
-            expected_content_type=manifest.media_content_type,
-            label="video",
+        return verify_instagram_manifest_media(
+            manifest,
+            allowed_hosts=self.config.media_allowed_hosts,
+            media_client=self._media_client,
         )
-        result: dict[str, object] = {"video": video}
-        if manifest.cover_url is not None:
-            if (
-                manifest.cover_sha256 is None
-                or manifest.cover_size_bytes is None
-                or manifest.cover_content_type is None
-            ):
-                raise InstagramMediaVerificationError(
-                    "Cover integrity contract is incomplete",
-                    error_code="cover_integrity_contract_incomplete",
-                    retryable=False,
-                )
-            result["cover"] = self._verify_public_object(
-                manifest.cover_url,
-                expected_sha256=manifest.cover_sha256,
-                expected_size_bytes=manifest.cover_size_bytes,
-                expected_content_type=manifest.cover_content_type,
-                label="cover",
-            )
-        return result
 
     def _verify_public_object(
         self,
@@ -567,92 +688,15 @@ class InstagramProviderClient:
         expected_content_type: str,
         label: str,
     ) -> dict[str, object]:
-        self.config.require_media_host(url)
-        try:
-            with self._media_client.stream(
-                "GET",
-                str(url),
-                headers={"Accept": expected_content_type},
-                follow_redirects=False,
-            ) as response:
-                if response.is_redirect:
-                    raise InstagramMediaVerificationError(
-                        f"Instagram {label} URL redirected; redirects are refused at the provider boundary",
-                        error_code=f"{label}_redirect_refused",
-                        retryable=False,
-                    )
-                if response.status_code < 200 or response.status_code >= 300:
-                    retryable = response.status_code in {408, 425, 429} or response.status_code >= 500
-                    raise InstagramMediaVerificationError(
-                        f"Instagram {label} URL returned HTTP {response.status_code}",
-                        error_code=f"{label}_http_{response.status_code}",
-                        retryable=retryable,
-                    )
-
-                content_type = response.headers.get("content-type", "").split(";", 1)[0].strip().lower()
-                if content_type != expected_content_type:
-                    raise InstagramMediaVerificationError(
-                        f"Instagram {label} content type mismatch: expected {expected_content_type!r}, got {content_type!r}",
-                        error_code=f"{label}_content_type_mismatch",
-                        retryable=False,
-                    )
-
-                raw_content_length = response.headers.get("content-length")
-                if raw_content_length is not None:
-                    try:
-                        content_length = int(raw_content_length)
-                    except ValueError as exc:
-                        raise InstagramMediaVerificationError(
-                            f"Instagram {label} Content-Length is invalid",
-                            error_code=f"{label}_invalid_content_length",
-                            retryable=False,
-                        ) from exc
-                    if content_length != expected_size_bytes:
-                        raise InstagramMediaVerificationError(
-                            f"Instagram {label} size mismatch: expected {expected_size_bytes}, got {content_length}",
-                            error_code=f"{label}_size_mismatch",
-                            retryable=False,
-                        )
-
-                digest = hashlib.sha256()
-                observed_size = 0
-                for chunk in response.iter_bytes():
-                    observed_size += len(chunk)
-                    if observed_size > expected_size_bytes:
-                        raise InstagramMediaVerificationError(
-                            f"Instagram {label} exceeded expected size {expected_size_bytes}",
-                            error_code=f"{label}_size_mismatch",
-                            retryable=False,
-                        )
-                    digest.update(chunk)
-        except InstagramMediaVerificationError:
-            raise
-        except httpx.RequestError as exc:
-            raise InstagramMediaVerificationError(
-                f"Instagram {label} verification transport failure: {exc}",
-                error_code=f"{label}_transport_failure",
-                retryable=True,
-            ) from exc
-
-        if observed_size != expected_size_bytes:
-            raise InstagramMediaVerificationError(
-                f"Instagram {label} size mismatch: expected {expected_size_bytes}, got {observed_size}",
-                error_code=f"{label}_size_mismatch",
-                retryable=False,
-            )
-        observed_sha256 = f"sha256:{digest.hexdigest()}"
-        if observed_sha256 != expected_sha256:
-            raise InstagramMediaVerificationError(
-                f"Instagram {label} SHA-256 mismatch",
-                error_code=f"{label}_sha256_mismatch",
-                retryable=False,
-            )
-        return {
-            "url": str(url),
-            "sha256": observed_sha256,
-            "size_bytes": observed_size,
-            "content_type": expected_content_type,
-        }
+        return verify_instagram_public_object(
+            url,
+            allowed_hosts=self.config.media_allowed_hosts,
+            expected_sha256=expected_sha256,
+            expected_size_bytes=expected_size_bytes,
+            expected_content_type=expected_content_type,
+            label=label,
+            media_client=self._media_client,
+        )
 
     def create_reel_container(self, manifest: InstagramPublishManifest) -> str:
         data: dict[str, RequestValue] = {
