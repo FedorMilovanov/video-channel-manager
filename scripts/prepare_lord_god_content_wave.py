@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from video_channel_manager.platforms.vk.text_writer import canonical_vk_text
+from video_channel_manager.telegram_models import TelegramLedger, TelegramQueue
 from video_channel_manager.wave_engine.canonical import file_sha256, write_json_atomic
 from video_channel_manager.wave_engine.models import (
     EvidenceArtifact,
@@ -99,6 +100,36 @@ def text_message(slot: dict[str, Any]) -> str:
     if source_url:
         suffix = f"\n\nПервоисточник: {source_url}" + suffix
     return canonical_vk_text(text + suffix)
+
+
+def verify_quote_slots(
+    backlog: dict[str, Any],
+    queue: TelegramQueue,
+    ledger: TelegramLedger,
+) -> None:
+    if backlog.get("telegram_quote_queue_digest") != queue.digest:
+        raise ValueError("Telegram quote queue digest differs from the backlog evidence")
+    if ledger.queue_digest != queue.digest:
+        raise ValueError("Telegram quote ledger is not bound to the immutable queue")
+    posts = {post.publication_id: post for post in queue.posts}
+    for slot in backlog.get("slots", []):
+        if not isinstance(slot, dict) or slot.get("kind") != "telegram_quote":
+            continue
+        publication_id = str(slot.get("publication_id") or "")
+        post = posts.get(publication_id)
+        entry = ledger.entries.get(publication_id)
+        if post is None or entry is None:
+            raise ValueError(f"Telegram quote evidence is missing: {publication_id}")
+        if entry.payload_sha256 != post.payload_sha256:
+            raise ValueError(f"Telegram quote ledger payload drift: {publication_id}")
+        if slot.get("telegram_payload_sha256") != entry.payload_sha256:
+            raise ValueError(f"Telegram quote backlog payload drift: {publication_id}")
+        if entry.state != "published" or entry.provider_effect != "verified":
+            raise ValueError(f"Telegram quote was not published+verified: {publication_id}")
+        if slot.get("telegram_message_id") != entry.message_id:
+            raise ValueError(f"Telegram quote message_id mismatch: {publication_id}")
+        if slot.get("telegram_message_url") != entry.message_url:
+            raise ValueError(f"Telegram quote message_url mismatch: {publication_id}")
 
 
 def build_specs(backlog: dict[str, Any], videos: dict[str, dict[str, Any]]) -> tuple[WaveOperationSpec, ...]:
@@ -204,6 +235,9 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("Telegram quote queue SHA differs from the backlog evidence")
     if backlog.get("telegram_quote_ledger_sha256") != file_sha256(quote_ledger_copy):
         raise ValueError("Telegram quote ledger SHA differs from the backlog evidence")
+    quote_queue = TelegramQueue.model_validate(read_json(quote_queue_copy))
+    quote_ledger = TelegramLedger.model_validate(read_json(quote_ledger_copy))
+    verify_quote_slots(backlog, quote_queue, quote_ledger)
     video_index = build_video_index(raw_videos)
     specs = build_specs(backlog, video_index)
 
