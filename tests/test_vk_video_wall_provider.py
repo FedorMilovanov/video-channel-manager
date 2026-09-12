@@ -181,6 +181,29 @@ def test_schedule_stops_on_open_wall_get_circuit_before_any_provider_call(tmp_pa
     assert calls == 0
 
 
+def test_reconcile_stops_on_open_wall_get_circuit_before_any_provider_call(tmp_path: Path) -> None:
+    calls = 0
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(500)
+
+    writer = VkVideoWallWriter(
+        token_store=VkTokenStore(tmp_path),
+        account_alias="legendary-poet",
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        api_base_url="https://example.test/method",
+    )
+    writer.flood_control.record("wall.get")
+
+    with pytest.raises(VkWriteError, match="circuit is open for wall.get") as captured:
+        writer.reconcile_exact(wall=parse_video_wall_operation(_operation()))
+
+    assert captured.value.attempts == 0
+    assert calls == 0
+
+
 class _ScheduleWriter(VkVideoWallWriter):
     def __init__(self, *, after: VideoWallCapture) -> None:
         self._captures = [_capture(), after]
