@@ -9,7 +9,7 @@ import pytest
 from video_channel_manager.platforms.http import HttpFailureKind, RetryPolicy
 from video_channel_manager.platforms.vk import flood_control as vk_flood_control
 from video_channel_manager.platforms.vk.client import VkApiClient, VkApiError
-from video_channel_manager.platforms.vk.flood_control import VkFloodControlGate
+from video_channel_manager.platforms.vk.flood_control import VkCredentialFloodControl, VkFloodControlGate
 from video_channel_manager.platforms.vk.models import VkAccessToken
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.writer import VkVideoWriter, VkWriteError
@@ -101,6 +101,72 @@ def test_read_client_code_9_is_single_attempt_and_opens_method_circuit(tmp_path:
     assert second.value.attempts == 0
     assert "circuit is open" in str(second.value)
     assert calls == 1
+
+
+def test_credential_gate_reads_and_clears_legacy_alias_state(tmp_path: Path) -> None:
+    store = VkTokenStore(tmp_path)
+    shared = VkAccessToken(access_token="shared", user_id=42)
+    store.save_token("default", shared)
+    store.save_token("legendary-poet", shared)
+
+    VkFloodControlGate(tmp_path, "legendary-poet").record("wall.get")
+    credential_gate = VkCredentialFloodControl(store, "default")
+
+    observed = credential_gate.get("wall.get")
+    assert observed is not None
+    assert observed.occurrences == 1
+    assert credential_gate.clear("wall.get") is True
+    assert VkFloodControlGate(tmp_path, "legendary-poet").get("wall.get") is None
+    assert VkFloodControlGate(tmp_path, "default").get("wall.get") is None
+
+
+def test_shared_token_code_9_blocks_equivalent_alias_without_second_provider_call(tmp_path: Path) -> None:
+    store = VkTokenStore(tmp_path)
+    shared = VkAccessToken(access_token="shared", user_id=42)
+    store.save_token("default", shared)
+    store.save_token("legendary-poet", shared)
+    calls = 0
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(
+            200,
+            json={"error": {"error_code": 9, "error_msg": "Flood control"}},
+        )
+
+    transport = httpx.MockTransport(handler)
+    legendary = VkApiClient(
+        token_store=store,
+        account_alias="legendary-poet",
+        http_client=httpx.Client(transport=transport),
+        api_base_url="https://example.test/method",
+        retry_policy=RetryPolicy(max_attempts=4, base_delay_seconds=0.01, jitter_seconds=0.0),
+        sleep=lambda _seconds: None,
+    )
+    default = VkApiClient(
+        token_store=store,
+        account_alias="default",
+        http_client=httpx.Client(transport=transport),
+        api_base_url="https://example.test/method",
+        retry_policy=RetryPolicy(max_attempts=4, base_delay_seconds=0.01, jitter_seconds=0.0),
+        sleep=lambda _seconds: None,
+    )
+
+    with pytest.raises(VkApiError) as first:
+        legendary.get_current_user()
+    assert first.value.code == 9
+    assert first.value.attempts == 1
+    assert calls == 1
+
+    with pytest.raises(VkApiError) as second:
+        default.get_current_user()
+    assert second.value.code == 9
+    assert second.value.attempts == 0
+    assert calls == 1
+
+    assert VkFloodControlGate(tmp_path, "legendary-poet").get("users.get") is not None
+    assert VkFloodControlGate(tmp_path, "default").get("users.get") is not None
 
 
 def test_write_client_safe_read_code_9_does_not_retry_or_block_other_methods(tmp_path: Path) -> None:

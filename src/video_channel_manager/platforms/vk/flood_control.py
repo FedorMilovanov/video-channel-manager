@@ -10,6 +10,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterator, Mapping
 
+from video_channel_manager.platforms.vk.store import VkAccountNotFoundError, VkTokenStore
+
 
 VK_FLOOD_CONTROL_SCHEMA = "video-manager.vk-flood-control"
 VK_FLOOD_CONTROL_VERSION = 1
@@ -250,10 +252,68 @@ class VkFloodControlGate:
             return True
 
 
+class VkCredentialFloodControl:
+    """Credential-scoped view over all local aliases sharing one access token."""
+
+    def __init__(self, token_store: VkTokenStore, account_alias: str) -> None:
+        self.token_store = token_store
+        self.account_alias = token_store.validate_alias(account_alias)
+
+    def _gates(self) -> tuple[VkFloodControlGate, ...]:
+        try:
+            aliases = self.token_store.aliases_sharing_access_token(self.account_alias)
+        except VkAccountNotFoundError:
+            aliases = (self.account_alias,)
+        return tuple(VkFloodControlGate(self.token_store.data_dir, alias) for alias in aliases)
+
+    @staticmethod
+    def _merge(method: str, entries: list[VkFloodControlEntry]) -> VkFloodControlEntry | None:
+        if not entries:
+            return None
+        first = min(entries, key=lambda entry: datetime.fromisoformat(entry.first_observed_at))
+        last = max(entries, key=lambda entry: datetime.fromisoformat(entry.last_observed_at))
+        return VkFloodControlEntry(
+            method=method,
+            first_observed_at=first.first_observed_at,
+            last_observed_at=last.last_observed_at,
+            occurrences=max(entry.occurrences for entry in entries),
+        )
+
+    def get(self, method: str) -> VkFloodControlEntry | None:
+        normalized = method.strip()
+        if not normalized:
+            raise ValueError("VK flood-control method cannot be blank")
+        entries = [entry for gate in self._gates() if (entry := gate.get(normalized)) is not None]
+        return self._merge(normalized, entries)
+
+    def list_open(self) -> tuple[VkFloodControlEntry, ...]:
+        methods = {entry.method for gate in self._gates() for entry in gate.list_open()}
+        return tuple(entry for method in sorted(methods) if (entry := self.get(method)) is not None)
+
+    def record(self, method: str) -> VkFloodControlEntry:
+        normalized = method.strip()
+        if not normalized:
+            raise ValueError("VK flood-control method cannot be blank")
+        entries = [gate.record(normalized) for gate in self._gates()]
+        merged = self._merge(normalized, entries)
+        assert merged is not None
+        return merged
+
+    def clear(self, method: str) -> bool:
+        normalized = method.strip()
+        if not normalized:
+            raise ValueError("VK flood-control method cannot be blank")
+        cleared = False
+        for gate in self._gates():
+            cleared = gate.clear(normalized) or cleared
+        return cleared
+
+
 __all__ = [
     "VK_FLOOD_CONTROL_CODE",
     "VK_FLOOD_CONTROL_SCHEMA",
     "VK_FLOOD_CONTROL_VERSION",
+    "VkCredentialFloodControl",
     "VkFloodControlEntry",
     "VkFloodControlGate",
 ]

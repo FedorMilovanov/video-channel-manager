@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from hmac import compare_digest
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -40,6 +41,26 @@ class VkTokenStore:
 
     def token_exists(self, alias: str) -> bool:
         return self.token_path(alias).is_file()
+
+    def aliases_sharing_access_token(self, alias: str) -> tuple[str, ...]:
+        primary_alias = self.validate_alias(alias)
+        primary = self.load_token(primary_alias)
+        aliases = {primary_alias}
+        if not self.token_dir.is_dir():
+            return (primary_alias,)
+
+        for path in self.token_dir.glob("*.json"):
+            candidate_alias = path.stem
+            if candidate_alias == primary_alias:
+                continue
+            try:
+                candidate_alias = self.validate_alias(candidate_alias)
+                candidate = self.load_token(candidate_alias)
+            except (OSError, ValueError, VkAccountNotFoundError):
+                continue
+            if compare_digest(candidate.access_token, primary.access_token):
+                aliases.add(candidate_alias)
+        return tuple(sorted(aliases))
 
     def save_token(self, alias: str, token: VkAccessToken) -> Path:
         self.ensure_directories()
