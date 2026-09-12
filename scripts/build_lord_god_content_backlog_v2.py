@@ -9,6 +9,8 @@ from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from video_channel_manager.telegram_models import TelegramLedger, TelegramQueue
+
 PROJECT_KEY = "lord-god-strength"
 COMMUNITY_ID = 60805374
 OWNER_ID = -60805374
@@ -32,7 +34,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("audit", type=Path, help="03-wall-content-audit.json")
     parser.add_argument("--telegram-root", type=Path, required=True)
-    parser.add_argument("--quote-corpus", type=Path, required=True)
+    parser.add_argument("--quote-queue", type=Path, required=True)
+    parser.add_argument("--quote-ledger", type=Path, required=True)
     parser.add_argument("--start-date", type=date.fromisoformat, required=True)
     parser.add_argument("--days", type=int, default=60)
     parser.add_argument("--video-count", type=int, default=60)
@@ -49,6 +52,16 @@ def read_json(path: Path) -> Any:
 
 def clean_title(value: object) -> str:
     return " ".join(str(value or "").split())
+
+
+def file_sha256(path: Path) -> str:
+    import hashlib
+
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def video_score(item: dict[str, Any]) -> tuple[int, int, float]:
@@ -160,29 +173,46 @@ def select_telegram(root: Path, *, count: int) -> list[dict[str, Any]]:
     return selected
 
 
-def select_quotes(path: Path, *, count: int) -> list[dict[str, Any]]:
-    payload = read_json(path)
-    posts = payload.get("posts") if isinstance(payload, dict) else None
-    if not isinstance(posts, list):
-        raise ValueError("quote corpus must contain posts")
+def load_quote_evidence(queue_path: Path, ledger_path: Path) -> tuple[TelegramQueue, TelegramLedger]:
+    queue = TelegramQueue.model_validate(read_json(queue_path))
+    ledger = TelegramLedger.model_validate(read_json(ledger_path))
+    if ledger.queue_digest != queue.digest:
+        raise ValueError("Telegram quote ledger digest differs from the immutable queue")
+    queue_ids = {post.publication_id for post in queue.posts}
+    ledger_ids = set(ledger.entries)
+    if ledger_ids != queue_ids:
+        missing = sorted(queue_ids - ledger_ids)
+        extra = sorted(ledger_ids - queue_ids)
+        raise ValueError(f"Telegram quote ledger coverage mismatch: missing={missing}, extra={extra}")
+    for post in queue.posts:
+        entry = ledger.entries[post.publication_id]
+        if entry.payload_sha256 != post.payload_sha256:
+            raise ValueError(f"Telegram quote payload SHA mismatch: {post.publication_id}")
+    return queue, ledger
+
+
+def select_quotes(queue_path: Path, ledger_path: Path, *, count: int) -> list[dict[str, Any]]:
+    queue, ledger = load_quote_evidence(queue_path, ledger_path)
     selected: list[dict[str, Any]] = []
-    for post in posts:
-        if not isinstance(post, dict):
+    for post in queue.posts:
+        entry = ledger.entries[post.publication_id]
+        if entry.state != "published" or entry.provider_effect != "verified":
             continue
-        source = post.get("source")
-        if not isinstance(source, dict) or source.get("verification_status") != "accepted":
-            continue
-        quote = clean_title(post.get("quote_ru"))
-        attribution = clean_title(post.get("attribution_ru"))
-        if not quote or not attribution:
-            continue
-        selected.append({
-            "publication_id": str(post.get("publication_id") or post.get("semantic_key") or ""),
-            "title": clean_title(post.get("title")),
-            "text": f"{quote}\n\n© {attribution}\n\n" + " ".join(post.get("hashtags") or []),
-            "source_url": str(source.get("url") or ""),
-            "theme": post.get("theme"),
-        })
+        if entry.message_id is None or entry.message_url is None or entry.published_at_utc is None:
+            raise ValueError(f"published Telegram quote lacks verified message identity: {post.publication_id}")
+        selected.append(
+            {
+                "publication_id": post.publication_id,
+                "title": post.title,
+                "text": post.text,
+                "source_url": str(post.source.url),
+                "telegram_message_id": entry.message_id,
+                "telegram_message_url": entry.message_url,
+                "telegram_published_at_utc": entry.published_at_utc.isoformat(),
+                "telegram_payload_sha256": entry.payload_sha256,
+                "telegram_source_state": "published_verified",
+            }
+        )
         if len(selected) >= count:
             break
     return selected
@@ -248,7 +278,7 @@ def build_backlog(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("audit community does not match lord-god-strength")
     videos = select_videos(audit, count=args.video_count, max_views=args.max_views)
     telegram = select_telegram(args.telegram_root, count=args.telegram_count)
-    quotes = select_quotes(args.quote_corpus, count=args.quote_count)
+    quotes = select_quotes(args.quote_queue, args.quote_ledger, count=args.quote_count)
     slots = build_slots(args.start_date, args.days, videos, telegram, quotes)
     return {
         "schema_name": "video-manager.lord-god-content-backlog",
@@ -266,6 +296,10 @@ def build_backlog(args: argparse.Namespace) -> dict[str, Any]:
         "video_candidate_count": len(videos),
         "telegram_candidate_count": len(telegram),
         "quote_candidate_count": len(quotes),
+        "telegram_quote_queue_digest": load_quote_evidence(args.quote_queue, args.quote_ledger)[0].digest,
+        "telegram_quote_queue_sha256": file_sha256(args.quote_queue),
+        "telegram_quote_ledger_sha256": file_sha256(args.quote_ledger),
+        "telegram_quote_evidence_policy": "published+verified+payload-bound",
         "slot_count": len(slots),
         "slots": slots,
     }
@@ -279,7 +313,7 @@ def render_markdown(backlog: dict[str, Any]) -> str:
         f"- Window: {backlog['start_date']} + {backlog['days']} days",
         f"- Video candidates: **{backlog['video_candidate_count']}**",
         f"- Telegram editorial candidates: **{backlog['telegram_candidate_count']}**",
-        f"- Verified quote candidates: **{backlog['quote_candidate_count']}**",
+        f"- Telegram published+verified quote candidates: **{backlog['quote_candidate_count']}**",
         f"- Total candidate slots: **{backlog['slot_count']}**",
         "- Live VK revalidation before scheduling: **REQUIRED**",
         "",
@@ -292,7 +326,11 @@ def render_markdown(backlog: dict[str, Any]) -> str:
             metric = str(slot.get("views_at_source_snapshot", ""))
         else:
             candidate = f"{slot['publication_id']} — {slot['title']}"
-            metric = "TG quote" if slot["kind"] == "telegram_quote" else "TG editorial"
+            metric = (
+                f"TG #{slot.get('telegram_message_id')}"
+                if slot["kind"] == "telegram_quote"
+                else "TG editorial"
+            )
         lines.append(f"| {slot['publish_at']} | {slot['kind']} | {candidate} | {metric} |")
     return "\n".join(lines) + "\n"
 
@@ -315,7 +353,7 @@ def main() -> int:
     print(
         f"Built provider-inert backlog: slots={backlog['slot_count']} "
         f"videos={backlog['video_candidate_count']} telegram={backlog['telegram_candidate_count']} "
-        f"output={args.output}"
+        f"quotes={backlog['quote_candidate_count']} output={args.output}"
     )
     return 0
 
