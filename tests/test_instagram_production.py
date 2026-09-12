@@ -23,6 +23,7 @@ from video_channel_manager.instagram.production import (
     InstagramRuntimeConfig,
     InstagramWriteGateError,
     PublicationStatus,
+    verify_instagram_manifest_media,
 )
 from video_channel_manager.persistence import Database
 
@@ -547,3 +548,65 @@ def test_publication_key_cannot_be_rebound_to_different_content() -> None:
         ledger.ensure_planned(_manifest(key="stable", caption="one"))
         with pytest.raises(InstagramProductionError, match="different canonical content"):
             ledger.ensure_planned(_manifest(key="stable", caption="two"))
+
+
+def test_provider_inert_manifest_media_verifier_sends_no_authorization_header() -> None:
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        assert request.url.host == "cdn.example.com"
+        assert "authorization" not in request.headers
+        assert request.headers.get("accept") == "video/mp4"
+        return _media_response(request)
+
+    transport = httpx.MockTransport(handler)
+    with httpx.Client(transport=transport, timeout=1.0) as media_client:
+        evidence = verify_instagram_manifest_media(
+            _manifest(key="validate-public-no-auth"),
+            allowed_hosts=("cdn.example.com",),
+            media_client=media_client,
+        )
+
+    assert len(requests) == 1
+    assert evidence["video"] == {
+        "url": MEDIA_URL,
+        "sha256": MEDIA_SHA256,
+        "size_bytes": len(MEDIA_BYTES),
+        "content_type": "video/mp4",
+    }
+
+
+def test_provider_inert_manifest_media_verifier_refuses_redirect_and_untrusted_host() -> None:
+    def redirect_handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            302,
+            request=request,
+            headers={"Location": "https://other.example/reel.mp4"},
+        )
+
+    redirect_transport = httpx.MockTransport(redirect_handler)
+    with httpx.Client(transport=redirect_transport, timeout=1.0) as media_client:
+        with pytest.raises(InstagramMediaVerificationError) as error:
+            verify_instagram_manifest_media(
+                _manifest(key="validate-public-redirect"),
+                allowed_hosts=("cdn.example.com",),
+                media_client=media_client,
+            )
+        assert error.value.error_code == "video_redirect_refused"
+
+    requests: list[httpx.Request] = []
+
+    def unexpected_handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        raise AssertionError("untrusted media must fail before network access")
+
+    unexpected_transport = httpx.MockTransport(unexpected_handler)
+    with httpx.Client(transport=unexpected_transport, timeout=1.0) as media_client:
+        with pytest.raises(InstagramConfigurationError, match="VCM_INSTAGRAM_MEDIA_ALLOWED_HOSTS"):
+            verify_instagram_manifest_media(
+                _manifest(key="validate-public-untrusted"),
+                allowed_hosts=(),
+                media_client=media_client,
+            )
+    assert requests == []
