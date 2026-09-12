@@ -395,6 +395,7 @@ class VkVideoWallWriter(VkWallWriter):
             raise
 
     def reconcile_exact(self, *, wall: VideoWallOperation) -> dict[str, Any]:
+        self.assert_method_circuit_closed("wall.get")
         self.verify_video(wall)
         capture = self.capture_complete_wall()
         matches = self.find_exact(capture, wall)
