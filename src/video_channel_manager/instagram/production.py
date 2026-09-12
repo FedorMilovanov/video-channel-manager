@@ -158,66 +158,108 @@ def verify_instagram_public_object(
     label: str,
     media_client: httpx.Client,
 ) -> dict[str, object]:
-    """Verify one hosted object without Meta credentials or Graph requests."""
+    """Verify one hosted object without Meta credentials or Graph requests.
+
+    Redirects are followed manually and fail closed: every hop must stay on HTTPS,
+    every hostname must be explicitly allowlisted, and the chain is capped at three
+    redirects. GitHub Release assets are served as application/octet-stream even
+    when the immutable object is an MP4; that MIME is accepted only on the exact
+    release-assets.githubusercontent.com delivery host, with size and SHA-256 still
+    required to match the manifest.
+    """
 
     require_instagram_media_host(url, allowed_hosts)
+    current_url = httpx.URL(str(url))
+    redirects = 0
+    observed_content_type = ""
+    observed_size = 0
+    digest = hashlib.sha256()
+
     try:
-        with media_client.stream(
-            "GET",
-            str(url),
-            headers={"Accept": expected_content_type},
-            follow_redirects=False,
-        ) as response:
-            if response.is_redirect:
+        while True:
+            current_host = (current_url.host or "").lower().rstrip(".")
+            if current_url.scheme != "https" or current_host not in allowed_hosts:
                 raise InstagramMediaVerificationError(
-                    f"Instagram {label} URL redirected; redirects are refused at the provider boundary",
+                    f"Instagram {label} redirect target is not an allowed HTTPS media host",
                     error_code=f"{label}_redirect_refused",
                     retryable=False,
                 )
-            if response.status_code < 200 or response.status_code >= 300:
-                retryable = response.status_code in {408, 425, 429} or response.status_code >= 500
-                raise InstagramMediaVerificationError(
-                    f"Instagram {label} URL returned HTTP {response.status_code}",
-                    error_code=f"{label}_http_{response.status_code}",
-                    retryable=retryable,
-                )
 
-            content_type = response.headers.get("content-type", "").split(";", 1)[0].strip().lower()
-            if content_type != expected_content_type:
-                raise InstagramMediaVerificationError(
-                    f"Instagram {label} content type mismatch: expected {expected_content_type!r}, got {content_type!r}",
-                    error_code=f"{label}_content_type_mismatch",
-                    retryable=False,
-                )
+            with media_client.stream(
+                "GET",
+                current_url,
+                headers={"Accept": expected_content_type},
+                follow_redirects=False,
+            ) as response:
+                if response.is_redirect:
+                    location = response.headers.get("location")
+                    if not location or redirects >= 3:
+                        raise InstagramMediaVerificationError(
+                            f"Instagram {label} redirect chain is invalid or too long",
+                            error_code=f"{label}_redirect_refused",
+                            retryable=False,
+                        )
+                    target = response.url.join(location)
+                    target_host = (target.host or "").lower().rstrip(".")
+                    if target.scheme != "https" or target_host not in allowed_hosts:
+                        raise InstagramMediaVerificationError(
+                            f"Instagram {label} redirected to an untrusted media host",
+                            error_code=f"{label}_redirect_refused",
+                            retryable=False,
+                        )
+                    current_url = target
+                    redirects += 1
+                    continue
 
-            raw_content_length = response.headers.get("content-length")
-            if raw_content_length is not None:
-                try:
-                    content_length = int(raw_content_length)
-                except ValueError as exc:
+                if response.status_code < 200 or response.status_code >= 300:
+                    retryable = response.status_code in {408, 425, 429} or response.status_code >= 500
                     raise InstagramMediaVerificationError(
-                        f"Instagram {label} Content-Length is invalid",
-                        error_code=f"{label}_invalid_content_length",
-                        retryable=False,
-                    ) from exc
-                if content_length != expected_size_bytes:
+                        f"Instagram {label} URL returned HTTP {response.status_code}",
+                        error_code=f"{label}_http_{response.status_code}",
+                        retryable=retryable,
+                    )
+
+                observed_content_type = response.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+                content_type_matches = observed_content_type == expected_content_type
+                github_release_octet_stream = (
+                    current_host == "release-assets.githubusercontent.com"
+                    and expected_content_type == "video/mp4"
+                    and observed_content_type == "application/octet-stream"
+                )
+                if not content_type_matches and not github_release_octet_stream:
                     raise InstagramMediaVerificationError(
-                        f"Instagram {label} size mismatch: expected {expected_size_bytes}, got {content_length}",
-                        error_code=f"{label}_size_mismatch",
+                        f"Instagram {label} content type mismatch: expected {expected_content_type!r}, got {observed_content_type!r}",
+                        error_code=f"{label}_content_type_mismatch",
                         retryable=False,
                     )
 
-            digest = hashlib.sha256()
-            observed_size = 0
-            for chunk in response.iter_bytes():
-                observed_size += len(chunk)
-                if observed_size > expected_size_bytes:
-                    raise InstagramMediaVerificationError(
-                        f"Instagram {label} exceeded expected size {expected_size_bytes}",
-                        error_code=f"{label}_size_mismatch",
-                        retryable=False,
-                    )
-                digest.update(chunk)
+                raw_content_length = response.headers.get("content-length")
+                if raw_content_length is not None:
+                    try:
+                        content_length = int(raw_content_length)
+                    except ValueError as exc:
+                        raise InstagramMediaVerificationError(
+                            f"Instagram {label} Content-Length is invalid",
+                            error_code=f"{label}_invalid_content_length",
+                            retryable=False,
+                        ) from exc
+                    if content_length != expected_size_bytes:
+                        raise InstagramMediaVerificationError(
+                            f"Instagram {label} size mismatch: expected {expected_size_bytes}, got {content_length}",
+                            error_code=f"{label}_size_mismatch",
+                            retryable=False,
+                        )
+
+                for chunk in response.iter_bytes():
+                    observed_size += len(chunk)
+                    if observed_size > expected_size_bytes:
+                        raise InstagramMediaVerificationError(
+                            f"Instagram {label} exceeded expected size {expected_size_bytes}",
+                            error_code=f"{label}_size_mismatch",
+                            retryable=False,
+                        )
+                    digest.update(chunk)
+                break
     except InstagramMediaVerificationError:
         raise
     except httpx.RequestError as exc:
