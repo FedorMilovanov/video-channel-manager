@@ -20,6 +20,7 @@ from video_channel_manager.platforms.vk import (
     VkConfigurationError,
     VkInventoryService,
     VkTokenStore,
+    known_user_scopes_from_permission_mask,
 )
 from video_channel_manager.platforms.vk.clips_audit import build_vk_clips_audit_snapshot
 from video_channel_manager.platforms.vk.flood_control import VK_FLOOD_CONTROL_CODE, VkCredentialFloodControl
@@ -91,9 +92,16 @@ def login(
                 api_version=settings.vk_api_version,
             )
             user = client.get_current_user()
+            permission_mask = client.get_app_permission_mask()
+            verified_scopes = known_user_scopes_from_permission_mask(permission_mask)
+            missing_required = [scope for scope in ("video", "groups") if scope not in verified_scopes]
+            if missing_required:
+                raise VkConfigurationError("VK token is missing required permission(s): " + ", ".join(missing_required))
             client.validate_video_access(user.user_id)
             communities = client.list_managed_communities()
         token.user_id = user.user_id
+        token.permission_mask = permission_mask
+        token.scopes = verified_scopes
         store.save_token(account, token)
         store.save_account(
             VkAccount(
@@ -161,6 +169,54 @@ def accounts() -> None:
             item.updated_at.astimezone(UTC).strftime("%Y-%m-%d %H:%M UTC"),
         )
     console.print(table)
+
+
+@vk_app.command("token-capabilities")
+def token_capabilities(
+    account: Annotated[str, typer.Option("--account", "-a")] = "default",
+    sync_local: Annotated[
+        bool,
+        typer.Option(
+            "--sync-local", help="Persist the provider-verified permission mask/scopes for equivalent aliases"
+        ),
+    ] = False,
+) -> None:
+    """Read the token's live VK application permission mask; optionally sync local metadata."""
+
+    settings = get_settings()
+    store = VkTokenStore(settings.data_dir)
+    try:
+        alias = store.validate_alias(account)
+        if not store.token_exists(alias):
+            raise VkAccountNotFoundError(f"VK account token not found: {alias}")
+        client = VkApiClient(
+            token_store=store,
+            account_alias=alias,
+            api_version=settings.vk_api_version,
+        )
+        permission_mask = client.get_app_permission_mask()
+        verified_scopes = known_user_scopes_from_permission_mask(permission_mask)
+        console.print(
+            f"VK token capabilities for '{alias}': mask={permission_mask}; "
+            f"known-scopes={','.join(verified_scopes) or 'none'}."
+        )
+        if sync_local:
+            equivalent_aliases = store.aliases_sharing_access_token(alias)
+            for equivalent_alias in equivalent_aliases:
+                token = store.load_token(equivalent_alias)
+                token.permission_mask = permission_mask
+                token.scopes = verified_scopes
+                store.save_token(equivalent_alias, token)
+            console.print(
+                "[green]Synchronized provider-verified VK token metadata for aliases:[/green] "
+                + ", ".join(equivalent_aliases)
+                + ". Provider writes: 0."
+            )
+        else:
+            console.print("Local token metadata unchanged. Provider writes: 0.")
+    except (OSError, ValueError, VkAccountNotFoundError, VkApiError) as exc:
+        console.print(f"[red]Cannot read VK token capabilities:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
 
 
 @vk_app.command("flood-status")

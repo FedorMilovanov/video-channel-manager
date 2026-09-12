@@ -352,6 +352,16 @@ class VkApiClient(HttpClientOwner):
                     kind=HttpFailureKind.INVALID_PAYLOAD,
                 )
 
+    def get_app_permission_mask(self) -> int:
+        response = self._call("account.getAppPermissions")
+        if type(response) is not int or response < 0:
+            raise VkApiError(
+                "VK account.getAppPermissions returned an invalid permission mask.",
+                method="account.getAppPermissions",
+                kind=HttpFailureKind.INVALID_PAYLOAD,
+            )
+        return response
+
     def get_current_user(self) -> VkUserIdentity:
         response = self._call("users.get", params={"fields": "screen_name"})
         users = [item for item in response if isinstance(item, dict)] if isinstance(response, list) else []

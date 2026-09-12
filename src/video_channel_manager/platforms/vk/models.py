@@ -14,11 +14,25 @@ class VkConfigurationError(ValueError):
     """Raised when a VK token input cannot be parsed safely."""
 
 
+VK_KNOWN_USER_PERMISSION_BITS: tuple[tuple[str, int], ...] = (
+    ("video", 16),
+    ("wall", 8192),
+    ("groups", 262144),
+)
+
+
+def known_user_scopes_from_permission_mask(permission_mask: int) -> list[str]:
+    if type(permission_mask) is not int or permission_mask < 0:
+        raise ValueError("VK application permission mask must be a non-negative integer")
+    return [name for name, bit in VK_KNOWN_USER_PERMISSION_BITS if permission_mask & bit]
+
+
 class VkAccessToken(StrictModel):
     access_token: str = Field(min_length=1, repr=False)
     user_id: int | None = Field(default=None, ge=1)
     token_type: str = "user"
-    scopes: list[str] = Field(default_factory=lambda: ["video", "groups"])
+    scopes: list[str] = Field(default_factory=list)
+    permission_mask: int | None = Field(default=None, ge=0)
     issued_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     expires_at: datetime | None = None
 
