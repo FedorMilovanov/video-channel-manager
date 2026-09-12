@@ -320,6 +320,15 @@ class VkWallWriter(VkVideoWriter):
     has no implicit fallback and requires a different reviewed authority type.
     """
 
+    def probe_wall_get(self, *, community_id: int) -> tuple[int, int]:
+        """Perform exactly one published-wall read for guarded recovery probing."""
+
+        return self._read_upload_wall_head(
+            community_id=community_id,
+            surface=VkWallSurface.PUBLISHED,
+            head_limit=1,
+        )
+
     def _read_upload_wall_head(
         self,
         *,

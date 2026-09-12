@@ -24,6 +24,8 @@ from video_channel_manager.platforms.vk import (
 )
 from video_channel_manager.platforms.vk.clips_audit import build_vk_clips_audit_snapshot
 from video_channel_manager.platforms.vk.flood_control import VK_FLOOD_CONTROL_CODE, VkCredentialFloodControl
+from video_channel_manager.platforms.vk.wall import VkWallWriter
+from video_channel_manager.platforms.vk.writer import VkWriteError
 from video_channel_manager.platforms.vk.clips_owner_probe import (
     VK_OWNER_CLIPS_PROBE_API_VERSION,
     build_vk_owner_clips_probe_snapshot,
@@ -289,6 +291,69 @@ def flood_reset(
         console.print(
             f"No open local VK flood-control circuit existed for {alias} / {normalized_method}. Provider calls: 0."
         )
+
+
+@vk_app.command("community-probe")
+def community_probe(
+    community: Annotated[int, typer.Option("--community", "-c", help="Exact numeric VK community ID")],
+    account: Annotated[str, typer.Option("--account", "-a")] = "default",
+) -> None:
+    """Perform exactly one groups.getById read for flood-recovery probing."""
+
+    if community <= 0:
+        raise typer.BadParameter("community must be positive", param_hint="--community")
+    settings = get_settings()
+    store = VkTokenStore(settings.data_dir)
+    alias = store.validate_alias(account)
+    client = VkApiClient(
+        token_store=store,
+        account_alias=alias,
+        api_version=settings.vk_api_version,
+        max_attempts=1,
+    )
+    try:
+        client.get_community(community)
+    except (VkAccountNotFoundError, OSError, ValueError, VkApiError) as exc:
+        console.print(f"[red]VK community probe failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+    finally:
+        client.close()
+    console.print(
+        f"[green]VK community probe succeeded:[/green] groups.getById / {community}. "
+        "Provider calls: 1. Provider writes: 0."
+    )
+
+
+@vk_app.command("wall-probe")
+def wall_probe(
+    community: Annotated[int, typer.Option("--community", "-c", help="Exact numeric VK community ID")],
+    account: Annotated[str, typer.Option("--account", "-a")] = "default",
+) -> None:
+    """Perform exactly one published wall.get read for flood-recovery probing."""
+
+    if community <= 0:
+        raise typer.BadParameter("community must be positive", param_hint="--community")
+    settings = get_settings()
+    store = VkTokenStore(settings.data_dir)
+    alias = store.validate_alias(account)
+    writer = VkWallWriter(
+        token_store=store,
+        account_alias=alias,
+        api_version=settings.vk_api_version,
+        max_attempts=1,
+    )
+    try:
+        writer.assert_token_scopes("wall")
+        items, total = writer.probe_wall_get(community_id=community)
+    except (VkAccountNotFoundError, OSError, ValueError, VkWriteError) as exc:
+        console.print(f"[red]VK wall probe failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+    finally:
+        writer.close()
+    console.print(
+        f"[green]VK wall probe succeeded:[/green] wall.get / {community}; "
+        f"published_head_items={len(items)} total={total}. Provider calls: 1. Provider writes: 0."
+    )
 
 
 @vk_app.command("communities")
