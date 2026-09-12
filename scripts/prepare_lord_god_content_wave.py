@@ -7,11 +7,13 @@ import argparse
 import hashlib
 import json
 import shutil
+import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from video_channel_manager.platforms.vk.text_writer import canonical_vk_text
+from video_channel_manager.telegram_historical_production import release_digest
 from video_channel_manager.telegram_models import TelegramLedger, TelegramQueue
 from video_channel_manager.wave_engine.canonical import file_sha256, write_json_atomic
 from video_channel_manager.wave_engine.models import (
@@ -40,6 +42,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--videos", type=Path, required=True)
     parser.add_argument("--quote-queue", type=Path, required=True)
     parser.add_argument("--quote-ledger", type=Path, required=True)
+    parser.add_argument("--historical-release", type=Path, required=True)
+    parser.add_argument("--historical-ledger", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--enable-provider-writes", action="store_true")
     return parser.parse_args()
@@ -60,6 +64,31 @@ def deterministic_guid(*parts: object) -> str:
 
 def repository_relative(root: Path, path: Path) -> str:
     return path.resolve().relative_to(root.resolve()).as_posix()
+
+
+def git_blob_sha(root: Path, relative_path: str) -> str:
+    completed = subprocess.run(
+        ["git", "-C", str(root), "rev-parse", f"HEAD:{relative_path}"],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+    if completed.returncode != 0:
+        raise ValueError(f"Git cannot resolve committed evidence {relative_path}")
+    return completed.stdout.strip()
+
+
+def read_committed_json(root: Path, relative_path: str) -> Any:
+    completed = subprocess.run(
+        ["git", "-C", str(root), "show", f"HEAD:{relative_path}"],
+        check=False,
+        capture_output=True,
+    )
+    if completed.returncode != 0:
+        error = completed.stderr.decode("utf-8", errors="replace").strip()
+        raise ValueError(f"Git cannot read committed evidence {relative_path}: {error}")
+    return json.loads(completed.stdout.decode("utf-8-sig"))
 
 
 def build_video_index(videos: list[object]) -> dict[str, dict[str, Any]]:
@@ -130,6 +159,68 @@ def verify_quote_slots(
             raise ValueError(f"Telegram quote message_id mismatch: {publication_id}")
         if slot.get("telegram_message_url") != entry.message_url:
             raise ValueError(f"Telegram quote message_url mismatch: {publication_id}")
+
+
+def verify_historical_slots(
+    backlog: dict[str, Any],
+    release: dict[str, Any],
+    ledger: dict[str, Any],
+    root: Path,
+) -> None:
+    if backlog.get("telegram_historical_release_digest") != release_digest(release):
+        raise ValueError("Telegram historical release digest differs from the backlog evidence")
+    if (
+        ledger.get("project_key") != LORD_GOD_PROJECT_KEY
+        or str(ledger.get("channel_username") or "").casefold() != "@lordchrist"
+        or ledger.get("release_id") != release.get("release_id")
+        or ledger.get("release_sha256") != release_digest(release)
+    ):
+        raise ValueError("Telegram historical ledger is not bound to the exact LordChrist release")
+
+    revision_binding = release.get("revision")
+    if not isinstance(revision_binding, dict):
+        raise ValueError("Telegram historical release lacks a revision binding")
+    revision_path = str(revision_binding.get("path") or "")
+    revision_blob = str(revision_binding.get("git_blob_sha") or "")
+    if not revision_path or git_blob_sha(root, revision_path) != revision_blob:
+        raise ValueError("Telegram historical revision Git blob differs from the release")
+    revision = read_committed_json(root, revision_path)
+    if not isinstance(revision, dict):
+        raise ValueError("Telegram historical committed revision is invalid")
+    post_binding = revision.get("post")
+    if not isinstance(post_binding, dict):
+        raise ValueError("Telegram historical revision lacks a post binding")
+    post_path = str(post_binding.get("path") or "")
+    post_blob = str(post_binding.get("git_blob_sha") or "")
+    if not post_path or git_blob_sha(root, post_path) != post_blob:
+        raise ValueError("Telegram historical post Git blob differs from the revision")
+
+    entries = ledger.get("entries")
+    if not isinstance(entries, dict):
+        raise ValueError("Telegram historical ledger entries are invalid")
+    for slot in backlog.get("slots", []):
+        if not isinstance(slot, dict) or slot.get("kind") != "telegram_editorial":
+            continue
+        publication_id = str(slot.get("publication_id") or "")
+        entry = entries.get(publication_id)
+        if not isinstance(entry, dict):
+            raise ValueError(f"Telegram historical ledger entry is missing: {publication_id}")
+        if entry.get("state") != "published" or entry.get("provider_effect") != "verified":
+            raise ValueError(f"Telegram historical post was not published+verified: {publication_id}")
+        if slot.get("telegram_message_id") != entry.get("message_id"):
+            raise ValueError(f"Telegram historical message_id mismatch: {publication_id}")
+        if slot.get("telegram_message_url") != entry.get("message_url"):
+            raise ValueError(f"Telegram historical message_url mismatch: {publication_id}")
+        if slot.get("telegram_document_sha256") != entry.get("document_sha256"):
+            raise ValueError(f"Telegram historical document SHA mismatch: {publication_id}")
+        if slot.get("telegram_release_id") != release.get("release_id"):
+            raise ValueError(f"Telegram historical release mismatch: {publication_id}")
+        if slot.get("telegram_release_sha256") != ledger.get("release_sha256"):
+            raise ValueError(f"Telegram historical release SHA mismatch: {publication_id}")
+        if slot.get("historical_revision_git_blob_sha") != revision_blob:
+            raise ValueError(f"Telegram historical revision blob mismatch: {publication_id}")
+        if slot.get("historical_post_git_blob_sha") != post_blob:
+            raise ValueError(f"Telegram historical post blob mismatch: {publication_id}")
 
 
 def build_specs(backlog: dict[str, Any], videos: dict[str, dict[str, Any]]) -> tuple[WaveOperationSpec, ...]:
@@ -222,10 +313,14 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
     videos_copy = output_dir / "01-videos.json"
     quote_queue_copy = output_dir / "02-telegram-quote-queue.json"
     quote_ledger_copy = output_dir / "03-telegram-quote-ledger.json"
+    historical_release_copy = output_dir / "04-telegram-historical-release.json"
+    historical_ledger_copy = output_dir / "05-telegram-historical-ledger.json"
     shutil.copy2(args.backlog.resolve(), backlog_copy)
     shutil.copy2(args.videos.resolve(), videos_copy)
     shutil.copy2(args.quote_queue.resolve(), quote_queue_copy)
     shutil.copy2(args.quote_ledger.resolve(), quote_ledger_copy)
+    shutil.copy2(args.historical_release.resolve(), historical_release_copy)
+    shutil.copy2(args.historical_ledger.resolve(), historical_ledger_copy)
 
     backlog = read_json(backlog_copy)
     raw_videos = read_json(videos_copy)
@@ -235,9 +330,18 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("Telegram quote queue SHA differs from the backlog evidence")
     if backlog.get("telegram_quote_ledger_sha256") != file_sha256(quote_ledger_copy):
         raise ValueError("Telegram quote ledger SHA differs from the backlog evidence")
+    if backlog.get("telegram_historical_release_sha256") != file_sha256(historical_release_copy):
+        raise ValueError("Telegram historical release SHA differs from the backlog evidence")
+    if backlog.get("telegram_historical_ledger_sha256") != file_sha256(historical_ledger_copy):
+        raise ValueError("Telegram historical ledger SHA differs from the backlog evidence")
     quote_queue = TelegramQueue.model_validate(read_json(quote_queue_copy))
     quote_ledger = TelegramLedger.model_validate(read_json(quote_ledger_copy))
+    historical_release = read_json(historical_release_copy)
+    historical_ledger = read_json(historical_ledger_copy)
+    if not isinstance(historical_release, dict) or not isinstance(historical_ledger, dict):
+        raise ValueError("Telegram historical release/ledger roots are invalid")
     verify_quote_slots(backlog, quote_queue, quote_ledger)
+    verify_historical_slots(backlog, historical_release, historical_ledger, root)
     video_index = build_video_index(raw_videos)
     specs = build_specs(backlog, video_index)
 
@@ -254,13 +358,21 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
             EvidenceArtifact(path=repository_relative(root, videos_copy), sha256=file_sha256(videos_copy)),
             EvidenceArtifact(path=repository_relative(root, quote_queue_copy), sha256=file_sha256(quote_queue_copy)),
             EvidenceArtifact(path=repository_relative(root, quote_ledger_copy), sha256=file_sha256(quote_ledger_copy)),
+            EvidenceArtifact(
+                path=repository_relative(root, historical_release_copy),
+                sha256=file_sha256(historical_release_copy),
+            ),
+            EvidenceArtifact(
+                path=repository_relative(root, historical_ledger_copy),
+                sha256=file_sha256(historical_ledger_copy),
+            ),
         ),
     )
     plan = WavePlan.build(source=source, specs=specs)
 
-    source_path = output_dir / "04-source.json"
-    plan_path = output_dir / "05-plan.json"
-    intent_path = output_dir / "06-apply-intent.json"
+    source_path = output_dir / "06-source.json"
+    plan_path = output_dir / "07-plan.json"
+    intent_path = output_dir / "08-apply-intent.json"
     manifest_path = output_dir / "manifest.json"
 
     write_json_atomic(source_path, source.model_dump(mode="json"))
@@ -297,6 +409,8 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
                 videos_copy,
                 quote_queue_copy,
                 quote_ledger_copy,
+                historical_release_copy,
+                historical_ledger_copy,
                 source_path,
                 plan_path,
                 intent_path,

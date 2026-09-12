@@ -961,7 +961,7 @@
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
-      "sha256": "c928e42ee745d2252ad6044c49aeab9706807956a602a4959fabf0a9b13c8429",
+      "sha256": "8d8fa462700bb0421e54c80e8be757c4c35a83d66a906aed894da6ef9f543320",
       "status": "independent_tool"
     },
     {
@@ -971,7 +971,7 @@
       "private_imports": [],
       "project_owner": "lord-god-strength",
       "provider_write_capable": false,
-      "sha256": "f71efe5354e9d5d786bd9d8c89b2700dc77a31e419a51f15551b1d39e0bbfc77",
+      "sha256": "5404de6ee3e04c860df2894c6f55c358ace37acbbca35fe9bee4e026f29df1ae",
       "status": "independent_tool"
     }
   ],
