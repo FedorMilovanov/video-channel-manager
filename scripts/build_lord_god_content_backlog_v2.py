@@ -25,9 +25,23 @@ BAD_TITLE_MARKERS = (
     "свадебный час",
 )
 PRIORITY_MARKERS = (
-    "макартур", "спраул", "лоусон", "вошер", "коломийцев", "бики",
-    "сперджен", "библи", "евангел", "христ", "проповед", "церков",
-    "святост", "писание", "бог", "реформац", "пуритан",
+    "макартур",
+    "спраул",
+    "лоусон",
+    "вошер",
+    "коломийцев",
+    "бики",
+    "сперджен",
+    "библи",
+    "евангел",
+    "христ",
+    "проповед",
+    "церков",
+    "святост",
+    "писание",
+    "бог",
+    "реформац",
+    "пуритан",
 )
 
 
@@ -249,35 +263,41 @@ def build_slots(
         if video_index < len(videos):
             at, epoch = dt_epoch(day, 19)
             video = videos[video_index]
-            slots.append({
-                "kind": "vk_video",
-                "publish_at": at,
-                "publish_date": epoch,
-                "video_id": video["video_id"],
-                "title": clean_title(video["title"]),
-                "views_at_source_snapshot": video.get("views"),
-                "source_state": video.get("state"),
-            })
+            slots.append(
+                {
+                    "kind": "vk_video",
+                    "publish_at": at,
+                    "publish_date": epoch,
+                    "video_id": video["video_id"],
+                    "title": clean_title(video["title"]),
+                    "views_at_source_snapshot": video.get("views"),
+                    "source_state": video.get("state"),
+                }
+            )
             video_index += 1
         if day.weekday() == 1 and text_index < len(texts):
             at, epoch = dt_epoch(day, 13)
             text = texts[text_index]
-            slots.append({
-                "kind": "telegram_editorial",
-                "publish_at": at,
-                "publish_date": epoch,
-                **text,
-            })
+            slots.append(
+                {
+                    "kind": "telegram_editorial",
+                    "publish_at": at,
+                    "publish_date": epoch,
+                    **text,
+                }
+            )
             text_index += 1
         if day.weekday() in {0, 2, 4} and quote_index < len(quotes):
             at, epoch = dt_epoch(day, 12)
             quote = quotes[quote_index]
-            slots.append({
-                "kind": "telegram_quote",
-                "publish_at": at,
-                "publish_date": epoch,
-                **quote,
-            })
+            slots.append(
+                {
+                    "kind": "telegram_quote",
+                    "publish_at": at,
+                    "publish_date": epoch,
+                    **quote,
+                }
+            )
             quote_index += 1
     return sorted(slots, key=lambda x: x["publish_date"])
 
@@ -340,24 +360,14 @@ def render_markdown(backlog: dict[str, Any]) -> str:
             metric = str(slot.get("views_at_source_snapshot", ""))
         else:
             candidate = f"{slot['publication_id']} — {slot['title']}"
-            metric = (
-                f"TG #{slot.get('telegram_message_id')}"
-                if slot["kind"] == "telegram_quote"
-                else "TG editorial"
-            )
+            metric = f"TG #{slot.get('telegram_message_id')}" if slot["kind"] == "telegram_quote" else "TG editorial"
         lines.append(f"| {slot['publish_at']} | {slot['kind']} | {candidate} | {metric} |")
     return "\n".join(lines) + "\n"
 
 
 def main() -> int:
     args = parse_args()
-    if (
-        args.days <= 0
-        or args.video_count < 0
-        or args.telegram_count < 0
-        or args.quote_count < 0
-        or args.max_views < 0
-    ):
+    if args.days <= 0 or args.video_count < 0 or args.telegram_count < 0 or args.quote_count < 0 or args.max_views < 0:
         raise SystemExit("invalid non-positive backlog limits")
     backlog = build_backlog(args)
     args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -133,7 +133,6 @@ def parse_lord_god_wall_operation(operation: WaveOperation) -> LordGodWallOperat
             source_id=source_id,
         )
 
-
     video_owner_id = payload.get("video_owner_id")
     if type(video_owner_id) is not int or video_owner_id != LORD_GOD_OWNER_ID:
         raise LordGodWallError("video_owner_id differs from the Lord God VK owner")
@@ -180,7 +179,6 @@ class LordGodWallWriter(VkWallWriter):
             raise LordGodWallError("live VK video is not playable")
         return item
 
-
     @staticmethod
     def _matches(snapshot: Any, wall: LordGodWallOperation) -> list[Any]:
         expected_attachment = wall.attachment
@@ -214,7 +212,6 @@ class LordGodWallWriter(VkWallWriter):
         if collisions:
             raise LordGodWallError("postponed schedule slot is already occupied")
         return None
-
 
     def schedule_text(self, wall: LordGodWallOperation) -> dict[str, Any]:
         self.assert_method_circuit_closed("wall.get")
@@ -289,7 +286,6 @@ class LordGodWallWriter(VkWallWriter):
             if mutation_started:
                 raise UnknownProviderOutcomeError(f"{type(exc).__name__}: {exc}") from exc
             raise
-
 
     def schedule_video(self, wall: LordGodWallOperation) -> dict[str, Any]:
         self.assert_method_circuit_closed("wall.get")
@@ -388,7 +384,6 @@ class LordGodPostponedWallAdapter:
             raise UnknownProviderOutcomeError(str(exc)) from exc
         except (LordGodWallError, OSError, ValueError) as exc:
             raise OperationRejectedError(str(exc)) from exc
-
 
     def reconcile(self, operation: WaveOperation) -> Mapping[str, Any]:
         wall = parse_lord_god_wall_operation(operation)

@@ -31,7 +31,6 @@ def sha(value: str) -> str:
     return "sha256:" + hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
-
 def operation(payload: dict[str, Any]) -> WaveOperation:
     project = ProjectBinding(
         project_key="lord-god-strength",
@@ -66,7 +65,6 @@ def text_payload() -> dict[str, Any]:
     }
 
 
-
 def video_payload() -> dict[str, Any]:
     message = "Джон МакАртур — Богодухновенность Библии."
     description = "Точное описание"
@@ -95,7 +93,6 @@ def snapshot(*posts: VkWallPostFingerprint) -> VkWallSnapshot:
         postponed_pages=1,
         posts=tuple(posts),
     )
-
 
 
 class _CircuitClosedWriter(LordGodWallWriter):
@@ -129,7 +126,6 @@ def test_verify_video_checks_exact_title_description_and_playability() -> None:
 
     item = FakeWriter().verify_video(wall)
     assert item["title"].startswith("Джон МакАртур")
-
 
 
 def test_schedule_text_requires_exact_single_postflight_delta() -> None:

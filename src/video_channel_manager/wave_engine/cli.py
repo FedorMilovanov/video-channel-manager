@@ -429,7 +429,12 @@ def apply(
             console.print(f"[red]Wave apply retry journal rejected:[/red] {exc}")
             raise typer.Exit(code=3) from exc
 
-    adapter: VkPostponedArticlePhotoAdapter | VkNativeVideoUploadAdapter | VkPostponedVideoWallAdapter | LordGodPostponedWallAdapter
+    adapter: (
+        VkPostponedArticlePhotoAdapter
+        | VkNativeVideoUploadAdapter
+        | VkPostponedVideoWallAdapter
+        | LordGodPostponedWallAdapter
+    )
     if _article_plan(plan):
         adapter = VkPostponedArticlePhotoAdapter(
             repository_root=repository_root,
@@ -515,7 +520,12 @@ def reconcile(
         )
         raise typer.Exit(code=3)
 
-    adapter: VkPostponedArticlePhotoAdapter | VkNativeVideoUploadAdapter | VkPostponedVideoWallAdapter | LordGodPostponedWallAdapter
+    adapter: (
+        VkPostponedArticlePhotoAdapter
+        | VkNativeVideoUploadAdapter
+        | VkPostponedVideoWallAdapter
+        | LordGodPostponedWallAdapter
+    )
     if _article_plan(plan):
         adapter = VkPostponedArticlePhotoAdapter(
             repository_root=repository_root,

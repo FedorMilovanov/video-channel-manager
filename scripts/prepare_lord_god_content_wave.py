@@ -258,7 +258,6 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
     )
     plan = WavePlan.build(source=source, specs=specs)
 
-
     source_path = output_dir / "04-source.json"
     plan_path = output_dir / "05-plan.json"
     intent_path = output_dir / "06-apply-intent.json"

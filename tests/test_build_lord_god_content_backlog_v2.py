@@ -52,9 +52,7 @@ def test_select_videos_round_robins_major_speakers() -> None:
         ]
     }
     selected = module.select_videos(audit, count=4, max_views=100)
-    assert [module.speaker_bucket(item) for item in selected] == [
-        "macarthur", "sproul", "lawson", "washer"
-    ]
+    assert [module.speaker_bucket(item) for item in selected] == ["macarthur", "sproul", "lawson", "washer"]
 
 
 def test_build_slots_uses_distinct_moscow_times() -> None:
