@@ -51,6 +51,7 @@ from video_channel_manager.wave_engine.vk_video_provider import (
     VkNativeVideoUploadAdapter,
 )
 from video_channel_manager.wave_engine.vk_video_wall_provider import (
+    VK_VIDEO_WALL_LEGACY_PREFLIGHT_FLOOD_ERROR,
     VK_VIDEO_WALL_OPERATION_KIND,
     VkPostponedVideoWallAdapter,
 )
@@ -316,13 +317,22 @@ def _assert_retry_safe_video_wall_journal(
     if result.status is not WaveStatus.FAILED or len(result.operations) != 1:
         raise ValueError("existing wall journal is not a single failed apply result")
     operation_result = result.operations[0]
-    if not (
+    explicitly_retry_safe = (
         operation_result.status is OperationStatus.FAILED
         and operation_result.attempt_count == 1
         and operation_result.retry_safe is True
         and operation_result.unknown_requires_reconciliation is False
         and operation_result.error_kind == "rejected_before_dispatch"
-    ):
+    )
+    legacy_wall_get_flood = (
+        operation_result.status is OperationStatus.FAILED
+        and operation_result.attempt_count == 1
+        and operation_result.retry_safe is False
+        and operation_result.unknown_requires_reconciliation is False
+        and operation_result.error_kind == "provider_rejected"
+        and operation_result.error_message == VK_VIDEO_WALL_LEGACY_PREFLIGHT_FLOOD_ERROR
+    )
+    if not (explicitly_retry_safe or legacy_wall_get_flood):
         raise ValueError("existing wall journal is not explicitly retry-safe before provider dispatch")
 
     preflight = read_json_object(journal_directory / "preflight-summary.json")

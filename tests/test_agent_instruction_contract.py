@@ -97,7 +97,11 @@ def test_current_state_is_a_live_index_not_a_commit_ledger() -> None:
     assert "The current exact publication is `milovi-feed-20260821-001`" not in text
     assert "the only currently authorized Milovi identity" not in text
     assert "Issue #492 is closed as repository implementation complete" in text
-    assert "Provider publications remain 0" in text
+    assert "One successful Legendary Poet Instagram Reel is now published" in text
+    assert "Issue #581 is closed as **completed**" in text
+    assert "18135337036649890" in text
+    assert "https://www.instagram.com/reel/DdMgCixE8Gl/" in text
+    assert "Provider publications remain 0" not in text
 
 
 def test_dependabot_maintenance_is_atomic_and_bounded() -> None:

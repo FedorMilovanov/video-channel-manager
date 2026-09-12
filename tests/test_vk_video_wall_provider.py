@@ -11,7 +11,11 @@ import video_channel_manager.wave_engine.vk_video_wall_provider as provider_modu
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.wall_safety import build_wall_snapshot
 from video_channel_manager.platforms.vk.writer import VkWriteError
-from video_channel_manager.wave_engine.engine import KnownProviderRejectionError, UnknownProviderOutcomeError
+from video_channel_manager.wave_engine.engine import (
+    KnownProviderRejectionError,
+    OperationRejectedError,
+    UnknownProviderOutcomeError,
+)
 from video_channel_manager.wave_engine.models import MutationClass, ProjectBinding, WaveOperation, WaveOperationSpec
 from video_channel_manager.wave_engine.vk_video_wall_provider import (
     VK_VIDEO_WALL_COMMUNITY_ID,
@@ -264,6 +268,29 @@ def test_schedule_postflight_mismatch_is_unknown_and_never_replayed(
     assert writer.wall_post_calls == 1
 
 
+class _PostflightReadErrorWriter(_ScheduleWriter):
+    def capture_complete_wall(self, *, max_posts_per_surface: int = 10_000) -> VideoWallCapture:
+        del max_posts_per_surface
+        if self._capture_index == 0:
+            self._capture_index += 1
+            return _capture()
+        raise VkWriteError(
+            "VK API 9 in wall.get: Flood control",
+            method="wall.get",
+            code=9,
+            attempts=1,
+        )
+
+
+def test_schedule_postflight_wall_get_rejection_is_unknown() -> None:
+    writer = _PostflightReadErrorWriter(after=_capture())
+
+    with pytest.raises(UnknownProviderOutcomeError, match="wall.get"):
+        writer.schedule(wall=parse_video_wall_operation(_operation()))
+
+    assert writer.wall_post_calls == 1
+
+
 class _ErrorWriter:
     def __init__(self, error: Exception) -> None:
         self.error = error
@@ -288,4 +315,23 @@ def test_adapter_classifies_explicit_provider_rejection_as_known(
     )
 
     with pytest.raises(KnownProviderRejectionError):
+        adapter.execute(_operation())
+
+
+def test_adapter_classifies_preflight_wall_get_rejection_as_retry_safe(
+    tmp_path: Path,
+) -> None:
+    adapter = object.__new__(VkPostponedVideoWallAdapter)
+    adapter.settings = SimpleNamespace(data_dir=tmp_path)
+    adapter.account_alias = "legendary-poet"
+    adapter.writer = _ErrorWriter(
+        VkWriteError(
+            "VK API 9 in wall.get: Flood control [kind=provider_flood_control attempts=1]",
+            method="wall.get",
+            code=9,
+            attempts=1,
+        )
+    )
+
+    with pytest.raises(OperationRejectedError, match="wall.get"):
         adapter.execute(_operation())

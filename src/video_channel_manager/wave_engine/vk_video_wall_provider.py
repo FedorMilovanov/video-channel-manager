@@ -33,6 +33,9 @@ VK_VIDEO_WALL_PROJECT_KEY = "legendary-poet"
 VK_VIDEO_WALL_COMMUNITY_ID = 235216998
 VK_VIDEO_WALL_OWNER_ID = -235216998
 VK_VIDEO_WALL_ACCOUNT_ALIAS = "legendary-poet"
+VK_VIDEO_WALL_LEGACY_PREFLIGHT_FLOOD_ERROR = (
+    "VK API 9 in wall.get: Flood control [kind=provider_flood_control attempts=1]"
+)
 
 
 class VkVideoWallError(RuntimeError):
@@ -388,7 +391,9 @@ class VkVideoWallWriter(VkWallWriter):
             }
         except UnknownProviderOutcomeError:
             raise
-        except VkWriteError:
+        except VkWriteError as exc:
+            if mutation_started and exc.method != "wall.post":
+                raise UnknownProviderOutcomeError(str(exc)) from exc
             raise
         except Exception as exc:
             if mutation_started:
@@ -456,7 +461,7 @@ class VkPostponedVideoWallAdapter:
         except UnknownProviderOutcomeError:
             raise
         except VkWriteError as exc:
-            if exc.attempts == 0:
+            if exc.attempts == 0 or exc.method in {"video.get", "wall.get"}:
                 raise OperationRejectedError(str(exc)) from exc
             if exc.code is not None:
                 raise KnownProviderRejectionError(str(exc)) from exc
