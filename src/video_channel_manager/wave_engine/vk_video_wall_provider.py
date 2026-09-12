@@ -317,6 +317,7 @@ class VkVideoWallWriter(VkWallWriter):
 
     def schedule(self, *, wall: VideoWallOperation) -> dict[str, Any]:
         self.assert_method_circuit_closed("wall.get")
+        self.assert_method_circuit_closed("wall.post")
         self.verify_video(wall)
         before = self.capture_complete_wall()
         existing = self._preflight_conflicts(before, wall)
