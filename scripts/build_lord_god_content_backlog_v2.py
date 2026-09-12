@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
@@ -54,14 +55,9 @@ def clean_title(value: object) -> str:
     return " ".join(str(value or "").split())
 
 
-def file_sha256(path: Path) -> str:
-    import hashlib
-
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+def read_json_evidence(path: Path) -> tuple[Any, str]:
+    raw = path.read_bytes()
+    return json.loads(raw.decode("utf-8-sig")), hashlib.sha256(raw).hexdigest()
 
 
 def video_score(item: dict[str, Any]) -> tuple[int, int, float]:
@@ -173,9 +169,14 @@ def select_telegram(root: Path, *, count: int) -> list[dict[str, Any]]:
     return selected
 
 
-def load_quote_evidence(queue_path: Path, ledger_path: Path) -> tuple[TelegramQueue, TelegramLedger]:
-    queue = TelegramQueue.model_validate(read_json(queue_path))
-    ledger = TelegramLedger.model_validate(read_json(ledger_path))
+def load_quote_evidence(
+    queue_path: Path,
+    ledger_path: Path,
+) -> tuple[TelegramQueue, TelegramLedger, str, str]:
+    raw_queue, queue_sha256 = read_json_evidence(queue_path)
+    raw_ledger, ledger_sha256 = read_json_evidence(ledger_path)
+    queue = TelegramQueue.model_validate(raw_queue)
+    ledger = TelegramLedger.model_validate(raw_ledger)
     if ledger.queue_digest != queue.digest:
         raise ValueError("Telegram quote ledger digest differs from the immutable queue")
     queue_ids = {post.publication_id for post in queue.posts}
@@ -188,11 +189,15 @@ def load_quote_evidence(queue_path: Path, ledger_path: Path) -> tuple[TelegramQu
         entry = ledger.entries[post.publication_id]
         if entry.payload_sha256 != post.payload_sha256:
             raise ValueError(f"Telegram quote payload SHA mismatch: {post.publication_id}")
-    return queue, ledger
+    return queue, ledger, queue_sha256, ledger_sha256
 
 
-def select_quotes(queue_path: Path, ledger_path: Path, *, count: int) -> list[dict[str, Any]]:
-    queue, ledger = load_quote_evidence(queue_path, ledger_path)
+def select_published_quotes(
+    queue: TelegramQueue,
+    ledger: TelegramLedger,
+    *,
+    count: int,
+) -> list[dict[str, Any]]:
     selected: list[dict[str, Any]] = []
     for post in queue.posts:
         entry = ledger.entries[post.publication_id]
@@ -216,6 +221,11 @@ def select_quotes(queue_path: Path, ledger_path: Path, *, count: int) -> list[di
         if len(selected) >= count:
             break
     return selected
+
+
+def select_quotes(queue_path: Path, ledger_path: Path, *, count: int) -> list[dict[str, Any]]:
+    queue, ledger, _, _ = load_quote_evidence(queue_path, ledger_path)
+    return select_published_quotes(queue, ledger, count=count)
 
 
 def dt_epoch(day: date, hour: int) -> tuple[str, int]:
@@ -278,7 +288,11 @@ def build_backlog(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("audit community does not match lord-god-strength")
     videos = select_videos(audit, count=args.video_count, max_views=args.max_views)
     telegram = select_telegram(args.telegram_root, count=args.telegram_count)
-    quotes = select_quotes(args.quote_queue, args.quote_ledger, count=args.quote_count)
+    quote_queue, quote_ledger, quote_queue_sha256, quote_ledger_sha256 = load_quote_evidence(
+        args.quote_queue,
+        args.quote_ledger,
+    )
+    quotes = select_published_quotes(quote_queue, quote_ledger, count=args.quote_count)
     slots = build_slots(args.start_date, args.days, videos, telegram, quotes)
     return {
         "schema_name": "video-manager.lord-god-content-backlog",
@@ -296,9 +310,9 @@ def build_backlog(args: argparse.Namespace) -> dict[str, Any]:
         "video_candidate_count": len(videos),
         "telegram_candidate_count": len(telegram),
         "quote_candidate_count": len(quotes),
-        "telegram_quote_queue_digest": load_quote_evidence(args.quote_queue, args.quote_ledger)[0].digest,
-        "telegram_quote_queue_sha256": file_sha256(args.quote_queue),
-        "telegram_quote_ledger_sha256": file_sha256(args.quote_ledger),
+        "telegram_quote_queue_digest": quote_queue.digest,
+        "telegram_quote_queue_sha256": quote_queue_sha256,
+        "telegram_quote_ledger_sha256": quote_ledger_sha256,
         "telegram_quote_evidence_policy": "published+verified+payload-bound",
         "slot_count": len(slots),
         "slots": slots,
