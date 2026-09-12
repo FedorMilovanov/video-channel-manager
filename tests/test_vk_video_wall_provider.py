@@ -162,10 +162,10 @@ def test_preflight_blocks_occupied_postponed_slot() -> None:
         VkVideoWallWriter._preflight_conflicts(_capture(postponed=[collision]), wall)
 
 
-@pytest.mark.parametrize("method", ["wall.get", "wall.post"])
-def test_schedule_stops_on_open_required_wall_circuit_before_any_provider_call(
+@pytest.mark.parametrize("evidence_method", ["wall.get", "wall.post", "apps.get"])
+def test_schedule_stops_on_global_code9_quarantine_before_any_provider_call(
     tmp_path: Path,
-    method: str,
+    evidence_method: str,
 ) -> None:
     calls = 0
 
@@ -180,17 +180,17 @@ def test_schedule_stops_on_open_required_wall_circuit_before_any_provider_call(
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://example.test/method",
     )
-    writer.flood_control.record(method)
+    writer.flood_control.record(evidence_method)
 
-    with pytest.raises(VkWriteError, match="circuit is open") as captured:
+    with pytest.raises(VkWriteError, match="global flood-control quarantine is open") as captured:
         writer.schedule(wall=parse_video_wall_operation(_operation()))
 
     assert captured.value.attempts == 0
-    assert captured.value.method == method
+    assert captured.value.method == "wall.get"
     assert calls == 0
 
 
-def test_reconcile_stops_on_open_wall_get_circuit_before_any_provider_call(tmp_path: Path) -> None:
+def test_reconcile_stops_on_unrelated_global_code9_quarantine_before_any_provider_call(tmp_path: Path) -> None:
     calls = 0
 
     def handler(_request: httpx.Request) -> httpx.Response:
@@ -204,9 +204,9 @@ def test_reconcile_stops_on_open_wall_get_circuit_before_any_provider_call(tmp_p
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://example.test/method",
     )
-    writer.flood_control.record("wall.get")
+    writer.flood_control.record("apps.get")
 
-    with pytest.raises(VkWriteError, match="circuit is open for wall.get") as captured:
+    with pytest.raises(VkWriteError, match="global flood-control quarantine is open") as captured:
         writer.reconcile_exact(wall=parse_video_wall_operation(_operation()))
 
     assert captured.value.attempts == 0

@@ -94,14 +94,14 @@ Regex-cleanup допустим для ссылок и разметки, но н�
 Постоянное исправление:
 
 - code 9 отделён от обычных retryable `6/10/29`;
-- первый code 9 не повторяется автоматически;
-- durable local flood-control circuit логически scoped по exact credential + method: все локальные aliases с тем же access token видят один и тот же open method;
-- legacy per-alias state остаётся совместимым и объединяется через credential view, поэтому второй alias того же токена не может обойти уже открытый circuit;
-- следующий процесс проверяет credential-scoped circuit до сети и останавливается с нулём provider attempts;
-- circuit не имеет выдуманного автоматического TTL;
-- `vk flood-status` читает состояние локально без обращения к VK;
-- повторное открытие exact method возможно только явным `vk flood-reset --confirm-code 9`;
-- unrelated VK method не блокируется только потому, что code 9 был получен на другом method.
+- актуальная официальная VK API schema помечает code 9 как `global: true`, поэтому первый code 9 не повторяется автоматически и открывает quarantine для всего credential, а не только для метода, на котором он наблюдался;
+- per-method записи сохраняются как forensic evidence: они показывают, какой вызов фактически получил code 9, но не ограничивают область runtime-блокировки;
+- все локальные aliases с тем же access token видят один credential-global quarantine; legacy per-alias state остаётся совместимым и объединяется через credential view;
+- любой следующий VK API method этого credential проверяет global quarantine до сети и останавливается с нулём provider attempts;
+- quarantine не имеет выдуманного автоматического TTL;
+- `vk flood-status` читает forensic evidence локально без обращения к VK;
+- точечный `vk flood-reset --method ... --confirm-code 9` удаляет только выбранную forensic-запись и не гарантирует reopening credential, пока остаются другие code-9 entries;
+- production reopening после global code 9 выполняется только явным `vk flood-reset-all --confirm-code 9`, который локально очищает все code-9 entries эквивалентных aliases и делает zero provider calls.
 
 ## Инцидент 8: полное чтение всей стены перед каждым upload создаёт лишнюю provider-нагрузку
 

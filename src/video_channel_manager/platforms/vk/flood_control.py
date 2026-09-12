@@ -290,6 +290,12 @@ class VkCredentialFloodControl:
         methods = {entry.method for gate in self._gates() for entry in gate.list_open()}
         return tuple(entry for method in sorted(methods) if (entry := self.get(method)) is not None)
 
+    def global_blocker(self) -> VkFloodControlEntry | None:
+        entries = self.list_open()
+        if not entries:
+            return None
+        return min(entries, key=lambda entry: datetime.fromisoformat(entry.first_observed_at))
+
     def record(self, method: str) -> VkFloodControlEntry:
         normalized = method.strip()
         if not normalized:
@@ -307,6 +313,12 @@ class VkCredentialFloodControl:
         for gate in self._gates():
             cleared = gate.clear(normalized) or cleared
         return cleared
+
+    def clear_all(self) -> tuple[str, ...]:
+        methods = tuple(entry.method for entry in self.list_open())
+        for method in methods:
+            self.clear(method)
+        return methods
 
 
 __all__ = [
