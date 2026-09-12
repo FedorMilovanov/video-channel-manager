@@ -41,6 +41,10 @@ from video_channel_manager.wave_engine.vk_video_prepare import (
     VkVideoPreparationError,
     prepare_vk_video_wave,
 )
+from video_channel_manager.wave_engine.vk_lord_god_wall_provider import (
+    LORD_GOD_WALL_OPERATION_KIND,
+    LordGodPostponedWallAdapter,
+)
 from video_channel_manager.wave_engine.vk_video_provider import (
     VK_VIDEO_DEFAULT_ACCOUNT_ALIAS,
     VK_VIDEO_OPERATION_KIND,
@@ -278,6 +282,24 @@ def _video_wall_plan(plan: WavePlan) -> bool:
     }
 
 
+def _lord_god_wall_plan(plan: WavePlan) -> bool:
+    return bool(plan.operations) and {operation.operation_kind for operation in plan.operations} == {
+        LORD_GOD_WALL_OPERATION_KIND
+    }
+
+
+def _plan_label(plan: WavePlan) -> str:
+    if _article_plan(plan):
+        return "Article"
+    if _video_plan(plan):
+        return "VK video"
+    if _video_wall_plan(plan):
+        return "VK video wall"
+    if _lord_god_wall_plan(plan):
+        return "Lord God VK wall"
+    return "Wave"
+
+
 def _assert_retry_safe_video_wall_journal(
     *,
     journal_directory: Path,
@@ -385,7 +407,7 @@ def apply(
         repository_root=repository_root,
         enable_provider_writes=enable_provider_writes,
     )
-    if not (_article_plan(plan) or _video_plan(plan) or _video_wall_plan(plan)):
+    if not (_article_plan(plan) or _video_plan(plan) or _video_wall_plan(plan) or _lord_god_wall_plan(plan)):
         console.print(
             "[red]Rejected:[/red] no reviewed production provider adapter is registered for this operation set."
         )
@@ -407,7 +429,7 @@ def apply(
             console.print(f"[red]Wave apply retry journal rejected:[/red] {exc}")
             raise typer.Exit(code=3) from exc
 
-    adapter: VkPostponedArticlePhotoAdapter | VkNativeVideoUploadAdapter | VkPostponedVideoWallAdapter
+    adapter: VkPostponedArticlePhotoAdapter | VkNativeVideoUploadAdapter | VkPostponedVideoWallAdapter | LordGodPostponedWallAdapter
     if _article_plan(plan):
         adapter = VkPostponedArticlePhotoAdapter(
             repository_root=repository_root,
@@ -419,8 +441,12 @@ def apply(
             journal_directory=journal_directory,
             account_alias=vk_account,
         )
-    else:
+    elif _video_wall_plan(plan):
         adapter = VkPostponedVideoWallAdapter(
+            account_alias=vk_account,
+        )
+    else:
+        adapter = LordGodPostponedWallAdapter(
             account_alias=vk_account,
         )
     journal_existed_before = journal_directory.exists()
@@ -450,7 +476,7 @@ def apply(
         if callable(close):
             close()
 
-    label = "Article" if _article_plan(plan) else "VK video wall" if _video_wall_plan(plan) else "VK video"
+    label = _plan_label(plan)
     if result.status is WaveStatus.SUCCEEDED:
         console.print(
             f"[green]{label} wave succeeded:[/green] {len(result.operations)} operation(s); "
@@ -483,13 +509,13 @@ def reconcile(
         request.assert_matches(plan, result)
     except ValueError as exc:
         raise typer.BadParameter(str(exc), param_hint=str(request_path)) from exc
-    if not (_article_plan(plan) or _video_plan(plan) or _video_wall_plan(plan)):
+    if not (_article_plan(plan) or _video_plan(plan) or _video_wall_plan(plan) or _lord_god_wall_plan(plan)):
         console.print(
             f"[red]Rejected:[/red] no production reconciliation adapter is registered for {request.self_digest}."
         )
         raise typer.Exit(code=3)
 
-    adapter: VkPostponedArticlePhotoAdapter | VkNativeVideoUploadAdapter | VkPostponedVideoWallAdapter
+    adapter: VkPostponedArticlePhotoAdapter | VkNativeVideoUploadAdapter | VkPostponedVideoWallAdapter | LordGodPostponedWallAdapter
     if _article_plan(plan):
         adapter = VkPostponedArticlePhotoAdapter(
             repository_root=repository_root,
@@ -501,8 +527,12 @@ def reconcile(
             journal_directory=result_path.parent,
             account_alias=vk_account,
         )
-    else:
+    elif _video_wall_plan(plan):
         adapter = VkPostponedVideoWallAdapter(
+            account_alias=vk_account,
+        )
+    else:
+        adapter = LordGodPostponedWallAdapter(
             account_alias=vk_account,
         )
     try:
@@ -520,7 +550,7 @@ def reconcile(
         close = getattr(adapter, "close", None)
         if callable(close):
             close()
-    label = "Article" if _article_plan(plan) else "VK video wall" if _video_wall_plan(plan) else "VK video"
+    label = _plan_label(plan)
     console.print(f"[green]{label} reconciliation succeeded:[/green] {reconciliation.self_digest} -> {output_path}")
 
 
