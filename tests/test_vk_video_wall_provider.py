@@ -213,7 +213,7 @@ class _ScheduleWriter(VkVideoWallWriter):
         self.wall_post_calls = 0
 
     def assert_method_circuit_closed(self, method: str) -> None:
-        assert method == "wall.get"
+        assert method in {"wall.get", "wall.post"}
 
     def verify_video(self, wall: object) -> dict[str, object]:
         return {"id": VIDEO_ID}
