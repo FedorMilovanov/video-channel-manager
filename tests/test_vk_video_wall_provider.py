@@ -159,7 +159,10 @@ def test_preflight_blocks_occupied_postponed_slot() -> None:
 
 
 @pytest.mark.parametrize("method", ["wall.get", "wall.post"])
-def test_schedule_stops_on_open_required_wall_circuit_before_any_provider_call(tmp_path: Path, method: str) -> None:
+def test_schedule_stops_on_open_required_wall_circuit_before_any_provider_call(
+    tmp_path: Path,
+    method: str,
+) -> None:
     calls = 0
 
     def handler(_request: httpx.Request) -> httpx.Response:
