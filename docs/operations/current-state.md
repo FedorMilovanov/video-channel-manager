@@ -18,7 +18,7 @@ Only `main` is a supported repository code/runtime execution baseline.
 `state/lordchrist-telegram`, `state/svodka-telegram`, and `state/milovi-cake-telegram` are durable state-only refs. None is a code baseline. Ephemeral `work/`, `agent/`, `feature/` and `research/` refs become non-authoritative when their owning scope closes; preserve unique evidence before cleanup and never rewrite a durable state ref as branch hygiene.
 
 ### Current checkpoint
-The exact repository checkpoint used for this documentation sync is `main` `880845214e0323dc883ff1d498d856eaa762293e`. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
+The exact repository checkpoint used for this documentation sync is `main` `9bbdcfaa21fcabf8c39ba7a9d6db3c6c6cfc0568`. Resolve fresh `main` again before any later operation; this SHA is evidence, not standing authority.
 Recent hardening now present on `main` includes:
 - LordChrist quote production: durable morning/evening slots, bounded same-Moscow-day leases, predecessor-to-successor handoff, reviewed 60-card successor corpus, source-integrity amendment, and successor-ledger initialization moved behind publication eligibility/current-main/target gates (#548, #551, #557, #559, #583, #590).
 - LordChrist historical production: evidence-backed editorial foundation plus the separate archival-v3 recurring release, 16 media exhibits for eight recurring posts, reader-safe rendering, durable canary/editorial approval and pre-exhaustion successor guard (#556, #591).
