@@ -209,3 +209,109 @@ def test_wave_apply_rejection_before_journal_remains_known_failure(
 
     assert exc_info.value.exit_code == 3
     assert not journal.exists()
+
+
+def test_wave_apply_routes_lord_god_wall_plan_to_lord_god_adapter(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    journal = tmp_path / "journal"
+    plan = SimpleNamespace(
+        operations=(SimpleNamespace(operation_kind=wave_cli.LORD_GOD_WALL_OPERATION_KIND),),
+    )
+    monkeypatch.setattr(
+        wave_cli,
+        "_validated_apply_documents",
+        lambda **_kwargs: (object(), plan, object()),
+    )
+    constructed: list[dict[str, object]] = []
+
+    class DummyLordGodAdapter:
+        def __init__(self, **kwargs: object) -> None:
+            constructed.append(kwargs)
+
+        def close(self) -> None:
+            pass
+
+    class WrongAdapter:
+        def __init__(self, **_kwargs: object) -> None:
+            raise AssertionError("Legendary Poet wall adapter must not be selected")
+
+    class SuccessfulEngine:
+        def apply(self, **_kwargs: object) -> object:
+            return SimpleNamespace(
+                status=wave_cli.WaveStatus.SUCCEEDED,
+                operations=(object(),),
+            )
+
+    monkeypatch.setattr(wave_cli, "LordGodPostponedWallAdapter", DummyLordGodAdapter)
+    monkeypatch.setattr(wave_cli, "VkPostponedVideoWallAdapter", WrongAdapter)
+    monkeypatch.setattr(wave_cli, "WaveEngine", SuccessfulEngine)
+
+    wave_cli.apply(
+        source_path=tmp_path / "source.json",
+        plan_path=tmp_path / "plan.json",
+        intent_path=tmp_path / "intent.json",
+        repository_root=tmp_path,
+        journal_directory=journal,
+        vk_account="legendary-poet",
+        enable_provider_writes=True,
+    )
+
+    assert constructed == [{"account_alias": "legendary-poet"}]
+
+
+def test_wave_reconcile_routes_lord_god_wall_plan_to_lord_god_adapter(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    plan = SimpleNamespace(
+        operations=(SimpleNamespace(operation_kind=wave_cli.LORD_GOD_WALL_OPERATION_KIND),),
+    )
+    request = SimpleNamespace(
+        self_digest="request-digest",
+        assert_matches=lambda _plan, _result: None,
+    )
+    result = object()
+
+    def fake_read_model(_path: Path, model: object) -> object:
+        if model is wave_cli.WaveReconciliationRequest:
+            return request
+        if model is wave_cli.WavePlan:
+            return plan
+        if model is wave_cli.WaveResult:
+            return result
+        raise AssertionError(f"unexpected model: {model}")
+
+    constructed: list[dict[str, object]] = []
+
+    class DummyLordGodAdapter:
+        def __init__(self, **kwargs: object) -> None:
+            constructed.append(kwargs)
+
+        def close(self) -> None:
+            pass
+
+    class WrongAdapter:
+        def __init__(self, **_kwargs: object) -> None:
+            raise AssertionError("Legendary Poet wall adapter must not be selected")
+
+    class SuccessfulEngine:
+        def reconcile(self, **_kwargs: object) -> object:
+            return SimpleNamespace(self_digest="reconciliation-digest")
+
+    monkeypatch.setattr(wave_cli, "_read_model", fake_read_model)
+    monkeypatch.setattr(wave_cli, "LordGodPostponedWallAdapter", DummyLordGodAdapter)
+    monkeypatch.setattr(wave_cli, "VkPostponedVideoWallAdapter", WrongAdapter)
+    monkeypatch.setattr(wave_cli, "WaveEngine", SuccessfulEngine)
+
+    wave_cli.reconcile(
+        request_path=tmp_path / "request.json",
+        plan_path=tmp_path / "plan.json",
+        result_path=tmp_path / "result.json",
+        output_path=tmp_path / "reconciliation.json",
+        repository_root=tmp_path,
+        vk_account="legendary-poet",
+    )
+
+    assert constructed == [{"account_alias": "legendary-poet"}]
