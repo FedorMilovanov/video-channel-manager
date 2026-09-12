@@ -142,15 +142,7 @@ class VkVideoWriter(HttpClientOwner):
             raise VkWriteError("Stored VK token does not declare the video permission.", method="token", code=7)
         return token.access_token
 
-    def _call(
-        self,
-        method: str,
-        *,
-        params: ApiParams | None = None,
-        retry_transient: bool = False,
-    ) -> object:
-        """Call VK under explicit read or ambiguous-mutation authority."""
-
+    def assert_method_circuit_closed(self, method: str) -> None:
         open_circuit = self.flood_control.get(method)
         if open_circuit is not None:
             raise VkWriteError(
@@ -161,6 +153,17 @@ class VkVideoWriter(HttpClientOwner):
                 kind=HttpFailureKind.PROVIDER_FLOOD_CONTROL,
                 attempts=0,
             )
+
+    def _call(
+        self,
+        method: str,
+        *,
+        params: ApiParams | None = None,
+        retry_transient: bool = False,
+    ) -> object:
+        """Call VK under explicit read or ambiguous-mutation authority."""
+
+        self.assert_method_circuit_closed(method)
         access_token = self._token_value()
         request_data: dict[str, str] = {
             "access_token": access_token,

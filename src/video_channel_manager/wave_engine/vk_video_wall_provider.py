@@ -316,6 +316,8 @@ class VkVideoWallWriter(VkWallWriter):
         return item
 
     def schedule(self, *, wall: VideoWallOperation) -> dict[str, Any]:
+        self.assert_method_circuit_closed("wall.get")
+        self.assert_method_circuit_closed("wall.post")
         self.verify_video(wall)
         before = self.capture_complete_wall()
         existing = self._preflight_conflicts(before, wall)
@@ -394,6 +396,7 @@ class VkVideoWallWriter(VkWallWriter):
             raise
 
     def reconcile_exact(self, *, wall: VideoWallOperation) -> dict[str, Any]:
+        self.assert_method_circuit_closed("wall.get")
         self.verify_video(wall)
         capture = self.capture_complete_wall()
         matches = self.find_exact(capture, wall)
