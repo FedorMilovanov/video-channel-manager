@@ -10,6 +10,7 @@ from video_channel_manager.platforms.vk.wall_safety import (
     VkWallSnapshot,
     VkWallSurface,
 )
+from video_channel_manager.platforms.vk.writer import VkWriteError
 from video_channel_manager.wave_engine.engine import UnknownProviderOutcomeError
 from video_channel_manager.wave_engine.models import (
     MutationClass,
@@ -97,6 +98,11 @@ def snapshot(*posts: VkWallPostFingerprint) -> VkWallSnapshot:
 
 
 
+class _CircuitClosedWriter(LordGodWallWriter):
+    def assert_method_circuit_closed(self, method: str) -> None:
+        assert method in {"wall.get", "wall.post"}
+
+
 def test_parse_text_operation_is_bound_to_lord_god_project() -> None:
     wall = parse_lord_god_wall_operation(operation(text_payload()))
     assert wall.content_kind == "text"
@@ -108,7 +114,7 @@ def test_parse_text_operation_is_bound_to_lord_god_project() -> None:
 def test_verify_video_checks_exact_title_description_and_playability() -> None:
     wall = parse_lord_god_wall_operation(operation(video_payload()))
 
-    class FakeWriter(LordGodWallWriter):
+    class FakeWriter(_CircuitClosedWriter):
         def __init__(self) -> None:
             pass
 
@@ -137,7 +143,7 @@ def test_schedule_text_requires_exact_single_postflight_delta() -> None:
         attachments=(),
     )
 
-    class FakeWriter(LordGodWallWriter):
+    class FakeWriter(_CircuitClosedWriter):
         def __init__(self) -> None:
             self._snapshots = iter((snapshot(), snapshot(created)))
             self.called: dict[str, Any] | None = None
@@ -173,7 +179,7 @@ def test_text_preflight_collision_blocks_before_dispatch() -> None:
         attachments=(),
     )
 
-    class FakeWriter(LordGodWallWriter):
+    class FakeWriter(_CircuitClosedWriter):
         def __init__(self) -> None:
             self.calls = 0
 
@@ -198,7 +204,7 @@ def test_text_preflight_collision_blocks_before_dispatch() -> None:
 def test_text_lost_provider_response_is_unknown_and_never_replayed() -> None:
     wall = parse_lord_god_wall_operation(operation(text_payload()))
 
-    class FakeWriter(LordGodWallWriter):
+    class FakeWriter(_CircuitClosedWriter):
         def __init__(self) -> None:
             self.calls = 0
 
@@ -231,7 +237,7 @@ def test_text_postflight_mismatch_is_unknown_and_never_replayed() -> None:
         attachments=(),
     )
 
-    class FakeWriter(LordGodWallWriter):
+    class FakeWriter(_CircuitClosedWriter):
         def __init__(self) -> None:
             self.calls = 0
             self.snapshots = iter((snapshot(), snapshot(wrong)))
@@ -252,3 +258,81 @@ def test_text_postflight_mismatch_is_unknown_and_never_replayed() -> None:
     with pytest.raises(UnknownProviderOutcomeError, match="not exactly visible"):
         writer.schedule_text(wall)
     assert writer.calls == 1
+
+
+def test_text_open_wall_circuit_fails_before_snapshot_or_dispatch() -> None:
+    wall = parse_lord_god_wall_operation(operation(text_payload()))
+
+    class FakeWriter(LordGodWallWriter):
+        def __init__(self) -> None:
+            self.checked: list[str] = []
+            self.snapshots = 0
+            self.calls = 0
+
+        def assert_method_circuit_closed(self, method: str) -> None:
+            self.checked.append(method)
+            raise VkWriteError(
+                "VK flood-control circuit is open for wall.get",
+                method=method,
+                code=9,
+                attempts=0,
+            )
+
+        def capture_wall_snapshot(
+            self,
+            *,
+            community_id: int,
+            max_posts_per_surface: int = 10_000,
+        ) -> VkWallSnapshot:
+            self.snapshots += 1
+            raise AssertionError("wall snapshot must not be requested")
+
+        def _call(self, method: str, *, params: dict[str, Any] | None = None, **_: Any) -> object:
+            self.calls += 1
+            raise AssertionError("provider mutation must not be dispatched")
+
+    writer = FakeWriter()
+    with pytest.raises(VkWriteError, match="flood-control circuit is open"):
+        writer.schedule_text(wall)
+    assert writer.checked == ["wall.get"]
+    assert writer.snapshots == 0
+    assert writer.calls == 0
+
+
+def test_video_open_wall_circuit_fails_before_video_read_or_wall_snapshot() -> None:
+    wall = parse_lord_god_wall_operation(operation(video_payload()))
+
+    class FakeWriter(LordGodWallWriter):
+        def __init__(self) -> None:
+            self.checked: list[str] = []
+            self.video_reads = 0
+            self.snapshots = 0
+
+        def assert_method_circuit_closed(self, method: str) -> None:
+            self.checked.append(method)
+            raise VkWriteError(
+                "VK flood-control circuit is open for wall.get",
+                method=method,
+                code=9,
+                attempts=0,
+            )
+
+        def read_video(self, *, owner_id: int, video_id: int) -> dict[str, Any] | None:
+            self.video_reads += 1
+            raise AssertionError("video.get must not be requested")
+
+        def capture_wall_snapshot(
+            self,
+            *,
+            community_id: int,
+            max_posts_per_surface: int = 10_000,
+        ) -> VkWallSnapshot:
+            self.snapshots += 1
+            raise AssertionError("wall snapshot must not be requested")
+
+    writer = FakeWriter()
+    with pytest.raises(VkWriteError, match="flood-control circuit is open"):
+        writer.schedule_video(wall)
+    assert writer.checked == ["wall.get"]
+    assert writer.video_reads == 0
+    assert writer.snapshots == 0

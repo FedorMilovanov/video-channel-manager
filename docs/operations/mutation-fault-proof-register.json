@@ -188,6 +188,7 @@
       "boundary_id": "vk.wall.lord_god.text.post",
       "proofs": [
         {"stages": ["before_dispatch"], "test_id": "tests/test_vk_lord_god_wall_provider.py::test_text_preflight_collision_blocks_before_dispatch", "claim": "occupied postponed slot stops before any wall.post dispatch"},
+        {"stages": ["before_dispatch"], "test_id": "tests/test_vk_lord_god_wall_provider.py::test_text_open_wall_circuit_fails_before_snapshot_or_dispatch", "claim": "an open wall.get flood-control circuit stops the Lord God text path before any wall snapshot or mutation dispatch"},
         {"stages": ["after_dispatch_before_response"], "test_id": "tests/test_vk_lord_god_wall_provider.py::test_text_lost_provider_response_is_unknown_and_never_replayed", "claim": "lost wall.post response becomes unknown after exactly one provider dispatch"},
         {"stages": ["during_postflight"], "test_id": "tests/test_vk_lord_god_wall_provider.py::test_text_postflight_mismatch_is_unknown_and_never_replayed", "claim": "non-exact postflight becomes unknown after one wall.post with no replay"},
         {"stages": ["before_final_commit"], "test_id": "tests/test_vk_lord_god_wall_provider.py::test_schedule_text_requires_exact_single_postflight_delta", "claim": "success requires one exact postponed text post and one-created-post wall delta"}

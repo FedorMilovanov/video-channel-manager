@@ -217,6 +217,8 @@ class LordGodWallWriter(VkWallWriter):
 
 
     def schedule_text(self, wall: LordGodWallOperation) -> dict[str, Any]:
+        self.assert_method_circuit_closed("wall.get")
+        self.assert_method_circuit_closed("wall.post")
         before = self.capture_wall_snapshot(
             community_id=LORD_GOD_COMMUNITY_ID,
             max_posts_per_surface=10_000,
@@ -290,6 +292,8 @@ class LordGodWallWriter(VkWallWriter):
 
 
     def schedule_video(self, wall: LordGodWallOperation) -> dict[str, Any]:
+        self.assert_method_circuit_closed("wall.get")
+        self.assert_method_circuit_closed("wall.post")
         self.verify_video(wall)
         assert wall.video_owner_id is not None and wall.video_id is not None
         result = self.post_video(
@@ -314,6 +318,7 @@ class LordGodWallWriter(VkWallWriter):
         }
 
     def reconcile_exact(self, wall: LordGodWallOperation) -> dict[str, Any]:
+        self.assert_method_circuit_closed("wall.get")
         if wall.content_kind == "video":
             self.verify_video(wall)
         snapshot = self.capture_wall_snapshot(
