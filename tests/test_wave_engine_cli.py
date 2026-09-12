@@ -74,6 +74,7 @@ def _write_wall_retry_journal(
     *,
     retry_safe: bool = True,
     error_kind: str = "rejected_before_dispatch",
+    error_message: str = "test failure",
 ) -> WaveResult:
     journal.mkdir(parents=True)
     operation = plan.operations[0]
@@ -85,7 +86,7 @@ def _write_wall_retry_journal(
         unknown_requires_reconciliation=False,
         evidence={},
         error_kind=error_kind,
-        error_message="test failure",
+        error_message=error_message,
     )
     result = WaveResult.build(
         plan=plan,
@@ -239,6 +240,29 @@ def test_video_wall_retry_safe_journal_advances_only_across_valid_failed_attempt
     journal = tmp_path / "journal"
     _write_wall_retry_journal(journal, plan, intent)
     _write_wall_retry_journal(tmp_path / "journal-retry-001", plan, intent)
+
+    resolved = wave_cli._resolve_video_wall_apply_journal(
+        requested_journal_directory=journal,
+        repository_root=tmp_path,
+        plan=plan,
+        intent=intent,
+    )
+
+    assert resolved == tmp_path / "journal-retry-002"
+
+
+def test_video_wall_retry_safe_journal_accepts_legacy_wall_get_flood_result(tmp_path: Path) -> None:
+    _source, plan, intent = _wall_retry_documents(tmp_path)
+    journal = tmp_path / "journal"
+    _write_wall_retry_journal(journal, plan, intent)
+    _write_wall_retry_journal(
+        tmp_path / "journal-retry-001",
+        plan,
+        intent,
+        retry_safe=False,
+        error_kind="provider_rejected",
+        error_message=wave_cli.VK_VIDEO_WALL_LEGACY_PREFLIGHT_FLOOD_ERROR,
+    )
 
     resolved = wave_cli._resolve_video_wall_apply_journal(
         requested_journal_directory=journal,
