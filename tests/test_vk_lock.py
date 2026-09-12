@@ -9,6 +9,7 @@ import pytest
 
 from video_channel_manager.platforms.vk.lock import (
     _pid_is_running,
+    _release_owned_lock,
     _require_issue323_execution_identity,
     _stale,
     _windows_pid_is_running,
@@ -262,16 +263,26 @@ def test_old_incomplete_lock_is_stale(tmp_path: Path) -> None:
     assert _stale(lock_path, invalid_grace_seconds=30.0) is True
 
 
-def test_release_does_not_remove_replacement_lock(tmp_path: Path) -> None:
+def test_release_owned_lock_does_not_remove_replacement_lock(tmp_path: Path) -> None:
+    lock_path = _canonical(tmp_path, 7)
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_path.write_text(
+        json.dumps({"pid": os.getpid(), "nonce": "replacement", "hostname": "replacement-host"}),
+        encoding="utf-8",
+    )
+
+    _release_owned_lock(lock_path, "original-owner")
+
+    assert lock_path.exists()
+    assert json.loads(lock_path.read_text(encoding="utf-8"))["nonce"] == "replacement"
+
+
+def test_context_manager_releases_owned_lock_normally(tmp_path: Path) -> None:
     requested_path = tmp_path / "locks" / "owner-operation.lock"
     lock_path = _canonical(tmp_path, 7)
 
     with local_vk_write_lock(requested_path, account="legendary-poet", community_id=7, operation="owner"):
-        lock_path.unlink()
-        lock_path.write_text(
-            json.dumps({"pid": os.getpid(), "nonce": "replacement", "hostname": "replacement-host"}),
-            encoding="utf-8",
-        )
+        payload = json.loads(lock_path.read_text(encoding="utf-8"))
+        assert payload["nonce"]
 
-    assert lock_path.exists()
-    lock_path.unlink()
+    assert not lock_path.exists()
