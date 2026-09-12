@@ -35,6 +35,24 @@ from video_channel_manager.persistence import Database
 
 
 console = Console()
+
+
+def _console_safe_text(value: object) -> str:
+    """Render arbitrary operator/provider text safely on legacy Windows consoles."""
+
+    text = str(value)
+    stream = getattr(console, "file", None)
+    encoding = getattr(stream, "encoding", None) or "utf-8"
+    try:
+        text.encode(encoding)
+    except (LookupError, UnicodeEncodeError):
+        try:
+            return text.encode(encoding, errors="backslashreplace").decode(encoding)
+        except LookupError:
+            return text.encode("ascii", errors="backslashreplace").decode("ascii")
+    return text
+
+
 instagram_production_app = typer.Typer(
     no_args_is_help=True,
     help="Production-capable Instagram publishing with explicit write gates and durable reconciliation.",
@@ -48,7 +66,7 @@ def _read_manifest(path: Path) -> InstagramPublishManifest:
     try:
         return InstagramPublishManifest.model_validate_json(path.read_text(encoding="utf-8-sig"))
     except (OSError, UnicodeError, ValidationError) as exc:
-        raise InstagramProductionError(f"Invalid Instagram publish manifest {path}: {exc}") from exc
+        raise InstagramProductionError(f"Invalid Instagram publish manifest {path}: {_console_safe_text(exc)}") from exc
 
 
 def _enforce_local_reel_size(path: Path) -> None:
@@ -131,22 +149,22 @@ def _render_snapshot(
     table = Table(title=f"Instagram publication {snapshot.publication_key}")
     table.add_column("Field")
     table.add_column("Value")
-    table.add_row("Account", snapshot.account_id)
+    table.add_row("Account", _console_safe_text(snapshot.account_id))
     table.add_row("Status", snapshot.status.value)
     table.add_row("Content hash", snapshot.content_hash)
-    table.add_row("Container", snapshot.provider_container_id or "-")
-    table.add_row("Media", snapshot.provider_media_id or "-")
-    table.add_row("Provider status", snapshot.provider_status or "-")
+    table.add_row("Container", _console_safe_text(snapshot.provider_container_id or "-"))
+    table.add_row("Media", _console_safe_text(snapshot.provider_media_id or "-"))
+    table.add_row("Provider status", _console_safe_text(snapshot.provider_status or "-"))
     table.add_row("Attempts", str(snapshot.attempt_count))
     table.add_row("Container requested", str(snapshot.container_requested_at or "-"))
     table.add_row("Publish requested", str(snapshot.publish_requested_at or "-"))
     table.add_row("Published", str(snapshot.published_at or "-"))
-    table.add_row("Last error", snapshot.last_error_message or "-")
+    table.add_row("Last error", _console_safe_text(snapshot.last_error_message or "-"))
     if resumable is not None:
         table.add_row("Upload state", resumable.state.value)
         table.add_row("Upload attempts", str(resumable.attempt_count))
-        table.add_row("Upload error code", resumable.last_error_code or "-")
-        table.add_row("Upload error", resumable.last_error_message or "-")
+        table.add_row("Upload error code", _console_safe_text(resumable.last_error_code or "-"))
+        table.add_row("Upload error", _console_safe_text(resumable.last_error_message or "-"))
     console.print(table)
 
 
@@ -191,7 +209,7 @@ def plan(
         database = Database(settings.database_url)
         snapshot = InstagramPublicationLedger(database).ensure_planned(manifest)
     except InstagramProductionError as exc:
-        console.print(f"[red]Instagram publish plan failed:[/red] {exc}")
+        console.print(f"[red]Instagram publish plan failed:[/red] {_console_safe_text(exc)}")
         raise typer.Exit(code=2) from exc
     finally:
         if database is not None:
@@ -216,7 +234,7 @@ def validate_public(
                 media_client=media_client,
             )
     except (InstagramProductionError, InstagramConfigurationError) as exc:
-        console.print(f"[red]Instagram public media validation failed:[/red] {exc}")
+        console.print(f"[red]Instagram public media validation failed:[/red] {_console_safe_text(exc)}")
         raise typer.Exit(code=2) from exc
 
     table = Table(title=f"Instagram public media validation: {manifest.publication_key}")
@@ -231,7 +249,7 @@ def validate_public(
             continue
         table.add_row(
             label,
-            str(raw.get("url") or "-"),
+            _console_safe_text(raw.get("url") or "-"),
             str(raw.get("sha256") or "-"),
             str(raw.get("size_bytes") or "-"),
             str(raw.get("content_type") or "-"),
@@ -255,7 +273,7 @@ def status(
             raise InstagramProductionError(f"Unknown publication key: {publication_key}")
         resumable = _resumable_upload_snapshot(database, publication_key)
     except InstagramProductionError as exc:
-        console.print(f"[red]Instagram status failed:[/red] {exc}")
+        console.print(f"[red]Instagram status failed:[/red] {_console_safe_text(exc)}")
         raise typer.Exit(code=2) from exc
     finally:
         if database is not None:
@@ -283,7 +301,7 @@ def publish(
         service, database = _open_service()
         snapshot = service.publish(manifest, execute=execute)
     except (InstagramProductionError, InstagramConfigurationError) as exc:
-        console.print(f"[red]Instagram publish refused/failed:[/red] {exc}")
+        console.print(f"[red]Instagram publish refused/failed:[/red] {_console_safe_text(exc)}")
         raise typer.Exit(code=2) from exc
     finally:
         if service is not None:
@@ -305,7 +323,7 @@ def validate_local(
     try:
         evidence = verify_local_reel(video_path)
     except InstagramProductionError as exc:
-        console.print(f"[red]Instagram local Reel validation failed:[/red] {exc}")
+        console.print(f"[red]Instagram local Reel validation failed:[/red] {_console_safe_text(exc)}")
         raise typer.Exit(code=2) from exc
 
     probe = evidence.probe
@@ -313,7 +331,7 @@ def validate_local(
     structure = evidence.structure
     closed_gop = evidence.closed_gop
 
-    table = Table(title=f"Instagram local Reel validation: {Path(evidence.path).name}")
+    table = Table(title=f"Instagram local Reel validation: {_console_safe_text(Path(evidence.path).name)}")
     table.add_column("Field")
     table.add_column("Value")
     table.add_row("SHA-256", evidence.media_sha256)
@@ -383,7 +401,7 @@ def publish_local(
         )
         snapshot = service.publish_local(manifest, video_path, execute=execute)
     except (InstagramProductionError, InstagramConfigurationError) as exc:
-        console.print(f"[red]Instagram local publish refused/failed:[/red] {exc}")
+        console.print(f"[red]Instagram local publish refused/failed:[/red] {_console_safe_text(exc)}")
         raise typer.Exit(code=2) from exc
     finally:
         if service is not None:
@@ -425,7 +443,7 @@ def reconcile(
         )
         resumable = _resumable_upload_snapshot(database, publication_key)
     except InstagramProductionError as exc:
-        console.print(f"[red]Instagram reconciliation failed:[/red] {exc}")
+        console.print(f"[red]Instagram reconciliation failed:[/red] {_console_safe_text(exc)}")
         raise typer.Exit(code=2) from exc
     finally:
         if service is not None:
