@@ -13,6 +13,8 @@ This file records local credential locations and usage rules without storing any
 
 The alias is only a credential label. Every VK operation must still bind exact `project_key`, `community_id`, and `owner_id`.
 
+Token permission metadata is not inferred from a raw access-token string. The local `scopes` and `permission_mask` fields become authority evidence only after a live `account.getAppPermissions` response has been validated. Use `video-manager vk token-capabilities --account <alias> --sync-local` to refresh that provider-verified metadata for every local alias sharing the exact token; the command performs no provider mutation.
+
 ## Required behavior
 
 1. Never copy the token value into this repository, documentation, command history, issue, pull request, log, report, plan, or ZIP.

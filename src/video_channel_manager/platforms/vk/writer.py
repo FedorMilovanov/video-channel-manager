@@ -21,6 +21,7 @@ from video_channel_manager.platforms.http import (
     redact_sensitive_text,
 )
 from video_channel_manager.platforms.vk.flood_control import VK_FLOOD_CONTROL_CODE, VkCredentialFloodControl
+from video_channel_manager.platforms.vk.models import VkAccessToken
 from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.upload_lifecycle import (
     UploadTicketProtocol,
@@ -128,19 +129,34 @@ class VkVideoWriter(HttpClientOwner):
         self._request_sleep = sleep
         self._jitter = jitter
 
-    def _token_value(self) -> str:
+    def assert_token_scopes(self, *required_scopes: str) -> VkAccessToken:
         token = self.token_store.load_token(self.account_alias)
         if token.is_expired():
             raise VkWriteError(
-                "VK access token is expired. Import a fresh user token with video permission.",
+                "VK access token is expired. Import a fresh user token with verified permissions.",
                 method="token",
                 code=5,
+                attempts=0,
             )
         if token.token_type != "user":
-            raise VkWriteError("VK write operations require a user access token.", method="token", code=27)
-        if "video" not in token.scopes:
-            raise VkWriteError("Stored VK token does not declare the video permission.", method="token", code=7)
-        return token.access_token
+            raise VkWriteError(
+                "VK write operations require a user access token.",
+                method="token",
+                code=27,
+                attempts=0,
+            )
+        missing = [scope for scope in required_scopes if scope not in token.scopes]
+        if missing:
+            raise VkWriteError(
+                "Stored VK token metadata does not verify required permission(s): " + ", ".join(missing),
+                method="token",
+                code=7,
+                attempts=0,
+            )
+        return token
+
+    def _token_value(self) -> str:
+        return self.assert_token_scopes("video").access_token
 
     def assert_method_circuit_closed(self, method: str) -> None:
         open_circuit = self.flood_control.get(method)
@@ -164,6 +180,8 @@ class VkVideoWriter(HttpClientOwner):
         """Call VK under explicit read or ambiguous-mutation authority."""
 
         self.assert_method_circuit_closed(method)
+        if method.startswith("wall."):
+            self.assert_token_scopes("wall")
         access_token = self._token_value()
         request_data: dict[str, str] = {
             "access_token": access_token,

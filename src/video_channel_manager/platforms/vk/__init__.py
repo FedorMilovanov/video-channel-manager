@@ -4,16 +4,19 @@ from video_channel_manager.platforms.vk.flood_control import (
     VK_FLOOD_CONTROL_CODE,
     VK_FLOOD_CONTROL_SCHEMA,
     VK_FLOOD_CONTROL_VERSION,
+    VkCredentialFloodControl,
     VkFloodControlEntry,
     VkFloodControlGate,
 )
 from video_channel_manager.platforms.vk.lock import local_vk_write_lock
 from video_channel_manager.platforms.vk.models import (
+    VK_KNOWN_USER_PERMISSION_BITS,
     VkAccessToken,
     VkAccount,
     VkCommunityIdentity,
     VkConfigurationError,
     VkUserIdentity,
+    known_user_scopes_from_permission_mask,
 )
 from video_channel_manager.platforms.vk.postponed_text_edit import (
     VK_POSTPONED_TEXT_EDIT_PLAN_SCHEMA,
@@ -76,6 +79,7 @@ __all__ = [
     "VK_FLOOD_CONTROL_CODE",
     "VK_FLOOD_CONTROL_SCHEMA",
     "VK_FLOOD_CONTROL_VERSION",
+    "VK_KNOWN_USER_PERMISSION_BITS",
     "UploadMediaAuthorityError",
     "VKCommentRenderer",
     "VKPostRenderer",
@@ -96,6 +100,7 @@ __all__ = [
     "VkApiError",
     "VkCommunityIdentity",
     "VkConfigurationError",
+    "VkCredentialFloodControl",
     "VkDescriptionRender",
     "VkFloodControlEntry",
     "VkFloodControlGate",
@@ -119,6 +124,7 @@ __all__ = [
     "execute_upload_operation",
     "execute_vk_postponed_text_edit_plan",
     "journal_media_evidence",
+    "known_user_scopes_from_permission_mask",
     "load_vk_postponed_text_edit_plan",
     "load_vk_postponed_text_edit_request",
     "local_vk_write_lock",
