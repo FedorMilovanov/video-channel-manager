@@ -162,11 +162,10 @@ class VkApiClient(HttpClientOwner):
         self._jitter = jitter
 
     def _call(self, method: str, *, params: ApiParams | None = None) -> object:
-        open_circuit = self.flood_control.global_blocker()
+        open_circuit = self.flood_control.get(method)
         if open_circuit is not None:
             raise VkApiError(
-                "VK global flood-control quarantine is open for this credential "
-                f"(observed via {open_circuit.method}); clear all local code-9 evidence before another provider request.",
+                f"VK flood-control circuit is open for {method}; clear that exact local circuit before another provider request.",
                 method=method,
                 code=VK_FLOOD_CONTROL_CODE,
                 retryable=False,

@@ -59,7 +59,7 @@ def test_flood_gate_retries_windows_permission_error_when_lock_disappears(
     assert gate.get("wall.get") == entry
 
 
-def test_read_client_code_9_is_single_attempt_and_opens_global_quarantine(tmp_path: Path) -> None:
+def test_read_client_code_9_is_single_attempt_and_opens_method_circuit(tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
     store.save_token("legendary-poet", VkAccessToken(access_token="access", user_id=42))
     calls = 0
@@ -99,7 +99,7 @@ def test_read_client_code_9_is_single_attempt_and_opens_global_quarantine(tmp_pa
     assert second.value.kind is HttpFailureKind.PROVIDER_FLOOD_CONTROL
     assert second.value.retryable is False
     assert second.value.attempts == 0
-    assert "global flood-control quarantine is open" in str(second.value)
+    assert "circuit is open" in str(second.value)
     assert calls == 1
 
 
@@ -160,17 +160,16 @@ def test_shared_token_code_9_blocks_equivalent_alias_without_second_provider_cal
     assert calls == 1
 
     with pytest.raises(VkApiError) as second:
-        default.list_managed_communities()
+        default.get_current_user()
     assert second.value.code == 9
     assert second.value.attempts == 0
-    assert second.value.method == "groups.get"
     assert calls == 1
 
     assert VkFloodControlGate(tmp_path, "legendary-poet").get("users.get") is not None
     assert VkFloodControlGate(tmp_path, "default").get("users.get") is not None
 
 
-def test_write_client_code_9_opens_global_credential_quarantine(tmp_path: Path) -> None:
+def test_write_client_safe_read_code_9_does_not_retry_or_block_other_methods(tmp_path: Path) -> None:
     store = VkTokenStore(tmp_path)
     store.save_token(
         "legendary-poet",
@@ -208,22 +207,22 @@ def test_write_client_code_9_opens_global_credential_quarantine(tmp_path: Path) 
     assert captured.value.attempts == 1
     assert calls == ["video.get"]
 
-    with pytest.raises(VkWriteError) as unrelated_stop:
+    # The circuit is method-scoped: a successful unrelated read is still allowed.
+    assert (
         writer.album_ids_for_video(
             community_id=235216998,
             owner_id=-235216998,
             video_id=501,
         )
-
-    assert unrelated_stop.value.attempts == 0
-    assert unrelated_stop.value.code == 9
-    assert calls == ["video.get"]
+        == set()
+    )
+    assert calls == ["video.get", "video.getAlbumsByVideo"]
 
     with pytest.raises(VkWriteError) as local_stop:
         writer.read_video(owner_id=-235216998, video_id=501)
 
     assert local_stop.value.attempts == 0
-    assert calls == ["video.get"]
+    assert calls == ["video.get", "video.getAlbumsByVideo"]
 
 
 def test_flood_gate_concurrent_records_do_not_lose_occurrences(tmp_path: Path) -> None:
