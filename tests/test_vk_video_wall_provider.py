@@ -158,7 +158,8 @@ def test_preflight_blocks_occupied_postponed_slot() -> None:
         VkVideoWallWriter._preflight_conflicts(_capture(postponed=[collision]), wall)
 
 
-def test_schedule_stops_on_open_wall_get_circuit_before_any_provider_call(tmp_path: Path) -> None:
+@pytest.mark.parametrize("method", ["wall.get", "wall.post"])
+def test_schedule_stops_on_open_required_wall_circuit_before_any_provider_call(tmp_path: Path, method: str) -> None:
     calls = 0
 
     def handler(_request: httpx.Request) -> httpx.Response:
@@ -172,12 +173,13 @@ def test_schedule_stops_on_open_wall_get_circuit_before_any_provider_call(tmp_pa
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
         api_base_url="https://example.test/method",
     )
-    writer.flood_control.record("wall.get")
+    writer.flood_control.record(method)
 
-    with pytest.raises(VkWriteError, match="circuit is open for wall.get") as captured:
+    with pytest.raises(VkWriteError, match="circuit is open") as captured:
         writer.schedule(wall=parse_video_wall_operation(_operation()))
 
     assert captured.value.attempts == 0
+    assert captured.value.method == method
     assert calls == 0
 
 
