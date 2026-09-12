@@ -72,7 +72,7 @@ Wave 4 contains no bulk deletion or automatic remediation. Issue #37 remains the
 ## Retry boundary
 
 - wall snapshot reads, when a wall workflow actually needs them, are classified safe reads and may use the bounded retry policy;
-- VK API code `9` (`Flood control`) is a distinct non-auto-retry condition for methods that are called; native-video upload no longer calls `wall.get` merely to prove that wall publishing was disabled;
+- VK API code `9` (`Flood control`) is a distinct non-auto-retry condition for methods that are called; a known-open `wall.get` circuit blocks postponed-wall execution locally before any `video.get` or other provider request, and native-video upload no longer calls `wall.get` merely to prove that wall publishing was disabled;
 - `wall.post`, `wall.edit`, `wall.delete`, upload reservation, upload-server POST, and all other mutations remain explicit ambiguous mutations;
 - mutation transport loss, HTTP 429/5xx, and provider-transient responses are one attempt and externally non-retryable;
 - a one-source postponed-video wall attempt may be retried only when the complete prior Wave result and operation journal prove `rejected_before_dispatch`, `retry_safe=true`, and no reconciliation requirement; the prior journal is immutable and the next execution uses a fresh deterministic sibling `journal-retry-NNN`;
