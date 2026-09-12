@@ -4,9 +4,11 @@ import hashlib
 from pathlib import Path
 from types import SimpleNamespace
 
+import httpx
 import pytest
 
 import video_channel_manager.wave_engine.vk_video_wall_provider as provider_module
+from video_channel_manager.platforms.vk.store import VkTokenStore
 from video_channel_manager.platforms.vk.wall_safety import build_wall_snapshot
 from video_channel_manager.platforms.vk.writer import VkWriteError
 from video_channel_manager.wave_engine.engine import KnownProviderRejectionError, UnknownProviderOutcomeError
@@ -156,11 +158,37 @@ def test_preflight_blocks_occupied_postponed_slot() -> None:
         VkVideoWallWriter._preflight_conflicts(_capture(postponed=[collision]), wall)
 
 
+def test_schedule_stops_on_open_wall_get_circuit_before_any_provider_call(tmp_path: Path) -> None:
+    calls = 0
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(500)
+
+    writer = VkVideoWallWriter(
+        token_store=VkTokenStore(tmp_path),
+        account_alias="legendary-poet",
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        api_base_url="https://example.test/method",
+    )
+    writer.flood_control.record("wall.get")
+
+    with pytest.raises(VkWriteError, match="circuit is open for wall.get") as captured:
+        writer.schedule(wall=parse_video_wall_operation(_operation()))
+
+    assert captured.value.attempts == 0
+    assert calls == 0
+
+
 class _ScheduleWriter(VkVideoWallWriter):
     def __init__(self, *, after: VideoWallCapture) -> None:
         self._captures = [_capture(), after]
         self._capture_index = 0
         self.wall_post_calls = 0
+
+    def assert_method_circuit_closed(self, method: str) -> None:
+        assert method == "wall.get"
 
     def verify_video(self, wall: object) -> dict[str, object]:
         return {"id": VIDEO_ID}
