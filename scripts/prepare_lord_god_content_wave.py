@@ -37,6 +37,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repository-root", type=Path, default=Path("."))
     parser.add_argument("--backlog", type=Path, required=True)
     parser.add_argument("--videos", type=Path, required=True)
+    parser.add_argument("--quote-queue", type=Path, required=True)
+    parser.add_argument("--quote-ledger", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--enable-provider-writes", action="store_true")
     return parser.parse_args()
@@ -187,13 +189,21 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
 
     backlog_copy = output_dir / "00-backlog.json"
     videos_copy = output_dir / "01-videos.json"
+    quote_queue_copy = output_dir / "02-telegram-quote-queue.json"
+    quote_ledger_copy = output_dir / "03-telegram-quote-ledger.json"
     shutil.copy2(args.backlog.resolve(), backlog_copy)
     shutil.copy2(args.videos.resolve(), videos_copy)
+    shutil.copy2(args.quote_queue.resolve(), quote_queue_copy)
+    shutil.copy2(args.quote_ledger.resolve(), quote_ledger_copy)
 
     backlog = read_json(backlog_copy)
     raw_videos = read_json(videos_copy)
     if not isinstance(backlog, dict) or not isinstance(raw_videos, list):
         raise ValueError("backlog/videos evidence has an invalid root type")
+    if backlog.get("telegram_quote_queue_sha256") != file_sha256(quote_queue_copy):
+        raise ValueError("Telegram quote queue SHA differs from the backlog evidence")
+    if backlog.get("telegram_quote_ledger_sha256") != file_sha256(quote_ledger_copy):
+        raise ValueError("Telegram quote ledger SHA differs from the backlog evidence")
     video_index = build_video_index(raw_videos)
     specs = build_specs(backlog, video_index)
 
@@ -208,14 +218,16 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
         artifacts=(
             EvidenceArtifact(path=repository_relative(root, backlog_copy), sha256=file_sha256(backlog_copy)),
             EvidenceArtifact(path=repository_relative(root, videos_copy), sha256=file_sha256(videos_copy)),
+            EvidenceArtifact(path=repository_relative(root, quote_queue_copy), sha256=file_sha256(quote_queue_copy)),
+            EvidenceArtifact(path=repository_relative(root, quote_ledger_copy), sha256=file_sha256(quote_ledger_copy)),
         ),
     )
     plan = WavePlan.build(source=source, specs=specs)
 
 
-    source_path = output_dir / "02-source.json"
-    plan_path = output_dir / "03-plan.json"
-    intent_path = output_dir / "04-apply-intent.json"
+    source_path = output_dir / "04-source.json"
+    plan_path = output_dir / "05-plan.json"
+    intent_path = output_dir / "06-apply-intent.json"
     manifest_path = output_dir / "manifest.json"
 
     write_json_atomic(source_path, source.model_dump(mode="json"))
@@ -247,7 +259,15 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
         "enable_provider_writes": intent.enable_provider_writes,
         "files": {
             path.name: file_sha256(path)
-            for path in (backlog_copy, videos_copy, source_path, plan_path, intent_path)
+            for path in (
+                backlog_copy,
+                videos_copy,
+                quote_queue_copy,
+                quote_ledger_copy,
+                source_path,
+                plan_path,
+                intent_path,
+            )
         },
     }
     write_json_atomic(manifest_path, manifest)
