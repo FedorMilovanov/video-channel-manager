@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Annotated
 
+import httpx
 import typer
 from pydantic import ValidationError
 from rich.console import Console
@@ -28,6 +29,7 @@ from video_channel_manager.instagram.production import (
     InstagramPublishManifest,
     InstagramRuntimeConfig,
     PublicationSnapshot,
+    verify_instagram_manifest_media,
 )
 from video_channel_manager.persistence import Database
 
@@ -196,6 +198,46 @@ def plan(
             database.close()
     _render_snapshot(snapshot)
     console.print("[yellow]Provider writes: none; provider credentials: not required.[/yellow]")
+
+
+@instagram_production_app.command("validate-public")
+def validate_public(
+    manifest_path: Annotated[Path, typer.Argument(help="Exact Instagram publish manifest JSON")],
+) -> None:
+    """Verify hosted manifest media without Instagram credentials, DB state, or Graph requests."""
+
+    try:
+        manifest = _read_manifest(manifest_path)
+        settings = get_settings()
+        with httpx.Client(timeout=settings.instagram_request_timeout_seconds) as media_client:
+            evidence = verify_instagram_manifest_media(
+                manifest,
+                allowed_hosts=settings.instagram_media_allowed_hosts,
+                media_client=media_client,
+            )
+    except (InstagramProductionError, InstagramConfigurationError) as exc:
+        console.print(f"[red]Instagram public media validation failed:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+    table = Table(title=f"Instagram public media validation: {manifest.publication_key}")
+    table.add_column("Object")
+    table.add_column("URL")
+    table.add_column("SHA-256")
+    table.add_column("Size")
+    table.add_column("Content type")
+    for label in ("video", "cover"):
+        raw = evidence.get(label)
+        if not isinstance(raw, dict):
+            continue
+        table.add_row(
+            label,
+            str(raw.get("url") or "-"),
+            str(raw.get("sha256") or "-"),
+            str(raw.get("size_bytes") or "-"),
+            str(raw.get("content_type") or "-"),
+        )
+    console.print(table)
+    console.print("[green]Instagram public media validation passed; Meta provider calls/writes: none.[/green]")
 
 
 @instagram_production_app.command("status")

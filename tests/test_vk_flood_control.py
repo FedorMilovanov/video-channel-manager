@@ -7,6 +7,7 @@ import httpx
 import pytest
 
 from video_channel_manager.platforms.http import HttpFailureKind, RetryPolicy
+from video_channel_manager.platforms.vk import flood_control as vk_flood_control
 from video_channel_manager.platforms.vk.client import VkApiClient, VkApiError
 from video_channel_manager.platforms.vk.flood_control import VkFloodControlGate
 from video_channel_manager.platforms.vk.models import VkAccessToken
@@ -30,6 +31,32 @@ def test_flood_gate_persists_exact_method_until_explicit_clear(tmp_path: Path) -
     assert gate.clear("wall.get") is True
     assert gate.get("wall.get") is None
     assert gate.clear("wall.get") is False
+
+
+def test_flood_gate_retries_windows_permission_error_when_lock_disappears(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    gate = VkFloodControlGate(tmp_path, "legendary-poet")
+    original_open = vk_flood_control.os.open
+    attempts = 0
+
+    def flaky_open(path: object, flags: int, mode: int = 0o777) -> int:
+        nonlocal attempts
+        if Path(path) == gate.lock_path and attempts == 0:
+            attempts += 1
+            raise PermissionError(13, "simulated Windows O_EXCL contention", str(path))
+        return original_open(path, flags, mode)
+
+    monkeypatch.setattr(vk_flood_control, "_WINDOWS_LOCK_PERMISSION_IS_CONTENTION", True)
+    monkeypatch.setattr(vk_flood_control.os, "open", flaky_open)
+    monkeypatch.setattr(vk_flood_control.time, "sleep", lambda _seconds: None)
+
+    entry = gate.record("wall.get")
+
+    assert entry.occurrences == 1
+    assert attempts == 1
+    assert gate.get("wall.get") == entry
 
 
 def test_read_client_code_9_is_single_attempt_and_opens_method_circuit(tmp_path: Path) -> None:
