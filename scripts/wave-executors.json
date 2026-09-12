@@ -953,6 +953,26 @@
       "provider_write_capable": true,
       "sha256": "25af1aeb488f7b6d9c964100d8b7905f6473f141f3ac5b5e38b4887d700b3cd8",
       "status": "retired"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/build_lord_god_content_backlog_v2.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "718c7c7131275d69f962ed3538ea2ca5274d6648abe2289aede87ce52ddf85bb",
+      "status": "independent_tool"
+    },
+    {
+      "callers": [],
+      "direct_entrypoint": true,
+      "path": "scripts/prepare_lord_god_content_wave.py",
+      "private_imports": [],
+      "project_owner": "lord-god-strength",
+      "provider_write_capable": false,
+      "sha256": "3dc507f52033fc1eb2b94f2c46cb45089fc7138da7d5341703390888ad8012db",
+      "status": "independent_tool"
     }
   ],
   "schema_name": "video-manager.wave-executor-registry",

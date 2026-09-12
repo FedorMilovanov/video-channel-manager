@@ -3,11 +3,14 @@ from __future__ import annotations
 import hashlib
 from typing import Any
 
+import pytest
+
 from video_channel_manager.platforms.vk.wall_safety import (
     VkWallPostFingerprint,
     VkWallSnapshot,
     VkWallSurface,
 )
+from video_channel_manager.wave_engine.engine import UnknownProviderOutcomeError
 from video_channel_manager.wave_engine.models import (
     MutationClass,
     ProjectBinding,
@@ -17,6 +20,7 @@ from video_channel_manager.wave_engine.models import (
 from video_channel_manager.wave_engine.vk_lord_god_wall_provider import (
     LORD_GOD_WALL_OPERATION_KIND,
     LORD_GOD_WALL_POLICY_VERSION,
+    LordGodWallError,
     LordGodWallWriter,
     parse_lord_god_wall_operation,
 )
@@ -57,7 +61,7 @@ def text_payload() -> dict[str, Any]:
         "message_sha256": sha(message),
         "publish_date": 2_000_000_000,
         "guid": "vcm-lgw-text-0001",
-        "source_id": "lordchrist-successor-owen-kill-sin",
+        "source_id": "lordchrist-bunyan-cross-burden",
     }
 
 
@@ -96,7 +100,7 @@ def snapshot(*posts: VkWallPostFingerprint) -> VkWallSnapshot:
 def test_parse_text_operation_is_bound_to_lord_god_project() -> None:
     wall = parse_lord_god_wall_operation(operation(text_payload()))
     assert wall.content_kind == "text"
-    assert wall.source_id == "lordchrist-successor-owen-kill-sin"
+    assert wall.source_id == "lordchrist-bunyan-cross-burden"
     assert wall.video_remote_id is None
     assert wall.message_sha256 == sha(wall.message)
 
@@ -156,3 +160,95 @@ def test_schedule_text_requires_exact_single_postflight_delta() -> None:
     assert writer.called is not None
     assert writer.called["owner_id"] == -60805374
     assert "attachments" not in writer.called
+
+
+def test_text_preflight_collision_blocks_before_dispatch() -> None:
+    wall = parse_lord_god_wall_operation(operation(text_payload()))
+    occupied = VkWallPostFingerprint(
+        owner_id=-60805374,
+        post_id=12999,
+        surface=VkWallSurface.POSTPONED,
+        publish_date=wall.publish_date,
+        text_sha256=sha("другой текст"),
+        attachments=(),
+    )
+
+    class FakeWriter(LordGodWallWriter):
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def capture_wall_snapshot(
+            self,
+            *,
+            community_id: int,
+            max_posts_per_surface: int = 10_000,
+        ) -> VkWallSnapshot:
+            return snapshot(occupied)
+
+        def _call(self, method: str, *, params: dict[str, Any] | None = None, **_: Any) -> object:
+            self.calls += 1
+            raise AssertionError("provider mutation must not be dispatched")
+
+    writer = FakeWriter()
+    with pytest.raises(LordGodWallError, match="schedule slot is already occupied"):
+        writer.schedule_text(wall)
+    assert writer.calls == 0
+
+
+def test_text_lost_provider_response_is_unknown_and_never_replayed() -> None:
+    wall = parse_lord_god_wall_operation(operation(text_payload()))
+
+    class FakeWriter(LordGodWallWriter):
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def capture_wall_snapshot(
+            self,
+            *,
+            community_id: int,
+            max_posts_per_surface: int = 10_000,
+        ) -> VkWallSnapshot:
+            return snapshot()
+
+        def _call(self, method: str, *, params: dict[str, Any] | None = None, **_: Any) -> object:
+            self.calls += 1
+            raise RuntimeError("lost provider response")
+
+    writer = FakeWriter()
+    with pytest.raises(UnknownProviderOutcomeError, match="lost provider response"):
+        writer.schedule_text(wall)
+    assert writer.calls == 1
+
+
+def test_text_postflight_mismatch_is_unknown_and_never_replayed() -> None:
+    wall = parse_lord_god_wall_operation(operation(text_payload()))
+    wrong = VkWallPostFingerprint(
+        owner_id=-60805374,
+        post_id=13001,
+        surface=VkWallSurface.POSTPONED,
+        publish_date=wall.publish_date,
+        text_sha256=sha("неожиданный текст"),
+        attachments=(),
+    )
+
+    class FakeWriter(LordGodWallWriter):
+        def __init__(self) -> None:
+            self.calls = 0
+            self.snapshots = iter((snapshot(), snapshot(wrong)))
+
+        def capture_wall_snapshot(
+            self,
+            *,
+            community_id: int,
+            max_posts_per_surface: int = 10_000,
+        ) -> VkWallSnapshot:
+            return next(self.snapshots)
+
+        def _call(self, method: str, *, params: dict[str, Any] | None = None, **_: Any) -> object:
+            self.calls += 1
+            return {"post_id": 13001}
+
+    writer = FakeWriter()
+    with pytest.raises(UnknownProviderOutcomeError, match="not exactly visible"):
+        writer.schedule_text(wall)
+    assert writer.calls == 1
