@@ -14,6 +14,7 @@ from typing import Any, Iterator, Mapping
 VK_FLOOD_CONTROL_SCHEMA = "video-manager.vk-flood-control"
 VK_FLOOD_CONTROL_VERSION = 1
 VK_FLOOD_CONTROL_CODE = 9
+_WINDOWS_LOCK_PERMISSION_IS_CONTENTION = os.name == "nt"
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,11 +86,20 @@ class VkFloodControlGate:
         while descriptor is None:
             try:
                 descriptor = os.open(self.lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-            except FileExistsError:
+            except OSError as exc:
+                if not isinstance(exc, (FileExistsError, PermissionError)):
+                    raise
                 try:
                     age = max(0.0, time.time() - self.lock_path.stat().st_mtime)
                 except FileNotFoundError:
+                    if isinstance(exc, PermissionError) and not _WINDOWS_LOCK_PERMISSION_IS_CONTENTION:
+                        raise
+                    time.sleep(0.01)
                     continue
+                except PermissionError:
+                    raise
+                if isinstance(exc, PermissionError) and not _WINDOWS_LOCK_PERMISSION_IS_CONTENTION:
+                    raise
                 if age > 30.0:
                     try:
                         self.lock_path.unlink()
