@@ -6,10 +6,12 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import subprocess
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from video_channel_manager.telegram_historical_production import release_digest
 from video_channel_manager.telegram_models import TelegramLedger, TelegramQueue
 
 PROJECT_KEY = "lord-god-strength"
@@ -48,7 +50,9 @@ PRIORITY_MARKERS = (
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("audit", type=Path, help="03-wall-content-audit.json")
-    parser.add_argument("--telegram-root", type=Path, required=True)
+    parser.add_argument("--repository-root", type=Path, default=Path("."))
+    parser.add_argument("--historical-release", type=Path, required=True)
+    parser.add_argument("--historical-ledger", type=Path, required=True)
     parser.add_argument("--quote-queue", type=Path, required=True)
     parser.add_argument("--quote-ledger", type=Path, required=True)
     parser.add_argument("--start-date", type=date.fromisoformat, required=True)
@@ -72,6 +76,35 @@ def clean_title(value: object) -> str:
 def read_json_evidence(path: Path) -> tuple[Any, str]:
     raw = path.read_bytes()
     return json.loads(raw.decode("utf-8-sig")), hashlib.sha256(raw).hexdigest()
+
+
+def _git_bytes(root: Path, relative_path: str) -> bytes:
+    completed = subprocess.run(
+        ["git", "-C", str(root), "show", f"HEAD:{relative_path}"],
+        check=False,
+        capture_output=True,
+    )
+    if completed.returncode != 0:
+        error = completed.stderr.decode("utf-8", errors="replace").strip()
+        raise ValueError(f"Git cannot read committed evidence {relative_path}: {error}")
+    return completed.stdout
+
+
+def git_blob_sha(root: Path, relative_path: str) -> str:
+    completed = subprocess.run(
+        ["git", "-C", str(root), "rev-parse", f"HEAD:{relative_path}"],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+    if completed.returncode != 0:
+        raise ValueError(f"Git cannot resolve committed evidence {relative_path}")
+    return completed.stdout.strip()
+
+
+def read_committed_json(root: Path, relative_path: str) -> Any:
+    return json.loads(_git_bytes(root, relative_path).decode("utf-8-sig"))
 
 
 def video_score(item: dict[str, Any]) -> tuple[int, int, float]:
@@ -129,15 +162,6 @@ def select_videos(audit: dict[str, Any], *, count: int, max_views: int) -> list[
     return result
 
 
-def telegram_ready(post: dict[str, Any]) -> bool:
-    if post.get("editorial_status") != "ready":
-        return False
-    if post.get("fact_check_status") != "accepted":
-        return False
-    review = post.get("theology_review")
-    return isinstance(review, dict) and review.get("review_status") == "accepted"
-
-
 def telegram_text(post: dict[str, Any]) -> str:
     title = clean_title(post.get("title"))
     lead = clean_title(post.get("lead"))
@@ -152,35 +176,110 @@ def telegram_text(post: dict[str, Any]) -> str:
     return "\n\n".join(parts)
 
 
-def select_telegram(root: Path, *, count: int) -> list[dict[str, Any]]:
-    selected: list[dict[str, Any]] = []
-    seen: set[str] = set()
-    for path in sorted(root.rglob("post.json")):
-        try:
-            post = read_json(path)
-        except (OSError, json.JSONDecodeError):
-            continue
-        if not isinstance(post, dict) or not telegram_ready(post):
-            continue
-        publication_id = str(post.get("publication_id") or path.parent.name)
-        if publication_id in seen:
-            continue
-        text = telegram_text(post)
-        if not text:
-            continue
-        selected.append(
+def load_historical_evidence(
+    root: Path,
+    release_path: Path,
+    ledger_path: Path,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any], str, str]:
+    raw_release, release_file_sha256 = read_json_evidence(release_path)
+    raw_ledger, ledger_file_sha256 = read_json_evidence(ledger_path)
+    if not isinstance(raw_release, dict) or not isinstance(raw_ledger, dict):
+        raise ValueError("historical release/ledger roots must be objects")
+    if (
+        raw_ledger.get("project_key") != PROJECT_KEY
+        or str(raw_ledger.get("channel_username") or "").casefold() != "@lordchrist"
+        or raw_ledger.get("release_id") != raw_release.get("release_id")
+        or raw_ledger.get("release_sha256") != release_digest(raw_release)
+    ):
+        raise ValueError("historical production ledger is not bound to the exact LordChrist release")
+
+    publication_ids = raw_release.get("publication_ids")
+    if not isinstance(publication_ids, list) or len(publication_ids) != 1:
+        raise ValueError("historical VK cross-post release must bind exactly one publication")
+    publication_id = str(publication_ids[0] or "")
+    revision_binding = raw_release.get("revision")
+    if not isinstance(revision_binding, dict):
+        raise ValueError("historical release lacks an exact revision binding")
+    revision_path = str(revision_binding.get("path") or "")
+    revision_blob = str(revision_binding.get("git_blob_sha") or "")
+    if not revision_path or git_blob_sha(root, revision_path) != revision_blob:
+        raise ValueError("historical committed revision blob differs from the published release")
+    revision = read_committed_json(root, revision_path)
+    if not isinstance(revision, dict) or revision.get("publication_id") != publication_id:
+        raise ValueError("historical revision publication identity differs from the release")
+
+    post_binding = revision.get("post")
+    if not isinstance(post_binding, dict):
+        raise ValueError("historical revision lacks a committed post binding")
+    post_path = str(post_binding.get("path") or "")
+    post_blob = str(post_binding.get("git_blob_sha") or "")
+    if not post_path or git_blob_sha(root, post_path) != post_blob:
+        raise ValueError("historical committed post blob differs from the reviewed revision")
+    post = read_committed_json(root, post_path)
+    if not isinstance(post, dict) or post.get("publication_id") != publication_id:
+        raise ValueError("historical committed post identity differs from the release")
+    return raw_release, raw_ledger, revision, post, release_file_sha256, ledger_file_sha256
+
+
+def select_published_historical(
+    root: Path,
+    release_path: Path,
+    ledger_path: Path,
+    *,
+    count: int,
+) -> tuple[list[dict[str, Any]], str, str, str]:
+    release, ledger, revision, post, release_file_sha256, ledger_file_sha256 = load_historical_evidence(
+        root,
+        release_path,
+        ledger_path,
+    )
+    publication_id = str(post["publication_id"])
+    entries = ledger.get("entries")
+    entry = entries.get(publication_id) if isinstance(entries, dict) else None
+    if not isinstance(entry, dict):
+        return [], release_file_sha256, ledger_file_sha256, release_digest(release)
+    if entry.get("state") != "published" or entry.get("provider_effect") != "verified":
+        return [], release_file_sha256, ledger_file_sha256, release_digest(release)
+    message_id = entry.get("message_id")
+    message_url = str(entry.get("message_url") or "")
+    document_sha256 = str(entry.get("document_sha256") or "")
+    if (
+        type(message_id) is not int
+        or message_id <= 0
+        or message_url != f"https://t.me/lordchrist/{message_id}"
+        or not document_sha256.startswith("sha256:")
+        or not entry.get("published_at_utc")
+    ):
+        raise ValueError(f"published historical Telegram entry lacks exact provider evidence: {publication_id}")
+    if count <= 0:
+        return [], release_file_sha256, ledger_file_sha256, release_digest(release)
+    text = telegram_text(post)
+    if not text:
+        raise ValueError(f"published historical Telegram post has no reusable text: {publication_id}")
+    return (
+        [
             {
                 "publication_id": publication_id,
                 "title": clean_title(post.get("title")),
                 "text": text,
-                "source_path": path.as_posix(),
+                "source_url": message_url,
+                "source_path": str(revision["post"]["path"]),
                 "topic_kind": post.get("topic_kind"),
+                "telegram_message_id": message_id,
+                "telegram_message_url": message_url,
+                "telegram_published_at_utc": str(entry["published_at_utc"]),
+                "telegram_document_sha256": document_sha256,
+                "telegram_release_id": str(release["release_id"]),
+                "telegram_release_sha256": str(ledger["release_sha256"]),
+                "historical_revision_git_blob_sha": str(release["revision"]["git_blob_sha"]),
+                "historical_post_git_blob_sha": str(revision["post"]["git_blob_sha"]),
+                "telegram_source_state": "published_verified_historical",
             }
-        )
-        seen.add(publication_id)
-        if len(selected) >= count:
-            break
-    return selected
+        ],
+        release_file_sha256,
+        ledger_file_sha256,
+        release_digest(release),
+    )
 
 
 def load_quote_evidence(
@@ -307,13 +406,20 @@ def build_backlog(args: argparse.Namespace) -> dict[str, Any]:
     if audit.get("community_id") != COMMUNITY_ID:
         raise ValueError("audit community does not match lord-god-strength")
     videos = select_videos(audit, count=args.video_count, max_views=args.max_views)
-    telegram = select_telegram(args.telegram_root, count=args.telegram_count)
+    historical, historical_release_sha256, historical_ledger_sha256, historical_release_digest = (
+        select_published_historical(
+            args.repository_root.resolve(),
+            args.historical_release,
+            args.historical_ledger,
+            count=args.telegram_count,
+        )
+    )
     quote_queue, quote_ledger, quote_queue_sha256, quote_ledger_sha256 = load_quote_evidence(
         args.quote_queue,
         args.quote_ledger,
     )
     quotes = select_published_quotes(quote_queue, quote_ledger, count=args.quote_count)
-    slots = build_slots(args.start_date, args.days, videos, telegram, quotes)
+    slots = build_slots(args.start_date, args.days, videos, historical, quotes)
     return {
         "schema_name": "video-manager.lord-god-content-backlog",
         "schema_version": 1,
@@ -328,8 +434,12 @@ def build_backlog(args: argparse.Namespace) -> dict[str, Any]:
         "days": args.days,
         "live_revalidation_required": True,
         "video_candidate_count": len(videos),
-        "telegram_candidate_count": len(telegram),
+        "telegram_candidate_count": len(historical),
         "quote_candidate_count": len(quotes),
+        "telegram_historical_release_sha256": historical_release_sha256,
+        "telegram_historical_ledger_sha256": historical_ledger_sha256,
+        "telegram_historical_release_digest": historical_release_digest,
+        "telegram_historical_evidence_policy": "published+verified+release/revision/post-bound",
         "telegram_quote_queue_digest": quote_queue.digest,
         "telegram_quote_queue_sha256": quote_queue_sha256,
         "telegram_quote_ledger_sha256": quote_ledger_sha256,
@@ -360,7 +470,7 @@ def render_markdown(backlog: dict[str, Any]) -> str:
             metric = str(slot.get("views_at_source_snapshot", ""))
         else:
             candidate = f"{slot['publication_id']} — {slot['title']}"
-            metric = f"TG #{slot.get('telegram_message_id')}" if slot["kind"] == "telegram_quote" else "TG editorial"
+            metric = f"TG #{slot.get('telegram_message_id')}"
         lines.append(f"| {slot['publish_at']} | {slot['kind']} | {candidate} | {metric} |")
     return "\n".join(lines) + "\n"
 
