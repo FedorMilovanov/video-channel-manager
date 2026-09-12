@@ -223,7 +223,7 @@ def token_capabilities(
 def flood_status(
     account: Annotated[str, typer.Option("--account", "-a")] = "default",
 ) -> None:
-    """Show durable local VK code-9 circuits without calling VK."""
+    """Show durable local VK code-9 evidence and global credential quarantine without calling VK."""
 
     settings = get_settings()
     store = VkTokenStore(settings.data_dir)
@@ -235,9 +235,9 @@ def flood_status(
         console.print(f"[red]Cannot read VK flood-control state:[/red] {exc}")
         raise typer.Exit(code=2) from exc
     if not entries:
-        console.print(f"[green]No open VK flood-control circuits for '{alias}'.[/green] Provider calls: 0")
+        console.print(f"[green]No open VK global flood-control quarantine for '{alias}'.[/green] Provider calls: 0")
         return
-    table = Table(title=f"Open VK flood-control circuits for '{alias}'")
+    table = Table(title=f"VK global flood-control quarantine evidence for '{alias}'")
     table.add_column("Method")
     table.add_column("First observed")
     table.add_column("Last observed")
@@ -250,19 +250,21 @@ def flood_status(
             str(entry.occurrences),
         )
     console.print(table)
-    console.print("[yellow]Provider calls: 0. No automatic TTL is assumed for VK API code 9.[/yellow]")
+    console.print(
+        "[yellow]Global quarantine: ACTIVE. Provider calls: 0. No automatic TTL is assumed for VK API code 9.[/yellow]"
+    )
 
 
 @vk_app.command("flood-reset")
 def flood_reset(
-    method: Annotated[str, typer.Option("--method", help="Exact open VK API method circuit, e.g. wall.get")],
+    method: Annotated[str, typer.Option("--method", help="Exact forensic VK API method entry to clear, e.g. wall.get")],
     account: Annotated[str, typer.Option("--account", "-a")] = "default",
     confirm_code: Annotated[
         int | None,
-        typer.Option("--confirm-code", help="Explicitly confirm VK API code 9 before reopening the method"),
+        typer.Option("--confirm-code", help="Explicitly confirm VK API code 9 before clearing this forensic entry"),
     ] = None,
 ) -> None:
-    """Explicitly reopen one local code-9 circuit; this command never calls VK."""
+    """Clear one local code-9 forensic entry; this may not reopen the global quarantine."""
 
     if confirm_code != VK_FLOOD_CONTROL_CODE:
         raise typer.BadParameter(
@@ -277,18 +279,58 @@ def flood_reset(
         raise typer.BadParameter("method cannot be blank", param_hint="--method")
     gate = VkCredentialFloodControl(store, alias)
     try:
+        entries = gate.list_open()
+        matching = [entry for entry in entries if entry.method == normalized_method]
+        if matching and len(entries) == 1:
+            raise ValueError(
+                "clearing the final code-9 entry would reopen the global credential quarantine; "
+                "use vk flood-reset-all --confirm-code 9"
+            )
         cleared = gate.clear(normalized_method)
     except (OSError, ValueError) as exc:
         console.print(f"[red]Cannot update VK flood-control state:[/red] {exc}")
         raise typer.Exit(code=2) from exc
     if cleared:
         console.print(
-            f"[green]Cleared local VK flood-control circuit:[/green] {alias} / {normalized_method}. Provider calls: 0."
+            f"[green]Cleared local VK code-9 forensic entry:[/green] {alias} / {normalized_method}. Provider calls: 0."
         )
     else:
         console.print(
-            f"No open local VK flood-control circuit existed for {alias} / {normalized_method}. Provider calls: 0."
+            f"No local VK code-9 forensic entry existed for {alias} / {normalized_method}. Provider calls: 0."
         )
+
+
+@vk_app.command("flood-reset-all")
+def flood_reset_all(
+    account: Annotated[str, typer.Option("--account", "-a")] = "default",
+    confirm_code: Annotated[
+        int | None,
+        typer.Option("--confirm-code", help="Explicitly confirm VK API code 9 before reopening the credential"),
+    ] = None,
+) -> None:
+    """Explicitly clear all local code-9 evidence for one credential; never calls VK."""
+
+    if confirm_code != VK_FLOOD_CONTROL_CODE:
+        raise typer.BadParameter(
+            f"--confirm-code {VK_FLOOD_CONTROL_CODE} is required; no provider request will be made",
+            param_hint="--confirm-code",
+        )
+    settings = get_settings()
+    store = VkTokenStore(settings.data_dir)
+    alias = store.validate_alias(account)
+    gate = VkCredentialFloodControl(store, alias)
+    try:
+        cleared = gate.clear_all()
+    except (OSError, ValueError) as exc:
+        console.print(f"[red]Cannot update VK flood-control state:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+    if cleared:
+        console.print(
+            "[green]Cleared global VK flood-control quarantine:[/green] "
+            f"{alias}; evidence methods={','.join(cleared)}. Provider calls: 0."
+        )
+    else:
+        console.print(f"No open VK flood-control quarantine existed for {alias}. Provider calls: 0.")
 
 
 @vk_app.command("communities")

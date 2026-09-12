@@ -159,10 +159,11 @@ class VkVideoWriter(HttpClientOwner):
         return self.assert_token_scopes("video").access_token
 
     def assert_method_circuit_closed(self, method: str) -> None:
-        open_circuit = self.flood_control.get(method)
+        open_circuit = self.flood_control.global_blocker()
         if open_circuit is not None:
             raise VkWriteError(
-                f"VK flood-control circuit is open for {method}; clear that exact local circuit before another provider request.",
+                "VK global flood-control quarantine is open for this credential "
+                f"(observed via {open_circuit.method}); clear all local code-9 evidence before another provider request.",
                 method=method,
                 code=VK_FLOOD_CONTROL_CODE,
                 retryable=False,
