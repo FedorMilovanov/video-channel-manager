@@ -4,6 +4,7 @@ import importlib.util
 import json
 from datetime import date
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -13,6 +14,12 @@ SPEC = importlib.util.spec_from_file_location("lord_god_backlog_v2", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
 module = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(module)
+
+PREPARE_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "prepare_lord_god_content_wave.py"
+PREPARE_SPEC = importlib.util.spec_from_file_location("prepare_lord_god_content_wave", PREPARE_SCRIPT)
+assert PREPARE_SPEC is not None and PREPARE_SPEC.loader is not None
+prepare_module = importlib.util.module_from_spec(PREPARE_SPEC)
+PREPARE_SPEC.loader.exec_module(prepare_module)
 
 
 def video(title: str, *, views: int = 10, duration: int = 600) -> dict[str, object]:
@@ -138,3 +145,97 @@ def test_select_quotes_rejects_payload_drift(tmp_path: Path) -> None:
     ledger_path.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(ValueError, match="payload SHA mismatch"):
         module.select_quotes(queue_path, ledger_path, count=24)
+
+
+def test_prepare_binds_telegram_queue_and_ledger_into_source_evidence(tmp_path: Path) -> None:
+    queue_path, ledger_path = _telegram_quote_evidence(tmp_path)
+    queue = module.TelegramQueue.model_validate(module.read_json(queue_path))
+    first = queue.posts[0]
+    videos_path = tmp_path / "videos.json"
+    videos_path.write_text("[]\n", encoding="utf-8")
+    backlog_path = tmp_path / "backlog.json"
+    backlog = {
+        "schema_name": "video-manager.lord-god-content-backlog",
+        "schema_version": 1,
+        "project_key": "lord-god-strength",
+        "community_id": 60805374,
+        "owner_id": -60805374,
+        "mode": "provider-inert",
+        "live_revalidation_required": True,
+        "telegram_quote_queue_digest": queue.digest,
+        "telegram_quote_queue_sha256": prepare_module.file_sha256(queue_path),
+        "telegram_quote_ledger_sha256": prepare_module.file_sha256(ledger_path),
+        "slots": [
+            {
+                "kind": "telegram_quote",
+                "publish_at": "2033-05-18T06:33:20+03:00",
+                "publish_date": 2_000_000_000,
+                "publication_id": first.publication_id,
+                "title": first.title,
+                "text": first.text,
+                "source_url": str(first.source.url),
+                "telegram_message_id": 1470,
+                "telegram_message_url": "https://t.me/lordchrist/1470",
+                "telegram_payload_sha256": first.payload_sha256,
+                "telegram_source_state": "published_verified",
+            }
+        ],
+    }
+    backlog_path.write_text(json.dumps(backlog, ensure_ascii=False), encoding="utf-8")
+    output = tmp_path / "handoff"
+    result = prepare_module.prepare(
+        SimpleNamespace(
+            repository_root=tmp_path,
+            backlog=backlog_path,
+            videos=videos_path,
+            quote_queue=queue_path,
+            quote_ledger=ledger_path,
+            output_dir=output,
+            enable_provider_writes=False,
+        )
+    )
+    assert result["operation_count"] == 1
+    assert "02-telegram-quote-queue.json" in result["files"]
+    assert "03-telegram-quote-ledger.json" in result["files"]
+    source = prepare_module.WaveSourceEvidence.model_validate_json(
+        (output / "04-source.json").read_text(encoding="utf-8"),
+        strict=True,
+    )
+    assert len(source.artifacts) == 4
+
+
+def test_prepare_rejects_telegram_ledger_digest_drift(tmp_path: Path) -> None:
+    queue_path, ledger_path = _telegram_quote_evidence(tmp_path)
+    queue = module.TelegramQueue.model_validate(module.read_json(queue_path))
+    videos_path = tmp_path / "videos.json"
+    videos_path.write_text("[]\n", encoding="utf-8")
+    backlog_path = tmp_path / "backlog.json"
+    backlog_path.write_text(
+        json.dumps(
+            {
+                "project_key": "lord-god-strength",
+                "community_id": 60805374,
+                "owner_id": -60805374,
+                "mode": "provider-inert",
+                "live_revalidation_required": True,
+                "telegram_quote_queue_digest": queue.digest,
+                "telegram_quote_queue_sha256": prepare_module.file_sha256(queue_path),
+                "telegram_quote_ledger_sha256": prepare_module.file_sha256(ledger_path),
+                "slots": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    ledger_path.write_text(ledger_path.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="ledger SHA differs"):
+        prepare_module.prepare(
+            SimpleNamespace(
+                repository_root=tmp_path,
+                backlog=backlog_path,
+                videos=videos_path,
+                quote_queue=queue_path,
+                quote_ledger=ledger_path,
+                output_dir=tmp_path / "handoff",
+                enable_provider_writes=False,
+            )
+        )
