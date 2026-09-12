@@ -75,6 +75,8 @@ Wave 4 contains no bulk deletion or automatic remediation. Issue #37 remains the
 - VK API code `9` (`Flood control`) is a distinct non-auto-retry condition for methods that are called; native-video upload no longer calls `wall.get` merely to prove that wall publishing was disabled;
 - `wall.post`, `wall.edit`, `wall.delete`, upload reservation, upload-server POST, and all other mutations remain explicit ambiguous mutations;
 - mutation transport loss, HTTP 429/5xx, and provider-transient responses are one attempt and externally non-retryable;
+- a one-source postponed-video wall attempt may be retried only when the complete prior Wave result and operation journal prove `rejected_before_dispatch`, `retry_safe=true`, and no reconciliation requirement; the prior journal is immutable and the next execution uses a fresh deterministic sibling `journal-retry-NNN`;
+- any provider rejection, unknown outcome, tampered/mismatched journal binding, multi-operation wall plan, or incomplete prior journal remains non-replayable through this path;
 - `guid` is an additional duplicate guard, not a substitute for published+postponed preflight or postflight.
 
 ## Definition of done

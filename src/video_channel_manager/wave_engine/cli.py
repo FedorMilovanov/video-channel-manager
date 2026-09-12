@@ -22,6 +22,7 @@ from video_channel_manager.wave_engine.canonical import (
 from video_channel_manager.wave_engine.engine import WaveEngine
 from video_channel_manager.wave_engine.models import (
     WAVE_SCHEMA_MODELS,
+    OperationStatus,
     WaveApplyIntent,
     WaveOperationSpec,
     WavePlan,
@@ -277,6 +278,96 @@ def _video_wall_plan(plan: WavePlan) -> bool:
     }
 
 
+def _assert_retry_safe_video_wall_journal(
+    *,
+    journal_directory: Path,
+    plan: WavePlan,
+    intent: WaveApplyIntent,
+) -> None:
+    if not _video_wall_plan(plan) or len(plan.operations) != 1:
+        raise ValueError("retry-safe journal continuation is limited to one postponed-video wall operation")
+    if not journal_directory.is_dir():
+        raise ValueError("existing retry journal path is not a directory")
+
+    result = _read_model(journal_directory / "result.json", WaveResult)
+    result.assert_matches(plan)
+    if result.status is not WaveStatus.FAILED or len(result.operations) != 1:
+        raise ValueError("existing wall journal is not a single failed apply result")
+    operation_result = result.operations[0]
+    if not (
+        operation_result.status is OperationStatus.FAILED
+        and operation_result.attempt_count == 1
+        and operation_result.retry_safe is True
+        and operation_result.unknown_requires_reconciliation is False
+        and operation_result.error_kind == "rejected_before_dispatch"
+    ):
+        raise ValueError("existing wall journal is not explicitly retry-safe before provider dispatch")
+
+    preflight = read_json_object(journal_directory / "preflight-summary.json")
+    if (
+        preflight.get("schema_name") != "video-manager.wave-preflight"
+        or preflight.get("schema_version") != 1
+        or preflight.get("status") != "passed"
+        or preflight.get("plan_self_digest") != plan.self_digest
+        or preflight.get("apply_intent_self_digest") != intent.self_digest
+        or preflight.get("source_snapshot_id") != plan.source_snapshot_id
+        or preflight.get("operation_set_digest") != plan.operation_set_digest
+        or preflight.get("operation_count") != 1
+    ):
+        raise ValueError("existing wall preflight binding differs from the reviewed apply intent")
+
+    operation = plan.operations[0]
+    operation_journal = read_json_object(journal_directory / f"{operation.sequence:06d}-{operation.operation_id}.json")
+    if (
+        operation_journal.get("schema_name") != "video-manager.wave-operation-journal"
+        or operation_journal.get("schema_version") != 1
+        or operation_journal.get("stage") != "result_committed"
+        or operation_journal.get("plan_self_digest") != plan.self_digest
+        or operation_journal.get("apply_intent_self_digest") != intent.self_digest
+        or operation_journal.get("operation") != operation.model_dump(mode="json")
+        or operation_journal.get("result") != operation_result.model_dump(mode="json")
+    ):
+        raise ValueError("existing wall operation journal is incomplete or does not bind the retry-safe result")
+
+
+def _resolve_video_wall_apply_journal(
+    *,
+    requested_journal_directory: Path,
+    repository_root: Path,
+    plan: WavePlan,
+    intent: WaveApplyIntent,
+) -> Path:
+    root = repository_root.resolve()
+    requested = (
+        requested_journal_directory.resolve()
+        if requested_journal_directory.is_absolute()
+        else (root / requested_journal_directory).resolve()
+    )
+    try:
+        requested.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("journal directory must remain inside the repository root") from exc
+    if not requested.exists():
+        return requested
+
+    current = requested
+    retry_index = 0
+    while current.exists():
+        _assert_retry_safe_video_wall_journal(
+            journal_directory=current,
+            plan=plan,
+            intent=intent,
+        )
+        retry_index += 1
+        current = requested.with_name(f"{requested.name}-retry-{retry_index:03d}")
+
+    console.print(
+        f"[yellow]Validated retry-safe pre-dispatch wall journal.[/yellow] "
+        f"Preserving prior evidence and using fresh journal: {current}"
+    )
+    return current
+
+
 @wave_app.command("apply")
 def apply(
     source_path: Annotated[Path, typer.Option("--source")],
@@ -304,6 +395,17 @@ def apply(
             "Wave apply requires --journal-directory",
             param_hint="--journal-directory",
         )
+    if _video_wall_plan(plan):
+        try:
+            journal_directory = _resolve_video_wall_apply_journal(
+                requested_journal_directory=journal_directory,
+                repository_root=repository_root,
+                plan=plan,
+                intent=intent,
+            )
+        except (OSError, ValueError, typer.BadParameter) as exc:
+            console.print(f"[red]Wave apply retry journal rejected:[/red] {exc}")
+            raise typer.Exit(code=3) from exc
 
     adapter: VkPostponedArticlePhotoAdapter | VkNativeVideoUploadAdapter | VkPostponedVideoWallAdapter
     if _article_plan(plan):
