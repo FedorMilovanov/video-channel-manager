@@ -75,7 +75,6 @@ class ExactVideoWallPost:
     publish_date: int
     surface: str
 
-
     @property
     def remote_id(self) -> str:
         return f"{self.owner_id}_{self.post_id}"
@@ -297,7 +296,6 @@ class VkVideoWallWriter(VkWallWriter):
                 raise VkVideoWallError("postponed schedule slot is already occupied")
         return None
 
-
     def verify_video(self, wall: VideoWallOperation) -> dict[str, Any]:
         item = self.read_video(owner_id=wall.video_owner_id, video_id=wall.video_id)
         if item is None:
@@ -463,7 +461,6 @@ class VkPostponedVideoWallAdapter:
         except (VkVideoWallError, OSError, ValueError) as exc:
             raise OperationRejectedError(str(exc)) from exc
 
-
     def reconcile(self, operation: WaveOperation) -> Mapping[str, Any]:
         wall = parse_video_wall_operation(operation)
         if wall.account_alias != self.account_alias:
@@ -490,4 +487,3 @@ __all__ = [
     "VkVideoWallWriter",
     "parse_video_wall_operation",
 ]
-

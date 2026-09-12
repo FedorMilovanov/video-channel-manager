@@ -162,7 +162,6 @@ class _ScheduleWriter(VkVideoWallWriter):
         self._capture_index = 0
         self.wall_post_calls = 0
 
-
     def verify_video(self, wall: object) -> dict[str, object]:
         return {"id": VIDEO_ID}
 
@@ -200,9 +199,7 @@ def test_schedule_requires_exact_postflight() -> None:
 def test_schedule_postflight_mismatch_is_unknown_and_never_replayed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    writer = _ScheduleWriter(
-        after=_capture(postponed=[_post(post_id=77, message="Неверный текст")])
-    )
+    writer = _ScheduleWriter(after=_capture(postponed=[_post(post_id=77, message="Неверный текст")]))
     monkeypatch.setattr(provider_module.time, "sleep", lambda _seconds: None)
 
     with pytest.raises(UnknownProviderOutcomeError, match="not exactly visible"):
