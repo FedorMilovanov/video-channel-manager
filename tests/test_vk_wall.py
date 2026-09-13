@@ -169,6 +169,31 @@ def test_build_wall_plan_is_project_bound_postponed_and_self_validating() -> Non
         validate_vk_wall_post_plan(tampered)
 
 
+def test_wall_probe_reads_exactly_one_published_item(tmp_path: Path) -> None:
+    calls: list[tuple[str, str]] = []
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        assert request.url.path.endswith("/wall.get")
+        form = parse_qs(request.content.decode("utf-8"))
+        calls.append((form["filter"][0], form["count"][0]))
+        return httpx.Response(
+            200,
+            json={
+                "response": {
+                    "count": 250,
+                    "items": [_video_post(101, text="Published head")],
+                }
+            },
+        )
+
+    writer = _writer(tmp_path, httpx.MockTransport(respond))
+    items, total = writer.probe_wall_get(community_id=COMMUNITY_ID)
+
+    assert total == 250
+    assert len(items) == 1
+    assert calls == [("owner", "1")]
+
+
 def test_upload_wall_guard_reads_exactly_one_head_page_per_surface(tmp_path: Path) -> None:
     calls: list[tuple[str, str]] = []
 
