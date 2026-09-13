@@ -10,7 +10,8 @@ ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = ROOT / "scripts" / "operator" / "powershell-wrappers.json"
 SUPPORTED_PATH = "scripts/operator/Invoke-VideoManager.ps1"
 DELEGATING_SUPPORTED_PATH = "scripts/Invoke-VkPostponedTextEdit.ps1"
-STATUSES = {"supported", "delegating_supported", "compatibility_only", "retired"}
+PROVIDER_INERT_PATH = "scripts/operator/Invoke-InstagramDailyQueue.ps1"
+STATUSES = {"supported", "delegating_supported", "provider_inert", "compatibility_only", "retired"}
 RETIRED_GUARD = "Stop-VcmRetiredWrapper"
 RISK_MARKERS = (
     "apply_vk_editorial_cleanup_plan.py",
@@ -120,6 +121,20 @@ def test_retired_provider_write_wrappers_stop_before_historical_executor_markers
         marker_indexes = [text.find(marker) for marker in RISK_MARKERS if text.find(marker) >= 0]
         if marker_indexes:
             assert guard_index < min(marker_indexes), item["path"]
+
+
+def test_provider_inert_wrapper_cannot_publish_to_meta() -> None:
+    wrappers = _registry()["wrappers"]
+    provider_inert = [item for item in wrappers if item["status"] == "provider_inert"]
+    assert [item["path"] for item in provider_inert] == [PROVIDER_INERT_PATH]
+    assert provider_inert[0]["provider_write_capable"] is False
+
+    text = _code_without_comments(ROOT / PROVIDER_INERT_PATH)
+    assert '$env:VCM_INSTAGRAM_WRITES_ENABLED = "false"' in text
+    assert "publish --execute" not in text
+    assert "instagram production validate-local" in text
+    assert "instagram production validate-public" in text
+    assert "instagram production plan" in text
 
 
 def test_compatibility_wrappers_are_explicitly_non_provider_write() -> None:

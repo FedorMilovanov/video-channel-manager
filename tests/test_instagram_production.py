@@ -394,6 +394,48 @@ def test_media_size_mismatch_is_terminal_and_causes_zero_provider_posts() -> Non
         assert graph_posts == []
 
 
+def test_trusted_github_release_redirect_is_verified_by_exact_bytes() -> None:
+    release_url = "https://github.com/owner/repo/releases/download/instagram-staging/reel.mp4"
+    asset_url = "https://release-assets.githubusercontent.com/release/reel.mp4?sig=test"
+    manifest = InstagramPublishManifest(
+        publication_key="trusted-release-redirect",
+        account_id=ACCOUNT_ID,
+        video_url=release_url,
+        media_sha256=MEDIA_SHA256,
+        media_size_bytes=len(MEDIA_BYTES),
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "github.com":
+            return httpx.Response(302, request=request, headers={"Location": asset_url})
+        if request.url.host == "release-assets.githubusercontent.com":
+            return httpx.Response(
+                200,
+                request=request,
+                content=MEDIA_BYTES,
+                headers={
+                    "Content-Type": "application/octet-stream",
+                    "Content-Length": str(len(MEDIA_BYTES)),
+                },
+            )
+        raise AssertionError(f"Unexpected request: {request.method} {request.url}")
+
+    transport = httpx.MockTransport(handler)
+    with httpx.Client(transport=transport, timeout=1.0) as media_client:
+        proof = verify_instagram_manifest_media(
+            manifest,
+            allowed_hosts=("github.com", "release-assets.githubusercontent.com"),
+            media_client=media_client,
+        )
+
+    assert proof["video"] == {
+        "url": release_url,
+        "sha256": MEDIA_SHA256,
+        "size_bytes": len(MEDIA_BYTES),
+        "content_type": "video/mp4",
+    }
+
+
 def test_media_redirect_is_refused_before_provider_post() -> None:
     graph_posts: list[str] = []
 
