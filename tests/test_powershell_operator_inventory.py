@@ -123,7 +123,6 @@ def test_retired_provider_write_wrappers_stop_before_historical_executor_markers
             assert guard_index < min(marker_indexes), item["path"]
 
 
-
 def test_provider_inert_wrapper_cannot_publish_to_meta() -> None:
     wrappers = _registry()["wrappers"]
     provider_inert = [item for item in wrappers if item["status"] == "provider_inert"]
@@ -136,6 +135,7 @@ def test_provider_inert_wrapper_cannot_publish_to_meta() -> None:
     assert "instagram production validate-local" in text
     assert "instagram production validate-public" in text
     assert "instagram production plan" in text
+
 
 def test_compatibility_wrappers_are_explicitly_non_provider_write() -> None:
     wrappers = _registry()["wrappers"]
