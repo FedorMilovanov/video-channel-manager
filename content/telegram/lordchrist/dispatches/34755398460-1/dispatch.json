@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
+  "publication_id": "lordchrist-calvin-gifts-stewardship",
+  "sequence": 14,
+  "intent_id": "bc7e6952a50e40932def02df954cc918",
+  "workflow_run_id": "34755398460",
+  "workflow_run_attempt": "1",
+  "github_sha": "e398e4b439bebcc1a5207af478d2b795d7f5c455",
+  "github_workflow_sha": "e398e4b439bebcc1a5207af478d2b795d7f5c455",
+  "payload_sha256": "sha256:8f29a61a7f74578122a1df6d0759ec49d5edaf1eff3d50dcf1c23938e65aafbe",
+  "text": "Писание напоминает нам: всё, что мы получили от Господа, дано на условии употреблять это для общего блага Церкви; поэтому законное употребление всех даров состоит в добром и щедром общении ими с другими.\n\nНет более надёжного правила и более сильного побуждения, чем знание, что все наши способности — Божьи вклады, доверенные нам именно для того, чтобы распределять их на благо ближнего. Писание идёт дальше и уподобляет эти дары членам тела: ни один член не действует для себя и не употребляет функцию для личной пользы, но передаёт её другим членам; и сам получает пользу лишь ту, которую получает вместе со всем телом.\n\nТак и благочестивый человек обязан сделать для братьев всё, что может, заботясь о собственном благе лишь через искреннее стремление к общему созиданию Церкви. Во всём, что Бог дал нам и чем мы можем помочь ближнему, мы — Его домоправители и должны дать отчёт; единственно правильное управление — то, которым руководит любовь.\n\n© Жан Кальвин, «О христианской жизни»\n\n#ЖанКальвин #Дары #Церковь #Любовь",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-09-13T11:48:50.775526Z"
+  },
+  "prepared_at_utc": "2026-09-13T11:48:52.364322Z"
+}
