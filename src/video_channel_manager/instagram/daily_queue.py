@@ -79,9 +79,7 @@ class InstagramDailyQueueItem(FrozenModel):
 
 
 class InstagramDailyQueue(FrozenModel):
-    schema_name: Literal["video-manager.instagram-daily-reels-queue"] = (
-        "video-manager.instagram-daily-reels-queue"
-    )
+    schema_name: Literal["video-manager.instagram-daily-reels-queue"] = "video-manager.instagram-daily-reels-queue"
     schema_version: Literal[1] = 1
     status: Literal["provider-inert"] = "provider-inert"
     provider_writes_authorized: Literal[False] = False
@@ -117,9 +115,7 @@ class InstagramDailyQueue(FrozenModel):
         if len(keys) != len(set(keys)):
             raise ValueError("publication keys must be unique")
         schedule = sorted(
-            item.scheduled_at
-            for item in self.items
-            if item.status == "ready" and item.scheduled_at is not None
+            item.scheduled_at for item in self.items if item.status == "ready" and item.scheduled_at is not None
         )
         if len(schedule) != len(set(schedule)):
             raise ValueError("ready schedule must use unique slots")
@@ -178,20 +174,11 @@ def caption_for(
     folded = title.casefold()
     if is_ru:
         if "рок" in folded:
-            context = (
-                "Русская поэзия в рок-прочтении: классический текст, музыка "
-                "и кинематографичный визуал."
-            )
+            context = "Русская поэзия в рок-прочтении: классический текст, музыка и кинематографичный визуал."
         elif "dj" in folded or "регги" in folded:
-            context = (
-                "Классическая поэзия встречается с современным музыкальным "
-                "звучанием и визуальным экспериментом."
-            )
+            context = "Классическая поэзия встречается с современным музыкальным звучанием и визуальным экспериментом."
         elif author:
-            context = (
-                f"{author}: классическая поэзия в музыкальном и визуальном "
-                "прочтении The Legendary Poet."
-            )
+            context = f"{author}: классическая поэзия в музыкальном и визуальном прочтении The Legendary Poet."
         else:
             context = "Поэзия в музыкальном и визуальном прочтении The Legendary Poet."
         ctas = (
@@ -201,10 +188,7 @@ def caption_for(
             "Вернись к этому стихотворению позже: сохрани Reel и поделись им с любителем русской поэзии.",
         )
     else:
-        context = (
-            "Russian poetry in a new musical and cinematic interpretation "
-            "by The Legendary Poet."
-        )
+        context = "Russian poetry in a new musical and cinematic interpretation by The Legendary Poet."
         ctas = (
             "Save this Reel for another listen and send it to someone who loves poetry.",
             "Which line stays with you? Save the Reel and share it with a poetry lover.",
@@ -310,12 +294,8 @@ def build_legendary_poet_daily_queue(
         )
 
     blocked_ids = PUBLISHED_SOURCE_IDS | frozenset(RIGHTS_REVIEW)
-    ready = diversify(
-        [item for item in staged if str(item["source_id"]) not in blocked_ids]
-    )
-    ready_order = {
-        str(item["source_id"]): index for index, item in enumerate(ready)
-    }
+    ready = diversify([item for item in staged if str(item["source_id"]) not in blocked_ids])
+    ready_order = {str(item["source_id"]): index for index, item in enumerate(ready)}
 
     items: list[InstagramDailyQueueItem] = []
     for item in staged:
