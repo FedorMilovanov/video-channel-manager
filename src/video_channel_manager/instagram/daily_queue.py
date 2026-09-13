@@ -117,7 +117,9 @@ class InstagramDailyQueue(FrozenModel):
         if len(keys) != len(set(keys)):
             raise ValueError("publication keys must be unique")
         schedule = sorted(
-            item.scheduled_at for item in self.items if item.status == "ready"
+            item.scheduled_at
+            for item in self.items
+            if item.status == "ready" and item.scheduled_at is not None
         )
         if len(schedule) != len(set(schedule)):
             raise ValueError("ready schedule must use unique slots")
@@ -232,10 +234,17 @@ def priority_score(
     )
 
 
+def _priority_value(item: dict[str, object]) -> float:
+    value = item.get("priority_score")
+    if not isinstance(value, int | float):
+        raise ValueError("priority_score must be numeric")
+    return float(value)
+
+
 def diversify(items: list[dict[str, object]]) -> list[dict[str, object]]:
     remaining = sorted(
         items,
-        key=lambda item: (-float(item["priority_score"]), str(item["source_id"])),
+        key=lambda item: (-_priority_value(item), str(item["source_id"])),
     )
     result: list[dict[str, object]] = []
     last_author: str | None = None
