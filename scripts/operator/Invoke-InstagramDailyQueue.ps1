@@ -141,10 +141,42 @@ if (-not $Stage) {
     Write-Host "Public staging skipped because -Stage was not supplied."
     exit 0
 }
-& gh.exe release upload $ReleaseTag $AssetPath --repo $ReleaseRepository --clobber
-if ($LASTEXITCODE -ne 0) { throw "GitHub Release staging failed." }
+$ReleaseJson = & gh.exe release view $ReleaseTag --repo $ReleaseRepository --json assets
+if ($LASTEXITCODE -ne 0) { throw "Unable to inspect GitHub Release staging assets." }
+$Release = $ReleaseJson | ConvertFrom-Json
+$ExistingAsset = $Release.assets | Where-Object { $_.name -eq $AssetName } | Select-Object -First 1
+
+if ($ExistingAsset) {
+    if ([int64]$ExistingAsset.size -ne [int64]$File.Length) {
+        throw "Existing content-addressed GitHub Release asset has the wrong size; refusing clobber."
+    }
+    if ($ExistingAsset.digest -and [string]$ExistingAsset.digest -ne "sha256:$Sha") {
+        throw "Existing content-addressed GitHub Release asset has the wrong digest; refusing clobber."
+    }
+    Write-Host ("Reusing exact GitHub Release asset: {0}" -f $AssetName)
+}
+else {
+    & gh.exe release upload $ReleaseTag $AssetPath --repo $ReleaseRepository
+    if ($LASTEXITCODE -ne 0) { throw "GitHub Release staging failed." }
+    Write-Host ("Uploaded new GitHub Release asset: {0}" -f $AssetName)
+}
 
 $VideoUrl = "https://github.com/$ReleaseRepository/releases/download/$ReleaseTag/$AssetName"
+
+$Ready = $false
+for ($Attempt = 1; $Attempt -le 12; $Attempt++) {
+    & curl.exe -L --fail --silent --show-error -r 0-1023 -o NUL --connect-timeout 10 --max-time 30 $VideoUrl
+    if ($LASTEXITCODE -eq 0) {
+        $Ready = $true
+        break
+    }
+    if ($Attempt -lt 12) {
+        Start-Sleep -Seconds 5
+    }
+}
+if (-not $Ready) {
+    throw "GitHub Release asset did not become publicly readable within the readiness window."
+}
 $ManifestPath = Join-Path $WorkDir "manifest.json"
 $Manifest = [ordered]@{
     schema_version = "1"
