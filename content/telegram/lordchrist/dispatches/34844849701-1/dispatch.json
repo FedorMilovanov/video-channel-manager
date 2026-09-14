@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
+  "publication_id": "lordchrist-watson-sin-worse-hell",
+  "sequence": 24,
+  "intent_id": "4aafd73b431341fc55dcef23ede6a703",
+  "workflow_run_id": "34844849701",
+  "workflow_run_attempt": "1",
+  "github_sha": "e398e4b439bebcc1a5207af478d2b795d7f5c455",
+  "github_workflow_sha": "e398e4b439bebcc1a5207af478d2b795d7f5c455",
+  "payload_sha256": "sha256:bd6b7fe567ec11351b8fc8b64711c8c8e6827b8160cfee11e2950e216ce71a28",
+  "text": "Грех хуже смерти. Аристотель называет смерть самым ужасным из ужасов, а Иов — «царём ужасов»; но грех смертоноснее самой смерти. Хотя смерть мучительна, она не причиняла бы вреда, если бы не грех: именно грех придаёт ей горечь и вкладывает жало. «Жало же смерти — грех». Без греха смерть могла бы убить, но не могла бы проклясть. Смерть лишь разделяет тело и душу; грех же без покаяния разделяет Бога и душу. Смерть отнимает жизнь, а грех отнимает у нас Бога; поэтому грех хуже смерти.\n\nГрех хуже ада. В аду есть червь и огонь, однако грех хуже. Ад сотворён Богом, но грех не сотворён Им: это чудовище, созданное дьяволом. Адские мучения служат бременем только для грешника, а грех является бременем для Бога. В мучениях ада есть нечто доброе — исполнение Божьей справедливости; в аду есть правосудие. Но грех — самое несправедливое: он желает похитить у Бога славу, у Христа — приобретённый Им народ, а у души — счастье; поэтому грех хуже ада.\n\n© Томас Уотсон, «Молитва Господня»\n\n#ТомасУотсон #Грех #Смерть #Суд",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-09-14T12:44:39.068938Z"
+  },
+  "prepared_at_utc": "2026-09-14T12:44:40.144454Z"
+}
