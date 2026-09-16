@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
+  "publication_id": "lordchrist-spurgeon-chief-end",
+  "sequence": 10,
+  "intent_id": "2178cf5279c2fd818fc4261ab41c1b7b",
+  "workflow_run_id": "35090537737",
+  "workflow_run_attempt": "1",
+  "github_sha": "319d3cd30682aee036000d68d5d9ce0ede7f88ef",
+  "github_workflow_sha": "319d3cd30682aee036000d68d5d9ce0ede7f88ef",
+  "payload_sha256": "sha256:3f35dedcdd120b45bcb9fa12ca877aa6ddf50f3d8443a861b8563ff96182c5b0",
+  "text": "Старый Вестминстерский катехизис спрашивает: «Какова главная цель человека?» — и отвечает: «Прославлять Бога и вечно наслаждаться Им». Ответ совершенно верен, но был бы столь же истинным и в более кратком виде: главная цель человека — угождать Богу. Поступая так, человек угождает и самому себе. Мы верим, что главная цель человека и в этой жизни, и в будущей — угождать Богу, своему Творцу.\n\nЕсли человек угождает Богу, он делает то, что больше всего содействует его временному и вечному благу.\n\nЧеловек не может угождать Богу, не приобретая для себя великого счастья. Если он угождает Богу, то потому, что Бог принимает его как сына, даёт ему благословения усыновления, изливает на него щедроты благодати, делает блаженным в этой жизни и обеспечивает ему венец вечной жизни. Но если человек не угождает Богу, он неизбежно приносит себе скорбь и страдание: вкладывает червя и гниение в сердцевину своих радостей, наполняет смертное ложе терниями и собирает топливо для вечного огня.\n\n© Чарльз Сперджен, «Вера»\n\n#ЧарльзСперджен #СлаваБожья #Вера #Вечность",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-09-16T11:29:13.884328Z"
+  },
+  "prepared_at_utc": "2026-09-16T11:29:14.870148Z"
+}
