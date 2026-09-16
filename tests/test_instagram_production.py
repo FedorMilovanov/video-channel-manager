@@ -652,3 +652,84 @@ def test_provider_inert_manifest_media_verifier_refuses_redirect_and_untrusted_h
                 media_client=media_client,
             )
     assert requests == []
+
+
+def test_transient_container_error_can_recover_to_finished_without_duplicate_creation() -> None:
+    writes: list[str] = []
+    container_statuses = iter(
+        [
+            {"status_code": "ERROR", "status": "Error: Media upload has failed with error code 2207077"},
+            {"status_code": "FINISHED", "status": "ready"},
+        ]
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "cdn.example.com":
+            return _media_response(request)
+        path = request.url.path
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}"):
+            return _response(request, 200, {"id": ACCOUNT_ID, "username": USERNAME})
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}/content_publishing_limit"):
+            return _response(request, 200, {"data": []})
+        if request.method == "POST" and path.endswith(f"/{ACCOUNT_ID}/media"):
+            writes.append("container")
+            return _response(request, 200, {"id": "container-transient-error"})
+        if request.method == "GET" and path.endswith("/container-transient-error"):
+            return _response(request, 200, next(container_statuses))
+        if request.method == "POST" and path.endswith(f"/{ACCOUNT_ID}/media_publish"):
+            writes.append("publish")
+            return _response(request, 200, {"id": "media-transient-error"})
+        raise AssertionError(f"Unexpected request: {request.method} {request.url}")
+
+    config = _config()
+    transport = httpx.MockTransport(handler)
+    sleeps: list[float] = []
+    with _ledger() as ledger, _provider_client(config, transport) as client:
+        service = InstagramProductionService(config, ledger, client=client, sleep=sleeps.append)
+        result = service.publish(_manifest(key="transient-container-error"), execute=True)
+
+        assert result.status == PublicationStatus.PUBLISHED
+        assert result.provider_container_id == "container-transient-error"
+        assert result.provider_media_id == "media-transient-error"
+        assert writes == ["container", "publish"]
+        assert sleeps == [0.0]
+
+
+def test_repeated_container_error_is_terminal_without_media_publish() -> None:
+    writes: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "cdn.example.com":
+            return _media_response(request)
+        path = request.url.path
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}"):
+            return _response(request, 200, {"id": ACCOUNT_ID, "username": USERNAME})
+        if request.method == "GET" and path.endswith(f"/{ACCOUNT_ID}/content_publishing_limit"):
+            return _response(request, 200, {"data": []})
+        if request.method == "POST" and path.endswith(f"/{ACCOUNT_ID}/media"):
+            writes.append("container")
+            return _response(request, 200, {"id": "container-persistent-error"})
+        if request.method == "GET" and path.endswith("/container-persistent-error"):
+            return _response(
+                request,
+                200,
+                {"status_code": "ERROR", "status": "Error: Media upload has failed with error code 2207077"},
+            )
+        if request.method == "POST" and path.endswith(f"/{ACCOUNT_ID}/media_publish"):
+            writes.append("publish")
+            return _response(request, 200, {"id": "should-not-publish"})
+        raise AssertionError(f"Unexpected request: {request.method} {request.url}")
+
+    config = _config()
+    transport = httpx.MockTransport(handler)
+    sleeps: list[float] = []
+    with _ledger() as ledger, _provider_client(config, transport) as client:
+        service = InstagramProductionService(config, ledger, client=client, sleep=sleeps.append)
+        result = service.publish(_manifest(key="persistent-container-error"), execute=True)
+
+        assert result.status == PublicationStatus.TERMINAL_FAILURE
+        assert result.provider_container_id == "container-persistent-error"
+        assert result.provider_media_id is None
+        assert result.publish_requested_at is None
+        assert writes == ["container"]
+        assert sleeps == [0.0]

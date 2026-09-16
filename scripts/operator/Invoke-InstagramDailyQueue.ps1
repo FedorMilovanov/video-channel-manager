@@ -129,8 +129,36 @@ if ($File.Length -ne $FileBeforeHash.Length) {
     throw "Instagram clean MP4 changed size while establishing exact-byte stability."
 }
 
-& $VideoManager instagram production validate-local $CleanMp4
-if ($LASTEXITCODE -ne 0) { throw "Instagram validate-local failed." }
+$ValidationLog = Join-Path $WorkDir "validate-local.txt"
+& $VideoManager instagram production validate-local $CleanMp4 *> $ValidationLog
+$ValidationExit = $LASTEXITCODE
+Get-Content -LiteralPath $ValidationLog
+
+if ($ValidationExit -ne 0) {
+    $ValidationText = Get-Content -Raw -LiteralPath $ValidationLog
+    if ($ValidationText -notmatch "closed-GOP|closed GOP|non_idr_intra_frame") {
+        throw "Instagram validate-local failed for a non-GOP reason; fallback transcode is refused."
+    }
+
+    Write-Host "Closed-GOP validation failed; applying deterministic H.264 closed-GOP fallback transcode."
+    & $Ffmpeg -hide_banner -y -i $SourceMp4 `
+        -map 0:v:0 -map 0:a:0 `
+        -c:v libx264 -preset medium -crf 18 -profile:v high -pix_fmt yuv420p `
+        -g 60 -keyint_min 60 -sc_threshold 0 `
+        -x264-params "open-gop=0:scenecut=0:keyint=60:min-keyint=60" `
+        -c:a copy -use_editlist 0 -movflags +faststart $CleanMp4
+    if ($LASTEXITCODE -ne 0) { throw "ffmpeg closed-GOP fallback transcode failed with exit $LASTEXITCODE" }
+
+    $FileBeforeHash = Get-Item -LiteralPath $CleanMp4
+    $Sha = (Get-FileHash -Algorithm SHA256 -LiteralPath $CleanMp4).Hash.ToLowerInvariant()
+    $File = Get-Item -LiteralPath $CleanMp4
+    if ($File.Length -ne $FileBeforeHash.Length) {
+        throw "Instagram fallback MP4 changed size while establishing exact-byte stability."
+    }
+
+    & $VideoManager instagram production validate-local $CleanMp4
+    if ($LASTEXITCODE -ne 0) { throw "Instagram fallback transcode still failed validate-local." }
+}
 
 $AssetName = "$Sha.mp4"
 $AssetPath = Join-Path $WorkDir $AssetName
