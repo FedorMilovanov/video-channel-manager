@@ -1087,7 +1087,23 @@ class InstagramProductionService:
                 raise InstagramReconciliationRequired(
                     f"Container for {publication_key} is already published; refusing duplicate publish"
                 )
-            if status_code in {"ERROR", "EXPIRED"}:
+            if status_code == "EXPIRED":
+                return self.ledger.transition(
+                    publication_key,
+                    PublicationStatus.TERMINAL_FAILURE,
+                    expected_statuses=expected_statuses,
+                    provider_status=status_code,
+                    error_code=status_code.lower(),
+                    error_message=status_message or f"Instagram container is {status_code}",
+                )
+            if status_code == "ERROR":
+                # Meta can transiently report ERROR while the same known container
+                # later becomes FINISHED. Never create another container; keep
+                # polling the exact container within the existing bounded window.
+                if attempt + 1 < self.config.poll_attempts:
+                    latest = self.ledger.get(publication_key)
+                    self._sleep(self.config.poll_interval_seconds)
+                    continue
                 return self.ledger.transition(
                     publication_key,
                     PublicationStatus.TERMINAL_FAILURE,
