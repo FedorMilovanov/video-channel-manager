@@ -1,0 +1,25 @@
+{
+  "schema_name": "video-channel-manager.telegram-rendered-post",
+  "schema_version": 2,
+  "publication_id": "lordchrist-successor-augustine-one-substance",
+  "source_payload_sha256": "sha256:31cce22c356cb7ca31c5ca6de7bed2fce605e8bc82e49c8794acacb21b7f2d98",
+  "presentation_policy_id": "lordchrist-editorial-v2",
+  "presentation_policy_sha256": "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8",
+  "provider_payload_sha256": "sha256:bb711f5d4351055330caca96bfb8db69ae95be5e041197d278dba99489116e1b",
+  "parse_mode": "HTML",
+  "text": "Отец, Сын и Святой Дух являют Божественное единство одной и той же сущности в нераздельном равенстве.\n\nАвгустин, «О Троице, книга I, гл. 4»\n\n\n#Августин #Троица #Бог",
+  "html_text": "Отец, Сын и Святой Дух являют Божественное единство одной и той же сущности в нераздельном равенстве.\n\n<b>Августин</b>, <i>«О Троице, книга I, гл. 4»</i>\n\n\n#Августин #Троица #Бог",
+  "expected_entities": [
+    {
+      "type": "bold",
+      "offset": 103,
+      "length": 8
+    },
+    {
+      "type": "italic",
+      "offset": 113,
+      "length": 26
+    }
+  ],
+  "link_preview_disabled": true
+}

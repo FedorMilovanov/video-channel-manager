@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873",
+  "publication_id": "lordchrist-successor-augustine-one-substance",
+  "sequence": 1,
+  "intent_id": "ecd042a6b93a350fb4463b5fe9e4c9f6",
+  "workflow_run_id": "35438714038",
+  "workflow_run_attempt": "1",
+  "github_sha": "8807a466353b813d173fca5344da8f64a393d5d6",
+  "github_workflow_sha": "8807a466353b813d173fca5344da8f64a393d5d6",
+  "payload_sha256": "sha256:31cce22c356cb7ca31c5ca6de7bed2fce605e8bc82e49c8794acacb21b7f2d98",
+  "text": "Отец, Сын и Святой Дух являют Божественное единство одной и той же сущности в нераздельном равенстве.\n\n© Августин, «О Троице, книга I, гл. 4»\n\n#Августин #Троица #Бог",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-09-19T10:55:55.458563Z"
+  },
+  "prepared_at_utc": "2026-09-19T10:56:00.158140Z"
+}
