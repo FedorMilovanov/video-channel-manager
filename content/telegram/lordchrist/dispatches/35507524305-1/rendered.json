@@ -1,0 +1,25 @@
+{
+  "schema_name": "video-channel-manager.telegram-rendered-post",
+  "schema_version": 2,
+  "publication_id": "lordchrist-successor-chrysostom-pride-stronghold",
+  "source_payload_sha256": "sha256:60123fc529df7016fe900db5acb42919f15b7068c7815ea0db12c0f85d408a1f",
+  "presentation_policy_id": "lordchrist-editorial-v2",
+  "presentation_policy_sha256": "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8",
+  "provider_payload_sha256": "sha256:809479b210b9fda02f2b51f95e3177bbcf1d07bcfc36475b49b870ed347ecaf7",
+  "parse_mode": "HTML",
+  "text": "Это было крепостью наших зол, корнем и источником всякого нечестия.\n\nИоанн Златоуст, «Беседа 15 на Евангелие от Матфея»\n\n\n#Златоуст #Смирение #Гордость",
+  "html_text": "Это было крепостью наших зол, корнем и источником всякого нечестия.\n\n<b>Иоанн Златоуст</b>, <i>«Беседа 15 на Евангелие от Матфея»</i>\n\n\n#Златоуст #Смирение #Гордость",
+  "expected_entities": [
+    {
+      "type": "bold",
+      "offset": 69,
+      "length": 14
+    },
+    {
+      "type": "italic",
+      "offset": 85,
+      "length": 34
+    }
+  ],
+  "link_preview_disabled": true
+}
