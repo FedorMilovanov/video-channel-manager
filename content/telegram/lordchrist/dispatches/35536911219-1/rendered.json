@@ -1,0 +1,25 @@
+{
+  "schema_name": "video-channel-manager.telegram-rendered-post",
+  "schema_version": 2,
+  "publication_id": "lordchrist-successor-owen-kill-sin",
+  "source_payload_sha256": "sha256:242195f9142136b590004f96fbde0f202e48191a0bbe70a11ee55ee0376b967b",
+  "presentation_policy_id": "lordchrist-editorial-v2",
+  "presentation_policy_sha256": "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8",
+  "provider_payload_sha256": "sha256:11154011bc3d0583da5ea1f07991fc3a08f8b60022620d1894d8fe124cc2d30d",
+  "parse_mode": "HTML",
+  "text": "Умерщвляй грех, иначе он будет умерщвлять тебя.\n\nДжон Оуэн, «Об умерщвлении греха в верующих, гл. II»\n\n\n#Оуэн #Грех #Освящение",
+  "html_text": "Умерщвляй грех, иначе он будет умерщвлять тебя.\n\n<b>Джон Оуэн</b>, <i>«Об умерщвлении греха в верующих, гл. II»</i>\n\n\n#Оуэн #Грех #Освящение",
+  "expected_entities": [
+    {
+      "type": "bold",
+      "offset": 49,
+      "length": 9
+    },
+    {
+      "type": "italic",
+      "offset": 60,
+      "length": 41
+    }
+  ],
+  "link_preview_disabled": true
+}

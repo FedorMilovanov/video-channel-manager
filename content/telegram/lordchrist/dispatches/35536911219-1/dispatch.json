@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873",
+  "publication_id": "lordchrist-successor-owen-kill-sin",
+  "sequence": 3,
+  "intent_id": "901257ffaad6f4c805f44f4cb48b5ba4",
+  "workflow_run_id": "35536911219",
+  "workflow_run_attempt": "1",
+  "github_sha": "8807a466353b813d173fca5344da8f64a393d5d6",
+  "github_workflow_sha": "8807a466353b813d173fca5344da8f64a393d5d6",
+  "payload_sha256": "sha256:242195f9142136b590004f96fbde0f202e48191a0bbe70a11ee55ee0376b967b",
+  "text": "Умерщвляй грех, иначе он будет умерщвлять тебя.\n\n© Джон Оуэн, «Об умерщвлении греха в верующих, гл. II»\n\n#Оуэн #Грех #Освящение",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "evening",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-09-20T20:52:31.227536Z"
+  },
+  "prepared_at_utc": "2026-09-20T20:52:32.589846Z"
+}
