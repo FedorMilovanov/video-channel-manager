@@ -1,0 +1,25 @@
+{
+  "schema_name": "video-channel-manager.telegram-rendered-post",
+  "schema_version": 2,
+  "publication_id": "lordchrist-successor-charnock-best-not-worst",
+  "source_payload_sha256": "sha256:696b5954be2aae1c671f9a0eb11be82d440e387529a38b8b2d9da028c52061a8",
+  "presentation_policy_id": "lordchrist-editorial-v2",
+  "presentation_policy_sha256": "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8",
+  "provider_payload_sha256": "sha256:77324e9af36b8f355da088979625a7d4f8d94dce08b7fb83668621ba85e907ca",
+  "parse_mode": "HTML",
+  "text": "Неужели Бог повелевает творениям отдавать нам лучшее, а мы отделываемся перед Ним худшим от самих себя?\n\nСтивен Чарнок, «Рассуждение о духовном поклонении»\n\n\n#Чарнок #Поклонение #Благочестие",
+  "html_text": "Неужели Бог повелевает творениям отдавать нам лучшее, а мы отделываемся перед Ним худшим от самих себя?\n\n<b>Стивен Чарнок</b>, <i>«Рассуждение о духовном поклонении»</i>\n\n\n#Чарнок #Поклонение #Благочестие",
+  "expected_entities": [
+    {
+      "type": "bold",
+      "offset": 105,
+      "length": 13
+    },
+    {
+      "type": "italic",
+      "offset": 120,
+      "length": 35
+    }
+  ],
+  "link_preview_disabled": true
+}

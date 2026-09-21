@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873",
+  "publication_id": "lordchrist-successor-charnock-best-not-worst",
+  "sequence": 4,
+  "intent_id": "d407b4bf01f0cb68afcb5c51ca0c2c95",
+  "workflow_run_id": "35601280477",
+  "workflow_run_attempt": "1",
+  "github_sha": "8807a466353b813d173fca5344da8f64a393d5d6",
+  "github_workflow_sha": "8807a466353b813d173fca5344da8f64a393d5d6",
+  "payload_sha256": "sha256:696b5954be2aae1c671f9a0eb11be82d440e387529a38b8b2d9da028c52061a8",
+  "text": "Неужели Бог повелевает творениям отдавать нам лучшее, а мы отделываемся перед Ним худшим от самих себя?\n\n© Стивен Чарнок, «Рассуждение о духовном поклонении»\n\n#Чарнок #Поклонение #Благочестие",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-09-21T12:44:40.387589Z"
+  },
+  "prepared_at_utc": "2026-09-21T12:44:41.686064Z"
+}
