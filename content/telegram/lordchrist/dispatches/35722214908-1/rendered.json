@@ -1,0 +1,25 @@
+{
+  "schema_name": "video-channel-manager.telegram-rendered-post",
+  "schema_version": 2,
+  "publication_id": "lordchrist-successor-gurnall-arms-dependence",
+  "source_payload_sha256": "sha256:ef8e31b926b7517db1de943d4f6f171c1f24079b9816d6db5b5bdccae955ec29",
+  "presentation_policy_id": "lordchrist-editorial-v2",
+  "presentation_policy_sha256": "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8",
+  "provider_payload_sha256": "sha256:9f9ee46a7670a094652bf718b0603292f350e75eef258b27ae426804372adb38",
+  "parse_mode": "HTML",
+  "text": "Тот, Кто даёт вам оружие, один может научить пользоваться им и дать вам победить посредством него.\n\nУильям Герналл, «Христианин во всеоружии, наставление XI»\n\n\n#Герналл #Вера #Молитва",
+  "html_text": "Тот, Кто даёт вам оружие, один может научить пользоваться им и дать вам победить посредством него.\n\n<b>Уильям Герналл</b>, <i>«Христианин во всеоружии, наставление XI»</i>\n\n\n#Герналл #Вера #Молитва",
+  "expected_entities": [
+    {
+      "type": "bold",
+      "offset": 100,
+      "length": 14
+    },
+    {
+      "type": "italic",
+      "offset": 116,
+      "length": 41
+    }
+  ],
+  "link_preview_disabled": true
+}

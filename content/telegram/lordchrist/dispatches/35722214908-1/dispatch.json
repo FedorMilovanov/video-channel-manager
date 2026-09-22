@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873",
+  "publication_id": "lordchrist-successor-gurnall-arms-dependence",
+  "sequence": 5,
+  "intent_id": "7096b16c13d29e38f69070271d0c28b9",
+  "workflow_run_id": "35722214908",
+  "workflow_run_attempt": "1",
+  "github_sha": "8807a466353b813d173fca5344da8f64a393d5d6",
+  "github_workflow_sha": "8807a466353b813d173fca5344da8f64a393d5d6",
+  "payload_sha256": "sha256:ef8e31b926b7517db1de943d4f6f171c1f24079b9816d6db5b5bdccae955ec29",
+  "text": "Тот, Кто даёт вам оружие, один может научить пользоваться им и дать вам победить посредством него.\n\n© Уильям Герналл, «Христианин во всеоружии, наставление XI»\n\n#Герналл #Вера #Молитва",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-09-22T11:35:04.151808Z"
+  },
+  "prepared_at_utc": "2026-09-22T11:35:05.700830Z"
+}
