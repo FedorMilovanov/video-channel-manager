@@ -1,0 +1,25 @@
+{
+  "schema_name": "video-channel-manager.telegram-rendered-post",
+  "schema_version": 2,
+  "publication_id": "lordchrist-successor-bunyan-perfect-righteousness",
+  "source_payload_sha256": "sha256:c90d2738af9dcdb965e5920041dd0b66cb555dd7cbf2ad1983b8625dbbd96f6b",
+  "presentation_policy_id": "lordchrist-editorial-v2",
+  "presentation_policy_sha256": "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8",
+  "provider_payload_sha256": "sha256:a62d88646ee17ef95e188bd04b1736f01ae5f280b29737acc90d5d131dfca428",
+  "parse_mode": "HTML",
+  "text": "Я увидел, что мне нужна совершенная праведность, чтобы представить меня перед Богом без вины.\n\nДжон Беньян, «Благодать, изливающаяся на величайшего из грешников, §83»\n\n\n#Беньян #Благодать #Праведность",
+  "html_text": "Я увидел, что мне нужна совершенная праведность, чтобы представить меня перед Богом без вины.\n\n<b>Джон Беньян</b>, <i>«Благодать, изливающаяся на величайшего из грешников, §83»</i>\n\n\n#Беньян #Благодать #Праведность",
+  "expected_entities": [
+    {
+      "type": "bold",
+      "offset": 95,
+      "length": 11
+    },
+    {
+      "type": "italic",
+      "offset": 108,
+      "length": 58
+    }
+  ],
+  "link_preview_disabled": true
+}

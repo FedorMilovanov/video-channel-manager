@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873",
+  "publication_id": "lordchrist-successor-bunyan-perfect-righteousness",
+  "sequence": 6,
+  "intent_id": "f43ac4f7aca82a0edea80ca5e25c695a",
+  "workflow_run_id": "35855087309",
+  "workflow_run_attempt": "1",
+  "github_sha": "8807a466353b813d173fca5344da8f64a393d5d6",
+  "github_workflow_sha": "8807a466353b813d173fca5344da8f64a393d5d6",
+  "payload_sha256": "sha256:c90d2738af9dcdb965e5920041dd0b66cb555dd7cbf2ad1983b8625dbbd96f6b",
+  "text": "Я увидел, что мне нужна совершенная праведность, чтобы представить меня перед Богом без вины.\n\n© Джон Беньян, «Благодать, изливающаяся на величайшего из грешников, §83»\n\n#Беньян #Благодать #Праведность",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-09-23T11:32:23.150746Z"
+  },
+  "prepared_at_utc": "2026-09-23T11:32:24.237219Z"
+}
