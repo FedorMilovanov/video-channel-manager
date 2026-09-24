@@ -1,0 +1,25 @@
+{
+  "schema_name": "video-channel-manager.telegram-rendered-post",
+  "schema_version": 2,
+  "publication_id": "lordchrist-successor-augustine-indivisible-works",
+  "source_payload_sha256": "sha256:76456b95921219f8b3f64f8ea89c46cdf8ce1bbc11fd33b27fbef045020cf4e6",
+  "presentation_policy_id": "lordchrist-editorial-v2",
+  "presentation_policy_sha256": "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8",
+  "provider_payload_sha256": "sha256:10d4641d0fcf8181a607d1f9481963a66b2e2f08eeab120fdde52115fe7338be",
+  "parse_mode": "HTML",
+  "text": "Отец, Сын и Святой Дух, будучи нераздельными, также и действуют нераздельно.\n\nАвгустин, «О Троице, книга I, гл. 4»\n\n\n#Августин #Троица #Богословие",
+  "html_text": "Отец, Сын и Святой Дух, будучи нераздельными, также и действуют нераздельно.\n\n<b>Августин</b>, <i>«О Троице, книга I, гл. 4»</i>\n\n\n#Августин #Троица #Богословие",
+  "expected_entities": [
+    {
+      "type": "bold",
+      "offset": 78,
+      "length": 8
+    },
+    {
+      "type": "italic",
+      "offset": 88,
+      "length": 26
+    }
+  ],
+  "link_preview_disabled": true
+}
