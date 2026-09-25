@@ -1,0 +1,25 @@
+{
+  "schema_name": "video-channel-manager.telegram-rendered-post",
+  "schema_version": 2,
+  "publication_id": "lordchrist-successor-chrysostom-humility-self-command",
+  "source_payload_sha256": "sha256:222749b0861c1e3817fd700496fb522ef9e21b576ecfaf740f56c6ea0f657cd4",
+  "presentation_policy_id": "lordchrist-editorial-v2",
+  "presentation_policy_sha256": "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8",
+  "provider_payload_sha256": "sha256:50e34802b296ad01c3e4910367c162aa8d546bb55a082147c099f61116d81f94",
+  "parse_mode": "HTML",
+  "text": "Как гордость есть источник всякого нечестия, так смирение — начало всякого самообладания.\n\nИоанн Златоуст, «Беседа 15 на Евангелие от Матфея»\n\n\n#Златоуст #Смирение #Благочестие",
+  "html_text": "Как гордость есть источник всякого нечестия, так смирение — начало всякого самообладания.\n\n<b>Иоанн Златоуст</b>, <i>«Беседа 15 на Евангелие от Матфея»</i>\n\n\n#Златоуст #Смирение #Благочестие",
+  "expected_entities": [
+    {
+      "type": "bold",
+      "offset": 91,
+      "length": 14
+    },
+    {
+      "type": "italic",
+      "offset": 107,
+      "length": 34
+    }
+  ],
+  "link_preview_disabled": true
+}

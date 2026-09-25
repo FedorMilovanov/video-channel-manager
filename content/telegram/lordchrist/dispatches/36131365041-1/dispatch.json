@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873",
+  "publication_id": "lordchrist-successor-chrysostom-humility-self-command",
+  "sequence": 8,
+  "intent_id": "3b08ba3649e106bae6ce95b4aa522ec0",
+  "workflow_run_id": "36131365041",
+  "workflow_run_attempt": "1",
+  "github_sha": "8807a466353b813d173fca5344da8f64a393d5d6",
+  "github_workflow_sha": "8807a466353b813d173fca5344da8f64a393d5d6",
+  "payload_sha256": "sha256:222749b0861c1e3817fd700496fb522ef9e21b576ecfaf740f56c6ea0f657cd4",
+  "text": "Как гордость есть источник всякого нечестия, так смирение — начало всякого самообладания.\n\n© Иоанн Златоуст, «Беседа 15 на Евангелие от Матфея»\n\n#Златоуст #Смирение #Благочестие",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-09-25T11:48:18.620199Z"
+  },
+  "prepared_at_utc": "2026-09-25T11:48:19.756445Z"
+}
