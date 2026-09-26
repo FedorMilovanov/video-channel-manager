@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873",
+  "publication_id": "lordchrist-successor-owen-sin-utmost",
+  "sequence": 9,
+  "intent_id": "ff8a2871735bfeba1c60dc5106c734de",
+  "workflow_run_id": "36238577010",
+  "workflow_run_attempt": "1",
+  "github_sha": "8807a466353b813d173fca5344da8f64a393d5d6",
+  "github_workflow_sha": "8807a466353b813d173fca5344da8f64a393d5d6",
+  "payload_sha256": "sha256:9bf6822a6127d69c516a2cf33e5c478f6b10b3427dea647f473bb12d21fb3e6d",
+  "text": "Грех всегда стремится к крайнему пределу.\n\n© Джон Оуэн, «Об умерщвлении греха в верующих, гл. II»\n\n#Оуэн #Грех #Освящение",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-09-26T11:21:59.314068Z"
+  },
+  "prepared_at_utc": "2026-09-26T11:22:00.575657Z"
+}

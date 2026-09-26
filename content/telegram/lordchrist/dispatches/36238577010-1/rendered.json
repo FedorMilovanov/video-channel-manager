@@ -1,0 +1,25 @@
+{
+  "schema_name": "video-channel-manager.telegram-rendered-post",
+  "schema_version": 2,
+  "publication_id": "lordchrist-successor-owen-sin-utmost",
+  "source_payload_sha256": "sha256:9bf6822a6127d69c516a2cf33e5c478f6b10b3427dea647f473bb12d21fb3e6d",
+  "presentation_policy_id": "lordchrist-editorial-v2",
+  "presentation_policy_sha256": "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8",
+  "provider_payload_sha256": "sha256:6e59d220b9e9f8a758fee07da234e7f7298865e36ff52d345d8be26430f4cd96",
+  "parse_mode": "HTML",
+  "text": "Грех всегда стремится к крайнему пределу.\n\nДжон Оуэн, «Об умерщвлении греха в верующих, гл. II»\n\n\n#Оуэн #Грех #Освящение",
+  "html_text": "Грех всегда стремится к крайнему пределу.\n\n<b>Джон Оуэн</b>, <i>«Об умерщвлении греха в верующих, гл. II»</i>\n\n\n#Оуэн #Грех #Освящение",
+  "expected_entities": [
+    {
+      "type": "bold",
+      "offset": 43,
+      "length": 9
+    },
+    {
+      "type": "italic",
+      "offset": 54,
+      "length": 41
+    }
+  ],
+  "link_preview_disabled": true
+}
