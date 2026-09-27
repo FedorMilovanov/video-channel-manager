@@ -1,0 +1,25 @@
+{
+  "schema_name": "video-channel-manager.telegram-rendered-post",
+  "schema_version": 2,
+  "publication_id": "lordchrist-successor-charnock-best-part",
+  "source_payload_sha256": "sha256:e52e1dd9d132c388b9458ac6dd6134ee57de4c568e40044e808e62345376ae95",
+  "presentation_policy_id": "lordchrist-editorial-v2",
+  "presentation_policy_sha256": "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8",
+  "provider_payload_sha256": "sha256:7fa704fd052bdc9f7aaec6d3e4a81065ad239c1bdb240d840cc3677af4a670e1",
+  "parse_mode": "HTML",
+  "text": "Поскольку Бог желает поклонения от Своего творения, оно должно совершаться лучшей частью Его творения.\n\nСтивен Чарнок, «Рассуждение о духовном поклонении»\n\n\n#Чарнок #Поклонение #Сердце",
+  "html_text": "Поскольку Бог желает поклонения от Своего творения, оно должно совершаться лучшей частью Его творения.\n\n<b>Стивен Чарнок</b>, <i>«Рассуждение о духовном поклонении»</i>\n\n\n#Чарнок #Поклонение #Сердце",
+  "expected_entities": [
+    {
+      "type": "bold",
+      "offset": 104,
+      "length": 13
+    },
+    {
+      "type": "italic",
+      "offset": 119,
+      "length": 35
+    }
+  ],
+  "link_preview_disabled": true
+}
