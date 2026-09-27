@@ -67,9 +67,7 @@ def test_editorial_layer_fills_only_the_42_public_domain_context_gaps() -> None:
     assert len(resolved) == 60
     assert all(len(context) >= 80 for context in resolved.values())
     assert all(resolved[publication_id] == context for publication_id, context in source_context.items())
-    assert "английский пуританин XVII века" in resolved[
-        "lordchrist-successor-gurnall-arms-dependence"
-    ]
+    assert "английский пуританин XVII века" in resolved["lordchrist-successor-gurnall-arms-dependence"]
 
 
 def test_every_successor_runtime_post_labels_explanation_before_attribution() -> None:
@@ -100,9 +98,7 @@ def test_missing_editorial_fallback_fails_closed(tmp_path: Path) -> None:
 def test_editorial_layer_cannot_shadow_modern_source_context(tmp_path: Path) -> None:
     corpus = _corpus()
     modern = next(
-        card
-        for card in corpus.posts
-        if card.editorial_context_ru is not None and card.editorial_context_ru.strip()
+        card for card in corpus.posts if card.editorial_context_ru is not None and card.editorial_context_ru.strip()
     )
     payload = json.loads(EDITORIAL.read_text(encoding="utf-8"))
     payload["entries"].append(
