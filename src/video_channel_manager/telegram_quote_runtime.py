@@ -246,9 +246,7 @@ def build_successor_runtime_queue(
         release_id=SUCCESSOR_RELEASE_ID,
         predecessor_queue_digest=LEGACY_QUEUE_DIGEST,
         normalized_corpus_digest=corpus.digest,
-        posts=tuple(
-            _runtime_post(card, editorial_contexts[card.publication_id]) for card in corpus.posts
-        ),
+        posts=tuple(_runtime_post(card, editorial_contexts[card.publication_id]) for card in corpus.posts),
     )
 
 
