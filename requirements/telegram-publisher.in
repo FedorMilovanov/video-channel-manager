@@ -8,5 +8,6 @@
 # the isolated Python 3.11 runtime and passes pip check, guarded CLI smoke, and
 # dependency audit in full CI.
 
+anyio==4.14.2
 httpx==0.28.1
 pydantic==2.13.4
