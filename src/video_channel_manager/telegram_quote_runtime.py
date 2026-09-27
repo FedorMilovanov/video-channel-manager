@@ -25,6 +25,10 @@ from video_channel_manager.telegram_quote_successor import (
 )
 from video_channel_manager.telegram_publisher import load_ledger
 from video_channel_manager.telegram_state import initialize_ledger, strict_next_post
+from video_channel_manager.telegram_successor_editorial import (
+    SUCCESSOR_EDITORIAL_FILENAME,
+    resolve_successor_editorial_contexts,
+)
 
 SUCCESSOR_RUNTIME_SCHEMA = "video-channel-manager.telegram-successor-runtime-queue"
 SUCCESSOR_RUNTIME_SCHEMA_VERSION = 1
@@ -163,13 +167,17 @@ def _presentation_identity(attribution_ru: str) -> RuntimeSourceIdentity:
     return RuntimeSourceIdentity(author=author.strip(), work=work)
 
 
-def _runtime_post(card: SuccessorQuoteCard) -> SuccessorRuntimePost:
+def _runtime_post(card: SuccessorQuoteCard, editorial_context_ru: str) -> SuccessorRuntimePost:
     source = _presentation_identity(card.attribution_ru)
-    body = [card.quote_ru.strip()]
-    if card.editorial_context_ru is not None:
-        body.append(card.editorial_context_ru.strip())
     hashtags = " ".join(card.hashtags)
-    text = "\n\n".join([*body, f"© {source.author}, «{source.work}»", hashtags])
+    text = "\n\n".join(
+        [
+            card.quote_ru.strip(),
+            f"Пояснение: {editorial_context_ru}",
+            f"© {source.author}, «{source.work}»",
+            hashtags,
+        ]
+    )
     return SuccessorRuntimePost(
         sequence=card.sequence,
         publication_id=card.publication_id,
@@ -226,6 +234,10 @@ def build_successor_runtime_queue(
     if activation.presentation_policy_sha256 != presentation_policy_sha256:
         raise ValueError("successor activation presentation policy digest differs from production")
 
+    editorial_contexts = resolve_successor_editorial_contexts(
+        corpus,
+        candidate_path.with_name(SUCCESSOR_EDITORIAL_FILENAME),
+    )
     return SuccessorRuntimeQueue(
         schema_name=SUCCESSOR_RUNTIME_SCHEMA,
         schema_version=SUCCESSOR_RUNTIME_SCHEMA_VERSION,
@@ -234,7 +246,9 @@ def build_successor_runtime_queue(
         release_id=SUCCESSOR_RELEASE_ID,
         predecessor_queue_digest=LEGACY_QUEUE_DIGEST,
         normalized_corpus_digest=corpus.digest,
-        posts=tuple(_runtime_post(card) for card in corpus.posts),
+        posts=tuple(
+            _runtime_post(card, editorial_contexts[card.publication_id]) for card in corpus.posts
+        ),
     )
 
 
