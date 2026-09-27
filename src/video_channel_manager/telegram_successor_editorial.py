@@ -90,8 +90,7 @@ def resolve_successor_editorial_contexts(
         missing = sorted(fallback_ids - entry_ids)
         extra = sorted(entry_ids - fallback_ids)
         raise ValueError(
-            "successor editorial coverage differs from cards lacking source context: "
-            f"missing={missing}, extra={extra}"
+            f"successor editorial coverage differs from cards lacking source context: missing={missing}, extra={extra}"
         )
 
     resolved: dict[str, str] = {}
@@ -101,9 +100,7 @@ def resolve_successor_editorial_contexts(
         if len(context) < 80:
             raise ValueError(f"successor editorial context is incomplete for {card.publication_id}")
         if context.casefold().startswith("пояснение:"):
-            raise ValueError(
-                f"successor editorial context embeds presentation label for {card.publication_id}"
-            )
+            raise ValueError(f"successor editorial context embeds presentation label for {card.publication_id}")
         resolved[card.publication_id] = context
 
     if set(resolved) != set(cards_by_id):
