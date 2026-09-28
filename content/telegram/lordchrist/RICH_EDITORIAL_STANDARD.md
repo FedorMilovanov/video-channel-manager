@@ -22,6 +22,19 @@ Prefer this order when the subject allows it:
 6. **Christian takeaway** — restrained and textually connected to the material; no forced moral appended to unrelated history.
 7. **Sources/details** when useful — compact, not a bibliography wall in the main reading flow.
 
+## Paragraph rhythm and anti-slogan rule
+
+The normal unit of thought is a **paragraph**, not a stack of dramatic one-line declarations.
+
+- Prefer paragraphs of roughly 2–5 sentences when the thought naturally supports them.
+- A one-sentence paragraph is reserved for a genuinely decisive transition or conclusion; it must not become the default cadence.
+- Avoid repeated slogan structures such as `Не X. Не Y. А Z.`, repeated all-caps lines, pseudo-aphorisms, and serial rhetorical fragments whose main effect is visual drama rather than precision.
+- Do not split one ordinary argument into five tiny paragraphs merely to make it look forceful on a phone.
+- A conclusion should normally be one or two coherent paragraphs that state the theological inference and its pastoral force, not a staircase of slogans.
+- Repetition is allowed only when it adds semantic force that would be lost in ordinary prose.
+
+The target is serious, readable Russian prose with natural variation in sentence and paragraph length. If a draft sounds like a sequence of quote cards, motivational captions, or AI-generated maxims, recombine it into connected argument.
+
 ## Visual standard
 
 Images are explanatory evidence, not decoration.
@@ -57,9 +70,22 @@ Do not rank ministers by fame, archive size, sermon count or surviving media. Co
 
 Use direct quotations only when the exact wording adds value. Do not manufacture dialogue or devotional quotes.
 
+For research / explanatory posts, **primary-source quotation is preferred over paraphrasing a historical author and then attaching only a source link**. A useful article normally needs a small number of high-value quotations, not a wall of excerpts.
+
+Every quotation must satisfy all of the following:
+
+- it maps to a contiguous passage in the primary source;
+- author, work and stable source location are known;
+- the source URL and verification anchors live in the owning evidence record when the infrastructure supports them;
+- omitted words do not alter the author's claim;
+- a Russian translation preserves the force and qualifications of the original rather than improving the author rhetorically;
+- synthesis or explanation by the editor is never placed inside quotation marks.
+
+Prefer **2–4 short, exact primary-source excerpts** that materially advance the argument. Surround them with enough prose to explain why they matter. A historical authority is evidence for what that author taught; it is not a substitute for exegesis of Scripture.
+
 Long quotation blocks should not dominate an explanatory article. Prefer short exact excerpts surrounded by original explanation and source context.
 
-Where a historical teacher is discussed, Scripture and Christ remain the final norm; historical influence is not spiritual authority by itself.
+Where a historical teacher is discussed, Scripture and Christ remain the final norm; historical influence is not spiritual authority by itself. Do not make a biblical proof-text carry a claim more specific than its immediate context warrants; distinguish the text's direct teaching from a legitimate broader theological inference.
 
 ## Tone
 
@@ -71,6 +97,7 @@ Avoid:
 - artificial suspense;
 - bureaucratic phrases such as `в рамках данного материала`;
 - repetitive AI cadence and identical paragraph lengths;
+- slogan-like one-line staircases and excessive all-caps emphasis;
 - rankings of servants of God;
 - claims that surviving archives measure final faithfulness;
 - sentimental conclusions unsupported by the body.
@@ -82,6 +109,8 @@ The ideal voice is well-read, understandable Russian that can explain evidence w
 Use bold for hierarchy or genuinely important phrases, not every second sentence. Use italic sparingly for titles, foreign terms or secondary emphasis.
 
 Use lists only for parallel items. Use a table only when the reader compares the same attributes across several subjects. Use details/source blocks only for optional depth.
+
+Do not use formatting to compensate for weak prose. A sentence should still read clearly after all bold, italics and quote styling are removed.
 
 A rich block is removed if ordinary prose is clearer.
 
@@ -99,12 +128,17 @@ Before a new rich article becomes eligible for a provider canary:
 
 - [ ] title and lead make sense to a first-time reader;
 - [ ] article has one clear question or narrative spine;
+- [ ] ordinary thoughts are carried by coherent paragraphs rather than stacked one-line slogans;
+- [ ] all-caps, repetitive rhetorical fragments and artificial aphorisms have been removed unless uniquely justified;
 - [ ] every material factual claim maps to accepted evidence;
+- [ ] every direct quotation maps to a contiguous primary-source passage with author/work/location provenance;
+- [ ] translations preserve the source's qualifications and are not polished into stronger claims;
 - [ ] estimates/ranges are not rewritten as exact facts;
 - [ ] images are relevant, non-duplicative and provenance/rights-reviewed;
 - [ ] captions identify what the image actually shows;
 - [ ] formatting improves reading rather than demonstrating features;
 - [ ] theological conclusion follows from the article rather than being pasted on;
+- [ ] biblical citations are not made to prove more than their context supports;
 - [ ] visible plain text and reviewed canonical copy agree;
 - [ ] provider execution has a new exact successor identity and does not reuse a retired release;
 - [ ] provider write remains separately authorized and one-shot, with durable intent and no blind retry.
