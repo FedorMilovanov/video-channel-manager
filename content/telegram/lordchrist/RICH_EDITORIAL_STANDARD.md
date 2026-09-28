@@ -1,87 +1,190 @@
 # LordChrist Rich — reader-first editorial standard
 
-Status: editorial contract for new `@lordchrist` research / history / explanatory successor releases.
+Status: canonical editorial contract for new `@lordchrist` research / history / explanatory Telegram posts.
 
-This standard does **not** replace the live short quote lane. It defines the larger article format that should alternate with short verified quotations so the channel does not become a sequence of visually identical quote cards.
+This standard does **not** replace the live short quote lane. It defines the larger article format and the exact presentation conventions agents must follow when preparing a manually copyable rich post.
 
-## Core rule
+## 1. Core editorial rule
 
-A rich post is a compact article for a real reader, not a Telegram formatting demonstration and not an AI-looking wall of headings.
+A rich post is a compact article for a real reader, not a Telegram formatting demonstration and not an AI-looking wall of slogans.
 
-Every paragraph, heading, image, list, quote or optional details block must earn its place by improving understanding, evidence, historical context or emotional clarity.
+Every paragraph, heading, image, list and quotation must earn its place by improving understanding, evidence, historical context or clarity.
 
-The prose must read as continuous argument, not as a stack of slogans. Do **not** manufacture rhythm by breaking one ordinary thought into a run of one-line paragraphs. Short isolated lines are reserved for rare conclusions that genuinely need emphasis; they are not the default cadence.
+The prose must read as a continuous argument. Normal explanatory/theological paragraphs should usually contain **2–5 complete sentences**. Do not split one thought into a ladder of tiny one-line declarations merely for drama.
 
-## Default article shape
-
-Prefer this order when the subject allows it:
-
-1. **Title** — concrete and informative, not clickbait.
-2. **Lead** — 2–4 sentences explaining why the subject matters.
-3. **Context** — enough history or textual background to understand the question.
-4. **Two to four sections** — one idea per section, short Telegram paragraphs.
-5. **Evidence / primary-source boundary** — make clear what is documented, estimated or interpreted.
-6. **Christian takeaway** — restrained and textually connected to the material; no forced moral appended to unrelated history.
-7. **Sources/details** when useful — compact, not a bibliography wall in the main reading flow.
-
-For explanatory/theological posts, normal body paragraphs should usually contain **2–5 complete sentences**. Single-sentence paragraphs may be used when the sentence genuinely changes direction or carries unusual weight, but repeated slogan-like one-liners are a quality defect.
-
-## Anti-slogan rule
-
-Avoid the characteristic AI cadence of repeated standalone declarations, especially chains such as:
+Avoid characteristic AI cadence such as:
 
 - `Не в X.`
 - `Не в Y.`
 - `А в Z.`
 - `Он падает.`
 - `Он встаёт.`
-- `Есть вера...`
+- repeated slogan-like conclusions separated into single lines.
 
-If several neighbouring lines belong to one argument, combine them into one grammatical paragraph. Prefer explanation over rhetorical hammering. A post may have one or two memorable sentences; it should not be built from them.
+If several neighbouring sentences form one thought, keep them in one grammatical paragraph. One or two memorable short sentences may be used when genuinely warranted; they must not become the dominant rhythm.
 
-Do not use all-caps as a substitute for argument. Full-cap emphasis is exceptional and should normally be avoided in rich articles.
+## 2. Title rule
 
-## Quotations and primary-source discipline
+For the `@lordchrist` rich-article lane, the reader-facing post title is normally:
 
-Use direct quotations only when the exact wording adds value. Do not manufacture dialogue or devotional quotes.
+- **BOLD**;
+- **ALL CAPS**;
+- one concise line;
+- concrete rather than clickbait.
 
-For historical theologians, confessions and church fathers, prefer **primary texts** over summaries. A named historical quotation must have:
+Example:
+
+**ВРЕМЕННО ВЕРУЮЩИЕ**
+
+This is the explicit exception to the anti-all-caps rule. **Do not use all caps as body-text emphasis.** Body prose remains normally cased and uses restrained bold only where it helps hierarchy or comprehension.
+
+## 3. Default article shape
+
+Prefer this order when the subject allows it:
+
+1. **Bold all-caps title**.
+2. Primary biblical text / thesis quotation when it genuinely governs the article.
+3. Lead and immediate context.
+4. Continuous explanatory argument in normal multi-sentence paragraphs.
+5. Two to four strong primary-source witnesses rather than many tiny quotations.
+6. Canonical cross-references and doctrinal synthesis.
+7. Restrained conclusion that follows from the exegesis rather than functioning as a slogan.
+
+### Completeness before compactness
+
+If the complete reviewed version already fits Telegram, **do not shorten it merely to make the post look tighter**. Compactness is not a reason to delete useful exegesis, source context, theological distinctions, or evidence.
+
+When trimming is actually required, remove in this order:
+
+1. genuine repetition;
+2. weak filler or duplicated transitions;
+3. nonessential decorative wording;
+4. only then lower-value secondary material.
+
+Do not remove the main exegetical argument, necessary qualification, primary-source support, or conclusion merely to hit an arbitrary aesthetic target.
+
+### Exact length preflight
+
+The final one-message draft must fit Telegram's message-text limit **after rendering**. Preflight the exact text that will be pasted/sent, including:
+
+- title;
+- quotation text and attribution;
+- normal line breaks;
+- every invisible `U+2060` spacer line.
+
+Do not estimate length from the Markdown/research source or assume invisible spacers are free. They are characters in the pasted text. Keep a small safety margin below the platform limit rather than targeting the boundary exactly.
+
+If a reviewed draft is only slightly over, make surgical wording reductions while preserving its argument. Do **not** replace full paragraphs with slogan fragments or delete source context arbitrarily.
+
+## 4. Paragraph spacing for manual Android posts
+
+A manually copied rich article must preserve visible air between independent paragraphs. Telegram/Android can collapse genuinely empty rich-text lines, so the manual-copy representation uses a standalone invisible Unicode **WORD JOINER `U+2060`** spacer line where a paragraph gap must survive paste.
+
+The reader must not see any placeholder character. Never substitute visible bars, dots, Markdown markers or fake quote symbols for spacing.
+
+Use one invisible spacer between independent article paragraphs. Do not create multiple blank spacer rows unless there is an intentional major section break.
+
+The transport details live in `DIRECT_COPY_TO_TELEGRAM.md`.
+
+## 5. Quotations — exact presentation contract
+
+`QUOTE_ATTRIBUTION_STANDARD.md` is authoritative for quote layout.
+
+The key rules are:
+
+- the Telegram quote block contains **only quoted words**;
+- author/work or Scripture reference sits **outside** the quote block on the next line in *italic*;
+- reader-facing historical work titles are in Russian;
+- English/original titles and exact source anchors stay in the research/evidence layer;
+- paraphrases never appear in quotation marks.
+
+### Air before quotations
+
+**Default: keep air before a quotation.** If a normal explanatory paragraph or substantial multi-sentence paragraph introduces a quotation, place one `U+2060` spacer line before the quote block.
+
+Only one narrow exception exists: a very short one-sentence connector that exists solely to attach the immediately following quotation, for example:
+
+`Об окончательно отпавших Иоанн говорит иначе:`
+
+In that case the quote follows immediately, with no spacer between connector and quote, because they form one visual/semantic block.
+
+Do **not** generalize this exception. Most quotes retain air before them. A colon by itself is not a reason to remove spacing. Do not manufacture tiny lead-in sentences merely to make a compact quote block.
+
+After the quote, attribution stays attached immediately below it. Then use the normal paragraph gap before the next independent paragraph.
+
+## 6. Primary-source discipline
+
+Use a direct quotation only when exact wording adds value. Historical theologians, confessions and church fathers should be verified from primary texts or reliable critical/public-domain reproductions.
+
+A named historical quotation must have in the evidence layer:
 
 - author;
 - exact work;
-- section/chapter/paragraph when recoverable;
-- a primary-text or reliable critical/public-domain source URL in the evidence record;
-- the original-language anchor or exact English anchor when the published post uses a Russian translation;
-- a translation status indicating whether the Russian wording is an existing published translation or an editorial translation.
+- chapter/section/paragraph when recoverable;
+- primary/public-domain source URL;
+- exact original-language or English anchor when the Telegram post uses an editorial Russian translation;
+- translation status: published Russian translation vs editorial translation.
 
-Never put quotation marks around a paraphrase. If a source is being summarized, write it as prose and say what the author argues rather than presenting an invented Russian sentence as a quotation.
+Never put quotation marks around a paraphrase. When translating a source editorially, preserve its logical force and use a short contiguous excerpt. Ellipses must represent real omissions and must not stitch unrelated clauses into a statement the author never made.
 
-When translating a primary source for Telegram, preserve the claim and logical force of the source. Prefer a short contiguous excerpt over a stitched quotation. Ellipses must represent actual omissions and must not fuse separate passages into a sentence the author never wrote.
-
-For a normal one-post theological article, **2–4 substantial historical quotations** are usually stronger than many tiny quote fragments. Scripture quotations remain primary and may be used more freely when central to the exegesis.
+For a normal one-message theological article, **2–4 substantial historical quotations** are generally stronger than many tiny fragments. Scripture may be quoted more freely when it directly drives the exegesis.
 
 Long quotation blocks should not dominate an explanatory article. Prefer short exact excerpts surrounded by original explanation and source context.
 
-Where a historical teacher is discussed, Scripture and Christ remain the final norm; historical influence is not spiritual authority by itself.
+Where a historical teacher is discussed, Scripture and Christ remain the final norm; historical influence or agreement is not spiritual authority by itself.
 
-## Exegesis standard
+## 7. Exegesis standard
 
-When a post turns on a biblical phrase:
+When the article turns on a biblical phrase:
 
 - establish the immediate literary context first;
 - use parallel passages where they genuinely illuminate the text;
 - distinguish lexical observation from theological inference;
-- do not claim that a Greek tense, lemma or preposition proves more than it actually proves;
-- distinguish final apostasy from the serious falls of a true believer when the text requires that distinction;
-- state both divine causation and human means when Scripture states both (for example, `1 Pet. 1:5`: guarded by God's power **through faith**).
+- do not make a Greek tense, lemma or preposition prove more than it proves;
+- distinguish final apostasy from serious falls of a true believer where Scripture requires it;
+- when Scripture gives both divine causation and human means, state both. Example: `1 Pet. 1:5` speaks of believers guarded by **God's power through faith**.
 
-A doctrinal conclusion should arise from the text and its canonical cross-references, then be confirmed by historical witnesses—not the other way round.
+A doctrinal conclusion should arise from Scripture and canonical cross-references, then be confirmed by historical witnesses—not imposed on the text by the witnesses.
 
-## Visual standard
+## 8. Evidence and freshness
 
-Images are explanatory evidence, not decoration.
+Every material factual claim must remain bound to accepted source evidence from the owning research queue, registry, or task-specific evidence file. Preserve certainty labels, measurement scope and source limitations.
 
-A normal rich historical article may use **1–3 images**. More are allowed only when the sequence itself teaches something.
+Historical facts may be evergreen; modern biographical, institutional, legal, rights/licence, status and platform facts must be refreshed before a new release when they could have changed since the evidence pass.
+
+Estimates and ranges must not be rewritten as exact facts. Surviving, published, recorded and preached counts are different quantities and must retain their denominator and uncertainty.
+
+A retired provider release is immutable historical evidence. Its copy may inform a **new** successor release, but old provider intent/digests must never be reused to obtain a second mutation.
+
+## 9. Tone
+
+Prefer calm, serious, well-read Russian that a normal reader can follow.
+
+Avoid:
+
+- clickbait (`шок`, `вы не поверите`, `невероятная история`);
+- artificial suspense;
+- bureaucratic prose;
+- repetitive AI cadence;
+- slogan ladders;
+- body-text all caps;
+- excessive bolding;
+- sentimental conclusions unsupported by the argument;
+- rankings of ministers by fame, archive size or surviving media.
+
+Theological firmness is compatible with measured prose. Explain rather than hammer.
+
+## 10. Rich-format restraint
+
+Use bold for title, hierarchy and genuinely important phrases—not every second sentence. Use italics for attribution, work titles where appropriate, foreign terms or secondary emphasis.
+
+Use block quotes only for genuine quotations. Do not use quote formatting merely to decorate the author's own prose.
+
+Use lists only for genuinely parallel items. Tables are justified only when the reader is comparing the same attributes across several subjects.
+
+## 11. Visual standard
+
+Images are explanatory evidence, not decoration. A normal rich historical article may use **1–3 images** if each serves a distinct function.
 
 Useful roles include:
 
@@ -89,95 +192,69 @@ Useful roles include:
 - a manuscript, printed page, sermon volume, archive object or period photograph that directly supports the story;
 - a church, city, pulpit or institution when place explains the history;
 - a timeline, comparison graphic or map when prose would be harder to scan;
-- two or three contrasting images when the article compares people, eras or preservation media.
+- two or three contrasting images when the comparison itself teaches something.
 
-Do not repeat essentially the same portrait several times. Do not use generic generated religious scenery as fake historical evidence.
+Do not repeat near-identical portraits. Do not use generic generated religious scenery as fake historical evidence. Every external image must retain reviewed provenance and rights/licence metadata. Caption the image with what it actually shows and attribute it where required.
 
-Every external image must retain reviewed provenance and rights/licence metadata. Caption the image with what it actually shows and attribute it where required.
+## 12. Calvin / Spurgeon / MacArthur series
 
-## Calvin / Spurgeon / MacArthur series
-
-The prepared `research-posts-v3` corpus should be treated as article copy, not collapsed back to one quote plus attribution.
+The prepared `research-posts-v3` corpus should be treated as article copy/evidence, not collapsed back to one quote plus attribution.
 
 Examples of useful visual structures:
 
 - **«Перо, стенографист и магнитная лента»**: Calvin manuscript/sermon record → Spurgeon printed sermon/volume → MacArthur recording/archive medium.
 - **«Учиться у тех, кто жил до нас»**: restrained portraits or documentary artifacts for the historical links actually discussed.
-- **«Один текст — разные способы проповедовать»**: one meaningful visual per preacher, or a compact three-column comparison graphic if it is clearer than three decorative portraits.
+- **«Один текст — разные способы проповедовать»**: one meaningful visual per preacher, or a compact comparison graphic if clearer.
 - **«Невидимая дисциплина»**: study/preparation/archive evidence rather than generic pulpit glamour.
 
 Do not rank ministers by fame, archive size, sermon count or surviving media. Counts must always keep their denominator and uncertainty: preached, recorded, surviving and published are different quantities.
 
-## Tone
+## 13. Direct ChatGPT → Telegram drafting mode
 
-Prefer calm, serious curiosity and warmth.
+When the user asks for a manually copyable Telegram article, the assistant should return **one clean rendered rich-text article**, not raw Markdown, raw HTML or a code block.
 
-Avoid:
+Required reader-facing representation:
 
-- `невероятная история`, `шок`, `вы не поверите`;
-- artificial suspense;
-- bureaucratic phrases such as `в рамках данного материала`;
-- repetitive AI cadence and identical paragraph lengths;
-- slogan chains and repeated one-line emphatic paragraphs;
-- excessive all-caps or bolding;
-- rankings of servants of God;
-- claims that surviving archives measure final faithfulness;
-- sentimental conclusions unsupported by the body.
+- **bold all-caps title**;
+- real rendered **bold** and *italic*;
+- real blockquote entities;
+- normal multi-sentence paragraphs;
+- `U+2060` invisible spacer lines where Telegram must preserve paragraph air;
+- quote attribution outside the quote block in italics;
+- no literal `>`, `**`, HTML tags or other visible transport syntax.
 
-The ideal voice is well-read, understandable Russian that can explain evidence without sounding academic for its own sake.
+Canonical Android insertion path:
 
-## Rich-format restraint
+**Rendered ChatGPT text → Copy → Telegram composer → long-press → system Paste.**
 
-Use bold for hierarchy or genuinely important phrases, not every second sentence. Use italic sparingly for titles, foreign terms or secondary emphasis.
+Do not insert rich posts via the keyboard clipboard/history panel; that route can flatten the clipboard to plain text.
 
-Use block quotes for genuine quotations only. Do not use block quotes as decoration for the author's own prose.
+## 14. Production review checklist
 
-Use lists only for parallel items. Use a table only when the reader compares the same attributes across several subjects. Use details/source blocks only for optional depth.
+Before considering a rich article finished:
 
-A rich block is removed if ordinary prose is clearer.
-
-## Direct ChatGPT → Telegram drafting mode
-
-Some `@lordchrist` posts are composed interactively in ChatGPT and then posted manually from a phone. For this mode, the assistant output should be a **single ordinary rendered rich-text response**, not a code block and not raw Markdown source.
-
-The intended manual-copy representation is:
-
-- real rendered **bold**;
-- real rendered *italic*;
-- real rendered block quotes;
-- normal paragraph spacing;
-- no literal `>`, `**`, `*` or HTML tags in the reader-facing copy.
-
-The user should select the rendered article text directly when the client preserves rich clipboard data. The ChatGPT/message `Copy` action must not be assumed to preserve rich formatting; some clients copy Markdown/plain text instead.
-
-Because Android/browser clipboard handling can regress or vary by browser build, direct-copy eligibility must be checked with a small formatting canary before relying on it for a long post. The operational troubleshooting and canary are documented in `DIRECT_COPY_TO_TELEGRAM.md`.
-
-Do not change the article itself merely to work around a clipboard bug. Transport problems belong in the copy workflow, not in visible editorial punctuation or fake quote markers.
-
-## Evidence and freshness
-
-Every factual claim must remain bound to accepted source evidence from the owning research queue/registry. Preserve certainty labels and measurement scope.
-
-Historical facts may be evergreen; modern biographical/status facts must be refreshed before a new release if they could have changed since the evidence pass.
-
-A retired provider release is immutable historical evidence. Copy may be adapted into a **new** successor release, but old provider intent/digests must never be reused to obtain a second mutation.
-
-## Production review checklist
-
-Before a new rich article becomes eligible for a provider canary:
-
-- [ ] title and lead make sense to a first-time reader;
-- [ ] article has one clear question or narrative spine;
+- [ ] title is one concise **bold all-caps** line;
+- [ ] article has one clear argument/narrative spine;
 - [ ] body paragraphs are real paragraphs, not a slogan ladder;
-- [ ] isolated one-line emphasis is rare and justified;
+- [ ] useful content was not shortened merely for visual compactness;
+- [ ] exact rendered/pasted text length was checked, including line breaks and `U+2060` spacers;
+- [ ] independent paragraphs have preserved visual air;
+- [ ] most quotations have air before them;
+- [ ] only a genuinely short connector is attached directly to its quote;
+- [ ] quotation blocks contain quoted words only;
+- [ ] author/work or Scripture reference is italic and outside the quote block;
+- [ ] reader-facing historical work titles are Russian;
 - [ ] every material factual claim maps to accepted evidence;
-- [ ] historical quotations are exact primary-source quotations or explicitly labelled paraphrases;
-- [ ] translated quotations retain an original-language/English anchor in the evidence record;
-- [ ] estimates/ranges are not rewritten as exact facts;
+- [ ] every historical quotation has a primary-source anchor in the evidence layer;
+- [ ] editorial translations are identified as such in evidence;
+- [ ] paraphrases are not presented as quotations;
+- [ ] estimates/ranges preserve their uncertainty and denominator;
 - [ ] images are relevant, non-duplicative and provenance/rights-reviewed;
 - [ ] captions identify what the image actually shows;
-- [ ] formatting improves reading rather than demonstrating features;
-- [ ] theological conclusion follows from the article rather than being pasted on;
-- [ ] visible plain text and reviewed canonical copy agree;
-- [ ] provider execution has a new exact successor identity and does not reuse a retired release;
-- [ ] provider write remains separately authorized and one-shot, with durable intent and no blind retry.
+- [ ] bold/italic formatting is restrained and purposeful;
+- [ ] doctrinal conclusion follows from the biblical argument;
+- [ ] visible reader-facing copy and reviewed canonical copy agree;
+- [ ] manual Android paste is tested through long-press → system Paste, not keyboard clipboard insertion;
+- [ ] Telegram composer is visually inspected before sending;
+- [ ] any provider successor has a new exact identity and does not reuse a retired release;
+- [ ] provider execution, if used, remains a separate explicitly authorized one-shot action with durable intent and no blind retry.

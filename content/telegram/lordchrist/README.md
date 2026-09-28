@@ -2,6 +2,18 @@
 
 Эта папка разделяет **verified source evidence** и **Telegram presentation**.
 
+## Agent start here
+
+Если агенту дали только ссылку на репозиторий и задачу по `@lordchrist` / «Господь Бог — Сила Моя», сначала открыть:
+
+1. `AGENTS.md` — локальный read order и приоритет правил;
+2. `RICH_EDITORIAL_STANDARD.md` — канонический стандарт больших богословских/исторических постов;
+3. `QUOTE_ATTRIBUTION_STANDARD.md` — цитаты, подписи и точное правило воздуха перед цитатами;
+4. `DIRECT_COPY_TO_TELEGRAM.md` — ручная rich-copy вставка на Android и `U+2060` spacing;
+5. только затем task-specific research/evidence.
+
+**Research drafts не являются presentation authority.** Старый draft может хранить правильные факты и source anchors, но его типографику нельзя механически копировать, если она расходится с текущими стандартами.
+
 ## Источник — не финальный визуальный шаблон
 
 `verified-30-posts.json` и `verified-30-posts.md` фиксируют проверенные source cards: перевод непрерывного фрагмента, автора, труд, location, source URL, anchors и historical source attribution. После первого verified canary source JSON и его digest остаются immutable.
@@ -33,13 +45,18 @@ src/video_channel_manager/telegram_presentation.py
 
 `preview` показывает одновременно immutable source payload и exact rendered provider payload. Source SHA и provider/presentation SHA намеренно являются разными доказательствами.
 
-## Research / rich-линия — следующий редакционный стандарт
+## Research / rich-линия — текущий редакционный стандарт
 
-Большие исторические, сравнительные, биографические и объясняющие материалы **не должны** сводиться к растянутому quote-посту. Для них действует отдельный reader-first rich contract:
+Большие исторические, сравнительные, биографические и объясняющие материалы **не должны** сводиться к растянутому quote-посту. Для них действует reader-first rich contract:
 
 ```text
 RICH_EDITORIAL_STANDARD.md
+QUOTE_ATTRIBUTION_STANDARD.md
 ```
+
+Ключевые reader-facing правила: жирный заголовок ALL CAPS; нормальные многопредложные абзацы без лозунговой дроби; проверенные первичные цитаты; текст цитаты внутри quote entity, а автор/труд или ссылка на Писание — отдельной курсивной строкой ниже; русские названия трудов в публикации; воздух перед большинством цитат и только узкое исключение для короткой однострочной связки, которая семантически принадлежит следующей цитате.
+
+Если полная качественная версия поста помещается в Telegram, **не сокращать её только ради компактности**. Убирать повторы и слабые формулировки, а не полезную экзегезу, доказательства или контекст. Telegram `sendMessage` допускает **1–4096 символов после разбора entities**; финальный preflight обязан считать точный вставляемый текст вместе с переводами строк и невидимыми `U+2060` spacing-символами. Каноническая ссылка на лимит: `https://core.telegram.org/bots/api#sendmessage`.
 
 Для ручной публикации статьи, собранной интерактивно в ChatGPT на телефоне, действует отдельный transport preflight:
 
@@ -47,7 +64,7 @@ RICH_EDITORIAL_STANDARD.md
 DIRECT_COPY_TO_TELEGRAM.md
 ```
 
-Он фиксирует rich-copy canary, восстановление после Android/ChatGPT clipboard regressions и обязательный fallback на provider HTML/entities, если текущая сессия копирует только plain text.
+Канонический Android-путь: rendered ChatGPT text → Copy → Telegram composer → long-press → system **Paste / «Вставить»**. Вставка из clipboard/history панели клавиатуры запрещена для rich posts, потому что она может превратить содержимое в plain text. Обычные пустые строки при rich paste могут схлопываться, поэтому нужный paragraph air сохраняется отдельной невидимой строкой `U+2060 WORD JOINER` согласно runbook.
 
 Текущий подготовленный successor corpus:
 
