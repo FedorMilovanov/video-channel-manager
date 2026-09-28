@@ -54,6 +54,14 @@ Operational requirement for ChatGPT manual-copy output:
 
 If a future Telegram/ChatGPT client preserves real empty lines reliably, the invisible spacer may be removed; it is not part of the editorial prose.
 
+## Exact message-length preflight
+
+Telegram `sendMessage` accepts **1–4096 characters after entities parsing**. The authoritative Bot API reference is `https://core.telegram.org/bots/api#sendmessage`.
+
+For a manually pasted rich post, count the exact reader-facing text that reaches Telegram. Bold, italic and quote entities do not create extra visible wording, but **line breaks and `U+2060` spacer characters are still characters** and must be included in the preflight.
+
+Do not shorten a complete, reviewed article merely for aesthetics when it already fits. If the exact pasted form is slightly over the limit, trim repetition or weak wording surgically while preserving exegesis, evidence, qualifications and the logical conclusion. Keep a small safety margin below 4096 rather than targeting the boundary exactly.
+
 ## What is known
 
 On 2026-09-27, direct Android text selection from the **rendered ChatGPT response** successfully preserved bold, italic and quote formatting when pasted into Telegram. Blank paragraph spacing needed separate attention.
@@ -155,7 +163,8 @@ When the user asks for a manually copyable Telegram article:
 - no slogan ladder;
 - no visible Markdown/HTML syntax;
 - add invisible `U+2060` paragraph spacer lines where Telegram rich paste would otherwise collapse empty lines;
-- historical quotations must be primary-source verified under `RICH_EDITORIAL_STANDARD.md`.
+- historical quotations must be primary-source verified under `RICH_EDITORIAL_STANDARD.md`;
+- run the exact **≤4096-character** post-entity text preflight, including line breaks and `U+2060` spacers.
 
 ## Operational rule
 
