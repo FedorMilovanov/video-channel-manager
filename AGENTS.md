@@ -18,6 +18,10 @@ Before changing provider-facing, workflow, state, release, or artifact code, rea
 5. Historical audits only when provenance or a past defect must be understood.
 6. `.github/copilot-instructions.md` for Windows/operator handoff details.
 
+### @lordchrist content routing
+
+For any task that researches, drafts, edits, formats, or hands off Telegram content for `@lordchrist` / «Господь Бог — Сила Моя», read `content/telegram/lordchrist/AGENTS.md` before using any old draft or example. That local contract routes to the current rich-editorial, quotation, and Android copy/paste standards and defines their precedence. Research drafts are evidence inputs, not presentation authority.
+
 Current durable/provider state overrides old chats, screenshots, remembered counts, filenames, stale issue text, and historical packages. Never infer a current authorization from historical success.
 
 ## Adaptive reasoning contract
