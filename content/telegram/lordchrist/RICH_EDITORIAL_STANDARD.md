@@ -48,7 +48,31 @@ Prefer this order when the subject allows it:
 6. Canonical cross-references and doctrinal synthesis.
 7. Restrained conclusion that follows from the exegesis rather than functioning as a slogan.
 
-The post must fit the actual Telegram message limit with safety margin after rendering. Do not solve an overlong draft by turning it into fragments or deleting source context arbitrarily.
+### Completeness before compactness
+
+If the complete reviewed version already fits Telegram, **do not shorten it merely to make the post look tighter**. Compactness is not a reason to delete useful exegesis, source context, theological distinctions, or evidence.
+
+When trimming is actually required, remove in this order:
+
+1. genuine repetition;
+2. weak filler or duplicated transitions;
+3. nonessential decorative wording;
+4. only then lower-value secondary material.
+
+Do not remove the main exegetical argument, necessary qualification, primary-source support, or conclusion merely to hit an arbitrary aesthetic target.
+
+### Exact length preflight
+
+The final one-message draft must fit Telegram's message-text limit **after rendering**. Preflight the exact text that will be pasted/sent, including:
+
+- title;
+- quotation text and attribution;
+- normal line breaks;
+- every invisible `U+2060` spacer line.
+
+Do not estimate length from the Markdown/research source or assume invisible spacers are free. They are characters in the pasted text. Keep a small safety margin below the platform limit rather than targeting the boundary exactly.
+
+If a reviewed draft is only slightly over, make surgical wording reductions while preserving its argument. Do **not** replace full paragraphs with slogan fragments or delete source context arbitrarily.
 
 ## 4. Paragraph spacing for manual Android posts
 
@@ -175,6 +199,8 @@ Before considering a rich article finished:
 - [ ] title is one concise **bold all-caps** line;
 - [ ] article has one clear argument/narrative spine;
 - [ ] body paragraphs are real paragraphs, not a slogan ladder;
+- [ ] useful content was not shortened merely for visual compactness;
+- [ ] exact rendered/pasted text length was checked, including line breaks and `U+2060` spacers;
 - [ ] independent paragraphs have preserved visual air;
 - [ ] most quotations have air before them;
 - [ ] only a genuinely short connector is attached directly to its quote;
