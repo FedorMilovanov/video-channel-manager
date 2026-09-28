@@ -1,6 +1,6 @@
 # Direct ChatGPT → Telegram rich-copy workflow
 
-Status: operational guidance for manually copying reviewed `@lordchrist` article copy from ChatGPT on a phone into Telegram while preserving bold, italic and quote formatting.
+Status: operational guidance for manually copying reviewed `@lordchrist` article copy from ChatGPT on a phone into Telegram while preserving bold, italic, quote formatting **and paragraph spacing**.
 
 This workflow is intentionally separate from the bot/provider publisher. It exists for occasional interactive articles that the editor wants to post manually from the chat.
 
@@ -25,13 +25,40 @@ That path inserts the `text/plain` representation and strips rich formatting.
 
 Therefore, for `@lordchrist`, **system long-press Paste inside the Telegram composer is the canonical manual insertion method. Keyboard clipboard insertion is forbidden for rich posts.**
 
-This resolves the 2026-09-28 apparent regression: the clipboard itself could contain the needed rich representation, but the keyboard clipboard UI was reinserting only plain text.
+## Paragraph spacing: separate transport issue
+
+Rich formatting can survive while **empty paragraph separators collapse** during HTML/styled paste. This is a different problem from losing bold/italic/blockquote entities.
+
+For manually copied ChatGPT articles that must keep a visible blank line between paragraphs, use a spacer line containing a single invisible Unicode **WORD JOINER `U+2060`** between paragraph blocks.
+
+The spacer line is technically non-empty, so rich-paste normalization is much less likely to discard it, while it remains visually blank to the Telegram reader.
+
+Canonical rendered structure:
+
+```text
+Paragraph one.
+
+[U+2060 on its own line]
+
+Paragraph two.
+```
+
+The visible article must never show placeholder characters, vertical bars, Markdown quote markers or other fake spacing symbols. The `U+2060` separator is a transport-only invisible character.
+
+Operational requirement for ChatGPT manual-copy output:
+
+- place one `U+2060` spacer line between ordinary paragraphs;
+- place one spacer line before and after quote blocks when a visible paragraph gap is desired;
+- do not insert multiple spacer lines unless an intentionally larger break is required;
+- verify the final Telegram composer before sending.
+
+If a future Telegram/ChatGPT client preserves real empty lines reliably, the invisible spacer may be removed; it is not part of the editorial prose.
 
 ## What is known
 
 On 2026-09-27, direct Android text selection from the **rendered ChatGPT response** successfully preserved bold, italic and quote formatting when pasted into Telegram. Blank paragraph spacing needed separate attention.
 
-On 2026-09-28, repeated tests initially looked like a rich-copy failure because insertion was being performed from the keyboard clipboard UI. After switching to a long press in the Telegram composer and choosing the system **Paste** command, formatting was preserved again.
+On 2026-09-28, repeated tests initially looked like a rich-copy failure because insertion was being performed from the keyboard clipboard UI. After switching to a long press in the Telegram composer and choosing the system **Paste** command, formatting was preserved again. A later test confirmed that formatting survived but ordinary empty paragraph gaps were collapsed, requiring the separate non-empty invisible spacer rule above.
 
 Telegram Android itself supports rich paste when the Android clipboard item contains `text/html`: its composer checks for the `text/html` MIME type, parses the HTML, and converts supported tags including `blockquote` into Telegram text entities.
 
@@ -40,16 +67,17 @@ Relevant implementation references:
 - Telegram Android `EditTextCaption.onTextContextMenuItem`: rich paste path requires `text/html` and calls `CopyUtilities.fromHTML`.
 - Telegram Android `CopyUtilities`: converts bold/italic styles and `blockquote` into Telegram entities.
 - Telegram Bot API/TDLib explicitly support bold, italic and blockquote entities.
+- Telegram rich-message implementations also document that ordinary rich-HTML newlines may be collapsed unless the structure contains an explicit line break or non-empty block boundary.
 
 ## Canonical manual-copy method
 
 Use **ordinary rendered ChatGPT output**. The article must not be supplied as a code block, raw Markdown source, raw HTML, or a visible-symbol workaround such as `>` quote markers or vertical-bar pseudoquotes.
 
-The response should visibly contain real bold, italic and block quotes before copying.
+The response should visibly contain real bold, italic and block quotes before copying, and invisible `U+2060` spacer lines where paragraph gaps must survive Telegram paste.
 
 ### Step 1 — run a small canary when needed
 
-Before copying a long article after any client/app update, test this rendered sample:
+Before copying a long article after any client/app update, test this rendered sample with an invisible spacer between blocks:
 
 **Жирный текст**
 
@@ -59,9 +87,9 @@ Before copying a long article after any client/app update, test this rendered sa
 
 Обычный абзац.
 
-Pass condition: after **long-press → Paste** in Telegram, the composer visibly shows bold + quote block + italic before sending.
+Pass condition: after **long-press → Paste** in Telegram, the composer visibly shows bold + quote block + italic and a visible paragraph gap.
 
-Fail condition: all text is plain, or literal Markdown punctuation (`>`, `*`, `**`) appears.
+Fail condition: formatting is flattened, literal Markdown punctuation appears, or paragraph gaps collapse.
 
 ### Step 2 — copy from ChatGPT
 
@@ -80,7 +108,7 @@ A ChatGPT-level Copy action may be used only if a canary proves that it preserve
 2. **Long-press inside the composer itself.**
 3. Wait for the Android text context menu.
 4. Tap **Paste / «Вставить»** there.
-5. Verify formatting in the composer before sending.
+5. Verify both formatting **and paragraph spacing** in the composer before sending.
 
 Do **not** paste a rich article by tapping:
 
@@ -126,12 +154,13 @@ When the user asks for a manually copyable Telegram article:
 - normal multi-sentence paragraphs;
 - no slogan ladder;
 - no visible Markdown/HTML syntax;
+- add invisible `U+2060` paragraph spacer lines where Telegram rich paste would otherwise collapse empty lines;
 - historical quotations must be primary-source verified under `RICH_EDITORIAL_STANDARD.md`.
 
 ## Operational rule
 
 For manual rich posting from Android, the canonical sequence is now:
 
-**Rendered ChatGPT text → Copy → Telegram composer → long-press → system Paste.**
+**Rendered ChatGPT text with invisible paragraph spacers → Copy → Telegram composer → long-press → system Paste.**
 
 Never use the keyboard clipboard panel for rich articles.
