@@ -35,16 +35,24 @@ The acceptance probe is visual: before posting to the channel, paste into Saved 
 
 ## Repository-owned reliable manual helper
 
-If manual chat-to-Telegram posting is a recurring workflow, the repository should own a **top-level HTTPS rich-copy helper**, not a downloaded/sandboxed HTML attachment.
+The repository implementation lives at:
 
-Required properties:
+```text
+tools/telegram-rich-copy/index.html
+```
 
-- served as a normal top-level HTTPS page, not `file:`, `data:`, a ChatGPT attachment preview, or a sandboxed iframe;
+It intentionally refuses to claim success unless it is running as a top-level secure page with the Clipboard API and `text/html` support available. It accepts the raw Markdown copied from ChatGPT, converts the supported subset to Telegram-compatible HTML, and writes one clipboard item containing both `text/plain` and `text/html`.
+
+For actual phone use this file must be served from a reviewed **top-level HTTPS** hosting path. Opening the same bytes as a ChatGPT attachment preview, `file:` URL, `data:` URL, or sandboxed iframe is not an acceptance test because browser clipboard permissions and MIME handling can differ there.
+
+Required properties of the hosted helper:
+
+- served as a normal top-level HTTPS page;
 - accepts raw Markdown or reviewed Telegram HTML as input;
 - normalizes output to Telegram-supported constructs only;
 - writes one clipboard item containing both `text/plain` and `text/html` from an explicit user click;
-- uses the Async Clipboard API when available and reports a hard failure instead of silently claiming rich copy succeeded;
-- includes a small test payload and an operator-visible success/failure state;
+- uses the Async Clipboard API and reports a hard failure instead of silently claiming rich copy succeeded;
+- includes a small bold/italic/blockquote test payload and an operator-visible success/failure state;
 - never sends the article text to a third-party service;
 - never performs a Telegram provider mutation itself;
 - the operator still verifies the Saved Messages acceptance probe before channel publication.
