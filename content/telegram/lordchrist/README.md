@@ -41,6 +41,14 @@ src/video_channel_manager/telegram_presentation.py
 RICH_EDITORIAL_STANDARD.md
 ```
 
+Для ручной публикации статьи, собранной интерактивно в ChatGPT на телефоне, действует отдельный transport preflight:
+
+```text
+DIRECT_COPY_TO_TELEGRAM.md
+```
+
+Он фиксирует rich-copy canary, восстановление после Android/ChatGPT clipboard regressions и обязательный fallback на provider HTML/entities, если текущая сессия копирует только plain text.
+
 Текущий подготовленный successor corpus:
 
 ```text
