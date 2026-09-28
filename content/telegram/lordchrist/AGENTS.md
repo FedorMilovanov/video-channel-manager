@@ -32,7 +32,7 @@ Research drafts are evidence inputs, **not presentation authority**. If an old d
 - Reader-facing title: **bold, ALL CAPS, one concise line**.
 - Body: continuous Russian prose, normally multi-sentence paragraphs; no AI slogan ladder.
 - Preserve useful content. If the complete reviewed post fits Telegram, **do not shorten it merely to make it look more compact**. Remove repetition or weak wording, not evidence, exegesis, or useful context.
-- Telegram hard-length preflight must be run on the exact pasted text. Count line breaks and invisible `U+2060` spacer characters too. Prefer a small safety margin below the platform limit.
+- Telegram `sendMessage` text is limited to **1–4096 characters after entities parsing** (`https://core.telegram.org/bots/api#sendmessage`). Run the hard-length preflight on the exact pasted text, counting line breaks and invisible `U+2060` spacer characters too. Keep a small margin below 4096 rather than targeting the boundary exactly.
 - Historical quotations: primary-source verified; editorial Russian translations must retain an exact original/English anchor in evidence.
 - Quote entity: quoted words only.
 - Attribution: immediately below the quote, outside the quote entity, in *italic*; reader-facing work titles in Russian.
