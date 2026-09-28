@@ -41,6 +41,14 @@ src/video_channel_manager/telegram_presentation.py
 RICH_EDITORIAL_STANDARD.md
 ```
 
+Если материал собирается в ChatGPT/редакторе и оператор хочет вручную вставить его в Telegram с сохранением жирного, курсива и blockquote, действует отдельный transport/handoff contract:
+
+```text
+MANUAL_RICH_COPY.md
+```
+
+Он отделяет редакционное качество статьи от нестабильности Android/browser clipboard: статья не должна переписываться видимыми Markdown-символами ради починки транспорта. Для ручной публикации обязательна проверка форматирования в Saved Messages; детерминированным fallback остаётся reviewed Telegram provider path.
+
 Текущий подготовленный successor corpus:
 
 ```text
