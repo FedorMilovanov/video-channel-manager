@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873",
+  "publication_id": "lordchrist-successor-gurnall-humble-boldness",
+  "sequence": 11,
+  "intent_id": "9b116b605888f280b6d924cb6f2ac8f9",
+  "workflow_run_id": "36570666152",
+  "workflow_run_attempt": "1",
+  "github_sha": "e62770f6ca04631a9e688623aa006856c4e37d83",
+  "github_workflow_sha": "e62770f6ca04631a9e688623aa006856c4e37d83",
+  "payload_sha256": "sha256:457c310c8b14d80785df45f8237f63a84e0e700af1a0479a5593873c22d5a8d4",
+  "text": "Христианин в молитве приближается к Богу со смиренной дерзновенностью веры.\n\nПояснение: Герналл соединяет две вещи, которые легко разорвать: смирение грешника и дерзновение веры. Христианин приходит не потому, что достоин доступа сам по себе, а потому, что во Христе ему открыт престол благодати; поэтому уверенность не обязана превращаться в самоуверенность.\n\n© Уильям Герналл, «Христианин во всеоружии, наставление I»\n\n#Герналл #Молитва #Вера",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-09-29T12:49:16.572645Z"
+  },
+  "prepared_at_utc": "2026-09-29T12:49:17.727786Z"
+}
