@@ -38,7 +38,7 @@ Research drafts are evidence inputs, **not presentation authority**. If an old d
 - Telegram `sendMessage` text is limited to **1–4096 characters after entities parsing** (`https://core.telegram.org/bots/api#sendmessage`). Run the hard-length preflight on the exact pasted text, counting line breaks and invisible `U+2060` spacer characters too. Keep a small margin below 4096 rather than targeting the boundary exactly.
 - Historical quotations: primary-source verified; editorial Russian translations must retain an exact original/English anchor in evidence.
 - Quote entity: quoted words only.
-- Attribution: immediately below the quote, outside the quote entity, in *italic*; reader-facing work titles in Russian.
+- Attribution: immediately below the quote, outside the quote entity, in *italic*, and beginning with Unicode em dash plus one normal space (`— `); reader-facing work titles in Russian. Apply the same `— ` prefix to Scripture references. The dash is part of the attribution line, never part of the quote.
 - **Default: air before quotations.** Put one `U+2060` spacer line before a quote after a normal/substantial paragraph.
 - Narrow exception only: a genuinely short one-sentence connector that exists solely to introduce the next quote (for example, `Об окончательно отпавших Иоанн говорит иначе:`) stays attached to the quote with no spacer. Do not generalize this exception.
 - After quote attribution, restore the normal article gap before the next independent paragraph.

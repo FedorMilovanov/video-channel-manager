@@ -6,19 +6,19 @@ Status: canonical presentation rule for quotations in rich/editorial Telegram po
 
 A Telegram blockquote contains **only the quoted words**. Author, work title, Scripture reference, section number and other source metadata are never part of the quotation entity.
 
-Immediately after the quote block, place the attribution on its own line in *italic*, outside the blockquote:
+Immediately after the quote block, place the attribution on its own line in *italic*, outside the blockquote. Every reader-facing attribution line begins with a Unicode em dash `—` (`U+2014`) followed by one normal space:
 
 > «Точный текст цитаты»
 
-*Автор, «Название труда»*
+*— Автор, «Название труда»*
 
-For Scripture use the same hierarchy:
+For Scripture use the same hierarchy and the same em-dash prefix:
 
 > «Текст библейской цитаты»
 
-*Лк. 8:13*
+*— Лк. 8:13*
 
-This prevents attribution metadata from looking like words spoken by the quoted author and produces a cleaner Telegram visual hierarchy.
+The em dash belongs to the attribution line, **not** to the quotation entity. Do not substitute a hyphen `-`, en dash `–`, bullet, copyright sign or other prefix. This keeps the source visually connected to the quotation while making it unmistakably separate from the quoted words.
 
 ## Reader-facing language
 
@@ -44,7 +44,7 @@ Explanatory paragraph of normal article length.
 
 > «Quotation»
 
-*Attribution*
+*— Attribution*
 ```
 
 There is one narrow exception: when a **very short one-sentence connector** exists only to attach the immediately following quotation—for example, `Об окончательно отпавших Иоанн говорит иначе:`—the quote follows that connector directly, with **no spacer between the connector and quotation**. The connector and quote should read as one semantic block.
@@ -53,7 +53,7 @@ There is one narrow exception: when a **very short one-sentence connector** exis
 Об окончательно отпавших Иоанн говорит иначе:
 > «Quotation»
 
-*Attribution*
+*— Attribution*
 ```
 
 Do not generalize this exception. **Most quotations should still have air before them.** Do not remove spacing merely because the preceding paragraph happens to end with a colon. The criterion is semantic and visual: only a genuinely short connector/label is kept attached to its quote.
@@ -62,7 +62,7 @@ Also do not manufacture tiny one-sentence lead-ins merely to avoid spacing. If t
 
 ## Spacing after quotations
 
-Attribution is visually attached to its quotation and therefore receives no extra spacer between quote and attribution. After the italic attribution, use one normal article gap (`U+2060` in the Android manual-copy path) before the next independent paragraph.
+Attribution is visually attached to its quotation and therefore receives no extra spacer between quote and attribution. The required `— ` prefix does not change this spacing rule. After the italic attribution, use one normal article gap (`U+2060` in the Android manual-copy path) before the next independent paragraph.
 
 So the preferred hierarchy is:
 
@@ -70,7 +70,7 @@ So the preferred hierarchy is:
 substantial paragraph
 [air]
 quotation block
-italic attribution
+italic attribution beginning with —
 [air]
 next paragraph
 ```
@@ -80,7 +80,7 @@ and only for the narrow connector case:
 ```text
 short connector:
 quotation block
-italic attribution
+italic attribution beginning with —
 [air]
 next paragraph
 ```
