@@ -17,8 +17,9 @@ from video_channel_manager.telegram_models import (
 )
 
 CANONICAL_PRESENTATION_POLICY_PATH = Path("content/telegram/lordchrist/presentation-policy.json")
+QUOTE_V3_PRESENTATION_POLICY_PATH = Path("content/telegram/lordchrist/presentation-policy-v3.json")
 DIRECT_QUOTE_RE = re.compile(r"«[^»\n]+»")
-FormattingType = Literal["bold", "italic"]
+FormattingType = Literal["bold", "italic", "blockquote"]
 
 
 class BodyQuoteEmphasisPolicy(BaseModel):
@@ -46,6 +47,12 @@ class SpacingPolicy(BaseModel):
 
 
 class PresentationPolicy(BaseModel):
+    """Legacy/current editorial-v2 policy.
+
+    This remains byte-for-byte compatible with the already published successor
+    release. New depth-v2 posts opt into QuotePresentationPolicyV3 explicitly.
+    """
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_name: Literal["video-channel-manager.telegram-presentation-policy"]
@@ -60,6 +67,34 @@ class PresentationPolicy(BaseModel):
     @property
     def digest(self) -> str:
         return sha256_text(canonical_json(self.model_dump(mode="json")))
+
+
+class QuotePresentationPolicyV3(BaseModel):
+    """Reader-facing policy for reviewed quote cards.
+
+    Exact quotation, source attribution, editorial context and hashtags are
+    separate semantic blocks. Presentation never adds a visible editorial label
+    or copyright glyph.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_name: Literal["video-channel-manager.telegram-presentation-policy"]
+    schema_version: Literal[3]
+    policy_id: Literal["lordchrist-quote-v3"]
+    parse_mode: Literal["HTML"]
+    quote_style: Literal["blockquote"]
+    attribution_style: Literal["italic"]
+    attribution_prefix: Literal["— "]
+    block_separator: Literal["\n\n"]
+    link_preview_disabled: Literal[True] = True
+
+    @property
+    def digest(self) -> str:
+        return sha256_text(canonical_json(self.model_dump(mode="json")))
+
+
+PresentationPolicyContract = PresentationPolicy | QuotePresentationPolicyV3
 
 
 class TelegramTextEntity(BaseModel):
@@ -77,7 +112,7 @@ class RenderedTelegramPost(BaseModel):
     schema_version: Literal[2]
     publication_id: str = Field(pattern=r"^lordchrist-[a-z0-9][a-z0-9-]{4,100}$")
     source_payload_sha256: str = Field(pattern=SHA256_PATTERN)
-    presentation_policy_id: Literal["lordchrist-editorial-v2"]
+    presentation_policy_id: Literal["lordchrist-editorial-v2", "lordchrist-quote-v3"]
     presentation_policy_sha256: str = Field(pattern=SHA256_PATTERN)
     provider_payload_sha256: str = Field(pattern=SHA256_PATTERN)
     parse_mode: Literal["HTML"]
@@ -90,12 +125,19 @@ class RenderedTelegramPost(BaseModel):
     def validate_rendered_contract(self) -> "RenderedTelegramPost":
         if "© " in self.text:
             raise ValueError("rendered Telegram publication must not contain the legacy copyright prefix")
-        if "\n\n\n#" not in self.text:
-            raise ValueError("rendered Telegram publication must contain the approved extra spacing before hashtags")
-        if not any(entity.type == "bold" for entity in self.expected_entities):
-            raise ValueError("rendered Telegram publication must contain at least one bold entity")
-        if not any(entity.type == "italic" for entity in self.expected_entities):
-            raise ValueError("rendered Telegram publication must contain at least one italic entity")
+        types = {entity.type for entity in self.expected_entities}
+        if self.presentation_policy_id == "lordchrist-editorial-v2":
+            if "\n\n\n#" not in self.text:
+                raise ValueError("editorial-v2 publication must contain approved extra spacing before hashtags")
+            if not {"bold", "italic"}.issubset(types):
+                raise ValueError("editorial-v2 publication requires bold and italic entities")
+        else:
+            if "Пояснение:" in self.text:
+                raise ValueError("quote-v3 publication must not expose the editorial label")
+            if "\n\n#" not in self.text:
+                raise ValueError("quote-v3 publication must keep hashtags as a separate final block")
+            if "blockquote" not in types or "italic" not in types:
+                raise ValueError("quote-v3 publication requires blockquote and italic attribution entities")
         return self
 
 
@@ -107,6 +149,18 @@ DEFAULT_PRESENTATION_POLICY = PresentationPolicy(
     body_quote_emphasis=BodyQuoteEmphasisPolicy(),
     attribution=AttributionPolicy(),
     spacing=SpacingPolicy(),
+    link_preview_disabled=True,
+)
+
+DEFAULT_QUOTE_V3_PRESENTATION_POLICY = QuotePresentationPolicyV3(
+    schema_name="video-channel-manager.telegram-presentation-policy",
+    schema_version=3,
+    policy_id="lordchrist-quote-v3",
+    parse_mode="HTML",
+    quote_style="blockquote",
+    attribution_style="italic",
+    attribution_prefix="— ",
+    block_separator="\n\n",
     link_preview_disabled=True,
 )
 
@@ -131,8 +185,15 @@ class _RenderBuilder:
         length = self._utf16_length(value)
         self._plain.append(value)
         escaped = html.escape(value, quote=False)
-        tag = "b" if style == "bold" else "i"
-        self._html.append(f"<{tag}>{escaped}</{tag}>")
+        if style == "bold":
+            rendered = f"<b>{escaped}</b>"
+        elif style == "italic":
+            rendered = f"<i>{escaped}</i>"
+        elif style == "blockquote":
+            rendered = f"<blockquote>{escaped}</blockquote>"
+        else:  # pragma: no cover - protected by Literal at validation boundaries
+            raise ValueError(f"unsupported Telegram formatting type: {style}")
+        self._html.append(rendered)
         self._entities.append(TelegramTextEntity(type=style, offset=self._utf16_offset, length=length))
         self._utf16_offset += length
 
@@ -149,15 +210,25 @@ class _RenderBuilder:
         return tuple(self._entities)
 
 
-def load_presentation_policy(path: Path = CANONICAL_PRESENTATION_POLICY_PATH) -> PresentationPolicy:
+def load_presentation_policy(
+    path: Path = CANONICAL_PRESENTATION_POLICY_PATH,
+) -> PresentationPolicyContract:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
-        policy = PresentationPolicy.model_validate(payload)
-    except (OSError, json.JSONDecodeError, ValidationError) as exc:
+        policy_id = payload.get("policy_id") if isinstance(payload, dict) else None
+        if policy_id == "lordchrist-editorial-v2":
+            policy: PresentationPolicyContract = PresentationPolicy.model_validate(payload)
+            expected_digest = DEFAULT_PRESENTATION_POLICY.digest
+        elif policy_id == "lordchrist-quote-v3":
+            policy = QuotePresentationPolicyV3.model_validate(payload)
+            expected_digest = DEFAULT_QUOTE_V3_PRESENTATION_POLICY.digest
+        else:
+            raise ValueError(f"unsupported Telegram presentation policy id: {policy_id!r}")
+    except (OSError, json.JSONDecodeError, ValidationError, ValueError) as exc:
         raise ValueError(f"invalid Telegram presentation policy {path}: {exc}") from exc
 
-    if policy.digest != DEFAULT_PRESENTATION_POLICY.digest:
-        raise ValueError("presentation policy artifact differs from the code-reviewed lordchrist-editorial-v2 contract")
+    if policy.digest != expected_digest:
+        raise ValueError(f"presentation policy artifact differs from the code-reviewed {policy.policy_id} contract")
     return policy
 
 
@@ -196,14 +267,48 @@ def _select_bold_quote_index(quote_blocks: list[str], policy: PresentationPolicy
     return max(range(len(quotes)), key=lambda index: (len(quotes[index]), -index))
 
 
-def render_post(
+def _provider_payload(
+    *,
     post: TelegramPost,
-    policy: PresentationPolicy = DEFAULT_PRESENTATION_POLICY,
+    policy: PresentationPolicyContract,
+    builder: _RenderBuilder,
 ) -> RenderedTelegramPost:
-    if policy.digest != DEFAULT_PRESENTATION_POLICY.digest:
-        raise ValueError("unsupported Telegram presentation policy")
+    plain_text = builder.text
+    html_text = builder.html_text
+    if len(plain_text) > MAX_TELEGRAM_TEXT_LENGTH:
+        raise ValueError(
+            f"rendered Telegram publication exceeds {MAX_TELEGRAM_TEXT_LENGTH} characters: {post.publication_id}"
+        )
+    payload = {
+        "publication_id": post.publication_id,
+        "source_payload_sha256": post.payload_sha256,
+        "presentation_policy_sha256": policy.digest,
+        "parse_mode": policy.parse_mode,
+        "text": plain_text,
+        "html_text": html_text,
+        "expected_entities": [entity.model_dump(mode="json") for entity in builder.entities],
+        "link_preview_disabled": policy.link_preview_disabled,
+    }
+    return RenderedTelegramPost(
+        schema_name="video-channel-manager.telegram-rendered-post",
+        schema_version=2,
+        publication_id=post.publication_id,
+        source_payload_sha256=post.payload_sha256,
+        presentation_policy_id=policy.policy_id,
+        presentation_policy_sha256=policy.digest,
+        provider_payload_sha256=sha256_text(canonical_json(payload)),
+        parse_mode=policy.parse_mode,
+        text=plain_text,
+        html_text=html_text,
+        expected_entities=builder.entities,
+        link_preview_disabled=policy.link_preview_disabled,
+    )
 
+
+def _render_post_v2(post: TelegramPost, policy: PresentationPolicy) -> RenderedTelegramPost:
     blocks = [block.strip() for block in post.text.split("\n\n") if block.strip()]
+    if len(blocks) < 3:
+        raise ValueError("editorial-v2 source text does not contain body, attribution and hashtags")
     quote_blocks = blocks[:-2]
     hashtags = blocks[-1]
     bold_quote_index = _select_bold_quote_index(quote_blocks, policy)
@@ -227,50 +332,77 @@ def render_post(
     builder.append(policy.spacing.attribution_to_hashtags)
     builder.append(hashtags)
 
-    plain_text = builder.text
-    html_text = builder.html_text
-    if len(plain_text) > MAX_TELEGRAM_TEXT_LENGTH:
-        raise ValueError(
-            f"rendered Telegram publication exceeds {MAX_TELEGRAM_TEXT_LENGTH} characters: {post.publication_id}"
-        )
-    if "© " in plain_text:
+    if "© " in builder.text:
         raise ValueError("rendered Telegram publication must not contain the legacy copyright prefix")
-    if not plain_text.endswith(hashtags):
+    if not builder.text.endswith(hashtags):
         raise ValueError("rendered Telegram publication must preserve the original hashtag block")
-    if policy.spacing.attribution_to_hashtags not in plain_text:
+    if policy.spacing.attribution_to_hashtags not in builder.text:
         raise ValueError("rendered Telegram publication must preserve the approved hashtag spacing")
+    return _provider_payload(post=post, policy=policy, builder=builder)
 
-    provider_payload = {
-        "publication_id": post.publication_id,
-        "source_payload_sha256": post.payload_sha256,
-        "presentation_policy_sha256": policy.digest,
-        "parse_mode": policy.parse_mode,
-        "text": plain_text,
-        "html_text": html_text,
-        "expected_entities": [entity.model_dump(mode="json") for entity in builder.entities],
-        "link_preview_disabled": policy.link_preview_disabled,
-    }
-    provider_payload_sha256 = sha256_text(canonical_json(provider_payload))
 
-    return RenderedTelegramPost(
-        schema_name="video-channel-manager.telegram-rendered-post",
-        schema_version=2,
-        publication_id=post.publication_id,
-        source_payload_sha256=post.payload_sha256,
-        presentation_policy_id=policy.policy_id,
-        presentation_policy_sha256=policy.digest,
-        provider_payload_sha256=provider_payload_sha256,
-        parse_mode=policy.parse_mode,
-        text=plain_text,
-        html_text=html_text,
-        expected_entities=builder.entities,
-        link_preview_disabled=policy.link_preview_disabled,
-    )
+def _quote_v3_blocks(post: TelegramPost, policy: QuotePresentationPolicyV3) -> tuple[str, str, str, str]:
+    if "© " in post.text or "Пояснение:" in post.text:
+        raise ValueError("quote-v3 source text must not contain legacy presentation labels")
+    blocks = [block.strip() for block in post.text.replace("\r\n", "\n").strip().split("\n\n") if block.strip()]
+    if len(blocks) < 4:
+        raise ValueError("quote-v3 source text must contain quote, attribution, context and hashtags")
+
+    expected_attribution = f"{policy.attribution_prefix}{post.source.author}, «{post.source.work}»"
+    attribution_indexes = [index for index, block in enumerate(blocks[:-1]) if block == expected_attribution]
+    if len(attribution_indexes) != 1:
+        raise ValueError("quote-v3 source text must contain exactly one source-bound attribution block")
+    attribution_index = attribution_indexes[0]
+    if attribution_index < 1 or attribution_index >= len(blocks) - 2:
+        raise ValueError("quote-v3 attribution must sit between quotation and editorial context")
+
+    quote = "\n\n".join(blocks[:attribution_index]).strip()
+    context = "\n\n".join(blocks[attribution_index + 1 : -1]).strip()
+    hashtags = blocks[-1]
+    if len(quote) < 20:
+        raise ValueError("quote-v3 quotation is too short to stand as a substantive quote")
+    if len(context) < 80:
+        raise ValueError("quote-v3 editorial context must be substantive")
+    tags = hashtags.split()
+    if not 2 <= len(tags) <= 8 or any(not tag.startswith("#") or any(ch.isspace() for ch in tag) for tag in tags):
+        raise ValueError("quote-v3 hashtags must be a compact final block")
+    return quote, expected_attribution, context, hashtags
+
+
+def _render_post_v3(post: TelegramPost, policy: QuotePresentationPolicyV3) -> RenderedTelegramPost:
+    quote, attribution, context, hashtags = _quote_v3_blocks(post, policy)
+    sep = policy.block_separator
+
+    builder = _RenderBuilder()
+    builder.append_styled(quote, "blockquote")
+    builder.append(sep)
+    builder.append_styled(attribution, "italic")
+    builder.append(sep)
+    builder.append(context)
+    builder.append(sep)
+    builder.append(hashtags)
+
+    return _provider_payload(post=post, policy=policy, builder=builder)
+
+
+def render_post(
+    post: TelegramPost,
+    policy: PresentationPolicyContract = DEFAULT_PRESENTATION_POLICY,
+) -> RenderedTelegramPost:
+    if isinstance(policy, PresentationPolicy):
+        if policy.digest != DEFAULT_PRESENTATION_POLICY.digest:
+            raise ValueError("unsupported Telegram presentation policy")
+        return _render_post_v2(post, policy)
+    if isinstance(policy, QuotePresentationPolicyV3):
+        if policy.digest != DEFAULT_QUOTE_V3_PRESENTATION_POLICY.digest:
+            raise ValueError("unsupported Telegram quote-v3 presentation policy")
+        return _render_post_v3(post, policy)
+    raise ValueError("unsupported Telegram presentation policy type")
 
 
 def verify_rendered_post(
     post: TelegramPost,
-    policy: PresentationPolicy,
+    policy: PresentationPolicyContract,
     rendered: RenderedTelegramPost,
 ) -> None:
     expected = render_post(post, policy)
@@ -286,11 +418,12 @@ def formatting_entities_match(
         return False
 
     actual_formatting: list[tuple[str, int, int]] = []
+    allowed = {"bold", "italic", "blockquote"}
     for entity in actual:
         if not isinstance(entity, dict):
             continue
         entity_type = str(entity.get("type") or "")
-        if entity_type not in {"bold", "italic"}:
+        if entity_type not in allowed:
             continue
         try:
             offset = int(entity["offset"])
