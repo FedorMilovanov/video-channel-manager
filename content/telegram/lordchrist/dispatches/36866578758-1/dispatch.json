@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873",
+  "publication_id": "lordchrist-successor-augustine-nourished-faith",
+  "sequence": 13,
+  "intent_id": "2d567e79ec073e48ea202ac50ba2cfaf",
+  "workflow_run_id": "36866578758",
+  "workflow_run_attempt": "1",
+  "github_sha": "0aab27e2636f32cce13c7099d6613d5efbe68730",
+  "github_workflow_sha": "0aab27e2636f32cce13c7099d6613d5efbe68730",
+  "payload_sha256": "sha256:19e3f4f33df93b840cef504f20ce289f49a535ea8d718c1825a9f2f783a6f6da",
+  "text": "Мы должны питаться верой и быть ведомыми такими путями, которые более соответствуют нашей способности.\n\nПояснение: Августин не противопоставляет веру разуму. Его мысль ближе к принципу «вера ищет понимания»: там, где наш ум ещё слаб для полного созерцания истины, Бог ведёт нас через доверие откровению, чтобы вера становилась дорогой к более зрелому познанию.\n\n© Августин, «О Троице, книга I, гл. 1»\n\n#Августин #Вера #ПознаниеБога",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-10-01T13:09:20.631161Z"
+  },
+  "prepared_at_utc": "2026-10-01T13:09:21.816515Z"
+}
