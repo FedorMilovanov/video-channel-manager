@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873",
+  "publication_id": "lordchrist-successor-chrysostom-humility-adds",
+  "sequence": 14,
+  "intent_id": "3ef838d1fc399af6dfeffa73c630bb43",
+  "workflow_run_id": "37007067678",
+  "workflow_run_attempt": "1",
+  "github_sha": "0aab27e2636f32cce13c7099d6613d5efbe68730",
+  "github_workflow_sha": "0aab27e2636f32cce13c7099d6613d5efbe68730",
+  "payload_sha256": "sha256:8e3f804adbea8c50584cd6e2b6a8da89efb95ccbd9f5c9138b1d5fbdb50f9a95",
+  "text": "Смирение не только ничего у нас не отнимает, но прибавляет нам даже то, чего у нас ещё нет.\n\nПояснение: Златоуст показывает, что истинное смирение не обедняет человека и не уничтожает достойные дары; напротив, оно освобождает от гордого самоутверждения и делает человека способным принимать благодать и служить. Смирение теряет не добро, а притязание на самодостаточность.\n\n© Иоанн Златоуст, «Беседа 65 на Евангелие от Матфея»\n\n#Златоуст #Смирение #Гордость",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-10-02T12:30:33.862945Z"
+  },
+  "prepared_at_utc": "2026-10-02T12:30:35.098732Z"
+}
