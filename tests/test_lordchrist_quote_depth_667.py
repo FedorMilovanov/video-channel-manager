@@ -117,6 +117,7 @@ def test_depth_v2_preserves_14_published_payloads_and_rekeys_only_future_suffix(
     handoff = release.handoff_published_prefix
 
     assert depth.digest == DEPTH_QUEUE_DIGEST
+    assert depth.release_id == "lordchrist-successor-depth-v2"
     assert len(depth.posts) == 60
     assert [post.publication_id for post in depth.posts[:handoff]] == [
         post.publication_id for post in source.posts[:handoff]

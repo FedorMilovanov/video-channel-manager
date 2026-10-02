@@ -17,6 +17,11 @@ from video_channel_manager.telegram_state import load_queue as load_legacy_queue
 SUCCESSOR_QUEUE_DIGEST = "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873"
 SUCCESSOR_LEDGER_FILENAME = "successor-publication-ledger.json"
 SUCCESSOR_ENTRY_COUNT = 60
+DEPTH_QUEUE_DIGEST = "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441"
+DEPTH_LEDGER_FILENAME = "successor-depth-v2-publication-ledger.json"
+DEPTH_PUBLICATION_PREFIX = "lordchrist-successor-depth-v2-"
+DEPTH_HISTORY_COUNT = 14
+DEPTH_FUTURE_COUNT = 46
 
 
 class EffectEntry(Protocol):
@@ -144,6 +149,41 @@ def load_optional_successor_ledger(
     return ledger
 
 
+def load_optional_depth_ledger(
+    path: Path,
+    *,
+    profile: TelegramChannelProfile,
+) -> TelegramLedger | None:
+    # Load the exact depth-v2 state as a channel-wide provider-effect track.
+
+    if not path.exists():
+        return None
+    try:
+        ledger = TelegramLedger.model_validate_json(path.read_text(encoding="utf-8"))
+    except (OSError, ValidationError) as exc:
+        raise ValueError(f"invalid Lordchrist depth-v2 ledger {path}: {exc}") from exc
+    if ledger.project_key != profile.project_key:
+        raise ValueError("depth-v2 ledger project differs from canonical Lordchrist profile")
+    if ledger.channel_username.casefold() != profile.channel_username.casefold():
+        raise ValueError("depth-v2 ledger channel differs from canonical Lordchrist profile")
+    if ledger.queue_digest != DEPTH_QUEUE_DIGEST:
+        raise ValueError("depth-v2 ledger queue digest differs from the reviewed depth-v2 release")
+    depth_ids = [
+        publication_id for publication_id in ledger.entries if publication_id.startswith(DEPTH_PUBLICATION_PREFIX)
+    ]
+    history_ids = [
+        publication_id for publication_id in ledger.entries if not publication_id.startswith(DEPTH_PUBLICATION_PREFIX)
+    ]
+    if (
+        len(ledger.entries) != SUCCESSOR_ENTRY_COUNT
+        or len(depth_ids) != DEPTH_FUTURE_COUNT
+        or len(history_ids) != DEPTH_HISTORY_COUNT
+        or any(not publication_id.startswith("lordchrist-successor-") for publication_id in history_ids)
+    ):
+        raise ValueError("depth-v2 ledger coverage differs from the reviewed 14-history/46-future release")
+    return ledger
+
+
 def require_no_cross_track_unresolved_effects(
     *,
     profile_path: Path,
@@ -175,6 +215,8 @@ def require_no_cross_track_unresolved_effects(
     research_ledger = load_optional_research_ledger(research_ledger_path, profile=profile)
     successor_ledger_path = legacy_ledger_path.parent / SUCCESSOR_LEDGER_FILENAME
     successor_ledger = load_optional_successor_ledger(successor_ledger_path, profile=profile)
+    depth_ledger_path = legacy_ledger_path.parent / DEPTH_LEDGER_FILENAME
+    depth_ledger = load_optional_depth_ledger(depth_ledger_path, profile=profile)
 
     retirement = None
     retired_research_publication_ids: frozenset[str] = frozenset()
@@ -189,6 +231,7 @@ def require_no_cross_track_unresolved_effects(
             "legacy": legacy_ledger.entries.values(),
             "research": research_ledger.entries.values() if research_ledger is not None else (),
             "successor": successor_ledger.entries.values() if successor_ledger is not None else (),
+            "depth_v2": depth_ledger.entries.values() if depth_ledger is not None else (),
         },
         retired_publication_ids_by_track={
             "research": retired_research_publication_ids,
@@ -198,9 +241,11 @@ def require_no_cross_track_unresolved_effects(
         "clear": True,
         "research_ledger_present": research_ledger is not None,
         "successor_ledger_present": successor_ledger is not None,
+        "depth_v2_ledger_present": depth_ledger is not None,
         "legacy_unresolved": list(blockers["legacy"]),
         "research_unresolved": list(blockers["research"]),
         "successor_unresolved": list(blockers["successor"]),
+        "depth_v2_unresolved": list(blockers["depth_v2"]),
         "retired_research_publications": sorted(retired_research_publication_ids),
         "research_retirement_issue": retirement.owning_issue if retirement is not None else None,
     }

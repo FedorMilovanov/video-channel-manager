@@ -34,6 +34,7 @@ AMENDMENTS = CONTENT / "successor-integrity-amendments-v1.json"
 RELEASE = CONTENT / "successor-release-v2.json"
 ACTIVATION = CONTENT / "successor-activation-v1.json"
 POLICY = CONTENT / "presentation-policy.json"
+SCHEDULE_POLICY = CONTENT / "presentation-policy-v3.json"
 SCHEDULE = CONTENT / "production-schedule.json"
 CHAT_ID = -1001295216957
 BOT_ID = 8716602202
@@ -104,7 +105,7 @@ def test_evening_schedule_expires_before_moscow_midnight() -> None:
 
 def test_schedule_release_binding_accepts_only_predecessor_or_armed_successor() -> None:
     schedule = load_production_schedule(SCHEDULE)
-    policy = load_presentation_policy(POLICY)
+    policy = load_presentation_policy(SCHEDULE_POLICY)
     for digest in (schedule.queue_digest, schedule.successor_queue_digest):
         require_release_binding(
             schedule,

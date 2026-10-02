@@ -586,7 +586,7 @@ def build_depth_runtime_queue(
         schema_version=SUCCESSOR_RUNTIME_SCHEMA_VERSION,
         project_key=PROJECT_KEY,
         channel_username=CHANNEL_USERNAME,
-        release_id="lordchrist-successor-quotes-v1-integrity-v2",
+        release_id=DEPTH_RELEASE_ID,
         predecessor_queue_digest=LEGACY_QUEUE_DIGEST,
         normalized_corpus_digest=release.normalized_queue_digest,
         posts=tuple(posts),
