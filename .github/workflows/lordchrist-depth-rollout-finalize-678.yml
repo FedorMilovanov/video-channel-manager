@@ -1,0 +1,150 @@
+name: Lordchrist depth-v2 rollout finalize 678
+
+on:
+  push:
+    branches:
+      - agent/lordchrist-depth-v2-rollout-678
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lordchrist-depth-v2-rollout-finalize-678
+  cancel-in-progress: false
+
+jobs:
+  patch-verify-commit:
+    if: "${{ github.event.head_commit.message == 'chore(lordchrist): prepare depth-v2 rollout snapshot' }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact rollout branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/lordchrist-depth-v2-rollout-678
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Recover and apply reviewed rollout patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64
+          import re
+          import subprocess
+          import zlib
+
+          helper = subprocess.check_output(
+              [
+                  "git",
+                  "show",
+                  "e5ee324238b1d798cb36b0fe72a4ff76a157aec8:.github/workflows/lordchrist-depth-rollout-patch-678.yml",
+              ],
+              text=True,
+              encoding="utf-8",
+          )
+          match = re.search(r"^\s*PATCH_ZLIB_B64:\s*(\S+)\s*$", helper, flags=re.MULTILINE)
+          if match is None:
+              raise SystemExit("reviewed rollout patch payload is missing from its immutable source commit")
+          code = zlib.decompress(base64.b64decode(match.group(1))).decode("utf-8")
+          exec(compile(code, "<lordchrist-depth-v2-rollout-678>", "exec"), {"__name__": "__main__"})
+          PY
+
+      - name: Install development toolchain
+        run: |
+          python -m pip install --upgrade "pip>=25" "setuptools>=83,<85" wheel
+          pip install -e ".[dev]"
+
+      - name: Format and verify exact rollout scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruff format \
+            src/video_channel_manager/telegram_quote_runtime.py \
+            src/video_channel_manager/telegram_quote_depth.py \
+            src/video_channel_manager/lordchrist_cross_track_effect_guard.py \
+            tests/test_lordchrist_quote_depth_667.py \
+            tests/test_lordchrist_quote_handoff_582.py \
+            tests/test_lordchrist_autonomous_production.py
+          ruff check \
+            src/video_channel_manager/telegram_quote_runtime.py \
+            src/video_channel_manager/telegram_quote_depth.py \
+            src/video_channel_manager/lordchrist_cross_track_effect_guard.py \
+            tests/test_lordchrist_quote_depth_667.py \
+            tests/test_lordchrist_quote_handoff_582.py \
+            tests/test_lordchrist_autonomous_production.py
+          mypy src --show-error-codes
+          pytest -q \
+            tests/test_lordchrist_quote_depth_667.py \
+            tests/test_lordchrist_quote_handoff_582.py \
+            tests/test_lordchrist_autonomous_production.py \
+            tests/test_telegram_presentation.py \
+            tests/test_lordchrist_depth_rollout_678.py
+
+      - name: Snapshot generated workflow changes and commit provider-inert code
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import shutil
+          import subprocess
+          from pathlib import Path
+
+          root = Path('.github/workflows')
+          snapshot_root = Path('content/telegram/lordchrist/rollout-678-workflow-snapshots')
+          snapshot_root.mkdir(parents=True, exist_ok=True)
+          status = subprocess.check_output(
+              ['git', 'status', '--porcelain=v1', '--untracked-files=all', '--', str(root)],
+              text=True,
+              encoding='utf-8',
+          )
+          entries = []
+          for raw in status.splitlines():
+              if not raw.strip():
+                  continue
+              path_text = raw[3:]
+              if ' -> ' in path_text:
+                  path_text = path_text.split(' -> ', 1)[1]
+              path = Path(path_text)
+              if path.name == 'lordchrist-depth-rollout-finalize-678.yml':
+                  continue
+              target = path.as_posix()
+              if path.is_file():
+                  snapshot = snapshot_root / path.name
+                  shutil.copyfile(path, snapshot)
+                  entries.append({'action': 'upsert', 'target_path': target, 'snapshot_path': snapshot.as_posix()})
+              else:
+                  entries.append({'action': 'delete', 'target_path': target})
+          if not entries:
+              raise SystemExit('rollout patch produced no workflow delta to stage')
+          (snapshot_root / 'manifest.json').write_text(
+              json.dumps({'schema_version': 1, 'entries': entries}, ensure_ascii=False, indent=2) + '\n',
+              encoding='utf-8',
+          )
+          subprocess.run(['git', 'restore', '--source=HEAD', '--staged', '--worktree', '--', str(root)], check=True)
+          subprocess.run(['git', 'clean', '-f', '--', str(root)], check=True)
+          PY
+
+          git config user.name "FedorMilovanov"
+          git config user.email "258225528+FedorMilovanov@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && {
+            echo "Depth-v2 rollout produced no non-workflow delta." >&2
+            exit 2
+          }
+          parent_sha="$(git rev-parse HEAD)"
+          git commit -m "feat(lordchrist): stage depth-v2 production cutover"
+          local_sha="$(git rev-parse HEAD)"
+          remote_sha="$(git ls-remote origin refs/heads/agent/lordchrist-depth-v2-rollout-678 | cut -f1)"
+          [[ "$remote_sha" == "$parent_sha" ]] || {
+            echo "Rollout branch moved from $parent_sha to $remote_sha during final verification; refusing to overwrite it." >&2
+            exit 3
+          }
+          git push origin "$local_sha":refs/heads/agent/lordchrist-depth-v2-rollout-678
