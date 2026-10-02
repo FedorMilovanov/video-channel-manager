@@ -28,7 +28,9 @@ def test_autonomous_production_config_is_explicit_release_bound_and_slot_gated()
     assert config.chat_id == EXPECTED_CHAT_ID
     assert config.bot_id == EXPECTED_BOT_ID
     assert config.bot_username == EXPECTED_BOT_USERNAME
-    assert config.enabled is True
+    assert config.enabled is False
+    assert "paused" in config.activation_note.lower()
+    assert "depth-v2" in config.activation_note
     assert config.not_before_moscow_date == date(2026, 8, 8)
     assert config.timezone == "Europe/Moscow"
     assert config.primary_time == "09:17"
@@ -50,8 +52,21 @@ def test_autonomous_production_config_is_explicit_release_bound_and_slot_gated()
     assert config.presentation_policy_sha256 == policy.digest
 
 
-def test_schedule_decision_has_daily_morning_and_only_tuesday_friday_sunday_evening() -> None:
+def test_disabled_production_schedule_fails_closed_before_slot_evaluation() -> None:
     config = load_production_schedule(CONFIG_PATH)
+    decision = decide_scheduled_slot(
+        config,
+        event_schedule="17 9 * * *",
+        now=datetime(2026, 9, 7, 6, 17, tzinfo=UTC),
+    )
+
+    assert decision.active is False
+    assert decision.slot is None
+    assert decision.reason == "production schedule disabled"
+
+
+def test_schedule_decision_has_daily_morning_and_only_tuesday_friday_sunday_evening() -> None:
+    config = load_production_schedule(CONFIG_PATH).model_copy(update={"enabled": True})
 
     monday = datetime(2026, 9, 7, 6, 17, tzinfo=UTC)  # 09:17 Moscow
     tuesday_evening = datetime(2026, 9, 8, 18, 17, tzinfo=UTC)  # 21:17 Moscow
@@ -69,7 +84,7 @@ def test_schedule_decision_has_daily_morning_and_only_tuesday_friday_sunday_even
 
 
 def test_schedule_decision_rejects_premature_and_stale_runs_without_backfill() -> None:
-    config = load_production_schedule(CONFIG_PATH)
+    config = load_production_schedule(CONFIG_PATH).model_copy(update={"enabled": True})
 
     before_morning = datetime(2026, 9, 8, 6, 16, 59, tzinfo=UTC)  # 09:16:59 Moscow
     fresh_delayed_morning = datetime(2026, 9, 8, 18, 16, 59, tzinfo=UTC)  # 21:16:59 Moscow

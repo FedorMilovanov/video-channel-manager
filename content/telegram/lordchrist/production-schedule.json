@@ -6,7 +6,7 @@
   "chat_id": -1001295216957,
   "bot_id": 8716602202,
   "bot_username": "preaching_mp3_bot",
-  "enabled": true,
+  "enabled": false,
   "not_before_moscow_date": "2026-08-08",
   "timezone": "Europe/Moscow",
   "primary_time": "09:17",
@@ -32,5 +32,5 @@
   "successor_queue_digest": "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873",
   "presentation_policy_id": "lordchrist-editorial-v2",
   "presentation_policy_sha256": "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8",
-  "activation_note": "Autonomous production enabled after verified manual canary 1470 and verified GitHub-hosted presentation test 1471. Slot policy v3 treats GitHub scheduler delay as a bounded same-day lease rather than backfill: the morning 09:17 event remains eligible only until the 21:17 editorial boundary, while the evening 21:17 event expires before the Moscow calendar day ends. Existing strict ledger guards still enforce one verified publication per slot, two per day, no scheduled reruns, no catch-up/backfill, exact Telegram identity, predecessor queue binding, and reviewed presentation policy. The sealed successor normalized corpus digest is also release-bound here, while provider authorization remains separately gated by successor-activation-v1.json and predecessor terminality."
+  "activation_note": "Scheduled quote publication is temporarily paused after the 2026-10-02 quality incident while successor depth-v2 is finalized against the exact live published prefix. Manual guarded preflight remains available; autonomous scheduling must stay disabled until the reviewed depth-v2 release, migrated ledger, quote-v3 presentation policy, and exact current state boundary are merged and validated."
 }
