@@ -147,7 +147,7 @@ jobs:
           policy = load_presentation_policy(Path(os.environ["PRESENTATION_POLICY_PATH"]))
           require_release_binding(
               schedule,
-              queue_digest=os.environ["LORDCHRIST_APPROVED_QUEUE_DIGEST"],
+              queue_digest=schedule.successor_queue_digest,
               chat_id=int(os.environ["LORDCHRIST_TELEGRAM_CHAT_ID"]),
               bot_id=int(os.environ["LORDCHRIST_TELEGRAM_BOT_ID"]),
               bot_username=os.environ["LORDCHRIST_TELEGRAM_BOT_USERNAME"],

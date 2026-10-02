@@ -202,3 +202,13 @@ def test_depth_v2_ledger_durable_initialization_is_execution_gated_and_after_cur
     before_quality = workflow[:quality_start]
     assert "persist-credentials: true" not in before_quality[local_start:]
     assert "Initialize reviewed Lordchrist depth-v2 ledger" not in before_quality
+
+
+def test_scheduled_pre_resolution_gate_uses_version_controlled_depth_digest_not_repo_variable() -> None:
+    workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+    start = workflow.index("      - name: Determine guarded execution mode")
+    end = workflow.index("      - name: Check out publication ledger read-only")
+    gate = workflow[start:end]
+
+    assert "queue_digest=schedule.successor_queue_digest" in gate
+    assert 'queue_digest=os.environ["LORDCHRIST_APPROVED_QUEUE_DIGEST"]' not in gate
