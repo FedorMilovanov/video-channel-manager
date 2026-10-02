@@ -1,0 +1,58 @@
+name: Lordchrist depth-v2 rollout prep 678
+
+on:
+  push:
+    branches:
+      - agent/lordchrist-depth-v2-rollout-678
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lordchrist-depth-rollout-prep-678
+  cancel-in-progress: false
+
+jobs:
+  normalize-anchor:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out rollout branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/lordchrist-depth-v2-rollout-678
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Make source-v1 activation literal distinct from runtime queue literal
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/video_channel_manager/telegram_quote_runtime.py")
+          text = path.read_text(encoding="utf-8")
+          old = '    release_id: Literal["lordchrist-successor-quotes-v1-integrity-v2"]\n'
+          alternate = '    release_id: Literal[\n        "lordchrist-successor-quotes-v1-integrity-v2"\n    ]\n'
+          count = text.count(old)
+          if count == 2:
+              first = text.index(old)
+              second = text.index(old, first + len(old))
+              text = text[:second] + alternate + text[second + len(old):]
+              path.write_text(text, encoding="utf-8")
+          elif count == 1 and alternate in text:
+              pass
+          else:
+              raise SystemExit(f"unexpected source-v1 release_id anchor state: count={count}, alternate={alternate in text}")
+          PY
+
+          if git diff --quiet -- src/video_channel_manager/telegram_quote_runtime.py; then
+            echo "Anchor already normalized."
+            exit 0
+          fi
+          git config user.name "FedorMilovanov"
+          git config user.email "258225528+FedorMilovanov@users.noreply.github.com"
+          git add src/video_channel_manager/telegram_quote_runtime.py
+          git commit -m "chore(lordchrist): distinguish runtime and activation release anchors"
+          git push origin HEAD:agent/lordchrist-depth-v2-rollout-678
