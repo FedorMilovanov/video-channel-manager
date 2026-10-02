@@ -1,0 +1,189 @@
+name: Lordchrist depth branch fix
+
+on:
+  push:
+    branches:
+      - agent/lordchrist-quote-depth-667
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lordchrist-depth-branch-fix
+  cancel-in-progress: false
+
+jobs:
+  fix-and-verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/lordchrist-quote-depth-667
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Rebase depth boundary onto exact live prefix and fix policy typing
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          old_digest = "sha256:6aaca397c05b8b0b011a486eedf8b784a2fe9a9d28c0b01d046eb5baef1abf3f"
+          new_digest = "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441"
+
+          def replace_exact(path: str, old: str, new: str, *, count: int = 1) -> None:
+              p = Path(path)
+              text = p.read_text(encoding="utf-8")
+              actual = text.count(old)
+              if actual != count:
+                  raise SystemExit(f"{path}: expected {count} occurrence(s) of {old!r}, found {actual}")
+              p.write_text(text.replace(old, new, count), encoding="utf-8")
+
+          depth_py = Path("src/video_channel_manager/telegram_quote_depth.py")
+          text = depth_py.read_text(encoding="utf-8")
+          if old_digest not in text:
+              raise SystemExit("telegram_quote_depth.py does not contain the staged depth digest")
+          depth_py.write_text(text.replace(old_digest, new_digest), encoding="utf-8")
+
+          release_path = Path("content/telegram/lordchrist/successor-depth-release-v1.json")
+          release = json.loads(release_path.read_text(encoding="utf-8"))
+          release.update(
+              transition_identity="after_v1_exactly_14_published_46_pending",
+              normalized_queue_digest=new_digest,
+              handoff_published_prefix=14,
+              future_post_count=46,
+              future_keep_count=27,
+              future_replace_count=19,
+              superseded_replacement_count=2,
+          )
+          release_path.write_text(json.dumps(release, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+          activation_path = Path("content/telegram/lordchrist/successor-depth-activation-v1.json")
+          activation = json.loads(activation_path.read_text(encoding="utf-8"))
+          activation.update(
+              queue_digest=new_digest,
+              required_published_prefix=14,
+              required_pending_suffix=46,
+          )
+          if activation.get("provider_writes_authorized") is not False:
+              raise SystemExit("implementation PR must remain provider-inert")
+          activation_path.write_text(json.dumps(activation, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+          replace_exact(
+              "src/video_channel_manager/telegram_transport.py",
+              "    PresentationPolicy,\n",
+              "    PresentationPolicyContract,\n",
+          )
+          replace_exact(
+              "src/video_channel_manager/telegram_transport.py",
+              "    presentation_policy: PresentationPolicy = DEFAULT_PRESENTATION_POLICY,\n",
+              "    presentation_policy: PresentationPolicyContract = DEFAULT_PRESENTATION_POLICY,\n",
+          )
+          replace_exact(
+              "src/video_channel_manager/telegram_lordchrist_outcome.py",
+              "    PresentationPolicy,\n",
+              "    PresentationPolicyContract,\n",
+          )
+          replace_exact(
+              "src/video_channel_manager/telegram_lordchrist_outcome.py",
+              "    presentation_policy: PresentationPolicy,\n",
+              "    presentation_policy: PresentationPolicyContract,\n",
+          )
+
+          test_path = Path("tests/test_lordchrist_quote_depth_667.py")
+          tests = test_path.read_text(encoding="utf-8")
+          replacements = [
+              (
+                  "def test_depth_release_records_13_published_and_47_future_without_rewriting_audit() -> None:\n",
+                  "def test_depth_release_records_14_published_and_46_future_without_rewriting_audit() -> None:\n",
+              ),
+              ("    assert release.handoff_published_prefix == 13\n", "    assert release.handoff_published_prefix == 14\n"),
+              ("    assert release.future_post_count == 47\n", "    assert release.future_post_count == 46\n"),
+              ("    assert release.future_replace_count == 20\n", "    assert release.future_replace_count == 19\n"),
+              ("    assert release.superseded_replacement_count == 1\n", "    assert release.superseded_replacement_count == 2\n"),
+              (
+                  "def test_depth_v2_preserves_13_published_payloads_and_rekeys_only_future_suffix() -> None:\n",
+                  "def test_depth_v2_preserves_14_published_payloads_and_rekeys_only_future_suffix() -> None:\n",
+              ),
+              ("    assert len(depth_future_ids) == 47\n", "    assert len(depth_future_ids) == 46\n"),
+              (
+                  "def test_sequence_13_is_immutable_even_though_original_audit_marked_it_for_replacement() -> None:\n",
+                  "def test_sequences_13_and_14_are_immutable_even_though_original_audit_marked_them_for_replacement() -> None:\n",
+              ),
+              (
+                  "    assert depth.posts[12].payload_sha256 == source.posts[12].payload_sha256\n\n\n",
+                  "    assert depth.posts[12].payload_sha256 == source.posts[12].payload_sha256\n"
+                  "    assert depth.posts[13].publication_id == source.posts[13].publication_id\n"
+                  "    assert depth.posts[13].payload_sha256 == source.posts[13].payload_sha256\n\n\n",
+              ),
+              ("    for post in depth.posts[13:]:\n", "    for post in depth.posts[14:]:\n"),
+              ("    rendered = render_post(depth.posts[13], policy)\n", "    rendered = render_post(depth.posts[14], policy)\n"),
+              (
+                  "    assert rendered.text.endswith(depth.posts[13].text.split(\"\\n\\n\")[-1])\n",
+                  "    assert rendered.text.endswith(depth.posts[14].text.split(\"\\n\\n\")[-1])\n",
+              ),
+              (
+                  "def test_exact_v1_handoff_accepts_only_13_published_and_47_pristine_pending() -> None:\n",
+                  "def test_exact_v1_handoff_accepts_only_14_published_and_46_pristine_pending() -> None:\n",
+              ),
+              ("    post_14 = source.posts[release.handoff_published_prefix]\n", "    post_15 = source.posts[release.handoff_published_prefix]\n"),
+              (
+                  "    contaminated.entries[post_14.publication_id] = _published_entry(post_14, 14)\n",
+                  "    contaminated.entries[post_15.publication_id] = _published_entry(post_15, 15)\n",
+              ),
+          ]
+          for old, new in replacements:
+              if tests.count(old) != 1:
+                  raise SystemExit(f"test patch expected exactly one occurrence: {old!r}")
+              tests = tests.replace(old, new, 1)
+          test_path.write_text(tests, encoding="utf-8")
+          PY
+
+      - name: Install development toolchain
+        run: |
+          python -m pip install --upgrade "pip>=25" "setuptools>=83,<85" wheel
+          pip install -e ".[dev]"
+
+      - name: Format and verify exact scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruff format \
+            src/video_channel_manager/telegram_quote_depth.py \
+            src/video_channel_manager/telegram_transport.py \
+            src/video_channel_manager/telegram_lordchrist_outcome.py \
+            tests/test_lordchrist_quote_depth_667.py
+          ruff check \
+            src/video_channel_manager/telegram_quote_depth.py \
+            src/video_channel_manager/telegram_transport.py \
+            src/video_channel_manager/telegram_lordchrist_outcome.py \
+            tests/test_lordchrist_quote_depth_667.py
+          mypy src --show-error-codes
+          pytest -q tests/test_lordchrist_quote_depth_667.py tests/test_telegram_presentation.py tests/test_telegram_transport.py tests/test_telegram_lordchrist_outcome.py
+
+      - name: Commit verified branch repair and remove helper workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/lordchrist-depth-branch-fix.yml
+          git config user.name "lordchrist-depth-maintenance[bot]"
+          git config user.email "lordchrist-depth-maintenance@users.noreply.github.com"
+          git add \
+            content/telegram/lordchrist/successor-depth-release-v1.json \
+            content/telegram/lordchrist/successor-depth-activation-v1.json \
+            src/video_channel_manager/telegram_quote_depth.py \
+            src/video_channel_manager/telegram_transport.py \
+            src/video_channel_manager/telegram_lordchrist_outcome.py \
+            tests/test_lordchrist_quote_depth_667.py \
+            .github/workflows/lordchrist-depth-branch-fix.yml
+          git commit -m "fix(lordchrist): bind depth-v2 to 14-post live prefix"
+          git push origin HEAD:agent/lordchrist-quote-depth-667
