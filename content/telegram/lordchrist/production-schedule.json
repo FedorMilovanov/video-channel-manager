@@ -6,7 +6,7 @@
   "chat_id": -1001295216957,
   "bot_id": 8716602202,
   "bot_username": "preaching_mp3_bot",
-  "enabled": true,
+  "enabled": false,
   "not_before_moscow_date": "2026-08-08",
   "timezone": "Europe/Moscow",
   "primary_time": "09:17",
@@ -44,5 +44,5 @@
   "successor_queue_digest": "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441",
   "presentation_policy_id": "lordchrist-quote-v3",
   "presentation_policy_sha256": "sha256:c6350861bcdbf3de9816afc398db5d80c605ae9fc0e750c3f7850e2e68449e0f",
-  "activation_note": "Quality-audited Lordchrist depth-v2 is the only autonomous quote release. The exact source-v1 handoff is locked at 14 published+verified and 46 pristine pending entries; runtime selection, ledger migration, quote-v3 presentation, provider authorization, and schedule binding all fail closed on identity or state drift."
+  "activation_note": "Depth-v2 is fully wired to the reviewed 14-published/46-pristine handoff and quote-v3 presentation, but autonomous publication remains paused and provider writes remain unauthorized until exact current-main CI plus read-only state-bound and Telegram-target preflight have passed. Any identity or state drift must fail closed."
 }
