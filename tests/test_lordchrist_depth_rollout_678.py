@@ -12,16 +12,17 @@ CONTENT = ROOT / "content/telegram/lordchrist"
 WORKFLOW = ROOT / ".github/workflows/lordchrist-telegram-poster.yml"
 
 
-def test_depth_v2_activation_and_schedule_form_one_exact_production_identity() -> None:
+def test_depth_v2_staging_identity_is_exact_but_provider_inert() -> None:
     activation = load_depth_activation(CONTENT / "successor-depth-activation-v1.json")
     schedule = load_production_schedule(CONTENT / "production-schedule.json")
     policy = load_presentation_policy(CONTENT / "presentation-policy-v3.json")
 
-    assert activation.provider_writes_authorized is True
+    assert activation.provider_writes_authorized is False
     assert activation.queue_digest == DEPTH_QUEUE_DIGEST
     assert activation.presentation_policy_id == policy.policy_id == "lordchrist-quote-v3"
     assert activation.presentation_policy_sha256 == policy.digest
-    assert schedule.enabled is True
+    assert schedule.enabled is False
+    assert "paused" in schedule.activation_note.lower()
     assert schedule.successor_queue_digest == DEPTH_QUEUE_DIGEST
     assert schedule.presentation_policy_id == policy.policy_id
     assert schedule.presentation_policy_sha256 == policy.digest
@@ -54,6 +55,7 @@ def test_production_workflow_has_no_old_successor_runtime_fallback() -> None:
     assert "presentation-policy-v3.json" in publish_next
     assert "remote-depth-v2-ledger.json" in publish_next
     assert "--require-provider-writes" in publish_next
+    assert "steps.intent.outputs.do_publish" in publish_next
 
 
 def test_rollout_artifacts_do_not_mutate_sealed_source_v1_identity() -> None:
