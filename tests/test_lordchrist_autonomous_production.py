@@ -29,9 +29,10 @@ def test_autonomous_production_config_is_explicit_release_bound_and_slot_gated()
     assert config.bot_id == EXPECTED_BOT_ID
     assert config.bot_username == EXPECTED_BOT_USERNAME
     assert config.enabled is False
-    assert "depth-v2" in config.activation_note
-    assert "paused" in config.activation_note.lower()
-    assert "fail closed" in config.activation_note.lower()
+    note = config.activation_note.casefold()
+    assert "depth-v2" in note
+    assert "paused" in note
+    assert "fail closed" in note
     assert config.not_before_moscow_date == date(2026, 8, 8)
     assert config.timezone == "Europe/Moscow"
     assert config.primary_time == "09:17"
