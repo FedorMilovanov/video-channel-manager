@@ -4,7 +4,11 @@ import json
 from pathlib import Path
 
 from video_channel_manager.telegram_presentation import load_presentation_policy
-from video_channel_manager.telegram_quote_depth import DEPTH_QUEUE_DIGEST, build_depth_runtime_queue, load_depth_activation
+from video_channel_manager.telegram_quote_depth import (
+    DEPTH_QUEUE_DIGEST,
+    build_depth_runtime_queue,
+    load_depth_activation,
+)
 from video_channel_manager.telegram_schedule import load_production_schedule
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -58,5 +62,8 @@ def test_production_workflow_has_no_old_successor_runtime_fallback() -> None:
 
 def test_rollout_artifacts_do_not_mutate_sealed_source_v1_identity() -> None:
     source_activation = json.loads((CONTENT / "successor-activation-v1.json").read_text(encoding="utf-8"))
-    assert source_activation["successor_queue_digest"] == "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873"
+    assert (
+        source_activation["successor_queue_digest"]
+        == "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873"
+    )
     assert source_activation["presentation_policy_id"] == "lordchrist-editorial-v2"
