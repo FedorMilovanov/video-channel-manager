@@ -199,12 +199,12 @@ jobs:
           from pathlib import Path
 
           proof = json.loads(Path(os.environ["TARGET_PROOF_PATH"]).read_text(encoding="utf-8"))
-          assert proof["chat"]["id"] == int(os.environ["EXPECTED_CHAT_ID"]), proof
-          assert proof["bot"]["id"] == int(os.environ["EXPECTED_BOT_ID"]), proof
-          assert proof["bot"]["username"].casefold() == os.environ["EXPECTED_BOT_USERNAME"].casefold(), proof
-          assert proof["chat"]["username"].casefold() == "lordchrist", proof
-          assert proof["membership"]["status"] in {"administrator", "creator"}, proof
-          assert proof["membership"]["can_post_messages"] is True, proof
+          assert proof["chat_id"] == int(os.environ["EXPECTED_CHAT_ID"]), proof
+          assert proof["bot_id"] == int(os.environ["EXPECTED_BOT_ID"]), proof
+          assert proof["bot_username"].casefold() == os.environ["EXPECTED_BOT_USERNAME"].casefold(), proof
+          assert proof["chat_username"].casefold() == "lordchrist", proof
+          assert proof["chat_type"] == "channel", proof
+          assert proof["can_post_messages"] is True, proof
           print("Exact Telegram target proof passed; no provider mutation attempted.")
           PY
 
