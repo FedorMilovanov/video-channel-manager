@@ -17,7 +17,7 @@ from video_channel_manager.telegram_models import (
 )
 from video_channel_manager.telegram_presentation import (
     DEFAULT_PRESENTATION_POLICY,
-    PresentationPolicy,
+    PresentationPolicyContract,
     RenderedTelegramPost,
     formatting_entities_match,
     verify_rendered_post,
@@ -303,7 +303,7 @@ def dispatch_prepared(
     *,
     token: str,
     rendered: RenderedTelegramPost | None = None,
-    presentation_policy: PresentationPolicy = DEFAULT_PRESENTATION_POLICY,
+    presentation_policy: PresentationPolicyContract = DEFAULT_PRESENTATION_POLICY,
     api_base: str = DEFAULT_API_BASE,
     client: httpx.Client | None = None,
     now: datetime | None = None,

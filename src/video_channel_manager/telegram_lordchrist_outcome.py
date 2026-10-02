@@ -12,7 +12,7 @@ from video_channel_manager.telegram_models import (
     TelegramQueue,
 )
 from video_channel_manager.telegram_presentation import (
-    PresentationPolicy,
+    PresentationPolicyContract,
     RenderedTelegramPost,
     verify_rendered_post,
 )
@@ -126,7 +126,7 @@ def capture_lordchrist_provider_outcome(
     queue: TelegramQueue,
     envelope: DispatchEnvelope,
     rendered: RenderedTelegramPost,
-    presentation_policy: PresentationPolicy,
+    presentation_policy: PresentationPolicyContract,
     entry: LedgerEntry,
 ) -> LordchristProviderOutcome:
     post = verify_dispatch_against_queue(queue, envelope)

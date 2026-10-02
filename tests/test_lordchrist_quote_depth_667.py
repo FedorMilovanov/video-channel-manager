@@ -94,19 +94,19 @@ def test_depth_audit_remains_the_immutable_original_10_29_21_snapshot() -> None:
     assert sum(entry.verdict == "replace" for entry in audit.entries[10:]) == 21
 
 
-def test_depth_release_records_13_published_and_47_future_without_rewriting_audit() -> None:
+def test_depth_release_records_14_published_and_46_future_without_rewriting_audit() -> None:
     release = load_depth_release(DEPTH_RELEASE)
 
-    assert release.handoff_published_prefix == 13
-    assert release.future_post_count == 47
+    assert release.handoff_published_prefix == 14
+    assert release.future_post_count == 46
     assert release.future_keep_count == 27
-    assert release.future_replace_count == 20
+    assert release.future_replace_count == 19
     assert release.replacement_pool_count == 21
-    assert release.superseded_replacement_count == 1
+    assert release.superseded_replacement_count == 2
     assert release.normalized_queue_digest == DEPTH_QUEUE_DIGEST
 
 
-def test_depth_v2_preserves_13_published_payloads_and_rekeys_only_future_suffix() -> None:
+def test_depth_v2_preserves_14_published_payloads_and_rekeys_only_future_suffix() -> None:
     source = _source_v1_queue()
     release = load_depth_release(DEPTH_RELEASE)
     depth = build_depth_runtime_queue(
@@ -127,13 +127,13 @@ def test_depth_v2_preserves_13_published_payloads_and_rekeys_only_future_suffix(
 
     source_future_ids = {post.publication_id for post in source.posts[handoff:]}
     depth_future_ids = [post.publication_id for post in depth.posts[handoff:]]
-    assert len(depth_future_ids) == 47
+    assert len(depth_future_ids) == 46
     assert len(depth_future_ids) == len(set(depth_future_ids))
     assert source_future_ids.isdisjoint(depth_future_ids)
     assert all(publication_id.startswith("lordchrist-successor-depth-v2-") for publication_id in depth_future_ids)
 
 
-def test_sequence_13_is_immutable_even_though_original_audit_marked_it_for_replacement() -> None:
+def test_sequences_13_and_14_are_immutable_even_though_original_audit_marked_them_for_replacement() -> None:
     source = _source_v1_queue()
     depth = build_depth_runtime_queue(
         candidate_path=CANDIDATE,
@@ -143,6 +143,8 @@ def test_sequence_13_is_immutable_even_though_original_audit_marked_it_for_repla
 
     assert depth.posts[12].publication_id == source.posts[12].publication_id
     assert depth.posts[12].payload_sha256 == source.posts[12].payload_sha256
+    assert depth.posts[13].publication_id == source.posts[13].publication_id
+    assert depth.posts[13].payload_sha256 == source.posts[13].payload_sha256
 
 
 def test_future_depth_posts_use_reviewed_replacements_without_legacy_labels() -> None:
@@ -162,7 +164,7 @@ def test_future_depth_posts_use_reviewed_replacements_without_legacy_labels() ->
     assert by_sequence[59].publication_id.endswith("spurgeon-resurrection-keystone")
     assert "Иисус распятый и воскресший" in by_sequence[59].text
 
-    for post in depth.posts[13:]:
+    for post in depth.posts[14:]:
         assert "Пояснение:" not in post.text
         assert "© " not in post.text
         blocks = [block.strip() for block in post.text.split("\n\n") if block.strip()]
@@ -182,7 +184,7 @@ def test_quote_v3_renders_native_blockquote_then_attribution_context_and_tags() 
         integrity_amendment_path=AMENDMENTS,
     )
     policy = load_presentation_policy(POLICY_V3)
-    rendered = render_post(depth.posts[13], policy)
+    rendered = render_post(depth.posts[14], policy)
 
     assert rendered.presentation_policy_id == "lordchrist-quote-v3"
     assert rendered.html_text.startswith("<blockquote>")
@@ -190,10 +192,10 @@ def test_quote_v3_renders_native_blockquote_then_attribution_context_and_tags() 
     assert "Пояснение:" not in rendered.text
     assert "© " not in rendered.text
     assert [entity.type for entity in rendered.expected_entities] == ["blockquote", "italic"]
-    assert rendered.text.endswith(depth.posts[13].text.split("\n\n")[-1])
+    assert rendered.text.endswith(depth.posts[14].text.split("\n\n")[-1])
 
 
-def test_exact_v1_handoff_accepts_only_13_published_and_47_pristine_pending() -> None:
+def test_exact_v1_handoff_accepts_only_14_published_and_46_pristine_pending() -> None:
     source = _source_v1_queue()
     release = load_depth_release(DEPTH_RELEASE)
     ledger = _exact_source_v1_ledger(source)
@@ -201,8 +203,8 @@ def test_exact_v1_handoff_accepts_only_13_published_and_47_pristine_pending() ->
     require_exact_v1_handoff(source, ledger, published_prefix=release.handoff_published_prefix)
 
     contaminated = TelegramLedger.model_validate(ledger.model_dump(mode="json"))
-    post_14 = source.posts[release.handoff_published_prefix]
-    contaminated.entries[post_14.publication_id] = _published_entry(post_14, 14)
+    post_15 = source.posts[release.handoff_published_prefix]
+    contaminated.entries[post_15.publication_id] = _published_entry(post_15, 15)
     with pytest.raises(ValueError, match="pristine unpublished suffix"):
         require_exact_v1_handoff(
             source,
@@ -234,16 +236,11 @@ def test_depth_ledger_copies_verified_history_exactly_and_creates_new_pending_su
     assert migrated.queue_digest == DEPTH_QUEUE_DIGEST
     assert len(migrated.entries) == 60
     assert all(migrated.entries[post.publication_id].state == "published" for post in depth.posts[:handoff])
-    assert all(
-        migrated.entries[post.publication_id].provider_effect == "verified" for post in depth.posts[:handoff]
-    )
+    assert all(migrated.entries[post.publication_id].provider_effect == "verified" for post in depth.posts[:handoff])
     assert all(migrated.entries[post.publication_id].state == "pending" for post in depth.posts[handoff:])
+    assert all(migrated.entries[post.publication_id].provider_effect == "impossible" for post in depth.posts[handoff:])
     assert all(
-        migrated.entries[post.publication_id].provider_effect == "impossible" for post in depth.posts[handoff:]
-    )
-    assert all(
-        migrated.entries[post.publication_id].payload_sha256 == post.payload_sha256
-        for post in depth.posts[handoff:]
+        migrated.entries[post.publication_id].payload_sha256 == post.payload_sha256 for post in depth.posts[handoff:]
     )
 
 

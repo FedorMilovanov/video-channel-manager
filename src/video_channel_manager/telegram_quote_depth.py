@@ -45,7 +45,7 @@ DEPTH_RELEASE_FILENAME = "successor-depth-release-v1.json"
 DEPTH_ACTIVATION_FILENAME = "successor-depth-activation-v1.json"
 DEPTH_PRESENTATION_FILENAME = "presentation-policy-v3.json"
 DEPTH_RELEASE_ID = "lordchrist-successor-depth-v2"
-DEPTH_QUEUE_DIGEST = "sha256:6aaca397c05b8b0b011a486eedf8b784a2fe9a9d28c0b01d046eb5baef1abf3f"
+DEPTH_QUEUE_DIGEST = "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441"
 SOURCE_V1_QUEUE_DIGEST = "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873"
 AUDIT_HISTORY_PREFIX = 10
 REVIEWED_TOTAL = 60
@@ -183,9 +183,7 @@ class DepthRelease(BaseModel):
     channel_username: Literal["@lordchrist"]
     release_id: Literal["lordchrist-successor-depth-v2"]
     owning_issue: Literal[667]
-    source_v1_queue_digest: Literal[
-        "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873"
-    ]
+    source_v1_queue_digest: Literal["sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873"]
     audit_git_blob_sha1: str = Field(pattern=r"^[0-9a-f]{40}$")
     replacements_git_blob_sha1: str = Field(pattern=r"^[0-9a-f]{40}$")
     transition_identity: str = Field(pattern=r"^after_v1_exactly_[0-9]+_published_[0-9]+_pending$")
@@ -225,17 +223,13 @@ class DepthActivation(BaseModel):
     release_id: Literal["lordchrist-successor-depth-v2"]
     owning_issue: Literal[667]
     queue_digest: str = Field(pattern=SHA256_PATTERN)
-    source_v1_queue_digest: Literal[
-        "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873"
-    ]
+    source_v1_queue_digest: Literal["sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873"]
     activation_policy: Literal["exact_published_prefix_and_pristine_suffix"]
     required_published_prefix: int = Field(ge=AUDIT_HISTORY_PREFIX, le=REVIEWED_TOTAL)
     required_pending_suffix: int = Field(ge=0, le=REVIEWED_TOTAL)
     presentation_policy_id: Literal["lordchrist-quote-v3"]
     presentation_policy_sha256: str = Field(pattern=SHA256_PATTERN)
-    state_ledger_relative_path: Literal[
-        "content/telegram/lordchrist/successor-depth-v2-publication-ledger.json"
-    ]
+    state_ledger_relative_path: Literal["content/telegram/lordchrist/successor-depth-v2-publication-ledger.json"]
     provider_writes_authorized: bool
 
     @model_validator(mode="after")
@@ -254,9 +248,7 @@ class DepthActiveSelection(BaseModel):
     release_id: Literal["lordchrist-successor-depth-v2"]
     queue_path: str
     ledger_path: str
-    ledger_relative_path: Literal[
-        "content/telegram/lordchrist/successor-depth-v2-publication-ledger.json"
-    ]
+    ledger_relative_path: Literal["content/telegram/lordchrist/successor-depth-v2-publication-ledger.json"]
     queue_digest: str = Field(pattern=SHA256_PATTERN)
     predecessor_complete: Literal[True]
     needs_ledger_initialization: bool
