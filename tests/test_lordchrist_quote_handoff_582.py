@@ -63,7 +63,7 @@ def _write_ledger(path: Path, ledger: object) -> None:
 
 
 def test_delayed_morning_schedule_remains_same_day_eligible() -> None:
-    schedule = load_production_schedule(SCHEDULE)
+    schedule = load_production_schedule(SCHEDULE).model_copy(update={"enabled": True})
     # 14:19 Moscow: this reproduces the September 9 delayed GitHub delivery that
     # used to green-skip under the old two-hour window.
     decision = decide_scheduled_slot(
@@ -85,7 +85,7 @@ def test_delayed_morning_schedule_remains_same_day_eligible() -> None:
 
 
 def test_evening_schedule_expires_before_moscow_midnight() -> None:
-    schedule = load_production_schedule(SCHEDULE)
+    schedule = load_production_schedule(SCHEDULE).model_copy(update={"enabled": True})
     active = decide_scheduled_slot(
         schedule,
         event_schedule="17 21 * * 2,5,0",
