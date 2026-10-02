@@ -6,7 +6,7 @@
   "chat_id": -1001295216957,
   "bot_id": 8716602202,
   "bot_username": "preaching_mp3_bot",
-  "enabled": false,
+  "enabled": true,
   "not_before_moscow_date": "2026-08-08",
   "timezone": "Europe/Moscow",
   "primary_time": "09:17",
@@ -15,13 +15,25 @@
     "morning": {
       "cron": "17 9 * * *",
       "time": "09:17",
-      "iso_weekdays": [1, 2, 3, 4, 5, 6, 7],
+      "iso_weekdays": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "max_lateness_minutes": 720
     },
     "evening": {
       "cron": "17 21 * * 2,5,0",
       "time": "21:17",
-      "iso_weekdays": [2, 5, 7],
+      "iso_weekdays": [
+        2,
+        5,
+        7
+      ],
       "max_lateness_minutes": 160
     }
   },
@@ -29,8 +41,8 @@
   "max_verified_per_day": 2,
   "backfill_policy": "none",
   "queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
-  "successor_queue_digest": "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873",
-  "presentation_policy_id": "lordchrist-editorial-v2",
-  "presentation_policy_sha256": "sha256:daec0eb71658d815fd5d73ce6863f49b1a942afbb36cb8358dc689a87a73acc8",
-  "activation_note": "Scheduled quote publication is temporarily paused after the 2026-10-02 quality incident while successor depth-v2 is finalized against the exact live published prefix. Manual guarded preflight remains available; autonomous scheduling must stay disabled until the reviewed depth-v2 release, migrated ledger, quote-v3 presentation policy, and exact current state boundary are merged and validated."
+  "successor_queue_digest": "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441",
+  "presentation_policy_id": "lordchrist-quote-v3",
+  "presentation_policy_sha256": "sha256:c6350861bcdbf3de9816afc398db5d80c605ae9fc0e750c3f7850e2e68449e0f",
+  "activation_note": "Quality-audited Lordchrist depth-v2 is the only autonomous quote release. The exact source-v1 handoff is locked at 14 published+verified and 46 pristine pending entries; runtime selection, ledger migration, quote-v3 presentation, provider authorization, and schedule binding all fail closed on identity or state drift."
 }

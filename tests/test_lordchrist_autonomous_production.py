@@ -8,10 +8,10 @@ from video_channel_manager.telegram_schedule import decide_scheduled_slot, load_
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "content/telegram/lordchrist/production-schedule.json"
-POLICY_PATH = ROOT / "content/telegram/lordchrist/presentation-policy.json"
+POLICY_PATH = ROOT / "content/telegram/lordchrist/presentation-policy-v3.json"
 WORKFLOW_PATH = ROOT / ".github/workflows/lordchrist-telegram-poster.yml"
 EXPECTED_DIGEST = "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"
-EXPECTED_SUCCESSOR_DIGEST = "sha256:6c9835793785570311108eec21fd1468aa83e0c45cf63eb554d0f6b9cb7d0873"
+EXPECTED_SUCCESSOR_DIGEST = "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441"
 EXPECTED_CHAT_ID = -1001295216957
 EXPECTED_BOT_ID = 8716602202
 EXPECTED_BOT_USERNAME = "preaching_mp3_bot"
@@ -28,9 +28,9 @@ def test_autonomous_production_config_is_explicit_release_bound_and_slot_gated()
     assert config.chat_id == EXPECTED_CHAT_ID
     assert config.bot_id == EXPECTED_BOT_ID
     assert config.bot_username == EXPECTED_BOT_USERNAME
-    assert config.enabled is False
-    assert "paused" in config.activation_note.lower()
+    assert config.enabled is True
     assert "depth-v2" in config.activation_note
+    assert "fail closed" in config.activation_note.lower()
     assert config.not_before_moscow_date == date(2026, 8, 8)
     assert config.timezone == "Europe/Moscow"
     assert config.primary_time == "09:17"
@@ -52,7 +52,7 @@ def test_autonomous_production_config_is_explicit_release_bound_and_slot_gated()
     assert config.presentation_policy_sha256 == policy.digest
 
 
-def test_disabled_production_schedule_fails_closed_before_slot_evaluation() -> None:
+def test_enabled_depth_v2_schedule_activates_an_exact_due_slot() -> None:
     config = load_production_schedule(CONFIG_PATH)
     decision = decide_scheduled_slot(
         config,
@@ -60,9 +60,9 @@ def test_disabled_production_schedule_fails_closed_before_slot_evaluation() -> N
         now=datetime(2026, 9, 7, 6, 17, tzinfo=UTC),
     )
 
-    assert decision.active is False
-    assert decision.slot is None
-    assert decision.reason == "production schedule disabled"
+    assert decision.active is True
+    assert decision.slot == "morning"
+    assert decision.reason == "morning slot active"
 
 
 def test_schedule_decision_has_daily_morning_and_only_tuesday_friday_sunday_evening() -> None:
@@ -128,7 +128,7 @@ def test_workflow_uses_version_controlled_slot_gate_and_exact_release_identity()
 def test_scheduled_gate_does_not_require_manual_posting_toggle() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
     gate_start = workflow.index("      - name: Enforce publication gates")
-    gate_end = workflow.index("      - name: Discard read-only successor ledger before durable initialization")
+    gate_end = workflow.index("      - name: Discard read-only depth-v2 ledger before durable initialization")
     gate = workflow[gate_start:gate_end]
 
     scheduled_branch, manual_branch = gate.split("          else\n", 1)
@@ -153,19 +153,19 @@ def test_send_step_bridges_only_a_valid_schedule_event_into_legacy_internal_gate
     assert "if: steps.persist_intent.outputs.persisted == 'true'" in send_step
 
 
-def test_successor_ledger_durable_initialization_is_execution_gated_and_after_current_main_proof() -> None:
+def test_depth_v2_ledger_durable_initialization_is_execution_gated_and_after_current_main_proof() -> None:
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
 
-    local_start = workflow.index("      - name: Materialize missing successor ledger locally for read-only validation")
+    local_start = workflow.index("      - name: Materialize missing depth-v2 ledger locally for read-only validation")
     validate_start = workflow.index("      - name: Validate immutable queue and strict ledger")
     preview_start = workflow.index("      - name: Preview next publication")
     quality_start = workflow.index("      - name: Require current-main exact-SHA repository CI proof")
     target_start = workflow.index("      - name: Validate read-only target configuration")
     preflight_start = workflow.index("      - name: Read-only bot and channel preflight")
     gate_start = workflow.index("      - name: Enforce publication gates")
-    discard_start = workflow.index("      - name: Discard read-only successor ledger before durable initialization")
-    writer_start = workflow.index("      - name: Enable state writer for one-time successor ledger initialization")
-    durable_start = workflow.index("      - name: Persist exact successor ledger after current-main proof")
+    discard_start = workflow.index("      - name: Discard read-only depth-v2 ledger before durable initialization")
+    writer_start = workflow.index("      - name: Enable state writer for one-time depth-v2 ledger initialization")
+    durable_start = workflow.index("      - name: Persist exact depth-v2 ledger after current-main proof")
     publication_writer_start = workflow.index("      - name: Enable publication ledger writer")
 
     assert (
@@ -195,10 +195,10 @@ def test_successor_ledger_durable_initialization_is_execution_gated_and_after_cu
     durable_step = workflow[durable_start:publication_writer_start]
     assert "steps.active_release.outputs.needs_ledger_initialization == 'true'" in durable_step
     assert "steps.intent.outputs.do_publish == 'true'" in durable_step
-    assert "Initialize sealed Lordchrist successor ledger" in durable_step
+    assert "Initialize reviewed Lordchrist depth-v2 ledger" in durable_step
     assert 'git -C "$STATE_DIR" push origin "HEAD:$STATE_BRANCH"' in durable_step
-    assert "remote-successor-ledger.json" in durable_step
+    assert "remote-depth-v2-ledger.json" in durable_step
 
     before_quality = workflow[:quality_start]
     assert "persist-credentials: true" not in before_quality[local_start:]
-    assert "Initialize sealed Lordchrist successor ledger" not in before_quality
+    assert "Initialize reviewed Lordchrist depth-v2 ledger" not in before_quality

@@ -13,5 +13,5 @@
   "presentation_policy_id": "lordchrist-quote-v3",
   "presentation_policy_sha256": "sha256:c6350861bcdbf3de9816afc398db5d80c605ae9fc0e750c3f7850e2e68449e0f",
   "state_ledger_relative_path": "content/telegram/lordchrist/successor-depth-v2-publication-ledger.json",
-  "provider_writes_authorized": false
+  "provider_writes_authorized": true
 }
