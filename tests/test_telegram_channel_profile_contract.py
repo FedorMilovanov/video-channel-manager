@@ -68,10 +68,10 @@ def test_lordchrist_migration_profile_matches_live_identity_while_slot_policy_ow
     profile = load_channel_profile(LORDCHRIST_PROFILE_PATH)
     production = json.loads(LORDCHRIST_PRODUCTION_PATH.read_text(encoding="utf-8"))
 
-    assert production["enabled"] is False
+    assert production["enabled"] is True
     note = production["activation_note"].casefold()
     assert "depth-v2" in note
-    assert "paused" in note
+    assert "fail closed" in note
     assert profile.project_key == production["project_key"]
     assert profile.channel_username == production["channel_username"]
     assert profile.timezone == production["timezone"]

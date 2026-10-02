@@ -16,17 +16,16 @@ CONTENT = ROOT / "content/telegram/lordchrist"
 WORKFLOW = ROOT / ".github/workflows/lordchrist-telegram-poster.yml"
 
 
-def test_depth_v2_staging_identity_is_exact_but_provider_inert() -> None:
+def test_depth_v2_activation_and_schedule_form_one_exact_production_identity() -> None:
     activation = load_depth_activation(CONTENT / "successor-depth-activation-v1.json")
     schedule = load_production_schedule(CONTENT / "production-schedule.json")
     policy = load_presentation_policy(CONTENT / "presentation-policy-v3.json")
 
-    assert activation.provider_writes_authorized is False
+    assert activation.provider_writes_authorized is True
     assert activation.queue_digest == DEPTH_QUEUE_DIGEST
     assert activation.presentation_policy_id == policy.policy_id == "lordchrist-quote-v3"
     assert activation.presentation_policy_sha256 == policy.digest
-    assert schedule.enabled is False
-    assert "paused" in schedule.activation_note.lower()
+    assert schedule.enabled is True
     assert schedule.successor_queue_digest == DEPTH_QUEUE_DIGEST
     assert schedule.presentation_policy_id == policy.policy_id
     assert schedule.presentation_policy_sha256 == policy.digest
