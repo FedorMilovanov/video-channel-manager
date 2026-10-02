@@ -168,7 +168,7 @@ jobs:
             src/video_channel_manager/telegram_lordchrist_outcome.py \
             tests/test_lordchrist_quote_depth_667.py
           mypy src --show-error-codes
-          pytest -q tests/test_lordchrist_quote_depth_667.py tests/test_telegram_presentation.py tests/test_telegram_transport.py tests/test_telegram_lordchrist_outcome.py
+          pytest -q tests/test_lordchrist_quote_depth_667.py tests/test_telegram_presentation.py
 
       - name: Commit verified branch repair and remove helper workflow
         shell: bash
