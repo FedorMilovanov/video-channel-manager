@@ -22,6 +22,8 @@ env:
   EXPECTED_BOT_USERNAME: preaching_mp3_bot
   PREDECESSOR_QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
   PREDECESSOR_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json
+  LORDCHRIST_PREDECESSOR_QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
+  LORDCHRIST_PREDECESSOR_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json
   SUCCESSOR_CANDIDATE_PATH: content/telegram/lordchrist/successor-quotes-v1.json
   SUCCESSOR_TRANSLATION_LEDGER_PATH: content/telegram/lordchrist/successor-translation-ledger-v1.json
   SUCCESSOR_INTEGRITY_AMENDMENTS_PATH: content/telegram/lordchrist/successor-integrity-amendments-v1.json
