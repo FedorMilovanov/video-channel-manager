@@ -42,18 +42,14 @@ def test_source_web_audit_exceeds_requested_50_page_floor_with_unique_pages() ->
     audit = load_source_web_audit(AUDIT_PATH)
 
     assert audit.minimum_research_pages == 50
-    assert audit.research_pages_reviewed >= 70
+    assert audit.research_pages_reviewed >= 98
     assert len(audit.research_pages) == audit.research_pages_reviewed
     assert len(set(audit.research_pages)) == audit.research_pages_reviewed
 
 
 def test_source_web_audit_retains_all_reviewed_primary_and_official_source_families() -> None:
     audit = load_source_web_audit(AUDIT_PATH)
-    families = {
-        family
-        for url in audit.research_pages
-        if (family := _family(urlparse(url).hostname)) is not None
-    }
+    families = {family for url in audit.research_pages if (family := _family(urlparse(url).hostname)) is not None}
 
     assert families == {"ccel.org", "newadvent.org", "spurgeon.org", "ligonier.org", "gty.org"}
 
