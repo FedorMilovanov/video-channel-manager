@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import argparse
+import json
 import re
 from dataclasses import dataclass
+from pathlib import Path
 
+from video_channel_manager.telegram_quote_depth import build_depth_runtime_queue
 from video_channel_manager.telegram_quote_runtime import SuccessorRuntimePost
 
 # These openings normally depend on a preceding sentence, contrast, referent, or
@@ -147,3 +151,40 @@ def assert_future_suffix_quality(
             f"{issue.sequence:02d} {issue.publication_id}: {issue.code}: {issue.detail}" for issue in issues
         )
         raise ValueError(f"quote-v4 future quality gate failed:\n{detail}")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Validate standalone quality for the pending LordChrist quote-v4 suffix.")
+    parser.add_argument("--candidate", type=Path, required=True)
+    parser.add_argument("--translation-ledger", type=Path, required=True)
+    parser.add_argument("--integrity-amendment", type=Path, required=True)
+    parser.add_argument("--depth-audit", type=Path, required=True)
+    parser.add_argument("--replacements", type=Path, required=True)
+    parser.add_argument("--published-boundary", type=int, default=15)
+    args = parser.parse_args()
+
+    queue = build_depth_runtime_queue(
+        candidate_path=args.candidate,
+        translation_ledger_path=args.translation_ledger,
+        integrity_amendment_path=args.integrity_amendment,
+        audit_path=args.depth_audit,
+        replacements_path=args.replacements,
+    )
+    assert_future_suffix_quality(queue.posts, published_boundary=args.published_boundary)
+    print(
+        json.dumps(
+            {
+                "release_id": queue.release_id,
+                "queue_digest": queue.digest,
+                "published_boundary": args.published_boundary,
+                "pending_quality_verified": len(queue.posts) - args.published_boundary,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
