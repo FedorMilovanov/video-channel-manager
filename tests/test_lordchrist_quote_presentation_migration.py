@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "content/telegram/lordchrist"
 EXPECTED_QUEUE_DIGEST = "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441"
 EXPECTED_V3_DIGEST = "sha256:c6350861bcdbf3de9816afc398db5d80c605ae9fc0e750c3f7850e2e68449e0f"
-EXPECTED_V4_DIGEST = "sha256:e1a7ccefffbf02e2f1bd743d0119769c2717ec0738252959b39df1b8d0d1e7a1"
+EXPECTED_V4_DIGEST = "sha256:e5b4041702c74b4e06e4dd409a7cfaba4726bd81c8a0f34d2f6f0403295ead4c"
 
 
 def test_presentation_migration_preserves_published_1_to_15_and_only_targets_future_suffix() -> None:
