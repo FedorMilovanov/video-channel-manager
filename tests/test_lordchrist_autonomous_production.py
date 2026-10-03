@@ -28,10 +28,10 @@ def test_autonomous_production_config_is_explicit_release_bound_and_slot_gated()
     assert config.chat_id == EXPECTED_CHAT_ID
     assert config.bot_id == EXPECTED_BOT_ID
     assert config.bot_username == EXPECTED_BOT_USERNAME
-    assert config.enabled is True
+    assert config.enabled is False
     note = config.activation_note.casefold()
+    assert "paused" in note
     assert "depth-v2" in note
-    assert "fail closed" in note
     assert config.not_before_moscow_date == date(2026, 8, 8)
     assert config.timezone == "Europe/Moscow"
     assert config.primary_time == "09:17"
@@ -53,7 +53,7 @@ def test_autonomous_production_config_is_explicit_release_bound_and_slot_gated()
     assert config.presentation_policy_sha256 == policy.digest
 
 
-def test_enabled_depth_v2_schedule_activates_an_exact_due_slot() -> None:
+def test_paused_depth_v2_schedule_fails_closed_before_slot_evaluation() -> None:
     config = load_production_schedule(CONFIG_PATH)
     decision = decide_scheduled_slot(
         config,
@@ -61,9 +61,9 @@ def test_enabled_depth_v2_schedule_activates_an_exact_due_slot() -> None:
         now=datetime(2026, 9, 7, 6, 17, tzinfo=UTC),
     )
 
-    assert decision.active is True
-    assert decision.slot == "morning"
-    assert decision.reason == "morning slot active"
+    assert decision.active is False
+    assert decision.slot is None
+    assert decision.reason == "production schedule disabled"
 
 
 def test_schedule_decision_has_daily_morning_and_only_tuesday_friday_sunday_evening() -> None:

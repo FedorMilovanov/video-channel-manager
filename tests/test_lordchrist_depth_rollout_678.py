@@ -25,7 +25,11 @@ def test_depth_v2_activation_and_schedule_form_one_exact_production_identity() -
     assert activation.queue_digest == DEPTH_QUEUE_DIGEST
     assert activation.presentation_policy_id == policy.policy_id == "lordchrist-quote-v3"
     assert activation.presentation_policy_sha256 == policy.digest
-    assert schedule.enabled is True
+    # A temporary editorial safety pause may disable autonomous dispatch without
+    # weakening the exact release identity or the provider authorization seal.
+    assert schedule.enabled is False
+    assert "paused" in schedule.activation_note.casefold()
+    assert "depth-v2" in schedule.activation_note.casefold()
     assert schedule.successor_queue_digest == DEPTH_QUEUE_DIGEST
     assert schedule.presentation_policy_id == policy.policy_id
     assert schedule.presentation_policy_sha256 == policy.digest
