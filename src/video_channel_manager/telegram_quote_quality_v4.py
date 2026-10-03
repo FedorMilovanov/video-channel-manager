@@ -9,9 +9,10 @@ from video_channel_manager.telegram_quote_depth import build_depth_runtime_queue
 from video_channel_manager.telegram_quote_runtime import SuccessorRuntimePost
 
 # These openings normally depend on a preceding sentence, contrast, referent, or
-# conclusion. Quote cards have no preceding source paragraph, so the future
-# suffix must not begin with them. Published history is never retroactively
-# subjected to this rule.
+# conclusion. Quote-v4 supplies the exact reviewed title immediately before the
+# quotation, but that must not become a blanket excuse for context-dependent
+# excerpts. Only explicitly reviewed title-to-pronoun resolutions in the sealed
+# depth-v2 suffix are accepted below.
 CONTEXT_DEPENDENT_PREFIXES = (
     "а ",
     "но ",
@@ -59,6 +60,21 @@ CONTEXT_DEPENDENT_PREFIXES = (
     "там ",
 )
 
+# Human-reviewed, release-scoped anaphora whose referent is made explicit by
+# quote-v4's visible title immediately above the quotation. Binding both the
+# publication id and the exact title prevents a future title/content change from
+# silently inheriting this exception.
+TITLE_CONTEXT_RESOLUTIONS: dict[str, tuple[str, str]] = {
+    "lordchrist-successor-depth-v2-17-gurnall-defend-in-suffering": (
+        "они ",
+        "Доспехи для страдания, не от страдания",
+    ),
+    "lordchrist-successor-depth-v2-32-chrysostom-son-obedience": (
+        "он ",
+        "Послушание Сына не делает Его рабом",
+    ),
+}
+
 
 @dataclass(frozen=True)
 class QuoteQualityIssue:
@@ -83,19 +99,31 @@ def semantic_blocks(post: SuccessorRuntimePost) -> tuple[str, str, str, str]:
     return quote, expected_attribution, context, hashtags
 
 
+def _title_resolves_opening(post: SuccessorRuntimePost, matched_prefix: str) -> bool:
+    reviewed = TITLE_CONTEXT_RESOLUTIONS.get(post.publication_id)
+    return reviewed == (matched_prefix, post.title.strip())
+
+
 def standalone_quote_issues(post: SuccessorRuntimePost) -> tuple[QuoteQualityIssue, ...]:
+    """Validate the visible quote-v4 unit while preserving the sealed quote text.
+
+    The quote itself remains source-bound and unchanged. V4 adds the reviewed
+    title immediately before it, so only explicitly reviewed pronoun resolutions
+    may rely on that title; all other context-dependent openings still fail.
+    """
+
     quote, _attribution, context, hashtags = semantic_blocks(post)
     issues: list[QuoteQualityIssue] = []
     folded = quote.casefold().lstrip("«\"'—–- ")
 
     matched_prefix = next((prefix for prefix in CONTEXT_DEPENDENT_PREFIXES if folded.startswith(prefix)), None)
-    if matched_prefix is not None:
+    if matched_prefix is not None and not _title_resolves_opening(post, matched_prefix):
         issues.append(
             QuoteQualityIssue(
                 publication_id=post.publication_id,
                 sequence=post.sequence,
                 code="context_dependent_opening",
-                detail=f"quotation begins with context-dependent prefix {matched_prefix!r}",
+                detail=f"quotation begins with unresolved context-dependent prefix {matched_prefix!r}",
             )
         )
 
@@ -170,6 +198,7 @@ def main() -> int:
                 "queue_digest": queue.digest,
                 "published_boundary": args.published_boundary,
                 "pending_quality_verified": len(queue.posts) - args.published_boundary,
+                "title_context_resolutions": len(TITLE_CONTEXT_RESOLUTIONS),
             },
             ensure_ascii=False,
             sort_keys=True,
