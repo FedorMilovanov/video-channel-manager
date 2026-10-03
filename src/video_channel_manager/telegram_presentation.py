@@ -98,8 +98,9 @@ class QuotePresentationPolicyV3(BaseModel):
 class QuotePresentationPolicyV4(BaseModel):
     """Hardened quote-card policy for the post-v3 future suffix.
 
-    The source line belongs visually to the quotation, so it follows the
-    blockquote immediately on the next line. Editorial context and hashtags
+    The reviewed title is a visible context lead immediately above the source-
+    bound quotation. The source line belongs visually to the quotation and
+    follows it immediately on the next line. Editorial context and hashtags
     remain distinct blocks separated by one blank line.
     """
 
@@ -109,6 +110,8 @@ class QuotePresentationPolicyV4(BaseModel):
     schema_version: Literal[4]
     policy_id: Literal["lordchrist-quote-v4"]
     parse_mode: Literal["HTML"]
+    title_style: Literal["bold"]
+    title_to_quote_separator: Literal["\n"]
     quote_style: Literal["blockquote"]
     attribution_style: Literal["italic"]
     attribution_prefix: Literal["— "]
@@ -164,8 +167,11 @@ class RenderedTelegramPost(BaseModel):
                 raise ValueError("quote publication must not expose the editorial label")
             if "\n\n#" not in self.text:
                 raise ValueError("quote publication must keep hashtags as a separate final block")
-            if "blockquote" not in types or "italic" not in types:
-                raise ValueError("quote publication requires blockquote and italic attribution entities")
+            required_types = {"blockquote", "italic"}
+            if self.presentation_policy_id == "lordchrist-quote-v4":
+                required_types.add("bold")
+            if not required_types.issubset(types):
+                raise ValueError("quote publication is missing required presentation entities")
         return self
 
 
@@ -197,6 +203,8 @@ DEFAULT_QUOTE_V4_PRESENTATION_POLICY = QuotePresentationPolicyV4(
     schema_version=4,
     policy_id="lordchrist-quote-v4",
     parse_mode="HTML",
+    title_style="bold",
+    title_to_quote_separator="\n",
     quote_style="blockquote",
     attribution_style="italic",
     attribution_prefix="— ",
@@ -433,6 +441,8 @@ def _render_post_v4(post: TelegramPost, policy: QuotePresentationPolicyV4) -> Re
     quote, attribution, context, hashtags = _quote_card_blocks(post, policy)
 
     builder = _RenderBuilder()
+    builder.append_styled(post.title, "bold")
+    builder.append(policy.title_to_quote_separator)
     builder.append_styled(quote, "blockquote")
     builder.append(policy.quote_to_attribution_separator)
     builder.append_styled(attribution, "italic")
@@ -442,9 +452,14 @@ def _render_post_v4(post: TelegramPost, policy: QuotePresentationPolicyV4) -> Re
     builder.append(hashtags)
 
     rendered = _provider_payload(post=post, policy=policy, builder=builder)
-    expected_boundary = f"{quote}{policy.quote_to_attribution_separator}{attribution}"
+    expected_boundary = (
+        f"{post.title}{policy.title_to_quote_separator}"
+        f"{quote}{policy.quote_to_attribution_separator}{attribution}"
+    )
     if not rendered.text.startswith(expected_boundary):
-        raise ValueError("quote-v4 source attribution must immediately follow the quotation")
+        raise ValueError("quote-v4 title, quotation and source must form one immediate reading unit")
+    if f"{post.title}\n\n{quote}" in rendered.text:
+        raise ValueError("quote-v4 must not insert a blank line between title and quotation")
     if f"{quote}\n\n{attribution}" in rendered.text:
         raise ValueError("quote-v4 must not insert a blank line between quotation and source attribution")
     return rendered
