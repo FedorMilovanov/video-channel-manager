@@ -95,13 +95,19 @@ def validate_migration(
     for post in queue.posts[: migration.published_boundary]:
         entry = ledger.entries[post.publication_id]
         if entry.state != "published" or entry.provider_effect != "verified":
-            raise ValueError(f"published migration prefix is not immutable provider-verified history: {post.publication_id}")
+            raise ValueError(
+                f"published migration prefix is not immutable provider-verified history: {post.publication_id}"
+            )
         if entry.payload_sha256 != post.source_payload_sha256:
             raise ValueError(f"published migration prefix payload differs from runtime identity: {post.publication_id}")
 
     for post in queue.posts[migration.published_boundary :]:
         entry = ledger.entries[post.publication_id]
-        if entry.state != "pending" or entry.provider_effect not in {"impossible", "not_dispatched", "confirmed_absent"}:
+        if entry.state != "pending" or entry.provider_effect not in {
+            "impossible",
+            "not_dispatched",
+            "confirmed_absent",
+        }:
             raise ValueError(f"future migration suffix is not pristine pending state: {post.publication_id}")
         if entry.intent_id is not None or entry.message_id is not None:
             raise ValueError(f"future migration suffix already has dispatch/provider identity: {post.publication_id}")
