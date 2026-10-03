@@ -7,7 +7,7 @@ from video_channel_manager.telegram_quote_depth import build_depth_runtime_queue
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "content/telegram/lordchrist"
-EXPECTED_V4_DIGEST = "sha256:e1a7ccefffbf02e2f1bd743d0119769c2717ec0738252959b39df1b8d0d1e7a1"
+EXPECTED_V4_DIGEST = "sha256:e5b4041702c74b4e06e4dd409a7cfaba4726bd81c8a0f34d2f6f0403295ead4c"
 
 
 def _sequence_16():
