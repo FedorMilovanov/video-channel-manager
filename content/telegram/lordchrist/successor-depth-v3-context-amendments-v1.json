@@ -1,0 +1,38 @@
+{
+  "schema_name": "video-channel-manager.telegram-successor-depth-v3-context-amendments",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "release_id": "lordchrist-successor-depth-v3",
+  "parent_queue_digest": "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441",
+  "published_boundary": 15,
+  "review_state": "source_verified",
+  "entries": [
+    {
+      "sequence": 17,
+      "parent_publication_id": "lordchrist-successor-depth-v2-17-gurnall-defend-in-suffering",
+      "source_url": "https://www.ccel.org/ccel/gurnall/armour/files/gurnal03b.htm",
+      "source_location": "Direction IX, Fifth Piece—The Christian’s Helmet, suffering paragraph",
+      "source_exact_fragment": "As most of the pieces are defensive, so all of them to defend from sin, none to secure the Christian from suffering. They are to defend him in suffering, not privilege him from it.",
+      "source_fragment_sha256": "sha256:26e01de12a7bf3aa1cf93c0092a7fa37024d8ec09cd2dd810b32f778b47be721",
+      "quote_ru": "Все части доспехов служат защите от греха; ни одна не ограждает христианина от страдания. Они должны защищать его в страдании, а не освобождать от него.",
+      "translation_note": "Расширен непрерывный первичный фрагмент на предыдущее предложение, чтобы явный референт «части доспехов» был внутри самой цитаты; богословский тезис и направление мысли Герналла не изменены.",
+      "translation_binding_sha256": "sha256:6bc71dab4c1851b7e147dfd8c9cb257ca44b9af9f42d9cec35007facb64b2121",
+      "checked_on": "2026-10-03",
+      "review_state": "reviewed"
+    },
+    {
+      "sequence": 32,
+      "parent_publication_id": "lordchrist-successor-depth-v2-32-chrysostom-son-obedience",
+      "source_url": "https://www.newadvent.org/fathers/230207.htm",
+      "source_location": "Homily 7 on Philippians, Philippians 2:8 exposition",
+      "source_exact_fragment": "He became obedient as a Son to His Father; He fell not thus into a servile state, but by this very act above all others guarded his wondrous Sonship, by thus greatly honoring the Father.",
+      "source_fragment_sha256": "sha256:0b1fd01f78c375cb3aeb10f4c21fbc5eec79283798ade81dce239ee0f0d7b0ec",
+      "quote_ru": "Иисус Христос стал послушен Своему Отцу как Сын; этим Он не впал в рабское состояние, но самим этим поступком более всего сохранил Своё дивное Сыновство, столь велико почтив Отца.",
+      "translation_note": "Английское местоимение «He» раскрыто в русском как «Иисус Христос» по непосредственному контексту беседы, чтобы отдельная карточка имела явный субъект; остальная фраза переведена из того же непрерывного первичного фрагмента без добавления нового тезиса.",
+      "translation_binding_sha256": "sha256:5042e0c2982521e1a9e8d7587ff95344c72c1edabfdf8b66775743efbb25a048",
+      "checked_on": "2026-10-03",
+      "review_state": "reviewed"
+    }
+  ]
+}
