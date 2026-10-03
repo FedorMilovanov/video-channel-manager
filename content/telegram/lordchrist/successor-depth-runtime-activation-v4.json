@@ -9,7 +9,7 @@
   "required_published_prefix": 15,
   "required_pending_suffix": 45,
   "presentation_policy_id": "lordchrist-quote-v4",
-  "presentation_policy_sha256": "sha256:c6b17e8dffab05e7e2b0e82dcd580f91a51c9600cc0e2217e07670c3d8d65711",
+  "presentation_policy_sha256": "sha256:a87dd04d605a749c84ecd47d18c127dd921dddea500781c0fd75a0db20a7be9f",
   "state_ledger_relative_path": "content/telegram/lordchrist/successor-depth-v2-publication-ledger.json",
   "source_web_audit": "quote-source-web-audit-v2.json",
   "source_live_probe": "quote-source-live-probe-v1.json",
