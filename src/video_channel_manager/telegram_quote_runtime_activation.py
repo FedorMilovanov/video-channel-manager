@@ -70,21 +70,31 @@ def _validate_live_probe(path: Path, *, audit_page_count: int) -> dict[str, int]
     except (OSError, json.JSONDecodeError) as exc:
         raise ValueError(f"invalid LordChrist quote source live probe {path}: {exc}") from exc
 
+    if payload.get("schema_name") != "video-channel-manager.telegram-quote-source-live-probe":
+        raise ValueError("live source probe schema identity is invalid")
+    if payload.get("schema_version") != 1:
+        raise ValueError("live source probe schema version is invalid")
     if payload.get("release_id") != DEPTH_RELEASE_ID or payload.get("queue_digest") != DEPTH_QUEUE_DIGEST:
         raise ValueError("live source probe differs from the exact depth-v2 release identity")
+    if payload.get("web_audit_file") != "quote-source-web-audit-v2.json":
+        raise ValueError("live source probe is not bound to the reviewed web-audit inventory")
+
     attempted = int(payload.get("urls_attempted", -1))
-    succeeded = int(payload.get("urls_succeeded", -1))
-    failed = int(payload.get("urls_failed", -1))
-    not_found = int(payload.get("http_404_count", -1))
+    succeeded = int(payload.get("urls_fetched_successfully", -1))
+    failed = int(payload.get("fetch_failures", -1))
+    failed_urls = payload.get("failed_urls")
     if attempted != audit_page_count:
         raise ValueError("live source probe URL count differs from the reviewed web-audit inventory")
     if succeeded + failed != attempted:
         raise ValueError("live source probe success/failure accounting is inconsistent")
     if succeeded < 50:
         raise ValueError("live source probe did not independently fetch at least 50 reviewed source URLs")
-    if not_found != 0:
-        raise ValueError("live source probe recorded an HTTP 404 in the reviewed source inventory")
-    return {"attempted": attempted, "succeeded": succeeded, "failed": failed, "http_404": not_found}
+    if not isinstance(failed_urls, list) or len(failed_urls) != failed or len(failed_urls) != len(set(failed_urls)):
+        raise ValueError("live source probe failure inventory is inconsistent")
+    semantics = str(payload.get("failure_semantics", ""))
+    if "not evidence that the source URL is dead" not in semantics:
+        raise ValueError("live source probe must preserve retrieval-failure semantics")
+    return {"attempted": attempted, "succeeded": succeeded, "failed": failed}
 
 
 def validate_runtime_checkpoint(
