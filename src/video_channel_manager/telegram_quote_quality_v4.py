@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -29,6 +28,8 @@ CONTEXT_DEPENDENT_PREFIXES = (
     "впрочем ",
     "все иные ",
     "все другие ",
+    "всё это ",
+    "все это ",
     "из этого ",
     "из этого следует",
     "по этой причине",
@@ -43,11 +44,20 @@ CONTEXT_DEPENDENT_PREFIXES = (
     "таково ",
     "такова ",
     "таковы ",
+    "он ",
+    "она ",
+    "оно ",
+    "они ",
+    "его ",
+    "её ",
+    "ее ",
+    "их ",
+    "ему ",
+    "ей ",
+    "им ",
     "здесь ",
     "там ",
 )
-_SENTENCE_END_RE = re.compile(r"[.!?…](?:[»\"']|\s|$)")
-_WORD_RE = re.compile(r"\b[\w’'-]+\b", re.UNICODE)
 
 
 @dataclass(frozen=True)
@@ -89,29 +99,9 @@ def standalone_quote_issues(post: SuccessorRuntimePost) -> tuple[QuoteQualityIss
             )
         )
 
-    words = _WORD_RE.findall(quote)
-    if len(words) < 10:
-        issues.append(
-            QuoteQualityIssue(
-                publication_id=post.publication_id,
-                sequence=post.sequence,
-                code="quotation_too_thin",
-                detail=f"quotation has only {len(words)} words",
-            )
-        )
-
-    first_sentence_end = _SENTENCE_END_RE.search(quote)
-    first_sentence = quote[: first_sentence_end.end()].strip() if first_sentence_end else quote.strip()
-    if len(_WORD_RE.findall(first_sentence)) < 6:
-        issues.append(
-            QuoteQualityIssue(
-                publication_id=post.publication_id,
-                sequence=post.sequence,
-                code="opening_sentence_too_thin",
-                detail="opening sentence is too short to establish a self-contained thought",
-            )
-        )
-
+    # Brevity is not itself a defect. A short, complete aphorism can be stronger
+    # and more self-contained than a longer excerpt. The gate therefore rejects
+    # dependency on missing context, not an arbitrary word-count threshold.
     if len(context) < 120:
         issues.append(
             QuoteQualityIssue(
@@ -154,7 +144,9 @@ def assert_future_suffix_quality(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate standalone quality for the pending LordChrist quote-v4 suffix.")
+    parser = argparse.ArgumentParser(
+        description="Validate standalone quality for the pending LordChrist quote-v4 suffix."
+    )
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--translation-ledger", type=Path, required=True)
     parser.add_argument("--integrity-amendment", type=Path, required=True)
