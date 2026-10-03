@@ -1,0 +1,19 @@
+{
+  "schema_name": "video-channel-manager.telegram-successor-depth-runtime-activation",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "release_id": "lordchrist-successor-depth-v2",
+  "queue_digest": "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441",
+  "sealed_handoff_published_prefix": 14,
+  "required_published_prefix": 15,
+  "required_pending_suffix": 45,
+  "presentation_policy_id": "lordchrist-quote-v4",
+  "presentation_policy_sha256": "sha256:a87dd04d605a749c84ecd47d18c127dd921dddea500781c0fd75a0db20a7be9f",
+  "state_ledger_relative_path": "content/telegram/lordchrist/successor-depth-v2-publication-ledger.json",
+  "source_web_audit": "quote-source-web-audit-v2.json",
+  "source_live_probe": "quote-source-live-probe-v1.json",
+  "presentation_migration": "successor-depth-presentation-migration-v1.json",
+  "provider_writes_authorized": false,
+  "note": "Provider-inert rolling checkpoint after verified sequence 15. It preserves the sealed 14/46 handoff artifacts, requires the durable depth-v2 ledger to be exactly 15 published and 45 pristine pending, binds future rendering to quote-v4, and authorizes no Telegram mutation until a later exact-state activation commit."
+}
