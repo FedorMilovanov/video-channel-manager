@@ -1,0 +1,214 @@
+name: Lordchrist quote-v4 read-only preflight
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/lordchrist-quote-v4-preflight.yml
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: lordchrist-quote-v4-read-only-preflight
+  cancel-in-progress: false
+
+env:
+  PYTHONPATH: src
+  PREDECESSOR_QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
+  PREDECESSOR_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json
+  SUCCESSOR_CANDIDATE_PATH: content/telegram/lordchrist/successor-quotes-v1.json
+  SUCCESSOR_TRANSLATION_LEDGER_PATH: content/telegram/lordchrist/successor-translation-ledger-v1.json
+  SUCCESSOR_INTEGRITY_AMENDMENTS_PATH: content/telegram/lordchrist/successor-integrity-amendments-v1.json
+  SUCCESSOR_RUNTIME_QUEUE_PATH: .runtime/lordchrist-successor-runtime-queue.json
+  SUCCESSOR_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/successor-publication-ledger.json
+  DEPTH_RUNTIME_QUEUE_PATH: .runtime/lordchrist-successor-depth-v2-runtime-queue.json
+  DEPTH_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/successor-depth-v2-publication-ledger.json
+  ACTIVE_SELECTION_PATH: .runtime/lordchrist-active-quote-selection.json
+  V3_POLICY_PATH: content/telegram/lordchrist/presentation-policy-v3.json
+  V4_POLICY_PATH: content/telegram/lordchrist/presentation-policy-v4.json
+  PRESENTATION_MIGRATION_PATH: content/telegram/lordchrist/successor-depth-presentation-migration-v1.json
+  DEPTH_AUDIT_PATH: content/telegram/lordchrist/quote-depth-audit-v1.json
+  DEPTH_REPLACEMENTS_PATH: content/telegram/lordchrist/quote-depth-replacements-v1.json
+  SOURCE_AUDIT_PATH: content/telegram/lordchrist/quote-source-web-audit-v2.json
+  TARGET_PROOF_PATH: .runtime/lordchrist-quote-v4-target-proof.json
+  LORDCHRIST_APPROVED_QUEUE_DIGEST: sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441
+  LORDCHRIST_TELEGRAM_CHAT_ID: ${{ vars.LORDCHRIST_TELEGRAM_CHAT_ID }}
+  LORDCHRIST_TELEGRAM_BOT_ID: ${{ vars.LORDCHRIST_TELEGRAM_BOT_ID }}
+  LORDCHRIST_TELEGRAM_BOT_USERNAME: ${{ vars.LORDCHRIST_TELEGRAM_BOT_USERNAME }}
+
+jobs:
+  preflight:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Check out publication state read-only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/lordchrist-telegram
+          path: .state/lordchrist
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal Telegram runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Resolve exact depth-v2 queue without provider writes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.telegram_quote_depth resolve \
+            --predecessor-queue "$PREDECESSOR_QUEUE_PATH" \
+            --predecessor-ledger "$PREDECESSOR_LEDGER_PATH" \
+            --candidate "$SUCCESSOR_CANDIDATE_PATH" \
+            --translation-ledger "$SUCCESSOR_TRANSLATION_LEDGER_PATH" \
+            --integrity-amendments "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
+            --source-v1-runtime-queue "$SUCCESSOR_RUNTIME_QUEUE_PATH" \
+            --source-v1-ledger "$SUCCESSOR_LEDGER_PATH" \
+            --runtime-queue "$DEPTH_RUNTIME_QUEUE_PATH" \
+            --depth-ledger "$DEPTH_LEDGER_PATH" \
+            --output "$ACTIVE_SELECTION_PATH"
+
+      - name: Prove immutable 15 published and 45 pristine pending boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_quote_presentation_migration \
+            --migration "$PRESENTATION_MIGRATION_PATH" \
+            --v3-policy "$V3_POLICY_PATH" \
+            --v4-policy "$V4_POLICY_PATH" \
+            --ledger "$DEPTH_LEDGER_PATH" \
+            --candidate "$SUCCESSOR_CANDIDATE_PATH" \
+            --translation-ledger "$SUCCESSOR_TRANSLATION_LEDGER_PATH" \
+            --integrity-amendment "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH"
+
+      - name: Prove all pending quote-v4 cards pass standalone quality
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_quote_quality_v4 \
+            --candidate "$SUCCESSOR_CANDIDATE_PATH" \
+            --translation-ledger "$SUCCESSOR_TRANSLATION_LEDGER_PATH" \
+            --integrity-amendment "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
+            --depth-audit "$DEPTH_AUDIT_PATH" \
+            --replacements "$DEPTH_REPLACEMENTS_PATH" \
+            --published-boundary 15
+
+      - name: Prove exact source coverage for pending 16 through 60
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_quote_source_audit \
+            "$SOURCE_AUDIT_PATH" \
+            --candidate "$SUCCESSOR_CANDIDATE_PATH" \
+            --translation-ledger "$SUCCESSOR_TRANSLATION_LEDGER_PATH" \
+            --integrity-amendment "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
+            --depth-audit "$DEPTH_AUDIT_PATH" \
+            --replacements "$DEPTH_REPLACEMENTS_PATH"
+
+      - name: Validate exact state ledger under quote-v4 presentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_cli \
+            --queue "$DEPTH_RUNTIME_QUEUE_PATH" \
+            --ledger "$DEPTH_LEDGER_PATH" \
+            --presentation-policy "$V4_POLICY_PATH" \
+            validate
+
+      - name: Prove strict next is sequence 16 and v4 rendering is tight
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          from video_channel_manager.telegram_presentation import load_presentation_policy, render_post
+          from video_channel_manager.telegram_publisher import load_ledger, load_queue, preview_next
+          from video_channel_manager.telegram_quote_quality_v4 import semantic_blocks
+
+          queue = load_queue(Path(os.environ["DEPTH_RUNTIME_QUEUE_PATH"]))
+          ledger = load_ledger(Path(os.environ["DEPTH_LEDGER_PATH"]), queue)
+          policy = load_presentation_policy(Path(os.environ["V4_POLICY_PATH"]))
+          prepared = preview_next(queue, ledger)
+          post = prepared.post
+          if post is None or post.sequence != 16:
+              raise SystemExit(f"strict next must be sequence 16, got {getattr(post, 'sequence', None)!r}: {prepared.reason}")
+          if policy.policy_id != "lordchrist-quote-v4" or policy.digest != "sha256:a87dd04d605a749c84ecd47d18c127dd921dddea500781c0fd75a0db20a7be9f":
+              raise SystemExit("quote-v4 presentation identity mismatch")
+          quote, attribution, _context, _hashtags = semantic_blocks(post)
+          rendered = render_post(post, policy)
+          expected_prefix = f"{post.title}\n{quote}\n{attribution}\n\n"
+          if not rendered.text.startswith(expected_prefix):
+              raise SystemExit("quote-v4 title/quote/source boundary is not tight")
+          if rendered.presentation_policy_id != "lordchrist-quote-v4":
+              raise SystemExit("strict next rendered with the wrong presentation policy")
+          print(
+              f"strict_next_sequence={post.sequence} publication_id={post.publication_id} "
+              f"policy={rendered.presentation_policy_id} provider_payload_sha256={rendered.provider_payload_sha256}"
+          )
+          PY
+
+      - name: Require successful CI for this exact current-main SHA
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_github_quality_gate \
+            --workflow ci.yml \
+            --sha "$GITHUB_SHA" \
+            --wait-seconds 420 \
+            --poll-seconds 10
+
+      - name: Validate target variables
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$LORDCHRIST_TELEGRAM_CHAT_ID" =~ ^-?[0-9]+$ ]] && (( LORDCHRIST_TELEGRAM_CHAT_ID < 0 ))
+          [[ "$LORDCHRIST_TELEGRAM_BOT_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$LORDCHRIST_TELEGRAM_BOT_USERNAME" =~ ^[A-Za-z0-9_]+$ ]]
+
+      - name: Read-only Telegram bot and channel preflight
+        shell: bash
+        env:
+          LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_cli \
+            --queue "$DEPTH_RUNTIME_QUEUE_PATH" \
+            --ledger "$DEPTH_LEDGER_PATH" \
+            --presentation-policy "$V4_POLICY_PATH" \
+            preflight \
+            --mode manual \
+            --expected-chat-id "$LORDCHRIST_TELEGRAM_CHAT_ID" \
+            --expected-bot-id "$LORDCHRIST_TELEGRAM_BOT_ID" \
+            --expected-bot-username "$LORDCHRIST_TELEGRAM_BOT_USERNAME" \
+            --output "$TARGET_PROOF_PATH"
+
+      - name: Confirm provider-inert completion
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$TARGET_PROOF_PATH"
+          echo "Quote-v4 read-only preflight passed. No dispatch was prepared, no provider write was attempted, and state/lordchrist-telegram was never checked out with write credentials."
