@@ -453,8 +453,7 @@ def _render_post_v4(post: TelegramPost, policy: QuotePresentationPolicyV4) -> Re
 
     rendered = _provider_payload(post=post, policy=policy, builder=builder)
     expected_boundary = (
-        f"{post.title}{policy.title_to_quote_separator}"
-        f"{quote}{policy.quote_to_attribution_separator}{attribution}"
+        f"{post.title}{policy.title_to_quote_separator}{quote}{policy.quote_to_attribution_separator}{attribution}"
     )
     if not rendered.text.startswith(expected_boundary):
         raise ValueError("quote-v4 title, quotation and source must form one immediate reading unit")
