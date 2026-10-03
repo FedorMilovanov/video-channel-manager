@@ -1,0 +1,200 @@
+name: Lordchrist quote-v4 read-only preflight
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: lordchrist-quote-v4-read-only-preflight
+  cancel-in-progress: true
+
+env:
+  PYTHONPATH: src
+  PREDECESSOR_QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
+  PREDECESSOR_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json
+  SUCCESSOR_CANDIDATE_PATH: content/telegram/lordchrist/successor-quotes-v1.json
+  SUCCESSOR_TRANSLATION_LEDGER_PATH: content/telegram/lordchrist/successor-translation-ledger-v1.json
+  SUCCESSOR_INTEGRITY_AMENDMENTS_PATH: content/telegram/lordchrist/successor-integrity-amendments-v1.json
+  SUCCESSOR_RUNTIME_QUEUE_PATH: .runtime/lordchrist-successor-runtime-queue.json
+  SUCCESSOR_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/successor-publication-ledger.json
+  DEPTH_RUNTIME_QUEUE_PATH: .runtime/lordchrist-successor-depth-v2-runtime-queue.json
+  DEPTH_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/successor-depth-v2-publication-ledger.json
+  ACTIVE_SELECTION_PATH: .runtime/lordchrist-active-quote-selection.json
+  V3_POLICY_PATH: content/telegram/lordchrist/presentation-policy-v3.json
+  V4_POLICY_PATH: content/telegram/lordchrist/presentation-policy-v4.json
+  RUNTIME_ACTIVATION_PATH: content/telegram/lordchrist/successor-depth-runtime-activation-v4.json
+  PRESENTATION_MIGRATION_PATH: content/telegram/lordchrist/successor-depth-presentation-migration-v1.json
+  SOURCE_WEB_AUDIT_PATH: content/telegram/lordchrist/quote-source-web-audit-v2.json
+  SOURCE_LIVE_PROBE_PATH: content/telegram/lordchrist/quote-source-live-probe-v1.json
+  DEPTH_AUDIT_PATH: content/telegram/lordchrist/quote-depth-audit-v1.json
+  DEPTH_REPLACEMENTS_PATH: content/telegram/lordchrist/quote-depth-replacements-v1.json
+  TARGET_PROOF_PATH: .runtime/lordchrist-quote-v4-target-proof.json
+  LORDCHRIST_TELEGRAM_CHAT_ID: ${{ vars.LORDCHRIST_TELEGRAM_CHAT_ID }}
+  LORDCHRIST_TELEGRAM_BOT_ID: ${{ vars.LORDCHRIST_TELEGRAM_BOT_ID }}
+  LORDCHRIST_TELEGRAM_BOT_USERNAME: ${{ vars.LORDCHRIST_TELEGRAM_BOT_USERNAME }}
+
+jobs:
+  preflight:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact successful main SHA
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prove checkout is still current main
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_SHA" ]] || {
+            echo "Checked-out SHA differs from successful CI SHA." >&2
+            exit 2
+          }
+          current_main="$(git ls-remote origin refs/heads/main | cut -f1)"
+          [[ "$current_main" == "$EXPECTED_SHA" ]] || {
+            echo "Successful CI SHA is no longer current main; refusing stale activation proof." >&2
+            exit 3
+          }
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Install minimal Telegram runtime
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r requirements/telegram-publisher.txt
+
+      - name: Check out durable Telegram state read-only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: state/lordchrist-telegram
+          path: .state/lordchrist
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Build exact depth-v2 runtime queue without provider authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .runtime
+          python -m video_channel_manager.telegram_quote_depth resolve \
+            --predecessor-queue "$PREDECESSOR_QUEUE_PATH" \
+            --predecessor-ledger "$PREDECESSOR_LEDGER_PATH" \
+            --candidate "$SUCCESSOR_CANDIDATE_PATH" \
+            --translation-ledger "$SUCCESSOR_TRANSLATION_LEDGER_PATH" \
+            --integrity-amendments "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
+            --source-v1-runtime-queue "$SUCCESSOR_RUNTIME_QUEUE_PATH" \
+            --source-v1-ledger "$SUCCESSOR_LEDGER_PATH" \
+            --runtime-queue "$DEPTH_RUNTIME_QUEUE_PATH" \
+            --depth-ledger "$DEPTH_LEDGER_PATH" \
+            --output "$ACTIVE_SELECTION_PATH"
+
+      - name: Validate rolling v4 checkpoint and evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_quote_runtime_activation \
+            --activation "$RUNTIME_ACTIVATION_PATH" \
+            --presentation-policy "$V4_POLICY_PATH" \
+            --v3-policy "$V3_POLICY_PATH" \
+            --migration "$PRESENTATION_MIGRATION_PATH" \
+            --source-web-audit "$SOURCE_WEB_AUDIT_PATH" \
+            --source-live-probe "$SOURCE_LIVE_PROBE_PATH" \
+            --ledger "$DEPTH_LEDGER_PATH" \
+            --candidate "$SUCCESSOR_CANDIDATE_PATH" \
+            --translation-ledger "$SUCCESSOR_TRANSLATION_LEDGER_PATH" \
+            --integrity-amendment "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
+            --depth-audit "$DEPTH_AUDIT_PATH" \
+            --replacements "$DEPTH_REPLACEMENTS_PATH"
+
+      - name: Re-run standalone quality gate for exact future suffix 16 through 60
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_quote_quality_v4 \
+            --candidate "$SUCCESSOR_CANDIDATE_PATH" \
+            --translation-ledger "$SUCCESSOR_TRANSLATION_LEDGER_PATH" \
+            --integrity-amendment "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
+            --depth-audit "$DEPTH_AUDIT_PATH" \
+            --replacements "$DEPTH_REPLACEMENTS_PATH" \
+            --published-boundary 15
+
+      - name: Validate queue and ledger through quote-v4 renderer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_cli \
+            --queue "$DEPTH_RUNTIME_QUEUE_PATH" \
+            --ledger "$DEPTH_LEDGER_PATH" \
+            --presentation-policy "$V4_POLICY_PATH" \
+            validate
+
+      - name: Prove exact Telegram target configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$LORDCHRIST_TELEGRAM_CHAT_ID" =~ ^-?[0-9]+$ ]] && (( LORDCHRIST_TELEGRAM_CHAT_ID < 0 )) || {
+            echo "LORDCHRIST_TELEGRAM_CHAT_ID must be an exact negative integer." >&2
+            exit 2
+          }
+          [[ "$LORDCHRIST_TELEGRAM_BOT_ID" =~ ^[1-9][0-9]*$ ]] || {
+            echo "LORDCHRIST_TELEGRAM_BOT_ID must be an exact positive integer." >&2
+            exit 2
+          }
+          [[ "$LORDCHRIST_TELEGRAM_BOT_USERNAME" =~ ^[A-Za-z0-9_]+$ ]] || {
+            echo "LORDCHRIST_TELEGRAM_BOT_USERNAME is invalid." >&2
+            exit 2
+          }
+
+      - name: Read-only live bot and channel identity preflight
+        shell: bash
+        env:
+          LORDCHRIST_TELEGRAM_BOT_TOKEN: ${{ secrets.LORDCHRIST_TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_cli \
+            --queue "$DEPTH_RUNTIME_QUEUE_PATH" \
+            --ledger "$DEPTH_LEDGER_PATH" \
+            --presentation-policy "$V4_POLICY_PATH" \
+            preflight \
+            --mode manual \
+            --expected-chat-id "$LORDCHRIST_TELEGRAM_CHAT_ID" \
+            --expected-bot-id "$LORDCHRIST_TELEGRAM_BOT_ID" \
+            --expected-bot-username "$LORDCHRIST_TELEGRAM_BOT_USERNAME" \
+            --output "$TARGET_PROOF_PATH"
+
+      - name: Assert preflight remained provider-inert
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          activation = json.loads(Path("content/telegram/lordchrist/successor-depth-runtime-activation-v4.json").read_text(encoding="utf-8"))
+          selection = json.loads(Path(".runtime/lordchrist-active-quote-selection.json").read_text(encoding="utf-8"))
+          if activation["provider_writes_authorized"] is not False:
+              raise SystemExit("Read-only preflight artifact unexpectedly authorizes provider writes.")
+          if selection["needs_ledger_initialization"]:
+              raise SystemExit("Existing durable depth-v2 ledger unexpectedly requires initialization.")
+          print("PASS: exact current-main quote-v4 preflight is read-only; durable state remains 15/45 and next is sequence 16.")
+          PY
