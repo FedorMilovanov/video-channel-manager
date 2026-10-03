@@ -35,12 +35,13 @@ def test_quote_v4_places_source_on_immediate_next_line_without_blank_air() -> No
     policy = load_presentation_policy(CONTENT / "presentation-policy-v4.json")
     rendered = render_post(post, policy)
     attribution = f"— {post.source.author}, «{post.source.work}»"
+    hashtag_block = post.text.rsplit("\n\n", 1)[-1]
 
     assert rendered.presentation_policy_id == "lordchrist-quote-v4"
     assert f"\n{attribution}\n\n" in rendered.text
     assert f"\n\n{attribution}" not in rendered.text
     assert rendered.text.count(attribution) == 1
-    assert rendered.text.endswith(post.hashtags_text)
+    assert rendered.text.endswith(hashtag_block)
 
 
 def test_quote_v4_keeps_native_blockquote_and_italic_source_entities() -> None:
