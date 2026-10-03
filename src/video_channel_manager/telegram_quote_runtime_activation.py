@@ -37,9 +37,7 @@ class RuntimeActivation(BaseModel):
     required_pending_suffix: int = Field(ge=0, le=EXPECTED_TOTAL)
     presentation_policy_id: Literal["lordchrist-quote-v4"]
     presentation_policy_sha256: str = Field(pattern=SHA256_PATTERN)
-    state_ledger_relative_path: Literal[
-        "content/telegram/lordchrist/successor-depth-v2-publication-ledger.json"
-    ]
+    state_ledger_relative_path: Literal["content/telegram/lordchrist/successor-depth-v2-publication-ledger.json"]
     source_web_audit: Literal["quote-source-web-audit-v2.json"]
     source_live_probe: Literal["quote-source-live-probe-v1.json"]
     presentation_migration: Literal["successor-depth-presentation-migration-v1.json"]
@@ -212,7 +210,9 @@ def validate_runtime_checkpoint(
 
 
 def parser() -> argparse.ArgumentParser:
-    root = argparse.ArgumentParser(description="Validate the rolling LordChrist quote-v4 runtime activation checkpoint.")
+    root = argparse.ArgumentParser(
+        description="Validate the rolling LordChrist quote-v4 runtime activation checkpoint."
+    )
     root.add_argument("--activation", type=Path, required=True)
     root.add_argument("--presentation-policy", type=Path, required=True)
     root.add_argument("--v3-policy", type=Path, required=True)
