@@ -89,11 +89,7 @@ class QuoteSourceWebAudit(BaseModel):
             raise ValueError("web-audit page count differs from its URL inventory")
         if len(self.research_pages) < self.minimum_research_pages:
             raise ValueError("web audit does not meet its minimum research-page requirement")
-        families = {
-            family
-            for url in self.research_pages
-            if (family := _core_family(urlparse(url).hostname)) is not None
-        }
+        families = {family for url in self.research_pages if (family := _core_family(urlparse(url).hostname)) is not None}
         if not CORE_SOURCE_FAMILIES.issubset(families):
             missing = sorted(CORE_SOURCE_FAMILIES - families)
             raise ValueError(f"web audit is missing reviewed core source families: {missing}")
