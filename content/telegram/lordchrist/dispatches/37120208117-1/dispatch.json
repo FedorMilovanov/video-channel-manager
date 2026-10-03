@@ -1,0 +1,32 @@
+{
+  "schema_name": "video-channel-manager.telegram-dispatch",
+  "schema_version": 4,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "queue_digest": "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441",
+  "publication_id": "lordchrist-successor-depth-v2-15-owen-mortify-by-spirit",
+  "sequence": 15,
+  "intent_id": "4930558ba43db3cec6a46189057e406e",
+  "workflow_run_id": "37120208117",
+  "workflow_run_attempt": "1",
+  "github_sha": "034ac195ed7347da917628e44de46b704de0a92b",
+  "github_workflow_sha": "034ac195ed7347da917628e44de46b704de0a92b",
+  "payload_sha256": "sha256:bf1296b305ffee24629abd37a32440df397c35b2183b0e00b4e535495fb22405",
+  "text": "Все иные пути умерщвления греха тщетны; всякая помощь оставляет нас беспомощными: это должно совершаться Духом.\n\n— Джон Оуэн, «Об умерщвлении греха в верующих, гл. I»\n\nОуэн исключает самоспасение и одновременно не оправдывает пассивность. По Рим. 8:13 именно верующий умерщвляет дела плоти, но делает это «Духом»: христианское усилие реально, а его сила и плод не автономны от Святого Духа.\n\n#Оуэн #СвятойДух #Освящение",
+  "dispatch_mode": "scheduled",
+  "scheduled_slot": "morning",
+  "target": {
+    "schema_name": "video-channel-manager.telegram-target-proof",
+    "schema_version": 2,
+    "bot_id": 8716602202,
+    "bot_username": "preaching_mp3_bot",
+    "chat_id": -1001295216957,
+    "chat_username": "lordchrist",
+    "chat_title": "† Господь Бог - Сила Моя †",
+    "chat_type": "channel",
+    "member_status": "administrator",
+    "can_post_messages": true,
+    "checked_at_utc": "2026-10-03T11:37:02.882548Z"
+  },
+  "prepared_at_utc": "2026-10-03T11:37:07.678102Z"
+}
