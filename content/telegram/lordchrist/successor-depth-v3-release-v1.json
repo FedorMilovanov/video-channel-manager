@@ -1,0 +1,18 @@
+{
+  "schema_name": "video-channel-manager.telegram-successor-depth-v3-release",
+  "schema_version": 1,
+  "project_key": "lord-god-strength",
+  "channel_username": "@lordchrist",
+  "release_id": "lordchrist-successor-depth-v3",
+  "parent_release_id": "lordchrist-successor-depth-v2",
+  "parent_queue_digest": "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441",
+  "published_boundary": 15,
+  "pending_suffix": 45,
+  "amended_sequences": [17, 32],
+  "presentation_policy_id": "lordchrist-quote-v4",
+  "presentation_policy_sha256": "sha256:e5b4041702c74b4e06e4dd409a7cfaba4726bd81c8a0f34d2f6f0403295ead4c",
+  "normalized_queue_digest": "sha256:962ccf972de0b3205da26ffd28adedfebf1822f1b3267b0c7ba316cc16d8ee37",
+  "release_state": "staged_provider_inert",
+  "provider_writes_authorized": false,
+  "migration_policy": "copy_verified_prefix_rekey_pristine_suffix"
+}
