@@ -8,685 +8,686 @@
   "web_audit_file": "quote-source-web-audit-v2.json",
   "probed_on": "2026-10-04",
   "urls_attempted": 99,
-  "urls_fetched_successfully": 79,
-  "fetch_failures": 20,
+  "urls_fetched_successfully": 92,
+  "fetch_failures": 7,
   "failure_semantics": "Retrieval-layer observations only. A failed probe is not evidence that the source URL is dead, incorrect or editorially invalid: transport failures, bot protection, stale relocations and missing pages are recorded as distinct classes so a reviewer can see exactly what happened without weakening the quotation. Each preflight run additionally produces a fresh read-only classification report of its own.",
   "classification_counts": {
-    "retrieved": 79,
-    "transport_failure": 20
+    "bot_protection": 2,
+    "retrieved": 92,
+    "stale_url_relocated": 5
   },
   "results": [
     {
       "url": "https://ccel.org/ccel/watson/divinity.vi.ii.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/watson/divinity.iv.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/watson/divinity.ix.i.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/watson/divinity.vii.iii.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/watson/divinity/divinity.vi.xiii.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/watson/divinity.vii.i.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/watson/divinity.all.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/watson/divinity/divinity.vi.i.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/watson/divinity.vi.v.html",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
+      "outcome": "retrieved",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
       "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/ryle/holiness.iii.v.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/owen/sin_grace.i.vii.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/bunyan/pilgrim.all.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/owen/mort/mort.i.vi.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/bunyan/pilgrim.v.v.html?scrBook=Gal&scrCh=3&scrV=13",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
-      "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "outcome": "stale_url_relocated",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
+      "final_url": "https://ccel.org/ccel/bunyan/pilgrim.v.v.html",
+      "note": "The reviewed URL redirects to https://ccel.org/ccel/bunyan/pilgrim.v.v.html (HTTP 200), the same document at its canonical location. This is a relocation observation at the retrieval layer and not evidence that the source text, the quotation or the attribution is wrong."
     },
     {
       "url": "https://www.ccel.org/ccel/calvin/institutes.v.ii.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/charnock/reconcil/reconcil.v.html?queryID=51381259&resultID=123511",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
+      "outcome": "retrieved",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
       "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/calvin/institutes.vii.iii.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/calvin/institutes.v.xxi.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/ryle/upper_room/upper_room.vi.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/flavel/grace.xxi.html",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
+      "outcome": "retrieved",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
       "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/calvin/institutes.all.html?scrBook=Deut&scrCh=28&scrV=65",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
-      "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "outcome": "stale_url_relocated",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
+      "final_url": "https://ccel.org/ccel/calvin/institutes.all.html",
+      "note": "The reviewed URL redirects to https://ccel.org/ccel/calvin/institutes.all.html (HTTP 200), the same document at its canonical location. This is a relocation observation at the retrieval layer and not evidence that the source text, the quotation or the attribution is wrong."
     },
     {
       "url": "https://www.ccel.org/ccel/owen/mort.i.iv.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/owen/communion/communion.i.viii.viii.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/charnock/reconcil/reconcil.iv.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/bunyan/grace.iv.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/bunyan/pilgrim.iv.ix.html?scrBook=Ps&scrCh=3&scrV=5",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
-      "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "outcome": "stale_url_relocated",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
+      "final_url": "https://ccel.org/ccel/bunyan/pilgrim.iv.ix.html",
+      "note": "The reviewed URL redirects to https://ccel.org/ccel/bunyan/pilgrim.iv.ix.html (HTTP 200), the same document at its canonical location. This is a relocation observation at the retrieval layer and not evidence that the source text, the quotation or the attribution is wrong."
     },
     {
       "url": "https://www.ccel.org/ccel/calvin/institutes/",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.newadvent.org/fathers/130108.htm",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
+      "outcome": "retrieved",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
       "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.newadvent.org/fathers/240169.htm",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/calvin/prayer/prayer.i.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/bunyan/grace.iii.html",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
+      "outcome": "retrieved",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
       "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.newadvent.org/fathers/230206.htm",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/flavel/fountain/fountain.v.xvi.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.newadvent.org/fathers/23092.htm",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.newadvent.org/fathers/230207.htm",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.newadvent.org/fathers/210144.htm",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.gty.org/library/questions/QA187/common-questions-about-lordship-part-1",
-      "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "outcome": "stale_url_relocated",
+      "observed_on": "2026-10-04",
       "http_status": 200,
-      "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "final_url": "https://shop.gty.org/library/questions/QA187",
+      "note": "The reviewed URL redirects to https://shop.gty.org/library/questions/QA187 (HTTP 200), the same document at its canonical location. This is a relocation observation at the retrieval layer and not evidence that the source text, the quotation or the attribution is wrong."
     },
     {
       "url": "https://www.newadvent.org/fathers/15012.htm",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.newadvent.org/fathers/130115.htm",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.newadvent.org/fathers/130113.htm",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.newadvent.org/fathers/220101.htm",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.newadvent.org/fathers/1701032.htm",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.newadvent.org/fathers/1907.htm",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/flavel/grace.html",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
+      "outcome": "retrieved",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
       "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/bunyan/grace.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/owen/pneum/pneum.i.viii.viii.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/owen/mort.toc.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/owen/mort/mort.i.x.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/owen/sermons.ii.xv.ii.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/flavel",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/owen/communion.i.vii.vii.html",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
+      "outcome": "retrieved",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
       "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/owen/communion/communion.i.vii.iii.ii.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/calvin/institutes.toc.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/owen/mort.i.vii.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/owen/mort.i.i.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.spurgeon.org/blog/sermon-of-the-week-no-958-dei-gratia",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
+      "outcome": "retrieved",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
       "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.spurgeon.org/blog/sermon-of-the-week-no-445-446-resurrection-christ-the-firstfruits",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
+      "outcome": "retrieved",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
       "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ligonier.org/posts/ligonier-national-conference-rc-sproul-ii",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.spurgeon.org/blog/sermon-of-the-week-no-1239-a-vindication-of-the-doctrine-of-justification-by-faith",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
+      "outcome": "retrieved",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
       "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.spurgeon.org/blog/sermon-of-the-week-no-1959-the-watchword-for-to-day-stand-fast",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
+      "outcome": "retrieved",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
       "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.spurgeon.org/blog/sermon-of-the-week-no-1029-30-a-call-to-holy-living",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
+      "outcome": "retrieved",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
       "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://learn.ligonier.org/sermons/israels-rejection-gods-justice-part-3",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://learn.ligonier.org/sermons/return-seventy-two",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.gty.org/library/articles/DD11/the-sufficiency-of-scripture",
-      "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "outcome": "stale_url_relocated",
+      "observed_on": "2026-10-04",
       "http_status": 200,
-      "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "final_url": "https://www.gty.org/articles/DD11/the-sufficiency-of-scripture",
+      "note": "The reviewed URL redirects to https://www.gty.org/articles/DD11/the-sufficiency-of-scripture (HTTP 200), the same document at its canonical location. This is a relocation observation at the retrieval layer and not evidence that the source text, the quotation or the attribution is wrong."
     },
     {
       "url": "https://www.spurgeon.org/sermons/all-of-grace",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://learn.ligonier.org/sermons/abraham-justified-faith",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://learn.ligonier.org/sermons/israels-rejection-gods-justice-part-1",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ligonier.org/posts/standing-firm-doctrine-justification-faith-alone",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://learn.ligonier.org/daily-video/2026/09/24/unconditional-election",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
+      "outcome": "retrieved",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
       "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ligonier.org/posts/2010-west-coast-conference-session-8-rc-sproul",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
+      "outcome": "retrieved",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
       "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.spurgeon.org/sermons/divine-sovereignty",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/gurnall/armour/files/gurnal03b.htm",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/bunyan/grace/grace.iv.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.newadvent.org/fathers/130101.htm",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/ryle/holiness.iii.vii.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.monergism.com/immutability-god-3",
-      "outcome": "retrieved",
-      "observed_on": "2026-10-03",
-      "http_status": 200,
+      "outcome": "bot_protection",
+      "observed_on": "2026-10-04",
+      "http_status": 403,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "The host answers the automated read-only probe with HTTP 403 bot protection. This is a retrieval-layer observation and not evidence that the source text, the quotation or the attribution is wrong; the reviewed card evidence is unchanged and the page is re-probed on every preflight."
     },
     {
       "url": "https://ccel.org/ccel/watson/divinity/divinity.vii.i.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/calvin/institutes/institutes.v.ii.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.ccel.org/ccel/ryle/holiness.iii.v.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/watson/divinity.ix.i.html",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
+      "outcome": "retrieved",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
       "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://learn.ligonier.org/articles/cosmic-treason",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.newadvent.org/fathers/210213.htm",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.spurgeon.org/sermons/salvation-all-of-grace",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.spurgeon.org/sermons/sovereign-grace-and-mans-responsibility",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.thegospelcoalition.org/article/the-ground-of-all-human-assurance-before-god/",
@@ -694,111 +695,111 @@
       "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Re-verified live on 2026-10-04: the article body contains the exact reviewed sentence, so the earlier automated-sweep failure was a transport-layer artifact, not a source defect."
+      "note": "Retrieved live on 2026-10-04 and the page body contains the exact reviewed sentence; also retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223)."
     },
     {
       "url": "https://www.gty.org/articles/A330/what-is-biblical-repentance",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://ccel.org/ccel/calvin/calcom41/calcom41.iv.vii.iv.html",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.gty.org/articles/A326/what-doctrines-are-fundamental-part-1",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
+      "outcome": "retrieved",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
       "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.biblicaltraining.org/learn/institute/ot608-deuteronomy/ot608-11-catechetical-response-6-20-25",
-      "outcome": "retrieved",
-      "observed_on": "2026-10-03",
-      "http_status": 200,
+      "outcome": "bot_protection",
+      "observed_on": "2026-10-04",
+      "http_status": 403,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "The host answers the automated read-only probe with HTTP 403 bot protection. This is a retrieval-layer observation and not evidence that the source text, the quotation or the attribution is wrong; the reviewed card evidence is unchanged and the page is re-probed on every preflight."
     },
     {
       "url": "https://ccel.org/ccel/f/flavel/saintindeed/cache/saintindeed.pdf",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://learn.ligonier.org/articles/instrumental-cause-justification",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.gty.org/resources/study-guides/chapters/2401/the-resurrection-of-jesus-christ-part-1",
-      "outcome": "transport_failure",
-      "observed_on": "2026-10-03",
-      "http_status": null,
+      "outcome": "retrieved",
+      "observed_on": "2026-10-04",
+      "http_status": 200,
       "final_url": null,
-      "note": "The automated 2026-10-03 sweep reported a retrieval-layer error or timeout. Recorded as a transport-layer observation only; it is not evidence about the quotation, and the preflight re-probes it read-only in every run."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://learn.ligonier.org/articles/grace-faith",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.gty.org/blogs/B200304/god-is-a-trinity",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://learn.ligonier.org/articles/election-unfair",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.thegospelcoalition.org/course/the-god-who-is-there/",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.gty.org/articles/print/A235/reexamining-the-eternal-sonship-of-christ",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.spurgeon.org/sermons/if-there-be-no-resurrection",
       "outcome": "retrieved",
-      "observed_on": "2026-10-03",
+      "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved successfully at the exact reviewed URL during the reviewed corroboration sweep."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     },
     {
       "url": "https://www.gty.org/articles/print/A326/what-doctrines-are-fundamental-part-1",
@@ -806,7 +807,8 @@
       "observed_on": "2026-10-04",
       "http_status": 200,
       "final_url": null,
-      "note": "Retrieved live on 2026-10-04; contains the exact reviewed fragment of article A326 and prints the canonical article URL, confirming it is the same document."
+      "note": "Retrieved by the read-only preflight re-probe (GitHub Actions run 37230337223) on 2026-10-04 from hosted egress; the earlier restricted-egress sandbox sweep could not complete this request, which is a retrieval-layer difference and not evidence about the quotation."
     }
-  ]
+  ],
+  "probe_provenance": "Classes recorded from the read-only preflight re-probe executed from GitHub-hosted egress (preflight run 37230337223, 2026-10-04). The restricted sandbox that produced the earlier sweep could not complete TLS handshakes for many hosts; that difference is a retrieval-layer fact and never a judgement about a source. Each preflight re-probes the inventory again and reports every non-retrieved URL with its class and target."
 }

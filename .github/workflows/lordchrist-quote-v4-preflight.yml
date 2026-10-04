@@ -456,6 +456,17 @@ jobs:
               f"chat @{target_proof['chat_username']} ({target_proof['chat_id']}) {target_proof['chat_type']}; "
               f"member status {target_proof['member_status']}; can_post_messages={target_proof['can_post_messages']}",
           )
+          review = json.loads(Path(os.environ["STANDALONE_REVIEW_PATH"]).read_text(encoding="utf-8"))
+          findings = json.loads(Path(os.environ["CONTENT_FINDINGS_PATH"]).read_text(encoding="utf-8"))
+          audit = json.loads(Path(os.environ["SOURCE_WEB_AUDIT_PATH"]).read_text(encoding="utf-8"))
+          emit(
+              "reviewed pending evidence",
+              f"{len(review['entries'])} reviewed standalone entries; "
+              f"{sum(1 for e in review['entries'] if e['opening'] == 'title_resolved_anaphora')} title-resolved; "
+              f"{len(findings['entries'])} open content finding(s) recorded against the sealed suffix; "
+              f"{audit['research_pages_reviewed']} reviewed source pages; "
+              f"{len(audit['canonical_equivalents'])} reviewed canonical equivalents",
+          )
           emit(
               "reviewed attribution line",
               "reader-facing source line is the reviewed attribution verbatim; balanced, never nested; "

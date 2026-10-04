@@ -183,3 +183,39 @@ def test_reviewed_source_coverage_maps_every_pending_sequence_to_a_reviewed_form
     for cited, reviewed in coverage.values():
         assert cited in audit.research_pages
         assert reviewed in audit.research_pages
+
+
+def test_durable_probe_and_reviewed_ledger_agree_about_retrieval_classes() -> None:
+    """Two evidence layers must never disagree about what a fetch did.
+
+    A card whose reviewed source URL is not retrieved by the live probe cannot
+    carry a `retrieved_*` class in the reviewed standalone ledger, and a card the
+    probe retrieves must not be recorded as an unexplained retrieval failure.
+    Neither direction says anything about whether the quotation is true.
+    """
+
+    from video_channel_manager.telegram_quote_standalone_review import load_standalone_review
+
+    probe = json.loads(PROBE_PATH.read_text(encoding="utf-8"))
+    review = load_standalone_review(CONTENT / "quote-standalone-review-v1.json")
+    by_url = {entry["url"]: entry["outcome"] for entry in probe["results"]}
+
+    checked = 0
+    for entry in review.entries:
+        outcome = by_url[entry.source_url]
+        retrieved_class = entry.source_retrieval in {
+            "retrieved_live_review",
+            "retrieved_via_canonical_endpoint",
+            "retrieved_in_reviewed_sweep",
+            "retrieved_by_live_reprobe",
+        }
+        if retrieved_class:
+            assert outcome == "retrieved", (entry.sequence, entry.source_url, outcome)
+        else:
+            assert outcome != "retrieved", (entry.sequence, entry.source_url, outcome)
+        checked += 1
+
+    assert checked == 45
+    assert probe["probe_provenance"].strip()
+    assert "retrieval-layer" in probe["probe_provenance"]
+    assert probe["classification_counts"]["retrieved"] >= 50

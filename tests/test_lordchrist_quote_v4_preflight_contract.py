@@ -170,3 +170,15 @@ def test_quote_v4_preflight_enforces_the_reviewed_pending_content_findings_recor
     assert "python -m video_channel_manager.telegram_quote_content_findings" in workflow
     assert '"$CONTENT_FINDINGS_PATH" \\' in workflow
     assert '--queue "$DEPTH_RUNTIME_QUEUE_PATH" \\' in workflow
+
+
+def test_quote_v4_preflight_publishes_the_reviewed_pending_evidence_summary() -> None:
+    """The run itself must state how much evidence the gate actually verified."""
+
+    workflow = _workflow()
+
+    assert '"reviewed pending evidence"' in workflow
+    assert "reviewed standalone entries" in workflow
+    assert "open content finding(s) recorded against the sealed suffix" in workflow
+    assert "reviewed canonical equivalents" in workflow
+    assert ".runtime/lordchrist-quote-source-probe-report.json" in workflow

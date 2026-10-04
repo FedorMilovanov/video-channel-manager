@@ -26,6 +26,7 @@ RETRIEVAL_CLASSES = Literal[
     "retrieved_live_review",
     "retrieved_via_canonical_endpoint",
     "retrieved_in_reviewed_sweep",
+    "retrieved_by_live_reprobe",
     "transport_failure_not_invalidating",
     "bot_protection_not_invalidating",
     "stale_url_relocated",
