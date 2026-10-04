@@ -19,6 +19,9 @@ from video_channel_manager.telegram_quote_source_audit import (
 )
 
 RUNTIME_ACTIVATION_FILENAME = "successor-depth-runtime-activation-v4.json"
+SOURCE_PROBE_OUTCOMES = frozenset(
+    {"retrieved", "transport_failure", "bot_protection", "stale_url_relocated", "not_found", "insufficient_evidence"}
+)
 EXPECTED_TOTAL = 60
 SEALED_HANDOFF_PREFIX = 14
 
@@ -39,7 +42,7 @@ class RuntimeActivation(BaseModel):
     presentation_policy_sha256: str = Field(pattern=SHA256_PATTERN)
     state_ledger_relative_path: Literal["content/telegram/lordchrist/successor-depth-v2-publication-ledger.json"]
     source_web_audit: Literal["quote-source-web-audit-v2.json"]
-    source_live_probe: Literal["quote-source-live-probe-v1.json"]
+    source_live_probe: Literal["quote-source-live-probe-v1.json", "quote-source-live-probe-v2.json"]
     presentation_migration: Literal["successor-depth-presentation-migration-v1.json"]
     provider_writes_authorized: bool
     note: str = Field(min_length=120, max_length=1200)
@@ -70,7 +73,7 @@ def _validate_live_probe(path: Path, *, audit_page_count: int) -> dict[str, int]
 
     if payload.get("schema_name") != "video-channel-manager.telegram-quote-source-live-probe":
         raise ValueError("live source probe schema identity is invalid")
-    if payload.get("schema_version") != 1:
+    if payload.get("schema_version") not in {1, 2}:
         raise ValueError("live source probe schema version is invalid")
     if payload.get("release_id") != DEPTH_RELEASE_ID or payload.get("queue_digest") != DEPTH_QUEUE_DIGEST:
         raise ValueError("live source probe differs from the exact depth-v2 release identity")
@@ -80,18 +83,46 @@ def _validate_live_probe(path: Path, *, audit_page_count: int) -> dict[str, int]
     attempted = int(payload.get("urls_attempted", -1))
     succeeded = int(payload.get("urls_fetched_successfully", -1))
     failed = int(payload.get("fetch_failures", -1))
-    failed_urls = payload.get("failed_urls")
     if attempted != audit_page_count:
         raise ValueError("live source probe URL count differs from the reviewed web-audit inventory")
     if succeeded + failed != attempted:
         raise ValueError("live source probe success/failure accounting is inconsistent")
     if succeeded < 50:
         raise ValueError("live source probe did not independently fetch at least 50 reviewed source URLs")
-    if not isinstance(failed_urls, list) or len(failed_urls) != failed or len(failed_urls) != len(set(failed_urls)):
-        raise ValueError("live source probe failure inventory is inconsistent")
     semantics = str(payload.get("failure_semantics", ""))
     if "not evidence that the source URL is dead" not in semantics:
         raise ValueError("live source probe must preserve retrieval-failure semantics")
+
+    version = payload.get("schema_version")
+    if version == 2:
+        results = payload.get("results")
+        if not isinstance(results, list) or len(results) != attempted:
+            raise ValueError("classified live source probe must record one entry per reviewed URL")
+        counts: dict[str, int] = {}
+        seen: set[str] = set()
+        for entry in results:
+            if not isinstance(entry, dict):
+                raise ValueError("classified live source probe entries must be objects")
+            outcome = entry.get("outcome")
+            if outcome not in SOURCE_PROBE_OUTCOMES:
+                raise ValueError(f"classified live source probe uses an unknown outcome: {outcome!r}")
+            url = str(entry.get("url", ""))
+            if not url.startswith("https://") or url in seen:
+                raise ValueError("classified live source probe URLs must be unique public HTTPS URLs")
+            seen.add(url)
+            counts[str(outcome)] = counts.get(str(outcome), 0) + 1
+        recomputed_retrieved = counts.get("retrieved", 0)
+        if recomputed_retrieved != succeeded or attempted - recomputed_retrieved != failed:
+            raise ValueError("classified live source probe counts disagree with its own entries")
+        reported = payload.get("classification_counts")
+        if reported != counts:
+            raise ValueError("classified live source probe classification summary disagree with its entries")
+        if counts.get("retrieved", 0) < 50:
+            raise ValueError("classified live source probe did not independently retrieve 50 reviewed source URLs")
+    else:
+        failed_urls = payload.get("failed_urls")
+        if not isinstance(failed_urls, list) or len(failed_urls) != failed or len(failed_urls) != len(set(failed_urls)):
+            raise ValueError("live source probe failure inventory is inconsistent")
     return {"attempted": attempted, "succeeded": succeeded, "failed": failed}
 
 

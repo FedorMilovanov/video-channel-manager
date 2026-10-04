@@ -393,6 +393,74 @@ def _render_post_v2(post: TelegramPost, policy: PresentationPolicy) -> RenderedT
     return _provider_payload(post=post, policy=policy, builder=builder)
 
 
+SENTENCE_TERMINATORS = (".", "!", "?", "…", ":", ";")
+DANGLING_TRAILING_CONNECTORS = (
+    "и",
+    "а",
+    "но",
+    "однако",
+    "что",
+    "чтобы",
+    "который",
+    "которая",
+    "которое",
+    "которые",
+    "если",
+    "когда",
+    "потому",
+    "поэтому",
+    "так",
+)
+
+
+def _require_standalone_quotation(quote: str) -> None:
+    """Reject structurally incomplete quotation fragments without a length rule.
+
+    Brevity is not a defect: a short, complete aphorism is a valid quotation.
+    What is rejected here is an excerpt that cannot be a sentence on its own -
+    an excerpt that starts mid-sentence or stops before its predicate - because
+    such a fragment reads as torn from the preceding source context.
+    """
+
+    stripped = quote.strip()
+    if not stripped:
+        raise ValueError("quote quotation must not be empty")
+    if not any(character.isalpha() for character in stripped):
+        raise ValueError("quote quotation must contain reviewed words")
+    if stripped[0].islower():
+        raise ValueError("quote quotation must not start mid-sentence")
+    if not stripped.endswith(SENTENCE_TERMINATORS):
+        raise ValueError("quote quotation must keep the source sentence ending")
+    trailing = stripped[:-1].rstrip().casefold().split()
+    if trailing and trailing[-1].rstrip(",") in DANGLING_TRAILING_CONNECTORS:
+        raise ValueError("quote quotation must not end on a dangling connector")
+
+
+def reviewed_attribution_line(post: TelegramPost) -> str | None:
+    """Return the reviewed attribution line carried by a successor runtime post.
+
+    Successor runtime posts bind the human-reviewed attribution string next to
+    the normalized evidence identity. Older ``TelegramPost`` payloads predate
+    that field and keep the historical derived rendering.
+    """
+
+    value = getattr(post, "attribution_text", None)
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError("reviewed attribution text must be a non-empty string")
+    return " ".join(value.strip().split())
+
+
+def expected_attribution_line(post: TelegramPost, policy: QuoteCardPresentationPolicy) -> str:
+    """The exact reader-facing attribution line for a reviewed quote card."""
+
+    reviewed = reviewed_attribution_line(post)
+    if reviewed is not None:
+        return f"{policy.attribution_prefix}{reviewed}"
+    return f"{policy.attribution_prefix}{post.source.author}, «{post.source.work}»"
+
+
 def _quote_card_blocks(post: TelegramPost, policy: QuoteCardPresentationPolicy) -> tuple[str, str, str, str]:
     if "© " in post.text or "Пояснение:" in post.text:
         raise ValueError("quote source text must not contain legacy presentation labels")
@@ -400,7 +468,7 @@ def _quote_card_blocks(post: TelegramPost, policy: QuoteCardPresentationPolicy) 
     if len(blocks) < 4:
         raise ValueError("quote source text must contain quote, attribution, context and hashtags")
 
-    expected_attribution = f"{policy.attribution_prefix}{post.source.author}, «{post.source.work}»"
+    expected_attribution = expected_attribution_line(post, policy)
     attribution_indexes = [index for index, block in enumerate(blocks[:-1]) if block == expected_attribution]
     if len(attribution_indexes) != 1:
         raise ValueError("quote source text must contain exactly one source-bound attribution block")
@@ -411,8 +479,7 @@ def _quote_card_blocks(post: TelegramPost, policy: QuoteCardPresentationPolicy) 
     quote = "\n\n".join(blocks[:attribution_index]).strip()
     context = "\n\n".join(blocks[attribution_index + 1 : -1]).strip()
     hashtags = blocks[-1]
-    if len(quote) < 20:
-        raise ValueError("quote quotation is too short to stand as a substantive quote")
+    _require_standalone_quotation(quote)
     if len(context) < 80:
         raise ValueError("quote editorial context must be substantive")
     tags = hashtags.split()

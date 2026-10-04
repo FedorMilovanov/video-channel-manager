@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from collections.abc import Iterable, Mapping
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol
 
 from pydantic import ValidationError
 
@@ -184,6 +184,23 @@ def load_optional_depth_ledger(
     return ledger
 
 
+def _load_active_queue_or_fail_closed(path: Path, *, label: str) -> Any:
+    """Load the caller-supplied queue with the same union loader the runtime uses.
+
+    The legacy track must never be inferred from an artifact whose schema is a
+    generated successor runtime queue: that would bind the channel-wide effect
+    barrier to the wrong ledger and report a schema error instead of an identity
+    error. Unknown queue identities fail closed here.
+    """
+
+    from video_channel_manager.telegram_quote_runtime import load_active_queue
+
+    try:
+        return load_active_queue(path)
+    except ValueError as exc:
+        raise ValueError(f"invalid {label} {path}: {exc}") from exc
+
+
 def require_no_cross_track_unresolved_effects(
     *,
     profile_path: Path,
@@ -199,13 +216,25 @@ def require_no_cross_track_unresolved_effects(
     predecessor_ledger_raw = os.environ.get("LORDCHRIST_PREDECESSOR_LEDGER_PATH", "").strip()
     if bool(predecessor_queue_raw) != bool(predecessor_ledger_raw):
         raise ValueError("LordChrist predecessor guard paths must be configured together")
+
+    from video_channel_manager.telegram_quote_runtime import SuccessorRuntimeQueue
+
     if predecessor_queue_raw:
         legacy_queue_path = Path(predecessor_queue_raw)
         legacy_ledger_path = Path(predecessor_ledger_raw)
         research_ledger_path = legacy_ledger_path.parent / "research-v2/publication-ledger.json"
+        legacy_queue = load_legacy_queue(legacy_queue_path)
+    else:
+        active_queue = _load_active_queue_or_fail_closed(legacy_queue_path, label="active Telegram queue")
+        if isinstance(active_queue, SuccessorRuntimeQueue):
+            raise ValueError(
+                "the active queue is a generated successor runtime artifact, so the predecessor effect track "
+                "cannot be read from it; bind LORDCHRIST_PREDECESSOR_QUEUE_PATH and "
+                "LORDCHRIST_PREDECESSOR_LEDGER_PATH to the exact predecessor artifacts"
+            )
+        legacy_queue = active_queue
 
     profile = load_channel_profile(profile_path)
-    legacy_queue = load_legacy_queue(legacy_queue_path)
     legacy_ledger = load_legacy_ledger(legacy_ledger_path, legacy_queue)
     if legacy_ledger.project_key != profile.project_key:
         raise ValueError("legacy ledger project differs from canonical Lordchrist profile")

@@ -12,6 +12,34 @@
 4. `DIRECT_COPY_TO_TELEGRAM.md` — ручная rich-copy вставка на Android и `U+2060` spacing;
 5. только затем task-specific research/evidence.
 
+## Rolling quote-v4 — reviewed evidence для остаточных 45 карточек
+
+Rolling-релиз depth-v2 (`successor-depth-runtime-activation-v4.json`) публикует остаточную очередь после последовательности 15. Пока `enabled = false`, доказательства reviewed-слоя читаются только preflight-ом:
+
+```text
+quote-standalone-review-v1.json      — 45 reviewed карточек 16..60: opening class, title-context resolution, пометки ревьюера
+quote-source-web-audit-v2.json       — 99 reviewed страниц источников + 3 reviewed canonical equivalents
+quote-source-live-probe-v2.json      — классификация retrieval по каждой странице (никогда не «источник мёртв»)
+quote-depth-audit-v1.json            — semantic-key audit очереди
+quote-depth-replacements-v1.json     — reviewed replacement-карточки (изменяют payload identity намеренно)
+```
+
+Правило карточки: reader-facing подпись — это **reviewed строка из карточки, verbatim**; рендер никогда не выводит её заново из evidence identity. Цитата и подпись образуют одну единицу чтения (`\n`), затем обычный абзацный воздух до редакционного текста. Короткие полные афоризмы допустимы; длина цитаты не является критерием качества.
+
+Канонический read-only preflight — `.github/workflows/lordchrist-quote-v4-preflight.yml` (20 шагов, provider-inert). Он падает closed, если расписание включено: пока идёт hardening, `production-schedule.json` обязан оставаться `enabled = false`, а включение — отдельное reviewed изменение активации.
+
+### Canary для последовательности 16
+
+Canary запускается **только** после явной provider-write авторизации и только на точном provider-inert SHA, где preflight зелёный:
+
+```text
+sequence 16 | lordchrist-successor-depth-v2-16-spurgeon-sovereignty-comfort
+queue digest  sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441
+policy        lordchrist-quote-v4 sha256:a87dd04d605a749c84ecd47d18c127dd921dddea500781c0fd75a0db20a7be9f
+```
+
+Ожидаемый результат: ровно один новый пост от `preaching_mp3_bot` (8716602202) в @lordchrist (-1001295216957); жирный заголовок, native blockquote, подпись `— Чарльз Сперджен, проповедь «Божественный суверенитет», 1856` непосредственно под цитатой без пустой строки, затем обычный абзац и хэштеги; durable ledger переходит в 15 опубликованных / 45 pending → 16 опубликованных / 44 pending ровно один раз, с `message_url`; дублей и backfill нет. Любое отклонение — fail closed: последовательность 17 не публикуется, инцидент фиксируется, состояние сверяется read-only с провайдером.
+
 **Research drafts не являются presentation authority.** Старый draft может хранить правильные факты и source anchors, но его типографику нельзя механически копировать, если она расходится с текущими стандартами.
 
 ## Источник — не финальный визуальный шаблон

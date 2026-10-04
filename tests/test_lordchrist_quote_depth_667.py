@@ -169,8 +169,11 @@ def test_future_depth_posts_use_reviewed_replacements_without_legacy_labels() ->
         assert "Пояснение:" not in post.text
         assert "© " not in post.text
         blocks = [block.strip() for block in post.text.split("\n\n") if block.strip()]
-        attribution = f"— {post.source.author}, «{post.source.work}»"
+        # The reader-facing source line is the reviewed attribution verbatim; the
+        # normalized evidence identity is kept next to it for verification only.
+        attribution = f"— {post.attribution_text}"
         assert attribution in blocks
+        assert attribution == f"— {' '.join(post.attribution_text.split())}"
         attribution_index = blocks.index(attribution)
         assert attribution_index >= 1
         assert attribution_index < len(blocks) - 2

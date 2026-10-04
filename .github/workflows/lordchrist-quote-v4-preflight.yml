@@ -8,6 +8,18 @@ on:
       - completed
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Exact read-only staging confirmation READ-ONLY-STAGING-PREFLIGHT
+        required: true
+        type: string
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
 
 permissions:
   actions: read
@@ -33,11 +45,23 @@ env:
   V4_POLICY_PATH: content/telegram/lordchrist/presentation-policy-v4.json
   RUNTIME_ACTIVATION_PATH: content/telegram/lordchrist/successor-depth-runtime-activation-v4.json
   PRESENTATION_MIGRATION_PATH: content/telegram/lordchrist/successor-depth-presentation-migration-v1.json
+  PRODUCTION_SCHEDULE_PATH: content/telegram/lordchrist/production-schedule.json
   SOURCE_WEB_AUDIT_PATH: content/telegram/lordchrist/quote-source-web-audit-v2.json
-  SOURCE_LIVE_PROBE_PATH: content/telegram/lordchrist/quote-source-live-probe-v1.json
+  STANDALONE_REVIEW_PATH: content/telegram/lordchrist/quote-standalone-review-v1.json
+  CONTENT_FINDINGS_PATH: content/telegram/lordchrist/quote-pending-content-findings-v1.json
+  SOURCE_PROBE_REPORT_PATH: .runtime/lordchrist-quote-source-probe-report.json
+  SOURCE_LIVE_PROBE_PATH: content/telegram/lordchrist/quote-source-live-probe-v2.json
   DEPTH_AUDIT_PATH: content/telegram/lordchrist/quote-depth-audit-v1.json
   DEPTH_REPLACEMENTS_PATH: content/telegram/lordchrist/quote-depth-replacements-v1.json
   TARGET_PROOF_PATH: .runtime/lordchrist-quote-v4-target-proof.json
+  RENDER_PROOF_PATH: .runtime/lordchrist-quote-v4-render-proof.json
+  STATE_DIR: .state/lordchrist
+  STATE_BRANCH: state/lordchrist-telegram
+  # The channel-wide no-blind-replay barrier must inspect the immutable predecessor
+  # track even while the active queue is a generated successor runtime artifact.
+  # These exact bindings mirror the guarded production publisher.
+  LORDCHRIST_PREDECESSOR_QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
+  LORDCHRIST_PREDECESSOR_LEDGER_PATH: .state/lordchrist/content/telegram/lordchrist/publication-ledger.json
   LORDCHRIST_TELEGRAM_CHAT_ID: ${{ vars.LORDCHRIST_TELEGRAM_CHAT_ID }}
   LORDCHRIST_TELEGRAM_BOT_ID: ${{ vars.LORDCHRIST_TELEGRAM_BOT_ID }}
   LORDCHRIST_TELEGRAM_BOT_USERNAME: ${{ vars.LORDCHRIST_TELEGRAM_BOT_USERNAME }}
@@ -45,33 +69,88 @@ env:
 jobs:
   preflight:
     if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main'
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main') ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository &&
+       contains(github.event.pull_request.labels.*.name, 'lordchrist-read-only-preflight'))
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - name: Check out exact successful main SHA
+      - name: Check out the exact read-only preflight revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.head_sha) || (github.event_name == 'pull_request' && github.event.pull_request.head.sha) || github.sha }}
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Prove checkout is still current main
+      - name: Prove the exact preflight revision and read-only mode
         shell: bash
         env:
-          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          SUCCESSFUL_CI_SHA: ${{ github.event.workflow_run.head_sha }}
+          DISPATCH_SHA: ${{ github.sha }}
+          DISPATCH_REF: ${{ github.ref }}
+          DISPATCH_CONFIRMATION: ${{ inputs.confirm }}
+          PULL_REQUEST_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PULL_REQUEST_REF: ${{ github.event.pull_request.head.label }}
         run: |
           set -euo pipefail
-          [[ "$(git rev-parse HEAD)" == "$EXPECTED_SHA" ]] || {
-            echo "Checked-out SHA differs from successful CI SHA." >&2
-            exit 2
-          }
+          local_sha="$(git rev-parse HEAD)"
           current_main="$(git ls-remote origin refs/heads/main | cut -f1)"
-          [[ "$current_main" == "$EXPECTED_SHA" ]] || {
-            echo "Successful CI SHA is no longer current main; refusing stale activation proof." >&2
-            exit 3
+          staging_revision=""
+          case "$EVENT_NAME" in
+            workflow_run)
+              [[ "$local_sha" == "$SUCCESSFUL_CI_SHA" ]] || {
+                echo "Checked-out SHA differs from successful CI SHA." >&2
+                exit 2
+              }
+              [[ "$current_main" == "$SUCCESSFUL_CI_SHA" ]] || {
+                echo "Successful CI SHA is no longer current main; refusing stale activation proof." >&2
+                exit 3
+              }
+              ;;
+            workflow_dispatch)
+              [[ "$DISPATCH_CONFIRMATION" == "READ-ONLY-STAGING-PREFLIGHT" ]] || {
+                echo "workflow_dispatch requires the exact confirmation READ-ONLY-STAGING-PREFLIGHT." >&2
+                exit 2
+              }
+              [[ "$local_sha" == "$DISPATCH_SHA" ]] || {
+                echo "Checked-out SHA differs from the dispatched SHA." >&2
+                exit 2
+              }
+              staging_revision="$DISPATCH_REF"
+              ;;
+            pull_request)
+              [[ "$local_sha" == "$PULL_REQUEST_HEAD_SHA" ]] || {
+                echo "Checked-out SHA differs from the pull-request head SHA." >&2
+                exit 2
+              }
+              staging_revision="$PULL_REQUEST_REF"
+              ;;
+            *)
+              echo "Unsupported preflight event: $EVENT_NAME" >&2
+              exit 4
+              ;;
+          esac
+          if [[ "$local_sha" == "$current_main" ]]; then
+            preflight_mode=current_main
+          else
+            preflight_mode=staging_sha
+            echo "Read-only staging proof on ${staging_revision:-$EVENT_NAME} at $local_sha."
+            echo "This staged run is verification evidence only; it never authorizes a provider write."
+          fi
+          [[ "$preflight_mode" == "current_main" || "$preflight_mode" == "staging_sha" ]] || {
+            echo "Unknown preflight mode." >&2
+            exit 4
           }
+          {
+            echo "PREFLIGHT_MODE=$preflight_mode"
+            echo "PREFLIGHT_SHA=$local_sha"
+          } >> "$GITHUB_ENV"
+          echo "Read-only preflight mode: $preflight_mode at $local_sha."
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -108,6 +187,36 @@ jobs:
             --depth-ledger "$DEPTH_LEDGER_PATH" \
             --output "$ACTIVE_SELECTION_PATH"
 
+      - name: Bind the exact reviewed queue digest for the read-only preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' >> "$GITHUB_ENV"
+          import json
+          import os
+          from pathlib import Path
+
+          selection = json.loads(Path(os.environ["ACTIVE_SELECTION_PATH"]).read_text(encoding="utf-8"))
+          activation = json.loads(Path(os.environ["RUNTIME_ACTIVATION_PATH"]).read_text(encoding="utf-8"))
+          schedule = json.loads(Path(os.environ["PRODUCTION_SCHEDULE_PATH"]).read_text(encoding="utf-8"))
+          digest = selection["queue_digest"]
+          if not (digest == activation["queue_digest"] == schedule["successor_queue_digest"]):
+              raise SystemExit(
+                  "Resolved depth-v2 queue digest differs from the rolling activation checkpoint "
+                  "and the reviewed production schedule binding."
+              )
+          # Hardening-phase effect guard: the reviewed schedule must stay disabled.
+          # Re-enabling it is a deliberate activation change made in its own reviewed
+          # commit, and this read-only preflight is expected to fail closed until it is
+          # updated together with that activation.
+          if schedule["enabled"] is not False:
+              raise SystemExit(
+                  "Reviewed production schedule is enabled during the hardening phase; "
+                  "read-only preflight must not proceed on an armed schedule."
+              )
+          print(f"LORDCHRIST_APPROVED_QUEUE_DIGEST={digest}")
+          PY
+
       - name: Validate rolling v4 checkpoint and evidence
         shell: bash
         run: |
@@ -126,6 +235,79 @@ jobs:
             --depth-audit "$DEPTH_AUDIT_PATH" \
             --replacements "$DEPTH_REPLACEMENTS_PATH"
 
+      - name: Validate the reviewed standalone ledger for exact future suffix 16 through 60
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_quote_standalone_review \
+            "$STANDALONE_REVIEW_PATH" \
+            --candidate "$SUCCESSOR_CANDIDATE_PATH" \
+            --translation-ledger "$SUCCESSOR_TRANSLATION_LEDGER_PATH" \
+            --integrity-amendment "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
+            --depth-audit "$DEPTH_AUDIT_PATH" \
+            --replacements "$DEPTH_REPLACEMENTS_PATH" \
+            --published-boundary 15
+
+      - name: Validate reviewed pending content findings
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_quote_content_findings \
+            "$CONTENT_FINDINGS_PATH" \
+            --queue "$DEPTH_RUNTIME_QUEUE_PATH" \
+            --published-boundary 15
+
+      - name: Validate reviewed source coverage with safe canonicalization
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_quote_source_audit \
+            "$SOURCE_WEB_AUDIT_PATH" \
+            --candidate "$SUCCESSOR_CANDIDATE_PATH" \
+            --translation-ledger "$SUCCESSOR_TRANSLATION_LEDGER_PATH" \
+            --integrity-amendment "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
+            --depth-audit "$DEPTH_AUDIT_PATH" \
+            --replacements "$DEPTH_REPLACEMENTS_PATH"
+
+      - name: Classify live source retrieval read-only (report only, never invalidating)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_quote_source_probe \
+            --inventory "$SOURCE_WEB_AUDIT_PATH" \
+            --out "$SOURCE_PROBE_REPORT_PATH" || true
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["SOURCE_PROBE_REPORT_PATH"])
+          if not path.exists():
+              print("::notice::live source retrieval re-probe produced no report in this run; reviewed evidence remains authoritative")
+              raise SystemExit(0)
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          print(
+              "::notice::live source retrieval re-probe: "
+              f"{payload['urls_fetched_successfully']}/{payload['urls_attempted']} retrieved; "
+              f"classes {json.dumps(payload['classification_counts'], sort_keys=True)}; "
+              "retrieval classes never mark a quotation invalid"
+          )
+          not_retrieved = [
+              "{outcome} {url} -> {target} (status {status})".format(
+                  outcome=entry["outcome"],
+                  url=entry["url"],
+                  target=entry.get("final_url") or "unresolved",
+                  status=entry.get("http_status") if entry.get("http_status") is not None else "n/a",
+              )
+              for entry in payload["results"]
+              if entry["outcome"] != "retrieved"
+          ]
+          if not_retrieved:
+              # Auditable per-URL view of every non-retrieved class in this run, so
+              # the observation does not depend on downloading the artifact.
+              print("::notice::live source retrieval non-retrieved URLs: " + "; ".join(not_retrieved[:40]))
+          PY
+
       - name: Re-run standalone quality gate for exact future suffix 16 through 60
         shell: bash
         run: |
@@ -136,6 +318,8 @@ jobs:
             --integrity-amendment "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
             --depth-audit "$DEPTH_AUDIT_PATH" \
             --replacements "$DEPTH_REPLACEMENTS_PATH" \
+            --source-web-audit "$SOURCE_WEB_AUDIT_PATH" \
+            --standalone-review "$STANDALONE_REVIEW_PATH" \
             --published-boundary 15
 
       - name: Validate queue and ledger through quote-v4 renderer
@@ -147,6 +331,17 @@ jobs:
             --ledger "$DEPTH_LEDGER_PATH" \
             --presentation-policy "$V4_POLICY_PATH" \
             validate
+
+      - name: Prove quote-v4 reading unit for the exact next pending publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_quote_v4_render_proof \
+            --queue "$DEPTH_RUNTIME_QUEUE_PATH" \
+            --ledger "$DEPTH_LEDGER_PATH" \
+            --presentation-policy "$V4_POLICY_PATH" \
+            --activation "$RUNTIME_ACTIVATION_PATH" \
+            --output "$RENDER_PROOF_PATH"
 
       - name: Prove exact Telegram target configuration
         shell: bash
@@ -186,15 +381,118 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Direct state-inert proof: the read-only durable state checkout was not
+          # modified and no dispatch/rendered provider intent was materialized.
+          [[ -z "$(git -C "$STATE_DIR" status --porcelain)" ]] || {
+            echo "Read-only preflight modified the durable state checkout." >&2
+            exit 2
+          }
+          [[ "$(git -C "$STATE_DIR" rev-parse HEAD)" == "$(git ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)" ]] || {
+            echo "Read-only preflight no longer matches the durable state branch head." >&2
+            exit 3
+          }
+          [[ ! -e .runtime/lordchrist-dispatch.json && ! -e .runtime/lordchrist-rendered.json ]] || {
+            echo "Read-only preflight materialized a provider dispatch or rendered payload." >&2
+            exit 4
+          }
           python - <<'PY'
           import json
+          import os
           from pathlib import Path
 
-          activation = json.loads(Path("content/telegram/lordchrist/successor-depth-runtime-activation-v4.json").read_text(encoding="utf-8"))
-          selection = json.loads(Path(".runtime/lordchrist-active-quote-selection.json").read_text(encoding="utf-8"))
+          activation = json.loads(Path(os.environ["RUNTIME_ACTIVATION_PATH"]).read_text(encoding="utf-8"))
+          selection = json.loads(Path(os.environ["ACTIVE_SELECTION_PATH"]).read_text(encoding="utf-8"))
+          render_proof = json.loads(Path(os.environ["RENDER_PROOF_PATH"]).read_text(encoding="utf-8"))
+          target_proof = json.loads(Path(os.environ["TARGET_PROOF_PATH"]).read_text(encoding="utf-8"))
+
           if activation["provider_writes_authorized"] is not False:
-              raise SystemExit("Read-only preflight artifact unexpectedly authorizes provider writes.")
+              raise SystemExit("Read-only preflight checkpoint unexpectedly authorizes provider writes.")
           if selection["needs_ledger_initialization"]:
               raise SystemExit("Existing durable depth-v2 ledger unexpectedly requires initialization.")
-          print("PASS: exact current-main quote-v4 preflight is read-only; durable state remains 15/45 and next is sequence 16.")
+          if render_proof["provider_writes_authorized"] is not False:
+              raise SystemExit("Rendering proof unexpectedly authorizes provider writes.")
+          if target_proof["bot_id"] != int(os.environ["LORDCHRIST_TELEGRAM_BOT_ID"]):
+              raise SystemExit("Live target proof resolved a different bot id.")
+          if target_proof["chat_id"] != int(os.environ["LORDCHRIST_TELEGRAM_CHAT_ID"]):
+              raise SystemExit("Live target proof resolved a different channel id.")
+          if target_proof["chat_username"] != "lordchrist" or target_proof["chat_type"] != "channel":
+              raise SystemExit("Live target proof did not resolve the canonical channel.")
+          if target_proof["can_post_messages"] is not True:
+              raise SystemExit("Live target proof did not confirm posting permission.")
+
+          mode = os.environ["PREFLIGHT_MODE"]
+          label = "exact current-main" if mode == "current_main" else "read-only staging"
+          print(
+              f"PASS: {label} quote-v4 preflight is provider-inert; "
+              f"published prefix {render_proof['published_prefix']}, pending suffix {render_proof['pending_suffix']}, "
+              f"strict next sequence {render_proof['next_sequence']} ({render_proof['next_publication_id']})."
+          )
           PY
+
+      - name: Publish exact read-only preflight evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          def emit(label: str, value: str) -> None:
+              print(f"::notice::{label}: {value}")
+
+          emit("preflight mode", f"{os.environ.get('PREFLIGHT_MODE', 'unknown')} at {os.environ.get('PREFLIGHT_SHA', 'unknown')}")
+          activation = json.loads(Path(os.environ["RUNTIME_ACTIVATION_PATH"]).read_text(encoding="utf-8"))
+          emit("rolling checkpoint release", f"{activation['release_id']} {activation['queue_digest']}")
+          emit("quote-v4 policy", f"{activation['presentation_policy_id']} {activation['presentation_policy_sha256']}")
+          render_proof = json.loads(Path(os.environ["RENDER_PROOF_PATH"]).read_text(encoding="utf-8"))
+          emit(
+              "state boundary",
+              f"{render_proof['published_prefix']} published / {render_proof['pending_suffix']} pristine pending; "
+              f"strict next sequence {render_proof['next_sequence']} ({render_proof['next_publication_id']})",
+          )
+          emit(
+              "quote-v4 reading unit",
+              f"entities {','.join(render_proof['entity_layout'])}; "
+              f"attribution immediately below quotation; {render_proof['rendered_text_length']} characters; "
+              f"provider payload {render_proof['provider_payload_sha256']}",
+          )
+          target_proof = json.loads(Path(os.environ["TARGET_PROOF_PATH"]).read_text(encoding="utf-8"))
+          emit(
+              "read-only Telegram target proof",
+              f"bot {target_proof['bot_username']} ({target_proof['bot_id']}); "
+              f"chat @{target_proof['chat_username']} ({target_proof['chat_id']}) {target_proof['chat_type']}; "
+              f"member status {target_proof['member_status']}; can_post_messages={target_proof['can_post_messages']}",
+          )
+          review = json.loads(Path(os.environ["STANDALONE_REVIEW_PATH"]).read_text(encoding="utf-8"))
+          findings = json.loads(Path(os.environ["CONTENT_FINDINGS_PATH"]).read_text(encoding="utf-8"))
+          audit = json.loads(Path(os.environ["SOURCE_WEB_AUDIT_PATH"]).read_text(encoding="utf-8"))
+          emit(
+              "reviewed pending evidence",
+              f"{len(review['entries'])} reviewed standalone entries; "
+              f"{sum(1 for e in review['entries'] if e['opening'] == 'title_resolved_anaphora')} title-resolved; "
+              f"{len(findings['entries'])} open content finding(s) recorded against the sealed suffix; "
+              f"{audit['research_pages_reviewed']} reviewed source pages; "
+              f"{len(audit['canonical_equivalents'])} reviewed canonical equivalents",
+          )
+          emit(
+              "reviewed attribution line",
+              "reader-facing source line is the reviewed attribution verbatim; balanced, never nested; "
+              "one line below the quotation inside the same reading unit",
+          )
+          emit("provider inertness", "durable state checkout byte-clean; no dispatch or rendered payload materialized")
+          PY
+
+      - name: Upload exact read-only preflight evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lordchrist-quote-v4-preflight-proofs
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            .runtime/lordchrist-active-quote-selection.json
+            .runtime/lordchrist-quote-v4-render-proof.json
+            .runtime/lordchrist-quote-v4-target-proof.json
+            .runtime/lordchrist-quote-source-probe-report.json

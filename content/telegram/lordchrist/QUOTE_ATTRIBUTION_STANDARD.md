@@ -20,6 +20,8 @@ For Scripture use the same hierarchy and the same em-dash prefix:
 
 The em dash belongs to the attribution line, **not** to the quotation entity. Do not substitute a hyphen `-`, en dash `–`, bullet, copyright sign or other prefix. This keeps the source visually connected to the quotation while making it unmistakably separate from the quoted words.
 
+The reader-facing line is the **reviewed attribution of the card, verbatim**. The pipeline must never re-derive it from the normalized evidence identity: re-deriving used to merge the chapter reference into the quoted work title and, where the reviewed line already contains a quoted title, produced nested or unclosed quotation marks such as `«проповедь «Божественный суверенитет», 1856»`, `«Святость, «Цена»»` or `«курс «The God Who Is There`. Quotation marks inside a reviewed attribution must stay balanced and must never nest; the runtime contract rejects both.
+
 ## Reader-facing language
 
 Reader-facing Telegram attribution uses Russian forms:
