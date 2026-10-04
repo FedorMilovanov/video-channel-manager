@@ -182,3 +182,13 @@ def test_quote_v4_preflight_publishes_the_reviewed_pending_evidence_summary() ->
     assert "open content finding(s) recorded against the sealed suffix" in workflow
     assert "reviewed canonical equivalents" in workflow
     assert ".runtime/lordchrist-quote-source-probe-report.json" in workflow
+
+
+def test_quote_v4_preflight_proves_the_reviewed_schedule_stays_disabled() -> None:
+    """The hardening-phase effect guard fails closed if the schedule is armed."""
+
+    workflow = _workflow()
+
+    assert 'if schedule["enabled"] is not False:' in workflow
+    assert "read-only preflight must not proceed on an armed schedule" in workflow
+    assert 'digest == activation["queue_digest"] == schedule["successor_queue_digest"]' in workflow

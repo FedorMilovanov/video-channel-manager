@@ -205,6 +205,15 @@ jobs:
                   "Resolved depth-v2 queue digest differs from the rolling activation checkpoint "
                   "and the reviewed production schedule binding."
               )
+          # Hardening-phase effect guard: the reviewed schedule must stay disabled.
+          # Re-enabling it is a deliberate activation change made in its own reviewed
+          # commit, and this read-only preflight is expected to fail closed until it is
+          # updated together with that activation.
+          if schedule["enabled"] is not False:
+              raise SystemExit(
+                  "Reviewed production schedule is enabled during the hardening phase; "
+                  "read-only preflight must not proceed on an armed schedule."
+              )
           print(f"LORDCHRIST_APPROVED_QUEUE_DIGEST={digest}")
           PY
 
