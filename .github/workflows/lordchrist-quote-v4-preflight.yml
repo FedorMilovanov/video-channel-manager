@@ -47,7 +47,9 @@ env:
   PRESENTATION_MIGRATION_PATH: content/telegram/lordchrist/successor-depth-presentation-migration-v1.json
   PRODUCTION_SCHEDULE_PATH: content/telegram/lordchrist/production-schedule.json
   SOURCE_WEB_AUDIT_PATH: content/telegram/lordchrist/quote-source-web-audit-v2.json
-  SOURCE_LIVE_PROBE_PATH: content/telegram/lordchrist/quote-source-live-probe-v1.json
+  STANDALONE_REVIEW_PATH: content/telegram/lordchrist/quote-standalone-review-v1.json
+  SOURCE_PROBE_REPORT_PATH: .runtime/lordchrist-quote-source-probe-report.json
+  SOURCE_LIVE_PROBE_PATH: content/telegram/lordchrist/quote-source-live-probe-v2.json
   DEPTH_AUDIT_PATH: content/telegram/lordchrist/quote-depth-audit-v1.json
   DEPTH_REPLACEMENTS_PATH: content/telegram/lordchrist/quote-depth-replacements-v1.json
   TARGET_PROOF_PATH: .runtime/lordchrist-quote-v4-target-proof.json
@@ -223,6 +225,56 @@ jobs:
             --depth-audit "$DEPTH_AUDIT_PATH" \
             --replacements "$DEPTH_REPLACEMENTS_PATH"
 
+      - name: Validate the reviewed standalone ledger for exact future suffix 16 through 60
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_quote_standalone_review \
+            "$STANDALONE_REVIEW_PATH" \
+            --candidate "$SUCCESSOR_CANDIDATE_PATH" \
+            --translation-ledger "$SUCCESSOR_TRANSLATION_LEDGER_PATH" \
+            --integrity-amendment "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
+            --depth-audit "$DEPTH_AUDIT_PATH" \
+            --replacements "$DEPTH_REPLACEMENTS_PATH" \
+            --published-boundary 15
+
+      - name: Validate reviewed source coverage with safe canonicalization
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_quote_source_audit \
+            "$SOURCE_WEB_AUDIT_PATH" \
+            --candidate "$SUCCESSOR_CANDIDATE_PATH" \
+            --translation-ledger "$SUCCESSOR_TRANSLATION_LEDGER_PATH" \
+            --integrity-amendment "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
+            --depth-audit "$DEPTH_AUDIT_PATH" \
+            --replacements "$DEPTH_REPLACEMENTS_PATH"
+
+      - name: Classify live source retrieval read-only (report only, never invalidating)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_quote_source_probe \
+            --inventory "$SOURCE_WEB_AUDIT_PATH" \
+            --out "$SOURCE_PROBE_REPORT_PATH" || true
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["SOURCE_PROBE_REPORT_PATH"])
+          if not path.exists():
+              print("::notice::live source retrieval re-probe produced no report in this run; reviewed evidence remains authoritative")
+              raise SystemExit(0)
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          print(
+              "::notice::live source retrieval re-probe: "
+              f"{payload['urls_fetched_successfully']}/{payload['urls_attempted']} retrieved; "
+              f"classes {json.dumps(payload['classification_counts'], sort_keys=True)}; "
+              "retrieval classes never mark a quotation invalid"
+          )
+          PY
+
       - name: Re-run standalone quality gate for exact future suffix 16 through 60
         shell: bash
         run: |
@@ -233,6 +285,8 @@ jobs:
             --integrity-amendment "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
             --depth-audit "$DEPTH_AUDIT_PATH" \
             --replacements "$DEPTH_REPLACEMENTS_PATH" \
+            --source-web-audit "$SOURCE_WEB_AUDIT_PATH" \
+            --standalone-review "$STANDALONE_REVIEW_PATH" \
             --published-boundary 15
 
       - name: Validate queue and ledger through quote-v4 renderer
@@ -378,6 +432,11 @@ jobs:
               f"chat @{target_proof['chat_username']} ({target_proof['chat_id']}) {target_proof['chat_type']}; "
               f"member status {target_proof['member_status']}; can_post_messages={target_proof['can_post_messages']}",
           )
+          emit(
+              "reviewed attribution line",
+              "reader-facing source line is the reviewed attribution verbatim; balanced, never nested; "
+              "one line below the quotation inside the same reading unit",
+          )
           emit("provider inertness", "durable state checkout byte-clean; no dispatch or rendered payload materialized")
           PY
 
@@ -392,3 +451,4 @@ jobs:
             .runtime/lordchrist-active-quote-selection.json
             .runtime/lordchrist-quote-v4-render-proof.json
             .runtime/lordchrist-quote-v4-target-proof.json
+            .runtime/lordchrist-quote-source-probe-report.json

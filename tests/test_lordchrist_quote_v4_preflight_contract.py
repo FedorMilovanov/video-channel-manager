@@ -49,6 +49,9 @@ def test_quote_v4_preflight_keeps_the_exact_step_order() -> None:
         "Build exact depth-v2 runtime queue without provider authorization",
         "Bind the exact reviewed queue digest for the read-only preflight",
         "Validate rolling v4 checkpoint and evidence",
+        "Validate the reviewed standalone ledger for exact future suffix 16 through 60",
+        "Validate reviewed source coverage with safe canonicalization",
+        "Classify live source retrieval read-only (report only, never invalidating)",
         "Re-run standalone quality gate for exact future suffix 16 through 60",
         "Validate queue and ledger through quote-v4 renderer",
         "Prove quote-v4 reading unit for the exact next pending publication",
@@ -129,3 +132,29 @@ def test_quote_v4_preflight_proves_inertness_from_the_read_only_state_checkout()
     assert ".runtime/lordchrist-quote-v4-target-proof.json" in workflow
     assert '"read-only Telegram target proof",' in workflow
     assert '"provider inertness"' in workflow
+
+
+def test_quote_v4_preflight_validates_the_reviewed_standalone_ledger_and_source_classes() -> None:
+    """Quote-v4 acceptance is evidenced by a reviewed ledger, not heuristics alone."""
+
+    workflow = _workflow()
+
+    assert "STANDALONE_REVIEW_PATH: content/telegram/lordchrist/quote-standalone-review-v1.json" in workflow
+    assert "python -m video_channel_manager.telegram_quote_standalone_review" in workflow
+    assert '"$STANDALONE_REVIEW_PATH" \\' in workflow
+    assert "python -m video_channel_manager.telegram_quote_source_audit" in workflow
+    assert '--source-web-audit "$SOURCE_WEB_AUDIT_PATH"' in workflow
+    assert '--standalone-review "$STANDALONE_REVIEW_PATH"' in workflow
+    assert "SOURCE_LIVE_PROBE_PATH: content/telegram/lordchrist/quote-source-live-probe-v2.json" in workflow
+
+
+def test_quote_v4_preflight_reprobes_source_retrieval_read_only_without_invalidating_quotes() -> None:
+    workflow = _workflow()
+
+    probe_step = workflow.index("Classify live source retrieval read-only")
+    renderer_step = workflow.index("Validate queue and ledger through quote-v4 renderer")
+    assert probe_step < renderer_step
+    assert "python -m video_channel_manager.telegram_quote_source_probe" in workflow
+    assert '--out "$SOURCE_PROBE_REPORT_PATH" || true' in workflow
+    assert "retrieval classes never mark a quotation invalid" in workflow
+    assert ".runtime/lordchrist-quote-source-probe-report.json" in workflow
