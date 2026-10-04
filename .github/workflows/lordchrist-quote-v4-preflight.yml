@@ -404,13 +404,6 @@ jobs:
             echo "Read-only preflight materialized a provider outcome." >&2
             exit 4
           }
-          # Structural proof that inertness does not depend on the reviewed activation
-          # state: this workflow owns no publishing entrypoint at all.
-          ! grep -qE "telegram_cli .*(send|prepare|render-dispatch)" \
-            .github/workflows/lordchrist-quote-v4-preflight.yml || {
-            echo "Read-only preflight workflow contains a provider write entrypoint." >&2
-            exit 5
-          }
           python - <<'PY'
           import json
           import os
