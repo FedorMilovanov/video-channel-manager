@@ -127,3 +127,5 @@ def test_quote_v4_preflight_proves_inertness_from_the_read_only_state_checkout()
     assert 'if selection["provider_writes_authorized"] is not False' not in workflow
     assert "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a" in workflow
     assert ".runtime/lordchrist-quote-v4-target-proof.json" in workflow
+    assert '"read-only Telegram target proof",' in workflow
+    assert '"provider inertness"' in workflow

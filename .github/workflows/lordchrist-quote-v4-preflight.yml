@@ -342,6 +342,45 @@ jobs:
           )
           PY
 
+      - name: Publish exact read-only preflight evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          def emit(label: str, value: str) -> None:
+              print(f"::notice::{label}: {value}")
+
+          emit("preflight mode", f"{os.environ.get('PREFLIGHT_MODE', 'unknown')} at {os.environ.get('PREFLIGHT_SHA', 'unknown')}")
+          activation = json.loads(Path(os.environ["RUNTIME_ACTIVATION_PATH"]).read_text(encoding="utf-8"))
+          emit("rolling checkpoint release", f"{activation['release_id']} {activation['queue_digest']}")
+          emit("quote-v4 policy", f"{activation['presentation_policy_id']} {activation['presentation_policy_sha256']}")
+          render_proof = json.loads(Path(os.environ["RENDER_PROOF_PATH"]).read_text(encoding="utf-8"))
+          emit(
+              "state boundary",
+              f"{render_proof['published_prefix']} published / {render_proof['pending_suffix']} pristine pending; "
+              f"strict next sequence {render_proof['next_sequence']} ({render_proof['next_publication_id']})",
+          )
+          emit(
+              "quote-v4 reading unit",
+              f"entities {','.join(render_proof['entity_layout'])}; "
+              f"attribution immediately below quotation; {render_proof['rendered_text_length']} characters; "
+              f"provider payload {render_proof['provider_payload_sha256']}",
+          )
+          target_proof = json.loads(Path(os.environ["TARGET_PROOF_PATH"]).read_text(encoding="utf-8"))
+          emit(
+              "read-only Telegram target proof",
+              f"bot {target_proof['bot_username']} ({target_proof['bot_id']}); "
+              f"chat @{target_proof['chat_username']} ({target_proof['chat_id']}) {target_proof['chat_type']}; "
+              f"member status {target_proof['member_status']}; can_post_messages={target_proof['can_post_messages']}",
+          )
+          emit("provider inertness", "durable state checkout byte-clean; no dispatch or rendered payload materialized")
+          PY
+
       - name: Upload exact read-only preflight evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
