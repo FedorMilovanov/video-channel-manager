@@ -284,7 +284,14 @@ jobs:
               "retrieval classes never mark a quotation invalid"
           )
           not_retrieved = [
-              f"{entry['outcome']} {entry['url']}" for entry in payload["results"] if entry["outcome"] != "retrieved"
+              "{outcome} {url} -> {target} (status {status})".format(
+                  outcome=entry["outcome"],
+                  url=entry["url"],
+                  target=entry.get("final_url") or "unresolved",
+                  status=entry.get("http_status") if entry.get("http_status") is not None else "n/a",
+              )
+              for entry in payload["results"]
+              if entry["outcome"] != "retrieved"
           ]
           if not_retrieved:
               # Auditable per-URL view of every non-retrieved class in this run, so
