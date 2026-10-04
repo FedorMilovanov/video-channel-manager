@@ -184,11 +184,12 @@ def test_quote_v4_preflight_publishes_the_reviewed_pending_evidence_summary() ->
     assert ".runtime/lordchrist-quote-source-probe-report.json" in workflow
 
 
-def test_quote_v4_preflight_proves_the_reviewed_schedule_stays_disabled() -> None:
-    """The hardening-phase effect guard fails closed if the schedule is armed."""
+def test_quote_v4_preflight_binds_schedule_arming_to_the_reviewed_activation() -> None:
+    """Arming is only legitimate when the reviewed checkpoint authorizes writes."""
 
     workflow = _workflow()
 
-    assert 'if schedule["enabled"] is not False:' in workflow
-    assert "read-only preflight must not proceed on an armed schedule" in workflow
+    assert 'if schedule["enabled"] is not activation["provider_writes_authorized"]:' in workflow
+    assert "read-only preflight must not proceed on an unreviewed arming state" in workflow
+    assert 'if schedule["presentation_policy_sha256"] != activation["presentation_policy_sha256"]:' in workflow
     assert 'digest == activation["queue_digest"] == schedule["successor_queue_digest"]' in workflow

@@ -26,7 +26,7 @@ def test_v4_runtime_activation_is_exact_provider_inert_15_45_checkpoint() -> Non
     assert activation.required_pending_suffix == 45
     assert activation.presentation_policy_id == policy.policy_id == "lordchrist-quote-v4"
     assert activation.presentation_policy_sha256 == policy.digest
-    assert activation.provider_writes_authorized is False
+    assert activation.provider_writes_authorized is True
 
 
 def test_v4_runtime_activation_points_only_to_reviewed_migration_and_source_evidence() -> None:

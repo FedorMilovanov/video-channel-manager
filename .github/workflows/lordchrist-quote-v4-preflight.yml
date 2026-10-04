@@ -205,14 +205,19 @@ jobs:
                   "Resolved depth-v2 queue digest differs from the rolling activation checkpoint "
                   "and the reviewed production schedule binding."
               )
-          # Hardening-phase effect guard: the reviewed schedule must stay disabled.
-          # Re-enabling it is a deliberate activation change made in its own reviewed
-          # commit, and this read-only preflight is expected to fail closed until it is
-          # updated together with that activation.
-          if schedule["enabled"] is not False:
+          # Effect guard: autonomous dispatch may only be armed by the same reviewed
+          # activation checkpoint that authorizes provider writes, and both must bind the
+          # identical presentation policy. Any disagreement fails the read-only preflight
+          # closed instead of letting an unreviewed arming reach the publisher.
+          if schedule["enabled"] is not activation["provider_writes_authorized"]:
               raise SystemExit(
-                  "Reviewed production schedule is enabled during the hardening phase; "
-                  "read-only preflight must not proceed on an armed schedule."
+                  "Reviewed production schedule arming disagrees with the rolling runtime activation "
+                  "checkpoint; read-only preflight must not proceed on an unreviewed arming state."
+              )
+          if schedule["presentation_policy_sha256"] != activation["presentation_policy_sha256"]:
+              raise SystemExit(
+                  "Reviewed production schedule presentation policy differs from the rolling runtime "
+                  "activation checkpoint."
               )
           print(f"LORDCHRIST_APPROVED_QUEUE_DIGEST={digest}")
           PY
