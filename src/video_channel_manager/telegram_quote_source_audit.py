@@ -6,7 +6,7 @@ import json
 from datetime import date
 from pathlib import Path
 from typing import Literal
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunsplit
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
@@ -53,6 +53,68 @@ def _require_public_https(raw_url: str) -> str:
     return raw_url
 
 
+CANONICAL_EQUIVALENT_KINDS = frozenset(
+    {
+        "www_prefix",
+        "trailing_slash",
+        "http_to_https",
+        "official_print_or_view_endpoint",
+    }
+)
+MECHANICAL_EQUIVALENT_KINDS = frozenset({"www_prefix", "trailing_slash", "http_to_https"})
+
+
+def canonical_url(raw_url: str) -> str:
+    """Safe canonicalization used only to recognize the same public page.
+
+    This normalizes the www prefix, a trailing slash and the scheme. It never
+    treats a different document path as the same source: two different paths
+    only ever match through an explicitly reviewed canonical-equivalent entry.
+    """
+
+    parsed = urlparse(raw_url)
+    host = (parsed.hostname or "").casefold()
+    if host.startswith("www."):
+        host = host[len("www.") :]
+    path = parsed.path or "/"
+    while len(path) > 1 and path.endswith("/"):
+        path = path[:-1]
+    return urlunsplit(("https", host, path, parsed.query, ""))
+
+
+class CanonicalEquivalent(BaseModel):
+    """One explicitly reviewed canonical alias of a reviewed source page.
+
+    A canonical alias is allowed only between pages that are the same document
+    served under equivalent official forms. A thematically related page is never
+    an equivalence, and only the mechanically checkable kinds are accepted
+    without an explicitly reviewed official-endpoint note.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    url: str
+    canonical_url: str
+    kind: Literal["www_prefix", "trailing_slash", "http_to_https", "official_print_or_view_endpoint"]
+    note: str = Field(min_length=40, max_length=400)
+
+    @model_validator(mode="after")
+    def reviewed_equivalence_is_exact(self) -> "CanonicalEquivalent":
+        _require_public_https(self.url)
+        _require_public_https(self.canonical_url)
+        if self.url == self.canonical_url:
+            raise ValueError("canonical equivalent must differ from its reviewed form")
+        if self.kind in MECHANICAL_EQUIVALENT_KINDS and canonical_url(self.url) != canonical_url(self.canonical_url):
+            raise ValueError(
+                f"{self.kind} canonicalization must normalize to the same page: {self.url} vs {self.canonical_url}"
+            )
+        if self.kind == "official_print_or_view_endpoint" and canonical_url(self.url) == canonical_url(
+            self.canonical_url
+        ):
+            raise ValueError("official print/view endpoints differ by path, not by host normalization")
+        return self
+
+
 class QuoteSourceWebAudit(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -69,6 +131,7 @@ class QuoteSourceWebAudit(BaseModel):
     research_pages_reviewed: int = Field(ge=50)
     method: str = Field(min_length=120, max_length=1200)
     research_pages: tuple[str, ...]
+    canonical_equivalents: tuple[CanonicalEquivalent, ...] = ()
 
     @field_validator("research_pages")
     @classmethod
@@ -95,6 +158,17 @@ class QuoteSourceWebAudit(BaseModel):
         if not CORE_SOURCE_FAMILIES.issubset(families):
             missing = sorted(CORE_SOURCE_FAMILIES - families)
             raise ValueError(f"web audit is missing reviewed core source families: {missing}")
+        reviewed = set(self.research_pages)
+        seen: set[str] = set()
+        for equivalent in self.canonical_equivalents:
+            if equivalent.url not in reviewed or equivalent.canonical_url not in reviewed:
+                raise ValueError(
+                    "canonical equivalents must stay inside the reviewed inventory: "
+                    f"{equivalent.url} -> {equivalent.canonical_url}"
+                )
+            if equivalent.url in seen:
+                raise ValueError(f"duplicate canonical equivalent for {equivalent.url}")
+            seen.add(equivalent.url)
         return self
 
 
@@ -134,6 +208,50 @@ def future_exact_source_urls(
     return result
 
 
+def reviewed_source_coverage(
+    audit: QuoteSourceWebAudit,
+    *,
+    candidate_path: Path,
+    translation_ledger_path: Path,
+    integrity_amendment_path: Path,
+    depth_audit_path: Path,
+    replacements_path: Path,
+) -> dict[int, tuple[str, str]]:
+    """Map every pending sequence to its cited URL and the reviewed URL that covers it.
+
+    A card's exact source is covered when it is reviewed literally or when an
+    explicitly reviewed canonical alias of the same page is. A merely thematic
+    relation never covers a card: it would have to be recorded as an equivalence
+    and would fail the equivalence contract above.
+    """
+
+    exact_sources = future_exact_source_urls(
+        candidate_path=candidate_path,
+        translation_ledger_path=translation_ledger_path,
+        integrity_amendment_path=integrity_amendment_path,
+        depth_audit_path=depth_audit_path,
+        replacements_path=replacements_path,
+    )
+    reviewed = set(audit.research_pages)
+    aliases = {equivalent.url: equivalent.canonical_url for equivalent in audit.canonical_equivalents}
+
+    coverage: dict[int, tuple[str, str]] = {}
+    missing: dict[int, str] = {}
+    for sequence, url in exact_sources.items():
+        if url in reviewed:
+            coverage[sequence] = (url, url)
+            continue
+        alias = aliases.get(url)
+        if alias is not None and alias in reviewed:
+            coverage[sequence] = (url, alias)
+            continue
+        missing[sequence] = url
+    if missing:
+        detail = "\n".join(f"{sequence:02d} {url}" for sequence, url in missing.items())
+        raise ValueError(f"web audit is missing exact source URLs for pending quote cards:\n{detail}")
+    return coverage
+
+
 def assert_future_exact_source_coverage(
     audit: QuoteSourceWebAudit,
     *,
@@ -143,19 +261,15 @@ def assert_future_exact_source_coverage(
     depth_audit_path: Path,
     replacements_path: Path,
 ) -> dict[int, str]:
-    exact_sources = future_exact_source_urls(
+    coverage = reviewed_source_coverage(
+        audit,
         candidate_path=candidate_path,
         translation_ledger_path=translation_ledger_path,
         integrity_amendment_path=integrity_amendment_path,
         depth_audit_path=depth_audit_path,
         replacements_path=replacements_path,
     )
-    reviewed = set(audit.research_pages)
-    missing = {sequence: url for sequence, url in exact_sources.items() if url not in reviewed}
-    if missing:
-        detail = "\n".join(f"{sequence:02d} {url}" for sequence, url in missing.items())
-        raise ValueError(f"web audit is missing exact source URLs for pending quote cards:\n{detail}")
-    return exact_sources
+    return {sequence: url for sequence, (url, _reviewed) in coverage.items()}
 
 
 def main() -> int:
@@ -176,6 +290,14 @@ def main() -> int:
         depth_audit_path=args.depth_audit,
         replacements_path=args.replacements,
     )
+    coverage = reviewed_source_coverage(
+        audit,
+        candidate_path=args.candidate,
+        translation_ledger_path=args.translation_ledger,
+        integrity_amendment_path=args.integrity_amendment,
+        depth_audit_path=args.depth_audit,
+        replacements_path=args.replacements,
+    )
     print(
         json.dumps(
             {
@@ -184,6 +306,8 @@ def main() -> int:
                 "published_boundary": audit.published_boundary,
                 "future_sequences_reviewed": len(audit.future_sequences_reviewed),
                 "exact_future_source_urls": len(set(exact_sources.values())),
+                "canonically_covered_sequences": sum(1 for url, reviewed in coverage.values() if url != reviewed),
+                "canonical_equivalents": len(audit.canonical_equivalents),
                 "research_pages_reviewed": audit.research_pages_reviewed,
                 "checked_on": audit.checked_on.isoformat(),
             },

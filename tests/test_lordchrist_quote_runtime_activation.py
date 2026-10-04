@@ -37,13 +37,23 @@ def test_v4_runtime_activation_points_only_to_reviewed_migration_and_source_evid
     assert activation.presentation_migration == "successor-depth-presentation-migration-v1.json"
     assert audit.queue_digest == activation.queue_digest
     assert audit.future_sequences_reviewed == tuple(range(16, 61))
-    assert audit.research_pages_reviewed == 98
+    assert audit.research_pages_reviewed == 99
     assert probe["queue_digest"] == activation.queue_digest
-    assert probe["urls_attempted"] == 98
-    assert probe["urls_fetched_successfully"] == 77
-    assert probe["fetch_failures"] == 21
-    assert len(probe["failed_urls"]) == probe["fetch_failures"]
+    assert probe["urls_attempted"] == audit.research_pages_reviewed == 99
+    assert probe["schema_version"] == 2
+    assert probe["classification_counts"]["retrieved"] == probe["urls_fetched_successfully"]
     assert probe["urls_fetched_successfully"] >= 50
+    assert probe["urls_fetched_successfully"] + probe["fetch_failures"] == probe["urls_attempted"]
+    assert probe["urls_attempted"] == len(probe["results"])
+    outcomes = {entry["outcome"] for entry in probe["results"]}
+    assert outcomes <= {
+        "retrieved",
+        "transport_failure",
+        "bot_protection",
+        "stale_url_relocated",
+        "not_found",
+        "insufficient_evidence",
+    }
 
 
 def test_runtime_activation_rejects_write_authorization_in_preflight_artifact(tmp_path: Path) -> None:

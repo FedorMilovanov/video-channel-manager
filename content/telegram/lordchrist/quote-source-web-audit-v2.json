@@ -55,8 +55,8 @@
   ],
   "checked_on": "2026-10-03",
   "minimum_research_pages": 50,
-  "research_pages_reviewed": 98,
-  "method": "Fresh web corroboration sweep across public-domain primary-text libraries, official author/ministry sources, and the exact source URL bound to every pending quote card. This layer supplements, and never replaces, the per-card exact-fragment and reviewed-translation bindings already sealed in the quote corpus.",
+  "research_pages_reviewed": 99,
+  "method": "Fresh web corroboration sweep across public-domain primary-text libraries, official author/ministry sources, and the exact source URL bound to every pending quote card. This layer supplements, and never replaces, the per-card exact-fragment and reviewed-translation bindings already sealed in the quote corpus. Canonical equivalents are recorded explicitly and conservatively: only the same document served under equivalent official forms (www prefix, trailing slash, scheme, or the publisher's own print/view endpoint) qualifies, while a merely thematic page never covers a card. Retrieval outcomes are classified separately in the live probe so that a transport or bot-layer failure is never treated as evidence about a quotation.",
   "research_pages": [
     "https://ccel.org/ccel/watson/divinity.vi.ii.html",
     "https://www.ccel.org/ccel/watson/divinity.iv.html",
@@ -155,6 +155,27 @@
     "https://learn.ligonier.org/articles/election-unfair",
     "https://www.thegospelcoalition.org/course/the-god-who-is-there/",
     "https://www.gty.org/articles/print/A235/reexamining-the-eternal-sonship-of-christ",
-    "https://www.spurgeon.org/sermons/if-there-be-no-resurrection"
+    "https://www.spurgeon.org/sermons/if-there-be-no-resurrection",
+    "https://www.gty.org/articles/print/A326/what-doctrines-are-fundamental-part-1"
+  ],
+  "canonical_equivalents": [
+    {
+      "url": "https://www.ccel.org/ccel/watson/divinity.ix.i.html",
+      "canonical_url": "https://ccel.org/ccel/watson/divinity.ix.i.html",
+      "kind": "www_prefix",
+      "note": "Same CCEL chapter page; the reviewed inventory lists the www and non-www forms of the identical document, and both were retrieved in the reviewed sweep."
+    },
+    {
+      "url": "https://www.ccel.org/ccel/ryle/holiness.iii.v.html",
+      "canonical_url": "https://ccel.org/ccel/ryle/holiness.iii.v.html",
+      "kind": "www_prefix",
+      "note": "Same CCEL chapter page; the reviewed inventory lists the www and non-www forms of the identical document, and both were retrieved in the reviewed sweep."
+    },
+    {
+      "url": "https://www.gty.org/articles/A326/what-doctrines-are-fundamental-part-1",
+      "canonical_url": "https://www.gty.org/articles/print/A326/what-doctrines-are-fundamental-part-1",
+      "kind": "official_print_or_view_endpoint",
+      "note": "Grace to You serves the same article A326 through its own print/view endpoint. That endpoint was retrieved live during this review on 2026-10-04, contains the exact reviewed fragment, and prints the canonical article URL, confirming the identical document."
+    }
   ]
 }
