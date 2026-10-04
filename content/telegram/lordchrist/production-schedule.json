@@ -6,7 +6,7 @@
   "chat_id": -1001295216957,
   "bot_id": 8716602202,
   "bot_username": "preaching_mp3_bot",
-  "enabled": false,
+  "enabled": true,
   "not_before_moscow_date": "2026-08-08",
   "timezone": "Europe/Moscow",
   "primary_time": "09:17",
@@ -42,7 +42,7 @@
   "backfill_policy": "none",
   "queue_digest": "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20",
   "successor_queue_digest": "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441",
-  "presentation_policy_id": "lordchrist-quote-v3",
-  "presentation_policy_sha256": "sha256:c6350861bcdbf3de9816afc398db5d80c605ae9fc0e750c3f7850e2e68449e0f",
-  "activation_note": "Autonomous depth-v2 quote publication is temporarily paused after sequence 15 while quote presentation and standalone-context gates are hardened. Published provider history remains immutable. Re-enable only after the future suffix is re-audited, presentation spacing is corrected, source verification is refreshed, exact current state is preflighted, and protected-branch CI passes."
+  "presentation_policy_id": "lordchrist-quote-v4",
+  "presentation_policy_sha256": "sha256:a87dd04d605a749c84ecd47d18c127dd921dddea500781c0fd75a0db20a7be9f",
+  "activation_note": "Autonomous depth-v2 quote publication is re-armed after the quote-v4 hardening review. Rendering is bound to the reviewed lordchrist-quote-v4 policy, the durable boundary is exactly 15 published and 45 pristine pending, and the next publication is sequence 16. Published history 1-15 stays immutable, backfill stays disabled, and the rolling runtime activation checkpoint is the single artifact that authorizes provider writes."
 }

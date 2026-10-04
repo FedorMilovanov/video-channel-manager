@@ -14,6 +14,6 @@
   "source_web_audit": "quote-source-web-audit-v2.json",
   "source_live_probe": "quote-source-live-probe-v2.json",
   "presentation_migration": "successor-depth-presentation-migration-v1.json",
-  "provider_writes_authorized": false,
-  "note": "Provider-inert rolling checkpoint after verified sequence 15. It preserves the sealed 14/46 handoff artifacts, requires the durable depth-v2 ledger to be exactly 15 published and 45 pristine pending, binds future rendering to quote-v4, and authorizes no Telegram mutation until a later exact-state activation commit."
+  "provider_writes_authorized": true,
+  "note": "Exact-state activation of the reviewed depth-v2 suffix under quote-v4. It preserves the sealed 14/46 handoff artifacts, requires the durable depth-v2 ledger to be exactly 15 published and 45 pristine pending, binds future rendering to the reviewed quote-v4 presentation digest and the reviewed source evidence, and authorizes Telegram writes starting at sequence 16 for at most one verified publication per scheduled slot with no backfill."
 }

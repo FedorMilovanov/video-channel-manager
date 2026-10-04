@@ -41,7 +41,14 @@ env:
   PYTHONPATH: src
   PREDECESSOR_QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
   QUEUE_PATH: content/telegram/lordchrist/verified-30-posts.json
-  PRESENTATION_POLICY_PATH: content/telegram/lordchrist/presentation-policy-v3.json
+  PRESENTATION_POLICY_PATH: content/telegram/lordchrist/presentation-policy-v4.json
+  PRESENTATION_POLICY_V3_PATH: content/telegram/lordchrist/presentation-policy-v3.json
+  RUNTIME_ACTIVATION_PATH: content/telegram/lordchrist/successor-depth-runtime-activation-v4.json
+  PRESENTATION_MIGRATION_PATH: content/telegram/lordchrist/successor-depth-presentation-migration-v1.json
+  SOURCE_WEB_AUDIT_PATH: content/telegram/lordchrist/quote-source-web-audit-v2.json
+  SOURCE_LIVE_PROBE_PATH: content/telegram/lordchrist/quote-source-live-probe-v2.json
+  DEPTH_AUDIT_PATH: content/telegram/lordchrist/quote-depth-audit-v1.json
+  DEPTH_REPLACEMENTS_PATH: content/telegram/lordchrist/quote-depth-replacements-v1.json
   PRODUCTION_CONFIG_PATH: content/telegram/lordchrist/production-schedule.json
   SUCCESSOR_CANDIDATE_PATH: content/telegram/lordchrist/successor-quotes-v1.json
   SUCCESSOR_TRANSLATION_LEDGER_PATH: content/telegram/lordchrist/successor-translation-ledger-v1.json
@@ -289,6 +296,46 @@ jobs:
             --ledger "$LEDGER_PATH" \
             --presentation-policy "$PRESENTATION_POLICY_PATH" \
             validate
+
+      - name: Bind the reviewed quote-v4 runtime activation checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          provider_write_args=()
+          if [[ "${{ steps.intent.outputs.do_publish }}" == "true" ]]; then
+            provider_write_args+=(--require-provider-writes)
+          fi
+          python -m video_channel_manager.telegram_quote_runtime_activation \
+            --activation "$RUNTIME_ACTIVATION_PATH" \
+            --presentation-policy "$PRESENTATION_POLICY_PATH" \
+            --v3-policy "$PRESENTATION_POLICY_V3_PATH" \
+            --migration "$PRESENTATION_MIGRATION_PATH" \
+            --source-web-audit "$SOURCE_WEB_AUDIT_PATH" \
+            --source-live-probe "$SOURCE_LIVE_PROBE_PATH" \
+            --ledger "$DEPTH_LEDGER_PATH" \
+            --candidate "$SUCCESSOR_CANDIDATE_PATH" \
+            --translation-ledger "$SUCCESSOR_TRANSLATION_LEDGER_PATH" \
+            --integrity-amendment "$SUCCESSOR_INTEGRITY_AMENDMENTS_PATH" \
+            --depth-audit "$DEPTH_AUDIT_PATH" \
+            --replacements "$DEPTH_REPLACEMENTS_PATH" \
+            "${provider_write_args[@]}"
+
+          python - <<'PY_ARM'
+          import json
+          import os
+          from pathlib import Path
+
+          activation = json.loads(Path(os.environ["RUNTIME_ACTIVATION_PATH"]).read_text(encoding="utf-8"))
+          schedule = json.loads(Path(os.environ["PRODUCTION_CONFIG_PATH"]).read_text(encoding="utf-8"))
+          if schedule["enabled"] is not activation["provider_writes_authorized"]:
+              raise SystemExit(
+                  "Reviewed schedule arming disagrees with the rolling runtime activation checkpoint; "
+                  "autonomous dispatch may only be armed by the same reviewed activation that authorizes writes."
+              )
+          if schedule["presentation_policy_sha256"] != activation["presentation_policy_sha256"]:
+              raise SystemExit("Reviewed schedule presentation policy differs from the runtime activation checkpoint.")
+          PY_ARM
+
 
       - name: Preview next publication
         if: steps.intent.outputs.do_preflight != 'true' && steps.intent.outputs.do_publish != 'true'

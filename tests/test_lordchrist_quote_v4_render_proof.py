@@ -110,8 +110,29 @@ def test_render_proof_confirms_exact_next_publication_and_tight_reading_unit(tmp
     assert proof["next_publication_id"] == "lordchrist-successor-depth-v2-16-spurgeon-sovereignty-comfort"
     assert proof["entity_layout"] == ["bold", "blockquote", "italic"]
     assert proof["attribution_line_immediately_follows_quotation"] is True
-    assert proof["provider_writes_authorized"] is False
+    # The proof reports the reviewed authorization state of the checkpoint it was bound
+    # to; it never dispatches, so building it stays read-only in either state.
+    assert (
+        proof["provider_writes_authorized"]
+        == json.loads(ACTIVATION.read_text(encoding="utf-8"))["provider_writes_authorized"]
+    )
     assert proof["rendered_text_length"] < 4096
+
+
+def test_render_proof_is_read_only_for_an_authorized_checkpoint(tmp_path: Path) -> None:
+    queue_path, ledger_path = _state_paths(tmp_path)
+    before = ledger_path.read_bytes()
+
+    proof = build_render_proof(
+        queue_path=queue_path,
+        ledger_path=ledger_path,
+        presentation_policy_path=V4_POLICY,
+        activation_path=ACTIVATION,
+    )
+
+    assert proof["provider_writes_authorized"] is True
+    assert proof["next_sequence"] == 16
+    assert ledger_path.read_bytes() == before
 
 
 def test_render_proof_rejects_stale_checkpoint_boundary(tmp_path: Path) -> None:

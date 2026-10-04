@@ -25,14 +25,21 @@ def test_depth_v2_activation_and_schedule_form_one_exact_production_identity() -
     assert activation.queue_digest == DEPTH_QUEUE_DIGEST
     assert activation.presentation_policy_id == policy.policy_id == "lordchrist-quote-v3"
     assert activation.presentation_policy_sha256 == policy.digest
-    # A temporary editorial safety pause may disable autonomous dispatch without
-    # weakening the exact release identity or the provider authorization seal.
-    assert schedule.enabled is False
-    assert "paused" in schedule.activation_note.casefold()
+    # The sealed depth-v2 activation keeps the 14/46 handoff identity and the quote-v3
+    # digest it was sealed with; arming the live schedule is carried by the rolling
+    # quote-v4 runtime activation checkpoint instead of by mutating the seal.
+    runtime_activation = json.loads(
+        (CONTENT / "successor-depth-runtime-activation-v4.json").read_text(encoding="utf-8")
+    )
+    v4_policy = load_presentation_policy(CONTENT / "presentation-policy-v4.json")
+    assert activation.required_published_prefix == 14
+    assert activation.required_pending_suffix == 46
+    assert schedule.enabled is runtime_activation["provider_writes_authorized"]
     assert "depth-v2" in schedule.activation_note.casefold()
     assert schedule.successor_queue_digest == DEPTH_QUEUE_DIGEST
-    assert schedule.presentation_policy_id == policy.policy_id
-    assert schedule.presentation_policy_sha256 == policy.digest
+    assert schedule.presentation_policy_id == v4_policy.policy_id == "lordchrist-quote-v4"
+    assert schedule.presentation_policy_sha256 == v4_policy.digest
+    assert runtime_activation["presentation_policy_sha256"] == v4_policy.digest
 
 
 def test_depth_v2_runtime_is_release_scoped_and_starts_future_work_at_sequence_15() -> None:
@@ -59,7 +66,7 @@ def test_production_workflow_has_no_old_successor_runtime_fallback() -> None:
     assert "video_channel_manager.telegram_quote_runtime resolve" not in publish_next
     assert "INITIALIZE_REVIEWED_DEPTH_V2_LEDGER" in publish_next
     assert "successor-depth-v2-publication-ledger.json" in publish_next
-    assert "presentation-policy-v3.json" in publish_next
+    assert "presentation-policy-v4.json" in publish_next
     assert "remote-depth-v2-ledger.json" in publish_next
     assert "--require-provider-writes" in publish_next
     assert "steps.intent.outputs.do_publish" in publish_next

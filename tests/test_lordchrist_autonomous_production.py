@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -8,7 +10,8 @@ from video_channel_manager.telegram_schedule import decide_scheduled_slot, load_
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "content/telegram/lordchrist/production-schedule.json"
-POLICY_PATH = ROOT / "content/telegram/lordchrist/presentation-policy-v3.json"
+POLICY_PATH = ROOT / "content/telegram/lordchrist/presentation-policy-v4.json"
+ACTIVATION_PATH = ROOT / "content/telegram/lordchrist/successor-depth-runtime-activation-v4.json"
 WORKFLOW_PATH = ROOT / ".github/workflows/lordchrist-telegram-poster.yml"
 EXPECTED_DIGEST = "sha256:43518f50844b92230dd3854c363e86f0075347e31ed266f0ecad9c92b48d1b20"
 EXPECTED_SUCCESSOR_DIGEST = "sha256:c2ad28bb96e88a9e0633c4b7a55d6033bbf29c5a557e1aa4478cc2e0359e3441"
@@ -28,10 +31,18 @@ def test_autonomous_production_config_is_explicit_release_bound_and_slot_gated()
     assert config.chat_id == EXPECTED_CHAT_ID
     assert config.bot_id == EXPECTED_BOT_ID
     assert config.bot_username == EXPECTED_BOT_USERNAME
-    assert config.enabled is False
+    activation = json.loads(ACTIVATION_PATH.read_text(encoding="utf-8"))
+    # Arming is not a free-standing flag: autonomous dispatch may only be enabled by the
+    # same reviewed activation checkpoint that authorizes provider writes, and both must
+    # bind the identical reviewed presentation policy.
+    assert config.enabled is activation["provider_writes_authorized"]
+    assert config.presentation_policy_sha256 == activation["presentation_policy_sha256"]
+    assert activation["required_published_prefix"] == 15
+    assert activation["required_pending_suffix"] == 45
     note = config.activation_note.casefold()
-    assert "paused" in note
     assert "depth-v2" in note
+    assert "sequence 16" in note
+    assert "15 published and 45 pristine pending" in note
     assert config.not_before_moscow_date == date(2026, 8, 8)
     assert config.timezone == "Europe/Moscow"
     assert config.primary_time == "09:17"
@@ -53,8 +64,8 @@ def test_autonomous_production_config_is_explicit_release_bound_and_slot_gated()
     assert config.presentation_policy_sha256 == policy.digest
 
 
-def test_paused_depth_v2_schedule_fails_closed_before_slot_evaluation() -> None:
-    config = load_production_schedule(CONFIG_PATH)
+def test_disabled_depth_v2_schedule_fails_closed_before_slot_evaluation() -> None:
+    config = load_production_schedule(CONFIG_PATH).model_copy(update={"enabled": False})
     decision = decide_scheduled_slot(
         config,
         event_schedule="17 9 * * *",
@@ -64,6 +75,23 @@ def test_paused_depth_v2_schedule_fails_closed_before_slot_evaluation() -> None:
     assert decision.active is False
     assert decision.slot is None
     assert decision.reason == "production schedule disabled"
+
+
+def test_armed_depth_v2_schedule_still_publishes_at_most_one_verified_post_per_slot() -> None:
+    config = load_production_schedule(CONFIG_PATH)
+
+    assert config.enabled is True
+    assert config.max_verified_per_slot == 1
+    assert config.max_verified_per_day == 2
+    assert config.backfill_policy == "none"
+    assert (
+        decide_scheduled_slot(
+            config,
+            event_schedule="17 9 * * *",
+            now=datetime(2026, 9, 7, 6, 17, tzinfo=UTC),
+        ).slot
+        == "morning"
+    )
 
 
 def test_schedule_decision_has_daily_morning_and_only_tuesday_friday_sunday_evening() -> None:
