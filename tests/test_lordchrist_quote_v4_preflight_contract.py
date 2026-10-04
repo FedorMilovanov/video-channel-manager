@@ -50,6 +50,7 @@ def test_quote_v4_preflight_keeps_the_exact_step_order() -> None:
         "Bind the exact reviewed queue digest for the read-only preflight",
         "Validate rolling v4 checkpoint and evidence",
         "Validate the reviewed standalone ledger for exact future suffix 16 through 60",
+        "Validate reviewed pending content findings",
         "Validate reviewed source coverage with safe canonicalization",
         "Classify live source retrieval read-only (report only, never invalidating)",
         "Re-run standalone quality gate for exact future suffix 16 through 60",
@@ -158,3 +159,14 @@ def test_quote_v4_preflight_reprobes_source_retrieval_read_only_without_invalida
     assert '--out "$SOURCE_PROBE_REPORT_PATH" || true' in workflow
     assert "retrieval classes never mark a quotation invalid" in workflow
     assert ".runtime/lordchrist-quote-source-probe-report.json" in workflow
+
+
+def test_quote_v4_preflight_enforces_the_reviewed_pending_content_findings_record() -> None:
+    """Open language findings on sealed cards stay explicit and cannot rot silently."""
+
+    workflow = _workflow()
+
+    assert "CONTENT_FINDINGS_PATH: content/telegram/lordchrist/quote-pending-content-findings-v1.json" in workflow
+    assert "python -m video_channel_manager.telegram_quote_content_findings" in workflow
+    assert '"$CONTENT_FINDINGS_PATH" \\' in workflow
+    assert '--queue "$DEPTH_RUNTIME_QUEUE_PATH" \\' in workflow

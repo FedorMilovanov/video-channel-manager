@@ -48,6 +48,7 @@ env:
   PRODUCTION_SCHEDULE_PATH: content/telegram/lordchrist/production-schedule.json
   SOURCE_WEB_AUDIT_PATH: content/telegram/lordchrist/quote-source-web-audit-v2.json
   STANDALONE_REVIEW_PATH: content/telegram/lordchrist/quote-standalone-review-v1.json
+  CONTENT_FINDINGS_PATH: content/telegram/lordchrist/quote-pending-content-findings-v1.json
   SOURCE_PROBE_REPORT_PATH: .runtime/lordchrist-quote-source-probe-report.json
   SOURCE_LIVE_PROBE_PATH: content/telegram/lordchrist/quote-source-live-probe-v2.json
   DEPTH_AUDIT_PATH: content/telegram/lordchrist/quote-depth-audit-v1.json
@@ -238,6 +239,15 @@ jobs:
             --replacements "$DEPTH_REPLACEMENTS_PATH" \
             --published-boundary 15
 
+      - name: Validate reviewed pending content findings
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m video_channel_manager.telegram_quote_content_findings \
+            "$CONTENT_FINDINGS_PATH" \
+            --queue "$DEPTH_RUNTIME_QUEUE_PATH" \
+            --published-boundary 15
+
       - name: Validate reviewed source coverage with safe canonicalization
         shell: bash
         run: |
@@ -273,6 +283,13 @@ jobs:
               f"classes {json.dumps(payload['classification_counts'], sort_keys=True)}; "
               "retrieval classes never mark a quotation invalid"
           )
+          not_retrieved = [
+              f"{entry['outcome']} {entry['url']}" for entry in payload["results"] if entry["outcome"] != "retrieved"
+          ]
+          if not_retrieved:
+              # Auditable per-URL view of every non-retrieved class in this run, so
+              # the observation does not depend on downloading the artifact.
+              print("::notice::live source retrieval non-retrieved URLs: " + "; ".join(not_retrieved[:40]))
           PY
 
       - name: Re-run standalone quality gate for exact future suffix 16 through 60
