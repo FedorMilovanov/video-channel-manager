@@ -61,8 +61,36 @@ class SuccessorRuntimePost(BaseModel):
     title: str = Field(min_length=2, max_length=160)
     text: str = Field(min_length=100, max_length=4096)
     source: RuntimeSourceIdentity
+    attribution_text: str = Field(min_length=4, max_length=260)
     source_sequence: int = Field(ge=1, le=60)
     source_payload_sha256: str = Field(pattern=SHA256_PATTERN)
+
+    @model_validator(mode="after")
+    def validate_reviewed_attribution_text(self) -> "SuccessorRuntimePost":
+        """The reader-facing attribution is the reviewed attribution string.
+
+        The runtime source identity is a normalized evidence view of the same
+        reviewed string. Presentation renders ``attribution_text`` verbatim, so
+        the reviewed line must remain a single balanced line that starts with the
+        reviewed author instead of being re-derived into nested quotations.
+        """
+
+        value = " ".join(self.attribution_text.strip().split())
+        if value != self.attribution_text:
+            raise ValueError("reviewed attribution text must be a normalized single line")
+        if not value.startswith(f"{self.source.author},"):
+            raise ValueError("reviewed attribution text must begin with the reviewed source author")
+        if value.count("«") != value.count("»"):
+            raise ValueError("reviewed attribution text must keep balanced quotation marks")
+        depth = 0
+        for character in value:
+            if character == "«":
+                if depth:
+                    raise ValueError("reviewed attribution text must not nest quotation marks")
+                depth += 1
+            elif character == "»":
+                depth -= 1
+        return self
 
     @property
     def payload_sha256(self) -> str:
@@ -184,6 +212,7 @@ def _runtime_post(card: SuccessorQuoteCard, editorial_context_ru: str) -> Succes
         title=card.title,
         text=text,
         source=source,
+        attribution_text=" ".join(card.attribution_ru.strip().split()),
         source_sequence=card.sequence,
         source_payload_sha256=card.payload_sha256,
     )

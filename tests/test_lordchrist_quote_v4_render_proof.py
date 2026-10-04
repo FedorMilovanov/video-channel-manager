@@ -198,7 +198,7 @@ def test_quote_v3_presentation_would_reintroduce_the_blank_air_defect(tmp_path: 
     """Document the original production defect and its exact v4 correction."""
 
     post = _depth_queue().posts[15]
-    attribution = f"— {post.source.author}, «{post.source.work}»"
+    attribution = f"— {post.attribution_text}"
 
     v3_rendered = render_post(post, load_presentation_policy(V3_POLICY))
     v4_rendered = render_post(post, load_presentation_policy(V4_POLICY))

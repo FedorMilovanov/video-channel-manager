@@ -293,7 +293,10 @@ def _presentation_identity(attribution_ru: str) -> RuntimeSourceIdentity:
     if "," not in value:
         raise ValueError(f"depth attribution has no author/work separator: {attribution_ru}")
     author, work = value.split(",", 1)
-    return RuntimeSourceIdentity(author=author.strip(), work=work.strip().strip("«»"))
+    work = work.strip()
+    if work.startswith("«") and work.endswith("»"):
+        work = work[1:-1].strip()
+    return RuntimeSourceIdentity(author=author.strip(), work=work)
 
 
 def _render_legacy_text(
@@ -310,22 +313,25 @@ def _render_legacy_text(
     )
 
 
-def _render_depth_text(
-    *, quote_ru: str, context_ru: str, source: RuntimeSourceIdentity, hashtags: tuple[str, ...]
-) -> str:
-    """Canonical semantic v3 text.
+def _render_depth_text(*, quote_ru: str, attribution_ru: str, context_ru: str, hashtags: tuple[str, ...]) -> str:
+    """Canonical semantic text for the depth-v2 future suffix.
 
     Formatting belongs to telegram_presentation; this transport text contains no
-    presentation labels and no copyright marker.
+    presentation labels and no copyright marker. The source line is the reviewed
+    attribution verbatim: re-deriving it from the normalized evidence identity
+    would nest quotation marks and silently drop reviewed wording.
     """
     quote = quote_ru.strip()
     context = context_ru.strip()
+    attribution = " ".join(attribution_ru.strip().split())
     if "Пояснение:" in quote or "Пояснение:" in context or "© " in quote or "© " in context:
         raise ValueError("depth-v2 semantic text cannot contain legacy presentation labels")
+    if "Пояснение:" in attribution or "© " in attribution:
+        raise ValueError("depth-v2 reviewed attribution cannot contain legacy presentation labels")
     return "\n\n".join(
         [
             quote,
-            f"— {source.author}, «{source.work}»",
+            f"— {attribution}",
             context,
             " ".join(hashtags),
         ]
@@ -376,6 +382,7 @@ def _history_runtime_post(card: SuccessorQuoteCard, context_ru: str) -> Successo
             hashtags=card.hashtags,
         ),
         source=source,
+        attribution_text=" ".join(card.attribution_ru.strip().split()),
         source_sequence=card.sequence,
         source_payload_sha256=card.payload_sha256,
     )
@@ -400,11 +407,12 @@ def _future_keep_runtime_post(card: SuccessorQuoteCard, context_ru: str) -> Succ
         title=card.title,
         text=_render_depth_text(
             quote_ru=card.quote_ru,
+            attribution_ru=card.attribution_ru,
             context_ru=context_ru,
-            source=source,
             hashtags=card.hashtags,
         ),
         source=source,
+        attribution_text=card.attribution_ru,
         source_sequence=card.sequence,
         source_payload_sha256=payload_sha256,
     )
@@ -431,11 +439,12 @@ def _future_replacement_runtime_post(
         title=replacement.title,
         text=_render_depth_text(
             quote_ru=replacement.quote_ru,
+            attribution_ru=replacement.attribution_ru,
             context_ru=replacement.editorial_context_ru,
-            source=source,
             hashtags=replacement.hashtags,
         ),
         source=source,
+        attribution_text=replacement.attribution_ru,
         source_sequence=source_sequence,
         source_payload_sha256=payload_sha256,
     )

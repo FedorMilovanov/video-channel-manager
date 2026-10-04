@@ -92,7 +92,12 @@ def build_render_proof(
     # legacy queue model.
     rendered = render_post(cast("TelegramPost", next_post), policy)
     title = next_post.title
-    attribution = f"— {next_post.source.author}, «{next_post.source.work}»"
+    reviewed_attribution = " ".join(next_post.attribution_text.strip().split())
+    attribution = f"— {reviewed_attribution}"
+    if reviewed_attribution.count("«") != reviewed_attribution.count("»"):
+        raise ValueError("quote-v4 source line must keep balanced quotation marks")
+    if "«" in reviewed_attribution.split("«", 1)[1].split("»", 1)[0][-1:]:
+        raise ValueError("quote-v4 source line must not nest quotation marks")
 
     if not rendered.text.startswith(f"{title}\n"):
         raise ValueError("quote-v4 rendering must open with the reviewed title line")
@@ -137,6 +142,7 @@ def build_render_proof(
         "pending_suffix": len(pending),
         "next_sequence": next_post.sequence,
         "next_publication_id": next_post.publication_id,
+        "attribution_line": reviewed_attribution,
         "provider_payload_sha256": rendered.provider_payload_sha256,
         "rendered_text_length": len(rendered.text),
         "entity_layout": [entity.type for entity in entities],
