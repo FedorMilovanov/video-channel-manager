@@ -400,6 +400,17 @@ jobs:
             echo "Read-only preflight materialized a provider dispatch or rendered payload." >&2
             exit 4
           }
+          [[ ! -e .runtime/lordchrist-outcome.json ]] || {
+            echo "Read-only preflight materialized a provider outcome." >&2
+            exit 4
+          }
+          # Structural proof that inertness does not depend on the reviewed activation
+          # state: this workflow owns no publishing entrypoint at all.
+          ! grep -qE "telegram_cli .*(send|prepare|render-dispatch)" \
+            .github/workflows/lordchrist-quote-v4-preflight.yml || {
+            echo "Read-only preflight workflow contains a provider write entrypoint." >&2
+            exit 5
+          }
           python - <<'PY'
           import json
           import os
@@ -410,12 +421,17 @@ jobs:
           render_proof = json.loads(Path(os.environ["RENDER_PROOF_PATH"]).read_text(encoding="utf-8"))
           target_proof = json.loads(Path(os.environ["TARGET_PROOF_PATH"]).read_text(encoding="utf-8"))
 
-          if activation["provider_writes_authorized"] is not False:
-              raise SystemExit("Read-only preflight checkpoint unexpectedly authorizes provider writes.")
+          # Inertness is a property of this run, not of the reviewed authorization state:
+          # the durable checkout is byte-clean, no dispatch/rendered/outcome artifact
+          # exists and this workflow owns no publishing entrypoint (asserted above). What
+          # the proofs must show here is that they report the reviewed state without drift.
+          schedule = json.loads(Path(os.environ["PRODUCTION_SCHEDULE_PATH"]).read_text(encoding="utf-8"))
+          if render_proof["provider_writes_authorized"] != activation["provider_writes_authorized"]:
+              raise SystemExit("Rendering proof authorization differs from the reviewed activation checkpoint.")
+          if schedule["enabled"] is not activation["provider_writes_authorized"]:
+              raise SystemExit("Reviewed schedule arming differs from the reviewed activation checkpoint.")
           if selection["needs_ledger_initialization"]:
               raise SystemExit("Existing durable depth-v2 ledger unexpectedly requires initialization.")
-          if render_proof["provider_writes_authorized"] is not False:
-              raise SystemExit("Rendering proof unexpectedly authorizes provider writes.")
           if target_proof["bot_id"] != int(os.environ["LORDCHRIST_TELEGRAM_BOT_ID"]):
               raise SystemExit("Live target proof resolved a different bot id.")
           if target_proof["chat_id"] != int(os.environ["LORDCHRIST_TELEGRAM_CHAT_ID"]):
