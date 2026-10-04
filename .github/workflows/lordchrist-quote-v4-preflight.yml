@@ -52,6 +52,8 @@ env:
   DEPTH_REPLACEMENTS_PATH: content/telegram/lordchrist/quote-depth-replacements-v1.json
   TARGET_PROOF_PATH: .runtime/lordchrist-quote-v4-target-proof.json
   RENDER_PROOF_PATH: .runtime/lordchrist-quote-v4-render-proof.json
+  STATE_DIR: .state/lordchrist
+  STATE_BRANCH: state/lordchrist-telegram
   # The channel-wide no-blind-replay barrier must inspect the immutable predecessor
   # track even while the active queue is a generated successor runtime artifact.
   # These exact bindings mirror the guarded production publisher.
@@ -292,6 +294,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Direct state-inert proof: the read-only durable state checkout was not
+          # modified and no dispatch/rendered provider intent was materialized.
+          [[ -z "$(git -C "$STATE_DIR" status --porcelain)" ]] || {
+            echo "Read-only preflight modified the durable state checkout." >&2
+            exit 2
+          }
+          [[ "$(git -C "$STATE_DIR" rev-parse HEAD)" == "$(git ls-remote origin "refs/heads/$STATE_BRANCH" | cut -f1)" ]] || {
+            echo "Read-only preflight no longer matches the durable state branch head." >&2
+            exit 3
+          }
+          [[ ! -e .runtime/lordchrist-dispatch.json && ! -e .runtime/lordchrist-rendered.json ]] || {
+            echo "Read-only preflight materialized a provider dispatch or rendered payload." >&2
+            exit 4
+          }
           python - <<'PY'
           import json
           import os
@@ -303,11 +319,9 @@ jobs:
           target_proof = json.loads(Path(os.environ["TARGET_PROOF_PATH"]).read_text(encoding="utf-8"))
 
           if activation["provider_writes_authorized"] is not False:
-              raise SystemExit("Read-only preflight artifact unexpectedly authorizes provider writes.")
+              raise SystemExit("Read-only preflight checkpoint unexpectedly authorizes provider writes.")
           if selection["needs_ledger_initialization"]:
               raise SystemExit("Existing durable depth-v2 ledger unexpectedly requires initialization.")
-          if selection["provider_writes_authorized"] is not False:
-              raise SystemExit("Active selection unexpectedly authorizes provider writes.")
           if render_proof["provider_writes_authorized"] is not False:
               raise SystemExit("Rendering proof unexpectedly authorizes provider writes.")
           if target_proof["bot_id"] != int(os.environ["LORDCHRIST_TELEGRAM_BOT_ID"]):
@@ -327,3 +341,15 @@ jobs:
               f"strict next sequence {render_proof['next_sequence']} ({render_proof['next_publication_id']})."
           )
           PY
+
+      - name: Upload exact read-only preflight evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lordchrist-quote-v4-preflight-proofs
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            .runtime/lordchrist-active-quote-selection.json
+            .runtime/lordchrist-quote-v4-render-proof.json
+            .runtime/lordchrist-quote-v4-target-proof.json

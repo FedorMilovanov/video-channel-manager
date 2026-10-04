@@ -107,3 +107,23 @@ def test_quote_v4_preflight_is_provider_inert_and_never_writes_state() -> None:
     assert 'if target_proof["chat_username"] != "lordchrist"' in workflow
     assert "requirements/telegram-publisher.txt" in workflow
     assert 'python-version: "3.11"' in workflow
+
+
+def test_quote_v4_preflight_proves_inertness_from_the_read_only_state_checkout() -> None:
+    """Inertness is proven directly, not inferred from the active selection.
+
+    The active selection inherits the reviewed depth-v2 activation, which does
+    authorize production writes; the preflight therefore proves that the
+    read-only durable state checkout was not modified and that no provider
+    dispatch or rendered payload was materialized.
+    """
+
+    workflow = _workflow()
+
+    assert '[[ -z "$(git -C "$STATE_DIR" status --porcelain)" ]]' in workflow
+    assert 'git ls-remote origin "refs/heads/$STATE_BRANCH"' in workflow
+    assert "! -e .runtime/lordchrist-dispatch.json" in workflow
+    assert "! -e .runtime/lordchrist-rendered.json" in workflow
+    assert 'if selection["provider_writes_authorized"] is not False' not in workflow
+    assert "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a" in workflow
+    assert ".runtime/lordchrist-quote-v4-target-proof.json" in workflow
