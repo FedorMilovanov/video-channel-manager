@@ -14,6 +14,12 @@ on:
         description: Exact read-only staging confirmation READ-ONLY-STAGING-PREFLIGHT
         required: true
         type: string
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
 
 permissions:
   actions: read
@@ -61,14 +67,17 @@ jobs:
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.head_branch == 'main') ||
-      github.event_name == 'workflow_dispatch'
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository &&
+       contains(github.event.pull_request.labels.*.name, 'lordchrist-read-only-preflight'))
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Check out the exact read-only preflight revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.head_sha) || (github.event_name == 'pull_request' && github.event.pull_request.head.sha) || github.sha }}
           fetch-depth: 1
           persist-credentials: false
 
@@ -80,36 +89,53 @@ jobs:
           DISPATCH_SHA: ${{ github.sha }}
           DISPATCH_REF: ${{ github.ref }}
           DISPATCH_CONFIRMATION: ${{ inputs.confirm }}
+          PULL_REQUEST_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PULL_REQUEST_REF: ${{ github.event.pull_request.head.label }}
         run: |
           set -euo pipefail
           local_sha="$(git rev-parse HEAD)"
           current_main="$(git ls-remote origin refs/heads/main | cut -f1)"
-          if [[ "$EVENT_NAME" == "workflow_run" ]]; then
-            [[ "$local_sha" == "$SUCCESSFUL_CI_SHA" ]] || {
-              echo "Checked-out SHA differs from successful CI SHA." >&2
-              exit 2
-            }
-            [[ "$current_main" == "$SUCCESSFUL_CI_SHA" ]] || {
-              echo "Successful CI SHA is no longer current main; refusing stale activation proof." >&2
-              exit 3
-            }
+          staging_revision=""
+          case "$EVENT_NAME" in
+            workflow_run)
+              [[ "$local_sha" == "$SUCCESSFUL_CI_SHA" ]] || {
+                echo "Checked-out SHA differs from successful CI SHA." >&2
+                exit 2
+              }
+              [[ "$current_main" == "$SUCCESSFUL_CI_SHA" ]] || {
+                echo "Successful CI SHA is no longer current main; refusing stale activation proof." >&2
+                exit 3
+              }
+              ;;
+            workflow_dispatch)
+              [[ "$DISPATCH_CONFIRMATION" == "READ-ONLY-STAGING-PREFLIGHT" ]] || {
+                echo "workflow_dispatch requires the exact confirmation READ-ONLY-STAGING-PREFLIGHT." >&2
+                exit 2
+              }
+              [[ "$local_sha" == "$DISPATCH_SHA" ]] || {
+                echo "Checked-out SHA differs from the dispatched SHA." >&2
+                exit 2
+              }
+              staging_revision="$DISPATCH_REF"
+              ;;
+            pull_request)
+              [[ "$local_sha" == "$PULL_REQUEST_HEAD_SHA" ]] || {
+                echo "Checked-out SHA differs from the pull-request head SHA." >&2
+                exit 2
+              }
+              staging_revision="$PULL_REQUEST_REF"
+              ;;
+            *)
+              echo "Unsupported preflight event: $EVENT_NAME" >&2
+              exit 4
+              ;;
+          esac
+          if [[ "$local_sha" == "$current_main" ]]; then
             preflight_mode=current_main
           else
-            [[ "$DISPATCH_CONFIRMATION" == "READ-ONLY-STAGING-PREFLIGHT" ]] || {
-              echo "workflow_dispatch requires the exact confirmation READ-ONLY-STAGING-PREFLIGHT." >&2
-              exit 2
-            }
-            [[ "$local_sha" == "$DISPATCH_SHA" ]] || {
-              echo "Checked-out SHA differs from the dispatched SHA." >&2
-              exit 2
-            }
-            if [[ "$current_main" == "$local_sha" ]]; then
-              preflight_mode=current_main
-            else
-              preflight_mode=staging_sha
-              echo "Read-only staging proof on $DISPATCH_REF at $local_sha."
-              echo "This dispatch is verification evidence only; it never authorizes a provider write."
-            fi
+            preflight_mode=staging_sha
+            echo "Read-only staging proof on ${staging_revision:-$EVENT_NAME} at $local_sha."
+            echo "This staged run is verification evidence only; it never authorizes a provider write."
           fi
           [[ "$preflight_mode" == "current_main" || "$preflight_mode" == "staging_sha" ]] || {
             echo "Unknown preflight mode." >&2

@@ -79,6 +79,20 @@ def test_quote_v4_preflight_dispatch_is_explicit_read_only_staging_only() -> Non
     assert "current_main" in workflow
 
 
+def test_quote_v4_preflight_staging_pull_request_run_requires_the_exact_label() -> None:
+    """A staged read-only proof is available only on an explicitly labelled
+    same-repository pull request; forks never receive repository secrets."""
+
+    workflow = _workflow()
+
+    assert "pull_request:" in workflow
+    assert "github.event.pull_request.head.repo.full_name == github.repository" in workflow
+    assert "contains(github.event.pull_request.labels.*.name, 'lordchrist-read-only-preflight')" in workflow
+    assert "github.event.pull_request.head.sha" in workflow
+    assert "This staged run is verification evidence only" in workflow
+    assert "Unsupported preflight event" in workflow
+
+
 def test_quote_v4_preflight_is_provider_inert_and_never_writes_state() -> None:
     workflow = _workflow()
 
