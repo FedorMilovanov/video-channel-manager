@@ -12,6 +12,22 @@
 4. `DIRECT_COPY_TO_TELEGRAM.md` — ручная rich-copy вставка на Android и `U+2060` spacing;
 5. только затем task-specific research/evidence.
 
+## Rolling quote-v4 — reviewed evidence для остаточных 45 карточек
+
+Rolling-релиз depth-v2 (`successor-depth-runtime-activation-v4.json`) публикует остаточную очередь после последовательности 15. Пока `enabled = false`, доказательства reviewed-слоя читаются только preflight-ом:
+
+```text
+quote-standalone-review-v1.json      — 45 reviewed карточек 16..60: opening class, title-context resolution, пометки ревьюера
+quote-source-web-audit-v2.json       — 99 reviewed страниц источников + 3 reviewed canonical equivalents
+quote-source-live-probe-v2.json      — классификация retrieval по каждой странице (никогда не «источник мёртв»)
+quote-depth-audit-v1.json            — semantic-key audit очереди
+quote-depth-replacements-v1.json     — reviewed replacement-карточки (изменяют payload identity намеренно)
+```
+
+Правило карточки: reader-facing подпись — это **reviewed строка из карточки, verbatim**; рендер никогда не выводит её заново из evidence identity. Цитата и подпись образуют одну единицу чтения (`\n`), затем обычный абзацный воздух до редакционного текста. Короткие полные афоризмы допустимы; длина цитаты не является критерием качества.
+
+Канонический read-only preflight — `.github/workflows/lordchrist-quote-v4-preflight.yml` (19 шагов, provider-inert).
+
 **Research drafts не являются presentation authority.** Старый draft может хранить правильные факты и source anchors, но его типографику нельзя механически копировать, если она расходится с текущими стандартами.
 
 ## Источник — не финальный визуальный шаблон

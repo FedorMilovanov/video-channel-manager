@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from datetime import date
 from pathlib import Path
 from typing import Literal
@@ -132,6 +133,40 @@ def reviewed_title_resolutions(reviewed: ReviewedStandaloneSuffix) -> dict[str, 
     }
 
 
+NEAR_DUPLICATE_QUOTATION_SIMILARITY = 0.75
+
+
+def _quotation_tokens(quotation: str) -> frozenset[str]:
+    words = re.findall(r"[0-9a-zа-яё]+", quotation.casefold())
+    return frozenset(word for word in words if len(word) > 3)
+
+
+def near_duplicate_quotations(quotations: dict[str, str]) -> tuple[tuple[str, str, float], ...]:
+    """Find accidental near-duplicate quotations inside the pending suffix.
+
+    Publication ids are unique and semantic keys are unique, so a duplicated or
+    silently reworded card would otherwise only be noticed by a human reader.
+    The check is a containment ratio over content words: a shorter excerpt fully
+    contained in another counts as a duplicate, which is exactly the accidental
+    repetition this reviewer layer must catch.
+    """
+
+    duplicates: list[tuple[str, str, float]] = []
+    tokens = {publication_id: _quotation_tokens(quotation) for publication_id, quotation in quotations.items()}
+    ordered = sorted(tokens)
+    for index, left in enumerate(ordered):
+        if not tokens[left]:
+            continue
+        for right in ordered[index + 1 :]:
+            if not tokens[right]:
+                continue
+            shared = len(tokens[left] & tokens[right])
+            ratio = shared / min(len(tokens[left]), len(tokens[right]))
+            if ratio >= NEAR_DUPLICATE_QUOTATION_SIMILARITY:
+                duplicates.append((left, right, round(ratio, 3)))
+    return tuple(duplicates)
+
+
 def assert_reviewed_standalone_suffix(
     reviewed: ReviewedStandaloneSuffix,
     posts: tuple[SuccessorRuntimePost, ...],
@@ -166,6 +201,16 @@ def assert_reviewed_standalone_suffix(
             raise ValueError(f"title-context resolution is not bound to the visible title: {post.publication_id}")
         if entry.opening == "self_contained" and entry.title_context_reference is not None:
             raise ValueError(f"self-contained review must not claim a title resolution: {post.publication_id}")
+
+    quotations: dict[str, str] = {}
+    for post in future:
+        blocks = [block.strip() for block in post.text.replace("\r\n", "\n").strip().split("\n\n") if block.strip()]
+        attribution_index = blocks.index(f"— {post.attribution_text}")
+        quotations[post.publication_id] = "\n\n".join(blocks[:attribution_index]).strip()
+    duplicates = near_duplicate_quotations(quotations)
+    if duplicates:
+        detail = "; ".join(f"{left} ~ {right} ({ratio})" for left, right, ratio in duplicates)
+        raise ValueError(f"standalone review found near-duplicate pending quotations: {detail}")
 
 
 def main() -> int:

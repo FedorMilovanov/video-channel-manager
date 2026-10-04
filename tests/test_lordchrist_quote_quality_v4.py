@@ -237,3 +237,26 @@ def test_quality_gate_does_not_mutate_published_prefix() -> None:
 
     published_after = tuple(post.model_dump(mode="json") for post in queue.posts[:15])
     assert published_after == published_before
+
+
+def test_near_duplicate_pending_quotations_are_rejected_by_the_reviewed_ledger() -> None:
+    from video_channel_manager.telegram_quote_standalone_review import near_duplicate_quotations
+
+    assert near_duplicate_quotations({}) == ()
+    duplicated = near_duplicate_quotations(
+        {
+            "a": "Нет свойства Бога более утешительного для Его детей, чем учение о Божественном суверенитете.",
+            "b": "Нет свойства Бога более утешительного для Его детей, чем учение о суверенитете Бога.",
+            "c": "Сам Бог есть удел святых.",
+        }
+    )
+    assert duplicated and duplicated[0][0] == "a" and duplicated[0][1] == "b"
+
+
+def test_pending_suffix_has_no_near_duplicate_quotations() -> None:
+    from video_channel_manager.telegram_quote_standalone_review import near_duplicate_quotations
+
+    queue = _queue()
+    quotations = {post.publication_id: semantic_blocks(post)[0] for post in queue.posts[15:]}
+
+    assert near_duplicate_quotations(quotations) == ()
